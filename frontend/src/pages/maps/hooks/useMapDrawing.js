@@ -6,7 +6,7 @@ import { useEmojiTemplate } from './useEmojiTemplate';
 import { useTextTemplate } from './useTextTemplate';
 import { useVectorLayerSetup } from './useVectorLayerSetup';
 
-export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSelection = null) => { // Updated signature
+export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSelection = null) => {
     const [measureType, setMeasureType] = useState('Point');
     const [measurements, setMeasurements] = useState([]);
     const [isSketching, setIsSketching] = useState(false);

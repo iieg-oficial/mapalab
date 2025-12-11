@@ -68,12 +68,8 @@ prod: network-create
 	@echo "=================="
 	@echo ""
 	@echo "🔨 Construyendo frontend..."
-	@cd $(FRONTEND_DIR) && \
-		if [ ! -d "node_modules" ]; then \
-			echo "📦 Instalando dependencias de npm..."; \
-			npm ci; \
-		fi && \
-		npm run build
+	@echo "📦 Instalando dependencias y construyendo en Docker..."
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "npm install && npm run build"
 	@echo ""
 	@echo "📦 Configurando variables de entorno..."
 	@cd $(FRONTEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
@@ -99,7 +95,8 @@ prod: network-create
 
 build-prod:
 	@echo "🔨 Construyendo imágenes de producción..."
-	@cd $(FRONTEND_DIR) && npm run build
+	@echo "🔨 Construyendo imágenes de producción..."
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "npm install && npm run build"
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml build
 	@cd $(NGINX_DIR) && docker compose build
 	@echo "✅ Imágenes construidas"
