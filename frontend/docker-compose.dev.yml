@@ -1,0 +1,25 @@
+name: mapalab-frontend-dev
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    env_file:
+      - .env.development
+    volumes:
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
+      - ./index.html:/app/index.html:ro
+      - ./vite.config.js:/app/vite.config.js:ro
+      - ./vitest.config.js:/app/vitest.config.js:ro
+      - /app/node_modules
+    ports:
+      - '${FRONTEND_PORT:-${VITE_PORT:-5173}}:${VITE_PORT:-5173}'
+    networks:
+      - mapalab-network
+    restart: unless-stopped
+
+networks:
+  mapalab-network:
+    name: ${NETWORK_NAME:-mapalab-network}
+    external: true

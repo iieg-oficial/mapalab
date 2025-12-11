@@ -1,0 +1,20 @@
+name: mapalab-frontend
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        VITE_GOOGLE_ANALYTICS_ID: ${VITE_GOOGLE_ANALYTICS_ID}
+        VITE_BACKEND_API_HOST: ${VITE_BACKEND_API_HOST}
+        VITE_GEOSERVER_URL: ${VITE_GEOSERVER_URL}
+        VITE_NODE_ENV: ${VITE_NODE_ENV:-production}
+    volumes:
+      - ./data:/usr/share/nginx/html/data:ro
+    networks:
+      - mapalab-network
+    restart: unless-stopped
+
+networks:
+  mapalab-network:
+    name: ${NETWORK_NAME:-mapalab-network}
+    external: true

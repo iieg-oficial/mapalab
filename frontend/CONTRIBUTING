@@ -1,0 +1,225 @@
+# Contributing Guide
+
+## Branching Strategy
+We follow a simplified Git workflow:
+
+1. **main**: Production-ready code
+2. **develop**: Main development branch
+3. **feature/***:  New features
+4. **bugfix/***:  Bug fixes
+5. **hotfix/***:  Critical fixes for production
+
+### Branch Naming
+- Features: `feature/description`
+- Bug fixes: `bugfix/issue-description`
+- Hotfixes: `hotfix/critical-fix`
+
+### Process
+1. Create branch from `develop`
+2. Make changes
+3. Submit MR to `develop`
+4. After review, merge to `develop`
+
+## Merge Request Template
+```markdown
+### Description
+[Provide a brief description of the changes]
+
+### Type of Change
+- [ ] New feature
+- [ ] Bug fix
+- [ ] Documentation update
+- [ ] Code refactor
+- [ ] Performance improvement
+- [ ] Other (please specify)
+
+### Testing
+- [ ] Unit tests added/updated
+- [ ] Integration tests added/updated
+- [ ] Manual testing completed
+
+### Checklist
+- [ ] Code follows style guidelines
+- [ ] Documentation updated
+- [ ] Tests passing
+- [ ] Branch up-to-date with develop
+- [ ] Self-review completed
+- [ ] No console errors
+
+### Related Issues
+Closes #[issue number]
+
+### Screenshots (if applicable)
+[Add screenshots here]
+
+### Additional Notes
+[Any additional information]
+```
+
+## Commit Conventions
+
+We use conventional commits to maintain a clear history:
+
+- `feat`: New features
+- `fix`: Bug fixes
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code changes that neither fix bugs nor add features
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
+- `revert`: Reverting previous commits
+
+Format: `type(scope): description`
+Example: `feat(auth): add login functionality`
+
+## Commit Scopes
+
+Common scopes for this project include:
+
+- `auth`: Authentication and authorization
+- `chat`: Chat-related functionality
+- `ui`: User interface components
+- `api`: API integrations and endpoints
+- `layout`: Layout and structural changes
+- `test`: Testing infrastructure
+- `docs`: Documentation updates
+- `utils`: Utility functions
+- `config`: Configuration changes
+
+Each scope should clearly identify the area of change.
+
+### Commit Convention
+Consult [Conventional Commits](https://www.conventionalcommits.org/).
+
+
+## Code Style Guide
+
+### Formato General
+- Usar **4 espacios** para indentación
+- Límite de 80 caracteres por línea
+- Límite de 300 líneas por archivo (excluyendo líneas en blanco y comentarios)
+- Punto y coma (;) al final de cada declaración
+- **Strings**:
+  - Usar comillas simples ('') para strings regulares
+  - Usar backticks (``) para template literals y strings multilinea
+  - Nunca usar comillas dobles ("")
+- Siempre usar llaves {} en bloques de control
+- Espacio después de palabras clave (`if`, `for`, `while`, etc.)
+
+### Convenciones de Nombrado
+- **PascalCase** para componentes React
+  ```jsx
+  function UserProfile() { }
+  const TableHeader = () => { }
+  ```
+- **camelCase** para variables, funciones y métodos
+  ```javascript
+  const userData = { }
+  function getData() { }
+  ```
+- **UPPER_SNAKE_CASE** para constantes
+  ```javascript
+  const API_BASE_URL = 'https://api.example.com'
+  const MAX_ITEMS = 100
+  ```
+
+### JavaScript/React
+- Usar funciones flecha para componentes y callbacks
+  ```jsx
+  const Button = ({ onClick, children }) => (
+    <button onClick={onClick}>{children}</button>
+  )
+  ```
+
+- Uso correcto de strings:
+  ```javascript
+  // ✅ Correcto
+  const nombre = 'Juan'
+  const mensaje = `Hola ${nombre}, 
+    bienvenido a la aplicación`
+  const html = `
+    <div>
+      <h1>Título</h1>
+    </div>
+  `
+
+  // ❌ Incorrecto
+  const nombre = "Juan"              // No usar comillas dobles
+  const mensaje = 'Hola ' + nombre   // Usar template literal para concatenación
+  ```
+- Preferir desestructuración
+  ```javascript
+  const { name, age } = user
+  const [value, setValue] = useState(null)
+  ```
+- Usar async/await sobre promesas directas
+  ```javascript
+  const getData = async () => {
+    try {
+      const response = await fetch(url)
+      return await response.json()
+    } catch (error) {
+      console.error(error)
+    }
+  }
+  ```
+
+### Estructura de Componentes
+1. Imports ordenados:
+   ```javascript
+   // 1. React y hooks
+   import React, { useState } from 'react'
+   // 2. Librerías de terceros
+   import { useForm } from 'react-hook-form'
+   // 3. Hooks, utilidades y servicios
+   import { useAuth } from '../hooks'
+   // 4. Componentes propios
+   import Button from './Button'
+   // 5. Assets, imagenes y estilos
+   import './styles.css'
+   ```
+
+2. Orden de métodos en componentes:
+   - Hooks (useState, useEffect)
+   - Funciones auxiliares
+   - Handlers de eventos
+   - Render
+
+### CSS/Tailwind
+- Ordenar clases de Tailwind por categorías:
+  ```jsx
+  <div className="
+    // Layout
+    flex items-center justify-between
+    // Espaciado
+    p-4 my-2
+    // Fondo y bordes
+    bg-white rounded-lg border
+    // Estados
+    hover:bg-gray-50
+  ">
+  ```
+
+### Mejores Prácticas
+1. **Componentización**
+   - Componentes pequeños y reutilizables
+   - Un componente por archivo
+   - Extraer lógica compleja a hooks personalizados
+
+2. **Manejo de Estado**
+   - Usar Context para estado global
+   - useState para estado local simple
+   - Evitar prop drilling
+
+3. **Performance**
+   - Usar React.memo para componentes puros
+   - Implementar useMemo y useCallback cuando sea necesario
+   - Evitar renders innecesarios
+
+4. **Testing**
+   - Escribir tests para lógica crítica
+   - Mantener cobertura de código significativa
+   - Usar nombres descriptivos para los tests
+
+## Code of Conduct
+Please follow our [Code of Conduct](./CODE_OF_CONDUCT.md) in all your interactions with the project.

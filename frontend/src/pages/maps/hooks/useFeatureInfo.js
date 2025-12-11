@@ -1,0 +1,236 @@
+import { useState, useCallback, useContext } from 'react';
+import MapsContext from '@contexts/MapsContext';
+import { getFeatureInfoForActiveLayers, getFeaturesInPolygonForActiveLayers } from '@services/featureInfoService';
+import { toLonLat } from 'ol/proj';
+import { findLayerById, layers as allLayers, collectLayersWithWMS } from '../helpers/layers/index';
+
+const FEATURE_INFO_LOADING_ID = 'feature_info_query';
+
+export const useFeatureInfo = () => {
+    const { hiddenLayerIds, setSelectedFeatureInfo, clickPosition, activeLayerIds, getFilter, selectedLayerForSymbology, setLayerLoading } = useContext(MapsContext);
+    const [loading, setLoading] = useState(false);
+
+    const queryFeatures = useCallback(async (map, coordinate, event) => {
+        if (!map || !coordinate) {
+            return null;
+        }
+
+        if (event) {
+            clickPosition.updatePosition(event);
+        }
+
+        let layersToQuery = [];
+
+        if (!activeLayerIds || activeLayerIds.length === 0) {
+            return null;
+        }
+
+        if (selectedLayerForSymbology) {
+            if (hiddenLayerIds.includes(selectedLayerForSymbology.id)) {
+                return null;
+            }
+
+            const layerNode = findLayerById(selectedLayerForSymbology.id, allLayers);
+            if (layerNode) {
+                const activeIdSet = new Set(activeLayerIds || []);
+                const wmsLayers = collectLayersWithWMS(layerNode).filter(node => activeIdSet.has(node.id));
+
+                if (wmsLayers.length > 0) {
+                    layersToQuery = wmsLayers.map(node => ({
+                        id: node.id,
+                        name: node.label,
+                        visible: true
+                    }));
+                } else if (layerNode.wmsConfig && activeIdSet.has(layerNode.id)) {
+                    layersToQuery = [{
+                        id: layerNode.id,
+                        name: layerNode.label,
+                        visible: true
+                    }];
+                }
+            }
+        } else {
+            const activeIdSet = new Set(activeLayerIds || []);
+            const hiddenIdSet = new Set(hiddenLayerIds || []);
+
+            const expandedLayers = (activeLayerIds || []).flatMap(layerId => {
+                if (hiddenIdSet.has(layerId)) return [];
+
+                const layerNode = findLayerById(layerId, allLayers);
+                if (!layerNode) return [];
+
+                const wmsLayers = collectLayersWithWMS(layerNode).filter(node => activeIdSet.has(node.id));
+
+                if (wmsLayers.length === 0 && layerNode.wmsConfig && activeIdSet.has(layerNode.id)) {
+                    return [{
+                        id: layerNode.id,
+                        name: layerNode.label,
+                        visible: true
+                    }];
+                }
+
+                return wmsLayers.map(node => ({
+                    id: node.id,
+                    name: node.label,
+                    visible: true
+                }));
+            });
+
+            const activeLayersMap = new Map();
+            expandedLayers.forEach(layerInfo => {
+                if (!activeLayersMap.has(layerInfo.id)) {
+                    activeLayersMap.set(layerInfo.id, layerInfo);
+                }
+            });
+
+            layersToQuery = Array.from(activeLayersMap.values());
+        }
+        const activeLayers = layersToQuery;
+
+        setLoading(true);
+        setLayerLoading(FEATURE_INFO_LOADING_ID, true);
+        
+        try {
+            const results = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter);
+            const [lng, lat] = toLonLat(coordinate);
+
+            if (results && results.length > 0) {
+                setSelectedFeatureInfo({
+                    lngLat: { lng, lat },
+                    results
+                });
+                return results;
+            } else {
+                setSelectedFeatureInfo(null);
+                clickPosition.clearPosition();
+                return null;
+            }
+        } catch (error) {
+            setSelectedFeatureInfo(null);
+            clickPosition.clearPosition();
+            return null;
+        } finally {
+            setLoading(false);
+            setLayerLoading(FEATURE_INFO_LOADING_ID, false);
+        }
+    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, selectedLayerForSymbology, setLayerLoading]);
+
+    const queryFeaturesInPolygon = useCallback(async (map, polygonGeometry, centerCoordinate, onFeatureCountUpdate) => {
+        if (!map || !polygonGeometry) {
+            return null;
+        }
+
+        const hiddenIdSet = new Set(hiddenLayerIds || []);
+
+        const baseLayersNode = findLayerById('base_layers', allLayers);
+        const baseLayerIds = new Set(
+            baseLayersNode?.children?.map(child => child.id) || []
+        );
+
+        const nonBaseActiveLayerIds = (activeLayerIds || []).filter(id => !baseLayerIds.has(id));
+        const hasNonBaseLayers = nonBaseActiveLayerIds.length > 0;
+
+        let layerIdsToQuery = activeLayerIds || [];
+
+        if (!hasNonBaseLayers && baseLayersNode) {
+            const visibleBaseLayers = baseLayersNode.children
+                .filter(child => !hiddenIdSet.has(child.id))
+                .map(child => child.id);
+            layerIdsToQuery = visibleBaseLayers;
+        }
+
+        const expandedLayers = layerIdsToQuery.flatMap(layerId => {
+            if (hiddenIdSet.has(layerId)) return [];
+
+            const layerNode = findLayerById(layerId, allLayers);
+            if (!layerNode) return [];
+
+            const wmsLayers = collectLayersWithWMS(layerNode).filter(node =>
+                layerIdsToQuery.includes(node.id) || baseLayerIds.has(node.id)
+            );
+
+            if (wmsLayers.length === 0 && layerNode.wmsConfig) {
+                return [{
+                    id: layerNode.id,
+                    name: layerNode.label,
+                    visible: true
+                }];
+            }
+
+            return wmsLayers.map(node => ({
+                id: node.id,
+                name: node.label,
+                visible: true
+            }));
+        });
+
+        const activeLayersMap = new Map();
+        expandedLayers.forEach(layerInfo => {
+            if (!activeLayersMap.has(layerInfo.id)) {
+                activeLayersMap.set(layerInfo.id, layerInfo);
+            }
+        });
+
+        const activeLayers = Array.from(activeLayersMap.values());
+
+        setLoading(true);
+        setLayerLoading(FEATURE_INFO_LOADING_ID, true);
+        try {
+            const results = await getFeaturesInPolygonForActiveLayers(activeLayers, map, polygonGeometry, getFilter);
+            const [lng, lat] = toLonLat(centerCoordinate);
+
+            if (results && results.length > 0) {
+                const totalFeatures = results.reduce((sum, result) => sum + (result.features?.length || 0), 0);
+                const layerBreakdown = results
+                    .filter(result => result.features?.length > 0)
+                    .map(result => ({
+                        name: result.layerName,
+                        count: result.features.length
+                    }));
+
+                if (onFeatureCountUpdate) {
+                    onFeatureCountUpdate(totalFeatures, layerBreakdown, results);
+                }
+
+                setTimeout(() => {
+                    const pixel = map.getPixelFromCoordinate(centerCoordinate);
+                    clickPosition.updatePosition({ pixel });
+
+                    setSelectedFeatureInfo({
+                        lngLat: { lng, lat },
+                        results,
+                        isPolygonSelection: true
+                    });
+                }, 100);
+                return results;
+            } else {
+                if (onFeatureCountUpdate) {
+                    onFeatureCountUpdate(0);
+                }
+
+                setSelectedFeatureInfo(null);
+                clickPosition.clearPosition();
+                return null;
+            }
+        } catch (error) {
+            setSelectedFeatureInfo(null);
+            clickPosition.clearPosition();
+            return null;
+        } finally {
+            setLoading(false);
+            setLayerLoading(FEATURE_INFO_LOADING_ID, false);
+        }
+    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, setLayerLoading]);
+
+    const clearFeatureInfo = useCallback(() => {
+        setSelectedFeatureInfo(null);
+        clickPosition.clearPosition();
+    }, [setSelectedFeatureInfo, clickPosition]);
+
+    return {
+        queryFeatures,
+        queryFeaturesInPolygon,
+        clearFeatureInfo,
+        loading
+    };
+};
