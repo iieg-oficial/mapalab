@@ -1,0 +1,243 @@
+# Registro de Cambios
+Todos los cambios notables de este proyecto serán documentados en este archivo.
+
+## [0.9.1] - 2025-11-12
+### Añadido
+- Configuración completa de Vitest para testing del proyecto.
+  - Instalación de librerías: vitest, @testing-library/react, @testing-library/jest-dom, @testing-library/user-event, jsdom.
+  - Archivo de configuración `vitest.config.js` con soporte para React y alias de rutas.
+  - Setup global de tests en `src/test/setup.js`.
+  - Test de ejemplo en `src/test/example.test.jsx`.
+  - Documentación completa en `src/test/README.md` con ejemplos y guías.
+- Scripts npm para testing:
+  - `npm test`: Ejecutar tests en modo watch.
+  - `npm run test:ui`: Interfaz visual de Vitest.
+  - `npm run test:coverage`: Reporte de cobertura de código.
+- Soporte para cobertura de código con `@vitest/coverage-v8`.
+- Actualización de `.gitignore` para excluir carpetas de testing (coverage, .vitest).
+
+## [0.9.0] - 2025-11-12
+### Añadido
+- Hook `useAutoCleanFilters` para limpieza automática de filtros al eliminar capas.
+  - Detecta automáticamente cuando se eliminan capas del mapa.
+  - Limpia filtros asociados tanto del estado como de la URL.
+  - Previene acumulación de filtros huérfanos en la aplicación.
+- Función `isRenderableParentLayer` en layerHelpers para detectar capas padre renderizables.
+
+### Optimizado
+- Reducción del tiempo de carga de filtros desde URL de 400ms a 150ms (~62% más rápido).
+- Eliminación de setTimeout anidados innecesarios en la inicialización de filtros.
+
+## [0.8.3] - 2025-11-11
+### Modificado
+- Actualización de configuración de capas para utilizar filtros CQL en lugar de estilos.
+  - Mejora en la flexibilidad de filtrado de capas WMS.
+  - Optimización del rendimiento en consultas espaciales.
+
+## [0.8.2] - 2025-11-10
+### Añadido
+- Sistema de sincronización bidireccional de filtros con la URL.
+  - Hook `useFilterUrlSync` para sincronización automática filtros → URL.
+  - Hook `useInitializeFiltersFromUrl` para carga de filtros desde URL.
+  - Variable compartida `filtersInitializationComplete` para coordinación entre hooks.
+- Mejoras en la gestión de filtros y capas:
+  - Lógica mejorada en `useActiveLayersLogic` para manejo de jerarquías de capas.
+  - Detección automática de capas padre e hijas.
+  - Prevención de conflictos durante inicialización desde URL.
+
+## [0.8.2-beta] - 2025-11-07
+### Añadido
+- Componente de periodicidad en el modal de detalles de capas.
+  - Filtro de fecha para análisis temporal de datos.
+  - Interfaz de usuario para selección de períodos.
+- Concatenación de filtros CQL para parámetro de periodicidad.
+  - Soporte para múltiples filtros simultáneos.
+  - Combinación automática con operador AND.
+
+### Corregido
+- Problema de múltiple información al seleccionar un punto en el mapa.
+  - Evita duplicación de consultas GetFeatureInfo.
+  - Mejora en la detección de features en la posición del click.
+- Tipo de capa para homologar con GeoServer.
+  - Corrección de tipos MIME en respuestas WMS.
+  - Compatibilidad mejorada con diferentes versiones de GeoServer.
+
+## [0.8.1-patch] - 2025-11-06
+### Corregido
+- Problema de recarga de parámetros de la URL al desmarcar capas.
+  - Prevención de ciclos infinitos de actualización.
+  - Sincronización correcta entre estado y URL parameters.
+- Mejora de contrastes en componentes de UI.
+  - Optimización de legibilidad en modo oscuro.
+  - Ajustes de accesibilidad según WCAG 2.1.
+
+## [0.8.1] - 2025-10-07  
+### Añadido  
+- Implementación del hook useLayerUrlSync donde.
+  - Actualiza en tiempo real la url con las capas seleccionadas.
+  - Genera un ID a la url para evitar url's demasiados largos.
+- Nuevos helpers:  
+  - handleShare: Copia la url.
+
+## [0.8.0] - 2025-10-07  
+### Añadido  
+- Implementación del frame al descargar el mapa que muestra.
+  - 🧭 Norte (flecha o rosa de los vientos).
+  - 📏 Escala gráfica.
+  - 📌 Leyenda básica (título de la capa activa y simbología). Escala gráfica.
+  - 📅 Fecha de generación del mapa.
+  - 📍 Coordenadas o cuadrícula (opcional, si la integración es viable).
+- Nuevas Utils:  
+  - coordinateGrid: Crea la cuadricula sobre el mapa.
+  - coordinateLabels: Muestra las coordenadas sobre el mapa.
+  - layoutFooter: Crea el footer sobre el mapa.
+  - layoutHeader: Crea el header sobre el mapa.
+  - northArrow: muestra la flecha de NORTE.
+  - symbology: Crea la simbologia que se muestra en el mapa.
+  - symbologyData: Son los datos que se muestran en la simbologia.  
+
+## [0.7.7] - 2025-09-24  
+### Añadido  
+- Implementación del Footer en la página de inicio.  
+- Nuevos componentes:  
+  - Footer: Diseño y experiencia de usuario (UX/UI) siguiendo el mockup.  
+
+## [0.7.6] - 2025-09-24  
+### Añadido  
+- Implementación de la Suport Section en la página de inicio.  
+- Nuevos componentes:  
+  - SuportSection: Diseño y experiencia de usuario (UX/UI) siguiendo el mockup.  
+
+## [0.7.6] - 2025-09-24  
+### Añadido  
+- Implementación de la Select Section en la página de inicio.  
+- Nuevos componentes:  
+  - SelectSection: Diseño y experiencia de usuario (UX/UI) siguiendo el mockup.  
+
+## [0.7.5] - 2025-09-30
+### Añadido
+- Implementación de GuideSection en la página de inicio.
+- Ejemplo de uso de MapaLab.
+- Nuevos componentes:
+  - GuideSection: diseño y experiencia de usuario siguiendo el mockup.
+  - PrimaryButton: botón dinámico que permite cambiar el texto y la URL de destino.
+
+## [0.7.4] - 2025-10-02
+### Añadido
+- Configuración del servidor WMS para conexión con servicios de mapas externos
+- Soporte para capas WMS (Web Map Service) en el visualizador de mapas
+- Gestión avanzada de layers con capacidades de configuración personalizada
+- Sistema de autenticación para servicios WMS protegidos
+- Cache local para capas WMS frecuentemente utilizadas
+
+### Cambiado
+- Optimización en la carga y renderizado de capas WMS
+- Mejoras en la gestión de metadatos de layers
+- Actualización de la configuración de conexión para múltiples servidores WMS
+
+### Corregido
+- Problemas de timeout en conexiones WMS lentas
+- Corrección de errores en la proyección de coordenadas para capas WMS
+- Ajustes en la sincronización entre capas locales y remotas
+
+## [0.7.3] - 2025-09-25
+### Añadido
+- Topic section con temáticas donde puedes buscar por palabra clave o seleccionar una.
+- Al hacer hover sobre cada temática se despliega un submenú con varias opciones.
+- Diseño responsive: en móviles, solo necesitas dar click en una temática para desplegar las opciones.
+- Efecto de hover al mostrar el submenú de cada temática.
+- Componentes personalizados reutilizables:
+  - TopicSection: UI para crear temáticas con su submenú; incluye el input de búsqueda.
+  - Card: UI que muestra la carta con submenú al hacer hover, con efecto de expansión suave.
+  - CardResponsive: versión responsive para móviles, optimizando la experiencia UX.
+- Helpers reutilizables:
+  - expandLeft: ayuda a detectar si la card se expande a la derecha o izquierda según el espacio disponible.
+
+## [0.7.2] - 2025-09-24  
+### Añadido  
+- Implementación de la Hero Section en la página de inicio.  
+- Nuevos componentes:  
+  - HeroSection: Diseño y experiencia de usuario (UX/UI) siguiendo el mockup.  
+
+## [0.7.1] - 2025-09-23
+
+### Añadido
+- Header de la plataforma con opciones dinámicas; ahora puedes agregar las que quieras.
+- Hamburger menu en el Header para mejorar la experiencia del usuario en dispositivos móviles.
+- Componentes personalizados reutilizables:
+  - Header: UI del header de la página.
+  - HamburgerMenu: Menú desplegable para mejorar la navegación en móviles.
+
+### Corregido
+- Error de UI en el header sobre z index corregido.
+- Nombre de archivo corregido para seguir buenas prácticas (hamburgerMenu - HamburgerMenu).
+- Archivo innecesario eliminado ( vite ).
+
+## [0.7.0] - 2025-09-04
+### Añadido
+- Sistema de paneles colapsables para capas activas y simbología
+- Posicionamiento dinámico de iconos (se alinean a la derecha cuando el otro panel está expandido)
+- Componente ActiveLayerItem específico para gestión avanzada de capas
+- Hooks personalizados para separación de responsabilidades:
+  - useActiveLayersLogic: Lógica de búsqueda y manipulación de capas
+  - useLayerCollapse: Manejo de estados de colapso manual/automático
+  - useLayerDragDrop: Funcionalidad de arrastrar y soltar
+- Funcionalidad drag & drop para reordenar capas activas (Z-index)
+- Indicadores visuales de estado (simbología activa, número de capas)
+- Sistema de auto-colapso inteligente basado en contenido
+
+### Cambiado
+- Refactorización completa de MapsProvider usando hooks personalizados
+- Refactorización de ActiveLayersList con separación de responsabilidades
+- Optimización del renderizado con useCallback para prevenir re-renders innecesarios
+- Mejora en la gestión de estados de capas activas y simbología
+- Separación de componentes: CollapsedLayersView y ExpandedLayersView
+
+### Corregido
+- Problema de "encasillamiento" de capas en el menú desplegable del sider
+- Sincronización entre activeLayerIds y symbologyStack
+- Problemas de timing en actualizaciones de estado de React
+- Estabilización de funciones con useCallback para evitar closures obsoletos
+
+## [0.6.8] - 2024-06-11
+### Añadido
+- Funcionalidad para compartir mapas mediante enlaces directos
+- Soporte para capas personalizadas de usuario
+- Notificaciones en tiempo real para actualizaciones de datos
+
+### Cambiado
+- Optimización del renderizado de capas vectoriales
+- Mejoras en la gestión de sesiones de usuario
+
+### Corregido
+- Corrección de errores al exportar mapas en PDF
+- Ajustes en la visualización de la barra de navegación en dispositivos móviles
+
+## [0.5.5] - 2024-01-09
+### Cambiado
+- Añadidos controles de capas de mapa
+- Mejorada la responsividad de la interfaz de usuario
+- Actualizados los componentes de visualización de mapas
+
+### Añadido
+- Nuevas opciones de filtrado de datos
+- Características interactivas de leyenda
+- Capacidades avanzadas de búsqueda
+
+## [0.5.1] - 2025-08-22
+### Cambiado
+- Actualizada la estructura del proyecto para seguir mejores prácticas
+- Mejorada la organización de carpetas
+
+### Corregido
+- Problemas de configuración inicial
+- Configuración del entorno de desarrollo
+
+## [0.1.0] - 2025-08-10
+### Añadido
+- Configuración inicial del proyecto
+- Estructura básica del frontend con React
+- Componentes de integración de mapas
+- Elementos básicos de interfaz de usuario
+- Configuración de dependencias del proyecto
+
