@@ -21,7 +21,7 @@ export const educacionLayers = {
             children: NIVELES.map(([id, label, nivel, tags]) => ({
                 id,
                 label,
-                wmsConfig: createEducacionLayer.withFilter('escuelas', `nivel_educativo ILIKE '${nivel}'`),
+                wmsConfig: createEducacionLayer.withFilter('gold_centros_educativos_mapalab', `nivel_educativo ILIKE '${nivel}'`),
                 searchMeta: {
                     hasMunicipio: false,
                     hasDireccion: false,
@@ -29,17 +29,6 @@ export const educacionLayers = {
                     tags
                 }
             }))
-        }, {
-            id: 'rezago_educativo',
-            label: '*Rezago Educativo',
-            base: 'iieg',
-            wmsConfig: createEducacionLayer('rezago_educativo'),
-            searchMeta: {
-                hasMunicipio: false,
-                hasDireccion: false,
-                searchableFields: [],
-                tags: []
-            }
         }
     ]
 };
