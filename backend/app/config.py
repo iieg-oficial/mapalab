@@ -1,5 +1,5 @@
-import os
 from typing import List, Literal, Optional
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -14,9 +14,11 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_HOST: str
     DB_PORT: str
-    DB_NAME: Optional[str] = None
+    DB_NAME: Optional[str] = Field(default=None)
 
-    GEOSERVER_URL: Optional[str] = None
+    GEOSERVER_URL: Optional[str] = Field(default=None)
+    GEOSERVER_USER: str
+    GEOSERVER_PASSWORD: str
 
     @property
     def DATABASE_URL(self) -> str:
