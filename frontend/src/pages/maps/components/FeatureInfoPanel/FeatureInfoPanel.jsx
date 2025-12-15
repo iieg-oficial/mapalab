@@ -74,7 +74,7 @@ const FeatureInfoPanel = () => {
         const config = getFeatureConfig(layerId);
 
         if (config) {
-            const configuredContent = renderConfiguredFeature(feature.properties, config, onClose);
+            const configuredContent = renderConfiguredFeature(feature.properties, config, onClose, layerId);
             if (configuredContent) {
                 return configuredContent;
             }
