@@ -25,27 +25,27 @@ help:
 	@echo ""
 
 network-create:
-	@echo "🔧 Creando red $(NETWORK_NAME)..."
-	@docker network create $(NETWORK_NAME) 2>/dev/null || echo "✅ Red $(NETWORK_NAME) ya existe"
+	@echo "Creando red $(NETWORK_NAME)..."
+	@docker network create $(NETWORK_NAME) 2>/dev/null || echo "Red $(NETWORK_NAME) ya existe"
 
 network-remove:
-	@echo "🗑️  Eliminando red $(NETWORK_NAME)..."
-	@docker network rm $(NETWORK_NAME) 2>/dev/null || echo "⚠️  Red $(NETWORK_NAME) no existe"
+	@echo "Eliminando red $(NETWORK_NAME)..."
+	@docker network rm $(NETWORK_NAME) 2>/dev/null || echo "Red $(NETWORK_NAME) no existe"
 
 dev: network-create
 	@echo ""
-	@echo "🚀 MODO DESARROLLO"
+	@echo "MODO DESARROLLO"
 	@echo "=================="
 	@echo ""
-	@echo "📦 Configurando variables de entorno..."
+	@echo "Configurando variables de entorno..."
 	@cd $(FRONTEND_DIR) && if [ ! -f .env.development ]; then cp .env.development.example .env.development; fi
 	@cd $(BACKEND_DIR) && if [ ! -f .env.development ]; then cp .env.example .env.development; fi
 	@echo ""
-	@echo "🔨 Levantando servicios de desarrollo..."
+	@echo "Levantando servicios de desarrollo..."
 	@cd $(BACKEND_DIR) && cp .env.development .env && docker compose up -d
 	@cd $(FRONTEND_DIR) && docker compose --env-file .env.development -f docker-compose.dev.yml up -d
 	@echo ""
-	@echo "✅ SERVICIOS LEVANTADOS EN DESARROLLO"
+	@echo "SERVICIOS LEVANTADOS EN DESARROLLO"
 	@echo "======================================"
 	@echo ""
 	@FP=$$(grep '^FRONTEND_PORT=' $(FRONTEND_DIR)/.env.development 2>/dev/null | cut -d '=' -f2); \
@@ -53,65 +53,65 @@ dev: network-create
 	if [ -z "$$FP" ]; then FP=5173; fi; \
 	BP=$$(grep '^BACKEND_PORT=' $(BACKEND_DIR)/.env.development 2>/dev/null | cut -d '=' -f2); \
 	if [ -z "$$BP" ]; then BP=8000; fi; \
-	echo "  🎨 Frontend (Vite dev):  http://localhost:$$FP"; \
-	echo "  🔧 Backend API:          http://localhost:$$BP"; \
-	echo "  📚 Backend Docs:         http://localhost:$$BP/docs"; \
-	echo "  📖 Backend ReDoc:        http://localhost:$$BP/redoc"
+	echo "  Frontend (Vite dev):  http://localhost:$$FP"; \
+	echo "  Backend API:          http://localhost:$$BP"; \
+	echo "  Backend Docs:         http://localhost:$$BP/docs"; \
+	echo "  Backend ReDoc:        http://localhost:$$BP/redoc"
 	@echo ""
-	@echo "💡 Hot-reload activado en frontend y backend"
-	@echo "💡 Nginx NO se usa en desarrollo"
+	@echo "Hot-reload activado en frontend y backend"
+	@echo "Nginx NO se usa en desarrollo"
 	@echo ""
 
 prod: network-create
 	@echo ""
-	@echo "🚀 MODO PRODUCCIÓN"
+	@echo "MODO PRODUCCIÓN"
 	@echo "=================="
 	@echo ""
-	@echo "🔨 Construyendo frontend..."
-	@echo "📦 Instalando dependencias y construyendo en Docker..."
+	@echo "Construyendo frontend..."
+	@echo "Instalando dependencias y construyendo en Docker..."
 	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "npm install && npm run build"
 	@echo ""
-	@echo "📦 Configurando variables de entorno..."
+	@echo "Configurando variables de entorno..."
 	@cd $(FRONTEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
 	@cd $(BACKEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
 	@cd $(NGINX_DIR) && if [ ! -f .env ]; then \
 		cp .env.example .env 2>/dev/null || true; \
 	fi
 	@echo ""
-	@echo "🐳 Levantando servicios de producción..."
+	@echo "Levantando servicios de producción..."
 	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d
 	@cd $(NGINX_DIR) && docker compose up -d --build
 	@echo ""
-	@echo "✅ SERVICIOS LEVANTADOS EN PRODUCCIÓN"
+	@echo "SERVICIOS LEVANTADOS EN PRODUCCIÓN"
 	@echo "======================================"
 	@echo ""
-	@echo "  🌐 Aplicación:           http://localhost"
-	@echo "  🔧 Backend API:          http://localhost/api"
-	@echo "  🗺️  GeoServer:            http://localhost/geoserver/"
+	@echo "  Aplicación:           http://localhost"
+	@echo "  Backend API:          http://localhost/api"
+	@echo "  GeoServer:            http://localhost/geoserver/"
 	@echo ""
-	@echo "💡 Frontend servido como archivos estáticos desde nginx"
-	@echo "💡 /docs y /redoc están deshabilitados en producción"
+	@echo "Frontend servido como archivos estáticos desde nginx"
+	@echo "/docs y /redoc están deshabilitados en producción"
 	@echo ""
 
 build-prod:
-	@echo "🔨 Construyendo imágenes de producción..."
-	@echo "🔨 Construyendo imágenes de producción..."
+	@echo "Construyendo imágenes de producción..."
+	@echo "Construyendo imágenes de producción..."
 	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "npm install && npm run build"
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml build
 	@cd $(NGINX_DIR) && docker compose build
-	@echo "✅ Imágenes construidas"
+	@echo "Imágenes construidas"
 
 down:
-	@echo "⏹️  Deteniendo todos los servicios..."
+	@echo "Deteniendo todos los servicios..."
 	@cd $(NGINX_DIR) && docker compose down 2>/dev/null || true
 	@cd $(FRONTEND_DIR) && docker compose -f docker-compose.dev.yml down 2>/dev/null || true
 	@cd $(FRONTEND_DIR) && docker compose down 2>/dev/null || true
 	@cd $(BACKEND_DIR) && docker compose down 2>/dev/null || true
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml down 2>/dev/null || true
-	@echo "✅ Servicios detenidos"
+	@echo "Servicios detenidos"
 
 clean: down
-	@echo "🧹 Limpiando volúmenes y archivos generados..."
+	@echo "Limpiando volúmenes y archivos generados..."
 	@cd $(BACKEND_DIR) && docker compose down -v 2>/dev/null || true
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml down -v 2>/dev/null || true
 	@cd $(FRONTEND_DIR) && docker compose -f docker-compose.dev.yml down -v 2>/dev/null || true
@@ -119,14 +119,14 @@ clean: down
 	@rm -rf $(FRONTEND_DIR)/dist 2>/dev/null || true
 	@rm -rf $(FRONTEND_DIR)/node_modules 2>/dev/null || true
 	@$(MAKE) network-remove
-	@echo "✅ Limpieza completada"
+	@echo "Limpieza completada"
 
 logs-dev:
-	@echo "📋 Logs de desarrollo (frontend + backend):"
+	@echo "Logs de desarrollo (frontend + backend):"
 	@docker compose -f $(BACKEND_DIR)/docker-compose.yaml -f $(FRONTEND_DIR)/docker-compose.dev.yml logs -f
 
 logs-prod:
-	@echo "📋 Logs de producción (nginx + backend):"
+	@echo "Logs de producción (nginx + backend):"
 	@docker compose -f $(BACKEND_DIR)/docker-compose.prod.yaml -f $(NGINX_DIR)/docker-compose.yml logs -f
 
 logs-backend:
@@ -139,7 +139,7 @@ logs-nginx:
 	@cd $(NGINX_DIR) && docker compose logs -f
 
 status:
-	@echo "📊 Estado de los servicios:"
+	@echo "Estado de los servicios:"
 	@echo ""
 	@echo "=== DESARROLLO ==="
 	@echo "Frontend (Vite dev):"
@@ -156,7 +156,7 @@ status:
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml ps 2>/dev/null || echo "  No está corriendo"
 	@echo ""
 	@if [ -d "$(FRONTEND_DIR)/dist" ]; then \
-		echo "Frontend dist/: ✅ Existe"; \
+		echo "Frontend dist/: Existe"; \
 	else \
-		echo "Frontend dist/: ❌ No existe (ejecuta 'make prod' para generar)"; \
+		echo "Frontend dist/: No existe (ejecuta 'make prod' para generar)"; \
 	fi

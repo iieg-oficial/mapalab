@@ -6,27 +6,27 @@ Proyecto MapaLab del Instituto de Información Estadística y Geográfica del Es
 
 El proyecto está diseñado con **dos modos completamente diferentes**:
 
-### 🔧 MODO DESARROLLO
+### MODO DESARROLLO
 
 **Stack:**
-- Frontend: Vite dev server (Docker) en puerto 5173 con hot-reload ⚡
+- Frontend: Vite dev server (Docker) en puerto 5173 con hot-reload
 - Backend: FastAPI (Docker) en puerto 8000 con --reload
 - **SIN nginx**
 
 **Características:**
-- ✅ Hot-reload en frontend y backend
-- ✅ `/docs` y `/redoc` habilitados
-- ✅ DEBUG=True, logs detallados
-- ✅ Perfecto para agregar código y ver cambios al instante
+- Hot-reload en frontend y backend
+- `/docs` y `/redoc` habilitados
+- DEBUG=True, logs detallados
+- Perfecto para agregar código y ver cambios al instante
 
 **Flujo:**
 ```
 Cliente → Frontend (localhost:5173) → Backend API (localhost:8000)
-         ↓ Hot-reload ⚡
+         ↓ Hot-reload
       Vite dev server
 ```
 
-### 🚀 MODO PRODUCCIÓN
+### MODO PRODUCCIÓN
 
 **Stack:**
 - Frontend: Archivos estáticos (dist/) servidos por nginx
@@ -34,11 +34,11 @@ Cliente → Frontend (localhost:5173) → Backend API (localhost:8000)
 - Nginx: Reverse proxy en puerto 80
 
 **Características:**
-- ✅ Frontend optimizado (build compilado)
-- ✅ `/docs` y `/redoc` DESHABILITADOS
-- ✅ DEBUG=False, logs censurados
-- ✅ Nginx como punto de entrada único
-- ✅ Proxy a GeoServer externo
+- Frontend optimizado (build compilado)
+- `/docs` y `/redoc` DESHABILITADOS
+- DEBUG=False, logs censurados
+- Nginx como punto de entrada único
+- Proxy a GeoServer externo
 
 **Flujo:**
 ```
@@ -232,15 +232,15 @@ docker compose up -d
 | Aspecto | Desarrollo | Producción |
 |---------|-----------|------------|
 | **Frontend** | Vite dev server (5173) | Archivos estáticos en nginx |
-| **Hot-reload** | ✅ Sí | ❌ No |
-| **Backend /docs** | ✅ Habilitado | ❌ Deshabilitado |
-| **Backend /redoc** | ✅ Habilitado | ❌ Deshabilitado |
-| **DEBUG** | ✅ True | ❌ False |
-| **Logs** | 📝 Detallados | 📝 Censurados |
+| **Hot-reload** | Sí | No |
+| **Backend /docs** | Habilitado | Deshabilitado |
+| **Backend /redoc** | Habilitado | Deshabilitado |
+| **DEBUG** | True | False |
+| **Logs** | Detallados | Censurados |
 | **Servidor backend** | Uvicorn --reload | Gunicorn (4 workers) |
-| **Nginx** | ❌ No se usa | ✅ Reverse proxy |
+| **Nginx** | No se usa | Reverse proxy |
 | **Puertos** | Frontend:5173, Backend:8000 | Todo en :80 (nginx) |
-| **Build frontend** | ❌ No necesario | ✅ npm run build |
+| **Build frontend** | No necesario | npm run build |
 
 ## Flujo de Trabajo Recomendado
 
