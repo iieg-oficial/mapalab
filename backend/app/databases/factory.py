@@ -6,7 +6,7 @@ from app.config import settings
 class DatabaseFactory:
 
     @staticmethod
-    def _resolve_db_name(db_type: DatabaseType) -> str:
+    def _select_db_name(db_type: DatabaseType) -> str:
         override = os.getenv(f"{db_type.name}_DB_NAME")
         if override:
             return override
@@ -22,7 +22,7 @@ class DatabaseFactory:
         password = settings.DB_PASSWORD
         host = settings.DB_HOST
         port = settings.DB_PORT
-        db_name = DatabaseFactory._resolve_db_name(db_type)
+        db_name = DatabaseFactory._select_db_name(db_type)
         return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
 
     @staticmethod
