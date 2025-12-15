@@ -9,8 +9,12 @@ from app.schemas.mapalab import LayerResponse, PeriodicityLayer
 from app.schemas.pagination import PaginatedResponse
 from app.exceptions.common_exceptions import InternalServerException
 from app.services.geoserver_service import GeoServerService
-from app.utils.logger import Logger
 from app.utils.api_responses import api_responses
+
+from app.services.search_service import SearchService
+from app.services.search_cache_service import SearchCacheService
+from app.schemas.search import SearchResponse
+from app.utils.logger import Logger
 
 router = APIRouter(prefix="/mapalab", tags=["Mapalab"])
 
@@ -48,7 +52,6 @@ def get_layer_periodicity(
     layer: str = Query(..., description="Nombre de la capa dentro del workspace (p. ej. capa_anual)"),
     cql_filter: Optional[str] = Query(default=None, description="Filtro CQL opcional para restringir la consulta WFS")
 ):
-    base_layer_url = GeoServerService.get_layer_url(workspace, layer)
     wfs_query_url = GeoServerService.get_layer_url(workspace, layer, cql_filter=cql_filter)
 
     try:
@@ -61,3 +64,25 @@ def get_layer_periodicity(
         url=wfs_query_url,
         fecha=georserver_periodicity["fecha"]
     )
+
+@router.get("/search", response_model=SearchResponse)
+async def search_layers(query: str = Query(..., description="Search query")):
+    return SearchService.search(query)
+
+
+
+@router.post("/search/refresh")
+async def refresh_cache():
+    try:
+        cache = SearchCacheService.generate_cache()
+        SearchCacheService.save_cache(cache)
+
+        return {
+            "message": "Cache regenerated successfully",
+            "last_updated": cache.get("last_updated"),
+            "layers_count": len(cache.get("layers", {})),
+            "cache_file": str(SearchCacheService.CACHE_FILE.absolute())
+        }
+    except Exception as e:
+        Logger.error(f"Error refreshing cache: {str(e)}")
+        raise
