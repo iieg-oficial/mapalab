@@ -130,10 +130,12 @@ const SearchMenu = ({ close, onToggleLayer, activeLayerIds = [] }) => {
                                                     </span>
                                                     <Icon
                                                         name={isActive ? 'check' : 'plus'}
-                                                        className={isActive
-                                                            ? 'text-green-600'
-                                                            : 'text-gray-400 group-hover:text-blue-600 transition-colors'
-                                                        }
+                                                        className={`
+                                                            w-6 h-6 shrink-0
+                                                            ${isActive
+                                                                ? 'text-green-600'
+                                                                : 'text-gray-400 group-hover:text-blue-600 transition-colors'}
+                                                        `}
                                                     />
                                                 </button>
                                             );

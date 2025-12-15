@@ -129,6 +129,21 @@ const seguridadConfig = () => ({
     ],
 });
 
+const desaparecidosConfig = {
+    headerField: 'municipio',
+    labelGroups: [
+        { fields: ['colonia'] }
+    ],
+    list: [
+        { label: 'Fecha', field: 'fecha' },
+    ],
+    cards: [
+        { label: 'Tasa de hombres desaparecidos', field: 'tasa_hombres' },
+        { label: 'Tasa de mujeres desaparecidas', field: 'tasa_mujeres' },
+        { label: 'Tasa total', field: 'tasa_total' },
+    ],
+};
+
 export const featureDisplayConfig = {
     preescolar: escuelasConfig,
     primaria: escuelasConfig,
@@ -192,8 +207,10 @@ export const featureDisplayConfig = {
     tasa_abuso_sexual_infantil: seguridadConfig(),
     tasa_violacion: seguridadConfig(),
     tasa_feminicidio: seguridadConfig(),
-    tasa_personas_desaparecidas: seguridadConfig(),
-    tasa_personas_localizadas: seguridadConfig(),
+    tasa_hombres_desaparecidos: desaparecidosConfig,
+    tasa_mujeres_desaparecidas: desaparecidosConfig,
+    tasa_hombres_localizados: desaparecidosConfig,
+    tasa_mujeres_localizadas: desaparecidosConfig,
 };
 
 export const getFeatureConfig = (layerId) => {
