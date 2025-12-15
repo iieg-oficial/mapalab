@@ -172,20 +172,19 @@ export const seguridadLayers = {
                 {
                     id: 'tasa_personas_desaparecidas',
                     label: 'Personas desaparecidas',
-                    wmsConfig: createSeguridadLayer('Tasa de personas desaparecidas'),
-                    searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags: ['seguridad', 'desaparecidos'] },
+                    isCategory: true,
                     children: [
                         {
                             id: 'tasa_hombres_desaparecidos',
-                            label: 'Hombres desaparecidos',
-                            wmsConfig: createSeguridadLayer.withFilter('tasa_personas_desaparecidas', "delito = 'tasa_hombres_desaparecidos'"),
-                            searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags: ['seguridad', 'desaparecidos', 'hombres'] }
+                            label: 'Tasa de Hombres desaparecidos',
+                            wmsConfig: createSeguridadLayer.withStyles('personas_desaparecidas', 'desaparecidos_hombres'),
+                            searchMeta: { tags: ['seguridad', 'desaparecidos', 'hombres'] }
                         },
                         {
                             id: 'tasa_mujeres_desaparecidas',
-                            label: 'Mujeres desaparecidas',
-                            wmsConfig: createSeguridadLayer.withFilter('tasa_personas_desaparecidas', "delito = 'tasa_mujeres_desaparecidas'"),
-                            searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags: ['seguridad', 'desaparecidos', 'mujeres'] }
+                            label: 'Tasa de Mujeres desaparecidas',
+                            wmsConfig: createSeguridadLayer('personas_desaparecidas'),
+                            searchMeta: { tags: ['seguridad', 'desaparecidos', 'mujeres'] }
                         }
                     ]
                 },
