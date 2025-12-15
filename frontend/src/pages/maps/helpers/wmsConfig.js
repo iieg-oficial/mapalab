@@ -23,9 +23,16 @@ const WMS_WORKSPACES = {
     gobierno: `${import.meta.env.VITE_GEOSERVER_URL}gobierno_y_ciudadania/wms`
 };
 
+const WORKSPACE_REAL_NAMES = {
+    seguridad: 'seguridad_y_proteccion_ciudadana',
+    gobierno: 'gobierno_y_ciudadania',
+    desarrollo: 'desarrollo_social',
+    recursos: 'recursos_y_calidad_de_vida'
+};
+
 export const createWMSConfig = (workspace, layerName, styles = '', cqlFilter = '') => ({
     baseUrl: WMS_WORKSPACES[workspace],
-    layerName: `${workspace}:${layerName}`,
+    layerName: `${WORKSPACE_REAL_NAMES[workspace] || workspace}:${layerName}`,
     workspace,
     styles,
     cqlFilter,
