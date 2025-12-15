@@ -3,6 +3,47 @@ import { createLayerFactory } from '../utils/layerFactory';
 const createRecursosLayer = createLayerFactory('recursos');
 const createGeneralLayer = createLayerFactory('general');
 
+const recursosConfig = (headerField) => ({
+    headerField: headerField,
+    labelGroups: [
+        { fields: ['condicion', 'tipo'] }
+    ],
+    list: [
+        { label: 'Región Hidrológica', field: 'region_hidrologica' },
+        { label: 'Situación', field: 'situacion_acuifero' },
+        { label: 'Condición', field: 'condicion_acuifero' },
+        { label: 'Suelo', field: 'descripcion' },
+        { label: 'Dominancia del suelo en la selección', field: 'dominancia' },
+        { label: 'Fecha de decreto', field: 'fecha_decreto' },
+    ],
+    cards: [
+        { label: 'Recarga media anual', field: 'recarga_media_anual_hm3' },
+        { label: 'Descarga natural comprometida', field: 'descarga_natural_comprometida_hm3' },
+        { label: 'Volumen extracción total', field: 'volumen_extraccion_total_hm3' },
+        { label: '%', field: '%' }
+    ],
+});
+
+const primaveraConfig = (headerField) => ({
+    headerField: headerField,
+    labelGroups: [
+        { fields: ['municipio'], splitValues: true }
+    ],
+    list: [
+        { label: 'Nombre del predio', field: 'nombre' },
+        { label: 'Estatus', field: 'estatus' },
+        { label: 'Fecha de registro', field: 'fecha' },
+        { label: 'Folio', field: 'folio' },
+        { label: 'Decreto', field: 'decreto' },
+        { label: 'Manejo', field: 'manejo' },
+        { label: 'Fecha de decreto', field: 'primer_decreto' },
+    ],
+    cards: [
+        { label: 'Área del decreto', field: 'area_km2' },
+        { label: 'Superficie', field: 'superficie' },
+    ],
+});
+
 const ESPACIOS_PUBLICOS = [
     ['espacios_publicos_y_lugares_recreativos', 'Espacios públicos y lugares recreativos', 'espacios_publicos_y_lugares_recreativos', ['recursos', 'parques', 'jardines', 'recreacion', 'aire_libre', 'esparcimiento', 'convivencia']],
     ['instalacion_deportiva', '*Instalación Deportiva o Recreativa', 'instalacion_deportiva', ['recursos', 'deporte', 'cancha', 'estadio', 'gimnasio', 'unidad_deportiva', 'ejercicio']],
@@ -75,6 +116,7 @@ export const recursosLayers = {
                     id: 'disponibilidad_acuiferos_2023',
                     label: 'Disponibilidad de acuíferos 2023',
                     wmsConfig: createRecursosLayer('disponibilidad_acuiferos_2023'),
+                    littleCard: recursosConfig('nombre_acuifero'),
                     searchMeta: {
                         hasMunicipio: false,
                         hasDireccion: false,
@@ -86,6 +128,7 @@ export const recursosLayers = {
                     id: 'cuerpos_de_agua',
                     label: 'Cuerpos de agua',
                     wmsConfig: createGeneralLayer('cuerpos_de_agua_250k'),
+                    littleCard: recursosConfig('nombre'),
                     searchMeta: {
                         hasMunicipio: false,
                         hasDireccion: false,
@@ -107,6 +150,7 @@ export const recursosLayers = {
                         id,
                         label,
                         wmsConfig: createRecursosLayer(layerName),
+                        littleCard: primaveraConfig(label),
                         searchMeta: {
                             hasMunicipio: false,
                             hasDireccion: false,
@@ -124,6 +168,7 @@ export const recursosLayers = {
                 id,
                 label,
                 wmsConfig: createRecursosLayer(layerName),
+                littleCard: id === 'dominancia_de_uso_de_suelo' ? recursosConfig('Uso de suelo') : undefined,
                 searchMeta: {
                     hasMunicipio: true,
                     hasDireccion: false,
