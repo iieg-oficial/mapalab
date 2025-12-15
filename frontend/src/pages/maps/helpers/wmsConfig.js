@@ -20,7 +20,7 @@ const WMS_WORKSPACES = {
     recursos: `${import.meta.env.VITE_GEOSERVER_URL}recursos_y_calidad_de_vida/wms`,
     demografia: `${import.meta.env.VITE_GEOSERVER_URL}demografia/wms`,
     desarrollo: `${import.meta.env.VITE_GEOSERVER_URL}desarrollo_social/wms`,
-    gobierno: `${import.meta.env.VITE_GEOSERVER_URL}gobierno_y_cuidadania/wms`
+    gobierno: `${import.meta.env.VITE_GEOSERVER_URL}gobierno_y_ciudadania/wms`
 };
 
 export const createWMSConfig = (workspace, layerName, styles = '', cqlFilter = '') => ({

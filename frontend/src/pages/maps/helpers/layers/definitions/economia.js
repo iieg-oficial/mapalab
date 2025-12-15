@@ -15,7 +15,10 @@ const CULTIVOS = [
 
 const OCUPACION_Y_EMPLEO_FORMAL_SUBCAPAS = [
     ['tasa_de_desempleo', '*Tasa de Desempleo', 'tasa_de_desempleo', ['economia', 'empleo', 'trabajo', 'desocupacion', 'laboral', 'mercado', 'indicador']],
-    ['porcentaje_de_informalidad', '*Porcentaje de Informalidad', 'porcentaje_de_informalidad', ['economia', 'empleo', 'trabajo', 'informalidad', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador']]
+    ['porcentaje_de_informalidad', '*Porcentaje de Informalidad', 'porcentaje_de_informalidad', ['economia', 'empleo', 'trabajo', 'informalidad', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador']],
+    ['ocupacion_informal', 'Ocupación informal', 'ocupacion_informal', ['economia', 'empleo', 'trabajo', 'informalidad', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador']],
+    ['tasa_ocupacion', 'Tasa de Ocupación', 'tasa_ocupacion', ['economia', 'empleo', 'trabajo', 'ocupacion', 'laboral', 'mercado', 'indicador']],
+    ['trabajadores_asegurados', 'Trabajadores Asegurados', 'trabajadores_asegurados', ['economia', 'empleo', 'trabajo', 'aseguramiento', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador']],
 ];
 
 export const economiaLayers = {
