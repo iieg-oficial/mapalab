@@ -4,12 +4,12 @@ Proyecto MapaLab del Instituto de Información Estadística y Geográfica del Es
 
 ## Arquitectura
 
-El proyecto está diseñado con **dos modos completamente diferentes**:
+El proyecto está diseñado con **desarrollo y producción**:
 
 ### MODO DESARROLLO
 
 **Stack:**
-- Frontend: Vite dev server (Docker) en puerto 5173 con hot-reload
+- Frontend: Vite dev server (Docker) en puerto 3006 con hot-reload
 - Backend: FastAPI (Docker) en puerto 8000 con --reload
 - **SIN nginx**
 
@@ -21,7 +21,7 @@ El proyecto está diseñado con **dos modos completamente diferentes**:
 
 **Flujo:**
 ```
-Cliente → Frontend (localhost:5173) → Backend API (localhost:8000)
+Cliente → Frontend (localhost:3006) → Backend API (localhost:8000)
          ↓ Hot-reload
       Vite dev server
 ```
@@ -89,7 +89,7 @@ mapalab/
 make dev
 
 # Acceder a:
-# - Frontend: http://localhost:5173 (Vite dev server con hot-reload)
+# - Frontend: http://localhost:3006 (Vite dev server con hot-reload)
 # - Backend: http://localhost:8000
 # - Docs: http://localhost:8000/docs
 ```
@@ -227,21 +227,6 @@ docker compose up -d
 | `make status` | Ver estado de servicios |
 | `make help` | Ver todos los comandos |
 
-## Diferencias entre Desarrollo y Producción
-
-| Aspecto | Desarrollo | Producción |
-|---------|-----------|------------|
-| **Frontend** | Vite dev server (5173) | Archivos estáticos en nginx |
-| **Hot-reload** | Sí | No |
-| **Backend /docs** | Habilitado | Deshabilitado |
-| **Backend /redoc** | Habilitado | Deshabilitado |
-| **DEBUG** | True | False |
-| **Logs** | Detallados | Censurados |
-| **Servidor backend** | Uvicorn --reload | Gunicorn (4 workers) |
-| **Nginx** | No se usa | Reverse proxy |
-| **Puertos** | Frontend:5173, Backend:8000 | Todo en :80 (nginx) |
-| **Build frontend** | No necesario | npm run build |
-
 ## Flujo de Trabajo Recomendado
 
 ### Desarrollo Activo
@@ -291,7 +276,7 @@ DB_NAME=<nombre_db>
 GeoServer es un servicio **externo**. Configurar en `nginx/.env`:
 
 ```bash
-GEOSERVER_HOST=<tu_host_geoserver>  # Ej: 10.13.23.58
+GEOSERVER_HOST=<tu_host_geoserver>
 GEOSERVER_PORT=8080
 ```
 
@@ -302,7 +287,7 @@ Si prefieres desarrollo local sin Docker:
 ```bash
 cd frontend
 npm install
-npm run dev  # http://localhost:5173
+npm run dev  # http://localhost:3006
 ```
 
 Asegúrate de que `VITE_BACKEND_API_HOST` en `.env.development` apunte a tu backend.
@@ -315,7 +300,7 @@ Asegúrate de que `VITE_BACKEND_API_HOST` en `.env.development` apunte a tu back
 ```bash
 cd frontend
 docker compose -f docker-compose.dev.yml logs
-# Verificar que Vite esté corriendo en puerto 5173
+# Verificar que Vite esté corriendo en puerto 3006
 ```
 
 ### Backend no muestra /docs en desarrollo
