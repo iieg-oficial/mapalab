@@ -2,6 +2,38 @@ import { createLayerFactory } from '../utils/layerFactory';
 
 const createSeguridadLayer = createLayerFactory('seguridad');
 
+const seguridadConfig = {
+    headerField: 'delito',
+    labelGroups: [
+        { fields: ['municipio', 'colonia'] }
+    ],
+    list: [
+        { label: 'Fecha', field: 'fecha' },
+        { label: 'Hora del delito', field: 'hora' },
+        { label: 'Bien afectado', field: 'bien_afectado' },
+    ],
+    cards: [
+        { label: 'Área del decreto', field: 'area_km2' },
+        { label: 'Superficie', field: 'superficie' },
+        { label: 'Tasa de carpetas investigadas', field: 'tasa_carpetas_investigacion' },
+    ],
+};
+
+const desaparecidosConfig = {
+    headerField: 'municipio',
+    labelGroups: [
+        { fields: ['colonia'] }
+    ],
+    list: [
+        { label: 'Fecha', field: 'fecha' },
+    ],
+    cards: [
+        { label: 'Tasa de hombres desaparecidos', field: 'tasa_hombres' },
+        { label: 'Tasa de mujeres desaparecidas', field: 'tasa_mujeres' },
+        { label: 'Tasa total', field: 'tasa_total' },
+    ],
+};
+
 const DELITOS_STRUCTURE = [
     {
         id: 'cat-vida-integridad',
@@ -98,6 +130,7 @@ export const seguridadLayers = {
                     id,
                     label,
                     wmsConfig: createSeguridadLayer(layerName),
+                    littleCard: seguridadConfig,
                     searchMeta: { tags }
                 }))
             }))
@@ -113,6 +146,7 @@ export const seguridadLayers = {
                     id,
                     label,
                     wmsConfig: createSeguridadLayer(layerName),
+                    littleCard: seguridadConfig,
                     searchMeta: { tags }
                 }))
             }))
@@ -130,11 +164,13 @@ export const seguridadLayers = {
                             id: 'tasa_hombres_desaparecidos',
                             label: 'Tasa de hombres desaparecidos',
                             wmsConfig: createSeguridadLayer.withStyles('personas_desaparecidas', 'desaparecidos_hombres'),
+                            littleCard: desaparecidosConfig,
                             searchMeta: { tags: ['seguridad', 'desaparecidos', 'hombres'] }
                         }, {
                             id: 'tasa_mujeres_desaparecidas',
                             label: 'Tasa de mujeres desaparecidas',
                             wmsConfig: createSeguridadLayer('personas_desaparecidas'),
+                            littleCard: desaparecidosConfig,
                             searchMeta: { tags: ['seguridad', 'desaparecidos', 'mujeres'] }
                         }
                     ]
@@ -147,11 +183,13 @@ export const seguridadLayers = {
                             id: 'tasa_hombres_localizados',
                             label: 'Tasa de hombres localizados',
                             wmsConfig: createSeguridadLayer.withFilter('tasa_personas_localizadas', "delito = 'tasa_hombres_localizados'"),
+                            littleCard: desaparecidosConfig,
                             searchMeta: { tags: ['seguridad', 'localizados', 'hombres'] }
                         }, {
                             id: 'tasa_mujeres_localizadas',
                             label: 'Tasa de mujeres localizadas',
                             wmsConfig: createSeguridadLayer.withFilter('tasa_personas_localizadas', "delito = 'tasa_mujeres_localizadas'"),
+                            littleCard: desaparecidosConfig,
                             searchMeta: { tags: ['seguridad', 'localizados', 'mujeres'] }
                         }
                     ]
