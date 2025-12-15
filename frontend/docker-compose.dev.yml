@@ -1,4 +1,4 @@
-name: mapalab-frontend-dev
+name: mapalab-dev
 services:
   frontend:
     build:

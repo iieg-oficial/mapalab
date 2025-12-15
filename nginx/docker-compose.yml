@@ -1,4 +1,5 @@
-name: mapalab-nginx
+name: mapalab
+
 services:
   nginx:
     build:
