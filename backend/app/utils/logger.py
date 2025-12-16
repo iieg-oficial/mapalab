@@ -1,6 +1,5 @@
 import coloredlogs
 import logging
-
 from typing import Any
 
 logger = logging.getLogger('MapaLab')

@@ -95,7 +95,7 @@ class SearchCacheService:
         Logger.info(f"workspace: {workspace}")
 
         layers = GeoServerService.get_layers(workspace)
-        Logger.info(f"Layers: {len(layers)}")
+        Logger.info(f"{len(layers)} layers detected from workspace {workspace}")
 
         for layer in layers:
             SearchCacheService._process_layer(workspace, layer, cache_data, stats)
@@ -108,8 +108,6 @@ class SearchCacheService:
             stats: Dict
         ) -> None:
         layer_key = f"{workspace}:{layer}"
-        Logger.info(f"Layer: {layer}")
-
         try:
             categorical_fields = SearchCacheService._extract_categorical_fields(workspace, layer)
 
@@ -118,7 +116,7 @@ class SearchCacheService:
                 stats["total_layers"] += 1
                 stats["total_fields"] += len(categorical_fields)
             else:
-                Logger.info("No categorical fields found")
+                Logger.warning("No categorical fields found in layer: {layer}")
 
         except Exception as e:
             Logger.error(f"Failed to process layer: {str(e)}")
@@ -159,7 +157,7 @@ class SearchCacheService:
             unique_values = GeoServerService.get_property_values(workspace, layer, field_name)
 
             if is_categorical_field(field_name, unique_values):
-                Logger.info(f"{field_name}: {len(unique_values)} values")
+                Logger.info(f"Field: {field_name}, unique values: {len(unique_values)} values")
                 return {
                     "unique_count": len(unique_values),
                     "values": sorted(list(unique_values))
