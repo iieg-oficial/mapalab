@@ -153,16 +153,22 @@ const MapSider = ({ className = '' }) => {
                     ].join(' ')}
                     onScroll={checkScroll}
                 >
-                    {menuItems.map((item, index) => (
+                    <div className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3">
+                        {menuItems.slice(0, 3).map((item, index) => (
+                            <div
+                                key={item.id || index}
+                                className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
+                                title={item.tooltip}
+                            >
+                                {renderMenuItem(item)}
+                            </div>
+                        ))}
+                    </div>
+                    {menuItems.slice(3).map((item, index) => (
                         <div
                             key={item.id || index}
-                            className={[
-                                'transition-opacity duration-500',
-                                'w-full shrink-0',
-                                'overflow-x-hidden'
-                            ].join(' ')}
-                            style={{ transitionTimingFunction: SIDER_TRANSITION_TIMING }}
-                            title={!isExpanded ? item.tooltip : undefined}
+                            className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
+                            title={item.tooltip}
                         >
                             {renderMenuItem(item)}
                         </div>
