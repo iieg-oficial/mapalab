@@ -2,7 +2,7 @@ import { useMemo, useEffect, useCallback, useRef, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider, useSiderHover } from '@contexts/SiderContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
-import FloatingMenu from '@components/FloatingMenu';
+import Panel from '@components/Panel';
 import Logo from '@components/Logo';
 import { createMenuItems } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
@@ -57,7 +57,10 @@ const MapSider = ({ className = '' }) => {
         createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef }),
         [isExpanded, contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef]);
 
-    const renderMenuItem = useCallback((item) => {
+    const MenuItem = useCallback(({ item }) => {
+        const [isMenuOpen, setIsMenuOpen] = useState(false);
+        const buttonRef = useRef(null);
+
         try {
             if (!item.hasMenu) {
                 if (item.onClick) {
@@ -71,16 +74,32 @@ const MapSider = ({ className = '' }) => {
             }
 
             return (
-                <FloatingMenu
-                    placement="right-start"
-                    trigger={({ ref, props, open }) => (
-                        <div ref={ref} {...props}>
-                            {item.renderComponent ? item.renderComponent({ isMenuOpen: open }) : item.component}
-                        </div>
-                    )}
-                >
-                    {(api) => item.menuContent(api)}
-                </FloatingMenu>
+                <>
+                    <div
+                        ref={buttonRef}
+                        id={`menu-button-${item.id}`}
+                        aria-haspopup="menu"
+                        aria-expanded={isMenuOpen}
+                        aria-controls={`menu-content-${item.id}`}
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className="cursor-pointer"
+                    >
+                        {item.renderComponent ? item.renderComponent({ isMenuOpen }) : item.component}
+                    </div>
+                    <Panel
+                        open={isMenuOpen}
+                        onClose={() => setIsMenuOpen(false)}
+                        anchorRef={buttonRef}
+                        variant="menu"
+                        role="menu"
+                        placement="right-start"
+                        closeOnEscape={true}
+                        autoFocus={true}
+                        registerInSider={true}
+                    >
+                        {item.menuContent({ close: () => setIsMenuOpen(false) })}
+                    </Panel>
+                </>
             );
         } catch (error) {
             console.error('Error rendering menu item:', error);
@@ -160,7 +179,7 @@ const MapSider = ({ className = '' }) => {
                                 className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
                                 title={item.tooltip}
                             >
-                                {renderMenuItem(item)}
+                                <MenuItem item={item} />
                             </div>
                         ))}
                     </div>
@@ -170,7 +189,7 @@ const MapSider = ({ className = '' }) => {
                             className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
                             title={item.tooltip}
                         >
-                            {renderMenuItem(item)}
+                            <MenuItem item={item} />
                         </div>
                     ))}
                 </div>
