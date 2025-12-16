@@ -15,30 +15,30 @@ const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpe
     return (
         <button
             className={`
-                flex items-center gap-2 py-2 px-2 w-full hover:bg-black/5 transition-all duration-500 rounded-[6px]
+                flex items-center gap-3 py-2 px-2 w-full hover:bg-black/5 transition-all duration-500 rounded-[6px]
                 ${isMenuOpen ? 'bg-purple-600/10' : ''}
             `}
             style={{ transitionTimingFunction: SIDER_TRANSITION_TIMING }}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
         >
-            <div 
+            <div
                 className={`
-                    shrink-0 w-[6px] h-8 rounded-[5px] transition-all duration-500 
+                    shrink-0 w-[6px] h-8 rounded-[5px] transition-all duration-500
                     ${hasActiveLayers ? 'bg-[#FF8300] opacity-100' : 'opacity-0'}
                 `}
             />
-            <Icon 
-                name={iconName} 
-                state={iconState} 
-                size="size-8" 
-                className={`transition-all duration-500 ${hasActiveLayers ? '' : '-ml-[6px]'}`} 
+            <Icon
+                name={iconName}
+                state={iconState}
+                size="size-8"
+                className={`transition-all duration-500 ${hasActiveLayers ? '' : '-ml-3'}`}
             />
-            <span 
+            <span
                 className={`
-                    transition-all duration-500 truncate whitespace-nowrap font-garet
+                    transition-all duration-500 truncate whitespace-nowrap font-garet ml-5
                     ${!isHovered ? 'opacity-0 w-0' : 'opacity-100 w-auto'}
-                    ${(hasActiveLayers || isHovering || isMenuOpen) ? 'font-bold text-[#5C2472]' : 'font-medium'}
+                    ${(hasActiveLayers || isHovering || isMenuOpen) ? 'font-bold text-[#5C2472]' : 'font-medium ml-8'}
                 `}
             >
                 {label}
