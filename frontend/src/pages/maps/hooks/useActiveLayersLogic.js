@@ -1,6 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import { layers } from '@pages/maps/helpers/layers/index';
 
+const isMainLayer = (layerId) => {
+    if (['base_layers'].includes(layerId)) return false;
+    return layers.some(layer => layer.id === layerId);
+};
+
 export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
     const findLayerById = useCallback((id) => {
         const search = (layersList) => {
@@ -81,7 +86,7 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
             if (isProperty) {
                 const ancestor = findRootChildAncestor(layerId);
 
-                if (ancestor) {
+                if (ancestor && !isMainLayer(ancestor.id)) {
                     if (!processedIds.has(ancestor.id)) {
                         const ancestorVisible = !hiddenLayerIds.includes(ancestor.id);
 
@@ -104,6 +109,15 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
                     processedIds.add(layerId);
                     continue;
                 }
+            }
+
+            if (isMainLayer(layerId)) {
+                processedIds.add(layerId);
+                if (hasChildren) {
+                    const childIds = getAllChildLayerIds(layerId);
+                    childIds.forEach(childId => processedIds.add(childId));
+                }
+                continue;
             }
 
             const visible = !hiddenLayerIds.includes(layerId);
