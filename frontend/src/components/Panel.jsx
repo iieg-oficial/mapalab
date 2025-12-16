@@ -3,6 +3,7 @@ import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Divider from '@components/Divider';
 import { useFloatingPosition } from '@hooks/useFloatingPosition';
+import { useSiderMenuPosition } from '@hooks/useSiderMenuPosition';
 import { useSider } from '@contexts/SiderContext';
 
 const Panel = ({
@@ -33,12 +34,23 @@ const Panel = ({
     const siderContext = useSider();
     const isMobile = siderContext?.isMobile || false;
 
+    const { isReady } = variant === 'menu' && hasFloatingPosition
+        ? useSiderMenuPosition({
+            open,
+            anchorRef,
+            contentRef: panelRef,
+            placement,
+            offset: 8,
+            mobileFullscreen
+        })
+        : { isReady: true };
+
     useFloatingPosition({
-        open: hasFloatingPosition ? open : false,
+        open: hasFloatingPosition && variant !== 'menu' ? open : false,
         anchorRef,
         contentRef: panelRef,
         placement,
-        offset: variant === 'menu' ? 8 : 12
+        offset: 12
     });
 
     useEffect(() => {
@@ -104,17 +116,19 @@ const Panel = ({
     const positionClass = position ? `absolute ${position}` : 'fixed';
     const showHeader = title || onClose;
 
-    const mobileFullscreenClasses = mobileFullscreen
-        ? 'max-md:inset-x-0 max-md:w-full max-md:h-auto max-md:rounded-t-2xl max-md:rounded-b-none'
+    const mobileFullscreenClasses = mobileFullscreen && isMobile
+        ? 'inset-x-0 bottom-0 top-auto left-0! right-0! w-full h-auto max-h-[85vh] rounded-t-2xl rounded-b-none'
+        : mobileFullscreen && !isMobile
+            ? `${width} ${maxHeight}`
+            : '';
+
+    const desktopSizeClasses = !mobileFullscreen
+        ? `${width} ${maxHeight}`
         : '';
 
-    const desktopSizeClasses = mobileFullscreen
-        ? `md:${width} md:${maxHeight}`
-        : `${width} ${maxHeight}`;
-
-    const mobileMenuClasses = variant === 'menu' && isMobile
+    const mobileMenuClasses = variant === 'menu' && isMobile && !mobileFullscreen
         ? 'left-0 right-0 mx-4'
-        : variant === 'menu'
+        : variant === 'menu' && !isMobile && !mobileFullscreen
             ? 'min-w-40'
             : '';
 
@@ -142,6 +156,8 @@ const Panel = ({
                 ${mobileMenuClasses}
                 flex
                 ${variant === 'menu' ? 'z-50 outline-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]' : ''}
+                ${variant === 'menu' ? 'transition-opacity duration-150' : ''}
+                ${variant === 'menu' && !isReady ? 'opacity-0' : 'opacity-100'}
             `}
             style={variant === 'menu' ? { position: 'fixed' } : undefined}
         >

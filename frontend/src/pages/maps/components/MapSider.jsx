@@ -92,10 +92,10 @@ const MapSider = ({ className = '' }) => {
                         anchorRef={buttonRef}
                         variant="menu"
                         role="menu"
-                        placement="right-start"
                         closeOnEscape={true}
                         autoFocus={true}
                         registerInSider={true}
+                        mobileFullscreen={true}
                     >
                         {item.menuContent({ close: () => setIsMenuOpen(false) })}
                     </Panel>
