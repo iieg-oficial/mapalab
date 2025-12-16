@@ -1,5 +1,57 @@
 import { cloneElement } from 'react';
 
+import baseNormal from '@assets/icons/ico_general_normal.svg';
+import baseHover from '@assets/icons/ico_general_hover.svg';
+import demografiaNormal from '@assets/icons/ico_demografía_normal.svg';
+import demografiaHover from '@assets/icons/ico_demografia_hover.svg';
+import saludNormal from '@assets/icons/ico_salud_normal.svg';
+import saludHover from '@assets/icons/ico_salud_hover.svg';
+import economiaNormal from '@assets/icons/ico_economia_normal.svg';
+import economiaHover from '@assets/icons/ico_economia_hover.svg';
+import educacionNormal from '@assets/icons/ico_educacion_normal.svg';
+import educacionHover from '@assets/icons/ico_educacion_hover.svg';
+import recursosNormal from '@assets/icons/ico_recursos_calidad_vida_normal.svg';
+import recursosHover from '@assets/icons/ico_recursos_calidad_vida_hover.svg';
+import desarrolloNormal from '@assets/icons/ico_desarrollo_social_normal.svg';
+import desarrolloHover from '@assets/icons/ico_desarrollo_social.svg';
+import seguridadNormal from '@assets/icons/ico_seguridad_normal.svg';
+import seguridadHover from '@assets/icons/ico_seguridad_hover.svg';
+import gobiernoNormal from '@assets/icons/ico_gobierno_ciudadania_normal.svg';
+import gobiernoHover from '@assets/icons/ico_gobierno_ciudadania_hover.svg';
+import buscadorNormal from '@assets/icons/ico_buscador_normal.svg';
+import buscadorHover from '@assets/icons/ico_buscador_hover.svg';
+import herramientasNormal from '@assets/icons/ico_herramientas_normal.svg';
+import herramientasHover from '@assets/icons/ico_herramientas_hover.svg';
+import mapasNormal from '@assets/icons/ico_mapas_normal.svg';
+import mapasHover from '@assets/icons/ico_mapa_hover.svg';
+
+const externalIcons = {
+    base_layers_normal: baseNormal,
+    base_layers_hover: baseHover,
+    demografia_normal: demografiaNormal,
+    demografia_hover: demografiaHover,
+    salud_normal: saludNormal,
+    salud_hover: saludHover,
+    economia_normal: economiaNormal,
+    economia_hover: economiaHover,
+    educacion_normal: educacionNormal,
+    educacion_hover: educacionHover,
+    recursos_normal: recursosNormal,
+    recursos_hover: recursosHover,
+    desarrollo_normal: desarrolloNormal,
+    desarrollo_hover: desarrolloHover,
+    seguridad_normal: seguridadNormal,
+    seguridad_hover: seguridadHover,
+    gobierno_normal: gobiernoNormal,
+    gobierno_hover: gobiernoHover,
+    search_normal: buscadorNormal,
+    search_hover: buscadorHover,
+    tools_normal: herramientasNormal,
+    tools_hover: herramientasHover,
+    basemaps_normal: mapasNormal,
+    basemaps_hover: mapasHover,
+};
+
 const icons = {
     map: (
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -247,7 +299,13 @@ const icons = {
     ),
 };
 
-const Icon = ({ name, className = '' }) => {
+const Icon = ({ name, className = '', state = 'normal' }) => {
+    const externalKey = `${name}_${state}`;
+
+    if (externalIcons[externalKey]) {
+        return <img src={externalIcons[externalKey]} alt={name} className={className || 'w-[29px] h-[29px]'} />;
+    }
+
     if (!icons[name]) return null;
 
     const icon = icons[name];

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Icon from '@components/Icon';
 import BaseMapList from '@mapsComponents/BaseMapList';
 import SearchMenu from '@mapsComponents/SearchMenu';
@@ -5,25 +6,25 @@ import LayerItem from '@mapsComponents/LayerItem';
 import { layers } from '@pages/maps/helpers/layers/index';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 
-const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpen = false }) => {
+const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpen = false, categoryId = null }) => {
+    const [isHovering, setIsHovering] = useState(false);
+
+    const iconName = categoryId || icon;
+    const iconState = (hasActiveLayers || isHovering || isMenuOpen) ? 'hover' : 'normal';
+
     return (
-        <button className={`
-            flex items-center p-[13px] w-full hover:bg-black/5 transition-all duration-500 relative
-            ${isHovered ? 'gap-2' : 'gap-0 justify-center'}
-            ${isMenuOpen ? 'bg-purple-600/10' : ''}
-        `}>
-            {hasActiveLayers && (
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-600 rounded-l-md" />
-            )}
-            <Icon name={icon} className="shrink-0 w-[29px] h-[29px]" />
-            <span
-                className={`
-                    transition-all duration-500
-                    truncate whitespace-nowrap
-                    ${!isHovered ? 'opacity-0 w-0' : 'opacity-100 w-auto'}
-                `}
-                style={{ transitionTimingFunction: SIDER_TRANSITION_TIMING }}
-            >
+        <button
+            className={`
+                flex items-center gap-2 py-2 px-2 w-full hover:bg-black/5 transition-all duration-500 rounded-[6px]
+                ${isMenuOpen ? 'bg-purple-600/10' : ''}
+            `}
+            style={{ transitionTimingFunction: SIDER_TRANSITION_TIMING }}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+        >
+            <div className={`shrink-0 h-8 rounded-[5px] transition-all duration-500 ${hasActiveLayers ? 'w-[6px] bg-[#FF8300] opacity-100' : 'w-0 opacity-0'}`} />
+            <Icon name={iconName} state={iconState} className="shrink-0" size="size-8" />
+            <span className={`transition-all duration-500 truncate whitespace-nowrap ${!isHovered ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
                 {label}
             </span>
         </button>
@@ -49,7 +50,7 @@ export const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, togg
         hasMenu: true,
         tooltip: 'Mapas Base',
         menuContent: () => <BaseMapList />,
-        component: <MenuButton icon="layers" label="Mapas base" isHovered={isHovered} />
+        component: <MenuButton icon="basemaps" label="Mapas base" isHovered={isHovered} />
     }
 ];
 
@@ -95,6 +96,7 @@ export const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer }
             renderComponent: ({ isMenuOpen }) => (
                 <MenuButton
                     icon="layers"
+                    categoryId={category.id}
                     label={category.label}
                     isHovered={isHovered}
                     hasActiveLayers={hasActiveLayers}

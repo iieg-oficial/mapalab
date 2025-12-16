@@ -134,14 +134,14 @@ const MapSider = ({ className = '' }) => {
                 className={`shrink-0 p-3 flex justify-center ${isMobile ? 'cursor-pointer' : ''}`}
                 onClick={handleLogoClick}
             >
-                <Logo name="mapalab" size={isExpanded ? 'w-57 h-17' : 'w-14 h-17'} className="transition-all duration-500" expanded={isExpanded} />
+                <Logo name="mapalab" size={isExpanded ? 'w-57 h-17' : 'w-14 h-17'} expanded={isExpanded} />
             </div>
 
             {(!isMobile || isOpen) && (
                 <div
                     ref={contentRef}
                     className={[
-                        'flex-1 flex flex-col gap-1 px-2',
+                        'flex-1 flex flex-col gap-3 px-3',
                         'overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]',
                         scrollState.canScrollUp && scrollState.canScrollDown
                             ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]'
@@ -172,7 +172,7 @@ const MapSider = ({ className = '' }) => {
 
             {(!isMobile || isOpen) && (
                 <div className="shrink-0 p-3 my-2 flex justify-center">
-                    <Logo name="iieg" size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'} className="transition-all duration-500" expanded={isExpanded} />
+                    <Logo name="iieg" size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'} expanded={isExpanded} />
                 </div>
             )}
         </aside>
