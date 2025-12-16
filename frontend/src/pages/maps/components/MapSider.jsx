@@ -73,9 +73,9 @@ const MapSider = ({ className = '' }) => {
             return (
                 <FloatingMenu
                     placement="right-start"
-                    trigger={({ ref, props }) => (
+                    trigger={({ ref, props, open }) => (
                         <div ref={ref} {...props}>
-                            {item.component}
+                            {item.renderComponent ? item.renderComponent({ isMenuOpen: open }) : item.component}
                         </div>
                     )}
                 >
