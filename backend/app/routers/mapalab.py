@@ -4,16 +4,11 @@ from math import ceil
 
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
-from app.repositories.mapalab_repository import MapalabRepository
-from app.schemas.mapalab import LayerResponse, PeriodicityLayer
-from app.schemas.pagination import PaginatedResponse
 from app.exceptions.common_exceptions import InternalServerException
-from app.services.geoserver_service import GeoServerService
+from app.repositories.mapalab_repository import MapalabRepository
+from app.services import (GeoServerService, SearchCacheService, SearchService)
+from app.schemas import (LayerResponse, PaginatedResponse, PeriodicityLayer, SearchResponse)
 from app.utils.api_responses import api_responses
-
-from app.services.search_service import SearchService
-from app.services.search_cache_service import SearchCacheService
-from app.schemas.search import SearchResponse
 from app.utils.logger import Logger
 
 router = APIRouter(prefix="/mapalab", tags=["Mapalab"])
@@ -24,8 +19,6 @@ def get_layers(
     size: int = Query(default=50, ge=1, le=500, description="Elementos por página"),
     keyword: Optional[str] = Query(default=None, max_length=100, description="Buscar en nombre, descripción o tema"),
 ):
-
-
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
 
     with conn.get_session() as session:
@@ -37,7 +30,6 @@ def get_layers(
         )
 
         layers = [LayerResponse.model_validate(layer) for layer in results]
-
         total_pages = ceil(total / size) if size > 0 else 0
 
         return PaginatedResponse(
@@ -68,8 +60,6 @@ def get_layer_periodicity(
 @router.get("/search", response_model=SearchResponse)
 async def search_layers(query: str = Query(..., description="Search query")):
     return SearchService.search(query)
-
-
 
 @router.post("/search/refresh")
 async def refresh_cache():
