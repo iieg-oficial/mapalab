@@ -22,9 +22,25 @@ const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpe
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
         >
-            <div className={`shrink-0 h-8 rounded-[5px] transition-all duration-500 ${hasActiveLayers ? 'w-[6px] bg-[#FF8300] opacity-100' : 'w-0 opacity-0'}`} />
-            <Icon name={iconName} state={iconState} className="shrink-0" size="size-8" />
-            <span className={`transition-all duration-500 truncate whitespace-nowrap ${!isHovered ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
+            <div 
+                className={`
+                    shrink-0 w-[6px] h-8 rounded-[5px] transition-all duration-500 
+                    ${hasActiveLayers ? 'bg-[#FF8300] opacity-100' : 'opacity-0'}
+                `}
+            />
+            <Icon 
+                name={iconName} 
+                state={iconState} 
+                size="size-8" 
+                className={`transition-all duration-500 ${hasActiveLayers ? '' : '-ml-[6px]'}`} 
+            />
+            <span 
+                className={`
+                    transition-all duration-500 truncate whitespace-nowrap font-garet
+                    ${!isHovered ? 'opacity-0 w-0' : 'opacity-100 w-auto'}
+                    ${(hasActiveLayers || isHovering || isMenuOpen) ? 'font-bold text-[#5C2472]' : 'font-medium'}
+                `}
+            >
                 {label}
             </span>
         </button>

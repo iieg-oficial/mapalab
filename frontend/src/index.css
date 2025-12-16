@@ -15,19 +15,42 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
+@font-face {
+    font-family: "Garet";
+    src: url("/fonts/Garet-Book.otf") format("opentype");
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Garet";
+    src: url("/fonts/Garet-Regular.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Garet";
+    src: url("/fonts/Garet-Medium.otf") format("opentype");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Garet";
+    src: url("/fonts/Garet-Bold.otf") format("opentype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
 @theme {  
-    --font-garetbold: "GaretBold", "sans-serif"; 
-    --font-garetbold--font-feature-settings: "cv02", "cv03", "cv04", "cv11";   
-    --font-garetbold--font-variation-settings: "opsz" 32; 
-    --font-garetmedium: "GaretMedium", "sans-serif"; 
-    --font-garetmedium--font-feature-settings: "cv02", "cv03", "cv04", "cv11";   
-    --font-garetmedium--font-variation-settings: "opsz" 32; 
-    --font-garetregular: "GaretRegular", "sans-serif"; 
-    --font-garetregular--font-feature-settings: "cv02", "cv03", "cv04", "cv11";   
-    --font-garetregular--font-variation-settings: "opsz" 32; 
-    --font-garetbook: "GaretBook", "sans-serif"; 
-    --font-garetbook--font-feature-settings: "cv02", "cv03", "cv04", "cv11";   
-    --font-garetbook--font-variation-settings: "opsz" 32; 
+    --font-garet: "Garet", "sans-serif";
+    --font-garet--font-feature-settings: "cv02", "cv03", "cv04", "cv11";   
+    --font-garet--font-variation-settings: "opsz" 32; 
 }
 
 
