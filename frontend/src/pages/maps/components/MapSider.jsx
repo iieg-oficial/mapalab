@@ -95,7 +95,6 @@ const MapSider = ({ className = '' }) => {
                         closeOnEscape={true}
                         autoFocus={true}
                         registerInSider={true}
-                        mobileFullscreen={true}
                     >
                         {item.menuContent({ close: () => setIsMenuOpen(false) })}
                     </Panel>
