@@ -24,6 +24,9 @@ import herramientasNormal from '@assets/icons/ico_herramientas_normal.svg';
 import herramientasHover from '@assets/icons/ico_herramientas_hover.svg';
 import mapasNormal from '@assets/icons/ico_mapas_normal.svg';
 import mapasHover from '@assets/icons/ico_mapa_hover.svg';
+import search from '@assets/icons/ico_search.svg';
+import checkNormal from '@assets/icons/ico_check_normal.svg';
+import checkActive from '@assets/icons/ico_check_activo.svg';
 
 const externalIcons = {
     base_layers_normal: baseNormal,
@@ -50,6 +53,9 @@ const externalIcons = {
     tools_hover: herramientasHover,
     basemaps_normal: mapasNormal,
     basemaps_hover: mapasHover,
+    searchInput_normal: search,
+    check_normal: checkNormal,
+    check_active: checkActive,
 };
 
 const icons = {
@@ -87,12 +93,6 @@ const icons = {
             <circle cx="5" cy="6" r="1.5" />
             <circle cx="5" cy="12" r="1.5" />
             <circle cx="5" cy="18" r="1.5" />
-        </svg>
-    ),
-    check: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-            <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
     ),
     select: (
@@ -271,12 +271,6 @@ const icons = {
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
             <polyline points="15 3 21 3 21 9" />
             <line x1="10" y1="14" x2="21" y2="3" />
-        </svg>
-    ),
-    search: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
         </svg>
     ),
     image: (

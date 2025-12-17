@@ -54,8 +54,8 @@ const MapSider = ({ className = '' }) => {
     const isExpanded = isMobile ? isOpen : isHovered;
 
     const menuItems = useMemo(() =>
-        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef }),
-        [isExpanded, contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef]);
+        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible }),
+        [isExpanded, contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible]);
 
     const MenuItem = useCallback(({ item }) => {
         const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -95,6 +95,14 @@ const MapSider = ({ className = '' }) => {
                         closeOnEscape={true}
                         autoFocus={true}
                         registerInSider={true}
+                        width="w-84"
+                        maxHeight="max-h-200"
+                        noPadding={true}
+                        className="border-none"
+                        shadow="shadow-none"
+                        offset={10}
+                        rounded="rounded-r-2xl"
+                        bg="bg-[#F9FBFF]"
                     >
                         {item.menuContent({ close: () => setIsMenuOpen(false) })}
                     </Panel>
@@ -132,13 +140,9 @@ const MapSider = ({ className = '' }) => {
         <aside
             ref={siderRef}
             className={[
-                'absolute top-4 left-4 z-20',
-                'max-h-[calc(100vh-2rem)]',
-                'backdrop-blur bg-white/80',
-                'border border-black/10 shadow-2xl',
-                'rounded-2xl',
+                'absolute top-4 left-4 z-20 flex flex-col',
+                'max-h-[calc(100vh-2rem)] bg-white rounded-[10px]',
                 'transition-all duration-500',
-                'flex flex-col',
                 className,
             ].join(' ')}
             style={{

@@ -20,7 +20,7 @@ const IGUALDAD_GENERO = [
     ['brecha_salarial', 'Brecha salarial entre mujeres y hombres', 'brecha_salarial', ['desarrollo', 'social', 'genero', 'salario', 'ingreso', 'mujer', 'hombre', 'trabajo', 'remuneracion', 'equidad', 'desigualdad']],
     ['nacimientos_madres_adolescentes', 'Nacimientos de madres adolescentes', 'nacimientos_adolescentes', ['desarrollo', 'social', 'genero', 'salud', 'embarazo', 'adolescente', 'maternidad', 'jovenes', 'reproductiva']],
     ['nacimientos_infantiles', 'Nacimientos infantiles', 'nacimientos_infantiles', ['desarrollo', 'social', 'genero', 'salud', 'embarazo', 'adolescente', 'maternidad', 'jovenes', 'reproductiva']],
-    ['feminicidios', '*Pendiente tasas anuales de feminicidios', 'feminicidios', ['desarrollo', 'social', 'genero', 'violencia', 'seguridad', 'delito', 'mujer', 'justicia', 'crimen']]
+    ['feminicidios', 'Tasas anuales de feminicidios', 'feminicidios', ['desarrollo', 'social', 'feminicidios', 'genero', 'violencia', 'seguridad', 'delito', 'mujer', 'justicia', 'crimen']]
 ];
 
 const POR_DEFINIR = [
