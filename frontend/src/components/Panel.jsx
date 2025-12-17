@@ -28,6 +28,10 @@ const Panel = ({
     closeOnEscape = true,
     autoFocus = false,
     registerInSider = false,
+    offset,
+    shadow,
+    rounded,
+    bg,
 }) => {
     const panelRef = useRef(null);
     const menuId = useId();
@@ -45,7 +49,7 @@ const Panel = ({
             anchorRef,
             contentRef: panelRef,
             placement,
-            offset: 8,
+            offset: offset ?? 8,
             mobileFullscreen: shouldUseMobileFullscreen
         })
         : { isReady: true };
@@ -55,7 +59,7 @@ const Panel = ({
         anchorRef,
         contentRef: panelRef,
         placement,
-        offset: 12
+        offset: offset ?? 12
     });
 
     useEffect(() => {
@@ -112,12 +116,24 @@ const Panel = ({
 
     const closeLabel = title ? `Cerrar ${title}` : 'Cerrar panel';
     const baseStyles = variant === 'floating'
-        ? 'bg-white/80 rounded-xl shadow'
+        ? ''
         : variant === 'menu'
-            ? 'border border-white-800 bg-white text-black backdrop-blur shadow-xl p-1'
-            : 'bg-white rounded-2xl border border-black/10 shadow-2xl';
+            ? 'border border-white-800 text-black backdrop-blur'
+            : 'border border-black/10';
 
-    const borderRadius = variant === 'menu' ? 'rounded-2xl' : variant === 'floating' ? 'rounded-xl' : 'rounded-2xl';
+    const defaultShadow = variant === 'floating'
+        ? 'shadow'
+        : variant === 'menu'
+            ? 'shadow-xl'
+            : 'shadow-2xl';
+
+    const shadowClass = shadow !== undefined ? shadow : defaultShadow;
+
+    const defaultRounded = variant === 'menu' ? 'rounded-2xl' : variant === 'floating' ? 'rounded-xl' : 'rounded-2xl';
+    const roundedClass = rounded !== undefined ? rounded : defaultRounded;
+
+    const defaultBg = variant === 'floating' ? 'bg-white/80' : 'bg-white';
+    const bgClass = bg !== undefined ? bg : defaultBg;
     const positionClass = position ? `absolute ${position}` : 'fixed';
     const showHeader = title || onClose;
 
@@ -153,12 +169,15 @@ const Panel = ({
                 ${positionClass}
                 ${desktopSizeClasses}
                 ${baseStyles}
-                ${borderRadius}
+                ${roundedClass}
+                ${bgClass}
                 ${flexDirection}
                 ${className}
                 ${!showHeader && contentClassName}
                 ${mobileFullscreenClasses}
                 ${mobileMenuClasses}
+                ${mobileMenuClasses}
+                ${shadowClass || ''}
                 flex
                 ${variant === 'menu' ? 'z-50 outline-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]' : ''}
                 ${variant === 'menu' ? 'transition-opacity duration-150' : ''}
@@ -172,7 +191,7 @@ const Panel = ({
                 <>
                     {showHeader && (
                         <>
-                            <div className={`sticky top-0 ${variant === 'floating' ? 'bg-white/80' : 'bg-white'} ${noPadding ? 'p-0' : 'p-3'} flex items-center justify-between ${variant === 'floating' ? 'rounded-t-xl' : 'rounded-t-2xl'} ${shouldUseMobileFullscreen ? 'max-md:rounded-none' : ''} shrink-0`}>
+                            <div className={`sticky top-0 ${bgClass} ${noPadding ? 'p-0' : 'p-3'} flex items-center justify-between ${variant === 'floating' ? 'rounded-t-xl' : 'rounded-t-2xl'} ${shouldUseMobileFullscreen ? 'max-md:rounded-none' : ''} shrink-0`}>
                                 {title && (
                                     <span className="text-xs font-semibold text-gray-600 ">
                                         {title}
@@ -191,7 +210,7 @@ const Panel = ({
                                     </Tooltip>
                                 )}
                             </div>
-                            <Divider spacingClass="my-0" />
+                            {!hasFloatingPosition && <Divider spacingClass="my-0" />}
                         </>
                     )}
 
@@ -205,8 +224,8 @@ const Panel = ({
 
                     {footer && (
                         <>
-                            <Divider spacingClass="my-0" />
-                            <div className={`sticky bottom-0 ${variant === 'floating' ? 'bg-white/80' : 'bg-white'} p-2 ${variant === 'floating' ? 'rounded-b-xl' : 'rounded-b-2xl'} ${shouldUseMobileFullscreen ? 'max-md:rounded-none' : ''} shrink-0`}>
+                            {!hasFloatingPosition && <Divider spacingClass="my-0" />}
+                            <div className={`sticky bottom-0 ${bgClass} p-2 ${variant === 'floating' ? 'rounded-b-xl' : 'rounded-b-2xl'} ${shouldUseMobileFullscreen ? 'max-md:rounded-none' : ''} shrink-0`}>
                                 {footer}
                             </div>
                         </>
@@ -218,4 +237,3 @@ const Panel = ({
 };
 
 export default Panel;
-

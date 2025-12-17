@@ -16,7 +16,7 @@ const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpe
         <button
             className={`
                 flex items-center gap-3 py-2 px-2 w-full hover:bg-black/5 transition-all duration-500 rounded-[6px]
-                ${isMenuOpen ? 'bg-purple-600/10' : ''}
+                ${isMenuOpen ? 'bg-[#703088]/10' : ''}
             `}
             style={{ transitionTimingFunction: SIDER_TRANSITION_TIMING }}
             onMouseEnter={() => setIsHovering(true)}
@@ -47,26 +47,45 @@ const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpe
     );
 };
 
-export const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef }) => [
+export const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible }) => [
     {
         id: 'search',
         hasMenu: true,
-        tooltip: 'Buscar',
+        tooltip: 'Buscador por capas',
         menuContent: ({ close }) => <SearchMenu close={close} activeLayerIds={activeLayerIds} onToggleLayer={onToggleLayer} />,
-        component: <MenuButton icon="search" label="Buscar" isHovered={isHovered} />
+        renderComponent: ({ isMenuOpen }) => (
+            <MenuButton
+                icon="search"
+                label="Buscador"
+                isHovered={isHovered}
+                isMenuOpen={isMenuOpen}
+            />
+        )
     }, {
         id: 'tools',
         hasMenu: false,
         tooltip: 'Herramientas',
         onClick: toggleMeasurementTools,
         ref: toolsButtonRef,
-        component: <MenuButton icon="tools" label="Herramientas" isHovered={isHovered} />
+        component: <MenuButton
+            icon="tools"
+            label="Herramientas"
+            isHovered={isHovered}
+            hasActiveLayers={areMeasurementToolsVisible}
+        />
     }, {
         id: 'basemaps',
         hasMenu: true,
         tooltip: 'Mapas Base',
         menuContent: () => <BaseMapList />,
-        component: <MenuButton icon="basemaps" label="Mapas base" isHovered={isHovered} />
+        renderComponent: ({ isMenuOpen }) => (
+            <MenuButton
+                icon="basemaps"
+                label="Mapas base"
+                isHovered={isHovered}
+                isMenuOpen={isMenuOpen}
+            />
+        )
     }
 ];
 
@@ -98,7 +117,7 @@ export const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer }
             icon: 'layers',
             tooltip: category.label,
             menuContent: () => (
-                <div className="min-w-[250px] max-h-[70vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+                <div className="min-w-[250px] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
                     {category.children && category.children.map(layer => (
                         <LayerItem
                             key={layer.id}
