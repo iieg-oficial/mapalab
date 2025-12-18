@@ -52,7 +52,7 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
 
 
     return (
-        <div className={`pt-6 pb-2 px-4 w-full ${HIDDEN_SCROLLBAR}`}>
+        <div className={`pt-6 ${selectedLayers.length > 0 ? 'pb-2' : 'pb-6'} px-4 w-full ${HIDDEN_SCROLLBAR}`}>
             <label className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
                 Buscador
             </label>

@@ -6,42 +6,41 @@ const BaseMapList = () => {
     const { baseMapId, setBaseMapId, basemaps } = useMapsContext();
 
     return (
-        <div className="space-y-1">
-            {BASEMAP_ORDER.map(id => {
-                const active = baseMapId === id;
-                const label = basemaps[id]?.label ?? id;
+        <div className="py-6 px-4">
+            <label className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
+                Mapas Base
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+                {BASEMAP_ORDER.map(id => {
+                    const active = baseMapId === id;
+                    const label = basemaps[id]?.label ?? id;
 
-                return (
-                    <button
-                        key={id}
-                        onClick={() => setBaseMapId(id)}
-                        className={[
-                            'group w-full flex items-center gap-2',
-                            'rounded-lg px-2 py-2',
-                            active
-                                ? 'bg-blue-500 text-white'
-                                : 'hover:bg-black/5'
-                        ].join(' ')}
-                        title={label}
-                    >
-                        <BasemapIcon id={id} active={active} />
-                        <span
-                            className={['text-sm transition', 'opacity-100'].join(' ')}
+                    return (
+                        <button
+                            key={id}
+                            onClick={() => setBaseMapId(id)}
+                            className={`
+                                flex flex-col items-center justify-center gap-2 cursor-pointer
+                                w-[138px] h-[142px] p-3 rounded-[9px] bg-white border
+                                ${active ? 'border-[#70308A]' : 'border-transparent hover:border-[#465055]/20'}
+                            `}
+                            title={label}
                         >
-                            {label}
-                        </span>
-                    </button>
-                );
-            })}
+                            <div className="w-[55px] h-[55px] flex items-center justify-center">
+                                <Icon
+                                    name={id ? id : 'default'}
+                                    className="w-10 h-10"
+                                />
+                            </div>
+                            <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-[#5C2472]' : 'font-medium text-[#465055]'}`}>
+                                {label}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 };
-
-const BasemapIcon = ({ id, active }) => (
-    <Icon
-        name={id ? id : 'default'}
-        className={active ? 'stroke-white' : 'stroke-current'}
-    />
-);
 
 export default BaseMapList;
