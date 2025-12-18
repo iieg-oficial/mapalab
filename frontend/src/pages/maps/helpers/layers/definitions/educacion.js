@@ -31,23 +31,31 @@ const NIVELES = [
 export const educacionLayers = {
     id: 'educacion',
     label: 'Educación',
-    children: [
-        {
-            id: 'escuelas',
-            label: 'Escuelas',
-            base: 'iieg',
-            children: NIVELES.map(([id, label, nivel, tags]) => ({
-                id,
-                label,
-                wmsConfig: createEducacionLayer.withFilter('gold_centros_educativos_mapalab', `nivel_educativo ILIKE '${nivel}'`),
-                littleCard: escuelasConfig,
-                searchMeta: {
-                    hasMunicipio: false,
-                    hasDireccion: false,
-                    searchableFields: [],
-                    tags
-                }
-            }))
+    children: [{
+        id: 'infrestructura_educacion',
+        label: 'Infraestructura en Educación',
+        isCategory: true,
+        children: [{
+                id: 'escuelas',
+                label: 'Escuelas',
+                children: NIVELES.map(([id, label, nivel, tags]) => ({
+                    id,
+                    label,
+                    wmsConfig: createEducacionLayer.withFilter('gold_centros_educativos_mapalab', `nivel_educativo ILIKE '${nivel}'`),
+                    littleCard: escuelasConfig,
+                    searchMeta: {
+                        hasMunicipio: false,
+                        hasDireccion: false,
+                        searchableFields: [],
+                        tags
+                    }
+                }))
+            }
+        ]}, {
+            id: 'rezago_educativo',
+            label: 'Rezago Educativo',
+            isCategory: true,
+            children: [{}]
         }
     ]
 };

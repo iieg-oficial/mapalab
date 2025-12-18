@@ -6,6 +6,7 @@ import Panel from '@components/Panel';
 import Logo from '@components/Logo';
 import { createMenuItems } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
+import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const MapSider = ({ className = '' }) => {
     const {
@@ -164,7 +165,7 @@ const MapSider = ({ className = '' }) => {
                     ref={contentRef}
                     className={[
                         'flex-1 flex flex-col gap-3 px-3',
-                        'overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]',
+                        `${HIDDEN_SCROLLBAR}`,
                         scrollState.canScrollUp && scrollState.canScrollDown
                             ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]'
                             : scrollState.canScrollUp

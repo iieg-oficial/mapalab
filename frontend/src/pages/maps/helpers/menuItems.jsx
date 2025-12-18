@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Icon from '@components/Icon';
 import BaseMapList from '@mapsComponents/BaseMapList';
 import SearchMenu from '@mapsComponents/SearchMenu';
-import LayerItem from '@mapsComponents/LayerItem';
+import ThemeMenu from '@mapsComponents/ThemeMenu';
 import { layers } from '@pages/maps/helpers/layers/index';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 
@@ -117,16 +117,11 @@ export const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer }
             icon: 'layers',
             tooltip: category.label,
             menuContent: () => (
-                <div className="min-w-[250px] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-                    {category.children && category.children.map(layer => (
-                        <LayerItem
-                            key={layer.id}
-                            layer={layer}
-                            onToggle={onToggleLayer}
-                            activeLayerIds={activeLayerIds}
-                        />
-                    ))}
-                </div>
+                <ThemeMenu
+                    theme={category}
+                    activeLayerIds={activeLayerIds}
+                    onToggleLayer={onToggleLayer}
+                />
             ),
             renderComponent: ({ isMenuOpen }) => (
                 <MenuButton
