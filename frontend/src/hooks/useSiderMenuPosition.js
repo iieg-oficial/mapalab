@@ -180,8 +180,9 @@ export const useSiderMenuPosition = ({
 
     useLayoutEffect(() => {
         if (!open) return;
+        lastPositionRef.current = null;
         updatePosition();
-    }, [open, siderWidth, updatePosition]);
+    }, [open, siderWidth, anchorRef, updatePosition]);
 
     useLayoutEffect(() => {
         if (!open || !contentRef?.current) return;
