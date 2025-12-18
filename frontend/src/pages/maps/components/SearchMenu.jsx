@@ -3,6 +3,7 @@ import { getSearchConfig } from '@services/searchConfig';
 import { searchGlobal } from '@services/searchService';
 import { useDebounce } from '@hooks/useDebounce';
 import Icon from '@components/Icon';
+import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -51,7 +52,7 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
 
 
     return (
-        <div className="py-6 px-4 w-full overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+        <div className={`pt-6 pb-2 px-4 w-full ${HIDDEN_SCROLLBAR}`}>
             <label className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
                 Buscador
             </label>
@@ -79,10 +80,10 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
             </div>
 
             {selectedLayers.length > 0 && (
-                <div className="relative mt-6">
+                <div className="relative mt-6 bg-white rounded-[7px] p-2">
                     <div
                         ref={listRef}
-                        className="max-h-100 space-y-3 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+                        className={`max-h-100 space-y-3 ${HIDDEN_SCROLLBAR}`}
                         style={{
                             maskImage: hasScroll ? 'linear-gradient(to bottom, black calc(100% - 100px), transparent 100%)' : 'none',
                             WebkitMaskImage: hasScroll ? 'linear-gradient(to bottom, black calc(100% - 100px), transparent 100%)' : 'none'

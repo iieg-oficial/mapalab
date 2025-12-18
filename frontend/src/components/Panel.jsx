@@ -1,10 +1,11 @@
-import { useEffect, useRef, useId } from 'react';
+import { useEffect, useRef, useId, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Divider from '@components/Divider';
 import { useFloatingPosition } from '@hooks/useFloatingPosition';
 import { useSiderMenuPosition } from '@hooks/useSiderMenuPosition';
 import { useSider } from '@contexts/SiderContext';
+import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const Panel = ({
     open = true,
@@ -38,6 +39,7 @@ const Panel = ({
     const hasFloatingPosition = anchorRef != null;
     const siderContext = useSider();
     const isMobile = siderContext?.isMobile || false;
+    const [scrollState, setScrollState] = useState({ canScrollUp: false, canScrollDown: false });
 
     const shouldUseMobileFullscreen = mobileFullscreen !== undefined
         ? mobileFullscreen
@@ -112,6 +114,28 @@ const Panel = ({
         focusable[0]?.focus({ preventScroll: true });
     }, [open, autoFocus]);
 
+    useEffect(() => {
+        if (!open || variant !== 'menu' || !panelRef.current) return;
+        const checkScroll = () => {
+            if (panelRef.current) {
+                const { scrollTop, scrollHeight, clientHeight } = panelRef.current;
+                setScrollState({
+                    canScrollUp: scrollTop > 0,
+                    canScrollDown: scrollTop + clientHeight < scrollHeight - 1
+                });
+            }
+        };
+        checkScroll();
+        const observer = new ResizeObserver(checkScroll);
+        observer.observe(panelRef.current);
+        panelRef.current.addEventListener('scroll', checkScroll);
+        const ref = panelRef.current;
+        return () => {
+            observer.disconnect();
+            ref?.removeEventListener('scroll', checkScroll);
+        };
+    }, [open, variant, children]);
+
     if (!open) return null;
 
     const closeLabel = title ? `Cerrar ${title}` : 'Cerrar panel';
@@ -128,15 +152,12 @@ const Panel = ({
             : 'shadow-2xl';
 
     const shadowClass = shadow !== undefined ? shadow : defaultShadow;
-
     const defaultRounded = variant === 'menu' ? 'rounded-2xl' : variant === 'floating' ? 'rounded-xl' : 'rounded-2xl';
     const roundedClass = rounded !== undefined ? rounded : defaultRounded;
-
     const defaultBg = variant === 'floating' ? 'bg-white/80' : 'bg-white';
     const bgClass = bg !== undefined ? bg : defaultBg;
     const positionClass = position ? `absolute ${position}` : 'fixed';
     const showHeader = title || onClose;
-
     const mobileFullscreenClasses = shouldUseMobileFullscreen && isMobile
         ? 'inset-x-0 bottom-0 top-auto left-0! right-0! w-full h-auto max-h-[85vh] rounded-t-2xl rounded-b-none'
         : shouldUseMobileFullscreen && !isMobile
@@ -179,14 +200,28 @@ const Panel = ({
                 ${mobileMenuClasses}
                 ${shadowClass || ''}
                 flex
-                ${variant === 'menu' ? 'z-50 outline-none overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]' : ''}
+                ${variant === 'menu' ? `z-50 outline-none ${HIDDEN_SCROLLBAR}` : ''}
                 ${variant === 'menu' ? 'transition-opacity duration-150' : ''}
                 ${variant === 'menu' && !isReady ? 'opacity-0' : 'opacity-100'}
             `}
-            style={variant === 'menu' ? { position: 'fixed' } : undefined}
+            style={{
+                ...(variant === 'menu' ? { position: 'fixed' } : {})
+            }}
         >
             {variant === 'menu' ? (
-                typeof children === 'function' ? children({ close: onClose }) : children
+                <>
+                    {scrollState.canScrollUp && (
+                        <div className="sticky top-2 left-0 right-0 flex justify-center pointer-events-none z-10">
+                            <Icon name="downArrow" className="w-3 h-3 rotate-180 animate-[bounce_4s_ease-in-out_infinite]" />
+                        </div>
+                    )}
+                    {typeof children === 'function' ? children({ close: onClose }) : children}
+                    {scrollState.canScrollDown && (
+                        <div className="sticky bottom-2 left-0 right-0 flex justify-center pointer-events-none">
+                            <Icon name="downArrow" className="w-3 h-3 animate-[bounce_4s_ease-in-out_infinite]" />
+                        </div>
+                    )}
+                </>
             ) : (
                 <>
                     {showHeader && (

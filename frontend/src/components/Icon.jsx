@@ -27,6 +27,7 @@ import mapasHover from '@assets/icons/ico_mapa_hover.svg';
 import search from '@assets/icons/ico_search.svg';
 import checkNormal from '@assets/icons/ico_check_normal.svg';
 import checkActive from '@assets/icons/ico_check_activo.svg';
+import downArrow from '@assets/icons/ico_down_arrow.svg';
 
 const externalIcons = {
     base_layers_normal: baseNormal,
@@ -56,6 +57,7 @@ const externalIcons = {
     searchInput_normal: search,
     check_normal: checkNormal,
     check_active: checkActive,
+    downArrow_normal: downArrow,
 };
 
 const icons = {
@@ -249,11 +251,6 @@ const icons = {
     minus: (
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-    ),
-    chevron_down: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6 9 12 15 18 9" />
         </svg>
     ),
     chevron_left: (
