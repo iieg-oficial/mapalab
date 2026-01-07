@@ -28,6 +28,12 @@ import search from '@assets/icons/ico_search.svg';
 import checkNormal from '@assets/icons/ico_check_normal.svg';
 import checkActive from '@assets/icons/ico_check_activo.svg';
 import downArrow from '@assets/icons/ico_down_arrow.svg';
+import zoominNormal from '@assets/icons/ico_zoomin.svg';
+import zoominHover from '@assets/icons/ico_zoomin_hover.svg';
+import zoomoutNormal from '@assets/icons/ico_zoomout.svg';
+import zoomoutHover from '@assets/icons/ico_zoomout_hover.svg';
+import centerNormal from '@assets/icons/ico_center_normal.svg';
+import centerHover from '@assets/icons/ico_center_hover.svg';
 
 const externalIcons = {
     base_layers_normal: baseNormal,
@@ -58,6 +64,12 @@ const externalIcons = {
     check_normal: checkNormal,
     check_active: checkActive,
     downArrow_normal: downArrow,
+    zoomin_normal: zoominNormal,
+    zoomin_hover: zoominHover,
+    zoomout_normal: zoomoutNormal,
+    zoomout_hover: zoomoutHover,
+    center_normal: centerNormal,
+    center_hover: centerHover,
 };
 
 const icons = {

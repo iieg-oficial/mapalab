@@ -3,10 +3,10 @@ import { useSiderAnchoredPosition } from '@contexts/SiderContext';
 import Loading from '@components/Loading';
 
 const GlobalLoading = () => {
-    const { loadingLayers } = useMapsContext();
+    const { loadingLayers, isLocating } = useMapsContext();
     const { style, className } = useSiderAnchoredPosition({ offset: 28 });
 
-    if (loadingLayers.size === 0) return null;
+    if (loadingLayers.size === 0 && !isLocating) return null;
 
     return (
         <div

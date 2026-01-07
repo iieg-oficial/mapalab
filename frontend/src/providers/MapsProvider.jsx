@@ -18,6 +18,7 @@ const MapsProvider = ({ children }) => {
     const [selectedLayer, setSelectedLayer] = useState(null);
     const [selectedFeatureInfo, setSelectedFeatureInfo] = useState(null);
     const [loadingLayers, setLoadingLayers] = useState(new Set());
+    const [isLocating, setIsLocating] = useState(false);
     const queryFeaturesInPolygonRef = useRef(null);
     const clickPosition = useClickPosition();
     const targetRef = useRef(null);
@@ -93,7 +94,9 @@ const MapsProvider = ({ children }) => {
         ...cqlFilter,
         ...mapDrawing,
         loadingLayers,
-        setLayerLoading
+        setLayerLoading,
+        isLocating,
+        setIsLocating
     }), [
         baseMapId,
         siderCollapsed,
@@ -109,7 +112,8 @@ const MapsProvider = ({ children }) => {
         cqlFilter,
         mapDrawing,
         loadingLayers,
-        setLayerLoading
+        setLayerLoading,
+        isLocating
     ]);
 
     return (
