@@ -2,6 +2,7 @@
 .env.local
 .env.*.local
 .env.development
+docker-compose.local.yaml
 .env.production
 *.env
 !*.env.example

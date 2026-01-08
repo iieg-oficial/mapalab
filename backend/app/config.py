@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: str
     DB_NAME: Optional[str] = Field(default=None)
-    GEOSERVER_URL: Optional[str] = Field(default=None)
+    GEOSERVER_URL: Optional[str] = Field(default="")
     GEOSERVER_USER: str
     GEOSERVER_PASSWORD: str
 
