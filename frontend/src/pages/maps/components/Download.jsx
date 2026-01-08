@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import Tooltip from '@components/Tooltip';
 import Panel from '@components/Panel';
-import Icon from '@components/Icon';
 import { useMapDownload } from '../hooks/useMapDownload';
 import SymbologyItem from './SymbologyItem';
+import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const Download = () => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -105,36 +105,26 @@ const Download = () => {
     };
 
     return (
-        <div className="flex flex-col gap-2 relative">
-            <div className="flex items-center w-full h-auto rounded-lg overflow-hidden shadow-sm">
-                <Tooltip
-                    content={!canDownload ? 'Necesitas tener al menos una capa activa para descargar' : 'Descargar mapa'}
-                    placement="top"
-                    delay={300}
+        <div className="flex flex-col relative">
+            <Tooltip
+                content={!canDownload ? 'Necesitas tener al menos una capa activa para descargar' : 'Descargar mapa'}
+                placement="top"
+                delay={300}
+            >
+                <button
+                    ref={anchorRef}
+                    type="button"
+                    onClick={handleDownloadClick}
+                    disabled={!canDownload || isDownloading}
+                    className={[
+                        'text-center h-12.5 px-10 rounded-[30px] transition ',
+                        'font-garet font-bold text-[14px]/[47px]',
+                        canDownload ? 'bg-[#703089] text-white hover:bg-[#5C2472]' : 'bg-black/5 text-black/40 cursor-not-allowed',
+                    ].join(' ')}
                 >
-                    <button
-                        ref={anchorRef}
-                        type="button"
-                        onClick={handleDownloadClick}
-                        disabled={!canDownload || isDownloading}
-                        className={[
-                            'flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm transition',
-                            canDownload
-                                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                                : 'bg-black/5 text-black/40 cursor-not-allowed',
-                        ].join(' ')}
-                    >
-                        {isDownloading ? (
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        ) : (
-                            <Icon name="download" className="h-5 w-5" />
-                        )}
-                        <span className="text-left font-medium hidden md:inline">
-                            {isDownloading ? 'Generando…' : 'Descargar'}
-                        </span>
-                    </button>
-                </Tooltip>
-            </div>
+                    {isDownloading ? 'Generando…' : 'Descargar'}
+                </button>
+            </Tooltip>
 
             <Panel
                 open={isPanelOpen}
@@ -142,53 +132,61 @@ const Download = () => {
                 onClose={() => setIsPanelOpen(false)}
                 variant="solid"
                 width="w-72"
-                className="z-50"
+                maxHeight="max-h-200"
+                className="z-50 mt-2 shadow-none border-none rounded-[14px]"
                 placement="bottom-end"
-                title="Descargar mapa"
+                title={ <span className="font-garet font-bold text-[14px]/[47px]">Descargar mapa</span> }
                 mobileFullscreen
             >
-                <div className="flex flex-col p-4 gap-4">
-                    <div>
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                            Formato
-                        </div>
-                        <div className="flex gap-2">
-                            {['png', 'jpeg', 'pdf'].map(fmt => (
-                                <button
-                                    key={fmt}
-                                    onClick={() => setFormat(fmt)}
-                                    className={`px-3 py-1.5 text-sm rounded border transition-colors ${format === fmt
-                                        ? 'bg-blue-50 border-blue-500 text-blue-700 font-medium'
-                                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                                        }`}
-                                >
-                                    {fmt.toUpperCase()}
-                                </button>
-                            ))}
-                        </div>
+                <div className="flex flex-col px-4 pb-4 gap-4">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb">
+                        Formato
+                    </div>
+                    <div className="flex gap-2">
+                        {['png', 'jpeg', 'pdf'].map(fmt => (
+                            <button
+                                key={fmt}
+                                onClick={() => setFormat(fmt)}
+                                className={`
+                                    px-3 py-1.5 text-sm rounded-[14px] border transition-colors 
+                                    ${format === fmt
+                                        ? 'bg-[#FF8300] border-transparent text-white font-medium'
+                                        : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+                                    }
+                                `}
+                            >
+                                {fmt.toUpperCase()}
+                            </button>
+                        ))}
                     </div>
 
                     <div>
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                             Vista
                         </div>
                         <div className="flex flex-col gap-2">
                             <button
                                 onClick={() => setViewType('viewport')}
-                                className={`px-3 py-2 text-sm rounded border transition-colors text-left ${viewType === 'viewport'
-                                    ? 'bg-blue-50 border-blue-500 text-blue-700 font-medium'
-                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                                    }`}
+                                className={`
+                                    px-3 py-2 text-sm rounded-[14px] border transition-colors text-left 
+                                    ${viewType === 'viewport'
+                                        ? 'bg-[#FF8300] border-transparent text-white font-medium'
+                                        : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+                                    }
+                                `}
                             >
                                 <div className="font-medium">Vista actual</div>
                                 <div className="text-xs opacity-75">Captura el viewport actual</div>
                             </button>
                             <button
                                 onClick={() => setViewType('full-state')}
-                                className={`px-3 py-2 text-sm rounded border transition-colors text-left ${viewType === 'full-state'
-                                    ? 'bg-blue-50 border-blue-500 text-blue-700 font-medium'
-                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                                    }`}
+                                className={`
+                                    px-3 py-2 text-sm rounded-[14px] border transition-colors text-left 
+                                    ${viewType === 'full-state'
+                                        ? 'bg-[#703089] border-[#703089] text-white font-medium'
+                                        : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+                                    }
+                                `}
                             >
                                 <div className="font-medium">Estado completo</div>
                                 <div className="text-xs opacity-75">Vista de todo Jalisco en formato carta</div>
@@ -202,7 +200,7 @@ const Download = () => {
                                 {format === 'pdf' ? 'Leyendas' : 'Leyenda'}
                             </div>
 
-                            <div className="max-h-40 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] border border-gray-100 rounded">
+                            <div className={`max-h-40 ${HIDDEN_SCROLLBAR} border border-gray-100 rounded`}>
                                 {layersWithLegends.map(layer => {
                                     const isSelected = selectedLegendLayers.some(l => l.id === layer.id);
                                     return (
@@ -220,7 +218,7 @@ const Download = () => {
                                                     name="legend-selection"
                                                     checked={isSelected}
                                                     readOnly
-                                                    className={`text-blue-500 focus:ring-blue-500 mr-2 ${format === 'pdf' ? 'rounded' : ''}`}
+                                                    className={`text-[#703089] focus:ring-[#703089] mr-2 ${format === 'pdf' ? 'rounded' : ''}`}
                                                     style={{ cursor: 'pointer' }}
                                                 />
                                             }
@@ -233,7 +231,7 @@ const Download = () => {
 
                     <button
                         onClick={handleConfirmDownload}
-                        className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-medium text-sm"
+                        className="w-full py-2 bg-[#703089] text-white rounded-[14px] hover:bg-[#5C2472] transition font-medium text-sm"
                     >
                         Descargar {format.toUpperCase()}
                     </button>

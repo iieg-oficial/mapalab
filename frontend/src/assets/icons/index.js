@@ -59,6 +59,12 @@ import cerrarHover from './ico_cerrar_hover.svg';
 import puntoNormal from './ico_punto_normal.svg';
 import puntoHover from './ico_punto_hover.svg';
 
+import infoNormal from './ico_info_normal.svg';
+import infoHover from './ico_info_hover.svg';
+
+import sharedNormal from './ico_shared_normal.svg';
+import sharedHover from './ico_shared_hover.svg';
+
 export const externalIcons = {
     base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
     salud_normal: saludNormal, salud_hover: saludHover, economia_normal: economiaNormal, economia_hover: economiaHover,
@@ -71,4 +77,5 @@ export const externalIcons = {
     center_normal: centerNormal, center_hover: centerHover, mediciones_normal: medicionesNormal, mediciones_hover: medicionesHover,
     linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover,
     emoji_normal: emojiNormal, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,
+    info_normal: infoNormal, info_hover: infoHover, shared_normal: sharedNormal, shared_hover: sharedHover,
 };
