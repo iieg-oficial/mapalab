@@ -16,7 +16,7 @@ class PostgresConnection:
             Logger.info(f"Conexión establecida con PostgreSQL: {self.db_url}")
             yield session
         except Exception as e:
-            Logger.error(f"Database error: {str(e)}")
+            Logger.error(f"Error en la base de datos: {str(e)}")
             session.rollback()
             raise
         finally:

@@ -2,8 +2,7 @@ import pandas as pd
 import urllib.request
 import requests
 import json
-import xml.etree.ElementTree as ET
-from typing import Optional, Dict, List, Set
+from typing import Optional, List, Set
 from urllib.parse import unquote, quote_plus
 from functools import lru_cache
 
@@ -11,6 +10,7 @@ from app.utils.logger import Logger
 from app.config import settings
 
 class GeoServerService:
+
     @staticmethod
     @lru_cache(maxsize=32)
     def get_periodicity(wfs_url: str) -> dict:
@@ -73,16 +73,15 @@ class GeoServerService:
             layer: str,
             cql_filter: Optional[str] = None
         ) -> str:
-        geoserver_url = (settings.GEOSERVER_URL or "").rstrip("/")
 
-        if not geoserver_url:
+        if not settings.GEOSERVER_URL:
             raise ValueError("La URL base de GeoServer no está configurada")
 
         if not workspace or not layer:
             raise ValueError("Se deben proporcionar workspace y layer")
 
         url = (
-            f"{geoserver_url}/wfs"
+            f"{settings.GEOSERVER_URL}/wfs"
             f"?service=WFS"
             f"&version=1.0.0"
             f"&request=GetFeature"
@@ -97,12 +96,9 @@ class GeoServerService:
 
     @staticmethod
     def get_workspaces() -> List[str]:
-        geoserver_url =(settings.GEOSERVER_URL or "").rstrip("/")
-
-        url = f"{geoserver_url}/rest/workspaces.json"
+        url = f"{settings.GEOSERVER_URL}/rest/workspaces.json"
         try:
-            response = requests.get(url, auth=(settings.GEOSERVER_USER, settings.GEOSERVER_PASSWORD))
-            data = response.json()
+            data = GeoServerService._request_auth_geoserver(url)
             return [ws["name"] for ws in data.get("workspaces", {}).get("workspace", [])]
         except Exception as e:
             Logger.error(f"Error getting workspaces: {str(e)}")
@@ -110,12 +106,9 @@ class GeoServerService:
 
     @staticmethod
     def get_layers(workspace: str) -> List[str]:
-        geoserver_url =(settings.GEOSERVER_URL or "").rstrip("/")
-
-        url = f"{geoserver_url}/rest/workspaces/{workspace}/layers.json"
+        url = f"{settings.GEOSERVER_URL}/rest/workspaces/{workspace}/layers.json"
         try:
-            response = requests.get(url, auth=(settings.GEOSERVER_USER, settings.GEOSERVER_PASSWORD))
-            data = response.json()
+            data = GeoServerService._request_auth_geoserver(url)
             layers = data.get("layers", {}).get("layer", [])
             if isinstance(layers, dict):
                 return [layers["name"]]
@@ -123,51 +116,6 @@ class GeoServerService:
         except Exception as e:
             Logger.error(f"Error getting layers for workspace {workspace}: {str(e)}")
             return []
-
-    @staticmethod
-    def describe_feature_type(
-            workspace: str,
-            layer: str
-        ) -> Dict[str, str]:
-        geoserver_url =(settings.GEOSERVER_URL or "").rstrip("/")
-
-        if not geoserver_url:
-            raise ValueError("GeoServer URL not configured")
-
-        url = (
-                f"{geoserver_url}/wfs"
-                f"?service=WFS"
-                f"&version=1.1.0"
-                f"&request=DescribeFeatureType"
-                f"&typeName={workspace}:{layer}"
-               )
-
-        try:
-            with urllib.request.urlopen(url) as response:
-                xml_data = response.read().decode()
-
-            root = ET.fromstring(xml_data)
-
-            fields = {}
-            for element in root.iter():
-                if element.tag.endswith('element') and 'name' in element.attrib and 'type' in element.attrib:
-                    field_name = element.attrib['name']
-                    field_type = element.attrib['type']
-
-                    if 'string' in field_type.lower():
-                        fields[field_name] = 'string'
-                    elif any(t in field_type.lower() for t in ['int', 'long', 'double', 'float', 'number']):
-                        fields[field_name] = 'numeric'
-                    elif 'geometry' in field_type.lower() or 'geom' in field_type.lower():
-                        fields[field_name] = 'geometry'
-                    else:
-                        fields[field_name] = 'unknown'
-
-            return fields
-
-        except Exception as e:
-            Logger.error(f"Error describing feature type for {workspace}:{layer}: {str(e)}")
-            return {}
 
     @staticmethod
     def get_property_values(
@@ -198,3 +146,8 @@ class GeoServerService:
         except Exception as e:
             Logger.error(f"Error getting property values for {workspace}:{layer}.{property_name}: {str(e)}")
             return set()
+
+    @staticmethod
+    def _request_auth_geoserver(url: str):
+        response = requests.get(url, auth=(settings.GEOSERVER_USER, settings.GEOSERVER_PASSWORD))
+        return response.json()
