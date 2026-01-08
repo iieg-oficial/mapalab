@@ -6,6 +6,7 @@ import Body from '../../home/components/Body';
 
 const InfoModal = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
     return (
         <>
@@ -17,15 +18,12 @@ const InfoModal = () => {
                 <button
                     type="button"
                     onClick={() => setIsOpen(true)}
-                    className={[
-                        'flex items-center justify-center rounded-lg p-2 text-sm transition',
-                        isOpen
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-black/5 text-black/70 hover:bg-black/10'
-                    ].join(' ')}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    className="cursor-pointer"
                     aria-label="Información"
                 >
-                    <Icon name="info" />
+                    <Icon name="info" state={isHovered ? 'hover' : 'normal'} className="h-12.5 w-12.5" />
                 </button>
             </Tooltip>
 
