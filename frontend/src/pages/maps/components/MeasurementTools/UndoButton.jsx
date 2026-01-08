@@ -11,10 +11,10 @@ const UndoButton = ({
     placement = 'right'
 }) => {
     const baseClasses = [
-        'flex items-center gap-2 px-3 py-1.5 rounded-xl shadow backdrop-blur-sm border border-white/60',
+        'flex items-center gap-2 px-3 py-1.5 rounded-full border border-transparent transition-all',
         disabled
-            ? 'bg-white/60  text-gray-400 cursor-not-allowed opacity-80'
-            : 'bg-white/90  text-gray-800  hover:bg-blue-50'
+            ? 'bg-[#EAEFFA]/60 text-[#703089]/40 cursor-not-allowed'
+            : 'bg-[#EAEFFA] text-[#703089] hover:border-[#5C2472] active:bg-[#703089] active:text-white'
     ]
         .concat(className)
         .join(' ')

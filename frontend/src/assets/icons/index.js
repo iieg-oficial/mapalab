@@ -1,0 +1,74 @@
+import baseNormal from './ico_general_normal.svg';
+import baseHover from './ico_general_hover.svg';
+import demografiaNormal from './ico_demografía_normal.svg';
+import demografiaHover from './ico_demografia_hover.svg';
+
+import saludNormal from './ico_salud_normal.svg';
+import saludHover from './ico_salud_hover.svg';
+import economiaNormal from './ico_economia_normal.svg';
+import economiaHover from './ico_economia_hover.svg';
+
+import educacionNormal from './ico_educacion_normal.svg';
+import educacionHover from './ico_educacion_hover.svg';
+import recursosNormal from './ico_recursos_calidad_vida_normal.svg';
+import recursosHover from './ico_recursos_calidad_vida_hover.svg';
+
+import desarrolloNormal from './ico_desarrollo_social_normal.svg';
+import desarrolloHover from './ico_desarrollo_social.svg';
+import seguridadNormal from './ico_seguridad_normal.svg';
+import seguridadHover from './ico_seguridad_hover.svg';
+
+import gobiernoNormal from './ico_gobierno_ciudadania_normal.svg';
+import gobiernoHover from './ico_gobierno_ciudadania_hover.svg';
+import buscadorNormal from './ico_buscador_normal.svg';
+import buscadorHover from './ico_buscador_hover.svg';
+
+import herramientasNormal from './ico_herramientas_normal.svg';
+import herramientasHover from './ico_herramientas_hover.svg';
+import mapasNormal from './ico_mapas_normal.svg';
+import mapasHover from './ico_mapa_hover.svg';
+
+import search from './ico_search.svg';
+import checkNormal from './ico_check_normal.svg';
+import checkActive from './ico_check_activo.svg';
+import downArrow from './ico_down_arrow.svg';
+
+import zoominNormal from './ico_zoomin.svg';
+import zoominHover from './ico_zoomin_hover.svg';
+
+import zoomoutNormal from './ico_zoomout.svg';
+import zoomoutHover from './ico_zoomout_hover.svg';
+
+import centerNormal from './ico_center_normal.svg';
+import centerHover from './ico_center_hover.svg';
+
+import medicionesNormal from './ico_mediciones_normal.svg';
+import medicionesHover from './ico_mediciones_hover.svg';
+
+import lineaNormal from './ico_linea_normal.svg';
+import lineaHover from './ico_linea_hover.svg';
+
+import poligonoNormal from './ico_poligono_normal.svg';
+import poligonoHover from './ico_poligono_hover.svg';
+
+import emojiNormal from './ico_emoji_normal.svg';
+
+import cerrarNormal from './ico_cerrar_normal.svg';
+import cerrarHover from './ico_cerrar_hover.svg';
+
+import puntoNormal from './ico_punto_normal.svg';
+import puntoHover from './ico_punto_hover.svg';
+
+export const externalIcons = {
+    base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
+    salud_normal: saludNormal, salud_hover: saludHover, economia_normal: economiaNormal, economia_hover: economiaHover,
+    educacion_normal: educacionNormal, educacion_hover: educacionHover, recursos_normal: recursosNormal, recursos_hover: recursosHover,
+    desarrollo_normal: desarrolloNormal, desarrollo_hover: desarrolloHover, seguridad_normal: seguridadNormal, seguridad_hover: seguridadHover,
+    gobierno_normal: gobiernoNormal, gobierno_hover: gobiernoHover, search_normal: buscadorNormal, search_hover: buscadorHover,
+    tools_normal: herramientasNormal, tools_hover: herramientasHover, basemaps_normal: mapasNormal, basemaps_hover: mapasHover,
+    searchInput_normal: search, check_normal: checkNormal, check_active: checkActive, downArrow_normal: downArrow,
+    zoomin_normal: zoominNormal, zoomin_hover: zoominHover, zoomout_normal: zoomoutNormal, zoomout_hover: zoomoutHover,
+    center_normal: centerNormal, center_hover: centerHover, mediciones_normal: medicionesNormal, mediciones_hover: medicionesHover,
+    linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover,
+    emoji_normal: emojiNormal, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,
+};
