@@ -13,3 +13,4 @@ rapidfuzz
 apscheduler
 requests
 apscheduler
+rich
