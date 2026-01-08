@@ -43,7 +43,7 @@ import centerNormal from './ico_center_normal.svg';
 import centerHover from './ico_center_hover.svg';
 
 import medicionesNormal from './ico_mediciones_normal.svg';
-import medicionesHover from './ico_mediciones_hover.svg';
+import medicionesHover from './ico_mediciones_normal.svg';
 
 import lineaNormal from './ico_linea_normal.svg';
 import lineaHover from './ico_linea_hover.svg';
@@ -65,6 +65,20 @@ import infoHover from './ico_info_hover.svg';
 import sharedNormal from './ico_shared_normal.svg';
 import sharedHover from './ico_shared_hover.svg';
 
+import capaActivaNormal from './ico_capa_activa.svg';
+
+import mostrarNormal from './ico_mostrar.svg';
+import ocultarNormal from './ico_ocultar.svg';
+
+import moveNormal from './ico_move_normal.svg';
+import moveHover from './ico_move_hover.svg';
+
+import eliminarNormal from './ico_eliminar.svg';
+import eliminarHover from './ico_eliminar_hover.svg';
+
+import bigCardNormal from './ico_big_card_normal.svg';
+import bigCardHover from './ico_big_card_hover.svg';
+
 export const externalIcons = {
     base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
     salud_normal: saludNormal, salud_hover: saludHover, economia_normal: economiaNormal, economia_hover: economiaHover,
@@ -77,5 +91,7 @@ export const externalIcons = {
     center_normal: centerNormal, center_hover: centerHover, mediciones_normal: medicionesNormal, mediciones_hover: medicionesHover,
     linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover,
     emoji_normal: emojiNormal, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,
-    info_normal: infoNormal, info_hover: infoHover, shared_normal: sharedNormal, shared_hover: sharedHover,
+    info_normal: infoNormal, info_hover: infoHover, shared_normal: sharedNormal, shared_hover: sharedHover, capa_activa_normal: capaActivaNormal,
+    mostrar_normal: mostrarNormal, ocultar_normal: ocultarNormal, move_normal: moveNormal, move_hover: moveHover, 
+    eliminar_normal: eliminarNormal, eliminar_hover: eliminarHover, big_card_normal: bigCardNormal, big_card_hover: bigCardHover,
 };

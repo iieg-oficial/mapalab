@@ -27,7 +27,7 @@ const ShareButton = () => {
                 onClick={() => handleShare(setShareMessage)}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="cursor-pointer"
+                className="cursor-pointer h-auto"
                 aria-label="Compartir mapa"
             >
                 <Icon name="shared" state={isHovered ? 'hover' : 'normal'} className="h-12.5 w-12.5"/>
