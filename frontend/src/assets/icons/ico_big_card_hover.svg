@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g id="ico_mediciones_hover" transform="translate(-1591 -1907)">
+    <path id="Rectángulo_11977" data-name="Rectángulo 11977" d="M2,1A1,1,0,0,0,1,2V12a1,1,0,0,0,1,1H8a1,1,0,0,0,1-1V2A1,1,0,0,0,8,1H2M2,0H8a2,2,0,0,1,2,2V12a2,2,0,0,1-2,2H2a2,2,0,0,1-2-2V2A2,2,0,0,1,2,0Z" transform="translate(1594 1908)" fill="#70308a"/>
+    <rect id="Rectángulo_14454" data-name="Rectángulo 14454" width="16" height="16" transform="translate(1591 1907)" fill="none"/>
+    <path id="Línea_236" data-name="Línea 236" d="M5,.5H0A.5.5,0,0,1-.5,0,.5.5,0,0,1,0-.5H5a.5.5,0,0,1,.5.5A.5.5,0,0,1,5,.5Z" transform="translate(1596.5 1912.5)" fill="#70308a"/>
+    <path id="Línea_237" data-name="Línea 237" d="M5,.5H0A.5.5,0,0,1-.5,0,.5.5,0,0,1,0-.5H5a.5.5,0,0,1,.5.5A.5.5,0,0,1,5,.5Z" transform="translate(1596.5 1915)" fill="#70308a"/>
+  </g>
+</svg>

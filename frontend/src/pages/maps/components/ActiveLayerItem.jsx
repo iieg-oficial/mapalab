@@ -1,9 +1,10 @@
 import { useMapsContext } from '@hooks/useMaps';
 import Loading from '@components/Loading';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Icon from '@components/Icon';
+import Tooltip from '@components/Tooltip';
 
-const SIZE_BUTTON = 'size-4';
+const SIZE_BUTTON = 'size-5';
 
 const ActiveLayerItem = ({
     layer,
@@ -20,6 +21,9 @@ const ActiveLayerItem = ({
         setSelectedLayer
     } = useMapsContext();
 
+    const [isDeleteHovered, setIsDeleteHovered] = useState(false);
+    const [isCardHovered, setIsCardHovered] = useState(false);
+    const [isMoveActive, setIsMoveActive] = useState(false);
     const isSelected = selectedLayerForSymbology?.id === layer.id;
     const canOpenModal = layer.hasChildren !== false;
 
@@ -57,10 +61,10 @@ const ActiveLayerItem = ({
     return (
         <div
             className={`
-                group flex items-center gap-2 p-2 rounded border transition-all relative
-                ${layer.visible ? 'bg-white' : 'bg-gray-100'}
-                ${isSelected ? 'ring-2 ring-blue-400' : ''}
-                hover:shadow-md
+                group flex items-center gap-3 px-2 py-4 rounded-[10px] border border-transparent hover:border-[#EAEFFA] 
+                transition-all relative h-12 overflow-hidden
+                ${layer.visible ? 'bg-white' : 'bg-[#EBEBEB]'}
+                ${isSelected ? 'ring-1 ring-[#70308A]' : ''}
             `}
         >
             {isLoading && (
@@ -69,62 +73,70 @@ const ActiveLayerItem = ({
                 </div>
             )}
 
-            <span
-                className={`
-                    text-sm font-medium flex-1 truncate cursor-pointer
-                    ${isLoading ? '' : 'md:group-hover:pl-[140px]'} transition-all
-                    ${!layer.visible ? 'text-gray-500' : ''}
-                `}
-                title={layer.name}
-                onClick={handleClickOnLayer}
-            >
-                {layer.name}
-            </span>
-
-            <div className="flex items-center gap-0 md:absolute md:left-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                {dragHandleProps && (
+            <div className="hidden group-hover:flex items-center gap-1 shrink-0">
+                <Tooltip content={layer.visible ? 'Ocultar capa' : 'Mostrar capa'}>
                     <button
-                        {...dragHandleProps}
-                        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 p-1.5 rounded hover:bg-gray-100 touch-none"
-                        title="Reordenar capa"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (dragHandleProps.onClick) dragHandleProps.onClick(e);
-                        }}
+                        className="p-1.5 rounded-full transition-colors cursor-pointer border border-transparent hover:border-[#70308A] bg-[#F9FBFF]"
+                        onClick={handleToggleVisibilityClick}
                     >
-                        <Icon name="drag_and_drop" className={SIZE_BUTTON} />
+                        <Icon
+                            name={layer.visible ? 'mostrar' : 'ocultar'}
+                            className={SIZE_BUTTON}
+                        />
                     </button>
+                </Tooltip>
+
+                {dragHandleProps && (
+                    <Tooltip content="Reordenar capa">
+                        <button
+                            {...dragHandleProps}
+                            className="cursor-grab active:cursor-grabbing p-1.5 rounded-full touch-none"
+                            onMouseDown={() => setIsMoveActive(true)}
+                            onMouseUp={() => setIsMoveActive(false)}
+                            onMouseLeave={() => setIsMoveActive(false)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (dragHandleProps.onClick) dragHandleProps.onClick(e);
+                            }}
+                        >
+                            <Icon name="move" state={isMoveActive ? 'hover' : 'normal'} className="size-8" />
+                        </button>
+                    </Tooltip>
                 )}
-
-                <button
-                    className="px-2 py-1 text-red-500 hover:text-red-700 cursor-pointer"
-                    onClick={handleRemoveClick}
-                    title="Eliminar capa"
-                >
-                    <Icon name="trash" className={SIZE_BUTTON} />
-                </button>
-
-                <button
-                    className={`
-                            px-2 py-1 rounded transition-colors cursor-pointer
-                            ${layer.visible ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}
-                        `}
-                    onClick={handleToggleVisibilityClick}
-                    title={layer.visible ? 'Ocultar capa' : 'Mostrar capa'}
-                >
-                    <Icon name={layer.visible ? 'eye' : 'eye_off'} className={SIZE_BUTTON} />
-                </button>
 
                 {!isLoading && canOpenModal && (
-                    <button
-                        className="px-2 py-1 text-blue-500 hover:text-blue-700 cursor-pointer"
-                        onClick={handleSetSelectedLayerClick}
-                        title="Ver detalles de capa"
-                    >
-                        <Icon name="info" className={SIZE_BUTTON} />
-                    </button>
+                    <Tooltip content="Ver detalles de capa">
+                        <button
+                            className="p-1.5 rounded-full cursor-pointer border border-transparent hover:border-[#70308A] transition-colors bg-[#F9FBFF]"
+                            onClick={handleSetSelectedLayerClick}
+                            onMouseEnter={() => setIsCardHovered(true)}
+                            onMouseLeave={() => setIsCardHovered(false)}
+                        >
+                            <Icon name="big_card" state={isCardHovered ? 'hover' : 'normal'} className={SIZE_BUTTON} />
+                        </button>
+                    </Tooltip>
                 )}
+
+                <Tooltip content="Eliminar capa">
+                    <button
+                        className="p-1.5 rounded-full cursor-pointer border border-transparent hover:border-[#FF577D] transition-colors bg-[#F9FBFF]"
+                        onClick={handleRemoveClick}
+                        onMouseEnter={() => setIsDeleteHovered(true)}
+                        onMouseLeave={() => setIsDeleteHovered(false)}
+                    >
+                        <Icon name="eliminar" state={isDeleteHovered ? 'hover' : 'normal'} className={SIZE_BUTTON} />
+                    </button>
+                </Tooltip>
             </div>
+
+            <Tooltip content={layer.name}>
+                <span
+                    className="text-[14px]/[16px] font-garet font-medium flex-1 min-w-0 truncate cursor-pointer"
+                    onClick={handleClickOnLayer}
+                >
+                    {layer.name}
+                </span>
+            </Tooltip>
         </div>
     );
 };

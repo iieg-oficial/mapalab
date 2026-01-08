@@ -25,28 +25,28 @@ const Tooltip = ({
         };
 
         let top, left;
-        const offset = 8; 
+        const offset = 8;
 
         switch (placement) {
-        case 'top':
-            top = triggerRect.top - tooltipRect.height - offset;
-            left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
-            break;
-        case 'bottom':
-            top = triggerRect.bottom + offset;
-            left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
-            break;
-        case 'left':
-            top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
-            left = triggerRect.left - tooltipRect.width - offset;
-            break;
-        case 'right':
-            top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
-            left = triggerRect.right + offset;
-            break;
-        default:
-            top = triggerRect.top - tooltipRect.height - offset;
-            left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
+            case 'top':
+                top = triggerRect.top - tooltipRect.height - offset;
+                left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
+                break;
+            case 'bottom':
+                top = triggerRect.bottom + offset;
+                left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
+                break;
+            case 'left':
+                top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
+                left = triggerRect.left - tooltipRect.width - offset;
+                break;
+            case 'right':
+                top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
+                left = triggerRect.right + offset;
+                break;
+            default:
+                top = triggerRect.top - tooltipRect.height - offset;
+                left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
         }
 
         if (left < offset) {
@@ -119,7 +119,7 @@ const Tooltip = ({
                 ref={triggerRef}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                style={{ display: 'inline-block' }}
+                style={{ display: 'inline-block', lineHeight: 0 }}
             >
                 {children}
             </div>

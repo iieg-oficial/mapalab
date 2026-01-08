@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MOBILE_BREAKPOINT } from '@constants/sider';
 
-export const useLayerCollapse = (unifiedLayers, hasSelectedLayer) => {
+export const useLayerCollapse = (unifiedLayers) => {
     const [isCollapsed, setIsCollapsed] = useState(() => window.innerWidth < MOBILE_BREAKPOINT);
     const [isManuallyCollapsed, setIsManuallyCollapsed] = useState(() => window.innerWidth < MOBILE_BREAKPOINT);
 
@@ -23,13 +23,10 @@ export const useLayerCollapse = (unifiedLayers, hasSelectedLayer) => {
         setIsManuallyCollapsed(false);
     };
 
-    const shouldAlignRight = isCollapsed && hasSelectedLayer;
-
     return {
         isCollapsed,
         isManuallyCollapsed,
         handleManualCollapse,
         handleExpand,
-        shouldAlignRight
     };
 };
