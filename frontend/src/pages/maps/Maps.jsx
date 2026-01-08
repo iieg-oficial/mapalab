@@ -5,7 +5,7 @@ import MapLayersPanels from '@mapsComponents/MapLayersPanels';
 import LayerDetailModal from './components/LayerDetailModal';
 import FeatureInfoPanel from './components/FeatureInfoPanel/FeatureInfoPanel';
 import MapControls from './components/MapControls';
-import MeasurementControls from './components/MeasurementControls';
+import MeasurementTools from './components/MeasurementTools/ToolsPanel';
 import ScaleLineControl from './components/ScaleLineControl';
 import GlobalLoading from './components/GlobalLoading';
 import { useInitializeFromUrl } from './hooks/useInitializeFromUrl';
@@ -27,7 +27,7 @@ const Maps = () => {
                 <FeatureInfoPanel />
                 <ScaleLineControl />
                 <MapControls />
-                <MeasurementControls />
+                <MeasurementTools />
                 <MapView />
             </div>
         </SiderProvider>
