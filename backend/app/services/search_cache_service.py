@@ -116,7 +116,7 @@ class SearchCacheService:
 
     @staticmethod
     def _extract_filter_fields(workspace: str, layer: str) -> Dict:
-        FILTER_KEY: str = "nombre_institucion"
+        FILTER_KEY: str = "filter_"
         filter_fields = {}
 
         wfs_url = GeoServerService.get_layer_url(workspace, layer)

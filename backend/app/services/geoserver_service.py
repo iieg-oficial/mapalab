@@ -92,7 +92,7 @@ class GeoServerService:
         if cql_filter:
             url += f"&CQL_FILTER={quote_plus(cql_filter)}"
 
-        return unquote(url)
+        return url
 
     @staticmethod
     def get_workspaces() -> List[str]:
