@@ -112,7 +112,7 @@ down:
 
 clean: down
 	@echo "Limpiando volúmenes y archivos generados..."
-	@cd $(BACKEND_DIR) && docker compose down -v 2>/dev/null || true
+	@cd $(BACKEND_DIR) && docker compose down -v --remove-orphans 2>/dev/null || true
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml down -v 2>/dev/null || true
 	@cd $(FRONTEND_DIR) && docker compose -f docker-compose.dev.yml down -v 2>/dev/null || true
 	@cd $(NGINX_DIR) && docker compose down -v 2>/dev/null || true
