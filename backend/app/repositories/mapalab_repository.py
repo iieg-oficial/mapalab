@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
-from app.models.mapalab import MapalabMetadata
+from app.models.mapalab import Mapalab_Card
 from typing import Optional
 
 class MapalabRepository:
@@ -11,17 +11,19 @@ class MapalabRepository:
         page: int = 1,
         size: int = 50,
         keyword: Optional[str] = None,
-    ) -> tuple[list[MapalabMetadata], int]:
+    ) -> tuple[list[Mapalab_Card], int]:
 
-        query = session.query(MapalabMetadata)
+        query = session.query(Mapalab_Card)
 
         filters = []
 
         if keyword:
             keyword_filter = or_(
-                MapalabMetadata.nombre.ilike(f'%{keyword}%'),
-                MapalabMetadata.descripcion.ilike(f'%{keyword}%'),
-                MapalabMetadata.tematica.ilike(f'%{keyword}%')
+                Mapalab_Card.tema.ilike(f'%{keyword}%'),
+                Mapalab_Card.subtema.ilike(f'%{keyword}%'),
+                Mapalab_Card.descripcion.ilike(f'%{keyword}%'),
+                Mapalab_Card.nombre_capa_usuario.ilike(f'%{keyword}%'),
+                Mapalab_Card.nombre_capa_db.ilike(f'%{keyword}%')
             )
             filters.append(keyword_filter)
 
@@ -34,11 +36,3 @@ class MapalabRepository:
         results = query.limit(size).offset(offset).all()
 
         return results, total
-
-    @staticmethod
-    def get_layer_by_id(session: Session, layer_id: int) -> Optional[MapalabMetadata]:
-        return session.query(MapalabMetadata).filter(MapalabMetadata.id == layer_id).first()
-
-    @staticmethod
-    def get_layer_periodicity_by_url(session: Session, url: str) -> Optional[MapalabMetadata]:
-        return session.query(MapalabMetadata).filter(MapalabMetadata.url == url).first()

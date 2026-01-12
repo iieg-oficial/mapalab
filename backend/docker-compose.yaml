@@ -11,6 +11,7 @@ services:
       - mapalab-network
     ports:
       - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
+    tty: true
     restart: unless-stopped
 
 networks:
