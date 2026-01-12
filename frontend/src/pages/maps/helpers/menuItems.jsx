@@ -25,14 +25,14 @@ const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpe
             <div
                 className={`
                     shrink-0 w-[6px] h-8 rounded-[5px] transition-all duration-500
-                    ${hasActiveLayers ? 'bg-[#FF8300] opacity-100' : 'opacity-0'}
+                    ${isMenuOpen ? 'bg-[#FF8300] opacity-100' : 'opacity-0'}
                 `}
             />
             <Icon
                 name={iconName}
                 state={iconState}
                 size="size-8"
-                className={`transition-all duration-500 ${hasActiveLayers ? '' : '-ml-3'}`}
+                className={`transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
             />
             <span
                 className={`
