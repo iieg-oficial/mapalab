@@ -66,6 +66,7 @@ import sharedNormal from './ico_shared_normal.svg';
 import sharedHover from './ico_shared_hover.svg';
 
 import capaActivaNormal from './ico_capa_activa.svg';
+import simbologiaNormal from './ico_simbologia_normal.svg';
 
 import mostrarNormal from './ico_mostrar.svg';
 import ocultarNormal from './ico_ocultar.svg';
@@ -78,6 +79,9 @@ import eliminarHover from './ico_eliminar_hover.svg';
 
 import bigCardNormal from './ico_big_card_normal.svg';
 import bigCardHover from './ico_big_card_hover.svg';
+
+import upArrowNormal from './ico_up_arrow.svg';
+import alertNormal from './ico_alert.svg';
 
 export const externalIcons = {
     base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
@@ -92,6 +96,7 @@ export const externalIcons = {
     linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover,
     emoji_normal: emojiNormal, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,
     info_normal: infoNormal, info_hover: infoHover, shared_normal: sharedNormal, shared_hover: sharedHover, capa_activa_normal: capaActivaNormal,
-    mostrar_normal: mostrarNormal, ocultar_normal: ocultarNormal, move_normal: moveNormal, move_hover: moveHover, 
-    eliminar_normal: eliminarNormal, eliminar_hover: eliminarHover, big_card_normal: bigCardNormal, big_card_hover: bigCardHover,
+    mostrar_normal: mostrarNormal, ocultar_normal: ocultarNormal, move_normal: moveNormal, move_hover: moveHover, simbologia_normal: simbologiaNormal,
+    eliminar_normal: eliminarNormal, eliminar_hover: eliminarHover, big_card_normal: bigCardNormal, big_card_hover: bigCardHover, upArrow_normal: upArrowNormal,
+    alert_normal: alertNormal,
 };

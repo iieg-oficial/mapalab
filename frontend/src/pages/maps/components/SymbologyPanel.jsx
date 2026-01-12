@@ -1,11 +1,14 @@
-import { useContext, useState, useMemo } from 'react';
-import MapsContext from '@contexts/MapsContext';
-import SymbologyItem from './SymbologyItem';
+import { useContext, useState } from 'react';
 import { isParentLayer } from '../helpers/symbologyHelpers';
 import { MOBILE_BREAKPOINT } from '@constants/sider';
+import { HIDDEN_SCROLLBAR } from '../../../constants/global';
+import MapsContext from '@contexts/MapsContext';
+import SymbologyItem from './SymbologyItem';
+import Tooltip from '@components/Tooltip';
+import Icon from '@components/Icon';
 
 const SymbologyPanel = () => {
-    const { selectedLayerForSymbology, activeLayerIds, findLayerById, getLayersForSymbology } = useContext(MapsContext);
+    const { selectedLayerForSymbology, findLayerById, getLayersForSymbology } = useContext(MapsContext);
     const [isManuallyCollapsed, setIsManuallyCollapsed] = useState(() => window.innerWidth < MOBILE_BREAKPOINT);
 
     const hasLayer = !!selectedLayerForSymbology;
@@ -21,30 +24,22 @@ const SymbologyPanel = () => {
 
     if (isCollapsed) {
         return (
-            <div className="w-12 h-12 rounded-xl shadow bg-white/80  shrink-0">
-                <button
-                    onClick={() => (hasLayer || isManuallyCollapsed) && handleExpand()}
-                    className={`
-                        p-3 w-full h-full flex items-center justify-center text-gray-600 
-                        rounded-xl transition-colors relative
-                        ${(hasLayer || isManuallyCollapsed) ? 'hover:bg-gray-100  cursor-pointer' : 'cursor-default opacity-50'}
-                    `}
-                    title={isManuallyCollapsed ? 'Expandir Panel de Simbología' : (hasLayer ? 'Expandir Panel de Simbología' : 'No hay capa seleccionada')}
-                    disabled={!hasLayer && !isManuallyCollapsed}
-                >
-                    <span className="text-xl">🎨</span>
-
-                    {hasLayer && (
-                        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            🗺️
-                        </span>
-                    )}
-                    {isManuallyCollapsed && !hasLayer && (
-                        <span className="absolute -top-1 -right-1 bg-gray-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            ➖
-                        </span>
-                    )}
-                </button>
+            <div className="w-auto flex items-center justify-end">
+                <Tooltip content={hasLayer ? 'Expandir Panel de Simbología' : 'Selecciona una capa para ver sus simbologías'} placement="left">
+                    <button
+                        onClick={() => (hasLayer || isManuallyCollapsed) && handleExpand()}
+                        className={`
+                            size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors
+                            ${(hasLayer || isManuallyCollapsed)
+                                ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer'
+                                : 'cursor-default opacity-50'
+                            }
+                        `}
+                        disabled={!hasLayer && !isManuallyCollapsed}
+                    >
+                        <Icon name="simbologia" className="size-10" />
+                    </button>
+                </Tooltip>
             </div>
         );
     }
@@ -57,36 +52,32 @@ const SymbologyPanel = () => {
     const displayLayers = getLayersForSymbology(fullLayer);
 
     return (
-        <div className="w-64 px-4 py-3 rounded-xl shadow bg-white/80 max-h-96 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] shrink-0 flex flex-col">
-            <div className="flex justify-between items-center mb-3 shrink-0">
-                <h3 className="font-bold text-gray-900">
-                    Simbología
-                </h3>
+        <div className="w-auto px-4.5 pb-6 pt-5 rounded-[10px] bg-[#F9FBFF] max-h-[40vh] flex flex-col">
+            <div className="flex justify-between items-center mb-2 shrink-0">
+                <div className="flex items-center gap-3">
+                    <Icon name="simbologia" className="size-8" />
+                    <h3 className="font-garet font-bold text-[18px]/[47px]">Simbología</h3>
+                </div>
 
                 <div className="flex items-center gap-1">
-                    <button
-                        onClick={handleManualCollapse}
-                        className="text-gray-500 hover:text-gray-700 text-sm"
-                        title="Colapsar panel"
-                    >
-                        ➖
+                    <button onClick={handleManualCollapse} className="cursor-pointer">
+                        <Icon name="zoomout" className="size-6" tooltip="Colapsar simbologías" />
                     </button>
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] -mx-4">
+            <div className={`flex-1 min-h-0 overflow-y-auto ${HIDDEN_SCROLLBAR} rounded-[7px] bg-white px-3.5 py-3`}>
                 {displayLayers.length === 0 ? (
-                    <div className="text-center py-4 text-gray-500 text-sm">
+                    <div className="rounded-[7px] py-2">
                         {isParentLayer(fullLayer) ? 'No hay sub-capas activas' : 'Sin simbología disponible'}
                     </div>
                 ) : (
-                    displayLayers.map((layer, index) => (
+                    displayLayers.map((layer, _index) => (
                         <SymbologyItem
                             key={layer._isProxy ? `proxy-${layer.id}` : layer.id}
                             layer={layer}
                             isExpanded={true}
                             onToggle={() => { }}
-                            showDivider={index < displayLayers.length - 1}
                         />
                     ))
                 )}
