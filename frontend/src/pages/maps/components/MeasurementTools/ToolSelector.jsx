@@ -70,9 +70,8 @@ const ToolSelector = ({
         }
     };
 
-    const getIconState = (_typeId, isActive, isHovered) => {
-        if (isActive) return 'active';
-        if (isHovered) return 'hover';
+    const getIconState = (_typeId, isActive, _isHovered) => {
+        if (isActive) return 'hover';
         return 'normal';
     };
 
@@ -147,17 +146,18 @@ const ToolSelector = ({
                     <div key={type.id} className="relative">
                         <Tooltip
                             content={type.description}
-                            placement="right"
+                            placement="top"
                             delay={400}
                         >
                             {renderButton(type, buttonProps, isActive, isEmoji)}
                         </Tooltip>
 
                         {showUndoButton && (
-                            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3">
+                            <div className="absolute left-full top-1/2 -translate-y-1/2 -ml-4 animate-[slideIn_0.2s_ease-out] -z-10">
                                 <UndoButton
                                     onClick={onUndo}
                                     disabled={!canUndo}
+                                    showLabel={false}
                                 />
                             </div>
                         )}

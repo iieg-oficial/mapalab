@@ -57,11 +57,11 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                                             type="button"
                                             onClick={() => onShowSelection?.(index)}
                                             className={`
-                                                flex items-center justify-center size-6 border border-transparent rounded-full hover:border-[#70308A] hover:bg-[#EBEBEB] active:bg-[#F9FBFF]
+                                                flex items-center justify-center size-6 border border-transparent rounded-full hover:border-[#70308A] hover:bg-[#F9FBFF]
                                             `}
                                             aria-label={`Mostrar tarjetas seleccionadas de ${measurement.label} `}
                                         >
-                                            <Icon name="info" className="size-4" />
+                                            <Icon name="big_card" state="normal" className="size-4" />
                                         </button>
                                     </Tooltip>
                                 )}
@@ -70,11 +70,11 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                                         type="button"
                                         onClick={() => onToggleVisibility?.(index)}
                                         className={`
-                                            flex items-center justify-center size-6 border border-transparent rounded-full hover:border-[#70308A] hover:bg-[#EBEBEB] active:bg-[#F9FBFF]
+                                            flex items-center justify-center size-6 border border-transparent rounded-full hover:border-[#70308A] hover:bg-[#F9FBFF]
                                         `}
                                         aria-label={`${measurement.visible === false ? 'Mostrar' : 'Ocultar'} ${measurement.label} `}
                                     >
-                                        <Icon name={measurement.visible === false ? 'eye_off' : 'eye'} className="size-4" />
+                                        <Icon name="visible" state={measurement.visible ? 'normal' : 'hover'} className="size-4" />
                                     </button>
                                 </Tooltip>
                                 <Tooltip content="Eliminar" placement="top" delay={500}>
@@ -82,11 +82,11 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                                         type="button"
                                         onClick={() => onDelete?.(index)}
                                         className={`
-                                            flex items-center justify-center size-6 border border-transparent rounded-full hover:border-[#70308A] hover:bg-[#EBEBEB] active:bg-[#F9FBFF]
+                                            flex items-center justify-center size-6 border border-transparent rounded-full hover:border-[#FF577D] hover:bg-[#F9FBFF]
                                         `}
                                         aria-label={`Eliminar ${measurement.label} `}
                                     >
-                                        <Icon name="trash" className="size-4" />
+                                        <Icon name="eliminar" state="hover" className="size-4" />
                                     </button>
                                 </Tooltip>
                             </div>
