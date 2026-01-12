@@ -80,7 +80,8 @@ const ActiveLayerItem = ({
                         onClick={handleToggleVisibilityClick}
                     >
                         <Icon
-                            name={layer.visible ? 'mostrar' : 'ocultar'}
+                            name='visible'
+                            state={layer.visible ? 'normal' : 'hover'}
                             className={SIZE_BUTTON}
                         />
                     </button>

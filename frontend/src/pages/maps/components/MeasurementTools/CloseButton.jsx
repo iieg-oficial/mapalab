@@ -10,7 +10,6 @@ const CloseButton = ({
 }) => {
     const buttonRef = useRef(null);
     const [isOpen, setIsOpen] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
 
     if (!visible) return null;
 
@@ -19,7 +18,7 @@ const CloseButton = ({
         setIsOpen(false);
     };
 
-    const iconState = isHovered ? 'hover' : 'normal';
+    const iconState = isOpen ? 'hover' : 'normal';
 
     return (
         <>
@@ -28,16 +27,14 @@ const CloseButton = ({
                     ref={buttonRef}
                     type="button"
                     onClick={() => setIsOpen(true)}
-                    onMouseEnter={() => setIsHovered(true)}
-                    onMouseLeave={() => setIsHovered(false)}
                     className={[
-                        'flex items-center justify-center p-1 size-10 rounded-full border border-transparent',
-                        'bg-[#FFE6EC] hover:border-[#FF577D] active:bg-[#FF577D] transition-all',
+                        'flex items-center justify-center p-1 size-10 rounded-full border border-transparent transition-all',
+                        isOpen ? 'bg-[#FF577D]' : 'bg-[#FFE6EC] hover:border-[#FF577D] active:bg-[#FF577D]',
                         className
                     ].join(' ')}
                     aria-label="Cerrar herramienta de mediciones"
                 >
-                    <Icon name="cerrar" state={iconState} className="w-7.5 h-7.5" />
+                    <Icon name="cerrar" state={iconState} className="size-7.5" />
                 </button>
             </Tooltip>
 

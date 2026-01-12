@@ -1,35 +1,42 @@
 import baseNormal from './ico_general_normal.svg';
 import baseHover from './ico_general_hover.svg';
+
 import demografiaNormal from './ico_demografía_normal.svg';
 import demografiaHover from './ico_demografia_hover.svg';
 
 import saludNormal from './ico_salud_normal.svg';
 import saludHover from './ico_salud_hover.svg';
+
 import economiaNormal from './ico_economia_normal.svg';
 import economiaHover from './ico_economia_hover.svg';
 
 import educacionNormal from './ico_educacion_normal.svg';
 import educacionHover from './ico_educacion_hover.svg';
+
 import recursosNormal from './ico_recursos_calidad_vida_normal.svg';
 import recursosHover from './ico_recursos_calidad_vida_hover.svg';
 
 import desarrolloNormal from './ico_desarrollo_social_normal.svg';
 import desarrolloHover from './ico_desarrollo_social.svg';
+
 import seguridadNormal from './ico_seguridad_normal.svg';
 import seguridadHover from './ico_seguridad_hover.svg';
 
 import gobiernoNormal from './ico_gobierno_ciudadania_normal.svg';
 import gobiernoHover from './ico_gobierno_ciudadania_hover.svg';
+
 import buscadorNormal from './ico_buscador_normal.svg';
 import buscadorHover from './ico_buscador_hover.svg';
 
 import herramientasNormal from './ico_herramientas_normal.svg';
 import herramientasHover from './ico_herramientas_hover.svg';
+
 import mapasNormal from './ico_mapas_normal.svg';
 import mapasHover from './ico_mapa_hover.svg';
 
 import search from './ico_search.svg';
 import checkNormal from './ico_check_normal.svg';
+
 import checkActive from './ico_check_activo.svg';
 import downArrow from './ico_down_arrow.svg';
 
@@ -42,22 +49,23 @@ import zoomoutHover from './ico_zoomout_hover.svg';
 import centerNormal from './ico_center_normal.svg';
 import centerHover from './ico_center_hover.svg';
 
-import medicionesNormal from './ico_mediciones_normal.svg';
-import medicionesHover from './ico_mediciones_normal.svg';
-
 import lineaNormal from './ico_linea_normal.svg';
 import lineaHover from './ico_linea_hover.svg';
 
 import poligonoNormal from './ico_poligono_normal.svg';
 import poligonoHover from './ico_poligono_hover.svg';
 
-import emojiNormal from './ico_emoji_normal.svg';
-
-import cerrarNormal from './ico_cerrar_normal.svg';
-import cerrarHover from './ico_cerrar_hover.svg';
+import cerrarNormal from './ico_cerrar_mediciones_normal.svg';
+import cerrarHover from './ico_cerrar_mediciones_hover.svg';
 
 import puntoNormal from './ico_punto_normal.svg';
 import puntoHover from './ico_punto_hover.svg';
+
+import listaNormal from './ico_lista_normal.svg';
+import listaHover from './ico_lista_hover.svg';
+
+import emojiNormal from './ico_emoji_normal.svg';
+import emojiHover from './ico_emoji_hover.svg';
 
 import infoNormal from './ico_info_normal.svg';
 import infoHover from './ico_info_hover.svg';
@@ -68,13 +76,13 @@ import sharedHover from './ico_shared_hover.svg';
 import capaActivaNormal from './ico_capa_activa.svg';
 import simbologiaNormal from './ico_simbologia_normal.svg';
 
-import mostrarNormal from './ico_mostrar.svg';
-import ocultarNormal from './ico_ocultar.svg';
+import visibleNormal from './ico_mostrar.svg';
+import visibleHover from './ico_ocultar.svg';
 
 import moveNormal from './ico_move_normal.svg';
 import moveHover from './ico_move_hover.svg';
 
-import eliminarNormal from './ico_eliminar.svg';
+import eliminarNormal from './ico_eliminar_normal.svg';
 import eliminarHover from './ico_eliminar_hover.svg';
 
 import bigCardNormal from './ico_big_card_normal.svg';
@@ -82,6 +90,8 @@ import bigCardHover from './ico_big_card_hover.svg';
 
 import upArrowNormal from './ico_up_arrow.svg';
 import alertNormal from './ico_alert.svg';
+
+import deshacerNormal from './ico_deshacer.svg';
 
 export const externalIcons = {
     base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
@@ -92,11 +102,10 @@ export const externalIcons = {
     tools_normal: herramientasNormal, tools_hover: herramientasHover, basemaps_normal: mapasNormal, basemaps_hover: mapasHover,
     searchInput_normal: search, check_normal: checkNormal, check_active: checkActive, downArrow_normal: downArrow,
     zoomin_normal: zoominNormal, zoomin_hover: zoominHover, zoomout_normal: zoomoutNormal, zoomout_hover: zoomoutHover,
-    center_normal: centerNormal, center_hover: centerHover, mediciones_normal: medicionesNormal, mediciones_hover: medicionesHover,
-    linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover,
-    emoji_normal: emojiNormal, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,
+    linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover, lista_normal: listaNormal, lista_hover: listaHover,
+    emoji_normal: emojiNormal, emoji_hover: emojiHover, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,
     info_normal: infoNormal, info_hover: infoHover, shared_normal: sharedNormal, shared_hover: sharedHover, capa_activa_normal: capaActivaNormal,
-    mostrar_normal: mostrarNormal, ocultar_normal: ocultarNormal, move_normal: moveNormal, move_hover: moveHover, simbologia_normal: simbologiaNormal,
+    visible_normal: visibleNormal, visible_hover: visibleHover, move_normal: moveNormal, move_hover: moveHover, simbologia_normal: simbologiaNormal,
     eliminar_normal: eliminarNormal, eliminar_hover: eliminarHover, big_card_normal: bigCardNormal, big_card_hover: bigCardHover, upArrow_normal: upArrowNormal,
-    alert_normal: alertNormal,
+    alert_normal: alertNormal, deshacer_normal: deshacerNormal, center_normal: centerNormal, center_hover: centerHover,
 };
