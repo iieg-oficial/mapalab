@@ -10,9 +10,9 @@ const MapLayersPanels = () => {
             width="w-[373px]"
             maxHeight="max-h-[calc(100vh-6rem)]"
             flexDirection="flex-col"
-            contentClassName="gap-4 overflow-y-auto"
+            contentClassName="gap-4 overflow-hidden"
             noPadding={true}
-            className="bg-transparent! border-transparent! shadow-none!"
+            className="bg-transparent! border-transparent! shadow-none! overflow-hidden"
         >
             <ActiveLayersList />
             <SymbologyPanel />

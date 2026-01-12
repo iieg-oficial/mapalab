@@ -41,8 +41,8 @@ const ActiveLayersList = () => {
                         onClick={() => (unifiedLayers.length > 0 || collapse.isManuallyCollapsed) && collapse.handleExpand()}
                         className={`
                             size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors relative
-                            ${(unifiedLayers.length > 0 || collapse.isManuallyCollapsed) 
-                                ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer' 
+                            ${(unifiedLayers.length > 0 || collapse.isManuallyCollapsed)
+                                ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer'
                                 : 'cursor-default opacity-50'
                             }
                         `}
@@ -57,8 +57,8 @@ const ActiveLayersList = () => {
     }
 
     return (
-        <div className={`w-auto px-6.5 pb-6 pt-2 rounded-[10px] bg-[#F9FBFF] max-h-[585px] ${HIDDEN_SCROLLBAR}`}>
-            <div className="flex items-center justify-between">
+        <div className="w-auto px-4.5 pb-6 pt-2 rounded-[10px] bg-[#F9FBFF] max-h-[45vh] flex flex-col">
+            <div className="flex items-center justify-between shrink-0 mb-2">
                 <div className="flex items-center gap-3">
                     <Icon name="capa_activa" className="size-8" />
                     <h3 className="font-garet font-bold text-[18px]/[47px]">Capas Activas</h3>
@@ -79,18 +79,20 @@ const ActiveLayersList = () => {
                 </div>
             </div>
 
-            <SortableList
-                items={unifiedLayers.map(l => l.id)}
-                onSortEnd={handleDragEnd}
-            >
-                <div className="space-y-1">
-                    {unifiedLayers.map((layer) => (
-                        <SortableItem key={layer.id} id={layer.id}>
-                            <ActiveLayerItem layer={layer} />
-                        </SortableItem>
-                    ))}
-                </div>
-            </SortableList>
+            <div className={`flex-1 min-h-0 overflow-y-auto ${HIDDEN_SCROLLBAR} -mx-1 px-1`}>
+                <SortableList
+                    items={unifiedLayers.map(l => l.id)}
+                    onSortEnd={handleDragEnd}
+                >
+                    <div className="space-y-1 py-1">
+                        {unifiedLayers.map((layer) => (
+                            <SortableItem key={layer.id} id={layer.id}>
+                                <ActiveLayerItem layer={layer} />
+                            </SortableItem>
+                        ))}
+                    </div>
+                </SortableList>
+            </div>
         </div>
     );
 };

@@ -1,5 +1,6 @@
 import { cloneElement } from 'react';
 import { externalIcons } from '@assets/icons';
+import Tooltip from '@components/Tooltip';
 
 const icons = {
     map: (
@@ -91,21 +92,28 @@ const icons = {
     ),
 };
 
-const Icon = ({ name, className = '', state = 'normal' }) => {
+const Icon = ({ name, className = '', state = 'normal', visible = true, tooltip = null }) => {
+    if (!visible) return null;
+
     const externalKey = `${name}_${state}`;
+    let iconElement = null;
 
     if (externalIcons[externalKey]) {
-        return <img src={externalIcons[externalKey]} alt={name} className={className || 'w-[29px] h-[29px]'} />;
+        iconElement = <img src={externalIcons[externalKey]} alt={name} className={className || 'w-[29px] h-[29px]'} />;
+    } else if (icons[name]) {
+        const icon = icons[name];
+        const mergedClassName = className || icon.props.className;
+        iconElement = cloneElement(icon, { className: mergedClassName });
     }
 
-    if (!icons[name]) return null;
+    if (!iconElement) return null;
 
-    const icon = icons[name];
-    const mergedClassName = className || icon.props.className;
+    if (tooltip) {
+        return <Tooltip content={tooltip}>{iconElement}</Tooltip>;
+    }
 
-    return cloneElement(icon, {
-        className: mergedClassName
-    });
+    return iconElement;
 };
 
 export default Icon;
+
