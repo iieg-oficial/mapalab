@@ -3,12 +3,14 @@ import { getSearchConfig } from '@services/searchConfig';
 import { searchGlobal } from '@services/searchService';
 import { useDebounce } from '@hooks/useDebounce';
 import Icon from '@components/Icon';
+import Loading from '@components/Loading';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedQuery = useDebounce(searchQuery, 500);
     const [selectedLayers, setSelectedLayers] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
     const [hasScroll, setHasScroll] = useState(false);
     const listRef = useRef(null);
 
@@ -30,6 +32,7 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
     useEffect(() => {
         const performSearch = async () => {
             if (debouncedQuery) {
+                setIsLoading(true);
                 const results = await searchGlobal(debouncedQuery, {
                     includeLayerNames: true,
                     includeLayerData: false,
@@ -41,9 +44,13 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
                 if (matches.length > 0) {
                     const newLayerIds = matches.map(m => m.layerId);
                     setSelectedLayers(newLayerIds);
+                } else {
+                    setSelectedLayers([]);
                 }
+                setIsLoading(false);
             } else {
                 setSelectedLayers([]);
+                setIsLoading(false);
             }
         };
 
@@ -75,7 +82,7 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
                         bg-[#703088] rounded-r-[8px] flex items-center justify-center
                     "
                 >
-                    <Icon name="searchInput" />
+                    {isLoading ? <Loading visible={true} size="w-5 h-5" border="border-2" color="border-white" /> : <Icon name="searchInput" />}
                 </button>
             </div>
 
@@ -136,11 +143,11 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
                                                         state={isActive ? 'normal' : 'active'}
                                                         className="w-3 h-3 shrink-0"
                                                     />
-                                                    <span 
+                                                    <span
                                                         className={`
                                                             text-[13px]/[19px] font-garet font-normal text-left tracking-normal
                                                             ${isActive ? 'text-[#5C2472] font-bold' : 'text-[#454545] group-hover:text-[#5C2472]'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {layer.label}
                                                     </span>
