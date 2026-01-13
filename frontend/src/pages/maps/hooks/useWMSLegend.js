@@ -3,20 +3,21 @@ import { findWMSConfig, hasWMSConfig } from '../helpers/wmsConfig';
 import { layers } from '../helpers/layers/index';
 
 export const useWMSLegend = () => {
-    const openLegend = useCallback((layer) => {
-        const wmsConfig = findWMSConfig(layer.id, layers);
-
-        if (wmsConfig) {
-            const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&transparent=true&layer=${wmsConfig.layerName}&format=image/png`;
-            window.open(url, '_blank', 'width=300,height=400');
-        }
-    }, []);
-
     const getLegendUrl = useCallback((layer) => {
         const wmsConfig = findWMSConfig(layer.id, layers);
 
         if (wmsConfig) {
-            const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&transparent=true&layer=${wmsConfig.layerName}&format=image/png&width=240&height=40`;
+            const legendOptions = [
+                'fontName:Helvetica',
+                'fontSize:10',
+                'fontStyle:normal',
+                'fontAntiAliasing:true',
+                'fontColor:0x454545',
+                'labelMargin:12',
+                'dpi:100',
+            ].join(';');
+
+            const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=image/png&width=20&height=20&LEGEND_OPTIONS=${legendOptions}`;
             return url;
         }
         return null;
@@ -37,7 +38,6 @@ export const useWMSLegend = () => {
     }, []);
 
     return {
-        openLegend,
         getLegendUrl,
         hasLegend,
         baseUrl

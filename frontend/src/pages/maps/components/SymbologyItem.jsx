@@ -80,7 +80,7 @@ const SymbologyItem = ({
                     )}
 
                     {!loadingSymbology && hasLayerLegend && legendUrl && (
-                        <div className="bg-white  p-1 rounded border border-gray-200 ">
+                        <div>
                             <img
                                 src={legendUrl}
                                 alt={`Leyenda de ${layer.label}`}
