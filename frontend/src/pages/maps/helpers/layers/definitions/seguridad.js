@@ -38,6 +38,7 @@ const DELITOS_STRUCTURE = [
     {
         id: 'cat-vida-integridad',
         label: 'Delitos contra la vida y la integridad corporal',
+        isLabel: true,
         layers: [
             ['homicidio_doloso', 'Homicidio doloso', 'delitos_fiscalia_homicidio_doloso', ['seguridad', 'delito', 'homicidio', 'tasa', 'asesinato', 'crimen', 'violencia']],
             ['lesiones_dolosas', 'Lesiones dolosas', 'delitos_fiscalia_lesiones_dolosas', ['seguridad', 'delito', 'lesiones', 'dolosas', 'golpes', 'agresion', 'fisica']],
@@ -46,6 +47,7 @@ const DELITOS_STRUCTURE = [
     }, {
         id: 'cat-patrimonio',
         label: 'Delitos contra el patrimonio',
+        isLabel: true,
         layers: [
             ['robo_a_casa_habitacion', 'Robo a casa habitación', 'delitos_fiscalia_robo_casa_habitacion', ['seguridad', 'delito', 'robo', 'casa', 'hogar', 'vivienda', 'domicilio', 'habitacion', 'patrimonio']],
             ['robo_a_vehiculos_particulares', 'Robo a vehículos particulares', 'delitos_fiscalia_robo_vehiculos_particulares', ['seguridad', 'delito', 'robo', 'vehiculo', 'carro', 'auto', 'coche', 'particular']],
@@ -61,12 +63,14 @@ const DELITOS_STRUCTURE = [
     }, {
         id: 'cat-familia',
         label: 'Delitos contra la familia',
+        isLabel: true,
         layers: [
             ['violencia_familiar', 'Violencia familiar', 'delitos_fiscalia_violencia_familiar', ['seguridad', 'delito', 'violencia', 'familia', 'domestica', 'intrafamiliar', 'genero', 'hogar']]
         ]
     }, {
         id: 'cat-libertad-sexual',
         label: 'Delitos contra la libertad y la seguridad sexual',
+        isLabel: true,
         layers: [
             ['abuso_sexual_infantil', 'Abuso sexual infantil', 'delitos_fiscalia_abuso_sexual_infantil', ['seguridad', 'delito', 'abuso', 'sexual', 'ninos', 'infantil', 'menores', 'pederastia']],
             ['violacion', 'Violación', 'delitos_fiscalia_violacion', ['seguridad', 'delito', 'violacion', 'sexual', 'abuso', 'agresion']]
@@ -78,6 +82,7 @@ const TASAS_STRUCTURE = [
     {
         id: 'cat-tasa-vida-integridad',
         label: 'Delitos contra la vida y la integridad corporal (tasa)',
+        isLabel: true,
         layers: [
             ['tasa_homicidio_doloso', 'Tasa Homicidio doloso', 'datos_delitos_homicidio_doloso_secretariado', ['seguridad', 'delito', 'homicidio', 'tasa', 'asesinato', 'crimen', 'violencia']],
             ['tasa_lesiones_dolosas', 'Tasa Lesiones dolosas', 'datos_delitos_lesiones_dolosas_secretariado', ['seguridad', 'delito', 'lesiones', 'dolosas', 'tasa', 'golpes', 'agresion', 'fisica']],
@@ -86,6 +91,7 @@ const TASAS_STRUCTURE = [
     }, {
         id: 'cat-tasa-patrimonio',
         label: 'Delitos contra el patrimonio (tasa)',
+        isLabel: true,
         layers: [
             ['tasa_robo_casa_habitacion', 'Tasa Robo a casa habitación', 'datos_delitos_robo_casa_habitacion_secretariado', ['seguridad', 'delito', 'robo', 'casa', 'tasa', 'hogar']],
             ['tasa_robo_vehiculo_particular', 'Tasa Robo a vehículos particulares', 'datos_delitos_robo_coche_cuatro_ruedas_secretariado', ['seguridad', 'delito', 'robo', 'vehiculo', 'tasa', 'auto']],
@@ -101,12 +107,14 @@ const TASAS_STRUCTURE = [
     }, {
         id: 'cat-tasa-familia',
         label: 'Delitos contra la familia',
+        isLabel: true,
         layers: [
             ['tasa_violencia_familiar', 'Tasa Violencia familiar', 'datos_delitos_violencia_familiar_secretariado', ['seguridad', 'delito', 'violencia', 'familia', 'tasa', 'domestica']]
         ]
     }, {
         id: 'cat-tasa-libertad-sexual',
         label: 'Delitos contra la libertad y la seguridad sexual',
+        isLabel: true,
         layers: [
             ['tasa_abuso_sexual_infantil', 'Tasa Abuso sexual infantil', 'datos_delitos_abuso_sexual_secretariado', ['seguridad', 'delito', 'abuso', 'sexual', 'tasa', 'infantil']],
             ['tasa_violacion', 'Tasa Violación', 'datos_delitos_violacion_secretariado', ['seguridad', 'delito', 'violacion', 'tasa', 'sexual']]
@@ -122,10 +130,12 @@ export const seguridadLayers = {
             id: 'delitos-fuero-comun',
             label: 'Delitos del Fuero Común',
             base: 'inegi',
+            isCategory: true,
             children: DELITOS_STRUCTURE.map(cat => ({
                 id: cat.id,
                 label: cat.label,
-                isCategory: true,
+                isLabel: cat.isLabel,
+                isCategory: !cat.isLabel,
                 children: cat.layers.map(([id, label, layerName, tags]) => ({
                     id,
                     label,
@@ -138,10 +148,12 @@ export const seguridadLayers = {
             id: 'Tasa_incidencia_delitos_del_fuero_comun',
             label: 'Tasa de incidencia delitos del fuero común',
             base: 'inegi',
+            isCategory: true,
             children: TASAS_STRUCTURE.map(cat => ({
                 id: cat.id,
                 label: cat.label,
-                isCategory: true,
+                isLabel: cat.isLabel,
+                isCategory: !cat.isLabel,
                 children: cat.layers.map(([id, label, layerName, tags]) => ({
                     id,
                     label,
@@ -154,11 +166,12 @@ export const seguridadLayers = {
             id: 'personas-desaparecidas',
             label: 'Personas Desaparecidas',
             base: 'inegi',
+            isCategory: true,
             children: [
                 {
                     id: 'tasa_personas_desaparecidas',
                     label: 'Personas desaparecidas',
-                    isCategory: true,
+                    isLabel: true,
                     children: [
                         {
                             id: 'tasa_hombres_desaparecidos',
@@ -177,7 +190,7 @@ export const seguridadLayers = {
                 }, {
                     id: 'tasa_personas_localizadas',
                     label: 'Personas localizadas',
-                    isCategory: true,
+                    isLabel: true,
                     children: [
                         {
                             id: 'tasa_hombres_localizados',

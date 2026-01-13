@@ -96,7 +96,7 @@ const MapSider = ({ className = '' }) => {
                         closeOnEscape={true}
                         autoFocus={true}
                         registerInSider={true}
-                        width="w-84"
+                        width="w-88"
                         maxHeight="max-h-200"
                         noPadding={true}
                         className="border-none"
