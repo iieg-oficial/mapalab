@@ -42,6 +42,7 @@ const seguridadConfig = {
         { label: 'Área del decreto', field: 'area_km2' },
         { label: 'Superficie', field: 'superficie' },
         { label: 'Tasa de carpetas investigadas', field: 'tasa_carpetas_investigacion' },
+        { field: 'modalidad' },
     ],
 };
 
