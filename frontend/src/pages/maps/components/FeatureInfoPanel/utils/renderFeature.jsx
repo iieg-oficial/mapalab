@@ -156,10 +156,12 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
 
     if (config.cards) {
         const cards = config.cards
+            .filter(Boolean)
             .filter(card => shouldIncludeField(card.field, suffix))
             .map(card => ({
                 label: card.label,
-                value: properties[card.field]
+                value: properties[card.field],
+                suffix: card.suffix || ''
             }))
             .filter(card => card.value !== null && card.value !== undefined && card.value !== '');
 
