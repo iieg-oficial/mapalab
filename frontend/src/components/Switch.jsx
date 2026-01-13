@@ -23,7 +23,7 @@ const Switch = ({ checked, indeterminate, onChange, disabled, className = '' }) 
                 }
             }}
             className={`
-                relative inline-flex h-5 w-7.5 items-center rounded-full
+                relative inline-flex h-5 w-7.5 shrink-0 items-center rounded-full
                 transition-colors duration-200 ease-in-out bg-[#E9EDF7]
                 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
                 ${className}

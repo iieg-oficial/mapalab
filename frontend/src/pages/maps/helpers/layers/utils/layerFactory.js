@@ -19,5 +19,8 @@ export const createLayerFactory = (workspace) => {
     createLayer.withStyles = (layerName, styles, options = {}) =>
         createLayer(layerName, { ...options, styles });
 
+    createLayer.withFilterAndStyles = (layerName, filter, styles, options = {}) =>
+        createLayer(layerName, { ...options, cqlFilter: filter, styles });
+
     return createLayer;
 };

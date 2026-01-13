@@ -73,7 +73,7 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
         <div className={HIDDEN_SCROLLBAR}>
             <div
                 className={`
-                    flex items-center px-4 w-full ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''} 
+                    flex items-start px-4 w-full ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''} 
                 `}
             >
                 {useSwitch ? (
@@ -82,7 +82,7 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
                         indeterminate={switchIndeterminate}
                         onChange={handleSwitchChange}
                         disabled={isDisabled}
-                        className="mr-2"
+                        className="mr-2 mt-1"
                     />
                 ) : (
                     <Checkbox

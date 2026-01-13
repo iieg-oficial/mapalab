@@ -5,7 +5,7 @@ import Icon from '@components/Icon';
 const LabelItem = ({ layer, activeLayerIds, onToggleLayer }) => {
     return (
         <div className="w-full">
-            <div className="px-4 py-2">
+            <div className="p-2">
                 <span className="font-garet font-bold text-[12px] text-[#5C2472] tracking-normal">
                     {layer.label}
                 </span>
@@ -56,7 +56,7 @@ const CategoryItem = ({ layer, activeLayerIds, onToggleLayer }) => {
                 onClick={() => setIsManuallyExpanded(!isManuallyExpanded)}
                 className="w-full flex items-center justify-between px-4 group transition-colors cursor-pointer"
             >
-                <span className="font-garet font-bold text-[#465055] text-[14px] my-2 text-left tracking-normal">
+                <span className="font-garet font-bold text-[#465055] text-[14px] mt-2 text-left tracking-normal">
                     {layer.label}
                 </span>
                 <Icon
