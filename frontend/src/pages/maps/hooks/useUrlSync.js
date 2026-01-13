@@ -19,7 +19,7 @@ export const useUrlSync = () => {
         const validLayerIds = debouncedActiveLayerIds.filter(id => {
             if (!id || id.trim().length === 0) return false;
             const layer = findLayerById(id);
-            return layer && !layer.isLabel;
+            return layer && !layer.isLabel && !layer.isCategory;
         });
         if (validLayerIds.length > 0) {
             result.layers = validLayerIds.join(',');

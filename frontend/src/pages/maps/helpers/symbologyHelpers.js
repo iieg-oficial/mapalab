@@ -40,10 +40,10 @@ export const collectActiveChildren = (parentLayer, activeLayerIds) => {
                 if (hasWMSConfig(child)) {
                     activeChildren.push(child);
                 }
+            }
 
-                if (isParentLayer(child)) {
-                    traverse(child.children);
-                }
+            if (isParentLayer(child)) {
+                traverse(child.children);
             }
         }
     };

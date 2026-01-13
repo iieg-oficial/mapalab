@@ -116,6 +116,11 @@ export const useSymbology = ({
             .filter(layer => layer && isParentLayer(layer))
             .filter(layer => !hiddenLayerIds.includes(layer.id));
 
+        const visibleIndividualLayers = activeLayerIds
+            .map(id => findLayerById(id))
+            .filter(layer => layer && !isParentLayer(layer) && hasWMSConfig(layer))
+            .filter(layer => !hiddenLayerIds.includes(layer.id));
+
         const isCurrentSelectionValid = selectedLayerForSymbology && (
             activeLayerIds.includes(selectedLayerForSymbology.id) ||
             getAllChildLayerIds(selectedLayerForSymbology.id).some(id => activeLayerIds.includes(id))
@@ -124,6 +129,8 @@ export const useSymbology = ({
         if (!isCurrentSelectionValid) {
             if (visibleParentLayers.length > 0) {
                 setSelectedLayerForSymbology(visibleParentLayers[0]);
+            } else if (visibleIndividualLayers.length > 0) {
+                setSelectedLayerForSymbology(visibleIndividualLayers[0]);
             } else {
                 setSelectedLayerForSymbology(null);
             }
