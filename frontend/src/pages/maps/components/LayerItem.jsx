@@ -93,7 +93,7 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
                 )}
                 <span
                     className={`
-                        flex-grow font-garet font-normal text-[12px]/[30px] text-[#454545] tracking-normal
+                        flex-grow font-garet font-normal text-[12px] my-1.5 text-[#454545] tracking-normal
                         ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
                     `}
                     onClick={handleLabelClick}

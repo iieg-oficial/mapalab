@@ -79,6 +79,7 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
 
             const layer = findLayerById(layerId);
             if (!layer) continue;
+            if (layer.isLabel) continue;
 
             const hasChildren = layer.children && layer.children.length > 0;
             const isProperty = !hasChildren;
