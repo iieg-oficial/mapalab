@@ -4,10 +4,13 @@ import Panel from '@components/Panel';
 import { useMapDownload } from '../hooks/useMapDownload';
 import SymbologyItem from './SymbologyItem';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
+import { useSider } from '@contexts/SiderContext';
+import Icon from '../../../components/Icon';
 
 const Download = () => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [selectedLegendLayers, setSelectedLegendLayers] = useState([]);
+    const { isMobile } = useSider();
     const anchorRef = useRef(null);
 
     const {
@@ -122,7 +125,7 @@ const Download = () => {
                         canDownload ? 'bg-[#703089] text-white hover:bg-[#5C2472]' : 'bg-black/5 text-black/40 cursor-not-allowed',
                     ].join(' ')}
                 >
-                    {isDownloading ? 'Generando…' : 'Descargar'}
+                    {isMobile ? <Icon name="download" /> : (isDownloading ? 'Generando…' : 'Descargar')}
                 </button>
             </Tooltip>
 

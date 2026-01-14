@@ -40,9 +40,7 @@ export const useLayerManagement = () => {
 
         const collectChildIds = (layers, result) => {
             for (const layer of layers) {
-                if (!layer.isLabel) {
-                    result.push(layer.id);
-                }
+                result.push(layer.id);
                 if (layer.children && layer.children.length > 0) {
                     collectChildIds(layer.children, result);
                 }
