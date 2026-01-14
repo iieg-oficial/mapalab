@@ -10,6 +10,7 @@ from app.services import (GeoServerService, SearchCacheService, SearchService)
 from app.schemas import (LayerResponse, PaginatedResponse, PeriodicityLayer, SearchResponse)
 from app.utils.api_responses import api_responses
 from app.utils.logger import Logger
+from app.consts import CACHE_FILE
 
 router = APIRouter(prefix="/mapalab", tags=["Mapalab"])
 
@@ -71,7 +72,7 @@ async def refresh_cache():
             "message": "Cache regenerated successfully",
             "last_updated": cache.get("last_updated"),
             "layers_count": len(cache.get("layers", {})),
-            "cache_file": str(SearchCacheService.CACHE_FILE.absolute())
+            "cache_file": str(CACHE_FILE.absolute())
         }
     except Exception as e:
         Logger.error(f"Error refreshing cache: {str(e)}")
