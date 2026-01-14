@@ -1,27 +1,29 @@
 import json
 import urllib.request
 from datetime import datetime, timezone
-from typing import Dict,  Final
-from pathlib import Path
+from typing import Dict
 
 from app.services.geoserver_service import GeoServerService
 from app.utils.logger import Logger
+from app.consts import (
+    CACHE_FILE,
+    CACHE_EXPIRY_HOURS,
+    FILTER_KEY
+)
 
 
 class SearchCacheService:
-    CACHE_FILE: Final[Path] = Path("mapalab_layers_fields_cache.json")
-    CACHE_EXPIRY_HOURS: Final[int] = 24
 
     @staticmethod
     def load_cache() -> Dict:
-        if not SearchCacheService.CACHE_FILE.exists():
-            Logger.warning(f"Cache file not found: {SearchCacheService.CACHE_FILE.absolute()}")
+        if not CACHE_FILE.exists():
+            Logger.warning(f"Cache file not found: {CACHE_FILE.absolute()}")
             return {}
 
         try:
-            with open(SearchCacheService.CACHE_FILE, 'r', encoding='utf-8') as f:
+            with open(CACHE_FILE, 'r', encoding='utf-8') as f:
                 cache = json.load(f)
-                Logger.info(f"Cache loaded from {SearchCacheService.CACHE_FILE.absolute()}: {len(cache.get('layers', {}))} layers")
+                Logger.info(f"Cache loaded from {CACHE_FILE.absolute()}: {len(cache.get('layers', {}))} layers")
                 return cache
         except Exception as e:
             Logger.error(f"Error loading cache: {str(e)}")
@@ -30,7 +32,7 @@ class SearchCacheService:
     @staticmethod
     def save_cache(cache: Dict) -> None:
         try:
-            cache_path = SearchCacheService.CACHE_FILE.absolute()
+            cache_path = CACHE_FILE.absolute()
 
             Logger.info(f"Saving cache to: {cache_path}")
 
@@ -41,7 +43,7 @@ class SearchCacheService:
             Logger.info(f"Cache saved successfully: {len(cache.get('layers', {}))} layers, {file_size} bytes")
 
         except Exception as e:
-            Logger.error(f"Failed to save cache to {SearchCacheService.CACHE_FILE.absolute()}: {str(e)}")
+            Logger.error(f"Failed to save cache to {CACHE_FILE.absolute()}: {str(e)}")
             raise
 
     @staticmethod
@@ -53,7 +55,7 @@ class SearchCacheService:
             last_updated = datetime.fromisoformat(cache_data["last_updated"].replace("Z", "+00:00"))
             now = datetime.now(timezone.utc)
             hours_elapsed = (now - last_updated).total_seconds() / 3600
-            is_expired = hours_elapsed > SearchCacheService.CACHE_EXPIRY_HOURS
+            is_expired = hours_elapsed > CACHE_EXPIRY_HOURS
 
             Logger.info(f"Cache age: {hours_elapsed:.1f} hours, expired: {is_expired}")
             return is_expired
@@ -116,7 +118,6 @@ class SearchCacheService:
 
     @staticmethod
     def _extract_filter_fields(workspace: str, layer: str) -> Dict:
-        FILTER_KEY: str = "filter_"
         filter_fields = {}
 
         wfs_url = GeoServerService.get_layer_url(workspace, layer)

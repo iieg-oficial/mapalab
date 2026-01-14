@@ -3,7 +3,7 @@ import urllib.request
 import requests
 import json
 from typing import Optional, List, Set
-from urllib.parse import unquote, quote_plus
+from urllib.parse import quote_plus
 from functools import lru_cache
 
 from app.utils.logger import Logger
@@ -122,11 +122,11 @@ class GeoServerService:
             workspace: str,
             layer: str,
             property_name: str,
-            max_features: int = 5_000
         ) -> Set[str]:
         try:
             wfs_url = GeoServerService.get_layer_url(workspace, layer)
-            wfs_url += f"&propertyName={property_name}&maxFeatures={max_features}"
+            wfs_url += f"&propertyName={property_name}"
+
 
             with urllib.request.urlopen(wfs_url) as response:
                 data = json.loads(response.read().decode())
