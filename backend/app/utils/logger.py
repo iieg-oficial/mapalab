@@ -1,10 +1,11 @@
 import logging
 from rich.logging import RichHandler
 from typing import Any
+from app.config import Settings
 
 FORMAT: str = "%(message)s"
 logging.basicConfig(
-    level="DEBUG", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+    level=Settings.LOG_LEVEL, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
 
 log: logging = logging.getLogger("MapaLab")
