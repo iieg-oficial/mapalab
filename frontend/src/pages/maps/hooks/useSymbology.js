@@ -111,26 +111,43 @@ export const useSymbology = ({
             return;
         }
 
-        const visibleParentLayers = activeLayerIds
+        const baseLayersNode = findLayerById('base_layers');
+        const baseLayerIds = new Set(baseLayersNode?.children?.map(child => child.id) || []);
+
+        const allParentLayers = activeLayerIds
             .map(id => findLayerById(id))
             .filter(layer => layer && isParentLayer(layer))
             .filter(layer => !hiddenLayerIds.includes(layer.id));
 
-        const visibleIndividualLayers = activeLayerIds
+        const allIndividualLayers = activeLayerIds
             .map(id => findLayerById(id))
             .filter(layer => layer && !isParentLayer(layer) && hasWMSConfig(layer))
             .filter(layer => !hiddenLayerIds.includes(layer.id));
+
+        const nonBaseParentLayers = allParentLayers.filter(layer => !baseLayerIds.has(layer.id));
+        const nonBaseIndividualLayers = allIndividualLayers.filter(layer => !baseLayerIds.has(layer.id));
 
         const isCurrentSelectionValid = selectedLayerForSymbology && (
             activeLayerIds.includes(selectedLayerForSymbology.id) ||
             getAllChildLayerIds(selectedLayerForSymbology.id).some(id => activeLayerIds.includes(id))
         ) && !hiddenLayerIds.includes(selectedLayerForSymbology.id);
 
-        if (!isCurrentSelectionValid) {
-            if (visibleParentLayers.length > 0) {
-                setSelectedLayerForSymbology(visibleParentLayers[0]);
-            } else if (visibleIndividualLayers.length > 0) {
-                setSelectedLayerForSymbology(visibleIndividualLayers[0]);
+        const isCurrentSelectionBaseLayer = selectedLayerForSymbology && baseLayerIds.has(selectedLayerForSymbology.id);
+        const hasNonBaseLayers = nonBaseParentLayers.length > 0 || nonBaseIndividualLayers.length > 0;
+
+        const shouldAutoSelect = !selectedLayerForSymbology ||
+            !isCurrentSelectionValid ||
+            (isCurrentSelectionBaseLayer && hasNonBaseLayers);
+
+        if (shouldAutoSelect) {
+            if (nonBaseParentLayers.length > 0) {
+                setSelectedLayerForSymbology(nonBaseParentLayers[0]);
+            } else if (nonBaseIndividualLayers.length > 0) {
+                setSelectedLayerForSymbology(nonBaseIndividualLayers[0]);
+            } else if (allParentLayers.length > 0) {
+                setSelectedLayerForSymbology(allParentLayers[0]);
+            } else if (allIndividualLayers.length > 0) {
+                setSelectedLayerForSymbology(allIndividualLayers[0]);
             } else {
                 setSelectedLayerForSymbology(null);
             }

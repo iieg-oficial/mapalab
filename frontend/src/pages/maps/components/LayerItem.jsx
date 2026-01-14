@@ -13,7 +13,7 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
         const ids = [];
         if (layer.children) {
             layer.children.forEach(child => {
-                if (!child.isCategory) {
+                if (!child.isLabel) {
                     ids.push(child.id);
                 }
                 if (child.children) {
@@ -27,7 +27,7 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
     const { allChildrenActive, hasPartialSelection, hasAnyChildActive } = useMemo(() => {
         if (!hasChildren) return { allChildrenActive: false, hasPartialSelection: false, hasAnyChildActive: false };
 
-        const directChildIds = layer.children.filter(child => !child.isCategory).map(child => child.id);
+        const directChildIds = layer.children.filter(child => !child.isLabel).map(child => child.id);
         const activeDirectChildren = directChildIds.filter(childId => activeLayerIds.includes(childId));
         const allDescendantIds = getAllDescendantIds(layer);
         const activeDescendants = allDescendantIds.filter(id => activeLayerIds.includes(id));
@@ -89,6 +89,7 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
                         checked={isActive}
                         onChange={handleCheckboxClick}
                         disabled={isDisabled}
+                        className="mt-2"
                     />
                 )}
                 <span
