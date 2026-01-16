@@ -2,7 +2,7 @@ import MapView from '@mapsComponents/MapView';
 import MapSider from '@mapsComponents/MapSider';
 import MapToolsPanel from '@mapsComponents/MapToolsPanel';
 import MapLayersPanels from '@mapsComponents/MapLayersPanels';
-import LayerDetailModal from './components/LayerDetailModal';
+import LayerDetailModal from './components/LayerDetailModal/LayerDetailModal';
 import FeatureInfoPanel from './components/FeatureInfoPanel/FeatureInfoPanel';
 import MapControls from './components/MapControls';
 import MeasurementTools from './components/MeasurementTools/ToolsPanel';
