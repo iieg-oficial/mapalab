@@ -1,4 +1,4 @@
-import Download from './Download';
+import Download from './MapExport/Download';
 import ShareButton from './ShareButton';
 import InfoModal from './InfoModal';
 import Panel from '@components/Panel';

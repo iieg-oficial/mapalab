@@ -8,6 +8,7 @@ import MapControls from './components/MapControls';
 import MeasurementTools from './components/MeasurementTools/ToolsPanel';
 import ScaleLineControl from './components/ScaleLineControl';
 import GlobalLoading from './components/GlobalLoading';
+import ExportPreview from './components/MapExport/ExportPreview';
 import { useInitializeFromUrl } from './hooks/useInitializeFromUrl';
 import { useUrlSync } from './hooks/useUrlSync';
 import { SiderProvider } from '@contexts/SiderContext';
@@ -28,6 +29,7 @@ const Maps = () => {
                 <ScaleLineControl />
                 <MapControls />
                 <MeasurementTools />
+                <ExportPreview />
                 <MapView />
             </div>
         </SiderProvider>
