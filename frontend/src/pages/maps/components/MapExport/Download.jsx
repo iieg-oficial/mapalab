@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import Tooltip from '@components/Tooltip';
 import Panel from '@components/Panel';
-import { useMapDownload } from '../hooks/useMapDownload';
-import SymbologyItem from './SymbologyItem';
+import { useMapDownload } from './hooks/useMapDownload';
+import SymbologyItem from '../SymbologyItem';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useSider } from '@contexts/SiderContext';
-import Icon from '../../../components/Icon';
+import Icon from '@components/Icon';
 
 const Download = () => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [selectedLegendLayers, setSelectedLegendLayers] = useState([]);
+    const [title, setTitle] = useState('');
     const { isMobile } = useSider();
     const anchorRef = useRef(null);
 
@@ -20,6 +21,16 @@ const Download = () => {
         layersWithLegends,
         selectedLayer
     } = useMapDownload();
+
+    useEffect(() => {
+        if (selectedLayer) {
+            setTitle(selectedLayer.label || selectedLayer.name || 'Título del mapa');
+        } else if (layersWithLegends.length > 0) {
+            setTitle(layersWithLegends[0].label || layersWithLegends[0].name || 'Título del mapa');
+        } else {
+            setTitle('Título del mapa');
+        }
+    }, [selectedLayer, layersWithLegends]);
 
     useEffect(() => {
         if (layersWithLegends.length > 0) {
@@ -89,7 +100,7 @@ const Download = () => {
 
     const handleConfirmDownload = async () => {
         setIsPanelOpen(false);
-        await downloadMap(format, selectedLegendLayers, viewType);
+        await downloadMap(format, selectedLegendLayers, viewType, title);
     };
 
     const handleLayerSelect = (layer) => {
@@ -134,14 +145,27 @@ const Download = () => {
                 anchorRef={anchorRef}
                 onClose={() => setIsPanelOpen(false)}
                 variant="solid"
-                width="w-72"
+                width="w-80"
                 maxHeight="max-h-200"
                 className="z-50 mt-2 shadow-none border-none rounded-[14px]"
                 placement="bottom-end"
-                title={ <span className="font-garet font-bold text-[14px]/[47px]">Descargar mapa</span> }
+                title={<span className="font-garet font-bold text-[14px]/[47px]">Descargar mapa</span>}
                 mobileFullscreen
             >
                 <div className="flex flex-col px-4 pb-4 gap-4">
+                    <div>
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                            Título del mapa
+                        </div>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#703089] focus:border-transparent outline-none"
+                            placeholder="Título del mapa"
+                        />
+                    </div>
+
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb">
                         Formato
                     </div>
