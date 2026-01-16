@@ -74,8 +74,8 @@ const OpacityControl = ({ value = 1, onChange }) => {
 
     return (
         <div ref={containerRef} className="space-y-2">
-            <div className="flex items-center gap-1 text-sm">
-                <span className="text-gray-700">
+            <div className="flex items-center gap-1">
+                <span className="text-[#465055] font-garet font-medium text-[14px]/[16px] md:mr-4 mr-1">
                     <span className="sm:hidden">Opacidad:</span>
                     <span className="hidden sm:inline">Opacidad de la capa:</span>
                 </span>
@@ -87,13 +87,20 @@ const OpacityControl = ({ value = 1, onChange }) => {
                         onChange={handleInputChange}
                         onBlur={handleInputBlur}
                         onKeyDown={handleInputKeyDown}
-                        className="w-16 text-center font-semibold text-blue-600 bg-[#EAEFFA] rounded-[9px] px-2 py-1 outline-none"
+                        className={`
+                            w-17 h-12.5 text-center font-garet font-medium text-[14px]/[16px] text-[#465055] 
+                            bg-white rounded-[9px] px-3-5 py-3 outline-none border border-[#703088] 
+                            cursor-pointer
+                        `}
                     />
                 ) : (
                     <button
                         type="button"
                         onClick={handlePercentageClick}
-                        className="font-semibold text-blue-600 hover:text-blue-700 transition bg-[#EAEFFA] rounded-[9px] px-2 py-1"
+                        className={`
+                            w-17 h-12.5 font-garet font-medium text-[14px]/[16px] text-[#465055] transition 
+                            bg-[#EAEFFA] rounded-[9px] px-3-5 py-3 cursor-pointer
+                        `}
                     >
                         {currentPercentage}%
                     </button>
@@ -106,7 +113,7 @@ const OpacityControl = ({ value = 1, onChange }) => {
                     max="100"
                     value={currentPercentage}
                     onChange={handleSliderChange}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    className="w-full h-2 bg-[#465055]/20 rounded-lg appearance-none cursor-pointer accent-[#FF8300]"
                     aria-label="Opacidad"
                 />
             )}
