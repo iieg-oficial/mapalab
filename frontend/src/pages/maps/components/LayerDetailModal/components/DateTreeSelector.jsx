@@ -1,11 +1,13 @@
-import { useState, useEffect, useContext, useMemo } from 'react';
+import { useState, useEffect, useContext, useMemo, useRef } from 'react';
 import { getLayerPeriodicity } from '@services/periodicityService';
 import MapsContext from '@contexts/MapsContext';
 import { useCarouselOverflow } from '@pages/maps/hooks/useCarouselOverflow';
 import { useDateSelections } from '@pages/maps/hooks/useDateSelections';
 import { generateCQLFilter, parseCQLToSelections, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
-import NavigationButton from './NavigationButton';
+import NavigationButton from '../../NavigationButton';
 import Icon from '@components/Icon';
+import Loading from '@components/Loading';
+import Tooltip from '@components/Tooltip';
 
 const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 'date' }) => {
     const { activeLayerIds = [], findLayerById, getSpecificFilter } = useContext(MapsContext);
@@ -22,6 +24,8 @@ const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 
         expandedYear,
         expandedMonth,
         selections,
+        toggleYear,
+        toggleMonth,
         handleYearClick,
         handleMonthClick,
         handleDayClick,
@@ -129,22 +133,32 @@ const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 
         fetchPeriodicity();
     }, [layerGroups]);
 
+    const onFilterApplyRef = useRef(onFilterApply);
+    const onClearFilterRef = useRef(onClearFilter);
+
+    useEffect(() => {
+        onFilterApplyRef.current = onFilterApply;
+        onClearFilterRef.current = onClearFilter;
+    });
+
     useEffect(() => {
         const cqlFilter = generateCQLFilter(selections, periodicityData?.filterColumn || 'fecha');
 
-        if (onFilterApply) {
-            if (cqlFilter) {
-                onFilterApply({
+        if (cqlFilter) {
+            if (onFilterApplyRef.current) {
+                onFilterApplyRef.current({
                     filterName,
                     cqlFilter,
                     filterColumn: periodicityData?.filterColumn || 'fecha',
                     selections: Array.from(selections)
                 });
-            } else if (onClearFilter) {
-                onClearFilter();
+            }
+        } else {
+            if (onClearFilterRef.current) {
+                onClearFilterRef.current();
             }
         }
-    }, [selections, periodicityData]);
+    }, [selections, periodicityData, filterName]);
 
     useEffect(() => {
         yearsCarousel.checkOverflow();
@@ -153,17 +167,18 @@ const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 
 
     if (loading) {
         return (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                Cargando fechas disponibles...
+            <div className="flex items-center gap-2 text-[12px]/[18px] text-[#454545] font-normal font-garet tracking-normal">
+                <Loading visible size="size-5" />
+                Cargando fechas disponibles ...
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="text-sm text-red-600">
-                {error}
+            <div className="flex items-center gap-2 text-[11px]/[16px] text-[#EA4335] font-normal font-garet tracking-normal">
+                <Icon name="alert" className="h-4 w-4" />
+                {error || 'Ocurrió un error al cargar las fechas disponibles'}
             </div>
         );
     }
@@ -181,16 +196,24 @@ const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 
     const hasAnySelection = selections.size > 0;
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-gray-700">Periodicidad</h4>
+                <div className="flex items-center gap-2">
+                    <span className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal">Periodicidad</span>
+                    <Icon
+                        name="info_warning"
+                        className="size-4 cursor-help"
+                        tooltip="Click simple: navegar opciones. Doble click: seleccionar fecha. Click en seleccionado: deseleccionar."
+                    />
+                </div>
                 {hasAnySelection && (
-                    <button
-                        onClick={clearAllSelections}
-                        title="Limpiar todas las selecciones"
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                    >
-                        <Icon name="trash" className="h-4 w-4" />
+                    <button onClick={clearAllSelections}>
+                        <Icon
+                            tooltip="Limpiar todas las selecciones"
+                            name="eliminar"
+                            state="hover"
+                            className="size-5 cursor-pointer"
+                        />
                     </button>
                 )}
             </div>
@@ -211,11 +234,17 @@ const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 
                         return (
                             <button
                                 key={year}
-                                onClick={() => handleYearClick(year, periodicityData?.fecha?.[year])}
+                                onClick={() => toggleYear(year, periodicityData?.fecha?.[year])}
+                                onDoubleClick={() => handleYearClick(year)}
                                 className={`
-                                    shrink-0 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium shadow-sm
-                                    hover:shadow-md active:scale-95
-                                    ${isExpanded ? 'bg-amber-500 text-white ring-2 ring-amber-300 ring-offset-2' : isActive ? 'bg-blue-600 text-white ring-2 ring-blue-400 ring-offset-2' : 'bg-blue-500 text-white hover:bg-blue-600'}
+                                    shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200
+                                    text-[14px]/[16px] text-[#2E4372] font-medium font-garet 
+                                    ${isExpanded
+                                        ? 'bg-[#FF8300]/30 border border-[#FF8300] text-[#FF8300]'
+                                        : isActive
+                                            ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
+                                            : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
+                                    }
                                 `}
                             >
                                 {year}
@@ -230,10 +259,7 @@ const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 
 
             {expandedYear !== null && (
                 <div className="mt-2">
-                    <div
-                        className="grid grid-flow-col auto-cols-max gap-1 overflow-x-auto scrollbar-hide"
-                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                    >
+                    <div className="flex flex-wrap gap-1">
                         {(() => {
                             const yearData = periodicityData.fecha[expandedYear];
                             const availableMonths = Object.keys(yearData).map(Number).sort((a, b) => a - b);
@@ -248,11 +274,17 @@ const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 
                                 return (
                                     <button
                                         key={`${expandedYear}-${monthNum}`}
-                                        onClick={() => handleMonthClick(expandedYear, monthNum, yearData)}
+                                        onClick={() => toggleMonth(expandedYear, monthNum, yearData)}
+                                        onDoubleClick={() => handleMonthClick(expandedYear, monthNum)}
                                         className={`
-                                            px-2 py-1 rounded transition-all duration-200 text-xs font-medium shadow-sm
-                                            hover:shadow-md active:scale-95
-                                            ${isExpanded ? 'bg-amber-500 text-white ring-2 ring-amber-300 ring-offset-1' : isActive ? 'bg-green-600 text-white ring-2 ring-green-400 ring-offset-1' : 'bg-green-500 text-white hover:bg-green-600'}
+                                            shrink-0 px-4 py-2 rounded-[9px] transition-all duration-200
+                                            text-[12px]/[14px] text-[#2E4372] font-medium font-garet
+                                            ${isExpanded
+                                                ? 'bg-[#FF8300]/30 border border-[#FF8300] text-[#FF8300]'
+                                                : isActive
+                                                    ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
+                                                    : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
+                                            }
                                         `}
                                     >
                                         <span className="sm:hidden">{shortName}</span>
@@ -290,11 +322,15 @@ const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 
                                     return (
                                         <button
                                             key={`${year}-${monthNum}-${day}`}
-                                            onClick={() => handleDayClick(year, monthNum, day)}
+                                            onClick={() => isActive && handleDayClick(year, monthNum, day)}
+                                            onDoubleClick={() => handleDayClick(year, monthNum, day)}
                                             className={`
-                                                shrink-0 px-2 py-1 rounded transition-all duration-200 text-xs font-medium shadow-sm
-                                                hover:shadow-md active:scale-95
-                                                ${isActive ? 'bg-purple-600 text-white ring-2 ring-purple-400 ring-offset-1' : 'bg-purple-500 text-white hover:bg-purple-600'}
+                                                shrink-0 px-4 py-2 rounded-[9px] transition-all duration-200
+                                                text-[12px]/[14px] text-[#2E4372] font-medium font-garet
+                                                ${isActive
+                                                    ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
+                                                    : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
+                                                }
                                             `}
                                         >
                                             {day}

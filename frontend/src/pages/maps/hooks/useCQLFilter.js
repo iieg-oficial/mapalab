@@ -84,17 +84,18 @@ export const useCQLFilter = () => {
         setFilters(prev => {
             const layerFilters = { ...(prev[layerId] || {}) };
             delete layerFilters[filterName];
-            
+
             if (Object.keys(layerFilters).length === 0) {
                 const newFilters = { ...prev };
                 delete newFilters[layerId];
                 return newFilters;
             }
-            
-            return {
+
+            const result = {
                 ...prev,
                 [layerId]: layerFilters
             };
+            return result;
         });
     }, []);
 

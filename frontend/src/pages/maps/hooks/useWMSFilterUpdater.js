@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useDebounce } from '@hooks/useDebounce';
-import { findWMSConfig } from '../helpers/wmsConfig';
-import { layers } from '../helpers/layers/index';
+
 export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds }) => {
     const debouncedFilters = useDebounce(filters, 300);
     const debouncedActiveLayers = useDebounce(activeLayerIds, 300);
@@ -51,9 +50,7 @@ export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, 
                         if (newCqlFilter) {
                             source.updateParams({ CQL_FILTER: newCqlFilter });
                         } else {
-                            const params = { ...currentParams };
-                            delete params.CQL_FILTER;
-                            source.updateParams(params);
+                            source.updateParams({ CQL_FILTER: undefined });
                         }
                         source.refresh();
                     }
