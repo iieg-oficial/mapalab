@@ -71,7 +71,8 @@ class GeoServerService:
     def get_layer_url(
             workspace: str,
             layer: str,
-            cql_filter: Optional[str] = None
+            cql_filter: Optional[str] = None,
+            property_name: Optional[str] = None
         ) -> str:
 
         if not settings.GEOSERVER_URL:
@@ -88,6 +89,9 @@ class GeoServerService:
             f"&typeName={workspace}:{layer}"
             f"&outputFormat=application/json"
         )
+
+        if property_name:
+            url += f"&propertyName={property_name}"
 
         if cql_filter:
             url += f"&CQL_FILTER={quote_plus(cql_filter)}"

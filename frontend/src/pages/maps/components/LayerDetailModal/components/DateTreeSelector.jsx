@@ -7,7 +7,6 @@ import { generateCQLFilter, parseCQLToSelections, MONTHS } from '@pages/maps/hel
 import NavigationButton from '../../NavigationButton';
 import Icon from '@components/Icon';
 import Loading from '@components/Loading';
-import Tooltip from '@components/Tooltip';
 
 const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 'date' }) => {
     const { activeLayerIds = [], findLayerById, getSpecificFilter } = useContext(MapsContext);
