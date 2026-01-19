@@ -189,8 +189,7 @@ const createExportSidePanel = (options = {}) => {
                 top: `${Math.max(0, Math.min(100 - rectH, rectY))}%`,
                 width: `${Math.min(100, rectW)}%`,
                 height: `${Math.min(100, rectH)}%`,
-                border: '1px solid rgba(255, 131, 0, 0.6)',
-                backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                border: '4px solid rgba(255, 131, 0, 1)',
                 boxSizing: 'border-box'
             });
             minimapContainer.appendChild(viewportRect);
