@@ -44,7 +44,9 @@ def get_layer_periodicity(
     layer: str = Query(..., description="Nombre de la capa dentro del workspace (p. ej. capa_anual)"),
     cql_filter: Optional[str] = Query(default=None, description="Filtro CQL opcional para restringir la consulta WFS")
 ):
-    wfs_query_url = GeoServerService.get_layer_url(workspace, layer, cql_filter=cql_filter)
+    wfs_query_url = GeoServerService.get_layer_url(
+        workspace, layer, cql_filter=cql_filter, property_name='fecha'
+    )
 
     try:
         georserver_periodicity = GeoServerService.get_periodicity(wfs_query_url)
