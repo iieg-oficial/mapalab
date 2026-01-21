@@ -8,10 +8,10 @@ import MapControls from './components/MapControls';
 import MeasurementTools from './components/MeasurementTools/ToolsPanel';
 import ScaleLineControl from './components/ScaleLineControl';
 import GlobalLoading from './components/GlobalLoading';
-import ExportPreview from './components/MapExport/ExportPreview';
 import { useInitializeFromUrl } from './hooks/useInitializeFromUrl';
 import { useUrlSync } from './hooks/useUrlSync';
 import { SiderProvider } from '@contexts/SiderContext';
+import { ZenModeProvider } from './components/ZenMode';
 
 const Maps = () => {
     useInitializeFromUrl();
@@ -19,21 +19,23 @@ const Maps = () => {
 
     return (
         <SiderProvider>
-            <div className="relative w-full h-screen">
-                <MapSider />
-                <GlobalLoading />
-                <MapToolsPanel />
-                <MapLayersPanels />
-                <LayerDetailModal />
-                <FeatureInfoPanel />
-                <ScaleLineControl />
-                <MapControls />
-                <MeasurementTools />
-                <ExportPreview />
-                <MapView />
-            </div>
+            <ZenModeProvider>
+                <div className="relative w-full h-screen">
+                    <MapSider />
+                    <GlobalLoading />
+                    <MapToolsPanel />
+                    <MapLayersPanels />
+                    <LayerDetailModal />
+                    <FeatureInfoPanel />
+                    <ScaleLineControl />
+                    <MapControls />
+                    <MeasurementTools />
+                    <MapView />
+                </div>
+            </ZenModeProvider>
         </SiderProvider>
     );
 };
 
 export default Maps;
+

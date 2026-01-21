@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { isParentLayer } from '../helpers/symbologyHelpers';
 import { MOBILE_BREAKPOINT } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '../../../constants/global';
@@ -6,10 +6,18 @@ import MapsContext from '@contexts/MapsContext';
 import SymbologyItem from './SymbologyItem';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
+import { useZenMode } from './ZenMode';
 
 const SymbologyPanel = () => {
     const { selectedLayerForSymbology, findLayerById, getLayersForSymbology } = useContext(MapsContext);
     const [isManuallyCollapsed, setIsManuallyCollapsed] = useState(() => window.innerWidth < MOBILE_BREAKPOINT);
+    const { isZenMode } = useZenMode();
+
+    useEffect(() => {
+        if (isZenMode) {
+            setIsManuallyCollapsed(true);
+        }
+    }, [isZenMode]);
 
     const hasLayer = !!selectedLayerForSymbology;
     const isCollapsed = isManuallyCollapsed || !hasLayer;

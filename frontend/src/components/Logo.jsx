@@ -1,21 +1,34 @@
 import logoIiegLarge from '@assets/logos/iieg_large.svg';
 import logoIiegShort from '@assets/logos/iieg_short.svg';
 import logoMapalabLarge from '@assets/logos/mapalab_large.svg';
+import logoMapalabLargeDark from '@assets/logos/mapalab_large_dark.svg';
 import logoMapalabShort from '@assets/logos/mapalab_short.svg';
 
-const Logo = ({ name, className = '', size = 'w-12 h-12', expanded = false }) => {
+const Logo = ({ name, className = '', size = 'w-12 h-12', expanded = false, variant = 'light' }) => {
     const logos = {
         mapalab: {
-            large: logoMapalabLarge,
-            short: logoMapalabShort,
+            light: {
+                large: logoMapalabLarge,
+                short: logoMapalabShort,
+            },
+            dark: {
+                large: logoMapalabLargeDark,
+                short: logoMapalabShort,
+            }
         },
         iieg: {
-            large: logoIiegLarge,
-            short: logoIiegShort
+            light: {
+                large: logoIiegLarge,
+                short: logoIiegShort
+            },
+            dark: {
+                large: logoIiegLarge,
+                short: logoIiegShort
+            }
         }
     };
 
-    const currentLogo = logos[name];
+    const currentLogo = logos[name]?.[variant] || logos[name]?.light;
 
     if (!currentLogo) return null;
 

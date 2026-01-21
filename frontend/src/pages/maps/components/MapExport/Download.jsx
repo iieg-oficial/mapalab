@@ -1,97 +1,52 @@
 import { useState, useRef, useEffect } from 'react';
-import Tooltip from '@components/Tooltip';
-import Panel from '@components/Panel';
 import { useMapDownload } from './hooks/useMapDownload';
-import SymbologyItem from '../SymbologyItem';
-import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useSider } from '@contexts/SiderContext';
+import { HIDDEN_SCROLLBAR } from '@constants/global';
+import SymbologyItem from '../SymbologyItem';
 import Icon from '@components/Icon';
+import Panel from '@components/Panel';
+import Tooltip from '@components/Tooltip';
 
-const Download = () => {
+const Download = ({ onOpenPreview }) => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [selectedLegendLayers, setSelectedLegendLayers] = useState([]);
-    const [title, setTitle] = useState('');
+    const [title, setTitle] = useState('Capas mapalab');
     const { isMobile } = useSider();
     const anchorRef = useRef(null);
-
-    const {
-        downloadMap,
-        isDownloading,
-        canDownload,
-        layersWithLegends,
-        selectedLayer
-    } = useMapDownload();
-
-    useEffect(() => {
-        if (selectedLayer) {
-            setTitle(selectedLayer.label || selectedLayer.name || 'Título del mapa');
-        } else if (layersWithLegends.length > 0) {
-            setTitle(layersWithLegends[0].label || layersWithLegends[0].name || 'Título del mapa');
-        } else {
-            setTitle('Título del mapa');
-        }
-    }, [selectedLayer, layersWithLegends]);
-
-    useEffect(() => {
-        if (layersWithLegends.length > 0) {
-            if (selectedLayer) {
-                const layerWithLegend = layersWithLegends.find(l => l.id === selectedLayer.id);
-                if (layerWithLegend) {
-                    setSelectedLegendLayers([layerWithLegend]);
-                    return;
-                }
-            }
-            setSelectedLegendLayers(layersWithLegends.slice(0, 1));
-        } else {
-            setSelectedLegendLayers([]);
-        }
-    }, [layersWithLegends, selectedLayer]);
-
     const [format, setFormat] = useState('png');
     const [viewType, setViewType] = useState('viewport');
 
-    useEffect(() => {
-        if (layersWithLegends.length > 0) {
-            if (format === 'pdf') {
-                setSelectedLegendLayers(layersWithLegends);
-            } else {
-                if (selectedLayer) {
-                    const layerWithLegend = layersWithLegends.find(l => l.id === selectedLayer.id);
-                    if (layerWithLegend) {
-                        setSelectedLegendLayers([layerWithLegend]);
-                        return;
-                    }
-                }
-
-                if (selectedLegendLayers.length !== 1) {
-                    setSelectedLegendLayers([layersWithLegends[0]]);
-                }
-            }
-        }
-    }, [format, layersWithLegends, selectedLayer]);
+    const {
+        downloadMap, isDownloading, canDownload,
+        layersWithLegends, selectedLayer
+    } = useMapDownload();
 
     useEffect(() => {
-        if (isPanelOpen && layersWithLegends.length > 0) {
-            if (format === 'pdf') {
-                setSelectedLegendLayers(layersWithLegends);
-            } else {
-                if (selectedLayer) {
-                    const layerWithLegend = layersWithLegends.find(l => l.id === selectedLayer.id);
-                    if (layerWithLegend) {
-                        setSelectedLegendLayers([layerWithLegend]);
-                        return;
-                    }
-                }
+        const layer = selectedLayer || layersWithLegends[0];
+        setTitle(layer?.label || layer?.name || 'Capas mapalab');
+    }, [selectedLayer, layersWithLegends]);
 
-                const currentSelected = selectedLegendLayers[0];
-                const stillExists = currentSelected && layersWithLegends.find(l => l.id === currentSelected.id);
-
-                if (!stillExists || selectedLegendLayers.length !== 1) {
-                    setSelectedLegendLayers([layersWithLegends[0]]);
-                }
-            }
+    useEffect(() => {
+        if (layersWithLegends.length === 0) {
+            setSelectedLegendLayers([]);
+            return;
         }
-    }, [isPanelOpen, format, layersWithLegends, selectedLayer]);
+
+        if (format === 'pdf') {
+            setSelectedLegendLayers(layersWithLegends);
+            return;
+        }
+
+        const targetLayer = selectedLayer
+            ? layersWithLegends.find(l => l.id === selectedLayer.id)
+            : null;
+
+        if (targetLayer) {
+            setSelectedLegendLayers([targetLayer]);
+        } else if (selectedLegendLayers.length !== 1 || !layersWithLegends.find(l => l.id === selectedLegendLayers[0]?.id)) {
+            setSelectedLegendLayers([layersWithLegends[0]]);
+        }
+    }, [format, layersWithLegends, selectedLayer, isPanelOpen]);
 
     const handleDownloadClick = () => {
         if (!canDownload || isDownloading) return;
@@ -99,8 +54,15 @@ const Download = () => {
     };
 
     const handleConfirmDownload = async () => {
-        setIsPanelOpen(false);
-        await downloadMap(format, selectedLegendLayers, viewType, title);
+        if (viewType === 'viewport') {
+            setIsPanelOpen(false);
+            if (onOpenPreview) {
+                onOpenPreview(format);
+            }
+        } else {
+            setIsPanelOpen(false);
+            await downloadMap(format, selectedLegendLayers, 'full-state', title);
+        }
     };
 
     const handleLayerSelect = (layer) => {
@@ -150,21 +112,9 @@ const Download = () => {
                 className="z-50 mt-2 shadow-none border-none rounded-[14px]"
                 placement="bottom-end"
                 title={<span className="font-garet font-bold text-[14px]/[47px]">Descargar mapa</span>}
-                mobileFullscreen
+                mobileFullscreen={isMobile}
             >
                 <div className="flex flex-col px-4 pb-4 gap-4">
-                    <div>
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                            Título del mapa
-                        </div>
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#703089] focus:border-transparent outline-none"
-                            placeholder="Título del mapa"
-                        />
-                    </div>
 
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb">
                         Formato
@@ -202,8 +152,8 @@ const Download = () => {
                                     }
                                 `}
                             >
-                                <div className="font-medium">Vista actual</div>
-                                <div className="text-xs opacity-75">Captura el viewport actual</div>
+                                <div className="font-medium">Seleccionar Área (Vista actual)</div>
+                                <div className="text-xs opacity-75">Activar recuadro de recorte manual</div>
                             </button>
                             <button
                                 onClick={() => setViewType('full-state')}
@@ -216,7 +166,7 @@ const Download = () => {
                                 `}
                             >
                                 <div className="font-medium">Estado completo</div>
-                                <div className="text-xs opacity-75">Vista de todo Jalisco en formato carta</div>
+                                <div className="text-xs opacity-75">Automático (Todo Jalisco)</div>
                             </button>
                         </div>
                     </div>
@@ -260,7 +210,7 @@ const Download = () => {
                         onClick={handleConfirmDownload}
                         className="w-full py-2 bg-[#703089] text-white rounded-[14px] hover:bg-[#5C2472] transition font-medium text-sm"
                     >
-                        Descargar {format.toUpperCase()}
+                        {viewType === 'viewport' ? 'Seleccionar Área' : `Descargar ${format.toUpperCase()}`}
                     </button>
                 </div>
             </Panel>
