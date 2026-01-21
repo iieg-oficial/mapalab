@@ -8,6 +8,8 @@ import { createMenuItems } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
+import { useZenMode } from './ZenMode';
+
 const MapSider = ({ className = '' }) => {
     const {
         activeLayerIds: contextActiveLayerIds,
@@ -29,8 +31,11 @@ const MapSider = ({ className = '' }) => {
         toggleSider,
         closeSider
     } = useSider();
+    const { isZenMode } = useZenMode();
     const [scrollState, setScrollState] = useState({ canScrollUp: false, canScrollDown: false });
     const contentRef = useRef(null);
+
+    const treatAsMobile = isMobile || isZenMode;
 
     const { handleMouseEnter, handleMouseLeave } = useSiderHover({
         setIsHovered,
@@ -39,20 +44,20 @@ const MapSider = ({ className = '' }) => {
     });
 
     useOutsideClick([siderRef], () => {
-        if (isMobile && isOpen) {
+        if (treatAsMobile && isOpen) {
             closeSider();
         }
     });
 
     const computeWidth = () => {
-        if (isMobile) {
+        if (treatAsMobile) {
             return isOpen ? expandedWidth : mobileWidth;
         }
         return isHovered ? expandedWidth : collapsedWidth;
     };
 
     const width = computeWidth();
-    const isExpanded = isMobile ? isOpen : isHovered;
+    const isExpanded = treatAsMobile ? isOpen : isHovered;
 
     const menuItems = useMemo(() =>
         createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible }),
@@ -132,7 +137,7 @@ const MapSider = ({ className = '' }) => {
     }, [checkScroll]);
 
     const handleLogoClick = () => {
-        if (isMobile) {
+        if (treatAsMobile) {
             toggleSider();
         }
     };
@@ -150,17 +155,17 @@ const MapSider = ({ className = '' }) => {
                 transitionTimingFunction: SIDER_TRANSITION_TIMING,
                 width: `${width}px`
             }}
-            onMouseEnter={!isMobile ? handleMouseEnter : undefined}
-            onMouseLeave={!isMobile ? handleMouseLeave : undefined}
+            onMouseEnter={!treatAsMobile ? handleMouseEnter : undefined}
+            onMouseLeave={!treatAsMobile ? handleMouseLeave : undefined}
         >
             <div
-                className={`shrink-0 p-3 flex justify-center ${isMobile ? 'cursor-pointer' : ''}`}
+                className={`shrink-0 p-3 flex justify-center ${treatAsMobile ? 'cursor-pointer' : ''}`}
                 onClick={handleLogoClick}
             >
                 <Logo name="mapalab" size={isExpanded ? 'w-57 h-17' : 'w-14 h-17'} expanded={isExpanded} />
             </div>
 
-            {(!isMobile || isOpen) && (
+            {(!treatAsMobile || isOpen) && (
                 <div
                     ref={contentRef}
                     className={[
@@ -199,7 +204,7 @@ const MapSider = ({ className = '' }) => {
                 </div>
             )}
 
-            {(!isMobile || isOpen) && (
+            {(!treatAsMobile || isOpen) && (
                 <div className="shrink-0 p-3 my-2 flex justify-center">
                     <Logo name="iieg" size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'} expanded={isExpanded} />
                 </div>

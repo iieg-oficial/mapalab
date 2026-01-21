@@ -5,18 +5,18 @@ import { useWMSLegend } from '../../../hooks/useWMSLegend';
 import { useMinimap } from './useMinimap';
 import { useMapView } from './useMapView';
 import { useMapCapture } from './useMapCapture';
+import { useImageComposition } from './useImageComposition';
 import { usePdfExport } from './usePdfExport';
-import coordinateGrid from '../utils/coordinateGrid';
-import northArrow from '../utils/northArrow';
-import createExportSidePanel from '../ExportSidePanel';
 import { layers as allLayers, findLayerById } from '../../../helpers/layers/index';
+import { transformExtent } from 'ol/proj';
 
 export const useMapDownload = () => {
-    const { targetRef } = useMapsContext();
-    const { getLegendUrl, hasLegend } = useWMSLegend();
+    const { targetRef, mapRef } = useMapsContext();
+    const { getLegendUrl, hasLegend, getLegendJson } = useWMSLegend();
     const { generateMinimapImage } = useMinimap();
-    const { getViewportExtent, adjustViewToFullState, restoreView } = useMapView();
-    const { prepareScaleControl, restoreScaleControl, waitForTilesToLoad, captureMap, captureElement, waitForImages } = useMapCapture();
+    const { getViewportExtent, adjustViewToFullState } = useMapView();
+    const { prepareScaleControl, restoreScaleControl, waitForTilesToLoad, captureMap } = useMapCapture();
+    const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
     const { activeLayerIds, selectedLayer, groupedActiveLayers } = useContext(MapsContext);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -39,108 +39,115 @@ export const useMapDownload = () => {
 
     const canDownload = activeLayers.length > 0;
 
-    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa') => {
+    const getGuideExtent = () => {
+        if (!mapRef.current) return null;
+
+        const guideFrame = document.getElementById('export-guide-frame');
+        if (!guideFrame) return getViewportExtent();
+
+        const rect = guideFrame.getBoundingClientRect();
+        const mapRect = mapRef.current.getTargetElement().getBoundingClientRect();
+
+        const topLeft = [
+            rect.left - mapRect.left + (rect.width * 0),
+            rect.top - mapRect.top
+        ];
+        const bottomRight = [
+            rect.right - mapRect.left,
+            rect.bottom - mapRect.top
+        ];
+
+        const coord1 = mapRef.current.getCoordinateFromPixel(topLeft);
+        const coord2 = mapRef.current.getCoordinateFromPixel(bottomRight);
+
+        if (!coord1 || !coord2) return getViewportExtent();
+
+        const minX = Math.min(coord1[0], coord2[0]);
+        const maxX = Math.max(coord1[0], coord2[0]);
+        const minY = Math.min(coord1[1], coord2[1]);
+        const maxY = Math.max(coord1[1], coord2[1]);
+
+        return transformExtent([minX, minY, maxX, maxY], 'EPSG:3857', 'EPSG:4326');
+    };
+
+    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa', forcedExtent = null) => {
         if (!targetRef.current || !canDownload || isDownloading) return;
 
         setIsDownloading(true);
         const scaleControl = targetRef.current.querySelector('.ol-scale-line');
         const originalStyles = prepareScaleControl(scaleControl);
 
-        let currentViewportExtent = getViewportExtent();
         let originalView = null;
+
+        const LOGICAL_MAP_WIDTH = 1020;
+        const LOGICAL_HEIGHT = 850;
+        const SIDE_PANEL_WIDTH = 255;
 
         try {
             const minimapImageUrl = await generateMinimapImage();
+            const view = mapRef.current.getView();
+            const originalCenter = view.getCenter();
+            const originalResolution = view.getResolution();
+            let targetExtent = null;
 
             if (viewType === 'full-state') {
-                originalView = adjustViewToFullState();
-                await waitForTilesToLoad();
+                originalView = {
+                    width: targetRef.current.style.width,
+                    height: targetRef.current.style.height
+                };
+
+                targetRef.current.style.width = `${LOGICAL_MAP_WIDTH}px`;
+                targetRef.current.style.height = `${LOGICAL_HEIGHT}px`;
+                mapRef.current.updateSize();
+
+                adjustViewToFullState();
+                targetExtent = getViewportExtent();
             } else {
-                await new Promise(resolve => setTimeout(resolve, 100));
+                const guideExtent = forcedExtent || getGuideExtent();
+
+                originalView = {
+                    width: targetRef.current.style.width,
+                    height: targetRef.current.style.height
+                };
+
+                targetRef.current.style.width = `${LOGICAL_MAP_WIDTH}px`;
+                targetRef.current.style.height = `${LOGICAL_HEIGHT}px`;
+                mapRef.current.updateSize();
+
+                const extent3857 = transformExtent(guideExtent, 'EPSG:4326', 'EPSG:3857');
+                mapRef.current.getView().fit(extent3857, { size: [LOGICAL_MAP_WIDTH, LOGICAL_HEIGHT] });
+
+                targetExtent = guideExtent;
             }
 
-            const extent = getViewportExtent();
-            const mapCanvas = await captureMap(2);
+            await waitForTilesToLoad();
+            const scale = 2;
+            const mapCanvas = await captureMap(scale);
 
+            if (originalView) {
+                targetRef.current.style.width = originalView.width;
+                targetRef.current.style.height = originalView.height;
+                mapRef.current.updateSize();
+                mapRef.current.getView().setCenter(originalCenter);
+                mapRef.current.getView().setResolution(originalResolution);
+            }
             restoreScaleControl(scaleControl, originalStyles);
-
-            const sidePanelWidth = 280 * 2;
-            const totalWidth = mapCanvas.width + sidePanelWidth;
-
-            const tempContainer = document.createElement('div');
-            Object.assign(tempContainer.style, {
-                position: 'absolute',
-                left: '-9999px',
-                width: `${totalWidth}px`,
-                height: `${mapCanvas.height}px`,
-                backgroundColor: '#ffffff'
-            });
-
-            const mapSection = document.createElement('div');
-            Object.assign(mapSection.style, {
-                position: 'absolute',
-                top: '0',
-                left: '0',
-                width: `${mapCanvas.width}px`,
-                height: `${mapCanvas.height}px`
-            });
-
-            const mapImage = document.createElement('img');
-            mapImage.src = mapCanvas.toDataURL('image/png');
-            Object.assign(mapImage.style, {
-                position: 'absolute',
-                top: '0',
-                left: '0',
-                width: '100%',
-                height: '100%',
-                zIndex: '1'
-            });
-
-            const grid = coordinateGrid(mapCanvas.width / 2, mapCanvas.height / 2, extent);
-            grid.style.transform = 'scale(2)';
-            grid.style.transformOrigin = 'top left';
-
-            const arrow = northArrow();
-            arrow.style.transform = 'scale(2)';
-            arrow.style.transformOrigin = 'top left';
-
-            mapSection.appendChild(mapImage);
-            mapSection.appendChild(grid);
-            mapSection.appendChild(arrow);
-
-            tempContainer.appendChild(mapSection);
 
             const legendForPanel = selectedLegends.length > 0 ? selectedLegends[0] : currentSelectedLegend;
 
-            const sidePanel = createExportSidePanel({
+            const finalMapCanvas = await composeExportImage({
+                mapCanvas,
+                extent: targetExtent || getViewportExtent(),
+                sidePanelWidth: SIDE_PANEL_WIDTH,
                 title,
-                captureDate: new Date(),
                 selectedLegend: legendForPanel,
                 getLegendUrl,
+                getLegendJson,
                 viewType,
-                viewportExtent: viewType === 'viewport' ? currentViewportExtent : null,
+                viewportExtent: viewType === 'viewport' ? targetExtent : null,
                 minimapImageUrl,
-                source: 'Por definir'
+                scale
             });
-            sidePanel.style.left = 'auto';
-            sidePanel.style.right = '0';
-            sidePanel.style.width = `${sidePanelWidth}px`;
-            sidePanel.style.height = `${mapCanvas.height}px`;
-            sidePanel.style.fontSize = '22px';
-            tempContainer.appendChild(sidePanel);
-
-            document.body.appendChild(tempContainer);
-
-            await new Promise((resolve) => {
-                if (mapImage.complete) resolve();
-                else mapImage.onload = resolve;
-            });
-
-            await waitForImages(sidePanel);
-
-            const finalMapCanvas = await captureElement(tempContainer);
-
-            document.body.removeChild(tempContainer);
 
             if (format === 'pdf') {
                 await exportToPdf({
@@ -155,10 +162,12 @@ export const useMapDownload = () => {
 
         } catch (error) {
             console.error('Error al descargar el mapa:', error);
-        } finally {
-            if (originalView) {
-                restoreView(originalView);
+            if (originalView && targetRef.current && mapRef.current) {
+                targetRef.current.style.width = originalView.width;
+                targetRef.current.style.height = originalView.height;
+                mapRef.current.updateSize();
             }
+        } finally {
             setIsDownloading(false);
         }
     };
@@ -169,6 +178,7 @@ export const useMapDownload = () => {
         canDownload,
         layersWithLegends,
         currentSelectedLegend,
-        selectedLayer
+        selectedLayer,
+        getGuideExtent
     };
 };
