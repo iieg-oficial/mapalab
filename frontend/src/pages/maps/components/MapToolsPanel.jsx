@@ -8,9 +8,13 @@ import ExportPreview from './MapExport/ExportPreview';
 const MapToolsPanel = () => {
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [previewFormat, setPreviewFormat] = useState('png');
+    const [previewLegend, setPreviewLegend] = useState(null);
+    const [previewTitle, setPreviewTitle] = useState('');
 
-    const handleOpenPreview = (format) => {
+    const handleOpenPreview = (format, selectedLegend, title) => {
         setPreviewFormat(format || 'png');
+        setPreviewLegend(selectedLegend || null);
+        setPreviewTitle(title || '');
         setIsPreviewOpen(true);
     };
 
@@ -37,6 +41,8 @@ const MapToolsPanel = () => {
                 isOpen={isPreviewOpen}
                 onClose={handleClosePreview}
                 format={previewFormat}
+                selectedLegend={previewLegend}
+                initialTitle={previewTitle}
             />
         </>
     );

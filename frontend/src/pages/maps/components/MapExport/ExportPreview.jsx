@@ -15,10 +15,10 @@ import { transformExtent } from 'ol/proj';
 import Loading from '@components/Loading';
 import Icon from '@components/Icon';
 
-const ExportPreview = ({ isOpen, onClose, format = 'png' }) => {
+const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSelectedLegend, initialTitle = '' }) => {
     const { targetRef, mapRef } = useMapsContext();
     const { getLegendUrl, getLegendJson } = useWMSLegend();
-    const { activeLayerIds, groupedActiveLayers, selectedLayer } = useContext(MapsContext);
+    const { activeLayerIds, groupedActiveLayers } = useContext(MapsContext);
 
     const { getGuideExtent } = useMapDownload();
     const { restoreView } = useMapView();
@@ -57,25 +57,19 @@ const ExportPreview = ({ isOpen, onClose, format = 'png' }) => {
         }
     }, [capturedExtent]);
 
-    const layersWithLegends = useMemo(() => {
-        return groupedActiveLayers.filter(layer => {
-            const url = getLegendUrl(layer);
-            return url !== null;
-        });
-    }, [groupedActiveLayers, getLegendUrl]);
-
     const currentSelectedLegend = useMemo(() => {
-        if (selectedLayer) {
-            const found = layersWithLegends.find(l => l.id === selectedLayer.id);
-            if (found) return found;
-        }
-        return layersWithLegends[0] || null;
-    }, [selectedLayer, layersWithLegends]);
+        if (propSelectedLegend) return propSelectedLegend;
+        return groupedActiveLayers.find(layer => getLegendUrl(layer) !== null) || null;
+    }, [propSelectedLegend, groupedActiveLayers, getLegendUrl]);
 
     useEffect(() => {
-        const layer = currentSelectedLegend || activeLayers[0];
-        setTitle(layer?.label || layer?.name || 'Mapa sin título');
-    }, [currentSelectedLegend, activeLayers]);
+        if (initialTitle) {
+            setTitle(initialTitle);
+        } else {
+            const layer = currentSelectedLegend || activeLayers[0];
+            setTitle(layer?.label || layer?.name || 'Mapa sin título');
+        }
+    }, [initialTitle, currentSelectedLegend, activeLayers]);
 
     const generatePreview = async () => {
         if (!targetRef.current || activeLayers.length === 0 || !capturedExtent) return;

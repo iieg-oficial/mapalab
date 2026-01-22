@@ -57,7 +57,7 @@ const Download = ({ onOpenPreview }) => {
         if (viewType === 'viewport') {
             setIsPanelOpen(false);
             if (onOpenPreview) {
-                onOpenPreview(format);
+                onOpenPreview(format, selectedLegendLayers[0], title);
             }
         } else {
             setIsPanelOpen(false);
