@@ -9,13 +9,14 @@ import { useImageComposition } from './useImageComposition';
 import { usePdfExport } from './usePdfExport';
 import { layers as allLayers, findLayerById } from '../../../helpers/layers/index';
 import { transformExtent } from 'ol/proj';
+import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
 
 export const useMapDownload = () => {
     const { targetRef, mapRef } = useMapsContext();
     const { getLegendUrl, hasLegend, getLegendJson } = useWMSLegend();
     const { generateMinimapImage } = useMinimap();
-    const { getViewportExtent, adjustViewToFullState } = useMapView();
-    const { prepareScaleControl, restoreScaleControl, waitForTilesToLoad, captureMap } = useMapCapture();
+    const { getViewportExtent } = useMapView();
+    const { prepareScaleControl, getMapSnapshot } = useMapCapture();
     const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
     const { activeLayerIds, selectedLayer, groupedActiveLayers } = useContext(MapsContext);
@@ -75,63 +76,25 @@ export const useMapDownload = () => {
 
         setIsDownloading(true);
         const scaleControl = targetRef.current.querySelector('.ol-scale-line');
-        const originalStyles = prepareScaleControl(scaleControl);
+        prepareScaleControl(scaleControl);
 
-        let originalView = null;
-
-        const LOGICAL_MAP_WIDTH = 1020;
-        const LOGICAL_HEIGHT = 850;
-        const SIDE_PANEL_WIDTH = 255;
+        const { SIDE_PANEL_WIDTH } = EXPORT_DIMENSIONS;
 
         try {
             const minimapImageUrl = await generateMinimapImage();
-            const view = mapRef.current.getView();
-            const originalCenter = view.getCenter();
-            const originalResolution = view.getResolution();
             let targetExtent = null;
-
             if (viewType === 'full-state') {
-                originalView = {
-                    width: targetRef.current.style.width,
-                    height: targetRef.current.style.height
-                };
-
-                targetRef.current.style.width = `${LOGICAL_MAP_WIDTH}px`;
-                targetRef.current.style.height = `${LOGICAL_HEIGHT}px`;
-                mapRef.current.updateSize();
-
-                adjustViewToFullState();
                 targetExtent = getViewportExtent();
             } else {
-                const guideExtent = forcedExtent || getGuideExtent();
-
-                originalView = {
-                    width: targetRef.current.style.width,
-                    height: targetRef.current.style.height
-                };
-
-                targetRef.current.style.width = `${LOGICAL_MAP_WIDTH}px`;
-                targetRef.current.style.height = `${LOGICAL_HEIGHT}px`;
-                mapRef.current.updateSize();
-
-                const extent3857 = transformExtent(guideExtent, 'EPSG:4326', 'EPSG:3857');
-                mapRef.current.getView().fit(extent3857, { size: [LOGICAL_MAP_WIDTH, LOGICAL_HEIGHT] });
-
-                targetExtent = guideExtent;
+                targetExtent = forcedExtent || getGuideExtent();
             }
 
-            await waitForTilesToLoad();
-            const scale = 2;
-            const mapCanvas = await captureMap(scale);
+            const mapCanvas = await getMapSnapshot({
+                extent: targetExtent,
+                viewType
+            });
 
-            if (originalView) {
-                targetRef.current.style.width = originalView.width;
-                targetRef.current.style.height = originalView.height;
-                mapRef.current.updateSize();
-                mapRef.current.getView().setCenter(originalCenter);
-                mapRef.current.getView().setResolution(originalResolution);
-            }
-            restoreScaleControl(scaleControl, originalStyles);
+            if (!mapCanvas) throw new Error('Failed to capture map');
 
             const legendForPanel = selectedLegends.length > 0 ? selectedLegends[0] : currentSelectedLegend;
 
@@ -145,8 +108,7 @@ export const useMapDownload = () => {
                 getLegendJson,
                 viewType,
                 viewportExtent: viewType === 'viewport' ? targetExtent : null,
-                minimapImageUrl,
-                scale
+                minimapImageUrl
             });
 
             if (format === 'pdf') {
@@ -162,11 +124,6 @@ export const useMapDownload = () => {
 
         } catch (error) {
             console.error('Error al descargar el mapa:', error);
-            if (originalView && targetRef.current && mapRef.current) {
-                targetRef.current.style.width = originalView.width;
-                targetRef.current.style.height = originalView.height;
-                mapRef.current.updateSize();
-            }
         } finally {
             setIsDownloading(false);
         }

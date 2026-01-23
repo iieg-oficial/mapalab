@@ -37,13 +37,15 @@ const MapToolsPanel = () => {
                 <ShareButton />
                 <InfoModal />
             </Panel>
-            <ExportPreview
-                isOpen={isPreviewOpen}
-                onClose={handleClosePreview}
-                format={previewFormat}
-                selectedLegend={previewLegend}
-                initialTitle={previewTitle}
-            />
+            {isPreviewOpen && (
+                <ExportPreview
+                    isOpen={isPreviewOpen}
+                    onClose={handleClosePreview}
+                    format={previewFormat}
+                    selectedLegend={previewLegend}
+                    initialTitle={previewTitle}
+                />
+            )}
         </>
     );
 };

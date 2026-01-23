@@ -3,6 +3,7 @@ import FeatureLabel from '../components/FeatureLabel';
 import FeatureList from '../components/FeatureList';
 import FeatureIconText from '../components/FeatureIconText';
 import FeatureCards from '../components/FeatureCards';
+import FeatureText from '../components/FeatureText';
 
 const extractSuffixFromLayerId = (layerId) => {
     if (!layerId) return null;
@@ -153,6 +154,21 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
             />
         );
     }
+
+    if (config.text) {
+        config.text.forEach((textItem, idx) => {
+            const value = textItem.field ? getValue(textItem.field) : null;
+            if (textItem.label || value) {
+                body.push(
+                    <FeatureText
+                        key={`text-${idx}`}
+                        label={textItem.label}
+                        value={value}
+                    />
+                );
+            }
+        });
+    } 
 
     if (config.cards) {
         const cards = config.cards

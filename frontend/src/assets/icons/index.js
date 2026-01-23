@@ -95,6 +95,8 @@ import deshacerNormal from './ico_deshacer.svg';
 import xrNormal from './ico_xr_normal.svg';
 import xlNormal from './ico_xl_normal.svg';
 import infoWarningNormal from './ico_info_warning_normal.svg';
+import coordenadasNormal from './ico_coordenadas_normal.svg';
+import nNormal from './ico_n.svg';
 
 export const externalIcons = {
     base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
@@ -111,5 +113,5 @@ export const externalIcons = {
     visible_normal: visibleNormal, visible_hover: visibleHover, move_normal: moveNormal, move_hover: moveHover, simbologia_normal: simbologiaNormal,
     eliminar_normal: eliminarNormal, eliminar_hover: eliminarHover, big_card_normal: bigCardNormal, big_card_hover: bigCardHover, upArrow_normal: upArrowNormal,
     alert_normal: alertNormal, deshacer_normal: deshacerNormal, center_normal: centerNormal, center_hover: centerHover, xr_normal: xrNormal, xl_normal: xlNormal,
-    info_warning_normal: infoWarningNormal,
+    info_warning_normal: infoWarningNormal, coordenadas_normal: coordenadasNormal, n_normal: nNormal,
 };
