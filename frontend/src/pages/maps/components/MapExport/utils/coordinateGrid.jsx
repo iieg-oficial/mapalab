@@ -1,6 +1,6 @@
-import coordinateLabels from './coordinateLabels';
+import coordenadasIcon from '@assets/icons/ico_coordenadas_normal.svg';
 
-const coordinateGrid = (width, height, extent = null) => {
+const coordinateGrid = (width, height, divisionsX = 5, divisionsY = 4) => {
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.top = '0';
@@ -10,46 +10,27 @@ const coordinateGrid = (width, height, extent = null) => {
     container.style.zIndex = '5';
     container.style.pointerEvents = 'none';
 
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', width);
-    svg.setAttribute('height', height);
-    svg.style.position = 'absolute';
-    svg.style.top = '0';
-    svg.style.left = '0';
+    const iconSize = 16;
 
-    const gridSpacing = 80;
-    const crossSize = 10;
+    for (let i = 1; i < divisionsX; i++) {
+        for (let j = 1; j < divisionsY; j++) {
+            const x = (i / divisionsX) * width;
+            const y = (j / divisionsY) * height;
 
-    const cols = Math.floor(width / gridSpacing);
-    const rows = Math.floor(height / gridSpacing);
+            const icon = document.createElement('img');
+            icon.src = coordenadasIcon;
+            Object.assign(icon.style, {
+                position: 'absolute',
+                left: `${x - iconSize / 2}px`,
+                top: `${y - iconSize / 2}px`,
+                width: `${iconSize}px`,
+                height: `${iconSize}px`,
+                opacity: '0.6'
+            });
 
-    for (let i = 1; i < cols; i++) {
-        for (let j = 1; j < rows; j++) {
-            const x = i * gridSpacing;
-            const y = j * gridSpacing;
-
-            const hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            hLine.setAttribute('x1', x - crossSize / 2);
-            hLine.setAttribute('y1', y);
-            hLine.setAttribute('x2', x + crossSize / 2);
-            hLine.setAttribute('y2', y);
-            hLine.setAttribute('stroke', 'rgba(0, 0, 0, 0.4)');
-            hLine.setAttribute('stroke-width', '1');
-            svg.appendChild(hLine);
-
-            const vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            vLine.setAttribute('x1', x);
-            vLine.setAttribute('y1', y - crossSize / 2);
-            vLine.setAttribute('x2', x);
-            vLine.setAttribute('y2', y + crossSize / 2);
-            vLine.setAttribute('stroke', 'rgba(0, 0, 0, 0.4)');
-            vLine.setAttribute('stroke-width', '1');
-            svg.appendChild(vLine);
+            container.appendChild(icon);
         }
     }
-
-    container.appendChild(svg);
-    container.appendChild(coordinateLabels(height, width, extent));
 
     return container;
 };

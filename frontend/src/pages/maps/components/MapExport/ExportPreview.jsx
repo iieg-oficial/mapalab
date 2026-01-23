@@ -6,26 +6,22 @@ import { useMapsContext } from '@hooks/useMaps';
 import MapsContext from '@contexts/MapsContext';
 import { useWMSLegend } from '../../hooks/useWMSLegend';
 import { useMapDownload } from './hooks/useMapDownload';
-import { useMapView } from './hooks/useMapView';
 import { useMinimap } from './hooks/useMinimap';
 import { useMapCapture } from './hooks/useMapCapture';
 import { useImageComposition } from './hooks/useImageComposition';
 import { layers as allLayers, findLayerById } from '../../helpers/layers/index';
-import { transformExtent } from 'ol/proj';
+import { EXPORT_DIMENSIONS } from './utils/exportDimensions';
 import Loading from '@components/Loading';
 import Icon from '@components/Icon';
 
 const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSelectedLegend, initialTitle = '' }) => {
-    const { targetRef, mapRef } = useMapsContext();
+    const { targetRef } = useMapsContext();
     const { getLegendUrl, getLegendJson } = useWMSLegend();
     const { activeLayerIds, groupedActiveLayers } = useContext(MapsContext);
-
     const { getGuideExtent } = useMapDownload();
-    const { restoreView } = useMapView();
     const { generateMinimapImage } = useMinimap();
-    const { waitForTilesToLoad, captureMap } = useMapCapture();
+    const { getMapSnapshot } = useMapCapture();
     const { composeExportImage } = useImageComposition();
-
     const [previewUrl, setPreviewUrl] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [title, setTitle] = useState('');
@@ -47,6 +43,12 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
         } else {
             setIsZenMode(false);
             setShowModal(false);
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (import.meta.env.DEV && isOpen && !capturedExtent) {
+            handleConfirmCapture();
         }
     }, [isOpen]);
 
@@ -76,41 +78,15 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
 
         setIsGenerating(true);
 
-        let originalView = null;
-        let originalSize = null;
-
-        const LOGICAL_MAP_WIDTH = 1020;
-        const LOGICAL_HEIGHT = 850;
-        const SIDE_PANEL_WIDTH = 255;
+        const { SIDE_PANEL_WIDTH } = EXPORT_DIMENSIONS;
 
         try {
             const minimapImageUrl = await generateMinimapImage();
 
-            if (mapRef.current && targetRef.current) {
-                originalSize = {
-                    width: targetRef.current.style.width,
-                    height: targetRef.current.style.height
-                };
-
-                targetRef.current.style.width = `${LOGICAL_MAP_WIDTH}px`;
-                targetRef.current.style.height = `${LOGICAL_HEIGHT}px`;
-                mapRef.current.updateSize();
-            }
-
-            const extent3857 = transformExtent(capturedExtent, 'EPSG:4326', 'EPSG:3857');
-            mapRef.current.getView().fit(extent3857, { size: [LOGICAL_MAP_WIDTH, LOGICAL_HEIGHT] });
-
-            await waitForTilesToLoad();
-            const mapCanvas = await captureMap(1);
-
-            if (originalSize && targetRef.current && mapRef.current) {
-                targetRef.current.style.width = originalSize.width;
-                targetRef.current.style.height = originalSize.height;
-                mapRef.current.updateSize();
-            }
-            if (originalView) {
-                restoreView(originalView);
-            }
+            const mapCanvas = await getMapSnapshot({
+                extent: capturedExtent,
+                viewType: 'viewport'
+            });
 
             const finalCanvas = await composeExportImage({
                 mapCanvas,
@@ -122,8 +98,7 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
                 getLegendJson,
                 viewType: 'viewport',
                 viewportExtent: capturedExtent,
-                minimapImageUrl,
-                scale: 1
+                minimapImageUrl
             });
 
             setPreviewUrl(finalCanvas.toDataURL('image/png'));
@@ -131,14 +106,6 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
         } catch (error) {
             console.error('Error generando preview:', error);
         } finally {
-            if (originalSize && targetRef.current && mapRef.current) {
-                targetRef.current.style.width = originalSize.width;
-                targetRef.current.style.height = originalSize.height;
-                mapRef.current.updateSize();
-            }
-            if (originalView) {
-                restoreView(originalView);
-            }
             setIsGenerating(false);
         }
     };
@@ -175,7 +142,7 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
     return (
         <>
             <GuideOverlay
-                visible={isZenMode}
+                visible={isZenMode && !showModal}
                 aspectRatio={1.2}
                 onConfirm={handleConfirmCapture}
                 onCancel={handleCancelCapture}
@@ -185,7 +152,7 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
                 <div className="fixed inset-0 bg-black/50 z-[9999] flex flex-col items-center justify-center p-4 gap-6">
                     <div
                         ref={containerRef}
-                        className="relative bg-white shadow-2xl flex flex-col max-w-[90vw] max-h-[calc(85vh - 60px)]"
+                        className="relative bg-[#F7F8FC] shadow-2xl flex flex-col max-w-[85vw] max-h-[85vh]"
                     >
                         <div className="absolute top-0 left-0 bg-[#703089] text-white text-[10px] px-2 py-1 font-bold uppercase tracking-wide z-10">
                             Vista Previa
@@ -203,7 +170,7 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
                                 <img
                                     src={previewUrl}
                                     alt="Export Preview"
-                                    className="max-w-full max-h-[calc(85vh - 60px)] object-contain shadow-lg rounded-lg"
+                                    className="max-w-[85vw] max-h-[75vh] object-contain shadow-lg rounded-lg"
                                 />
                             )}
                             {!isGenerating && !previewUrl && (

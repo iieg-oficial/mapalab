@@ -1,8 +1,12 @@
 import { useMapsContext } from '@hooks/useMaps';
 import html2canvas from 'html2canvas';
+import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
+import { transformExtent } from 'ol/proj';
+import { useMapView } from './useMapView';
 
 export const useMapCapture = () => {
-    const { targetRef } = useMapsContext();
+    const { targetRef, mapRef } = useMapsContext();
+    const { adjustViewToFullState } = useMapView();
 
     const prepareScaleControl = (scaleControl) => {
         if (!scaleControl) return null;
@@ -88,12 +92,61 @@ export const useMapCapture = () => {
         }));
     };
 
+    const getMapSnapshot = async ({ extent, viewType = 'viewport' }) => {
+        if (!targetRef.current || !mapRef.current) return null;
+
+        let originalState = null;
+        const { MAP_WIDTH, MAP_HEIGHT } = EXPORT_DIMENSIONS;
+
+        try {
+            originalState = {
+                width: targetRef.current.style.width,
+                height: targetRef.current.style.height,
+                center: mapRef.current.getView().getCenter(),
+                resolution: mapRef.current.getView().getResolution()
+            };
+
+            targetRef.current.style.width = `${MAP_WIDTH}px`;
+            targetRef.current.style.height = `${MAP_HEIGHT}px`;
+            mapRef.current.updateSize();
+
+            if (viewType === 'full-state') {
+                adjustViewToFullState();
+            } else if (extent) {
+                const extent3857 = transformExtent(extent, 'EPSG:4326', 'EPSG:3857');
+                mapRef.current.getView().fit(extent3857, { size: [MAP_WIDTH, MAP_HEIGHT] });
+            }
+
+            await waitForTilesToLoad();
+
+            const canvas = await captureMap(1);
+
+            return canvas;
+
+        } catch (error) {
+            console.error('Error in getMapSnapshot:', error);
+            throw error;
+        } finally {
+            if (originalState) {
+                targetRef.current.style.width = originalState.width;
+                targetRef.current.style.height = originalState.height;
+                mapRef.current.updateSize();
+
+                if (viewType === 'full-state' || extent) {
+                    mapRef.current.getView().setCenter(originalState.center);
+                    mapRef.current.getView().setResolution(originalState.resolution);
+                }
+            }
+        }
+    };
+
     return {
         prepareScaleControl,
         restoreScaleControl,
         waitForTilesToLoad,
         captureMap,
         captureElement,
-        waitForImages
+        waitForImages,
+        getMapSnapshot
     };
 };
