@@ -55,8 +55,8 @@ export const useUrlSync = () => {
         }
 
         const layersChanged =
-            debouncedActiveLayerIds.sort().join(',') !==
-            previousState.current.layerIds.sort().join(',');
+            [...debouncedActiveLayerIds].sort().join(',') !==
+            [...previousState.current.layerIds].sort().join(',');
 
         const filtersChanged =
             JSON.stringify(debouncedFilters) !==
