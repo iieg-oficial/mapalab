@@ -1,4 +1,4 @@
-import ActiveLayersList from './ActiveLayersList';
+import { ActiveLayersList } from './ActiveLayers';
 import SymbologyPanel from './SymbologyPanel';
 import Panel from '@components/Panel';
 

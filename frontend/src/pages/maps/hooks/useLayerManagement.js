@@ -1,60 +1,21 @@
 import { useState, useCallback } from 'react';
 import { layers } from '@pages/maps/helpers/layers/index';
+import { findLayerById as findLayerByIdHelper, getAllChildLayerIds as getAllChildLayerIdsHelper } from '@pages/maps/helpers/layers/index';
 
 export const useLayerManagement = () => {
     const [activeLayerIds, setActiveLayerIds] = useState([]);
 
     const findLayerById = useCallback((layerId) => {
-        const find = (layers) => {
-            for (const layer of layers) {
-                if (layer.id === layerId) return layer;
-                if (layer.children && layer.children.length > 0) {
-                    const found = find(layer.children);
-                    if (found) return found;
-                }
-            }
-            return null;
-        };
-
-        return find(layers);
+        return findLayerByIdHelper(layerId, layers);
     }, []);
 
     const getAllChildLayerIds = useCallback((layerId) => {
-        const findLayer = (layers, id, result = []) => {
-            for (const layer of layers) {
-                if (layer.id === id) {
-                    if (layer.children && layer.children.length > 0) {
-                        collectChildIds(layer.children, result);
-                    }
-                    return true;
-                }
-
-                if (layer.children && layer.children.length > 0) {
-                    if (findLayer(layer.children, id, result)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        };
-
-        const collectChildIds = (layers, result) => {
-            for (const layer of layers) {
-                result.push(layer.id);
-                if (layer.children && layer.children.length > 0) {
-                    collectChildIds(layer.children, result);
-                }
-            }
-        };
-
-        const childIds = [];
-        findLayer(layers, layerId, childIds);
-        return childIds;
+        return getAllChildLayerIdsHelper(layerId, layers);
     }, []);
 
     const findParent = useCallback((layerId) => {
-        const findDirectParent = (layers, targetId) => {
-            for (const layer of layers) {
+        const findDirectParent = (layersList, targetId) => {
+            for (const layer of layersList) {
                 if (layer.children && layer.children.some(child => child.id === targetId)) {
                     return layer;
                 }

@@ -1,10 +1,10 @@
 import { useContext, useCallback } from 'react';
 import MapsContext from '@contexts/MapsContext';
-import { useActiveLayersLogic } from '../hooks/useActiveLayersLogic';
-import { useLayerCollapse } from '../hooks/useLayerCollapse';
-import { useLayerSorting } from '../hooks/useLayerSorting';
+import { useActiveLayersLogic } from '../../hooks/useActiveLayersLogic';
+import { useLayerCollapse } from './hooks/useLayerCollapse';
+import { useLayerSorting } from './hooks/useLayerSorting';
 import { SortableList, SortableItem } from './SortableList';
-import ActiveLayerItem from '@mapsComponents/ActiveLayerItem';
+import ActiveLayerItem from './ActiveLayerItem';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
@@ -39,13 +39,7 @@ const ActiveLayersList = () => {
                 <Tooltip content={unifiedLayers.length > 0 ? 'Expandir capas activas' : 'No hay capas activas'}>
                     <button
                         onClick={() => (unifiedLayers.length > 0 || collapse.isManuallyCollapsed) && collapse.handleExpand()}
-                        className={`
-                            size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors relative
-                            ${(unifiedLayers.length > 0 || collapse.isManuallyCollapsed)
-                                ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer'
-                                : 'cursor-default opacity-50'
-                            }
-                        `}
+                        className={`size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors relative ${(unifiedLayers.length > 0 || collapse.isManuallyCollapsed) ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer' : 'cursor-default opacity-50'}`}
                         disabled={unifiedLayers.length === 0 && !collapse.isManuallyCollapsed}
                     >
                         <Icon name="capa_activa" className="size-10" />
@@ -65,7 +59,7 @@ const ActiveLayersList = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Tooltip content={isInegiMode ? "Vista INEGI" : "Vista IIEG"}>
+                    <Tooltip content={isInegiMode ? 'Vista INEGI' : 'Vista IIEG'}>
                         <button onClick={handleToggleBaseMode} className="cursor-pointer">
                             <Icon name="basemaps" state={isInegiMode ? 'normal' : 'hover'} className="size-6" />
                         </button>
