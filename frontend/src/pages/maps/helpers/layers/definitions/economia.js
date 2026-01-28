@@ -44,6 +44,7 @@ export const economiaLayers = {
             id: 'cultivos',
             label: 'Cultivos',
             base: 'iieg',
+            forceGroup: true,
             children: CULTIVOS.map(([id, label, matchValue, tags]) => ({
                 id,
                 label,

@@ -59,6 +59,7 @@ export const baseLayers = {
     label: 'Capas base',
     base: 'iieg',
     hasPeriodicity: false,
+    forceGroup: true,
     children: BASE_LAYERS.map(([id, label, param3, tags, littleCard]) => {
         let wmsGroup = 'default';
         if (id.includes('inegi')) {
