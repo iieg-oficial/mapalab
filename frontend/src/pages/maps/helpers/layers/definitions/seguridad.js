@@ -205,6 +205,7 @@ export const seguridadLayers = {
                         id: layer.id,
                         label: layer.label,
                         isLabel: layer.isLabel,
+                        forceGroup: layer.forceGroup,
                         children: layer.children.map(child => ({
                             id: child.id,
                             label: child.label,
