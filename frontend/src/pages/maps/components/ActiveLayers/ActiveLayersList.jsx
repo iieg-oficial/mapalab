@@ -1,4 +1,4 @@
-import { useContext, useCallback } from 'react';
+import { useContext, useCallback, useMemo } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useActiveLayersLogic } from '../../hooks/useActiveLayersLogic';
 import { useLayerCollapse } from './hooks/useLayerCollapse';
@@ -21,6 +21,7 @@ const ActiveLayersList = () => {
     const { unifiedLayers } = useActiveLayersLogic(activeLayerIds, hiddenLayerIds);
     const collapse = useLayerCollapse(unifiedLayers);
     const { handleDragEnd } = useLayerSorting(activeLayerIds, unifiedLayers, reorderActiveLayerIds);
+    const sortableItems = useMemo(() => unifiedLayers.map(l => l.id), [unifiedLayers]);
     const isInegiMode = activeLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id));
 
     const handleToggleBaseMode = useCallback(() => {
@@ -35,7 +36,7 @@ const ActiveLayersList = () => {
 
     if (collapse.isCollapsed) {
         return (
-            <div className={`w-auto h-15 shadow-[0_5px_20px_#1A26641A] flex items-center justify-end`}>
+            <div className={`w-auto h-15 flex items-center justify-end`}>
                 <Tooltip content={unifiedLayers.length > 0 ? 'Expandir capas activas' : 'No hay capas activas'}>
                     <button
                         onClick={() => (unifiedLayers.length > 0 || collapse.isManuallyCollapsed) && collapse.handleExpand()}
@@ -75,7 +76,7 @@ const ActiveLayersList = () => {
 
             <div className={`flex-1 min-h-0 overflow-y-auto ${HIDDEN_SCROLLBAR} -mx-1 px-1`}>
                 <SortableList
-                    items={unifiedLayers.map(l => l.id)}
+                    items={sortableItems}
                     onSortEnd={handleDragEnd}
                 >
                     <div className="space-y-1 py-1">
