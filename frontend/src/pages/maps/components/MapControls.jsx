@@ -137,7 +137,7 @@ const MapControls = () => {
             className={`fixed bottom-15 z-10 flex flex-col w-10 ${className}`}
             style={style}
         >
-            <div className="flex flex-col justify-center items-center rounded-[20px] bg-white">
+            <div className="flex flex-col justify-center items-center rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
                 <button
                     onClick={handleZoomIn}
                     onMouseEnter={() => setHoveredButton('zoomin')}

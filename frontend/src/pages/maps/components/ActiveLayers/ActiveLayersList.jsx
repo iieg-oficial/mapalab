@@ -35,7 +35,7 @@ const ActiveLayersList = () => {
 
     if (collapse.isCollapsed) {
         return (
-            <div className={`w-auto h-15 flex items-center justify-end`}>
+            <div className={`w-auto h-15 shadow-[0_5px_20px_#1A26641A] flex items-center justify-end`}>
                 <Tooltip content={unifiedLayers.length > 0 ? 'Expandir capas activas' : 'No hay capas activas'}>
                     <button
                         onClick={() => (unifiedLayers.length > 0 || collapse.isManuallyCollapsed) && collapse.handleExpand()}
@@ -51,7 +51,7 @@ const ActiveLayersList = () => {
     }
 
     return (
-        <div className="w-auto px-4.5 pb-6 pt-2 rounded-[10px] bg-[#F9FBFF] max-h-[45vh] flex flex-col">
+        <div className="w-auto px-4.5 pb-6 pt-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] max-h-[45vh] flex flex-col">
             <div className="flex items-center justify-between shrink-0 mb-2">
                 <div className="flex items-center gap-3">
                     <Icon name="capa_activa" className="size-8" />

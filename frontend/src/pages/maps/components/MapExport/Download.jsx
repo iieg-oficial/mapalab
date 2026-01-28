@@ -93,12 +93,12 @@ const Download = ({ onOpenPreview }) => {
                     onClick={handleDownloadClick}
                     disabled={!canDownload || isDownloading}
                     className={[
-                        'text-center h-12.5 px-10 rounded-[30px] transition ',
+                        'text-center w-[235px] h-12.5 rounded-[30px] transition ',
                         'font-garet font-bold text-[14px]/[47px] hover:shadow-[0_6px_6px_#5C247234]',
                         canDownload ? 'bg-[#703089] text-white hover:bg-[#5C2472]' : 'bg-black/5 text-black/40 cursor-not-allowed',
                     ].join(' ')}
                 >
-                    {isMobile ? <Icon name="download" /> : (isDownloading ? 'Generando…' : 'Descargar')}
+                    {isMobile ? <Icon name="download" /> : (isDownloading ? 'Generando…' : 'Descargar visualización')}
                 </button>
             </Tooltip>
 

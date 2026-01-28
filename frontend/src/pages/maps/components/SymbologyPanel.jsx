@@ -37,7 +37,7 @@ const SymbologyPanel = () => {
                     <button
                         onClick={() => (hasLayer || isManuallyCollapsed) && handleExpand()}
                         className={`
-                            size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors
+                            size-12.5 flex items-center justify-center bg-[#EAEFFA] shadow-[0_5px_20px_#1A26641A] rounded-full transition-colors
                             ${(hasLayer || isManuallyCollapsed)
                                 ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer'
                                 : 'cursor-default opacity-50'
@@ -60,7 +60,7 @@ const SymbologyPanel = () => {
     const displayLayers = getLayersForSymbology(fullLayer);
 
     return (
-        <div className="w-auto px-4.5 pb-6 pt-5 rounded-[10px] bg-[#F9FBFF] max-h-[40vh] flex flex-col">
+        <div className="w-auto px-4.5 pb-6 pt-5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] max-h-[40vh] flex flex-col">
             <div className="flex justify-between items-center mb-2 shrink-0">
                 <div className="flex items-center gap-3">
                     <Icon name="simbologia" className="size-8" />

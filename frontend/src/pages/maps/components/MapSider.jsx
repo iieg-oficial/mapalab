@@ -108,7 +108,7 @@ const MapSider = ({ className = '' }) => {
                         shadow="shadow-none"
                         offset={10}
                         rounded="rounded-r-2xl"
-                        bg="bg-[#F9FBFF]"
+                        bg="bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A]"
                     >
                         {item.menuContent({ close: () => setIsMenuOpen(false) })}
                     </Panel>
@@ -147,7 +147,7 @@ const MapSider = ({ className = '' }) => {
             ref={siderRef}
             className={[
                 'absolute top-4 left-4 z-20 flex flex-col',
-                'max-h-[calc(100vh-2rem)] bg-white rounded-[10px]',
+                'max-h-[calc(100vh-2rem)] bg-white shadow-[0_5px_20px_#1A26641A] rounded-[10px]',
                 'transition-all duration-500',
                 className,
             ].join(' ')}
