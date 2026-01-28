@@ -55,6 +55,7 @@ const TextPanel = ({
             title="Texto a colocar"
             width="w-64"
             footer={footer}
+            shadow="shadow-[0_5px_20px_#1A26641A]"
         >
             <div className="p-3 space-y-3">
                 <input
