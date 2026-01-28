@@ -69,10 +69,12 @@ export const baseLayers = {
         }
 
         const wfsAvailable = !['limite_iieg', 'limite_inegi'].includes(id);
+        const hiddenInMenu = ['limite_iieg', 'limite_inegi', 'limite_municipal', 'limite_municipal_inegi', 'regiones'].includes(id);
 
         return {
             id,
             label,
+            hiddenInMenu,
             wmsConfig: {
                 ...createGeneralLayer(param3),
                 wmsGroup,
