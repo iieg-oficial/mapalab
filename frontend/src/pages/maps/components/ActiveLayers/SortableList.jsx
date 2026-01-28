@@ -69,7 +69,7 @@ export function SortableItem(props) {
                 if (React.isValidElement(child)) {
                     return React.cloneElement(child, {
                         dragHandleProps: { ...attributes, ...listeners },
-                        isDragging 
+                        isDragging
                     });
                 }
                 return child;

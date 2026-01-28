@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MOBILE_BREAKPOINT } from '@constants/sider';
-import { useZenMode } from '../components/ZenMode';
+import { useZenMode } from '../../ZenMode';
 
 export const useLayerCollapse = (unifiedLayers) => {
     const [isCollapsed, setIsCollapsed] = useState(() => window.innerWidth < MOBILE_BREAKPOINT);

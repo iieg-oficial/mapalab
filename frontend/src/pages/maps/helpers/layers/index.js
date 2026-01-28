@@ -10,7 +10,8 @@ import { baseLayers } from './definitions/base';
 import {
     findLayerById, validateLayer,
     getSymbologyStats,
-    collectLayersWithWMS, collectLayerIdsWithWMS
+    collectLayersWithWMS, collectLayerIdsWithWMS,
+    getAllChildLayerIds
 } from './utils/layerHelpers';
 
 export const layers = [
@@ -21,5 +22,6 @@ export const layers = [
 export {
     findLayerById, validateLayer,
     getSymbologyStats,
-    collectLayersWithWMS, collectLayerIdsWithWMS
+    collectLayersWithWMS, collectLayerIdsWithWMS,
+    getAllChildLayerIds
 };

@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { layers } from '@pages/maps/helpers/layers/index';
+import { findLayerById as findLayerByIdHelper, getAllChildLayerIds as getAllChildLayerIdsHelper } from '@pages/maps/helpers/layers/index';
 
 const isMainLayer = (layerId) => {
     if (['base_layers'].includes(layerId)) return false;
@@ -8,38 +9,12 @@ const isMainLayer = (layerId) => {
 
 export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
     const findLayerById = useCallback((id) => {
-        const search = (layersList) => {
-            for (const layer of layersList) {
-                if (layer.id === id) return layer;
-                if (layer.children && layer.children.length > 0) {
-                    const found = search(layer.children);
-                    if (found) return found;
-                }
-            }
-            return null;
-        };
-        return search(layers);
+        return findLayerByIdHelper(id, layers);
     }, []);
 
     const getAllChildLayerIds = useCallback((layerId) => {
-        const result = [];
-
-        const collectIds = (layers) => {
-            for (const layer of layers) {
-                result.push(layer.id);
-                if (layer.children && layer.children.length > 0) {
-                    collectIds(layer.children);
-                }
-            }
-        };
-
-        const layer = findLayerById(layerId);
-        if (layer && layer.children && layer.children.length > 0) {
-            collectIds(layer.children);
-        }
-
-        return result;
-    }, [findLayerById]);
+        return getAllChildLayerIdsHelper(layerId, layers);
+    }, []);
 
     const findRootChildAncestor = useCallback((layerId) => {
         const findPath = (currentLayers, targetId, path = []) => {

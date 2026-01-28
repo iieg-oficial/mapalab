@@ -61,7 +61,7 @@ const ActiveLayerItem = ({
     return (
         <div
             className={`
-                group flex items-center gap-3 px-2 py-4 rounded-[10px] border border-transparent hover:border-[#EAEFFA] 
+                group flex items-center gap-3 px-2 py-4 rounded-[10px] border border-transparent hover:border-[#EAEFFA]
                 transition-all relative h-12 hover:shadow-sm
                 ${layer.visible ? 'bg-white' : 'bg-[#EBEBEB]'}
                 ${isSelected ? 'ring-1 ring-[#70308A]' : ''}
