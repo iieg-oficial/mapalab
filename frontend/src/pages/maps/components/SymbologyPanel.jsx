@@ -37,7 +37,7 @@ const SymbologyPanel = () => {
                     <button
                         onClick={() => (hasLayer || isManuallyCollapsed) && handleExpand()}
                         className={`
-                            size-12.5 flex items-center justify-center bg-[#EAEFFA] shadow-[0_5px_20px_#1A26641A] rounded-full transition-colors
+                            size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors
                             ${(hasLayer || isManuallyCollapsed)
                                 ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer'
                                 : 'cursor-default opacity-50'
