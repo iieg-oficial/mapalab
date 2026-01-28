@@ -33,28 +33,32 @@ const Panel = ({
     shadow,
     rounded,
     bg,
+    treatAsMobile: treatAsMobileProp,
 }) => {
     const panelRef = useRef(null);
     const menuId = useId();
     const hasFloatingPosition = anchorRef != null;
     const siderContext = useSider();
-    const isMobile = siderContext?.isMobile || false;
+    const isMobile = treatAsMobileProp ?? siderContext?.isMobile ?? false;
     const [scrollState, setScrollState] = useState({ canScrollUp: false, canScrollDown: false });
 
     const shouldUseMobileFullscreen = mobileFullscreen !== undefined
         ? mobileFullscreen
         : (variant === 'menu' && !disableMobileFullscreen);
 
-    const { isReady } = variant === 'menu' && hasFloatingPosition
-        ? useSiderMenuPosition({
-            open,
-            anchorRef,
-            contentRef: panelRef,
-            placement,
-            offset: offset ?? 8,
-            mobileFullscreen: shouldUseMobileFullscreen
-        })
-        : { isReady: true };
+    const shouldUseMenuPosition = variant === 'menu' && hasFloatingPosition;
+
+    const menuPositionResult = useSiderMenuPosition({
+        open: shouldUseMenuPosition ? open : false,
+        anchorRef,
+        contentRef: panelRef,
+        placement,
+        offset: offset ?? 8,
+        mobileFullscreen: shouldUseMobileFullscreen,
+        treatAsMobile: treatAsMobileProp
+    });
+
+    const isReady = shouldUseMenuPosition ? menuPositionResult.isReady : true;
 
     useFloatingPosition({
         open: hasFloatingPosition && variant !== 'menu' ? open : false,
@@ -196,7 +200,6 @@ const Panel = ({
                 ${className}
                 ${!showHeader && contentClassName}
                 ${mobileFullscreenClasses}
-                ${mobileMenuClasses}
                 ${mobileMenuClasses}
                 ${shadowClass || ''}
                 flex

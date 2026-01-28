@@ -13,7 +13,7 @@ const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpe
     const iconState = (hasActiveLayers || isHovering || isMenuOpen) ? 'hover' : 'normal';
 
     return (
-        <button
+        <div
             className={`
                 flex items-center gap-3 py-2 px-2 w-full hover:bg-black/5 transition-all duration-500 rounded-[6px]
                 ${isMenuOpen ? 'bg-[#703088]/10' : ''}
@@ -43,7 +43,7 @@ const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpe
             >
                 {label}
             </span>
-        </button>
+        </div>
     );
 };
 
