@@ -27,7 +27,7 @@ const MapToolsPanel = () => {
             <Panel
                 variant="floating"
                 position="top-3 right-3 z-11"
-                width="w-[373px]"
+                width="w-auto md:w-[373px]"
                 flexDirection="flex-row items-center"
                 className="rounded-[14px] shadow-[0_5px_20px_#1A26641A]"
                 contentClassName="gap-2 px-2 py-3"

@@ -8,9 +8,11 @@ export const useSiderMenuPosition = ({
     contentRef,
     placement = 'right-start',
     offset = 8,
-    mobileFullscreen = false
+    mobileFullscreen = false,
+    treatAsMobile: treatAsMobileProp
 }) => {
-    const { siderRef, isMobile, width: siderWidth } = useSider();
+    const { siderRef, isMobile: contextIsMobile, width: siderWidth } = useSider();
+    const isMobile = treatAsMobileProp ?? contextIsMobile;
     const [isReady, setIsReady] = useState(false);
     const updateFrameRef = useRef(null);
     const lastPositionRef = useRef(null);
@@ -137,10 +139,7 @@ export const useSiderMenuPosition = ({
         }
 
         lastPositionRef.current = positionKey;
-
-        if (!el.style.transition) {
-            el.style.transition = SIDER_TRANSITION_CSS;
-        }
+        el.style.transition = SIDER_TRANSITION_CSS;
 
         if (position.placement === 'fullscreen') {
             el.style.left = '';

@@ -3,6 +3,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useSider, useSiderHover } from '@contexts/SiderContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import Panel from '@components/Panel';
+import MobileMenu from './MobileMenu';
 import Logo from '@components/Logo';
 import { createMenuItems } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
@@ -44,7 +45,7 @@ const MapSider = ({ className = '' }) => {
     });
 
     useOutsideClick([siderRef], () => {
-        if (treatAsMobile && isOpen) {
+        if (treatAsMobile && isOpen && openMenusCount === 0) {
             closeSider();
         }
     });
@@ -63,7 +64,7 @@ const MapSider = ({ className = '' }) => {
         createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible }),
         [isExpanded, contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible]);
 
-    const MenuItem = useCallback(({ item }) => {
+    const MenuItem = useCallback(({ item, isMobileView }) => {
         const [isMenuOpen, setIsMenuOpen] = useState(false);
         const buttonRef = useRef(null);
 
@@ -79,39 +80,52 @@ const MapSider = ({ className = '' }) => {
                 return item.component;
             }
 
+            const handleClose = () => setIsMenuOpen(false);
+
             return (
                 <>
-                    <div
+                    <button
+                        type="button"
                         ref={buttonRef}
                         id={`menu-button-${item.id}`}
                         aria-haspopup="menu"
                         aria-expanded={isMenuOpen}
                         aria-controls={`menu-content-${item.id}`}
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="cursor-pointer"
+                        className="cursor-pointer w-full text-left"
                     >
                         {item.renderComponent ? item.renderComponent({ isMenuOpen }) : item.component}
-                    </div>
-                    <Panel
-                        open={isMenuOpen}
-                        onClose={() => setIsMenuOpen(false)}
-                        anchorRef={buttonRef}
-                        variant="menu"
-                        role="menu"
-                        closeOnEscape={true}
-                        autoFocus={true}
-                        registerInSider={true}
-                        width="w-88"
-                        maxHeight="max-h-200"
-                        noPadding={true}
-                        className="border-none"
-                        shadow="shadow-none"
-                        offset={10}
-                        rounded="rounded-r-2xl"
-                        bg="bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A]"
-                    >
-                        {item.menuContent({ close: () => setIsMenuOpen(false) })}
-                    </Panel>
+                    </button>
+                    {isMobileView ? (
+                        <MobileMenu
+                            open={isMenuOpen}
+                            onClose={handleClose}
+                            registerInSider={true}
+                        >
+                            {item.menuContent({ close: handleClose })}
+                        </MobileMenu>
+                    ) : (
+                        <Panel
+                            open={isMenuOpen}
+                            onClose={handleClose}
+                            anchorRef={buttonRef}
+                            variant="menu"
+                            role="menu"
+                            closeOnEscape={true}
+                            autoFocus={true}
+                            registerInSider={true}
+                            width="w-88"
+                            maxHeight="max-h-200"
+                            noPadding={true}
+                            className="border-none"
+                            shadow="shadow-none"
+                            offset={10}
+                            rounded="rounded-r-2xl"
+                            bg="bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A]"
+                        >
+                            {item.menuContent({ close: handleClose })}
+                        </Panel>
+                    )}
                 </>
             );
         } catch (error) {
@@ -188,7 +202,7 @@ const MapSider = ({ className = '' }) => {
                                 className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
                                 title={item.tooltip}
                             >
-                                <MenuItem item={item} />
+                                <MenuItem item={item} isMobileView={treatAsMobile} />
                             </div>
                         ))}
                     </div>
@@ -198,7 +212,7 @@ const MapSider = ({ className = '' }) => {
                             className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
                             title={item.tooltip}
                         >
-                            <MenuItem item={item} />
+                            <MenuItem item={item} isMobileView={treatAsMobile} />
                         </div>
                     ))}
                 </div>
