@@ -32,8 +32,8 @@ const CategoryItem = ({ layer, activeLayerIds, onToggleLayer }) => {
     const renderChild = (childLayer) => {
         if (childLayer.isLabel) {
             return (
-                <LabelItem 
-                    key={childLayer.id} 
+                <LabelItem
+                    key={childLayer.id}
                     layer={childLayer}
                     activeLayerIds={activeLayerIds}
                     onToggleLayer={onToggleLayer}
@@ -85,29 +85,31 @@ const ThemeMenu = ({ theme, activeLayerIds, onToggleLayer }) => {
                 </h3>
             </div>
             <div className="ml-4 bg-white rounded-[7px] py-2">
-                {theme.children && theme.children.map(layer => {
-                    if (layer.isLabel) {
-                        return <LabelItem key={layer.id} layer={layer} activeLayerIds={activeLayerIds} onToggleLayer={onToggleLayer} />;
-                    }
-                    if (layer.isCategory) {
+                {theme.children && theme.children
+                    .filter(layer => !layer.hiddenInMenu)
+                    .map(layer => {
+                        if (layer.isLabel) {
+                            return <LabelItem key={layer.id} layer={layer} activeLayerIds={activeLayerIds} onToggleLayer={onToggleLayer} />;
+                        }
+                        if (layer.isCategory) {
+                            return (
+                                <CategoryItem
+                                    key={layer.id}
+                                    layer={layer}
+                                    onToggleLayer={onToggleLayer}
+                                    activeLayerIds={activeLayerIds}
+                                />
+                            );
+                        }
                         return (
-                            <CategoryItem
+                            <LayerItem
                                 key={layer.id}
                                 layer={layer}
-                                onToggleLayer={onToggleLayer}
+                                onToggle={onToggleLayer}
                                 activeLayerIds={activeLayerIds}
                             />
                         );
-                    }
-                    return (
-                        <LayerItem
-                            key={layer.id}
-                            layer={layer}
-                            onToggle={onToggleLayer}
-                            activeLayerIds={activeLayerIds}
-                        />
-                    );
-                })}
+                    })}
             </div>
         </div>
     );
