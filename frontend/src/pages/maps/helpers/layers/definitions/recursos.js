@@ -146,6 +146,7 @@ export const recursosLayers = {
                 {
                     id: 'bosque_de_la_primavera',
                     label: 'Bosque de la Primavera',
+                    forceGroup: true,
                     children: AREAS_NATURALES.map(([id, label, layerName, tags]) => ({
                         id,
                         label,

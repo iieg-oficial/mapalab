@@ -6,6 +6,7 @@ const createRoboConModalidad = (id, label, layerName, baseTags) => ({
     id,
     label,
     isLabel: true,
+    forceGroup: true,
     layerName,
     baseTags,
     children: [
@@ -241,6 +242,7 @@ export const seguridadLayers = {
                 {
                     id: 'tasa_personas_desaparecidas',
                     label: 'Personas desaparecidas',
+                    forceGroup: true,
                     wmsConfig: createSeguridadLayer('personas_desaparecidas'),
                     littleCard: personasConfig('desaparecidos', 'total'),
                     searchMeta: { tags: ['seguridad', 'desaparecidos', 'personas', 'tasa', 'incidencia'] },
@@ -262,6 +264,7 @@ export const seguridadLayers = {
                 }, {
                     id: 'tasa_personas_localizadas',
                     label: 'Personas localizadas',
+                    forceGroup: true,
                     wmsConfig: createSeguridadLayer('personas_localizadas'),
                     littleCard: personasConfig('localizados', 'total'),
                     searchMeta: { tags: ['seguridad', 'localizados', 'personas', 'tasa', 'incidencia'] },

@@ -53,6 +53,7 @@ export const saludLayers = {
             id: 'establecimientos_salud',
             label: 'Establecimientos de salud',
             base: 'iieg',
+            forceGroup: true,
             children: INSTITUCIONES.map(([id, label, layerName, tags]) => ({
                 id,
                 label,
