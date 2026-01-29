@@ -36,3 +36,17 @@ class MapalabRepository:
         results = query.limit(size).offset(offset).all()
 
         return results, total
+
+    @staticmethod
+    def get_metadata(
+        session: Session,
+        workspace: Optional[str] = None,
+        layer: Optional[str] = None,
+    ) -> list[Mapalab_Card]:
+
+        query = session.query(Mapalab_Card)
+
+        query = query.filter(
+            Mapalab_Card.nombre_capa_db == f"{workspace}:{layer}"
+        )
+        return query.all()

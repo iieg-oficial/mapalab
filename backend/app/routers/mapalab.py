@@ -1,64 +1,50 @@
 from fastapi import APIRouter, Query
-from typing import Optional
-from math import ceil
 
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
-from app.exceptions.common_exceptions import InternalServerException
 from app.repositories.mapalab_repository import MapalabRepository
 from app.services import (GeoServerService, SearchCacheService, SearchService)
-from app.schemas import (LayerResponse, PaginatedResponse, PeriodicityLayer, SearchResponse)
+from app.schemas import ( MetadataResponse, SearchResponse)
 from app.utils.api_responses import api_responses
 from app.utils.logger import Logger
 from app.consts import CACHE_FILE
 
-router = APIRouter(prefix="/mapalab", tags=["Mapalab"])
+router = APIRouter(prefix="/metadata", tags=["Metadata"])
 
-@router.get("/layers", response_model=PaginatedResponse[LayerResponse], responses=api_responses(400))
-def get_layers(
-    page: int = Query(default=1, ge=1, description="Número de página (comienza en 1)"),
-    size: int = Query(default=50, ge=1, le=500, description="Elementos por página"),
-    keyword: Optional[str] = Query(default=None, max_length=100, description="Buscar en nombre, descripción o tema"),
+@router.get("/", response_model=list[MetadataResponse], responses=api_responses(404, 500))
+def get_metadata(
+    workspace: str = Query(description="Nombre del workspace de GeoServer (p. ej. mapalab)"),
+    layer: str = Query(description="Nombre de la capa dentro del workspace (p. ej. capa_anual)"),
 ):
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
 
     with conn.get_session() as session:
-        results, total = MapalabRepository.get_layers(
+        results = MapalabRepository.get_metadata(
             session=session,
-            page=page,
-            size=size,
-            keyword=keyword,
+            workspace=workspace,
+            layer=layer,
         )
 
-        layers = [LayerResponse.model_validate(layer) for layer in results]
-        total_pages = ceil(total / size) if size > 0 else 0
+    metadata_list = []
+    for record in results:
+        periodicity = None
+        if record.nombre_capa_db and ":" in record.nombre_capa_db:
+            workspace, layer = record.nombre_capa_db.split(":", 1)
+            try:
+                wfs_query_url = GeoServerService.get_layer_url(
+                    workspace, layer, cql_filter="",  property_name='fecha'
+                )
 
-        return PaginatedResponse(
-        data=layers,
-        page=page,
-        total_pages=total_pages
-       )
+                georserver_periodicity = GeoServerService.get_periodicity(wfs_query_url)
+                periodicity = georserver_periodicity["fecha"]
+            except Exception as e:
+                Logger.error(f"Error fetching periodicity for {record.nombre_capa_db}: {str(e)}")
 
-@router.get("/periodicity", response_model=PeriodicityLayer, responses=api_responses(404, 500))
-def get_layer_periodicity(
-    workspace: str = Query(..., description="Nombre del workspace de GeoServer (p. ej. mapalab)"),
-    layer: str = Query(..., description="Nombre de la capa dentro del workspace (p. ej. capa_anual)"),
-    cql_filter: Optional[str] = Query(default=None, description="Filtro CQL opcional para restringir la consulta WFS")
-):
-    wfs_query_url = GeoServerService.get_layer_url(
-        workspace, layer, cql_filter=cql_filter, property_name='fecha'
-    )
+        item = MetadataResponse.model_validate(record)
+        item.periodicity = periodicity
+        metadata_list.append(item)
 
-    try:
-        georserver_periodicity = GeoServerService.get_periodicity(wfs_query_url)
-    except Exception as e:
-        Logger.error(f"Failed to fetch GeoServer metadata: {str(e)}")
-        raise InternalServerException("No se pudo obtener los metadatos de la capa desde GeoServer")
-
-    return PeriodicityLayer(
-        url=wfs_query_url,
-        fecha=georserver_periodicity["fecha"]
-    )
+    return metadata_list
 
 @router.get("/search", response_model=SearchResponse)
 async def search_layers(query: str = Query(..., description="Search query")):
