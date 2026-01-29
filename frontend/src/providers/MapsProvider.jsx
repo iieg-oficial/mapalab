@@ -13,7 +13,7 @@ import { layers as allLayers } from '@pages/maps/helpers/layers/index';
 import { toLonLat } from 'ol/proj';
 
 const MapsProvider = ({ children }) => {
-    const [baseMapId, setBaseMapId] = useState('carto_voyager');
+    const [baseMapId, setBaseMapId] = useState('voyager');
     const [siderCollapsed, setSiderCollapsed] = useState(true);
     const [selectedLayer, setSelectedLayer] = useState(null);
     const [selectedFeatureInfo, setSelectedFeatureInfo] = useState(null);

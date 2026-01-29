@@ -16,8 +16,11 @@ const MapSider = ({ className = '' }) => {
         activeLayerIds: contextActiveLayerIds,
         onToggleLayer,
         toggleMeasurementTools,
-        areMeasurementToolsVisible
+        areMeasurementToolsVisible,
+        loadingLayers,
+        isLocating
     } = useMapsContext();
+    const isLoading = loadingLayers.size > 0 || isLocating;
     const {
         siderRef,
         toolsButtonRef,
@@ -156,6 +159,11 @@ const MapSider = ({ className = '' }) => {
         }
     };
 
+    const sizeLogo = {
+        expanded: 'w-57 h-17',
+        collapsed: 'w-14 h-17',
+        loading: 'w-14 h-17'
+    }
     return (
         <aside
             ref={siderRef}
@@ -176,7 +184,12 @@ const MapSider = ({ className = '' }) => {
                 className={`shrink-0 p-3 flex justify-center ${treatAsMobile ? 'cursor-pointer' : ''}`}
                 onClick={handleLogoClick}
             >
-                <Logo name="mapalab" size={isExpanded ? 'w-57 h-17' : 'w-14 h-17'} expanded={isExpanded} />
+                <Logo
+                    name="mapalab"
+                    size={sizeLogo[isLoading ? 'loading' : isExpanded ? 'expanded' : 'collapsed']}
+                    expanded={isExpanded}
+                    isLoading={isLoading}
+                />
             </div>
 
             {(!treatAsMobile || isOpen) && (
