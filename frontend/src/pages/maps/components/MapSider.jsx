@@ -1,7 +1,8 @@
-import { useMemo, useEffect, useCallback, useRef, useState } from 'react';
+import { useMemo, useCallback, useRef, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider, useSiderHover } from '@contexts/SiderContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
+import { useScrollOverflow } from '@hooks/useScrollOverflow';
 import Panel from '@components/Panel';
 import MobileMenu from './MobileMenu';
 import Logo from '@components/Logo';
@@ -36,8 +37,8 @@ const MapSider = ({ className = '' }) => {
         closeSider
     } = useSider();
     const { isZenMode } = useZenMode();
-    const [scrollState, setScrollState] = useState({ canScrollUp: false, canScrollDown: false });
     const contentRef = useRef(null);
+    const { canScrollUp, canScrollDown } = useScrollOverflow(contentRef);
 
     const treatAsMobile = isMobile || isZenMode;
 
@@ -137,22 +138,6 @@ const MapSider = ({ className = '' }) => {
         }
     }, []);
 
-    const checkScroll = useCallback(() => {
-        if (contentRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } = contentRef.current;
-            setScrollState({
-                canScrollUp: scrollTop > 0,
-                canScrollDown: scrollTop + clientHeight < scrollHeight - 1
-            });
-        }
-    }, []);
-
-    useEffect(() => {
-        checkScroll();
-        window.addEventListener('resize', checkScroll);
-        return () => window.removeEventListener('resize', checkScroll);
-    }, [checkScroll]);
-
     const handleLogoClick = () => {
         if (treatAsMobile) {
             toggleSider();
@@ -198,15 +183,14 @@ const MapSider = ({ className = '' }) => {
                     className={[
                         'flex-1 flex flex-col gap-3 px-3',
                         `${HIDDEN_SCROLLBAR}`,
-                        scrollState.canScrollUp && scrollState.canScrollDown
+                        canScrollUp && canScrollDown
                             ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]'
-                            : scrollState.canScrollUp
+                            : canScrollUp
                                 ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%)]'
-                                : scrollState.canScrollDown
+                                : canScrollDown
                                     ? '[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]'
                                     : ''
                     ].join(' ')}
-                    onScroll={checkScroll}
                 >
                     <div className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3">
                         {menuItems.slice(0, 3).map((item, index) => (

@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { getSearchConfig } from '@services/searchConfig';
 import { searchGlobal } from '@services/searchService';
 import { useDebounce } from '@hooks/useDebounce';
 import Icon from '@components/Icon';
 import Loading from '@components/Loading';
+import ScrollContainer from '@components/ScrollContainer';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
@@ -11,14 +12,6 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
     const debouncedQuery = useDebounce(searchQuery, 500);
     const [selectedLayers, setSelectedLayers] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [hasScroll, setHasScroll] = useState(false);
-    const listRef = useRef(null);
-
-    useEffect(() => {
-        if (listRef.current) {
-            setHasScroll(listRef.current.scrollHeight > listRef.current.clientHeight);
-        }
-    }, [selectedLayers]);
 
     const isLayerActive = (layerId) => {
         return activeLayerIds.includes(layerId);
@@ -88,14 +81,7 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
 
             {selectedLayers.length > 0 && (
                 <div className="relative mt-6 bg-white rounded-[7px] p-2">
-                    <div
-                        ref={listRef}
-                        className={`max-h-100 space-y-3 ${HIDDEN_SCROLLBAR}`}
-                        style={{
-                            maskImage: hasScroll ? 'linear-gradient(to bottom, black calc(100% - 100px), transparent 100%)' : 'none',
-                            WebkitMaskImage: hasScroll ? 'linear-gradient(to bottom, black calc(100% - 100px), transparent 100%)' : 'none'
-                        }}
-                    >
+                    <ScrollContainer className="max-h-100 space-y-3">
                         {(() => {
                             const grouped = {};
 
@@ -158,7 +144,7 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
                                 </div>
                             ));
                         })()}
-                    </div>
+                    </ScrollContainer>
                 </div>
             )}
         </div>
