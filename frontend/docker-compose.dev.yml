@@ -1,6 +1,8 @@
 name: mapalab-dev
 services:
   frontend:
+    image: mapalab-frontend-dev:${IMAGE_TAG:-latest}
+    container_name: mapalab-frontend-dev
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -12,12 +14,16 @@ services:
       - ./index.html:/app/index.html:ro
       - ./vite.config.js:/app/vite.config.js:ro
       - ./vitest.config.js:/app/vitest.config.js:ro
-      - /app/node_modules
+      - mapalab-frontend-node-modules:/app/node_modules
     ports:
       - '${FRONTEND_PORT:-${VITE_PORT:-5173}}:${VITE_PORT:-5173}'
     networks:
       - mapalab-network
     restart: unless-stopped
+
+volumes:
+  mapalab-frontend-node-modules:
+    name: mapalab-frontend-node-modules
 
 networks:
   mapalab-network:
