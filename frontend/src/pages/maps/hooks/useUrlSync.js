@@ -5,7 +5,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { filtersInitializationComplete } from './useInitializeFromUrl';
 
 export const useUrlSync = () => {
-    const { activeLayerIds, filters } = useMapsContext();
+    const { activeLayerIds, filters, findLayerById } = useMapsContext();
     const [_searchParams, setSearchParams] = useSearchParams();
     const isFirstRender = useRef(true);
     const previousState = useRef({ layerIds: [], filters: {} });
@@ -16,7 +16,11 @@ export const useUrlSync = () => {
     const expectedParams = useMemo(() => {
         const result = {};
 
-        const validLayerIds = debouncedActiveLayerIds.filter(id => id && id.trim().length > 0);
+        const validLayerIds = debouncedActiveLayerIds.filter(id => {
+            if (!id || id.trim().length === 0) return false;
+            const layer = findLayerById(id);
+            return layer && !layer.isLabel && !layer.isCategory;
+        });
         if (validLayerIds.length > 0) {
             result.layers = validLayerIds.join(',');
         }
@@ -34,7 +38,7 @@ export const useUrlSync = () => {
         });
 
         return result;
-    }, [debouncedActiveLayerIds, debouncedFilters]);
+    }, [debouncedActiveLayerIds, debouncedFilters, findLayerById]);
 
     useEffect(() => {
         if (isFirstRender.current) {
@@ -51,8 +55,8 @@ export const useUrlSync = () => {
         }
 
         const layersChanged =
-            debouncedActiveLayerIds.sort().join(',') !==
-            previousState.current.layerIds.sort().join(',');
+            [...debouncedActiveLayerIds].sort().join(',') !==
+            [...previousState.current.layerIds].sort().join(',');
 
         const filtersChanged =
             JSON.stringify(debouncedFilters) !==

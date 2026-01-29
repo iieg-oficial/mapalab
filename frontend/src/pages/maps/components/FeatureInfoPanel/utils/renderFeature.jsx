@@ -3,8 +3,41 @@ import FeatureLabel from '../components/FeatureLabel';
 import FeatureList from '../components/FeatureList';
 import FeatureIconText from '../components/FeatureIconText';
 import FeatureCards from '../components/FeatureCards';
+import FeatureText from '../components/FeatureText';
 
-export const renderConfiguredFeature = (properties, config, onClose) => {
+const extractSuffixFromLayerId = (layerId) => {
+    if (!layerId) return null;
+
+    const layerIdLower = layerId.toLowerCase();
+    const commonSuffixes = ['hombres', 'mujeres', 'masculino', 'femenino', 'ninos', 'ninas', 'adultos', 'jovenes'];
+
+    for (const suffix of commonSuffixes) {
+        if (layerIdLower.includes(suffix)) {
+            return suffix;
+        }
+    }
+
+    return null;
+};
+
+const shouldIncludeField = (fieldName, suffix) => {
+    if (!suffix || !fieldName) return true;
+
+    const fieldLower = fieldName.toLowerCase();
+
+    if (fieldLower.includes(suffix)) {
+        return true;
+    }
+
+    const allSuffixes = ['hombres', 'mujeres', 'masculino', 'femenino', 'ninos', 'ninas', 'adultos', 'jovenes'];
+    const otherSuffixes = allSuffixes.filter(s => s !== suffix);
+
+    return !otherSuffixes.some(otherSuffix => fieldLower.includes(otherSuffix));
+};
+
+export const renderConfiguredFeature = (properties, config, onClose, layerId = null) => {
+    const suffix = extractSuffixFromLayerId(layerId);
+
     const getValue = (field) => {
         if (!field) return '';
         const key = Object.keys(properties).find(k => k.toLowerCase() === field.toLowerCase());
@@ -95,6 +128,7 @@ export const renderConfiguredFeature = (properties, config, onClose) => {
 
     if (config.list) {
         const rows = config.list
+            .filter(row => shouldIncludeField(row.field, suffix))
             .map(row => ({
                 label: row.label,
                 value: properties[row.field]
@@ -121,11 +155,29 @@ export const renderConfiguredFeature = (properties, config, onClose) => {
         );
     }
 
+    if (config.text) {
+        config.text.forEach((textItem, idx) => {
+            const value = textItem.field ? getValue(textItem.field) : null;
+            if (textItem.label || value) {
+                body.push(
+                    <FeatureText
+                        key={`text-${idx}`}
+                        label={textItem.label}
+                        value={value}
+                    />
+                );
+            }
+        });
+    } 
+
     if (config.cards) {
         const cards = config.cards
+            .filter(Boolean)
+            .filter(card => shouldIncludeField(card.field, suffix))
             .map(card => ({
                 label: card.label,
-                value: properties[card.field]
+                value: properties[card.field],
+                suffix: card.suffix || ''
             }))
             .filter(card => card.value !== null && card.value !== undefined && card.value !== '');
 

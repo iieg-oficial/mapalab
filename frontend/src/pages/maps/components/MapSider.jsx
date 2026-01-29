@@ -2,10 +2,14 @@ import { useMemo, useEffect, useCallback, useRef, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider, useSiderHover } from '@contexts/SiderContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
-import FloatingMenu from '@components/FloatingMenu';
+import Panel from '@components/Panel';
+import MobileMenu from './MobileMenu';
 import Logo from '@components/Logo';
 import { createMenuItems } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
+import { HIDDEN_SCROLLBAR } from '@constants/global';
+
+import { useZenMode } from './ZenMode';
 
 const MapSider = ({ className = '' }) => {
     const {
@@ -28,8 +32,11 @@ const MapSider = ({ className = '' }) => {
         toggleSider,
         closeSider
     } = useSider();
+    const { isZenMode } = useZenMode();
     const [scrollState, setScrollState] = useState({ canScrollUp: false, canScrollDown: false });
     const contentRef = useRef(null);
+
+    const treatAsMobile = isMobile || isZenMode;
 
     const { handleMouseEnter, handleMouseLeave } = useSiderHover({
         setIsHovered,
@@ -38,26 +45,29 @@ const MapSider = ({ className = '' }) => {
     });
 
     useOutsideClick([siderRef], () => {
-        if (isMobile && isOpen) {
+        if (treatAsMobile && isOpen && openMenusCount === 0) {
             closeSider();
         }
     });
 
     const computeWidth = () => {
-        if (isMobile) {
+        if (treatAsMobile) {
             return isOpen ? expandedWidth : mobileWidth;
         }
         return isHovered ? expandedWidth : collapsedWidth;
     };
 
     const width = computeWidth();
-    const isExpanded = isMobile ? isOpen : isHovered;
+    const isExpanded = treatAsMobile ? isOpen : isHovered;
 
     const menuItems = useMemo(() =>
-        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef }),
-        [isExpanded, contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef]);
+        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible }),
+        [isExpanded, contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible]);
 
-    const renderMenuItem = useCallback((item) => {
+    const MenuItem = useCallback(({ item, isMobileView }) => {
+        const [isMenuOpen, setIsMenuOpen] = useState(false);
+        const buttonRef = useRef(null);
+
         try {
             if (!item.hasMenu) {
                 if (item.onClick) {
@@ -70,17 +80,53 @@ const MapSider = ({ className = '' }) => {
                 return item.component;
             }
 
+            const handleClose = () => setIsMenuOpen(false);
+
             return (
-                <FloatingMenu
-                    placement="right-start"
-                    trigger={({ ref, props }) => (
-                        <div ref={ref} {...props}>
-                            {item.component}
-                        </div>
+                <>
+                    <button
+                        type="button"
+                        ref={buttonRef}
+                        id={`menu-button-${item.id}`}
+                        aria-haspopup="menu"
+                        aria-expanded={isMenuOpen}
+                        aria-controls={`menu-content-${item.id}`}
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className="cursor-pointer w-full text-left"
+                    >
+                        {item.renderComponent ? item.renderComponent({ isMenuOpen }) : item.component}
+                    </button>
+                    {isMobileView ? (
+                        <MobileMenu
+                            open={isMenuOpen}
+                            onClose={handleClose}
+                            registerInSider={true}
+                        >
+                            {item.menuContent({ close: handleClose })}
+                        </MobileMenu>
+                    ) : (
+                        <Panel
+                            open={isMenuOpen}
+                            onClose={handleClose}
+                            anchorRef={buttonRef}
+                            variant="menu"
+                            role="menu"
+                            closeOnEscape={true}
+                            autoFocus={true}
+                            registerInSider={true}
+                            width="w-88"
+                            maxHeight="max-h-200"
+                            noPadding={true}
+                            className="border-none"
+                            shadow="shadow-none"
+                            offset={10}
+                            rounded="rounded-r-2xl"
+                            bg="bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A]"
+                        >
+                            {item.menuContent({ close: handleClose })}
+                        </Panel>
                     )}
-                >
-                    {(api) => item.menuContent(api)}
-                </FloatingMenu>
+                </>
             );
         } catch (error) {
             console.error('Error rendering menu item:', error);
@@ -105,7 +151,7 @@ const MapSider = ({ className = '' }) => {
     }, [checkScroll]);
 
     const handleLogoClick = () => {
-        if (isMobile) {
+        if (treatAsMobile) {
             toggleSider();
         }
     };
@@ -114,35 +160,31 @@ const MapSider = ({ className = '' }) => {
         <aside
             ref={siderRef}
             className={[
-                'absolute top-4 left-4 z-20',
-                'max-h-[calc(100vh-2rem)]',
-                'backdrop-blur bg-white/80',
-                'border border-black/10 shadow-2xl',
-                'rounded-2xl',
+                'absolute top-4 left-4 z-20 flex flex-col',
+                'max-h-[calc(100vh-2rem)] bg-white shadow-[0_5px_20px_#1A26641A] rounded-[10px]',
                 'transition-all duration-500',
-                'flex flex-col',
                 className,
             ].join(' ')}
             style={{
                 transitionTimingFunction: SIDER_TRANSITION_TIMING,
                 width: `${width}px`
             }}
-            onMouseEnter={!isMobile ? handleMouseEnter : undefined}
-            onMouseLeave={!isMobile ? handleMouseLeave : undefined}
+            onMouseEnter={!treatAsMobile ? handleMouseEnter : undefined}
+            onMouseLeave={!treatAsMobile ? handleMouseLeave : undefined}
         >
             <div
-                className={`shrink-0 p-3 flex justify-center ${isMobile ? 'cursor-pointer' : ''}`}
+                className={`shrink-0 p-3 flex justify-center ${treatAsMobile ? 'cursor-pointer' : ''}`}
                 onClick={handleLogoClick}
             >
-                <Logo name="mapalab" size={isExpanded ? 'w-57 h-17' : 'w-14 h-17'} className="transition-all duration-500" expanded={isExpanded} />
+                <Logo name="mapalab" size={isExpanded ? 'w-57 h-17' : 'w-14 h-17'} expanded={isExpanded} />
             </div>
 
-            {(!isMobile || isOpen) && (
+            {(!treatAsMobile || isOpen) && (
                 <div
                     ref={contentRef}
                     className={[
-                        'flex-1 flex flex-col gap-1 px-2',
-                        'overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]',
+                        'flex-1 flex flex-col gap-3 px-3',
+                        `${HIDDEN_SCROLLBAR}`,
                         scrollState.canScrollUp && scrollState.canScrollDown
                             ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]'
                             : scrollState.canScrollUp
@@ -153,26 +195,32 @@ const MapSider = ({ className = '' }) => {
                     ].join(' ')}
                     onScroll={checkScroll}
                 >
-                    {menuItems.map((item, index) => (
+                    <div className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3">
+                        {menuItems.slice(0, 3).map((item, index) => (
+                            <div
+                                key={item.id || index}
+                                className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
+                                title={item.tooltip}
+                            >
+                                <MenuItem item={item} isMobileView={treatAsMobile} />
+                            </div>
+                        ))}
+                    </div>
+                    {menuItems.slice(3).map((item, index) => (
                         <div
                             key={item.id || index}
-                            className={[
-                                'transition-opacity duration-500',
-                                'w-full shrink-0',
-                                'overflow-x-hidden'
-                            ].join(' ')}
-                            style={{ transitionTimingFunction: SIDER_TRANSITION_TIMING }}
-                            title={!isExpanded ? item.tooltip : undefined}
+                            className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
+                            title={item.tooltip}
                         >
-                            {renderMenuItem(item)}
+                            <MenuItem item={item} isMobileView={treatAsMobile} />
                         </div>
                     ))}
                 </div>
             )}
 
-            {(!isMobile || isOpen) && (
+            {(!treatAsMobile || isOpen) && (
                 <div className="shrink-0 p-3 my-2 flex justify-center">
-                    <Logo name="iieg" size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'} className="transition-all duration-500" expanded={isExpanded} />
+                    <Logo name="iieg" size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'} expanded={isExpanded} />
                 </div>
             )}
         </aside>

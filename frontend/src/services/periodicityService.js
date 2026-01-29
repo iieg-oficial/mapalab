@@ -1,7 +1,6 @@
 import { findLayerById, layers } from '@pages/maps/helpers/layers';
 
-const API_HOST = (import.meta.env.VITE_BACKEND_API_HOST || 'http://localhost:8000')
-    .replace(/\/+$/, '');
+const API_HOST = import.meta.env.VITE_BACKEND_API_HOST.replace(/\/+$/, '');
 const PERIODICITY_ENDPOINT = `${API_HOST}/mapalab/periodicity`;
 
 

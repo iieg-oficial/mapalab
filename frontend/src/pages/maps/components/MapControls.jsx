@@ -1,10 +1,11 @@
 import { useMapsContext } from '@hooks/useMaps';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useCallback, useState, useEffect, useRef } from 'react';
+import Icon from '@components/Icon';
 
 const MapControls = () => {
-    const { mapRef } = useMapsContext();
-    const [isLocating, setIsLocating] = useState(false);
+    const { mapRef, isLocating, setIsLocating } = useMapsContext();
+    const [hoveredButton, setHoveredButton] = useState(null);
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 180 });
     const locationLayerRef = useRef(null);
 
@@ -113,17 +114,11 @@ const MapControls = () => {
             },
             {
                 enableHighAccuracy: true,
-                timeout: 5000,
+                timeout: 15000,
                 maximumAge: 0
             }
         );
     }, [mapRef]);
-
-    const [isGeolocationAvailable, setIsGeolocationAvailable] = useState(false);
-
-    useEffect(() => {
-        setIsGeolocationAvailable('geolocation' in navigator);
-    }, []);
 
     useEffect(() => {
         const mapInstance = mapRef.current;
@@ -139,103 +134,54 @@ const MapControls = () => {
 
     return (
         <div
-            className={`fixed bottom-15 z-10 flex flex-col gap-2 ${className}`}
+            className={`fixed bottom-15 z-10 flex flex-col w-10 ${className}`}
             style={style}
         >
-            <div className="flex flex-col rounded-xl shadow bg-white/80  backdrop-blur-sm">
+            <div className="flex flex-col justify-center items-center rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
                 <button
                     onClick={handleZoomIn}
-                    className="px-3 py-2 text-zinc-700  hover:bg-zinc-100/80  transition-colors rounded-t-xl border-b border-zinc-200 "
+                    onMouseEnter={() => setHoveredButton('zoomin')}
+                    onMouseLeave={() => setHoveredButton(null)}
+                    className="p-2"
                     title="Acercar"
                     aria-label="Acercar zoom"
                 >
-                    <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 4v16m8-8H4"
-                        />
-                    </svg>
+                    <Icon
+                        name="zoomin"
+                        state={hoveredButton === 'zoomin' ? 'hover' : 'normal'}
+                        className="w-6 h-6"
+                    />
                 </button>
-                <button
-                    onClick={handleZoomOut}
-                    className="px-3 py-2 text-zinc-700  hover:bg-zinc-100/80  transition-colors rounded-b-xl"
-                    title="Alejar"
-                    aria-label="Alejar zoom"
-                >
-                    <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M20 12H4"
-                        />
-                    </svg>
-                </button>
-            </div>
-
-            {isGeolocationAvailable && (
                 <button
                     onClick={handleLocateMe}
+                    onMouseEnter={() => setHoveredButton('center')}
+                    onMouseLeave={() => setHoveredButton(null)}
                     disabled={isLocating}
-                    className="px-3 py-2 rounded-xl shadow bg-white/80  backdrop-blur-sm text-zinc-700  hover:bg-zinc-100/80  transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2"
                     title="Mi ubicación"
                     aria-label="Ir a mi ubicación"
                 >
-                    {isLocating ? (
-                        <svg
-                            className="w-5 h-5 animate-spin"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
-                            <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                            />
-                            <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            />
-                        </svg>
-                    ) : (
-                        <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                        </svg>
-                    )}
+                    <Icon
+                        name="center"
+                        state={isLocating || hoveredButton === 'center' ? 'hover' : 'normal'}
+                        className="w-6 h-6"
+                    />
                 </button>
-            )}
+                <button
+                    onClick={handleZoomOut}
+                    onMouseEnter={() => setHoveredButton('zoomout')}
+                    onMouseLeave={() => setHoveredButton(null)}
+                    className="p-2"
+                    title="Alejar"
+                    aria-label="Alejar zoom"
+                >
+                    <Icon
+                        name="zoomout"
+                        state={hoveredButton === 'zoomout' ? 'hover' : 'normal'}
+                        className="w-6 h-6"
+                    />
+                </button>
+            </div>
         </div>
     );
 };

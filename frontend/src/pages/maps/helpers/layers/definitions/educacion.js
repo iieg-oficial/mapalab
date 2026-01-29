@@ -2,6 +2,24 @@ import { createLayerFactory } from '../utils/layerFactory';
 
 const createEducacionLayer = createLayerFactory('educacion');
 
+const escuelasConfig = {
+    headerField: 'nombre_escuela',
+    labels: ['nivel_educativo', 'control'],
+    labelGroups: [
+        { fields: ['municipio', 'localidad'] }
+    ],
+    list: [
+        { label: 'Turno', field: 'nombre_turno' },
+        { label: 'Sector', field: 'sector' },
+        { label: 'Año de la información', field: '' },
+    ],
+    iconText: { icon: 'location', field: 'domicilio' },
+    cards: [
+        { label: 'Total de personal', field: 'total_personal' },
+        { label: 'Total de alumnos', field: 'total_alumnos' },
+    ],
+};
+
 const NIVELES = [
     ['preescolar', 'Preescolar', 'preescolar', ['educacion', 'escuela', 'kinder', 'jardin', 'infantil', 'niños', 'preescolar', 'inicial']],
     ['primaria', 'Primaria', 'primaria', ['educacion', 'escuela', 'primaria', 'basica', 'niños', 'elemental', 'primer_grado']],
@@ -15,31 +33,34 @@ export const educacionLayers = {
     label: 'Educación',
     children: [
         {
-            id: 'escuelas',
-            label: 'Escuelas',
-            base: 'iieg',
-            children: NIVELES.map(([id, label, nivel, tags]) => ({
-                id,
-                label,
-                wmsConfig: createEducacionLayer.withFilter('escuelas', `nivel_educativo ILIKE '${nivel}'`),
-                searchMeta: {
-                    hasMunicipio: false,
-                    hasDireccion: false,
-                    searchableFields: [],
-                    tags
+            id: 'infrestructura_educacion',
+            label: 'Infraestructura en Educación',
+            isCategory: true,
+            children: [
+                {
+                    id: 'escuelas',
+                    label: 'Escuelas',
+                    forceGroup: true,
+                    children: NIVELES.map(([id, label, nivel, tags]) => ({
+                        id,
+                        label,
+                        wmsConfig: createEducacionLayer.withFilter('gold_centros_educativos_mapalab', `nivel_educativo ILIKE '${nivel}'`),
+                        littleCard: escuelasConfig,
+                        searchMeta: {
+                            hasMunicipio: false,
+                            hasDireccion: false,
+                            searchableFields: [],
+                            tags
+                        }
+                    }))
                 }
-            }))
-        }, {
+            ]
+        },
+        {
             id: 'rezago_educativo',
-            label: '*Rezago Educativo',
-            base: 'iieg',
-            wmsConfig: createEducacionLayer('rezago_educativo'),
-            searchMeta: {
-                hasMunicipio: false,
-                hasDireccion: false,
-                searchableFields: [],
-                tags: []
-            }
+            label: 'Rezago Educativo',
+            isCategory: true,
+            children: [{}]
         }
     ]
 };
