@@ -105,30 +105,55 @@ export const useSymbology = ({
 
     useEffect(() => {
         if (!activeLayerIds || activeLayerIds.length === 0) {
-            if (selectedLayerForSymbology) {
-                setSelectedLayerForSymbology(null);
-            }
+            setSelectedLayerForSymbology(prev => prev ? null : prev);
             return;
         }
 
-        const visibleParentLayers = activeLayerIds
+        const baseLayersNode = findLayerById('base_layers');
+        const baseLayerIds = new Set(baseLayersNode?.children?.map(child => child.id) || []);
+
+        const allParentLayers = activeLayerIds
             .map(id => findLayerById(id))
             .filter(layer => layer && isParentLayer(layer))
             .filter(layer => !hiddenLayerIds.includes(layer.id));
 
-        const isCurrentSelectionValid = selectedLayerForSymbology && (
-            activeLayerIds.includes(selectedLayerForSymbology.id) ||
-            getAllChildLayerIds(selectedLayerForSymbology.id).some(id => activeLayerIds.includes(id))
-        ) && !hiddenLayerIds.includes(selectedLayerForSymbology.id);
+        const allIndividualLayers = activeLayerIds
+            .map(id => findLayerById(id))
+            .filter(layer => layer && !isParentLayer(layer) && hasWMSConfig(layer))
+            .filter(layer => !hiddenLayerIds.includes(layer.id));
 
-        if (!isCurrentSelectionValid) {
-            if (visibleParentLayers.length > 0) {
-                setSelectedLayerForSymbology(visibleParentLayers[0]);
-            } else {
-                setSelectedLayerForSymbology(null);
+        const nonBaseParentLayers = allParentLayers.filter(layer => !baseLayerIds.has(layer.id));
+        const nonBaseIndividualLayers = allIndividualLayers.filter(layer => !baseLayerIds.has(layer.id));
+
+        setSelectedLayerForSymbology(prev => {
+            const isCurrentSelectionValid = prev && (
+                activeLayerIds.includes(prev.id) ||
+                getAllChildLayerIds(prev.id).some(id => activeLayerIds.includes(id))
+            ) && !hiddenLayerIds.includes(prev.id);
+
+            const isCurrentSelectionBaseLayer = prev && baseLayerIds.has(prev.id);
+            const hasNonBaseLayers = nonBaseParentLayers.length > 0 || nonBaseIndividualLayers.length > 0;
+
+            const shouldAutoSelect = !prev ||
+                !isCurrentSelectionValid ||
+                (isCurrentSelectionBaseLayer && hasNonBaseLayers);
+
+            if (!shouldAutoSelect) {
+                return prev;
             }
-        }
-    }, [activeLayerIds, selectedLayerForSymbology, findLayerById, hiddenLayerIds, getAllChildLayerIds]);
+
+            if (nonBaseParentLayers.length > 0) {
+                return nonBaseParentLayers[0];
+            } else if (nonBaseIndividualLayers.length > 0) {
+                return nonBaseIndividualLayers[0];
+            } else if (allParentLayers.length > 0) {
+                return allParentLayers[0];
+            } else if (allIndividualLayers.length > 0) {
+                return allIndividualLayers[0];
+            }
+            return null;
+        });
+    }, [activeLayerIds, findLayerById, hiddenLayerIds, getAllChildLayerIds]);
 
     return {
         selectedLayerForSymbology,

@@ -28,11 +28,6 @@ const ScaleLineControl = () => {
                     line-height: 1;
                 }
 
-                .dark .ol-scale-line {
-                    background: rgba(39, 39, 42, 0.8);
-                    color: rgb(228, 228, 231);
-                }
-
                 .ol-scale-line-inner {
                     border: 1px solid rgb(39, 39, 42);
                     border-top: none;
@@ -41,11 +36,6 @@ const ScaleLineControl = () => {
                     text-align: center;
                     margin: 1px;
                     will-change: contents, width;
-                }
-
-                .dark .ol-scale-line-inner {
-                    border-color: rgb(228, 228, 231);
-                    color: rgb(228, 228, 231);
                 }
             `}</style>
         </div>

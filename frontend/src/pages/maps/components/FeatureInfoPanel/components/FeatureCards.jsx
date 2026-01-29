@@ -12,7 +12,7 @@ const FeatureCards = ({ cards, columns = 1 }) => {
                     className="bg-[#EFF3FC] rounded-[5px] py-1 px-2 flex flex-col items-center justify-center"
                 >
                     <div className="text-sm font-bold text-gray-900 text-center">
-                        {card.value}
+                        {card.value}{card.suffix}
                     </div>
                     <div className="text-[9px] text-gray-600 text-center leading-tight mt-0.5">
                         {card.label}

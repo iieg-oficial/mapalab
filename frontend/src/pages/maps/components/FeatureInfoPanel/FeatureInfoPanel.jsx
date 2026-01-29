@@ -2,8 +2,8 @@ import { useContext, useRef, useState } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import { useViewportContainment } from '@hooks/useViewportContainment';
-import { getFeatureConfig } from './config/featureDisplayConfig';
 import { renderConfiguredFeature } from './utils/renderFeature.jsx';
+import { findLayerById, layers as allLayers } from '../../helpers/layers/index';
 import Icon from '@components/Icon';
 import FeatureSummaryCard from './components/FeatureSummaryCard';
 
@@ -71,10 +71,11 @@ const FeatureInfoPanel = () => {
     };
 
     const renderFeature = (feature, layerId, onClose) => {
-        const config = getFeatureConfig(layerId);
+        const layerNode = findLayerById(layerId, allLayers);
+        const config = layerNode?.littleCard;
 
         if (config) {
-            const configuredContent = renderConfiguredFeature(feature.properties, config, onClose);
+            const configuredContent = renderConfiguredFeature(feature.properties, config, onClose, layerId);
             if (configuredContent) {
                 return configuredContent;
             }

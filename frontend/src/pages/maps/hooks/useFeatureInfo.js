@@ -49,47 +49,12 @@ export const useFeatureInfo = () => {
                     }];
                 }
             }
-        } else {
-            const activeIdSet = new Set(activeLayerIds || []);
-            const hiddenIdSet = new Set(hiddenLayerIds || []);
-
-            const expandedLayers = (activeLayerIds || []).flatMap(layerId => {
-                if (hiddenIdSet.has(layerId)) return [];
-
-                const layerNode = findLayerById(layerId, allLayers);
-                if (!layerNode) return [];
-
-                const wmsLayers = collectLayersWithWMS(layerNode).filter(node => activeIdSet.has(node.id));
-
-                if (wmsLayers.length === 0 && layerNode.wmsConfig && activeIdSet.has(layerNode.id)) {
-                    return [{
-                        id: layerNode.id,
-                        name: layerNode.label,
-                        visible: true
-                    }];
-                }
-
-                return wmsLayers.map(node => ({
-                    id: node.id,
-                    name: node.label,
-                    visible: true
-                }));
-            });
-
-            const activeLayersMap = new Map();
-            expandedLayers.forEach(layerInfo => {
-                if (!activeLayersMap.has(layerInfo.id)) {
-                    activeLayersMap.set(layerInfo.id, layerInfo);
-                }
-            });
-
-            layersToQuery = Array.from(activeLayersMap.values());
         }
         const activeLayers = layersToQuery;
 
         setLoading(true);
         setLayerLoading(FEATURE_INFO_LOADING_ID, true);
-        
+
         try {
             const results = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter);
             const [lng, lat] = toLonLat(coordinate);

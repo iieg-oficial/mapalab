@@ -5,6 +5,7 @@ import handleShare from '../helpers/handleShare';
 
 const ShareButton = () => {
     const [shareMessage, setShareMessage] = useState(null);
+    const [isHovered, setIsHovered] = useState(false);
 
     useEffect(() => {
         if (shareMessage) {
@@ -24,18 +25,16 @@ const ShareButton = () => {
             <button
                 type="button"
                 onClick={() => handleShare(setShareMessage)}
-                className={[
-                    'flex items-center justify-center rounded-lg p-2 text-sm transition',
-                    shareMessage === '¡Enlace copiado!'
-                        ? 'bg-green-500 text-white'
-                        : 'bg-black/5 text-black/70 hover:bg-black/10'
-                ].join(' ')}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                className="cursor-pointer h-auto"
                 aria-label="Compartir mapa"
             >
-                <Icon name="share" />
+                <Icon name="shared" state={isHovered ? 'hover' : 'normal'} className="h-12.5 w-12.5"/>
             </button>
         </Tooltip>
     );
 };
 
 export default ShareButton;
+

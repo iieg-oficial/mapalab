@@ -27,35 +27,78 @@ export const useDateSelections = (initialSelections = new Set()) => {
 
     const [selections, setSelections] = useState(initialSelections);
 
-    const handleYearClick = (year, yearData) => {
+    const toggleYear = (year, yearData) => {
         const yearKey = String(year);
-        const newSelections = new Set(selections);
-
         const months = yearData ? Object.keys(yearData) : [];
         const isSingleMonth = months.length === 1;
+
+        const isSelected = selections.has(yearKey) ||
+            Array.from(selections).some(sel => sel.startsWith(`${year}-`));
+
+        if (isSelected) {
+            const newSelections = new Set(selections);
+            newSelections.delete(yearKey);
+            Array.from(selections).forEach(sel => {
+                if (sel.startsWith(`${year}-`)) {
+                    newSelections.delete(sel);
+                }
+            });
+            setSelections(newSelections);
+            setExpandedYear(null);
+            setExpandedMonth(null);
+        } else if (expandedYear === year) {
+            setExpandedYear(null);
+            setExpandedMonth(null);
+        } else {
+            setExpandedYear(year);
+            setExpandedMonth(null);
+            if (isSingleMonth) {
+                const monthNum = parseInt(months[0]);
+                setExpandedMonth(`${year}-${monthNum}`);
+            }
+        }
+    };
+
+    const handleYearClick = (year) => {
+        const yearKey = String(year);
+        const newSelections = new Set(selections);
 
         if (newSelections.has(yearKey)) {
             newSelections.delete(yearKey);
         } else {
             newSelections.add(yearKey);
-
-            if (!isSingleMonth) {
-                setExpandedYear(year);
-                setExpandedMonth(null);
-            } else {
-                setExpandedYear(null);
-            }
         }
         setSelections(newSelections);
     };
 
-    const handleMonthClick = (year, month, yearData) => {
+    const toggleMonth = (year, month, yearData) => {
         const monthKey = `${year}-${month}`;
-        const yearKey = String(year);
         const monthData = yearData[month];
         const hasDays = Array.isArray(monthData) && monthData.length > 0;
-        const isSingleDay = hasDays && monthData.length === 1;
 
+        const isSelected = selections.has(monthKey) ||
+            Array.from(selections).some(sel => sel.startsWith(`${year}-${month}-`));
+
+        if (isSelected) {
+            const newSelections = new Set(selections);
+            newSelections.delete(monthKey);
+            Array.from(selections).forEach(sel => {
+                if (sel.startsWith(`${year}-${month}-`)) {
+                    newSelections.delete(sel);
+                }
+            });
+            setSelections(newSelections);
+            setExpandedMonth(null);
+        } else if (expandedMonth === monthKey) {
+            setExpandedMonth(null);
+        } else if (hasDays) {
+            setExpandedMonth(monthKey);
+        }
+    };
+
+    const handleMonthClick = (year, month) => {
+        const monthKey = `${year}-${month}`;
+        const yearKey = String(year);
         const newSelections = new Set(selections);
 
         if (newSelections.has(yearKey)) {
@@ -66,12 +109,6 @@ export const useDateSelections = (initialSelections = new Set()) => {
             newSelections.delete(monthKey);
         } else {
             newSelections.add(monthKey);
-
-            if (hasDays && !isSingleDay) {
-                setExpandedMonth(monthKey);
-            } else {
-                setExpandedMonth(null);
-            }
         }
         setSelections(newSelections);
     };
@@ -121,6 +158,8 @@ export const useDateSelections = (initialSelections = new Set()) => {
         expandedYear,
         expandedMonth,
         selections,
+        toggleYear,
+        toggleMonth,
         handleYearClick,
         handleMonthClick,
         handleDayClick,
