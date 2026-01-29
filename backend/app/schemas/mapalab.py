@@ -24,7 +24,5 @@ class LayerResponse(BaseModel):
     tarjeta_punto_poligono: Optional[str] = Field(default=None)
 
 
-
-class PeriodicityLayer(BaseModel):
-    url: str
-    fecha: Optional[dict[str, dict[int, list[int]]]] = None
+class MetadataResponse(LayerResponse):
+    periodicity: Optional[dict[str, dict[int, list[int]]]] = Field(default=None)
