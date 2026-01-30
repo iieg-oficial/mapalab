@@ -13,7 +13,7 @@ router = APIRouter(prefix="/search", tags=["Search"])
 async def search_layers(query: str = Query(..., description="Search query")):
     return SearchService.search(query)
 
-@router.post("/search/refresh")
+@router.post("/refresh")
 async def refresh_cache():
     try:
         cache = SearchCacheService.generate_cache()

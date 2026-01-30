@@ -24,9 +24,9 @@ class LayerResponse(BaseModel):
     metadato: Optional[str] = Field(default=None)
     tarjeta_punto_poligono: Optional[str] = Field(default=None)
 
-class PeriodicityRespose(LayerResponse):
+class PeriodicityRespose(BaseModel):
     periodicity: Optional[dict[str, dict[int, list[int]]]] = Field(default=None)
 
-class MetadataResponse(PeriodicityRespose):
+class MetadataResponse(PeriodicityRespose, LayerResponse):
     numeralia: Optional[list] = Field(default = None)
-    nombre_pie_numeralia : Optional[list] = Field(default = None)
+    nombre_pie_numeralia : Optional[str] = Field(default = None)
