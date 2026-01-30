@@ -4,7 +4,7 @@ import Footer from './components/Footer'
 
 const Home = () => {
     return (
-        <div className='min-h-screen bg-white'>
+        <div className='min-h-screen bg-[#f5f5f5]'>
             <Header />
             <Body />
             <Footer />
