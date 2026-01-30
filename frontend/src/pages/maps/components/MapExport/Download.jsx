@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useMapDownload } from './hooks/useMapDownload';
 import { useSider } from '@contexts/SiderContext';
-import { HIDDEN_SCROLLBAR } from '@constants/global';
 import SymbologyItem from '../SymbologyItem';
 import Icon from '@components/Icon';
 import Panel from '@components/Panel';
 import Tooltip from '@components/Tooltip';
+import ScrollContainer from '@components/ScrollContainer';
 
 const Download = ({ onOpenPreview }) => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -178,7 +178,7 @@ const Download = ({ onOpenPreview }) => {
                                 {format === 'pdf' ? 'Leyendas' : 'Leyenda'}
                             </div>
 
-                            <div className={`max-h-40 ${HIDDEN_SCROLLBAR} border border-gray-100 rounded`}>
+                            <ScrollContainer className="max-h-40 border border-gray-100 rounded">
                                 {layersWithLegends.map(layer => {
                                     const isSelected = selectedLegendLayers.some(l => l.id === layer.id);
                                     return (
@@ -203,7 +203,7 @@ const Download = ({ onOpenPreview }) => {
                                         />
                                     );
                                 })}
-                            </div>
+                            </ScrollContainer>
                         </div>
                     )}
 

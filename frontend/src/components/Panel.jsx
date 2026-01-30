@@ -1,9 +1,10 @@
-import { useEffect, useRef, useId, useState } from 'react';
+import { useEffect, useRef, useId } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Divider from '@components/Divider';
 import { useFloatingPosition } from '@hooks/useFloatingPosition';
 import { useSiderMenuPosition } from '@hooks/useSiderMenuPosition';
+import { useScrollOverflow } from '@hooks/useScrollOverflow';
 import { useSider } from '@contexts/SiderContext';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
@@ -40,7 +41,7 @@ const Panel = ({
     const hasFloatingPosition = anchorRef != null;
     const siderContext = useSider();
     const isMobile = treatAsMobileProp ?? siderContext?.isMobile ?? false;
-    const [scrollState, setScrollState] = useState({ canScrollUp: false, canScrollDown: false });
+    const { canScrollUp, canScrollDown } = useScrollOverflow(panelRef, { enabled: open && variant === 'menu' });
 
     const shouldUseMobileFullscreen = mobileFullscreen !== undefined
         ? mobileFullscreen
@@ -118,28 +119,6 @@ const Panel = ({
         focusable[0]?.focus({ preventScroll: true });
     }, [open, autoFocus]);
 
-    useEffect(() => {
-        if (!open || variant !== 'menu' || !panelRef.current) return;
-        const checkScroll = () => {
-            if (panelRef.current) {
-                const { scrollTop, scrollHeight, clientHeight } = panelRef.current;
-                setScrollState({
-                    canScrollUp: scrollTop > 0,
-                    canScrollDown: scrollTop + clientHeight < scrollHeight - 1
-                });
-            }
-        };
-        checkScroll();
-        const observer = new ResizeObserver(checkScroll);
-        observer.observe(panelRef.current);
-        panelRef.current.addEventListener('scroll', checkScroll);
-        const ref = panelRef.current;
-        return () => {
-            observer.disconnect();
-            ref?.removeEventListener('scroll', checkScroll);
-        };
-    }, [open, variant, children]);
-
     if (!open) return null;
 
     const closeLabel = title ? `Cerrar ${title}` : 'Cerrar panel';
@@ -213,13 +192,13 @@ const Panel = ({
         >
             {variant === 'menu' ? (
                 <>
-                    {scrollState.canScrollUp && (
+                    {canScrollUp && (
                         <div className="sticky top-2 left-0 right-0 flex justify-center pointer-events-none z-10">
                             <Icon name="downArrow" className="w-3 h-3 rotate-180 animate-[bounce_4s_ease-in-out_infinite]" />
                         </div>
                     )}
                     {typeof children === 'function' ? children({ close: onClose }) : children}
-                    {scrollState.canScrollDown && (
+                    {canScrollDown && (
                         <div className="sticky bottom-2 left-0 right-0 flex justify-center pointer-events-none">
                             <Icon name="downArrow" className="w-3 h-3 animate-[bounce_4s_ease-in-out_infinite]" />
                         </div>

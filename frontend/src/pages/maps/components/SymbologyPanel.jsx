@@ -1,11 +1,11 @@
 import { useContext, useState, useEffect } from 'react';
 import { isParentLayer } from '../helpers/symbologyHelpers';
 import { MOBILE_BREAKPOINT } from '@constants/sider';
-import { HIDDEN_SCROLLBAR } from '../../../constants/global';
 import MapsContext from '@contexts/MapsContext';
 import SymbologyItem from './SymbologyItem';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
+import ScrollContainer from '@components/ScrollContainer';
 import { useZenMode } from './ZenMode';
 
 const SymbologyPanel = () => {
@@ -74,7 +74,7 @@ const SymbologyPanel = () => {
                 </div>
             </div>
 
-            <div className={`flex-1 min-h-0 overflow-y-auto ${HIDDEN_SCROLLBAR} rounded-[7px] bg-white px-3.5 py-3`}>
+            <ScrollContainer className="flex-1 min-h-0 rounded-[7px] bg-white px-3.5 py-3">
                 {displayLayers.length === 0 ? (
                     <div className="rounded-[7px] py-2">
                         {isParentLayer(fullLayer) ? 'No hay sub-capas activas' : 'Sin simbología disponible'}
@@ -89,7 +89,7 @@ const SymbologyPanel = () => {
                         />
                     ))
                 )}
-            </div>
+            </ScrollContainer>
         </div>
     );
 };
