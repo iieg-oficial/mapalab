@@ -1,4 +1,4 @@
-from .mapalab import LayerResponse, MetadataResponse
+from .metadata import LayerResponse, MetadataResponse
 from .search import SearchResponse
 from .pagination import PaginatedResponse
 

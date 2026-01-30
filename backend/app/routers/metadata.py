@@ -4,9 +4,11 @@ from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.repositories.mapalab_repository import MapalabRepository
 from app.services import GeoServerService
+from app.services.periodicity import get_periodicity
 from app.schemas import (MetadataResponse,  LayerResponse)
 from app.utils.api_responses import api_responses
 from app.utils.logger import Logger
+from app.utils.clean import NanToNone
 
 router = APIRouter(prefix="/metadata", tags=["Metadata"])
 
@@ -26,7 +28,6 @@ def get_metadata(
 
     metadata_list = []
     for record in results:
-        periodicity = None
         if record.nombre_capa_geoserver and ":" in record.nombre_capa_geoserver:
             workspace, layer = record.nombre_capa_geoserver.split(":", 1)
             try:
@@ -34,7 +35,7 @@ def get_metadata(
                     workspace, layer, cql_filter="", property_name='fecha'
                 )
 
-                georserver_periodicity = GeoServerService.get_periodicity(wfs_query_url)
+                georserver_periodicity = get_periodicity(wfs_query_url)
                 periodicity = georserver_periodicity["fecha"]
             except Exception as e:
                 Logger.error(f"Error fetching periodicity for {record.nombre_capa_geoserver}: {str(e)}")
@@ -43,17 +44,18 @@ def get_metadata(
         for i in range(1, 7):
             valor = getattr(record, f'numeralia_0{i}_valor', None)
             nombre = getattr(record, f'numeralia_0{i}_nombre', None)
-            if valor is not None and nombre is not None:
-                numeralia.append({"valor": valor, "nombre": nombre})
+
+            numeralia.append({"valor": NanToNone(valor), "nombre": NanToNone(nombre)})
 
         layer_data = LayerResponse.model_validate(record).model_dump()
-
+        transformed_layer_data = {key: NanToNone(value) for key, value in layer_data.items()}
+        pie_numeralia = NanToNone(record.nombre_pie_numeralia)
         item = MetadataResponse(
-            **layer_data,
+            **transformed_layer_data,
             periodicity=periodicity,
-            numeralia=numeralia if numeralia else None,
-            nombre_pie_numeralia=[x.strip() for x in record.nombre_pie_numeralia.split(",")] if record.nombre_pie_numeralia else None
-        )
+            numeralia=numeralia,
+            nombre_pie_numeralia= pie_numeralia
+            )
         metadata_list.append(item)
 
     return metadata_list
