@@ -9,6 +9,7 @@ class LayerResponse(BaseModel):
     subtema: Optional[str] = Field(default=None)
     link_final_capa: Optional[str] = Field(default=None)
     nombre_capa_db: Optional[str] = Field(default=None)
+    nombre_capa_geoserver: Optional[str] = Field(default=None)
     nombre_capa_usuario: Optional[str] = Field(default=None)
     descripcion: Optional[str] = Field(default=None)
     frecuencia_actualizacion: Optional[str] = Field(default=None)
@@ -23,6 +24,9 @@ class LayerResponse(BaseModel):
     metadato: Optional[str] = Field(default=None)
     tarjeta_punto_poligono: Optional[str] = Field(default=None)
 
-
-class MetadataResponse(LayerResponse):
+class PeriodicityRespose(LayerResponse):
     periodicity: Optional[dict[str, dict[int, list[int]]]] = Field(default=None)
+
+class MetadataResponse(PeriodicityRespose):
+    numeralia: Optional[list] = Field(default = None)
+    nombre_pie_numeralia : Optional[list] = Field(default = None)
