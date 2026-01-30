@@ -1,6 +1,8 @@
 name: mapalab
 services:
   frontend:
+    image: mapalab-frontend:${IMAGE_TAG:-latest}
+    container_name: mapalab-frontend
     build:
       context: .
       args:

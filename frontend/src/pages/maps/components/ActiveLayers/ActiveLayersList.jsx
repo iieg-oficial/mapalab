@@ -8,7 +8,7 @@ import ActiveLayerItem from './ActiveLayerItem';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
-import { HIDDEN_SCROLLBAR } from '@constants/global';
+import ScrollContainer from '@components/ScrollContainer';
 
 const ActiveLayersList = () => {
     const {
@@ -74,7 +74,7 @@ const ActiveLayersList = () => {
                 </div>
             </div>
 
-            <div className={`flex-1 min-h-0 overflow-y-auto ${HIDDEN_SCROLLBAR} -mx-1 px-1`}>
+            <ScrollContainer className="flex-1 min-h-0 -mx-1 px-1">
                 <SortableList
                     items={sortableItems}
                     onSortEnd={handleDragEnd}
@@ -87,7 +87,7 @@ const ActiveLayersList = () => {
                         ))}
                     </div>
                 </SortableList>
-            </div>
+            </ScrollContainer>
         </div>
     );
 };

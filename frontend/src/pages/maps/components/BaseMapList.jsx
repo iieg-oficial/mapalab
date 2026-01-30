@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { BASEMAP_ORDER } from '@pages/maps/helpers/basemaps';
 import { useMapsContext } from '@hooks/useMaps';
 import Icon from '@components/Icon';
 
 const BaseMapList = () => {
     const { baseMapId, setBaseMapId, basemaps } = useMapsContext();
+    const [hoveredId, setHoveredId] = useState(null);
 
     return (
         <div className="py-6 px-4">
@@ -19,17 +21,20 @@ const BaseMapList = () => {
                         <button
                             key={id}
                             onClick={() => setBaseMapId(id)}
+                            onMouseEnter={() => setHoveredId(id)}
+                            onMouseLeave={() => setHoveredId(null)}
                             className={`
                                 flex flex-col items-center justify-center gap-2 cursor-pointer
-                                w-[138px] h-[142px] p-3 rounded-[9px] bg-white border
-                                ${active ? 'border-[#70308A]' : 'border-transparent hover:border-[#465055]/20'}
+                                w-[138px] h-[142px] p-3 rounded-[9px] bg-transparent border
+                                ${active ? 'border-[#70308A]' : 'border-transparent hover:border-[#70308A]'}
                             `}
                             title={label}
                         >
-                            <div className="w-[55px] h-[55px] flex items-center justify-center">
+                            <div className="flex items-center justify-center">
                                 <Icon
-                                    name={id ? id : 'default'}
-                                    className="w-10 h-10"
+                                    name={id}
+                                    state={active || hoveredId === id ? 'hover' : 'normal'}
+                                    className={`${active || hoveredId === id ? 'size-[57px]' : 'size-[47px]'}`}
                                 />
                             </div>
                             <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-[#5C2472]' : 'font-medium text-[#465055]'}`}>
