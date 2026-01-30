@@ -64,8 +64,8 @@ class GeoServerService:
             }
 
         except Exception as e:
-            Logger.error(f"Error al obtener la capa de GeoServer: {str(e)}")
-            raise
+            Logger.warning(f"Error al obtener la periodicidad de la capa del GeoServer: {str(e)}")
+            return {"fecha": None}
 
     @staticmethod
     def get_layer_url(
