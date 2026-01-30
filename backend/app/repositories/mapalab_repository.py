@@ -47,6 +47,6 @@ class MapalabRepository:
         query = session.query(Mapalab_Card)
 
         query = query.filter(
-            Mapalab_Card.nombre_capa_db == f"{workspace}:{layer}"
+            Mapalab_Card.nombre_capa_geoserver == f"{workspace}:{layer}"
         )
         return query.all()
