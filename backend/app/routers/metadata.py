@@ -3,11 +3,10 @@ from fastapi import APIRouter, Query
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.repositories.mapalab_repository import MapalabRepository
-from app.services import (GeoServerService, SearchCacheService, SearchService)
-from app.schemas import ( MetadataResponse, SearchResponse)
+from app.services import GeoServerService
+from app.schemas import (MetadataResponse,  LayerResponse)
 from app.utils.api_responses import api_responses
 from app.utils.logger import Logger
-from app.consts import CACHE_FILE
 
 router = APIRouter(prefix="/metadata", tags=["Metadata"])
 
@@ -28,40 +27,33 @@ def get_metadata(
     metadata_list = []
     for record in results:
         periodicity = None
-        if record.nombre_capa_db and ":" in record.nombre_capa_db:
-            workspace, layer = record.nombre_capa_db.split(":", 1)
+        if record.nombre_capa_geoserver and ":" in record.nombre_capa_geoserver:
+            workspace, layer = record.nombre_capa_geoserver.split(":", 1)
             try:
                 wfs_query_url = GeoServerService.get_layer_url(
-                    workspace, layer, cql_filter="",  property_name='fecha'
+                    workspace, layer, cql_filter="", property_name='fecha'
                 )
 
                 georserver_periodicity = GeoServerService.get_periodicity(wfs_query_url)
                 periodicity = georserver_periodicity["fecha"]
             except Exception as e:
-                Logger.error(f"Error fetching periodicity for {record.nombre_capa_db}: {str(e)}")
+                Logger.error(f"Error fetching periodicity for {record.nombre_capa_geoserver}: {str(e)}")
 
-        item = MetadataResponse.model_validate(record)
-        item.periodicity = periodicity
+        numeralia = []
+        for i in range(1, 7):
+            valor = getattr(record, f'numeralia_0{i}_valor', None)
+            nombre = getattr(record, f'numeralia_0{i}_nombre', None)
+            if valor is not None and nombre is not None:
+                numeralia.append({"valor": valor, "nombre": nombre})
+
+        layer_data = LayerResponse.model_validate(record).model_dump()
+
+        item = MetadataResponse(
+            **layer_data,
+            periodicity=periodicity,
+            numeralia=numeralia if numeralia else None,
+            nombre_pie_numeralia=[x.strip() for x in record.nombre_pie_numeralia.split(",")] if record.nombre_pie_numeralia else None
+        )
         metadata_list.append(item)
 
     return metadata_list
-
-@router.get("/search", response_model=SearchResponse)
-async def search_layers(query: str = Query(..., description="Search query")):
-    return SearchService.search(query)
-
-@router.post("/search/refresh")
-async def refresh_cache():
-    try:
-        cache = SearchCacheService.generate_cache()
-        SearchCacheService.save_cache(cache)
-
-        return {
-            "message": "Cache regenerated successfully",
-            "last_updated": cache.get("last_updated"),
-            "layers_count": len(cache.get("layers", {})),
-            "cache_file": str(CACHE_FILE.absolute())
-        }
-    except Exception as e:
-        Logger.error(f"Error refreshing cache: {str(e)}")
-        raise
