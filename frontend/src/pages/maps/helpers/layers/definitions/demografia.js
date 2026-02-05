@@ -1,22 +1,21 @@
 import { createLayerFactory } from '../utils/layerFactory';
+import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
 
 const createDemografiaLayer = createLayerFactory('demografia');
 
-const razonAdultosConfig = {
-    headerField: 'Razón de dependencia adulta',
-    labelGroups: [
-        { fields: ['municipio'] }
-    ],
+const razonAdultosConfig = cardTemplates.TEEMLEV({
+    title: 'Razón de dependencia adulta',
+    municipio: 'municipio',
     list: [
         { label: 'Año seleccionado', field: 'fecha' },
     ],
     text: [
         { label: 'Personas mayores de 64 años por cada 100 personas de 15-64' },
     ],
-    cards: [
+    stats: [
         { label: 'Razón de dependencia adulta', field: 'valor' },
-    ],
-};
+    ]
+});
 
 const TASAS_POBLACION = [
     ['tasa_poblacion_total', 'Población', 'poblacion', ['demografia', 'habitantes', 'residentes', 'censo', 'proyeccion', 'estadistica', 'conapo']],
