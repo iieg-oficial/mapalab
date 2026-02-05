@@ -1,7 +1,7 @@
 import { useContext, useRef, useState } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
-import { useViewportContainment } from '@hooks/useViewportContainment';
+import { useViewportContainment } from './hooks/useViewportContainment';
 import { renderConfiguredFeature } from './utils/renderFeature.jsx';
 import { findLayerById, layers as allLayers } from '../../helpers/layers/index';
 import Icon from '@components/Icon';
