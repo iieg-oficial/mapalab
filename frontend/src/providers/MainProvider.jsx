@@ -1,10 +1,13 @@
 import { Outlet } from 'react-router';
 import MapsProvider from '@providers/MapsProvider';
+import { SearchProvider } from '@contexts/SearchContext';
 
 const MainProvider = () => {
     return (
         <MapsProvider>
-            <Outlet />
+            <SearchProvider>
+                <Outlet />
+            </SearchProvider>
         </MapsProvider>
     );
 }

@@ -51,6 +51,7 @@
     --font-garet: "Garet", "sans-serif";
     --font-garet--font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     --font-garet--font-variation-settings: "opsz" 32;
+    --font-weight-book: 300;
 }
 
 

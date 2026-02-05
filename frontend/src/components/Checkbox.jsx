@@ -14,8 +14,8 @@ const Checkbox = ({ checked, onChange, disabled, className = '' }) => {
             disabled={disabled}
             onClick={!disabled ? onChange : undefined}
             className={`
-                relative w-3.5 h-3.5 rounded-[4px] mr-2
-                flex items-center justify-center
+                relative w-3.5 h-3.5 min-w-3.5 min-h-3.5 rounded-[4px] mr-2
+                flex-shrink-0 flex items-center justify-center
                 transition-all duration-200 ease-in-out
                 ${getBackgroundColor()}
                 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:shadow-[0px_3px_6px_#C1C1C143]'}

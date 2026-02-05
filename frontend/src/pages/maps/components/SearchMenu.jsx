@@ -1,17 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getSearchConfig } from '@services/searchConfig';
 import { searchGlobal } from '@services/searchService';
 import { useDebounce } from '@hooks/useDebounce';
+import { useSearch } from '@contexts/SearchContext';
 import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import ScrollContainer from '@components/ScrollContainer';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
+    const { initialSearchQuery, consumeInitialQuery } = useSearch();
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedQuery = useDebounce(searchQuery, 500);
     const [selectedLayers, setSelectedLayers] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const initializedRef = useRef(false);
+
+    useEffect(() => {
+        if (!initializedRef.current && initialSearchQuery) {
+            initializedRef.current = true;
+            setSearchQuery(initialSearchQuery);
+            consumeInitialQuery();
+        }
+    }, [initialSearchQuery, consumeInitialQuery]);
 
     const isLayerActive = (layerId) => {
         return activeLayerIds.includes(layerId);
@@ -63,8 +74,8 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="¿Qué quieres buscar?"
                     className="
-                        w-full py-4 pl-4 border-none bg-[#EAEFFA] rounded-[8px] 
-                        text-[13px]/[19px] text-[#5C2472] font-garet font-normal tracking-normal 
+                        w-full py-4 pl-4 border-none bg-[#EAEFFA] rounded-[8px]
+                        text-[13px]/[19px] text-[#5C2472] font-garet font-normal tracking-normal
                         placeholder:text-[#191919] placeholder:font-garet placeholder:font-normal placeholder:text-[13px]/[19px]
                         focus:outline-[#5C2472] transition-colors
                     "
@@ -120,7 +131,7 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
                                                     key={layer.id}
                                                     onClick={() => handleLayerClick(layer.id)}
                                                     className={`
-                                                        w-full flex items-center justify-start gap-3 px-2 py-1.5 rounded-[8px] transition-all group cursor-pointer 
+                                                        w-full flex items-center justify-start gap-3 px-2 py-1.5 rounded-[8px] transition-all group cursor-pointer
                                                         hover:bg-[#FF8300]/10
                                                     `}
                                                 >
