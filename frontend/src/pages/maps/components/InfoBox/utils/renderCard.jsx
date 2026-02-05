@@ -1,9 +1,10 @@
-import FeatureHeader from '../components/FeatureHeader';
-import FeatureLabel from '../components/FeatureLabel';
-import FeatureList from '../components/FeatureList';
-import FeatureIconText from '../components/FeatureIconText';
-import FeatureCards from '../components/FeatureCards';
-import FeatureText from '../components/FeatureText';
+import Header from '../components/Header';
+import Label from '../components/Label';
+import List from '../components/List';
+import IconText from '../components/IconText';
+import Cards from '../components/Cards';
+import Text from '../components/Text';
+import { generateDefaultConfig } from './cardTemplates';
 
 const extractSuffixFromLayerId = (layerId) => {
     if (!layerId) return null;
@@ -35,7 +36,7 @@ const shouldIncludeField = (fieldName, suffix) => {
     return !otherSuffixes.some(otherSuffix => fieldLower.includes(otherSuffix));
 };
 
-export const renderConfiguredFeature = (properties, config, onClose, layerId = null) => {
+export const renderCard = (properties, config, onClose, layerId = null) => {
     const suffix = extractSuffixFromLayerId(layerId);
 
     const getValue = (field) => {
@@ -44,18 +45,21 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
         return key ? properties[key] : '';
     };
 
-    if (!config || !properties) return null;
+    if (!properties) return null;
+
+    const finalConfig = config || generateDefaultConfig(properties);
+    if (!finalConfig) return null;
 
     const header = [];
     const body = [];
 
-    if (config.headerField) {
-        const headerValueFromProperties = getValue(config.headerField);
-        const finalHeaderValue = headerValueFromProperties || config.headerField;
+    if (finalConfig.headerField) {
+        const headerValueFromProperties = getValue(finalConfig.headerField);
+        const finalHeaderValue = headerValueFromProperties || finalConfig.headerField;
 
         if (finalHeaderValue) {
             header.push(
-                <FeatureHeader
+                <Header
                     key="header"
                     value={finalHeaderValue}
                     onClose={onClose}
@@ -64,12 +68,12 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
         }
     }
 
-    if (config.labels) {
+    if (finalConfig.labels) {
         const labelElements = [];
-        config.labels.forEach((field, idx) => {
+        finalConfig.labels.forEach((field, idx) => {
             if (properties[field]) {
                 labelElements.push(
-                    <FeatureLabel
+                    <Label
                         key={`label-${idx}`}
                         value={properties[field]}
                         index={idx}
@@ -79,15 +83,15 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
         });
         if (labelElements.length > 0) {
             body.push(
-                <div key="labels-group" className="flex flex-wrap gap-1 mb-2">
+                <div key="labels-group" className="flex flex-wrap gap-1 mb-3">
                     {labelElements}
                 </div>
             );
         }
     }
 
-    if (config.labelGroups) {
-        config.labelGroups.forEach((group, groupIdx) => {
+    if (finalConfig.labelGroups) {
+        finalConfig.labelGroups.forEach((group, groupIdx) => {
             const values = group.fields
                 .map(field => properties[field])
                 .filter(v => v !== null && v !== undefined && v !== '');
@@ -98,19 +102,19 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
                     const splitItems = value.split(/,\s*|\s+y\s+/).filter(item => item.trim() !== '');
                     splitItems.forEach((item, splitIdx) => {
                         groupElements.push(
-                            <FeatureLabel
+                            <Label
                                 key={`labelgroup-${groupIdx}-${idx}-${splitIdx}`}
                                 value={item.trim()}
-                                index={config.labels ? config.labels.length + idx + splitIdx : idx + splitIdx}
+                                index={finalConfig.labels ? finalConfig.labels.length + idx + splitIdx : idx + splitIdx}
                             />
                         );
                     });
                 } else {
                     groupElements.push(
-                        <FeatureLabel
+                        <Label
                             key={`labelgroup-${groupIdx}-${idx}`}
                             value={value}
-                            index={config.labels ? config.labels.length + idx : idx}
+                            index={finalConfig.labels ? finalConfig.labels.length + idx : idx}
                         />
                     );
                 }
@@ -118,7 +122,7 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
 
             if (groupElements.length > 0) {
                 body.push(
-                    <div key={`labelgroup-${groupIdx}`} className="flex flex-wrap gap-1 mb-2">
+                    <div key={`labelgroup-${groupIdx}`} className="flex flex-wrap gap-1 mb-3">
                         {groupElements}
                     </div>
                 );
@@ -126,8 +130,8 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
         });
     }
 
-    if (config.list) {
-        const rows = config.list
+    if (finalConfig.list) {
+        const rows = finalConfig.list
             .filter(row => shouldIncludeField(row.field, suffix))
             .map(row => ({
                 label: row.label,
@@ -137,7 +141,7 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
 
         if (rows.length > 0) {
             body.push(
-                <FeatureList
+                <List
                     key="list"
                     rows={rows}
                 />
@@ -145,22 +149,22 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
         }
     }
 
-    if (config.iconText && properties[config.iconText.field]) {
+    if (finalConfig.iconText && properties[finalConfig.iconText.field]) {
         body.push(
-            <FeatureIconText
+            <IconText
                 key="icontext"
-                icon={config.iconText.icon}
-                value={properties[config.iconText.field]}
+                icon={finalConfig.iconText.icon}
+                value={properties[finalConfig.iconText.field]}
             />
         );
     }
 
-    if (config.text) {
-        config.text.forEach((textItem, idx) => {
+    if (finalConfig.text) {
+        finalConfig.text.forEach((textItem, idx) => {
             const value = textItem.field ? getValue(textItem.field) : null;
             if (textItem.label || value) {
                 body.push(
-                    <FeatureText
+                    <Text
                         key={`text-${idx}`}
                         label={textItem.label}
                         value={value}
@@ -168,10 +172,10 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
                 );
             }
         });
-    } 
+    }
 
-    if (config.cards) {
-        const cards = config.cards
+    if (finalConfig.cards) {
+        const cards = finalConfig.cards
             .filter(Boolean)
             .filter(card => shouldIncludeField(card.field, suffix))
             .map(card => ({
@@ -183,10 +187,10 @@ export const renderConfiguredFeature = (properties, config, onClose, layerId = n
 
         if (cards.length > 0) {
             body.push(
-                <FeatureCards
+                <Cards
                     key="cards"
                     cards={cards}
-                    columns={config.cardsColumns || 1}
+                    columns={finalConfig.cardsColumns || 1}
                 />
             );
         }

@@ -1,24 +1,24 @@
 import { createLayerFactory } from '../utils/layerFactory';
+import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
 
 const createEducacionLayer = createLayerFactory('educacion');
 
-const escuelasConfig = {
-    headerField: 'nombre_escuela',
-    labels: ['nivel_educativo', 'control'],
-    labelGroups: [
-        { fields: ['municipio', 'localidad'] }
-    ],
+const escuelasConfig = cardTemplates.TDEMECLUEV({
+    title: 'centro_educativo',
+    municipio: ['municipio', 'localidad'],
+    caracteristica: ['nivel_educativo', 'control'],
     list: [
-        { label: 'Turno', field: 'nombre_turno' },
-        { label: 'Sector', field: 'sector' },
-        { label: 'Año de la información', field: '' },
+        { label: 'Turno', field: 'turno' },
+        { label: 'Sostenimiento', field: 'sostenimiento' },
     ],
-    iconText: { icon: 'location', field: 'domicilio' },
-    cards: [
-        { label: 'Total de personal', field: 'total_personal' },
+    ubicacion: 'domicilio',
+    stats: [
+        { label: 'Cantidad de alumnas mujeres', field: 'cantidad_mujeres' },
+        { label: 'Cantidad de alumnos hombres', field: 'cantidad_hombres' },
         { label: 'Total de alumnos', field: 'total_alumnos' },
-    ],
-};
+        { label: 'Cantidad de docentes y directivos', field: 'total_docentes_directivos' },
+    ]
+});
 
 const NIVELES = [
     ['preescolar', 'Preescolar', 'preescolar', ['educacion', 'escuela', 'kinder', 'jardin', 'infantil', 'niños', 'preescolar', 'inicial']],

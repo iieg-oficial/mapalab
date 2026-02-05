@@ -1,25 +1,24 @@
 import { createLayerFactory } from '../utils/layerFactory';
+import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
 
 const SALUD_LAYER = 'gold_unidades_salud_mapalab';
 
 const createSaludLayer = createLayerFactory('salud');
 
-const establecimientosSaludConfig = {
-    headerField: 'nombre_unidad',
-    labels: ['municipio'],
-    labelGroups: [
-        { fields: ['nombre_institucion', 'clave_institucion', 'nivel_atencion'] }
-    ],
+const establecimientosSaludConfig = cardTemplates.TDEMECLUEH({
+    title: 'nombre_unidad',
+    municipio: 'municipio',
+    caracteristica: ['nombre_institucion', 'clave_institucion', 'nivel_atencion'],
     list: [
         { label: 'Año de la información', field: 'fecha_ultimo_movimiento' },
     ],
-    iconText: { icon: 'location', field: 'observaciones_direccion' },
-    cards: [
+    ubicacion: 'observaciones_direccion',
+    stats: [
         { label: 'Total de camas', field: 'total_camas' },
         { label: 'Total de consultorios', field: 'total_consultorios' },
     ],
-    cardsColumns: 2
-};
+    columns: 2
+});
 
 const INSTITUCIONES = [
     ['imss', 'IMSS', 'Instituto Mexicano del Seguro Social', ['salud', 'hospital', 'clinica', 'seguro', 'social', 'medico', 'atencion', 'publico']],

@@ -3,7 +3,7 @@ import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import Alert from '@components/Alert';
 
-const FeatureSummaryCard = ({ results, isExpanded, isLoadingExpand, onToggleExpand, onClose }) => {
+const SummaryCard = ({ results, isExpanded, isLoadingExpand, onToggleExpand, onClose }) => {
     const [showWarning, setShowWarning] = useState(false);
     const totalFeatures = results.reduce((total, result) => total + result.features.length, 0);
     const hasMany = totalFeatures > 5000;
@@ -87,9 +87,8 @@ const FeatureSummaryCard = ({ results, isExpanded, isLoadingExpand, onToggleExpa
                 <button
                     onClick={handleToggle}
                     disabled={isLoadingExpand || showWarning}
-                    className={`w-full bg-[#2F495C] text-white text-xs font-medium py-2 px-4 rounded-[5px] transition-colors flex items-center justify-center gap-2 ${
-                        (isLoadingExpand || showWarning) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#1e2f3c]'
-                    }`}
+                    className={`w-full bg-[#2F495C] text-white text-xs font-medium py-2 px-4 rounded-[5px] transition-colors flex items-center justify-center gap-2 ${(isLoadingExpand || showWarning) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#1e2f3c]'
+                        }`}
                 >
                     {isLoadingExpand ? (
                         <>
@@ -113,4 +112,4 @@ const FeatureSummaryCard = ({ results, isExpanded, isLoadingExpand, onToggleExpa
     );
 };
 
-export default FeatureSummaryCard;
+export default SummaryCard;

@@ -2,12 +2,11 @@ import { useContext, useRef, useState } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import { useViewportContainment } from './hooks/useViewportContainment';
-import { renderConfiguredFeature } from './utils/renderFeature.jsx';
+import { renderCard } from './utils/renderCard.jsx';
 import { findLayerById, layers as allLayers } from '../../helpers/layers/index';
-import Icon from '@components/Icon';
-import FeatureSummaryCard from './components/FeatureSummaryCard';
+import SummaryCard from './components/SummaryCard';
 
-const FeatureInfoPanel = () => {
+const InfoBox = () => {
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition } = useContext(MapsContext);
     const panelRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -70,55 +69,10 @@ const FeatureInfoPanel = () => {
         }
     };
 
-    const renderFeature = (feature, layerId, onClose) => {
+    const renderItem = (feature, layerId, onClose) => {
         const layerNode = findLayerById(layerId, allLayers);
         const config = layerNode?.littleCard;
-
-        if (config) {
-            const configuredContent = renderConfiguredFeature(feature.properties, config, onClose, layerId);
-            if (configuredContent) {
-                return configuredContent;
-            }
-        }
-
-        return (
-            <div className="text-xs space-y-2 relative p-4">
-                {onClose && (
-                    <div
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onClose();
-                        }}
-                        className="absolute right-2 top-2 cursor-pointer text-gray-400 hover:text-gray-600 transition-colors z-10"
-                    >
-                        <Icon name="close" size={14} />
-                    </div>
-                )}
-                {feature.properties && Object.keys(feature.properties).length > 0 ? (
-                    Object.entries(feature.properties).map(([key, value]) => (
-                        <div key={key} className="flex">
-                            <span className="font-medium text-gray-600 w-32 shrink-0">
-                                {key}:
-                            </span>
-                            <span className="text-gray-900 flex-1 break-words">
-                                {value !== null && value !== undefined ? String(value) : 'N/A'}
-                            </span>
-                        </div>
-                    ))
-                ) : (
-                    <div className="text-gray-500 italic">
-                        No hay propiedades disponibles
-                    </div>
-                )}
-                {feature.geometry && (
-                    <div className="pt-2 border-t border-gray-100 mt-2">
-                        <span className="text-xs font-medium text-gray-600">
-                            Geometría: {feature.geometry.type}
-                        </span>
-                    </div>
-                )}
-            </div>
-        );
+        return renderCard(feature.properties, config, onClose, layerId);
     };
 
     return (
@@ -151,7 +105,7 @@ const FeatureInfoPanel = () => {
                     ) : (
                         <>
                             {isPolygonSelection && (
-                                <FeatureSummaryCard
+                                <SummaryCard
                                     results={results}
                                     isExpanded={isExpanded}
                                     isLoadingExpand={isLoadingExpand}
@@ -161,22 +115,24 @@ const FeatureInfoPanel = () => {
                             )}
 
                             {(!isPolygonSelection || isExpanded) && (
-                                results.map((result, idx) => (
-                                    <div key={idx}>
-                                        {result.features.map((feature, featureIdx) => (
-                                            <div
-                                                key={featureIdx}
-                                                className="bg-white rounded-[10px] border-b border-gray-100 shadow-[0px_6px_12px_#2F495C14] pb-2 mb-2 last:border-0 last:mb-0"
-                                            >
-                                                {renderFeature(
-                                                    feature,
-                                                    result.layerId,
-                                                    () => handleRemoveFeature(result.layerId, featureIdx)
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ))
+                                <div className="space-y-2">
+                                    {results.map((result, idx) => (
+                                        <div key={idx} className="space-y-2">
+                                            {result.features.map((feature, featureIdx) => (
+                                                <div
+                                                    key={featureIdx}
+                                                    className="bg-white rounded-[10px] shadow-[0px_6px_12px_#2F495C14] pb-2"
+                                                >
+                                                    {renderItem(
+                                                        feature,
+                                                        result.layerId,
+                                                        () => handleRemoveFeature(result.layerId, featureIdx)
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </>
                     )}
@@ -186,4 +142,4 @@ const FeatureInfoPanel = () => {
     );
 };
 
-export default FeatureInfoPanel;
+export default InfoBox;

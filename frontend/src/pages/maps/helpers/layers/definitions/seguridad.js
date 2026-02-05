@@ -1,4 +1,5 @@
 import { createLayerFactory } from '../utils/layerFactory';
+import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
 
 const createSeguridadLayer = createLayerFactory('seguridad');
 
@@ -29,25 +30,23 @@ const createRoboConModalidad = (id, label, layerName, baseTags) => ({
     ]
 });
 
-const seguridadConfig = {
-    headerField: 'delito',
-    labelGroups: [
-        { fields: ['municipio', 'colonia'] }
-    ],
+const seguridadConfig = cardTemplates.TDEMLEV({
+    title: 'delito',
+    municipio: ['municipio', 'colonia'],
     list: [
         { label: 'Fecha', field: 'fecha' },
         { label: 'Hora del delito', field: 'hora' },
         { label: 'Bien afectado', field: 'bien_afectado' },
     ],
-    cards: [
+    stats: [
         { label: 'Área del decreto', field: 'area_km2' },
         { label: 'Superficie', field: 'superficie' },
         { label: 'Tasa de carpetas investigadas', field: 'tasa_carpetas_investigacion' },
         { field: 'modalidad' },
-    ],
-};
+    ]
+});
 
-const PERSONAS_CARDS = {
+const PERSONAS_STATS = {
     desaparecidos: {
         total: [
             { label: 'Total desaparecidos', field: 'total' },
@@ -78,13 +77,12 @@ const PERSONAS_CARDS = {
     },
 };
 
-const personasConfig = (tipo, whatIs) => ({
-    headerField: 'nombre',
-    labelGroups: [],
+const personasConfig = (tipo, whatIs) => cardTemplates.TDLEV({
+    title: 'nombre',
     list: [
         { label: 'Fecha', field: 'fecha' },
     ],
-    cards: PERSONAS_CARDS[tipo]?.[whatIs] || [],
+    stats: PERSONAS_STATS[tipo]?.[whatIs] || []
 });
 
 const DELITOS_STRUCTURE = [

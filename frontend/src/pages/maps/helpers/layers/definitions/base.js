@@ -1,44 +1,39 @@
 import { createLayerFactory } from '../utils/layerFactory';
+import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
 
 const createGeneralLayer = createLayerFactory('general');
 
-const aeropuertosConfig = {
-    headerField: 'nombre',
-    labels: ['ciudad'],
-    labelGroups: [
-        { fields: ['tipo'] }
-    ],
+const aeropuertosConfig = cardTemplates.TDEMECLU({
+    title: 'nombre',
+    municipio: 'ciudad',
+    caracteristica: 'tipo',
     list: [
         { label: 'Año de la información', field: 'fecha_ultimo_movimiento' },
     ],
-    iconText: { icon: 'location', field: 'domicilio' },
-};
+    ubicacion: 'domicilio'
+});
 
-const carreterasCaminosConfig = (headerField) => ({
-    headerField: headerField,
-    labelGroups: [
-        { fields: ['administracion', 'transito', 'pavimento', 'tipo_material'] }
-    ],
+const carreterasCaminosConfig = (title) => cardTemplates.TDEMLEV({
+    title,
+    municipio: ['administracion', 'transito', 'pavimento', 'tipo_material'],
     list: [
         { label: 'Código', field: 'codigo' },
         { label: 'Origen', field: 'origen' },
         { label: 'Destino', field: 'destino' },
         { label: 'Fecha de la capa', field: 'fecha' },
     ],
-    cards: [
+    stats: [
         { label: 'Cantidad de carriles', field: 'carriles' },
-    ],
+    ]
 });
 
-const regionesConfig = {
-    headerField: 'region',
-    labelGroups: [
-        { fields: ['municipio'] }
-    ],
-    cards: [
+const regionesConfig = cardTemplates.TDEMEV({
+    title: 'region',
+    municipio: 'municipio',
+    stats: [
         { label: 'Área', field: 'area_km2' },
-    ],
-};
+    ]
+});
 
 const BASE_LAYERS = [
     ['curvas_de_nivel', 'Curvas de nivel', 'curvas_de_nivel', ['base', 'topografia', 'altitud', 'relieve', 'elevacion', 'isolineas', 'pendiente', 'terreno', 'cotas'], null],
