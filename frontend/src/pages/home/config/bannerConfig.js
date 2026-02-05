@@ -22,7 +22,7 @@ const bannerConfig = {
                 }
             },
             image: {
-                src: 'src/assets/png/bannerHeader.png',
+                src: 'src/assets/images/bannerHeader.png',
                 alt: 'Vista previa del mapa interactivo'
             }
         }
