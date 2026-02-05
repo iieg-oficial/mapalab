@@ -15,7 +15,7 @@ const footerConfig = {
         }, { 
             id: 3, 
             name: 'Jalisco', 
-            src: '/src/assets/logos/jalisco_large.svg', 
+            src: '/src/assets/logos/jalisco_large_dark.svg', 
             width: '226px', 
             height: '77px' 
         }
