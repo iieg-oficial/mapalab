@@ -1,88 +1,67 @@
+import { findLayerById, layers } from '@pages/maps/helpers/layers';
+
 const API_HOST = import.meta.env.VITE_BACKEND_API_HOST?.replace(/\/+$/, '');
-const LAYERS_ENDPOINT = `${API_HOST}/mapalab/layers`;
+const METADATA_ENDPOINT = `${API_HOST}/metadata/`;
 
-export const THEME_ICONS = {
-    'demografia': '👥',
-    'salud': '🏥',
-    'economia': '💼',
-    'educacion': '🎓',
-    'seguridad': '🚨',
-    'gobierno': '🏛️',
-    'recursos': '🌳',
-    'desarrollo': '🏗️',
-    'general': '📊'
-};
+const cleanNaN = (value) => (value === 'NaN' ? null : value);
 
-export const THEME_COLORS = {
-    'demografia': '#3b82f6',
-    'salud': '#ef4444',
-    'economia': '#10b981',
-    'educacion': '#f59e0b',
-    'seguridad': '#8b5cf6',
-    'gobierno': '#ec4899',
-    'recursos': '#14b8a6',
-    'desarrollo': '#f97316',
-    'general': '#64748b'
-};
-
-const parseStatistics = (metadato) => {
-    if (!metadato) return [];
-    try {
-        const parsed = typeof metadato === 'string' ? JSON.parse(metadato) : metadato;
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
+const cleanResponse = (data) => {
+    if (data == null) return data;
+    if (typeof data === 'string') return cleanNaN(data);
+    if (Array.isArray(data)) return data.map(cleanResponse);
+    if (typeof data === 'object') {
+        return Object.fromEntries(
+            Object.entries(data).map(([k, v]) => [k, cleanResponse(v)])
+        );
     }
+    return data;
 };
 
-const getThemeId = (themeName) => {
-    if (!themeName) return 'general';
-    const normalized = themeName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const themeMap = {
-        'demografia': 'demografia',
-        'salud': 'salud',
-        'economia': 'economia',
-        'educacion': 'educacion',
-        'seguridad': 'seguridad',
-        'gobierno': 'gobierno',
-        'recursos': 'recursos',
-        'desarrollo': 'desarrollo',
-        'medio ambiente': 'recursos',
-        'infraestructura': 'desarrollo'
-    };
-    return Object.keys(themeMap).find(key => normalized.includes(key)) || 'general';
+const filterNumeralia = (numeralia) => {
+    if (!Array.isArray(numeralia)) return [];
+    return numeralia.filter(item => item.valor != null || item.nombre != null);
 };
 
-const transformLayerResponse = (layer) => {
-    const themeId = getThemeId(layer.tema);
+const findLayerWithWMS = (layer) => {
+    if (!layer) return null;
+    if (layer.wmsConfig) return layer;
+    if (Array.isArray(layer.children)) {
+        for (const child of layer.children) {
+            const found = findLayerWithWMS(child);
+            if (found) return found;
+        }
+    }
+    return null;
+};
 
-    return {
-        id: layer.nombre_capa_db,
-        name: layer.nombre_capa_usuario || layer.nombre_capa_db,
-        description: layer.descripcion,
-        theme: {
-            id: themeId,
-            name: layer.tema || 'General',
-            icon: THEME_ICONS[themeId] || THEME_ICONS['general'],
-            color: THEME_COLORS[themeId] || THEME_COLORS['general']
-        },
-        updateInfo: layer.frecuencia_actualizacion || layer.fecha_ultima_actualizacion ? {
-            frequency: layer.frecuencia_actualizacion,
-            lastUpdate: layer.fecha_ultima_actualizacion
-        } : null,
-        statistics: parseStatistics(layer.metadato),
-        methodology: layer.metodologia_texto ? {
-            title: 'Metodología',
-            content: layer.metodologia_texto,
-            link: layer.metodologia_archivo_enlace
-        } : null,
-        temporalCoverage: layer.rangos_periodicidad ? {
-            range: layer.rangos_periodicidad
-        } : null,
-        source: layer.fuentes_texto,
-        sourceLink: layer.fuentes_enlace,
-        license: 'Datos abiertos'
-    };
+const extractWorkspaceFromBaseUrl = (baseUrl) => {
+    if (!baseUrl) return null;
+    try {
+        const url = new URL(baseUrl);
+        const segments = url.pathname.split('/').filter(Boolean);
+        const wmsIndex = segments.lastIndexOf('wms');
+        if (wmsIndex > 0) return segments[wmsIndex - 1];
+    } catch {
+        const segments = baseUrl.split('/').filter(Boolean);
+        const wmsIndex = segments.lastIndexOf('wms');
+        if (wmsIndex > 0) return segments[wmsIndex - 1];
+    }
+    return null;
+};
+
+const getLayerRequestParams = (layerId) => {
+    const layerNode = findLayerById(layerId, layers);
+    if (!layerNode) return null;
+
+    const layerWithConfig = findLayerWithWMS(layerNode);
+    if (!layerWithConfig?.wmsConfig) return null;
+
+    const { wmsConfig } = layerWithConfig;
+    const layerName = wmsConfig.layerName?.split(':').pop();
+    const workspace = extractWorkspaceFromBaseUrl(wmsConfig.baseUrl) || wmsConfig.workspace;
+
+    if (!workspace || !layerName) return null;
+    return { workspace, layer: layerName };
 };
 
 export const getLayerMetadata = async (layerId) => {
@@ -91,56 +70,52 @@ export const getLayerMetadata = async (layerId) => {
         return null;
     }
 
-    const url = new URL(LAYERS_ENDPOINT);
-    url.searchParams.set('keyword', layerId);
-    url.searchParams.set('size', '1');
+    const params = getLayerRequestParams(layerId);
+    if (!params) {
+        console.warn(`No se encontró configuración WMS para la capa ${layerId}`);
+        return null;
+    }
+
+    const url = new URL(METADATA_ENDPOINT);
+    url.searchParams.set('workspace', params.workspace);
+    url.searchParams.set('layer', params.layer);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
         const response = await fetch(url.toString(), {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             throw new Error(`Error HTTP: ${response.status}`);
         }
 
-        const result = await response.json();
-        const layer = result.data?.find(l => l.nombre_capa_db === layerId);
+        const raw = await response.json();
+        const list = Array.isArray(raw) ? raw : [raw];
+        const first = list[0];
 
-        if (!layer) {
-            return null;
+        if (!first) return null;
+
+        const data = cleanResponse(first);
+
+        if (data.numeralia) {
+            data.numeralia = filterNumeralia(data.numeralia);
         }
 
-        return transformLayerResponse(layer);
+        return data;
     } catch (error) {
-        console.error('Error al obtener metadata de la capa:', error);
-        throw error;
-    }
-};
-
-export const getLayerMetadataById = async (id) => {
-    if (!API_HOST) {
-        console.error('VITE_BACKEND_API_HOST no está configurado');
-        return null;
-    }
-
-    const url = `${API_HOST}/mapalab/metadatos/${id}`;
-
-    try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            console.warn(`Tiempo de espera agotado para la capa ${layerId}`);
+        } else {
+            console.error('Error al obtener metadata de la capa:', error);
         }
-
-        const layer = await response.json();
-        return transformLayerResponse(layer);
-    } catch (error) {
-        console.error('Error al obtener metadata por ID:', error);
         throw error;
     }
 };

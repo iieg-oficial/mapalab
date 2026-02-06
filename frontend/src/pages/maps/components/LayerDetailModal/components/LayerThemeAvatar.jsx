@@ -11,6 +11,16 @@ const themeToIconMap = {
     'Gobierno y ciudadanía': 'gobierno',
 };
 
+const normalize = (str) =>
+    str?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || '';
+
+const normalizedMap = Object.fromEntries(
+    Object.entries(themeToIconMap).map(([key, value]) => [normalize(key), value])
+);
+
+const resolveIcon = (name, icon) =>
+    themeToIconMap[name] || normalizedMap[normalize(name)] || icon;
+
 const LayerThemeAvatar = ({ icon, name, size = 'md' }) => {
     const sizeClasses = {
         sm: 'size-10',
@@ -24,7 +34,7 @@ const LayerThemeAvatar = ({ icon, name, size = 'md' }) => {
         lg: 'size-12'
     };
 
-    const iconName = themeToIconMap[name] || icon;
+    const iconName = resolveIcon(name, icon);
 
     return (
         <div className={`${sizeClasses[size]} flex items-center justify-center`} title={name}>

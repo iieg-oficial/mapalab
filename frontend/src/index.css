@@ -47,6 +47,14 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: "Garet";
+    src: url("/fonts/Garet-ExtraBold.otf") format("opentype");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
 @theme {
     --font-garet: "Garet", "sans-serif";
     --font-garet--font-feature-settings: "cv02", "cv03", "cv04", "cv11";

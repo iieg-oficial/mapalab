@@ -1,18 +1,20 @@
-import { useState, useEffect, useContext, useMemo, useRef } from 'react';
-import { getLayerPeriodicity } from '@services/periodicityService';
+import { useEffect, useContext, useMemo, useRef } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useCarouselOverflow } from '@pages/maps/hooks/useCarouselOverflow';
 import { useDateSelections } from '@pages/maps/hooks/useDateSelections';
 import { generateCQLFilter, parseCQLToSelections, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import NavigationButton from '../../NavigationButton';
 import Icon from '@components/Icon';
-import Loading from '@components/Loading';
 
-const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 'date' }) => {
-    const { activeLayerIds = [], findLayerById, getSpecificFilter } = useContext(MapsContext);
-    const [loading, setLoading] = useState(true);
-    const [periodicityData, setPeriodicityData] = useState(null);
-    const [error, setError] = useState(null);
+const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, filterName = 'date' }) => {
+    const { getSpecificFilter } = useContext(MapsContext);
+
+    const periodicityData = useMemo(() => {
+        if (!periodicity) return null;
+        const fecha = periodicity.fecha || periodicity;
+        if (!fecha || typeof fecha !== 'object') return null;
+        return { fecha, filterColumn: 'fecha' };
+    }, [periodicity]);
 
     const initialSelections = useMemo(() => {
         const currentFilter = getSpecificFilter ? getSpecificFilter(layerId, filterName) : null;
@@ -36,101 +38,6 @@ const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 
 
     const yearsCarousel = useCarouselOverflow();
     const daysCarousel = useCarouselOverflow();
-
-    const layerGroups = useMemo(() => {
-        if (!layerId || !findLayerById) return [];
-
-        const rootLayer = findLayerById(layerId);
-        if (!rootLayer) return [];
-
-        const activeIdsSet = new Set(activeLayerIds);
-        const groups = {};
-
-        const collectLayers = (layerNode, ancestorActive = false, isRoot = false) => {
-            if (!layerNode) return;
-
-            const isActive = ancestorActive || activeIdsSet.has(layerNode.id) || isRoot;
-
-            if (isActive && layerNode.wmsConfig) {
-                const layerName = layerNode.wmsConfig.layerName;
-                if (!groups[layerName]) {
-                    groups[layerName] = {
-                        representativeId: layerNode.id,
-                        filters: [],
-                        isShared: false
-                    };
-                }
-                if (layerNode.wmsConfig.cqlFilter) {
-                    groups[layerName].filters.push(layerNode.wmsConfig.cqlFilter);
-                }
-            }
-
-            if (Array.isArray(layerNode.children) && layerNode.children.length > 0) {
-                layerNode.children.forEach(child => collectLayers(child, false, false));
-            }
-        };
-
-        collectLayers(rootLayer, false, true);
-        return Object.values(groups);
-    }, [layerId, activeLayerIds, findLayerById]);
-
-    useEffect(() => {
-        const fetchPeriodicity = async () => {
-            if (layerGroups.length === 0) {
-                setLoading(false);
-                return;
-            }
-
-            setLoading(true);
-            setError(null);
-
-            try {
-                const results = await Promise.all(layerGroups.map(async (group) => {
-                    let cqlFilter = null;
-                    if (group.filters.length > 0) {
-                        const uniqueFilters = [...new Set(group.filters)];
-                        if (uniqueFilters.length === 1) {
-                            cqlFilter = uniqueFilters[0];
-                        } else {
-                            cqlFilter = uniqueFilters.map(f => `(${f})`).join(' OR ');
-                        }
-                    }
-
-                    return getLayerPeriodicity(group.representativeId, { cqlFilter });
-                }));
-
-                const mergedFecha = {};
-                const filterColumn = 'fecha';
-
-                results.forEach(result => {
-                    if (!result.fecha) return;
-
-                    Object.entries(result.fecha).forEach(([year, months]) => {
-                        if (!mergedFecha[year]) mergedFecha[year] = {};
-                        Object.entries(months).forEach(([month, days]) => {
-                            if (!mergedFecha[year][month]) mergedFecha[year][month] = [];
-                            const existingDays = new Set(mergedFecha[year][month]);
-                            days.forEach(d => existingDays.add(d));
-                            mergedFecha[year][month] = Array.from(existingDays).sort((a, b) => a - b);
-                        });
-                    });
-                });
-
-                setPeriodicityData({
-                    fecha: mergedFecha,
-                    filterColumn
-                });
-
-            } catch (err) {
-                console.error('Error al obtener periodicidad:', err);
-                setError('No se pudo obtener la información de fechas disponibles');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchPeriodicity();
-    }, [layerGroups]);
 
     const onFilterApplyRef = useRef(onFilterApply);
     const onClearFilterRef = useRef(onClearFilter);
@@ -163,24 +70,6 @@ const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 
         yearsCarousel.checkOverflow();
         daysCarousel.checkOverflow();
     }, [periodicityData, expandedYear, expandedMonth, yearsCarousel.checkOverflow, daysCarousel.checkOverflow]);
-
-    if (loading) {
-        return (
-            <div className="flex items-center gap-2 text-[12px]/[18px] text-[#454545] font-normal font-garet tracking-normal">
-                <Loading visible size="size-5" />
-                Cargando fechas disponibles ...
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="flex items-center gap-2 text-[11px]/[16px] text-[#EA4335] font-normal font-garet tracking-normal">
-                <Icon name="alert" className="h-4 w-4" />
-                {error || 'Ocurrió un error al cargar las fechas disponibles'}
-            </div>
-        );
-    }
 
     if (!periodicityData || !periodicityData.fecha || typeof periodicityData.fecha !== 'object') {
         return null;
@@ -237,7 +126,7 @@ const DateTreeSelector = ({ layerId, onFilterApply, onClearFilter, filterName = 
                                 onDoubleClick={() => handleYearClick(year)}
                                 className={`
                                     shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200
-                                    text-[14px]/[16px] text-[#2E4372] font-medium font-garet 
+                                    text-[14px]/[16px] text-[#2E4372] font-medium font-garet
                                     ${isExpanded
                                         ? 'bg-[#FF8300]/30 border border-[#FF8300] text-[#FF8300]'
                                         : isActive
