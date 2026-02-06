@@ -3,8 +3,11 @@ import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import Alert from '@components/Alert';
 
-const SummaryCard = ({ results, isExpanded, isLoadingExpand, onToggleExpand, onClose }) => {
+const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpand, onToggleExpand, onClose }) => {
     const [showWarning, setShowWarning] = useState(false);
+
+    if (!visible) return null;
+
     const totalFeatures = results.reduce((total, result) => total + result.features.length, 0);
     const hasMany = totalFeatures > 5000;
 
@@ -92,20 +95,10 @@ const SummaryCard = ({ results, isExpanded, isLoadingExpand, onToggleExpand, onC
                 >
                     {isLoadingExpand ? (
                         <>
-                            <Loading visible={true} size="h-4 w-4" />
+                            <Loading visible={true} className="h-4 w-4" />
                             Cargando detalles...
                         </>
-                    ) : isExpanded ? (
-                        <>
-                            <Icon name="expand_less" size={16} />
-                            Ocultar detalles
-                        </>
-                    ) : (
-                        <>
-                            <Icon name="expand_more" size={16} />
-                            Ver detalles
-                        </>
-                    )}
+                    ) : isExpanded ? "Ocultar detalles" : "Ver detalles"}
                 </button>
             </div>
         </div>

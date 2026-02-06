@@ -92,24 +92,50 @@ const icons = {
     ),
 };
 
-const Icon = ({ name, className = '', state = 'normal', visible = true, tooltip = null }) => {
+const Icon = ({ name, className = '', state = 'normal', visible = true, tooltip = null, onClick = null }) => {
     if (!visible) return null;
+
+    const positioningClasses = ['absolute', 'fixed', 'relative', 'sticky', 'top-', 'bottom-', 'left-', 'right-', 'inset-', 'z-'];
+    const classNames = className.split(' ');
+    const wrapperClasses = [];
+    const iconClasses = [];
+
+    classNames.forEach(cls => {
+        if (positioningClasses.some(pos => cls.startsWith(pos))) {
+            wrapperClasses.push(cls);
+        } else {
+            iconClasses.push(cls);
+        }
+    });
 
     const externalKey = `${name}_${state}`;
     let iconElement = null;
+    const iconClassName = iconClasses.join(' ');
 
     if (externalIcons[externalKey]) {
-        iconElement = <img src={externalIcons[externalKey]} alt={name} className={className || 'w-[29px] h-[29px]'} />;
+        iconElement = <img src={externalIcons[externalKey]} alt={name} className={iconClassName || 'w-[29px] h-[29px]'} />;
     } else if (icons[name]) {
         const icon = icons[name];
-        const mergedClassName = className || icon.props.className;
+        const mergedClassName = iconClassName || icon.props.className;
         iconElement = cloneElement(icon, { className: mergedClassName });
     }
 
     if (!iconElement) return null;
 
-    if (tooltip) {
-        return <Tooltip content={tooltip}>{iconElement}</Tooltip>;
+    const needsWrapper = onClick || tooltip || wrapperClasses.length > 0;
+
+    if (needsWrapper) {
+        const finalWrapperClasses = [
+            ...wrapperClasses,
+            onClick ? 'cursor-pointer' : ''
+        ].filter(Boolean).join(' ');
+
+        iconElement = (
+            <span onClick={onClick} className={finalWrapperClasses || undefined}>
+                {tooltip ? <Tooltip content={tooltip}>{iconElement}</Tooltip> : iconElement}
+            </span>
+        );
+        return iconElement;
     }
 
     return iconElement;

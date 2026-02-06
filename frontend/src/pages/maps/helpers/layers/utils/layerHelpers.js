@@ -144,3 +144,24 @@ export const getAllChildLayerIds = (layerId, layersArray) => {
 
     return result;
 };
+
+export const findParentGroup = (layerId, layersArray) => {
+    const findParent = (layers, parent = null) => {
+        for (const layer of layers) {
+            if (layer.id === layerId) {
+                if (parent?.forceGroup) {
+                    return parent;
+                }
+                return null;
+            }
+            if (layer.children) {
+                const nextParent = layer.forceGroup ? layer : parent;
+                const found = findParent(layer.children, nextParent);
+                if (found !== undefined) return found;
+            }
+        }
+        return undefined;
+    };
+
+    return findParent(layersArray);
+};
