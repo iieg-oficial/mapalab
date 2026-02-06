@@ -37,7 +37,7 @@ const regionesConfig = cardTemplates.TDEMEV({
 
 const BASE_LAYERS = [
     ['curvas_de_nivel', 'Curvas de nivel', 'curvas_de_nivel', ['base', 'topografia', 'altitud', 'relieve', 'elevacion', 'isolineas', 'pendiente', 'terreno', 'cotas'], null],
-    ['cuerpos_de_agua_250k', 'Cuerpos de agua', 'cuerpos_de_agua_250k', ['base', 'agua', 'hidrologia', 'rio', 'lago', 'presa', 'laguna', 'recursos_hidricos', 'humedal'], null],
+    ['cuerpos_de_agua_50k', 'Cuerpos de agua', 'cuerpos_de_agua_50k', ['base', 'agua', 'hidrologia', 'rio', 'lago', 'presa', 'laguna', 'recursos_hidricos', 'humedal'], null],
     ['limite_municipal', 'Límite municipal', 'limite_municipal', ['base', 'limite', 'frontera', 'municipio', 'division', 'iieg', 'demarcacion', 'territorio', 'alcaldia'], null],
     ['limite_municipal_inegi', 'Límite municipal inegi', 'limite_municipal_inegi', ['base', 'limite', 'frontera', 'municipio', 'division', 'inegi', 'demarcacion', 'territorio', 'alcaldia'], null],
     ['carretera_2012', 'Carreteras', 'carretera_2012', ['base', 'carretera', 'vialidad', 'transporte', 'autopista', 'ruta', 'infraestructura', 'pavimento', 'red_vial'], carreterasCaminosConfig('Carreteras')],
