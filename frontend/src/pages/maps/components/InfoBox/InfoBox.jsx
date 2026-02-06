@@ -57,7 +57,7 @@ const InfoBox = () => {
     const showNoLayerSelected = hasNoResults && !isPolygonSelection && !queriedLayerName && !hasAlternatives;
 
     const positionStyle = clickPosition.getPositionStyle(
-        isSingleFeature ? { x: 0, y: -15 } : { x: 15, y: 15 }
+        isSingleFeature ? { x: 0, y: -12 } : { x: 12, y: -24 }
     );
 
     const handleRemoveFeature = (layerId, featureIndex) => {
