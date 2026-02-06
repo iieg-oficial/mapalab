@@ -92,7 +92,7 @@ const icons = {
     ),
 };
 
-const Icon = ({ name, className = '', state = 'normal', visible = true, tooltip = null, onClick = null }) => {
+const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visible = true, tooltip = null, onClick = null }) => {
     if (!visible) return null;
 
     const positioningClasses = ['absolute', 'fixed', 'relative', 'sticky', 'top-', 'bottom-', 'left-', 'right-', 'inset-', 'z-'];
@@ -122,11 +122,12 @@ const Icon = ({ name, className = '', state = 'normal', visible = true, tooltip 
 
     if (!iconElement) return null;
 
-    const needsWrapper = onClick || tooltip || wrapperClasses.length > 0;
+    const needsWrapper = onClick || tooltip || wrapperClasses.length > 0 || classNameBG;
 
     if (needsWrapper) {
         const finalWrapperClasses = [
             ...wrapperClasses,
+            classNameBG,
             onClick ? 'cursor-pointer' : ''
         ].filter(Boolean).join(' ');
 
