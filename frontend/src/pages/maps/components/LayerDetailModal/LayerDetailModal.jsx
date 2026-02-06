@@ -1,8 +1,9 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useRef, useCallback } from 'react';
 import { useLayerMetadata } from '../../hooks/useLayerMetadata';
 import { useSider } from '@contexts/SiderContext';
 import MapsContext from '@contexts/MapsContext';
 import DateTreeSelector from './components/DateTreeSelector';
+import SimpleDateSelector from './components/SimpleDateSelector';
 import LayerDownloadModal from './components/LayerDownloadModal';
 import OpacityControl from './components/OpacityControl';
 import InfoCard from './components/InfoCard';
@@ -15,10 +16,26 @@ import Logo from '@components/Logo';
 const LayerDetailModal = () => {
     const { selectedLayer, setSelectedLayer, applyFilter, clearFilter, getLayerOpacity, setLayerOpacity } = useContext(MapsContext);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
+    const [isAdvancedMode, setIsAdvancedMode] = useState(false);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
     const { isMobile } = useSider();
+    const longPressTimer = useRef(null);
 
     const hasPeriodicity = metadata?.periodicity != null;
+
+    const handleLongPressStart = useCallback(() => {
+        longPressTimer.current = setTimeout(() => {
+            setIsAdvancedMode(prev => !prev);
+            longPressTimer.current = null;
+        }, 1000);
+    }, []);
+
+    const handleLongPressEnd = useCallback(() => {
+        if (longPressTimer.current) {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+        }
+    }, []);
 
     const handleDateFilterApply = (filterData) => {
         if (selectedLayer && selectedLayer.id) {
@@ -131,13 +148,43 @@ const LayerDetailModal = () => {
 
                                 {hasPeriodicity && (
                                     <div className="mb-4">
-                                        <DateTreeSelector
-                                            layerId={selectedLayer.id}
-                                            periodicity={metadata.periodicity}
-                                            onFilterApply={handleDateFilterApply}
-                                            onClearFilter={handleClearFilter}
-                                            filterName="date"
-                                        />
+                                        <div className="flex items-center justify-between my-5">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer"
+                                                    onDoubleClick={() => setIsAdvancedMode(prev => !prev)}
+                                                    onMouseDown={handleLongPressStart}
+                                                    onMouseUp={handleLongPressEnd}
+                                                    onMouseLeave={handleLongPressEnd}
+                                                >
+                                                    Periodicidad:
+                                                </span>
+                                                {isAdvancedMode && (
+                                                    <Icon
+                                                        name="info_warning"
+                                                        className="size-4 cursor-help"
+                                                        tooltip="Click simple: navegar opciones. Doble click: seleccionar fecha. Click en seleccionado: deseleccionar."
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                        {isAdvancedMode ? (
+                                            <DateTreeSelector
+                                                layerId={selectedLayer.id}
+                                                periodicity={metadata.periodicity}
+                                                onFilterApply={handleDateFilterApply}
+                                                onClearFilter={handleClearFilter}
+                                                filterName="date"
+                                            />
+                                        ) : (
+                                            <SimpleDateSelector
+                                                layerId={selectedLayer.id}
+                                                periodicity={metadata.periodicity}
+                                                onFilterApply={handleDateFilterApply}
+                                                onClearFilter={handleClearFilter}
+                                                filterName="date"
+                                            />
+                                        )}
                                     </div>
                                 )}
 

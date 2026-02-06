@@ -3,7 +3,6 @@ import MapsContext from '@contexts/MapsContext';
 import { useCarouselOverflow } from '@pages/maps/hooks/useCarouselOverflow';
 import { useDateSelections } from '@pages/maps/hooks/useDateSelections';
 import { generateCQLFilter, parseCQLToSelections, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
-import NavigationButton from '../../NavigationButton';
 import Icon from '@components/Icon';
 
 const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, filterName = 'date' }) => {
@@ -85,16 +84,8 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <span className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal">Periodicidad</span>
-                    <Icon
-                        name="info_warning"
-                        className="size-4 cursor-help"
-                        tooltip="Click simple: navegar opciones. Doble click: seleccionar fecha. Click en seleccionado: deseleccionar."
-                    />
-                </div>
-                {hasAnySelection && (
+            {hasAnySelection && (
+                <div className="flex justify-end">
                     <button onClick={clearAllSelections}>
                         <Icon
                             tooltip="Limpiar todas las selecciones"
@@ -103,12 +94,19 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
                             className="size-5 cursor-pointer"
                         />
                     </button>
-                )}
-            </div>
+                </div>
+            )}
 
             <div className="flex items-center gap-2">
                 {yearsCarousel.hasOverflow && (
-                    <NavigationButton direction="left" onClick={() => yearsCarousel.scroll('left')} />
+                    <button onClick={() => yearsCarousel.scroll('left')}>
+                        <Icon
+                            name="downArrow"
+                            tooltip="Anterior"
+                            classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
+                            className="w-5 h-2 transition-transform duration-300 rotate-90"
+                        />
+                    </button>
                 )}
                 <div
                     ref={yearsCarousel.scrollRef}
@@ -141,7 +139,14 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
                     })}
                 </div>
                 {yearsCarousel.hasOverflow && (
-                    <NavigationButton direction="right" onClick={() => yearsCarousel.scroll('right')} />
+                    <button onClick={() => yearsCarousel.scroll('right')}>
+                        <Icon
+                            name="downArrow"
+                            tooltip="Siguiente"
+                            classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
+                            className="w-5 h-2 transition-transform duration-300 -rotate-90"
+                        />
+                    </button>
                 )}
             </div>
 
@@ -197,7 +202,14 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
                     <div className="mt-2">
                         <div className="flex items-center gap-2">
                             {daysCarousel.hasOverflow && (
-                                <NavigationButton direction="left" onClick={() => daysCarousel.scroll('left')} />
+                                <button onClick={() => daysCarousel.scroll('left')}>
+                                    <Icon
+                                        name="downArrow"
+                                        tooltip="Anterior"
+                                        classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
+                                        className="w-5 h-2 transition-transform duration-300 rotate-90"
+                                    />
+                                </button>
                             )}
                             <div
                                 ref={daysCarousel.scrollRef}
@@ -227,7 +239,14 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
                                 })}
                             </div>
                             {daysCarousel.hasOverflow && (
-                                <NavigationButton direction="right" onClick={() => daysCarousel.scroll('right')} />
+                                <button onClick={() => daysCarousel.scroll('right')}>
+                                    <Icon
+                                        name="downArrow"
+                                        tooltip="Siguiente"
+                                        classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
+                                        className="w-5 h-2 transition-transform duration-300 -rotate-90"
+                                    />
+                                </button>
                             )}
                         </div>
                     </div>
