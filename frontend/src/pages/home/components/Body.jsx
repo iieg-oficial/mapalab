@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import SearchBar from './SearchBar';
 import Card from './Card';
 import TitleAndNote from './TitleAndNote';
+import Icon from '@components/Icon';
 import topicsConfig from '../config/topicsConfig';
 import guideConfig from '../config/guideConfig';
 import selectConfig from '../config/selectConfig';
@@ -13,9 +14,15 @@ const Body = () => {
     const [startX, setStartX] = useState(0);
     const [scrollLeft, setScrollLeft] = useState(0);
     const [expandedSection, setExpandedSection] = useState(null);
+    const [expandedFaq, setExpandedFaq] = useState({});
 
     const toggleSection = (id) => {
         setExpandedSection(expandedSection === id ? null : id);
+    };
+
+    const toggleFaq = (sectionId, index) => {
+        const key = `${sectionId}-${index}`;
+        setExpandedFaq(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
     const handleMouseDown = (e) => {
@@ -148,57 +155,68 @@ const Body = () => {
                     ))}
                 </div>
             </div>
-            <div className="my-[61px] mx-[3%] xl:mx-[5%]">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[1100px] mx-auto">
-                    {suportConfig.sections.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => toggleSection(item.id)}
-                            className={`
-                                group relative bg-[#F3EBFF] flex items-center rounded-[50px]
-                                w-full h-[110px] transition-all
-                                ${expandedSection === item.id ? 'border border-[#5C2472]' : 'hover:border hover:border-[#5C2472]'}
-                            `}
-                        >
-                            <div className="absolute left-[43px] flex items-center justify-center bg-white group-hover:bg-[#E5D9F2] rounded-full p-3 size-[74px]">
-                                <img
-                                    src={item.icon}
-                                    alt=""
-                                    className={`size-full ${expandedSection === item.id ? 'hidden' : 'block group-hover:hidden'}`}
-                                />
-                                <img
-                                    src={item.iconHover}
-                                    alt=""
-                                    className={`size-full ${expandedSection === item.id ? 'block' : 'hidden group-hover:block'}`}
-                                />
-                            </div>
-                            <h2 className="font-garet font-medium text-[#8936AB] text-[24px]/[28px] tracking-normal ml-[140px]">
-                                {item.label}
-                            </h2>
-                        </button>
-                    ))}
-                </div>
+            <div className="w-full flex items-center justify-center my-10 md:my-[61px]">
                 {suportConfig.sections.map((item) => (
-                    <div
+                    <button
                         key={item.id}
+                        onClick={() => toggleSection(item.id)}
                         className={`
-                            overflow-hidden transition-all duration-300 ease-in-out max-w-[1100px] mx-auto shadow-[0px_6px_12px_#ACBFE533]
-                            rounded-[13px]
-                            ${expandedSection === item.id ? 'max-h-[500px] opacity-100 mt-6' : 'max-h-0 opacity-0'}
+                            group relative bg-[#F3EBFF] flex items-center justify-center md:justify-end rounded-[50px]
+                            w-full max-w-[522px] h-[110px] transition-all border border-transparent pl-18 md:pl-0 md:pr-22 mx-4
+                            ${expandedSection === item.id ? 'border-[#5C2472]' : 'hover:border-[#5C2472]'}
                         `}
                     >
-                        <div className="bg-white rounded-[20px] p-6">
-                            {item.content.map((contentItem, index) => (
-                                <div key={index} className="py-3 border-b border-[#E5D9F2] last:border-b-0">
-                                    <h3 className="font-garet font-medium text-[#5C2472] text-[18px]">
-                                        {contentItem.question || contentItem.title}
-                                    </h3>
-                                    <p className="font-garet font-book text-[#2E4372] text-[14px] mt-1">
-                                        {contentItem.answer || contentItem.description}
-                                    </p>
-                                </div>
-                            ))}
+                        <div className="absolute left-4 md:left-[43px] flex items-center justify-center bg-white rounded-full p-4 size-[74px]">
+                            <img
+                                src={item.icon}
+                                alt="preguntas frecuentes icon"
+                                className={`size-full ${expandedSection === item.id ? 'hidden' : 'block group-hover:hidden'}`}
+                            />
+                            <img
+                                src={item.iconHover}
+                                alt="preguntas frecuentes icon hover"
+                                className={`size-full ${expandedSection === item.id ? 'block' : 'hidden group-hover:block'}`}
+                            />
                         </div>
+                        <h2 className="font-garet font-medium text-[#8936AB] text-[24px]/[28px] tracking-normal">
+                            {item.label}
+                        </h2>
+                    </button>
+                ))}
+            </div>
+            <div className={`w-full flex flex-col items-center justify-center px-2 bg-[#F9FBFF] ${expandedSection === 1 ? 'block' : 'hidden'}`}>
+                <h2 className="font-garet font-bold text-[#5C2472] text-[34px]/[64px] tracking-normal my-4 md:my-10">
+                    Preguntas frecuentes
+                </h2>
+                {suportConfig.sections.map((item) => (
+                    <div key={item.id} className="w-full max-w-[1330px] bg-transparent mb-4 lg:mb-20">
+                        {item.content.map((contentItem, index) => {
+                            const isExpanded = expandedFaq[`${item.id}-${index}`];
+                            return (
+                                <div
+                                    key={index}
+                                    onClick={() => toggleFaq(item.id, index)}
+                                    className="bg-white rounded-[13px] mb-4 py-8 px-4 lg:pr-9 lg:pl-[106px] cursor-pointer"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="font-garet font-medium text-[#2E4372] text-[19px]/[28px] tracking-normal">
+                                            {contentItem.question || contentItem.title}
+                                        </h3>
+                                        <Icon
+                                            name="downArrow"
+                                            tooltip={isExpanded ? 'Cerrar' : 'Abrir'}
+                                            classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
+                                            className={`w-5 h-2 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+                                        />
+                                    </div>
+                                    <div className={`w-full max-w-[1152px] mt-5 ${isExpanded ? 'block' : 'hidden'}`}>
+                                        <p className="font-garet font-regular text-[#2E4372] text-[18px]/[26px] tracking-normal text-left">
+                                            {contentItem.answer || contentItem.description}
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 ))}
             </div>
