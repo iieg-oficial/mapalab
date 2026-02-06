@@ -10,16 +10,15 @@ import StatCard from './components/StatCard';
 import LayerThemeAvatar from './components/LayerThemeAvatar';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
-import Loading from '@components/Loading';
+import Logo from '@components/Logo';
 
 const LayerDetailModal = () => {
-    const { selectedLayer, setSelectedLayer, applyFilter, clearFilter, findLayerById, getLayerOpacity, setLayerOpacity } = useContext(MapsContext);
+    const { selectedLayer, setSelectedLayer, applyFilter, clearFilter, getLayerOpacity, setLayerOpacity } = useContext(MapsContext);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
     const { isMobile } = useSider();
 
-    const layerData = findLayerById ? findLayerById(selectedLayer?.id) : null;
-    const hasPeriodicity = layerData?.hasPeriodicity !== false;
+    const hasPeriodicity = metadata?.periodicity != null;
 
     const handleDateFilterApply = (filterData) => {
         if (selectedLayer && selectedLayer.id) {
@@ -45,7 +44,7 @@ const LayerDetailModal = () => {
         <>
             <div className="fixed top-[52px] sm:top-[104px] bottom-0 right-0 sm:right-4 z-30 w-full sm:w-[643px] pointer-events-none">
                 <div className={`
-                    h-full bg-white shadow-[0_5px_20px_#1A26641A] backdrop-blur-sm overflow-y-auto pointer-events-auto rounded-t-[20px] 
+                    h-full bg-white shadow-[0_5px_20px_#1A26641A] backdrop-blur-sm overflow-y-auto pointer-events-auto rounded-t-[20px]
                     scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400
                 `}>
                     <div className="sticky top-0 z-10 bg-white backdrop-blur-sm p-4 sm:px-6 sm:pt-6">
@@ -59,81 +58,72 @@ const LayerDetailModal = () => {
                                     <button
                                         onClick={() => setShowDownloadModal(true)}
                                         className={`
-                                            px-10 text-[14px]/[47px] text-white bg-[#703089] hover:bg-[#5C2472] rounded-[30px] 
+                                            px-10 text-[14px]/[47px] text-white bg-[#703089] hover:bg-[#5C2472] rounded-[30px]
                                             transition-colors hover:shadow-[0px_6px_6px_#5C247234] h-12.5 font-bold font-garet
                                         `}
                                     >
                                         {isMobile ? <Icon name="download" /> : 'Descargar capa'}
                                     </button>
                                 </Tooltip>
-                                <button
-                                    onClick={() => setSelectedLayer(null)}
-                                    aria-label="Cerrar"
-                                >
-                                    <div className="relative w-5 h-5">
-                                        <Icon name="xl" className="absolute -left-2 inset-0 w-5 h-5" />
-                                        <Icon name="xr" className="absolute inset-0 w-5 h-5" />
-                                    </div>
-                                </button>
+                                <Icon 
+                                    name="cerrarModal" 
+                                    aria-label="Cerrar" 
+                                    onClick={() => setSelectedLayer(null)} 
+                                    classNameBG="rounded-full hover:shadow-[0px_5px_20px_#101F3629]"
+                                    className="size-10 " 
+                                />
                             </div>
                         </div>
                     </div>
 
                     <div className="px-4 pb-4 sm:px-6 sm:pb-6">
-                        {loading ? (
-                            <div className="">
-                                <Loading size="size-16" visible fullContainer />
-                            </div>
-                        ) : (
+                        {loading ? (<Logo name="mapalab" size="size-36" className="mt-40 lg:mt-52" isLoading />) : (
                             <>
-                                <div className="flex items-center mb-4">
-                                    <LayerThemeAvatar name={metadata?.theme?.name} size="md" />
+                                <div className="flex items-center gap-3">
+                                    <LayerThemeAvatar name={metadata?.tema} size="md" />
                                     <span className="text-[14px]/[47px] font-garet font-bold text-[#465055] tracking-normal">
-                                        {metadata?.theme?.name || 'General'}
+                                        {metadata?.tema || 'General'}
                                     </span>
                                 </div>
+                                <h3 className="text-[18px]/[47px] font-garet font-extrabold text-[#5C2472] tracking-normal">
+                                    {selectedLayer.name || 'Capa sin nombre'}
+                                </h3>
 
-                                <div className="mb-2">
-                                    <h3 className="text-[18px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
-                                        {selectedLayer.name || 'Capa sin nombre'}
-                                    </h3>
-                                </div>
-
-                                {metadata?.updateInfo && (
+                                {(metadata?.frecuencia_actualizacion || metadata?.fecha_ultima_actualizacion) && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-3">
                                         <InfoCard
                                             label="Frecuencia de actualización"
-                                            value={metadata.updateInfo.frequency}
+                                            value={metadata.frecuencia_actualizacion}
                                         />
                                         <InfoCard
                                             label="Última actualización"
-                                            value={formatDate(metadata.updateInfo.lastUpdate)}
+                                            value={formatDate(metadata.fecha_ultima_actualizacion)}
                                         />
                                     </div>
                                 )}
 
-                                {metadata?.description && (
+                                {metadata?.descripcion && (
                                     <div className="mb-4">
                                         <p className="text-[14px]/[32px] text-left font-garet font-medium text-[#465055] tracking-normal">
-                                            {metadata.description}
+                                            {metadata.descripcion}
                                         </p>
                                     </div>
                                 )}
 
-                                {metadata?.statistics && metadata.statistics.length > 0 && (
+                                {metadata?.numeralia && metadata.numeralia.length > 0 && (
                                     <div className="mb-4">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {metadata.statistics.map((stat, index) => (
+                                            {metadata.numeralia.map((stat, index) => (
                                                 <StatCard
                                                     key={index}
-                                                    label={stat.label}
-                                                    value={stat.value}
+                                                    label={stat.nombre}
+                                                    value={stat.valor}
                                                 />
                                             ))}
                                         </div>
-                                        {metadata?.updateInfo?.lastUpdate && (
+                                        {metadata?.nombre_pie_numeralia?.[0] && (
                                             <p className="text-[10px]/[11px] font-garet font-medium text-[#465055] tracking-normal mt-6">
-                                                * La numeralia corresponde a datos del {formatDate(metadata.updateInfo.lastUpdate)}
+                                                * {metadata.nombre_pie_numeralia[0]}
                                             </p>
                                         )}
                                     </div>
@@ -143,6 +133,7 @@ const LayerDetailModal = () => {
                                     <div className="mb-4">
                                         <DateTreeSelector
                                             layerId={selectedLayer.id}
+                                            periodicity={metadata.periodicity}
                                             onFilterApply={handleDateFilterApply}
                                             onClearFilter={handleClearFilter}
                                             filterName="date"
@@ -150,26 +141,26 @@ const LayerDetailModal = () => {
                                     </div>
                                 )}
 
-                                {metadata?.methodology && (
+                                {metadata?.metodologia_texto && (
                                     <div className="mb-4">
                                         <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4">
                                             <span className="text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
                                                 Metodología
                                             </span>
                                             <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
-                                                {metadata.methodology.content}
+                                                {metadata.metodologia_texto}
                                             </p>
                                         </div>
                                     </div>
                                 )}
 
-                                {metadata?.source && (
+                                {metadata?.fuentes_texto && (
                                     <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4">
                                         <span className="text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
                                             Fuente
                                         </span>
                                         <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
-                                            {metadata.source}
+                                            {metadata.fuentes_texto}
                                         </p>
                                     </div>
                                 )}

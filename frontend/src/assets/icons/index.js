@@ -57,6 +57,7 @@ import poligonoHover from './ico_poligono_hover.svg';
 
 import cerrarNormal from './ico_cerrar_mediciones_normal.svg';
 import cerrarHover from './ico_cerrar_mediciones_hover.svg';
+import cerrarModal from './ico_cerrar.svg';
 
 import puntoNormal from './ico_punto_normal.svg';
 import puntoHover from './ico_punto_hover.svg';
@@ -92,8 +93,6 @@ import upArrowNormal from './ico_up_arrow.svg';
 import alertNormal from './ico_alert.svg';
 
 import deshacerNormal from './ico_deshacer.svg';
-import xrNormal from './ico_xr_normal.svg';
-import xlNormal from './ico_xl_normal.svg';
 import infoWarningNormal from './ico_info_warning_normal.svg';
 import coordenadasNormal from './ico_coordenadas_normal.svg';
 import nNormal from './ico_n.svg';
@@ -120,14 +119,14 @@ export const externalIcons = {
     desarrollo_normal: desarrolloNormal, desarrollo_hover: desarrolloHover, seguridad_normal: seguridadNormal, seguridad_hover: seguridadHover,
     gobierno_normal: gobiernoNormal, gobierno_hover: gobiernoHover, search_normal: buscadorNormal, search_hover: buscadorHover,
     tools_normal: herramientasNormal, tools_hover: herramientasHover, basemaps_normal: mapasNormal, basemaps_hover: mapasHover,
-    searchInput_normal: search, check_normal: checkNormal, check_active: checkActive, downArrow_normal: downArrow,
+    searchInput_normal: search, check_normal: checkNormal, check_active: checkActive, downArrow_normal: downArrow, cerrarModal_normal: cerrarModal,
     zoomin_normal: zoominNormal, zoomin_hover: zoominHover, zoomout_normal: zoomoutNormal, zoomout_hover: zoomoutHover,
     linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover, lista_normal: listaNormal, lista_hover: listaHover,
     emoji_normal: emojiNormal, emoji_hover: emojiHover, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,
     info_normal: infoNormal, info_hover: infoHover, shared_normal: sharedNormal, shared_hover: sharedHover, capa_activa_normal: capaActivaNormal,
     visible_normal: visibleNormal, visible_hover: visibleHover, move_normal: moveNormal, move_hover: moveHover, simbologia_normal: simbologiaNormal,
     eliminar_normal: eliminarNormal, eliminar_hover: eliminarHover, big_card_normal: bigCardNormal, big_card_hover: bigCardHover, upArrow_normal: upArrowNormal,
-    alert_normal: alertNormal, deshacer_normal: deshacerNormal, center_normal: centerNormal, center_hover: centerHover, xr_normal: xrNormal, xl_normal: xlNormal,
+    alert_normal: alertNormal, deshacer_normal: deshacerNormal, center_normal: centerNormal, center_hover: centerHover,
     info_warning_normal: infoWarningNormal, coordenadas_normal: coordenadasNormal, n_normal: nNormal, sin_mapalab_normal: sinMapalabNormal, sin_mapalab_hover: sinMapalabHover,
     satelite_normal: sateliteNormal, satelite_hover: sateliteHover, position_normal: positionNormal, position_hover: positionHover, voyager_normal: voyagerNormal, 
     voyager_hover: voyagerHover, ubicacion_normal: ubicacionNormal, hombre_normal: hombreNormal, mujer_normal: mujerNormal,
