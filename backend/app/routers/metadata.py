@@ -28,6 +28,7 @@ def get_metadata(
 
     metadata_list = []
     for record in results:
+        periodicity = None
         if record.nombre_capa_geoserver and ":" in record.nombre_capa_geoserver:
             workspace, layer = record.nombre_capa_geoserver.split(":", 1)
             try:
