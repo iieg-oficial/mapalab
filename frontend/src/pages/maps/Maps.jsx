@@ -3,7 +3,7 @@ import MapSider from '@mapsComponents/MapSider';
 import MapToolsPanel from '@mapsComponents/MapToolsPanel';
 import MapLayersPanels from '@mapsComponents/MapLayersPanels';
 import LayerDetailModal from './components/LayerDetailModal/LayerDetailModal';
-import FeatureInfoPanel from './components/FeatureInfoPanel/FeatureInfoPanel';
+import InfoBox from './components/InfoBox/InfoBox';
 import MapControls from './components/MapControls';
 import MeasurementTools from './components/MeasurementTools/ToolsPanel';
 import ScaleLineControl from './components/ScaleLineControl';
@@ -24,7 +24,7 @@ const Maps = () => {
                     <MapToolsPanel />
                     <MapLayersPanels />
                     <LayerDetailModal />
-                    <FeatureInfoPanel />
+                    <InfoBox />
                     <ScaleLineControl />
                     <MapControls />
                     <MeasurementTools />
