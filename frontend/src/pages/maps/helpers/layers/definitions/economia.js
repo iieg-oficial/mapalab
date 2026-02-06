@@ -2,15 +2,20 @@ import { createLayerFactory } from '../utils/layerFactory';
 
 const createEconomiaLayer = createLayerFactory('economia');
 
+const cultivosConfig = {
+    headerField: 'Cultivo',
+    labels: ['ai_preds']
+};
+
 const CULTIVOS = [
     ['agave', 'Agave', 'Agave', ['economia', 'agricultura', 'cultivo', 'agave', 'tequila', 'mezcal', 'siembra', 'campo']],
-    ['caña_de_azucar', 'Caña de Azúcar', 'Sugarcane', ['economia', 'agricultura', 'cultivo', 'caña', 'azucar', 'ingenio', 'siembra', 'campo']],
-    ['maiz', 'Maíz', 'Corn grain', ['economia', 'agricultura', 'cultivo', 'maiz', 'grano', 'elote', 'siembra', 'campo', 'alimento']],
-    ['avocado', 'Aguacate', 'Avocado', ['economia', 'agricultura', 'cultivo', 'aguacate', 'fruta', 'oro_verde', 'siembra', 'campo', 'exportacion']],
-    ['banana', 'Plátano', 'Banana', ['economia', 'agricultura', 'cultivo', 'platano', 'banano', 'fruta', 'siembra', 'campo']],
+    ['caña_de_azucar', 'Caña de Azúcar', 'Caña de azúcar', ['economia', 'agricultura', 'cultivo', 'caña', 'azucar', 'ingenio', 'siembra', 'campo']],
+    ['maiz', 'Maíz', 'Maíz grano', ['economia', 'agricultura', 'cultivo', 'maiz', 'grano', 'elote', 'siembra', 'campo', 'alimento']],
+    ['aguacate', 'Aguacate', 'Aguacate', ['economia', 'agricultura', 'cultivo', 'aguacate', 'fruta', 'oro_verde', 'siembra', 'campo', 'exportacion']],
+    ['platano', 'Plátano', 'Plátano', ['economia', 'agricultura', 'cultivo', 'platano', 'banano', 'fruta', 'siembra', 'campo']],
     ['mango', 'Mango', 'Mango', ['economia', 'agricultura', 'cultivo', 'mango', 'fruta', 'siembra', 'campo']],
-    ['citrus', 'Cítricos', 'Citrus fruits', ['economia', 'agricultura', 'cultivo', 'citricos', 'limon', 'naranja', 'toronja', 'fruta', 'siembra', 'campo']],
-    ['others', 'Otros', 'Others', ['economia', 'agricultura', 'cultivo', 'otros', 'varios', 'siembra', 'campo']]
+    ['citricos', 'Cítricos', 'Cítricos', ['economia', 'agricultura', 'cultivo', 'citricos', 'limon', 'naranja', 'toronja', 'fruta', 'siembra', 'campo']],
+    ['otros', 'Otros', 'Otros', ['economia', 'agricultura', 'cultivo', 'otros', 'varios', 'siembra', 'campo']]
 ];
 
 const OCUPACION_Y_EMPLEO_FORMAL_SUBCAPAS = [
@@ -49,6 +54,7 @@ export const economiaLayers = {
                 id,
                 label,
                 wmsConfig: createEconomiaLayer.withFilter('cultivos', `ai_preds = '${matchValue}'`),
+                littleCard: cultivosConfig,
                 searchMeta: {
                     hasMunicipio: false,
                     hasDireccion: false,

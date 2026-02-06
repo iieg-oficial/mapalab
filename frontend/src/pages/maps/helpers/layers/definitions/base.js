@@ -54,7 +54,6 @@ export const baseLayers = {
     label: 'Capas base',
     base: 'iieg',
     hasPeriodicity: false,
-    forceGroup: true,
     children: BASE_LAYERS.map(([id, label, param3, tags, littleCard]) => {
         let wmsGroup = 'default';
         if (id.includes('inegi')) {
@@ -70,6 +69,7 @@ export const baseLayers = {
             id,
             label,
             hiddenInMenu,
+            hasPeriodicity: false,
             wmsConfig: {
                 ...createGeneralLayer(param3),
                 wmsGroup,

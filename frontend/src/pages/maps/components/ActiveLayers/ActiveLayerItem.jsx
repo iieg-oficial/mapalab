@@ -25,7 +25,7 @@ const ActiveLayerItem = ({
     const [isCardHovered, setIsCardHovered] = useState(false);
     const [isMoveActive, setIsMoveActive] = useState(false);
     const isSelected = selectedLayerForSymbology?.id === layer.id;
-    const canOpenModal = layer.hasChildren !== false;
+    const canOpenModal = true;
 
     const handleClickOnLayer = (e) => {
         e.stopPropagation();
