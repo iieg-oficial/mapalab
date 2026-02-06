@@ -1,3 +1,5 @@
+import bannerHeader from '@assets/images/bannerHeader.png';
+
 const bannerConfig = {
     banners: [
         {
@@ -22,7 +24,7 @@ const bannerConfig = {
                 }
             },
             image: {
-                src: 'src/assets/images/bannerHeader.png',
+                src: bannerHeader,
                 alt: 'Vista previa del mapa interactivo'
             }
         }
