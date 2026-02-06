@@ -1,12 +1,20 @@
-const FeatureIconText = ({ value }) => {
+import Divider from '@components/Divider';
+import Icon from '@components/Icon';
+
+const IconText = ({ value, icon = 'ubicacion' }) => {
     if (!value) return null;
 
     return (
-        <div className="flex items-start gap-2 mb-3 text-sm text-gray-700">
-            <span className="text-base">📍</span>
-            <span className="flex-1">{value}</span>
-        </div>
+        <>
+            <Divider className="m-0" />
+            <div className="flex items-start gap-2 py-3">
+                <Icon name={icon} className="w-2 h-2.5" />
+                <span className="flex-1 font-garet font-medium text-[10px]/[14px] text-[#454545] tracking-normal">
+                    {value}
+                </span>
+            </div>
+        </>
     );
 };
 
-export default FeatureIconText;
+export default IconText;
