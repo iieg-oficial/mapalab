@@ -1,16 +1,18 @@
-import { useMemo, useCallback, useRef, useState } from 'react';
+import { useMemo, useCallback, useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider, useSiderHover } from '@contexts/SiderContext';
+import { useSearch } from '@contexts/SearchContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import { useScrollOverflow } from '@hooks/useScrollOverflow';
-import Panel from '@components/Panel';
-import MobileMenu from './MobileMenu';
 import Logo from '@components/Logo';
 import { createMenuItems } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 import { useZenMode } from './ZenMode';
+
+import MenuItem from './MenuItem';
 
 const MapSider = ({ className = '' }) => {
     const {
@@ -34,18 +36,50 @@ const MapSider = ({ className = '' }) => {
         isMobile,
         isOpen,
         toggleSider,
-        closeSider
+        closeSider,
+        lockMode,
+        toggleLock
     } = useSider();
+    const { shouldAutoOpenSearch, clearAutoOpen } = useSearch();
     const { isZenMode } = useZenMode();
     const contentRef = useRef(null);
     const { canScrollUp, canScrollDown } = useScrollOverflow(contentRef);
+    const [autoOpenMenuId, setAutoOpenMenuId] = useState(null);
+    const autoOpenProcessedRef = useRef(false);
+    const navigate = useNavigate();
 
     const treatAsMobile = isMobile || isZenMode;
+
+    useEffect(() => {
+        if (shouldAutoOpenSearch && !autoOpenProcessedRef.current) {
+            autoOpenProcessedRef.current = true;
+            clearAutoOpen();
+            setIsHovered(true);
+            setTimeout(() => {
+                setAutoOpenMenuId('search');
+            }, 300);
+        }
+    }, [shouldAutoOpenSearch, clearAutoOpen, setIsHovered]);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.altKey && e.key.toLowerCase() === 'b') {
+                e.preventDefault();
+                if (!treatAsMobile) {
+                    toggleLock();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [treatAsMobile, toggleLock]);
 
     const { handleMouseEnter, handleMouseLeave } = useSiderHover({
         setIsHovered,
         hasOpenMenus: openMenusCount > 0,
-        hasVisibleTools: areMeasurementToolsVisible
+        hasVisibleTools: areMeasurementToolsVisible,
+        lockMode
     });
 
     useOutsideClick([siderRef], () => {
@@ -62,85 +96,23 @@ const MapSider = ({ className = '' }) => {
     };
 
     const width = computeWidth();
-    const isExpanded = treatAsMobile ? isOpen : isHovered;
+    const isExpanded = treatAsMobile
+        ? isOpen
+        : (lockMode === 'expanded' ? true : (lockMode === 'collapsed' ? false : isHovered));
 
     const menuItems = useMemo(() =>
         createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible }),
         [isExpanded, contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible]);
 
-    const MenuItem = useCallback(({ item, isMobileView }) => {
-        const [isMenuOpen, setIsMenuOpen] = useState(false);
-        const buttonRef = useRef(null);
-
-        try {
-            if (!item.hasMenu) {
-                if (item.onClick) {
-                    return (
-                        <div ref={item.ref} onClick={item.onClick} className="cursor-pointer">
-                            {item.component}
-                        </div>
-                    );
-                }
-                return item.component;
-            }
-
-            const handleClose = () => setIsMenuOpen(false);
-
-            return (
-                <>
-                    <button
-                        type="button"
-                        ref={buttonRef}
-                        id={`menu-button-${item.id}`}
-                        aria-haspopup="menu"
-                        aria-expanded={isMenuOpen}
-                        aria-controls={`menu-content-${item.id}`}
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="cursor-pointer w-full text-left"
-                    >
-                        {item.renderComponent ? item.renderComponent({ isMenuOpen }) : item.component}
-                    </button>
-                    {isMobileView ? (
-                        <MobileMenu
-                            open={isMenuOpen}
-                            onClose={handleClose}
-                            registerInSider={true}
-                        >
-                            {item.menuContent({ close: handleClose })}
-                        </MobileMenu>
-                    ) : (
-                        <Panel
-                            open={isMenuOpen}
-                            onClose={handleClose}
-                            anchorRef={buttonRef}
-                            variant="menu"
-                            role="menu"
-                            closeOnEscape={true}
-                            autoFocus={true}
-                            registerInSider={true}
-                            width="w-88"
-                            maxHeight="max-h-200"
-                            noPadding={true}
-                            className="border-none"
-                            shadow="shadow-none"
-                            offset={10}
-                            rounded="rounded-r-2xl"
-                            bg="bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A]"
-                        >
-                            {item.menuContent({ close: handleClose })}
-                        </Panel>
-                    )}
-                </>
-            );
-        } catch (error) {
-            console.error('Error rendering menu item:', error);
-            return null;
-        }
+    const clearAutoOpenMenu = useCallback(() => {
+        setAutoOpenMenuId(null);
     }, []);
 
     const handleLogoClick = () => {
         if (treatAsMobile) {
             toggleSider();
+        } else {
+            navigate('/');
         }
     };
 
@@ -149,6 +121,7 @@ const MapSider = ({ className = '' }) => {
         collapsed: 'w-14 h-17',
         loading: 'w-14 h-17'
     }
+
     return (
         <aside
             ref={siderRef}
@@ -165,18 +138,15 @@ const MapSider = ({ className = '' }) => {
             onMouseEnter={!treatAsMobile ? handleMouseEnter : undefined}
             onMouseLeave={!treatAsMobile ? handleMouseLeave : undefined}
         >
-            <div
-                className={`shrink-0 p-3 flex justify-center ${treatAsMobile ? 'cursor-pointer' : ''}`}
+            <Logo
+                name="mapalab"
+                size={sizeLogo[isLoading ? 'loading' : isExpanded ? 'expanded' : 'collapsed']}
+                expanded={isExpanded}
+                isLoading={isLoading}
                 onClick={handleLogoClick}
-            >
-                <Logo
-                    name="mapalab"
-                    size={sizeLogo[isLoading ? 'loading' : isExpanded ? 'expanded' : 'collapsed']}
-                    expanded={isExpanded}
-                    isLoading={isLoading}
-                />
-            </div>
-
+                tooltip={!treatAsMobile ? "Ir al inicio" : ""}
+                className="shrink-0 p-3 flex justify-center"
+            />
             {(!treatAsMobile || isOpen) && (
                 <div
                     ref={contentRef}
@@ -199,7 +169,12 @@ const MapSider = ({ className = '' }) => {
                                 className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
                                 title={item.tooltip}
                             >
-                                <MenuItem item={item} isMobileView={treatAsMobile} />
+                                <MenuItem
+                                    item={item}
+                                    isMobileView={treatAsMobile}
+                                    autoOpenMenuId={autoOpenMenuId}
+                                    clearAutoOpenMenu={clearAutoOpenMenu}
+                                />
                             </div>
                         ))}
                     </div>
@@ -209,17 +184,28 @@ const MapSider = ({ className = '' }) => {
                             className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
                             title={item.tooltip}
                         >
-                            <MenuItem item={item} isMobileView={treatAsMobile} />
+                            <MenuItem
+                                item={item}
+                                isMobileView={treatAsMobile}
+                                autoOpenMenuId={autoOpenMenuId}
+                                clearAutoOpenMenu={clearAutoOpenMenu}
+                            />
                         </div>
                     ))}
                 </div>
             )}
 
-            {(!treatAsMobile || isOpen) && (
-                <div className="shrink-0 p-3 my-2 flex justify-center">
-                    <Logo name="iieg" size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'} expanded={isExpanded} />
-                </div>
-            )}
+            <Logo
+                name="iieg"
+                size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'}
+                expanded={isExpanded}
+                tooltip={!treatAsMobile && "Fijar menú: Lila = Expandido, Naranja = Colapsado, Negro = Automático. Interaccion con click o (Alt + B)"}
+                tooltipPlacement="right"
+                colorFilter={lockMode === 'expanded' ? '#CBC5F1' : lockMode === 'collapsed' ? '#FFB98E' : null}
+                onClick={!treatAsMobile && toggleLock}
+                visible={!treatAsMobile || isOpen}
+                className="shrink-0 p-3 my-2"
+            />
         </aside>
     );
 };

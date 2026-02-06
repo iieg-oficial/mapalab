@@ -19,7 +19,6 @@ const LayerDetailModal = () => {
     const { isMobile } = useSider();
 
     const layerData = findLayerById ? findLayerById(selectedLayer?.id) : null;
-    const isProperty = layerData && (!layerData.children || layerData.children.length === 0);
     const hasPeriodicity = layerData?.hasPeriodicity !== false;
 
     const handleDateFilterApply = (filterData) => {
@@ -34,7 +33,7 @@ const LayerDetailModal = () => {
         }
     };
 
-    if (!selectedLayer || isProperty) return null;
+    if (!selectedLayer) return null;
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';

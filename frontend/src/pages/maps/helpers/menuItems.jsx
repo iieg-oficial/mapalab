@@ -52,7 +52,7 @@ export const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, togg
         id: 'search',
         hasMenu: true,
         tooltip: 'Buscador por capas',
-        menuContent: ({ close }) => <SearchMenu close={close} activeLayerIds={activeLayerIds} onToggleLayer={onToggleLayer} />,
+        menuContent: () => <SearchMenu onToggleLayer={onToggleLayer} activeLayerIds={activeLayerIds} />,
         renderComponent: ({ isMenuOpen }) => (
             <MenuButton
                 icon="search"

@@ -70,7 +70,9 @@ const CategoryItem = ({ layer, activeLayerIds, onToggleLayer }) => {
                     ${isManuallyExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}
                 `}
             >
-                {layer.children && layer.children.map(renderChild)}
+                {layer.children && layer.children.map(childLayer => (
+                    <div key={childLayer.id}>{renderChild(childLayer)}</div>
+                ))}
             </div>
         </div>
     );

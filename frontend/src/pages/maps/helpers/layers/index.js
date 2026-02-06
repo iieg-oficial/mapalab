@@ -11,7 +11,7 @@ import {
     findLayerById, validateLayer,
     getSymbologyStats,
     collectLayersWithWMS, collectLayerIdsWithWMS,
-    getAllChildLayerIds
+    getAllChildLayerIds, findParentGroup
 } from './utils/layerHelpers';
 
 export const layers = [
@@ -23,5 +23,5 @@ export {
     findLayerById, validateLayer,
     getSymbologyStats,
     collectLayersWithWMS, collectLayerIdsWithWMS,
-    getAllChildLayerIds
+    getAllChildLayerIds, findParentGroup
 };

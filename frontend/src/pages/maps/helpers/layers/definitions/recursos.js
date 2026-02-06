@@ -1,13 +1,12 @@
 import { createLayerFactory } from '../utils/layerFactory';
+import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
 
 const createRecursosLayer = createLayerFactory('recursos');
 const createGeneralLayer = createLayerFactory('general');
 
-const recursosConfig = (headerField) => ({
-    headerField: headerField,
-    labelGroups: [
-        { fields: ['condicion', 'tipo'] }
-    ],
+const recursosConfig = (title) => cardTemplates.TDEMLEV({
+    title,
+    municipio: ['condicion', 'tipo'],
     list: [
         { label: 'Región Hidrológica', field: 'region_hidrologica' },
         { label: 'Situación', field: 'situacion_acuifero' },
@@ -16,19 +15,18 @@ const recursosConfig = (headerField) => ({
         { label: 'Dominancia del suelo en la selección', field: 'dominancia' },
         { label: 'Fecha de decreto', field: 'fecha_decreto' },
     ],
-    cards: [
+    stats: [
         { label: 'Recarga media anual', field: 'recarga_media_anual_hm3' },
         { label: 'Descarga natural comprometida', field: 'descarga_natural_comprometida_hm3' },
         { label: 'Volumen extracción total', field: 'volumen_extraccion_total_hm3' },
         { label: '%', field: '%' }
-    ],
+    ]
 });
 
-const primaveraConfig = (headerField) => ({
-    headerField: headerField,
-    labelGroups: [
-        { fields: ['municipio'], splitValues: true }
-    ],
+const primaveraConfig = (title) => cardTemplates.TDEMLEV({
+    title,
+    municipio: 'municipio',
+    splitMunicipio: true,
     list: [
         { label: 'Nombre del predio', field: 'nombre' },
         { label: 'Estatus', field: 'estatus' },
@@ -38,10 +36,10 @@ const primaveraConfig = (headerField) => ({
         { label: 'Manejo', field: 'manejo' },
         { label: 'Fecha de decreto', field: 'primer_decreto' },
     ],
-    cards: [
+    stats: [
         { label: 'Área del decreto', field: 'area_km2' },
         { label: 'Superficie', field: 'superficie' },
-    ],
+    ]
 });
 
 const ESPACIOS_PUBLICOS = [
@@ -68,7 +66,11 @@ const AREAS_NATURALES = [
 
 const USO_SUELO = [
     ['itur_iieg', 'Índice Territorial Urbano - Rural', 'itur_iieg', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
-    ['dominancia_de_uso_de_suelo', 'Dominancia del uso de suelo', 'dominancia_de_uso_de_suelo', ['recursos', 'suelo', 'cobertura', 'vegetacion', 'urbano', 'agricola', 'forestal']]
+    ['uso_de_suelo_serie_7', 'Uso de suelo serie 7', 'uso_de_suelo_serie_7', ['recursos', 'suelo', 'cobertura', 'vegetacion', 'urbano', 'agricola', 'forestal']],
+];
+
+const USO_SUELO_RASTER = [
+    ['temperatura_media_mensual_2025_12', 'Temperatura media mensual 2025-12', 'temperatura_media_mensual_2025_12', ['recursos', 'clima', 'calor', 'frio', 'grados', 'ambiente', 'meteorologia']],
 ];
 
 export const recursosLayers = {
@@ -165,18 +167,31 @@ export const recursosLayers = {
             id: 'uso_de_suelo',
             label: 'Uso de suelo',
             base: 'iieg',
-            children: USO_SUELO.map(([id, label, layerName, tags]) => ({
-                id,
-                label,
-                wmsConfig: createRecursosLayer(layerName),
-                littleCard: id === 'dominancia_de_uso_de_suelo' ? recursosConfig('Uso de suelo') : undefined,
-                searchMeta: {
-                    hasMunicipio: true,
-                    hasDireccion: false,
-                    searchableFields: [],
-                    tags
-                }
-            }))
+            children: [
+                ...USO_SUELO.map(([id, label, layerName, tags]) => ({
+                    id,
+                    label,
+                    wmsConfig: createRecursosLayer(layerName),
+                    littleCard: id === 'dominancia_de_uso_de_suelo' ? recursosConfig('Uso de suelo') : undefined,
+                    searchMeta: {
+                        hasMunicipio: true,
+                        hasDireccion: false,
+                        searchableFields: [],
+                        tags
+                    }
+                })),
+                ...USO_SUELO_RASTER.map(([id, label, layerName, tags]) => ({
+                    id,
+                    label,
+                    wmsConfig: createGeneralLayer(layerName),
+                    searchMeta: {
+                        hasMunicipio: false,
+                        hasDireccion: false,
+                        searchableFields: [],
+                        tags
+                    }
+                }))
+            ]
         }
     ]
 };

@@ -23,6 +23,7 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
     const [openMenusCount, setOpenMenusCount] = useState(0);
     const [isMobile, setIsMobile] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [lockMode, setLockMode] = useState('auto');
 
     const toggleSider = useCallback(() => {
         if (isMobile) {
@@ -35,6 +36,20 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
             setIsOpen(false);
         }
     }, [isMobile]);
+
+    const toggleLock = useCallback(() => {
+        setLockMode(prev => {
+            if (prev === 'auto') {
+                setIsHovered(true);
+                return 'expanded';
+            }
+            if (prev === 'expanded') {
+                setIsHovered(false);
+                return 'collapsed';
+            }
+            return 'auto';
+        });
+    }, []);
 
     const registerOpenMenu = useCallback(() => {
         setOpenMenusCount(prev => prev + 1);
@@ -95,8 +110,10 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
         unregisterOpenMenu,
         isMobile,
         isOpen,
+        lockMode,
         toggleSider,
         closeSider,
+        toggleLock,
     };
 
     return (
@@ -117,7 +134,8 @@ export const useSider = () => {
 export const useSiderHover = ({
     setIsHovered,
     hasOpenMenus = false,
-    hasVisibleTools = false
+    hasVisibleTools = false,
+    lockMode = 'auto'
 }) => {
     const enterTimeoutRef = useRef(null);
     const leaveTimeoutRef = useRef(null);
@@ -134,6 +152,8 @@ export const useSiderHover = ({
     };
 
     const handleMouseEnter = () => {
+        if (lockMode === 'collapsed') return;
+
         clearTimers();
 
         const delay = hasVisibleTools ? SIDER_HOVER_DELAY_LEAVE_WITH_TOOLS : SIDER_HOVER_DELAY_ENTER;
@@ -144,6 +164,8 @@ export const useSiderHover = ({
     };
 
     const handleMouseLeave = () => {
+        if (lockMode === 'expanded') return;
+
         clearTimers();
 
         let delay = SIDER_HOVER_DELAY_LEAVE_DEFAULT;

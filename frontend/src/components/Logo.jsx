@@ -1,13 +1,34 @@
 import { useRef, useEffect } from 'react';
 import Lottie from 'lottie-react';
+import Tooltip from '@components/Tooltip';
 import logoIiegLarge from '@assets/logos/iieg_large.svg';
 import logoIiegShort from '@assets/logos/iieg_short.svg';
 import logoMapalabLarge from '@assets/logos/mapalab_large.svg';
 import logoMapalabLargeDark from '@assets/logos/mapalab_large_dark.svg';
 import logoMapalabShort from '@assets/logos/mapalab_short.svg';
 import spinnerAnimation from '@assets/Loading/spinner.json';
+import logoMapalabSquare from '@assets/logos/mapalab_square.svg';
 
-const Logo = ({ name, className = '', size = 'w-12 h-12', expanded = false, variant = 'light', isLoading = false }) => {
+const colorFilters = {
+    '#CBC5F1': 'brightness(0) saturate(100%) invert(83%) sepia(12%) saturate(746%) hue-rotate(206deg) brightness(101%) contrast(92%)',
+    '#FFB98E': 'brightness(0) saturate(100%) invert(78%) sepia(31%) saturate(597%) hue-rotate(329deg) brightness(101%) contrast(101%)',
+};
+
+const Logo = ({
+    name,
+    alt = '',
+    className = '',
+    size = 'size-12',
+    expanded = false,
+    variant = 'light',
+    isLoading = false,
+    type = null,
+    tooltip = null,
+    tooltipPlacement = 'right',
+    colorFilter = null,
+    onClick = null,
+    visible = true
+}) => {
     const lottieRef = useRef(null);
     const isLoadingRef = useRef(isLoading);
 
@@ -29,15 +50,19 @@ const Logo = ({ name, className = '', size = 'w-12 h-12', expanded = false, vari
         }
     };
 
+    if (!visible) return null;
+
     const logos = {
         mapalab: {
             light: {
                 large: logoMapalabLarge,
                 short: logoMapalabShort,
+                square: logoMapalabSquare,
             },
             dark: {
                 large: logoMapalabLargeDark,
                 short: logoMapalabShort,
+                square: logoMapalabSquare,
             }
         },
         iieg: {
@@ -56,43 +81,99 @@ const Logo = ({ name, className = '', size = 'w-12 h-12', expanded = false, vari
 
     if (!currentLogo) return null;
 
-    return (
-        <div className={`relative flex items-center justify-center ${size} ${className}`}>
-            <Lottie
-                lottieRef={lottieRef}
-                animationData={spinnerAnimation}
-                loop={false}
-                autoplay={false}
-                onComplete={handleComplete}
-                className={`
-                    absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                    h-full aspect-square
-                    transition-opacity duration-300 ease-in-out
-                    ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-                `}
-            />
-            <img
-                src={currentLogo.short}
-                alt={`Logo ${name} corto`}
-                className={`
-                    absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                    max-w-full max-h-full object-contain
-                    transition-all duration-500 ease-in-out
-                    ${isLoading || expanded ? 'opacity-0' : 'opacity-100'}
-                `}
-            />
-            <img
-                src={currentLogo.large}
-                alt={`Logo ${name} completo`}
-                className={`
-                    absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                    max-w-full max-h-full object-contain
-                    transition-all duration-500 ease-in-out
-                    ${isLoading || !expanded ? 'opacity-0' : 'opacity-100'}
-                `}
-            />
-        </div>
-    );
+    const filterStyle = colorFilter && colorFilters[colorFilter]
+        ? { filter: colorFilters[colorFilter] }
+        : {};
+
+
+
+    const renderContent = () => {
+        if (type && currentLogo[type]) {
+            return (
+                <div onClick={onClick} className={`flex items-center justify-center ${className} ${onClick ? 'cursor-pointer' : ''}`}>
+                    <div className={`relative ${size}`}>
+                        <Lottie
+                            lottieRef={lottieRef}
+                            animationData={spinnerAnimation}
+                            loop={false}
+                            autoplay={false}
+                            onComplete={handleComplete}
+                            className={`
+                                absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                                h-full aspect-square
+                                transition-opacity duration-300 ease-in-out
+                                ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+                            `}
+                        />
+                        <img
+                            src={currentLogo[type]}
+                            alt={alt || `Logo ${name} ${type}`}
+                            style={filterStyle}
+                            className={`
+                                absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                                w-full h-full object-contain
+                                transition-all duration-500 ease-in-out
+                                ${isLoading ? 'opacity-0' : 'opacity-100'}
+                            `}
+                        />
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div onClick={onClick} className={`flex items-center justify-center ${className} ${onClick ? 'cursor-pointer' : ''}`}>
+                <div className={`relative ${size}`}>
+                    <Lottie
+                        lottieRef={lottieRef}
+                        animationData={spinnerAnimation}
+                        loop={false}
+                        autoplay={false}
+                        onComplete={handleComplete}
+                        className={`
+                            absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                            h-full aspect-square
+                            transition-opacity duration-300 ease-in-out
+                            ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+                        `}
+                    />
+                    <img
+                        src={currentLogo.short}
+                        alt={alt || `Logo ${name} corto`}
+                        style={filterStyle}
+                        className={`
+                            absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                            w-full h-full object-contain
+                            transition-all duration-500 ease-in-out
+                            ${isLoading || expanded ? 'opacity-0' : 'opacity-100'}
+                        `}
+                    />
+                    <img
+                        src={currentLogo.large}
+                        alt={alt || `Logo ${name} completo`}
+                        style={filterStyle}
+                        className={`
+                            absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                            w-full h-full object-contain
+                            transition-all duration-500 ease-in-out
+                            ${isLoading || !expanded ? 'opacity-0' : 'opacity-100'}
+                        `}
+                    />
+                </div>
+            </div>
+        );
+    };
+
+    if (tooltip) {
+        return (
+            <Tooltip content={tooltip} placement={tooltipPlacement} variant="normal">
+                {renderContent()}
+            </Tooltip>
+        );
+    }
+
+    return renderContent();
 };
 
 export default Logo;
+
