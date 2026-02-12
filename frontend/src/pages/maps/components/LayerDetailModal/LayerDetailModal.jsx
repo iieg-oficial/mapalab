@@ -207,12 +207,13 @@ const LayerDetailModal = () => {
                                                     key={index}
                                                     label={stat.nombre}
                                                     value={stat.valor}
+                                                    simbolo={stat.simbolo}
                                                 />
                                             ))}
                                         </div>
-                                        {metadata?.nombre_pie_numeralia?.[0] && (
+                                        {metadata?.nombre_pie_numeralia && (
                                             <p className="text-[10px]/[11px] font-garet font-medium text-[#465055] tracking-normal mt-6">
-                                                * {metadata.nombre_pie_numeralia[0]}
+                                                {metadata.nombre_pie_numeralia}
                                             </p>
                                         )}
                                     </div>
@@ -263,27 +264,43 @@ const LayerDetailModal = () => {
                                     </div>
                                 )}
 
-                                {metadata?.metodologia_texto && (
+                                {(metadata?.metodologia_texto || metadata?.metodologia_archivo_enlace) && (
                                     <div className="mb-4">
                                         <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4">
                                             <span className="text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
                                                 Metodología
                                             </span>
-                                            <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
-                                                {metadata.metodologia_texto}
-                                            </p>
+                                            {metadata.metodologia_texto && (
+                                                <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
+                                                    {metadata.metodologia_texto}
+                                                </p>
+                                            )}
+                                            {metadata.metodologia_archivo_enlace && (
+                                                <a href={metadata.metodologia_archivo_enlace} target="_blank" rel="noopener noreferrer"
+                                                    className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
+                                                    Ver documento
+                                                </a>
+                                            )}
                                         </div>
                                     </div>
                                 )}
 
-                                {metadata?.fuentes_texto && (
+                                {(metadata?.fuentes_texto_largo || metadata?.fuentes_enlace) && (
                                     <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4">
                                         <span className="text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
                                             Fuente
                                         </span>
-                                        <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
-                                            {metadata.fuentes_texto}
-                                        </p>
+                                        {metadata.fuentes_texto_largo && (
+                                            <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
+                                                {metadata.fuentes_texto_largo}
+                                            </p>
+                                        )}
+                                        {metadata.fuentes_enlace && (
+                                            <a href={metadata.fuentes_enlace} target="_blank" rel="noopener noreferrer"
+                                                className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
+                                                Ver fuente
+                                            </a>
+                                        )}
                                     </div>
                                 )}
                             </>
