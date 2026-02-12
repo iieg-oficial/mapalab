@@ -1,4 +1,5 @@
 import { useEffect, useRef, useId } from 'react';
+import { createPortal } from 'react-dom';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Divider from '@components/Divider';
@@ -164,7 +165,7 @@ const Panel = ({
         role: role
     };
 
-    return (
+    const panelContent = (
         <div
             ref={panelRef}
             id={role === 'menu' ? `${menuId}-content` : undefined}
@@ -251,6 +252,12 @@ const Panel = ({
             )}
         </div>
     );
+
+    if (variant === 'menu') {
+        return createPortal(panelContent, document.body);
+    }
+
+    return panelContent;
 };
 
 export default Panel;
