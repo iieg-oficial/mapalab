@@ -8,8 +8,13 @@ El proyecto está diseñado con **desarrollo y producción**:
 
 ### MODO DESARROLLO
 
+![Application](https://img.shields.io/badge/Application-MAPALAB-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-0.9.5-yellow?style=for-the-badge)
+![React](https://img.shields.io/badge/React-19.2.1-brightgreen?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)
+
 **Stack:**
-- Frontend: Vite dev server (Docker) en puerto 3006 con hot-reload
+- Frontend: Vite dev server (Docker) en puerto 5173 con hot-reload
 - Backend: FastAPI (Docker) en puerto 8000 con --reload
 - **SIN nginx**
 
@@ -21,7 +26,7 @@ El proyecto está diseñado con **desarrollo y producción**:
 
 **Flujo:**
 ```
-Cliente → Frontend (localhost:3006) → Backend API (localhost:8000)
+Cliente → Frontend (localhost:5173) → Backend API (localhost:8000)
          ↓ Hot-reload
       Vite dev server
 ```
@@ -89,7 +94,7 @@ mapalab/
 make dev
 
 # Acceder a:
-# - Frontend: http://localhost:3006 (Vite dev server con hot-reload)
+# - Frontend: http://localhost:5173 (Vite dev server con hot-reload)
 # - Backend: http://localhost:8000
 # - Docs: http://localhost:8000/docs
 ```
@@ -287,7 +292,7 @@ Si prefieres desarrollo local sin Docker:
 ```bash
 cd frontend
 npm install
-npm run dev  # http://localhost:3006
+npm run dev  # http://localhost:5173
 ```
 
 Asegúrate de que `VITE_BACKEND_API_HOST` en `.env.development` apunte a tu backend.
@@ -300,7 +305,7 @@ Asegúrate de que `VITE_BACKEND_API_HOST` en `.env.development` apunte a tu back
 ```bash
 cd frontend
 docker compose -f docker-compose.dev.yml logs
-# Verificar que Vite esté corriendo en puerto 3006
+# Verificar que Vite esté corriendo en puerto 5173
 ```
 
 ### Backend no muestra /docs en desarrollo
