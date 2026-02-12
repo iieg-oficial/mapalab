@@ -3,6 +3,7 @@ import Loading from '@components/Loading';
 import { useMemo, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
+import { MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 
 const SIZE_BUTTON = 'size-5';
 
@@ -18,7 +19,9 @@ const ActiveLayerItem = ({
         clearLayerFilters,
         getAllChildLayerIds,
         toggleLayerVisibility,
-        setSelectedLayer
+        setSelectedLayer,
+        getLoopState,
+        toggleLoop
     } = useMapsContext();
 
     const [isDeleteHovered, setIsDeleteHovered] = useState(false);
@@ -50,6 +53,13 @@ const ActiveLayerItem = ({
         setSelectedLayer(layer);
     };
 
+    const loopState = getLoopState?.(layer.id);
+    const isLooping = loopState?.isPlaying;
+    const loopMonth = loopState?.currentMonth;
+    const monthAbbr = loopMonth != null
+        ? MONTHS.find(m => m.num === loopMonth)?.name.slice(0, 3).toUpperCase()
+        : null;
+
     const isLoading = useMemo(() => {
         if (loadingLayers.has(layer.id)) return true;
         if (layer.childIds) {
@@ -67,7 +77,26 @@ const ActiveLayerItem = ({
                 ${isSelected ? 'ring-1 ring-[#70308A]' : ''}
             `}
         >
-            {isLoading && (
+            {loopState && monthAbbr && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); toggleLoop?.(layer.id); }}
+                    className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#F0EAF3] text-[#703089] text-[11px] font-garet font-medium shrink-0 hover:bg-[#E5DAE9] transition-colors"
+                >
+                    {isLooping ? (
+                        <svg width="10" height="10" viewBox="0 0 12 12">
+                            <rect x="1" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
+                            <rect x="7.5" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
+                        </svg>
+                    ) : (
+                        <svg width="10" height="10" viewBox="0 0 12 12">
+                            <path d="M2 1.5v9l8.5-4.5L2 1.5z" fill="currentColor" />
+                        </svg>
+                    )}
+                    {monthAbbr}
+                </button>
+            )}
+
+            {isLoading && !loopState && (
                 <div className="px-2 py-1 shrink-0">
                     <Loading visible={true} size={SIZE_BUTTON} border="border-2" />
                 </div>

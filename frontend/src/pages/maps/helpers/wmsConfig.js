@@ -21,7 +21,7 @@ const WMS_WORKSPACES = {
     demografia: `${import.meta.env.VITE_GEOSERVER_URL}demografia/wms`,
     desarrollo: `${import.meta.env.VITE_GEOSERVER_URL}desarrollo_social/wms`,
     gobierno: `${import.meta.env.VITE_GEOSERVER_URL}gobierno_y_ciudadania/wms`,
-    raster: `${import.meta.env.VITE_GEOSERVER_URL}raster/wms`
+    raster: `${import.meta.env.VITE_GEOSERVER_URL}raster/wms`,
 };
 
 const WORKSPACE_REAL_NAMES = {
@@ -56,4 +56,21 @@ export const findWMSConfig = (layerId, layersArray) => {
 
 export const hasWMSConfig = (layerId, layersArray) => {
     return findWMSConfig(layerId, layersArray) !== null;
+};
+
+export const resolveTimeStyle = (pattern, timeValue) => {
+    if (!pattern || !timeValue) return null;
+    const [year, month] = timeValue.split('-');
+    return pattern.replace('{year}', year).replace('{month}', month);
+};
+
+export const findLayerDef = (layerId, layersArray) => {
+    for (const layer of layersArray) {
+        if (layer.id === layerId) return layer;
+        if (layer.children) {
+            const found = findLayerDef(layerId, layer.children);
+            if (found) return found;
+        }
+    }
+    return null;
 };

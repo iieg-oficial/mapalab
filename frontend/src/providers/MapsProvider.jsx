@@ -8,6 +8,7 @@ import { useSymbology } from '@hooksMaps/useSymbology';
 import { useLayerOpacity } from '@hooksMaps/useLayerOpacity';
 import { useLayerToggle } from '@hooksMaps/useLayerToggle';
 import { useCQLFilter } from '@hooksMaps/useCQLFilter';
+import { useRasterLoop } from '@hooksMaps/useRasterLoop';
 import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { layers as allLayers } from '@pages/maps/helpers/layers/index';
 import { toLonLat } from 'ol/proj';
@@ -33,6 +34,13 @@ const MapsProvider = ({ children }) => {
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
     const layerToggle = useLayerToggle(layerManagement);
     const cqlFilter = useCQLFilter();
+    const rasterLoop = useRasterLoop({
+        applyFilter: cqlFilter.applyFilter,
+        clearFilter: cqlFilter.clearFilter,
+        loadingLayers,
+        mapRef,
+        activeLayerIds: layerManagement.activeLayerIds
+    });
 
     const setLayerLoading = useCallback((layerId, isLoading) => {
         setLoadingLayers(prev => {
@@ -92,6 +100,7 @@ const MapsProvider = ({ children }) => {
         ...symbology,
         ...layerOpacity,
         ...cqlFilter,
+        ...rasterLoop,
         ...mapDrawing,
         loadingLayers,
         setLayerLoading,
@@ -110,6 +119,7 @@ const MapsProvider = ({ children }) => {
         setSelectedFeatureInfo,
         clickPosition,
         cqlFilter,
+        rasterLoop,
         mapDrawing,
         loadingLayers,
         setLayerLoading,

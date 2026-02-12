@@ -1,8 +1,11 @@
-import { useCallback } from 'react';
-import { findWMSConfig, hasWMSConfig } from '../helpers/wmsConfig';
+import { useCallback, useContext } from 'react';
+import { findWMSConfig, hasWMSConfig, resolveTimeStyle } from '../helpers/wmsConfig';
 import { layers } from '../helpers/layers/index';
+import MapsContext from '@contexts/MapsContext';
 
 export const useWMSLegend = () => {
+    const { getFilter } = useContext(MapsContext);
+
     const getLegendUrl = useCallback((layer) => {
         const wmsConfig = findWMSConfig(layer.id, layers);
 
@@ -17,11 +20,19 @@ export const useWMSLegend = () => {
                 'dpi:100',
             ].join(';');
 
-            const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=image/png&width=20&height=20&LEGEND_OPTIONS=${legendOptions}`;
+            let style = wmsConfig.styles || '';
+            if (wmsConfig.timeStylePattern && getFilter) {
+                const timeValue = getFilter(layer.id);
+                if (timeValue) {
+                    style = resolveTimeStyle(wmsConfig.timeStylePattern, timeValue);
+                }
+            }
+
+            const url =`${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=image/png&width=20&height=20&LEGEND_OPTIONS=${legendOptions}${style ? `&STYLE=${style}` : ''}`;
             return url;
         }
         return null;
-    }, []);
+    }, [getFilter]);
 
     const getLegendJson = useCallback(async (layer) => {
         const wmsConfig = findWMSConfig(layer.id, layers);

@@ -52,10 +52,53 @@ const ESPACIOS_PUBLICOS = [
     ['plaza', '*Plaza', 'plaza', ['recursos', 'espacio_publico', 'jardin', 'centro', 'reunion', 'civico']],
 ];
 
-const CLIMA = [
-    ['temperatura_media', '*Temperatura media', 'temperatura_media', ['recursos', 'clima', 'calor', 'frio', 'grados', 'ambiente', 'meteorologia']],
+const CLIMA_VECTOR = [
     ['sequia', '*Sequía', 'sequia', ['recursos', 'clima', 'agua', 'lluvia', 'aridez', 'estiaje', 'meteorologia']],
-    ['precipitacion', '*Precipitación', 'precipitacion', ['recursos', 'clima', 'lluvia', 'agua', 'pluvial', 'tormenta', 'meteorologia']],
+];
+
+const createRasterLayer = createLayerFactory('raster');
+
+const RASTER_YEAR = new Date().getFullYear();
+const RASTER_TAGS = ['recursos', 'clima', 'calor', 'frio', 'grados', 'ambiente', 'meteorologia', 'lluvia', 'precipitacion', 'temperatura'];
+
+const buildMonthlyTime = (years = [RASTER_YEAR]) => {
+    const result = {};
+    years.forEach(year => {
+        result[year] = {};
+        for (let m = 1; m <= 12; m++) {
+            result[year][m] = `${year}-${String(m).padStart(2, '0')}-01`;
+        }
+    });
+    return result;
+};
+
+const CLIMA_RASTER = [
+    {
+        id: 'temperatura_media_mensual',
+        label: 'Temperatura media mensual',
+        wmsConfig: createRasterLayer('temperaturas', { wmsGroup: 'temp_mensual', timeEnabled: true }),
+        rasterPeriodicity: buildMonthlyTime([RASTER_YEAR - 1]),
+        searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags: RASTER_TAGS }
+    },
+    {
+        id: 'temperatura_media_anual',
+        label: 'Temperatura media promedio',
+        wmsConfig: createRasterLayer(`temperatura_media_anual_${RASTER_YEAR}_promedio`, { wmsGroup: 'temp_anual' }),
+        searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags: RASTER_TAGS }
+    },
+    {
+        id: 'precipitacion_mensual',
+        label: 'Precipitación mensual',
+        wmsConfig: createRasterLayer('precipitacion', { wmsGroup: 'precip_mensual', timeEnabled: true, timeStylePattern: 'lluvia_total_mensual_{year}_{month}' }),
+        rasterPeriodicity: buildMonthlyTime([RASTER_YEAR - 1]),
+        searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags: RASTER_TAGS }
+    },
+    {
+        id: 'precipitacion_anual',
+        label: 'Precipitación acumulada',
+        wmsConfig: createRasterLayer(`lluvia_anual_${RASTER_YEAR}`, { wmsGroup: 'precip_anual' }),
+        searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags: RASTER_TAGS }
+    },
 ];
 
 const AREAS_NATURALES = [
@@ -69,9 +112,6 @@ const USO_SUELO = [
     ['uso_de_suelo_serie_7', 'Uso de suelo serie 7', 'uso_de_suelo_serie_7', ['recursos', 'suelo', 'cobertura', 'vegetacion', 'urbano', 'agricola', 'forestal']],
 ];
 
-const USO_SUELO_RASTER = [
-    ['temperatura_media_mensual_2025_12', 'Temperatura media mensual 2025-12', 'temperatura_media_mensual_2025_12', ['recursos', 'clima', 'calor', 'frio', 'grados', 'ambiente', 'meteorologia']],
-];
 
 export const recursosLayers = {
     id: 'recursos',
@@ -97,17 +137,15 @@ export const recursosLayers = {
             id: 'clima',
             label: 'Clima',
             base: 'iieg',
-            children: CLIMA.map(([id, label, layerName, tags]) => ({
-                id,
-                label,
-                wmsConfig: createRecursosLayer(layerName),
-                searchMeta: {
-                    hasMunicipio: false,
-                    hasDireccion: false,
-                    searchableFields: [],
-                    tags
-                }
-            }))
+            children: [
+                ...CLIMA_VECTOR.map(([id, label, layerName, tags]) => ({
+                    id,
+                    label,
+                    wmsConfig: createRecursosLayer(layerName),
+                    searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags }
+                })),
+                ...CLIMA_RASTER
+            ]
         },
         {
             id: 'agua',
@@ -180,17 +218,6 @@ export const recursosLayers = {
                         tags
                     }
                 })),
-                ...USO_SUELO_RASTER.map(([id, label, layerName, tags]) => ({
-                    id,
-                    label,
-                    wmsConfig: createGeneralLayer(layerName),
-                    searchMeta: {
-                        hasMunicipio: false,
-                        hasDireccion: false,
-                        searchableFields: [],
-                        tags
-                    }
-                }))
             ]
         }
     ]

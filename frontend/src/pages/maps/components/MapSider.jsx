@@ -21,9 +21,11 @@ const MapSider = ({ className = '' }) => {
         toggleMeasurementTools,
         areMeasurementToolsVisible,
         loadingLayers,
-        isLocating
+        isLocating,
+        rasterLoops
     } = useMapsContext();
-    const isLoading = loadingLayers.size > 0 || isLocating;
+    const hasNonLoopLoading = [...loadingLayers].some(id => !rasterLoops[id]?.isPlaying);
+    const isLoading = hasNonLoopLoading || isLocating;
     const {
         siderRef,
         toolsButtonRef,

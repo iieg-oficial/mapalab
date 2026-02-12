@@ -27,7 +27,10 @@ export const useUrlSync = () => {
 
         Object.entries(debouncedFilters).forEach(([layerId, layerFilters]) => {
             if (layerFilters && Object.keys(layerFilters).length > 0) {
-                const filterExpressions = Object.values(layerFilters).filter(Boolean);
+                const filterExpressions = Object.entries(layerFilters)
+                    .filter(([key, val]) => val && !key.startsWith('_'))
+                    .map(([, val]) => val);
+
                 if (filterExpressions.length > 0) {
                     const combinedFilter = filterExpressions.length === 1
                         ? filterExpressions[0]
@@ -75,7 +78,7 @@ export const useUrlSync = () => {
             const newParams = new URLSearchParams(prev);
 
             const keysToDelete = Array.from(newParams.keys()).filter(key =>
-                key === 'layers' || key.startsWith('filter_')
+                key === 'layers' || key.startsWith('filter_') || key.startsWith('swap_')
             );
             keysToDelete.forEach(key => newParams.delete(key));
 

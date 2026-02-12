@@ -5,7 +5,7 @@ import { useDateSelections } from '@pages/maps/hooks/useDateSelections';
 import { generateCQLFilter, parseCQLToSelections, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import Icon from '@components/Icon';
 
-const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, filterName = 'date' }) => {
+const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false }) => {
     const { getSpecificFilter } = useContext(MapsContext);
 
     const periodicityData = useMemo(() => {
@@ -26,14 +26,26 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
         selections,
         toggleYear,
         toggleMonth,
-        handleYearClick,
-        handleMonthClick,
-        handleDayClick,
+        handleYearClick: _handleYearClick,
+        handleMonthClick: _handleMonthClick,
+        handleDayClick: _handleDayClick,
         clearAllSelections,
         isYearActive,
         isMonthActive,
         isDayActive
     } = useDateSelections(initialSelections);
+
+    const handleYearClick = singleSelectOnly
+        ? (year) => { clearAllSelections(); _handleYearClick(year); }
+        : _handleYearClick;
+
+    const handleMonthClick = singleSelectOnly
+        ? (year, month) => { clearAllSelections(); _handleMonthClick(year, month); }
+        : _handleMonthClick;
+
+    const handleDayClick = singleSelectOnly
+        ? (year, month, day) => { clearAllSelections(); _handleDayClick(year, month, day); }
+        : _handleDayClick;
 
     const yearsCarousel = useCarouselOverflow();
     const daysCarousel = useCarouselOverflow();
