@@ -1,10 +1,12 @@
-import { useContext, useState, useRef, useCallback } from 'react';
+import { useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLayerMetadata } from '../../hooks/useLayerMetadata';
 import { useSider } from '@contexts/SiderContext';
 import MapsContext from '@contexts/MapsContext';
+import { findLayerDef, findWMSConfig } from '../../helpers/wmsConfig';
+import { layers as allLayers } from '../../helpers/layers/index';
+import { fetchGeometryType } from '../../../../utils/featureInfoUtils';
 import DateTreeSelector from './components/DateTreeSelector';
 import SimpleDateSelector from './components/SimpleDateSelector';
-import LayerDownloadModal from './components/LayerDownloadModal';
 import OpacityControl from './components/OpacityControl';
 import InfoCard from './components/InfoCard';
 import StatCard from './components/StatCard';
@@ -12,16 +14,75 @@ import LayerThemeAvatar from './components/LayerThemeAvatar';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Logo from '@components/Logo';
+import { downloadLayerBundle } from '@services/downloadService';
 
 const LayerDetailModal = () => {
-    const { selectedLayer, setSelectedLayer, applyFilter, clearFilter, getLayerOpacity, setLayerOpacity } = useContext(MapsContext);
-    const [showDownloadModal, setShowDownloadModal] = useState(false);
+    const { selectedLayer, setSelectedLayer, applyFilter, clearFilter, getFilter, getLayerOpacity, setLayerOpacity, activeLayerIds } = useContext(MapsContext);
+
+    const rasterPeriodicity = useMemo(() => {
+        if (!selectedLayer?.id) return null;
+        const layerDef = findLayerDef(selectedLayer.id, allLayers);
+        return layerDef?.rasterPeriodicity || null;
+    }, [selectedLayer?.id]);
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
+    const [downloading, setDownloading] = useState(false);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
     const { isMobile } = useSider();
     const longPressTimer = useRef(null);
+    const [singleSelectOnly, setSingleSelectOnly] = useState(false);
 
-    const hasPeriodicity = metadata?.periodicity != null;
+    useEffect(() => {
+        if (!selectedLayer?.id || rasterPeriodicity) return;
+        const wmsConfig = findWMSConfig(selectedLayer.id, allLayers);
+        if (!wmsConfig) return;
+        let cancelled = false;
+        fetchGeometryType(wmsConfig.baseUrl, wmsConfig.layerName).then(type => {
+            if (!cancelled) setSingleSelectOnly(type === 'polygon');
+        });
+        return () => { cancelled = true; };
+    }, [selectedLayer?.id, rasterPeriodicity]);
+
+    const COOLDOWN_MS = 60000;
+    const storageKey = selectedLayer?.id ? `dl_cd_${selectedLayer.id}` : null;
+
+    const [cooldownEnd, setCooldownEnd] = useState(() =>
+        parseInt(sessionStorage.getItem(storageKey) || '0', 10)
+    );
+    const [cooldownRemaining, setCooldownRemaining] = useState(() =>
+        Math.max(0, cooldownEnd - Date.now())
+    );
+
+    useEffect(() => {
+        const stored = parseInt(sessionStorage.getItem(storageKey) || '0', 10);
+        setCooldownEnd(stored);
+    }, [storageKey]);
+
+    useEffect(() => {
+        const remaining = Math.max(0, cooldownEnd - Date.now());
+        setCooldownRemaining(remaining);
+        if (remaining <= 0) return;
+        const interval = setInterval(() => {
+            const r = Math.max(0, cooldownEnd - Date.now());
+            setCooldownRemaining(r);
+            if (r <= 0) clearInterval(interval);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [cooldownEnd]);
+
+    const cooldown = cooldownRemaining > 0;
+
+    const hasPeriodicity = metadata?.periodicity != null || rasterPeriodicity != null;
+
+    const handleDownloadClick = useCallback(async () => {
+        if (!selectedLayer?.id || downloading || cooldown) return;
+        setDownloading(true);
+        const result = await downloadLayerBundle(selectedLayer.id, { activeLayerIds, getFilter });
+        setDownloading(false);
+        if (!result?.success) return;
+        const end = Date.now() + COOLDOWN_MS;
+        sessionStorage.setItem(storageKey, String(end));
+        setCooldownEnd(end);
+    }, [selectedLayer?.id, activeLayerIds, getFilter, downloading, cooldown, storageKey]);
 
     const handleLongPressStart = useCallback(() => {
         longPressTimer.current = setTimeout(() => {
@@ -71,23 +132,34 @@ const LayerDetailModal = () => {
                                 onChange={(opacity) => setLayerOpacity(selectedLayer.id, opacity)}
                             />
                             <div className="flex items-center gap-5 md:gap-10">
-                                <Tooltip content="Para ver todos los atributos te sugerimos descargar la capa completa." variant="warning">
-                                    <button
-                                        onClick={() => setShowDownloadModal(true)}
-                                        className={`
-                                            px-10 text-[14px]/[47px] text-white bg-[#703089] hover:bg-[#5C2472] rounded-[30px]
-                                            transition-colors hover:shadow-[0px_6px_6px_#5C247234] h-12.5 font-bold font-garet
-                                        `}
-                                    >
-                                        {isMobile ? <Icon name="download" /> : 'Descargar capa'}
-                                    </button>
-                                </Tooltip>
-                                <Icon 
-                                    name="cerrarModal" 
-                                    aria-label="Cerrar" 
-                                    onClick={() => setSelectedLayer(null)} 
+                                {downloading
+                                    ? <Logo name="mapalab" size="size-15" isLoading />
+                                    : (
+                                        <Tooltip content="Descarga la capa completa con metadatos en ZIP" variant="warning">
+                                            <button
+                                                onClick={handleDownloadClick}
+                                                disabled={cooldown}
+                                                className={`
+                                                    min-w-[180px] px-10 text-[14px]/[47px] text-white rounded-[30px]
+                                                    transition-colors h-12.5 font-bold font-garet
+                                                    disabled:opacity-60 disabled:cursor-wait
+                                                    bg-[#703089] hover:bg-[#5C2472] hover:shadow-[0px_6px_6px_#5C247234]
+                                                `}
+                                            >
+                                                {cooldown
+                                                    ? (isMobile ? <Icon name="download" /> : `Espera ${Math.ceil(cooldownRemaining / 1000)}s`)
+                                                    : (isMobile ? <Icon name="download" /> : 'Descargar capa')
+                                                }
+                                            </button>
+                                        </Tooltip>
+                                    )
+                                }
+                                <Icon
+                                    name="cerrarModal"
+                                    aria-label="Cerrar"
+                                    onClick={() => setSelectedLayer(null)}
                                     classNameBG="rounded-full hover:shadow-[0px_5px_20px_#101F3629]"
-                                    className="size-10 " 
+                                    className="size-10 "
                                 />
                             </div>
                         </div>
@@ -168,21 +240,24 @@ const LayerDetailModal = () => {
                                                 )}
                                             </div>
                                         </div>
-                                        {isAdvancedMode ? (
+                                        {isAdvancedMode && !rasterPeriodicity ? (
                                             <DateTreeSelector
                                                 layerId={selectedLayer.id}
                                                 periodicity={metadata.periodicity}
                                                 onFilterApply={handleDateFilterApply}
                                                 onClearFilter={handleClearFilter}
                                                 filterName="date"
+                                                singleSelectOnly={singleSelectOnly}
                                             />
                                         ) : (
                                             <SimpleDateSelector
                                                 layerId={selectedLayer.id}
-                                                periodicity={metadata.periodicity}
+                                                periodicity={metadata?.periodicity}
+                                                rasterPeriodicity={rasterPeriodicity}
                                                 onFilterApply={handleDateFilterApply}
                                                 onClearFilter={handleClearFilter}
                                                 filterName="date"
+                                                singleSelectOnly={singleSelectOnly}
                                             />
                                         )}
                                     </div>
@@ -217,13 +292,6 @@ const LayerDetailModal = () => {
                 </div>
             </div>
 
-            {showDownloadModal && (
-                <LayerDownloadModal
-                    layerId={selectedLayer.id}
-                    layerName={selectedLayer.name}
-                    onClose={() => setShowDownloadModal(false)}
-                />
-            )}
         </>
     );
 };

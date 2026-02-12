@@ -5,6 +5,8 @@ import { findWMSConfig } from '../helpers/wmsConfig';
 import { layers } from '../helpers/layers/index';
 
 const IMAGE_LOAD_TIMEOUT = 30000;
+const MAX_CACHE_ENTRIES = 60;
+const wmsImageCache = new Map();
 
 export const useWMSLayerFactory = () => {
     const combineCQLFilters = useCallback((baseFilter, dynamicFilter) => {
@@ -43,6 +45,15 @@ export const useWMSLayerFactory = () => {
 
         const imageLoadFunction = (image, src) => {
             const img = image.getImage();
+
+            const cached = wmsImageCache.get(src);
+            if (cached) {
+                const objectUrl = URL.createObjectURL(cached);
+                img.onload = () => URL.revokeObjectURL(objectUrl);
+                img.src = objectUrl;
+                return;
+            }
+
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), IMAGE_LOAD_TIMEOUT);
 
@@ -55,6 +66,11 @@ export const useWMSLayerFactory = () => {
                     return response.blob();
                 })
                 .then(blob => {
+                    if (wmsImageCache.size >= MAX_CACHE_ENTRIES) {
+                        const oldestKey = wmsImageCache.keys().next().value;
+                        wmsImageCache.delete(oldestKey);
+                    }
+                    wmsImageCache.set(src, blob);
                     const objectUrl = URL.createObjectURL(blob);
                     img.onload = () => URL.revokeObjectURL(objectUrl);
                     img.src = objectUrl;

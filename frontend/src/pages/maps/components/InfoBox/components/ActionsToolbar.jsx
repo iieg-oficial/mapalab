@@ -28,8 +28,8 @@ const ActionsToolbar = ({ onClear, onDownload, visible = true }) => {
                         type="button"
                         onClick={button.onClick}
                         className={`
-                            ${button.className} flex items-center justify-center p-1 rounded-full 
-                            border border-transparent transition-all bg-[#EAEFFA] text-[#703089] 
+                            ${button.className} flex items-center justify-center p-1 rounded-full
+                            border border-transparent transition-all bg-[#EAEFFA] text-[#703089]
                             hover:border-[#5C2472] shadow-[0px_6px_12px_#2F495C14]
                         `}
                     >

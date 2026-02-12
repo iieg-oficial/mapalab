@@ -9,7 +9,9 @@ export const useCQLFilter = () => {
             return null;
         }
 
-        const filterExpressions = Object.values(layerFilters).filter(Boolean);
+        const filterExpressions = Object.entries(layerFilters)
+            .filter(([key, val]) => val && !key.startsWith('_'))
+            .map(([, val]) => val);
 
         if (filterExpressions.length === 0) {
             return null;
