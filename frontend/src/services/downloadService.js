@@ -64,12 +64,15 @@ const fetchBlob = async (url) => {
 };
 
 const addMetadataToZip = async (zip, metadata) => {
-    if (!metadata?.archivo) return;
-    try {
-        const blob = await fetchBlob(metadata.archivo);
-        const filename = metadata.archivo.split('/').pop() || 'metadata';
-        zip.file(filename, blob);
-    } catch {
+    const files = [metadata?.metadato_txt, metadata?.metadato_xlsx].filter(Boolean);
+    if (files.length === 0) return;
+    for (const url of files) {
+        try {
+            const blob = await fetchBlob(url);
+            const filename = url.split('/').pop() || 'metadata';
+            zip.file(filename, blob);
+        } catch {
+        }
     }
 };
 

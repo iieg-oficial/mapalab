@@ -53,7 +53,7 @@ export const economiaLayers = {
             children: CULTIVOS.map(([id, label, matchValue, tags]) => ({
                 id,
                 label,
-                wmsConfig: createEconomiaLayer.withFilter('cultivos', `ai_preds = '${matchValue}'`),
+                wmsConfig: createEconomiaLayer.withFilter('cultivos', `prediccion = '${matchValue}'`),
                 littleCard: cultivosConfig,
                 searchMeta: {
                     hasMunicipio: false,

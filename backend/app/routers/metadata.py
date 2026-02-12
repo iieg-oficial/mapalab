@@ -42,11 +42,12 @@ def get_metadata(
                 Logger.error(f"Error fetching periodicity for {record.nombre_capa_geoserver}: {str(e)}")
 
         numeralia = []
-        for i in range(1, 7):
+        for i in range(1, 9):
             valor = getattr(record, f'numeralia_0{i}_valor', None)
             nombre = getattr(record, f'numeralia_0{i}_nombre', None)
+            simbolo = getattr(record, f'numeralia_0{i}_simbolo', None)
 
-            numeralia.append({"valor": NanToNone(valor), "nombre": NanToNone(nombre)})
+            numeralia.append({"valor": NanToNone(valor), "nombre": NanToNone(nombre), "simbolo": NanToNone(simbolo)})
 
         layer_data = LayerResponse.model_validate(record).model_dump()
         transformed_layer_data = {key: NanToNone(value) for key, value in layer_data.items()}
