@@ -67,16 +67,16 @@ prod: network-create
 	@echo "MODO PRODUCCIÓN"
 	@echo "=================="
 	@echo ""
-	@echo "Construyendo frontend..."
-	@echo "Instalando dependencias y construyendo en Docker..."
-	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "npm install && npm run build"
-	@echo ""
 	@echo "Configurando variables de entorno..."
 	@cd $(FRONTEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
 	@cd $(BACKEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
 	@cd $(NGINX_DIR) && if [ ! -f .env ]; then \
 		cp .env.example .env 2>/dev/null || true; \
 	fi
+	@echo ""
+	@echo "Construyendo frontend..."
+	@echo "Instalando dependencias y construyendo en Docker..."
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "npm install && npm run build"
 	@echo ""
 	@echo "Levantando servicios de producción..."
 	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d
