@@ -85,93 +85,69 @@ const personasConfig = (tipo, whatIs) => cardTemplates.TDLEV({
     stats: PERSONAS_STATS[tipo]?.[whatIs] || []
 });
 
-const DELITOS_STRUCTURE = [
-    {
-        id: 'cat-vida-integridad',
-        label: 'Delitos contra la vida y la integridad corporal',
-        isLabel: true,
-        layers: [
-            ['homicidio_doloso', 'Homicidio doloso', 'delitos_fiscalia_homicidio_doloso', ['seguridad', 'delito', 'homicidio', 'tasa', 'asesinato', 'crimen', 'violencia']],
-            ['lesiones_dolosas', 'Lesiones dolosas', 'delitos_fiscalia_lesiones_dolosas', ['seguridad', 'delito', 'lesiones', 'dolosas', 'golpes', 'agresion', 'fisica']],
-            ['feminicidio', 'Feminicidio', 'delitos_fiscalia_feminicidio', ['seguridad', 'delito', 'feminicidio', 'mujer', 'homicidio', 'genero', 'violencia']]
-        ]
-    }, {
-        id: 'cat-patrimonio',
-        label: 'Delitos contra el patrimonio',
-        isLabel: true,
-        layers: [
-            createRoboConModalidad('robo_a_casa_habitacion', 'Robo a casa habitación', 'delitos_fiscalia_robo_casa_habitacion', ['seguridad', 'delito', 'robo', 'casa', 'hogar', 'vivienda', 'domicilio', 'habitacion', 'patrimonio']),
-            createRoboConModalidad('robo_a_vehiculos_particulares', 'Robo a vehículos particulares', 'delitos_fiscalia_robo_vehiculos_particulares', ['seguridad', 'delito', 'robo', 'vehiculo', 'carro', 'auto', 'coche', 'particular']),
-            createRoboConModalidad('robo_de_autopartes', 'Robo de autopartes', 'delitos_fiscalia_robo_autopartes', ['seguridad', 'delito', 'robo', 'vehiculo', 'autopartes', 'piezas', 'accesorios', 'llantas', 'espejos']),
-            createRoboConModalidad('robo_a_vehiculos_de_carga_pesada', 'Robo a vehículos de carga pesada', 'delitos_fiscalia_robo_carga_pesada', ['seguridad', 'delito', 'robo', 'vehiculo', 'carga', 'camion', 'trailer', 'transporte', 'mercancia']),
-            createRoboConModalidad('robo_a_persona', 'Robo a persona', 'delitos_fiscalia_robo_persona', ['seguridad', 'delito', 'robo', 'asalto', 'persona', 'transeunte', 'calle', 'via_publica']),
-            createRoboConModalidad('robo_a_bancos', 'Robo a bancos', 'delitos_fiscalia_robo_bancos', ['seguridad', 'delito', 'robo', 'banco', 'asalto', 'financiero', 'sucursal']),
-            createRoboConModalidad('robo_a_negocio', 'Robo a negocio', 'delitos_fiscalia_robo_negocio', ['seguridad', 'delito', 'robo', 'negocio', 'tienda', 'comercio', 'establecimiento', 'local']),
-            createRoboConModalidad('robo_a_cuentahabientes', 'Robo a cuentahabientes', 'delitos_fiscalia_robo_cuentahabientes', ['seguridad', 'delito', 'robo', 'banco', 'cajero', 'cuenta', 'dinero', 'efectivo']),
-            createRoboConModalidad('robo_a_interior_de_vehiculos', 'Robo a interior de vehículos', 'delitos_fiscalia_robo_int_vehiculos', ['seguridad', 'delito', 'robo', 'vehiculo', 'carro', 'auto', 'coche', 'interior', 'cristalazo']),
-            createRoboConModalidad('robo_de_motocicletas', 'Robo de motocicletas', 'delitos_fiscalia_robo_motocicleta', ['seguridad', 'delito', 'robo', 'moto', 'motocicleta', 'vehiculo'])
-        ]
-    }, {
-        id: 'cat-familia',
-        label: 'Delitos contra la familia',
-        isLabel: true,
-        layers: [
-            ['violencia_familiar', 'Violencia familiar', 'delitos_fiscalia_violencia_familiar', ['seguridad', 'delito', 'violencia', 'familia', 'domestica', 'intrafamiliar', 'genero', 'hogar']],
-            ['violencia_de_genero', 'Violencia de género en todas sus modalidades distinta a la violencia familiar', 'datos_delitos_violencia_genero_no_familiar_secretariado', ['seguridad', 'delito', 'violencia', 'genero', 'feminicidio', 'mujer', 'homicidio', 'genero', 'violencia']],
-        ]
-    }, {
-        id: 'cat-libertad-sexual',
-        label: 'Delitos contra la libertad y la seguridad sexual',
-        isLabel: true,
-        layers: [
-            ['abuso_sexual_infantil', 'Abuso sexual infantil', 'delitos_fiscalia_abuso_sexual_infantil', ['seguridad', 'delito', 'abuso', 'sexual', 'ninos', 'infantil', 'menores', 'pederastia']],
-            ['violacion', 'Violación', 'delitos_fiscalia_violacion', ['seguridad', 'delito', 'violacion', 'sexual', 'abuso', 'agresion']]
-        ]
-    }
+const TASAS_DELITOS_FUERO = [
+    { id: 'tasa_feminicidio', label: 'Feminicidios (tasa)', layerName: 'datos_delitos_feminicidio_secretariado', tags: ['seguridad', 'delito', 'feminicidio', 'tasa', 'mujer'] },
+    { id: 'tasa_homicidio_doloso', label: 'Homicidio doloso (tasa)', layerName: 'datos_delitos_homicidio_doloso_secretariado', tags: ['seguridad', 'delito', 'homicidio', 'tasa', 'asesinato', 'crimen', 'violencia'] },
+    { id: 'tasa_lesiones_dolosas', label: 'Lesiones dolosas (tasa)', layerName: 'datos_delitos_lesiones_dolosas_secretariado', tags: ['seguridad', 'delito', 'lesiones', 'dolosas', 'tasa', 'golpes', 'agresion', 'fisica'] },
 ];
 
-const TASAS_STRUCTURE = [
-    {
-        id: 'cat-tasa-vida-integridad',
-        label: 'Delitos contra la vida y la integridad corporal',
-        isLabel: true,
-        layers: [
-            ['tasa_homicidio_doloso', 'Homicidio doloso', 'datos_delitos_homicidio_doloso_secretariado', ['seguridad', 'delito', 'homicidio', 'tasa', 'asesinato', 'crimen', 'violencia']],
-            ['tasa_lesiones_dolosas', 'Lesiones dolosas', 'datos_delitos_lesiones_dolosas_secretariado', ['seguridad', 'delito', 'lesiones', 'dolosas', 'tasa', 'golpes', 'agresion', 'fisica']],
-            ['tasa_feminicidio', 'Feminicidio', 'datos_delitos_feminicidio_secretariado', ['seguridad', 'delito', 'feminicidio', 'tasa', 'mujer']]
-        ]
-    }, {
-        id: 'cat-tasa-patrimonio',
-        label: 'Delitos contra el patrimonio',
-        isLabel: true,
-        layers: [
-            ['tasa_robo_casa_habitacion', 'Robo a casa habitación', 'datos_delitos_robo_casa_habitacion_secretariado', ['seguridad', 'delito', 'robo', 'casa', 'tasa', 'hogar']],
-            ['tasa_robo_vehiculo_particular', 'Robo a vehículos particulares', 'datos_delitos_robo_coche_cuatro_ruedas_secretariado', ['seguridad', 'delito', 'robo', 'vehiculo', 'tasa', 'auto']],
-            ['tasa_robo_autopartes', 'Robo de autopartes', 'datos_delitos_robo_autopartes_secretariado', ['seguridad', 'delito', 'robo', 'autopartes', 'tasa', 'piezas']],
-            ['tasa_robo_vehiculo_carga_pesada', 'Robo a vehículos de carga pesada', 'datos_delitos_robo_transportista_secretariado', ['seguridad', 'delito', 'robo', 'carga', 'tasa', 'transporte']],
-            ['tasa_robo_persona', 'Robo a persona', 'datos_delitos_robo_transeunte_via_publica_secretariado', ['seguridad', 'delito', 'robo', 'persona', 'tasa', 'asalto']],
-            ['tasa_robo_bancos', 'Robo a bancos', 'datos_delitos_robo_institucion_bancaria_secretariado', ['seguridad', 'delito', 'robo', 'banco', 'tasa', 'asalto']],
-            ['tasa_robo_negocio', 'Robo a negocio', 'datos_delitos_robo_negocio_secretariado', ['seguridad', 'delito', 'robo', 'negocio', 'tasa', 'comercio']],
-            ['tasa_robo_cuentahabientes', '*Robo a cuentahabientes', 'incidencia_robo_cuentahabientes', ['seguridad', 'delito', 'robo', 'banco', 'tasa', 'cajero']],
-            ['tasa_robo_interior_vehiculos', '*Robo a interior de vehículos', 'incidencia_robo_interior_vehiculos', ['seguridad', 'delito', 'robo', 'vehiculo', 'tasa', 'interior']],
-            ['tasa_robo_motocicleta', 'Robo de motocicletas', 'datos_delitos_robo_motocicleta_secretariado', ['seguridad', 'delito', 'robo', 'moto', 'tasa', 'motocicleta']]
-        ]
-    }, {
-        id: 'cat-tasa-familia',
-        label: 'Delitos contra la familia',
-        isLabel: true,
-        layers: [
-            ['tasa_violencia_familiar', 'Violencia familiar', 'datos_delitos_violencia_familiar_secretariado', ['seguridad', 'delito', 'violencia', 'familia', 'tasa', 'domestica']]
-        ]
-    }, {
-        id: 'cat-tasa-libertad-sexual',
-        label: 'Delitos contra la libertad y la seguridad sexual',
-        isLabel: true,
-        layers: [
-            ['tasa_abuso_sexual_infantil', 'Abuso sexual infantil', 'datos_delitos_abuso_sexual_secretariado', ['seguridad', 'delito', 'abuso', 'sexual', 'tasa', 'infantil']],
-            ['tasa_violacion', 'Violación', 'datos_delitos_violacion_secretariado', ['seguridad', 'delito', 'violacion', 'tasa', 'sexual']]
-        ]
-    }
+const TASA_DELITOS_LIBERTAD = [
+    { id: 'tasa_violacion', label: 'Violación (tasa)', layerName: 'datos_delitos_violacion_secretariado', tags: ['seguridad', 'delito', 'violacion', 'tasa', 'sexual'] },
+    { id: 'tasa_abuso_sexual', label: 'Abuso sexual (tasa)', layerName: 'datos_delitos_abuso_sexual_secretariado', tags: ['seguridad', 'delito', 'abuso', 'sexual', 'tasa', 'infantil'] },
+];
+
+const TASA_DELITOS_FAMILIA = [
+    { id: 'tasa_violencia_de_genero', label: 'Violencia de género (tasa)', layerName: 'datos_delitos_violencia_de_genero_secretariado', tags: ['seguridad', 'delito', 'violencia', 'genero', 'tasa', 'domestica'] },
+    { id: 'tasa_violencia_familiar', label: 'Violencia familiar (tasa)', layerName: 'datos_delitos_violencia_familiar_secretariado', tags: ['seguridad', 'delito', 'violencia', 'familia', 'tasa', 'domestica'] },
+];
+
+const TASA_DELITOS_PATRIMONIO = [
+    { id: 'tasa_robos_coche_cuatro_ruedas', label: 'Robo de coche a cuatro ruedas (tasa)', layerName: 'datos_delitos_robos_coche_cuatro_ruedas_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'tasa_robos_transportistas', label: 'Robo de transportistas (tasa)', layerName: 'datos_delitos_robos_transportistas_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'tasa_robos_motocicleta', label: 'Robo de motocicleta (tasa)', layerName: 'datos_delitos_robos_motocicleta_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'tasa_robos_personas', label: 'Robo a personas (tasa)', layerName: 'datos_delitos_robos_personas_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'tasa_robos_casa_habitacion', label: 'Robo a casa habitacion (tasa)', layerName: 'datos_delitos_robos_casa_habitacion_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'tasa_robos_negocio', label: 'Robo a negocio (tasa)', layerName: 'datos_delitos_robos_negocio_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'tasa_robos_autopartes', label: 'Robo de autopartes (tasa)', layerName: 'datos_delitos_robos_autopartes_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'tasa_robos_instituciones_bancarias', label: 'Robo a instituciones bancarias (tasa)', layerName: 'datos_delitos_robos_instituciones_bancarias_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+];
+
+const DELITOS_VIDA = [
+    { id: 'eminicidio', label: 'Feminicidio', layerName: 'delitos_fiscalia_feminicidio', tags: ['seguridad', 'delito', 'feminicidio', 'tasa', 'mujer'] },
+    { id: 'homicidio_doloso', label: 'Homicidio doloso', layerName: 'delitos_fiscalia_homicidio_doloso', tags: ['seguridad', 'delito', 'homicidio', 'tasa', 'asesinato', 'crimen', 'violencia'] },
+    { id: 'lesiones_dolosas', label: 'Lesiones dolosas', layerName: 'delitos_fiscalia_lesiones_dolosas', tags: ['seguridad', 'delito', 'lesiones', 'dolosas', 'tasa', 'golpes', 'agresion', 'fisica'] },
+];
+
+const DELITOS_LIBERTAD = [
+    { id: 'abuso_sexual_infantil', label: 'Abuso sexual infantil', layerName: 'delitos_fiscalia_abuso_sexual_infantil', tags: ['seguridad', 'delito', 'abuso', 'sexual', 'infantil', 'tasa', 'violencia'] },
+    { id: 'violacion', label: 'Violacion', layerName: 'delitos_fiscalia_violacion', tags: ['seguridad', 'delito', 'violacion', 'tasa', 'sexual'] },
+];
+
+const DELITOS_FAMILIA = [
+    { id: 'violencia_familiar', label: 'Violencia familiar', layerName: 'delitos_fiscalia_violencia_familiar', tags: ['seguridad', 'delito', 'violencia', 'familiar', 'tasa', 'domestica'] },
+];
+
+const DELITOS_PATRIMONIO = [
+    { id: 'robos_coche_cuatro_ruedas', label: 'Robo de coche a cuatro ruedas', layerName: 'delitos_fiscalia_robo_vehiculos_particulares', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'robos_transportistas', label: 'Robo de transportistas', layerName: 'delitos_fiscalia_robo_transportistas', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'robos_motocicleta', label: 'Robo de motocicleta', layerName: 'delitos_fiscalia_robo_motocicleta', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'robos_personas', label: 'Robo a personas', layerName: 'delitos_fiscalia_robo_persona', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'robos_casa_habitacion', label: 'Robo a casa habitacion', layerName: 'delitos_fiscalia_robo_casa_habitacion', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'robos_negocio', label: 'Robo a negocio', layerName: 'delitos_fiscalia_robo_negocio', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'robos_autopartes', label: 'Robo de autopartes', layerName: 'delitos_fiscalia_robo_autopartes', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+    { id: 'robos_instituciones_bancarias', label: 'Robo a instituciones bancarias', layerName: 'delitos_fiscalia_robo_bancos', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'] },
+];
+
+const DESAPARECIDAS = [
+    { id: 'tasa_personas_desaparecidas', label: 'Personas desaparecidas (tasa)', style: 'personas_desaparecidas_total', not: 'tasa_personas', tags: ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'] },
+    { id: 'tasa_mujeres_desaparecidas', label: 'Mujeres desaparecidas (tasa)', style: 'desaparecidos_mujeres', not: 'tasa_mujeres', tags: ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'] },
+    { id: 'tasa_hombres_desaparecidos', label: 'Hombres desaparecidos (tasa)', style: 'desaparecidos_hombres', not: 'tasa_hombres', tags: ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'] },
+];
+
+const LOCALIZADAS = [
+    { id: 'tasa_personas_localizadas', label: 'Personas localizadas (tasa)', layerName: 'personas_localizadas', tags: ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'] },
+    { id: 'tasa_mujeres_localizadas', label: 'Mujeres localizadas (tasa)', layerName: 'personas_localizadas_mujeres', tags: ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'] },
+    { id: 'tasa_hombres_localizados', label: 'Hombres localizados (tasa)', layerName: 'personas_localizadas_hombres', tags: ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'] },
 ];
 
 export const seguridadLayers = {
@@ -180,108 +156,153 @@ export const seguridadLayers = {
     children: [
         {
             id: 'delitos-fuero-comun',
-            label: 'Delitos del Fuero Común',
-            base: 'inegi',
+            label: 'Incidencia en delitos del fuero común',
             isCategory: true,
-            children: DELITOS_STRUCTURE.map(cat => ({
-                id: cat.id,
-                label: cat.label,
-                isLabel: cat.isLabel,
-                isCategory: !cat.isLabel,
-                children: cat.layers.map(layer => {
-                    if (Array.isArray(layer)) {
-                        const [id, label, layerName, tags] = layer;
-                        return {
-                            id,
-                            label,
-                            wmsConfig: createSeguridadLayer(layerName),
-                            littleCard: seguridadConfig,
-                            searchMeta: { tags }
-                        };
-                    }
-                    return {
-                        id: layer.id,
-                        label: layer.label,
-                        isLabel: layer.isLabel,
-                        forceGroup: layer.forceGroup,
-                        children: layer.children.map(child => ({
-                            id: child.id,
-                            label: child.label,
-                            wmsConfig: createSeguridadLayer.withFilter(layer.layerName, child.filter),
-                            littleCard: seguridadConfig,
-                            searchMeta: { tags: [...layer.baseTags, ...child.tags] }
-                        }))
-                    };
-                })
-            }))
+            children: [
+                {
+                    id: 'cat-vida-integridad',
+                    label: 'Delitos contra la vida y la integridad corporal',
+                    isLabel: true,
+                    children: TASAS_DELITOS_FUERO.map(({ id, label, layerName, tags }) => ({
+                        id,
+                        label,
+                        wmsConfig: createSeguridadLayer(layerName),
+                        littleCard: seguridadConfig,
+                        searchMeta: { tags }
+                    }))
+                }, {
+                    id: 'cat-libertad-sexual',
+                    label: 'Delitos contra la libertad y la seguridad sexual',
+                    isLabel: true,
+                    children: TASA_DELITOS_LIBERTAD.map(({ id, label, layerName, tags }) => ({
+                        id,
+                        label,
+                        wmsConfig: createSeguridadLayer(layerName),
+                        littleCard: seguridadConfig,
+                        searchMeta: { tags }
+                    }))
+                }, {
+                    id: 'cat-familia',
+                    label: 'Delitos contra la familia',
+                    isLabel: true,
+                    children: TASA_DELITOS_FAMILIA.map(({ id, label, layerName, tags }) => ({
+                        id,
+                        label,
+                        wmsConfig: createSeguridadLayer(layerName),
+                        littleCard: seguridadConfig,
+                        searchMeta: { tags }
+                    }))
+                }, {
+                    id: 'cat-patrimonio',
+                    label: 'Delitos contra el patrimonio',
+                    isLabel: true,
+                    children: TASA_DELITOS_PATRIMONIO.map(({ id, label, layerName, tags }) => ({
+                        id,
+                        label,
+                        wmsConfig: createSeguridadLayer(layerName),
+                        littleCard: seguridadConfig,
+                        searchMeta: { tags }
+                    }))
+                }
+            ]
         }, {
-            id: 'Tasa_incidencia_delitos_del_fuero_comun',
-            label: 'Tasa de incidencia delitos del fuero común',
-            base: 'inegi',
+            id: 'delitos_del_fuero_comun',
+            label: 'Delitos del fuero común',
             isCategory: true,
-            children: TASAS_STRUCTURE.map(cat => ({
-                id: cat.id,
-                label: cat.label,
-                isLabel: cat.isLabel,
-                isCategory: !cat.isLabel,
-                children: cat.layers.map(([id, label, layerName, tags]) => ({
+            children: [{
+                id: 'cat-vida-integridad',
+                label: 'Delitos contra la vida y la integridad corporal',
+                isLabel: true,
+                children: DELITOS_VIDA.map(({ id, label, layerName, tags }) => ({
                     id,
                     label,
                     wmsConfig: createSeguridadLayer(layerName),
                     littleCard: seguridadConfig,
                     searchMeta: { tags }
                 }))
-            }))
+            }, {
+                id: 'cat-libertad-sexual',
+                label: 'Delitos contra la libertad y la seguridad sexual',
+                isLabel: true,
+                children: DELITOS_LIBERTAD.map(({ id, label, layerName, tags }) => ({
+                    id,
+                    label,
+                    wmsConfig: createSeguridadLayer(layerName),
+                    littleCard: seguridadConfig,
+                    searchMeta: { tags }
+                }))
+            }, {
+                id: 'cat-familia',
+                label: 'Delitos contra la familia',
+                isLabel: true,
+                children: DELITOS_FAMILIA.map(({ id, label, layerName, tags }) => ({
+                    id,
+                    label,
+                    wmsConfig: createSeguridadLayer(layerName),
+                    littleCard: seguridadConfig,
+                    searchMeta: { tags }
+                }))
+            }, {
+                id: 'cat-patrimonio',
+                label: 'Delitos contra el patrimonio',
+                isLabel: true,
+                children: DELITOS_PATRIMONIO.map(({ id, label, layerName, tags }) => ({
+                    id,
+                    label,
+                    forceGroup: true,
+                    children: [
+                        {
+                            id: `${id}_con_violencia`,
+                            label: 'Con violencia',
+                            wmsConfig: createSeguridadLayer.withFilter(layerName, "modalidad = 'Con violencia'"),
+                            littleCard: seguridadConfig,
+                            searchMeta: { tags: [...tags, 'violencia'] }
+                        },
+                        {
+                            id: `${id}_sin_violencia`,
+                            label: 'Sin violencia',
+                            wmsConfig: createSeguridadLayer.withFilter(layerName, "modalidad = 'Sin violencia'"),
+                            littleCard: seguridadConfig,
+                            searchMeta: { tags: [...tags, 'sin_violencia'] }
+                        },
+                        {
+                            id: `${id}_sin_especificar`,
+                            label: 'Sin especificar',
+                            wmsConfig: createSeguridadLayer.withFilter(layerName, "modalidad IS NULL OR modalidad = ''"),
+                            littleCard: seguridadConfig,
+                            searchMeta: { tags: [...tags, 'sin_especificar'] }
+                        }
+                    ]
+                }))
+            }
+            ]
         }, {
             id: 'personas-desaparecidas',
             label: 'Personas Desaparecidas',
-            base: 'inegi',
             isCategory: true,
             children: [
                 {
-                    id: 'tasa_personas_desaparecidas',
+                    id: 'cat-personas-desaparecidas',
                     label: 'Personas desaparecidas',
-                    forceGroup: true,
-                    wmsConfig: createSeguridadLayer('personas_desaparecidas'),
-                    littleCard: personasConfig('desaparecidos', 'total'),
-                    searchMeta: { tags: ['seguridad', 'desaparecidos', 'personas', 'tasa', 'incidencia'] },
-                    children: [
-                        {
-                            id: 'tasa_hombres_desaparecidos',
-                            label: 'Hombres',
-                            wmsConfig: createSeguridadLayer.withFilterAndStyles('personas_desaparecidas', 'tasa_hombres IS NOT NULL', 'desaparecidos_hombres'),
-                            littleCard: personasConfig('desaparecidos', 'hombres'),
-                            searchMeta: { tags: ['seguridad', 'desaparecidos', 'hombres', 'personas', 'tasa', 'incidencia'] }
-                        }, {
-                            id: 'tasa_mujeres_desaparecidas',
-                            label: 'Mujeres',
-                            wmsConfig: createSeguridadLayer.withFilterAndStyles('personas_desaparecidas', 'tasa_mujeres IS NOT NULL', 'desaparecidos_mujeres'),
-                            littleCard: personasConfig('desaparecidos', 'mujeres'),
-                            searchMeta: { tags: ['seguridad', 'desaparecidos', 'mujeres', 'personas', 'tasa', 'incidencia'] }
-                        }
-                    ]
+                    isLabel: true,
+                    children: DESAPARECIDAS.map(({ id, label, style, not, tags }) => ({
+                        id,
+                        label,
+                        wmsConfig: createSeguridadLayer.withFilterAndStyles('personas_desaparecidas', `${not} IS NOT NULL`, style),
+                        littleCard: personasConfig('desaparecidos', 'total'),
+                        searchMeta: { tags }
+                    }))
                 }, {
-                    id: 'tasa_personas_localizadas',
+                    id: 'cat-personas-localizadas',
                     label: 'Personas localizadas',
-                    forceGroup: true,
-                    wmsConfig: createSeguridadLayer('personas_localizadas'),
-                    littleCard: personasConfig('localizados', 'total'),
-                    searchMeta: { tags: ['seguridad', 'localizados', 'personas', 'tasa', 'incidencia'] },
-                    children: [
-                        {
-                            id: 'tasa_hombres_localizadas',
-                            label: 'Hombres',
-                            wmsConfig: createSeguridadLayer.withFilterAndStyles('personas_localizadas', 'tasa_hombres IS NOT NULL', 'localizados_hombres'),
-                            littleCard: personasConfig('localizados', 'hombres'),
-                            searchMeta: { tags: ['seguridad', 'localizados', 'hombres', 'personas', 'tasa', 'incidencia'] }
-                        }, {
-                            id: 'tasa_mujeres_localizadas',
-                            label: 'Mujeres',
-                            wmsConfig: createSeguridadLayer.withFilterAndStyles('personas_localizadas', 'tasa_mujeres IS NOT NULL', 'localizados_mujeres'),
-                            littleCard: personasConfig('localizados', 'mujeres'),
-                            searchMeta: { tags: ['seguridad', 'localizados', 'mujeres', 'personas', 'tasa', 'incidencia'] }
-                        }
-                    ]
+                    isLabel: true,
+                    children: LOCALIZADAS.map(({ id, label, layerName, tags }) => ({
+                        id,
+                        label,
+                        wmsConfig: createSeguridadLayer(layerName),
+                        littleCard: personasConfig('localizados', 'total'),
+                        searchMeta: { tags }
+                    }))
                 }
             ]
         }

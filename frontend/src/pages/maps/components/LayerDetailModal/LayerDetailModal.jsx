@@ -264,30 +264,10 @@ const LayerDetailModal = () => {
                                     </div>
                                 )}
 
-                                {(metadata?.metodologia_texto || metadata?.metodologia_archivo_enlace) && (
-                                    <div className="mb-4">
-                                        <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4">
-                                            <span className="text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
-                                                Metodología
-                                            </span>
-                                            {metadata.metodologia_texto && (
-                                                <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
-                                                    {metadata.metodologia_texto}
-                                                </p>
-                                            )}
-                                            {metadata.metodologia_archivo_enlace && (
-                                                <a href={metadata.metodologia_archivo_enlace} target="_blank" rel="noopener noreferrer"
-                                                    className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
-                                                    Ver documento
-                                                </a>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
 
                                 {(metadata?.fuentes_texto_largo || metadata?.fuentes_enlace) && (
-                                    <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4">
-                                        <span className="text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
+                                    <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4 mb-4">
+                                        <span className="block text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
                                             Fuente
                                         </span>
                                         {metadata.fuentes_texto_largo && (
@@ -297,8 +277,27 @@ const LayerDetailModal = () => {
                                         )}
                                         {metadata.fuentes_enlace && (
                                             <a href={metadata.fuentes_enlace} target="_blank" rel="noopener noreferrer"
-                                                className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
+                                            className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
                                                 Ver fuente
+                                            </a>
+                                        )}
+                                    </div>
+                                )}
+
+                                {(metadata?.metodologia_texto || metadata?.metodologia_archivo_enlace) && (
+                                    <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4">
+                                        <span className="block text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
+                                            Metodología
+                                        </span>
+                                        {metadata.metodologia_texto && (
+                                            <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
+                                                {metadata.metodologia_texto}
+                                            </p>
+                                        )}
+                                        {metadata.metodologia_archivo_enlace && (
+                                            <a href={metadata.metodologia_archivo_enlace} target="_blank" rel="noopener noreferrer"
+                                                className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
+                                                Ver documento
                                             </a>
                                         )}
                                     </div>
