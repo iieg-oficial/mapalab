@@ -105,9 +105,10 @@ const createTEEMLXEV = ({ title, municipio, list, text, stats }) => ({
     cardsColumns: 1
 });
 
-const createTEEC = ({ title, caracteristica }) => ({
+const createTEEC = ({ title, caracteristica, staticLabel }) => ({
     headerField: title,
     labelGroups: [
+        ...(staticLabel ? [{ staticValues: [staticLabel] }] : []),
         { fields: toArray(caracteristica) }
     ]
 });

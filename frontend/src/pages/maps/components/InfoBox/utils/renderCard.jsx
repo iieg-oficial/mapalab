@@ -92,35 +92,51 @@ export const renderCard = (properties, config, onClose, layerId = null) => {
 
     if (finalConfig.labelGroups) {
         finalConfig.labelGroups.forEach((group, groupIdx) => {
-            const values = group.fields
-                .map(field => properties[field])
-                .filter(v => v !== null && v !== undefined && v !== '');
-
             const groupElements = [];
-            values.forEach((value, idx) => {
-                if (group.splitValues && typeof value === 'string') {
-                    const splitItems = value.split(/,\s*|\s+y\s+/).filter(item => item.trim() !== '');
-                    splitItems.forEach((item, splitIdx) => {
-                        const labelIndex = group.colorIndex !== undefined ? group.colorIndex : (finalConfig.labels ? finalConfig.labels.length + idx + splitIdx : idx + splitIdx);
-                        groupElements.push(
-                            <Label
-                                key={`labelgroup-${groupIdx}-${idx}-${splitIdx}`}
-                                value={item.trim()}
-                                index={labelIndex}
-                            />
-                        );
-                    });
-                } else {
-                    const labelIndex = group.colorIndex !== undefined ? group.colorIndex : (finalConfig.labels ? finalConfig.labels.length + idx : idx);
+
+            if (group.staticValues) {
+                group.staticValues.forEach((value, idx) => {
+                    const labelIndex = group.colorIndex !== undefined ? group.colorIndex : idx;
                     groupElements.push(
                         <Label
-                            key={`labelgroup-${groupIdx}-${idx}`}
+                            key={`labelgroup-${groupIdx}-static-${idx}`}
                             value={value}
                             index={labelIndex}
                         />
                     );
-                }
-            });
+                });
+            }
+
+            if (group.fields) {
+                const values = group.fields
+                    .map(field => properties[field])
+                    .filter(v => v !== null && v !== undefined && v !== '');
+
+                values.forEach((value, idx) => {
+                    if (group.splitValues && typeof value === 'string') {
+                        const splitItems = value.split(/,\s*|\s+y\s+/).filter(item => item.trim() !== '');
+                        splitItems.forEach((item, splitIdx) => {
+                            const labelIndex = group.colorIndex !== undefined ? group.colorIndex : (finalConfig.labels ? finalConfig.labels.length + idx + splitIdx : idx + splitIdx);
+                            groupElements.push(
+                                <Label
+                                    key={`labelgroup-${groupIdx}-${idx}-${splitIdx}`}
+                                    value={item.trim()}
+                                    index={labelIndex}
+                                />
+                            );
+                        });
+                    } else {
+                        const labelIndex = group.colorIndex !== undefined ? group.colorIndex : (finalConfig.labels ? finalConfig.labels.length + idx : idx);
+                        groupElements.push(
+                            <Label
+                                key={`labelgroup-${groupIdx}-${idx}`}
+                                value={value}
+                                index={labelIndex}
+                            />
+                        );
+                    }
+                });
+            }
 
             if (groupElements.length > 0) {
                 body.push(
