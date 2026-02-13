@@ -76,7 +76,7 @@ export const getLayerMetadata = async (layerId) => {
         return null;
     }
 
-    const url = new URL(METADATA_ENDPOINT);
+    const url = new URL(METADATA_ENDPOINT, window.location.origin);
     url.searchParams.set('workspace', params.workspace);
     url.searchParams.set('layer', params.layer);
 
