@@ -4,7 +4,7 @@ import List from '../components/List';
 import IconText from '../components/IconText';
 import Cards from '../components/Cards';
 import Text from '../components/Text';
-import { generateDefaultConfig } from './cardTemplates';
+import { cardTemplates } from './cardTemplates';
 
 const extractSuffixFromLayerId = (layerId) => {
     if (!layerId) return null;
@@ -47,7 +47,7 @@ export const renderCard = (properties, config, onClose, layerId = null) => {
 
     if (!properties) return null;
 
-    const finalConfig = config || generateDefaultConfig(properties);
+    const finalConfig = config || cardTemplates.generateDefaultConfig(properties);
     if (!finalConfig) return null;
 
     const header = [];
@@ -101,20 +101,22 @@ export const renderCard = (properties, config, onClose, layerId = null) => {
                 if (group.splitValues && typeof value === 'string') {
                     const splitItems = value.split(/,\s*|\s+y\s+/).filter(item => item.trim() !== '');
                     splitItems.forEach((item, splitIdx) => {
+                        const labelIndex = group.colorIndex !== undefined ? group.colorIndex : (finalConfig.labels ? finalConfig.labels.length + idx + splitIdx : idx + splitIdx);
                         groupElements.push(
                             <Label
                                 key={`labelgroup-${groupIdx}-${idx}-${splitIdx}`}
                                 value={item.trim()}
-                                index={finalConfig.labels ? finalConfig.labels.length + idx + splitIdx : idx + splitIdx}
+                                index={labelIndex}
                             />
                         );
                     });
                 } else {
+                    const labelIndex = group.colorIndex !== undefined ? group.colorIndex : (finalConfig.labels ? finalConfig.labels.length + idx : idx);
                     groupElements.push(
                         <Label
                             key={`labelgroup-${groupIdx}-${idx}`}
                             value={value}
-                            index={finalConfig.labels ? finalConfig.labels.length + idx : idx}
+                            index={labelIndex}
                         />
                     );
                 }

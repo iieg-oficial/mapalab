@@ -1,24 +1,20 @@
 import { createLayerFactory } from '../utils/layerFactory';
-import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
+import { cardTemplates, createMunicipioConfig } from '../../../components/InfoBox/utils/cardTemplates';
 
 const SALUD_LAYER = 'gold_unidades_salud_mapalab';
 
 const createSaludLayer = createLayerFactory('salud');
 const createDesarrolloSocialLayer = createLayerFactory('desarrollo');
 
-const establecimientosSaludConfig = cardTemplates.TDEMECLUEH({
+const establecimientosSaludConfig = cardTemplates.TDEMECLU({
     title: 'nombre_unidad',
     municipio: 'municipio',
-    caracteristica: ['nombre_institucion', 'clave_institucion', 'nivel_atencion'],
+    caracteristica: ['nombre_institucion', 'nivel_atencion', 'estatus_operacion', 'nombre_tipo_establecimiento'],
     list: [
-        { label: 'Año de la información', field: 'fecha_ultimo_movimiento' },
+        { label: 'Año de la información', field: 'fecha' },
+        { label: 'Teléfono', field: 'telefono_1' },
     ],
-    ubicacion: 'observaciones_direccion',
-    stats: [
-        { label: 'Total de camas', field: 'total_camas' },
-        { label: 'Total de consultorios', field: 'total_consultorios' },
-    ],
-    columns: 2
+    ubicacion: 'domicilio'
 });
 
 const INSTITUCIONES_PRIMER_NIVEL = [
@@ -127,7 +123,15 @@ export const saludLayers = {
                     id: 'carencia_acceso',
                     label: 'Carencia por acceso a los servicios de salud (%)',
                     wmsConfig: createDesarrolloSocialLayer('carencia_acceso_servicios_salud'),
-                    littleCard: establecimientosSaludConfig,
+                    littleCard: createMunicipioConfig({
+                        title: 'Personas con carencia por acceso a los servicios de salud (%)',
+                        text: 'Porcentaje sobre la población total del municipio. Para la descripción de carencia por acceso a servicios de salud, ver la nota metodológica.',
+                        stats: [
+                            { label: 'Número de personas', field: 'personas' },
+                            { label: 'Porcentaje', field: 'porcentaje' },
+                            { label: 'Carencias promedio', field: 'carencias_promedio' },
+                        ]
+                    }),
                     searchMeta: { tags: ['salud', 'carencia', 'acceso', 'servicios', 'pobreza', 'vulnerabilidad', 'coneval'] }
                 }
             ]

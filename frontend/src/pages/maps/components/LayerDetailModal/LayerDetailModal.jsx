@@ -132,28 +132,29 @@ const LayerDetailModal = () => {
                                 onChange={(opacity) => setLayerOpacity(selectedLayer.id, opacity)}
                             />
                             <div className="flex items-center gap-5 md:gap-10">
-                                {downloading
-                                    ? <Logo name="mapalab" size="size-15" isLoading />
-                                    : (
-                                        <Tooltip content="Descarga la capa completa con metadatos en ZIP" variant="warning">
-                                            <button
-                                                onClick={handleDownloadClick}
-                                                disabled={cooldown}
-                                                className={`
-                                                    min-w-[180px] px-10 text-[14px]/[47px] text-white rounded-[30px]
-                                                    transition-colors h-12.5 font-bold font-garet
-                                                    disabled:opacity-60 disabled:cursor-wait
-                                                    bg-[#703089] hover:bg-[#5C2472] hover:shadow-[0px_6px_6px_#5C247234]
-                                                `}
-                                            >
-                                                {cooldown
-                                                    ? (isMobile ? <Icon name="download" /> : `Espera ${Math.ceil(cooldownRemaining / 1000)}s`)
-                                                    : (isMobile ? <Icon name="download" /> : 'Descargar capa')
-                                                }
-                                            </button>
-                                        </Tooltip>
-                                    )
-                                }
+                                {metadata?.capa_descargable !== false && (
+                                    downloading
+                                        ? <Logo name="mapalab" size="size-15" isLoading />
+                                        : (
+                                            <Tooltip content="Descarga la capa completa con metadatos en ZIP" variant="warning">
+                                                <button
+                                                    onClick={handleDownloadClick}
+                                                    disabled={cooldown}
+                                                    className={`
+                                                        min-w-[180px] px-10 text-[14px]/[47px] text-white rounded-[30px]
+                                                        transition-colors h-12.5 font-bold font-garet
+                                                        disabled:opacity-60 disabled:cursor-wait
+                                                        bg-[#703089] hover:bg-[#5C2472] hover:shadow-[0px_6px_6px_#5C247234]
+                                                    `}
+                                                >
+                                                    {cooldown
+                                                        ? (isMobile ? <Icon name="download" /> : `Espera ${Math.ceil(cooldownRemaining / 1000)}s`)
+                                                        : (isMobile ? <Icon name="download" /> : 'Descargar capa')
+                                                    }
+                                                </button>
+                                            </Tooltip>
+                                        )
+                                )}
                                 <Icon
                                     name="cerrarModal"
                                     aria-label="Cerrar"
@@ -277,7 +278,7 @@ const LayerDetailModal = () => {
                                         )}
                                         {metadata.fuentes_enlace && (
                                             <a href={metadata.fuentes_enlace} target="_blank" rel="noopener noreferrer"
-                                            className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
+                                                className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
                                                 Ver fuente
                                             </a>
                                         )}

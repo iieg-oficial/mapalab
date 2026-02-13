@@ -8,50 +8,95 @@ const cabecerasMunicipalesConfig = cardTemplates.TEEC({
     caracteristica: 'nombre',
 });
 
-const aeropuertosConfig = cardTemplates.TDEMECLU({
+const aeropuertosConfig = cardTemplates.TDEMEC({
     title: 'nombre',
     municipio: 'ciudad',
     caracteristica: 'tipo',
-    list: [
-        { label: 'Año de la información', field: 'fecha_ultimo_movimiento' },
-    ],
-    ubicacion: 'domicilio'
 });
 
-const carreterasCaminosConfig = (title) => cardTemplates.TDEMLEV({
-    title,
-    municipio: ['administracion', 'transito', 'pavimento', 'tipo_material'],
+const caminosConfig = {
+    headerField: 'Camino',
+    labelGroups: [
+        { fields: ['administracion', 'tipo_material'] }
+    ],
     list: [
-        { label: 'Código', field: 'codigo' },
         { label: 'Origen', field: 'origen' },
         { label: 'Destino', field: 'destino' },
         { label: 'Fecha de la capa', field: 'fecha' },
     ],
-    stats: [
+    cards: [
+        { label: 'Extensión (km)', field: 'largo_km' },
+    ],
+    cardsColumns: 1
+};
+
+const carreterasConfig = {
+    headerField: 'codigo',
+    labelGroups: [
+        { fields: ['administracion', 'transito', 'pavimento'] }
+    ],
+    list: [
+        { label: 'Origen', field: 'origen' },
+        { label: 'Destino', field: 'destino' },
+        { label: 'Fecha de la capa', field: 'fecha' },
+    ],
+    cards: [
         { label: 'Cantidad de carriles', field: 'carriles' },
-    ]
+        { label: 'Extensión (km)', field: 'largo_km' },
+    ],
+    cardsColumns: 1
+};
+
+const cuerposAguaConfig = cardTemplates.TEEC({
+    title: 'nombre',
+    caracteristica: ['tipo', 'condicion']
 });
 
-const regionesConfig = cardTemplates.TDEMEV({
-    title: 'region',
-    municipio: 'municipio',
-    stats: [
-        { label: 'Área', field: 'area_km2' },
-    ]
+const limiteEstatalConfig = (title) => ({
+    headerField: title,
+    cards: [
+        { label: 'Área (km²)', field: 'area_km2' },
+        { label: 'Área (ha)', field: 'area_ha' },
+    ],
+    cardsColumns: 1
 });
+
+const limiteMunicipalConfig = (title) => ({
+    headerField: title,
+    labelGroups: [
+        { fields: ['nombre', 'region'] }
+    ],
+    list: [{ label: 'Clave geográfica', field: 'clave_geo' }],
+    cards: [
+        { label: 'Área (km²)', field: 'area_km2' },
+        { label: 'Área (ha)', field: 'area_ha' },
+    ],
+    cardsColumns: 1
+});
+
+const regionesConfig = {
+    headerField: 'region',
+    labelGroups: [
+        { fields: ['municipios'], splitValues: true, colorIndex: 0 }
+    ],
+    cards: [
+        { label: 'Área (km²)', field: 'area_km2' },
+    ],
+    cardsColumns: 1
+};
 
 const MEDIO_FISICO = [
-    ['cuerpos_de_agua_50k', 'Cuerpos de agua', 'cuerpos_de_agua_50k', ['base', 'agua', 'hidrologia', 'rio', 'lago', 'presa', 'laguna', 'recursos_hidricos', 'humedal'], null],
+    ['cuerpos_de_agua_50k', 'Cuerpos de agua', 'cuerpos_de_agua_50k', ['base', 'agua', 'hidrologia', 'rio', 'lago', 'presa', 'laguna', 'recursos_hidricos', 'humedal'], cuerposAguaConfig],
 ];
 
 const INFRAESTRUCTURA = [
     ['cabeceras_municipales', 'Cabeceras municipales', 'cabeceras_municipales', ['base', 'cabecera', 'municipio', 'localidad', 'poblacion', 'ciudad', 'capital', 'centro_urbano', 'asentamiento'], cabecerasMunicipalesConfig],
-    ['caminos_2012', 'Red de Caminos', 'caminos_2012', ['base', 'camino', 'vialidad', 'transporte', 'rural', 'brecha', 'terraceria', 'sendero'], carreterasCaminosConfig('Caminos')],
+    ['caminos_2012', 'Red de Caminos', 'caminos_2012', ['base', 'camino', 'vialidad', 'transporte', 'rural', 'brecha', 'terraceria', 'sendero'], caminosConfig],
 ];
 
 const CARRETERAS = [
-    ['carretera_libre', 'Libres', 'Libre', 'carretera_2012', ['base', 'carretera', 'vialidad', 'transporte', 'autopista', 'ruta', 'infraestructura', 'pavimento', 'red_vial', 'libre'], carreterasCaminosConfig('Libres')],
-    ['carretera_cuota', 'Cuota', 'Cuota', 'carretera_2012', ['base', 'carretera', 'vialidad', 'transporte', 'autopista', 'ruta', 'infraestructura', 'pavimento', 'red_vial', 'cuota'], carreterasCaminosConfig('Cuota')],
+    ['carretera_libre', 'Libres', 'Libre', 'carretera_2012', ['base', 'carretera', 'vialidad', 'transporte', 'autopista', 'ruta', 'infraestructura', 'pavimento', 'red_vial', 'libre'], carreterasConfig],
+    ['carretera_cuota', 'Cuota', 'Cuota', 'carretera_2012', ['base', 'carretera', 'vialidad', 'transporte', 'autopista', 'ruta', 'infraestructura', 'pavimento', 'red_vial', 'cuota'], carreterasConfig],
 ];
 
 const AEROPUERTOS = [
@@ -61,11 +106,11 @@ const AEROPUERTOS = [
 ];
 
 const HIDDEN_LAYERS = [
-    ['limite_municipal', 'Límites municipales geoestadísticos IIEG', 'limite_municipal', ['base', 'limite', 'frontera', 'municipio', 'division', 'iieg', 'demarcacion', 'territorio', 'alcaldia'], null],
-    ['limite_municipal_inegi', 'Límites municipales administrativos INEGI', 'limite_municipal_inegi', ['base', 'limite', 'frontera', 'municipio', 'division', 'inegi', 'demarcacion', 'territorio', 'alcaldia'], null],
+    ['limite_municipal', 'Límites municipales geoestadísticos IIEG', 'limite_municipal', ['base', 'limite', 'frontera', 'municipio', 'division', 'iieg', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites municipales administrativos IIEG')],
+    ['limite_municipal_inegi', 'Límites municipales administrativos INEGI', 'limite_municipal_inegi', ['base', 'limite', 'frontera', 'municipio', 'division', 'inegi', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites geoestadísticos municipales INEGI')],
     ['regiones', 'Regiones del estado', 'regiones', ['base', 'region', 'administrativo', 'division', 'iieg', 'zona', 'distrito', 'sector'], regionesConfig],
-    ['limite_iieg', 'Límites estatales IIEG', 'limite_iieg', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'iieg', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], null],
-    ['limite_inegi', 'Límites estatales INEGI', 'limite_inegi', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'inegi', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], null],
+    ['limite_iieg', 'Límites estatales IIEG', 'limite_iieg', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'iieg', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig('Límite estatal IIEG')],
+    ['limite_inegi', 'Límites estatales INEGI', 'limite_inegi', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'inegi', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig('Límite estatal INEGI')],
     ['curvas_de_nivel', 'Curvas de nivel', 'curvas_de_nivel', ['base', 'topografia', 'altitud', 'relieve', 'elevacion', 'isolineas', 'pendiente', 'terreno', 'cotas'], null],
 ];
 

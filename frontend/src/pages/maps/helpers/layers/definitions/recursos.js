@@ -1,47 +1,94 @@
 import { createLayerFactory } from '../utils/layerFactory';
-import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
 import { RASTER_YEAR, RASTER_TAGS, buildMonthlyTime } from '../utils/rasterHelpers';
 
 const createRecursosLayer = createLayerFactory('recursos');
 const createRasterLayer = createLayerFactory('raster');
 
-const recursosConfig = (title) => cardTemplates.TDEMLEV({
-    title,
-    municipio: ['condicion', 'tipo'],
+const acuiferosConfig = {
+    headerField: 'nombre_acuifero',
+    labelGroups: [
+        { fields: ['situacion_acuifero', 'condicion_acuifero'] }
+    ],
     list: [
         { label: 'Región Hidrológica', field: 'region_hidrologica' },
-        { label: 'Situación', field: 'situacion_acuifero' },
-        { label: 'Condición', field: 'condicion_acuifero' },
-        { label: 'Suelo', field: 'descripcion' },
-        { label: 'Dominancia del suelo en la selección', field: 'dominancia' },
-        { label: 'Fecha de decreto', field: 'fecha_decreto' },
     ],
-    stats: [
-        { label: 'Recarga media anual', field: 'recarga_media_anual_hm3' },
-        { label: 'Descarga natural comprometida', field: 'descarga_natural_comprometida_hm3' },
-        { label: 'Volumen extracción total', field: 'volumen_extraccion_total_hm3' },
-        { label: '%', field: '%' }
+    cards: [
+        { label: 'Recarga media anual (hm³)', field: 'recarga_media_anual_hm3' },
+        { label: 'Descarga natural comprometida (hm³)', field: 'descarga_natural_comprometida_hm3' },
+        { label: 'Volumen de extracción total (hm³)', field: 'volumen_extraccion_total_hm3' },
+        { label: 'Disponibilidad media (hm³)', field: 'disponibilidad_media_hm3' },
+    ],
+    cardsColumns: 1
+};
+
+const bosquePrimaveraConfig = {
+    headerField: 'Área de Protección Bosque La Primavera',
+    list: [
+        { label: 'Decreto', field: 'decreto' },
+        { label: 'Manejo', field: 'manejo' },
+        { label: 'Municipios', field: 'municipio' },
+        { label: 'Fecha del decreto', field: 'primer_decreto' },
+    ],
+    cards: [
+        { label: 'Área del decreto (km²)', field: 'area_km2' },
+        { label: 'Área del decreto (ha)', field: 'area_ha' },
+    ],
+    cardsColumns: 1
+};
+
+const parcelaPrimaveraConfig = (title) => ({
+    headerField: title,
+    labelGroups: [
+        { fields: ['estatus'] }
+    ],
+    list: [
+        { label: 'Nombre del predio', field: 'nombre' },
+        { label: 'Folio', field: 'folio' },
+        { label: 'Fecha de registro', field: 'fecha_registro' },
     ]
 });
 
-const primaveraConfig = (title) => cardTemplates.TDEMLEV({
-    title,
-    municipio: 'municipio',
-    splitMunicipio: true,
+const usoDeSueloConfig = {
+    headerField: 'Uso de suelo serie VII',
     list: [
-        { label: 'Nombre del predio', field: 'nombre' },
-        { label: 'Estatus', field: 'estatus' },
-        { label: 'Fecha de registro', field: 'fecha' },
-        { label: 'Folio', field: 'folio' },
-        { label: 'Decreto', field: 'decreto' },
-        { label: 'Manejo', field: 'manejo' },
-        { label: 'Fecha de decreto', field: 'primer_decreto' },
+        { label: 'Suelo', field: 'descripcion' },
+        { label: 'Clave de tipo de suelo', field: 'clave' },
+        { label: 'Agrupación', field: 'grupo' },
     ],
-    stats: [
-        { label: 'Área del decreto', field: 'area_km2' },
-        { label: 'Superficie', field: 'superficie' },
+    cards: [
+        { label: 'Área en hectáreas', field: 'area_ha' },
+    ],
+    cardsColumns: 1
+};
+
+const iturConfig = {
+    headerField: 'Índice Territorial Urbano - Rural (ITUR)',
+    list: [
+        { label: 'Índice', field: 'resul_itur' },
+        { label: 'Segmento del ITUR', field: 'segmentos' },
+    ],
+    cards: [
+        { label: 'Tamaño de la población', field: 'poblacion_total_habitantes' },
+        { label: 'Densidad de población', field: 'densidad_poblacion_por_kilometro' },
+        { label: 'Distancia a localidades de más de 50 mil hab.', field: 'distancia_localidades_mas_50k_habitantes' },
+        { label: 'Carencia de servicios básicos en la vivienda', field: 'carencia_servicios_vivienda' },
+        { label: 'Proporción de uso productivo - vegetación', field: 'proporcion_uso_productivo_vegetacion' },
+        { label: 'Uso de suelo construido', field: 'uso_suelo_construido' },
+        { label: 'Condiciones de accesibilidad', field: 'condiciones_accesibilidad' },
+        { label: 'Equipamiento urbano', field: 'equipamiento_urbano' },
+    ],
+    cardsColumns: 1
+};
+
+const espaciosConfig = {
+    headerField: 'tipo',
+    labelGroups: [
+        { fields: ['geografico', 'ambito', 'condicion'] }
+    ],
+    list: [
+        { label: 'Nombre del espacio', field: 'nomserv' },
     ]
-});
+};
 
 const CLIMA_RASTER = [
     ['temperatura_media_mensual', 'Temperatura media mensual', 'temperaturas', RASTER_TAGS],
@@ -65,9 +112,9 @@ const AGUA = [
 ];
 
 const AREAS_NATURALES = [
-    ['bosque_de_la_primavera', 'Bosque de la Primavera', 'area_de_proteccion_bosque_la_primavera', ['recursos', 'ambiente', 'primavera', 'bosque', 'conservacion', 'limites']],
-    ['agave_primavera', 'Agave dentro del APFyF La Primavera', 'agave_en_area_de_proteccion_de_flora_y_fauna_bosque_la_primaver', ['recursos', 'ambiente', 'primavera', 'cultivo', 'agave', 'conservacion', 'impacto']],
-    ['parcelas_primavera', 'Parcelas dentro del APFyF La Primavera', 'parcelas_dentro_de_anp_bosque_de_la_primavera', ['recursos', 'ambiente', 'primavera', 'propiedad', 'tierra', 'conservacion', 'limites']],
+    ['bosque_de_la_primavera', 'Bosque de la Primavera', 'area_de_proteccion_bosque_la_primavera', ['recursos', 'ambiente', 'primavera', 'bosque', 'conservacion', 'limites'], bosquePrimaveraConfig],
+    ['agave_primavera', 'Agave dentro del APFyF La Primavera', 'agave_en_area_de_proteccion_de_flora_y_fauna_bosque_la_primaver', ['recursos', 'ambiente', 'primavera', 'cultivo', 'agave', 'conservacion', 'impacto'], parcelaPrimaveraConfig('Agave dentro del Área de Protección de Flora y Fauna La Primavera')],
+    ['parcelas_primavera', 'Parcelas dentro del APFyF La Primavera', 'parcelas_dentro_de_anp_bosque_de_la_primavera', ['recursos', 'ambiente', 'primavera', 'propiedad', 'tierra', 'conservacion', 'limites'], parcelaPrimaveraConfig('Parcela dentro del Área de Protección de Flora y Fauna La Primavera')],
 ];
 
 const ITUR = [
@@ -110,7 +157,7 @@ export const recursosLayers = {
                             wmsGroup: 'recursos',
                             wfsAvailable: true
                         },
-                        littleCard: recursosConfig('nombre_espacio'),
+                        littleCard: espaciosConfig,
                         searchMeta: { tags }
                     }))
                 },
@@ -162,7 +209,7 @@ export const recursosLayers = {
                             wmsGroup: 'recursos',
                             wfsAvailable: true
                         },
-                        littleCard: recursosConfig('nombre_acuifero'),
+                        littleCard: acuiferosConfig,
                         searchMeta: { tags }
                     }))
                 },
@@ -172,11 +219,11 @@ export const recursosLayers = {
             label: 'Áreas Protegidas',
             isCategory: true,
             children: [
-                ...AREAS_NATURALES.map(([id, label, layerName, tags]) => ({
+                ...AREAS_NATURALES.map(([id, label, layerName, tags, littleCard]) => ({
                     id,
                     label,
                     wmsConfig: createRecursosLayer(layerName),
-                    littleCard: primaveraConfig(label),
+                    littleCard,
                     searchMeta: { tags }
                 }))]
         }, {
@@ -195,6 +242,7 @@ export const recursosLayers = {
                         wmsGroup: 'recursos',
                         wfsAvailable: true
                     },
+                    littleCard: iturConfig,
                     searchMeta: { tags }
                 }))
             }, {
@@ -209,7 +257,7 @@ export const recursosLayers = {
                         wmsGroup: 'recursos',
                         wfsAvailable: true
                     },
-                    littleCard: recursosConfig('Uso de suelo'),
+                    littleCard: usoDeSueloConfig,
                     searchMeta: { tags }
                 }))
             }

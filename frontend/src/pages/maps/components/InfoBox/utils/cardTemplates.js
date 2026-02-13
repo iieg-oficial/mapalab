@@ -61,70 +61,32 @@ const generateDefaultConfig = (properties) => {
     return Object.keys(config).length > 0 ? config : null;
 };
 
-const createTDL = ({ title, list }) => ({
-    headerField: title,
-    list
-});
-
-const createTDLEV = ({ title, list, stats }) => ({
-    headerField: title,
-    list,
-    cards: stats,
-    cardsColumns: 1
-});
+const toArray = (v) => Array.isArray(v) ? v : [v];
 
 const createTDEMEC = ({ title, municipio, caracteristica }) => ({
     headerField: title,
     labelGroups: [
-        { fields: Array.isArray(municipio) ? municipio : [municipio] },
-        { fields: Array.isArray(caracteristica) ? caracteristica : [caracteristica] }
+        { fields: toArray(municipio) },
+        { fields: toArray(caracteristica) }
     ]
-});
-
-const createTDEMEV = ({ title, municipio, stats }) => ({
-    headerField: title,
-    labelGroups: [
-        { fields: Array.isArray(municipio) ? municipio : [municipio] }
-    ],
-    cards: stats,
-    cardsColumns: 1
-});
-
-const createTDEMECL = ({ title, municipio, caracteristica, list }) => ({
-    headerField: title,
-    labelGroups: [
-        { fields: Array.isArray(municipio) ? municipio : [municipio] },
-        { fields: Array.isArray(caracteristica) ? caracteristica : [caracteristica] }
-    ],
-    list
 });
 
 const createTDEMECLU = ({ title, municipio, caracteristica, list, ubicacion }) => ({
     headerField: title,
     labelGroups: [
-        { fields: Array.isArray(municipio) ? municipio : [municipio] },
-        { fields: Array.isArray(caracteristica) ? caracteristica : [caracteristica] }
+        { fields: toArray(municipio) },
+        { fields: toArray(caracteristica) }
     ],
     list,
     iconText: { icon: 'location', field: ubicacion }
 });
 
-const buildLabelGroups = (municipio, caracteristica, splitMunicipio) => {
-    const groups = [];
-    const munFields = Array.isArray(municipio) ? municipio : [municipio];
-    if (munFields.length > 0 && munFields[0]) {
-        groups.push({ fields: munFields, ...(splitMunicipio && { splitValues: true }) });
-    }
-    const carFields = Array.isArray(caracteristica) ? caracteristica : [caracteristica];
-    if (carFields.length > 0 && carFields[0]) {
-        groups.push({ fields: carFields });
-    }
-    return groups.length > 0 ? groups : undefined;
-};
-
-const createTDEMECLUEV = ({ title, municipio, caracteristica, list, ubicacion, stats, text, splitMunicipio }) => ({
+const createTDEMECLUEV = ({ title, municipio, caracteristica, list, ubicacion, stats, text }) => ({
     headerField: title,
-    labelGroups: buildLabelGroups(municipio, caracteristica, splitMunicipio),
+    labelGroups: [
+        { fields: toArray(municipio) },
+        { fields: toArray(caracteristica) }
+    ],
     list,
     iconText: ubicacion ? { icon: 'location', field: ubicacion } : undefined,
     ...(text && { text }),
@@ -132,128 +94,40 @@ const createTDEMECLUEV = ({ title, municipio, caracteristica, list, ubicacion, s
     cardsColumns: 1
 });
 
-const createTDEMECLUEH = ({ title, municipio, caracteristica, list, ubicacion, stats, text, columns = 2, splitMunicipio }) => ({
-    headerField: title,
-    labelGroups: buildLabelGroups(municipio, caracteristica, splitMunicipio),
-    list,
-    iconText: ubicacion ? { icon: 'location', field: ubicacion } : undefined,
-    ...(text && { text }),
-    cards: stats,
-    cardsColumns: columns
-});
-
-const createTELEV = ({ title, list, stats }) => ({
-    headerField: title,
-    list,
-    cards: stats,
-    cardsColumns: 1
-});
-
-const createTEEMEV = ({ title, municipio, stats }) => ({
+const createTEEMLXEV = ({ title, municipio, list, text, stats }) => ({
     headerField: title,
     labelGroups: [
-        { fields: Array.isArray(municipio) ? municipio : [municipio] }
-    ],
-    cards: stats,
-    cardsColumns: 1
-});
-
-const createTEEMECL = ({ title, municipio, caracteristica, list }) => ({
-    headerField: title,
-    labelGroups: [
-        { fields: Array.isArray(municipio) ? municipio : [municipio] },
-        { fields: Array.isArray(caracteristica) ? caracteristica : [caracteristica] }
-    ],
-    list
-});
-
-const createTEEMLEV = ({ title, municipio, list, stats, text }) => ({
-    headerField: title,
-    labelGroups: [
-        { fields: Array.isArray(municipio) ? municipio : [municipio] }
+        { fields: toArray(municipio) }
     ],
     list,
     ...(text && { text }),
     cards: stats,
     cardsColumns: 1
-});
-
-const createTDEMLEV = ({ title, municipio, list, stats, text, splitMunicipio }) => ({
-    headerField: title,
-    labelGroups: [
-        { fields: Array.isArray(municipio) ? municipio : [municipio], ...(splitMunicipio && { splitValues: true }) }
-    ],
-    list,
-    ...(text && { text }),
-    cards: stats,
-    cardsColumns: 1
-});
-
-const createTEEMECEV = ({ title, municipio, caracteristica, stats }) => ({
-    headerField: title,
-    labelGroups: [
-        { fields: Array.isArray(municipio) ? municipio : [municipio] },
-        { fields: Array.isArray(caracteristica) ? caracteristica : [caracteristica] }
-    ],
-    cards: stats,
-    cardsColumns: 1
-});
-
-const createTEEMECLEV = ({ title, municipio, caracteristica, list, stats }) => ({
-    headerField: title,
-    labelGroups: [
-        { fields: Array.isArray(municipio) ? municipio : [municipio] },
-        { fields: Array.isArray(caracteristica) ? caracteristica : [caracteristica] }
-    ],
-    list,
-    cards: stats,
-    cardsColumns: 1
-});
-
-const createTEEAEMECL = ({ title, accion, municipio, caracteristica, list }) => ({
-    headerField: title,
-    labels: Array.isArray(accion) ? accion : [accion],
-    labelGroups: [
-        { fields: Array.isArray(municipio) ? municipio : [municipio] },
-        { fields: Array.isArray(caracteristica) ? caracteristica : [caracteristica] }
-    ],
-    list
 });
 
 const createTEEC = ({ title, caracteristica }) => ({
     headerField: title,
     labelGroups: [
-        { fields: Array.isArray(caracteristica) ? caracteristica : [caracteristica] }
+        { fields: toArray(caracteristica) }
     ]
 });
 
+export const createMunicipioConfig = ({ title, municipio = 'nombre', text, stats, columns = 1 }) => ({
+    headerField: title,
+    labelGroups: [
+        { fields: [municipio] },
+        { fields: ['fecha'] }
+    ],
+    ...(text && { text: [{ label: text }] }),
+    cards: stats,
+    cardsColumns: columns
+});
+
 export const cardTemplates = {
-    TDL: createTDL,
-    TDLEV: createTDLEV,
     TDEMEC: createTDEMEC,
-    TDEMEV: createTDEMEV,
-    TDEMLEV: createTDEMLEV,
-    TDEMECL: createTDEMECL,
     TDEMECLU: createTDEMECLU,
     TDEMECLUEV: createTDEMECLUEV,
-    TDEMECLUEH: createTDEMECLUEH,
-    TELEV: createTELEV,
-    TEEMEV: createTEEMEV,
-    TEEMECL: createTEEMECL,
-    TEEMLEV: createTEEMLEV,
-    TEEMECEV: createTEEMECEV,
-    TEEMECLEV: createTEEMECLEV,
-    TEEAEMECL: createTEEAEMECL,
-    TEEC: createTEEC
+    TEEMLXEV: createTEEMLXEV,
+    TEEC: createTEEC,
+    generateDefaultConfig
 };
-
-export const createCardConfig = (template, fields) => {
-    const factory = cardTemplates[template];
-    if (!factory) {
-        console.warn(`Template "${template}" no encontrada, usando DEFAULT`);
-        return null;
-    }
-    return factory(fields);
-};
-
-export { generateDefaultConfig };
