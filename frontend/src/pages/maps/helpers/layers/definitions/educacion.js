@@ -1,16 +1,15 @@
 import { createLayerFactory } from '../utils/layerFactory';
-import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
+import { cardTemplates, createMunicipioConfig } from '../../../components/InfoBox/utils/cardTemplates';
 
 const createEducacionLayer = createLayerFactory('educacion');
 const createDesarrolloLayer = createLayerFactory('desarrollo');
 
 const escuelasConfig = cardTemplates.TDEMECLUEV({
     title: 'centro_educativo',
-    municipio: ['municipio', 'localidad'],
-    caracteristica: ['nivel_educativo', 'control'],
+    municipio: 'municipio',
+    caracteristica: ['nivel_educativo', 'sostenimiento', 'turno'],
     list: [
-        { label: 'Turno', field: 'turno' },
-        { label: 'Sostenimiento', field: 'sostenimiento' },
+        { label: 'Año de la información', field: 'fecha' },
     ],
     ubicacion: 'domicilio',
     stats: [
@@ -62,7 +61,15 @@ export const educacionLayers = {
                 id: 'rezago_educativo',
                 label: 'Rezago educativo',
                 wmsConfig: createDesarrolloLayer('rezago_educativo'),
-                littleCard: escuelasConfig,
+                littleCard: createMunicipioConfig({
+                    title: 'Personas en situación de rezago educativo',
+                    text: 'Porcentaje sobre la población total del municipio. Para la descripción de rezago educativo, favor de ver la nota metodológica.',
+                    stats: [
+                        { label: 'Número de personas', field: 'personas' },
+                        { label: 'Porcentaje', field: 'porcentaje' },
+                        { label: 'Carencias promedio', field: 'carencias_promedio' },
+                    ]
+                }),
                 searchMeta: { tags: ['educacion', 'rezago', 'alfabetizacion', 'escuela'] }
             }]
         }

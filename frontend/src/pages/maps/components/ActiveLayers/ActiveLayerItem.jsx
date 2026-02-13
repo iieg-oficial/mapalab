@@ -28,7 +28,7 @@ const ActiveLayerItem = ({
     const [isCardHovered, setIsCardHovered] = useState(false);
     const [isMoveActive, setIsMoveActive] = useState(false);
     const isSelected = selectedLayerForSymbology?.id === layer.id;
-    const canOpenModal = true;
+    const canOpenModal = layer.id !== 'curvas_de_nivel';
 
     const handleClickOnLayer = (e) => {
         e.stopPropagation();
