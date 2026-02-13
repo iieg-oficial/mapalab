@@ -1,5 +1,5 @@
 import { createLayerFactory } from '../utils/layerFactory';
-import { RASTER_YEAR, RASTER_TAGS, buildMonthlyTime } from '../utils/rasterHelpers';
+import { RASTER_YEAR, RASTER_TAGS, buildMonthlyTime, createClimaAnnualConfig, createClimaMonthlyConfig } from '../utils/rasterHelpers';
 
 const createRecursosLayer = createLayerFactory('recursos');
 const createRasterLayer = createLayerFactory('raster');
@@ -88,6 +88,29 @@ const espaciosConfig = {
     list: [
         { label: 'Nombre del espacio', field: 'nomserv' },
     ]
+};
+
+const CLIMA_CARDS = {
+    temperatura_media_anual: createClimaAnnualConfig(
+        'Temperatura media anual',
+        'Temperatura promedio en grados Celsius por interpolación de estaciones meteorológicas.',
+        'Temperatura (°)'
+    ),
+    temperatura_media_mensual: createClimaMonthlyConfig(
+        'Temperatura media mensual',
+        'Temperatura media en grados Celsius por interpolación de estaciones meteorológicas.',
+        'Temperatura (°)'
+    ),
+    precipitacion_anual: createClimaAnnualConfig(
+        'Precipitación total anual',
+        null,
+        'Precipitación total (mm)'
+    ),
+    precipitacion_mensual: createClimaMonthlyConfig(
+        'Precipitación total mensual',
+        null,
+        'Precipitación total (mm)'
+    ),
 };
 
 const CLIMA_RASTER = [
@@ -189,6 +212,7 @@ export const recursosLayers = {
                     label,
                     wmsConfig: createRasterLayer(layerName, wmsOptions),
                     rasterPeriodicity: isMonthly ? buildMonthlyTime([RASTER_YEAR - 1]) : undefined,
+                    littleCard: CLIMA_CARDS[id],
                     searchMeta: { tags }
                 };
             })
