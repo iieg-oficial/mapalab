@@ -4,8 +4,8 @@ import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
 const createGeneralLayer = createLayerFactory('general');
 
 const cabecerasMunicipalesConfig = cardTemplates.TEEC({
-    title: 'Cabecera Municipal',
-    caracteristica: 'nombre',
+    title: 'nombre',
+    staticLabel: 'Cabecera Municipal',
 });
 
 const aeropuertosConfig = cardTemplates.TDEMEC({
@@ -17,7 +17,8 @@ const aeropuertosConfig = cardTemplates.TDEMEC({
 const caminosConfig = {
     headerField: 'Camino',
     labelGroups: [
-        { fields: ['administracion', 'tipo_material'] }
+        { fields: ['administracion'] },
+        { fields: ['tipo_material'] }
     ],
     list: [
         { label: 'Origen', field: 'origen' },
@@ -49,7 +50,7 @@ const carreterasConfig = {
 
 const cuerposAguaConfig = cardTemplates.TEEC({
     title: 'nombre',
-    caracteristica: ['tipo', 'condicion']
+    caracteristica: ['condicion', 'tipo']
 });
 
 const limiteEstatalConfig = (title) => ({
