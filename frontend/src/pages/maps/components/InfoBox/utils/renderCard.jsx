@@ -196,11 +196,17 @@ export const renderCard = (properties, config, onClose, layerId = null) => {
         const cards = finalConfig.cards
             .filter(Boolean)
             .filter(card => shouldIncludeField(card.field, suffix))
-            .map(card => ({
-                label: card.label,
-                value: properties[card.field],
-                suffix: card.suffix || ''
-            }))
+            .map(card => {
+                let value = properties[card.field];
+                if (card.decimals != null && typeof value === 'number') {
+                    value = value.toFixed(card.decimals);
+                }
+                return {
+                    label: card.label,
+                    value,
+                    suffix: card.suffix || ''
+                };
+            })
             .filter(card => card.value !== null && card.value !== undefined && card.value !== '');
 
         if (cards.length > 0) {

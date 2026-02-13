@@ -11,7 +11,7 @@ import EmptySuggestions from './components/EmptySuggestions';
 import ActionsToolbar from './components/ActionsToolbar';
 
 const InfoBox = () => {
-    const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition } = useContext(MapsContext);
+    const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter } = useContext(MapsContext);
     const { selectAlternativeLayer } = useFeatureInfo();
     const panelRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -85,7 +85,10 @@ const InfoBox = () => {
 
     const renderItem = (feature, layerId, onClose) => {
         const layerNode = findLayerById(layerId, allLayers);
-        const config = layerNode?.littleCard;
+        const rawConfig = layerNode?.littleCard;
+        const config = typeof rawConfig === 'function'
+            ? rawConfig(getSpecificFilter?.(layerId, 'date'))
+            : rawConfig;
         return renderCard(feature.properties, config, onClose, layerId);
     };
 
