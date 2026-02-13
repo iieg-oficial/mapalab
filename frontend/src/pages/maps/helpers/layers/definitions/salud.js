@@ -4,6 +4,7 @@ import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
 const SALUD_LAYER = 'gold_unidades_salud_mapalab';
 
 const createSaludLayer = createLayerFactory('salud');
+const createDesarrolloSocialLayer = createLayerFactory('desarrollo');
 
 const establecimientosSaludConfig = cardTemplates.TDEMECLUEH({
     title: 'nombre_unidad',
@@ -20,28 +21,49 @@ const establecimientosSaludConfig = cardTemplates.TDEMECLUEH({
     columns: 2
 });
 
-const INSTITUCIONES = [
-    ['imss', 'IMSS', 'Instituto Mexicano del Seguro Social', ['salud', 'hospital', 'clinica', 'seguro', 'social', 'medico', 'atencion', 'publico']],
-    ['imss_bienestar', '*IMSS Bienestar', 'Instituto Mexicano del Seguro Social Regimen Bienestar', ['salud', 'hospital', 'clinica', 'seguro', 'social', 'bienestar', 'medico', 'atencion', 'publico']],
-    ['issste', 'ISSSTE', 'Instituto de Seguridad y Servicios Sociales de los Trabajadores del Estado', ['salud', 'hospital', 'clinica', 'seguro', 'trabajadores', 'estado', 'medico', 'atencion', 'publico']],
-    ['secretaria_salud_jalisco', 'Secretaría de Salud Jalisco', 'Secretaria de Salud', ['salud', 'hospital', 'clinica', 'ssa', 'publico', 'medico', 'atencion', 'estatal']],
-    ['servicios_medicos_estatales', 'Servicios Médicos Estatales', 'Servicios Medicos Estatales', ['salud', 'hospital', 'clinica', 'estatal', 'civil', 'medico', 'atencion', 'publico']],
-    ['servicios_medicos_municipales', 'Servicios Médicos Municipales', 'Servicios Medicos Municipales', ['salud', 'hospital', 'clinica', 'municipal', 'cruz', 'verde', 'medico', 'atencion', 'publico']],
-    ['servicios_medicos_privados', 'Servicios Médicos Privados', 'Servicios Medicos Privados', ['salud', 'hospital', 'clinica', 'privado', 'particular', 'medico', 'atencion', 'consultorio']],
-    ['servicios_medicos_universitarios', 'Servicios Médicos Universitarios', 'Servicios Medicos Universitarios', ['salud', 'hospital', 'clinica', 'universidad', 'universitario', 'medico', 'atencion', 'udg']],
-    ['dif', 'DIF', 'Sistema Nacional para el Desarrollo Integral de la Familia', ['salud', 'asistencia', 'social', 'familia', 'desarrollo', 'integral', 'apoyo']],
-    ['centros_integracion_juvenil', 'Centros de Integración Juvenil', 'Centros de integración Juvenil', ['salud', 'drogas', 'adicciones', 'juvenil', 'cij', 'rehabilitacion', 'prevencion']],
-    ['cruz_roja', 'Cruz Roja Mexicana', 'Cruz Roja Mexicana', ['salud', 'emergencia', 'ambulancia', 'urgencias', 'socorro', 'ayuda']],
-    ['pemex', 'Petróleos Mexicanos', 'Petroleos Mexicanos', ['salud', 'petroleos', 'petroleo', 'hospital', 'clinica', 'trabajadores']],
-    ['sct', 'Secretaria de Comunicaciones y Transportes', 'Secretaria de Comunicaciones y Transportes', ['salud', 'comunicaciones', 'transportes', 'medicina', 'preventiva']],
-    ['sedena', 'Secretaría de la Defensa Nacional', 'Secretaria de la Defensa Nacional', ['salud', 'militar', 'ejercito', 'defensa', 'hospital', 'clinica']],
-    ['semar', 'Secretaría de la Marina', 'Secretaria de Marina', ['salud', 'marina', 'naval', 'armada', 'hospital', 'clinica']],
-    ['sspc', '*Secretaría de Seguridad y Protección Ciudadana', 'Secretaría De Seguridad Y Protección Ciudadana', ['salud', 'seguridad', 'proteccion', 'ciudadana', 'prevencion']]
+const INSTITUCIONES_PRIMER_NIVEL = [
+    ['centros_integracion_juvenil_1', 'Centros de Integración Juvenil', 'Centros de integración Juvenil', ['salud', 'primer_nivel', 'juvenil']],
+    ['cruz_roja_1', 'Cruz Roja Mexicana', 'Cruz Roja Mexicana', ['salud', 'primer_nivel', 'cruz_roja']],
+    ['imss_1', 'IMSS', 'Instituto Mexicano del Seguro Social', ['salud', 'primer_nivel', 'imss', 'seguro_social']],
+    ['issste_1', 'ISSSTE', 'Instituto de Seguridad y Servicios Sociales de los Trabajadores del Estado', ['salud', 'primer_nivel', 'issste']],
+    ['pemex_1', 'PEMEX', 'Petroleos Mexicanos', ['salud', 'primer_nivel', 'pemex']],
+    ['sct_1', 'SCT', 'Secretaria de Comunicaciones y Transportes', ['salud', 'primer_nivel', 'sct']],
+    ['secretaria_salud_1', 'Secretaría de Salud', 'Secretaria de Salud', ['salud', 'primer_nivel', 'ssa']],
+    ['sedena_1', 'SEDENA', 'Secretaria de la Defensa Nacional', ['salud', 'primer_nivel', 'sedena']],
+    ['servicios_medicos_estatales_1', 'Servicios Médicos Estatales', 'Servicios Medicos Estatales', ['salud', 'primer_nivel', 'estatal']],
+    ['servicios_medicos_municipales_1', 'Servicios Médicos Municipales', 'Servicios Medicos Municipales', ['salud', 'primer_nivel', 'municipal']],
+    ['privados_1', 'Privados', 'Servicios Medicos Privados', ['salud', 'primer_nivel', 'privado']],
+    ['universitarios_1', 'Universitarios', 'Servicios Medicos Universitarios', ['salud', 'primer_nivel', 'universitario']],
+    ['dif_1', 'DIF', 'Sistema Nacional para el Desarrollo Integral de la Familia', ['salud', 'primer_nivel', 'dif']],
 ];
 
-const COBERTURA = [
-    ['estimacion_derechohabiencia', '*Estimación de derechohabiencia', 'estimacion_derechohabiencia', ['salud', 'derechohabiencia', 'afiliacion', 'seguro', 'cobertura', 'poblacion', 'acceso']],
-    ['acceso_servicios_salud', '*% de población con carencia por acceso a servicios de salud', 'acceso_servicios_salud', ['salud', 'carencia', 'acceso', 'servicios', 'pobreza', 'vulnerabilidad', 'coneval']]
+const INSTITUCIONES_SEGUNDO_NIVEL = [
+    ['centros_integracion_juvenil_2', 'Centros de Integración Juvenil', 'Centros de integración Juvenil', ['salud', 'segundo_nivel', 'juvenil']],
+    ['cruz_roja_2', 'Cruz Roja Mexicana', 'Cruz Roja Mexicana', ['salud', 'segundo_nivel', 'cruz_roja']],
+    ['imss_2', 'IMSS', 'Instituto Mexicano del Seguro Social', ['salud', 'segundo_nivel', 'imss']],
+    ['issste_2', 'ISSSTE', 'Instituto de Seguridad y Servicios Sociales de los Trabajadores del Estado', ['salud', 'segundo_nivel', 'issste']],
+    ['semar_2', 'SEMAR', 'Secretaria de Marina', ['salud', 'segundo_nivel', 'marina']],
+    ['secretaria_salud_2', 'Secretaría de Salud', 'Secretaria de Salud', ['salud', 'segundo_nivel', 'ssa']],
+    ['sedena_2', 'SEDENA', 'Secretaria de la Defensa Nacional', ['salud', 'segundo_nivel', 'sedena']],
+    ['servicios_medicos_municipales_2', 'Servicios Médicos Municipales', 'Servicios Medicos Municipales', ['salud', 'segundo_nivel', 'municipal']],
+    ['privados_2', 'Privados', 'Servicios Medicos Privados', ['salud', 'segundo_nivel', 'privado']],
+];
+
+const INSTITUCIONES_TERCER_NIVEL = [
+    ['imss_3', 'IMSS', 'Instituto Mexicano del Seguro Social', ['salud', 'tercer_nivel', 'imss']],
+    ['issste_3', 'ISSSTE', 'Instituto de Seguridad y Servicios Sociales de los Trabajadores del Estado', ['salud', 'tercer_nivel', 'issste']],
+    ['secretaria_salud_3', 'Secretaría de Salud', 'Secretaria de Salud', ['salud', 'tercer_nivel', 'ssa']],
+    ['sedena_3', 'SEDENA', 'Secretaria de la Defensa Nacional', ['salud', 'tercer_nivel', 'sedena']],
+    ['privados_3', 'Privados', 'Servicios Medicos Privados', ['salud', 'tercer_nivel', 'privado']],
+];
+
+const INSTITUCIONES_OTROS_NIVEL = [
+    ['imss_otros', 'IMSS', 'Instituto Mexicano del Seguro Social', ['salud', 'otros_niveles', 'imss']],
+    ['issste_otros', 'ISSSTE', 'Instituto de Seguridad y Servicios Sociales de los Trabajadores del Estado', ['salud', 'otros_niveles', 'issste']],
+    ['secretaria_salud_otros', 'Secretaría de Salud', 'Secretaria de Salud', ['salud', 'otros_niveles', 'ssa']],
+    ['servicios_medicos_estatales_otros', 'Servicios Médicos Estatales', 'Servicios Medicos Estatales', ['salud', 'otros_niveles', 'estatal']],
+    ['privados_otros', 'Privados', 'Servicios Medicos Privados', ['salud', 'otros_niveles', 'privado']],
+    ['dif_otros', 'DIF', 'Sistema Nacional para el Desarrollo Integral de la Familia', ['salud', 'otros_niveles', 'dif']],
 ];
 
 export const saludLayers = {
@@ -51,35 +73,64 @@ export const saludLayers = {
         {
             id: 'establecimientos_salud',
             label: 'Establecimientos de salud',
-            base: 'iieg',
+            isCategory: true,
             forceGroup: true,
-            children: INSTITUCIONES.map(([id, label, layerName, tags]) => ({
-                id,
-                label,
-                wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}'`),
-                littleCard: establecimientosSaludConfig,
-                searchMeta: {
-                    hasMunicipio: true,
-                    hasDireccion: false,
-                    searchableFields: [],
-                    tags
+            children: [
+                {
+                    id: 'primer_nivel',
+                    label: 'Primer nivel',
+                    children: INSTITUCIONES_PRIMER_NIVEL.map(([id, label, layerName, tags]) => ({
+                        id,
+                        label,
+                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Primer nivel'`),
+                        littleCard: establecimientosSaludConfig,
+                        searchMeta: { tags }
+                    }))
+                }, {
+                    id: 'segundo_nivel',
+                    label: 'Segundo nivel',
+                    children: INSTITUCIONES_SEGUNDO_NIVEL.map(([id, label, layerName, tags]) => ({
+                        id,
+                        label,
+                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Segundo nivel'`),
+                        littleCard: establecimientosSaludConfig,
+                        searchMeta: { tags }
+                    }))
+                }, {
+                    id: 'tercer_nivel',
+                    label: 'Tercer nivel',
+                    children: INSTITUCIONES_TERCER_NIVEL.map(([id, label, layerName, tags]) => ({
+                        id,
+                        label,
+                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Tercer nivel'`),
+                        littleCard: establecimientosSaludConfig,
+                        searchMeta: { tags }
+                    }))
+                }, {
+                    id: 'otros_nivel',
+                    label: 'Otros',
+                    children: INSTITUCIONES_OTROS_NIVEL.map(([id, label, layerName, tags]) => ({
+                        id,
+                        label,
+                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Otros'`),
+                        littleCard: establecimientosSaludConfig,
+                        searchMeta: { tags }
+                    }))
                 }
-            }))
+            ]
         }, {
-            id: 'cobertura_servicios_salud',
-            label: 'Cobertura de servicios de salud',
-            children: COBERTURA.map(([id, label, layerName, tags]) => ({
-                id,
-                label,
-                base: 'iieg',
-                wmsConfig: createSaludLayer(layerName),
-                searchMeta: {
-                    hasMunicipio: true,
-                    hasDireccion: false,
-                    searchableFields: [],
-                    tags
+            id: 'acceso_servicios_salud',
+            label: 'Acceso a servicios de salud',
+            isCategory: true,
+            children: [
+                {
+                    id: 'carencia_acceso',
+                    label: 'Carencia por acceso a los servicios de salud (%)',
+                    wmsConfig: createDesarrolloSocialLayer('carencia_acceso_servicios_salud'),
+                    littleCard: establecimientosSaludConfig,
+                    searchMeta: { tags: ['salud', 'carencia', 'acceso', 'servicios', 'pobreza', 'vulnerabilidad', 'coneval'] }
                 }
-            }))
+            ]
         }
     ]
 };

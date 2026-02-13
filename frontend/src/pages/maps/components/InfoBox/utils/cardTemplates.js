@@ -220,6 +220,13 @@ const createTEEAEMECL = ({ title, accion, municipio, caracteristica, list }) => 
     list
 });
 
+const createTEEC = ({ title, caracteristica }) => ({
+    headerField: title,
+    labelGroups: [
+        { fields: Array.isArray(caracteristica) ? caracteristica : [caracteristica] }
+    ]
+});
+
 export const cardTemplates = {
     TDL: createTDL,
     TDLEV: createTDLEV,
@@ -236,7 +243,8 @@ export const cardTemplates = {
     TEEMLEV: createTEEMLEV,
     TEEMECEV: createTEEMECEV,
     TEEMECLEV: createTEEMECLEV,
-    TEEAEMECL: createTEEAEMECL
+    TEEAEMECL: createTEEAEMECL,
+    TEEC: createTEEC
 };
 
 export const createCardConfig = (template, fields) => {

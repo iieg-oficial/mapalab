@@ -4,7 +4,7 @@ const createEconomiaLayer = createLayerFactory('economia');
 
 const cultivosConfig = {
     headerField: 'Cultivo',
-    labels: ['ai_preds']
+    labels: ['prediccion']
 };
 
 const CULTIVOS = [
@@ -19,11 +19,11 @@ const CULTIVOS = [
 ];
 
 const OCUPACION_Y_EMPLEO_FORMAL_SUBCAPAS = [
-    ['tasa_de_desempleo', '*Tasa de Desempleo', 'tasa_de_desempleo', ['economia', 'empleo', 'trabajo', 'desocupacion', 'laboral', 'mercado', 'indicador']],
-    ['porcentaje_de_informalidad', '*Porcentaje de Informalidad', 'porcentaje_de_informalidad', ['economia', 'empleo', 'trabajo', 'informalidad', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador']],
-    ['ocupacion_informal', 'Ocupación informal', 'ocupacion_informal', ['economia', 'empleo', 'trabajo', 'informalidad', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador']],
-    ['tasa_ocupacion', 'Tasa de Ocupación', 'tasa_ocupacion', ['economia', 'empleo', 'trabajo', 'ocupacion', 'laboral', 'mercado', 'indicador']],
-    ['trabajadores_asegurados', 'Trabajadores Asegurados', 'trabajadores_asegurados', ['economia', 'empleo', 'trabajo', 'aseguramiento', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador']],
+    ['tasa_desocupacion', 'Población desocupada (%)', 'tasa_desocupacion', ['economia', 'empleo', 'trabajo', 'desocupacion', 'laboral', 'mercado', 'indicador']],
+    ['ocupacion_informal', 'Ocupación informal (%)', 'ocupacion_informal', ['economia', 'empleo', 'trabajo', 'informalidad', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador']],
+    ['trabajadores_asegurados', 'Trabajadores asegurados en el IMSS', 'trabajadores_asegurados', ['economia', 'empleo', 'trabajo', 'informalidad', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador']],
+    ['trabajadores_asegurados_mujeres', 'Mujeres entre trabajadores asegurados en el IMSS (%)', 'trabajadores_asegurados_mujeres', ['economia', 'empleo', 'trabajo', 'ocupacion', 'laboral', 'mercado', 'indicador']],
+    ['trabajadores_asegurados_hombres', 'Hombres entre trabajadores asegurados en el IMSS (%)', 'trabajadores_asegurados_hombres', ['economia', 'empleo', 'trabajo', 'aseguramiento', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador']],
 ];
 
 export const economiaLayers = {
@@ -31,37 +31,33 @@ export const economiaLayers = {
     label: 'Economía',
     children: [
         {
-            id: 'unidades_economicas',
-            label: 'Unidades Ocupación y empleo formal',
-            base: 'iieg',
+            id: 'ocupacion_y_empleo',
+            label: 'Ocupación y empleo',
+            isCategory: true,
             children: OCUPACION_Y_EMPLEO_FORMAL_SUBCAPAS.map(([id, label, layerName, tags]) => ({
                 id,
                 label,
                 wmsConfig: createEconomiaLayer(layerName),
-                searchMeta: {
-                    hasMunicipio: true,
-                    hasDireccion: false,
-                    searchableFields: [],
-                    tags
-                }
+                searchMeta: {tags}
             }))
         }, {
-            id: 'cultivos',
-            label: 'Cultivos',
-            base: 'iieg',
-            forceGroup: true,
-            children: CULTIVOS.map(([id, label, matchValue, tags]) => ({
-                id,
-                label,
-                wmsConfig: createEconomiaLayer.withFilter('cultivos', `prediccion = '${matchValue}'`),
-                littleCard: cultivosConfig,
-                searchMeta: {
-                    hasMunicipio: false,
-                    hasDireccion: false,
-                    searchableFields: [],
-                    tags
+            id: 'sector_primario',
+            label: 'Sector Primario',
+            isCategory: true,
+            children: [
+                {
+                    id: 'cultivos',
+                    label: 'Clasificador de cultivos IIEG',
+                    forceGroup: true,
+                    children: CULTIVOS.map(([id, label, matchValue, tags]) => ({
+                        id,
+                        label,
+                        wmsConfig: createEconomiaLayer.withFilter('cultivos', `prediccion = '${matchValue}'`),
+                        littleCard: cultivosConfig,
+                        searchMeta: {tags}
+                    }))
                 }
-            }))
+            ]
         }
     ]
 };

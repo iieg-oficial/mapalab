@@ -1,8 +1,9 @@
 import { createLayerFactory } from '../utils/layerFactory';
 import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
+import { RASTER_YEAR, RASTER_TAGS, buildMonthlyTime } from '../utils/rasterHelpers';
 
 const createRecursosLayer = createLayerFactory('recursos');
-const createGeneralLayer = createLayerFactory('general');
+const createRasterLayer = createLayerFactory('raster');
 
 const recursosConfig = (title) => cardTemplates.TDEMLEV({
     title,
@@ -42,182 +43,176 @@ const primaveraConfig = (title) => cardTemplates.TDEMLEV({
     ]
 });
 
-const ESPACIOS_PUBLICOS = [
-    ['espacios_publicos_y_lugares_recreativos', 'Espacios públicos y lugares recreativos', 'espacios_publicos_y_lugares_recreativos', ['recursos', 'parques', 'jardines', 'recreacion', 'aire_libre', 'esparcimiento', 'convivencia']],
-    ['instalacion_deportiva', '*Instalación Deportiva o Recreativa', 'instalacion_deportiva', ['recursos', 'deporte', 'cancha', 'estadio', 'gimnasio', 'unidad_deportiva', 'ejercicio']],
-    ['centro_comercial', '*Centro Comercial', 'centro_comercial', ['recursos', 'comercio', 'tiendas', 'plaza', 'compras', 'servicios', 'mercado']],
-    ['instalacion_servicios', '*Instalación de Servicios', 'instalacion_servicios', ['recursos', 'servicios', 'infraestructura', 'atencion', 'publico', 'tramites']],
-    ['instalacion_gubernamental', '*Instalación Gubernamental', 'instalacion_gubernamental', ['recursos', 'gobierno', 'oficinas', 'administracion', 'publico', 'tramites']],
-    ['mercado', '*Mercado', 'mercado', ['recursos', 'comercio', 'abasto', 'alimentos', 'tianguis', 'venta', 'local']],
-    ['plaza', '*Plaza', 'plaza', ['recursos', 'espacio_publico', 'jardin', 'centro', 'reunion', 'civico']],
-];
-
-const CLIMA_VECTOR = [
-    ['sequia', '*Sequía', 'sequia', ['recursos', 'clima', 'agua', 'lluvia', 'aridez', 'estiaje', 'meteorologia']],
-];
-
-const createRasterLayer = createLayerFactory('raster');
-
-const RASTER_YEAR = new Date().getFullYear();
-const RASTER_TAGS = ['recursos', 'clima', 'calor', 'frio', 'grados', 'ambiente', 'meteorologia', 'lluvia', 'precipitacion', 'temperatura'];
-
-const buildMonthlyTime = (years = [RASTER_YEAR]) => {
-    const result = {};
-    years.forEach(year => {
-        result[year] = {};
-        for (let m = 1; m <= 12; m++) {
-            result[year][m] = `${year}-${String(m).padStart(2, '0')}-01`;
-        }
-    });
-    return result;
-};
-
 const CLIMA_RASTER = [
-    {
-        id: 'temperatura_media_mensual',
-        label: 'Temperatura media mensual',
-        wmsConfig: createRasterLayer('temperaturas', { wmsGroup: 'temp_mensual', timeEnabled: true }),
-        rasterPeriodicity: buildMonthlyTime([RASTER_YEAR - 1]),
-        searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags: RASTER_TAGS }
-    },
-    {
-        id: 'temperatura_media_anual',
-        label: 'Temperatura media promedio',
-        wmsConfig: createRasterLayer(`temperatura_media_anual_${RASTER_YEAR}_promedio`, { wmsGroup: 'temp_anual' }),
-        searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags: RASTER_TAGS }
-    },
-    {
-        id: 'precipitacion_mensual',
-        label: 'Precipitación mensual',
-        wmsConfig: createRasterLayer('precipitacion', { wmsGroup: 'precip_mensual', timeEnabled: true, timeStylePattern: 'lluvia_total_mensual_{year}_{month}' }),
-        rasterPeriodicity: buildMonthlyTime([RASTER_YEAR - 1]),
-        searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags: RASTER_TAGS }
-    },
-    {
-        id: 'precipitacion_anual',
-        label: 'Precipitación acumulada',
-        wmsConfig: createRasterLayer(`lluvia_anual_${RASTER_YEAR}`, { wmsGroup: 'precip_anual' }),
-        searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags: RASTER_TAGS }
-    },
+    ['temperatura_media_mensual', 'Temperatura media mensual', 'temperaturas', RASTER_TAGS],
+    ['temperatura_media_anual', 'Temperatura media promedio', `temperatura_media_anual_${RASTER_YEAR}_promedio`, RASTER_TAGS],
+    ['precipitacion_mensual', 'Precipitación mensual', 'precipitacion', RASTER_TAGS],
+    ['precipitacion_anual', 'Precipitación acumulada', `lluvia_anual_${RASTER_YEAR}`, RASTER_TAGS],
+];
+
+const ESPACIOS_PUBLICOS = [
+    ['centro_comercial', 'Centro comercial', 'Centro Comercial', ['recursos', 'espacios_publicos', 'parques', 'jardines', 'recreacion', 'ocio']],
+    ['instalacion_de_servicios', 'Instalación de servicios', 'Instalación de Servicios', ['recursos', 'espacios_publicos', 'plazas', 'plazuelas', 'recreacion', 'ocio']],
+    ['instalacion_deportiva_o_recreativa', 'Instalación deportiva o recreativa', 'Instalación Deportiva o Recreativa', ['recursos', 'espacios_publicos', 'andadores', 'paseos', 'recreacion', 'ocio']],
+    ['instalacion_gubernamental', 'Instalación gubernamental', 'Instalación Gubernamental', ['recursos', 'espacios_publicos', 'plataformas', 'miradores', 'recreacion', 'ocio']],
+    ['mercado', 'Mercado', 'Mercado', ['recursos', 'espacios_publicos', 'fuentes', 'monumentos', 'recreacion', 'ocio']],
+    ['plaza', 'Plaza', 'Plaza', ['recursos', 'espacios_publicos', 'otros', 'recreacion', 'ocio']],
+];
+
+const AGUA = [
+    ['con_disponibilidad', 'Con disponibilidad', 'Con Disponibilidad', ['recursos', 'agua', 'acuifero', 'subsuelo', 'fuente']],
+    ['sin_disponibilidad', 'Sin disponibilidad', 'Sin Disponibilidad', ['recursos', 'agua', 'acuifero', 'subsuelo', 'fuente']],
 ];
 
 const AREAS_NATURALES = [
-    ['area_bosque_primavera', 'Decreto ANP', 'area_de_proteccion_bosque_la_primavera', ['recursos', 'ambiente', 'primavera', 'conservacion', 'proteccion', 'ecologia', 'reserva', 'parque_nacional']],
-    ['agave_primavera', 'Agave en APFyF La Primavera', 'agave_en_area_de_proteccion_de_flora_y_fauna_bosque_la_primaver', ['recursos', 'ambiente', 'primavera', 'cultivo', 'agave', 'conservacion', 'impacto']],
+    ['bosque_de_la_primavera', 'Bosque de la Primavera', 'area_de_proteccion_bosque_la_primavera', ['recursos', 'ambiente', 'primavera', 'bosque', 'conservacion', 'limites']],
+    ['agave_primavera', 'Agave dentro del APFyF La Primavera', 'agave_en_area_de_proteccion_de_flora_y_fauna_bosque_la_primaver', ['recursos', 'ambiente', 'primavera', 'cultivo', 'agave', 'conservacion', 'impacto']],
     ['parcelas_primavera', 'Parcelas dentro del APFyF La Primavera', 'parcelas_dentro_de_anp_bosque_de_la_primavera', ['recursos', 'ambiente', 'primavera', 'propiedad', 'tierra', 'conservacion', 'limites']],
 ];
 
-const USO_SUELO = [
-    ['itur_iieg', 'Índice Territorial Urbano - Rural', 'itur_iieg', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
-    ['uso_de_suelo_serie_7', 'Uso de suelo serie 7', 'uso_de_suelo_serie_7', ['recursos', 'suelo', 'cobertura', 'vegetacion', 'urbano', 'agricola', 'forestal']],
+const ITUR = [
+    ['urbano', 'Urbano', 'Urbano', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+    ['urbano_transitorio', 'Urbano transitorio', 'Urbano transitorio', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+    ['transicion', 'Transición', 'Transición', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+    ['rural_transitorio', 'Rural transitorio', 'Rural transitorio', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+    ['rural', 'Rural', 'Rural', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
 ];
 
+const USOS_DE_SUELO = [
+    ['agricultura', 'Agricultura', 'Agricultura', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+    ['asentamiento_humano', 'Asentamiento humano', 'Asentamiento humano', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+    ['bosque', 'Bosque', 'Bosque', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+    ['cuerpo_de_agua', 'Cuerpo de agua', 'Cuerpo de agua', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+    ['otros_tipos_de_vegetacion', 'Otros tipos de vegetación', 'Otros tipos de vegetación', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+    ['pastizal', 'Pastizal', 'Pastizal', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+    ['selva', 'Selva', 'Selva', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+    ['sin_vegetacion_aparente', 'Sin vegetación aparente', 'Sin vegetación aparente', ['recursos', 'territorio', 'urbano', 'rural', 'clasificacion', 'poblacion', 'asentamiento']],
+];
 
 export const recursosLayers = {
     id: 'recursos',
     label: 'Recursos y calidad de vida',
     children: [
         {
-            id: 'espacios_publicos',
-            label: 'Espacios públicos',
-            base: 'iieg',
-            children: ESPACIOS_PUBLICOS.map(([id, label, layerName, tags]) => ({
-                id,
-                label,
-                wmsConfig: createRecursosLayer(layerName),
-                searchMeta: {
-                    hasMunicipio: false,
-                    hasDireccion: false,
-                    searchableFields: [],
-                    tags
-                }
-            }))
-        },
-        {
-            id: 'clima',
-            label: 'Clima',
-            base: 'iieg',
-            children: [
-                ...CLIMA_VECTOR.map(([id, label, layerName, tags]) => ({
-                    id,
-                    label,
-                    wmsConfig: createRecursosLayer(layerName),
-                    searchMeta: { hasMunicipio: false, hasDireccion: false, searchableFields: [], tags }
-                })),
-                ...CLIMA_RASTER
-            ]
-        },
-        {
-            id: 'agua',
-            label: 'Agua',
-            base: 'iieg',
+            id: 'asentamientos_humanos',
+            label: 'Asentamientos humanos',
+            isCategory: true,
             children: [
                 {
-                    id: 'disponibilidad_acuiferos_2023',
-                    label: 'Disponibilidad de acuíferos 2023',
-                    wmsConfig: createRecursosLayer('disponibilidad_acuiferos_2023'),
-                    littleCard: recursosConfig('nombre_acuifero'),
-                    searchMeta: {
-                        hasMunicipio: false,
-                        hasDireccion: false,
-                        searchableFields: [],
-                        tags: ['recursos', 'agua', 'acuiferos', 'disponibilidad', 'hidrologia']
-                    }
-                },
-                {
-                    id: 'cuerpos_de_agua',
-                    label: 'Cuerpos de agua',
-                    wmsConfig: createGeneralLayer('cuerpos_de_agua_250k'),
-                    littleCard: recursosConfig('nombre'),
-                    searchMeta: {
-                        hasMunicipio: false,
-                        hasDireccion: false,
-                        searchableFields: [],
-                        tags: ['recursos', 'agua', 'cuerpos', 'hidrologia', 'lagos', 'rios']
-                    }
-                }
-            ]
-        },
-        {
-            id: 'areas_naturales_protegidas',
-            label: 'Áreas Protegidas',
-            base: 'iieg',
-            children: [
-                {
-                    id: 'bosque_de_la_primavera',
-                    label: 'Bosque de la Primavera',
+                    id: 'espacios_publicos_y_lugares_recreativos',
+                    label: 'Espacios públicos y lugares recreativos',
                     forceGroup: true,
-                    children: AREAS_NATURALES.map(([id, label, layerName, tags]) => ({
+                    children: ESPACIOS_PUBLICOS.map(([id, label, matchValue, tags]) => ({
                         id,
                         label,
-                        wmsConfig: createRecursosLayer(layerName),
-                        littleCard: primaveraConfig(label),
-                        searchMeta: {
-                            hasMunicipio: false,
-                            hasDireccion: false,
-                            searchableFields: [],
-                            tags
-                        }
+                        wmsConfig: {
+                            ...createRecursosLayer.withFilter('espacios_publicos_y_lugares_recreativos', `geografico = '${matchValue}'`),
+                            wmsGroup: 'recursos',
+                            wfsAvailable: true
+                        },
+                        littleCard: recursosConfig('nombre_espacio'),
+                        searchMeta: { tags }
                     }))
                 },
             ]
         }, {
-            id: 'uso_de_suelo',
-            label: 'Uso de suelo',
-            base: 'iieg',
+            id: 'clima',
+            label: 'Clima',
+            isCategory: true,
+            children: CLIMA_RASTER.map(([id, label, layerName, tags]) => {
+                const isMonthly = id.includes('mensual');
+                const isTemp = id.includes('temperatura');
+                const isPrecip = id.includes('precipitacion');
+
+                const wmsOptions = {
+                    wmsGroup: isMonthly
+                        ? (isTemp ? 'temp_mensual' : 'precip_mensual')
+                        : (isTemp ? 'temp_anual' : 'precip_anual')
+                };
+
+                if (isMonthly) {
+                    wmsOptions.timeEnabled = true;
+                    if (isPrecip) {
+                        wmsOptions.timeStylePattern = 'lluvia_total_mensual_{year}_{month}';
+                    }
+                }
+
+                return {
+                    id,
+                    label,
+                    wmsConfig: createRasterLayer(layerName, wmsOptions),
+                    rasterPeriodicity: isMonthly ? buildMonthlyTime([RASTER_YEAR - 1]) : undefined,
+                    searchMeta: { tags }
+                };
+            })
+        }, {
+            id: 'agua',
+            label: 'Agua',
+            isCategory: true,
             children: [
-                ...USO_SUELO.map(([id, label, layerName, tags]) => ({
+                {
+                    id: 'disponibilidad_acuiferos',
+                    label: 'Disponibilidad de acuíferos',
+                    forceGroup: true,
+                    children: AGUA.map(([id, label, matchValue, tags]) => ({
+                        id,
+                        label,
+                        wmsConfig: {
+                            ...createRecursosLayer.withFilter('disponibilidad_acuiferos_2023', `situacion_acuifero = '${matchValue}'`),
+                            wmsGroup: 'recursos',
+                            wfsAvailable: true
+                        },
+                        littleCard: recursosConfig('nombre_acuifero'),
+                        searchMeta: { tags }
+                    }))
+                },
+            ]
+        }, {
+            id: 'areas_naturales_protegidas',
+            label: 'Áreas Protegidas',
+            isCategory: true,
+            children: [
+                ...AREAS_NATURALES.map(([id, label, layerName, tags]) => ({
                     id,
                     label,
                     wmsConfig: createRecursosLayer(layerName),
-                    littleCard: id === 'dominancia_de_uso_de_suelo' ? recursosConfig('Uso de suelo') : undefined,
-                    searchMeta: {
-                        hasMunicipio: true,
-                        hasDireccion: false,
-                        searchableFields: [],
-                        tags
-                    }
-                })),
+                    littleCard: primaveraConfig(label),
+                    searchMeta: { tags }
+                }))]
+        }, {
+            id: 'territorio',
+            label: 'Territorio',
+            isCategory: true,
+            children: [{
+                id: 'itur_iieg',
+                label: 'Índice Territorial Urbano - Rural (ITUR)',
+                forceGroup: true,
+                children: ITUR.map(([id, label, matchValue, tags]) => ({
+                    id,
+                    label,
+                    wmsConfig: {
+                        ...createRecursosLayer.withFilter('itur_iieg', `segmentos = '${matchValue}'`),
+                        wmsGroup: 'recursos',
+                        wfsAvailable: true
+                    },
+                    searchMeta: { tags }
+                }))
+            }, {
+                id: 'uso_de_suelo_serie_7',
+                label: 'Usos de suelo serie VII',
+                forceGroup: true,
+                children: USOS_DE_SUELO.map(([id, label, matchValue, tags]) => ({
+                    id,
+                    label,
+                    wmsConfig: {
+                        ...createRecursosLayer.withFilter('uso_de_suelo_serie_7', `grupo = '${matchValue}'`),
+                        wmsGroup: 'recursos',
+                        wfsAvailable: true
+                    },
+                    littleCard: recursosConfig('Uso de suelo'),
+                    searchMeta: { tags }
+                }))
+            }
             ]
         }
     ]
