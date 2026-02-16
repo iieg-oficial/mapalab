@@ -11,6 +11,7 @@ services:
         VITE_GEOSERVER_URL: ${VITE_GEOSERVER_URL}
         VITE_NODE_ENV: ${VITE_NODE_ENV:-production}
         VITE_BASE_PATH: ${VITE_BASE_PATH:-/}
+        MAPALAB_BACKEND_URL: ${MAPALAB_BACKEND_URL}
     volumes:
       - ./data:/usr/share/nginx/html/data:ro
     networks:

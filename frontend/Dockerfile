@@ -20,15 +20,13 @@ RUN npm run build
 
 FROM nginx:stable-alpine
 
-ARG VITE_BACKEND_API_HOST
-ARG VITE_GEOSERVER_URL
+ARG MAPALAB_BACKEND_URL
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 
 RUN apk add --no-cache gettext && \
-    export VITE_BACKEND_API_HOST=${VITE_BACKEND_API_HOST} && \
-    export VITE_GEOSERVER_URL=${VITE_GEOSERVER_URL} && \
-    envsubst '${VITE_BACKEND_API_HOST} ${VITE_GEOSERVER_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && \
+    export MAPALAB_BACKEND_URL=${MAPALAB_BACKEND_URL} && \
+    envsubst '${MAPALAB_BACKEND_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && \
     rm /etc/nginx/conf.d/default.conf.template && \
     apk del gettext
 
