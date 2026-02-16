@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     ENVIRONMENT: Literal["development", "production", "testing"] = "development"
     DEBUG: bool = True
-    CORS_ORIGINS: List[str] = ["*"]
+    CORS_ORIGINS: List[str] = []
     LOG_LEVEL: str = "INFO"
     DB_USER: str
     DB_PASSWORD: str
