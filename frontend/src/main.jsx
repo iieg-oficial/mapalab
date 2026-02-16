@@ -34,7 +34,7 @@ const router = createBrowserRouter([
             { path: '*', element: <NotFound /> },
         ],
     },
-]);
+], { basename: import.meta.env.VITE_BASE_PATH || '/' });
 
 createRoot(document.getElementById('root')).render(
     <RouterProvider router={router} />

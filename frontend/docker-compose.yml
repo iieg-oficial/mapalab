@@ -10,6 +10,7 @@ services:
         VITE_BACKEND_API_HOST: ${VITE_BACKEND_API_HOST}
         VITE_GEOSERVER_URL: ${VITE_GEOSERVER_URL}
         VITE_NODE_ENV: ${VITE_NODE_ENV:-production}
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/}
     volumes:
       - ./data:/usr/share/nginx/html/data:ro
     networks:
