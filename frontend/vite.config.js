@@ -13,7 +13,10 @@ export default defineConfig(({ mode }) => {
     const PORT = Number(env.VITE_PORT ?? '5173');
     const HOST_FRONTEND = env.VITE_HOST_FRONTEND ?? '0.0.0.0';
 
+    const BASE_PATH = env.VITE_BASE_PATH ?? '/';
+
     return {
+        base: BASE_PATH,
         plugins: [react(), tailwindcss()],
         server: {
             host: HOST_FRONTEND,
