@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { Vector as VectorSource } from 'ol/source';
 import { Vector as VectorLayer } from 'ol/layer';
 
 export const useVectorLayerSetup = (mapRef, getStyleForType, vectorSourceRef, vectorLayerRef) => {
-    useEffect(() => {
+    const ensureVectorLayer = useCallback(() => {
+        if (vectorSourceRef.current && vectorLayerRef.current) return true;
         const mapInstance = mapRef.current;
-        if (!mapInstance || vectorLayerRef.current) return;
+        if (!mapInstance) return false;
 
         const source = new VectorSource();
         const vector = new VectorLayer({
@@ -17,9 +18,18 @@ export const useVectorLayerSetup = (mapRef, getStyleForType, vectorSourceRef, ve
         mapInstance.addLayer(vector);
         vectorSourceRef.current = source;
         vectorLayerRef.current = vector;
+        return true;
+    }, [mapRef, getStyleForType, vectorSourceRef, vectorLayerRef]);
+
+    useEffect(() => {
+        ensureVectorLayer();
 
         return () => {
-            if (mapInstance) {
+            const mapInstance = mapRef.current;
+            const vector = vectorLayerRef.current;
+            const source = vectorSourceRef.current;
+
+            if (mapInstance && vector) {
                 mapInstance.removeLayer(vector);
             }
             if (vectorLayerRef.current === vector) {
@@ -38,4 +48,6 @@ export const useVectorLayerSetup = (mapRef, getStyleForType, vectorSourceRef, ve
             vectorLayerRef.current.changed();
         }
     }, [getStyleForType, vectorLayerRef]);
+
+    return { ensureVectorLayer };
 };
