@@ -173,7 +173,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         return createDefaultStyle(geometryType);
     }, [measurementConfig]);
 
-    useVectorLayerSetup(mapRef, getStyleForType, vectorSourceRef, vectorLayerRef);
+    const { ensureVectorLayer } = useVectorLayerSetup(mapRef, getStyleForType, vectorSourceRef, vectorLayerRef);
 
     const formatLength = useCallback((line) => {
         const length = getLength(line);
@@ -198,7 +198,8 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     }, []);
 
     const startDrawing = useCallback((type) => {
-        if (!mapRef.current || !vectorSourceRef.current) return;
+        if (!mapRef.current) return;
+        if (!vectorSourceRef.current && !ensureVectorLayer()) return;
 
         if (type === 'Text' && !textTemplateRef.current) {
             console.warn('Debes proporcionar un texto antes de colocarlo en el mapa');
@@ -409,7 +410,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         drawInteractionRef.current = draw;
         setMeasureType(type);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mapRef, formatLength, formatArea, getStyleForType, updateSketchingState, showMeasurementTools]);
+    }, [mapRef, formatLength, formatArea, getStyleForType, updateSketchingState, showMeasurementTools, ensureVectorLayer]);
 
     const stopDrawing = useCallback(() => {
         if (!mapRef.current) return;
