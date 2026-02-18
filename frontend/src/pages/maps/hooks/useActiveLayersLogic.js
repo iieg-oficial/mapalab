@@ -48,6 +48,7 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
             const layer = findLayerById(layerId);
             if (!layer) continue;
             if (layer.isLabel) continue;
+            if (layer.isCategory) continue;
 
             const forceGroupAncestor = findForceGroupAncestor(layerId);
 
