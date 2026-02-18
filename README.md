@@ -339,6 +339,86 @@ make prod
 docker network create mapalab-network
 ```
 
+## Roadmap
+
+### 🚀 v1.0.0 — Camino a producción
+
+#### v0.1.0 — Noviembre 2025
+- [x] Estructura base del proyecto (monorepo con frontend, backend, nginx)
+- [x] Configuración de Docker y Docker Compose (desarrollo y producción)
+- [x] Makefile con comandos para dev y prod
+
+#### v0.5.0 — Diciembre 2025
+- [x] Visor de mapas con OpenLayers
+- [x] Integración con GeoServer (WMS/WFS)
+- [x] Backend FastAPI con conexión a PostgreSQL
+
+#### v0.7.0 — Enero 2026
+- [x] Sidebar de capas con categorías y subcategorías
+- [x] Panel de capas activas con controles de visibilidad
+- [x] Modal de detalle de capa con metadatos y descarga
+
+#### v0.9.5 — Febrero 2026
+- [x] Capas base y límites municipales configurables
+- [x] InfoBox con información de features al hacer clic
+- [x] Periodicidad dinámica en capas raster
+- [x] Sección de preguntas frecuentes
+- [ ] Exportación del mapa visible (JPG, PNG, PDF)
+
+#### v0.9.7 — Febrero 2026
+- [ ] Google Analytics (integración y eventos clave)
+- [ ] SEO (metatags, Open Graph, sitemap.xml, heading structure)
+
+#### v0.9.9 — Marzo 2026
+- [ ] Creación de tests unitarios y de integración
+- [ ] CI/CD con GitHub Actions (lint, build, deploy automático)
+
+#### v1.0.0 — Marzo 2026
+- [ ] Deploy a producción (servidor IIEG)
+- [ ] Pruebas finales en entorno productivo
+- [ ] Documentación de despliegue
+
+---
+
+### 🛠️ v1.x — Consolidación y mejoras
+
+#### v1.1.0 — Abril 2026
+- Migrar lista de capas del sidebar a endpoint del backend
+- Endpoint de búsqueda de capas desde backend
+
+#### v1.2.0 — Mayo / Junio 2026
+- Herramienta para comparar periodicidad de mapas (vista lado a lado)
+
+#### v1.3.0 — Julio / Agosto 2026
+- Modo edición de Home integrado al administrador de portal
+- Compartir estado del mapa vía URL (para el componente comparar, ademas de agregar orden de capas, opacidad, etc)
+
+#### v1.4.0 — Septiembre / Octubre 2026
+- Sistema de login para cuidadanos
+- Guardar compartidos
+- Sistema de capas favoritas por usuario
+
+#### v1.5.0 — Noviembre 2026 / Enero 2027
+- Arquitectura de capas para agilizar integración de otras dependencias
+- Optimización de carga inicial y lazy loading de componentes
+
+---
+
+### 🔮 v2.0.0 — MapaLab Platform (Febrero 2027+) (Propuestas)
+
+- Integración con IGIBot (AgencIA)
+- Visualización 3D de terreno y datos volumétricos
+- Generador de dashboards personalizados con indicadores geoespaciales
+- API pública documentada para consumo externo de datos
+- Análisis espacial interactivo (buffers, intersecciones, estadísticas por zona)
+- Modo colaborativo en tiempo real para edición de mapas temáticos
+- Importación de datos externos (Shapefile, GeoJSON, KML, CSV)
+- Embebido de mapas en sitios externos (iframe / widget)
+- Sistema de roles y permisos (administrador, editor, visualizador)
+- PWA con soporte offline para consulta en campo
+- Sistema de notificaciones (nuevas capas, actualizaciones de datos)
+- Generación automatizada de reportes geoespaciales
+
 ## Licencia
 
 Desarrollado por el equipo del IIEG.
