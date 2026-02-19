@@ -1,70 +1,109 @@
-const createExportLegendsLayout = (layers, getLegendUrl) => {
+const createExportLegendsLayout = (layers, getLegendUrl, containerWidthPx, containerHeightPx) => {
+    const validLayers = layers.filter(layer => getLegendUrl({ id: layer.id, label: layer.label }));
+    const count = validLayers.length;
+    const columns = Math.max(1, Math.ceil(Math.sqrt(count)));
+
     const container = document.createElement('div');
     Object.assign(container.style, {
         position: 'absolute',
         left: '-9999px',
-        width: '1300px',
-        backgroundColor: '#ffffff',
-        padding: '30px',
+        width: `${containerWidthPx}px`,
+        height: `${containerHeightPx}px`,
+        backgroundColor: '#F9FBFF',
+        padding: '20px 18px 24px 18px',
+        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px'
+        gap: '12px',
+        fontFamily: 'Garet, Helvetica, sans-serif',
+        overflow: 'hidden'
     });
 
-    const title = document.createElement('h1');
-    title.textContent = 'Simbología';
-    Object.assign(title.style, {
-        fontSize: '24px',
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: '20px',
-        borderBottom: '2px solid #eee',
-        paddingBottom: '10px'
+    const header = document.createElement('div');
+    Object.assign(header.style, {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        flexShrink: '0',
+        marginBottom: '4px'
     });
-    container.appendChild(title);
+
+    const title = document.createElement('h3');
+    title.textContent = 'Leyendas';
+    Object.assign(title.style, {
+        fontFamily: 'Garet, Helvetica, sans-serif',
+        fontSize: '20px',
+        fontWeight: 'bold',
+        color: '#1A2664',
+        margin: '0'
+    });
+    header.appendChild(title);
+    container.appendChild(header);
 
     const grid = document.createElement('div');
     Object.assign(grid.style, {
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
-        gap: '20px',
-        alignItems: 'start'
+        gridTemplateColumns: `repeat(${columns}, auto)`,
+        justifyContent: 'start',
+        gap: '16px',
+        alignItems: 'start',
+        flex: '1',
+        overflow: 'hidden'
     });
 
-    layers.forEach(layer => {
-        const legendUrl = getLegendUrl({ id: layer.id, label: layer.label });
-        if (legendUrl) {
-            const item = document.createElement('div');
-            Object.assign(item.style, {
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-                breakInside: 'avoid'
-            });
+    validLayers.forEach(layer => {
+        const legendUrl = getLegendUrl({ id: layer.id, label: layer.label }, {
+            dpi: 300,
+            iconWidth: 20,
+            iconHeight: 20,
+            transparent: true,
+            fontName: 'Helvetica',
+            fontSize: 12,
+            fontStyle: 'normal',
+            fontColor: '0x454545',
+            labelMargin: 12,
+            forceLabels: 'on'
+        });
 
-            const layerTitle = document.createElement('h3');
-            layerTitle.textContent = layer.label || layer.name;
-            Object.assign(layerTitle.style, {
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#444',
-                margin: '0'
-            });
+        const card = document.createElement('div');
+        Object.assign(card.style, {
+            padding: '12px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            breakInside: 'avoid'
+        });
 
-            const img = document.createElement('img');
-            img.src = legendUrl;
-            Object.assign(img.style, {
-                maxWidth: '100%',
-                height: 'auto',
-                border: '1px solid #eee',
-                padding: '5px',
-                borderRadius: '4px'
-            });
+        const layerTitle = document.createElement('div');
+        layerTitle.textContent = layer.label || layer.name;
+        Object.assign(layerTitle.style, {
+            fontFamily: 'Garet, Helvetica, sans-serif',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            lineHeight: '16px',
+            letterSpacing: '0px',
+            color: '#1A2664',
+            margin: '0 0 2px 0'
+        });
 
-            item.appendChild(layerTitle);
-            item.appendChild(img);
-            grid.appendChild(item);
-        }
+        const imgWrapper = document.createElement('div');
+        Object.assign(imgWrapper.style, {
+            paddingTop: '12px'
+        });
+
+        const img = document.createElement('img');
+        img.src = legendUrl;
+        Object.assign(img.style, {
+            width: 'auto',
+            height: 'auto',
+            maxWidth: '100%',
+            display: 'block'
+        });
+
+        imgWrapper.appendChild(img);
+        card.appendChild(layerTitle);
+        card.appendChild(imgWrapper);
+        grid.appendChild(card);
     });
 
     container.appendChild(grid);

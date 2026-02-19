@@ -13,6 +13,7 @@ const createExportSidePanel = (options = {}) => {
         viewType = 'viewport',
         viewportExtent = null,
         minimapImageUrl = null,
+        minimapBounds = null,
         source = 'Por definir'
     } = options;
 
@@ -56,7 +57,8 @@ const createExportSidePanel = (options = {}) => {
         viewportExtent,
         contentWidth,
         SECTION_MARGIN,
-        SECTION_RADIUS
+        SECTION_RADIUS,
+        minimapBounds
     ));
 
     panel.appendChild(createSidePanelFooter(

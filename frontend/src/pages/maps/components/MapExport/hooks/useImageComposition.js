@@ -1,3 +1,4 @@
+import { transformExtent } from 'ol/proj';
 import { useMapCapture } from './useMapCapture';
 import coordinateGrid from '../utils/coordinateGrid';
 import coordinateLabels from '../utils/coordinateLabels';
@@ -8,6 +9,8 @@ import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
 const {
     LABEL_MARGIN_X,
     LABEL_MARGIN_Y,
+    MAP_WIDTH,
+    MAP_HEIGHT,
     FRAME_BORDER_WIDTH,
     FRAME_COLOR,
     NUM_DIVISIONS_X,
@@ -27,6 +30,7 @@ export const useImageComposition = () => {
         viewType,
         viewportExtent,
         minimapImageUrl,
+        minimapBounds,
         scale = 1
     }) => {
         const mapSectionWidth = mapCanvas.width / (scale > 1 ? scale : 1);
@@ -107,7 +111,22 @@ export const useImageComposition = () => {
         mapFrame.appendChild(mapImage);
         mapFrame.appendChild(gridContainer);
 
-        const labels = coordinateLabels(mapAreaWidth, mapAreaHeight, extent);
+        let frameExtent = extent;
+        if (extent) {
+            const ext3857 = transformExtent(extent, 'EPSG:4326', 'EPSG:3857');
+            const [ex0, ey0, ex1, ey1] = ext3857;
+            const ew = ex1 - ex0;
+            const eh = ey1 - ey0;
+            const cropped = [
+                ex0 + (LABEL_MARGIN_Y / MAP_WIDTH) * ew,
+                ey0 + (LABEL_MARGIN_X / MAP_HEIGHT) * eh,
+                ex1 - (LABEL_MARGIN_Y / MAP_WIDTH) * ew,
+                ey1 - (LABEL_MARGIN_X / MAP_HEIGHT) * eh
+            ];
+            frameExtent = transformExtent(cropped, 'EPSG:3857', 'EPSG:4326');
+        }
+
+        const labels = coordinateLabels(mapAreaWidth, mapAreaHeight, frameExtent);
 
         labels.top.style.position = 'absolute';
         labels.top.style.top = '0';
@@ -141,6 +160,7 @@ export const useImageComposition = () => {
             viewType,
             viewportExtent,
             minimapImageUrl,
+            minimapBounds,
             source: 'Por definir'
         });
 
@@ -158,6 +178,14 @@ export const useImageComposition = () => {
             else mapImage.onload = resolve;
         });
         await waitForImages(sidePanel);
+
+        sidePanel.querySelectorAll('img').forEach(img => {
+            if (img.naturalWidth > 0 && (!img.style.width || img.style.width === 'auto')) {
+                img.style.width = `${img.naturalWidth / 2}px`;
+                img.style.height = `${img.naturalHeight / 2}px`;
+                img.style.maxWidth = 'none';
+            }
+        });
 
         const finalCanvas = await captureElement(tempContainer, { scale: scale > 1 ? scale : 1 });
         document.body.removeChild(tempContainer);

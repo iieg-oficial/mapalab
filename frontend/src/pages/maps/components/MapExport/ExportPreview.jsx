@@ -9,12 +9,13 @@ import { useMapDownload } from './hooks/useMapDownload';
 import { useMinimap } from './hooks/useMinimap';
 import { useMapCapture } from './hooks/useMapCapture';
 import { useImageComposition } from './hooks/useImageComposition';
+import { usePdfExport } from './hooks/usePdfExport';
 import { layers as allLayers, findLayerById } from '../../helpers/layers/index';
 import { EXPORT_DIMENSIONS } from './utils/exportDimensions';
 import Loading from '@components/Loading';
 import Icon from '@components/Icon';
 
-const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSelectedLegend, initialTitle = '' }) => {
+const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propSelectedLegends = [], initialTitle = '' }) => {
     const { targetRef } = useMapsContext();
     const { getLegendUrl } = useWMSLegend();
     const { activeLayerIds, groupedActiveLayers } = useContext(MapsContext);
@@ -22,7 +23,9 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
     const { generateMinimapImage } = useMinimap();
     const { getMapSnapshot } = useMapCapture();
     const { composeExportImage } = useImageComposition();
+    const { exportToPdf, exportToImage } = usePdfExport();
     const [previewUrl, setPreviewUrl] = useState(null);
+    const [previewCanvas, setPreviewCanvas] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [title, setTitle] = useState('');
     const [capturedExtent, setCapturedExtent] = useState(null);
@@ -46,18 +49,23 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        return () => setIsZenMode(false);
+    }, []);
+
 
     useEffect(() => {
         if (capturedExtent && activeLayers.length > 0) {
             setShowModal(true);
+            setPreviewCanvas(null);
             generatePreview();
         }
     }, [capturedExtent]);
 
     const currentSelectedLegend = useMemo(() => {
-        if (propSelectedLegend) return propSelectedLegend;
+        if (propSelectedLegends.length > 0) return propSelectedLegends[0];
         return groupedActiveLayers.find(layer => getLegendUrl(layer) !== null) || null;
-    }, [propSelectedLegend, groupedActiveLayers, getLegendUrl]);
+    }, [propSelectedLegends, groupedActiveLayers, getLegendUrl]);
 
     useEffect(() => {
         if (initialTitle) {
@@ -76,7 +84,7 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
         const { SIDE_PANEL_WIDTH } = EXPORT_DIMENSIONS;
 
         try {
-            const minimapImageUrl = await generateMinimapImage();
+            const { url: minimapImageUrl, bounds: minimapBounds } = generateMinimapImage('viewport');
 
             const mapCanvas = await getMapSnapshot({
                 extent: capturedExtent,
@@ -92,9 +100,11 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
                 getLegendUrl,
                 viewType: 'viewport',
                 viewportExtent: capturedExtent,
-                minimapImageUrl
+                minimapImageUrl,
+                minimapBounds
             });
 
+            setPreviewCanvas(finalCanvas);
             setPreviewUrl(finalCanvas.toDataURL('image/png'));
 
         } catch (error) {
@@ -122,14 +132,16 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
         if (onClose) onClose();
     };
 
-    const handleDownload = () => {
-        if (!previewUrl) return;
+    const handleDownload = async () => {
+        if (!previewCanvas) return;
 
-        const date = new Date().toISOString().slice(0, 10);
-        const link = document.createElement('a');
-        link.download = `${title || 'mapa'}_${date}.${format}`;
-        link.href = previewUrl;
-        link.click();
+        if (format === 'pdf') {
+            const legends = propSelectedLegends.length > 0 ? propSelectedLegends : (currentSelectedLegend ? [currentSelectedLegend] : []);
+            await exportToPdf({ canvas: previewCanvas, title, selectedLegends: legends, getLegendUrl });
+        } else {
+            exportToImage(previewCanvas, format, title);
+        }
+        handleClose();
     };
 
     if (!isOpen) return null;
@@ -144,10 +156,10 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
             />
 
             {showModal && createPortal(
-                <div className="fixed inset-0 bg-black/50 z-[9999] flex flex-col items-center justify-center p-4 gap-6">
+                <div className="fixed inset-0 bg-black/80 z-[9999] flex flex-col items-center justify-center p-4 gap-6">
                     <div
                         ref={containerRef}
-                        className="relative bg-[#F7F8FC] shadow-2xl flex flex-col max-w-[85vw] max-h-[85vh]"
+                        className="relative shadow-2xl flex flex-col max-w-[85vw] max-h-[85vh]"
                     >
                         <div className="absolute top-0 left-0 bg-[#703089] text-white text-[10px] px-2 py-1 font-bold uppercase tracking-wide z-10">
                             Vista Previa
