@@ -165,7 +165,10 @@ export const downloadLayerBundle = async (layerId, options = {}) => {
         await addMetadataToZip(zip, metadata);
 
         const zipBlob = await zip.generateAsync({ type: 'blob' });
-        triggerDownload(zipBlob, `${layerName}.zip`);
+        const layerNode = findLayerById(layerId, layers);
+        const userLabel = (layerNode?.label || layerNode?.name || layerName).replace(/\s+/g, '_');
+        const date = new Date().toISOString().slice(0, 10);
+        triggerDownload(zipBlob, `${userLabel}_${date}.zip`);
 
         return { success: true };
     } catch (error) {
