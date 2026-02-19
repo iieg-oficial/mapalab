@@ -1,6 +1,7 @@
 import { useMapsContext } from '@hooks/useMaps';
 import html2canvas from 'html2canvas';
 import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
+const { MAP_WIDTH, MAP_HEIGHT, LABEL_MARGIN_X, LABEL_MARGIN_Y } = EXPORT_DIMENSIONS;
 import { transformExtent } from 'ol/proj';
 import { useMapView } from './useMapView';
 
@@ -96,8 +97,6 @@ export const useMapCapture = () => {
         if (!targetRef.current || !mapRef.current) return null;
 
         let originalState = null;
-        const { MAP_WIDTH, MAP_HEIGHT } = EXPORT_DIMENSIONS;
-
         try {
             originalState = {
                 width: targetRef.current.style.width,
@@ -114,7 +113,16 @@ export const useMapCapture = () => {
                 adjustViewToFullState();
             } else if (extent) {
                 const extent3857 = transformExtent(extent, 'EPSG:4326', 'EPSG:3857');
-                mapRef.current.getView().fit(extent3857, { size: [MAP_WIDTH, MAP_HEIGHT] });
+                const view = mapRef.current.getView();
+                const innerWidth = MAP_WIDTH - LABEL_MARGIN_Y * 2;
+                const innerHeight = MAP_HEIGHT - LABEL_MARGIN_X * 2;
+                const resolution = view.getResolutionForExtent(extent3857, [innerWidth, innerHeight]);
+                const center = [
+                    (extent3857[0] + extent3857[2]) / 2,
+                    (extent3857[1] + extent3857[3]) / 2
+                ];
+                view.setCenter(center);
+                view.setResolution(resolution);
             }
 
             await waitForTilesToLoad();

@@ -14,7 +14,7 @@ const GuideOverlay = ({ visible, aspectRatio = 1.2, onConfirm, onCancel }) => {
                 className="relative box-content shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] transition-all duration-300 ease-in-out pointer-events-none"
                 style={{
                     aspectRatio: aspectRatio,
-                    width: 'min(80vw, calc(80vh * 1.2))',
+                    width: `min(80vw, calc(80vh * ${aspectRatio}))`,
                 }}
             >
                 <div className="absolute top-0 left-0 bg-[#703089] text-white text-[10px] px-2 py-1 font-bold rounded-br uppercase tracking-wide">
