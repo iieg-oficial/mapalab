@@ -39,22 +39,13 @@ export const useMapCapture = () => {
         scaleControl.style.transform = originalStyles.transform;
     };
 
-    const waitForTilesToLoad = (maxWaitTime = 8000) => {
+    const waitForTilesToLoad = () => {
         return new Promise((resolve) => {
-            const startTime = Date.now();
-
-            const checkLoading = () => {
-                const loadingElement = document.querySelector('.animate-spin');
-                const isLoading = loadingElement !== null;
-
-                if (!isLoading || Date.now() - startTime > maxWaitTime) {
-                    setTimeout(resolve, 500);
-                } else {
-                    setTimeout(checkLoading, 200);
-                }
-            };
-
-            setTimeout(checkLoading, 1000);
+            if (!mapRef.current) {
+                resolve();
+                return;
+            }
+            mapRef.current.once('rendercomplete', resolve);
         });
     };
 
@@ -114,9 +105,9 @@ export const useMapCapture = () => {
             } else if (extent) {
                 const extent3857 = transformExtent(extent, 'EPSG:4326', 'EPSG:3857');
                 const view = mapRef.current.getView();
-                const innerWidth = MAP_WIDTH - LABEL_MARGIN_Y * 2;
-                const innerHeight = MAP_HEIGHT - LABEL_MARGIN_X * 2;
-                const resolution = view.getResolutionForExtent(extent3857, [innerWidth, innerHeight]);
+                const extentW = extent3857[2] - extent3857[0];
+                const extentH = extent3857[3] - extent3857[1];
+                const resolution = Math.min(extentW / MAP_WIDTH, extentH / MAP_HEIGHT);
                 const center = [
                     (extent3857[0] + extent3857[2]) / 2,
                     (extent3857[1] + extent3857[3]) / 2

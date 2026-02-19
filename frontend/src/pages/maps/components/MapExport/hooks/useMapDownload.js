@@ -50,12 +50,12 @@ export const useMapDownload = () => {
         const mapRect = mapRef.current.getTargetElement().getBoundingClientRect();
 
         const topLeft = [
-            rect.left - mapRect.left + (rect.width * 0),
-            rect.top - mapRect.top
+            Math.round(rect.left - mapRect.left),
+            Math.round(rect.top - mapRect.top)
         ];
         const bottomRight = [
-            rect.right - mapRect.left,
-            rect.bottom - mapRect.top
+            Math.round(rect.right - mapRect.left),
+            Math.round(rect.bottom - mapRect.top)
         ];
 
         const coord1 = mapRef.current.getCoordinateFromPixel(topLeft);
@@ -81,7 +81,7 @@ export const useMapDownload = () => {
         const { SIDE_PANEL_WIDTH } = EXPORT_DIMENSIONS;
 
         try {
-            const minimapImageUrl = await generateMinimapImage();
+            const { url: minimapImageUrl, bounds: minimapBounds } = generateMinimapImage(viewType);
             let targetExtent = null;
             if (viewType === 'full-state') {
                 targetExtent = getViewportExtent();
@@ -107,7 +107,8 @@ export const useMapDownload = () => {
                 getLegendUrl,
                 viewType,
                 viewportExtent: viewType === 'viewport' ? targetExtent : null,
-                minimapImageUrl
+                minimapImageUrl,
+                minimapBounds
             });
 
             if (format === 'pdf') {

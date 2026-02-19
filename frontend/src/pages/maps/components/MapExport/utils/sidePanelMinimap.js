@@ -1,6 +1,4 @@
-import { JALISCO_BOUNDS } from '../../../helpers/wmsConfig';
-
-export const createSidePanelMinimap = (minimapImageUrl, viewType, viewportExtent, contentWidth, sectionMargin, sectionRadius) => {
+export const createSidePanelMinimap = (minimapImageUrl, viewType, viewportExtent, contentWidth, sectionMargin, sectionRadius, minimapBounds) => {
     const minimapSection = document.createElement('div');
 
     Object.assign(minimapSection.style, {
@@ -26,8 +24,8 @@ export const createSidePanelMinimap = (minimapImageUrl, viewType, viewportExtent
         });
         minimapContainer.appendChild(minimapImg);
 
-        if (viewType === 'viewport' && viewportExtent) {
-            const [minLon, minLat, maxLon, maxLat] = JALISCO_BOUNDS.coords;
+        if (viewType === 'viewport' && viewportExtent && minimapBounds) {
+            const [minLon, minLat, maxLon, maxLat] = minimapBounds;
             const [vpMinLon, vpMinLat, vpMaxLon, vpMaxLat] = viewportExtent;
 
             const scaleX = 100 / (maxLon - minLon);

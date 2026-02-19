@@ -9,7 +9,45 @@ const {
     FRAME_COLOR
 } = EXPORT_DIMENSIONS;
 
-const createLabel = (text, isVertical = false) => {
+const createHorizontalLabel = (text, fraction) => {
+    const wrapper = document.createElement('div');
+    Object.assign(wrapper.style, {
+        position: 'absolute',
+        left: `${fraction * 100}%`,
+        top: '0',
+        height: '100%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    });
+
+    const label = document.createElement('div');
+    label.textContent = text;
+    Object.assign(label.style, {
+        fontFamily: 'Garet, system-ui, sans-serif',
+        fontSize: '11px',
+        color: FRAME_COLOR,
+        whiteSpace: 'nowrap'
+    });
+
+    wrapper.appendChild(label);
+    return wrapper;
+};
+
+const createVerticalLabel = (text, fraction) => {
+    const wrapper = document.createElement('div');
+    Object.assign(wrapper.style, {
+        position: 'absolute',
+        top: `${fraction * 100}%`,
+        left: '0',
+        width: '100%',
+        transform: 'translateY(-50%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    });
+
     const label = document.createElement('div');
     label.textContent = text;
     Object.assign(label.style, {
@@ -17,59 +55,43 @@ const createLabel = (text, isVertical = false) => {
         fontSize: '11px',
         color: FRAME_COLOR,
         whiteSpace: 'nowrap',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
+        transform: 'rotate(-90deg)'
     });
-    if (isVertical) {
-        Object.assign(label.style, {
-            transform: 'rotate(-90deg)',
-            transformOrigin: 'center center'
-        });
-    }
-    return label;
+
+    wrapper.appendChild(label);
+    return wrapper;
 };
 
 const coordinateLabels = (mapAreaWidth, mapAreaHeight, extent = null) => {
     const topLabelsContainer = document.createElement('div');
     Object.assign(topLabelsContainer.style, {
+        position: 'relative',
         width: `${mapAreaWidth}px`,
         height: `${LABEL_MARGIN_X}px`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         boxSizing: 'border-box'
     });
 
     const bottomLabelsContainer = document.createElement('div');
     Object.assign(bottomLabelsContainer.style, {
+        position: 'relative',
         width: `${mapAreaWidth}px`,
         height: `${LABEL_MARGIN_X}px`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         boxSizing: 'border-box'
     });
 
     const leftLabelsContainer = document.createElement('div');
     Object.assign(leftLabelsContainer.style, {
+        position: 'relative',
         width: `${LABEL_MARGIN_Y}px`,
         height: `${mapAreaHeight}px`,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         boxSizing: 'border-box'
     });
 
     const rightLabelsContainer = document.createElement('div');
     Object.assign(rightLabelsContainer.style, {
+        position: 'relative',
         width: `${LABEL_MARGIN_Y}px`,
         height: `${mapAreaHeight}px`,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         boxSizing: 'border-box'
     });
 
@@ -84,15 +106,17 @@ const coordinateLabels = (mapAreaWidth, mapAreaHeight, extent = null) => {
         for (let i = 0; i <= NUM_DIVISIONS_X; i++) {
             const easting = minUTM.easting + (i / NUM_DIVISIONS_X) * eastingRange;
             const text = formatUTMCoordinate(easting);
-            topLabelsContainer.appendChild(createLabel(text, false));
-            bottomLabelsContainer.appendChild(createLabel(text, false));
+            const fraction = i / NUM_DIVISIONS_X;
+            topLabelsContainer.appendChild(createHorizontalLabel(text, fraction));
+            bottomLabelsContainer.appendChild(createHorizontalLabel(text, fraction));
         }
 
-        for (let i = 0; i <= NUM_DIVISIONS_Y; i++) {
-            const northing = maxUTM.northing - (i / NUM_DIVISIONS_Y) * northingRange;
+        for (let j = 0; j <= NUM_DIVISIONS_Y; j++) {
+            const northing = maxUTM.northing - (j / NUM_DIVISIONS_Y) * northingRange;
             const text = formatUTMCoordinate(northing);
-            leftLabelsContainer.appendChild(createLabel(text, true));
-            rightLabelsContainer.appendChild(createLabel(text, true));
+            const fraction = j / NUM_DIVISIONS_Y;
+            leftLabelsContainer.appendChild(createVerticalLabel(text, fraction));
+            rightLabelsContainer.appendChild(createVerticalLabel(text, fraction));
         }
     }
 

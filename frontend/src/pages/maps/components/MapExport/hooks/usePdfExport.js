@@ -30,10 +30,22 @@ export const usePdfExport = () => {
         pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', mapX, mapY, mapDims.width, mapDims.height);
 
         if (selectedLegends.length > 0) {
-            const legendsContainer = createExportLegendsLayout(selectedLegends, getLegendUrl);
+            const MM_TO_PX = 3.7795;
+            const containerWidthPx = Math.round(pageWidth * MM_TO_PX);
+            const containerHeightPx = Math.round(pageHeight * MM_TO_PX);
+
+            const legendsContainer = createExportLegendsLayout(selectedLegends, getLegendUrl, containerWidthPx, containerHeightPx);
             document.body.appendChild(legendsContainer);
 
             await waitForImages(legendsContainer);
+
+            legendsContainer.querySelectorAll('img').forEach(img => {
+                if (img.naturalWidth > 0) {
+                    img.style.width = `${img.naturalWidth / 3}px`;
+                    img.style.height = `${img.naturalHeight / 3}px`;
+                    img.style.maxWidth = 'none';
+                }
+            });
 
             const legendsCanvas = await captureElement(legendsContainer, { scale: 2 });
 
@@ -41,11 +53,7 @@ export const usePdfExport = () => {
 
             pdf.addPage('letter', 'landscape');
 
-            const legendDims = calculateFittedDimensions(legendsCanvas.width, legendsCanvas.height, pageWidth, pageHeight);
-            const legendX = (pageWidth - legendDims.width) / 2;
-            const legendY = (pageHeight - legendDims.height) / 2;
-
-            pdf.addImage(legendsCanvas.toDataURL('image/jpeg', 0.9), 'JPEG', legendX, legendY, legendDims.width, legendDims.height);
+            pdf.addImage(legendsCanvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, pageWidth, pageHeight);
         }
 
         const date = new Date().toISOString().slice(0, 10);

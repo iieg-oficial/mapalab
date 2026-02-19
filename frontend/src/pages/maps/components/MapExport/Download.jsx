@@ -54,14 +54,13 @@ const Download = ({ onOpenPreview }) => {
     };
 
     const handleConfirmDownload = async () => {
-        if (viewType === 'viewport') {
-            setIsPanelOpen(false);
+        setIsPanelOpen(false);
+        if (viewType === 'viewport' && format !== 'pdf') {
             if (onOpenPreview) {
-                onOpenPreview(format, selectedLegendLayers[0], title);
+                onOpenPreview(format, selectedLegendLayers, title);
             }
         } else {
-            setIsPanelOpen(false);
-            await downloadMap(format, selectedLegendLayers, 'full-state', title);
+            await downloadMap(format, selectedLegendLayers, viewType, title);
         }
     };
 
