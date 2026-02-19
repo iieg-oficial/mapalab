@@ -10,7 +10,6 @@ const createExportSidePanel = (options = {}) => {
         captureDate = new Date(),
         selectedLegend = null,
         getLegendUrl,
-        legendData = null,
         viewType = 'viewport',
         viewportExtent = null,
         minimapImageUrl = null,
@@ -46,7 +45,6 @@ const createExportSidePanel = (options = {}) => {
     panel.appendChild(createSidePanelLegend(
         selectedLegend,
         getLegendUrl,
-        legendData,
         SECTION_PADDING,
         SECTION_MARGIN,
         SECTION_RADIUS

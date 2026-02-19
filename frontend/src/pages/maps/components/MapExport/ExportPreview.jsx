@@ -16,7 +16,7 @@ import Icon from '@components/Icon';
 
 const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSelectedLegend, initialTitle = '' }) => {
     const { targetRef } = useMapsContext();
-    const { getLegendUrl, getLegendJson } = useWMSLegend();
+    const { getLegendUrl } = useWMSLegend();
     const { activeLayerIds, groupedActiveLayers } = useContext(MapsContext);
     const { getGuideExtent } = useMapDownload();
     const { generateMinimapImage } = useMinimap();
@@ -90,7 +90,6 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
                 title,
                 selectedLegend: currentSelectedLegend,
                 getLegendUrl,
-                getLegendJson,
                 viewType: 'viewport',
                 viewportExtent: capturedExtent,
                 minimapImageUrl
