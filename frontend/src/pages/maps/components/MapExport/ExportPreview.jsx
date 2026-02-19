@@ -126,8 +126,9 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
     const handleDownload = () => {
         if (!previewUrl) return;
 
+        const date = new Date().toISOString().slice(0, 10);
         const link = document.createElement('a');
-        link.download = `${title || 'mapa'}.${format}`;
+        link.download = `${title || 'mapa'}_${date}.${format}`;
         link.href = previewUrl;
         link.click();
     };

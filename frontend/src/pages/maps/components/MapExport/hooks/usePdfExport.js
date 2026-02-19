@@ -48,12 +48,14 @@ export const usePdfExport = () => {
             pdf.addImage(legendsCanvas.toDataURL('image/jpeg', 0.9), 'JPEG', legendX, legendY, legendDims.width, legendDims.height);
         }
 
-        pdf.save(`mapalab-${title}.pdf`);
+        const date = new Date().toISOString().slice(0, 10);
+        pdf.save(`${title}_${date}.pdf`);
     };
 
     const exportToImage = (canvas, format, title) => {
+        const date = new Date().toISOString().slice(0, 10);
         const link = document.createElement('a');
-        link.download = `mapalab-${title}.${format}`;
+        link.download = `${title}_${date}.${format}`;
         link.href = canvas.toDataURL(`image/${format}`, 0.9);
         link.click();
     };
