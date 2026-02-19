@@ -46,11 +46,6 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
         }
     }, [isOpen]);
 
-    useEffect(() => {
-        if (import.meta.env.DEV && isOpen && !capturedExtent) {
-            handleConfirmCapture();
-        }
-    }, [isOpen]);
 
     useEffect(() => {
         if (capturedExtent && activeLayers.length > 0) {
@@ -143,7 +138,7 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegend: propSe
         <>
             <GuideOverlay
                 visible={isZenMode && !showModal}
-                aspectRatio={1.2}
+                aspectRatio={EXPORT_DIMENSIONS.MAP_ASPECT_RATIO}
                 onConfirm={handleConfirmCapture}
                 onCancel={handleCancelCapture}
             />
