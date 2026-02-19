@@ -24,7 +24,6 @@ export const useImageComposition = () => {
         title,
         selectedLegend,
         getLegendUrl,
-        getLegendJson,
         viewType,
         viewportExtent,
         minimapImageUrl,
@@ -134,21 +133,11 @@ export const useImageComposition = () => {
 
         tempContainer.appendChild(mapSection);
 
-        let legendData = null;
-        if (selectedLegend && getLegendJson) {
-            try {
-                legendData = await getLegendJson(selectedLegend);
-            } catch (error) {
-                console.error('Error getting legend JSON', error);
-            }
-        }
-
         const sidePanel = createExportSidePanel({
             title,
             captureDate: new Date(),
             selectedLegend,
             getLegendUrl,
-            legendData,
             viewType,
             viewportExtent,
             minimapImageUrl,

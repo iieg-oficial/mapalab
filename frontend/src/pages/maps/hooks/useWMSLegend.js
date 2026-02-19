@@ -6,18 +6,30 @@ import MapsContext from '@contexts/MapsContext';
 export const useWMSLegend = () => {
     const { getFilter } = useContext(MapsContext);
 
-    const getLegendUrl = useCallback((layer) => {
+    const getLegendUrl = useCallback((layer, {
+        dpi = 100,
+        iconWidth = 20,
+        iconHeight = 20,
+        transparent = false,
+        fontName = 'Helvetica',
+        fontSize = 10,
+        fontStyle = 'normal',
+        fontColor = '0x454545',
+        labelMargin = 12,
+        forceLabels = 'on'
+    } = {}) => {
         const wmsConfig = findWMSConfig(layer.id, layers);
 
         if (wmsConfig) {
             const legendOptions = [
-                'fontName:Helvetica',
-                'fontSize:10',
-                'fontStyle:normal',
+                `fontName:${fontName}`,
+                `fontSize:${fontSize}`,
+                `fontStyle:${fontStyle}`,
                 'fontAntiAliasing:true',
-                'fontColor:0x454545',
-                'labelMargin:12',
-                'dpi:100',
+                `fontColor:${fontColor}`,
+                `labelMargin:${labelMargin}`,
+                `dpi:${dpi}`,
+                `forceLabels:${forceLabels}`,
             ].join(';');
 
             let style = wmsConfig.styles || '';
@@ -28,7 +40,7 @@ export const useWMSLegend = () => {
                 }
             }
 
-            const url =`${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=image/png&width=20&height=20&LEGEND_OPTIONS=${legendOptions}${style ? `&STYLE=${style}` : ''}`;
+            const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=image/png&width=${iconWidth}&height=${iconHeight}${transparent ? '&transparent=true' : ''}&LEGEND_OPTIONS=${legendOptions}${style ? `&STYLE=${style}` : ''}`;
             return url;
         }
         return null;

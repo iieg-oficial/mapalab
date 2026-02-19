@@ -13,7 +13,7 @@ import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
 
 export const useMapDownload = () => {
     const { targetRef, mapRef } = useMapsContext();
-    const { getLegendUrl, hasLegend, getLegendJson } = useWMSLegend();
+    const { getLegendUrl, hasLegend } = useWMSLegend();
     const { generateMinimapImage } = useMinimap();
     const { getViewportExtent } = useMapView();
     const { prepareScaleControl, getMapSnapshot } = useMapCapture();
@@ -105,7 +105,6 @@ export const useMapDownload = () => {
                 title,
                 selectedLegend: legendForPanel,
                 getLegendUrl,
-                getLegendJson,
                 viewType,
                 viewportExtent: viewType === 'viewport' ? targetExtent : null,
                 minimapImageUrl
