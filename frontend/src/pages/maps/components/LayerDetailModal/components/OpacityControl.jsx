@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useOutsideClick } from '@hooks/useOutsideClick';
+import Bar from '@components/Bar';
 
 const OpacityControl = ({ value = 1, onChange }) => {
     const currentPercentage = Math.round(value * 100);
@@ -107,14 +108,11 @@ const OpacityControl = ({ value = 1, onChange }) => {
                 )}
             </div>
             {isExpanded && (
-                <input
-                    type="range"
-                    min="0"
-                    max="100"
+                <Bar
+                    min={0}
+                    max={100}
                     value={currentPercentage}
                     onChange={handleSliderChange}
-                    className="w-full h-2 bg-[#465055]/20 rounded-lg appearance-none cursor-pointer accent-[#FF8300]"
-                    aria-label="Opacidad"
                 />
             )}
         </div>

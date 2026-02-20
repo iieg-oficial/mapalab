@@ -11,12 +11,12 @@ import { useMapCapture } from './hooks/useMapCapture';
 import { useImageComposition } from './hooks/useImageComposition';
 import { usePdfExport } from './hooks/usePdfExport';
 import { layers as allLayers, findLayerById } from '../../helpers/layers/index';
-import { EXPORT_DIMENSIONS } from './utils/exportDimensions';
+import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from './utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
 import Loading from '@components/Loading';
 import Icon from '@components/Icon';
 
-const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propSelectedLegends = [], initialTitle = '' }) => {
+const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propSelectedLegends = [], initialTitle = '', quality = QUALITY_PRESETS[1] }) => {
     const { targetRef } = useMapsContext();
     const { getLegendUrl } = useWMSLegend();
     const { activeLayerIds, groupedActiveLayers } = useContext(MapsContext);
@@ -83,13 +83,17 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
         setIsGenerating(true);
 
         const { SIDE_PANEL_WIDTH } = EXPORT_DIMENSIONS;
+        const { mapWidth, mapHeight, captureScale, composeScale } = quality;
 
         try {
             const { url: minimapImageUrl, bounds: minimapBounds } = generateMinimapImage('viewport');
 
             const mapCanvas = await getMapSnapshot({
                 extent: capturedExtent,
-                viewType: 'viewport'
+                viewType: 'viewport',
+                mapWidth,
+                mapHeight,
+                captureScale
             });
 
             const sourcesMap = await getLayersSources(activeLayerIds).catch(() => ({}));
@@ -110,7 +114,7 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
                 minimapImageUrl,
                 minimapBounds,
                 source,
-                scale: 2
+                scale: composeScale
             });
 
             setPreviewCanvas(finalCanvas);

@@ -10,11 +10,13 @@ const MapToolsPanel = () => {
     const [previewFormat, setPreviewFormat] = useState('png');
     const [previewLegends, setPreviewLegends] = useState([]);
     const [previewTitle, setPreviewTitle] = useState('');
+    const [previewQuality, setPreviewQuality] = useState(null);
 
-    const handleOpenPreview = (format, selectedLegends, title) => {
+    const handleOpenPreview = (format, selectedLegends, title, quality) => {
         setPreviewFormat(format || 'png');
         setPreviewLegends(Array.isArray(selectedLegends) ? selectedLegends : (selectedLegends ? [selectedLegends] : []));
         setPreviewTitle(title || '');
+        setPreviewQuality(quality || null);
         setIsPreviewOpen(true);
     };
 
@@ -44,6 +46,7 @@ const MapToolsPanel = () => {
                     format={previewFormat}
                     selectedLegends={previewLegends}
                     initialTitle={previewTitle}
+                    quality={previewQuality}
                 />
             )}
         </>
