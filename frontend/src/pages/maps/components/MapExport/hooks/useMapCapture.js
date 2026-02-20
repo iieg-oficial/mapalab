@@ -1,7 +1,7 @@
 import { useMapsContext } from '@hooks/useMaps';
 import html2canvas from 'html2canvas';
 import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
-const { MAP_WIDTH, MAP_HEIGHT, LABEL_MARGIN_X, LABEL_MARGIN_Y } = EXPORT_DIMENSIONS;
+const { MAP_WIDTH, MAP_HEIGHT } = EXPORT_DIMENSIONS;
 import { transformExtent } from 'ol/proj';
 import { useMapView } from './useMapView';
 
@@ -56,7 +56,9 @@ export const useMapCapture = () => {
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            scale
+            scale,
+            width: MAP_WIDTH,
+            height: MAP_HEIGHT
         });
     };
 

@@ -33,8 +33,8 @@ export const usePdfExport = () => {
             const MM_TO_PX = 3.7795;
             const containerWidthPx = Math.round(pageWidth * MM_TO_PX);
             const containerHeightPx = Math.round(pageHeight * MM_TO_PX);
-
             const legendsContainer = createExportLegendsLayout(selectedLegends, getLegendUrl, containerWidthPx, containerHeightPx);
+            
             document.body.appendChild(legendsContainer);
 
             await waitForImages(legendsContainer);
