@@ -58,7 +58,7 @@ const Body = () => {
         <div className="gap-y-9">
             <div
                 className='
-                    relative z-10 -mt-[5vh] xl:-mt-[23vh] mx-[3%] xl:mx-[5%] bg-[#F9FBFF] rounded-[30px] 
+                    relative z-10 -mt-[5vh] 2xl:-mt-[23vh] mx-[3%] 2xl:mx-[5%] bg-[#F9FBFF] rounded-[30px] 
                     p-3 md:p-5 lg:p-10 flex flex-col shadow-[0px_3px_21px_#ACBFE56C] gap-y-3
                 '
             >
