@@ -10,6 +10,7 @@ import { usePdfExport } from './usePdfExport';
 import { layers as allLayers, findLayerById } from '../../../helpers/layers/index';
 import { transformExtent } from 'ol/proj';
 import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
+import { getLayersSources } from '@services/layerMetadataService';
 
 export const useMapDownload = () => {
     const { targetRef, mapRef } = useMapsContext();
@@ -98,6 +99,12 @@ export const useMapDownload = () => {
 
             const legendForPanel = selectedLegends.length > 0 ? selectedLegends[0] : currentSelectedLegend;
 
+            const sourcesMap = await getLayersSources(activeLayerIds).catch(() => ({}));
+            const source = Object.values(sourcesMap)
+                .filter(Boolean)
+                .filter((v, i, arr) => arr.indexOf(v) === i)
+                .join(', ') || 'Por definir';
+
             const finalMapCanvas = await composeExportImage({
                 mapCanvas,
                 extent: targetExtent || getViewportExtent(),
@@ -108,7 +115,9 @@ export const useMapDownload = () => {
                 viewType,
                 viewportExtent: viewType === 'viewport' ? targetExtent : null,
                 minimapImageUrl,
-                minimapBounds
+                minimapBounds,
+                source,
+                scale: 2
             });
 
             if (format === 'pdf') {

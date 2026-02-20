@@ -35,3 +35,7 @@ class PeriodicityRespose(BaseModel):
 class MetadataResponse(PeriodicityRespose, LayerResponse):
     numeralia: Optional[list] = Field(default = None)
     nombre_pie_numeralia : Optional[str] = Field(default = None)
+
+class LayerSourceResponse(BaseModel):
+    nombre_capa_geoserver: str
+    fuentes_texto_corto: Optional[str] = Field(default=None)

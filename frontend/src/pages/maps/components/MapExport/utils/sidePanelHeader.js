@@ -27,7 +27,9 @@ export const createSidePanelTitle = (title, contentWidth, sectionMargin, section
     const labelSection = document.createElement('div');
     Object.assign(labelSection.style, {
         width: `${contentWidth}px`,
-        height: '139px',
+        height: 'auto',
+        minHeight: '106px',
+        maxHeight: '160px',
         padding: '0 40px 30px 40px',
         margin: sectionMargin,
         backgroundColor: '#F7F8FC',
@@ -38,27 +40,19 @@ export const createSidePanelTitle = (title, contentWidth, sectionMargin, section
     });
 
     const titleText = document.createElement('div');
-    const dateLabel = document.createElement('div');
 
     titleText.textContent = title;
-    dateLabel.textContent = '*Captura de pantalla tomada de mapalab.iieg.gob.mx';
 
     Object.assign(titleText.style, {
         textAlign: 'left',
-        font: 'normal normal bold 24px Garet',
+        font: '24px/24px Garet, system-ui, sans-serif',
+        fontWeight: '800',
         letterSpacing: '0px',
         color: '#2E4372',
-    });
-
-    Object.assign(dateLabel.style, {
-        textAlign: 'left',
-        font: 'normal normal 500 12px/24px Garet',
-        letterSpacing: '0px',
-        color: '#2E4372'
+        marginTop: '17px'
     });
 
     labelSection.appendChild(titleText);
-    labelSection.appendChild(dateLabel);
 
     return labelSection;
 };

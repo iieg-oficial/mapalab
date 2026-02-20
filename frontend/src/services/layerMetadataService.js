@@ -2,6 +2,7 @@ import { findLayerById, layers } from '@pages/maps/helpers/layers';
 
 const API_HOST = import.meta.env.VITE_BACKEND_API_HOST?.replace(/\/+$/, '');
 const METADATA_ENDPOINT = `${API_HOST}/metadata/`;
+const SOURCES_ENDPOINT = `${API_HOST}/metadata/sources`;
 
 const cleanNaN = (value) => (value === 'NaN' ? null : value);
 
@@ -62,6 +63,42 @@ const getLayerRequestParams = (layerId) => {
 
     if (!workspace || !layerName) return null;
     return { workspace, layer: layerName };
+};
+
+export const getLayersSources = async (layerIds) => {
+    if (!API_HOST) return {};
+
+    const seen = new Set();
+    const entries = layerIds
+        .map((id) => {
+            const params = getLayerRequestParams(id);
+            if (!params) return null;
+            return { id, key: `${params.workspace}:${params.layer}` };
+        })
+        .filter(Boolean)
+        .filter(({ key }) => {
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
+    if (!entries.length) return {};
+
+    const keys = entries.map((e) => e.key).join(',');
+    const url = new URL(SOURCES_ENDPOINT);
+    url.searchParams.set('layers', keys);
+
+    const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+
+    const results = await response.json();
+    const byKey = Object.fromEntries(results.map((r) => [r.nombre_capa_geoserver, r.fuentes_texto_corto ?? null]));
+
+    return Object.fromEntries(entries.map(({ id, key }) => [id, byKey[key] ?? null]));
 };
 
 export const getLayerMetadata = async (layerId) => {

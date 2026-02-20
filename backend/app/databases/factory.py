@@ -23,7 +23,7 @@ class DatabaseFactory:
         host = settings.DB_HOST
         port = settings.DB_PORT
         db_name = DatabaseFactory._select_db_name(db_type)
-        return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+        return f"postgresql://{user}:{password}@{host}:{port}/{db_name}?sslmode=require"
 
     @staticmethod
     def get_connection(db_type: DatabaseType) -> PostgresConnection:

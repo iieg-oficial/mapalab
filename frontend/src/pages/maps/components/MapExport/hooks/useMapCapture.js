@@ -120,7 +120,7 @@ export const useMapCapture = () => {
 
             await waitForTilesToLoad();
 
-            const canvas = await captureMap(1);
+            const canvas = await captureMap(2);
 
             return canvas;
 

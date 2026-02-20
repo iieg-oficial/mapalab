@@ -12,6 +12,7 @@ import { useImageComposition } from './hooks/useImageComposition';
 import { usePdfExport } from './hooks/usePdfExport';
 import { layers as allLayers, findLayerById } from '../../helpers/layers/index';
 import { EXPORT_DIMENSIONS } from './utils/exportDimensions';
+import { getLayersSources } from '@services/layerMetadataService';
 import Loading from '@components/Loading';
 import Icon from '@components/Icon';
 
@@ -91,6 +92,12 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
                 viewType: 'viewport'
             });
 
+            const sourcesMap = await getLayersSources(activeLayerIds).catch(() => ({}));
+            const source = Object.values(sourcesMap)
+                .filter(Boolean)
+                .filter((v, i, arr) => arr.indexOf(v) === i)
+                .join(', ') || 'Por definir';
+
             const finalCanvas = await composeExportImage({
                 mapCanvas,
                 extent: capturedExtent,
@@ -101,7 +108,9 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
                 viewType: 'viewport',
                 viewportExtent: capturedExtent,
                 minimapImageUrl,
-                minimapBounds
+                minimapBounds,
+                source,
+                scale: 2
             });
 
             setPreviewCanvas(finalCanvas);
