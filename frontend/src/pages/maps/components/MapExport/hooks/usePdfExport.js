@@ -5,29 +5,18 @@ import createExportLegendsLayout from '../ExportLegendsLayout';
 export const usePdfExport = () => {
     const { waitForImages, captureElement } = useMapCapture();
 
-    const calculateFittedDimensions = (imgWidth, imgHeight, maxWidth, maxHeight) => {
-        const ratio = Math.min(maxWidth / imgWidth, maxHeight / imgHeight);
-        return {
-            width: imgWidth * ratio,
-            height: imgHeight * ratio
-        };
-    };
-
     const exportToPdf = async ({ canvas, title, selectedLegends = [], getLegendUrl }) => {
+        const canvasRatio = canvas.width / canvas.height;
+        const pageWidth = 297;
+        const pageHeight = pageWidth / canvasRatio;
+
         const pdf = new jsPDF({
-            orientation: 'landscape',
             unit: 'mm',
-            format: 'letter'
+            format: [pageWidth, pageHeight],
+            orientation: 'landscape'
         });
 
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-
-        const mapDims = calculateFittedDimensions(canvas.width, canvas.height, pageWidth, pageHeight);
-        const mapX = (pageWidth - mapDims.width) / 2;
-        const mapY = (pageHeight - mapDims.height) / 2;
-
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', mapX, mapY, mapDims.width, mapDims.height);
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, pageWidth, pageHeight);
 
         if (selectedLegends.length > 0) {
             const MM_TO_PX = 3.7795;
@@ -51,9 +40,8 @@ export const usePdfExport = () => {
 
             document.body.removeChild(legendsContainer);
 
-            pdf.addPage('letter', 'landscape');
-
-            pdf.addImage(legendsCanvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, pageWidth, pageHeight);
+            pdf.addPage([pageWidth, pageHeight], 'landscape');
+            pdf.addImage(legendsCanvas.toDataURL('image/jpeg', 1), 'JPEG', 0, 0, pageWidth, pageHeight);
         }
 
         const date = new Date().toISOString().slice(0, 10);

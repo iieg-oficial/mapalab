@@ -58,7 +58,7 @@ const Download = ({ onOpenPreview }) => {
 
     const executeDownload = async () => {
         const quality = QUALITY_PRESETS[qualityIndex];
-        if (viewType === 'viewport' && format !== 'pdf') {
+        if (viewType === 'viewport') {
             if (onOpenPreview) {
                 onOpenPreview(format, selectedLegendLayers, title, quality);
             }
