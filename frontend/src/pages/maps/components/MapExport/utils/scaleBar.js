@@ -16,7 +16,7 @@ const scaleBar = (mapAreaWidth, extent) => {
     const mapWidthMeters = (maxLon - minLon) * metersPerDegree;
     const metersPerPixel = mapWidthMeters / mapAreaWidth;
 
-    const targetPixels = 600;
+    const targetPixels = 445;
     const targetMeters = targetPixels * metersPerPixel;
 
     const magnitude = Math.pow(10, Math.floor(Math.log10(targetMeters)));
@@ -35,8 +35,8 @@ const scaleBar = (mapAreaWidth, extent) => {
     const halfVal = fmt(distanceMeters / 2);
     const fullVal = fmt(distanceMeters);
 
-    const TICK_HEIGHT = 28;
-    const STROKE = 6;
+    const TICK_HEIGHT = 14;
+    const STROKE = 4;
     const COLOR = '#111';
     const FONT = 'Garet, system-ui, sans-serif';
 
@@ -44,8 +44,8 @@ const scaleBar = (mapAreaWidth, extent) => {
     Object.assign(labelRow.style, {
         position: 'relative',
         width: `${barPixels}px`,
-        height: '28px',
-        marginBottom: '16px'
+        height: '21px',
+        marginBottom: '12px'
     });
 
     const makeLabel = (text, leftPx, anchor) => {
@@ -57,11 +57,11 @@ const scaleBar = (mapAreaWidth, extent) => {
             bottom: '0',
             transform: anchor,
             fontFamily: FONT,
-            fontSize: '24px',
+            fontSize: '18px',
             fontWeight: '700',
             color: COLOR,
             whiteSpace: 'nowrap',
-            textShadow: '-3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff, 3px 3px 0 #fff'
+            textShadow: '-2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff'
         });
         return el;
     };
