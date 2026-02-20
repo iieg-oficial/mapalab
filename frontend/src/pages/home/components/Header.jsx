@@ -17,16 +17,16 @@ const Header = () => {
     };
 
     return (
-        <header className="relative h-[90vh] xl:h-[80vh] min-h-[500px] w-full overflow-visible">
+        <header className="relative h-[90vh] 2xl:h-[80vh] min-h-[500px] w-full overflow-visible">
             <div
-                className="absolute inset-0 xl:hidden"
+                className="absolute inset-0 2xl:hidden"
                 style={mobileStyle}
             />
             <div
-                className="absolute inset-0 hidden xl:block"
+                className="absolute inset-0 hidden 2xl:block"
                 style={desktopStyle}
             />
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 xl:hidden z-10">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 2xl:hidden z-10">
                 <Logo
                     name="mapalab"
                     variant="dark"
@@ -36,8 +36,8 @@ const Header = () => {
                 />
             </div>
 
-            <div className="relative z-10 h-full xl:h-[70%] flex flex-col xl:flex-row items-center justify-center xl:justify-start xl:gap-36">
-                <div className="hidden xl:flex xl:w-[35vw] justify-end xl:mb-18">
+            <div className="relative z-10 h-full 2xl:h-[70%] flex flex-col 2xl:flex-row items-center justify-center 2xl:justify-start 2xl:gap-36">
+                <div className="hidden 2xl:flex 2xl:w-[35vw] justify-end 2xl:mb-18">
                     <Logo
                         name="mapalab"
                         variant="dark"
@@ -46,7 +46,7 @@ const Header = () => {
                         type="square"
                     />
                 </div>
-                <div className="w-full mt-15 md:mt-0 xl:w-[35vw] px-4 flex justify-center">
+                <div className="w-full mt-15 md:mt-0 2xl:w-[35vw] px-4 flex justify-center">
                     <div className="w-full max-w-[497px] flex flex-col items-start justify-start gap-3">
                         <h1 className="font-garet text-[50px]/[59px] text-white tracking-normal text-left">
                             <span className="block font-medium tracking-normal">{activeBanner.content.titleHighlight}</span>
@@ -68,7 +68,7 @@ const Header = () => {
                         </Link>
                     </div>
                 </div>
-                <div className="hidden xl:block w-[35vw]">
+                <div className="hidden 2xl:block w-[35vw]">
                     <img
                         src={activeBanner.image.src}
                         alt={activeBanner.image.alt}
