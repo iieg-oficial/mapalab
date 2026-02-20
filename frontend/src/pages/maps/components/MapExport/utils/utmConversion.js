@@ -5,7 +5,7 @@ export const latLonToUTM = (lat, lon) => {
     const e = Math.sqrt(2 * f - f * f);
     const e2 = e * e;
     const ep2 = e2 / (1 - e2);
-    const zone = 13;
+    const zone = Math.floor((lon + 180) / 6) + 1;
     const lon0 = ((zone - 1) * 6 - 180 + 3) * Math.PI / 180;
     const latRad = lat * Math.PI / 180;
     const lonRad = lon * Math.PI / 180;

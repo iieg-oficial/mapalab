@@ -1,4 +1,3 @@
-import { transformExtent } from 'ol/proj';
 import { useMapCapture } from './useMapCapture';
 import coordinateGrid from '../utils/coordinateGrid';
 import coordinateLabels from '../utils/coordinateLabels';
@@ -108,22 +107,7 @@ export const useImageComposition = () => {
         mapFrame.appendChild(mapImage);
         mapFrame.appendChild(gridContainer);
 
-        let frameExtent = extent;
-        if (extent) {
-            const ext3857 = transformExtent(extent, 'EPSG:4326', 'EPSG:3857');
-            const [ex0, ey0, ex1, ey1] = ext3857;
-            const ew = ex1 - ex0;
-            const eh = ey1 - ey0;
-            const cropped = [
-                ex0 + (LABEL_MARGIN_Y / MAP_WIDTH) * ew,
-                ey0 + (LABEL_MARGIN_X / MAP_HEIGHT) * eh,
-                ex1 - (LABEL_MARGIN_Y / MAP_WIDTH) * ew,
-                ey1 - (LABEL_MARGIN_X / MAP_HEIGHT) * eh
-            ];
-            frameExtent = transformExtent(cropped, 'EPSG:3857', 'EPSG:4326');
-        }
-
-        const labels = coordinateLabels(mapAreaWidth, mapAreaHeight, frameExtent);
+        const labels = coordinateLabels(mapAreaWidth, mapAreaHeight, extent);
 
         labels.top.style.position = 'absolute';
         labels.top.style.top = '0';
