@@ -1,3 +1,10 @@
+export const QUALITY_PRESETS = [
+    { label: 'Básica',  mapWidth: 2007, mapHeight: 1700, captureScale: 1, composeScale: 1 },
+    { label: 'Normal',  mapWidth: 2007, mapHeight: 1700, captureScale: 2, composeScale: 2 },
+    { label: 'Alta',    mapWidth: 4014, mapHeight: 3400, captureScale: 1, composeScale: 2 },
+    { label: 'Ultra',   mapWidth: 4014, mapHeight: 3400, captureScale: 2, composeScale: 4 },
+];
+
 export const EXPORT_DIMENSIONS = {
     TOTAL_WIDTH: 2550,
     TOTAL_HEIGHT: 1700,

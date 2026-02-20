@@ -49,7 +49,7 @@ export const useMapCapture = () => {
         });
     };
 
-    const captureMap = async (scale = 2) => {
+    const captureMap = async (scale = 1, mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT) => {
         if (!targetRef.current) return null;
 
         return html2canvas(targetRef.current, {
@@ -57,8 +57,8 @@ export const useMapCapture = () => {
             allowTaint: true,
             backgroundColor: '#ffffff',
             scale,
-            width: MAP_WIDTH,
-            height: MAP_HEIGHT
+            width: mapWidth,
+            height: mapHeight
         });
     };
 
@@ -86,10 +86,23 @@ export const useMapCapture = () => {
         }));
     };
 
-    const getMapSnapshot = async ({ extent, viewType = 'viewport' }) => {
+    const getAllLayers = (layerCollection) => {
+        const result = [];
+        layerCollection.forEach(layer => {
+            if (typeof layer.getLayers === 'function') {
+                result.push(...getAllLayers(layer.getLayers()));
+            } else {
+                result.push(layer);
+            }
+        });
+        return result;
+    };
+
+    const getMapSnapshot = async ({ extent, viewType = 'viewport', mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT, captureScale = 1 }) => {
         if (!targetRef.current || !mapRef.current) return null;
 
         let originalState = null;
+        let layerResolutions = [];
         try {
             originalState = {
                 width: targetRef.current.style.width,
@@ -98,8 +111,15 @@ export const useMapCapture = () => {
                 resolution: mapRef.current.getView().getResolution()
             };
 
-            targetRef.current.style.width = `${MAP_WIDTH}px`;
-            targetRef.current.style.height = `${MAP_HEIGHT}px`;
+            const allLayers = getAllLayers(mapRef.current.getLayers());
+            layerResolutions = allLayers.map(layer => ({
+                layer,
+                minResolution: layer.getMinResolution()
+            }));
+            allLayers.forEach(layer => layer.setMinResolution(0));
+
+            targetRef.current.style.width = `${mapWidth}px`;
+            targetRef.current.style.height = `${mapHeight}px`;
             mapRef.current.updateSize();
 
             if (viewType === 'full-state') {
@@ -109,7 +129,7 @@ export const useMapCapture = () => {
                 const view = mapRef.current.getView();
                 const extentW = extent3857[2] - extent3857[0];
                 const extentH = extent3857[3] - extent3857[1];
-                const resolution = Math.min(extentW / MAP_WIDTH, extentH / MAP_HEIGHT);
+                const resolution = Math.min(extentW / mapWidth, extentH / mapHeight);
                 const center = [
                     (extent3857[0] + extent3857[2]) / 2,
                     (extent3857[1] + extent3857[3]) / 2
@@ -120,7 +140,7 @@ export const useMapCapture = () => {
 
             await waitForTilesToLoad();
 
-            const canvas = await captureMap(2);
+            const canvas = await captureMap(captureScale, mapWidth, mapHeight);
 
             return canvas;
 
@@ -128,6 +148,8 @@ export const useMapCapture = () => {
             console.error('Error in getMapSnapshot:', error);
             throw error;
         } finally {
+            layerResolutions.forEach(({ layer, minResolution }) => layer.setMinResolution(minResolution));
+
             if (originalState) {
                 targetRef.current.style.width = originalState.width;
                 targetRef.current.style.height = originalState.height;

@@ -9,7 +9,7 @@ import { useImageComposition } from './useImageComposition';
 import { usePdfExport } from './usePdfExport';
 import { layers as allLayers, findLayerById } from '../../../helpers/layers/index';
 import { transformExtent } from 'ol/proj';
-import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
+import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from '../utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
 
 export const useMapDownload = () => {
@@ -72,7 +72,7 @@ export const useMapDownload = () => {
         return transformExtent([minX, minY, maxX, maxY], 'EPSG:3857', 'EPSG:4326');
     };
 
-    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa', forcedExtent = null) => {
+    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa', forcedExtent = null, quality = QUALITY_PRESETS[1]) => {
         if (!targetRef.current || !canDownload || isDownloading) return;
 
         setIsDownloading(true);
@@ -80,6 +80,7 @@ export const useMapDownload = () => {
         prepareScaleControl(scaleControl);
 
         const { SIDE_PANEL_WIDTH } = EXPORT_DIMENSIONS;
+        const { mapWidth, mapHeight, captureScale, composeScale } = quality;
 
         try {
             const { url: minimapImageUrl, bounds: minimapBounds } = generateMinimapImage(viewType);
@@ -92,7 +93,10 @@ export const useMapDownload = () => {
 
             const mapCanvas = await getMapSnapshot({
                 extent: targetExtent,
-                viewType
+                viewType,
+                mapWidth,
+                mapHeight,
+                captureScale
             });
 
             if (!mapCanvas) throw new Error('Failed to capture map');
@@ -117,7 +121,7 @@ export const useMapDownload = () => {
                 minimapImageUrl,
                 minimapBounds,
                 source,
-                scale: 2
+                scale: composeScale
             });
 
             if (format === 'pdf') {

@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useMapDownload } from './hooks/useMapDownload';
+import { QUALITY_PRESETS } from './utils/exportDimensions';
 import { useSider } from '@contexts/SiderContext';
 import SymbologyItem from '../SymbologyItem';
 import Icon from '@components/Icon';
 import Panel from '@components/Panel';
 import Tooltip from '@components/Tooltip';
 import ScrollContainer from '@components/ScrollContainer';
+import QualitySelector from './QualitySelector';
 
 const Download = ({ onOpenPreview }) => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -15,6 +17,7 @@ const Download = ({ onOpenPreview }) => {
     const anchorRef = useRef(null);
     const [format, setFormat] = useState('png');
     const [viewType, setViewType] = useState('viewport');
+    const [qualityIndex, setQualityIndex] = useState(1);
 
     const {
         downloadMap, isDownloading, canDownload,
@@ -53,15 +56,20 @@ const Download = ({ onOpenPreview }) => {
         setIsPanelOpen(true);
     };
 
-    const handleConfirmDownload = async () => {
-        setIsPanelOpen(false);
+    const executeDownload = async () => {
+        const quality = QUALITY_PRESETS[qualityIndex];
         if (viewType === 'viewport' && format !== 'pdf') {
             if (onOpenPreview) {
-                onOpenPreview(format, selectedLegendLayers, title);
+                onOpenPreview(format, selectedLegendLayers, title, quality);
             }
         } else {
-            await downloadMap(format, selectedLegendLayers, viewType, title);
+            await downloadMap(format, selectedLegendLayers, viewType, title, null, quality);
         }
+    };
+
+    const handleConfirmDownload = () => {
+        setIsPanelOpen(false);
+        executeDownload();
     };
 
     const handleLayerSelect = (layer) => {
@@ -119,7 +127,7 @@ const Download = ({ onOpenPreview }) => {
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb">
                         Formato
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mb-2">
                         {['png', 'jpeg', 'pdf'].map(fmt => (
                             <button
                                 key={fmt}
@@ -136,6 +144,12 @@ const Download = ({ onOpenPreview }) => {
                             </button>
                         ))}
                     </div>
+
+                    <QualitySelector
+                        value={qualityIndex}
+                        onChange={setQualityIndex}
+                        isPanelOpen={isPanelOpen}
+                    />
 
                     <div>
                         <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">

@@ -42,9 +42,11 @@ const Tooltip = ({
     disabled = false,
     icon = null,
     variant = 'normal',
-    showArrow = true
+    showArrow = true,
+    forceVisible = false
 }) => {
     const [isVisible, setIsVisible] = useState(false);
+    const shown = isVisible || forceVisible;
     const [position, setPosition] = useState({ top: 0, left: 0 });
     const [actualPlacement, setActualPlacement] = useState(placement);
     const [arrowOffset, setArrowOffset] = useState(0);
@@ -56,7 +58,7 @@ const Tooltip = ({
     const displayIcon = icon !== null ? icon : variantIcons[variant];
 
     const updatePosition = () => {
-        if (!isVisible || !triggerRef.current || !tooltipRef.current) return;
+        if (!shown || !triggerRef.current || !tooltipRef.current) return;
 
         const triggerRect = triggerRef.current.getBoundingClientRect();
         const tooltipRect = tooltipRef.current.getBoundingClientRect();
@@ -125,7 +127,7 @@ const Tooltip = ({
     };
 
     useLayoutEffect(() => {
-        if (!isVisible) return;
+        if (!shown) return;
 
         updatePosition();
 
@@ -138,7 +140,7 @@ const Tooltip = ({
             window.removeEventListener('scroll', handleUpdate, true);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isVisible, placement]);
+    }, [shown, placement]);
 
     const handleMouseEnter = () => {
         if (disabled || !content) return;
@@ -230,7 +232,7 @@ const Tooltip = ({
         };
     };
 
-    const tooltipElement = isVisible ? (
+    const tooltipElement = shown ? (
         <div
             ref={tooltipRef}
             role="tooltip"
