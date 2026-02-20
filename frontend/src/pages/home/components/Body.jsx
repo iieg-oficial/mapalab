@@ -163,7 +163,7 @@ const Body = () => {
                         className={`
                             group relative bg-[#F3EBFF] flex items-center justify-center md:justify-end rounded-[50px]
                             w-full max-w-[522px] h-[110px] transition-all border border-transparent pl-18 md:pl-0 md:pr-22 mx-4
-                            ${expandedSection === item.id ? 'border-[#5C2472]' : 'hover:border-[#5C2472]'} cursor-pointer
+s                            ${expandedSection === item.id ? 'border-[#5C2472]' : 'hover:border-[#5C2472]'} cursor-pointer
                         `}
                     >
                         <div className="absolute left-4 md:left-[43px] flex items-center justify-center bg-white rounded-full p-4 size-[74px]">
