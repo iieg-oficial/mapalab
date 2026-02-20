@@ -2,14 +2,13 @@ import { useMapCapture } from './useMapCapture';
 import coordinateGrid from '../utils/coordinateGrid';
 import coordinateLabels from '../utils/coordinateLabels';
 import northArrow from '../utils/northArrow';
+import scaleBar from '../utils/scaleBar';
 import createExportSidePanel from '../ExportSidePanel';
 import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
 
 const {
     LABEL_MARGIN_X,
     LABEL_MARGIN_Y,
-    MAP_WIDTH,
-    MAP_HEIGHT,
     FRAME_BORDER_WIDTH,
     FRAME_COLOR,
     NUM_DIVISIONS_X,
@@ -30,6 +29,7 @@ export const useImageComposition = () => {
         viewportExtent,
         minimapImageUrl,
         minimapBounds,
+        source = 'Por definir',
         scale = 1
     }) => {
         const mapSectionWidth = mapCanvas.width / (scale > 1 ? scale : 1);
@@ -100,9 +100,11 @@ export const useImageComposition = () => {
         grid.style.left = `${FRAME_BORDER_WIDTH}px`;
 
         const arrow = northArrow();
+        const scaleBarEl = scaleBar(mapAreaWidth - (FRAME_BORDER_WIDTH * 2), extent);
 
         gridContainer.appendChild(grid);
         gridContainer.appendChild(arrow);
+        gridContainer.appendChild(scaleBarEl);
 
         mapFrame.appendChild(mapImage);
         mapFrame.appendChild(gridContainer);
@@ -142,8 +144,8 @@ export const useImageComposition = () => {
             viewportExtent,
             minimapImageUrl,
             minimapBounds,
-            source: 'Por definir'
-        }); 
+            source
+        });
 
         sidePanel.style.position = 'relative';
         sidePanel.style.top = 'auto';

@@ -16,3 +16,17 @@ class MapalabRepository:
             Mapalab_Card.nombre_capa_geoserver == f"{workspace}:{layer}"
         )
         return query.all()
+
+    @staticmethod
+    def get_sources_batch(
+        session: Session,
+        layer_keys: list[str],
+    ) -> list[Mapalab_Card]:
+        return (
+            session.query(
+                Mapalab_Card.nombre_capa_geoserver,
+                Mapalab_Card.fuentes_texto_corto,
+            )
+            .filter(Mapalab_Card.nombre_capa_geoserver.in_(layer_keys))
+            .all()
+        )

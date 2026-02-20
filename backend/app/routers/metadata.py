@@ -5,12 +5,32 @@ from app.databases.factory import DatabaseFactory
 from app.repositories.mapalab_repository import MapalabRepository
 from app.services import GeoServerService
 from app.services.periodicity import get_periodicity
-from app.schemas import (MetadataResponse,  LayerResponse)
+from app.schemas import (MetadataResponse, LayerResponse, LayerSourceResponse)
 from app.utils.api_responses import api_responses
 from app.utils.logger import Logger
 from app.utils.clean import NanToNone
 
 router = APIRouter(prefix="/metadata", tags=["Metadata"])
+
+@router.get("/sources", response_model=list[LayerSourceResponse], responses=api_responses(404, 500))
+def get_sources_batch(
+    layers: str = Query(description="Capas separadas por coma en formato workspace:layer"),
+):
+    layer_keys = list(dict.fromkeys(l.strip() for l in layers.split(",") if l.strip()))
+    try:
+        conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+        with conn.get_session() as session:
+            results = MapalabRepository.get_sources_batch(session=session, layer_keys=layer_keys)
+        return [
+            LayerSourceResponse(
+                nombre_capa_geoserver=row.nombre_capa_geoserver,
+                fuentes_texto_corto=NanToNone(row.fuentes_texto_corto),
+            )
+            for row in results
+        ]
+    except Exception as e:
+        Logger.error(f"Error fetching sources batch: {str(e)}")
+        return []
 
 @router.get("/", response_model=list[MetadataResponse], responses=api_responses(404, 500))
 def get_metadata(
