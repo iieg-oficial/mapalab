@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import Icon from '@components/Icon';
 
 const Card = ({ topics = [] }) => {
     const navigate = useNavigate();
     const [hoveredIndex, setHoveredIndex] = useState(null);
+    const lastTouchRef = useRef(0);
 
     const handleSubtopicClick = (layerIds) => {
         const layers = Array.isArray(layerIds) ? layerIds.join(',') : layerIds;
@@ -19,9 +20,17 @@ const Card = ({ topics = [] }) => {
                 return (
                     <div
                         key={topic.id}
-                        className="relative group hover:z-50 h-[110px] w-full md:max-w-[397px]"
-                        onMouseEnter={() => setHoveredIndex(index)}
-                        onMouseLeave={() => setHoveredIndex(null)}
+                        className={`relative h-[110px] w-full md:max-w-[397px] ${isOpen ? 'z-50' : ''}`}
+                        onMouseEnter={() => {
+                            if (Date.now() - lastTouchRef.current > 500) setHoveredIndex(index);
+                        }}
+                        onMouseLeave={() => {
+                            if (Date.now() - lastTouchRef.current > 500) setHoveredIndex(null);
+                        }}
+                        onTouchStart={() => {
+                            lastTouchRef.current = Date.now();
+                            setHoveredIndex(isOpen ? null : index);
+                        }}
                     >
                         <div
                             className={`
@@ -41,15 +50,12 @@ const Card = ({ topics = [] }) => {
                                     flex flex-col flex-1 transition-all duration-300
                                     ${isOpen ? 'gap-7 justify-start' : 'justify-center'}
                                 `}>
-                                    <p className={`
-                                        font-garet font-bold text-[21px]/[28px] text-[#5C2472] tracking-normal
-                                    `}>
+                                    <p className="font-garet font-bold text-[21px]/[28px] text-[#5C2472] tracking-normal">
                                         {topic.label}
                                     </p>
                                     <p className={`
                                         font-garet font-medium text-[14px]/[28px] text-[#454545] tracking-normal
                                         max-h-0 overflow-hidden transition-all duration-300
-                                        group-hover:max-h-20
                                         ${isOpen ? 'max-h-20' : ''}
                                     `}>
                                         {topic.description}
@@ -60,13 +66,13 @@ const Card = ({ topics = [] }) => {
                             {topic.subtopics && topic.subtopics.length > 0 && (
                                 <ul className={`
                                     flex flex-col gap-2 max-h-0 overflow-hidden transition-all duration-500 ease-in-out
-                                    group-hover:max-h-[300px] group-hover:mt-4
                                     ${isOpen ? 'max-h-[300px] mt-4' : ''}
                                 `}>
                                     {topic.subtopics.map((subtopic, idx) => (
                                         <li key={idx}>
                                             <button
                                                 onClick={() => handleSubtopicClick(subtopic.layerIds)}
+                                                onTouchStart={(e) => e.stopPropagation()}
                                                 className="
                                                     w-full text-left px-3 py-2 rounded-lg
                                                     font-garet font-medium text-[14px] text-[#454545]
