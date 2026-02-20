@@ -76,11 +76,8 @@ export const useImageComposition = () => {
         const mapImage = document.createElement('img');
         mapImage.src = mapCanvas.toDataURL('image/png');
         Object.assign(mapImage.style, {
-            position: 'absolute',
-            top: `-${LABEL_MARGIN_X}px`,
-            left: `-${LABEL_MARGIN_Y}px`,
-            width: `${mapSectionWidth}px`,
-            height: `${mapSectionHeight}px`,
+            width: '100%',
+            height: '100%',
             display: 'block'
         });
 
@@ -162,7 +159,7 @@ export const useImageComposition = () => {
             minimapImageUrl,
             minimapBounds,
             source: 'Por definir'
-        });
+        }); 
 
         sidePanel.style.position = 'relative';
         sidePanel.style.top = 'auto';
