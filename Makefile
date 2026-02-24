@@ -76,7 +76,7 @@ prod: network-create
 	@echo ""
 	@echo "Construyendo frontend..."
 	@echo "Instalando dependencias y construyendo en Docker..."
-	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "npm install && npm run build"
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
 	@echo ""
 	@echo "Levantando servicios de producción..."
 	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d
@@ -96,7 +96,7 @@ prod: network-create
 build-prod:
 	@echo "Construyendo imágenes de producción..."
 	@echo "Construyendo imágenes de producción..."
-	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "npm install && npm run build"
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml build
 	@cd $(NGINX_DIR) && docker compose build
 	@echo "Imágenes construidas"
