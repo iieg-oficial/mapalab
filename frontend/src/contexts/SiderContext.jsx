@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useRef, useState, useLayoutEffect, useCallback, useEffect } from 'react';
 import {
     SIDER_COLLAPSED_WIDTH,
@@ -182,7 +183,7 @@ export const useSiderHover = ({
 
     useEffect(() => {
         return () => clearTimers();
-         
+
     }, []);
 
     return {

@@ -48,10 +48,12 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
             setIsZenMode(false);
             setShowModal(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
 
     useEffect(() => {
         return () => setIsZenMode(false);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
 
@@ -61,6 +63,7 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
             setPreviewCanvas(null);
             generatePreview();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [capturedExtent]);
 
     const currentSelectedLegend = useMemo(() => {

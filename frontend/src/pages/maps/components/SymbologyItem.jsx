@@ -31,6 +31,7 @@ const SymbologyItem = ({
 
             return () => clearTimeout(timer);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [internalExpanded, layer?.id, simple]);
 
     if (!layer) return null;

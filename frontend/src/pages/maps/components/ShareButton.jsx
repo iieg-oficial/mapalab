@@ -7,9 +7,9 @@ import { trackShareMap } from '@services/analyticsService';
 const ShareButton = () => {
     const [shareMessage, setShareMessage] = useState(null);
     const [isHovered, setIsHovered] = useState(false);
-    
+
     const massage = shareMessage === '¡Enlace copiado!'
-    
+
     useEffect(() => {
         if (shareMessage) {
             trackShareMap(massage ? 'exito' : 'error');
@@ -18,6 +18,7 @@ const ShareButton = () => {
             }, 3000);
             return () => clearTimeout(timer);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [shareMessage]);
 
     return (

@@ -118,6 +118,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                 setSelectedYear(loopState.year);
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loopState?.currentMonth, loopState?.isPlaying, loopState?.year]);
 
     const handleStopLoop = () => {

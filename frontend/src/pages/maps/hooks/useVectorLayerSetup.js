@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useCallback } from 'react';
 import { Vector as VectorSource } from 'ol/source';
 import { Vector as VectorLayer } from 'ol/layer';
@@ -39,7 +40,6 @@ export const useVectorLayerSetup = (mapRef, getStyleForType, vectorSourceRef, ve
                 vectorSourceRef.current = null;
             }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mapRef, vectorSourceRef, vectorLayerRef]);
 
     useEffect(() => {

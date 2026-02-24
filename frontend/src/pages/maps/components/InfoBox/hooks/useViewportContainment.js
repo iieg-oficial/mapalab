@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useLayoutEffect, useCallback } from 'react';
 
 export const useViewportContainment = (ref, dependencies = [], margin = 10) => {
