@@ -50,7 +50,7 @@ export const useScrollOverflow = (containerRef, { enabled = true } = {}) => {
         });
 
         element.addEventListener('scroll', checkScroll, { passive: true });
-        window.addEventListener('resize', checkScroll);
+        window.addEventListener('resize', checkScroll, { passive: true });
 
         return () => {
             if (rafId.current) {
@@ -59,7 +59,7 @@ export const useScrollOverflow = (containerRef, { enabled = true } = {}) => {
             resizeObserver.disconnect();
             mutationObserver.disconnect();
             element?.removeEventListener('scroll', checkScroll);
-            window.removeEventListener('resize', checkScroll);
+            window.removeEventListener('resize', checkScroll, { passive: true });
         };
     }, [enabled, containerRef, checkScroll]);
 

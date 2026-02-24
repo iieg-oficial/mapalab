@@ -79,7 +79,7 @@ const Body = () => {
                             <img
                                 src={item.image}
                                 className="bg-[transparent linear-gradient(0deg, #F3EBFF 0%, #F4EBFF00 100%) 0% 0% no-repeat padding-box] size-[122px] rounded-[16px]"
-                                alt={item.header}
+                                alt=""
                                 loading="lazy"
                             />
                             <div className="flex flex-col justify-start items-center text-center">
@@ -130,7 +130,7 @@ const Body = () => {
                             >
                                 <img
                                     src={item.image}
-                                    alt={item.header}
+                                    alt=""
                                     className="hidden xl:block xl:max-w-[506px] xl:max-h-[389px] object-cover xl:ml-[33px]"
                                     loading="lazy"
                                 />
@@ -171,13 +171,13 @@ s                            ${expandedSection === item.id ? 'border-[#5C2472]' 
                         <div className="absolute left-4 md:left-[43px] flex items-center justify-center bg-white rounded-full p-4 size-[74px]">
                             <img
                                 src={item.icon}
-                                alt="preguntas frecuentes icon"
+                                alt=""
                                 className={`size-full ${expandedSection === item.id ? 'hidden' : 'block group-hover:hidden'}`}
                                 loading="lazy"
                             />
                             <img
                                 src={item.iconHover}
-                                alt="preguntas frecuentes icon hover"
+                                alt=""
                                 className={`size-full ${expandedSection === item.id ? 'block' : 'hidden group-hover:block'}`}
                                 loading="lazy"
                             />

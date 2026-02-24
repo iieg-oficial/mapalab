@@ -84,7 +84,7 @@ const Panel = ({
         };
 
         document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('touchstart', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside, { passive: true });
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('touchstart', handleClickOutside);
@@ -162,7 +162,8 @@ const Panel = ({
         role: 'menu',
         'aria-labelledby': anchorRef ? `${menuId}-button` : undefined
     } : {
-        role: role
+        role: role,
+        ...(title && { 'aria-labelledby': `${menuId}-title` })
     };
 
     const panelContent = (
@@ -211,7 +212,7 @@ const Panel = ({
                         <>
                             <div className={`sticky top-0 ${bgClass} ${noPadding ? 'p-0' : 'p-3'} flex items-center justify-between ${variant === 'floating' ? 'rounded-t-xl' : 'rounded-t-2xl'} ${shouldUseMobileFullscreen ? 'max-md:rounded-none' : ''} shrink-0`}>
                                 {title && (
-                                    <span className="text-xs font-semibold text-gray-600 ">
+                                    <span id={`${menuId}-title`} className="text-xs font-semibold text-gray-600 ">
                                         {title}
                                     </span>
                                 )}
