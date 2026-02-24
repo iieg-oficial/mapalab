@@ -298,6 +298,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 lastSelectCenterRef.current = center;
 
                 const measurementData = {
+                    id: crypto.randomUUID(),
                     type: type,
                     feature: feature,
                     visible: true,
@@ -330,6 +331,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             }
 
             let measurementData = {
+                id: crypto.randomUUID(),
                 type: type,
                 feature: feature,
                 visible: true
