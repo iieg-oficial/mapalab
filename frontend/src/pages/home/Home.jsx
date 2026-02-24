@@ -7,23 +7,23 @@ import SEO from '@components/SEO'
 const Home = () => {
     return (
         <>
-        <SEO
-            title="Mapalab"
-            description="Explora información geoespacial del estado de Jalisco con mapas interactivos, capas temáticas y datos estadísticos del IIEG."
-        />
-        <div
-            className='min-h-screen bg-white'
-            style={{
-                backgroundImage: `url(${bgHome})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
-            }}
-        >
-            <Header />
-            <Body />
-            <Footer />
-        </div>
+            <SEO
+                title="Mapalab"
+                description="Explora información geoespacial del estado de Jalisco con mapas interactivos, capas temáticas y datos estadísticos del IIEG."
+            />
+            <div
+                className='min-h-screen bg-white'
+                style={{
+                    backgroundImage: `url(${bgHome})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                }}
+            >
+                <Header />
+                <Body />
+                <Footer />
+            </div>
         </>
     );
 };

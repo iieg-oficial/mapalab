@@ -10,7 +10,7 @@ export const combineCQLFilters = (baseFilter, dynamicFilter) => {
 };
 
 export const fetchGeometryColumns = async (baseUrl, typeNames) => {
-    const globalWfsUrl = baseUrl.replace(/\/(?:[^\/]+\/)?wms$/, '/wfs');
+    const globalWfsUrl = baseUrl.replace(/\/(?:[^/]+\/)?wms$/, '/wfs');
     const missingTypes = typeNames.filter(name => !geometryColumnCache[`${baseUrl}:${name}`]);
 
     if (missingTypes.length > 0) {
@@ -29,15 +29,15 @@ export const fetchGeometryColumns = async (baseUrl, typeNames) => {
 
             const text = await response.text();
             const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(text, "text/xml");
+            const xmlDoc = parser.parseFromString(text, 'text/xml');
 
-            const complexTypes = xmlDoc.getElementsByTagNameNS("http://www.w3.org/2001/XMLSchema", "complexType");
+            const complexTypes = xmlDoc.getElementsByTagNameNS('http://www.w3.org/2001/XMLSchema', 'complexType');
 
             for (let i = 0; i < complexTypes.length; i++) {
                 const complexType = complexTypes[i];
                 const typeName = complexType.getAttribute('name').replace('Type', '');
 
-                const elements = complexType.getElementsByTagNameNS("http://www.w3.org/2001/XMLSchema", "element");
+                const elements = complexType.getElementsByTagNameNS('http://www.w3.org/2001/XMLSchema', 'element');
                 let geomName = 'the_geom';
                 let geomType = 'unknown';
 
@@ -61,8 +61,7 @@ export const fetchGeometryColumns = async (baseUrl, typeNames) => {
                 }
             }
 
-        } catch (e) {
-        }
+        } catch { /* DescribeFeatureType is best-effort */ }
     }
 
     const result = {};
@@ -137,7 +136,7 @@ export const parseResponse = async (response) => {
         try {
             const text = await response.text();
             data = JSON.parse(text);
-        } catch (e) {
+        } catch {
             return null;
         }
     } else {

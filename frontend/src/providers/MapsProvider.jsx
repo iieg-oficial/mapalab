@@ -37,7 +37,6 @@ const MapsProvider = ({ children }) => {
         applyFilter: cqlFilter.applyFilter,
         clearFilter: cqlFilter.clearFilter,
         loadingLayers,
-        mapRef,
         activeLayerIds: layerManagement.activeLayerIds
     });
 
@@ -74,7 +73,7 @@ const MapsProvider = ({ children }) => {
 
     const mapDrawing = useMapDrawing(mapRef, handlePolygonComplete, handleShowCachedSelection);
 
-    const mapsAnalyticsEvent = useCallback((_action, _label) => {}, []);
+    const mapsAnalyticsEvent = useCallback(() => { }, []);
 
     const value = useMemo(() => ({
         baseMapId,

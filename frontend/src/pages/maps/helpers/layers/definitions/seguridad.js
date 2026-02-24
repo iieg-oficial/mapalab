@@ -60,45 +60,75 @@ const delitoRoboConfig = {
 const desaparecidosText = 'Las tasas se calculan respecto a la población total (ambos sexos), por cada 100,000 habitantes.';
 
 const TASAS_DELITOS_FUERO = [
-    { id: 'tasa_feminicidio', label: 'Feminicidios (tasa)', layerName: 'datos_delitos_feminicidio_secretariado', tags: ['seguridad', 'delito', 'feminicidio', 'tasa', 'mujer'],
-        littleCard: createTasaConfig('Feminicidio', TASA_STATS_HOMICIDIO, 'Tasa de carpetas de investigación por cada 100 mil habitantes.') },
-    { id: 'tasa_homicidio_doloso', label: 'Homicidio doloso (tasa)', layerName: 'datos_delitos_homicidio_doloso_secretariado', tags: ['seguridad', 'delito', 'homicidio', 'tasa', 'asesinato', 'crimen', 'violencia'],
-        littleCard: createTasaConfig('Homicidio doloso', TASA_STATS_HOMICIDIO, 'Tasa de carpetas de investigación por cada 100 mil habitantes.') },
-    { id: 'tasa_lesiones_dolosas', label: 'Lesiones dolosas (tasa)', layerName: 'datos_delitos_lesiones_dolosas_secretariado', tags: ['seguridad', 'delito', 'lesiones', 'dolosas', 'tasa', 'golpes', 'agresion', 'fisica'],
-        littleCard: createTasaConfig('Lesiones dolosas', TASA_STATS_HOMICIDIO, 'Tasa de carpetas de investigación por cada 100 mil habitantes.') },
+    {
+        id: 'tasa_feminicidio', label: 'Feminicidios (tasa)', layerName: 'datos_delitos_feminicidio_secretariado', tags: ['seguridad', 'delito', 'feminicidio', 'tasa', 'mujer'],
+        littleCard: createTasaConfig('Feminicidio', TASA_STATS_HOMICIDIO, 'Tasa de carpetas de investigación por cada 100 mil habitantes.')
+    },
+    {
+        id: 'tasa_homicidio_doloso', label: 'Homicidio doloso (tasa)', layerName: 'datos_delitos_homicidio_doloso_secretariado', tags: ['seguridad', 'delito', 'homicidio', 'tasa', 'asesinato', 'crimen', 'violencia'],
+        littleCard: createTasaConfig('Homicidio doloso', TASA_STATS_HOMICIDIO, 'Tasa de carpetas de investigación por cada 100 mil habitantes.')
+    },
+    {
+        id: 'tasa_lesiones_dolosas', label: 'Lesiones dolosas (tasa)', layerName: 'datos_delitos_lesiones_dolosas_secretariado', tags: ['seguridad', 'delito', 'lesiones', 'dolosas', 'tasa', 'golpes', 'agresion', 'fisica'],
+        littleCard: createTasaConfig('Lesiones dolosas', TASA_STATS_HOMICIDIO, 'Tasa de carpetas de investigación por cada 100 mil habitantes.')
+    },
 ];
 
 const TASA_DELITOS_LIBERTAD = [
-    { id: 'tasa_violacion', label: 'Violación (tasa)', layerName: 'datos_delitos_violacion_secretariado', tags: ['seguridad', 'delito', 'violacion', 'tasa', 'sexual'],
-        littleCard: createTasaConfig('Violación', TASA_STATS_BASE) },
-    { id: 'tasa_abuso_sexual', label: 'Abuso sexual (tasa)', layerName: 'datos_delitos_abuso_sexual_secretariado', tags: ['seguridad', 'delito', 'abuso', 'sexual', 'tasa', 'infantil'],
-        littleCard: createTasaConfig('Abuso sexual', TASA_STATS_BASE) },
+    {
+        id: 'tasa_violacion', label: 'Violación (tasa)', layerName: 'datos_delitos_violacion_secretariado', tags: ['seguridad', 'delito', 'violacion', 'tasa', 'sexual'],
+        littleCard: createTasaConfig('Violación', TASA_STATS_BASE)
+    },
+    {
+        id: 'tasa_abuso_sexual', label: 'Abuso sexual (tasa)', layerName: 'datos_delitos_abuso_sexual_secretariado', tags: ['seguridad', 'delito', 'abuso', 'sexual', 'tasa', 'infantil'],
+        littleCard: createTasaConfig('Abuso sexual', TASA_STATS_BASE)
+    },
 ];
 
 const TASA_DELITOS_FAMILIA = [
-    { id: 'tasa_violencia_de_genero', label: 'Violencia de género (tasa)', layerName: 'datos_delitos_violencia_de_genero_secretariado', tags: ['seguridad', 'delito', 'violencia', 'genero', 'tasa', 'domestica'],
-        littleCard: createTasaConfig('Violencia de género', TASA_STATS_BASE, 'Las cifras se refieren a violencia de género en todas sus modalidades distintas a la violencia familiar. Las tasas se presentan respecto al periodo seleccionado, por cada 100 mil habitantes') },
-    { id: 'tasa_violencia_familiar', label: 'Violencia familiar (tasa)', layerName: 'datos_delitos_violencia_familiar_secretariado', tags: ['seguridad', 'delito', 'violencia', 'familia', 'tasa', 'domestica'],
-        littleCard: createTasaConfig('Violencia familiar', TASA_STATS_BASE) },
+    {
+        id: 'tasa_violencia_de_genero', label: 'Violencia de género (tasa)', layerName: 'datos_delitos_violencia_de_genero_secretariado', tags: ['seguridad', 'delito', 'violencia', 'genero', 'tasa', 'domestica'],
+        littleCard: createTasaConfig('Violencia de género', TASA_STATS_BASE, 'Las cifras se refieren a violencia de género en todas sus modalidades distintas a la violencia familiar. Las tasas se presentan respecto al periodo seleccionado, por cada 100 mil habitantes')
+    },
+    {
+        id: 'tasa_violencia_familiar', label: 'Violencia familiar (tasa)', layerName: 'datos_delitos_violencia_familiar_secretariado', tags: ['seguridad', 'delito', 'violencia', 'familia', 'tasa', 'domestica'],
+        littleCard: createTasaConfig('Violencia familiar', TASA_STATS_BASE)
+    },
 ];
 
 const TASA_DELITOS_PATRIMONIO = [
-    { id: 'tasa_robos_coche_cuatro_ruedas', label: 'Robo de coche a cuatro ruedas (tasa)', layerName: 'datos_delitos_robos_coche_cuatro_ruedas_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
-        littleCard: createTasaConfig('Robo de coche de cuatro ruedas', TASA_STATS_ROBOS) },
-    { id: 'tasa_robos_transportistas', label: 'Robo de transportistas (tasa)', layerName: 'datos_delitos_robos_transportistas_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
-        littleCard: createTasaConfig('Robo a transportista', TASA_STATS_ROBOS) },
-    { id: 'tasa_robos_motocicleta', label: 'Robo de motocicleta (tasa)', layerName: 'datos_delitos_robos_motocicleta_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
-        littleCard: createTasaConfig('Robo de motocicleta', TASA_STATS_ROBOS) },
-    { id: 'tasa_robos_personas', label: 'Robo a personas (tasa)', layerName: 'datos_delitos_robos_personas_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
-        littleCard: createTasaConfig('Robo a persona', TASA_STATS_ROBOS) },
-    { id: 'tasa_robos_casa_habitacion', label: 'Robo a casa habitacion (tasa)', layerName: 'datos_delitos_robos_casa_habitacion_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
-        littleCard: createTasaConfig('Robo a casa habitación', TASA_STATS_ROBOS) },
-    { id: 'tasa_robos_negocio', label: 'Robo a negocio (tasa)', layerName: 'datos_delitos_robos_negocio_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
-        littleCard: createTasaConfig('Robo a negocio', TASA_STATS_ROBOS) },
-    { id: 'tasa_robos_autopartes', label: 'Robo de autopartes (tasa)', layerName: 'datos_delitos_robos_autopartes_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
-        littleCard: createTasaConfig('Robo de autopartes', TASA_STATS_ROBOS) },
-    { id: 'tasa_robos_instituciones_bancarias', label: 'Robo a instituciones bancarias (tasa)', layerName: 'datos_delitos_robos_instituciones_bancarias_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
-        littleCard: createTasaConfig('Robo a institución bancaria', TASA_STATS_ROBOS) },
+    {
+        id: 'tasa_robos_coche_cuatro_ruedas', label: 'Robo de coche a cuatro ruedas (tasa)', layerName: 'datos_delitos_robos_coche_cuatro_ruedas_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
+        littleCard: createTasaConfig('Robo de coche de cuatro ruedas', TASA_STATS_ROBOS)
+    },
+    {
+        id: 'tasa_robos_transportistas', label: 'Robo de transportistas (tasa)', layerName: 'datos_delitos_robos_transportistas_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
+        littleCard: createTasaConfig('Robo a transportista', TASA_STATS_ROBOS)
+    },
+    {
+        id: 'tasa_robos_motocicleta', label: 'Robo de motocicleta (tasa)', layerName: 'datos_delitos_robos_motocicleta_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
+        littleCard: createTasaConfig('Robo de motocicleta', TASA_STATS_ROBOS)
+    },
+    {
+        id: 'tasa_robos_personas', label: 'Robo a personas (tasa)', layerName: 'datos_delitos_robos_personas_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
+        littleCard: createTasaConfig('Robo a persona', TASA_STATS_ROBOS)
+    },
+    {
+        id: 'tasa_robos_casa_habitacion', label: 'Robo a casa habitacion (tasa)', layerName: 'datos_delitos_robos_casa_habitacion_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
+        littleCard: createTasaConfig('Robo a casa habitación', TASA_STATS_ROBOS)
+    },
+    {
+        id: 'tasa_robos_negocio', label: 'Robo a negocio (tasa)', layerName: 'datos_delitos_robos_negocio_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
+        littleCard: createTasaConfig('Robo a negocio', TASA_STATS_ROBOS)
+    },
+    {
+        id: 'tasa_robos_autopartes', label: 'Robo de autopartes (tasa)', layerName: 'datos_delitos_robos_autopartes_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
+        littleCard: createTasaConfig('Robo de autopartes', TASA_STATS_ROBOS)
+    },
+    {
+        id: 'tasa_robos_instituciones_bancarias', label: 'Robo a instituciones bancarias (tasa)', layerName: 'datos_delitos_robos_instituciones_bancarias_secretariado', tags: ['seguridad', 'delito', 'robos', 'tasa', 'robo'],
+        littleCard: createTasaConfig('Robo a institución bancaria', TASA_STATS_ROBOS)
+    },
 ];
 
 const DELITOS_VIDA = [
@@ -128,7 +158,8 @@ const DELITOS_PATRIMONIO = [
 ];
 
 const DESAPARECIDAS = [
-    { id: 'tasa_personas_desaparecidas', label: 'Personas desaparecidas (tasa)', style: 'personas_desaparecidas_total', not: 'tasa_personas', tags: ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
+    {
+        id: 'tasa_personas_desaparecidas', label: 'Personas desaparecidas (tasa)', style: 'personas_desaparecidas_total', not: 'tasa_personas', tags: ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
         littleCard: createMunicipioConfig({
             title: 'Personas desaparecidas',
             text: desaparecidosText,
@@ -140,8 +171,10 @@ const DESAPARECIDAS = [
                 { label: 'Hombres', field: 'total_hombres' },
                 { label: 'Tasa hombres', field: 'tasa_hombres' },
             ]
-        }) },
-    { id: 'tasa_mujeres_desaparecidas', label: 'Mujeres desaparecidas (tasa)', style: 'desaparecidos_mujeres', not: 'tasa_mujeres', tags: ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
+        })
+    },
+    {
+        id: 'tasa_mujeres_desaparecidas', label: 'Mujeres desaparecidas (tasa)', style: 'desaparecidos_mujeres', not: 'tasa_mujeres', tags: ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
         littleCard: createMunicipioConfig({
             title: 'Mujeres desaparecidas',
             text: desaparecidosText,
@@ -149,8 +182,10 @@ const DESAPARECIDAS = [
                 { label: 'Mujeres', field: 'total_mujeres' },
                 { label: 'Tasa mujeres', field: 'tasa_mujeres' },
             ]
-        }) },
-    { id: 'tasa_hombres_desaparecidos', label: 'Hombres desaparecidos (tasa)', style: 'desaparecidos_hombres', not: 'tasa_hombres', tags: ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
+        })
+    },
+    {
+        id: 'tasa_hombres_desaparecidos', label: 'Hombres desaparecidos (tasa)', style: 'desaparecidos_hombres', not: 'tasa_hombres', tags: ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
         littleCard: createMunicipioConfig({
             title: 'Hombres desaparecidos',
             text: desaparecidosText,
@@ -158,11 +193,13 @@ const DESAPARECIDAS = [
                 { label: 'Hombres', field: 'total_hombres' },
                 { label: 'Tasa hombres', field: 'tasa_hombres' },
             ]
-        }) },
+        })
+    },
 ];
 
 const LOCALIZADAS = [
-    { id: 'tasa_personas_localizadas', label: 'Personas localizadas (tasa)', layerName: 'personas_localizadas', tags: ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'],
+    {
+        id: 'tasa_personas_localizadas', label: 'Personas localizadas (tasa)', layerName: 'personas_localizadas', tags: ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'],
         littleCard: createMunicipioConfig({
             title: 'Personas localizadas',
             text: desaparecidosText,
@@ -180,8 +217,10 @@ const LOCALIZADAS = [
                 { label: 'Hombres sin vida', field: 'hombres_sin_vida' },
                 { label: 'Tasa hombres', field: 'tasa_hombres' },
             ]
-        }) },
-    { id: 'tasa_mujeres_localizadas', label: 'Mujeres localizadas (tasa)', layerName: 'personas_localizadas_mujeres', tags: ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'],
+        })
+    },
+    {
+        id: 'tasa_mujeres_localizadas', label: 'Mujeres localizadas (tasa)', layerName: 'personas_localizadas_mujeres', tags: ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'],
         littleCard: createMunicipioConfig({
             title: 'Mujeres localizadas',
             text: desaparecidosText,
@@ -191,8 +230,10 @@ const LOCALIZADAS = [
                 { label: 'Mujeres sin vida', field: 'mujeres_sin_vida' },
                 { label: 'Tasa mujeres', field: 'tasa_mujeres' },
             ]
-        }) },
-    { id: 'tasa_hombres_localizados', label: 'Hombres localizados (tasa)', layerName: 'personas_localizadas_hombres', tags: ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'],
+        })
+    },
+    {
+        id: 'tasa_hombres_localizados', label: 'Hombres localizados (tasa)', layerName: 'personas_localizadas_hombres', tags: ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'],
         littleCard: createMunicipioConfig({
             title: 'Hombres localizados',
             text: desaparecidosText,
@@ -202,7 +243,8 @@ const LOCALIZADAS = [
                 { label: 'Hombres sin vida', field: 'hombres_sin_vida' },
                 { label: 'Tasa hombres', field: 'tasa_hombres' },
             ]
-        }) },
+        })
+    },
 ];
 
 const mapTasas = (items) => items.map(({ id, label, layerName, tags, littleCard }) => ({

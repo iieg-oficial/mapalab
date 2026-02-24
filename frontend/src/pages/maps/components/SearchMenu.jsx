@@ -146,7 +146,7 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
                                                         className={`
                                                             text-[13px]/[19px] font-garet font-normal text-left tracking-normal
                                                             ${isActive ? 'text-[#5C2472] font-bold' : 'text-[#454545] group-hover:text-[#5C2472]'
-                                                            }`}
+                                                }`}
                                                     >
                                                         {layer.label}
                                                     </span>

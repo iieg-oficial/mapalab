@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
     combineCQLFilters,
     getWmsUrl,
@@ -55,7 +55,7 @@ describe('getWmsUrl / getWfsUrl', () => {
 });
 
 describe('filterValidLayers', () => {
-    const mockFindWMSConfig = (layerId, layers) => {
+    const mockFindWMSConfig = (layerId) => {
         const configs = {
             'general-layer': { workspace: 'general', baseUrl: 'http://server/wms', layerName: 'general:layer' },
             'tematic-layer': { workspace: 'recursos', baseUrl: 'http://server/wms', layerName: 'recursos:layer' },
@@ -64,14 +64,14 @@ describe('filterValidLayers', () => {
         return configs[layerId] || null;
     };
 
-    const layers = [];
+    const mockLayers = [];
 
     it('filtra capas no visibles', () => {
         const activeLayers = [
             { id: 'tematic-layer', visible: false },
             { id: 'another-tematic', visible: true },
         ];
-        const result = filterValidLayers(activeLayers, layers, mockFindWMSConfig);
+        const result = filterValidLayers(activeLayers, mockLayers, mockFindWMSConfig);
         expect(result).toHaveLength(1);
         expect(result[0].layer.id).toBe('another-tematic');
     });
@@ -81,7 +81,7 @@ describe('filterValidLayers', () => {
             { id: 'non-existent', visible: true },
             { id: 'tematic-layer', visible: true },
         ];
-        const result = filterValidLayers(activeLayers, layers, mockFindWMSConfig);
+        const result = filterValidLayers(activeLayers, mockLayers, mockFindWMSConfig);
         expect(result).toHaveLength(1);
         expect(result[0].layer.id).toBe('tematic-layer');
     });
@@ -91,7 +91,7 @@ describe('filterValidLayers', () => {
             { id: 'general-layer', visible: true },
             { id: 'tematic-layer', visible: true },
         ];
-        const result = filterValidLayers(activeLayers, layers, mockFindWMSConfig);
+        const result = filterValidLayers(activeLayers, mockLayers, mockFindWMSConfig);
         expect(result).toHaveLength(1);
         expect(result[0].layer.id).toBe('tematic-layer');
     });
@@ -100,13 +100,13 @@ describe('filterValidLayers', () => {
         const activeLayers = [
             { id: 'general-layer', visible: true },
         ];
-        const result = filterValidLayers(activeLayers, layers, mockFindWMSConfig);
+        const result = filterValidLayers(activeLayers, mockLayers, mockFindWMSConfig);
         expect(result).toHaveLength(1);
         expect(result[0].layer.id).toBe('general-layer');
     });
 
     it('retorna vacío si no hay capas activas', () => {
-        expect(filterValidLayers([], layers, mockFindWMSConfig)).toHaveLength(0);
+        expect(filterValidLayers([], mockLayers, mockFindWMSConfig)).toHaveLength(0);
     });
 });
 

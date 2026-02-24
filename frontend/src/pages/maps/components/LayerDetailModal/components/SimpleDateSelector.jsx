@@ -273,9 +273,9 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                                     py-2 rounded-[9px] transition-all duration-200
                                     text-[12px]/[14px] text-[#2E4372] font-medium font-garet
                                     ${isActive
-                                        ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
-                                        : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
-                                    }
+                                ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
+                                : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
+                            }
                                 `}
                             >
                                 {abbr}

@@ -140,7 +140,7 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
                 };
             });
 
-        } catch (error) {
+        } catch {
             return null;
         }
     });
@@ -264,7 +264,7 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
                 };
             });
 
-        } catch (error) {
+        } catch {
             return null;
         }
     });

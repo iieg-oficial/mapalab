@@ -173,9 +173,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                             if (currentParams.LAYERS !== newParams.LAYERS) paramsChanged = true;
                             if (currentParams.STYLES !== newParams.STYLES) paramsChanged = true;
 
-                            let newCqlFilterValue = undefined;
                             if (finalCqlFilter) {
-                                newCqlFilterValue = finalCqlFilter;
                                 if (currentParams.CQL_FILTER !== finalCqlFilter) paramsChanged = true;
                             } else {
                                 if (currentParams.CQL_FILTER) paramsChanged = true;

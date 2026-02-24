@@ -111,7 +111,7 @@ const MapSider = ({ className = '' }) => {
 
     const menuItems = useMemo(() =>
         createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible }),
-        [isExpanded, contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible]);
+    [isExpanded, contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible]);
 
     const clearAutoOpenMenu = useCallback(() => {
         setAutoOpenMenuId(null);
@@ -153,7 +153,7 @@ const MapSider = ({ className = '' }) => {
                 expanded={isExpanded}
                 isLoading={isLoading}
                 onClick={handleLogoClick}
-                tooltip={!treatAsMobile ? "Ir al inicio" : ""}
+                tooltip={!treatAsMobile ? 'Ir al inicio' : ''}
                 className="shrink-0 p-3 flex justify-center"
             />
             {(!treatAsMobile || isOpen) && (
@@ -208,7 +208,7 @@ const MapSider = ({ className = '' }) => {
                 name="iieg"
                 size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'}
                 expanded={isExpanded}
-                tooltip={!treatAsMobile && "Fijar menú: Lila = Expandido, Naranja = Colapsado, Negro = Automático. Interaccion con click o (Alt + B)"}
+                tooltip={!treatAsMobile && 'Fijar menú: Lila = Expandido, Naranja = Colapsado, Negro = Automático. Interaccion con click o (Alt + B)'}
                 tooltipPlacement="right"
                 colorFilter={lockMode === 'expanded' ? '#CBC5F1' : lockMode === 'collapsed' ? '#FFB98E' : null}
                 onClick={!treatAsMobile && handleToggleLock}

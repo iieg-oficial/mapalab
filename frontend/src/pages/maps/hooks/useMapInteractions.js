@@ -50,7 +50,7 @@ export const useMapInteractions = (mapRef, queryFeatures, disableFeatureSelectio
             lastPointerCheckRef.current = now;
 
             const pixel = map.getEventPixel(evt.originalEvent);
-            let hit = false;
+            let hit;
 
             try {
                 hit = map.hasFeatureAtPixel(pixel);

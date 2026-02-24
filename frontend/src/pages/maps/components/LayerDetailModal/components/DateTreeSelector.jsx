@@ -138,11 +138,11 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
                                     shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200
                                     text-[14px]/[16px] text-[#2E4372] font-medium font-garet
                                     ${isExpanded
-                                        ? 'bg-[#FF8300]/30 border border-[#FF8300] text-[#FF8300]'
-                                        : isActive
-                                            ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
-                                            : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
-                                    }
+                                ? 'bg-[#FF8300]/30 border border-[#FF8300] text-[#FF8300]'
+                                : isActive
+                                    ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
+                                    : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
+                            }
                                 `}
                             >
                                 {year}
@@ -185,11 +185,11 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
                                             shrink-0 px-4 py-2 rounded-[9px] transition-all duration-200
                                             text-[12px]/[14px] text-[#2E4372] font-medium font-garet
                                             ${isExpanded
-                                                ? 'bg-[#FF8300]/30 border border-[#FF8300] text-[#FF8300]'
-                                                : isActive
-                                                    ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
-                                                    : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
-                                            }
+                                        ? 'bg-[#FF8300]/30 border border-[#FF8300] text-[#FF8300]'
+                                        : isActive
+                                            ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
+                                            : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
+                                    }
                                         `}
                                     >
                                         <span className="sm:hidden">{shortName}</span>
@@ -240,9 +240,9 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
                                                 shrink-0 px-4 py-2 rounded-[9px] transition-all duration-200
                                                 text-[12px]/[14px] text-[#2E4372] font-medium font-garet
                                                 ${isActive
-                                                    ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
-                                                    : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
-                                                }
+                                            ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
+                                            : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
+                                        }
                                             `}
                                         >
                                             {day}
