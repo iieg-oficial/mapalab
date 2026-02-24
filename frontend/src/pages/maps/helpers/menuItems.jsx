@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState } from 'react';
 import Icon from '@components/Icon';
 import BaseMapList from '@mapsComponents/BaseMapList';

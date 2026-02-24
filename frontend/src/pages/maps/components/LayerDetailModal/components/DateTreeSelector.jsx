@@ -80,6 +80,7 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
     useEffect(() => {
         yearsCarousel.checkOverflow();
         daysCarousel.checkOverflow();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [periodicityData, expandedYear, expandedMonth, yearsCarousel.checkOverflow, daysCarousel.checkOverflow]);
 
     if (!periodicityData || !periodicityData.fecha || typeof periodicityData.fecha !== 'object') {

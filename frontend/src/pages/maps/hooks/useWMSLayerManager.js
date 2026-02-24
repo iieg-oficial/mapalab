@@ -206,6 +206,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
         } else {
             setTimeout(performUpdate, 0);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedActiveLayerIds, debouncedHiddenLayerIds, wmsConfigCache, createWMSLayer]);
 
     const layerUpdates = useMemo(() => {
@@ -245,6 +246,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 mapRef.current.render();
             }
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [layerUpdates, getAllChildLayerIds]);
 
     useEffect(updateActiveLayers, [updateActiveLayers]);
@@ -273,6 +275,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 mapRef.current.render();
             }
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [layerOpacities, getLayerOpacity]);
 
     useEffect(() => {
@@ -287,6 +290,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 layersMap.clear();
             }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return { wmsLayersRef };

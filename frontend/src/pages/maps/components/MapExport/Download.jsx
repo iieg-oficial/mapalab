@@ -50,6 +50,7 @@ const Download = ({ onOpenPreview }) => {
         } else if (selectedLegendLayers.length !== 1 || !layersWithLegends.find(l => l.id === selectedLegendLayers[0]?.id)) {
             setSelectedLegendLayers([layersWithLegends[0]]);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [format, layersWithLegends, selectedLayer, isPanelOpen]);
 
     const handleDownloadClick = () => {
