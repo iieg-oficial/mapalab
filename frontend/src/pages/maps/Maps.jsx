@@ -1,3 +1,4 @@
+import SEO from '@components/SEO';
 import MapView from '@mapsComponents/MapView';
 import MapSider from '@mapsComponents/MapSider';
 import MapToolsPanel from '@mapsComponents/MapToolsPanel';
@@ -19,6 +20,12 @@ const Maps = () => {
     return (
         <SiderProvider>
             <ZenModeProvider>
+                <SEO
+                    title="Mapa Interactivo | Mapalab"
+                    description="Visualiza capas de información geoespacial de Jalisco: temperatura, precipitación, recursos naturales y más."
+                    path="mapa"
+                    schemaType="WebApplication"
+                />
                 <div className="relative w-full h-screen">
                     <MapSider />
                     <MapToolsPanel />

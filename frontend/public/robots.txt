@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: VITE_SITE_URL/sitemap.xml
