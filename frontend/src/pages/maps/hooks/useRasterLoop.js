@@ -3,7 +3,7 @@ import { findLayerDef } from '../helpers/wmsConfig';
 import { layers as allLayers } from '../helpers/layers/index';
 import { trackRasterLoop } from '@services/analyticsService';
 
-export const useRasterLoop = ({ applyFilter, clearFilter, loadingLayers, mapRef, activeLayerIds }) => {
+export const useRasterLoop = ({ applyFilter, clearFilter, loadingLayers, activeLayerIds }) => {
     const [rasterLoops, setRasterLoops] = useState({});
     const loopDataRef = useRef({});
     const timersRef = useRef(new Map());

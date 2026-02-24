@@ -48,9 +48,10 @@ export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, 
                         }
                     }
                 } else {
-                    if (!wmsConfig) return;
+                    const layerWmsConfig = layer.get('wmsConfig');
+                    if (!layerWmsConfig) return;
 
-                    const baseCqlFilter = wmsConfig.cqlFilter && wmsConfig.cqlFilter.trim() !== '' ? wmsConfig.cqlFilter : null;
+                    const baseCqlFilter = layerWmsConfig.cqlFilter && layerWmsConfig.cqlFilter.trim() !== '' ? layerWmsConfig.cqlFilter : null;
                     const dynamicFilter = getFilter(key);
                     const combined = combineCQLFilters(baseCqlFilter, dynamicFilter);
                     combinedFilter = combined || null;

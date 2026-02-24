@@ -452,7 +452,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             const type = geometry.getType();
             const coordinates = geometry.getCoordinates();
             const minPoints = type === 'Polygon' ? 3 : 2;
-            let pointsCount = 0;
+            let pointsCount;
 
             if (type === 'Polygon') {
                 pointsCount = Array.isArray(coordinates?.[0]) ? coordinates[0].length : 0;

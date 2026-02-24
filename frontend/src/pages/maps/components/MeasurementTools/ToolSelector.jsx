@@ -70,7 +70,7 @@ const ToolSelector = ({
         }
     };
 
-    const getIconState = (_typeId, isActive, _isHovered) => {
+    const getIconState = (_typeId, isActive) => {
         if (isActive) return 'hover';
         return 'normal';
     };

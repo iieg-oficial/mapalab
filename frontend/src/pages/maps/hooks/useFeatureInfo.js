@@ -141,7 +141,7 @@ export const useFeatureInfo = () => {
 
                 return null;
             }
-        } catch (error) {
+        } catch {
             setSelectedFeatureInfo(null);
             clickPosition.clearPosition();
             return null;
@@ -258,7 +258,7 @@ export const useFeatureInfo = () => {
                 clickPosition.clearPosition();
                 return null;
             }
-        } catch (error) {
+        } catch {
             setSelectedFeatureInfo(null);
             clickPosition.clearPosition();
             return null;

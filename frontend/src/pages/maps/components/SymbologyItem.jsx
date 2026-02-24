@@ -65,7 +65,7 @@ const SymbologyItem = ({
                     </Tooltip>
                     <Loading visible={!simple && loadingSymbology} size="h-4 w-4" border="border-2" />
                 </div>
-                <Icon name={internalExpanded ? "upArrow" : "downArrow"} className="size-4" visible={!simple} />
+                <Icon name={internalExpanded ? 'upArrow' : 'downArrow'} className="size-4" visible={!simple} />
             </button>
 
             {internalExpanded && (

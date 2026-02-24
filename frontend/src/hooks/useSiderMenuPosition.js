@@ -113,6 +113,7 @@ export const useSiderMenuPosition = ({
         return compute();
     }, [anchorRef, contentRef, siderRef, placement, offset, isMobile, mobileFullscreen]);
 
+     
     const updatePosition = useCallback(() => {
         if (updateFrameRef.current) {
             cancelAnimationFrame(updateFrameRef.current);

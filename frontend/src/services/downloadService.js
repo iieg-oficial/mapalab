@@ -71,8 +71,7 @@ const addMetadataToZip = async (zip, metadata) => {
             const blob = await fetchBlob(url);
             const filename = url.split('/').pop() || 'metadata';
             zip.file(filename, blob);
-        } catch {
-        }
+        } catch { /* metadata fetch is optional */ }
     }
 };
 

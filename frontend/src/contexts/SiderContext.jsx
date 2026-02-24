@@ -182,7 +182,7 @@ export const useSiderHover = ({
 
     useEffect(() => {
         return () => clearTimers();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, []);
 
     return {

@@ -121,9 +121,9 @@ const InfoBox = () => {
                     className={`
                         absolute size-0
                         ${isSingleFeature
-                            ? 'bottom-[-12px] left-1/2 -translate-x-1/2 border-t-[12px] border-t-white border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent'
-                            : 'drop-shadow-md -left-3 top-6 border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent border-r-[12px] border-r-[#EFF3FC]'
-                        }
+            ? 'bottom-[-12px] left-1/2 -translate-x-1/2 border-t-[12px] border-t-white border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent'
+            : 'drop-shadow-md -left-3 top-6 border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent border-r-[12px] border-r-[#EFF3FC]'
+        }
                     `}
                 />
 

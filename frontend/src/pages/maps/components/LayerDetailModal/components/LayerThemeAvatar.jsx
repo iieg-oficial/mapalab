@@ -38,7 +38,7 @@ const LayerThemeAvatar = ({ icon, name, size = 'md' }) => {
 
     return (
         <div className={`${sizeClasses[size]} flex items-center justify-center`} title={name}>
-            <Icon name={iconName || "general"} state="hover" className={iconSizeClasses[size]} />
+            <Icon name={iconName || 'general'} state="hover" className={iconSizeClasses[size]} />
         </div>
     );
 };

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 vi.stubEnv('VITE_GEOSERVER_URL', 'http://geo.test/geoserver/');
 

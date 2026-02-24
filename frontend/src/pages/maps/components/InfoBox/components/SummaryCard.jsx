@@ -91,14 +91,14 @@ const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpan
                     onClick={handleToggle}
                     disabled={isLoadingExpand || showWarning}
                     className={`w-full bg-[#2F495C] text-white text-xs font-medium py-2 px-4 rounded-[5px] transition-colors flex items-center justify-center gap-2 ${(isLoadingExpand || showWarning) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#1e2f3c]'
-                        }`}
+                    }`}
                 >
                     {isLoadingExpand ? (
                         <>
                             <Loading visible={true} className="h-4 w-4" />
                             Cargando detalles...
                         </>
-                    ) : isExpanded ? "Ocultar detalles" : "Ver detalles"}
+                    ) : isExpanded ? 'Ocultar detalles' : 'Ver detalles'}
                 </button>
             </div>
         </div>

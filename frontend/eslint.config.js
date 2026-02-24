@@ -51,4 +51,20 @@ export default [
             }],
         },
     },
+    {
+        files: ['**/test/**/*.{js,jsx}', '**/*.test.{js,jsx}'],
+        languageOptions: {
+            globals: globals.node,
+        },
+    },
+    {
+        files: ['**/layers/definitions/seguridad.js'],
+        rules: {
+            'max-lines': ['error', {
+                'max': 400,
+                'skipBlankLines': true,
+                'skipComments': true
+            }],
+        },
+    },
 ]
