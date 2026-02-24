@@ -32,7 +32,11 @@ export default defineConfig({
             '@pages': path.resolve(__dirname, './src/pages'),
             '@utils': path.resolve(__dirname, './src/utils'),
             '@mapsComponents': path.resolve(__dirname, './src/pages/maps/components'),
-            '@hooksMaps': path.resolve(__dirname, './src/pages/maps/hooks')
+            '@hooksMaps': path.resolve(__dirname, './src/pages/maps/hooks'),
+            '@services': path.resolve(__dirname, './src/services'),
+            '@assets': path.resolve(__dirname, './src/assets'),
+            '@constants': path.resolve(__dirname, './src/constants'),
+            '@providers': path.resolve(__dirname, './src/providers'),
         }
     }
 });

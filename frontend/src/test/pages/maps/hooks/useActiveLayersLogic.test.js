@@ -2,16 +2,14 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useActiveLayersLogic } from '@hooksMaps/useActiveLayersLogic';
 
-vi.mock('@pages/maps/helpers/layers/index', () => ({
-    layers: [
+vi.mock('@pages/maps/helpers/layers/index', () => {
+    const mockLayers = [
         {
             id: 'parent-layer',
             label: 'Capa Padre',
+            forceGroup: true,
             children: [
-                {
-                    id: 'child-layer',
-                    label: 'Capa Hija'
-                }
+                { id: 'child-layer', label: 'Capa Hija' }
             ]
         },
         {
@@ -21,27 +19,47 @@ vi.mock('@pages/maps/helpers/layers/index', () => ({
                 {
                     id: 'group-layer',
                     label: 'Capa Grupo',
+                    forceGroup: true,
                     children: [
                         {
                             id: 'subgroup-layer',
                             label: 'Capa Subgrupo',
                             children: [
-                                {
-                                    id: 'deep-child-layer',
-                                    label: 'Capa Hija Profunda'
-                                }
+                                { id: 'deep-child-layer', label: 'Capa Hija Profunda' }
                             ]
                         }
                     ]
                 }
             ]
         },
-        {
-            id: 'standalone-layer',
-            label: 'Capa Independiente'
+        { id: 'standalone-layer', label: 'Capa Independiente' }
+    ];
+
+    const findById = (id, list) => {
+        for (const item of list) {
+            if (item.id === id) return item;
+            if (item.children) {
+                const found = findById(id, item.children);
+                if (found) return found;
+            }
         }
-    ]
-}));
+        return null;
+    };
+
+    const collectChildIds = (layer) => {
+        if (!layer.children) return [layer.id];
+        return layer.children.flatMap(collectChildIds);
+    };
+
+    return {
+        layers: mockLayers,
+        findLayerById: (id) => findById(id, mockLayers),
+        getAllChildLayerIds: (id) => {
+            const layer = findById(id, mockLayers);
+            return layer ? collectChildIds(layer) : [];
+        }
+    };
+});
 
 describe('useActiveLayersLogic', () => {
     it('debería retornar la capa padre cuando la capa hija está activa', () => {
