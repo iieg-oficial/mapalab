@@ -6,17 +6,20 @@ Este proyecto usa [Vitest](https://vitest.dev/) para testing con las siguientes 
 - **@testing-library/user-event**: Para simular interacciones de usuario
 - **jsdom**: Entorno de DOM para Node.js
 
-## 📦 Instalación
+## Instalación
 
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
 
-## 🚀 Comandos disponibles
+## Comandos disponibles
 
 ```bash
 # Ejecutar tests en modo watch (recomendado durante desarrollo)
 npm test
+
+# Ejecutar tests una sola vez
+npx vitest run
 
 # Ejecutar tests con interfaz visual
 npm run test:ui
@@ -25,29 +28,110 @@ npm run test:ui
 npm run test:coverage
 ```
 
-## 📝 Estructura de tests
+## � Inventario de tests — 24 archivos, 344 tests
 
-Los archivos de test deben seguir la convención:
-- `*.test.js` o `*.test.jsx` - Para tests de componentes/funciones
-- `*.spec.js` o `*.spec.jsx` - Alternativa aceptada
+### Componentes UI (5 archivos — 57 tests)
 
-Ejemplo de ubicación:
+| Archivo | Tests |
+|---|---|
+| `components/Alert.test.jsx` | 15 |
+| `components/Badge.test.jsx` | 7 |
+| `components/Checkbox.test.jsx` | 12 |
+| `components/Modal.test.jsx` | 12 |
+| `components/Switch.test.jsx` | 11 |
+
+### Hooks generales (3 archivos — 21 tests)
+
+| Archivo | Tests |
+|---|---|
+| `hooks/useDebounce.test.js` | 6 |
+| `hooks/useOutsideClick.test.js` | 7 |
+| `hooks/useScrollOverflow.test.js` | 8 |
+
+### Hooks del mapa (7 archivos — 89 tests)
+
+| Archivo | Tests |
+|---|---|
+| `pages/maps/hooks/useAccordion.test.js` | 12 |
+| `pages/maps/hooks/useActiveLayersLogic.test.js` | 3 |
+| `pages/maps/hooks/useCQLFilter.test.js` | 18 |
+| `pages/maps/hooks/useDateSelections.test.js` | 26 |
+| `pages/maps/hooks/useLayerManagement.test.js` | 13 |
+| `pages/maps/hooks/useLayerOpacity.test.js` | 9 |
+| `pages/maps/hooks/useLayerToggle.test.js` | 8 |
+
+### Helpers del mapa (2 archivos — 50 tests)
+
+| Archivo | Tests |
+|---|---|
+| `pages/maps/helpers/layerHelpers.test.js` | 22 |
+| `pages/maps/helpers/wmsConfig.test.js` | 28 |
+
+### Servicios (5 archivos — 103 tests)
+
+| Archivo | Tests |
+|---|---|
+| `services/analyticsService.test.js` | 21 |
+| `services/downloadService.test.js` | 16 |
+| `services/layerMetadataService.test.js` | 14 |
+| `services/searchConfig.test.js` | 24 |
+| `services/searchService.test.js` | 28 |
+
+### Utils (1 archivo — 21 tests)
+
+| Archivo | Tests |
+|---|---|
+| `utils/featureInfoUtils.test.js` | 21 |
+
+### Otros (1 archivo — 3 tests)
+
+| Archivo | Tests |
+|---|---|
+| `example.test.jsx` | 3 |
+
+## Estructura de tests
+
+Convención `*.test.js` / `*.test.jsx`, ubicados en `src/test/`:
+
 ```
-src/
-  components/
-    Button.jsx
-    Button.test.jsx
-  hooks/
-    useMaps.js
-    useMaps.test.js
-  test/
-    setup.js          # Configuración global
-    example.test.jsx  # Ejemplo de test
+src/test/
+├── setup.js
+├── example.test.jsx
+├── components/
+│   ├── Alert.test.jsx
+│   ├── Badge.test.jsx
+│   ├── Checkbox.test.jsx
+│   ├── Modal.test.jsx
+│   └── Switch.test.jsx
+├── hooks/
+│   ├── useDebounce.test.js
+│   ├── useOutsideClick.test.js
+│   └── useScrollOverflow.test.js
+├── pages/maps/
+│   ├── helpers/
+│   │   ├── layerHelpers.test.js
+│   │   └── wmsConfig.test.js
+│   └── hooks/
+│       ├── useAccordion.test.js
+│       ├── useActiveLayersLogic.test.js
+│       ├── useCQLFilter.test.js
+│       ├── useDateSelections.test.js
+│       ├── useLayerManagement.test.js
+│       ├── useLayerOpacity.test.js
+│       └── useLayerToggle.test.js
+├── services/
+│   ├── analyticsService.test.js
+│   ├── downloadService.test.js
+│   ├── layerMetadataService.test.js
+│   ├── searchConfig.test.js
+│   └── searchService.test.js
+└── utils/
+    └── featureInfoUtils.test.js
 ```
 
-## ✍️ Escribir un test
+## Escribir un test
 
-### Test básico de componente
+### Componente
 
 ```jsx
 import { describe, it, expect } from 'vitest';
@@ -62,68 +146,36 @@ describe('MiComponente', () => {
 });
 ```
 
-### Test con interacción de usuario
+### Funciones puras
 
-```jsx
+```js
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import Button from './Button';
+import { miFuncion } from '@pages/maps/helpers/miHelper';
 
-describe('Button', () => {
-    it('should call onClick when clicked', async () => {
-        const user = userEvent.setup();
-        const handleClick = vi.fn();
-
-        render(<Button onClick={handleClick}>Click me</Button>);
-
-        await user.click(screen.getByRole('button'));
-        expect(handleClick).toHaveBeenCalledOnce();
+describe('miFuncion', () => {
+    it('retorna el valor esperado', () => {
+        expect(miFuncion('input')).toBe('output');
     });
 });
 ```
 
-### Test de custom hooks
+### Servicios con mocks
 
-```jsx
-import { describe, it, expect } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useCounter } from './useCounter';
+```js
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-describe('useCounter', () => {
-    it('should increment counter', () => {
-        const { result } = renderHook(() => useCounter());
+vi.mock('@pages/maps/helpers/layers', () => ({
+    layers: [],
+    findLayerById: vi.fn()
+}));
 
-        act(() => {
-            result.current.increment();
-        });
-
-        expect(result.current.count).toBe(1);
-    });
+beforeEach(() => {
+    global.fetch = vi.fn();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 ```
 
-### Test con mocks
-
-```jsx
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import axios from 'axios';
-
-vi.mock('axios');
-
-describe('DataFetcher', () => {
-    it('should fetch and display data', async () => {
-        axios.get.mockResolvedValue({ data: { name: 'Test' } });
-
-        render(<DataFetcher />);
-
-        expect(await screen.findByText('Test')).toBeInTheDocument();
-    });
-});
-```
-
-## 🎯 Matchers útiles de jest-dom
+## Matchers útiles de jest-dom
 
 ```jsx
 expect(element).toBeInTheDocument()
@@ -134,20 +186,13 @@ expect(element).toBeDisabled()
 expect(element).toHaveAttribute('attr', 'value')
 ```
 
-## 📊 Cobertura de código
-
-El reporte de cobertura se genera en `/coverage` y muestra:
-- % de líneas cubiertas
-- % de funciones cubiertas
-- % de branches cubiertas
-- % de statements cubiertas
+## Cobertura de código
 
 ```bash
 npm run test:coverage
-# Abre coverage/index.html en el navegador para ver el reporte visual
 ```
 
-## 🔗 Enlaces útiles
+## Enlaces útiles
 
 - [Vitest Documentation](https://vitest.dev/)
 - [Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
