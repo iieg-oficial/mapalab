@@ -18,6 +18,18 @@ export default defineConfig(({ mode }) => {
     return {
         base: BASE_PATH,
         plugins: [react(), tailwindcss()],
+        build: {
+            rollupOptions: {
+                output: {
+                    manualChunks: {
+                        'vendor-react': ['react', 'react-dom', 'react-router'],
+                        'vendor-ol': ['ol'],
+                        'vendor-export': ['html2canvas', 'jspdf', 'jszip'],
+                        'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/modifiers', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+                    }
+                }
+            }
+        },
         server: {
             host: HOST_FRONTEND,
             port: PORT,
