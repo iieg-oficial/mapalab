@@ -7,10 +7,12 @@ import { trackShareMap } from '@services/analyticsService';
 const ShareButton = () => {
     const [shareMessage, setShareMessage] = useState(null);
     const [isHovered, setIsHovered] = useState(false);
-
+    
+    const massage = shareMessage === '¡Enlace copiado!'
+    
     useEffect(() => {
         if (shareMessage) {
-            trackShareMap(shareMessage === '¡Enlace copiado!' ? 'exito' : 'error');
+            trackShareMap(massage ? 'exito' : 'error');
             const timer = setTimeout(() => {
                 setShareMessage(null);
             }, 3000);
@@ -32,7 +34,11 @@ const ShareButton = () => {
                 className="cursor-pointer h-auto"
                 aria-label="Compartir mapa"
             >
-                <Icon name="shared" state={isHovered ? 'hover' : 'normal'} className="h-12.5 w-12.5"/>
+                <Icon
+                    name={massage ? 'check' : 'shared'}
+                    state={massage ? 'normal' : (isHovered ? 'hover' : 'normal')}
+                    className={massage ? 'size-11' : 'size-12.5'}
+                />
             </button>
         </Tooltip>
     );
