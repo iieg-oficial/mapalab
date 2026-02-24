@@ -1,12 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import Modal from '@components/Modal';
 import Body from '../../home/components/Body';
+import { trackInfoOpen } from '@services/analyticsService';
 
 const InfoModal = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) trackInfoOpen();
+    }, [isOpen]);
 
     return (
         <>

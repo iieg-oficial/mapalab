@@ -70,7 +70,7 @@ const Download = ({ onOpenPreview }) => {
 
     const handleConfirmDownload = () => {
         setIsPanelOpen(false);
-        trackMapExport(format, QUALITY_PRESETS[qualityIndex].label, viewType);
+        trackMapExport(format, QUALITY_PRESETS[qualityIndex].label, viewType === 'viewport' ? 'vista_actual' : 'estado_completo');
         executeDownload();
     };
 

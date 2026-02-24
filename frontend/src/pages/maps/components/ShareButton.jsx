@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import handleShare from '../helpers/handleShare';
+import { trackShareMap } from '@services/analyticsService';
 
 const ShareButton = () => {
     const [shareMessage, setShareMessage] = useState(null);
@@ -9,6 +10,7 @@ const ShareButton = () => {
 
     useEffect(() => {
         if (shareMessage) {
+            trackShareMap(shareMessage === '¡Enlace copiado!' ? 'exito' : 'error');
             const timer = setTimeout(() => {
                 setShareMessage(null);
             }, 3000);
