@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from '@components/Icon';
 
@@ -14,6 +14,7 @@ const Modal = ({
     showHeader = true
 }) => {
     const modalRef = useRef(null);
+    const titleId = useId();
 
     useEffect(() => {
         const handleEscape = (e) => {
@@ -45,11 +46,12 @@ const Modal = ({
                 className={`relative bg-white rounded-2xl shadow-2xl flex flex-col w-full ${width} ${height} ${className} overflow-hidden animate-in fade-in zoom-in-95 duration-200`}
                 role="dialog"
                 aria-modal="true"
+                aria-labelledby={title ? titleId : undefined}
             >
                 {showHeader && (title || showCloseButton) && (
                     <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 bg-white z-10">
                         {title && (
-                            <h3 className="text-lg font-semibold text-gray-900">
+                            <h3 id={titleId} className="text-lg font-semibold text-gray-900">
                                 {title}
                             </h3>
                         )}

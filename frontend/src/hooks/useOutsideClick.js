@@ -7,7 +7,7 @@ export const useOutsideClick = (refs, onOutside) => {
             if (!clickedInside) onOutside?.(e);
         };
         document.addEventListener('mousedown', handler);
-        document.addEventListener('touchstart', handler);
+        document.addEventListener('touchstart', handler, { passive: true });
 
         return () => {
             document.removeEventListener('mousedown', handler);
