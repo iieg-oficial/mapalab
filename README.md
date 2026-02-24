@@ -9,7 +9,7 @@ El proyecto está diseñado con **desarrollo y producción**:
 ### MODO DESARROLLO
 
 ![Application](https://img.shields.io/badge/Application-MAPALAB-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-0.9.5-yellow?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-0.9.7-yellow?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19.2.1-brightgreen?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)
 
@@ -363,11 +363,11 @@ docker network create mapalab-network
 - [x] InfoBox con información de features al hacer clic
 - [x] Periodicidad dinámica en capas raster
 - [x] Sección de preguntas frecuentes
-- [ ] Exportación del mapa visible (JPG, PNG, PDF)
+- [x] Exportación del mapa visible (JPG, PNG, PDF)
 
 #### v0.9.7 — Febrero 2026
-- [ ] Google Analytics (integración y eventos clave)
-- [ ] SEO (metatags, Open Graph, sitemap.xml, heading structure)
+- [x] Google Analytics (integración y eventos clave)
+- [x] SEO (metatags, Open Graph, sitemap.xml, heading structure)
 
 #### v0.9.9 — Marzo 2026
 - [ ] Creación de tests unitarios y de integración
@@ -418,6 +418,38 @@ docker network create mapalab-network
 - PWA con soporte offline para consulta en campo
 - Sistema de notificaciones (nuevas capas, actualizaciones de datos)
 - Generación automatizada de reportes geoespaciales
+
+## Analytics — Eventos GTM/GA4
+
+Los eventos se envían a `window.dataLayer` para ser consumidos por GTM. En desarrollo se muestran en el panel de debug flotante (esquina inferior izquierda).
+
+> **Integración:** El portal `iieg.jalisco.gob.mx` debe tener GTM instalado con un tag GA4 configurado para escuchar estos eventos desde `dataLayer`.
+
+| Evento | Parámetros | Qué mide | Dónde se dispara | KPI |
+|---|---|---|---|---|
+| `map_interaction` | `action` | Conteo total de interacciones en el mapa | Acompaña a cada evento de mapa | Número de visitas / Tasa de interacción |
+| `layer_toggle` | `layer_id`, `action: activate\|deactivate` | Capas más populares y frecuencia de uso | Al activar o desactivar una capa | Capas más activadas |
+| `feature_click` | `layer_id` | Consultas de información por capa | Al hacer clic en el mapa y obtener resultados | Interacción de clics en el mapa |
+| `map_zoom_level` | `zoom_level` | Nivel de zoom usado (botones +/-) | Al pulsar zoom in / zoom out | Interacción de clics en el mapa |
+| `layer_search` | `query` | Términos buscados con resultados exitosos | Al buscar una capa con coincidencias | Consultas de búsqueda orgánica |
+| `layer_detail_open` | `layer_id` | Capas cuyo detalle/metadata se consulta | Al abrir el modal de detalle de capa | Profundidad de desplazamiento |
+| `layer_download` | `layer_id` | Descargas de datos espaciales por capa | Al descargar el ZIP de una capa con éxito | Descargas |
+| `map_export` | `format: png\|jpeg\|pdf` | Exportaciones de mapa por formato | Al confirmar exportación en el panel | Descargas / Uso de herramientas |
+| `raster_loop_start` | `layer_id` | Uso de animación temporal raster | Al iniciar el loop en capas de precipitación/temperatura | Uso de herramientas / Filtros |
+| `raster_loop_stop` | `layer_id` | Duración implícita de uso del loop | Al detener el loop | Uso de herramientas |
+| `drawing_tool_use` | `tool: LineString\|Polygon\|Freehand\|Text\|Emoji` | Herramientas de dibujo/medición utilizadas | Al seleccionar una herramienta en el panel de dibujo | Uso de herramientas |
+| `basemap_change` | `basemap_id` | Preferencia de mapa base de los usuarios | Al cambiar el mapa base | Interacción de clics en el mapa |
+| `geolocate` | `status: success\|error` | Uso de geolocalización y tasa de error | Al pulsar el botón de ubicación | Uso de herramientas |
+| `periodicity_advanced` | `layer_id` | Uso del selector de fechas avanzado por capa | Al activar modo avanzado de periodicidad (doble clic o pulsación larga) | Uso de herramientas / Filtros |
+| `sider_lock` | `mode: expanded\|collapsed\|auto` | Preferencia de fijación del menú lateral | Al cambiar el modo de bloqueo del sider (clic o Alt+B) | Interacción de clics en el mapa |
+
+### Debug en desarrollo
+
+En `VITE_NODE_ENV=development` aparece un panel flotante en la esquina inferior izquierda que muestra cada evento disparado con sus parámetros y hora. Los eventos **no se envían a GA4** en este modo.
+
+En producción el panel no renderiza y los eventos van a `window.dataLayer` para GTM.
+
+---
 
 ## Licencia
 

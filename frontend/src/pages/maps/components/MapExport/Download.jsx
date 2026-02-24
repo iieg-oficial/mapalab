@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { trackMapExport } from '@services/analyticsService';
 import { useMapDownload } from './hooks/useMapDownload';
 import { QUALITY_PRESETS } from './utils/exportDimensions';
 import { useSider } from '@contexts/SiderContext';
@@ -69,6 +70,7 @@ const Download = ({ onOpenPreview }) => {
 
     const handleConfirmDownload = () => {
         setIsPanelOpen(false);
+        trackMapExport(format, QUALITY_PRESETS[qualityIndex].label, viewType);
         executeDownload();
     };
 

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { findLayerDef } from '../helpers/wmsConfig';
 import { layers as allLayers } from '../helpers/layers/index';
+import { trackRasterLoop } from '@services/analyticsService';
 
 export const useRasterLoop = ({ applyFilter, clearFilter, loadingLayers, mapRef, activeLayerIds }) => {
     const [rasterLoops, setRasterLoops] = useState({});
@@ -89,11 +90,13 @@ export const useRasterLoop = ({ applyFilter, clearFilter, loadingLayers, mapRef,
 
         if (data.isPlaying) {
             stopLoop(layerId);
+            trackRasterLoop(layerId, false);
         } else {
             const layerDef = findLayerDef(layerId, allLayers);
             const periodicityData = layerDef?.rasterPeriodicity;
             if (periodicityData) {
                 startLoop(layerId, data.year, periodicityData);
+                trackRasterLoop(layerId, true);
             }
         }
     }, [startLoop, stopLoop]);

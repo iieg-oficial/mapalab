@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getSearchConfig } from '@services/searchConfig';
 import { searchGlobal } from '@services/searchService';
+import { trackLayerSearch } from '@services/analyticsService';
 import { useDebounce } from '@hooks/useDebounce';
 import { useSearch } from '@contexts/SearchContext';
 import Icon from '@components/Icon';
@@ -48,6 +49,7 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
                 if (matches.length > 0) {
                     const newLayerIds = matches.map(m => m.layerId);
                     setSelectedLayers(newLayerIds);
+                    trackLayerSearch(debouncedQuery);
                 } else {
                     setSelectedLayers([]);
                 }

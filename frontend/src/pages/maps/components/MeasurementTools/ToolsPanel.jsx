@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useMapsContext } from '@hooks/useMaps';
+import { trackDrawingTool } from '@services/analyticsService';
 import HistoryButton from './HistoryButton';
 import CloseButton from './CloseButton';
 import ToolSelector from './ToolSelector';
@@ -67,6 +68,7 @@ const ToolsPanel = () => {
             return;
         }
 
+        trackDrawingTool(typeId);
         startDrawing(typeId);
     };
 
@@ -83,6 +85,7 @@ const ToolsPanel = () => {
             setEmojiTemplate(emoji);
         }
         setIsEmojiPickerOpen(false);
+        trackDrawingTool('Emoji');
         startDrawing('Emoji');
     };
 
@@ -95,6 +98,7 @@ const ToolsPanel = () => {
         if (!value) return;
         setTextTemplate(value);
         setIsTextPanelOpen(false);
+        trackDrawingTool('Text');
         startDrawing('Text');
     };
 

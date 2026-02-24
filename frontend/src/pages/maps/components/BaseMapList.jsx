@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BASEMAP_ORDER } from '@pages/maps/helpers/basemaps';
 import { useMapsContext } from '@hooks/useMaps';
 import Icon from '@components/Icon';
+import { trackBasemapChange } from '@services/analyticsService';
 
 const BaseMapList = () => {
     const { baseMapId, setBaseMapId, basemaps } = useMapsContext();
@@ -20,7 +21,7 @@ const BaseMapList = () => {
                     return (
                         <button
                             key={id}
-                            onClick={() => setBaseMapId(id)}
+                            onClick={() => { setBaseMapId(id); trackBasemapChange(id); }}
                             onMouseEnter={() => setHoveredId(id)}
                             onMouseLeave={() => setHoveredId(null)}
                             className={`
