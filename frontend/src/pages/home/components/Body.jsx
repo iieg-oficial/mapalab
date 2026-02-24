@@ -8,7 +8,7 @@ import guideConfig from '../config/guideConfig';
 import selectConfig from '../config/selectConfig';
 import suportConfig from '../config/suportConfig';
 
-const Body = () => {
+const Body = ({ isModal = false }) => {
     const carouselRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
@@ -56,25 +56,27 @@ const Body = () => {
 
     return (
         <div className="gap-y-9">
-            <div
-                className='
-                    relative z-10 -mt-[5vh] 2xl:-mt-[23vh] mx-[3%] 2xl:mx-[5%] bg-[#F9FBFF] rounded-[30px] 
-                    p-3 md:p-5 lg:p-10 flex flex-col shadow-[0px_3px_21px_#ACBFE56C] gap-y-3
-                '
-            >
-                <SearchBar className="relative mx-auto" />
-                <span className='block font-garet font-normal text-[#5C2472] text-[19px] md:text-[19px]/[64px] tracking-normal text-center'>
-                    Puedes buscar por palabra clave o seleccionar una de las temáticas disponibles para navegar en el mapa
-                </span>
-                <Card topics={topicsConfig.topics} />
-            </div>
+            {!isModal && (
+                <div
+                    className='
+                        relative z-10 -mt-[5vh] 2xl:-mt-[23vh] mx-[3%] 2xl:mx-[5%] bg-[#F9FBFF] rounded-[30px]
+                        p-3 md:p-5 lg:p-10 flex flex-col shadow-[0px_3px_21px_#ACBFE56C] gap-y-3
+                    '
+                >
+                    <SearchBar className="relative mx-auto" />
+                    <span className='block font-garet font-normal text-[#5C2472] text-[19px] md:text-[19px]/[64px] tracking-normal text-center'>
+                        Puedes buscar por palabra clave o seleccionar una de las temáticas disponibles para navegar en el mapa
+                    </span>
+                    <Card topics={topicsConfig.topics} />
+                </div>
+            )}
             <div className="my-9 mx-4 flex flex-col justify-center items-center">
                 <TitleAndNote title={guideConfig.title} description={guideConfig.note} />
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-10 lg:gap-x-16 2xl:gap-x-36 2xl:gap-y-14 md:mx-10 mt-8">
                     {guideConfig.steps.map((item) => (
                         <div
                             key={item.id}
-                            className="flex flex-col gap-3 items-center justify-end rounded-[13px] py-6 px-10 bg-white md:w-[400px] h-[360px] shadow-[0px_6px_12px_#ACBFE533]"
+                            className="flex flex-col gap-3 items-center justify-end rounded-[13px] py-6 px-10 bg-white w-full max-w-[400px] h-[360px] shadow-[0px_6px_12px_#ACBFE533]"
                         >
                             <img
                                 src={item.image}

@@ -41,8 +41,18 @@ const InfoModal = () => {
                 className="bg-gray-50"
                 showHeader={false}
             >
-                <div className="w-full h-full">
-                    <Body />
+                <div className="sticky top-0 z-10 flex justify-end p-3 pointer-events-none">
+                    <button
+                        type="button"
+                        onClick={() => setIsOpen(false)}
+                        className="pointer-events-auto cursor-pointer"
+                        aria-label="Cerrar"
+                    >
+                        <Icon name="cerrarModal" state="normal" className="size-8" />
+                    </button>
+                </div>
+                <div className="-mt-14">
+                    <Body isModal />
                 </div>
             </Modal>
         </>
