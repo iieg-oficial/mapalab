@@ -11,6 +11,7 @@ const Footer = () => {
                             alt={logo.name}
                             style={{ width: logo.width, height: logo.height }}
                             className="object-contain"
+                            loading="lazy"
                         />
                     </div>
                 ))}

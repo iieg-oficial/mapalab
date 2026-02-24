@@ -1,3 +1,4 @@
+import 'ol/ol.css';
 import SEO from '@components/SEO';
 import MapView from '@mapsComponents/MapView';
 import MapSider from '@mapsComponents/MapSider';

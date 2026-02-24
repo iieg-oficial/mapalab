@@ -80,6 +80,7 @@ const Body = () => {
                                 src={item.image}
                                 className="bg-[transparent linear-gradient(0deg, #F3EBFF 0%, #F4EBFF00 100%) 0% 0% no-repeat padding-box] size-[122px] rounded-[16px]"
                                 alt={item.header}
+                                loading="lazy"
                             />
                             <div className="flex flex-col justify-start items-center text-center">
                                 <h2 className="blockfont-garet font-bold text-[#FF8300] text-[16px]/[64px] tracking-normal">
@@ -131,6 +132,7 @@ const Body = () => {
                                     src={item.image}
                                     alt={item.header}
                                     className="hidden xl:block xl:max-w-[506px] xl:max-h-[389px] object-cover xl:ml-[33px]"
+                                    loading="lazy"
                                 />
                                 <div className="w-full flex flex-col justify-center xl:justify-start mx-4 2xl:mr-[188px]">
                                     <h3
@@ -171,11 +173,13 @@ s                            ${expandedSection === item.id ? 'border-[#5C2472]' 
                                 src={item.icon}
                                 alt="preguntas frecuentes icon"
                                 className={`size-full ${expandedSection === item.id ? 'hidden' : 'block group-hover:hidden'}`}
+                                loading="lazy"
                             />
                             <img
                                 src={item.iconHover}
                                 alt="preguntas frecuentes icon hover"
                                 className={`size-full ${expandedSection === item.id ? 'block' : 'hidden group-hover:block'}`}
+                                loading="lazy"
                             />
                         </div>
                         <h2 className="font-garet font-medium text-[#8936AB] text-[24px]/[28px] tracking-normal">
