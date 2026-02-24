@@ -2,7 +2,6 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import { createRoot } from 'react-dom/client'
-import ReactGA from 'react-ga4';
 import './index.css'
 import NotFound from '@pages/NotFound';
 import ErrorPage from '@pages/ErrorPage';
@@ -14,18 +13,11 @@ import.meta.env;
 const Home = lazy(() => import('@pages/home/Home'));
 const Maps = lazy(() => import('@pages/maps/Maps'));
 
-const MODE = import.meta.env.VITE_NODE_ENV
-const isDev = MODE === 'development';
-const trackingID = import.meta.env.VITE_GOOGLE_ANALYTICS_ID;
+const isDev = import.meta.env.VITE_NODE_ENV === 'development';
+
+window.dataLayer = window.dataLayer || [];
 
 isDev && console.info('¡Tú estás viendo esto, porque estás en modo de desarrollo!');
-
-ReactGA.initialize(trackingID, {
-    testMode: MODE,
-    gaOptions: {
-        cookieFlags: isDev ? 'SameSite=None;Secure' : 'Lax'
-    }
-});
 
 const router = createBrowserRouter([
     {

@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useClickPosition } from '@hooks/useClickPosition';
-import ReactGA from 'react-ga4';
 import MapsContext from '@contexts/MapsContext';
 import { BASEMAPS } from '@pages/maps/helpers/basemaps';
 import { useLayerManagement } from '@hooksMaps/useLayerManagement';
@@ -75,9 +74,7 @@ const MapsProvider = ({ children }) => {
 
     const mapDrawing = useMapDrawing(mapRef, handlePolygonComplete, handleShowCachedSelection);
 
-    const mapsAnalyticsEvent = useCallback((action, label) => {
-        ReactGA.event({ category: 'Mapa', action, label });
-    }, []);
+    const mapsAnalyticsEvent = useCallback((_action, _label) => {}, []);
 
     const value = useMemo(() => ({
         baseMapId,

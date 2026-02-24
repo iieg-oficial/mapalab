@@ -10,6 +10,7 @@ import { createMenuItems } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
+import { trackSiderLock } from '@services/analyticsService';
 import { useZenMode } from './ZenMode';
 
 import MenuItem from './MenuItem';
@@ -42,6 +43,12 @@ const MapSider = ({ className = '' }) => {
         lockMode,
         toggleLock
     } = useSider();
+    const handleToggleLock = useCallback(() => {
+        const nextMode = lockMode === 'auto' ? 'expanded' : lockMode === 'expanded' ? 'collapsed' : 'auto';
+        trackSiderLock(nextMode);
+        toggleLock();
+    }, [lockMode, toggleLock]);
+
     const { shouldAutoOpenSearch, clearAutoOpen } = useSearch();
     const { isZenMode } = useZenMode();
     const contentRef = useRef(null);
@@ -68,14 +75,14 @@ const MapSider = ({ className = '' }) => {
             if (e.altKey && e.key.toLowerCase() === 'b') {
                 e.preventDefault();
                 if (!treatAsMobile) {
-                    toggleLock();
+                    handleToggleLock();
                 }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [treatAsMobile, toggleLock]);
+    }, [treatAsMobile, handleToggleLock]);
 
     const { handleMouseEnter, handleMouseLeave } = useSiderHover({
         setIsHovered,
@@ -204,7 +211,7 @@ const MapSider = ({ className = '' }) => {
                 tooltip={!treatAsMobile && "Fijar menú: Lila = Expandido, Naranja = Colapsado, Negro = Automático. Interaccion con click o (Alt + B)"}
                 tooltipPlacement="right"
                 colorFilter={lockMode === 'expanded' ? '#CBC5F1' : lockMode === 'collapsed' ? '#FFB98E' : null}
-                onClick={!treatAsMobile && toggleLock}
+                onClick={!treatAsMobile && handleToggleLock}
                 visible={!treatAsMobile || isOpen}
                 className="shrink-0 p-3 my-2"
             />

@@ -1,5 +1,6 @@
-import { useContext, useRef, useState } from 'react';
+import { useContext, useRef, useState, useEffect } from 'react';
 import MapsContext from '@contexts/MapsContext';
+import { trackFeatureClick } from '@services/analyticsService';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import { useViewportContainment } from './hooks/useViewportContainment';
 import { useFeatureInfo } from '../../hooks/useFeatureInfo';
@@ -45,6 +46,12 @@ const InfoBox = () => {
 
     useOutsideClick([panelRef], handleClose);
     useViewportContainment(panelRef, [selectedFeatureInfo, clickPosition]);
+
+    useEffect(() => {
+        if (!selectedFeatureInfo?.results?.length) return;
+        const layerId = selectedFeatureInfo.results[0]?.layerId;
+        if (layerId) trackFeatureClick(layerId);
+    }, [selectedFeatureInfo]);
 
     if (!selectedFeatureInfo) return null;
 

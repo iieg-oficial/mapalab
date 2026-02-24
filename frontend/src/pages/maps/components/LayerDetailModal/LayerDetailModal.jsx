@@ -1,4 +1,5 @@
 import { useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { trackLayerDetailOpen, trackLayerDownload, trackPeriodicityAdvanced } from '@services/analyticsService';
 import { useLayerMetadata } from '../../hooks/useLayerMetadata';
 import { useSider } from '@contexts/SiderContext';
 import MapsContext from '@contexts/MapsContext';
@@ -79,6 +80,7 @@ const LayerDetailModal = () => {
         const result = await downloadLayerBundle(selectedLayer.id, { activeLayerIds, getFilter });
         setDownloading(false);
         if (!result?.success) return;
+        trackLayerDownload(selectedLayer.id);
         const end = Date.now() + COOLDOWN_MS;
         sessionStorage.setItem(storageKey, String(end));
         setCooldownEnd(end);
@@ -109,6 +111,14 @@ const LayerDetailModal = () => {
             clearFilter(selectedLayer.id, 'date');
         }
     };
+
+    useEffect(() => {
+        if (selectedLayer?.id) trackLayerDetailOpen(selectedLayer.id);
+    }, [selectedLayer?.id]);
+
+    useEffect(() => {
+        if (isAdvancedMode && selectedLayer?.id) trackPeriodicityAdvanced(selectedLayer.id);
+    }, [isAdvancedMode, selectedLayer?.id]);
 
     if (!selectedLayer) return null;
 

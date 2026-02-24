@@ -31,7 +31,7 @@ export const useInitializeFromUrl = () => {
 
             const timer = setTimeout(() => {
                 layerIds.forEach(layerId => {
-                    onToggleLayer(layerId, true);
+                    onToggleLayer(layerId, true, true);
                 });
 
                 filterParams.forEach(({ layerId, cqlFilter }) => {
@@ -49,7 +49,7 @@ export const useInitializeFromUrl = () => {
                 const excludedLayers = ['limite_inegi', 'limite_municipal_inegi'];
                 baseLayers.children.forEach(layer => {
                     if (!excludedLayers.includes(layer.id)) {
-                        onToggleLayer(layer.id, true);
+                        onToggleLayer(layer.id, true, true);
                     }
                 });
 

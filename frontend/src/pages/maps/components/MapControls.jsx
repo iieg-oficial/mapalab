@@ -2,6 +2,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useCallback, useState, useEffect, useRef } from 'react';
 import Icon from '@components/Icon';
+import { trackMapZoomLevel, trackGeolocate } from '@services/analyticsService';
 
 const MapControls = () => {
     const { mapRef, isLocating, setIsLocating } = useMapsContext();
@@ -17,10 +18,8 @@ const MapControls = () => {
         const maxZoom = view.getMaxZoom();
 
         if (currentZoom < maxZoom) {
-            view.animate({
-                zoom: currentZoom + 1,
-                duration: 250
-            });
+            view.animate({ zoom: currentZoom + 1, duration: 250 });
+            trackMapZoomLevel(currentZoom + 1);
         }
     }, [mapRef]);
 
@@ -32,10 +31,8 @@ const MapControls = () => {
         const minZoom = view.getMinZoom();
 
         if (currentZoom > minZoom) {
-            view.animate({
-                zoom: currentZoom - 1,
-                duration: 250
-            });
+            view.animate({ zoom: currentZoom - 1, duration: 250 });
+            trackMapZoomLevel(currentZoom - 1);
         }
     }, [mapRef]);
 
@@ -106,10 +103,12 @@ const MapControls = () => {
                     duration: 500
                 });
 
+                trackGeolocate('success');
                 setIsLocating(false);
             },
             (error) => {
                 console.error('Error getting location:', error);
+                trackGeolocate('error');
                 setIsLocating(false);
             },
             {
