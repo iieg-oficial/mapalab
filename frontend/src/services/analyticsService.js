@@ -13,7 +13,7 @@ const withMapInteraction = (eventName, params) => {
 };
 
 export const trackLayerToggle = (layerId, isActivating) =>
-    withMapInteraction('layer_toggle', { layer_id: layerId, action: isActivating ? 'activate' : 'deactivate' });
+    withMapInteraction('layer_toggle', { layer_id: layerId, action: isActivating ? 'activar' : 'desactivar' });
 
 export const trackFeatureClick = (layerId) =>
     withMapInteraction('feature_click', { layer_id: layerId });
@@ -50,3 +50,9 @@ export const trackPeriodicityAdvanced = (layerId) =>
 
 export const trackSiderLock = (mode) =>
     withMapInteraction('sider_lock', { mode });
+
+export const trackShareMap = (status) =>
+    withMapInteraction('share_map', { status });
+
+export const trackInfoOpen = () =>
+    withMapInteraction('info_open', {});

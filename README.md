@@ -428,20 +428,22 @@ Los eventos se envían a `window.dataLayer` para ser consumidos por GTM. En desa
 | Evento | Parámetros | Qué mide | Dónde se dispara | KPI |
 |---|---|---|---|---|
 | `map_interaction` | `action` | Conteo total de interacciones en el mapa | Acompaña a cada evento de mapa | Número de visitas / Tasa de interacción |
-| `layer_toggle` | `layer_id`, `action: activate\|deactivate` | Capas más populares y frecuencia de uso | Al activar o desactivar una capa | Capas más activadas |
+| `layer_toggle` | `layer_id`, `action: activar\|desactivar` | Capas más populares y frecuencia de uso | Al activar o desactivar una capa | Capas más activadas |
 | `feature_click` | `layer_id` | Consultas de información por capa | Al hacer clic en el mapa y obtener resultados | Interacción de clics en el mapa |
 | `map_zoom_level` | `zoom_level` | Nivel de zoom usado (botones +/-) | Al pulsar zoom in / zoom out | Interacción de clics en el mapa |
 | `layer_search` | `query` | Términos buscados con resultados exitosos | Al buscar una capa con coincidencias | Consultas de búsqueda orgánica |
 | `layer_detail_open` | `layer_id` | Capas cuyo detalle/metadata se consulta | Al abrir el modal de detalle de capa | Profundidad de desplazamiento |
 | `layer_download` | `layer_id` | Descargas de datos espaciales por capa | Al descargar el ZIP de una capa con éxito | Descargas |
-| `map_export` | `format: png\|jpeg\|pdf` | Exportaciones de mapa por formato | Al confirmar exportación en el panel | Descargas / Uso de herramientas |
+| `map_export` | `format: png\|jpeg\|pdf`, `quality: Básica\|Normal\|Alta\|Ultra`, `view: vista_actual\|estado_completo` | Exportaciones de mapa por formato, calidad y vista | Al confirmar exportación en el panel | Descargas / Uso de herramientas |
 | `raster_loop_start` | `layer_id` | Uso de animación temporal raster | Al iniciar el loop en capas de precipitación/temperatura | Uso de herramientas / Filtros |
 | `raster_loop_stop` | `layer_id` | Duración implícita de uso del loop | Al detener el loop | Uso de herramientas |
-| `drawing_tool_use` | `tool: LineString\|Polygon\|Freehand\|Text\|Emoji` | Herramientas de dibujo/medición utilizadas | Al seleccionar una herramienta en el panel de dibujo | Uso de herramientas |
+| `drawing_tool_use` | `tool: Linea\|Poligono\|ManoAlzada\|Texto\|Emoji\|Seleccion` | Herramientas de dibujo/medición utilizadas | Al seleccionar una herramienta en el panel de dibujo | Uso de herramientas |
 | `basemap_change` | `basemap_id` | Preferencia de mapa base de los usuarios | Al cambiar el mapa base | Interacción de clics en el mapa |
-| `geolocate` | `status: success\|error` | Uso de geolocalización y tasa de error | Al pulsar el botón de ubicación | Uso de herramientas |
+| `geolocate` | `status: exito\|error` | Uso de geolocalización y tasa de error | Al pulsar el botón de ubicación | Uso de herramientas |
 | `periodicity_advanced` | `layer_id` | Uso del selector de fechas avanzado por capa | Al activar modo avanzado de periodicidad (doble clic o pulsación larga) | Uso de herramientas / Filtros |
-| `sider_lock` | `mode: expanded\|collapsed\|auto` | Preferencia de fijación del menú lateral | Al cambiar el modo de bloqueo del sider (clic o Alt+B) | Interacción de clics en el mapa |
+| `sider_lock` | `mode: expandido\|colapsado\|automatico` | Preferencia de fijación del menú lateral | Al cambiar el modo de bloqueo del sider (clic o Alt+B) | Interacción de clics en el mapa |
+| `share_map` | `status: exito\|error` | Uso del botón de compartir y tasa de error | Al copiar el enlace del mapa al portapapeles | Interacción de clics en el mapa |
+| `info_open` | — | Acceso a la información general de Mapalab | Al abrir el modal de información | Profundidad de desplazamiento |
 
 ### Debug en desarrollo
 

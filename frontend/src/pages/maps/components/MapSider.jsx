@@ -44,8 +44,8 @@ const MapSider = ({ className = '' }) => {
         toggleLock
     } = useSider();
     const handleToggleLock = useCallback(() => {
-        const nextMode = lockMode === 'auto' ? 'expanded' : lockMode === 'expanded' ? 'collapsed' : 'auto';
-        trackSiderLock(nextMode);
+        const nextModeLabel = lockMode === 'auto' ? 'expandido' : lockMode === 'expanded' ? 'colapsado' : 'automatico';
+        trackSiderLock(nextModeLabel);
         toggleLock();
     }, [lockMode, toggleLock]);
 

@@ -54,6 +54,8 @@ const ToolsPanel = () => {
     const shouldRender = areMeasurementToolsVisible || isDrawing || measurements.length > 0;
     const showTypeSwitcher = areMeasurementToolsVisible || isDrawing;
 
+    const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo' };
+
     const handleMeasureTypeClick = (typeId) => {
         if (typeId === 'Point') {
             stopDrawing();
@@ -68,7 +70,7 @@ const ToolsPanel = () => {
             return;
         }
 
-        trackDrawingTool(typeId);
+        trackDrawingTool(TOOL_LABELS[typeId] || typeId);
         startDrawing(typeId);
     };
 
@@ -98,7 +100,7 @@ const ToolsPanel = () => {
         if (!value) return;
         setTextTemplate(value);
         setIsTextPanelOpen(false);
-        trackDrawingTool('Text');
+        trackDrawingTool('Texto');
         startDrawing('Text');
     };
 

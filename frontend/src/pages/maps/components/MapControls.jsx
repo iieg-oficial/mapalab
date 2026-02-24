@@ -103,7 +103,7 @@ const MapControls = () => {
                     duration: 500
                 });
 
-                trackGeolocate('success');
+                trackGeolocate('exito');
                 setIsLocating(false);
             },
             (error) => {
