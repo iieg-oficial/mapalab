@@ -1,5 +1,4 @@
 import { useMapsContext } from '@hooks/useMaps';
-import html2canvas from 'html2canvas';
 import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
 const { MAP_WIDTH, MAP_HEIGHT } = EXPORT_DIMENSIONS;
 import { transformExtent } from 'ol/proj';
@@ -52,6 +51,7 @@ export const useMapCapture = () => {
     const captureMap = async (scale = 1, mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT) => {
         if (!targetRef.current) return null;
 
+        const html2canvas = (await import('html2canvas')).default;
         return html2canvas(targetRef.current, {
             useCORS: true,
             allowTaint: true,
@@ -65,6 +65,7 @@ export const useMapCapture = () => {
     const captureElement = async (element, options = {}) => {
         if (!element) return null;
 
+        const html2canvas = (await import('html2canvas')).default;
         return html2canvas(element, {
             useCORS: true,
             allowTaint: true,

@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useWMSLegend } from '../hooks/useWMSLegend';
 import Icon from '@components/Icon';
-import Loading from '@components/Loading';
 import Tooltip from '@components/Tooltip';
 
 const SymbologyItem = ({
@@ -15,25 +14,11 @@ const SymbologyItem = ({
 }) => {
     const { getLegendUrl, hasLegend } = useWMSLegend();
     const [internalExpanded, setInternalExpanded] = useState(initialExpanded);
-    const [loadingSymbology, setLoadingSymbology] = useState(false);
 
     const handleInternalToggle = () => {
         setInternalExpanded(prev => !prev);
         if (onToggle) onToggle();
     };
-
-    useEffect(() => {
-        if (internalExpanded && layer && !simple) {
-            setLoadingSymbology(true);
-
-            const timer = setTimeout(() => {
-                setLoadingSymbology(false);
-            }, 300);
-
-            return () => clearTimeout(timer);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [internalExpanded, layer?.id, simple]);
 
     if (!layer) return null;
 
@@ -65,29 +50,19 @@ const SymbologyItem = ({
                             {layer.label}
                         </div>
                     </Tooltip>
-                    <Loading visible={!simple && loadingSymbology} size="h-4 w-4" border="border-2" />
                 </div>
                 <Icon name={internalExpanded ? 'upArrow' : 'downArrow'} className="size-4" visible={!simple} />
             </button>
 
             {internalExpanded && (
                 <div className="px-2 pb-2">
-                    {loadingSymbology && (
-                        <div className="flex items-center justify-center py-2">
-                            <Loading visible={true} size="h-4 w-4" border="border-2" />
-                            <span className="ml-2 text-xs text-gray-600 ">
-                                Cargando...
-                            </span>
-                        </div>
-                    )}
-
-                    {!loadingSymbology && hasLayerLegend && legendUrl && (
-                        <div>
+                    {hasLayerLegend && legendUrl && (
+                        <div className="min-h-[40px]">
                             <img
                                 src={legendUrl}
                                 alt={`Leyenda de ${layer.label}`}
                                 className="max-w-full h-auto"
-                                fetchpriority={priority ? 'high' : 'auto'}
+                                fetchPriority={priority ? 'high' : 'auto'}
                                 onError={(e) => {
                                     e.target.style.display = 'none';
                                     e.target.nextSibling.style.display = 'block';
