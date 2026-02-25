@@ -1,23 +1,18 @@
-# Environment files
 .env
 .env.local
 .env.*.local
 .env.development
+docker-compose.local.yaml
 .env.production
 *.env
 !*.env.example
-
-# Logs
 *.log
 logs/
-
-# OS
 .DS_Store
 Thumbs.db
-
-# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.local.md

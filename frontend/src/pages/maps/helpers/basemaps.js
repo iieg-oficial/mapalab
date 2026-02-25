@@ -1,9 +1,9 @@
 import XYZ from 'ol/source/XYZ';
 
 export const BASEMAPS = {
-    carto_voyager: {
+    voyager: {
         id: 'carto_voyager',
-        label: 'Carto Voyager',
+        label: 'Mapa Carto Voyager',
         create: () =>
             new XYZ({
                 url: 'https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
@@ -12,7 +12,7 @@ export const BASEMAPS = {
                 crossOrigin: 'anonymous',
             }),
     },
-    carto_light: {
+    position: {
         id: 'carto_light',
         label: 'Carto Light',
         create: () =>
@@ -23,15 +23,15 @@ export const BASEMAPS = {
                 crossOrigin: 'anonymous',
             }),
     },
-    none: {
-        id: 'none',
+    sin_mapalab: {
+        id: 'sin_mapalab',
         label: 'Sin Mapa Base',
         create: () => null,
     }
 };
 
 export const BASEMAP_ORDER = [
-    'carto_voyager',
-    'carto_light',
-    'none'
+    'voyager',
+    'position',
+    'sin_mapalab'
 ];

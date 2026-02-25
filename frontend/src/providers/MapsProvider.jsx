@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useClickPosition } from '@hooks/useClickPosition';
-import ReactGA from 'react-ga4';
 import MapsContext from '@contexts/MapsContext';
 import { BASEMAPS } from '@pages/maps/helpers/basemaps';
 import { useLayerManagement } from '@hooksMaps/useLayerManagement';
@@ -8,16 +7,18 @@ import { useSymbology } from '@hooksMaps/useSymbology';
 import { useLayerOpacity } from '@hooksMaps/useLayerOpacity';
 import { useLayerToggle } from '@hooksMaps/useLayerToggle';
 import { useCQLFilter } from '@hooksMaps/useCQLFilter';
+import { useRasterLoop } from '@hooksMaps/useRasterLoop';
 import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { layers as allLayers } from '@pages/maps/helpers/layers/index';
 import { toLonLat } from 'ol/proj';
 
 const MapsProvider = ({ children }) => {
-    const [baseMapId, setBaseMapId] = useState('carto_voyager');
+    const [baseMapId, setBaseMapId] = useState('voyager');
     const [siderCollapsed, setSiderCollapsed] = useState(true);
     const [selectedLayer, setSelectedLayer] = useState(null);
     const [selectedFeatureInfo, setSelectedFeatureInfo] = useState(null);
     const [loadingLayers, setLoadingLayers] = useState(new Set());
+    const [isLocating, setIsLocating] = useState(false);
     const queryFeaturesInPolygonRef = useRef(null);
     const clickPosition = useClickPosition();
     const targetRef = useRef(null);
@@ -32,6 +33,12 @@ const MapsProvider = ({ children }) => {
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
     const layerToggle = useLayerToggle(layerManagement);
     const cqlFilter = useCQLFilter();
+    const rasterLoop = useRasterLoop({
+        applyFilter: cqlFilter.applyFilter,
+        clearFilter: cqlFilter.clearFilter,
+        loadingLayers,
+        activeLayerIds: layerManagement.activeLayerIds
+    });
 
     const setLayerLoading = useCallback((layerId, isLoading) => {
         setLoadingLayers(prev => {
@@ -66,9 +73,7 @@ const MapsProvider = ({ children }) => {
 
     const mapDrawing = useMapDrawing(mapRef, handlePolygonComplete, handleShowCachedSelection);
 
-    const mapsAnalyticsEvent = useCallback((action, label) => {
-        ReactGA.event({ category: 'Mapa', action, label });
-    }, []);
+    const mapsAnalyticsEvent = useCallback(() => { }, []);
 
     const value = useMemo(() => ({
         baseMapId,
@@ -91,9 +96,12 @@ const MapsProvider = ({ children }) => {
         ...symbology,
         ...layerOpacity,
         ...cqlFilter,
+        ...rasterLoop,
         ...mapDrawing,
         loadingLayers,
-        setLayerLoading
+        setLayerLoading,
+        isLocating,
+        setIsLocating
     }), [
         baseMapId,
         siderCollapsed,
@@ -107,9 +115,11 @@ const MapsProvider = ({ children }) => {
         setSelectedFeatureInfo,
         clickPosition,
         cqlFilter,
+        rasterLoop,
         mapDrawing,
         loadingLayers,
-        setLayerLoading
+        setLayerLoading,
+        isLocating
     ]);
 
     return (

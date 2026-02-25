@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://iieg.jalisco.gob.mx/mapalab/sitemap.xml

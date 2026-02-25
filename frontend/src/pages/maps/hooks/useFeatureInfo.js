@@ -2,13 +2,42 @@ import { useState, useCallback, useContext } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { getFeatureInfoForActiveLayers, getFeaturesInPolygonForActiveLayers } from '@services/featureInfoService';
 import { toLonLat } from 'ol/proj';
-import { findLayerById, layers as allLayers, collectLayersWithWMS } from '../helpers/layers/index';
+import { findLayerById, layers as allLayers, collectLayersWithWMS, findParentGroup } from '../helpers/layers/index';
 
 const FEATURE_INFO_LOADING_ID = 'feature_info_query';
 
 export const useFeatureInfo = () => {
-    const { hiddenLayerIds, setSelectedFeatureInfo, clickPosition, activeLayerIds, getFilter, selectedLayerForSymbology, setLayerLoading } = useContext(MapsContext);
+    const { hiddenLayerIds, setSelectedFeatureInfo, clickPosition, activeLayerIds, getFilter, selectedLayerForSymbology, setLayerLoading, setSelectedLayerForSymbology } = useContext(MapsContext);
     const [loading, setLoading] = useState(false);
+
+    const getAllActiveLayers = useCallback(() => {
+        const hiddenIdSet = new Set(hiddenLayerIds || []);
+        const activeIdSet = new Set(activeLayerIds || []);
+
+        return (activeLayerIds || []).flatMap(layerId => {
+            if (hiddenIdSet.has(layerId)) return [];
+
+            const layerNode = findLayerById(layerId, allLayers);
+            if (!layerNode) return [];
+
+            const wmsLayers = collectLayersWithWMS(layerNode).filter(node => activeIdSet.has(node.id));
+
+            if (wmsLayers.length > 0) {
+                return wmsLayers.map(node => ({
+                    id: node.id,
+                    name: node.label,
+                    visible: true
+                }));
+            } else if (layerNode.wmsConfig) {
+                return [{
+                    id: layerNode.id,
+                    name: layerNode.label,
+                    visible: true
+                }];
+            }
+            return [];
+        });
+    }, [activeLayerIds, hiddenLayerIds]);
 
     const queryFeatures = useCallback(async (map, coordinate, event) => {
         if (!map || !coordinate) {
@@ -20,6 +49,7 @@ export const useFeatureInfo = () => {
         }
 
         let layersToQuery = [];
+        let queriedLayerName = null;
 
         if (!activeLayerIds || activeLayerIds.length === 0) {
             return null;
@@ -29,6 +59,8 @@ export const useFeatureInfo = () => {
             if (hiddenLayerIds.includes(selectedLayerForSymbology.id)) {
                 return null;
             }
+
+            queriedLayerName = selectedLayerForSymbology.name;
 
             const layerNode = findLayerById(selectedLayerForSymbology.id, allLayers);
             if (layerNode) {
@@ -49,47 +81,12 @@ export const useFeatureInfo = () => {
                     }];
                 }
             }
-        } else {
-            const activeIdSet = new Set(activeLayerIds || []);
-            const hiddenIdSet = new Set(hiddenLayerIds || []);
-
-            const expandedLayers = (activeLayerIds || []).flatMap(layerId => {
-                if (hiddenIdSet.has(layerId)) return [];
-
-                const layerNode = findLayerById(layerId, allLayers);
-                if (!layerNode) return [];
-
-                const wmsLayers = collectLayersWithWMS(layerNode).filter(node => activeIdSet.has(node.id));
-
-                if (wmsLayers.length === 0 && layerNode.wmsConfig && activeIdSet.has(layerNode.id)) {
-                    return [{
-                        id: layerNode.id,
-                        name: layerNode.label,
-                        visible: true
-                    }];
-                }
-
-                return wmsLayers.map(node => ({
-                    id: node.id,
-                    name: node.label,
-                    visible: true
-                }));
-            });
-
-            const activeLayersMap = new Map();
-            expandedLayers.forEach(layerInfo => {
-                if (!activeLayersMap.has(layerInfo.id)) {
-                    activeLayersMap.set(layerInfo.id, layerInfo);
-                }
-            });
-
-            layersToQuery = Array.from(activeLayersMap.values());
         }
         const activeLayers = layersToQuery;
 
         setLoading(true);
         setLayerLoading(FEATURE_INFO_LOADING_ID, true);
-        
+
         try {
             const results = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter);
             const [lng, lat] = toLonLat(coordinate);
@@ -97,15 +94,54 @@ export const useFeatureInfo = () => {
             if (results && results.length > 0) {
                 setSelectedFeatureInfo({
                     lngLat: { lng, lat },
-                    results
+                    results,
+                    queriedLayerName
                 });
                 return results;
             } else {
-                setSelectedFeatureInfo(null);
-                clickPosition.clearPosition();
+                const otherActiveLayers = getAllActiveLayers().filter(l =>
+                    !layersToQuery.some(q => q.id === l.id)
+                );
+
+                let alternativeLayers = [];
+
+                if (otherActiveLayers.length > 0) {
+                    const altResults = await getFeatureInfoForActiveLayers(otherActiveLayers, map, coordinate, getFilter);
+                    if (altResults && altResults.length > 0) {
+                        const groupedAlternatives = new Map();
+
+                        altResults.forEach(r => {
+                            const parentGroup = findParentGroup(r.layerId, allLayers);
+                            const groupKey = parentGroup ? parentGroup.id : r.layerId;
+                            const groupName = parentGroup ? parentGroup.label : r.layerName;
+
+                            if (groupedAlternatives.has(groupKey)) {
+                                const existing = groupedAlternatives.get(groupKey);
+                                existing.count += r.features?.length || 0;
+                            } else {
+                                groupedAlternatives.set(groupKey, {
+                                    id: groupKey,
+                                    name: groupName,
+                                    count: r.features?.length || 0,
+                                    isGroup: !!parentGroup
+                                });
+                            }
+                        });
+
+                        alternativeLayers = Array.from(groupedAlternatives.values());
+                    }
+                }
+
+                setSelectedFeatureInfo({
+                    lngLat: { lng, lat },
+                    results: [],
+                    queriedLayerName,
+                    alternativeLayers
+                });
+
                 return null;
             }
-        } catch (error) {
+        } catch {
             setSelectedFeatureInfo(null);
             clickPosition.clearPosition();
             return null;
@@ -113,7 +149,17 @@ export const useFeatureInfo = () => {
             setLoading(false);
             setLayerLoading(FEATURE_INFO_LOADING_ID, false);
         }
-    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, selectedLayerForSymbology, setLayerLoading]);
+    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, selectedLayerForSymbology, setLayerLoading, getAllActiveLayers]);
+
+    const selectAlternativeLayer = useCallback((layer) => {
+        const layerNode = findLayerById(layer.id, allLayers);
+        if (layerNode) {
+            setSelectedLayerForSymbology({
+                id: layerNode.id,
+                name: layerNode.label || layer.name
+            });
+        }
+    }, [setSelectedLayerForSymbology]);
 
     const queryFeaturesInPolygon = useCallback(async (map, polygonGeometry, centerCoordinate, onFeatureCountUpdate) => {
         if (!map || !polygonGeometry) {
@@ -212,7 +258,7 @@ export const useFeatureInfo = () => {
                 clickPosition.clearPosition();
                 return null;
             }
-        } catch (error) {
+        } catch {
             setSelectedFeatureInfo(null);
             clickPosition.clearPosition();
             return null;
@@ -231,6 +277,7 @@ export const useFeatureInfo = () => {
         queryFeatures,
         queryFeaturesInPolygon,
         clearFeatureInfo,
+        selectAlternativeLayer,
         loading
     };
 };

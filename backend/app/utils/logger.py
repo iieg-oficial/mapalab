@@ -1,26 +1,28 @@
-import coloredlogs
 import logging
-
+from rich.logging import RichHandler
 from typing import Any
+from app.config import settings
 
-logger = logging.getLogger('MapaLab')
-logger.setLevel(logging.INFO)
+FORMAT: str = "%(message)s"
+logging.basicConfig(
+    level=settings.LOG_LEVEL, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)
 
-coloredlogs.install(level='INFO')
-
-log_format = '%(asctime)s (%(name)s) %(levelname)s: %(message)s'
-logging.basicConfig(format=log_format)
+log: logging = logging.getLogger("MapaLab")
 
 class Logger:
-
     @staticmethod
     def info(message: Any) -> None:
-        logger.info(message)
+        log.info(f'[white]{message}[/]', extra={"markup": True})
 
     @staticmethod
     def warning(message: Any) -> None:
-        logger.warning(message)
+        log.warning(f'[bold yellow]{message}[/]', extra={"markup": True})
 
     @staticmethod
     def error(message: Any) -> None:
-        logger.error(message)
+        log.error(f'[bold red]{message}[/]', extra={"markup": True})
+
+    @staticmethod
+    def debug(message: Any) -> None:
+        log.debug(f'[bold green] {message}[/]', extra={"markup": True})

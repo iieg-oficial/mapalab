@@ -1,15 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getSearchConfig } from '@services/searchConfig';
 import { searchGlobal } from '@services/searchService';
+import { trackLayerSearch } from '@services/analyticsService';
 import { useDebounce } from '@hooks/useDebounce';
-import Divider from '@components/Divider';
-import MenuItem from '@components/MenuItem';
+import { useSearch } from '@contexts/SearchContext';
 import Icon from '@components/Icon';
+import Loading from '@components/Loading';
+import ScrollContainer from '@components/ScrollContainer';
+import { HIDDEN_SCROLLBAR } from '@constants/global';
 
-const SearchMenu = ({ close, onToggleLayer, activeLayerIds = [] }) => {
+const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
+    const { initialSearchQuery, consumeInitialQuery } = useSearch();
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedQuery = useDebounce(searchQuery, 500);
     const [selectedLayers, setSelectedLayers] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const initializedRef = useRef(false);
+
+    useEffect(() => {
+        if (!initializedRef.current && initialSearchQuery) {
+            initializedRef.current = true;
+            setSearchQuery(initialSearchQuery);
+            consumeInitialQuery();
+        }
+    }, [initialSearchQuery, consumeInitialQuery]);
 
     const isLayerActive = (layerId) => {
         return activeLayerIds.includes(layerId);
@@ -23,6 +37,7 @@ const SearchMenu = ({ close, onToggleLayer, activeLayerIds = [] }) => {
     useEffect(() => {
         const performSearch = async () => {
             if (debouncedQuery) {
+                setIsLoading(true);
                 const results = await searchGlobal(debouncedQuery, {
                     includeLayerNames: true,
                     includeLayerData: false,
@@ -34,9 +49,14 @@ const SearchMenu = ({ close, onToggleLayer, activeLayerIds = [] }) => {
                 if (matches.length > 0) {
                     const newLayerIds = matches.map(m => m.layerId);
                     setSelectedLayers(newLayerIds);
+                    trackLayerSearch(debouncedQuery);
+                } else {
+                    setSelectedLayers([]);
                 }
+                setIsLoading(false);
             } else {
                 setSelectedLayers([]);
+                setIsLoading(false);
             }
         };
 
@@ -45,39 +65,36 @@ const SearchMenu = ({ close, onToggleLayer, activeLayerIds = [] }) => {
 
 
     return (
-        <div className="py-2 min-w-[350px] max-w-[400px] max-h-[600px] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-            <div className="px-4 py-2">
-                <label className="block text-xs font-medium mb-2 text-gray-600">
-                    Palabra clave:
-                </label>
-                <div className="relative">
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Escribe aquí..."
-                        className="w-full px-2 py-1.5 text-sm border rounded"
-                    />
-                </div>
+        <div className={`pt-6 ${selectedLayers.length > 0 ? 'pb-2' : 'pb-6'} px-4 w-full ${HIDDEN_SCROLLBAR}`}>
+            <label className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
+                Buscador
+            </label>
+            <div className="relative">
+                <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="¿Qué quieres buscar?"
+                    className="
+                        w-full py-4 pl-4 border-none bg-[#EAEFFA] rounded-[8px]
+                        text-[13px]/[19px] text-[#5C2472] font-garet font-normal tracking-normal
+                        placeholder:text-[#191919] placeholder:font-garet placeholder:font-normal placeholder:text-[13px]/[19px]
+                        focus:outline-[#5C2472] transition-colors
+                    "
+                />
+                <button
+                    className="
+                        absolute right-0 top-1/2 -translate-y-1/2 h-full w-[51px]
+                        bg-[#703088] rounded-r-[8px] flex items-center justify-center
+                    "
+                >
+                    {isLoading ? <Loading visible={true} size="w-5 h-5" border="border-2" color="border-white" /> : <Icon name="searchInput" />}
+                </button>
             </div>
 
-
-
             {selectedLayers.length > 0 && (
-                <div className="px-4 py-2">
-                    <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-medium text-gray-600">
-                            Resultados de búsqueda ({selectedLayers.length})
-                        </p>
-                    </div>
-                    {selectedLayers.length > 20 && (
-                        <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded">
-                            <p className="text-xs text-blue-800">
-                                ℹ️ Se encontraron {selectedLayers.length} capas. Haz click en cualquiera para activarla.
-                            </p>
-                        </div>
-                    )}
-                    <div className="max-h-64 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] space-y-3">
+                <div className="relative mt-6 bg-white rounded-[7px] p-2">
+                    <ScrollContainer className="max-h-100 space-y-3">
                         {(() => {
                             const grouped = {};
 
@@ -105,7 +122,7 @@ const SearchMenu = ({ close, onToggleLayer, activeLayerIds = [] }) => {
 
                             return Object.entries(grouped).map(([groupKey, group]) => (
                                 <div key={groupKey} className="space-y-1">
-                                    <div className="text-xs text-gray-500 px-1">
+                                    <div className="text-[10px]/[11px] font-garet font-normal tracking-normal text-[#465055] px-1">
                                         {group.temaLabel} / {group.subtemaLabel}
                                     </div>
                                     <div className="space-y-0.5">
@@ -115,26 +132,24 @@ const SearchMenu = ({ close, onToggleLayer, activeLayerIds = [] }) => {
                                                 <button
                                                     key={layer.id}
                                                     onClick={() => handleLayerClick(layer.id)}
-                                                    className={`w-full flex items-center justify-between px-2 py-1.5 rounded transition-colors group cursor-pointer ${
-                                                        isActive
-                                                            ? 'bg-green-50 hover:bg-green-100'
-                                                            : 'hover:bg-blue-50'
-                                                    }`}
+                                                    className={`
+                                                        w-full flex items-center justify-start gap-3 px-2 py-1.5 rounded-[8px] transition-all group cursor-pointer
+                                                        hover:bg-[#FF8300]/10
+                                                    `}
                                                 >
-                                                    <span className={`text-sm ${
-                                                        isActive
-                                                            ? 'text-green-700 font-medium'
-                                                            : 'text-gray-900 group-hover:text-blue-700'
-                                                    }`}>
+                                                    <Icon
+                                                        name="check"
+                                                        state={isActive ? 'normal' : 'active'}
+                                                        className="w-3 h-3 shrink-0"
+                                                    />
+                                                    <span
+                                                        className={`
+                                                            text-[13px]/[19px] font-garet font-normal text-left tracking-normal
+                                                            ${isActive ? 'text-[#5C2472] font-bold' : 'text-[#454545] group-hover:text-[#5C2472]'
+                                                }`}
+                                                    >
                                                         {layer.label}
                                                     </span>
-                                                    <Icon
-                                                        name={isActive ? 'check' : 'plus'}
-                                                        className={isActive
-                                                            ? 'text-green-600'
-                                                            : 'text-gray-400 group-hover:text-blue-600 transition-colors'
-                                                        }
-                                                    />
                                                 </button>
                                             );
                                         })}
@@ -142,7 +157,7 @@ const SearchMenu = ({ close, onToggleLayer, activeLayerIds = [] }) => {
                                 </div>
                             ));
                         })()}
-                    </div>
+                    </ScrollContainer>
                 </div>
             )}
         </div>

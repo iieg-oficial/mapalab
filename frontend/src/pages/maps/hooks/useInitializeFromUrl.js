@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
 import { baseLayers } from '../helpers/layers/definitions/base';
-import { layers } from '../helpers/layers/index';
 
 export const filtersInitializationComplete = { value: false };
 
@@ -30,26 +29,9 @@ export const useInitializeFromUrl = () => {
                 .map(id => id.trim())
                 .filter(id => id.length > 0);
 
-            const flattenLayers = (layersList) => {
-                let flat = [];
-                layersList.forEach(layer => {
-                    flat.push(layer.id);
-                    if (layer.children) {
-                        flat = flat.concat(flattenLayers(layer.children));
-                    }
-                });
-                return flat;
-            };
-
-            const allLayerIds = flattenLayers(layers);
-
-            layerIds.sort((a, b) => {
-                return allLayerIds.indexOf(a) - allLayerIds.indexOf(b);
-            });
-
             const timer = setTimeout(() => {
                 layerIds.forEach(layerId => {
-                    onToggleLayer(layerId, true);
+                    onToggleLayer(layerId, true, true);
                 });
 
                 filterParams.forEach(({ layerId, cqlFilter }) => {
@@ -67,7 +49,7 @@ export const useInitializeFromUrl = () => {
                 const excludedLayers = ['limite_inegi', 'limite_municipal_inegi'];
                 baseLayers.children.forEach(layer => {
                     if (!excludedLayers.includes(layer.id)) {
-                        onToggleLayer(layer.id, true);
+                        onToggleLayer(layer.id, true, true);
                     }
                 });
 

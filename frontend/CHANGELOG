@@ -1,6 +1,50 @@
 # Registro de Cambios
 Todos los cambios notables de este proyecto serán documentados en este archivo.
 
+## [0.9.5] - 2026-02-06
+### Añadido
+- Selector de fecha en detalles de capa con opción de modo avanzado.
+- Mejora en generador de filtros CQL para ignorar claves internas (prefijadas con `_`).
+- Actualización de capa base 'Cuerpos de agua' a resolución 50k para mejor detalle.
+
+### Modificado
+- Refactorización completa del servicio de metadatos de capa para buscar por workspace y capa.
+- Eliminación del servicio de periodicidad obsoleto.
+- Ajuste de offsets en `InfoBox` y mejora en detección de posición de click (`originalEvent`).
+
+## [0.9.4] - 2026-01-12
+### Añadido
+- Estado de carga (`isLoading`) para seguimiento de progreso en búsquedas.
+
+### Refactorización
+- Implementación de estilos visuales según mockup para paneles de simbología, descargas y medidas.
+- Configuración de logging para mejor compatibilidad con Docker.
+- Implementación de nuevos iconos de control de mapa (zoom, centro) con estados hover.
+- Limpieza de `Makefile` para eliminar contenedores huérfanos en `docker compose down`.
+
+## [0.9.3] - 2025-12-15
+### Corregido
+- Expansión y refinamiento de definiciones de subcapas en categorías de demografía, desarrollo social y economía.
+- Exposición del puerto del backend al host.
+
+### Cambiado
+- Cambio de nombre de función en la fábrica de base de datos.
+- Estandarización de nombres de proyectos docker-compose en diferentes entornos.
+- Limpieza de `Makefile` y `README` (eliminación de emojis), y limpieza de archivos `.gitignore`.
+
+### Documentación
+- Actualización del puerto de desarrollo del frontend a 3006 y eliminación de tabla detallada de diferencias desarrollo/producción.
+
+## [0.9.2] - 2025-12-11
+### Añadido
+- Implementación de la versión inicial de la aplicación interactiva Mapalab con componentes completos de frontend y backend.
+
+### Cambiado
+- Contenedorización del proceso de construcción del frontend y simplificación de la configuración de Nginx.
+
+### Documentación
+- Simplificación y clarificación de archivos `.env.example` eliminando comentarios verbosos y usando marcadores de posición para valores de configuración.
+
 ## [0.9.1] - 2025-11-12
 ### Añadido
 - Configuración completa de Vitest para testing del proyecto.

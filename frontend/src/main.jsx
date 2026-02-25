@@ -1,28 +1,43 @@
+/* eslint-disable react-refresh/only-export-components */
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import { createRoot } from 'react-dom/client'
-import ReactGA from 'react-ga4';
 import './index.css'
-import 'ol/ol.css';
-import Maps from '@pages/maps/Maps';
-import Home from '@pages/home/Home';
 import NotFound from '@pages/NotFound';
 import ErrorPage from '@pages/ErrorPage';
 import MainProvider from '@providers/MainProvider';
+import MapsProvider from '@providers/MapsProvider';
+import Loading from '@components/Loading';
 import.meta.env;
 
-const MODE = import.meta.env.VITE_NODE_ENV
-const isDev = MODE === 'development';
-const trackingID = import.meta.env.VITE_GOOGLE_ANALYTICS_ID;
+const Home = lazy(() => import('@pages/home/Home'));
+const Maps = lazy(() => import('@pages/maps/Maps'));
+
+const isDev = import.meta.env.VITE_NODE_ENV === 'development';
+
+window.dataLayer = window.dataLayer || [];
+
+const gtmId = import.meta.env.VITE_GTM_ID;
+if (gtmId) {
+    window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtm.js?id=${gtmId}`;
+    document.head.appendChild(script);
+
+    const noscript = document.createElement('noscript');
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.googletagmanager.com/ns.html?id=${gtmId}`;
+    iframe.height = '0';
+    iframe.width = '0';
+    iframe.style.display = 'none';
+    iframe.style.visibility = 'hidden';
+    noscript.appendChild(iframe);
+    document.body.prepend(noscript);
+}
 
 isDev && console.info('¡Tú estás viendo esto, porque estás en modo de desarrollo!');
-
-ReactGA.initialize(trackingID, { 
-    testMode: MODE,
-    gaOptions: {
-        cookieFlags: isDev ? 'SameSite=None;Secure' : 'Lax'
-    }
-});
 
 const router = createBrowserRouter([
     {
@@ -30,12 +45,14 @@ const router = createBrowserRouter([
         errorElement: <ErrorPage />,
         children: [
             { index: true, element: <Home /> },
-            { path: 'mapa', element: <Maps /> },
+            { path: 'mapa', element: <MapsProvider><Maps /></MapsProvider> },
             { path: '*', element: <NotFound /> },
         ],
     },
-]);
+], { basename: import.meta.env.VITE_BASE_PATH || '/' });
 
 createRoot(document.getElementById('root')).render(
-    <RouterProvider router={router} />
+    <Suspense fallback={<div className="h-screen flex items-center justify-center"><Loading visible /></div>}>
+        <RouterProvider router={router} />
+    </Suspense>
 )

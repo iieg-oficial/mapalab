@@ -2,17 +2,23 @@ import { useState, useEffect } from 'react';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import handleShare from '../helpers/handleShare';
+import { trackShareMap } from '@services/analyticsService';
 
 const ShareButton = () => {
     const [shareMessage, setShareMessage] = useState(null);
+    const [isHovered, setIsHovered] = useState(false);
+
+    const massage = shareMessage === '¡Enlace copiado!'
 
     useEffect(() => {
         if (shareMessage) {
+            trackShareMap(massage ? 'exito' : 'error');
             const timer = setTimeout(() => {
                 setShareMessage(null);
             }, 3000);
             return () => clearTimeout(timer);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [shareMessage]);
 
     return (
@@ -24,18 +30,20 @@ const ShareButton = () => {
             <button
                 type="button"
                 onClick={() => handleShare(setShareMessage)}
-                className={[
-                    'flex items-center justify-center rounded-lg p-2 text-sm transition',
-                    shareMessage === '¡Enlace copiado!'
-                        ? 'bg-green-500 text-white'
-                        : 'bg-black/5 text-black/70 hover:bg-black/10'
-                ].join(' ')}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                className="cursor-pointer h-auto"
                 aria-label="Compartir mapa"
             >
-                <Icon name="share" />
+                <Icon
+                    name={massage ? 'check' : 'shared'}
+                    state={massage ? 'normal' : (isHovered ? 'hover' : 'normal')}
+                    className={massage ? 'size-11' : 'size-12.5'}
+                />
             </button>
         </Tooltip>
     );
 };
 
 export default ShareButton;
+

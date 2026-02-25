@@ -20,12 +20,20 @@ const WMS_WORKSPACES = {
     recursos: `${import.meta.env.VITE_GEOSERVER_URL}recursos_y_calidad_de_vida/wms`,
     demografia: `${import.meta.env.VITE_GEOSERVER_URL}demografia/wms`,
     desarrollo: `${import.meta.env.VITE_GEOSERVER_URL}desarrollo_social/wms`,
-    gobierno: `${import.meta.env.VITE_GEOSERVER_URL}gobierno_y_cuidadania/wms`
+    gobierno: `${import.meta.env.VITE_GEOSERVER_URL}gobierno_y_ciudadania/wms`,
+    raster: `${import.meta.env.VITE_GEOSERVER_URL}raster/wms`,
+};
+
+const WORKSPACE_REAL_NAMES = {
+    seguridad: 'seguridad_y_proteccion_ciudadana',
+    gobierno: 'gobierno_y_ciudadania',
+    desarrollo: 'desarrollo_social',
+    recursos: 'recursos_y_calidad_de_vida'
 };
 
 export const createWMSConfig = (workspace, layerName, styles = '', cqlFilter = '') => ({
     baseUrl: WMS_WORKSPACES[workspace],
-    layerName: `${workspace}:${layerName}`,
+    layerName: `${WORKSPACE_REAL_NAMES[workspace] || workspace}:${layerName}`,
     workspace,
     styles,
     cqlFilter,
@@ -48,4 +56,21 @@ export const findWMSConfig = (layerId, layersArray) => {
 
 export const hasWMSConfig = (layerId, layersArray) => {
     return findWMSConfig(layerId, layersArray) !== null;
+};
+
+export const resolveTimeStyle = (pattern, timeValue) => {
+    if (!pattern || !timeValue) return null;
+    const [year, month] = timeValue.split('-');
+    return pattern.replace('{year}', year).replace('{month}', month);
+};
+
+export const findLayerDef = (layerId, layersArray) => {
+    for (const layer of layersArray) {
+        if (layer.id === layerId) return layer;
+        if (layer.children) {
+            const found = findLayerDef(layerId, layer.children);
+            if (found) return found;
+        }
+    }
+    return null;
 };

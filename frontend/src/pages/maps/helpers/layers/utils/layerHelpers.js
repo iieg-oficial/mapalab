@@ -122,5 +122,46 @@ export const collectLayersWithWMS = (layer) => {
     return result;
 };
 
-export const collectLayerIdsWithWMS = (layer) => 
+export const collectLayerIdsWithWMS = (layer) =>
     collectLayersWithWMS(layer).map(node => node.id);
+
+export const getAllChildLayerIds = (layerId, layersArray) => {
+    const result = [];
+
+    const collectIds = (layers) => {
+        for (const layer of layers) {
+            result.push(layer.id);
+            if (layer.children && layer.children.length > 0) {
+                collectIds(layer.children);
+            }
+        }
+    };
+
+    const layer = findLayerById(layerId, layersArray);
+    if (layer && layer.children && layer.children.length > 0) {
+        collectIds(layer.children);
+    }
+
+    return result;
+};
+
+export const findParentGroup = (layerId, layersArray) => {
+    const findParent = (layers, parent = null) => {
+        for (const layer of layers) {
+            if (layer.id === layerId) {
+                if (parent?.forceGroup) {
+                    return parent;
+                }
+                return null;
+            }
+            if (layer.children) {
+                const nextParent = layer.forceGroup ? layer : parent;
+                const found = findParent(layer.children, nextParent);
+                if (found !== undefined) return found;
+            }
+        }
+        return undefined;
+    };
+
+    return findParent(layersArray);
+};

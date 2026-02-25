@@ -1,44 +1,32 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_
-from app.models.mapalab import MapalabMetadata
+from app.models.mapalab import Mapalab_Card
 from typing import Optional
 
 class MapalabRepository:
-
     @staticmethod
-    def get_layers(
+    def get_metadata(
         session: Session,
-        page: int = 1,
-        size: int = 50,
-        keyword: Optional[str] = None,
-    ) -> tuple[list[MapalabMetadata], int]:
+        workspace: Optional[str] = None,
+        layer: Optional[str] = None,
+    ) -> list[Mapalab_Card]:
 
-        query = session.query(MapalabMetadata)
+        query = session.query(Mapalab_Card)
 
-        filters = []
+        query = query.filter(
+            Mapalab_Card.nombre_capa_geoserver == f"{workspace}:{layer}"
+        )
+        return query.all()
 
-        if keyword:
-            keyword_filter = or_(
-                MapalabMetadata.nombre.ilike(f'%{keyword}%'),
-                MapalabMetadata.descripcion.ilike(f'%{keyword}%'),
-                MapalabMetadata.tematica.ilike(f'%{keyword}%')
+    @staticmethod
+    def get_sources_batch(
+        session: Session,
+        layer_keys: list[str],
+    ) -> list[Mapalab_Card]:
+        return (
+            session.query(
+                Mapalab_Card.nombre_capa_geoserver,
+                Mapalab_Card.fuentes_texto_corto,
             )
-            filters.append(keyword_filter)
-
-        if filters:
-            query = query.filter(and_(*filters))
-
-        total = query.count()
-
-        offset = (page - 1) * size
-        results = query.limit(size).offset(offset).all()
-
-        return results, total
-
-    @staticmethod
-    def get_layer_by_id(session: Session, layer_id: int) -> Optional[MapalabMetadata]:
-        return session.query(MapalabMetadata).filter(MapalabMetadata.id == layer_id).first()
-
-    @staticmethod
-    def get_layer_periodicity_by_url(session: Session, url: str) -> Optional[MapalabMetadata]:
-        return session.query(MapalabMetadata).filter(MapalabMetadata.url == url).first()
+            .filter(Mapalab_Card.nombre_capa_geoserver.in_(layer_keys))
+            .all()
+        )

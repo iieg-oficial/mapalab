@@ -35,6 +35,11 @@ export default [
                 'allowTemplateLiterals': true
             }],
             'template-curly-spacing': ['error', 'never'],
+            'react-hooks/set-state-in-effect': 'off',
+            'react-hooks/refs': 'off',
+            'react-hooks/preserve-manual-memoization': 'off',
+            'react-hooks/immutability': 'off',
+            'react-hooks/exhaustive-deps': 'warn',
             'react-refresh/only-export-components': [
                 'warn',
                 { allowConstantExport: true },
@@ -46,6 +51,22 @@ export default [
         rules: {
             'max-lines': ['error', {
                 'max': 600,
+                'skipBlankLines': true,
+                'skipComments': true
+            }],
+        },
+    },
+    {
+        files: ['**/test/**/*.{js,jsx}', '**/*.test.{js,jsx}'],
+        languageOptions: {
+            globals: globals.node,
+        },
+    },
+    {
+        files: ['**/layers/definitions/seguridad.js'],
+        rules: {
+            'max-lines': ['error', {
+                'max': 400,
                 'skipBlankLines': true,
                 'skipComments': true
             }],

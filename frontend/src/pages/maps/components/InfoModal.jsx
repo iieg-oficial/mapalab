@@ -1,11 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import Modal from '@components/Modal';
 import Body from '../../home/components/Body';
+import { trackInfoOpen } from '@services/analyticsService';
 
 const InfoModal = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) trackInfoOpen();
+    }, [isOpen]);
 
     return (
         <>
@@ -17,15 +23,12 @@ const InfoModal = () => {
                 <button
                     type="button"
                     onClick={() => setIsOpen(true)}
-                    className={[
-                        'flex items-center justify-center rounded-lg p-2 text-sm transition',
-                        isOpen
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-black/5 text-black/70 hover:bg-black/10'
-                    ].join(' ')}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    className="cursor-pointer"
                     aria-label="Información"
                 >
-                    <Icon name="info" />
+                    <Icon name="info" state={isHovered ? 'hover' : 'normal'} className="h-12.5 w-12.5" />
                 </button>
             </Tooltip>
 
@@ -38,8 +41,18 @@ const InfoModal = () => {
                 className="bg-gray-50"
                 showHeader={false}
             >
-                <div className="w-full h-full">
-                    <Body />
+                <div className="sticky top-0 z-10 flex justify-end p-3 pointer-events-none">
+                    <button
+                        type="button"
+                        onClick={() => setIsOpen(false)}
+                        className="pointer-events-auto cursor-pointer"
+                        aria-label="Cerrar"
+                    >
+                        <Icon name="cerrarModal" state="normal" className="size-8" />
+                    </button>
+                </div>
+                <div className="-mt-14">
+                    <Body isModal />
                 </div>
             </Modal>
         </>

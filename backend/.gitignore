@@ -9,5 +9,6 @@ __pycache__/
 .pytest_cache/
 *.sh
 .*rrules
+*.txt
 *.venv/
 *tmp/
