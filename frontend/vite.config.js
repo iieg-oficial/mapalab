@@ -44,12 +44,21 @@ export default defineConfig(({ mode }) => {
         server: {
             host: HOST_FRONTEND,
             port: PORT,
-            proxy: env.GEOSERVER_DEV_TARGET ? {
-                '/geoserver': {
-                    target: env.GEOSERVER_DEV_TARGET,
-                    changeOrigin: true,
-                }
-            } : {},
+            proxy: {
+                ...(env.GEOSERVER_DEV_TARGET && {
+                    '/geoserver': {
+                        target: env.GEOSERVER_DEV_TARGET,
+                        changeOrigin: true,
+                    }
+                }),
+                ...(env.BACKEND_DEV_TARGET && {
+                    '/api': {
+                        target: env.BACKEND_DEV_TARGET,
+                        changeOrigin: true,
+                        rewrite: (path) => path.replace(/^\/api/, ''),
+                    }
+                }),
+            },
         },
         resolve: {
             alias: {
