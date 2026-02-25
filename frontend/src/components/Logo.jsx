@@ -44,6 +44,12 @@ const Logo = ({
         }
     }, [isLoading]);
 
+    const handleDOMLoaded = () => {
+        if (isLoadingRef.current && lottieRef.current) {
+            lottieRef.current.goToAndPlay(0);
+        }
+    };
+
     const handleComplete = () => {
         if (isLoadingRef.current && lottieRef.current) {
             lottieRef.current.goToAndPlay(0);
@@ -97,6 +103,7 @@ const Logo = ({
                             animationData={spinnerAnimation}
                             loop={false}
                             autoplay={false}
+                            onDOMLoaded={handleDOMLoaded}
                             onComplete={handleComplete}
                             className={`
                                 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
@@ -129,6 +136,7 @@ const Logo = ({
                         animationData={spinnerAnimation}
                         loop={false}
                         autoplay={false}
+                        onDOMLoaded={handleDOMLoaded}
                         onComplete={handleComplete}
                         className={`
                             absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
@@ -176,4 +184,3 @@ const Logo = ({
 };
 
 export default Logo;
-
