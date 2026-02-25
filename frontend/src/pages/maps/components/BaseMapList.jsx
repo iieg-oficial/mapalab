@@ -1,47 +1,52 @@
+import { useState } from 'react';
 import { BASEMAP_ORDER } from '@pages/maps/helpers/basemaps';
 import { useMapsContext } from '@hooks/useMaps';
 import Icon from '@components/Icon';
+import { trackBasemapChange } from '@services/analyticsService';
 
 const BaseMapList = () => {
     const { baseMapId, setBaseMapId, basemaps } = useMapsContext();
+    const [hoveredId, setHoveredId] = useState(null);
 
     return (
-        <div className="space-y-1">
-            {BASEMAP_ORDER.map(id => {
-                const active = baseMapId === id;
-                const label = basemaps[id]?.label ?? id;
+        <div className="py-6 px-4">
+            <label className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
+                Mapas Base
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+                {BASEMAP_ORDER.map(id => {
+                    const active = baseMapId === id;
+                    const label = basemaps[id]?.label ?? id;
 
-                return (
-                    <button
-                        key={id}
-                        onClick={() => setBaseMapId(id)}
-                        className={[
-                            'group w-full flex items-center gap-2',
-                            'rounded-lg px-2 py-2',
-                            active
-                                ? 'bg-blue-500 text-white'
-                                : 'hover:bg-black/5'
-                        ].join(' ')}
-                        title={label}
-                    >
-                        <BasemapIcon id={id} active={active} />
-                        <span
-                            className={['text-sm transition', 'opacity-100'].join(' ')}
+                    return (
+                        <button
+                            key={id}
+                            onClick={() => { setBaseMapId(id); trackBasemapChange(id); }}
+                            onMouseEnter={() => setHoveredId(id)}
+                            onMouseLeave={() => setHoveredId(null)}
+                            className={`
+                                flex flex-col items-center justify-center gap-2 cursor-pointer
+                                w-[138px] h-[142px] p-3 rounded-[9px] bg-transparent border
+                                ${active ? 'border-[#70308A]' : 'border-transparent hover:border-[#70308A]'}
+                            `}
+                            title={label}
                         >
-                            {label}
-                        </span>
-                    </button>
-                );
-            })}
+                            <div className="flex items-center justify-center">
+                                <Icon
+                                    name={id}
+                                    state={active || hoveredId === id ? 'hover' : 'normal'}
+                                    className={`${active || hoveredId === id ? 'size-[57px]' : 'size-[47px]'}`}
+                                />
+                            </div>
+                            <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-[#5C2472]' : 'font-medium text-[#465055]'}`}>
+                                {label}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 };
-
-const BasemapIcon = ({ id, active }) => (
-    <Icon
-        name={id ? id : 'default'}
-        className={active ? 'stroke-white' : 'stroke-current'}
-    />
-);
 
 export default BaseMapList;

@@ -173,9 +173,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                             if (currentParams.LAYERS !== newParams.LAYERS) paramsChanged = true;
                             if (currentParams.STYLES !== newParams.STYLES) paramsChanged = true;
 
-                            let newCqlFilterValue = undefined;
                             if (finalCqlFilter) {
-                                newCqlFilterValue = finalCqlFilter;
                                 if (currentParams.CQL_FILTER !== finalCqlFilter) paramsChanged = true;
                             } else {
                                 if (currentParams.CQL_FILTER) paramsChanged = true;
@@ -208,6 +206,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
         } else {
             setTimeout(performUpdate, 0);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedActiveLayerIds, debouncedHiddenLayerIds, wmsConfigCache, createWMSLayer]);
 
     const layerUpdates = useMemo(() => {
@@ -247,6 +246,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 mapRef.current.render();
             }
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [layerUpdates, getAllChildLayerIds]);
 
     useEffect(updateActiveLayers, [updateActiveLayers]);
@@ -275,6 +275,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 mapRef.current.render();
             }
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [layerOpacities, getLayerOpacity]);
 
     useEffect(() => {
@@ -289,6 +290,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 layersMap.clear();
             }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return { wmsLayersRef };

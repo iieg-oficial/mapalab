@@ -7,8 +7,8 @@
 <div align="center">
 
 ![build succeeded](https://img.shields.io/badge/Application-MAPALAB-blue?style=for-the-badge)
-![build succeeded](https://img.shields.io/badge/Version-0.9.1-yellow?style=for-the-badge)
-![Static Badge](https://img.shields.io/badge/React-19.2.0-brightgreen?style=for-the-badge)
+![build succeeded](https://img.shields.io/badge/Version-0.9.5-yellow?style=for-the-badge)
+![Static Badge](https://img.shields.io/badge/React-19.2.1-brightgreen?style=for-the-badge)
 ![build succeeded](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)
 
 </div>
@@ -21,7 +21,7 @@ MapaLab is a web application for creating, managing, and visualizing interactive
 ## 📦 Requirements
 - Docker >= v28.2.2
 - Docker compose >= v2.36.2
-- node/npm >= v22.14.0(LTS)
+- node/npm >= v22.22.0(LTS)
 - Git >= 2.48.1
 - Web Browser (Firefox, Chrome, Brave, etc.)
 
@@ -65,10 +65,10 @@ pie title Project Status
 ```
 
 ## 🧭 Roadmap
-1. Basic map visualization - Q3 2025
-2. Layer management - Q4 2025
-3. Data analysis tools - Q1 2026
-4. Advanced visualization features - Q2 2026
+- [x] Basic map visualization - Q3 2025
+- [x] Layer management - Q4 2025
+- [ ] Data analysis tools - Q1 2026
+- [ ] Advanced visualization features - Q2 2026
 
 ## 🖌️ Styling
 This project uses [Tailwind CSS](https://tailwindcss.com/) for styling and [OpenLayers](https://openlayers.org/) for map rendering.

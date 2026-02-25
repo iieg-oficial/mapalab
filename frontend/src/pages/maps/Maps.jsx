@@ -1,16 +1,18 @@
+import 'ol/ol.css';
+import SEO from '@components/SEO';
 import MapView from '@mapsComponents/MapView';
 import MapSider from '@mapsComponents/MapSider';
 import MapToolsPanel from '@mapsComponents/MapToolsPanel';
 import MapLayersPanels from '@mapsComponents/MapLayersPanels';
-import LayerDetailModal from './components/LayerDetailModal';
-import FeatureInfoPanel from './components/FeatureInfoPanel/FeatureInfoPanel';
+import LayerDetailModal from './components/LayerDetailModal/LayerDetailModal';
+import InfoBox from './components/InfoBox/InfoBox';
 import MapControls from './components/MapControls';
-import MeasurementControls from './components/MeasurementControls';
+import MeasurementTools from './components/MeasurementTools/ToolsPanel';
 import ScaleLineControl from './components/ScaleLineControl';
-import GlobalLoading from './components/GlobalLoading';
 import { useInitializeFromUrl } from './hooks/useInitializeFromUrl';
 import { useUrlSync } from './hooks/useUrlSync';
 import { SiderProvider } from '@contexts/SiderContext';
+import { ZenModeProvider } from './components/ZenMode';
 
 const Maps = () => {
     useInitializeFromUrl();
@@ -18,20 +20,28 @@ const Maps = () => {
 
     return (
         <SiderProvider>
-            <div className="relative w-full h-screen">
-                <MapSider />
-                <GlobalLoading />
-                <MapToolsPanel />
-                <MapLayersPanels />
-                <LayerDetailModal />
-                <FeatureInfoPanel />
-                <ScaleLineControl />
-                <MapControls />
-                <MeasurementControls />
-                <MapView />
-            </div>
+            <ZenModeProvider>
+                <SEO
+                    title="Mapa Interactivo | Mapalab"
+                    description="Visualiza capas de información geoespacial de Jalisco: temperatura, precipitación, recursos naturales y más."
+                    path="mapa"
+                    schemaType="WebApplication"
+                />
+                <div className="relative w-full h-screen">
+                    <MapSider />
+                    <MapToolsPanel />
+                    <MapLayersPanels />
+                    <LayerDetailModal />
+                    <InfoBox />
+                    <ScaleLineControl />
+                    <MapControls />
+                    <MeasurementTools />
+                    <MapView />
+                </div>
+            </ZenModeProvider>
         </SiderProvider>
     );
 };
 
 export default Maps;
+

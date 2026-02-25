@@ -1,50 +1,204 @@
 import { createLayerFactory } from '../utils/layerFactory';
+import { cardTemplates } from '../../../components/InfoBox/utils/cardTemplates';
 
 const createGeneralLayer = createLayerFactory('general');
 
-const BASE_LAYERS = [
-    ['curvas_de_nivel', 'Curvas de nivel', 'curvas_de_nivel', ['base', 'topografia', 'altitud', 'relieve', 'elevacion', 'isolineas', 'pendiente', 'terreno', 'cotas']],
-    ['cuerpos_de_agua_250k', 'Cuerpos de agua', 'cuerpos_de_agua_250k', ['base', 'agua', 'hidrologia', 'rio', 'lago', 'presa', 'laguna', 'recursos_hidricos', 'humedal']],
-    ['limite_municipal', 'Límite municipal', 'limite_municipal', ['base', 'limite', 'frontera', 'municipio', 'division', 'iieg', 'demarcacion', 'territorio', 'alcaldia']],
-    ['limite_municipal_inegi', 'Límite municipal inegi', 'limite_municipal_inegi', ['base', 'limite', 'frontera', 'municipio', 'division', 'inegi', 'demarcacion', 'territorio', 'alcaldia']],
-    ['carretera_2012', 'Carreteras', 'carretera_2012', ['base', 'carretera', 'vialidad', 'transporte', 'autopista', 'ruta', 'infraestructura', 'pavimento', 'red_vial']],
-    ['caminos_2012', 'Caminos', 'caminos_2012', ['base', 'camino', 'vialidad', 'transporte', 'rural', 'brecha', 'terraceria', 'sendero']],
-    ['regiones', 'Regiones', 'regiones', ['base', 'region', 'administrativo', 'division', 'iieg', 'zona', 'distrito', 'sector']],
-    ['aeropuertos', 'Aeropuertos', 'aeropuertos', ['base', 'aeropuerto', 'transporte', 'comunicacion', 'aerodromo', 'pista', 'aviacion', 'helipuerto']],
-    ['cabeceras_municipales', 'Cabeceras municipales', 'cabeceras_municipales', ['base', 'cabecera', 'municipio', 'localidad', 'poblacion', 'ciudad', 'capital', 'centro_urbano', 'asentamiento']],
-    ['limite_iieg', 'Límite IIEG', 'limite_iieg', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'iieg', 'entidad_federativa', 'marco_geoestadistico', 'contorno']],
-    ['limite_inegi', 'Límite INEGI', 'limite_inegi', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'inegi', 'entidad_federativa', 'marco_geoestadistico', 'contorno']],
+const cabecerasMunicipalesConfig = cardTemplates.TEEC({
+    title: 'nombre',
+    staticLabel: 'Cabecera Municipal',
+});
+
+const aeropuertosConfig = cardTemplates.TDEMEC({
+    title: 'nombre',
+    municipio: 'ciudad',
+    caracteristica: 'tipo',
+});
+
+const caminosConfig = {
+    headerField: 'Camino',
+    labelGroups: [
+        { fields: ['administracion'] },
+        { fields: ['tipo_material'] }
+    ],
+    list: [
+        { label: 'Origen', field: 'origen' },
+        { label: 'Destino', field: 'destino' },
+        { label: 'Fecha de la capa', field: 'fecha' },
+    ],
+    cards: [
+        { label: 'Extensión (km)', field: 'largo_km' },
+    ],
+    cardsColumns: 1
+};
+
+const carreterasConfig = {
+    headerField: 'codigo',
+    labelGroups: [
+        { fields: ['administracion', 'transito', 'pavimento'] }
+    ],
+    list: [
+        { label: 'Origen', field: 'origen' },
+        { label: 'Destino', field: 'destino' },
+        { label: 'Fecha de la capa', field: 'fecha' },
+    ],
+    cards: [
+        { label: 'Cantidad de carriles', field: 'carriles' },
+        { label: 'Extensión (km)', field: 'largo_km' },
+    ],
+    cardsColumns: 1
+};
+
+const cuerposAguaConfig = cardTemplates.TEEC({
+    title: 'nombre',
+    caracteristica: ['condicion', 'tipo']
+});
+
+const limiteEstatalConfig = (title) => ({
+    headerField: title,
+    cards: [
+        { label: 'Área (km²)', field: 'area_km2' },
+        { label: 'Área (ha)', field: 'area_ha' },
+    ],
+    cardsColumns: 1
+});
+
+const limiteMunicipalConfig = (title) => ({
+    headerField: title,
+    labelGroups: [
+        { fields: ['nombre', 'region'] }
+    ],
+    list: [{ label: 'Clave geográfica', field: 'clave_geo' }],
+    cards: [
+        { label: 'Área (km²)', field: 'area_km2' },
+        { label: 'Área (ha)', field: 'area_ha' },
+    ],
+    cardsColumns: 1
+});
+
+const regionesConfig = {
+    headerField: 'region',
+    labelGroups: [
+        { fields: ['municipios'], splitValues: true, colorIndex: 0 }
+    ],
+    cards: [
+        { label: 'Área (km²)', field: 'area_km2' },
+    ],
+    cardsColumns: 1
+};
+
+const MEDIO_FISICO = [
+    ['cuerpos_de_agua_50k', 'Cuerpos de agua', 'cuerpos_de_agua_50k', ['base', 'agua', 'hidrologia', 'rio', 'lago', 'presa', 'laguna', 'recursos_hidricos', 'humedal'], cuerposAguaConfig],
 ];
+
+const INFRAESTRUCTURA = [
+    ['cabeceras_municipales', 'Cabeceras municipales', 'cabeceras_municipales', ['base', 'cabecera', 'municipio', 'localidad', 'poblacion', 'ciudad', 'capital', 'centro_urbano', 'asentamiento'], cabecerasMunicipalesConfig],
+    ['caminos_2012', 'Red de Caminos', 'caminos_2012', ['base', 'camino', 'vialidad', 'transporte', 'rural', 'brecha', 'terraceria', 'sendero'], caminosConfig],
+];
+
+const CARRETERAS = [
+    ['carretera_libre', 'Libres', 'Libre', 'carretera_2012', ['base', 'carretera', 'vialidad', 'transporte', 'autopista', 'ruta', 'infraestructura', 'pavimento', 'red_vial', 'libre'], carreterasConfig],
+    ['carretera_cuota', 'Cuota', 'Cuota', 'carretera_2012', ['base', 'carretera', 'vialidad', 'transporte', 'autopista', 'ruta', 'infraestructura', 'pavimento', 'red_vial', 'cuota'], carreterasConfig],
+];
+
+const AEROPUERTOS = [
+    ['aeropuerto_internacional', 'Internacional', 'Aeropuerto Internacional', 'aeropuertos', ['base', 'aeropuerto', 'transporte', 'comunicacion', 'aerodromo', 'pista', 'aviacion', 'helipuerto', 'internacional'], aeropuertosConfig],
+    ['base_aerea', 'Base Aérea', 'Base Aérea', 'aeropuertos', ['base', 'aeropuerto', 'transporte', 'comunicacion', 'aerodromo', 'pista', 'aviacion', 'helipuerto', 'base_aerea'], aeropuertosConfig],
+    ['aerodromo', 'Aeródromo', 'Aeródromo', 'aeropuertos', ['base', 'aeropuerto', 'transporte', 'comunicacion', 'aerodromo', 'pista', 'aviacion', 'helipuerto', 'aerodromo'], aeropuertosConfig],
+];
+
+const HIDDEN_LAYERS = [
+    ['limite_municipal', 'Límites municipales geoestadísticos IIEG', 'limite_municipal', ['base', 'limite', 'frontera', 'municipio', 'division', 'iieg', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites municipales administrativos IIEG')],
+    ['limite_municipal_inegi', 'Límites municipales administrativos INEGI', 'limite_municipal_inegi', ['base', 'limite', 'frontera', 'municipio', 'division', 'inegi', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites geoestadísticos municipales INEGI')],
+    ['regiones', 'Regiones del estado', 'regiones', ['base', 'region', 'administrativo', 'division', 'iieg', 'zona', 'distrito', 'sector'], regionesConfig],
+    ['limite_iieg', 'Límites estatales IIEG', 'limite_iieg', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'iieg', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig('Límite estatal IIEG')],
+    ['limite_inegi', 'Límites estatales INEGI', 'limite_inegi', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'inegi', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig('Límite estatal INEGI')],
+    ['curvas_de_nivel', 'Curvas de nivel', 'curvas_de_nivel', ['base', 'topografia', 'altitud', 'relieve', 'elevacion', 'isolineas', 'pendiente', 'terreno', 'cotas'], null],
+];
+
+const mapGeneralLayer = ([id, label, layerName, tags, littleCard]) => ({
+    id,
+    label,
+    wmsConfig: {
+        ...createGeneralLayer(layerName),
+        wmsGroup: 'default',
+        wfsAvailable: true
+    },
+    littleCard,
+    searchMeta: { tags }
+});
+
+const mapHiddenLayer = ([id, label, layerName, tags, littleCard]) => {
+    let wmsGroup = 'default';
+    if (id.includes('inegi')) {
+        wmsGroup = 'inegi';
+    } else if (['limite_iieg', 'limite_municipal', 'regiones'].includes(id)) {
+        wmsGroup = 'iieg';
+    }
+
+    return {
+        id,
+        label,
+        hiddenInMenu: true,
+        wmsConfig: {
+            ...createGeneralLayer(layerName),
+            wmsGroup,
+            wfsAvailable: !['limite_iieg', 'limite_inegi'].includes(id)
+        },
+        littleCard,
+        searchMeta: { tags }
+    };
+};
 
 export const baseLayers = {
     id: 'base_layers',
-    label: 'Capas base',
-    base: 'iieg',
-    hasPeriodicity: false,
-    children: BASE_LAYERS.map(([id, label, param3, tags]) => {
-        let wmsGroup = 'default';
-        if (id.includes('inegi')) {
-            wmsGroup = 'inegi';
-        } else if (['limite_iieg', 'limite_municipal', 'regiones'].includes(id)) {
-            wmsGroup = 'iieg';
-        }
-
-        const wfsAvailable = !['limite_iieg', 'limite_inegi'].includes(id);
-
-        return {
-            id,
-            label,
-            wmsConfig: {
-                ...createGeneralLayer(param3),
-                wmsGroup,
-                wfsAvailable
-            },
-            searchMeta: {
-                hasMunicipio: false,
-                hasDireccion: false,
-                searchableFields: [],
-                tags
-            }
-        };
-    })
+    label: 'General',
+    children: [
+        {
+            id: 'medio_fisico',
+            label: 'Medio Físico',
+            isCategory: true,
+            children: MEDIO_FISICO.map(mapGeneralLayer)
+        },
+        {
+            id: 'centro_e_infraestructura',
+            label: 'Centro e Infraestructura',
+            isCategory: true,
+            children: [
+                ...INFRAESTRUCTURA.map(mapGeneralLayer),
+                {
+                    id: 'carreteras',
+                    label: 'Altas de carreteras',
+                    forceGroup: true,
+                    children: CARRETERAS.map(([id, label, matchValue, layerName, tags, littleCard]) => ({
+                        id,
+                        label,
+                        wmsConfig: {
+                            ...createGeneralLayer.withFilter(layerName, `transito = '${matchValue}'`),
+                            wmsGroup: 'default',
+                            wfsAvailable: true
+                        },
+                        littleCard,
+                        searchMeta: { tags }
+                    }))
+                },
+                {
+                    id: 'aeropuertos',
+                    label: 'Aeropuertos',
+                    forceGroup: true,
+                    children: AEROPUERTOS.map(([id, label, matchValue, layerName, tags, littleCard]) => ({
+                        id,
+                        label,
+                        wmsConfig: {
+                            ...createGeneralLayer.withFilter(layerName, `tipo = '${matchValue}'`),
+                            wmsGroup: 'default',
+                            wfsAvailable: true
+                        },
+                        littleCard,
+                        searchMeta: { tags }
+                    }))
+                }
+            ]
+        },
+        ...HIDDEN_LAYERS.map(mapHiddenLayer)
+    ]
 };

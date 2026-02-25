@@ -1,25 +1,67 @@
-import { useCallback } from 'react';
-import { findWMSConfig, hasWMSConfig } from '../helpers/wmsConfig';
+import { useCallback, useContext } from 'react';
+import { findWMSConfig, hasWMSConfig, resolveTimeStyle } from '../helpers/wmsConfig';
 import { layers } from '../helpers/layers/index';
+import MapsContext from '@contexts/MapsContext';
 
 export const useWMSLegend = () => {
-    const openLegend = useCallback((layer) => {
+    const { getFilter } = useContext(MapsContext);
+
+    const getLegendUrl = useCallback((layer, {
+        dpi = 100,
+        iconWidth = 20,
+        iconHeight = 20,
+        transparent = false,
+        fontName = 'Helvetica',
+        fontSize = 10,
+        fontStyle = 'normal',
+        fontColor = '0x454545',
+        labelMargin = 12,
+        forceLabels = 'on'
+    } = {}) => {
         const wmsConfig = findWMSConfig(layer.id, layers);
 
         if (wmsConfig) {
-            const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&transparent=true&layer=${wmsConfig.layerName}&format=image/png`;
-            window.open(url, '_blank', 'width=300,height=400');
-        }
-    }, []);
+            const legendOptions = [
+                `fontName:${fontName}`,
+                `fontSize:${fontSize}`,
+                `fontStyle:${fontStyle}`,
+                'fontAntiAliasing:true',
+                `fontColor:${fontColor}`,
+                `labelMargin:${labelMargin}`,
+                `dpi:${dpi}`,
+                `forceLabels:${forceLabels}`,
+            ].join(';');
 
-    const getLegendUrl = useCallback((layer) => {
-        const wmsConfig = findWMSConfig(layer.id, layers);
+            let style = wmsConfig.styles || '';
+            if (wmsConfig.timeStylePattern && getFilter) {
+                const timeValue = getFilter(layer.id);
+                if (timeValue) {
+                    style = resolveTimeStyle(wmsConfig.timeStylePattern, timeValue);
+                }
+            }
 
-        if (wmsConfig) {
-            const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&transparent=true&layer=${wmsConfig.layerName}&format=image/png&width=240&height=40`;
+            const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=image/png&width=${iconWidth}&height=${iconHeight}${transparent ? '&transparent=true' : ''}&LEGEND_OPTIONS=${legendOptions}${style ? `&STYLE=${style}` : ''}`;
             return url;
         }
         return null;
+    }, [getFilter]);
+
+    const getLegendJson = useCallback(async (layer) => {
+        const wmsConfig = findWMSConfig(layer.id, layers);
+
+        if (!wmsConfig) return null;
+
+        const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=application/json`;
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) return null;
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching legend JSON:', error);
+            return null;
+        }
     }, []);
 
     const hasLegend = useCallback((layer) => {
@@ -37,8 +79,8 @@ export const useWMSLegend = () => {
     }, []);
 
     return {
-        openLegend,
         getLegendUrl,
+        getLegendJson,
         hasLegend,
         baseUrl
     };

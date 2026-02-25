@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import HamburgerMenu from './HamburgerMenu';
 
 export const headerOptions = [

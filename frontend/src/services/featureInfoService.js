@@ -37,6 +37,7 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
             const styles = [];
             const cqlFilters = [];
             const layerMap = {};
+            let timeValue = null;
 
 
             Object.entries(layerGroups).forEach(([layerName, group]) => {
@@ -46,6 +47,12 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
 
                 const groupFilters = group.map(({ layer, wmsConfig }) => {
                     const dynamicFilter = getFilterFn ? getFilterFn(layer.id) : null;
+
+                    if (dynamicFilter && /^\d{4}-\d{2}-\d{2}$/.test(dynamicFilter)) {
+                        timeValue = dynamicFilter;
+                        return wmsConfig.cqlFilter || null;
+                    }
+
                     const baseCqlFilter = wmsConfig.cqlFilter || null;
                     return combineCQLFilters(baseCqlFilter, dynamicFilter);
                 }).filter(f => f);
@@ -84,7 +91,8 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
                 FEATURE_COUNT: '50',
                 X: Math.floor(pixel[0]).toString(),
                 Y: Math.floor(pixel[1]).toString(),
-                CQL_FILTER: cqlFilters.join(';')
+                CQL_FILTER: cqlFilters.join(';'),
+                ...(timeValue ? { TIME: timeValue } : {})
             };
 
             const url = baseUrl + '?' + new URLSearchParams(params).toString();
@@ -99,12 +107,19 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
 
             data.features.forEach(feature => {
                 const featureId = feature.id;
-                if (!featureId) return;
 
-                const matchedLayerName = uniqueLayerNames.find(name => {
-                    const simpleName = name.split(':')[1] || name;
-                    return featureId.startsWith(simpleName + '.') || featureId.includes(':' + simpleName + '.');
-                });
+                let matchedLayerName = null;
+
+                if (featureId) {
+                    matchedLayerName = uniqueLayerNames.find(name => {
+                        const simpleName = name.split(':')[1] || name;
+                        return featureId.startsWith(simpleName + '.') || featureId.includes(':' + simpleName + '.');
+                    });
+                }
+
+                if (!matchedLayerName && uniqueLayerNames.length === 1) {
+                    matchedLayerName = uniqueLayerNames[0];
+                }
 
                 if (matchedLayerName) {
                     if (!resultsByLayer[matchedLayerName]) {
@@ -125,7 +140,7 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
                 };
             });
 
-        } catch (error) {
+        } catch {
             return null;
         }
     });
@@ -249,7 +264,7 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
                 };
             });
 
-        } catch (error) {
+        } catch {
             return null;
         }
     });

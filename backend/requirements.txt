@@ -9,3 +9,9 @@ pydantic
 geopandas
 pydantic-settings
 gunicorn
+rapidfuzz
+apscheduler
+requests
+apscheduler
+rich
+pytz

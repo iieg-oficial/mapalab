@@ -7,17 +7,58 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+function deferCssPlugin() {
+    return {
+        name: 'defer-css',
+        transformIndexHtml(html) {
+            return html.replace(
+                /<link rel="stylesheet" crossorigin href="([^"]+)">/g,
+                `<link rel="preload" as="style" href="$1" onload="this.rel='stylesheet'"><noscript><link rel="stylesheet" href="$1"></noscript>`
+            );
+        }
+    };
+}
+
 export default defineConfig(({ mode }) => {
     const { resolve } = path;
-    const env = loadEnv(mode, process.cwd());
+    const env = loadEnv(mode, process.cwd(), '');
     const PORT = Number(env.VITE_PORT ?? '5173');
     const HOST_FRONTEND = env.VITE_HOST_FRONTEND ?? '0.0.0.0';
 
+    const BASE_PATH = env.VITE_BASE_PATH ?? '/';
+
     return {
-        plugins: [react(), tailwindcss()],
+        base: BASE_PATH,
+        plugins: [react(), tailwindcss(), deferCssPlugin()],
+        build: {
+            rollupOptions: {
+                output: {
+                    manualChunks: {
+                        'vendor-react': ['react', 'react-dom', 'react-router'],
+                        'vendor-ol': ['ol'],
+                        'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/modifiers', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+                    }
+                }
+            }
+        },
         server: {
             host: HOST_FRONTEND,
             port: PORT,
+            proxy: {
+                ...(env.GEOSERVER_DEV_TARGET && {
+                    '/geoserver': {
+                        target: env.GEOSERVER_DEV_TARGET,
+                        changeOrigin: true,
+                    }
+                }),
+                ...(env.BACKEND_DEV_TARGET && {
+                    '/api': {
+                        target: env.BACKEND_DEV_TARGET,
+                        changeOrigin: true,
+                        rewrite: (path) => path.replace(/^\/api/, ''),
+                    }
+                }),
+            },
         },
         resolve: {
             alias: {

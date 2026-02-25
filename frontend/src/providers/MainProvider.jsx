@@ -1,11 +1,13 @@
 import { Outlet } from 'react-router';
-import MapsProvider from '@providers/MapsProvider';
+import { SearchProvider } from '@contexts/SearchContext';
+import AnalyticsDebugPanel from '@components/AnalyticsDebugPanel';
 
 const MainProvider = () => {
     return (
-        <MapsProvider>
+        <SearchProvider>
             <Outlet />
-        </MapsProvider>
+            <AnalyticsDebugPanel />
+        </SearchProvider>
     );
 }
 

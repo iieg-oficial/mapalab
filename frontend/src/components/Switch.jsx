@@ -1,13 +1,13 @@
 const Switch = ({ checked, indeterminate, onChange, disabled, className = '' }) => {
     const getTranslateClass = () => {
-        if (indeterminate) return 'translate-x-3';
-        return checked ? 'translate-x-6' : 'translate-x-0';
+        if (indeterminate) return 'translate-x-2';
+        return checked ? 'translate-x-3' : 'translate-x-1';
     };
 
     const getBackgroundColor = () => {
         if (disabled) return 'bg-gray-300';
-        if (indeterminate) return 'bg-yellow-400';
-        return checked ? 'bg-blue-500' : 'bg-gray-400';
+        if (indeterminate) return 'bg-[#FF8300]';
+        return checked ? 'bg-[#5AD344]' : 'bg-white';
     };
 
     return (
@@ -23,19 +23,18 @@ const Switch = ({ checked, indeterminate, onChange, disabled, className = '' }) 
                 }
             }}
             className={`
-                relative inline-flex h-5 w-10 items-center rounded-full
-                transition-colors duration-200 ease-in-out
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                ${getBackgroundColor()}
+                relative inline-flex h-5 w-7.5 shrink-0 items-center rounded-full
+                transition-colors duration-200 ease-in-out bg-[#E9EDF7]
                 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
                 ${className}
             `}
         >
             <span
                 className={`
-                    inline-block h-4 w-4 transform rounded-full bg-white
+                    inline-block w-3.5 h-3.5 transform rounded-full 
+                    shadow-[0px_3px_6px_#00000029]
                     transition-transform duration-200 ease-in-out
-                    ${getTranslateClass()}
+                    ${getTranslateClass()} ${getBackgroundColor()}
                 `}
             />
         </button>

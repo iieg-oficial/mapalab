@@ -1,42 +1,17 @@
 import { useCallback, useMemo } from 'react';
 import { layers } from '@pages/maps/helpers/layers/index';
+import { findLayerById as findLayerByIdHelper, getAllChildLayerIds as getAllChildLayerIdsHelper } from '@pages/maps/helpers/layers/index';
 
 export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
     const findLayerById = useCallback((id) => {
-        const search = (layersList) => {
-            for (const layer of layersList) {
-                if (layer.id === id) return layer;
-                if (layer.children && layer.children.length > 0) {
-                    const found = search(layer.children);
-                    if (found) return found;
-                }
-            }
-            return null;
-        };
-        return search(layers);
+        return findLayerByIdHelper(id, layers);
     }, []);
 
     const getAllChildLayerIds = useCallback((layerId) => {
-        const result = [];
+        return getAllChildLayerIdsHelper(layerId, layers);
+    }, []);
 
-        const collectIds = (layers) => {
-            for (const layer of layers) {
-                result.push(layer.id);
-                if (layer.children && layer.children.length > 0) {
-                    collectIds(layer.children);
-                }
-            }
-        };
-
-        const layer = findLayerById(layerId);
-        if (layer && layer.children && layer.children.length > 0) {
-            collectIds(layer.children);
-        }
-
-        return result;
-    }, [findLayerById]);
-
-    const findRootChildAncestor = useCallback((layerId) => {
+    const findForceGroupAncestor = useCallback((layerId) => {
         const findPath = (currentLayers, targetId, path = []) => {
             for (const layer of currentLayers) {
                 const currentPath = [...path, layer];
@@ -52,13 +27,11 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
         };
 
         const path = findPath(layers, layerId);
+        if (!path) return null;
 
-        if (path && path.length > 0) {
-            if (path.length === 2) {
-                return path[0];
-            }
-            if (path.length > 2) {
-                return path[1];
+        for (let i = path.length - 1; i >= 0; i--) {
+            if (path[i].forceGroup) {
+                return path[i];
             }
         }
 
@@ -74,38 +47,33 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
 
             const layer = findLayerById(layerId);
             if (!layer) continue;
+            if (layer.isLabel) continue;
+            if (layer.isCategory) continue;
 
-            const hasChildren = layer.children && layer.children.length > 0;
-            const isProperty = !hasChildren;
+            const forceGroupAncestor = findForceGroupAncestor(layerId);
 
-            if (isProperty) {
-                const ancestor = findRootChildAncestor(layerId);
+            if (forceGroupAncestor) {
+                if (!processedIds.has(forceGroupAncestor.id)) {
+                    const ancestorVisible = !hiddenLayerIds.includes(forceGroupAncestor.id);
+                    const childIds = getAllChildLayerIds(forceGroupAncestor.id);
 
-                if (ancestor) {
-                    if (!processedIds.has(ancestor.id)) {
-                        const ancestorVisible = !hiddenLayerIds.includes(ancestor.id);
+                    result.push({
+                        id: forceGroupAncestor.id,
+                        name: forceGroupAncestor.label,
+                        hasChildren: true,
+                        visible: ancestorVisible,
+                        order: result.length,
+                        childIds
+                    });
 
-                        result.push({
-                            id: ancestor.id,
-                            name: ancestor.label,
-                            hasChildren: true,
-                            visible: ancestorVisible,
-                            order: result.length,
-                            childIds: getAllChildLayerIds(ancestor.id)
-                        });
-
-                        processedIds.add(ancestor.id);
-
-                        if (ancestor.children) {
-                            const childIds = getAllChildLayerIds(ancestor.id);
-                            childIds.forEach(childId => processedIds.add(childId));
-                        }
-                    }
-                    processedIds.add(layerId);
-                    continue;
+                    processedIds.add(forceGroupAncestor.id);
+                    childIds.forEach(childId => processedIds.add(childId));
                 }
+                processedIds.add(layerId);
+                continue;
             }
 
+            const hasChildren = layer.children && layer.children.length > 0;
             const visible = !hiddenLayerIds.includes(layerId);
             const childIds = hasChildren ? getAllChildLayerIds(layer.id) : [layer.id];
 
@@ -121,13 +89,12 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
             processedIds.add(layerId);
 
             if (hasChildren) {
-                const childIds = getAllChildLayerIds(layerId);
                 childIds.forEach(childId => processedIds.add(childId));
             }
         }
 
         return result;
-    }, [activeLayerIds, hiddenLayerIds, getAllChildLayerIds, findLayerById, findRootChildAncestor]);
+    }, [activeLayerIds, hiddenLayerIds, getAllChildLayerIds, findLayerById, findForceGroupAncestor]);
 
     return {
         findLayerById,

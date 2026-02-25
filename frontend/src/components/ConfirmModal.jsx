@@ -7,8 +7,8 @@ const ConfirmModal = ({
     onConfirm,
     title,
     children,
-    confirmText = "Confirmar",
-    confirmButtonClass = "bg-red-500 hover:bg-red-600"
+    confirmText = 'Confirmar',
+    confirmButtonClass = 'bg-red-500 hover:bg-red-600'
 }) => {
     return (
         <Panel
