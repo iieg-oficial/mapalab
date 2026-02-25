@@ -80,12 +80,13 @@ const SymbologyPanel = () => {
                         {isParentLayer(fullLayer) ? 'No hay sub-capas activas' : 'Sin simbología disponible'}
                     </div>
                 ) : (
-                    displayLayers.map((layer) => (
+                    displayLayers.map((layer, index) => (
                         <SymbologyItem
                             key={layer._isProxy ? `proxy-${layer.id}` : layer.id}
                             layer={layer}
                             isExpanded={true}
                             onToggle={() => { }}
+                            priority={index === 0}
                         />
                     ))
                 )}

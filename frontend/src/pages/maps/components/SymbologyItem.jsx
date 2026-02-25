@@ -10,7 +10,8 @@ const SymbologyItem = ({
     onToggle,
     prefix = null,
     simple = false,
-    onClick = null
+    onClick = null,
+    priority = false
 }) => {
     const { getLegendUrl, hasLegend } = useWMSLegend();
     const [internalExpanded, setInternalExpanded] = useState(initialExpanded);
@@ -86,6 +87,7 @@ const SymbologyItem = ({
                                 src={legendUrl}
                                 alt={`Leyenda de ${layer.label}`}
                                 className="max-w-full h-auto"
+                                fetchpriority={priority ? 'high' : 'auto'}
                                 onError={(e) => {
                                     e.target.style.display = 'none';
                                     e.target.nextSibling.style.display = 'block';
