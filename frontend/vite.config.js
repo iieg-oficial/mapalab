@@ -7,6 +7,18 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+function deferCssPlugin() {
+    return {
+        name: 'defer-css',
+        transformIndexHtml(html) {
+            return html.replace(
+                /<link rel="stylesheet" crossorigin href="([^"]+)">/g,
+                `<link rel="preload" as="style" href="$1" onload="this.rel='stylesheet'"><noscript><link rel="stylesheet" href="$1"></noscript>`
+            );
+        }
+    };
+}
+
 export default defineConfig(({ mode }) => {
     const { resolve } = path;
     const env = loadEnv(mode, process.cwd());
@@ -17,7 +29,7 @@ export default defineConfig(({ mode }) => {
 
     return {
         base: BASE_PATH,
-        plugins: [react(), tailwindcss()],
+        plugins: [react(), tailwindcss(), deferCssPlugin()],
         build: {
             rollupOptions: {
                 output: {
