@@ -1,4 +1,4 @@
-.PHONY: help network-create network-remove dev prod ssl-local ssl-down down build-prod logs logs-backend logs-frontend logs-nginx clean status
+.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod logs logs-backend logs-frontend logs-nginx clean status
 
 FRONTEND_DIR=frontend
 BACKEND_DIR=backend
@@ -14,7 +14,8 @@ help:
 	@echo ""
 	@echo "PRODUCCIÓN:"
 	@echo "  make prod             - Modo producción HTTP (Nginx + Frontend estático + Backend sin /docs)"
-	@echo "  make ssl-local        - Modo HTTPS con certificado autofirmado (Proxmox / sin dominio)"
+	@echo "  make ssl              - Modo HTTPS GCP (Let's Encrypt, requiere APP_DOMAIN y SSL_EMAIL en nginx/.env)"
+	@echo "  make ssl-local        - Modo HTTPS local (certificado autofirmado, APP_DOMAIN puede ser IP)"
 	@echo "  make build-prod       - Construir imágenes de producción"
 	@echo "  make logs-prod        - Ver logs de producción"
 	@echo ""
@@ -94,6 +95,52 @@ prod: network-create
 	@echo "/docs y /redoc están deshabilitados en producción"
 	@echo ""
 
+ssl: network-create
+	@echo ""
+	@echo "MODO SSL GCP (LET'S ENCRYPT)"
+	@echo "=============================="
+	@echo ""
+	@cd $(FRONTEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
+	@cd $(BACKEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
+	@cd $(NGINX_DIR) && if [ ! -f .env ]; then cp .env.example .env 2>/dev/null || true; fi
+	@DOMAIN=$$(grep '^APP_DOMAIN=' $(NGINX_DIR)/.env | cut -d'=' -f2); \
+	EMAIL=$$(grep '^SSL_EMAIL=' $(NGINX_DIR)/.env | cut -d'=' -f2); \
+	if [ -z "$$DOMAIN" ]; then echo "ERROR: APP_DOMAIN no definido en $(NGINX_DIR)/.env" && exit 1; fi; \
+	if [ -z "$$EMAIL" ]; then echo "ERROR: SSL_EMAIL no definido en $(NGINX_DIR)/.env" && exit 1; fi; \
+	echo "Dominio: $$DOMAIN"; \
+	echo ""; \
+	echo "Configurando dominio en archivos de entorno..."; \
+	sed -i "s|^VITE_SITE_URL=.*|VITE_SITE_URL=https://$$DOMAIN|" $(FRONTEND_DIR)/.env.production; \
+	sed -i "s|^CORS_ALLOWED_ORIGIN=.*|CORS_ALLOWED_ORIGIN=https://$$DOMAIN|" $(FRONTEND_DIR)/.env.production; \
+	sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=[\"https://$$DOMAIN\"]|" $(BACKEND_DIR)/.env.production; \
+	echo ""; \
+	echo "Obteniendo certificado Let's Encrypt..."; \
+	mkdir -p $(CURDIR)/$(NGINX_DIR)/ssl/letsencrypt; \
+	docker run --rm -p 80:80 \
+		-v $(CURDIR)/$(NGINX_DIR)/ssl/letsencrypt:/etc/letsencrypt \
+		certbot/certbot certonly --standalone \
+		--non-interactive --agree-tos \
+		--email $$EMAIL -d $$DOMAIN; \
+	cp -L $(CURDIR)/$(NGINX_DIR)/ssl/letsencrypt/live/$$DOMAIN/fullchain.pem $(CURDIR)/$(NGINX_DIR)/ssl/cert.pem; \
+	cp -L $(CURDIR)/$(NGINX_DIR)/ssl/letsencrypt/live/$$DOMAIN/privkey.pem $(CURDIR)/$(NGINX_DIR)/ssl/key.pem; \
+	chmod 600 $(CURDIR)/$(NGINX_DIR)/ssl/key.pem; \
+	echo "Certificado obtenido"
+	@echo ""
+	@echo "Construyendo frontend..."
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
+	@echo ""
+	@echo "Levantando servicios..."
+	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d
+	@cd $(NGINX_DIR) && docker compose -f docker-compose.ssl.yml up -d --build
+	@echo ""
+	@echo "SERVICIOS LEVANTADOS EN GCP"
+	@echo "=============================="
+	@echo ""
+	@DOMAIN=$$(grep '^APP_DOMAIN=' $(NGINX_DIR)/.env | cut -d'=' -f2); \
+	echo "  Aplicación:  https://$$DOMAIN"; \
+	echo "  Backend API: https://$$DOMAIN/api"
+	@echo ""
+
 ssl-local: network-create
 	@echo ""
 	@echo "MODO SSL LOCAL (CERTIFICADO AUTOFIRMADO)"
@@ -107,13 +154,13 @@ ssl-local: network-create
 	@echo "Generando certificado autofirmado..."
 	@mkdir -p $(NGINX_DIR)/ssl
 	@if [ ! -f $(NGINX_DIR)/ssl/cert.pem ]; then \
-		SN=$$(grep '^SERVER_NAME=' $(NGINX_DIR)/.env 2>/dev/null | cut -d '=' -f2); \
-		if [ -z "$$SN" ]; then SN=localhost; fi; \
+		DOMAIN=$$(grep '^APP_DOMAIN=' $(NGINX_DIR)/.env | cut -d'=' -f2); \
+		if [ -z "$$DOMAIN" ]; then DOMAIN=localhost; fi; \
 		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 			-keyout $(NGINX_DIR)/ssl/key.pem \
 			-out $(NGINX_DIR)/ssl/cert.pem \
-			-subj "/CN=$$SN" 2>/dev/null && \
-		echo "Certificado generado para: $$SN"; \
+			-subj "/CN=$$DOMAIN" 2>/dev/null && \
+		echo "Certificado generado para: $$DOMAIN"; \
 	else \
 		echo "Certificado ya existe, reutilizando..."; \
 	fi
@@ -125,13 +172,13 @@ ssl-local: network-create
 	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d
 	@cd $(NGINX_DIR) && docker compose -f docker-compose.ssl.yml up -d --build
 	@echo ""
-	@echo "SERVICIOS LEVANTADOS CON SSL"
-	@echo "=============================="
+	@echo "SERVICIOS LEVANTADOS CON SSL LOCAL"
+	@echo "====================================="
 	@echo ""
-	@SN=$$(grep '^SERVER_NAME=' $(NGINX_DIR)/.env 2>/dev/null | cut -d '=' -f2); \
-	if [ -z "$$SN" ]; then SN=localhost; fi; \
-	echo "  Aplicación:  https://$$SN"; \
-	echo "  Backend API: https://$$SN/api"
+	@DOMAIN=$$(grep '^APP_DOMAIN=' $(NGINX_DIR)/.env | cut -d'=' -f2); \
+	if [ -z "$$DOMAIN" ]; then DOMAIN=localhost; fi; \
+	echo "  Aplicación:  https://$$DOMAIN"; \
+	echo "  Backend API: https://$$DOMAIN/api"
 	@echo ""
 	@echo "Certificado autofirmado (acepta la advertencia del navegador)"
 	@echo ""
