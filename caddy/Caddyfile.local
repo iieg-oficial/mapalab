@@ -1,0 +1,4 @@
+{$APP_DOMAIN} {
+	tls internal
+	reverse_proxy nginx:80
+}
