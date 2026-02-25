@@ -16,7 +16,7 @@ services:
       SSL_MODE: "true"
       SSL_CERTIFICATE: /etc/nginx/ssl/cert.pem
       SSL_CERTIFICATE_KEY: /etc/nginx/ssl/key.pem
-      SERVER_NAME: ${SERVER_NAME:-localhost}
+      APP_DOMAIN: ${APP_DOMAIN:-localhost}
       BACKEND_HOST: ${BACKEND_HOST:-backend:8000}
       GEOSERVER_HOST: ${GEOSERVER_HOST:-localhost}
     networks:
