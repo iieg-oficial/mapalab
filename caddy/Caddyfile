@@ -1,7 +1,0 @@
-{
-	email {$CADDY_EMAIL}
-}
-
-{$APP_DOMAIN} {
-	reverse_proxy nginx:80
-}
