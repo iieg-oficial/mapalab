@@ -452,6 +452,60 @@ En `VITE_NODE_ENV=development` aparece un panel flotante en la esquina inferior 
 En producción el panel no renderiza y los eventos van a `window.dataLayer` para GTM.
 
 ---
+## Diagrama de Arquitectura
+
+```mermaid
+graph LR                                                                                                                                             
+      subgraph INTERNET["Internet"]
+      USER["Usuario Final"]                                                                                                                        
+      end                                                   
+
+      subgraph DNS["DNS Público"]
+      DOM["mapalab-iieg.app"]
+      end
+
+      subgraph GCP["Google Cloud Platform — Entorno Temporal"]
+      subgraph VPC["VPC Interna"]
+            subgraph VM_MAPA["VM — MapaLab"]
+                  NGINX["Nginx :443 HTTPS / :80 → 443 SSL + HTTP2"]
+                  FE["Frontend /usr/share/nginx/html"]
+                  BE["Backend :3000"]
+            end
+
+            subgraph VM_DE["VM — DataEngine"]
+                  PG_PRI["PostgreSQL Primary PostGIS 18-3.6 :5432 SSL + SCRAM-SHA-256"]
+                  PG_REP["PostgreSQL Replica :5433"]
+                  PG_BKP["pg-backup → Acervo"]
+            end
+
+            subgraph VM_GEO["VM — GeoServer"]
+                  GEO["GeoServer 2.27.0 Kartoza / Tomcat :8080"]
+            end
+      end
+      end
+
+      USER -->|"HTTPS :443"| DOM
+      DOM --> NGINX
+
+      NGINX -->|"/ → static files"| FE
+      NGINX -->|"proxy /api/ → :3000"| BE
+      NGINX -->|"proxy /geoserver/ → :8080"| GEO
+
+      BE -->|"SQL :5432 SSL"| PG_PRI
+      GEO -->|"SQL :5432"| PG_PRI
+
+      PG_PRI -->|"replicación"| PG_REP
+      PG_PRI -->|"dump"| PG_BKP
+      PG_BKP -->|"Acervo :443"| acervo["Object Storage Backups"]
+
+      style INTERNET fill:#f66,stroke:#7b2d8e,color:#000
+      style DNS fill:#1a24,stroke:#16213e,color:#000
+      style GCP fill:#4285f4,stroke:#1a73e8,color:#fff
+      style VPC fill:#e8f0fe,stroke:#4285f4,color:#000
+      style VM_MAPA fill:#34a853,stroke:#1e8e3e,color:#fff
+      style VM_DE fill:#ea4335,stroke:#c5221f,color:#fff
+      style VM_GEO fill:#ff6d01,stroke:#e65100,color:#fff
+```
 
 ## Licencia
 
