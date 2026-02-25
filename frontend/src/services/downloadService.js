@@ -1,4 +1,3 @@
-import JSZip from 'jszip';
 import { findWMSConfig } from '../pages/maps/helpers/wmsConfig';
 import { layers, findLayerById, collectLayersWithWMS } from '../pages/maps/helpers/layers/index';
 import { getLayerMetadata } from './layerMetadataService';
@@ -138,6 +137,7 @@ export const downloadLayerBundle = async (layerId, options = {}) => {
             return getFilter(id) || undefined;
         };
 
+        const { default: JSZip } = await import('jszip');
         const zip = new JSZip();
 
         const metaResult = await Promise.allSettled([getLayerMetadata(layerId)]);

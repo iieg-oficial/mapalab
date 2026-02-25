@@ -21,7 +21,7 @@ function deferCssPlugin() {
 
 export default defineConfig(({ mode }) => {
     const { resolve } = path;
-    const env = loadEnv(mode, process.cwd());
+    const env = loadEnv(mode, process.cwd(), '');
     const PORT = Number(env.VITE_PORT ?? '5173');
     const HOST_FRONTEND = env.VITE_HOST_FRONTEND ?? '0.0.0.0';
 
@@ -36,7 +36,6 @@ export default defineConfig(({ mode }) => {
                     manualChunks: {
                         'vendor-react': ['react', 'react-dom', 'react-router'],
                         'vendor-ol': ['ol'],
-                        'vendor-export': ['html2canvas', 'jspdf', 'jszip'],
                         'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/modifiers', '@dnd-kit/sortable', '@dnd-kit/utilities'],
                     }
                 }
@@ -45,6 +44,12 @@ export default defineConfig(({ mode }) => {
         server: {
             host: HOST_FRONTEND,
             port: PORT,
+            proxy: env.GEOSERVER_DEV_TARGET ? {
+                '/geoserver': {
+                    target: env.GEOSERVER_DEV_TARGET,
+                    changeOrigin: true,
+                }
+            } : {},
         },
         resolve: {
             alias: {

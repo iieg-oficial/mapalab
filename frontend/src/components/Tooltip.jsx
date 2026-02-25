@@ -264,7 +264,7 @@ const Tooltip = ({
                 ref={triggerRef}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                style={{ display: 'inline-block', lineHeight: 0 }}
+                style={{ display: 'inline-block' }}
             >
                 {children}
             </div>

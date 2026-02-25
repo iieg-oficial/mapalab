@@ -20,7 +20,7 @@
     src: url("/fonts/Garet-Book.otf") format("opentype");
     font-weight: 300;
     font-style: normal;
-    font-display: swap;
+    font-display: optional;
 }
 
 @font-face {
@@ -28,7 +28,7 @@
     src: url("/fonts/Garet-Regular.otf") format("opentype");
     font-weight: 400;
     font-style: normal;
-    font-display: swap;
+    font-display: optional;
 }
 
 @font-face {
@@ -36,7 +36,7 @@
     src: url("/fonts/Garet-Medium.otf") format("opentype");
     font-weight: 500;
     font-style: normal;
-    font-display: swap;
+    font-display: optional;
 }
 
 @font-face {
@@ -44,7 +44,7 @@
     src: url("/fonts/Garet-Bold.otf") format("opentype");
     font-weight: 700;
     font-style: normal;
-    font-display: swap;
+    font-display: optional;
 }
 
 @font-face {
@@ -52,7 +52,7 @@
     src: url("/fonts/Garet-ExtraBold.otf") format("opentype");
     font-weight: 800;
     font-style: normal;
-    font-display: swap;
+    font-display: optional;
 }
 
 @theme {

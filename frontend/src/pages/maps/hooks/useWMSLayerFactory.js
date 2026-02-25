@@ -54,31 +54,45 @@ export const useWMSLayerFactory = () => {
                 return;
             }
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), IMAGE_LOAD_TIMEOUT);
+            const attemptLoad = (retriesLeft) => {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), IMAGE_LOAD_TIMEOUT);
 
-            fetch(src, { signal: controller.signal })
-                .then(response => {
-                    clearTimeout(timeoutId);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.blob();
-                })
-                .then(blob => {
-                    if (wmsImageCache.size >= MAX_CACHE_ENTRIES) {
-                        const oldestKey = wmsImageCache.keys().next().value;
-                        wmsImageCache.delete(oldestKey);
-                    }
-                    wmsImageCache.set(src, blob);
-                    const objectUrl = URL.createObjectURL(blob);
-                    img.onload = () => URL.revokeObjectURL(objectUrl);
-                    img.src = objectUrl;
-                })
-                .catch(error => {
-                    clearTimeout(timeoutId);
-                    console.warn(`Error cargando imagen WMS para ${layerId}:`, error.message);
-                });
+                fetch(src, { signal: controller.signal })
+                    .then(async response => {
+                        clearTimeout(timeoutId);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const contentType = response.headers.get('content-type') || '';
+                        if (!contentType.startsWith('image/')) {
+                            const body = await response.text();
+                            throw new Error(`Non-image response (${contentType}): ${body.substring(0, 300)}`);
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        if (wmsImageCache.size >= MAX_CACHE_ENTRIES) {
+                            const oldestKey = wmsImageCache.keys().next().value;
+                            wmsImageCache.delete(oldestKey);
+                        }
+                        wmsImageCache.set(src, blob);
+                        const objectUrl = URL.createObjectURL(blob);
+                        img.onload = () => URL.revokeObjectURL(objectUrl);
+                        img.src = objectUrl;
+                    })
+                    .catch(error => {
+                        clearTimeout(timeoutId);
+                        if (retriesLeft > 0 && error.name !== 'AbortError' && !error.message.startsWith('Non-image response')) {
+                            setTimeout(() => attemptLoad(retriesLeft - 1), 2000);
+                        } else {
+                            console.warn(`Error cargando imagen WMS para ${layerId}:`, error.message);
+                            img.dispatchEvent(new Event('error'));
+                        }
+                    });
+            };
+
+            attemptLoad(1);
         };
 
         const wmsSource = new ImageWMS({

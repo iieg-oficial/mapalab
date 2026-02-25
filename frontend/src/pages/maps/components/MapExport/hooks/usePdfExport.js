@@ -1,4 +1,3 @@
-import jsPDF from 'jspdf';
 import { useMapCapture } from './useMapCapture';
 import createExportLegendsLayout from '../ExportLegendsLayout';
 
@@ -6,6 +5,7 @@ export const usePdfExport = () => {
     const { waitForImages, captureElement } = useMapCapture();
 
     const exportToPdf = async ({ canvas, title, selectedLegends = [], getLegendUrl }) => {
+        const { default: jsPDF } = await import('jspdf');
         const canvasRatio = canvas.width / canvas.height;
         const pageWidth = 297;
         const pageHeight = pageWidth / canvasRatio;
