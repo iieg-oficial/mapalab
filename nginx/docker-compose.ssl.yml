@@ -7,9 +7,15 @@ services:
     env_file:
       - .env
     ports:
-      - '${NGINX_PORT:-80}:80'
+      - "80:80"
+      - "443:443"
     volumes:
       - ../frontend/dist:/usr/share/nginx/html:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    environment:
+      SSL_MODE: "true"
+      SSL_CERTIFICATE: /etc/nginx/ssl/cert.pem
+      SSL_CERTIFICATE_KEY: /etc/nginx/ssl/key.pem
     networks:
       - mapalab-network
     restart: unless-stopped

@@ -1,9 +1,8 @@
-.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod logs logs-backend logs-frontend logs-nginx logs-caddy clean status
+.PHONY: help network-create network-remove dev prod ssl-local ssl-down down build-prod logs logs-backend logs-frontend logs-nginx clean status
 
 FRONTEND_DIR=frontend
 BACKEND_DIR=backend
 NGINX_DIR=nginx
-CADDY_DIR=caddy
 NETWORK_NAME=mapalab-network
 
 help:
@@ -15,11 +14,9 @@ help:
 	@echo ""
 	@echo "PRODUCCIÓN:"
 	@echo "  make prod             - Modo producción HTTP (Nginx + Frontend estático + Backend sin /docs)"
-	@echo "  make ssl              - Modo producción HTTPS (Caddy + Let's Encrypt automático)"
-	@echo "  make ssl-local        - Modo HTTPS local/Proxmox (Caddy + certificado autofirmado)"
+	@echo "  make ssl-local        - Modo HTTPS con certificado autofirmado (Proxmox / sin dominio)"
 	@echo "  make build-prod       - Construir imágenes de producción"
 	@echo "  make logs-prod        - Ver logs de producción"
-	@echo "  make logs-caddy       - Ver logs de Caddy (SSL)"
 	@echo ""
 	@echo "GENERAL:"
 	@echo "  make down             - Detener todos los servicios"
@@ -97,75 +94,55 @@ prod: network-create
 	@echo "/docs y /redoc están deshabilitados en producción"
 	@echo ""
 
-ssl: network-create
+ssl-local: network-create
 	@echo ""
-	@echo "MODO SSL (PRODUCCIÓN CON HTTPS)"
-	@echo "================================"
+	@echo "MODO SSL LOCAL (CERTIFICADO AUTOFIRMADO)"
+	@echo "========================================="
 	@echo ""
 	@echo "Configurando variables de entorno..."
 	@cd $(FRONTEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
 	@cd $(BACKEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
 	@cd $(NGINX_DIR) && if [ ! -f .env ]; then cp .env.example .env 2>/dev/null || true; fi
-	@cd $(CADDY_DIR) && if [ ! -f .env ]; then cp .env.example .env; fi
+	@echo ""
+	@echo "Generando certificado autofirmado..."
+	@mkdir -p $(NGINX_DIR)/ssl
+	@if [ ! -f $(NGINX_DIR)/ssl/cert.pem ]; then \
+		SN=$$(grep '^SERVER_NAME=' $(NGINX_DIR)/.env 2>/dev/null | cut -d '=' -f2); \
+		if [ -z "$$SN" ]; then SN=localhost; fi; \
+		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+			-keyout $(NGINX_DIR)/ssl/key.pem \
+			-out $(NGINX_DIR)/ssl/cert.pem \
+			-subj "/CN=$$SN" 2>/dev/null && \
+		echo "Certificado generado para: $$SN"; \
+	else \
+		echo "Certificado ya existe, reutilizando..."; \
+	fi
 	@echo ""
 	@echo "Construyendo frontend..."
 	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
 	@echo ""
 	@echo "Levantando servicios..."
 	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d
-	@cd $(NGINX_DIR) && NGINX_PORT=127.0.0.1:8080 docker compose up -d --build
-	@cd $(CADDY_DIR) && docker compose up -d
+	@cd $(NGINX_DIR) && docker compose -f docker-compose.ssl.yml up -d --build
 	@echo ""
 	@echo "SERVICIOS LEVANTADOS CON SSL"
 	@echo "=============================="
 	@echo ""
-	@DOMAIN=$$(grep '^APP_DOMAIN=' $(CADDY_DIR)/.env 2>/dev/null | cut -d '=' -f2); \
-	if [ -z "$$DOMAIN" ]; then DOMAIN="tu-dominio.com"; fi; \
-	echo "  Aplicación:  https://$$DOMAIN"; \
-	echo "  Backend API: https://$$DOMAIN/api"
-	@echo ""
-	@echo "Caddy obtiene y renueva el certificado SSL automáticamente"
-	@echo ""
-
-ssl-local: network-create
-	@echo ""
-	@echo "MODO SSL LOCAL (PROXMOX / SIN DOMINIO)"
-	@echo "========================================"
-	@echo ""
-	@echo "Configurando variables de entorno..."
-	@cd $(FRONTEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
-	@cd $(BACKEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
-	@cd $(NGINX_DIR) && if [ ! -f .env ]; then cp .env.example .env 2>/dev/null || true; fi
-	@cd $(CADDY_DIR) && if [ ! -f .env ]; then cp .env.example .env; fi
-	@echo ""
-	@echo "Construyendo frontend..."
-	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
-	@echo ""
-	@echo "Levantando servicios..."
-	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d
-	@cd $(NGINX_DIR) && NGINX_PORT=127.0.0.1:8080 docker compose up -d --build
-	@cd $(CADDY_DIR) && docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
-	@echo ""
-	@echo "SERVICIOS LEVANTADOS CON SSL LOCAL"
-	@echo "====================================="
-	@echo ""
-	@DOMAIN=$$(grep '^APP_DOMAIN=' $(CADDY_DIR)/.env 2>/dev/null | cut -d '=' -f2); \
-	if [ -z "$$DOMAIN" ]; then DOMAIN="<IP o hostname>"; fi; \
-	echo "  Aplicación:  https://$$DOMAIN"; \
-	echo "  Backend API: https://$$DOMAIN/api"
+	@SN=$$(grep '^SERVER_NAME=' $(NGINX_DIR)/.env 2>/dev/null | cut -d '=' -f2); \
+	if [ -z "$$SN" ]; then SN=localhost; fi; \
+	echo "  Aplicación:  https://$$SN"; \
+	echo "  Backend API: https://$$SN/api"
 	@echo ""
 	@echo "Certificado autofirmado (acepta la advertencia del navegador)"
 	@echo ""
 
 ssl-down:
 	@echo "Deteniendo servicios SSL..."
-	@cd $(CADDY_DIR) && docker compose down 2>/dev/null || true
-	@cd $(NGINX_DIR) && docker compose down 2>/dev/null || true
+	@cd $(NGINX_DIR) && docker compose -f docker-compose.ssl.yml down 2>/dev/null || true
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml down 2>/dev/null || true
 	@echo "Servicios detenidos"
 
 build-prod:
-	@echo "Construyendo imágenes de producción..."
 	@echo "Construyendo imágenes de producción..."
 	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml build
@@ -174,8 +151,8 @@ build-prod:
 
 down:
 	@echo "Deteniendo todos los servicios..."
-	@cd $(CADDY_DIR) && docker compose down 2>/dev/null || true
 	@cd $(NGINX_DIR) && docker compose down 2>/dev/null || true
+	@cd $(NGINX_DIR) && docker compose -f docker-compose.ssl.yml down 2>/dev/null || true
 	@cd $(FRONTEND_DIR) && docker compose -f docker-compose.dev.yml down 2>/dev/null || true
 	@cd $(FRONTEND_DIR) && docker compose down 2>/dev/null || true
 	@cd $(BACKEND_DIR) && docker compose down 2>/dev/null || true
@@ -184,7 +161,6 @@ down:
 
 clean: down
 	@echo "Limpiando volúmenes y archivos generados..."
-	@cd $(CADDY_DIR) && docker compose down -v 2>/dev/null || true
 	@cd $(BACKEND_DIR) && docker compose down -v --remove-orphans 2>/dev/null || true
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml down -v 2>/dev/null || true
 	@cd $(FRONTEND_DIR) && docker compose -f docker-compose.dev.yml down -v 2>/dev/null || true
@@ -210,9 +186,6 @@ logs-frontend:
 
 logs-nginx:
 	@cd $(NGINX_DIR) && docker compose logs -f
-
-logs-caddy:
-	@cd $(CADDY_DIR) && docker compose logs -f
 
 status:
 	@echo "Estado de los servicios:"
