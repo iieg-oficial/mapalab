@@ -14,8 +14,8 @@ services:
       - ${SSL_VOLUME_PATH}
     environment:
       SSL_MODE: ${SSL_MODE:-true}
-      SSL_CERTIFICATE: ${SSL_CERTIFICATE:-/etc/nginx/ssl/cert.pem}
-      SSL_CERTIFICATE_KEY: ${SSL_CERTIFICATE_KEY:-/etc/nginx/ssl/key.pem}
+      SSL_CERTIFICATE: ${SSL_CERTIFICATE:-/etc/nginx/certs/fullchain.pem}
+      SSL_CERTIFICATE_KEY: ${SSL_CERTIFICATE_KEY:-/etc/nginx/certs/privkey.pem}
       APP_DOMAIN: ${APP_DOMAIN:-localhost}
       BACKEND_HOST: ${BACKEND_HOST:-backend:8000}
       GEOSERVER_HOST: ${GEOSERVER_HOST:-localhost}
