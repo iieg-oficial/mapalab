@@ -108,6 +108,18 @@ describe('filterValidLayers', () => {
     it('retorna vacío si no hay capas activas', () => {
         expect(filterValidLayers([], mockLayers, mockFindWMSConfig)).toHaveLength(0);
     });
+
+    it('deduplica capas con el mismo id', () => {
+        const activeLayers = [
+            { id: 'tematic-layer', visible: true },
+            { id: 'tematic-layer', visible: true },
+            { id: 'another-tematic', visible: true },
+        ];
+        const result = filterValidLayers(activeLayers, mockLayers, mockFindWMSConfig);
+        expect(result).toHaveLength(2);
+        expect(result[0].layer.id).toBe('tematic-layer');
+        expect(result[1].layer.id).toBe('another-tematic');
+    });
 });
 
 describe('groupLayersByUrl', () => {

@@ -87,8 +87,13 @@ export const getWfsUrl = (url) => {
 };
 
 export const filterValidLayers = (activeLayers, layers, findWMSConfig) => {
+    const seen = new Set();
     let validLayers = activeLayers
-        .filter(layer => layer.visible)
+        .filter(layer => {
+            if (!layer.visible || seen.has(layer.id)) return false;
+            seen.add(layer.id);
+            return true;
+        })
         .map(layer => {
             const wmsConfig = findWMSConfig(layer.id, layers);
             return wmsConfig ? { layer, wmsConfig } : null;
