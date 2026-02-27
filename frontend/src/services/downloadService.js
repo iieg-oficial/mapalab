@@ -19,7 +19,7 @@ const buildWFSUrl = (wmsConfig, format) => {
         outputFormat: format.id,
         srsName: format.srs || 'EPSG:4326'
     };
-    const url = new URL(baseUrl);
+    const url = new URL(baseUrl, window.location.origin);
     Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
     return url.toString();
 };
@@ -33,7 +33,7 @@ const buildWCSUrl = (wmsConfig, timeValue) => {
         coverageId: wmsConfig.layerName,
         format: 'image/geotiff'
     };
-    const url = new URL(baseUrl);
+    const url = new URL(baseUrl, window.location.origin);
     Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
     if (timeValue) {
         url.searchParams.append('SUBSET', `time("${timeValue}T00:00:00.000Z")`);
