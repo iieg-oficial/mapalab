@@ -11,7 +11,7 @@ services:
       - "443:443"
     volumes:
       - ../frontend/dist:/usr/share/nginx/html:ro
-      - ./error:/usr/share/nginx/html/error:ro
+      - ./error:/etc/nginx/error-pages:ro
       - ${SSL_VOLUME_PATH}
     environment:
       SSL_MODE: ${SSL_MODE:-true}
