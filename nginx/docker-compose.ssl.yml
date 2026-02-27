@@ -19,6 +19,7 @@ services:
       APP_DOMAIN: ${APP_DOMAIN:-localhost}
       BACKEND_HOST: ${BACKEND_HOST:-backend:8000}
       GEOSERVER_HOST: ${GEOSERVER_HOST:-localhost}
+      ALLOWED_IP: ${ALLOWED_IP:-127.0.0.1}
     networks:
       - mapalab-network
     restart: unless-stopped
