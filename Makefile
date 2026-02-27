@@ -78,7 +78,7 @@ prod: network-create
 	@echo ""
 	@echo "Construyendo frontend..."
 	@echo "Instalando dependencias y construyendo en Docker..."
-	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install --ignore-scripts || npm install --legacy-peer-deps --ignore-scripts) && npm run build"
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
 	@echo ""
 	@echo "Levantando servicios de producción..."
 	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d
@@ -127,7 +127,7 @@ ssl: network-create
 	echo "Certificado obtenido"
 	@echo ""
 	@echo "Construyendo frontend..."
-	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install --ignore-scripts || npm install --legacy-peer-deps --ignore-scripts) && npm run build"
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
 	@echo ""
 	@echo "Levantando servicios..."
 	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d
@@ -166,7 +166,7 @@ ssl-local: network-create
 	fi
 	@echo ""
 	@echo "Construyendo frontend..."
-	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install --ignore-scripts || npm install --legacy-peer-deps --ignore-scripts) && npm run build"
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
 	@echo ""
 	@echo "Levantando servicios..."
 	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d
@@ -191,7 +191,7 @@ ssl-down:
 
 build-prod:
 	@echo "Construyendo imágenes de producción..."
-	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install --ignore-scripts || npm install --legacy-peer-deps --ignore-scripts) && npm run build"
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml build
 	@cd $(NGINX_DIR) && docker compose build
 	@echo "Imágenes construidas"
