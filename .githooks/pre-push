@@ -1,0 +1,4 @@
+#!/bin/sh
+cd frontend || exit 1
+npm run lint || exit 1
+npm run test -- --run || exit 1
