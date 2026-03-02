@@ -60,17 +60,21 @@ Closes #[issue number]
 
 We use conventional commits to maintain a clear history:
 
+- `build`: Build system or external dependencies
+- `chore`: Maintenance tasks
+- `ci`: CI/CD configuration
+- `docs`: Documentation changes
 - `feat`: New features
 - `fix`: Bug fixes
-- `docs`: Documentation changes
-- `style`: Code style changes (formatting, etc.)
+- `perf`: Performance improvements
 - `refactor`: Code changes that neither fix bugs nor add features
-- `test`: Adding or updating tests
-- `chore`: Maintenance tasks
 - `revert`: Reverting previous commits
+- `style`: Code style changes (formatting, etc.)
+- `test`: Adding or updating tests
 
-Format: `type(scope): description`
-Example: `feat(auth): add login functionality`
+Format: `type[(scope)]: description`
+Example sin scope: `feat: add login form`
+Example con scope: `feat(auth): add login form`
 
 ## Commit Scopes
 
