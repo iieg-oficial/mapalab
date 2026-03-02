@@ -1,5 +1,5 @@
 location ^~ /geoserver/web {
-    allow ${ALLOWED_IP};
+    include /etc/nginx/allowed_ips.conf;
     deny all;
     proxy_pass http://geoserver/geoserver/web;
     proxy_set_header Host $host;
@@ -15,7 +15,7 @@ location ^~ /geoserver/web {
 }
 
 location ^~ /geoserver/rest {
-    allow ${ALLOWED_IP};
+    include /etc/nginx/allowed_ips.conf;
     deny all;
     proxy_pass http://geoserver/geoserver/rest;
     proxy_set_header Host $host;
