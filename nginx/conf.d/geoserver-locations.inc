@@ -35,6 +35,15 @@ location ^~ /geoserver/ {
     limit_conn geoserver_conn 4;
 
     location ~ ^/geoserver/(ows|wfs|wcs) {
+        valid_referers server_names *.$host $host localhost;
+        if ($invalid_referer) {
+            return 403;
+        }
+
+        if ($http_user_agent ~* (curl|wget|python|scrapy|httpclient|bot|spider|java|perl|ruby|php|go-http|node-fetch|axios|postman)) {
+            return 403;
+        }
+
         limit_req zone=geoserver_download burst=4 nodelay;
         limit_conn geoserver_conn 2;
         proxy_pass http://geoserver;
