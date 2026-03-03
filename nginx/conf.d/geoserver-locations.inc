@@ -44,8 +44,8 @@ location ^~ /geoserver/ {
             return 403;
         }
 
-        limit_req zone=geoserver_download burst=4 nodelay;
-        limit_conn geoserver_conn 2;
+        limit_req zone=geoserver_download burst=10 nodelay;
+        limit_conn geoserver_conn 6;
         proxy_pass http://geoserver;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
