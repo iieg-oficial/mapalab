@@ -5,6 +5,8 @@ import { filtersInitializationComplete } from './useInitializeFromUrl';
 import { useDebounce } from '@hooks/useDebounce';
 import { useMapsContext } from '@hooks/useMaps';
 
+const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
+
 export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, unifiedLayers, createWMSLayer, getAllChildLayerIds, getLayerOpacity, layerOpacities }) => {
     const wmsLayersRef = useRef(new Map());
     const isFirstRender = useRef(true);
@@ -39,6 +41,9 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
         }
 
         isFirstRender.current = false;
+
+        const isInegiMode = debouncedActiveLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
+        const envParam = isInegiMode ? 'geom:geom_inegi' : 'geom:geom_iieg';
 
         const performUpdate = () => {
             const currentGroupKeys = new Set(wmsLayersRef.current.keys());
@@ -122,6 +127,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 const customParams = {
                     LAYERS: layersParam,
                     STYLES: stylesParam,
+                    ENV: envParam,
                 };
                 if (finalCqlFilter) {
                     customParams.CQL_FILTER = finalCqlFilter;
@@ -166,12 +172,14 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
 
                             const newParams = {
                                 LAYERS: layersParam,
-                                STYLES: stylesParam
+                                STYLES: stylesParam,
+                                ENV: envParam,
                             };
 
                             let paramsChanged = false;
                             if (currentParams.LAYERS !== newParams.LAYERS) paramsChanged = true;
                             if (currentParams.STYLES !== newParams.STYLES) paramsChanged = true;
+                            if (currentParams.ENV !== newParams.ENV) paramsChanged = true;
 
                             if (finalCqlFilter) {
                                 if (currentParams.CQL_FILTER !== finalCqlFilter) paramsChanged = true;
