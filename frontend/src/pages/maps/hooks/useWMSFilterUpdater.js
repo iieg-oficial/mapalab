@@ -2,12 +2,17 @@ import { useEffect } from 'react';
 import { useDebounce } from '@hooks/useDebounce';
 import { resolveTimeStyle } from '../helpers/wmsConfig';
 
+const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
+
 export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds }) => {
     const debouncedFilters = useDebounce(filters, 300);
     const debouncedActiveLayers = useDebounce(activeLayerIds, 300);
 
     useEffect(() => {
         if (!mapRef.current || !getFilter) return;
+
+        const isInegiMode = debouncedActiveLayers.some(id => INEGI_LAYER_IDS.includes(id));
+        const envParam = isInegiMode ? 'geom:geom_inegi' : 'geom:geom_iieg';
 
         requestAnimationFrame(() => {
             wmsLayersRef.current.forEach((layer, key) => {
@@ -59,19 +64,21 @@ export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, 
 
                 const currentParams = source.getParams();
 
+                const envChanged = currentParams.ENV !== envParam;
+
                 if (timeValue !== undefined) {
                     const resolvedStyle = resolveTimeStyle(timeStylePattern, timeValue);
                     const timeChanged = currentParams.TIME !== timeValue;
                     const styleChanged = resolvedStyle && currentParams.STYLES !== resolvedStyle;
-                    if (timeChanged || styleChanged) {
-                        const updates = { TIME: timeValue, CQL_FILTER: undefined };
+                    if (timeChanged || styleChanged || envChanged) {
+                        const updates = { TIME: timeValue, CQL_FILTER: undefined, ENV: envParam };
                         if (resolvedStyle) updates.STYLES = resolvedStyle;
                         source.updateParams(updates);
                     }
                 } else {
                     const newCqlFilter = combinedFilter || undefined;
-                    if (currentParams.CQL_FILTER !== newCqlFilter) {
-                        source.updateParams({ CQL_FILTER: newCqlFilter, TIME: undefined });
+                    if (currentParams.CQL_FILTER !== newCqlFilter || envChanged) {
+                        source.updateParams({ CQL_FILTER: newCqlFilter, TIME: undefined, ENV: envParam });
                         source.refresh();
                     }
                 }
