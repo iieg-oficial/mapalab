@@ -167,7 +167,7 @@ export const baseLayers = {
                 ...INFRAESTRUCTURA.map(mapGeneralLayer),
                 {
                     id: 'carreteras',
-                    label: 'Altas de carreteras',
+                    label: 'Atlas de carreteras',
                     forceGroup: true,
                     children: CARRETERAS.map(([id, label, matchValue, layerName, tags, littleCard]) => ({
                         id,
