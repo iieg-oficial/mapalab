@@ -1,5 +1,6 @@
 import { useState, useCallback, useContext } from 'react';
 import MapsContext from '@contexts/MapsContext';
+import { useLayerLoading } from '@contexts/LayerLoadingContext';
 import { getFeatureInfoForActiveLayers, getFeaturesInPolygonForActiveLayers } from '@services/featureInfoService';
 import { toLonLat } from 'ol/proj';
 import { findLayerById, layers as allLayers, collectLayersWithWMS, findParentGroup } from '../helpers/layers/index';
@@ -7,7 +8,8 @@ import { findLayerById, layers as allLayers, collectLayersWithWMS, findParentGro
 const FEATURE_INFO_LOADING_ID = 'feature_info_query';
 
 export const useFeatureInfo = () => {
-    const { hiddenLayerIds, setSelectedFeatureInfo, clickPosition, activeLayerIds, getFilter, selectedLayerForSymbology, setLayerLoading, setSelectedLayerForSymbology } = useContext(MapsContext);
+    const { hiddenLayerIds, setSelectedFeatureInfo, clickPosition, activeLayerIds, getFilter, selectedLayerForSymbology, setSelectedLayerForSymbology } = useContext(MapsContext);
+    const { setLayerLoading } = useLayerLoading();
     const [loading, setLoading] = useState(false);
 
     const getAllActiveLayers = useCallback(() => {

@@ -132,7 +132,7 @@ const TASA_DELITOS_PATRIMONIO = [
 ];
 
 const DELITOS_VIDA = [
-    { id: 'eminicidio', label: 'Feminicidio', layerName: 'delitos_fiscalia_feminicidio', tags: ['seguridad', 'delito', 'feminicidio', 'tasa', 'mujer'] },
+    { id: 'feminicidio', label: 'Feminicidio', layerName: 'delitos_fiscalia_feminicidio', tags: ['seguridad', 'delito', 'feminicidio', 'tasa', 'mujer'] },
     { id: 'homicidio_doloso', label: 'Homicidio doloso', layerName: 'delitos_fiscalia_homicidio_doloso', tags: ['seguridad', 'delito', 'homicidio', 'tasa', 'asesinato', 'crimen', 'violencia'] },
     { id: 'lesiones_dolosas', label: 'Lesiones dolosas', layerName: 'delitos_fiscalia_lesiones_dolosas', tags: ['seguridad', 'delito', 'lesiones', 'dolosas', 'tasa', 'golpes', 'agresion', 'fisica'] },
 ];

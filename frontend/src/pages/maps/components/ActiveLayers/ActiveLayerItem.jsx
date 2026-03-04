@@ -1,4 +1,5 @@
 import { useMapsContext } from '@hooks/useMaps';
+import { useLayerLoading } from '@contexts/LayerLoadingContext';
 import Loading from '@components/Loading';
 import { useMemo, useState } from 'react';
 import Icon from '@components/Icon';
@@ -11,8 +12,8 @@ const ActiveLayerItem = ({
     layer,
     dragHandleProps
 }) => {
+    const { loadingLayers } = useLayerLoading();
     const {
-        loadingLayers,
         selectedLayerForSymbology,
         setSelectedLayerForSymbology,
         onToggleLayer,

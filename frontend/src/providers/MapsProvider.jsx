@@ -17,7 +17,6 @@ const MapsProvider = ({ children }) => {
     const [siderCollapsed, setSiderCollapsed] = useState(true);
     const [selectedLayer, setSelectedLayer] = useState(null);
     const [selectedFeatureInfo, setSelectedFeatureInfo] = useState(null);
-    const [loadingLayers, setLoadingLayers] = useState(new Set());
     const [isLocating, setIsLocating] = useState(false);
     const queryFeaturesInPolygonRef = useRef(null);
     const clickPosition = useClickPosition();
@@ -36,21 +35,8 @@ const MapsProvider = ({ children }) => {
     const rasterLoop = useRasterLoop({
         applyFilter: cqlFilter.applyFilter,
         clearFilter: cqlFilter.clearFilter,
-        loadingLayers,
         activeLayerIds: layerManagement.activeLayerIds
     });
-
-    const setLayerLoading = useCallback((layerId, isLoading) => {
-        setLoadingLayers(prev => {
-            const newSet = new Set(prev);
-            if (isLoading) {
-                newSet.add(layerId);
-            } else {
-                newSet.delete(layerId);
-            }
-            return newSet;
-        });
-    }, []);
 
     const handlePolygonComplete = useCallback((geometry, centerCoordinate, onFeatureCountUpdate) => {
         if (queryFeaturesInPolygonRef.current && mapRef.current) {
@@ -98,8 +84,6 @@ const MapsProvider = ({ children }) => {
         ...cqlFilter,
         ...rasterLoop,
         ...mapDrawing,
-        loadingLayers,
-        setLayerLoading,
         isLocating,
         setIsLocating
     }), [
@@ -117,8 +101,6 @@ const MapsProvider = ({ children }) => {
         cqlFilter,
         rasterLoop,
         mapDrawing,
-        loadingLayers,
-        setLayerLoading,
         isLocating
     ]);
 
