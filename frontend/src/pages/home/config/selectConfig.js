@@ -10,7 +10,7 @@ const selectConfig = {
             id: 1,
             image: imgInfoBanner,
             header: 'Tarjeta de información específica por capa',
-            label: 'Al seleccionar una capa desde el menú, se mostrará en el panel de capas activas con sus acciones: ocultarla, cambiar el orden del listado, ver su tarjeta de información, así como eliminar la capa. \n Al activar la tarjeta informativa de la capa podrás descargar la capa, ajustar su opacidad, consultar su descripción, numeralia, filtrar información por periodo de tiempo, así como conocer la metodología, fuente y fecha de actualización.',
+            label: 'Al seleccionar una capa desde el menú, se mostrará en el panel de capas activas con sus acciones: ocultarla, cambiar el orden del listado, ver su tarjeta de información, así como eliminar la capa. \n \n Al activar la tarjeta informativa de la capa podrás descargar la capa, ajustar su opacidad, consultar su descripción, numeralia, filtrar información por periodo de tiempo, así como conocer la metodología, fuente y fecha de actualización.',
             color: '#FFB98E'
         }, {
             id: 2,
