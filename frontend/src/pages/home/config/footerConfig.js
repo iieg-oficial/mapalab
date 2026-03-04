@@ -14,14 +14,14 @@ const footerConfig = {
             id: 2,
             name: 'IIEG',
             src: logoIiegLargeDark,
-            width: '210px',
-            height: '64px'
+            width: '280px',
+            height: '100px'
         }, {
             id: 3,
             name: 'Jalisco',
             src: logoJaliscoLargeDark,
-            width: '226px',
-            height: '77px'
+            width: '280px',
+            height: '100px'
         }
     ],
     copyright: 'TODOS LOS DERECHOS RESERVADOS'
