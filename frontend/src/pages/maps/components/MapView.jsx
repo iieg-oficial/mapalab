@@ -27,7 +27,7 @@ const MapView = () => {
 
     useMapInitialization({ targetRef, mapRef, baseMapRef, basemaps, baseMapId });
     useMapViewUrlSync(mapRef);
-    useBaseMapManager(baseMapRef, basemaps, baseMapId);
+    useBaseMapManager(baseMapRef, basemaps, baseMapId, mapRef);
 
     const { createWMSLayer, combineCQLFilters } = useWMSLayerFactory();
     const { wmsLayersRef } = useWMSLayerManager({ 
