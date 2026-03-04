@@ -2,8 +2,8 @@ import footerConfig from '../config/footerConfig';
 
 const Footer = () => {
     return (
-        <footer className="bg-[#5C2472] p-10">
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-y-10 mb-10 xl:my-[54px]">
+        <footer className="bg-purple p-10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-10 mb-10 lg:gap-x-10 xl:my-[54px]">
                 {footerConfig.logos.map((logo) => (
                     <div key={logo.id} className="flex items-center justify-center">
                         <img
