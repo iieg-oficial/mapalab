@@ -20,7 +20,7 @@ const Card = ({ topics = [] }) => {
                 return (
                     <div
                         key={topic.id}
-                        className={`relative h-[110px] w-full md:max-w-[397px] ${isOpen ? 'z-50' : ''}`}
+                        className={`relative h-[110px] w-full ${isOpen ? 'z-50' : ''}`}
                         onMouseEnter={() => {
                             if (Date.now() - lastTouchRef.current > 500) setHoveredIndex(index);
                         }}
