@@ -4,7 +4,7 @@ const topicsConfig = {
             id: 'general',
             label: 'General',
             description: 'Navega el territorio de Jalisco a través de un mapa base que facilita la ubicación y comprensión geográfica.',
-            icon: 'general'
+            icon: 'base_layers'
         },{
             id: 'demografia',
             label: 'Demografía',
