@@ -24,13 +24,14 @@ const SearchBar = ({ className = '' }) => {
     return (
         <div className={`w-full max-w-[603px] h-[60px] flex items-center justify-center ${className}`}>
             <input
+                id="search-input"
                 type="text"
                 placeholder='¿Qué quieres buscar?'
                 className={`
                     w-full h-full text-center rounded-[40px] bg-[#F4F1FF] transition-all pl-5
-                    font-garet font-medium text-[#FF8300] text-[18px]/[47px] tracking-normal text-left 
+                    font-garet font-medium text-numeralia text-[18px]/[47px] tracking-normal 
                     outline-none
-                    md:text-center md:pl-0 hover:font-bold
+                    md:text-center md:pl-0 hover:font-bold hover:text-orange
                 `}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
