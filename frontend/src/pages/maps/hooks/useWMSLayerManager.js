@@ -3,17 +3,17 @@ import { hasWMSConfig, findWMSConfig } from '../helpers/wmsConfig';
 import { layers } from '../helpers/layers/index';
 import { filtersInitializationComplete } from './useInitializeFromUrl';
 import { useDebounce } from '@hooks/useDebounce';
-import { useMapsContext } from '@hooks/useMaps';
+import { useLayerLoading } from '@contexts/LayerLoadingContext';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
 export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, unifiedLayers, createWMSLayer, getAllChildLayerIds, getLayerOpacity, layerOpacities }) => {
     const wmsLayersRef = useRef(new Map());
     const isFirstRender = useRef(true);
-    const debouncedActiveLayerIds = useDebounce(activeLayerIds, 100);
-    const debouncedHiddenLayerIds = useDebounce(hiddenLayerIds, 100);
-    const debouncedUnifiedLayers = useDebounce(unifiedLayers, 100);
-    const { setLayerLoading } = useMapsContext();
+    const debouncedActiveLayerIds = useDebounce(activeLayerIds, 30);
+    const debouncedHiddenLayerIds = useDebounce(hiddenLayerIds, 30);
+    const debouncedUnifiedLayers = useDebounce(unifiedLayers, 30);
+    const { setLayerLoading } = useLayerLoading();
 
     const handleLoadStart = useCallback((layerId) => {
         setLayerLoading(layerId, true);
@@ -70,6 +70,12 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                     const layer = wmsLayersRef.current.get(key);
                     if (layer) {
                         layer.setVisible(false);
+                        const mergedLayers = layer.get('mergedLayers');
+                        if (mergedLayers) {
+                            mergedLayers.forEach(merged => {
+                                merged.subLayers.forEach(sub => handleLoadEnd(sub.id));
+                            });
+                        }
                     }
                 }
             });
@@ -134,21 +140,30 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 }
 
                 if (!wmsLayersRef.current.has(groupKey)) {
+                    const layerRef = { current: null };
+
                     const onStart = () => {
-                        mergedLayers.forEach(merged => {
-                            merged.subLayers.forEach(sub => handleLoadStart(sub.id));
-                        });
+                        const currentMerged = layerRef.current?.get('mergedLayers');
+                        if (currentMerged) {
+                            currentMerged.forEach(merged => {
+                                merged.subLayers.forEach(sub => handleLoadStart(sub.id));
+                            });
+                        }
                     };
 
                     const onEnd = () => {
-                        mergedLayers.forEach(merged => {
-                            merged.subLayers.forEach(sub => handleLoadEnd(sub.id));
-                        });
+                        const currentMerged = layerRef.current?.get('mergedLayers');
+                        if (currentMerged) {
+                            currentMerged.forEach(merged => {
+                                merged.subLayers.forEach(sub => handleLoadEnd(sub.id));
+                            });
+                        }
                     };
 
                     const opacity = getLayerOpacity ? getLayerOpacity(representativeId) : 1;
                     const layer = createWMSLayer(representativeId, true, maxZIndex, customParams, onStart, onEnd, opacity);
                     if (layer && mapRef.current) {
+                        layerRef.current = layer;
                         layer.set('mergedLayers', wmsLayersOrdered);
                         mapRef.current.addLayer(layer);
                         wmsLayersRef.current.set(groupKey, layer);
@@ -209,11 +224,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
             });
         };
 
-        if (typeof requestIdleCallback !== 'undefined') {
-            requestIdleCallback(performUpdate, { timeout: 100 });
-        } else {
-            setTimeout(performUpdate, 0);
-        }
+        performUpdate();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedActiveLayerIds, debouncedHiddenLayerIds, wmsConfigCache, createWMSLayer]);
 
