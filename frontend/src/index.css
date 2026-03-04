@@ -56,10 +56,14 @@
 }
 
 @theme {
+    --breakpoint-3xl: 120rem;
     --font-garet: "Garet", "sans-serif";
     --font-garet--font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     --font-garet--font-variation-settings: "opsz" 32;
     --font-weight-book: 300;
+    --color-numeralia:#2e4372;
+    --color-purple:#5C2472;
+    --color-orange:#FF8300;
 }
 
 
@@ -79,4 +83,12 @@
 .mask-bottom {
     mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+}
+
+#qaf-button:hover .qaf {
+    background-color: #E3CAF2;
+}
+
+#qaf-button.active .qaf {
+    background-color: #E3CAF2;
 }
