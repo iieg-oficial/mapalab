@@ -1,4 +1,4 @@
-import icoQuestion from '@assets/icons/ico_question.svg';
+import icoQuestion from '@assets/icons/ico_preguntas.png';
 
 const suportConfig = {
     sections: [
