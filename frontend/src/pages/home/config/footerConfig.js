@@ -24,7 +24,7 @@ const footerConfig = {
             height: '77px'
         }
     ],
-    copyright: 'LEYENDA TODOS LOS DERECHOS RESERVADOS'
+    copyright: 'TODOS LOS DERECHOS RESERVADOS'
 };
 
 export default footerConfig;
