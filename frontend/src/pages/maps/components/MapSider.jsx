@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
+import { useLayerLoading } from '@contexts/LayerLoadingContext';
 import { useSider, useSiderHover } from '@contexts/SiderContext';
 import { useSearch } from '@contexts/SearchContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
@@ -21,10 +22,10 @@ const MapSider = ({ className = '' }) => {
         onToggleLayer,
         toggleMeasurementTools,
         areMeasurementToolsVisible,
-        loadingLayers,
         isLocating,
         rasterLoops
     } = useMapsContext();
+    const { loadingLayers } = useLayerLoading();
     const hasNonLoopLoading = [...loadingLayers].some(id => !rasterLoops[id]?.isPlaying);
     const isLoading = hasNonLoopLoading || isLocating;
     const {

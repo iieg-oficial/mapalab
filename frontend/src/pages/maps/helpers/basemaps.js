@@ -1,13 +1,18 @@
 import XYZ from 'ol/source/XYZ';
 
+const CARTO_ATTRIBUTIONS = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
 export const BASEMAPS = {
     voyager: {
         id: 'carto_voyager',
         label: 'Mapa Carto Voyager',
-        create: () =>
+        labelZoomThreshold: 15,
+        create: (withLabels = false) =>
             new XYZ({
-                url: 'https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
-                attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                url: withLabels
+                    ? 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+                    : 'https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
+                attributions: CARTO_ATTRIBUTIONS,
                 subdomains: ['a', 'b', 'c', 'd'],
                 crossOrigin: 'anonymous',
             }),
@@ -15,10 +20,13 @@ export const BASEMAPS = {
     position: {
         id: 'carto_light',
         label: 'Carto Light',
-        create: () =>
+        labelZoomThreshold: 15,
+        create: (withLabels = false) =>
             new XYZ({
-                url: 'https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
-                attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                url: withLabels
+                    ? 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+                    : 'https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+                attributions: CARTO_ATTRIBUTIONS,
                 subdomains: ['a', 'b', 'c', 'd'],
                 crossOrigin: 'anonymous',
             }),
