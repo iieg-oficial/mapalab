@@ -29,39 +29,30 @@ export const useInitializeFromUrl = () => {
                 .map(id => id.trim())
                 .filter(id => id.length > 0);
 
-            const timer = setTimeout(() => {
-                layerIds.forEach(layerId => {
-                    onToggleLayer(layerId, true, true);
-                });
+            layerIds.forEach(layerId => {
+                onToggleLayer(layerId, true, true);
+            });
 
-                filterParams.forEach(({ layerId, cqlFilter }) => {
-                    applyFilter(layerId, 'date', cqlFilter);
-                });
+            filterParams.forEach(({ layerId, cqlFilter }) => {
+                applyFilter(layerId, 'date', cqlFilter);
+            });
 
-                filtersInitializationComplete.value = true;
-            }, 150);
-
+            filtersInitializationComplete.value = true;
             initialized.current = true;
-
-            return () => clearTimeout(timer);
         } else {
-            const timer = setTimeout(() => {
-                const excludedLayers = ['limite_inegi', 'limite_municipal_inegi'];
-                baseLayers.children.forEach(layer => {
-                    if (!excludedLayers.includes(layer.id)) {
-                        onToggleLayer(layer.id, true, true);
-                    }
-                });
+            const excludedLayers = ['limite_inegi', 'limite_municipal_inegi'];
+            baseLayers.children.forEach(layer => {
+                if (!excludedLayers.includes(layer.id)) {
+                    onToggleLayer(layer.id, true, true);
+                }
+            });
 
-                filterParams.forEach(({ layerId, cqlFilter }) => {
-                    applyFilter(layerId, 'date', cqlFilter);
-                });
+            filterParams.forEach(({ layerId, cqlFilter }) => {
+                applyFilter(layerId, 'date', cqlFilter);
+            });
 
-                filtersInitializationComplete.value = true;
-            }, 150);
-
+            filtersInitializationComplete.value = true;
             initialized.current = true;
-            return () => clearTimeout(timer);
         }
     }, [searchParams, onToggleLayer, applyFilter]);
 };

@@ -2,8 +2,10 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { findLayerDef } from '../helpers/wmsConfig';
 import { layers as allLayers } from '../helpers/layers/index';
 import { trackRasterLoop } from '@services/analyticsService';
+import { useLayerLoading } from '@contexts/LayerLoadingContext';
 
-export const useRasterLoop = ({ applyFilter, clearFilter, loadingLayers, activeLayerIds }) => {
+export const useRasterLoop = ({ applyFilter, clearFilter, activeLayerIds }) => {
+    const { loadingLayers } = useLayerLoading();
     const [rasterLoops, setRasterLoops] = useState({});
     const loopDataRef = useRef({});
     const timersRef = useRef(new Map());
