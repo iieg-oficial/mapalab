@@ -45,15 +45,14 @@ const Header = () => {
             </div>
 
             <div className="hidden xl:block w-[35vw] absolute right-0 top-[20%] 2xl:top-[12%] 3xl:top-[10%]">
-                    <img
-                        src={activeBanner.image.src}
-                        alt={activeBanner.image.alt}
-                        className="w-full h-auto 2xl:w-full 2xl:h-auto 3xl:max-w-[723px] 3xl:max-h-[583px] object-cover overflow-visible float-right"
-                    />
+                <img
+                    src={activeBanner.image.src}
+                    alt={activeBanner.image.alt}
+                    className="w-full h-auto 2xl:w-full 2xl:h-auto 3xl:max-w-[723px] 3xl:max-h-[583px] object-cover overflow-visible float-right"
+                />
             </div>
 
             <div className="relative z-10 h-full 2xl:h-[70%] flex flex-col xl:flex-row items-center justify-center xl:justify-start 2xl:gap-36 xl:container xl:mx-auto">
-                {/* square logotype for extre big screen */}
                 <div className="hidden 2xl:flex 2xl:w-[20vw] 3xl:w-[25vw] justify-end 2xl:mb-18">
                     <Logo
                         name="mapalab"
@@ -76,7 +75,7 @@ const Header = () => {
                             to={activeBanner.content.button.link}
                             className={`
                                 flex items-center justify-center h-[54px] w-full max-w-[410px]
-                                mt-2 bg-[#FF8300] rounded-[30px] transition-colors
+                                mt-2 bg-orange rounded-[30px] transition-colors
                                 hover:bg-[#E57600] hover:shadow-[0px_6px_6px_#5C247234]
                                 font-garet font-medium text-white text-[18px] tracking-normal
                             `}
