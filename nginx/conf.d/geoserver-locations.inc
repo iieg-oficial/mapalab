@@ -79,7 +79,7 @@ location ^~ /geoserver/ {
     proxy_set_header Connection "";
     proxy_connect_timeout 60s;
     proxy_send_timeout    60s;
-    proxy_read_timeout    60s;
+    proxy_read_timeout    120s;
     proxy_buffer_size   32k;
     proxy_buffers       8 32k;
     proxy_busy_buffers_size 64k;
