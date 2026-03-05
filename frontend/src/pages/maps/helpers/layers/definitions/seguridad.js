@@ -355,7 +355,7 @@ export const seguridadLayers = {
                     isLabel: true,
                     children: DESAPARECIDAS.map(([id, label, style, not, tags, littleCard]) => ({
                         id, label,
-                        wmsConfig: createSeguridadLayer.withFilterAndStyles('personas_desaparecidas', `${not} IS NOT NULL`, style),
+                        wmsConfig: createSeguridadLayer.withFilterAndStyles('personas_desaparecidas', `${not} IS NOT NULL`, style, { metadataLayer: style }),
                         littleCard,
                         searchMeta: { tags }
                     }))
