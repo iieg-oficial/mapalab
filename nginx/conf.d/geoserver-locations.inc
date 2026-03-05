@@ -31,9 +31,6 @@ location ^~ /geoserver/rest {
 }
 
 location ^~ /geoserver/ {
-    limit_req zone=geoserver_limit burst=20 nodelay;
-    limit_conn geoserver_conn 4;
-
     location ~ ^/geoserver/(ows|wfs|wcs) {
         valid_referers server_names *.$host $host localhost;
         if ($invalid_referer) {
@@ -45,7 +42,6 @@ location ^~ /geoserver/ {
         }
 
         limit_req zone=geoserver_download burst=10 nodelay;
-        limit_conn geoserver_conn 6;
         proxy_pass http://geoserver;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -60,9 +56,6 @@ location ^~ /geoserver/ {
         proxy_buffer_size   32k;
         proxy_buffers       8 32k;
         proxy_busy_buffers_size 64k;
-        proxy_hide_header Cache-Control;
-        proxy_hide_header Pragma;
-        add_header Cache-Control $geoserver_cache_control;
 
         proxy_intercept_errors on;
         error_page 400 /geoserver-error/400.html;
@@ -90,9 +83,6 @@ location ^~ /geoserver/ {
     proxy_buffer_size   32k;
     proxy_buffers       8 32k;
     proxy_busy_buffers_size 64k;
-    proxy_hide_header Cache-Control;
-    proxy_hide_header Pragma;
-    add_header Cache-Control $geoserver_cache_control;
 
     proxy_intercept_errors on;
     error_page 400 /geoserver-error/400.html;
