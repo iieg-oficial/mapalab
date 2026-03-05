@@ -144,7 +144,7 @@ const DESAPARECIDAS = [
     ['tasa_personas_desaparecidas', 'Personas desaparecidas (tasa)', 'personas_desaparecidas_total', 'tasa_personas',
         ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
         createMunicipioConfig({
-            title: 'Personas desaparecidas',
+            title: 'Personas desaparecidas (tasa)',
             text: desaparecidosText,
             stats: [
                 { label: 'Total', field: 'total' },
@@ -158,7 +158,7 @@ const DESAPARECIDAS = [
     ['tasa_mujeres_desaparecidas', 'Mujeres desaparecidas (tasa)', 'desaparecidos_mujeres', 'tasa_mujeres',
         ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
         createMunicipioConfig({
-            title: 'Mujeres desaparecidas',
+            title: 'Mujeres desaparecidas (tasa)',
             text: desaparecidosText,
             stats: [
                 { label: 'Mujeres', field: 'total_mujeres' },
@@ -168,7 +168,7 @@ const DESAPARECIDAS = [
     ['tasa_hombres_desaparecidos', 'Hombres desaparecidos (tasa)', 'desaparecidos_hombres', 'tasa_hombres',
         ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
         createMunicipioConfig({
-            title: 'Hombres desaparecidos',
+            title: 'Hombres desaparecidos (tasa)',
             text: desaparecidosText,
             stats: [
                 { label: 'Hombres', field: 'total_hombres' },
@@ -181,7 +181,7 @@ const LOCALIZADAS = [
     ['tasa_personas_localizadas', 'Personas localizadas (tasa)', 'personas_localizadas',
         ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'],
         createMunicipioConfig({
-            title: 'Personas localizadas',
+            title: 'Personas localizadas (tasa)',
             text: desaparecidosText,
             stats: [
                 { label: 'Total', field: 'total' },
@@ -201,7 +201,7 @@ const LOCALIZADAS = [
     ['tasa_mujeres_localizadas', 'Mujeres localizadas (tasa)', 'personas_localizadas_mujeres',
         ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'],
         createMunicipioConfig({
-            title: 'Mujeres localizadas',
+            title: 'Mujeres localizadas (tasa)',
             text: desaparecidosText,
             stats: [
                 { label: 'Mujeres', field: 'total_mujeres' },
@@ -213,7 +213,7 @@ const LOCALIZADAS = [
     ['tasa_hombres_localizados', 'Hombres localizados (tasa)', 'personas_localizadas_hombres',
         ['seguridad', 'delito', 'localizadas', 'tasa', 'incidencia'],
         createMunicipioConfig({
-            title: 'Hombres localizados',
+            title: 'Hombres localizados (tasa)',
             text: desaparecidosText,
             stats: [
                 { label: 'Hombres', field: 'total_hombres' },
@@ -313,33 +313,36 @@ export const seguridadLayers = {
                 id: 'delito-patrimonio',
                 label: 'Delitos contra el patrimonio',
                 isLabel: true,
-                children: DELITOS_PATRIMONIO.map(([id, label, layerName, tags]) => ({
-                    id, label,
-                    forceGroup: true,
-                    children: [
-                        {
-                            id: `${id}_con_violencia`,
-                            label: 'Con violencia',
-                            wmsConfig: createSeguridadLayer.withFilter(layerName, "modalidad = 'Con violencia'"),
-                            littleCard: delitoRoboConfig,
-                            searchMeta: { tags: [...tags, 'violencia'] }
-                        },
-                        {
-                            id: `${id}_sin_violencia`,
-                            label: 'Sin violencia',
-                            wmsConfig: createSeguridadLayer.withFilter(layerName, "modalidad = 'Sin violencia'"),
-                            littleCard: delitoRoboConfig,
-                            searchMeta: { tags: [...tags, 'sin_violencia'] }
-                        },
-                        {
-                            id: `${id}_sin_especificar`,
-                            label: 'Sin especificar',
-                            wmsConfig: createSeguridadLayer.withFilter(layerName, "modalidad IS NULL OR modalidad = ''"),
-                            littleCard: delitoRoboConfig,
-                            searchMeta: { tags: [...tags, 'sin_especificar'] }
-                        }
-                    ]
-                }))
+                children: DELITOS_PATRIMONIO.map(([id, label, layerName, tags]) => {
+                    const config = { ...delitoRoboConfig, headerField: label };
+                    return {
+                        id, label,
+                        forceGroup: true,
+                        children: [
+                            {
+                                id: `${id}_con_violencia`,
+                                label: 'Con violencia',
+                                wmsConfig: createSeguridadLayer.withFilter(layerName, "modalidad = 'Con violencia'"),
+                                littleCard: config,
+                                searchMeta: { tags: [...tags, 'violencia'] }
+                            },
+                            {
+                                id: `${id}_sin_violencia`,
+                                label: 'Sin violencia',
+                                wmsConfig: createSeguridadLayer.withFilter(layerName, "modalidad = 'Sin violencia'"),
+                                littleCard: config,
+                                searchMeta: { tags: [...tags, 'sin_violencia'] }
+                            },
+                            {
+                                id: `${id}_sin_especificar`,
+                                label: 'Sin especificar',
+                                wmsConfig: createSeguridadLayer.withFilter(layerName, "modalidad IS NULL OR modalidad = ''"),
+                                littleCard: config,
+                                searchMeta: { tags: [...tags, 'sin_especificar'] }
+                            }
+                        ]
+                    };
+                })
             }]
         }, {
             id: 'personas-desaparecidas',
