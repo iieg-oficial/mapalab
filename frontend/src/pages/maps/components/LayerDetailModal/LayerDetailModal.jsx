@@ -286,7 +286,7 @@ const LayerDetailModal = () => {
                                                 {metadata.fuentes_texto_largo}
                                             </p>
                                         )}
-                                        {metadata.fuentes_enlace && (
+                                        {metadata.fuentes_enlace && metadata.fuentes_enlace.startsWith('https://') && (
                                             <a href={metadata.fuentes_enlace} target="_blank" rel="noopener noreferrer"
                                                 className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
                                                 Ver fuente
@@ -305,7 +305,7 @@ const LayerDetailModal = () => {
                                                 {metadata.metodologia_texto}
                                             </p>
                                         )}
-                                        {metadata.metodologia_archivo_enlace && (
+                                        {metadata.metodologia_archivo_enlace && metadata.metodologia_archivo_enlace.startsWith('https://') && (
                                             <a href={metadata.metodologia_archivo_enlace} target="_blank" rel="noopener noreferrer"
                                                 className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
                                                 Ver documento
