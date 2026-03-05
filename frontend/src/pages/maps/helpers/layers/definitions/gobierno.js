@@ -69,7 +69,7 @@ export const gobiernoLayers = {
                 id,
                 label,
                 wmsConfig: createGobiernoLayer(layerName),
-                littleCard,
+                littleCard: { ...littleCard, headerField: label },
                 searchMeta: { tags }
             }))
         }
