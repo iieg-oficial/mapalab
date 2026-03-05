@@ -8,6 +8,7 @@ const footerConfig = {
             id: 1,
             name: 'MapaLab',
             src: logoMapalabLargeDark,
+            link: '',
             width: '335px',
             height: '57px'
         }, {

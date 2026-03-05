@@ -5,8 +5,8 @@ import { resolveTimeStyle } from '../helpers/wmsConfig';
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
 export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds }) => {
-    const debouncedFilters = useDebounce(filters, 300);
-    const debouncedActiveLayers = useDebounce(activeLayerIds, 300);
+    const debouncedFilters = useDebounce(filters, 150);
+    const debouncedActiveLayers = useDebounce(activeLayerIds, 150);
 
     useEffect(() => {
         if (!mapRef.current || !getFilter) return;
