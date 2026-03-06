@@ -1,5 +1,5 @@
 import { useMapsContext } from '@hooks/useMaps';
-import { useLayerLoading } from '@contexts/LayerLoadingContext';
+import { useLayerLoading } from '@hooks/useLayerLoading';
 import Loading from '@components/Loading';
 import { useMemo, useState } from 'react';
 import Icon from '@components/Icon';
