@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { trackLayerDetailOpen, trackLayerDownload, trackPeriodicityAdvanced } from '@services/analyticsService';
 import { useLayerMetadata } from '../../hooks/useLayerMetadata';
 import { useSider } from '@contexts/SiderContext';
@@ -29,7 +29,6 @@ const LayerDetailModal = () => {
     const [downloading, setDownloading] = useState(false);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
     const { isMobile } = useSider();
-    const longPressTimer = useRef(null);
     const [singleSelectOnly, setSingleSelectOnly] = useState(false);
 
     useEffect(() => {
@@ -86,17 +85,9 @@ const LayerDetailModal = () => {
         setCooldownEnd(end);
     }, [selectedLayer?.id, activeLayerIds, getFilter, downloading, cooldown, storageKey]);
 
-    const handleLongPressStart = useCallback(() => {
-        longPressTimer.current = setTimeout(() => {
+    const handlePeriodicityClick = useCallback((e) => {
+        if (e.ctrlKey || e.metaKey) {
             setIsAdvancedMode(prev => !prev);
-            longPressTimer.current = null;
-        }, 1000);
-    }, []);
-
-    const handleLongPressEnd = useCallback(() => {
-        if (longPressTimer.current) {
-            clearTimeout(longPressTimer.current);
-            longPressTimer.current = null;
         }
     }, []);
 
@@ -236,10 +227,7 @@ const LayerDetailModal = () => {
                                             <div className="flex items-center gap-2">
                                                 <span
                                                     className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer"
-                                                    onDoubleClick={() => setIsAdvancedMode(prev => !prev)}
-                                                    onMouseDown={handleLongPressStart}
-                                                    onMouseUp={handleLongPressEnd}
-                                                    onMouseLeave={handleLongPressEnd}
+                                                    onClick={handlePeriodicityClick}
                                                 >
                                                     Periodicidad:
                                                 </span>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useContext } from 'react';
 import MapsContext from '@contexts/MapsContext';
+import { useCarouselOverflow } from '@pages/maps/hooks/useCarouselOverflow';
 import { generateCQLFilter, parseCQLToSelections, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import Icon from '@components/Icon';
 
@@ -129,6 +130,8 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
         startLoop?.(layerId, selectedYear, periodicityData?.fecha);
     };
 
+    const yearsCarousel = useCarouselOverflow();
+
     if (!periodicityData?.fecha || typeof periodicityData.fecha !== 'object') return null;
 
     const availableYears = Object.keys(periodicityData.fecha).map(Number).sort((a, b) => b - a);
@@ -141,6 +144,15 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
             setSelectedYear(year);
             setSelectedMonths(new Set());
             return;
+        }
+
+        if (yearData && typeof yearData === 'object') {
+            const monthKeys = Object.keys(yearData).map(Number);
+            if (monthKeys.length === 1) {
+                setSelectedYear(year);
+                setSelectedMonths(new Set([monthKeys[0]]));
+                return;
+            }
         }
 
         setSelectedYear(year);
@@ -212,6 +224,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
         }
 
         const availableMonthNums = yearData ? Object.keys(yearData).map(Number).sort((a, b) => a - b) : [];
+        const isSingleMonth = availableMonthNums.length === 1;
 
         return (
             <div className="space-y-3">
@@ -230,7 +243,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
-                        {isRaster && (
+                        {isRaster && !isSingleMonth && (
                             <button
                                 onClick={() => isPlaying ? handleStopLoop() : handleStartLoop()}
                                 className="size-7.5 rounded-full bg-[#F9FBFF] flex items-center justify-center hover:bg-[#F0EAF3] transition-colors"
@@ -248,7 +261,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                                 )}
                             </button>
                         )}
-                        {hasSelection && (
+                        {hasSelection && !isSingleMonth && (
                             <button onClick={handleClearMonths}>
                                 <Icon
                                     tooltip="Limpiar selecciones"
@@ -260,51 +273,79 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                         )}
                     </div>
                 </div>
-                <div className="grid grid-cols-6 sm:grid-cols-12 gap-1">
-                    {availableMonthNums.map((monthNum) => {
-                        const monthObj = MONTHS.find(m => m.num === monthNum);
-                        const abbr = monthObj ? monthObj.name.slice(0, 3).toUpperCase() : monthNum;
-                        const isActive = selectedMonths.has(monthNum);
+                {!isSingleMonth && (
+                    <div className="flex flex-wrap gap-1">
+                        {availableMonthNums.map((monthNum) => {
+                            const monthObj = MONTHS.find(m => m.num === monthNum);
+                            const abbr = monthObj ? monthObj.name.slice(0, 3).toUpperCase() : monthNum;
+                            const isActive = selectedMonths.has(monthNum);
 
-                        return (
-                            <button
-                                key={`${selectedYear}-${monthNum}`}
-                                onClick={() => handleMonthToggle(monthNum)}
-                                className={`
-                                    py-2 rounded-[9px] transition-all duration-200
-                                    text-[12px]/[14px] text-[#2E4372] font-medium font-garet
-                                    ${isActive
-                                ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
-                                : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
-                            }
-                                `}
-                            >
-                                {abbr}
-                            </button>
-                        );
-                    })}
-                </div>
+                            return (
+                                <button
+                                    key={`${selectedYear}-${monthNum}`}
+                                    onClick={() => handleMonthToggle(monthNum)}
+                                    className={`
+                                        shrink-0 px-4 py-2 rounded-[9px] transition-all duration-200
+                                        text-[12px]/[14px] text-[#2E4372] font-medium font-garet
+                                        ${isActive
+                                    ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
+                                    : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
+                                }
+                                    `}
+                                >
+                                    {abbr}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         );
     }
 
     return (
         <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-                {availableYears.map((year) => (
-                    <button
-                        key={year}
-                        onClick={() => handleYearClick(year)}
-                        className={`
-                            shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200 text-[14px]/[16px] text-[#2E4372]
-                            font-medium font-garet bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3]
-                            hover:text-[#703089] hover:border-[#703089]
-                            ${selectedYear === year ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]' : ''}
-                        `}
-                    >
-                        {year}
+            <div className="flex items-center gap-2">
+                {yearsCarousel.hasOverflow && (
+                    <button onClick={() => yearsCarousel.scroll('left')}>
+                        <Icon
+                            name="downArrow"
+                            tooltip="Anterior"
+                            classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
+                            className="w-5 h-2 transition-transform duration-300 rotate-90"
+                        />
                     </button>
-                ))}
+                )}
+                <div
+                    ref={yearsCarousel.scrollRef}
+                    className="flex gap-2 overflow-x-auto scrollbar-hide flex-1"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                    {availableYears.map((year) => (
+                        <button
+                            key={year}
+                            onClick={() => handleYearClick(year)}
+                            className={`
+                                shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200 text-[14px]/[16px] text-[#2E4372]
+                                font-medium font-garet bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3]
+                                hover:text-[#703089] hover:border-[#703089]
+                                ${selectedYear === year ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]' : ''}
+                            `}
+                        >
+                            {year}
+                        </button>
+                    ))}
+                </div>
+                {yearsCarousel.hasOverflow && (
+                    <button onClick={() => yearsCarousel.scroll('right')}>
+                        <Icon
+                            name="downArrow"
+                            tooltip="Siguiente"
+                            classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
+                            className="w-5 h-2 transition-transform duration-300 -rotate-90"
+                        />
+                    </button>
+                )}
             </div>
         </div>
     );
