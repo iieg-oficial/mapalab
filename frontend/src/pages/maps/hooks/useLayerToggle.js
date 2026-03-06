@@ -20,7 +20,7 @@ export const useLayerToggle = ({
                 return prevActiveIds.filter(id => !allRelatedIds.includes(id));
             }
         });
-        if (isActive) {
+        if (isActive && !skipAnalytics) {
             const layer = findLayerById(layerId);
             if (layer) setSelectedLayer(layer);
         }
