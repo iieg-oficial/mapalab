@@ -165,9 +165,9 @@ const Download = ({ onOpenPreview }) => {
                                 className={`
                                     px-3 py-2 text-sm rounded-[14px] border transition-colors text-left 
                                     ${viewType === 'viewport'
-                                        ? 'bg-[#FF8300] border-transparent text-white font-medium'
-                                        : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-                                    }
+            ? 'bg-[#FF8300] border-transparent text-white font-medium'
+            : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+        }
                                 `}
                             >
                                 <div className="font-medium">Seleccionar Área (Vista actual)</div>
@@ -178,9 +178,9 @@ const Download = ({ onOpenPreview }) => {
                                 className={`
                                     px-3 py-2 text-sm rounded-[14px] border transition-colors text-left 
                                     ${viewType === 'full-state'
-                                        ? 'bg-[#703089] border-[#703089] text-white font-medium'
-                                        : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-                                    }
+            ? 'bg-[#703089] border-[#703089] text-white font-medium'
+            : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+        }
                                 `}
                             >
                                 <div className="font-medium">Estado completo</div>

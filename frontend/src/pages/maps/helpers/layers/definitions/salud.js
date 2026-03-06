@@ -66,79 +66,79 @@ export const saludLayers = {
     id: 'salud',
     label: 'Salud',
     children: [{
-            id: 'oferta_infraestructura',
-            label: 'Oferta e infraestructura',
-            isCategory: true,
-            children: [{
-                    id: 'establecimientos_salud',
-                    label: 'Establecimientos de salud',
-                    forceGroup: true,
-                    children: [
-                        {
-                            id: 'primer_nivel',
-                            label: 'Primer nivel',
-                            isLabel: true,
-                            children: INSTITUCIONES_PRIMER_NIVEL.map(([id, label, layerName, tags]) => ({
-                                id, label,
-                                wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Primer nivel'`),
-                                littleCard: establecimientosSaludConfig,
-                                searchMeta: { tags }
-                            }))
-                        }, {
-                            id: 'segundo_nivel',
-                            label: 'Segundo nivel',
-                            isLabel: true,
-                            children: INSTITUCIONES_SEGUNDO_NIVEL.map(([id, label, layerName, tags]) => ({
-                                id, label,
-                                wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Segundo nivel'`),
-                                littleCard: establecimientosSaludConfig,
-                                searchMeta: { tags }
-                            }))
-                        }, {
-                            id: 'tercer_nivel',
-                            label: 'Tercer nivel',
-                            isLabel: true,
-                            children: INSTITUCIONES_TERCER_NIVEL.map(([id, label, layerName, tags]) => ({
-                                id, label,
-                                wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Tercer nivel'`),
-                                littleCard: establecimientosSaludConfig,
-                                searchMeta: { tags }
-                            }))
-                        }, {
-                            id: 'otros_nivel',
-                            label: 'Otros',
-                            isLabel: true,
-                            children: INSTITUCIONES_OTROS_NIVEL.map(([id, label, layerName, tags]) => ({
-                                id, label,
-                                wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Otros'`),
-                                littleCard: establecimientosSaludConfig,
-                                searchMeta: { tags }
-                            }))
-                        },
-                    ]
-                },
-            ]
-        }, {
-            id: 'acceso_servicios_salud',
-            label: 'Acceso a servicios de salud',
-            isCategory: true,
+        id: 'oferta_infraestructura',
+        label: 'Oferta e infraestructura',
+        isCategory: true,
+        children: [{
+            id: 'establecimientos_salud',
+            label: 'Establecimientos de salud',
+            forceGroup: true,
             children: [
                 {
-                    id: 'carencia_acceso',
-                    label: 'Carencia por acceso a los servicios de salud (%)',
-                    wmsConfig: createDesarrolloSocialLayer('carencia_acceso_servicios_salud'),
-                    littleCard: createMunicipioConfig({
-                        title: 'Personas con carencia por acceso a los servicios de salud (%)',
-                        text: 'Porcentaje sobre la población total del municipio. Para la descripción de carencia por acceso a servicios de salud, ver la nota metodológica.',
-                        stats: [
-                            { label: 'Número de personas', field: 'personas' },
-                            { label: 'Porcentaje', field: 'porcentaje' },
-                            { label: 'Carencias promedio', field: 'carencias_promedio' },
-                        ]
-                    }),
-                    searchMeta: { tags: ['salud', 'carencia', 'acceso', 'servicios', 'pobreza', 'vulnerabilidad', 'coneval'] }
-                }
+                    id: 'primer_nivel',
+                    label: 'Primer nivel',
+                    isLabel: true,
+                    children: INSTITUCIONES_PRIMER_NIVEL.map(([id, label, layerName, tags]) => ({
+                        id, label,
+                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Primer nivel'`),
+                        littleCard: establecimientosSaludConfig,
+                        searchMeta: { tags }
+                    }))
+                }, {
+                    id: 'segundo_nivel',
+                    label: 'Segundo nivel',
+                    isLabel: true,
+                    children: INSTITUCIONES_SEGUNDO_NIVEL.map(([id, label, layerName, tags]) => ({
+                        id, label,
+                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Segundo nivel'`),
+                        littleCard: establecimientosSaludConfig,
+                        searchMeta: { tags }
+                    }))
+                }, {
+                    id: 'tercer_nivel',
+                    label: 'Tercer nivel',
+                    isLabel: true,
+                    children: INSTITUCIONES_TERCER_NIVEL.map(([id, label, layerName, tags]) => ({
+                        id, label,
+                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Tercer nivel'`),
+                        littleCard: establecimientosSaludConfig,
+                        searchMeta: { tags }
+                    }))
+                }, {
+                    id: 'otros_nivel',
+                    label: 'Otros',
+                    isLabel: true,
+                    children: INSTITUCIONES_OTROS_NIVEL.map(([id, label, layerName, tags]) => ({
+                        id, label,
+                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Otros'`),
+                        littleCard: establecimientosSaludConfig,
+                        searchMeta: { tags }
+                    }))
+                },
             ]
-        }
+        },
+        ]
+    }, {
+        id: 'acceso_servicios_salud',
+        label: 'Acceso a servicios de salud',
+        isCategory: true,
+        children: [
+            {
+                id: 'carencia_acceso',
+                label: 'Carencia por acceso a los servicios de salud (%)',
+                wmsConfig: createDesarrolloSocialLayer('carencia_acceso_servicios_salud'),
+                littleCard: createMunicipioConfig({
+                    title: 'Personas con carencia por acceso a los servicios de salud (%)',
+                    text: 'Porcentaje sobre la población total del municipio. Para la descripción de carencia por acceso a servicios de salud, ver la nota metodológica.',
+                    stats: [
+                        { label: 'Número de personas', field: 'personas' },
+                        { label: 'Porcentaje', field: 'porcentaje' },
+                        { label: 'Carencias promedio', field: 'carencias_promedio' },
+                    ]
+                }),
+                searchMeta: { tags: ['salud', 'carencia', 'acceso', 'servicios', 'pobreza', 'vulnerabilidad', 'coneval'] }
+            }
+        ]
+    }
     ]
 };
