@@ -4,6 +4,7 @@ import { useMapDownload } from './hooks/useMapDownload';
 import { QUALITY_PRESETS } from './utils/exportDimensions';
 import { useSider } from '@contexts/SiderContext';
 import SymbologyItem from '../SymbologyItem';
+import Checkbox from '@components/Checkbox';
 import Icon from '@components/Icon';
 import Panel from '@components/Panel';
 import Tooltip from '@components/Tooltip';
@@ -164,9 +165,9 @@ const Download = ({ onOpenPreview }) => {
                                 className={`
                                     px-3 py-2 text-sm rounded-[14px] border transition-colors text-left 
                                     ${viewType === 'viewport'
-            ? 'bg-[#FF8300] border-transparent text-white font-medium'
-            : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-        }
+                                        ? 'bg-[#FF8300] border-transparent text-white font-medium'
+                                        : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+                                    }
                                 `}
                             >
                                 <div className="font-medium">Seleccionar Área (Vista actual)</div>
@@ -177,9 +178,9 @@ const Download = ({ onOpenPreview }) => {
                                 className={`
                                     px-3 py-2 text-sm rounded-[14px] border transition-colors text-left 
                                     ${viewType === 'full-state'
-            ? 'bg-[#703089] border-[#703089] text-white font-medium'
-            : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-        }
+                                        ? 'bg-[#703089] border-[#703089] text-white font-medium'
+                                        : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+                                    }
                                 `}
                             >
                                 <div className="font-medium">Estado completo</div>
@@ -207,14 +208,7 @@ const Download = ({ onOpenPreview }) => {
                                             simple={true}
                                             onClick={() => handleLayerSelect(layer)}
                                             prefix={
-                                                <input
-                                                    type={format === 'pdf' ? 'checkbox' : 'radio'}
-                                                    name="legend-selection"
-                                                    checked={isSelected}
-                                                    readOnly
-                                                    className={`text-[#703089] focus:ring-[#703089] mr-2 ${format === 'pdf' ? 'rounded' : ''}`}
-                                                    style={{ cursor: 'pointer' }}
-                                                />
+                                                <Checkbox checked={isSelected} />
                                             }
                                         />
                                     );
