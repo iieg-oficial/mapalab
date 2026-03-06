@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { findLayerDef } from '../helpers/wmsConfig';
 import { layers as allLayers } from '../helpers/layers/index';
 import { trackRasterLoop } from '@services/analyticsService';
-import { useLayerLoading } from '@contexts/LayerLoadingContext';
+import { useLayerLoading } from '@hooks/useLayerLoading';
 
 export const useRasterLoop = ({ applyFilter, clearFilter, activeLayerIds }) => {
     const { loadingLayers } = useLayerLoading();

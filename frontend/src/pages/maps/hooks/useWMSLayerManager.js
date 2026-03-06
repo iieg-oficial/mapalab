@@ -3,7 +3,7 @@ import { hasWMSConfig, findWMSConfig } from '../helpers/wmsConfig';
 import { layers } from '../helpers/layers/index';
 import { filtersInitializationComplete } from './useInitializeFromUrl';
 import { useDebounce } from '@hooks/useDebounce';
-import { useLayerLoading } from '@contexts/LayerLoadingContext';
+import { useLayerLoading } from '@hooks/useLayerLoading';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
