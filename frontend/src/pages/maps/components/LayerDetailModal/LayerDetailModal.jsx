@@ -11,6 +11,7 @@ import SimpleDateSelector from './components/SimpleDateSelector';
 import OpacityControl from './components/OpacityControl';
 import InfoCard from './components/InfoCard';
 import StatCard from './components/StatCard';
+import LayerInfoSections from './components/LayerInfoSections';
 import LayerThemeAvatar from './components/LayerThemeAvatar';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
@@ -264,60 +265,7 @@ const LayerDetailModal = () => {
                                 )}
 
 
-                                {(metadata?.fuentes_texto_largo || metadata?.fuentes_enlace) && (
-                                    <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4 mb-4">
-                                        <span className="block text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
-                                            Fuente
-                                        </span>
-                                        {metadata.fuentes_texto_largo && (
-                                            <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
-                                                {metadata.fuentes_texto_largo}
-                                            </p>
-                                        )}
-                                        {metadata.fuentes_enlace && metadata.fuentes_enlace.startsWith('https://') && (
-                                            <a href={metadata.fuentes_enlace} target="_blank" rel="noopener noreferrer"
-                                                className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
-                                                Ver fuente
-                                            </a>
-                                        )}
-                                    </div>
-                                )}
-
-                                {(metadata?.metodologia_texto || metadata?.metodologia_archivo_enlace) && (
-                                    <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4">
-                                        <span className="block text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
-                                            Metodología
-                                        </span>
-                                        {metadata.metodologia_texto && (
-                                            <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
-                                                {metadata.metodologia_texto}
-                                            </p>
-                                        )}
-                                        {metadata.metodologia_archivo_enlace && metadata.metodologia_archivo_enlace.startsWith('https://') && (
-                                            <a href={metadata.metodologia_archivo_enlace} target="_blank" rel="noopener noreferrer"
-                                                className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
-                                                Ver documento
-                                            </a>
-                                        )}
-                                    </div>
-                                )}
-
-                                {metadata?.metadato?.length > 0 && (
-                                    <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4">
-                                        <span className="block text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
-                                            Metadato
-                                        </span>
-                                        <div className="flex flex-col gap-1">
-                                            {metadata.metadato.map((doc, index) => (
-                                                <a key={index} href={doc.enlace} target="_blank" rel="noopener noreferrer"
-                                                    className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
-                                                    {doc.nombre}
-                                                </a>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
+                                <LayerInfoSections metadata={metadata} />
                             </>
                         )}
                     </div>
