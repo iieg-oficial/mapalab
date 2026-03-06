@@ -65,54 +65,58 @@ const INSTITUCIONES_OTROS_NIVEL = [
 export const saludLayers = {
     id: 'salud',
     label: 'Salud',
-    children: [
-        {
-            id: 'establecimientos_salud',
-            label: 'Establecimientos de salud',
+    children: [{
+            id: 'oferta_infraestructura',
+            label: 'Oferta e infraestructura',
             isCategory: true,
-            forceGroup: true,
-            children: [
-                {
-                    id: 'primer_nivel',
-                    label: 'Primer nivel',
-                    children: INSTITUCIONES_PRIMER_NIVEL.map(([id, label, layerName, tags]) => ({
-                        id,
-                        label,
-                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Primer nivel'`),
-                        littleCard: establecimientosSaludConfig,
-                        searchMeta: { tags }
-                    }))
-                }, {
-                    id: 'segundo_nivel',
-                    label: 'Segundo nivel',
-                    children: INSTITUCIONES_SEGUNDO_NIVEL.map(([id, label, layerName, tags]) => ({
-                        id,
-                        label,
-                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Segundo nivel'`),
-                        littleCard: establecimientosSaludConfig,
-                        searchMeta: { tags }
-                    }))
-                }, {
-                    id: 'tercer_nivel',
-                    label: 'Tercer nivel',
-                    children: INSTITUCIONES_TERCER_NIVEL.map(([id, label, layerName, tags]) => ({
-                        id,
-                        label,
-                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Tercer nivel'`),
-                        littleCard: establecimientosSaludConfig,
-                        searchMeta: { tags }
-                    }))
-                }, {
-                    id: 'otros_nivel',
-                    label: 'Otros',
-                    children: INSTITUCIONES_OTROS_NIVEL.map(([id, label, layerName, tags]) => ({
-                        id,
-                        label,
-                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Otros'`),
-                        littleCard: establecimientosSaludConfig,
-                        searchMeta: { tags }
-                    }))
-                }
+            children: [{
+                    id: 'establecimientos_salud',
+                    label: 'Establecimientos de salud',
+                    forceGroup: true,
+                    children: [
+                        {
+                            id: 'primer_nivel',
+                            label: 'Primer nivel',
+                            isLabel: true,
+                            children: INSTITUCIONES_PRIMER_NIVEL.map(([id, label, layerName, tags]) => ({
+                                id, label,
+                                wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Primer nivel'`),
+                                littleCard: establecimientosSaludConfig,
+                                searchMeta: { tags }
+                            }))
+                        }, {
+                            id: 'segundo_nivel',
+                            label: 'Segundo nivel',
+                            isLabel: true,
+                            children: INSTITUCIONES_SEGUNDO_NIVEL.map(([id, label, layerName, tags]) => ({
+                                id, label,
+                                wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Segundo nivel'`),
+                                littleCard: establecimientosSaludConfig,
+                                searchMeta: { tags }
+                            }))
+                        }, {
+                            id: 'tercer_nivel',
+                            label: 'Tercer nivel',
+                            isLabel: true,
+                            children: INSTITUCIONES_TERCER_NIVEL.map(([id, label, layerName, tags]) => ({
+                                id, label,
+                                wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Tercer nivel'`),
+                                littleCard: establecimientosSaludConfig,
+                                searchMeta: { tags }
+                            }))
+                        }, {
+                            id: 'otros_nivel',
+                            label: 'Otros',
+                            isLabel: true,
+                            children: INSTITUCIONES_OTROS_NIVEL.map(([id, label, layerName, tags]) => ({
+                                id, label,
+                                wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Otros'`),
+                                littleCard: establecimientosSaludConfig,
+                                searchMeta: { tags }
+                            }))
+                        },
+                    ]
+                },
             ]
         }, {
             id: 'acceso_servicios_salud',
