@@ -60,7 +60,12 @@ location ^~ /geoserver/ {
         proxy_cache geoserver_cache;
         proxy_cache_key "$request_uri";
         proxy_cache_valid 200 6h;
+        proxy_cache_lock on;
+        proxy_cache_lock_timeout 10s;
         proxy_cache_use_stale error timeout updating;
+        proxy_ignore_headers "Set-Cookie" "Expires" "Cache-Control";
+        proxy_no_cache $geoserver_no_cache;
+        proxy_cache_bypass $geoserver_no_cache;
         add_header X-Cache-Status $upstream_cache_status;
 
         proxy_intercept_errors on;
@@ -93,7 +98,12 @@ location ^~ /geoserver/ {
     proxy_cache geoserver_cache;
     proxy_cache_key "$request_uri";
     proxy_cache_valid 200 6h;
+    proxy_cache_lock on;
+    proxy_cache_lock_timeout 10s;
     proxy_cache_use_stale error timeout updating;
+    proxy_ignore_headers "Set-Cookie" "Expires" "Cache-Control";
+    proxy_no_cache $geoserver_no_cache;
+    proxy_cache_bypass $geoserver_no_cache;
     add_header X-Cache-Status $upstream_cache_status;
 
     proxy_intercept_errors on;
