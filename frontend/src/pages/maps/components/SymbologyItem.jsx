@@ -41,7 +41,7 @@ const SymbologyItem = ({
             >
                 <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                     {prefix && (
-                        <div onClick={(e) => e.stopPropagation()} className="shrink-0 flex items-center">
+                        <div onClick={simple ? undefined : (e) => e.stopPropagation()} className="shrink-0 flex items-center">
                             {prefix}
                         </div>
                     )}
