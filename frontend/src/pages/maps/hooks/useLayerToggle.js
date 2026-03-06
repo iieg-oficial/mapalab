@@ -3,7 +3,9 @@ import { trackLayerToggle } from '@services/analyticsService';
 
 export const useLayerToggle = ({
     setActiveLayerIds,
-    getAllChildLayerIds
+    getAllChildLayerIds,
+    findLayerById,
+    setSelectedLayer
 }) => {
     const handleToggleLayer = useCallback((layerId, isActive, skipAnalytics = false) => {
         if (!skipAnalytics) trackLayerToggle(layerId, isActive);
@@ -18,7 +20,11 @@ export const useLayerToggle = ({
                 return prevActiveIds.filter(id => !allRelatedIds.includes(id));
             }
         });
-    }, [setActiveLayerIds, getAllChildLayerIds]);
+        if (isActive) {
+            const layer = findLayerById(layerId);
+            if (layer) setSelectedLayer(layer);
+        }
+    }, [setActiveLayerIds, getAllChildLayerIds, findLayerById, setSelectedLayer]);
 
     return { handleToggleLayer };
 };
