@@ -70,11 +70,11 @@ const CategoryItem = ({ layer, activeLayerIds, onToggleLayer }) => {
                     ${isManuallyExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}
                 `}
             >
-            <div className="overflow-hidden">
-                {layer.children && layer.children.map(childLayer => (
-                    <div key={childLayer.id}>{renderChild(childLayer)}</div>
-                ))}
-            </div>
+                <div className="overflow-hidden">
+                    {layer.children && layer.children.map(childLayer => (
+                        <div key={childLayer.id}>{renderChild(childLayer)}</div>
+                    ))}
+                </div>
             </div>
         </div>
     );
