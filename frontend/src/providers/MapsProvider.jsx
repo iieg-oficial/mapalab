@@ -30,7 +30,10 @@ const MapsProvider = ({ children }) => {
         allLayers
     });
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
-    const layerToggle = useLayerToggle(layerManagement);
+    const layerToggle = useLayerToggle({
+        ...layerManagement,
+        setSelectedLayer
+    });
     const cqlFilter = useCQLFilter();
     const rasterLoop = useRasterLoop({
         applyFilter: cqlFilter.applyFilter,
