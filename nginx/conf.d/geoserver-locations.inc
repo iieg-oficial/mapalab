@@ -54,8 +54,14 @@ location ^~ /geoserver/ {
         proxy_send_timeout    60s;
         proxy_read_timeout    60s;
         proxy_buffer_size   32k;
-        proxy_buffers       8 32k;
+        proxy_buffers       16 32k;
         proxy_busy_buffers_size 64k;
+
+        proxy_cache geoserver_cache;
+        proxy_cache_key "$request_uri";
+        proxy_cache_valid 200 6h;
+        proxy_cache_use_stale error timeout updating;
+        add_header X-Cache-Status $upstream_cache_status;
 
         proxy_intercept_errors on;
         error_page 400 /geoserver-error/400.html;
@@ -81,8 +87,14 @@ location ^~ /geoserver/ {
     proxy_send_timeout    60s;
     proxy_read_timeout    120s;
     proxy_buffer_size   32k;
-    proxy_buffers       8 32k;
+    proxy_buffers       16 32k;
     proxy_busy_buffers_size 64k;
+
+    proxy_cache geoserver_cache;
+    proxy_cache_key "$request_uri";
+    proxy_cache_valid 200 6h;
+    proxy_cache_use_stale error timeout updating;
+    add_header X-Cache-Status $upstream_cache_status;
 
     proxy_intercept_errors on;
     error_page 400 /geoserver-error/400.html;
