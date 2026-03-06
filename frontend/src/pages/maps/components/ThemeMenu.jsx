@@ -66,13 +66,15 @@ const CategoryItem = ({ layer, activeLayerIds, onToggleLayer }) => {
             </button>
             <div
                 className={`
-                    pl-2 overflow-hidden transition-all duration-300 ease-in-out 
-                    ${isManuallyExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}
+                    pl-2 grid transition-all duration-300 ease-in-out
+                    ${isManuallyExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}
                 `}
             >
+            <div className="overflow-hidden">
                 {layer.children && layer.children.map(childLayer => (
                     <div key={childLayer.id}>{renderChild(childLayer)}</div>
                 ))}
+            </div>
             </div>
         </div>
     );
