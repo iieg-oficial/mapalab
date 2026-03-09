@@ -58,7 +58,7 @@ const getLayerRequestParams = (layerId) => {
     if (!layerWithConfig?.wmsConfig) return null;
 
     const { wmsConfig } = layerWithConfig;
-    const layerName = wmsConfig.layerName?.split(':').pop();
+    const layerName = wmsConfig.metadataLayer || wmsConfig.layerName?.split(':').pop();
     const workspace = extractWorkspaceFromBaseUrl(wmsConfig.baseUrl) || wmsConfig.workspace;
 
     if (!workspace || !layerName) return null;

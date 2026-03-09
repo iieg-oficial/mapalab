@@ -57,7 +57,7 @@ const createExportLegendsLayout = (layers, getLegendUrl, containerWidthPx, conta
             iconWidth: 20,
             iconHeight: 20,
             transparent: true,
-            fontName: 'Helvetica',
+            fontName: 'Garet Regular',
             fontSize: 12,
             fontStyle: 'normal',
             fontColor: '0x454545',

@@ -45,7 +45,7 @@ const FINZANZAS_MUNICIPALES = [
                 { label: 'Porcentaje de ingresos por participaciones', field: 'porcentaje_de_ingresos_por_participaciones' },
             ]
         })],
-    ['ingresos_propios', 'Ingresos propios (%)', 'porcentaje_ingresos_propios',
+    ['ingresos_propios', 'Ingresos propios (%)', 'ingresos_propios',
         ['gobierno', 'ciudadania', 'finanzas', 'dinero', 'recaudacion', 'impuestos', 'presupuesto', 'tesoreria'],
         createMunicipioConfig({
             title: 'Porcentaje de ingresos propios',
@@ -69,7 +69,7 @@ export const gobiernoLayers = {
                 id,
                 label,
                 wmsConfig: createGobiernoLayer(layerName),
-                littleCard,
+                littleCard: { ...littleCard, headerField: label },
                 searchMeta: { tags }
             }))
         }

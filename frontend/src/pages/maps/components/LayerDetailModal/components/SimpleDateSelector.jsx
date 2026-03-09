@@ -1,7 +1,51 @@
 import { useState, useEffect, useMemo, useRef, useContext } from 'react';
 import MapsContext from '@contexts/MapsContext';
+import { useCarouselOverflow } from '@pages/maps/hooks/useCarouselOverflow';
 import { generateCQLFilter, parseCQLToSelections, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import Icon from '@components/Icon';
+
+const BackButton = ({ onClick }) => (
+    <button onClick={onClick}>
+        <Icon
+            name="downArrow"
+            tooltip="Regresar"
+            classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
+            className="w-5 h-2 transition-transform duration-300 rotate-90"
+        />
+    </button>
+);
+
+const YearBadge = ({ year }) => (
+    <span className="shrink-0 px-5 py-3 rounded-[9px] text-[14px]/[16px] font-medium font-garet bg-[#F0EAF3] border border-[#703089] text-[#703089]">
+        {year}
+    </span>
+);
+
+const PlayPauseButton = ({ isPlaying, onToggle }) => (
+    <button
+        onClick={onToggle}
+        className="size-7.5 rounded-full bg-[#F9FBFF] flex items-center justify-center hover:bg-[#F0EAF3] transition-colors"
+        title={isPlaying ? 'Pausar' : 'Reproducir'}
+    >
+        <svg width="12" height="12" viewBox="0 0 12 12" className="text-[#703089]">
+            {isPlaying
+                ? <><rect x="1" y="1" width="3.5" height="10" rx="1" fill="currentColor" /><rect x="7.5" y="1" width="3.5" height="10" rx="1" fill="currentColor" /></>
+                : <path d="M2 1.5v9l8.5-4.5L2 1.5z" fill="currentColor" />
+            }
+        </svg>
+    </button>
+);
+
+const CarouselArrow = ({ direction, onClick }) => (
+    <button onClick={onClick}>
+        <Icon
+            name="downArrow"
+            tooltip={direction === 'left' ? 'Anterior' : 'Siguiente'}
+            classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
+            className={`w-5 h-2 transition-transform duration-300 ${direction === 'left' ? 'rotate-90' : '-rotate-90'}`}
+        />
+    </button>
+);
 
 const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false }) => {
     const { getSpecificFilter, startLoop, stopLoop: contextStopLoop, getLoopState } = useContext(MapsContext);
@@ -129,6 +173,8 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
         startLoop?.(layerId, selectedYear, periodicityData?.fecha);
     };
 
+    const yearsCarousel = useCarouselOverflow();
+
     if (!periodicityData?.fecha || typeof periodicityData.fecha !== 'object') return null;
 
     const availableYears = Object.keys(periodicityData.fecha).map(Number).sort((a, b) => b - a);
@@ -141,6 +187,15 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
             setSelectedYear(year);
             setSelectedMonths(new Set());
             return;
+        }
+
+        if (yearData && typeof yearData === 'object') {
+            const monthKeys = Object.keys(yearData).map(Number);
+            if (monthKeys.length === 1) {
+                setSelectedYear(year);
+                setSelectedMonths(new Set([monthKeys[0]]));
+                return;
+            }
         }
 
         setSelectedYear(year);
@@ -195,60 +250,28 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
             return (
                 <div className="space-y-3">
                     <div className="flex items-center gap-4">
-                        <button onClick={handleBackToYears}>
-                            <Icon
-                                name="downArrow"
-                                tooltip="Regresar"
-                                classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
-                                className="w-5 h-2 transition-transform duration-300 rotate-90"
-                            />
-                        </button>
-                        <span className="shrink-0 px-5 py-3 rounded-[9px] text-[14px]/[16px] font-medium font-garet bg-[#F0EAF3] border border-[#703089] text-[#703089]">
-                            {selectedYear}
-                        </span>
+                        <BackButton onClick={handleBackToYears} />
+                        <YearBadge year={selectedYear} />
                     </div>
                 </div>
             );
         }
 
         const availableMonthNums = yearData ? Object.keys(yearData).map(Number).sort((a, b) => a - b) : [];
+        const isSingleMonth = availableMonthNums.length === 1;
 
         return (
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <button onClick={handleBackToYears}>
-                            <Icon
-                                name="downArrow"
-                                tooltip="Regresar"
-                                classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
-                                className="w-5 h-2 transition-transform duration-300 rotate-90"
-                            />
-                        </button>
-                        <span className="shrink-0 px-5 py-3 rounded-[9px] text-[14px]/[16px] font-medium font-garet bg-[#F0EAF3] border border-[#703089] text-[#703089]">
-                            {selectedYear}
-                        </span>
+                        <BackButton onClick={handleBackToYears} />
+                        <YearBadge year={selectedYear} />
                     </div>
                     <div className="flex items-center gap-2">
-                        {isRaster && (
-                            <button
-                                onClick={() => isPlaying ? handleStopLoop() : handleStartLoop()}
-                                className="size-7.5 rounded-full bg-[#F9FBFF] flex items-center justify-center hover:bg-[#F0EAF3] transition-colors"
-                                title={isPlaying ? 'Pausar' : 'Reproducir'}
-                            >
-                                {isPlaying ? (
-                                    <svg width="12" height="12" viewBox="0 0 12 12" className="text-[#703089]">
-                                        <rect x="1" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
-                                        <rect x="7.5" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
-                                    </svg>
-                                ) : (
-                                    <svg width="12" height="12" viewBox="0 0 12 12" className="text-[#703089]">
-                                        <path d="M2 1.5v9l8.5-4.5L2 1.5z" fill="currentColor" />
-                                    </svg>
-                                )}
-                            </button>
+                        {isRaster && !isSingleMonth && (
+                            <PlayPauseButton isPlaying={isPlaying} onToggle={() => isPlaying ? handleStopLoop() : handleStartLoop()} />
                         )}
-                        {hasSelection && (
+                        {hasSelection && !isSingleMonth && (
                             <button onClick={handleClearMonths}>
                                 <Icon
                                     tooltip="Limpiar selecciones"
@@ -260,51 +283,52 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                         )}
                     </div>
                 </div>
-                <div className="grid grid-cols-6 sm:grid-cols-12 gap-1">
-                    {availableMonthNums.map((monthNum) => {
-                        const monthObj = MONTHS.find(m => m.num === monthNum);
-                        const abbr = monthObj ? monthObj.name.slice(0, 3).toUpperCase() : monthNum;
-                        const isActive = selectedMonths.has(monthNum);
+                {!isSingleMonth && (
+                    <div className="flex flex-wrap gap-1">
+                        {availableMonthNums.map((monthNum) => {
+                            const monthObj = MONTHS.find(m => m.num === monthNum);
+                            const abbr = monthObj ? monthObj.name.slice(0, 3).toUpperCase() : monthNum;
+                            const isActive = selectedMonths.has(monthNum);
 
-                        return (
-                            <button
-                                key={`${selectedYear}-${monthNum}`}
-                                onClick={() => handleMonthToggle(monthNum)}
-                                className={`
-                                    py-2 rounded-[9px] transition-all duration-200
-                                    text-[12px]/[14px] text-[#2E4372] font-medium font-garet
-                                    ${isActive
-                                ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
-                                : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
-                            }
-                                `}
-                            >
-                                {abbr}
-                            </button>
-                        );
-                    })}
-                </div>
+                            return (
+                                <button
+                                    key={`${selectedYear}-${monthNum}`}
+                                    onClick={() => handleMonthToggle(monthNum)}
+                                    className={`
+                                        shrink-0 px-4 py-2 rounded-[9px] transition-all duration-200
+                                        text-[12px]/[14px] text-[#2E4372] font-medium font-garet
+                                        ${isActive
+                                    ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
+                                    : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
+                                }
+                                    `}
+                                >
+                                    {abbr}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         );
     }
 
     return (
         <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-                {availableYears.map((year) => (
-                    <button
-                        key={year}
-                        onClick={() => handleYearClick(year)}
-                        className={`
-                            shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200 text-[14px]/[16px] text-[#2E4372]
-                            font-medium font-garet bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3]
-                            hover:text-[#703089] hover:border-[#703089]
-                            ${selectedYear === year ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]' : ''}
-                        `}
-                    >
-                        {year}
-                    </button>
-                ))}
+            <div className="flex items-center gap-2">
+                {yearsCarousel.hasOverflow && <CarouselArrow direction="left" onClick={() => yearsCarousel.scroll('left')} />}
+                <div ref={yearsCarousel.scrollRef} className="flex gap-2 overflow-x-auto scrollbar-hide flex-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                    {availableYears.map((year) => (
+                        <button
+                            key={year}
+                            onClick={() => handleYearClick(year)}
+                            className={`shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200 text-[14px]/[16px] text-[#2E4372] font-medium font-garet bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089] ${selectedYear === year ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]' : ''}`}
+                        >
+                            {year}
+                        </button>
+                    ))}
+                </div>
+                {yearsCarousel.hasOverflow && <CarouselArrow direction="right" onClick={() => yearsCarousel.scroll('right')} />}
             </div>
         </div>
     );

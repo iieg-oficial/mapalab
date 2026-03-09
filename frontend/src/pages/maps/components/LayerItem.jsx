@@ -105,7 +105,28 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
 
             {isExpanded && (
                 <div className={`pl-6 ${HIDDEN_SCROLLBAR}`}>
-                    {layer.children.map(childLayer => (
+                    {layer.children.map(childLayer => childLayer.isLabel ? (
+                        <div key={childLayer.id} className="w-full">
+                            <div className="p-2">
+                                <span className="font-garet font-bold text-[12px] text-[#5C2472] tracking-normal">
+                                    {childLayer.label}
+                                </span>
+                            </div>
+                            {childLayer.children && childLayer.children.length > 0 && (
+                                <div className="pl-2">
+                                    {childLayer.children.map(grandChild => (
+                                        <LayerItem
+                                            key={grandChild.id}
+                                            layer={grandChild}
+                                            onToggle={onToggle}
+                                            activeLayerIds={activeLayerIds}
+                                            depth={depth + 1}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
                         <LayerItem
                             key={childLayer.id}
                             layer={childLayer}
