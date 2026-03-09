@@ -202,10 +202,10 @@ const LayerDetailModal = () => {
                                     </div>
                                 )}
 
-                                {metadata?.numeralia && metadata.numeralia.length > 0 && (
+                                {metadata?.numeralia?.filter(s => s.nombre || s.valor).length > 0 && (
                                     <div className="mb-4">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {metadata.numeralia.map((stat, index) => (
+                                            {metadata.numeralia.filter(s => s.nombre || s.valor).map((stat, index) => (
                                                 <StatCard
                                                     key={index}
                                                     label={stat.nombre}
@@ -265,7 +265,7 @@ const LayerDetailModal = () => {
                                 )}
 
 
-                                <LayerInfoSections metadata={metadata} />
+                                <LayerInfoSections metadata={metadata} layerName={selectedLayer.name} />
                             </>
                         )}
                     </div>
