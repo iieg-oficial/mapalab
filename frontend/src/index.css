@@ -84,20 +84,4 @@
     mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
 }
-
-#qaf-button:hover .qaf {
-    background-color: #E3CAF2;
-}
-
-#qaf-button.active .qaf {
-    background-color: #E3CAF2;
-}
-
-#search-input::placeholder{
-    color: var(--color-numeralia);
-    opacity: 1;
-}
-
-#search-input:hover::placeholder {
-    color: var(--color-orange);
-}
+ 
