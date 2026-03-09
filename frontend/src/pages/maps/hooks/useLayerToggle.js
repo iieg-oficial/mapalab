@@ -22,7 +22,7 @@ export const useLayerToggle = ({
         });
         if (isActive && !skipAnalytics) {
             const layer = findLayerById(layerId);
-            if (layer) setSelectedLayer(layer);
+            if (layer) setSelectedLayer({ id: layer.id, name: layer.label });
         }
     }, [setActiveLayerIds, getAllChildLayerIds, findLayerById, setSelectedLayer]);
 
