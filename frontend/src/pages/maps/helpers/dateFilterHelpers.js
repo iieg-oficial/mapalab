@@ -75,6 +75,39 @@ export const parseCQLToSelections = (cqlFilter) => {
     return selections;
 };
 
+export const generateDefaultDateFilter = (defaultDate, filterColumn = 'fecha') => {
+    if (!defaultDate) return null;
+
+    const toArray = (val) => Array.isArray(val) ? val : [val];
+    const years = toArray(defaultDate.year);
+    const selections = new Set();
+
+    if (defaultDate.day != null) {
+        const months = toArray(defaultDate.month);
+        const days = toArray(defaultDate.day);
+        for (const y of years) {
+            for (const m of months) {
+                for (const d of days) {
+                    selections.add(`${y}-${m}-${d}`);
+                }
+            }
+        }
+    } else if (defaultDate.month != null) {
+        const months = toArray(defaultDate.month);
+        for (const y of years) {
+            for (const m of months) {
+                selections.add(`${y}-${m}`);
+            }
+        }
+    } else {
+        for (const y of years) {
+            selections.add(`${y}`);
+        }
+    }
+
+    return generateCQLFilter(selections, filterColumn);
+};
+
 export const MONTHS = [
     { num: 1, name: 'Enero', shortName: 'EN' },
     { num: 2, name: 'Febrero', shortName: 'FE' },

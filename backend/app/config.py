@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     GEOSERVER_URL: Optional[str] = Field(default="")
     GEOSERVER_USER: str
     GEOSERVER_PASSWORD: str
+    ACERVO_PUBLIC_URL: Optional[str] = Field(default=None)
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod
