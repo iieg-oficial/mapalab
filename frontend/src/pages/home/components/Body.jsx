@@ -160,14 +160,13 @@ const Body = ({ isModal = false }) => {
                     <button
                         key={item.id}
                         onClick={() => toggleSection(item.id)}
-                        id="qaf-button"
                         className={`
                             ${activeBtn ? 'bg-purple active' : ''} group relative bg-[#F3EBFF] flex flex-col sm:flex-row items-center justify-center md:justify-end rounded-[50px]
                             w-full max-w-[522px] h-[150px] sm:h-[110px] transition-all border border-transparent md:pl-0 pl-0 md:pr-22 py-5 md:py-0 mx-4
 s                            ${expandedSection === item.id ? 'border-purple' : 'hover:border-purple'} cursor-pointer 
                         `}
                     >
-                        <div className="sm:absolute left-4 md:left-[43px] flex items-center justify-center bg-white rounded-full p-4 size-[74px] qaf">
+                        <div className="sm:absolute left-4 md:left-[43px] flex items-center justify-center bg-white rounded-full p-4 size-[74px] group-hover:bg-[#E3CAF2] group-active:bg-[#E3CAF2]">
                             <img
                                 src={item.icon}
                                 alt=""

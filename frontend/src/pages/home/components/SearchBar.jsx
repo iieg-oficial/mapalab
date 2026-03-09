@@ -31,7 +31,7 @@ const SearchBar = ({ className = '' }) => {
                     w-full h-full text-center rounded-[40px] bg-[#F4F1FF] transition-all pl-5
                     font-garet font-medium text-numeralia text-[18px]/[47px] tracking-normal 
                     outline-none
-                    md:text-center md:pl-0 hover:font-bold hover:text-orange
+                    md:text-center md:pl-0 hover:font-bold hover:text-orange placeholder-numeralia hover:placeholder-orange placeholder-opacity-100
                 `}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
