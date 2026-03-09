@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { trackLayerDetailOpen, trackLayerDownload, trackPeriodicityAdvanced } from '@services/analyticsService';
 import { useLayerMetadata } from '../../hooks/useLayerMetadata';
 import { useSider } from '@contexts/SiderContext';
@@ -11,6 +11,7 @@ import SimpleDateSelector from './components/SimpleDateSelector';
 import OpacityControl from './components/OpacityControl';
 import InfoCard from './components/InfoCard';
 import StatCard from './components/StatCard';
+import LayerInfoSections from './components/LayerInfoSections';
 import LayerThemeAvatar from './components/LayerThemeAvatar';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
@@ -29,7 +30,6 @@ const LayerDetailModal = () => {
     const [downloading, setDownloading] = useState(false);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
     const { isMobile } = useSider();
-    const longPressTimer = useRef(null);
     const [singleSelectOnly, setSingleSelectOnly] = useState(false);
 
     useEffect(() => {
@@ -86,17 +86,9 @@ const LayerDetailModal = () => {
         setCooldownEnd(end);
     }, [selectedLayer?.id, activeLayerIds, getFilter, downloading, cooldown, storageKey]);
 
-    const handleLongPressStart = useCallback(() => {
-        longPressTimer.current = setTimeout(() => {
+    const handlePeriodicityClick = useCallback((e) => {
+        if (e.ctrlKey || e.metaKey) {
             setIsAdvancedMode(prev => !prev);
-            longPressTimer.current = null;
-        }, 1000);
-    }, []);
-
-    const handleLongPressEnd = useCallback(() => {
-        if (longPressTimer.current) {
-            clearTimeout(longPressTimer.current);
-            longPressTimer.current = null;
         }
     }, []);
 
@@ -236,10 +228,7 @@ const LayerDetailModal = () => {
                                             <div className="flex items-center gap-2">
                                                 <span
                                                     className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer"
-                                                    onDoubleClick={() => setIsAdvancedMode(prev => !prev)}
-                                                    onMouseDown={handleLongPressStart}
-                                                    onMouseUp={handleLongPressEnd}
-                                                    onMouseLeave={handleLongPressEnd}
+                                                    onClick={handlePeriodicityClick}
                                                 >
                                                     Periodicidad:
                                                 </span>
@@ -276,43 +265,7 @@ const LayerDetailModal = () => {
                                 )}
 
 
-                                {(metadata?.fuentes_texto_largo || metadata?.fuentes_enlace) && (
-                                    <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4 mb-4">
-                                        <span className="block text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
-                                            Fuente
-                                        </span>
-                                        {metadata.fuentes_texto_largo && (
-                                            <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
-                                                {metadata.fuentes_texto_largo}
-                                            </p>
-                                        )}
-                                        {metadata.fuentes_enlace && (
-                                            <a href={metadata.fuentes_enlace} target="_blank" rel="noopener noreferrer"
-                                                className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
-                                                Ver fuente
-                                            </a>
-                                        )}
-                                    </div>
-                                )}
-
-                                {(metadata?.metodologia_texto || metadata?.metodologia_archivo_enlace) && (
-                                    <div className="bg-[#F9FBFF] rounded-[11px] px-7 py-4">
-                                        <span className="block text-[14px]/[47px] font-garet font-bold text-[#5C2472] tracking-normal">
-                                            Metodología
-                                        </span>
-                                        {metadata.metodologia_texto && (
-                                            <p className="text-[12px]/[18px] text-left font-garet font-medium text-[#454545] tracking-normal">
-                                                {metadata.metodologia_texto}
-                                            </p>
-                                        )}
-                                        {metadata.metodologia_archivo_enlace && (
-                                            <a href={metadata.metodologia_archivo_enlace} target="_blank" rel="noopener noreferrer"
-                                                className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
-                                                Ver documento
-                                            </a>
-                                        )}
-                                    </div>
-                                )}
+                                <LayerInfoSections metadata={metadata} />
                             </>
                         )}
                     </div>

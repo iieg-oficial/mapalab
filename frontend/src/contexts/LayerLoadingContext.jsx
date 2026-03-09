@@ -1,8 +1,5 @@
-import { createContext, useContext, useCallback, useState, useMemo } from 'react';
-
-const LayerLoadingContext = createContext(null);
-
-LayerLoadingContext.displayName = 'LayerLoadingContext';
+import { useCallback, useState, useMemo } from 'react';
+import { LayerLoadingContext } from '@hooks/useLayerLoading';
 
 export const LayerLoadingProvider = ({ children }) => {
     const [loadingLayers, setLoadingLayers] = useState(new Set());
@@ -29,10 +26,4 @@ export const LayerLoadingProvider = ({ children }) => {
             {children}
         </LayerLoadingContext.Provider>
     );
-};
-
-export const useLayerLoading = () => {
-    const context = useContext(LayerLoadingContext);
-    if (!context) throw new Error('useLayerLoading debe usarse dentro de LayerLoadingProvider');
-    return context;
 };

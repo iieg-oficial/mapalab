@@ -8,23 +8,28 @@ const footerConfig = {
             id: 1,
             name: 'MapaLab',
             src: logoMapalabLargeDark,
+            link: '',
             width: '335px',
             height: '57px'
         }, {
             id: 2,
             name: 'IIEG',
             src: logoIiegLargeDark,
-            width: '280px',
-            height: '100px'
+            link: 'https://iieg.gob.mx/ns/ ',
+            width: '210px',
+            height: '64px'
         }, {
             id: 3,
             name: 'Jalisco',
             src: logoJaliscoLargeDark,
-            width: '280px',
-            height: '100px'
+            link: 'https://www.jalisco.gob.mx/inicio',
+            width: '226px',
+            height: '77px'
         }
     ],
-    copyright: 'TODOS LOS DERECHOS RESERVADOS'
+    copyright: `Instituto de Información Estadística y Geográfica de Jalisco © ${new Date().getFullYear()}`,
+    privacyPolicy: 'Aviso de Privacidad',
+    linkPrivacyPolicy: 'https://iieg.gob.mx/ns/wp-content/uploads/2025/06/Aviso_de_Privacidad_Integral_IIEG_06_2025.pdf'
 };
 
 export default footerConfig;

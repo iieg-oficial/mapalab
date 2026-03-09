@@ -4,6 +4,7 @@ import { useMapDownload } from './hooks/useMapDownload';
 import { QUALITY_PRESETS } from './utils/exportDimensions';
 import { useSider } from '@contexts/SiderContext';
 import SymbologyItem from '../SymbologyItem';
+import Checkbox from '@components/Checkbox';
 import Icon from '@components/Icon';
 import Panel from '@components/Panel';
 import Tooltip from '@components/Tooltip';
@@ -207,14 +208,7 @@ const Download = ({ onOpenPreview }) => {
                                             simple={true}
                                             onClick={() => handleLayerSelect(layer)}
                                             prefix={
-                                                <input
-                                                    type={format === 'pdf' ? 'checkbox' : 'radio'}
-                                                    name="legend-selection"
-                                                    checked={isSelected}
-                                                    readOnly
-                                                    className={`text-[#703089] focus:ring-[#703089] mr-2 ${format === 'pdf' ? 'rounded' : ''}`}
-                                                    style={{ cursor: 'pointer' }}
-                                                />
+                                                <Checkbox checked={isSelected} />
                                             }
                                         />
                                     );

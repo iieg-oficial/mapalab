@@ -1,6 +1,6 @@
 import { useState, useCallback, useContext } from 'react';
 import MapsContext from '@contexts/MapsContext';
-import { useLayerLoading } from '@contexts/LayerLoadingContext';
+import { useLayerLoading } from '@hooks/useLayerLoading';
 import { getFeatureInfoForActiveLayers, getFeaturesInPolygonForActiveLayers } from '@services/featureInfoService';
 import { toLonLat } from 'ol/proj';
 import { findLayerById, layers as allLayers, collectLayersWithWMS, findParentGroup } from '../helpers/layers/index';

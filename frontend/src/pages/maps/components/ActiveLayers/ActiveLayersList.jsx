@@ -26,11 +26,11 @@ const ActiveLayersList = () => {
 
     const handleToggleBaseMode = useCallback(() => {
         if (isInegiMode) {
-            ['limite_inegi', 'limite_municipal_inegi'].forEach(id => onToggleLayer(id, false));
-            ['regiones', 'limite_municipal', 'limite_iieg'].forEach(id => onToggleLayer(id, true));
+            ['limite_inegi', 'limite_municipal_inegi'].forEach(id => onToggleLayer(id, false, true));
+            ['regiones', 'limite_municipal', 'limite_iieg'].forEach(id => onToggleLayer(id, true, true));
         } else {
-            ['limite_iieg', 'limite_municipal', 'regiones'].forEach(id => onToggleLayer(id, false));
-            ['limite_municipal_inegi', 'limite_inegi'].forEach(id => onToggleLayer(id, true));
+            ['limite_iieg', 'limite_municipal', 'regiones'].forEach(id => onToggleLayer(id, false, true));
+            ['limite_municipal_inegi', 'limite_inegi'].forEach(id => onToggleLayer(id, true, true));
         }
     }, [isInegiMode, onToggleLayer]);
 

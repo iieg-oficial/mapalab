@@ -11,7 +11,7 @@ export const useWMSLegend = () => {
         iconWidth = 20,
         iconHeight = 20,
         transparent = false,
-        fontName = 'Helvetica',
+        fontName = 'Garet Regular',
         fontSize = 10,
         fontStyle = 'normal',
         fontColor = '0x454545',
