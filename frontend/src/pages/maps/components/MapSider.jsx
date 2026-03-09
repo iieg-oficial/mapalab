@@ -110,9 +110,16 @@ const MapSider = ({ className = '' }) => {
         ? isOpen
         : (lockMode === 'expanded' ? true : (lockMode === 'collapsed' ? false : isHovered));
 
+    const handleToggleTools = useCallback(() => {
+        toggleMeasurementTools();
+        if (lockMode === 'auto') {
+            setIsHovered(false);
+        }
+    }, [toggleMeasurementTools, lockMode, setIsHovered]);
+
     const menuItems = useMemo(() =>
-        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible }),
-    [isExpanded, contextActiveLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible]);
+        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible }),
+    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible]);
 
     const clearAutoOpenMenu = useCallback(() => {
         setAutoOpenMenuId(null);
