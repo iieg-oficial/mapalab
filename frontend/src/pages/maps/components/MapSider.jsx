@@ -26,7 +26,7 @@ const MapSider = ({ className = '' }) => {
         rasterLoops
     } = useMapsContext();
     const { loadingLayers } = useLayerLoading();
-    const hasNonLoopLoading = [...loadingLayers].some(id => !rasterLoops[id]?.isPlaying);
+    const hasNonLoopLoading = [...loadingLayers].some(id => !rasterLoops[id]?.isPlaying && contextActiveLayerIds.includes(id));
     const isLoading = hasNonLoopLoading || isLocating;
     const {
         siderRef,
@@ -112,10 +112,12 @@ const MapSider = ({ className = '' }) => {
 
     const handleToggleTools = useCallback(() => {
         toggleMeasurementTools();
-        if (lockMode === 'auto') {
+        if (treatAsMobile) {
+            closeSider();
+        } else if (lockMode === 'auto') {
             setIsHovered(false);
         }
-    }, [toggleMeasurementTools, lockMode, setIsHovered]);
+    }, [toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
 
     const menuItems = useMemo(() =>
         createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible }),
@@ -125,13 +127,33 @@ const MapSider = ({ className = '' }) => {
         setAutoOpenMenuId(null);
     }, []);
 
+    const longPressRef = useRef(null);
+
     const handleLogoClick = () => {
         if (treatAsMobile) {
+            if (longPressRef.current === 'fired') {
+                longPressRef.current = null;
+                return;
+            }
             toggleSider();
         } else {
             navigate('/');
         }
     };
+
+    const handleLogoTouchStart = useCallback(() => {
+        if (!treatAsMobile) return;
+        longPressRef.current = setTimeout(() => {
+            longPressRef.current = 'fired';
+            navigate('/');
+        }, 1000);
+    }, [treatAsMobile, navigate]);
+
+    const handleLogoTouchEnd = useCallback(() => {
+        if (longPressRef.current && longPressRef.current !== 'fired') {
+            clearTimeout(longPressRef.current);
+        }
+    }, []);
 
     const sizeLogo = {
         expanded: 'w-57 h-17',
@@ -143,8 +165,8 @@ const MapSider = ({ className = '' }) => {
         <aside
             ref={siderRef}
             className={[
-                'absolute top-4 left-4 z-20 flex flex-col',
-                'max-h-[calc(100vh-2rem)] bg-white shadow-[0_5px_20px_#1A26641A] rounded-[10px]',
+                'absolute top-4 left-4 z-20 max-md:z-22 flex flex-col',
+                'max-h-[calc(100dvh-2rem)] bg-white shadow-[0_5px_20px_#1A26641A] rounded-[10px]',
                 'transition-all duration-500',
                 className,
             ].join(' ')}
@@ -155,15 +177,23 @@ const MapSider = ({ className = '' }) => {
             onMouseEnter={!treatAsMobile ? handleMouseEnter : undefined}
             onMouseLeave={!treatAsMobile ? handleMouseLeave : undefined}
         >
-            <Logo
-                name="mapalab"
-                size={sizeLogo[isLoading ? 'loading' : isExpanded ? 'expanded' : 'collapsed']}
-                expanded={isExpanded}
-                isLoading={isLoading}
-                onClick={handleLogoClick}
-                tooltip={!treatAsMobile ? 'Ir al inicio' : ''}
-                className="shrink-0 p-3 flex justify-center"
-            />
+            <div
+                className="shrink-0 flex justify-center"
+                onTouchStart={handleLogoTouchStart}
+                onTouchEnd={handleLogoTouchEnd}
+                onTouchCancel={handleLogoTouchEnd}
+                onContextMenu={(e) => treatAsMobile && e.preventDefault()}
+            >
+                <Logo
+                    name="mapalab"
+                    size={sizeLogo[isLoading ? 'loading' : isExpanded ? 'expanded' : 'collapsed']}
+                    expanded={isExpanded}
+                    isLoading={isLoading}
+                    onClick={handleLogoClick}
+                    tooltip={!treatAsMobile ? 'Ir al inicio' : ''}
+                    className="shrink-0 p-3 flex justify-center"
+                />
+            </div>
             {(!treatAsMobile || isOpen) && (
                 <div
                     ref={contentRef}
@@ -221,7 +251,7 @@ const MapSider = ({ className = '' }) => {
                 colorFilter={lockMode === 'expanded' ? '#CBC5F1' : lockMode === 'collapsed' ? '#FFB98E' : null}
                 onClick={!treatAsMobile && handleToggleLock}
                 visible={!treatAsMobile || isOpen}
-                className="shrink-0 p-3 my-2"
+                className="shrink-0 p-3 my-2 w-full"
             />
         </aside>
     );

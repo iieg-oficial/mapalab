@@ -5,10 +5,10 @@ import MapsContext from '@contexts/MapsContext';
 import SymbologyItem from './SymbologyItem';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
-import ScrollContainer from '@components/ScrollContainer';
+
 import { useZenMode } from './ZenMode';
 
-const SymbologyPanel = () => {
+const SymbologyPanel = ({ onCollapseChange }) => {
     const { selectedLayerForSymbology, findLayerById, getLayersForSymbology } = useContext(MapsContext);
     const [isManuallyCollapsed, setIsManuallyCollapsed] = useState(() => window.innerWidth < MOBILE_BREAKPOINT);
     const { isZenMode } = useZenMode();
@@ -21,6 +21,8 @@ const SymbologyPanel = () => {
 
     const hasLayer = !!selectedLayerForSymbology;
     const isCollapsed = isManuallyCollapsed || !hasLayer;
+
+    useEffect(() => { onCollapseChange?.(isCollapsed); }, [isCollapsed, onCollapseChange]);
 
     const handleManualCollapse = () => {
         setIsManuallyCollapsed(true);
@@ -39,9 +41,9 @@ const SymbologyPanel = () => {
                         className={`
                             size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors
                             ${(hasLayer || isManuallyCollapsed)
-                ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer'
-                : 'cursor-default opacity-50'
-            }
+                                ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer'
+                                : 'cursor-default opacity-50'
+                            }
                         `}
                         disabled={!hasLayer && !isManuallyCollapsed}
                     >
@@ -60,7 +62,7 @@ const SymbologyPanel = () => {
     const displayLayers = getLayersForSymbology(fullLayer);
 
     return (
-        <div className="w-auto px-4.5 pb-6 pt-5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] max-h-[40vh] flex flex-col">
+        <div className="w-auto px-4.5 pb-6 pt-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] shrink-0">
             <div className="flex justify-between items-center mb-2 shrink-0">
                 <div className="flex items-center gap-3">
                     <Icon name="simbologia" className="size-8" />
@@ -74,7 +76,7 @@ const SymbologyPanel = () => {
                 </div>
             </div>
 
-            <ScrollContainer className="flex-1 min-h-0 rounded-[7px] bg-white px-3.5 py-3">
+            <div className="rounded-[7px] bg-white px-3.5 py-3">
                 {displayLayers.length === 0 ? (
                     <div className="rounded-[7px] py-2">
                         {isParentLayer(fullLayer) ? 'No hay sub-capas activas' : 'Sin simbología disponible'}
@@ -90,7 +92,7 @@ const SymbologyPanel = () => {
                         />
                     ))
                 )}
-            </ScrollContainer>
+            </div>
         </div>
     );
 };

@@ -2,6 +2,18 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSider } from '@contexts/SiderContext';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
+import Icon from '@components/Icon';
+
+export const MobileMenuCloseButton = ({ onClick }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className="text-gray-500 hover:text-gray-800 cursor-pointer ml-auto self-start"
+        aria-label="Cerrar menú"
+    >
+        <Icon name="close" className="size-6" />
+    </button>
+);
 
 const MobileMenu = ({
     open,
@@ -82,14 +94,6 @@ const MobileMenu = ({
                     transform: open ? 'translateY(0)' : 'translateY(100%)'
                 }}
             >
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="sticky top-0 z-10 flex justify-center pt-3 pb-2 bg-[#F9FBFF] w-full cursor-pointer"
-                    aria-label="Cerrar menú"
-                >
-                    <div className="w-12 h-1 bg-gray-300 rounded-full" />
-                </button>
                 {typeof children === 'function' ? children({ close: onClose }) : children}
             </div>
         </div>,

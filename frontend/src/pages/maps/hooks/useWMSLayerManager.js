@@ -69,13 +69,14 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 if (!layerGroups.has(key)) {
                     const layer = wmsLayersRef.current.get(key);
                     if (layer) {
-                        layer.setVisible(false);
                         const mergedLayers = layer.get('mergedLayers');
                         if (mergedLayers) {
                             mergedLayers.forEach(merged => {
                                 merged.subLayers.forEach(sub => handleLoadEnd(sub.id));
                             });
                         }
+                        mapRef.current?.removeLayer(layer);
+                        wmsLayersRef.current.delete(key);
                     }
                 }
             });

@@ -28,13 +28,13 @@ const CloseButton = ({
                     type="button"
                     onClick={() => setIsOpen(true)}
                     className={[
-                        'flex items-center justify-center p-1 size-10 rounded-full border border-transparent transition-all',
+                        'size-12.5 flex items-center justify-center rounded-full border border-transparent transition-all',
                         isOpen ? 'bg-[#FF577D]' : 'bg-[#FFE6EC] hover:border-[#FF577D] active:bg-[#FF577D]',
                         className
                     ].join(' ')}
                     aria-label="Cerrar herramienta de mediciones"
                 >
-                    <Icon name="cerrar" state={iconState} className="size-7.5" />
+                    <Icon name="cerrar" state={iconState} className="size-10" />
                 </button>
             </Tooltip>
 
