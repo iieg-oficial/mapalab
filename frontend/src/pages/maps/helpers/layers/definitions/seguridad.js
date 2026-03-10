@@ -3,7 +3,7 @@ import { createMunicipioConfig } from '../../../components/InfoBox/utils/cardTem
 
 const createSeguridadLayer = createLayerFactory('seguridad');
 
-const TASA_DEFAULT_DATE = { year: 2024, month: 12 };
+const TASA_DEFAULT_DATE = 'latest';
 
 const TASA_STATS_HOMICIDIO = [
     { label: 'Tasa', field: 'tasa_carpetas_investigacion' },
@@ -128,7 +128,7 @@ const DELITOS_LIBERTAD = [
 ];
 
 const DELITOS_FAMILIA = [
-    ['violencia_familiar', 'Violencia familiar', 'delitos_fiscalia_violencia_familiar', ['seguridad', 'delito', 'violencia', 'familiar', 'tasa', 'domestica'], { year: 2025, month: 12 }],
+    ['violencia_familiar', 'Violencia familiar', 'delitos_fiscalia_violencia_familiar', ['seguridad', 'delito', 'violencia', 'familiar', 'tasa', 'domestica'], 'latest'],
 ];
 
 const DELITOS_PATRIMONIO = [
@@ -289,9 +289,10 @@ export const seguridadLayers = {
                 id: 'delito-vida-integridad',
                 label: 'Delitos contra la vida y la integridad corporal',
                 isLabel: true,
-                children: DELITOS_VIDA.map(([id, label, layerName, tags]) => ({
+                children: DELITOS_VIDA.map(([id, label, layerName, tags, defaultDate]) => ({
                     id, label,
                     wmsConfig: createSeguridadLayer(layerName),
+                    defaultDate,
                     littleCard: delitoConfig,
                     searchMeta: { tags }
                 }))
@@ -299,9 +300,10 @@ export const seguridadLayers = {
                 id: 'delito-libertad-sexual',
                 label: 'Delitos contra la libertad y la seguridad sexual',
                 isLabel: true,
-                children: DELITOS_LIBERTAD.map(([id, label, layerName, tags]) => ({
+                children: DELITOS_LIBERTAD.map(([id, label, layerName, tags, defaultDate]) => ({
                     id, label,
                     wmsConfig: createSeguridadLayer(layerName),
+                    defaultDate,
                     littleCard: delitoConfig,
                     searchMeta: { tags }
                 }))
@@ -309,9 +311,10 @@ export const seguridadLayers = {
                 id: 'delito-familia',
                 label: 'Delitos contra la familia',
                 isLabel: true,
-                children: DELITOS_FAMILIA.map(([id, label, layerName, tags]) => ({
+                children: DELITOS_FAMILIA.map(([id, label, layerName, tags, defaultDate]) => ({
                     id, label,
                     wmsConfig: createSeguridadLayer(layerName),
+                    defaultDate,
                     littleCard: delitoConfig,
                     searchMeta: { tags }
                 }))
@@ -319,11 +322,12 @@ export const seguridadLayers = {
                 id: 'delito-patrimonio',
                 label: 'Delitos contra el patrimonio',
                 isLabel: true,
-                children: DELITOS_PATRIMONIO.map(([id, label, layerName, tags]) => {
+                children: DELITOS_PATRIMONIO.map(([id, label, layerName, tags, defaultDate]) => {
                     const config = { ...delitoRoboConfig, headerField: label };
                     return {
                         id, label,
                         forceGroup: true,
+                        defaultDate,
                         children: [
                             {
                                 id: `${id}_con_violencia`,

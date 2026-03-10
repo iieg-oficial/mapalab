@@ -2,6 +2,8 @@ import { useCallback } from 'react';
 import { trackLayerToggle } from '@services/analyticsService';
 import { generateDefaultDateFilter } from '@pages/maps/helpers/dateFilterHelpers';
 
+import { getLayerMetadata } from '@services/layerMetadataService';
+
 export const useLayerToggle = ({
     setActiveLayerIds,
     getAllChildLayerIds,
@@ -10,12 +12,39 @@ export const useLayerToggle = ({
     applyFilter,
     clearFilter
 }) => {
-    const applyDefaultDate = useCallback((layerId) => {
+    const applyDefaultDate = useCallback(async (layerId) => {
         const layer = findLayerById(layerId);
         if (!layer?.defaultDate) return;
 
-        const cql = generateDefaultDateFilter(layer.defaultDate, layer.defaultDate.column || 'fecha');
-        if (cql) applyFilter(layerId, 'date', cql);
+        let dateToApply = layer.defaultDate;
+
+        if (dateToApply === 'latest') {
+            try {
+                const metadata = await getLayerMetadata(layerId);
+                const periodicity = metadata?.periodicity?.fecha || metadata?.periodicity;
+                
+                if (periodicity && typeof periodicity === 'object') {
+                    const availableYears = Object.keys(periodicity).map(Number).sort((a, b) => b - a);
+                    if (availableYears.length > 0) {
+                        const latestYear = availableYears[0];
+                        const availableMonths = Object.keys(periodicity[latestYear]).map(Number).sort((a, b) => b - a);
+                        
+                        dateToApply = { year: latestYear };
+                        if (availableMonths.length > 0) {
+                            dateToApply.month = availableMonths[0];
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching latest date for layer', err);
+                return;
+            }
+        }
+
+        if (dateToApply && dateToApply !== 'latest') {
+            const cql = generateDefaultDateFilter(dateToApply, layer.defaultDate?.column || 'fecha');
+            if (cql) applyFilter(layerId, 'date', cql);
+        }
     }, [findLayerById, applyFilter]);
 
     const clearDefaultDate = useCallback((layerId) => {
