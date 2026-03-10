@@ -11,7 +11,7 @@ import Tooltip from '@components/Tooltip';
 import ScrollContainer from '@components/ScrollContainer';
 import QualitySelector from './QualitySelector';
 
-const Download = ({ onOpenPreview }) => {
+const Download = ({ onOpenPreview, onOpenChange }) => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [selectedLegendLayers, setSelectedLegendLayers] = useState([]);
     const [title, setTitle] = useState('Capas mapalab');
@@ -54,9 +54,14 @@ const Download = ({ onOpenPreview }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [format, layersWithLegends, selectedLayer, isPanelOpen]);
 
+    const handleSetIsPanelOpen = (isOpen) => {
+        setIsPanelOpen(isOpen);
+        if (onOpenChange) onOpenChange(isOpen);
+    };
+
     const handleDownloadClick = () => {
         if (!canDownload || isDownloading) return;
-        setIsPanelOpen(true);
+        handleSetIsPanelOpen(true);
     };
 
     const executeDownload = async () => {
@@ -71,7 +76,7 @@ const Download = ({ onOpenPreview }) => {
     };
 
     const handleConfirmDownload = () => {
-        setIsPanelOpen(false);
+        handleSetIsPanelOpen(false);
         trackMapExport(format, QUALITY_PRESETS[qualityIndex].label, viewType === 'viewport' ? 'vista_actual' : 'estado_completo');
         executeDownload();
     };
@@ -106,7 +111,7 @@ const Download = ({ onOpenPreview }) => {
                     className={[
                         'flex items-center justify-center',
                         'text-center w-12.5 md:w-[235px] h-12.5 rounded-[30px] transition ',
-                        'font-garet font-bold text-[14px]/[47px] hover:shadow-[0_6px_6px_#5C247234]',
+                        'font-garet font-bold text-[14px] hover:shadow-[0_6px_6px_#5C247234]',
                         canDownload ? 'bg-[#703089] text-white hover:bg-[#5C2472]' : 'bg-black/5 text-black/40 cursor-not-allowed',
                     ].join(' ')}
                 >
@@ -117,14 +122,24 @@ const Download = ({ onOpenPreview }) => {
             <Panel
                 open={isPanelOpen}
                 anchorRef={anchorRef}
-                onClose={() => setIsPanelOpen(false)}
+                onClose={() => handleSetIsPanelOpen(false)}
                 variant="solid"
                 width="w-80"
-                maxHeight="max-h-200"
-                className="z-50 mt-2 shadow-none border-none rounded-[14px]"
+                maxHeight="max-h-200 max-md:max-h-[calc(100dvh-6rem)]"
+                className="z-50 mt-4 shadow-none border-none rounded-[14px]"
                 placement="bottom-end"
                 title={<span className="font-garet font-bold text-[14px]/[47px]">Descargar mapa</span>}
-                mobileFullscreen={isMobile}
+                mobileFullscreen={false}
+                footer={
+                    <div className="px-2 pb-2">
+                        <button
+                            onClick={handleConfirmDownload}
+                            className="w-full h-12.5 bg-[#703089] text-white rounded-[30px] hover:bg-[#5C2472] hover:shadow-[0_6px_6px_#5C247234] transition font-garet font-bold text-[14px]"
+                        >
+                            {viewType === 'viewport' ? 'Ir a seleccionar área' : `Descargar ${format.toUpperCase()}`}
+                        </button>
+                    </div>
+                }
             >
                 <div className="flex flex-col px-4 pb-4 gap-4">
 
@@ -137,7 +152,7 @@ const Download = ({ onOpenPreview }) => {
                                 key={fmt}
                                 onClick={() => setFormat(fmt)}
                                 className={`
-                                    px-3 py-1.5 text-sm rounded-[14px] border transition-colors 
+                                    px-3 py-1.5 text-sm rounded-[14px] border transition-colors
                                     ${format === fmt
                                 ? 'bg-[#FF8300] border-transparent text-white font-medium'
                                 : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
@@ -163,7 +178,7 @@ const Download = ({ onOpenPreview }) => {
                             <button
                                 onClick={() => setViewType('viewport')}
                                 className={`
-                                    px-3 py-2 text-sm rounded-[14px] border transition-colors text-left 
+                                    px-3 py-2 text-sm rounded-[14px] border transition-colors text-left
                                     ${viewType === 'viewport'
             ? 'bg-[#FF8300] border-transparent text-white font-medium'
             : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
@@ -176,7 +191,7 @@ const Download = ({ onOpenPreview }) => {
                             <button
                                 onClick={() => setViewType('full-state')}
                                 className={`
-                                    px-3 py-2 text-sm rounded-[14px] border transition-colors text-left 
+                                    px-3 py-2 text-sm rounded-[14px] border transition-colors text-left
                                     ${viewType === 'full-state'
             ? 'bg-[#703089] border-[#703089] text-white font-medium'
             : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
@@ -216,13 +231,6 @@ const Download = ({ onOpenPreview }) => {
                             </ScrollContainer>
                         </div>
                     )}
-
-                    <button
-                        onClick={handleConfirmDownload}
-                        className="w-full py-2 bg-[#703089] text-white rounded-[14px] hover:bg-[#5C2472] transition font-medium text-sm"
-                    >
-                        {viewType === 'viewport' ? 'Seleccionar Área' : `Descargar ${format.toUpperCase()}`}
-                    </button>
                 </div>
             </Panel>
         </div>

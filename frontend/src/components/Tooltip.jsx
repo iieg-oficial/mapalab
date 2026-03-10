@@ -39,12 +39,14 @@ const Tooltip = ({
     content,
     placement = 'top',
     delay = 300,
-    disabled = false,
+    disabled: disabledProp = false,
+    disableMobile = false,
     icon = null,
     variant = 'normal',
     showArrow = true,
     forceVisible = false
 }) => {
+    const disabled = disabledProp || (disableMobile && window.innerWidth < 768);
     const [isVisible, setIsVisible] = useState(false);
     const shown = isVisible || forceVisible;
     const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -264,7 +266,7 @@ const Tooltip = ({
                 ref={triggerRef}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                style={{ display: 'inline-block' }}
+                style={{ display: 'inline-flex' }}
             >
                 {children}
             </div>

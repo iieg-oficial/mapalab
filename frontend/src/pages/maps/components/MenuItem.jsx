@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import Panel from '@components/Panel';
-import MobileMenu from './MobileMenu';
+import MobileMenu, { MobileMenuCloseButton } from './MobileMenu';
 
 const MenuItem = ({ item, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -48,7 +48,10 @@ const MenuItem = ({ item, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => 
                     onClose={handleClose}
                     registerInSider={true}
                 >
-                    {item.menuContent({ close: handleClose })}
+                    {item.menuContent({
+                        close: handleClose,
+                        closeButton: <MobileMenuCloseButton onClick={handleClose} />
+                    })}
                 </MobileMenu>
             ) : (
                 <Panel

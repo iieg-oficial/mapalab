@@ -31,8 +31,7 @@ const ActiveLayerItem = ({
     const isSelected = selectedLayerForSymbology?.id === layer.id;
     const canOpenModal = layer.id !== 'curvas_de_nivel';
 
-    const handleClickOnLayer = (e) => {
-        e.stopPropagation();
+    const handleClickOnLayer = () => {
         setSelectedLayerForSymbology(layer);
     };
 
@@ -69,105 +68,122 @@ const ActiveLayerItem = ({
         return false;
     }, [loadingLayers, layer.id, layer.childIds]);
 
+    const actionButtons = (
+        <>
+            <Tooltip content={layer.visible ? 'Ocultar capa' : 'Mostrar capa'}>
+                <button
+                    className="p-1.5 rounded-full transition-colors cursor-pointer border border-transparent hover:border-[#70308A] bg-[#F9FBFF]"
+                    onClick={handleToggleVisibilityClick}
+                >
+                    <Icon
+                        name='visible'
+                        state={layer.visible ? 'normal' : 'hover'}
+                        className={SIZE_BUTTON}
+                    />
+                </button>
+            </Tooltip>
+
+            {dragHandleProps && (
+                <Tooltip content="Reordenar capa">
+                    <button
+                        {...dragHandleProps}
+                        className="cursor-grab active:cursor-grabbing p-1.5 rounded-full touch-none"
+                        onMouseDown={() => setIsMoveActive(true)}
+                        onMouseUp={() => setIsMoveActive(false)}
+                        onMouseLeave={() => setIsMoveActive(false)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (dragHandleProps.onClick) dragHandleProps.onClick(e);
+                        }}
+                    >
+                        <Icon name="move" state={isMoveActive ? 'hover' : 'normal'} className="size-8" />
+                    </button>
+                </Tooltip>
+            )}
+
+            {!isLoading && canOpenModal && (
+                <Tooltip content="Ver detalles de capa">
+                    <button
+                        className="p-1.5 rounded-full cursor-pointer border border-transparent hover:border-[#70308A] transition-colors bg-[#F9FBFF]"
+                        onClick={handleSetSelectedLayerClick}
+                        onMouseEnter={() => setIsCardHovered(true)}
+                        onMouseLeave={() => setIsCardHovered(false)}
+                    >
+                        <Icon name="big_card" state={isCardHovered ? 'hover' : 'normal'} className={SIZE_BUTTON} />
+                    </button>
+                </Tooltip>
+            )}
+
+            <Tooltip content="Eliminar capa">
+                <button
+                    className="p-1.5 rounded-full cursor-pointer border border-transparent hover:border-[#FF577D] transition-colors bg-[#F9FBFF]"
+                    onClick={handleRemoveClick}
+                    onMouseEnter={() => setIsDeleteHovered(true)}
+                    onMouseLeave={() => setIsDeleteHovered(false)}
+                >
+                    <Icon name="eliminar" state={isDeleteHovered ? 'hover' : 'normal'} className={SIZE_BUTTON} />
+                </button>
+            </Tooltip>
+        </>
+    );
+
     return (
         <div
             className={`
-                group flex items-center gap-3 px-2 py-4 rounded-[10px] border border-transparent hover:border-[#EAEFFA]
-                transition-all relative h-12 hover:shadow-sm
+                group rounded-[10px] border border-transparent hover:border-[#EAEFFA]
+                transition-all hover:shadow-sm cursor-pointer
                 ${layer.visible ? 'bg-white' : 'bg-[#EBEBEB]'}
                 ${isSelected ? 'ring-1 ring-[#70308A]' : ''}
             `}
+            onClick={handleClickOnLayer}
         >
-            {loopState && monthAbbr && (
-                <button
-                    onClick={(e) => { e.stopPropagation(); toggleLoop?.(layer.id); }}
-                    className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#F0EAF3] text-[#703089] text-[11px] font-garet font-medium shrink-0 hover:bg-[#E5DAE9] transition-colors"
-                >
-                    {isLooping ? (
-                        <svg width="10" height="10" viewBox="0 0 12 12">
-                            <rect x="1" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
-                            <rect x="7.5" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
-                        </svg>
-                    ) : (
-                        <svg width="10" height="10" viewBox="0 0 12 12">
-                            <path d="M2 1.5v9l8.5-4.5L2 1.5z" fill="currentColor" />
-                        </svg>
-                    )}
-                    {monthAbbr}
-                </button>
-            )}
+            <div className="flex items-center gap-3 px-2 py-4 h-12">
+                {loopState && monthAbbr && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); toggleLoop?.(layer.id); }}
+                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#F0EAF3] text-[#703089] text-[11px] font-garet font-medium shrink-0 hover:bg-[#E5DAE9] transition-colors"
+                    >
+                        {isLooping ? (
+                            <svg width="10" height="10" viewBox="0 0 12 12">
+                                <rect x="1" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
+                                <rect x="7.5" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
+                            </svg>
+                        ) : (
+                            <svg width="10" height="10" viewBox="0 0 12 12">
+                                <path d="M2 1.5v9l8.5-4.5L2 1.5z" fill="currentColor" />
+                            </svg>
+                        )}
+                        {monthAbbr}
+                    </button>
+                )}
 
-            {isLoading && !loopState && (
-                <div className="px-2 py-1 shrink-0">
-                    <Loading visible={true} size={SIZE_BUTTON} border="border-2" />
+                {isLoading && !loopState && (
+                    <div className="px-2 py-1 shrink-0">
+                        <Loading visible={true} size={SIZE_BUTTON} border="border-2" />
+                    </div>
+                )}
+
+                <div className="hidden md:group-hover:flex items-center gap-1 shrink-0">
+                    {actionButtons}
                 </div>
-            )}
 
-            <div className="hidden group-hover:flex items-center gap-1 shrink-0">
-                <Tooltip content={layer.visible ? 'Ocultar capa' : 'Mostrar capa'}>
-                    <button
-                        className="p-1.5 rounded-full transition-colors cursor-pointer border border-transparent hover:border-[#70308A] bg-[#F9FBFF]"
-                        onClick={handleToggleVisibilityClick}
-                    >
-                        <Icon
-                            name='visible'
-                            state={layer.visible ? 'normal' : 'hover'}
-                            className={SIZE_BUTTON}
-                        />
-                    </button>
-                </Tooltip>
-
-                {dragHandleProps && (
-                    <Tooltip content="Reordenar capa">
-                        <button
-                            {...dragHandleProps}
-                            className="cursor-grab active:cursor-grabbing p-1.5 rounded-full touch-none"
-                            onMouseDown={() => setIsMoveActive(true)}
-                            onMouseUp={() => setIsMoveActive(false)}
-                            onMouseLeave={() => setIsMoveActive(false)}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (dragHandleProps.onClick) dragHandleProps.onClick(e);
-                            }}
+                <div className="flex-1 min-w-0 overflow-hidden pr-2">
+                    <Tooltip content={layer.name} disableMobile>
+                        <span
+                            className="text-[14px]/[16px] font-garet font-medium block truncate"
                         >
-                            <Icon name="move" state={isMoveActive ? 'hover' : 'normal'} className="size-8" />
-                        </button>
+                            {layer.name}
+                        </span>
                     </Tooltip>
-                )}
+                </div>
 
-                {!isLoading && canOpenModal && (
-                    <Tooltip content="Ver detalles de capa">
-                        <button
-                            className="p-1.5 rounded-full cursor-pointer border border-transparent hover:border-[#70308A] transition-colors bg-[#F9FBFF]"
-                            onClick={handleSetSelectedLayerClick}
-                            onMouseEnter={() => setIsCardHovered(true)}
-                            onMouseLeave={() => setIsCardHovered(false)}
-                        >
-                            <Icon name="big_card" state={isCardHovered ? 'hover' : 'normal'} className={SIZE_BUTTON} />
-                        </button>
-                    </Tooltip>
-                )}
-
-                <Tooltip content="Eliminar capa">
-                    <button
-                        className="p-1.5 rounded-full cursor-pointer border border-transparent hover:border-[#FF577D] transition-colors bg-[#F9FBFF]"
-                        onClick={handleRemoveClick}
-                        onMouseEnter={() => setIsDeleteHovered(true)}
-                        onMouseLeave={() => setIsDeleteHovered(false)}
-                    >
-                        <Icon name="eliminar" state={isDeleteHovered ? 'hover' : 'normal'} className={SIZE_BUTTON} />
-                    </button>
-                </Tooltip>
             </div>
 
-            <Tooltip content={layer.name}>
-                <span
-                    className="text-[14px]/[16px] font-garet font-medium flex-1 min-w-0 truncate cursor-pointer"
-                    onClick={handleClickOnLayer}
-                >
-                    {layer.name}
-                </span>
-            </Tooltip>
+            {isSelected && (
+                <div className="md:hidden flex items-center gap-1 px-2 pb-2">
+                    {actionButtons}
+                </div>
+            )}
         </div>
     );
 };

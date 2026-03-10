@@ -14,8 +14,8 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, 
         const lon = searchParams.get('lon');
 
         return {
-            center: (lat && lon) ? fromLonLat([parseFloat(lon), parseFloat(lat)]) : fromLonLat([-103.8, 20.85]),
-            zoom: zoom ? parseFloat(zoom) : 8.3
+            center: (lat && lon) ? fromLonLat([parseFloat(lon), parseFloat(lat)]) : fromLonLat(window.innerWidth < 768 ? [-103.6, 20.6] : [-103.8, 20.85]),
+            zoom: zoom ? parseFloat(zoom) : (window.innerWidth < 768 ? 7 : 8.3)
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -45,7 +45,7 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, 
             view: new View({
                 center: initialViewParams.center,
                 zoom: initialViewParams.zoom,
-                minZoom: 8,
+                minZoom: window.innerWidth < 768 ? 7 : 8,
                 maxZoom: 18,
                 projection: 'EPSG:3857'
             }),

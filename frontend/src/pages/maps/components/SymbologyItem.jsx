@@ -56,26 +56,24 @@ const SymbologyItem = ({
 
             {internalExpanded && (
                 <div className="px-2 pb-2">
-                    {hasLayerLegend && legendUrl && (
-                        <div className="min-h-[40px]">
-                            <img
-                                src={legendUrl}
-                                alt={`Leyenda de ${layer.label}`}
-                                className="max-w-full h-auto"
-                                fetchPriority={priority ? 'high' : 'auto'}
-                                onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    e.target.nextSibling.style.display = 'block';
-                                }}
-                            />
-                            <div style={{ display: 'none' }} className="font-garet font-medium text-[#EA4335] text-[13px]/[19px] p-2 text-center">
-                                <span className="inline-flex items-center justify-center gap-1">
-                                    <Icon name="alert" className="size-4" />
-                                    Error cargando leyenda
-                                </span>
-                            </div>
+                    {hasLayerLegend && legendUrl && <>
+                        <img
+                            src={legendUrl}
+                            alt={`Leyenda de ${layer.label}`}
+                            className="max-w-full h-auto"
+                            fetchPriority={priority ? 'high' : 'auto'}
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                            }}
+                        />
+                        <div style={{ display: 'none' }} className="font-garet font-medium text-[#EA4335] text-[13px]/[19px] p-2 text-center">
+                            <span className="inline-flex items-center justify-center gap-1">
+                                <Icon name="alert" className="size-4" />
+                                Error cargando leyenda
+                            </span>
                         </div>
-                    )}
+                    </>}
                 </div>
             )}
         </>

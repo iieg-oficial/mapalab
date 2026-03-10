@@ -47,7 +47,7 @@ export const educacionLayers = {
                     children: NIVELES.map(([id, label, nivel, tags]) => ({
                         id,
                         label,
-                        wmsConfig: createEducacionLayer.withFilter('gold_centros_educativos_mapalab', `nivel_educativo ILIKE '${nivel}'`),
+                        wmsConfig: createEducacionLayer.withFilter('centros_educativos', `nivel_educativo ILIKE '${nivel}'`),
                         littleCard: escuelasConfig,
                         searchMeta: { tags }
                     }))

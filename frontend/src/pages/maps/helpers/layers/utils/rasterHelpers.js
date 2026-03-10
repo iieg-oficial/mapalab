@@ -1,6 +1,6 @@
 import { MONTHS } from '../../dateFilterHelpers';
 
-export const RASTER_YEAR = new Date().getFullYear();
+export const RASTER_YEAR = 2025;
 
 export const RASTER_TAGS = [
     'recursos',

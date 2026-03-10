@@ -13,8 +13,10 @@ import { useInitializeFromUrl } from './hooks/useInitializeFromUrl';
 import { useUrlSync } from './hooks/useUrlSync';
 import { SiderProvider } from '@contexts/SiderContext';
 import { ZenModeProvider } from './components/ZenMode';
+import useThemeColor from '@hooks/useThemeColor';
 
 const Maps = () => {
+    useThemeColor('#ffffff');
     useInitializeFromUrl();
     useUrlSync();
 
@@ -27,7 +29,7 @@ const Maps = () => {
                     path="mapa"
                     schemaType="WebApplication"
                 />
-                <div className="relative w-full h-screen">
+                <div className="relative w-full h-dvh">
                     <MapSider />
                     <MapToolsPanel />
                     <MapLayersPanels />
