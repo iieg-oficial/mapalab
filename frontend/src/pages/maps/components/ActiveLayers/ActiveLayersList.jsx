@@ -1,4 +1,4 @@
-import { useContext, useCallback, useMemo } from 'react';
+import { useContext, useCallback, useMemo, useEffect } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useActiveLayersLogic } from '../../hooks/useActiveLayersLogic';
 import { useLayerCollapse } from './hooks/useLayerCollapse';
@@ -10,7 +10,7 @@ import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
 import ScrollContainer from '@components/ScrollContainer';
 
-const ActiveLayersList = () => {
+const ActiveLayersList = ({ onCollapseChange }) => {
     const {
         activeLayerIds,
         onToggleLayer,
@@ -20,6 +20,7 @@ const ActiveLayersList = () => {
 
     const { unifiedLayers } = useActiveLayersLogic(activeLayerIds, hiddenLayerIds);
     const collapse = useLayerCollapse(unifiedLayers);
+    useEffect(() => { onCollapseChange?.(collapse.isCollapsed); }, [collapse.isCollapsed, onCollapseChange]);
     const { handleDragEnd } = useLayerSorting(activeLayerIds, unifiedLayers, reorderActiveLayerIds);
     const sortableItems = useMemo(() => unifiedLayers.map(l => l.id), [unifiedLayers]);
     const isInegiMode = activeLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id));
@@ -36,7 +37,7 @@ const ActiveLayersList = () => {
 
     if (collapse.isCollapsed) {
         return (
-            <div className={`w-auto h-15 flex items-center justify-end`}>
+            <div className={`w-auto flex items-center justify-end pt-1 pl-1`}>
                 <Tooltip content={unifiedLayers.length > 0 ? 'Expandir capas activas' : 'No hay capas activas'}>
                     <button
                         onClick={() => (unifiedLayers.length > 0 || collapse.isManuallyCollapsed) && collapse.handleExpand()}
@@ -52,7 +53,7 @@ const ActiveLayersList = () => {
     }
 
     return (
-        <div className="w-auto px-4.5 pb-6 pt-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] max-h-[45vh] flex flex-col">
+        <div className="w-auto px-4.5 pb-6 pt-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] flex-1 min-h-0 flex flex-col">
             <div className="flex items-center justify-between shrink-0 mb-2">
                 <div className="flex items-center gap-3">
                     <Icon name="capa_activa" className="size-8" />

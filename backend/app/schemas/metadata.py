@@ -32,9 +32,14 @@ class LayerResponse(BaseModel):
 class PeriodicityRespose(BaseModel):
     periodicity: Optional[dict[str, dict[int, list[int]]]] = Field(default=None)
 
+class MetadatoItem(BaseModel):
+    nombre: str
+    enlace: str
+
 class MetadataResponse(PeriodicityRespose, LayerResponse):
     numeralia: Optional[list] = Field(default = None)
     nombre_pie_numeralia : Optional[str] = Field(default = None)
+    metadato: Optional[list[MetadatoItem]] = Field(default = None)
 
 class LayerSourceResponse(BaseModel):
     nombre_capa_geoserver: str

@@ -19,7 +19,9 @@ export const useFloatingPosition = ({ open, anchorRef, contentRef, placement = '
             const top = anchor.bottom + offset;
             const maxTop = window.innerHeight - el.offsetHeight - 8;
             el.style.top = Math.max(8, Math.min(top, maxTop)) + 'px';
-            el.style.left = '';
+            el.style.left = '1rem';
+            el.style.right = '1rem';
+            el.style.width = 'auto';
             return;
         }
 
@@ -42,6 +44,8 @@ export const useFloatingPosition = ({ open, anchorRef, contentRef, placement = '
 
         el.style.top = Math.max(8, Math.min(top, maxTop)) + 'px';
         el.style.left = Math.max(8, Math.min(left, maxLeft)) + 'px';
+        el.style.right = '';
+        el.style.width = '';
     }, [anchorRef, contentRef, placement, offset, isMobile]);
 
     useLayoutEffect(() => {

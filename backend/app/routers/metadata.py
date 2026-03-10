@@ -7,6 +7,7 @@ from app.services import GeoServerService
 from app.services.periodicity import get_periodicity
 from app.schemas import (MetadataResponse, LayerResponse, LayerSourceResponse)
 from app.utils.api_responses import api_responses
+from app.config import settings
 from app.utils.logger import Logger
 from app.utils.clean import NanToNone
 
@@ -72,11 +73,24 @@ def get_metadata(
         layer_data = LayerResponse.model_validate(record).model_dump()
         transformed_layer_data = {key: NanToNone(value) for key, value in layer_data.items()}
         pie_numeralia = NanToNone(record.nombre_pie_numeralia)
+
+        metadato = []
+        metadato_txt = NanToNone(record.metadato_txt)
+        metadato_xlsx = NanToNone(record.metadato_xlsx)
+        acervo_base = settings.ACERVO_PUBLIC_URL.rstrip("/") if settings.ACERVO_PUBLIC_URL else ""
+        if metadato_txt:
+            enlace = f"{acervo_base}/{metadato_txt.lstrip('/')}" if acervo_base else metadato_txt
+            metadato.append({"nombre": "Metadato TXT", "enlace": enlace})
+        if metadato_xlsx:
+            enlace = f"{acervo_base}/{metadato_xlsx.lstrip('/')}" if acervo_base else metadato_xlsx
+            metadato.append({"nombre": "Metadato XLSX", "enlace": enlace})
+
         item = MetadataResponse(
             **transformed_layer_data,
             periodicity=periodicity,
             numeralia=numeralia,
-            nombre_pie_numeralia= pie_numeralia
+            nombre_pie_numeralia=pie_numeralia,
+            metadato=metadato or None
             )
         metadata_list.append(item)
 

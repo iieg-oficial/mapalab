@@ -7,6 +7,7 @@ import ExportPreview from './MapExport/ExportPreview';
 
 const MapToolsPanel = () => {
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [previewFormat, setPreviewFormat] = useState('png');
     const [previewLegends, setPreviewLegends] = useState([]);
     const [previewTitle, setPreviewTitle] = useState('');
@@ -24,18 +25,20 @@ const MapToolsPanel = () => {
         setIsPreviewOpen(false);
     };
 
+    const isAnyPanelOpen = isDownloadOpen || isPreviewOpen;
+
     return (
         <>
             <Panel
                 variant="floating"
-                position="top-3 right-3 z-11"
+                position={`top-4 right-4 z-11 ${isAnyPanelOpen ? 'max-md:z-[60]' : 'max-md:z-21'}`}
                 width="w-auto md:w-[373px]"
                 flexDirection="flex-row items-center"
                 className="rounded-[14px] shadow-[0_5px_20px_#1A26641A]"
                 contentClassName="gap-2 px-2 py-3"
                 bg="bg-white"
             >
-                <Download onOpenPreview={handleOpenPreview} />
+                <Download onOpenPreview={handleOpenPreview} onOpenChange={setIsDownloadOpen} />
                 <ShareButton />
                 <InfoModal />
             </Panel>

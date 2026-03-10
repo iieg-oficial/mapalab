@@ -1,7 +1,7 @@
 import { createLayerFactory } from '../utils/layerFactory';
 import { cardTemplates, createMunicipioConfig } from '../../../components/InfoBox/utils/cardTemplates';
 
-const SALUD_LAYER = 'gold_unidades_salud_mapalab';
+const SALUD_LAYER = 'unidades_salud';
 
 const createSaludLayer = createLayerFactory('salud');
 const createDesarrolloSocialLayer = createLayerFactory('desarrollo');

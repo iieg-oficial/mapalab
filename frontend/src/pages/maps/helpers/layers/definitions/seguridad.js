@@ -3,6 +3,8 @@ import { createMunicipioConfig } from '../../../components/InfoBox/utils/cardTem
 
 const createSeguridadLayer = createLayerFactory('seguridad');
 
+const TASA_DEFAULT_DATE = 'latest';
+
 const TASA_STATS_HOMICIDIO = [
     { label: 'Tasa', field: 'tasa_carpetas_investigacion' },
     { label: 'Carpetas de investigación', field: 'carpetas_investigacion' },
@@ -131,7 +133,7 @@ const DELITOS_FAMILIA = [
 
 const DELITOS_PATRIMONIO = [
     ['robos_coche_cuatro_ruedas', 'Robo de coche a cuatro ruedas', 'delitos_fiscalia_robo_vehiculos_particulares', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
-    ['robos_transportistas', 'Robo de transportistas', 'delitos_fiscalia_robo_transportistas', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
+    ['robos_vehiculos_carga_pesada', 'Robo a vehículos de carga pesada', 'delitos_fiscalia_robo_carga_pesada', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
     ['robos_motocicleta', 'Robo de motocicleta', 'delitos_fiscalia_robo_motocicleta', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
     ['robos_personas', 'Robo a personas', 'delitos_fiscalia_robo_persona', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
     ['robos_casa_habitacion', 'Robo a casa habitacion', 'delitos_fiscalia_robo_casa_habitacion', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
@@ -240,6 +242,7 @@ export const seguridadLayers = {
                     children: TASAS_DELITOS_FUERO.map(([id, label, layerName, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
+                        defaultDate: TASA_DEFAULT_DATE,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -250,6 +253,7 @@ export const seguridadLayers = {
                     children: TASA_DELITOS_LIBERTAD.map(([id, label, layerName, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
+                        defaultDate: TASA_DEFAULT_DATE,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -260,6 +264,7 @@ export const seguridadLayers = {
                     children: TASA_DELITOS_FAMILIA.map(([id, label, layerName, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
+                        defaultDate: TASA_DEFAULT_DATE,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -270,6 +275,7 @@ export const seguridadLayers = {
                     children: TASA_DELITOS_PATRIMONIO.map(([id, label, layerName, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
+                        defaultDate: TASA_DEFAULT_DATE,
                         littleCard,
                         searchMeta: { tags }
                     }))

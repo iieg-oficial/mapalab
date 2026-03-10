@@ -23,11 +23,11 @@ const ExternalLink = ({ href, label }) => {
     );
 };
 
-const LayerInfoSections = ({ metadata }) => {
+const LayerInfoSections = ({ metadata, layerName }) => {
     if (!metadata) return null;
 
     return (
-        <>
+        <div className="flex flex-col gap-4">
             {(metadata.fuentes_texto_largo || metadata.fuentes_enlace) && (
                 <InfoSection title="Fuente">
                     {metadata.fuentes_texto_largo && <TextBlock text={metadata.fuentes_texto_largo} />}
@@ -40,16 +40,35 @@ const LayerInfoSections = ({ metadata }) => {
                     <ExternalLink href={metadata.metodologia_archivo_enlace} label="Ver documento" />
                 </InfoSection>
             )}
+            {(metadata.texto_leyenda_juridico || metadata.tipo_mapa) && (
+                <InfoSection title="Referencia cartográfica">
+                    {metadata.texto_leyenda_juridico && <TextBlock text={metadata.texto_leyenda_juridico} />}
+                    {metadata.tipo_mapa && (
+                        <div className="flex flex-col gap-2 mt-1">
+                            <span className="text-[12px]/[18px] font-garet font-medium text-[#454545]">
+                                <span className="font-garet font-bold">Tipo de mapa:</span> {metadata.tipo_mapa}
+                            </span>
+                            <ExternalLink href={metadata.tipo_mapa_enlace} label="Ver documento" />
+                        </div>
+                    )}
+                </InfoSection>
+            )}
             {metadata.metadato?.length > 0 && (
                 <InfoSection title="Metadato">
                     <div className="flex flex-col gap-1">
-                        {metadata.metadato.map((doc, index) => (
-                            <ExternalLink key={index} href={doc.enlace} label={doc.nombre} />
-                        ))}
+                        {metadata.metadato.map((doc, index) => {
+                            const extensionMatch = doc.enlace?.match(/\.([a-zA-Z0-9]+)(?:[?#]|$)/);
+                            const extension = extensionMatch ? `.${extensionMatch[1]}` : '';
+                            const nameWithExt = layerName ? `${layerName}${extension}` : doc.nombre;
+                            
+                            return (
+                                <ExternalLink key={index} href={doc.enlace} label={nameWithExt} />
+                            );
+                        })}
                     </div>
                 </InfoSection>
             )}
-        </>
+        </div>
     );
 };
 

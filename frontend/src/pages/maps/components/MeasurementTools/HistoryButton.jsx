@@ -20,13 +20,13 @@ const HistoryButton = ({
                 type='button'
                 onClick={onClick}
                 className={[
-                    'relative flex items-center justify-center p-1 rounded-full border border-transparent transition-all',
+                    'relative size-12.5 flex items-center justify-center rounded-full border border-transparent transition-all',
                     isOpen ? 'bg-[#703089]' : 'bg-[#EAEFFA] hover:border-[#703089] active:bg-[#5C2472]',
                     className
                 ].join(' ')}
                 aria-label={`Ver lista de mediciones (${count})`}
             >
-                <Icon name='lista' state={iconState} className='size-7.5' />
+                <Icon name='lista' state={iconState} className='size-10' />
                 <Badge visible={!isOpen} count={count} className='absolute -top-1 -right-1' />
             </button>
         </Tooltip>

@@ -4,15 +4,18 @@ import { useMapsContext } from '@hooks/useMaps';
 import Icon from '@components/Icon';
 import { trackBasemapChange } from '@services/analyticsService';
 
-const BaseMapList = () => {
+const BaseMapList = ({ closeButton }) => {
     const { baseMapId, setBaseMapId, basemaps } = useMapsContext();
     const [hoveredId, setHoveredId] = useState(null);
 
     return (
         <div className="py-6 px-4">
-            <label className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
-                Mapas Base
-            </label>
+            <div className="flex items-center justify-between">
+                <label className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
+                    Mapas Base
+                </label>
+                {closeButton}
+            </div>
             <div className="grid grid-cols-2 gap-4">
                 {BASEMAP_ORDER.map(id => {
                     const active = baseMapId === id;

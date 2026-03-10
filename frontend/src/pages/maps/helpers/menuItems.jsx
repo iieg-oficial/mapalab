@@ -53,7 +53,7 @@ export const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, togg
         id: 'search',
         hasMenu: true,
         tooltip: 'Buscador por capas',
-        menuContent: () => <SearchMenu onToggleLayer={onToggleLayer} activeLayerIds={activeLayerIds} />,
+        menuContent: ({ closeButton } = {}) => <SearchMenu onToggleLayer={onToggleLayer} activeLayerIds={activeLayerIds} closeButton={closeButton} />,
         renderComponent: ({ isMenuOpen }) => (
             <MenuButton
                 icon="search"
@@ -78,7 +78,7 @@ export const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, togg
         id: 'basemaps',
         hasMenu: true,
         tooltip: 'Mapas Base',
-        menuContent: () => <BaseMapList />,
+        menuContent: ({ closeButton } = {}) => <BaseMapList closeButton={closeButton} />,
         renderComponent: ({ isMenuOpen }) => (
             <MenuButton
                 icon="basemaps"
@@ -117,11 +117,12 @@ export const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer }
             hasMenu: true,
             icon: 'layers',
             tooltip: category.label,
-            menuContent: () => (
+            menuContent: ({ closeButton } = {}) => (
                 <ThemeMenu
                     theme={category}
                     activeLayerIds={activeLayerIds}
                     onToggleLayer={onToggleLayer}
+                    closeButton={closeButton}
                 />
             ),
             renderComponent: ({ isMenuOpen }) => (

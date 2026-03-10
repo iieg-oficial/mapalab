@@ -262,6 +262,12 @@ make prod
 make down
 ```
 
+## Documentación
+
+| Documento | Descripción |
+|-----------|-------------|
+| [Periodicidad](docs/periodicidad.md) | Sistema de filtrado temporal: periodicidad vectorial (CQL), raster (TIME), `defaultDate`, selectores de fecha y loop de animación |
+
 ## Notas Importantes
 
 ### Base de Datos
