@@ -15,9 +15,11 @@ const Body = ({ isModal = false }) => {
     const [scrollLeft, setScrollLeft] = useState(0);
     const [expandedSection, setExpandedSection] = useState(null);
     const [expandedFaq, setExpandedFaq] = useState({});
+    const [activeBtn, setActiveBtn] = useState(0); 
 
     const toggleSection = (id) => {
         setExpandedSection(expandedSection === id ? null : id);
+        setActiveBtn(!activeBtn);
     };
 
     const toggleFaq = (sectionId, index) => {
@@ -63,16 +65,17 @@ const Body = ({ isModal = false }) => {
                         p-3 md:p-5 lg:p-10 flex flex-col shadow-[0px_3px_21px_#ACBFE56C] gap-y-3
                     '
                 >
-                    <SearchBar className="relative mx-auto" />
-                    <span className='block font-garet font-normal text-[#5C2472] text-[19px] md:text-[19px]/[64px] tracking-normal text-center'>
+                    <span className='block font-garet font-normal text-numeralia text-[18px] mt-4 lg:mt-0 mb-4 2xl:leading-16 tracking-normal text-center'>
                         Puedes buscar por palabra clave o seleccionar una de las temáticas disponibles para navegar en el mapa
                     </span>
+                    <SearchBar className="relative mx-auto mb-2" />
+                    
                     <Card topics={topicsConfig.topics} />
                 </div>
             )}
             <div className="my-9 mx-4 flex flex-col justify-center items-center">
                 <TitleAndNote title={guideConfig.title} description={guideConfig.note} />
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-10 lg:gap-x-16 2xl:gap-x-36 2xl:gap-y-14 md:mx-10 mt-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 lg:gap-x-16 2xl:gap-x-36 2xl:gap-y-14 md:mx-10 mt-8">
                     {guideConfig.steps.map((item) => (
                         <div
                             key={item.id}
@@ -85,9 +88,9 @@ const Body = ({ isModal = false }) => {
                                 loading="lazy"
                             />
                             <div className="flex flex-col justify-start items-center text-center">
-                                <h2 className="blockfont-garet font-bold text-[#FF8300] text-[16px]/[64px] tracking-normal">
+                                <h3 className="blockfont-garet font-bold text-orange text-[16px] xl:leading-16 tracking-normal mb-5 mt-3 xl:mb-0 xl:mt-0">
                                     {item.header}
-                                </h2>
+                                </h3>
                                 <p className="font-garet font-book text-[#2E4372] text-[14px]/[24px] tracking-normal min-h-[93px]">
                                     {item.label}
                                 </p>
@@ -109,37 +112,30 @@ const Body = ({ isModal = false }) => {
                         mt-8 px-4 md:px-10 scrollbar-thin scrollbar-hidden cursor-grab select-none
                     "
                 >
+                    
                     {selectConfig.options.map((item) => (
                         <div
                             key={item.id}
-                            className="relative flex-shrink-0 snap-start rounded-[40px] overflow-hidden h-[560px] w-[calc(95%-24px)] max-w-[1422px]"
+                            className="relative flex-shrink-0 snap-start rounded-[40px] overflow-hidden h-auto pb-10 xl:h-[575px] w-full md:w-[calc(95%-24px)] max-w-[1422px]"
                             style={{ backgroundColor: item.color }}
                         >
-                            <div
-                                className="absolute inset-0 xl:hidden"
-                                style={{
-                                    background: `linear-gradient(180deg, ${item.color}E6 0%, ${item.color}E6 100%), url(${item.image})`,
-                                    backgroundSize: 'cover',
-                                    backgroundPosition: 'center',
-                                    backgroundRepeat: 'no-repeat'
-                                }}
-                            />
+                            
                             <div
                                 className="
-                                    relative z-10 flex flex-col xl:flex-row justify-center xl:justify-start 
-                                    items-center xl:items-start h-full px-4 md:px-10 xl:px-0 xl:pt-[85px]
+                                    relative z-10 grid grid-cols-1 xl:flex xl:flex-row justify-center xl:justify-start 
+                                    items-center px-4 md:px-10 xl:px-0 xl:pt-[85px] min-h-[305px] h-auto
                                 "
                             >
                                 <img
                                     src={item.image}
                                     alt=""
-                                    className="hidden xl:block xl:max-w-[506px] xl:max-h-[389px] object-cover xl:ml-[33px]"
+                                    className="mx-auto my-5 w-1/2 block lg:w-2/5 xl:max-w-[506px] xl:max-h-[389px] object-cover xl:ml-[33px]"
                                     loading="lazy"
                                 />
-                                <div className="w-full flex flex-col justify-center xl:justify-start mx-4 2xl:mr-[188px]">
+                                <div className="w-full flex flex-col justify-center xl:justify-start 2xl:mr-[188px]">
                                     <h3
                                         className="
-                                            font-garet font-bold text-[#5C2472] text-[24px] md:text-[36px]/[50px] tracking-normal 
+                                            font-garet font-bold text-purple text-[24px] md:text-[36px]/[50px] tracking-normal 
                                             text-center lg:text-left w-full max-w-[550px] mb-10
                                         "
                                     >
@@ -147,7 +143,7 @@ const Body = ({ isModal = false }) => {
                                     </h3>
                                     <p
                                         className="
-                                            font-garet font-book text-[#5C2472] text-[16px] md:text-[18px]/[36px] tracking-normal 
+                                            font-garet font-book text-purple text-[16px] md:text-[18px]/[36px] tracking-normal 
                                             text-center lg:text-justify xl:text-left w-full xl:max-w-[653px] whitespace-pre-line
                                         "
                                     >
@@ -165,12 +161,12 @@ const Body = ({ isModal = false }) => {
                         key={item.id}
                         onClick={() => toggleSection(item.id)}
                         className={`
-                            group relative bg-[#F3EBFF] flex items-center justify-center md:justify-end rounded-[50px]
-                            w-full max-w-[522px] h-[110px] transition-all border border-transparent pl-18 md:pl-0 md:pr-22 mx-4
-s                            ${expandedSection === item.id ? 'border-[#5C2472]' : 'hover:border-[#5C2472]'} cursor-pointer
+                            ${activeBtn ? 'bg-purple active' : ''} group relative bg-[#F3EBFF] flex flex-col sm:flex-row items-center justify-center md:justify-end rounded-[50px]
+                            w-full max-w-[522px] h-[150px] sm:h-[110px] transition-all border border-transparent md:pl-0 pl-0 md:pr-22 py-5 md:py-0 mx-4
+s                            ${expandedSection === item.id ? 'border-purple' : 'hover:border-purple'} cursor-pointer 
                         `}
                     >
-                        <div className="absolute left-4 md:left-[43px] flex items-center justify-center bg-white rounded-full p-4 size-[74px]">
+                        <div className="sm:absolute left-4 md:left-[43px] flex items-center justify-center bg-white rounded-full p-4 size-[74px] group-hover:bg-[#E3CAF2] group-active:bg-[#E3CAF2]">
                             <img
                                 src={item.icon}
                                 alt=""
@@ -184,16 +180,14 @@ s                            ${expandedSection === item.id ? 'border-[#5C2472]' 
                                 loading="lazy"
                             />
                         </div>
-                        <h2 className="font-garet font-medium text-[#8936AB] text-[24px]/[28px] tracking-normal">
+                        <h2 className={`font-garet font-medium ${activeBtn ? 'text-white' : 'text-[#8936AB]'} text-[24px]/[28px] tracking-normal pt-4 sm:pt-0`}>
                             {item.label}
                         </h2>
                     </button>
                 ))}
             </div>
+
             <div className={`w-full flex flex-col items-center justify-center px-2 bg-[#F9FBFF] ${expandedSection === 1 ? 'block' : 'hidden'}`}>
-                <h2 className="font-garet font-bold text-[#5C2472] text-[34px]/[64px] tracking-normal my-4 md:my-10">
-                    Preguntas frecuentes
-                </h2>
                 {suportConfig.sections.map((item) => (
                     <div key={item.id} className="w-full max-w-[1330px] bg-transparent mb-4 lg:mb-20">
                         {item.content.map((contentItem, index) => {
@@ -215,7 +209,7 @@ s                            ${expandedSection === item.id ? 'border-[#5C2472]' 
                                             className={`w-5 h-2 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
                                         />
                                     </div>
-                                    <div className={`w-full max-w-[1152px] mt-5 ${isExpanded ? 'block' : 'hidden'}`}>
+                                    <div className={`w-full max-w-6xl mt-5 ${isExpanded ? 'block' : 'hidden'}`}>
                                         <p className="font-garet font-regular text-[#2E4372] text-[18px]/[26px] tracking-normal text-left">
                                             {contentItem.answer || contentItem.description}
                                         </p>
@@ -226,6 +220,8 @@ s                            ${expandedSection === item.id ? 'border-[#5C2472]' 
                     </div>
                 ))}
             </div>
+
+
         </div>
     );
 };
