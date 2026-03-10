@@ -82,7 +82,7 @@ const ToolSelector = ({
         return (
             <button
                 className={[
-                    'flex items-center justify-center transition-all rounded-full border border-transparent p-1',
+                    'size-12.5 flex items-center justify-center transition-all rounded-full border border-transparent',
                     isActive ? 'bg-[#703089] text-white' : 'bg-[#EAEFFA] text-[#703089] hover:border-[#5C2472]'
                 ].join(' ')}
                 aria-pressed={isActive}
@@ -93,7 +93,7 @@ const ToolSelector = ({
                 onTouchCancel={isEmoji ? handleTouchEnd : undefined}
                 {...props}
             >
-                <Icon name={type.icon} state={iconState} className="w-7.5 h-7.5" />
+                <Icon name={type.icon} state={iconState} className="size-10" />
             </button>
         );
     };

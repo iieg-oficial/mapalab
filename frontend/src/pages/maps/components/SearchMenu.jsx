@@ -9,7 +9,7 @@ import Loading from '@components/Loading';
 import ScrollContainer from '@components/ScrollContainer';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
-const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
+const SearchMenu = ({ onToggleLayer, activeLayerIds = [], closeButton }) => {
     const { initialSearchQuery, consumeInitialQuery } = useSearch();
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedQuery = useDebounce(searchQuery, 500);
@@ -66,9 +66,12 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [] }) => {
 
     return (
         <div className={`pt-6 ${selectedLayers.length > 0 ? 'pb-2' : 'pb-6'} px-4 w-full ${HIDDEN_SCROLLBAR}`}>
-            <label className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
-                Buscador
-            </label>
+            <div className="flex items-center justify-between">
+                <label className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
+                    Buscador
+                </label>
+                {closeButton}
+            </div>
             <div className="relative">
                 <input
                     type="text"

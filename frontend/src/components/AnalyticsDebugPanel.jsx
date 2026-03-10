@@ -9,7 +9,7 @@ const AnalyticsDebugPanel = () => {
 
     useEffect(() => debugStore.subscribe(setEvents), []);
 
-    if (!isDev) return null;
+    if (!isDev || window.innerWidth < 768) return null;
 
     return (
         <div className="fixed bottom-4 left-4 z-[9999] font-mono text-xs select-none">
