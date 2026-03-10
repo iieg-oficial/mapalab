@@ -143,7 +143,7 @@ const LayerDetailModal = () => {
                                                     onClick={handleDownloadClick}
                                                     disabled={cooldown}
                                                     className={`
-                                                        min-w-[180px] px-10 text-[14px]/[47px] text-white rounded-[30px]
+                                                        w-auto md:min-w-[180px] px-10 text-[14px]/[47px] text-white rounded-[30px]
                                                         transition-colors h-12.5 font-bold font-garet
                                                         disabled:opacity-60 disabled:cursor-wait
                                                         bg-[#703089] hover:bg-[#5C2472] hover:shadow-[0px_6px_6px_#5C247234]
@@ -182,7 +182,7 @@ const LayerDetailModal = () => {
                                 </h3>
 
                                 {(metadata?.frecuencia_actualizacion || metadata?.fecha_ultima_actualizacion) && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 sm:gap-6 mb-3">
                                         <InfoCard
                                             label="Frecuencia de actualización"
                                             value={metadata.frecuencia_actualizacion}
