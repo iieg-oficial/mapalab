@@ -41,9 +41,9 @@ const SymbologyPanel = ({ onCollapseChange }) => {
                         className={`
                             size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors
                             ${(hasLayer || isManuallyCollapsed)
-                                ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer'
-                                : 'cursor-default opacity-50'
-                            }
+                ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer'
+                : 'cursor-default opacity-50'
+            }
                         `}
                         disabled={!hasLayer && !isManuallyCollapsed}
                     >
