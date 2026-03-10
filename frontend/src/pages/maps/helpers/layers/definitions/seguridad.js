@@ -128,7 +128,7 @@ const DELITOS_LIBERTAD = [
 ];
 
 const DELITOS_FAMILIA = [
-    ['violencia_familiar', 'Violencia familiar', 'delitos_fiscalia_violencia_familiar', ['seguridad', 'delito', 'violencia', 'familiar', 'tasa', 'domestica']],
+    ['violencia_familiar', 'Violencia familiar', 'delitos_fiscalia_violencia_familiar', ['seguridad', 'delito', 'violencia', 'familiar', 'tasa', 'domestica'], { year: 2025, month: 12 }],
 ];
 
 const DELITOS_PATRIMONIO = [
@@ -261,10 +261,10 @@ export const seguridadLayers = {
                     id: 'tasa-familia',
                     label: 'Delitos contra la familia',
                     isLabel: true,
-                    children: TASA_DELITOS_FAMILIA.map(([id, label, layerName, tags, littleCard]) => ({
+                    children: TASA_DELITOS_FAMILIA.map(([id, label, layerName, tags, littleCard, defaultDate]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
-                        defaultDate: TASA_DEFAULT_DATE,
+                        defaultDate: defaultDate,
                         littleCard,
                         searchMeta: { tags }
                     }))
