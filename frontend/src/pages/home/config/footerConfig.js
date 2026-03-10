@@ -16,15 +16,15 @@ const footerConfig = {
             name: 'IIEG',
             src: logoIiegLargeDark,
             link: 'https://iieg.gob.mx/ns/ ',
-            width: '210px',
-            height: '64px'
+            width: '230px',
+            height: '80px'
         }, {
             id: 3,
             name: 'Jalisco',
             src: logoJaliscoLargeDark,
             link: 'https://www.jalisco.gob.mx/inicio',
-            width: '226px',
-            height: '77px'
+            width: '230px',
+            height: '80px'
         }
     ],
     copyright: `Instituto de Información Estadística y Geográfica de Jalisco © ${new Date().getFullYear()}`,
