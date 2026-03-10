@@ -14,7 +14,7 @@ const MapLayersPanels = () => {
     return (
         <Panel
             variant="floating"
-            position={`top-27 right-4 z-10 ${allCollapsed ? 'max-md:z-9' : 'max-md:z-20'}`}
+            position={`top-27 right-4 z-10 ${allCollapsed ? 'max-md:z-9' : 'max-md:z-[23]'}`}
             width="w-[373px] max-md:w-[calc(100vw-2rem)]"
             maxHeight="max-h-[calc(100vh-7.5rem)] max-md:max-h-[calc(100dvh-8rem)]"
             flexDirection="flex-col"
