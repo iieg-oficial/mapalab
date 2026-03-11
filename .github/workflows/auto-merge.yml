@@ -1,0 +1,43 @@
+name: Auto Merge to Production
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci || npm install --legacy-peer-deps
+      - name: Lint
+        working-directory: ./frontend
+        run: npm run lint
+      - name: Test
+        working-directory: ./frontend
+        run: npm run test -- --run
+
+  merge:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge develop into production
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout production
+          git merge origin/develop --no-ff -m "chore: auto-merge develop into production"
+          git push origin production
