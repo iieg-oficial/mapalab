@@ -220,6 +220,7 @@ docker compose up -d
 | Comando | Descripción |
 |---------|-------------|
 | `make prod` | Levantar en modo producción (Nginx + Backend) |
+| `make deploy` | Rebuild y restart de servicios (usado por CD) |
 | `make build-prod` | Solo construir imágenes de producción |
 | `make logs-prod` | Ver logs de producción |
 | `make logs-nginx` | Ver logs solo de nginx |
@@ -267,6 +268,20 @@ make down
 | Documento | Descripción |
 |-----------|-------------|
 | [Periodicidad](docs/periodicidad.md) | Sistema de filtrado temporal: periodicidad vectorial (CQL), raster (TIME), `defaultDate`, selectores de fecha y loop de animación |
+| [CI/CD](docs/ci-cd.md) | Pipeline de integracion y despliegue continuo con GitHub Actions, deploy SSH, health check y notificaciones Discord |
+| [Roadmap](docs/roadmap.md) | Timeline del proyecto, versiones, features planeadas y propuestas futuras |
+| [Analytics](docs/analytics.md) | Eventos GTM/GA4, tabla de eventos, parametros y KPIs |
+| [Arquitectura](docs/arquitectura.md) | Diagramas de infraestructura, flujo de red, componentes y Docker |
+
+## CI/CD
+
+Pipeline automatizado con GitHub Actions. Al hacer push a `develop`, se ejecutan tests, se crea un PR a `production` con auto-merge, y al mergearse se despliega automaticamente via SSH con health check y notificacion a Discord.
+
+```
+push a develop → tests → PR a production → auto-merge → deploy → health check → Discord
+```
+
+Ver documentacion completa en [docs/ci-cd.md](docs/ci-cd.md).
 
 ## Notas Importantes
 
@@ -347,171 +362,19 @@ docker network create mapalab-network
 
 ## Roadmap
 
-### 🚀 v1.0.0 — Camino a producción
+Version actual: **v0.9.9** — Camino a v1.0.0 (Marzo 2026)
 
-#### v0.1.0 — Noviembre 2025
-- [x] Estructura base del proyecto (monorepo con frontend, backend, nginx)
-- [x] Configuración de Docker y Docker Compose (desarrollo y producción)
-- [x] Makefile con comandos para dev y prod
+Ver roadmap completo con timeline en [docs/roadmap.md](docs/roadmap.md).
 
-#### v0.5.0 — Diciembre 2025
-- [x] Visor de mapas con OpenLayers
-- [x] Integración con GeoServer (WMS/WFS)
-- [x] Backend FastAPI con conexión a PostgreSQL
+## Analytics
 
-#### v0.7.0 — Enero 2026
-- [x] Sidebar de capas con categorías y subcategorías
-- [x] Panel de capas activas con controles de visibilidad
-- [x] Modal de detalle de capa con metadatos y descarga
+Eventos GTM/GA4 enviados a `window.dataLayer`. En desarrollo se muestran en un panel de debug flotante.
 
-#### v0.9.5 — Febrero 2026
-- [x] Capas base y límites municipales configurables
-- [x] InfoBox con información de features al hacer clic
-- [x] Periodicidad dinámica en capas raster
-- [x] Sección de preguntas frecuentes
-- [x] Exportación del mapa visible (JPG, PNG, PDF)
+Ver tabla completa de eventos en [docs/analytics.md](docs/analytics.md).
 
-#### v0.9.7 — Febrero 2026
-- [x] Google Analytics (integración y eventos clave)
-- [x] SEO (metatags, Open Graph, sitemap.xml, heading structure)
+## Arquitectura
 
-#### v0.9.9 — Marzo 2026
-- [ ] Creación de tests unitarios y de integración
-- [ ] CI/CD con GitHub Actions (lint, build, deploy automático)
-
-#### v1.0.0 — Marzo 2026
-- [ ] Deploy a producción (servidor IIEG)
-- [ ] Pruebas finales en entorno productivo
-- [ ] Documentación de despliegue
-
----
-
-### 🛠️ v1.x — Consolidación y mejoras
-
-#### v1.1.0 — Abril 2026
-- Migrar lista de capas del sidebar a endpoint del backend
-- Endpoint de búsqueda de capas desde backend
-
-#### v1.2.0 — Mayo / Junio 2026
-- Herramienta para comparar periodicidad de mapas (vista lado a lado)
-
-#### v1.3.0 — Julio / Agosto 2026
-- Modo edición de Home integrado al administrador de portal
-- Compartir estado del mapa vía URL (para el componente comparar, ademas de agregar orden de capas, opacidad, etc)
-
-#### v1.4.0 — Septiembre / Octubre 2026
-- Sistema de login para cuidadanos
-- Guardar compartidos
-- Sistema de capas favoritas por usuario
-
-#### v1.5.0 — Noviembre 2026 / Enero 2027
-- Arquitectura de capas para agilizar integración de otras dependencias
-- Optimización de carga inicial y lazy loading de componentes
-
----
-
-### 🔮 v2.0.0 — MapaLab Platform (Febrero 2027+) (Propuestas)
-
-- Integración con IGIBot (AgencIA)
-- Visualización 3D de terreno y datos volumétricos
-- Generador de dashboards personalizados con indicadores geoespaciales
-- API pública documentada para consumo externo de datos
-- Análisis espacial interactivo (buffers, intersecciones, estadísticas por zona)
-- Modo colaborativo en tiempo real para edición de mapas temáticos
-- Importación de datos externos (Shapefile, GeoJSON, KML, CSV)
-- Embebido de mapas en sitios externos (iframe / widget)
-- Sistema de roles y permisos (administrador, editor, visualizador)
-- PWA con soporte offline para consulta en campo
-- Sistema de notificaciones (nuevas capas, actualizaciones de datos)
-- Generación automatizada de reportes geoespaciales
-
-## Analytics — Eventos GTM/GA4
-
-Los eventos se envían a `window.dataLayer` para ser consumidos por GTM. En desarrollo se muestran en el panel de debug flotante (esquina inferior izquierda).
-
-> **Integración:** El portal `iieg.jalisco.gob.mx` debe tener GTM instalado con un tag GA4 configurado para escuchar estos eventos desde `dataLayer`.
-
-| Evento | Parámetros | Qué mide | Dónde se dispara | KPI |
-|---|---|---|---|---|
-| `map_interaction` | `action` | Conteo total de interacciones en el mapa | Acompaña a cada evento de mapa | Número de visitas / Tasa de interacción |
-| `layer_toggle` | `layer_id`, `action: activar\|desactivar` | Capas más populares y frecuencia de uso | Al activar o desactivar una capa | Capas más activadas |
-| `feature_click` | `layer_id` | Consultas de información por capa | Al hacer clic en el mapa y obtener resultados | Interacción de clics en el mapa |
-| `map_zoom_level` | `zoom_level` | Nivel de zoom usado (botones +/-) | Al pulsar zoom in / zoom out | Interacción de clics en el mapa |
-| `layer_search` | `query` | Términos buscados con resultados exitosos | Al buscar una capa con coincidencias | Consultas de búsqueda orgánica |
-| `layer_detail_open` | `layer_id` | Capas cuyo detalle/metadata se consulta | Al abrir el modal de detalle de capa | Profundidad de desplazamiento |
-| `layer_download` | `layer_id` | Descargas de datos espaciales por capa | Al descargar el ZIP de una capa con éxito | Descargas |
-| `map_export` | `format: png\|jpeg\|pdf`, `quality: Básica\|Normal\|Alta\|Ultra`, `view: vista_actual\|estado_completo` | Exportaciones de mapa por formato, calidad y vista | Al confirmar exportación en el panel | Descargas / Uso de herramientas |
-| `raster_loop_start` | `layer_id` | Uso de animación temporal raster | Al iniciar el loop en capas de precipitación/temperatura | Uso de herramientas / Filtros |
-| `raster_loop_stop` | `layer_id` | Duración implícita de uso del loop | Al detener el loop | Uso de herramientas |
-| `drawing_tool_use` | `tool: Linea\|Poligono\|ManoAlzada\|Texto\|Emoji\|Seleccion` | Herramientas de dibujo/medición utilizadas | Al seleccionar una herramienta en el panel de dibujo | Uso de herramientas |
-| `basemap_change` | `basemap_id` | Preferencia de mapa base de los usuarios | Al cambiar el mapa base | Interacción de clics en el mapa |
-| `geolocate` | `status: exito\|error` | Uso de geolocalización y tasa de error | Al pulsar el botón de ubicación | Uso de herramientas |
-| `periodicity_advanced` | `layer_id` | Uso del selector de fechas avanzado por capa | Al activar modo avanzado de periodicidad (doble clic o pulsación larga) | Uso de herramientas / Filtros |
-| `sider_lock` | `mode: expandido\|colapsado\|automatico` | Preferencia de fijación del menú lateral | Al cambiar el modo de bloqueo del sider (clic o Alt+B) | Interacción de clics en el mapa |
-| `share_map` | `status: exito\|error` | Uso del botón de compartir y tasa de error | Al copiar el enlace del mapa al portapapeles | Interacción de clics en el mapa |
-| `info_open` | — | Acceso a la información general de Mapalab | Al abrir el modal de información | Profundidad de desplazamiento |
-
-### Debug en desarrollo
-
-En `VITE_NODE_ENV=development` aparece un panel flotante en la esquina inferior izquierda que muestra cada evento disparado con sus parámetros y hora. Los eventos **no se envían a GA4** en este modo.
-
-En producción el panel no renderiza y los eventos van a `window.dataLayer` para GTM.
-
----
-## Diagrama de Arquitectura
-
-```mermaid
-graph LR                                                                                                                                             
-      subgraph INTERNET["Internet"]
-      USER["Usuario Final"]                                                                                                                        
-      end                                                   
-
-      subgraph DNS["DNS Público"]
-      DOM["mapalab-iieg.app"]
-      end
-
-      subgraph GCP["Google Cloud Platform — Entorno Temporal"]
-      subgraph VPC["VPC Interna"]
-            subgraph VM_MAPA["VM — MapaLab"]
-                  NGINX["Nginx :443 HTTPS / :80 → 443 SSL + HTTP2"]
-                  FE["Frontend /usr/share/nginx/html"]
-                  BE["Backend :3000"]
-            end
-
-            subgraph VM_DE["VM — DataEngine"]
-                  PG_PRI["PostgreSQL Primary PostGIS 18-3.6 :5432 SSL + SCRAM-SHA-256"]
-                  PG_REP["PostgreSQL Replica :5433"]
-                  PG_BKP["pg-backup → Acervo"]
-            end
-
-            subgraph VM_GEO["VM — GeoServer"]
-                  GEO["GeoServer 2.27.0 Kartoza / Tomcat :8080"]
-            end
-      end
-      end
-
-      USER -->|"HTTPS :443"| DOM
-      DOM --> NGINX
-
-      NGINX -->|"/ → static files"| FE
-      NGINX -->|"proxy /api/ → :3000"| BE
-      NGINX -->|"proxy /geoserver/ → :8080"| GEO
-
-      BE -->|"SQL :5432 SSL"| PG_PRI
-      GEO -->|"SQL :5432"| PG_PRI
-
-      PG_PRI -->|"replicación"| PG_REP
-      PG_PRI -->|"dump"| PG_BKP
-      PG_BKP -->|"Acervo :443"| acervo["Object Storage Backups"]
-
-      style INTERNET fill:#f66,stroke:#7b2d8e,color:#000
-      style DNS fill:#1a24,stroke:#16213e,color:#000
-      style GCP fill:#4285f4,stroke:#1a73e8,color:#fff
-      style VPC fill:#e8f0fe,stroke:#4285f4,color:#000
-      style VM_MAPA fill:#34a853,stroke:#1e8e3e,color:#fff
-      style VM_DE fill:#ea4335,stroke:#c5221f,color:#fff
-      style VM_GEO fill:#ff6d01,stroke:#e65100,color:#fff
-```
+Ver diagramas de infraestructura, flujo de red y componentes en [docs/arquitectura.md](docs/arquitectura.md).
 
 ## Licencia
 
