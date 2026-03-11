@@ -36,7 +36,7 @@ const shouldIncludeField = (fieldName, suffix) => {
     return !otherSuffixes.some(otherSuffix => fieldLower.includes(otherSuffix));
 };
 
-export const renderCard = (properties, config, onClose, layerId = null) => {
+export const renderCard = (properties, config, onClose, layerId = null, featureId = null) => {
     const suffix = extractSuffixFromLayerId(layerId);
 
     const getValue = (field) => {
@@ -55,7 +55,8 @@ export const renderCard = (properties, config, onClose, layerId = null) => {
 
     if (finalConfig.headerField) {
         const headerValueFromProperties = getValue(finalConfig.headerField);
-        const finalHeaderValue = headerValueFromProperties || finalConfig.headerField;
+        const rawHeaderValue = headerValueFromProperties || finalConfig.headerField;
+        const finalHeaderValue = finalConfig.headerTransform ? finalConfig.headerTransform(rawHeaderValue, featureId) : rawHeaderValue;
 
         if (finalHeaderValue) {
             header.push(
