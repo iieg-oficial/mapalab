@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import { trackLayerToggle } from '@services/analyticsService';
 import { generateDefaultDateFilter } from '@pages/maps/helpers/dateFilterHelpers';
+import { findParentGroup } from '@pages/maps/helpers/layers/utils/layerHelpers';
+import { layers as allLayers } from '@pages/maps/helpers/layers/index';
 
 import { getLayerMetadata } from '@services/layerMetadataService';
 
@@ -72,7 +74,11 @@ export const useLayerToggle = ({
 
             if (!skipAnalytics) {
                 const layer = findLayerById(layerId);
-                if (layer) setSelectedLayer({ id: layer.id, name: layer.label });
+                if (layer) {
+                    const groupAncestor = findParentGroup(layerId, allLayers);
+                    const displayLayer = groupAncestor || layer;
+                    setSelectedLayer({ id: displayLayer.id, name: displayLayer.label });
+                }
             }
         } else {
             const childLayerIds = getAllChildLayerIds(layerId);
