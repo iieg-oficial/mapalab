@@ -206,7 +206,7 @@ deploy: network-create
 	@echo ""
 	@echo "Reiniciando servicios..."
 	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d --build
-	@if [ -f $(NGINX_DIR)/ssl/cert.pem ]; then \
+	@if grep -q '^SSL_MODE=true' $(NGINX_DIR)/.env 2>/dev/null; then \
 		cd $(NGINX_DIR) && docker compose -f docker-compose.ssl.yml up -d --build; \
 	else \
 		cd $(NGINX_DIR) && docker compose up -d --build; \
