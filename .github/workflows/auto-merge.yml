@@ -1,0 +1,84 @@
+name: Auto PR to Production
+
+on:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci || npm install --legacy-peer-deps
+      - name: Lint
+        working-directory: ./frontend
+        run: npm run lint
+      - name: Test
+        working-directory: ./frontend
+        run: npm run test -- --run
+
+  create-pr:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Create or update PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING_PR=$(gh pr list --base production --head develop --state open --json number --jq '.[0].number')
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR ya existe, actualizando..."
+            gh pr edit "$EXISTING_PR" \
+              --title "chore: auto-merge develop into production" \
+              --body "$(cat <<'EOF'
+          ## Auto-merge
+
+          PR generado automaticamente al pasar los tests en `develop`.
+
+          **Ultimo commit:** `${{ github.sha }}`
+          **Autor:** ${{ github.actor }}
+          EOF
+          )"
+          else
+            echo "Creando nuevo PR..."
+            gh pr create \
+              --base production \
+              --head develop \
+              --title "chore: auto-merge develop into production" \
+              --body "$(cat <<'EOF'
+          ## Auto-merge
+
+          PR generado automaticamente al pasar los tests en `develop`.
+
+          **Ultimo commit:** `${{ github.sha }}`
+          **Autor:** ${{ github.actor }}
+          EOF
+          )"
+          fi
+
+      - name: Enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list --base production --head develop --state open --json number --jq '.[0].number')
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr merge "$PR_NUMBER" --auto --merge
+            echo "Auto-merge habilitado en PR #$PR_NUMBER"
+          fi
