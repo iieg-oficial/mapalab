@@ -30,15 +30,56 @@ jobs:
     environment: production
     steps:
       - name: Deploy via SSH
+        id: deploy
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 20m
           script: |
             cd ${{ secrets.PROJECT_PATH }}
             git fetch origin production
             git checkout production
             git pull origin production
             make deploy
+            docker image prune -f --filter "until=168h"
+
+      - name: Health check
+        id: health
+        run: |
+          echo "Esperando que la app responda..."
+          for i in $(seq 1 10); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://mapalab-iieg.app || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "App respondiendo correctamente (HTTP 200)"
+              exit 0
+            fi
+            echo "Intento $i/10 - HTTP $STATUS, reintentando en 15s..."
+            sleep 15
+          done
+          echo "Health check falló después de 10 intentos"
+          exit 1
+
+      - name: Notify Discord - Success
+        if: success()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -s -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"✅ Deploy exitoso\",\"description\":\"**Branch:** production\n**Commit:** \`${GITHUB_SHA::7}\`\n**Autor:** ${{ github.actor }}\n**Mensaje:** $(echo '${{ github.event.head_commit.message }}' | head -1)\",\"color\":3066993,\"footer\":{\"text\":\"MapaLab CD\"},\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}]}" \
+            "$DISCORD_WEBHOOK"
+
+      - name: Notify Discord - Failure
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          FAILED_STEP="Deploy"
+          if [ "${{ steps.health.outcome }}" = "failure" ]; then
+            FAILED_STEP="Health Check"
+          fi
+          curl -s -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"❌ Deploy fallido\",\"description\":\"**Branch:** production\n**Commit:** \`${GITHUB_SHA::7}\`\n**Autor:** ${{ github.actor }}\n**Falló en:** $FAILED_STEP\n**Run:** [Ver logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\",\"color\":15158332,\"footer\":{\"text\":\"MapaLab CD\"},\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}]}" \
+            "$DISCORD_WEBHOOK"
