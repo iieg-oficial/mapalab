@@ -39,7 +39,7 @@ jobs:
 
       - name: Create or update PR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           EXISTING_PR=$(gh pr list --base production --head develop --state open --json number --jq '.[0].number')
 
@@ -75,7 +75,7 @@ jobs:
 
       - name: Enable auto-merge
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           PR_NUMBER=$(gh pr list --base production --head develop --state open --json number --jq '.[0].number')
           if [ -n "$PR_NUMBER" ]; then

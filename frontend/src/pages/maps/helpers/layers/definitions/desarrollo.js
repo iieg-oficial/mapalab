@@ -97,7 +97,7 @@ const IGUALDAD_GENERO = [
                 { label: 'Porcentaje con edad padre 18+ (%)', field: 'porcentaje_con_edad_mayor_18' },
             ]
         })],
-    ['tasa_nacimientos_madres_adolescentes', 'Nacimientos de madres de 15 a 19 años (tasa)', 'nacimientos_adolescentes',
+    ['tasa_nacimientos_madres_adolescentes', 'Nacimientos de madres de 15 a 19 años (tasa)', 'nacimientos_adolecentes',
         ['desarrollo', 'social', 'genero', 'salud', 'embarazo', 'adolescente', 'maternidad', 'jovenes', 'reproductiva'],
         createMunicipioConfig({
             title: 'Nacimientos de madres adolescentes',

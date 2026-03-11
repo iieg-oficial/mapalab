@@ -145,7 +145,7 @@ const DELITOS_PATRIMONIO = [
 ];
 
 const DESAPARECIDAS = [
-    ['tasa_personas_desaparecidas', 'Personas desaparecidas (tasa)', 'personas_desaparecidas_total', 'tasa_personas',
+    ['tasa_personas_desaparecidas', 'Personas desaparecidas (tasa)', 'personas_desaparecidas', 'tasa_personas',
         ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
         createMunicipioConfig({
             title: 'Personas desaparecidas (tasa)',
