@@ -96,7 +96,7 @@ const InfoBox = () => {
         const config = typeof rawConfig === 'function'
             ? rawConfig(getSpecificFilter?.(layerId, 'date'))
             : rawConfig;
-        return renderCard(feature.properties, config, onClose, layerId);
+        return renderCard(feature.properties, config, onClose, layerId, feature.id);
     };
 
     const handleDownload = () => {
