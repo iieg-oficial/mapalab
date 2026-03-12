@@ -114,12 +114,6 @@ const LayerDetailModal = () => {
 
     if (!selectedLayer) return null;
 
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        if (/^\d{4}$/.test(String(dateString).trim())) return String(dateString).trim();
-        const date = new Date(dateString);
-        return date.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
-    };
 
     return (
         <div className="fixed top-4 sm:top-4 bottom-0 right-0 sm:right-4 z-30 w-full sm:w-[643px] pointer-events-none">
@@ -189,7 +183,7 @@ const LayerDetailModal = () => {
                                     />
                                     <InfoCard
                                         label="Última actualización"
-                                        value={formatDate(metadata.fecha_ultima_actualizacion)}
+                                        value={metadata.fecha_ultima_actualizacion}
                                     />
                                 </div>
                             )}
