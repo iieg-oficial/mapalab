@@ -4,7 +4,7 @@ import List from '../components/List';
 import IconText from '../components/IconText';
 import Cards from '../components/Cards';
 import Text from '../components/Text';
-import { cardTemplates } from './cardTemplates';
+import { cardTemplates, CARACTERISTICA_STYLE } from './cardTemplates';
 
 const extractSuffixFromLayerId = (layerId) => {
     if (!layerId) return null;
@@ -77,7 +77,8 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
                     <Label
                         key={`label-${idx}`}
                         value={properties[field]}
-                        index={idx}
+                        color={CARACTERISTICA_STYLE.color}
+                        bg={CARACTERISTICA_STYLE.bg}
                     />
                 );
             }
@@ -97,42 +98,48 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
 
             if (group.staticValues) {
                 group.staticValues.forEach((value, idx) => {
-                    const labelIndex = group.colorIndex !== undefined ? group.colorIndex : idx;
                     groupElements.push(
                         <Label
                             key={`labelgroup-${groupIdx}-static-${idx}`}
                             value={value}
-                            index={labelIndex}
+                            color={group.color}
+                            bg={group.bg}
                         />
                     );
                 });
             }
 
             if (group.fields) {
-                const values = group.fields
-                    .map(field => properties[field])
-                    .filter(v => v !== null && v !== undefined && v !== '');
+                const fieldDefs = group.fields.map(f => typeof f === 'string' ? { field: f } : f);
 
-                values.forEach((value, idx) => {
+                fieldDefs.forEach((def, idx) => {
+                    const value = properties[def.field];
+                    if (value === null || value === undefined || value === '') return;
+
+                    const color = def.color || group.color;
+                    const bg = def.bg || group.bg;
+
                     if (group.splitValues && typeof value === 'string') {
                         const splitItems = value.split(/,\s*|\s+y\s+/).filter(item => item.trim() !== '');
                         splitItems.forEach((item, splitIdx) => {
-                            const labelIndex = group.colorIndex !== undefined ? group.colorIndex : (finalConfig.labels ? finalConfig.labels.length + idx + splitIdx : idx + splitIdx);
                             groupElements.push(
                                 <Label
                                     key={`labelgroup-${groupIdx}-${idx}-${splitIdx}`}
                                     value={item.trim()}
-                                    index={labelIndex}
+                                    color={color}
+                                    bg={bg}
+                                    fullWidth={def.fullWidth}
                                 />
                             );
                         });
                     } else {
-                        const labelIndex = group.colorIndex !== undefined ? group.colorIndex : (finalConfig.labels ? finalConfig.labels.length + idx : idx);
                         groupElements.push(
                             <Label
                                 key={`labelgroup-${groupIdx}-${idx}`}
                                 value={value}
-                                index={labelIndex}
+                                color={color}
+                                bg={bg}
+                                fullWidth={def.fullWidth}
                             />
                         );
                     }
@@ -168,14 +175,19 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
         }
     }
 
-    if (finalConfig.iconText && properties[finalConfig.iconText.field]) {
-        body.push(
-            <IconText
-                key="icontext"
-                icon={finalConfig.iconText.icon}
-                value={properties[finalConfig.iconText.field]}
-            />
-        );
+    if (finalConfig.iconText) {
+        const iconTextItems = Array.isArray(finalConfig.iconText) ? finalConfig.iconText : [finalConfig.iconText];
+        iconTextItems.forEach((item, idx) => {
+            if (item && properties[item.field]) {
+                body.push(
+                    <IconText
+                        key={`icontext-${idx}`}
+                        icon={item.icon}
+                        value={properties[item.field]}
+                    />
+                );
+            }
+        });
     }
 
     if (finalConfig.text) {
