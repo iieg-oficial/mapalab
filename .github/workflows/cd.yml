@@ -39,6 +39,7 @@ jobs:
           command_timeout: 20m
           script: |
             cd ${{ secrets.PROJECT_PATH }}
+            git config --global --add safe.directory ${{ secrets.PROJECT_PATH }}
             git fetch origin production
             git checkout production
             git pull origin production
