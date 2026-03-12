@@ -116,6 +116,7 @@ const LayerDetailModal = () => {
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
+        if (/^\d{4}$/.test(String(dateString).trim())) return String(dateString).trim();
         const date = new Date(dateString);
         return date.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
     };
