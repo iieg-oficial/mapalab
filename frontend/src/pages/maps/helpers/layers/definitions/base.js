@@ -117,8 +117,8 @@ const AEROPUERTOS = [
 ];
 
 const HIDDEN_LAYERS = [
-    ['limite_municipal', 'Límites municipales geoestadísticos IIEG', 'limite_municipal', ['base', 'limite', 'frontera', 'municipio', 'division', 'iieg', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites municipales administrativos IIEG')],
-    ['limite_municipal_inegi', 'Límites municipales administrativos INEGI', 'limite_municipal_inegi', ['base', 'limite', 'frontera', 'municipio', 'division', 'inegi', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites geoestadísticos municipales INEGI')],
+    ['limite_municipal', 'Límites geoestadísticos municipales IIEG', 'limite_municipal', ['base', 'limite', 'frontera', 'municipio', 'division', 'iieg', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites municipales administrativos IIEG')],
+    ['limite_municipal_inegi', 'Límites geoestadísticos municipales INEGI', 'limite_municipal_inegi', ['base', 'limite', 'frontera', 'municipio', 'division', 'inegi', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites geoestadísticos municipales INEGI')],
     ['regiones', 'Regiones del estado', 'regiones', ['base', 'region', 'administrativo', 'division', 'iieg', 'zona', 'distrito', 'sector'], regionesConfig],
     ['limite_iieg', 'Límites estatales IIEG', 'limite_iieg', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'iieg', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig],
     ['limite_inegi', 'Límites estatales INEGI', 'limite_inegi', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'inegi', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig],
