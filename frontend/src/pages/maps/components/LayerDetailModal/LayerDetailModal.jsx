@@ -122,158 +122,155 @@ const LayerDetailModal = () => {
     };
 
     return (
-        <>
-            <div className="fixed top-[52px] sm:top-[104px] bottom-0 right-0 sm:right-4 z-30 w-full sm:w-[643px] pointer-events-none">
-                <div className={`
-                    h-full bg-white shadow-[0_5px_20px_#1A26641A] backdrop-blur-sm overflow-y-auto pointer-events-auto rounded-t-[20px]
-                    scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400
-                `}>
-                    <div className="sticky top-0 z-10 bg-white backdrop-blur-sm p-4 sm:px-6 sm:pt-6">
-                        <div className="flex justify-between items-center">
-                            <OpacityControl
-                                value={getLayerOpacity(selectedLayer.id)}
-                                onChange={(opacity) => setLayerOpacity(selectedLayer.id, opacity)}
+        <div className="fixed top-4 sm:top-4 bottom-0 right-0 sm:right-4 z-30 w-full sm:w-[643px] pointer-events-none">
+            <div className={`
+                h-full bg-white shadow-[0_5px_20px_#1A26641A] backdrop-blur-sm overflow-y-auto pointer-events-auto rounded-t-[20px]
+                scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400
+            `}>
+                <div className="sticky top-0 z-10 bg-white backdrop-blur-sm p-4 sm:px-6 sm:pt-6">
+                    <div className="flex justify-between items-center">
+                        <OpacityControl
+                            value={getLayerOpacity(selectedLayer.id)}
+                            onChange={(opacity) => setLayerOpacity(selectedLayer.id, opacity)}
+                        />
+                        <div className="flex items-center gap-5 md:gap-10">
+                            {metadata?.capa_descargable !== false && (
+                                downloading
+                                    ? <Logo name="mapalab" size="size-15" isLoading />
+                                    : (
+                                        <Tooltip content="Descarga la capa completa con metadatos en ZIP" variant="warning">
+                                            <button
+                                                onClick={handleDownloadClick}
+                                                disabled={cooldown}
+                                                className={`
+                                                    w-auto md:min-w-[180px] px-10 text-[14px]/[47px] text-white rounded-[30px]
+                                                    transition-colors h-12.5 font-bold font-garet
+                                                    disabled:opacity-60 disabled:cursor-wait
+                                                    bg-[#703089] hover:bg-[#5C2472] hover:shadow-[0px_6px_6px_#5C247234]
+                                                `}
+                                            >
+                                                {cooldown
+                                                    ? (isMobile ? <Icon name="download" /> : `Espera ${Math.ceil(cooldownRemaining / 1000)}s`)
+                                                    : (isMobile ? <Icon name="download" /> : 'Descargar capa')
+                                                }
+                                            </button>
+                                        </Tooltip>
+                                    )
+                            )}
+                            <Icon
+                                name="cerrarModal"
+                                aria-label="Cerrar"
+                                onClick={() => setSelectedLayer(null)}
+                                classNameBG="rounded-full hover:shadow-[0px_5px_20px_#101F3629]"
+                                className="size-10 "
                             />
-                            <div className="flex items-center gap-5 md:gap-10">
-                                {metadata?.capa_descargable !== false && (
-                                    downloading
-                                        ? <Logo name="mapalab" size="size-15" isLoading />
-                                        : (
-                                            <Tooltip content="Descarga la capa completa con metadatos en ZIP" variant="warning">
-                                                <button
-                                                    onClick={handleDownloadClick}
-                                                    disabled={cooldown}
-                                                    className={`
-                                                        w-auto md:min-w-[180px] px-10 text-[14px]/[47px] text-white rounded-[30px]
-                                                        transition-colors h-12.5 font-bold font-garet
-                                                        disabled:opacity-60 disabled:cursor-wait
-                                                        bg-[#703089] hover:bg-[#5C2472] hover:shadow-[0px_6px_6px_#5C247234]
-                                                    `}
-                                                >
-                                                    {cooldown
-                                                        ? (isMobile ? <Icon name="download" /> : `Espera ${Math.ceil(cooldownRemaining / 1000)}s`)
-                                                        : (isMobile ? <Icon name="download" /> : 'Descargar capa')
-                                                    }
-                                                </button>
-                                            </Tooltip>
-                                        )
-                                )}
-                                <Icon
-                                    name="cerrarModal"
-                                    aria-label="Cerrar"
-                                    onClick={() => setSelectedLayer(null)}
-                                    classNameBG="rounded-full hover:shadow-[0px_5px_20px_#101F3629]"
-                                    className="size-10 "
-                                />
-                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <div className="px-4 pb-4 sm:px-6 sm:pb-6">
-                        {loading ? (<Logo name="mapalab" size="size-36" className="mt-40 lg:mt-52" isLoading />) : (
-                            <>
-                                <div className="flex items-center gap-3">
-                                    <LayerThemeAvatar name={metadata?.tema} size="md" />
-                                    <span className="text-[14px]/[47px] font-garet font-bold text-[#465055] tracking-normal">
-                                        {metadata?.tema || 'General'}
-                                    </span>
+                <div className="px-4 pb-4 sm:px-6 sm:pb-6">
+                    {loading ? (<Logo name="mapalab" size="size-36" className="mt-40 lg:mt-52" isLoading />) : (
+                        <>
+                            <div className="flex items-center gap-3">
+                                <LayerThemeAvatar name={metadata?.tema} size="md" />
+                                <span className="text-[14px]/[47px] font-garet font-bold text-[#465055] tracking-normal">
+                                    {metadata?.tema || 'General'}
+                                </span>
+                            </div>
+                            <h3 className="text-[18px]/[47px] font-garet font-extrabold text-[#5C2472] tracking-normal">
+                                {selectedLayer.name || 'Capa sin nombre'}
+                            </h3>
+
+                            {(metadata?.frecuencia_actualizacion || metadata?.fecha_ultima_actualizacion) && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 sm:gap-6 mb-3">
+                                    <InfoCard
+                                        label="Frecuencia de actualización"
+                                        value={metadata.frecuencia_actualizacion}
+                                    />
+                                    <InfoCard
+                                        label="Última actualización"
+                                        value={formatDate(metadata.fecha_ultima_actualizacion)}
+                                    />
                                 </div>
-                                <h3 className="text-[18px]/[47px] font-garet font-extrabold text-[#5C2472] tracking-normal">
-                                    {selectedLayer.name || 'Capa sin nombre'}
-                                </h3>
+                            )}
 
-                                {(metadata?.frecuencia_actualizacion || metadata?.fecha_ultima_actualizacion) && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 sm:gap-6 mb-3">
-                                        <InfoCard
-                                            label="Frecuencia de actualización"
-                                            value={metadata.frecuencia_actualizacion}
-                                        />
-                                        <InfoCard
-                                            label="Última actualización"
-                                            value={formatDate(metadata.fecha_ultima_actualizacion)}
-                                        />
+                            {metadata?.descripcion && (
+                                <div className="mb-4">
+                                    <p className="text-[14px]/[32px] text-left font-garet font-medium text-[#465055] tracking-normal">
+                                        {metadata.descripcion}
+                                    </p>
+                                </div>
+                            )}
+
+                            {metadata?.numeralia?.filter(s => s.nombre || s.valor).length > 0 && (
+                                <div className="mb-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {metadata.numeralia.filter(s => s.nombre || s.valor).map((stat, index) => (
+                                            <StatCard
+                                                key={index}
+                                                label={stat.nombre}
+                                                value={stat.valor}
+                                                simbolo={stat.simbolo}
+                                            />
+                                        ))}
                                     </div>
-                                )}
-
-                                {metadata?.descripcion && (
-                                    <div className="mb-4">
-                                        <p className="text-[14px]/[32px] text-left font-garet font-medium text-[#465055] tracking-normal">
-                                            {metadata.descripcion}
+                                    {metadata?.nombre_pie_numeralia && (
+                                        <p className="text-[10px]/[11px] font-garet font-medium text-[#465055] tracking-normal mt-6">
+                                            {metadata.nombre_pie_numeralia}
                                         </p>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
+                            )}
 
-                                {metadata?.numeralia?.filter(s => s.nombre || s.valor).length > 0 && (
-                                    <div className="mb-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {metadata.numeralia.filter(s => s.nombre || s.valor).map((stat, index) => (
-                                                <StatCard
-                                                    key={index}
-                                                    label={stat.nombre}
-                                                    value={stat.valor}
-                                                    simbolo={stat.simbolo}
+                            {hasPeriodicity && (
+                                <div className="mb-4">
+                                    <div className="flex items-center justify-between my-5">
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer"
+                                                onClick={handlePeriodicityClick}
+                                            >
+                                                Periodicidad:
+                                            </span>
+                                            {isAdvancedMode && (
+                                                <Icon
+                                                    name="info_warning"
+                                                    className="size-4 cursor-help"
+                                                    tooltip="Click simple: navegar opciones. Doble click: seleccionar fecha. Click en seleccionado: deseleccionar."
                                                 />
-                                            ))}
+                                            )}
                                         </div>
-                                        {metadata?.nombre_pie_numeralia && (
-                                            <p className="text-[10px]/[11px] font-garet font-medium text-[#465055] tracking-normal mt-6">
-                                                {metadata.nombre_pie_numeralia}
-                                            </p>
-                                        )}
                                     </div>
-                                )}
-
-                                {hasPeriodicity && (
-                                    <div className="mb-4">
-                                        <div className="flex items-center justify-between my-5">
-                                            <div className="flex items-center gap-2">
-                                                <span
-                                                    className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer"
-                                                    onClick={handlePeriodicityClick}
-                                                >
-                                                    Periodicidad:
-                                                </span>
-                                                {isAdvancedMode && (
-                                                    <Icon
-                                                        name="info_warning"
-                                                        className="size-4 cursor-help"
-                                                        tooltip="Click simple: navegar opciones. Doble click: seleccionar fecha. Click en seleccionado: deseleccionar."
-                                                    />
-                                                )}
-                                            </div>
-                                        </div>
-                                        {isAdvancedMode && !rasterPeriodicity ? (
-                                            <DateTreeSelector
-                                                layerId={selectedLayer.id}
-                                                periodicity={metadata.periodicity}
-                                                onFilterApply={handleDateFilterApply}
-                                                onClearFilter={handleClearFilter}
-                                                filterName="date"
-                                                singleSelectOnly={singleSelectOnly}
-                                            />
-                                        ) : (
-                                            <SimpleDateSelector
-                                                layerId={selectedLayer.id}
-                                                periodicity={metadata?.periodicity}
-                                                rasterPeriodicity={rasterPeriodicity}
-                                                onFilterApply={handleDateFilterApply}
-                                                onClearFilter={handleClearFilter}
-                                                filterName="date"
-                                                singleSelectOnly={singleSelectOnly}
-                                            />
-                                        )}
-                                    </div>
-                                )}
+                                    {isAdvancedMode && !rasterPeriodicity ? (
+                                        <DateTreeSelector
+                                            layerId={selectedLayer.id}
+                                            periodicity={metadata.periodicity}
+                                            onFilterApply={handleDateFilterApply}
+                                            onClearFilter={handleClearFilter}
+                                            filterName="date"
+                                            singleSelectOnly={singleSelectOnly}
+                                        />
+                                    ) : (
+                                        <SimpleDateSelector
+                                            layerId={selectedLayer.id}
+                                            periodicity={metadata?.periodicity}
+                                            rasterPeriodicity={rasterPeriodicity}
+                                            onFilterApply={handleDateFilterApply}
+                                            onClearFilter={handleClearFilter}
+                                            filterName="date"
+                                            singleSelectOnly={singleSelectOnly}
+                                        />
+                                    )}
+                                </div>
+                            )}
 
 
-                                <LayerInfoSections metadata={metadata} layerName={selectedLayer.name} />
-                            </>
-                        )}
-                    </div>
+                            <LayerInfoSections metadata={metadata} layerName={selectedLayer.name} />
+                        </>
+                    )}
                 </div>
             </div>
-
-        </>
+        </div>
     );
 };
 
