@@ -37,7 +37,7 @@ const InfoModal = () => {
                 onClose={() => setIsOpen(false)}
                 title="Información de Mapalab"
                 width="w-11/12 max-w-7xl"
-                height="h-[90vh]"
+                height="h-[98vh] sm:h-[90vh]"
                 className="bg-gray-50"
                 showHeader={false}
             >
