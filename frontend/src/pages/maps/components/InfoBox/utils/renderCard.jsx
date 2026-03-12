@@ -177,19 +177,17 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
 
     if (finalConfig.iconText) {
         const iconTextItems = Array.isArray(finalConfig.iconText) ? finalConfig.iconText : [finalConfig.iconText];
-        let isFirst = true;
-        iconTextItems.forEach((item, idx) => {
-            if (item && properties[item.field]) {
-                body.push(
-                    <IconText
-                        key={`icontext-${idx}`}
-                        icon={item.icon}
-                        value={properties[item.field]}
-                        showDivider={isFirst}
-                    />
-                );
-                isFirst = false;
-            }
+        const validItems = iconTextItems.filter(item => item && properties[item.field]);
+        validItems.forEach((item, idx) => {
+            body.push(
+                <IconText
+                    key={`icontext-${idx}`}
+                    icon={item.icon}
+                    value={properties[item.field]}
+                    showDivider={idx === 0}
+                    isLast={idx === validItems.length - 1}
+                />
+            );
         });
     }
 
