@@ -211,6 +211,8 @@ deploy: network-create
 	else \
 		cd $(NGINX_DIR) && docker compose up -d --build; \
 	fi
+	@echo "Recargando Nginx..."
+	@docker exec mapalab-nginx nginx -s reload 2>/dev/null || true
 	@echo ""
 	@echo "Deploy completado"
 	@echo ""
