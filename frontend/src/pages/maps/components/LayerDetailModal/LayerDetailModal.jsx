@@ -6,6 +6,7 @@ import MapsContext from '@contexts/MapsContext';
 import { findLayerDef, findWMSConfig } from '../../helpers/wmsConfig';
 import { layers as allLayers } from '../../helpers/layers/index';
 import { fetchGeometryType } from '../../../../utils/featureInfoUtils';
+import { formatDateString } from '../../helpers/dateFilterHelpers';
 import DateTreeSelector from './components/DateTreeSelector';
 import SimpleDateSelector from './components/SimpleDateSelector';
 import OpacityControl from './components/OpacityControl';
@@ -183,7 +184,7 @@ const LayerDetailModal = () => {
                                     />
                                     <InfoCard
                                         label="Última actualización"
-                                        value={metadata.fecha_ultima_actualizacion}
+                                        value={formatDateString(metadata.fecha_ultima_actualizacion)}
                                     />
                                 </div>
                             )}
