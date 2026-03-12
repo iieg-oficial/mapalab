@@ -10,10 +10,10 @@ const establecimientosSaludConfig = cardTemplates.TDEMECLU({
     title: 'nombre_unidad',
     municipio: 'municipio',
     caracteristica: [
-        { field: 'nombre_institucion', color: '#2E4372', bg: '#F0F0F0', fullWidth },
+        { field: 'nombre_institucion', color: '#2E4372', bg: '#F0F0F0', fullWidth: true },
         { field: 'nivel_atencion', color: '#5C2472', bg: '#F0EAF3' },
         { field: 'nombre_tipo_establecimiento', color: '#5C2472', bg: '#F0EAF3' },
-        { field: 'estatus_operacion', color: '#0FC136', bg: '#DDFFE4', fullWidth }
+        { field: 'estatus_operacion', color: '#0FC136', bg: '#DDFFE4', fullWidth: true }
     ],
     list: [
         { label: 'Año de la información', field: 'fecha' },
