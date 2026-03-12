@@ -16,7 +16,7 @@ class Mapalab_Card(Base):
     nombre_capa_geoserver = Column(String(1000), nullable=True)
     descripcion = Column(String(1000), nullable=True)
     frecuencia_actualizacion = Column(String(1000), nullable=True)
-    fecha_ultima_actualizacion = Column(Date, nullable=True)
+    fecha_ultima_actualizacion = Column(String(1000), nullable=True)
     numeralia_01_valor = Column(String(1000), nullable=True)
     numeralia_01_nombre = Column(String(1000), nullable=True)
     numeralia_01_simbolo = Column(String(1000), nullable=True)
