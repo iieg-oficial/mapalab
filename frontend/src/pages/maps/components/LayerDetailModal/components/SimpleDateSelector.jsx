@@ -139,6 +139,8 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
         const selections = new Set();
         if (selectedYear !== null && selectedMonths.size > 0) {
             selectedMonths.forEach(m => selections.add(`${selectedYear}-${m}`));
+        } else if (selectedYear !== null) {
+            selections.add(`${selectedYear}`);
         }
 
         const cqlFilter = generateCQLFilter(selections, periodicityData?.filterColumn || 'fecha');
