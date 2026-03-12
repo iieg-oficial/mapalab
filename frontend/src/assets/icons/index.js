@@ -97,6 +97,7 @@ import infoWarningNormal from './ico_info_warning_normal.svg';
 import coordenadasNormal from './ico_coordenadas_normal.svg';
 import nNormal from './ico_n.svg';
 import ubicacionNormal from './ico_ubicacion.svg';
+import celularNormal from './ico_celular.svg';
 import hombreNormal from './ico_hombre.svg';
 import mujerNormal from './ico_mujer.svg';
 
@@ -129,5 +130,5 @@ export const externalIcons = {
     alert_normal: alertNormal, deshacer_normal: deshacerNormal, center_normal: centerNormal, center_hover: centerHover,
     info_warning_normal: infoWarningNormal, coordenadas_normal: coordenadasNormal, n_normal: nNormal, sin_mapalab_normal: sinMapalabNormal, sin_mapalab_hover: sinMapalabHover,
     satelite_normal: sateliteNormal, satelite_hover: sateliteHover, position_normal: positionNormal, position_hover: positionHover, voyager_normal: voyagerNormal, 
-    voyager_hover: voyagerHover, ubicacion_normal: ubicacionNormal, hombre_normal: hombreNormal, mujer_normal: mujerNormal,
+    voyager_hover: voyagerHover, ubicacion_normal: ubicacionNormal, celular_normal: celularNormal, hombre_normal: hombreNormal, mujer_normal: mujerNormal,
 };

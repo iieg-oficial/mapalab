@@ -11,7 +11,9 @@ const escuelasConfig = cardTemplates.TDEMECLUEV({
     list: [
         { label: 'Año de la información', field: 'fecha' },
     ],
-    ubicacion: 'domicilio',
+    iconTexts: [
+        { icon: 'ubicacion', field: 'domicilio' }
+    ],
     stats: [
         { label: 'Cantidad de alumnas mujeres', field: 'cantidad_mujeres' },
         { label: 'Cantidad de alumnos hombres', field: 'cantidad_hombres' },
