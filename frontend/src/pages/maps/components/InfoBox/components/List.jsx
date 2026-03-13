@@ -1,3 +1,5 @@
+import { formatNumber } from '@pages/maps/helpers/formatNumber';
+
 const FeatureList = ({ rows }) => {
     if (!rows || rows.length === 0) return null;
 
@@ -28,7 +30,7 @@ const FeatureList = ({ rows }) => {
                         {row.label}:
                     </span>
                     <span className="font-medium text-[#465055] text-[10px] tracking-normal break-words">
-                        {formatValue(row.label, row.value)}
+                        {formatNumber(formatValue(row.label, row.value))}
                     </span>
                 </div>
             ))}

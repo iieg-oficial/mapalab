@@ -32,6 +32,8 @@ export const latLonToUTM = (lat, lon) => {
     return { easting: Math.round(easting), northing: Math.round(northing) };
 };
 
+import { formatNumber } from '@pages/maps/helpers/formatNumber';
+
 export const formatUTMCoordinate = (value) => {
-    return `${(value / 1000).toFixed(0)} km`;
+    return `${formatNumber((value / 1000).toFixed(0))} km`;
 };
