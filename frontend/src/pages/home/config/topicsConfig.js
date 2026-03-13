@@ -6,7 +6,7 @@ const topicsConfig = {
             description: 'Navega el territorio de Jalisco a través de un mapa base que facilita la ubicación y comprensión geográfica.',
             icon: 'base_layers',
             subtopics: [
-                { label: 'Medio físico', layerIds: ['cuerpos_de_agua'] },
+                { label: 'Medio físico', layerIds: ['cuerpos_de_agua_50k'] },
                 { label: 'Centro e infraestructura', layerIds: ['cabeceras_municipales','limite_municipal'] }
             ]
         },{
