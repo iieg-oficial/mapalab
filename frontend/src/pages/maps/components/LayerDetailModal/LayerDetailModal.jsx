@@ -38,7 +38,7 @@ const LayerDetailModal = () => {
 
     useEffect(() => {
         if (loading) {
-            slowTimerRef.current = setTimeout(() => setSlowMetadata(true), 10000);
+            slowTimerRef.current = setTimeout(() => setSlowMetadata(true), 5000);
         } else {
             setSlowMetadata(false);
         }
