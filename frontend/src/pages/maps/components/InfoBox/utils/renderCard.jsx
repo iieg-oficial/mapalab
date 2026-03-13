@@ -5,6 +5,7 @@ import IconText from '../components/IconText';
 import Cards from '../components/Cards';
 import Text from '../components/Text';
 import { cardTemplates, CARACTERISTICA_STYLE } from './cardTemplates';
+import { formatNumber } from '@pages/maps/helpers/formatNumber';
 
 const extractSuffixFromLayerId = (layerId) => {
     if (!layerId) return null;
@@ -213,7 +214,9 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
             .map(card => {
                 let value = properties[card.field];
                 if (card.decimals != null && typeof value === 'number') {
-                    value = value.toFixed(card.decimals);
+                    value = formatNumber(value.toFixed(card.decimals));
+                } else if (typeof value === 'number') {
+                    value = formatNumber(value);
                 }
                 return {
                     label: card.label,
