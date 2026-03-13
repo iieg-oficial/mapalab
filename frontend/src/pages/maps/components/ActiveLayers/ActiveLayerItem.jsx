@@ -148,48 +148,48 @@ const ActiveLayerItem = ({
                 disabled={!isSelected}
             >
                 <div className="flex items-center gap-3 px-2 py-4 h-12">
-                {loopState && monthAbbr && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); toggleLoop?.(layer.id); }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#F0EAF3] text-[#465055] text-[14px] font-garet font-medium shrink-0 hover:bg-[#E5DAE9] transition-colors"
-                    >
-                        {isLooping ? (
-                            <svg width="10" height="10" viewBox="0 0 12 12">
-                                <rect x="1" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
-                                <rect x="7.5" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
-                            </svg>
-                        ) : (
-                            <svg width="10" height="10" viewBox="0 0 12 12">
-                                <path d="M2 1.5v9l8.5-4.5L2 1.5z" fill="currentColor" />
-                            </svg>
-                        )}
-                        {monthAbbr}
-                    </button>
-                )}
-
-                {isLoading && !loopState && (
-                    <div className="px-2 py-1 shrink-0">
-                        <Loading visible={true} size={SIZE_BUTTON} border="border-2" />
-                    </div>
-                )}
-
-                <div className="hidden md:group-hover:flex items-center gap-1 shrink-0">
-                    {actionButtons}
-                </div>
-
-                <div className={`flex-1 min-w-0 pr-2 ${HIDDEN_SCROLLBAR}`}>
-                    <Tooltip content={layer.name} disableMobile>
-                        <span
-                            className="text-[14px] text-[#465055] font-garet font-medium block whitespace-nowrap pr-6"
+                    {loopState && monthAbbr && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); toggleLoop?.(layer.id); }}
+                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#F0EAF3] text-[#465055] text-[14px] font-garet font-medium shrink-0 hover:bg-[#E5DAE9] transition-colors"
                         >
-                            {layer.name}
-                        </span>
-                    </Tooltip>
+                            {isLooping ? (
+                                <svg width="10" height="10" viewBox="0 0 12 12">
+                                    <rect x="1" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
+                                    <rect x="7.5" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
+                                </svg>
+                            ) : (
+                                <svg width="10" height="10" viewBox="0 0 12 12">
+                                    <path d="M2 1.5v9l8.5-4.5L2 1.5z" fill="currentColor" />
+                                </svg>
+                            )}
+                            {monthAbbr}
+                        </button>
+                    )}
+
+                    {isLoading && !loopState && (
+                        <div className="px-2 py-1 shrink-0">
+                            <Loading visible={true} size={SIZE_BUTTON} border="border-2" />
+                        </div>
+                    )}
+
+                    <div className="hidden md:group-hover:flex items-center gap-1 shrink-0">
+                        {actionButtons}
+                    </div>
+
+                    <div className={`flex-1 min-w-0 pr-2 ${HIDDEN_SCROLLBAR}`}>
+                        <Tooltip content={layer.name} disableMobile>
+                            <span
+                                className="text-[14px] text-[#465055] font-garet font-medium block whitespace-nowrap pr-6"
+                            >
+                                {layer.name}
+                            </span>
+                        </Tooltip>
+                    </div>
+
                 </div>
 
-            </div>
-
-            </Tooltip>
+                </Tooltip>
 
             {isSelected && (
                 <div className="md:hidden flex items-center gap-1 px-2 pb-2">
