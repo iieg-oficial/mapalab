@@ -25,10 +25,10 @@ const InfoModal = () => {
                     onClick={() => setIsOpen(true)}
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
-                    className="cursor-pointer"
+                    className="cursor-pointer h-auto"
                     aria-label="Información"
                 >
-                    <Icon name="info" state={isHovered ? 'hover' : 'normal'} className="h-12.5 w-12.5" />
+                    <Icon name="info" state={isHovered ? 'hover' : 'normal'} className="size-12.5" />
                 </button>
             </Tooltip>
 
