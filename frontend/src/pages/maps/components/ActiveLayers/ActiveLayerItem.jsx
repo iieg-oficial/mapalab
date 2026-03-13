@@ -189,7 +189,7 @@ const ActiveLayerItem = ({
 
                 </div>
 
-                </Tooltip>
+            </Tooltip>
 
             {isSelected && (
                 <div className="md:hidden flex items-center gap-1 px-2 pb-2">
