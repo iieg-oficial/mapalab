@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { trackLayerDetailOpen, trackLayerDownload, trackPeriodicityAdvanced } from '@services/analyticsService';
 import { useLayerMetadata } from '../../hooks/useLayerMetadata';
 import { useSider } from '@contexts/SiderContext';
@@ -17,6 +17,7 @@ import LayerThemeAvatar from './components/LayerThemeAvatar';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Logo from '@components/Logo';
+import Message from '@components/Message';
 import { downloadLayerBundle } from '@services/downloadService';
 
 const LayerDetailModal = () => {
@@ -32,6 +33,19 @@ const LayerDetailModal = () => {
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
     const { isMobile } = useSider();
     const [singleSelectOnly, setSingleSelectOnly] = useState(false);
+    const [slowMetadata, setSlowMetadata] = useState(false);
+    const slowTimerRef = useRef(null);
+
+    useEffect(() => {
+        if (loading) {
+            slowTimerRef.current = setTimeout(() => setSlowMetadata(true), 10000);
+        } else {
+            setSlowMetadata(false);
+        }
+        return () => {
+            if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+        };
+    }, [loading]);
 
     useEffect(() => {
         if (!selectedLayer?.id || rasterPeriodicity) return;
@@ -164,7 +178,19 @@ const LayerDetailModal = () => {
                 </div>
 
                 <div className="px-4 pb-4 sm:px-6 sm:pb-6">
-                    {loading ? (<Logo name="mapalab" size="size-36" className="mt-40 lg:mt-52" isLoading />) : (
+                    {loading ? (
+                        <div className="flex flex-col items-center">
+                            <Logo name="mapalab" size="size-36" className="mt-40 lg:mt-52" isLoading />
+                            {slowMetadata && (
+                                <Message
+                                    variant="info"
+                                    title="Esta acción está tomando tiempo"
+                                    description="Estas capas contienen una mayor cantidad de datos por lo que podrían tardar más tiempo en cargarse."
+                                    className="mt-6"
+                                />
+                            )}
+                        </div>
+                    ) : (
                         <>
                             <div className="flex items-center gap-3">
                                 <LayerThemeAvatar name={metadata?.tema} size="md" />
