@@ -130,10 +130,9 @@ const ActiveLayerItem = ({
     return (
         <div
             className={`
-                group rounded-[10px] border border-transparent hover:border-[#EAEFFA]
+                group rounded-[7px] border border-transparent hover:border-[#EAEFFA]
                 transition-all hover:shadow-sm cursor-pointer
-                ${layer.visible ? 'bg-white' : 'bg-[#EBEBEB]'}
-                ${isSelected ? 'ring-1 ring-[#70308A]' : ''}
+                ${isSelected ? 'bg-[#F7F0FA] ring-1 ring-[#70308A]' : layer.visible ? 'bg-white' : 'bg-[#EFF3FC]'}
             `}
             onClick={handleClickOnLayer}
         >
@@ -141,7 +140,7 @@ const ActiveLayerItem = ({
                 {loopState && monthAbbr && (
                     <button
                         onClick={(e) => { e.stopPropagation(); toggleLoop?.(layer.id); }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#F0EAF3] text-[#703089] text-[11px] font-garet font-medium shrink-0 hover:bg-[#E5DAE9] transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#F0EAF3] text-[#465055] text-[14px] font-garet font-medium shrink-0 hover:bg-[#E5DAE9] transition-colors"
                     >
                         {isLooping ? (
                             <svg width="10" height="10" viewBox="0 0 12 12">
@@ -170,7 +169,7 @@ const ActiveLayerItem = ({
                 <div className="flex-1 min-w-0 overflow-hidden pr-2">
                     <Tooltip content={layer.name} disableMobile>
                         <span
-                            className="text-[14px]/[16px] font-garet font-medium block truncate"
+                            className="text-[14px] text-[#465055] font-garet font-medium block truncate"
                         >
                             {layer.name}
                         </span>
