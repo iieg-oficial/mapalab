@@ -71,7 +71,7 @@ const CategoryItem = ({ layer, activeLayerIds, onToggleLayer }) => {
                 `}
             >
                 <div className="overflow-hidden">
-                    {layer.children && layer.children.map(childLayer => (
+                    {layer.children && layer.children.filter(c => !c.hiddenInMenu).map(childLayer => (
                         <div key={childLayer.id}>{renderChild(childLayer)}</div>
                     ))}
                 </div>
