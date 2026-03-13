@@ -2,12 +2,15 @@ import { useState, useCallback } from 'react';
 import { ActiveLayersList } from './ActiveLayers';
 import SymbologyPanel from './SymbologyPanel';
 import Panel from '@components/Panel';
+import Message from '@components/Message';
+import { useSlowLoading } from '@hooks/useSlowLoading';
 
 const MapLayersPanels = () => {
     const [layersCollapsed, setLayersCollapsed] = useState(true);
     const [symbologyCollapsed, setSymbologyCollapsed] = useState(true);
     const handleLayersCollapse = useCallback((v) => setLayersCollapsed(v), []);
     const handleSymbologyCollapse = useCallback((v) => setSymbologyCollapsed(v), []);
+    const isSlow = useSlowLoading();
 
     const allCollapsed = layersCollapsed && symbologyCollapsed;
 
@@ -22,6 +25,13 @@ const MapLayersPanels = () => {
             noPadding={true}
             className="bg-transparent! border-transparent! shadow-none! overflow-visible"
         >
+            {isSlow && (
+                <Message
+                    variant="warning"
+                    title="Recuerda que..."
+                    description="El funcionamiento del mapa puede verse afectado de acuerdo al número de capas que tengas activas."
+                />
+            )}
             <ActiveLayersList onCollapseChange={handleLayersCollapse} />
             <SymbologyPanel onCollapseChange={handleSymbologyCollapse} />
         </Panel>

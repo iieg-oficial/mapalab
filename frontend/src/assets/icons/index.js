@@ -117,6 +117,8 @@ import avisoPrivacidadNormal from './ico_aviso_privacidad.svg';
 import copieNormal from './ico_copie_normal.svg';
 import copieHover from './ico_copie.svg';
 import sharedClick from './ico_shared_click.svg';
+import rendimientoNormal from './ico_rendimiento_capas.svg';
+import tiempoAlertNormal from './ico_tiempo_alert.svg';
 
 export const externalIcons = {
     base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
@@ -136,4 +138,5 @@ export const externalIcons = {
     info_warning_normal: infoWarningNormal, coordenadas_normal: coordenadasNormal, n_normal: nNormal, sin_mapalab_normal: sinMapalabNormal, sin_mapalab_hover: sinMapalabHover,
     satelite_normal: sateliteNormal, satelite_hover: sateliteHover, position_normal: positionNormal, position_hover: positionHover, voyager_normal: voyagerNormal,
     voyager_hover: voyagerHover, ubicacion_normal: ubicacionNormal, celular_normal: celularNormal, hombre_normal: hombreNormal, mujer_normal: mujerNormal,
+    rendimiento_normal: rendimientoNormal, tiempo_alert_normal: tiempoAlertNormal,
 };
