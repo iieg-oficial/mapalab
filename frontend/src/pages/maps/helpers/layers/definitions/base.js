@@ -102,7 +102,6 @@ const MEDIO_FISICO = [
 
 const INFRAESTRUCTURA = [
     ['cabeceras_municipales', 'Cabeceras municipales', 'cabeceras_municipales', ['base', 'cabecera', 'municipio', 'localidad', 'poblacion', 'ciudad', 'capital', 'centro_urbano', 'asentamiento'], cabecerasMunicipalesConfig],
-    ['caminos_2012', 'Red de Caminos', 'caminos_2012', ['base', 'camino', 'vialidad', 'transporte', 'rural', 'brecha', 'terraceria', 'sendero'], caminosConfig],
 ];
 
 const CARRETERAS = [
@@ -123,6 +122,7 @@ const HIDDEN_LAYERS = [
     ['limite_iieg', 'Límites estatales IIEG', 'limite_iieg', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'iieg', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig],
     ['limite_inegi', 'Límites estatales INEGI', 'limite_inegi', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'inegi', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig],
     ['curvas_de_nivel', 'Curvas de nivel', 'curvas_de_nivel', ['base', 'topografia', 'altitud', 'relieve', 'elevacion', 'isolineas', 'pendiente', 'terreno', 'cotas'], null],
+    ['caminos_2012', 'Red de Caminos', 'caminos_2012', ['base', 'camino', 'vialidad', 'transporte', 'rural', 'brecha', 'terraceria', 'sendero'], caminosConfig],
 ];
 
 const mapGeneralLayer = ([id, label, layerName, tags, littleCard]) => ({
@@ -165,8 +165,6 @@ export const BASE_INITIAL_ORDER = [
     'limite_municipal',
     'cabeceras_municipales',
     'aeropuertos',
-    'carreteras',
-    'caminos_2012',
     'cuerpos_de_agua_50k',
     'curvas_de_nivel',
 ];
@@ -191,6 +189,7 @@ export const baseLayers = {
                     id: 'carreteras',
                     label: 'Atlas de carreteras',
                     forceGroup: true,
+                    hiddenInMenu: true,
                     children: CARRETERAS.map(([id, label, matchValue, layerName, tags, littleCard]) => ({
                         id,
                         label,

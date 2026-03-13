@@ -10,7 +10,7 @@ const MapLayersPanels = () => {
     const [symbologyCollapsed, setSymbologyCollapsed] = useState(true);
     const handleLayersCollapse = useCallback((v) => setLayersCollapsed(v), []);
     const handleSymbologyCollapse = useCallback((v) => setSymbologyCollapsed(v), []);
-    const isSlow = useSlowLoading();
+    const isSlow = useSlowLoading(5000);
 
     const allCollapsed = layersCollapsed && symbologyCollapsed;
 
