@@ -133,7 +133,7 @@ const LayerDetailModal = () => {
                                 downloading
                                     ? <Logo name="mapalab" size="size-15" isLoading />
                                     : (
-                                        <Tooltip content="Descarga la capa completa con metadatos en ZIP" variant="warning">
+                                        <Tooltip content="Descarga la tabla completa con metadatos en .ZIP" variant="warning">
                                             <button
                                                 onClick={handleDownloadClick}
                                                 disabled={cooldown}

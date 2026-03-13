@@ -1,5 +1,5 @@
 import icoQuestion from '@assets/icons/ico_preguntas.png';
-import icoInfoWarning from '@assets/icons/ico_info_warning_normal.svg';
+import icoAvisoPrivacidad from '@assets/icons/ico_aviso_privacidad.svg';
 
 const suportConfig = [{
     id: 1,
@@ -21,8 +21,8 @@ const suportConfig = [{
 }, {
     id: 2,
     label: 'Aviso de privacidad',
-    icon: icoInfoWarning,
-    iconHover: icoInfoWarning,
+    icon: icoAvisoPrivacidad,
+    iconHover: icoAvisoPrivacidad,
     link: 'https://iieg.gob.mx/ns/wp-content/uploads/2025/06/Aviso_de_Privacidad_Integral_IIEG_06_2025.pdf',
     content: [],
 }
