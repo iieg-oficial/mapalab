@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { debugStore } from '@services/analyticsDebugStore';
 
 const isDev = import.meta.env.VITE_NODE_ENV === 'development';
@@ -6,13 +6,49 @@ const isDev = import.meta.env.VITE_NODE_ENV === 'development';
 const AnalyticsDebugPanel = () => {
     const [events, setEvents] = useState(debugStore.getEvents());
     const [collapsed, setCollapsed] = useState(false);
+    const [position, setPosition] = useState({ x: 16, y: window.innerHeight - 80 });
+    const dragRef = useRef(null);
+    const panelRef = useRef(null);
 
     useEffect(() => debugStore.subscribe(setEvents), []);
+
+    const handlePointerDown = useCallback((e) => {
+        if (e.target.closest('button') || e.target.closest('a')) return;
+        e.preventDefault();
+        const rect = panelRef.current.getBoundingClientRect();
+        dragRef.current = { offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
+        document.body.style.userSelect = 'none';
+    }, []);
+
+    useEffect(() => {
+        const handlePointerMove = (e) => {
+            if (!dragRef.current) return;
+            setPosition({
+                x: e.clientX - dragRef.current.offsetX,
+                y: e.clientY - dragRef.current.offsetY
+            });
+        };
+        const handlePointerUp = () => {
+            dragRef.current = null;
+            document.body.style.userSelect = '';
+        };
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', handlePointerUp);
+        return () => {
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+        };
+    }, []);
 
     if (!isDev || window.innerWidth < 768) return null;
 
     return (
-        <div className="fixed bottom-4 left-4 z-[9999] font-mono text-xs select-none">
+        <div
+            ref={panelRef}
+            onPointerDown={handlePointerDown}
+            className="fixed z-[9999] font-mono text-xs select-none cursor-grab active:cursor-grabbing"
+            style={{ left: position.x, top: position.y }}
+        >
             <div className="bg-gray-900 text-white rounded-xl shadow-2xl w-72">
                 <button
                     onClick={() => setCollapsed(p => !p)}

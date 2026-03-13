@@ -17,7 +17,6 @@ const ScaleLineControl = () => {
             style={style}
         >
             <style>{`
-                /* Style the OpenLayers ScaleLine to match our design */
                 .ol-scale-line {
                     background: rgba(255, 255, 255, 0.8);
                     backdrop-filter: blur(4px);

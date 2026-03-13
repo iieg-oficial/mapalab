@@ -1,0 +1,130 @@
+name: CD
+
+on:
+  push:
+    branches: [production]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci || npm install --legacy-peer-deps
+      - name: Lint
+        working-directory: ./frontend
+        run: npm run lint
+      - name: Test
+        working-directory: ./frontend
+        run: npm run test -- --run
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          command_timeout: 20m
+          script: |
+            cd ${{ secrets.PROJECT_PATH }}
+            git config --global --add safe.directory ${{ secrets.PROJECT_PATH }}
+            git fetch origin production
+            git checkout production
+            git pull origin production
+            make deploy
+            docker image prune -f --filter "until=168h"
+
+  health-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check
+        run: |
+          echo "Esperando que MapaLab responda..."
+          for i in $(seq 1 10); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://mapalab-iieg.app || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "MapaLab respondiendo correctamente (HTTP 200)"
+              exit 0
+            fi
+            echo "Intento $i/10 - HTTP $STATUS, reintentando en 15s..."
+            sleep 15
+          done
+          echo "Health check fallo despues de 10 intentos"
+          exit 1
+
+  notify:
+    needs: [deploy, health-check]
+    if: always()
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Notify Discord - Success
+        if: needs.deploy.result == 'success' && needs.health-check.result == 'success'
+        continue-on-error: true
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          COMMIT_MSG=$(echo '${{ github.event.head_commit.message }}' | head -1)
+          COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          curl -sf -H "Content-Type: application/json" -d '{
+            "embeds": [{
+              "title": "Deploy exitoso",
+              "color": 3066993,
+              "fields": [
+                { "name": "Commit", "value": "[`'"${GITHUB_SHA::7}"'`]('"$COMMIT_URL"')", "inline": true },
+                { "name": "Autor", "value": "${{ github.actor }}", "inline": true },
+                { "name": "Branch", "value": "`production`", "inline": true },
+                { "name": "Cambios", "value": "'"$COMMIT_MSG"'" },
+                { "name": "Health Check", "value": "Passed", "inline": true },
+                { "name": "Workflow", "value": "[Ver ejecucion]('"$RUN_URL"')", "inline": true }
+              ],
+              "footer": { "text": "MapaLab" },
+              "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+            }]
+          }' "$DISCORD_WEBHOOK"
+
+      - name: Notify Discord - Failure
+        if: needs.deploy.result == 'failure' || needs.health-check.result == 'failure'
+        continue-on-error: true
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          COMMIT_MSG=$(echo '${{ github.event.head_commit.message }}' | head -1)
+          COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          FAILED_STEP="Deploy SSH"
+          if [ "${{ needs.deploy.result }}" = "success" ]; then
+            FAILED_STEP="Health Check"
+          fi
+
+          curl -sf -H "Content-Type: application/json" -d '{
+            "embeds": [{
+              "title": "Deploy fallido",
+              "color": 15158332,
+              "fields": [
+                { "name": "Commit", "value": "[`'"${GITHUB_SHA::7}"'`]('"$COMMIT_URL"')", "inline": true },
+                { "name": "Autor", "value": "${{ github.actor }}", "inline": true },
+                { "name": "Branch", "value": "`production`", "inline": true },
+                { "name": "Fallo en", "value": "'"$FAILED_STEP"'" },
+                { "name": "Workflow", "value": "[Ver logs]('"$RUN_URL"')", "inline": true }
+              ],
+              "footer": { "text": "MapaLab" },
+              "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+            }]
+          }' "$DISCORD_WEBHOOK"

@@ -53,14 +53,24 @@ const cuerposAguaConfig = cardTemplates.TEEC({
     caracteristica: ['condicion', 'tipo']
 });
 
-const limiteEstatalConfig = (title) => ({
-    headerField: title,
+const ETIQUETA_LABELS = {
+    'L í m i t e    I I E G': 'Límite estatal IIEG',
+    'L í m i t e    I N E G I': 'Límite estatal INEGI',
+};
+
+const limiteEstatalConfig = {
+    headerField: 'etiqueta',
+    headerTransform: (value, featureId) => {
+        const label = ETIQUETA_LABELS[value] || value;
+        const suffix = featureId?.includes('secundario') ? '(Trasera)' : '(Frontal)';
+        return `${label} ${suffix}`;
+    },
     cards: [
         { label: 'Área (km²)', field: 'area_km2' },
         { label: 'Área (ha)', field: 'area_ha' },
     ],
     cardsColumns: 1
-});
+};
 
 const limiteMunicipalConfig = (title) => ({
     headerField: title,
@@ -107,11 +117,11 @@ const AEROPUERTOS = [
 ];
 
 const HIDDEN_LAYERS = [
-    ['limite_municipal', 'Límites municipales geoestadísticos IIEG', 'limite_municipal', ['base', 'limite', 'frontera', 'municipio', 'division', 'iieg', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites municipales administrativos IIEG')],
-    ['limite_municipal_inegi', 'Límites municipales administrativos INEGI', 'limite_municipal_inegi', ['base', 'limite', 'frontera', 'municipio', 'division', 'inegi', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites geoestadísticos municipales INEGI')],
+    ['limite_municipal', 'Límites municipales administrativos IIEG', 'limite_municipal', ['base', 'limite', 'frontera', 'municipio', 'division', 'iieg', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites municipales administrativos IIEG')],
+    ['limite_municipal_inegi', 'Límites geoestadísticos municipales INEGI', 'limite_municipal_inegi', ['base', 'limite', 'frontera', 'municipio', 'division', 'inegi', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites geoestadísticos municipales INEGI')],
     ['regiones', 'Regiones del estado', 'regiones', ['base', 'region', 'administrativo', 'division', 'iieg', 'zona', 'distrito', 'sector'], regionesConfig],
-    ['limite_iieg', 'Límites estatales IIEG', 'limite_iieg', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'iieg', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig('Límite estatal IIEG')],
-    ['limite_inegi', 'Límites estatales INEGI', 'limite_inegi', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'inegi', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig('Límite estatal INEGI')],
+    ['limite_iieg', 'Límites estatales IIEG', 'limite_iieg', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'iieg', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig],
+    ['limite_inegi', 'Límites estatales INEGI', 'limite_inegi', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'inegi', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig],
     ['curvas_de_nivel', 'Curvas de nivel', 'curvas_de_nivel', ['base', 'topografia', 'altitud', 'relieve', 'elevacion', 'isolineas', 'pendiente', 'terreno', 'cotas'], null],
 ];
 
@@ -148,6 +158,18 @@ const mapHiddenLayer = ([id, label, layerName, tags, littleCard]) => {
         searchMeta: { tags }
     };
 };
+
+export const BASE_INITIAL_ORDER = [
+    'limite_iieg',
+    'regiones',
+    'limite_municipal',
+    'cabeceras_municipales',
+    'aeropuertos',
+    'carreteras',
+    'caminos_2012',
+    'cuerpos_de_agua_50k',
+    'curvas_de_nivel',
+];
 
 export const baseLayers = {
     id: 'base_layers',

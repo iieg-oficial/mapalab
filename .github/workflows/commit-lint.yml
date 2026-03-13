@@ -4,7 +4,7 @@ jobs:
   commit-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       
@@ -17,6 +17,9 @@ jobs:
           error=0
           
           while read -r msg; do
+            if [ -z "$msg" ]; then
+              continue
+            fi
             if echo "$msg" | grep -E -q "^Merge "; then
               continue
             fi

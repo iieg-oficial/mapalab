@@ -6,13 +6,11 @@ import { trackShareMap } from '@services/analyticsService';
 
 const ShareButton = () => {
     const [shareMessage, setShareMessage] = useState(null);
-    const [isHovered, setIsHovered] = useState(false);
-
-    const massage = shareMessage === '¡Enlace copiado!'
+    const isCopied = shareMessage === '¡Enlace copiado!'
 
     useEffect(() => {
         if (shareMessage) {
-            trackShareMap(massage ? 'exito' : 'error');
+            trackShareMap(isCopied ? 'exito' : 'error');
             const timer = setTimeout(() => {
                 setShareMessage(null);
             }, 3000);
@@ -24,21 +22,20 @@ const ShareButton = () => {
     return (
         <Tooltip
             content={shareMessage || 'Compartir mapa'}
-            placement="left"
+            placement="bottom"
             delay={300}
+            forceVisible={!!shareMessage}
         >
             <button
                 type="button"
                 onClick={() => handleShare(setShareMessage)}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-                className="cursor-pointer h-auto"
+                className={`cursor-pointer h-auto bg-[#F7F0FA] border hover:border-[#703088] ${isCopied ? 'border-[#703088]' : 'border-transparent'} rounded-full p-3`}
                 aria-label="Compartir mapa"
             >
                 <Icon
-                    name={massage ? 'check' : 'shared'}
-                    state={massage ? 'normal' : (isHovered ? 'hover' : 'normal')}
-                    className={massage ? 'size-11' : 'size-12.5'}
+                    name={isCopied ? 'shared_click' : 'copie'}
+                    state={isCopied ? 'hover' : 'normal'}
+                    className={'size-6.5'}
                 />
             </button>
         </Tooltip>

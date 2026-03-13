@@ -108,6 +108,25 @@ export const generateDefaultDateFilter = (defaultDate, filterColumn = 'fecha') =
     return generateCQLFilter(selections, filterColumn);
 };
 
+export const formatDateString = (dateString) => {
+    if (!dateString) return 'N/A';
+    const str = String(dateString).trim();
+    if (/^\d{4}$/.test(str)) return str;
+
+    const parts = str.split('-');
+    if (parts.length >= 2) {
+        const year = parts[0];
+        const month = MONTHS.find(m => m.num === parseInt(parts[1]));
+        const monthName = month?.name || parts[1];
+        if (parts.length >= 3 && parseInt(parts[2]) > 0) {
+            return `${parseInt(parts[2])} de ${monthName} de ${year}`;
+        }
+        return `${monthName} ${year}`;
+    }
+
+    return str;
+};
+
 export const MONTHS = [
     { num: 1, name: 'Enero', shortName: 'EN' },
     { num: 2, name: 'Febrero', shortName: 'FE' },

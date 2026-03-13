@@ -9,12 +9,19 @@ const createDesarrolloSocialLayer = createLayerFactory('desarrollo');
 const establecimientosSaludConfig = cardTemplates.TDEMECLU({
     title: 'nombre_unidad',
     municipio: 'municipio',
-    caracteristica: ['nombre_institucion', 'nivel_atencion', 'estatus_operacion', 'nombre_tipo_establecimiento'],
+    caracteristica: [
+        { field: 'nombre_institucion', color: '#2E4372', bg: '#F0F0F0', fullWidth: true },
+        { field: 'nivel_atencion', color: '#5C2472', bg: '#F0EAF3' },
+        { field: 'nombre_tipo_establecimiento', color: '#5C2472', bg: '#F0EAF3' },
+        { field: 'estatus_operacion', color: '#0FC136', bg: '#DDFFE4', fullWidth: true }
+    ],
     list: [
         { label: 'Año de la información', field: 'fecha' },
-        { label: 'Teléfono', field: 'telefono_1' },
     ],
-    ubicacion: 'domicilio'
+    iconTexts: [
+        { icon: 'ubicacion', field: 'domicilio' },
+        { icon: 'celular', field: 'telefono_1' }
+    ]
 });
 
 const INSTITUCIONES_PRIMER_NIVEL = [

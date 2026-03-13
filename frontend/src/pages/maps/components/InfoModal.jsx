@@ -25,10 +25,10 @@ const InfoModal = () => {
                     onClick={() => setIsOpen(true)}
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
-                    className="cursor-pointer"
+                    className="cursor-pointer h-auto"
                     aria-label="Información"
                 >
-                    <Icon name="info" state={isHovered ? 'hover' : 'normal'} className="h-12.5 w-12.5" />
+                    <Icon name="info" state={isHovered ? 'hover' : 'normal'} className="size-12.5" />
                 </button>
             </Tooltip>
 
@@ -37,7 +37,7 @@ const InfoModal = () => {
                 onClose={() => setIsOpen(false)}
                 title="Información de Mapalab"
                 width="w-11/12 max-w-7xl"
-                height="h-[90vh]"
+                height="h-[98vh] sm:h-[90vh]"
                 className="bg-gray-50"
                 showHeader={false}
             >

@@ -132,18 +132,20 @@ const DELITOS_FAMILIA = [
 ];
 
 const DELITOS_PATRIMONIO = [
-    ['robos_coche_cuatro_ruedas', 'Robo de coche a cuatro ruedas', 'delitos_fiscalia_robo_vehiculos_particulares', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
+    ['robos_coche_cuatro_ruedas', 'Robo a vehículos particulares', 'delitos_fiscalia_robo_vehiculos_particulares', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
     ['robos_vehiculos_carga_pesada', 'Robo a vehículos de carga pesada', 'delitos_fiscalia_robo_carga_pesada', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
     ['robos_motocicleta', 'Robo de motocicleta', 'delitos_fiscalia_robo_motocicleta', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
     ['robos_personas', 'Robo a personas', 'delitos_fiscalia_robo_persona', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
     ['robos_casa_habitacion', 'Robo a casa habitacion', 'delitos_fiscalia_robo_casa_habitacion', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
     ['robos_negocio', 'Robo a negocio', 'delitos_fiscalia_robo_negocio', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
     ['robos_autopartes', 'Robo de autopartes', 'delitos_fiscalia_robo_autopartes', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
-    ['robos_instituciones_bancarias', 'Robo a instituciones bancarias', 'delitos_fiscalia_robo_bancos', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
+    ['robo_interior_vehiculos', 'Robo al interior de vehículos', 'delitos_fiscalia_robo_int_vehiculos', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
+    ['robo_cuentahabientes', 'Robo a cuentahabientes', 'delitos_fiscalia_robo_cuentahabientes', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
+    ['robo_bancos', 'Robo a bancos', 'delitos_fiscalia_robo_bancos', ['seguridad', 'delito', 'robos', 'tasa', 'robo']],
 ];
 
 const DESAPARECIDAS = [
-    ['tasa_personas_desaparecidas', 'Personas desaparecidas (tasa)', 'personas_desaparecidas_total', 'tasa_personas',
+    ['tasa_personas_desaparecidas', 'Personas desaparecidas (tasa)', 'personas_desaparecidas', 'tasa_personas',
         ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
         createMunicipioConfig({
             title: 'Personas desaparecidas (tasa)',

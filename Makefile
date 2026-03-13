@@ -1,4 +1,4 @@
-.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod logs logs-backend logs-frontend logs-nginx clean status
+.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod deploy logs logs-backend logs-frontend logs-nginx clean status
 
 FRONTEND_DIR=frontend
 BACKEND_DIR=backend
@@ -195,6 +195,27 @@ build-prod:
 	@cd $(BACKEND_DIR) && docker compose -f docker-compose.prod.yaml build
 	@cd $(NGINX_DIR) && docker compose build
 	@echo "Imágenes construidas"
+
+deploy: network-create
+	@echo ""
+	@echo "DEPLOY (REBUILD + RESTART)"
+	@echo "==========================="
+	@echo ""
+	@echo "Construyendo frontend..."
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
+	@echo ""
+	@echo "Reiniciando servicios..."
+	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d --build
+	@if grep -q '^SSL_MODE=true' $(NGINX_DIR)/.env 2>/dev/null; then \
+		cd $(NGINX_DIR) && docker compose -f docker-compose.ssl.yml up -d --build; \
+	else \
+		cd $(NGINX_DIR) && docker compose up -d --build; \
+	fi
+	@echo "Recargando Nginx..."
+	@docker exec mapalab-nginx nginx -s reload 2>/dev/null || true
+	@echo ""
+	@echo "Deploy completado"
+	@echo ""
 
 down:
 	@echo "Deteniendo todos los servicios..."

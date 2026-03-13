@@ -9,6 +9,7 @@ import InfoBox from './components/InfoBox/InfoBox';
 import MapControls from './components/MapControls';
 import MeasurementTools from './components/MeasurementTools/ToolsPanel';
 import ScaleLineControl from './components/ScaleLineControl';
+import MapAttribution from './components/MapAttribution';
 import { useInitializeFromUrl } from './hooks/useInitializeFromUrl';
 import { useUrlSync } from './hooks/useUrlSync';
 import { SiderProvider } from '@contexts/SiderContext';
@@ -36,6 +37,7 @@ const Maps = () => {
                     <LayerDetailModal />
                     <InfoBox />
                     <ScaleLineControl />
+                    <MapAttribution />
                     <MapControls />
                     <MeasurementTools />
                     <MapView />

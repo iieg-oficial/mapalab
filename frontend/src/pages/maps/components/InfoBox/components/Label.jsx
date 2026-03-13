@@ -1,16 +1,24 @@
-const FeatureLabel = ({ value, index = 0 }) => {
+const FeatureLabel = ({ value, color, bg, fullWidth = false }) => {
     if (!value) return null;
 
-    const getColorClasses = (idx) => {
-        if (idx === 0) return 'text-orange-600 bg-orange-50';
-        if (idx === 1 || idx === 2) return 'text-purple-600 bg-purple-50';
-        return 'text-blue-600 bg-blue-50';
-    };
-
-    const colorClasses = getColorClasses(index);
+    if (fullWidth) {
+        return (
+            <div className="w-full">
+                <p
+                    className="font-garet font-bold text-[10px]/[14px] px-2 py-1 rounded-[5px] w-fit"
+                    style={{ color, backgroundColor: bg }}
+                >
+                    {value}
+                </p>
+            </div>
+        );
+    }
 
     return (
-        <p className={`text-xs ${colorClasses} px-2 py-1 rounded-[5px]`}>
+        <p
+            className="font-garet font-bold text-[10px]/[14px] px-2 py-1 rounded-[5px]"
+            style={{ color, backgroundColor: bg }}
+        >
             {value}
         </p>
     );
