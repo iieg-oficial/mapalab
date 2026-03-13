@@ -4,7 +4,11 @@ const topicsConfig = {
             id: 'general',
             label: 'General',
             description: 'Navega el territorio de Jalisco a través de un mapa base que facilita la ubicación y comprensión geográfica.',
-            icon: 'base_layers'
+            icon: 'base_layers',
+            subtopics: [
+                { label: 'Medio físico', layerIds: ['cuerpos_de_agua'] },
+                { label: 'Centro e infraestructura', layerIds: ['cabeceras_municipales','limite_municipal'] }
+            ]
         },{
             id: 'demografia',
             label: 'Demografía',
@@ -19,8 +23,8 @@ const topicsConfig = {
             description: 'Descubre cómo se mueve la economía con estadísticas de empleo, producción y actividad económica.',
             icon: 'economia',
             subtopics: [
-                { label: 'Ocupación y empleo formal', layerIds: ['tasa_de_desempleo'] },
-                { label: 'Cultivos', layerIds: ['agave', 'maiz', 'caña_de_azucar'] }
+                { label: 'Ocupación y empleo', layerIds: ['trabajadores_asegurados'] },
+                { label: 'Sector primario', layerIds: ['agave'] }
             ]
         }, {
             id: 'recursos',
@@ -28,8 +32,11 @@ const topicsConfig = {
             description: 'Encuentra información sobre espacios públicos, agua, clima y áreas naturales protegidas.',
             icon: 'recursos',
             subtopics: [
-                { label: 'Espacios públicos', layerIds: ['espacios_publicos_y_lugares_recreativos'] },
-                { label: 'Áreas naturales protegidas', layerIds: ['area_bosque_primavera'] }
+                { label: 'Asentamientos urbanos', layerIds: ['espacios_publicos_y_lugares_recreativos'] },
+                { label: 'Clima', layerIds: ['temperatura_media_anual'] },
+                { label: 'Agua', layerIds: ['disponibilidad_acuiferos'] },
+                { label: 'Áreas protegidas', layerIds: ['bosque_de_la_primavera'] },
+                { label: 'Territorio', layerIds: ['urbano'] }
             ]
         }, {
             id: 'seguridad',
@@ -37,7 +44,8 @@ const topicsConfig = {
             description: 'Conoce índices de seguridad y datos sobre diferentes categorías de delitos.',
             icon: 'seguridad',
             subtopics: [
-                { label: 'Feminicidios', layerIds: ['tasa_feminicidio', 'feminicidio'] },
+                { label: 'Incidencia en delitos del fuero común', layerIds: ['tasa_lesiones_dolosas', 'tasa_homicidio_doloso'] },
+                { label: 'Delitos del fuero común', layerIds: ['lesiones_dolosas', 'homicidio_doloso'] },
                 { label: 'Personas desaparecidas', layerIds: ['tasa_personas_desaparecidas'] }
             ]
         }, {
@@ -46,7 +54,8 @@ const topicsConfig = {
             description: 'Visualiza información sobre clínicas, hospitales y servicios médicos municipales, estatales y federales.',
             icon: 'salud',
             subtopics: [
-                { label: 'Establecimientos de salud', layerIds: ['establecimientos_salud'] }
+                { label: 'Oferta e infraestructura', layerIds: ['establecimeintos_salud'] },
+                { label: 'Acceso a servicios de salud', layerIds: ['carencia_acceso'] }
             ]
         }, {
             id: 'educacion',
@@ -54,7 +63,8 @@ const topicsConfig = {
             description: 'Accede a estadísticas sobre escuelas en todos sus niveles y rezago educativo.',
             icon: 'educacion',
             subtopics: [
-                { label: 'Infraestructura en Educación', layerIds: ['escuelas'] }
+                { label: 'Oferta e infraestructura', layerIds: ['cat-centros-educativos'] },
+                { label: 'Capacidades y alfabetización', layerIds: ['rezago_educativo'] }
             ]
         }, {
             id: 'desarrollo',
@@ -62,8 +72,8 @@ const topicsConfig = {
             description: 'Analiza información sobre pobreza, vulnerabilidad y desigualdad.',
             icon: 'desarrollo',
             subtopics: [
-                { label: 'Pobreza', layerIds: ['pobreza'] },
-                { label: 'Igualdad de género', layerIds: ['ind_igualdad_genero'] }
+                { label: 'Pobreza y vulnerabilidades', layerIds: ['tasa_pobreza'] },
+                { label: 'Igualdad de género', layerIds: ['brecha_salarial'] }
             ]
         }, {
             id: 'gobierno',
@@ -71,7 +81,7 @@ const topicsConfig = {
             description: 'Explora cómo se manejan los recursos municipales con estadísticas sobre ingresos y gastos.',
             icon: 'gobierno',
             subtopics: [
-                { label: 'Finanzas municipales', layerIds: ['ingresos_propios'] }
+                { label: 'Finanzas municipales', layerIds: ['ingreso_per_capita'] }
             ]
         }
     ]
