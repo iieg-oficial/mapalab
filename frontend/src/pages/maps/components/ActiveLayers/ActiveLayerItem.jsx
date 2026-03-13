@@ -1,10 +1,12 @@
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayerLoading } from '@hooks/useLayerLoading';
+import { useSider } from '@contexts/SiderContext';
 import Loading from '@components/Loading';
 import { useMemo, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
+import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const SIZE_BUTTON = 'size-5';
 
@@ -13,6 +15,7 @@ const ActiveLayerItem = ({
     dragHandleProps
 }) => {
     const { loadingLayers } = useLayerLoading();
+    const { isMobile } = useSider();
     const {
         selectedLayerForSymbology,
         setSelectedLayerForSymbology,
@@ -127,16 +130,24 @@ const ActiveLayerItem = ({
         </>
     );
 
+    const warningContent = 'Al seleccionar un punto en el mapa, éste mostrará información de esta capa. Puedes cambiar la selección dando clic en la capa que necesites visualizar.';
+
     return (
         <div
             className={`
                 group rounded-[7px] border border-transparent hover:border-[#EAEFFA]
-                transition-all hover:shadow-sm cursor-pointer
+                transition-all hover:shadow-sm cursor-pointer overflow-hidden
                 ${isSelected ? 'bg-[#F7F0FA] ring-1 ring-[#70308A]' : layer.visible ? 'bg-white' : 'bg-[#EFF3FC]'}
             `}
             onClick={handleClickOnLayer}
         >
-            <div className="flex items-center gap-3 px-2 py-4 h-12">
+            <Tooltip
+                content={isSelected ? warningContent : null}
+                variant="warning"
+                placement={isMobile ? 'top' : 'left'}
+                disabled={!isSelected}
+            >
+                <div className="flex items-center gap-3 px-2 py-4 h-12">
                 {loopState && monthAbbr && (
                     <button
                         onClick={(e) => { e.stopPropagation(); toggleLoop?.(layer.id); }}
@@ -166,10 +177,10 @@ const ActiveLayerItem = ({
                     {actionButtons}
                 </div>
 
-                <div className="flex-1 min-w-0 overflow-hidden pr-2">
+                <div className={`flex-1 min-w-0 pr-2 ${HIDDEN_SCROLLBAR}`}>
                     <Tooltip content={layer.name} disableMobile>
                         <span
-                            className="text-[14px] text-[#465055] font-garet font-medium block truncate"
+                            className="text-[14px] text-[#465055] font-garet font-medium block whitespace-nowrap pr-6"
                         >
                             {layer.name}
                         </span>
@@ -177,6 +188,8 @@ const ActiveLayerItem = ({
                 </div>
 
             </div>
+
+            </Tooltip>
 
             {isSelected && (
                 <div className="md:hidden flex items-center gap-1 px-2 pb-2">
