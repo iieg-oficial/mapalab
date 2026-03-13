@@ -12,9 +12,9 @@ const variantStyles = {
         arrowColor: '#2563eb'
     },
     warning: {
-        className: 'bg-[#FFDDBA] border-[#EF8B10] text-[#FF8300]',
-        arrowColor: '#FFDDBA',
-        arrowBorderColor: '#EF8B10'
+        className: 'bg-[#FFF1E3] border-2 border-[#FF8300] text-[#FF8300] py-3 px-6 max-w-[300px] rounded-full',
+        arrowColor: '#FFF1E3',
+        arrowBorderColor: '#FF8300'
     },
     error: {
         className: 'bg-red-600 text-white border-red-600',
@@ -237,9 +237,9 @@ const Tooltip = ({
             ref={tooltipRef}
             role="tooltip"
             className={`
-                fixed z-[9999] px-2.5 py-1 text-[10px]/[12px] font-medium font-garet rounded-[12px] 
-                max-w-xs pointer-events-none flex items-center gap-1.5 border tracking-normal
                 ${variantConfig.className}
+                fixed z-[9999] px-2.5 py-1 text-[10px]/[12px] font-bold font-garet rounded-[12px] 
+                max-w-xs pointer-events-none flex items-center gap-2 border tracking-normal
             `}
             style={{
                 top: `${position.top}px`,
