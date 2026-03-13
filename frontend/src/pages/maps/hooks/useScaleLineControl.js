@@ -29,7 +29,7 @@ export const useScaleLineControl = (mapRef, containerRef) => {
             units: 'metric',
             bar: true,
             text: true,
-            minWidth: 100
+            minWidth: 150
         });
 
         mapInstance.addControl(scaleLine);
