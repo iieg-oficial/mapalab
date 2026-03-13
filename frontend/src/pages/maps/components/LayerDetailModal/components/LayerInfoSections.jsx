@@ -35,7 +35,7 @@ const LayerInfoSections = ({ metadata, layerName }) => {
                         const links = metadata.fuentes_enlace.split(',').map(l => l.trim()).filter(Boolean);
                         if (links.length <= 1) return <ExternalLink href={metadata.fuentes_enlace} label="Ver fuente" />;
                         return (
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-row gap-2">
                                 {links.map((link, i) => (
                                     <ExternalLink key={i} href={link} label={`Fuente ${i + 1}`} />
                                 ))}
