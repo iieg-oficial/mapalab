@@ -6,8 +6,6 @@ import { trackShareMap } from '@services/analyticsService';
 
 const ShareButton = () => {
     const [shareMessage, setShareMessage] = useState(null);
-    const [isHovered, setIsHovered] = useState(false);
-
     const isCopied = shareMessage === '¡Enlace copiado!'
 
     useEffect(() => {
@@ -31,8 +29,6 @@ const ShareButton = () => {
             <button
                 type="button"
                 onClick={() => handleShare(setShareMessage)}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
                 className={`cursor-pointer h-auto bg-[#F7F0FA] border hover:border-[#703088] ${isCopied ? 'border-[#703088]' : 'border-transparent'} rounded-full p-3`}
                 aria-label="Compartir mapa"
             >
