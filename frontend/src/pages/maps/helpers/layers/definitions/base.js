@@ -159,6 +159,18 @@ const mapHiddenLayer = ([id, label, layerName, tags, littleCard]) => {
     };
 };
 
+export const BASE_INITIAL_ORDER = [
+    'limite_iieg',
+    'regiones',
+    'limite_municipal',
+    'cabeceras_municipales',
+    'aeropuertos',
+    'carreteras',
+    'caminos_2012',
+    'cuerpos_de_agua_50k',
+    'curvas_de_nivel',
+];
+
 export const baseLayers = {
     id: 'base_layers',
     label: 'General',

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Draw } from 'ol/interaction';
 import { getLength, getArea } from 'ol/sphere';
 import { createDefaultStyle, createEmojiStyle, createFreehandStyle, createTextStyle, computeAndCacheStyle, computeStylesForFeature } from '../helpers/drawingStyles';
+import { formatNumber } from '../helpers/formatNumber';
 import { useEmojiTemplate } from './useEmojiTemplate';
 import { useTextTemplate } from './useTextTemplate';
 import { useVectorLayerSetup } from './useVectorLayerSetup';
@@ -179,9 +180,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         const length = getLength(line);
         let output;
         if (length > 1000) {
-            output = `${Math.round((length / 1000) * 100) / 100} km`;
+            output = `${formatNumber(Math.round((length / 1000) * 100) / 100)} km`;
         } else {
-            output = `${Math.round(length * 100) / 100} m`;
+            output = `${formatNumber(Math.round(length * 100) / 100)} m`;
         }
         return output;
     }, []);
@@ -190,9 +191,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         const area = getArea(polygon);
         let output;
         if (area > 10000) {
-            output = `${Math.round((area / 1000000) * 100) / 100} km²`;
+            output = `${formatNumber(Math.round((area / 1000000) * 100) / 100)} km²`;
         } else {
-            output = `${Math.round(area * 100) / 100} m²`;
+            output = `${formatNumber(Math.round(area * 100) / 100)} m²`;
         }
         return output;
     }, []);
