@@ -5,6 +5,7 @@ from app.databases.factory import DatabaseFactory
 from app.repositories.mapalab_repository import MapalabRepository
 from app.services import GeoServerService
 from app.services.periodicity import get_periodicity
+from app.services.periodicity_cache_service import PeriodicityCacheService
 from app.schemas import (MetadataResponse, LayerResponse, LayerSourceResponse)
 from app.utils.api_responses import api_responses
 from app.config import settings
@@ -51,16 +52,19 @@ def get_metadata(
     for record in results:
         periodicity = None
         if record.nombre_capa_geoserver and ":" in record.nombre_capa_geoserver:
-            workspace, layer = record.nombre_capa_geoserver.split(":", 1)
-            try:
-                wfs_query_url = GeoServerService.get_layer_url(
-                    workspace, layer, cql_filter="", property_name='fecha'
-                )
-
-                georserver_periodicity = get_periodicity(wfs_query_url)
-                periodicity = georserver_periodicity["fecha"]
-            except Exception as e:
-                Logger.error(f"Error fetching periodicity for {record.nombre_capa_geoserver}: {str(e)}")
+            cached = PeriodicityCacheService.get_periodicity(record.nombre_capa_geoserver)
+            if cached:
+                periodicity = cached
+            else:
+                ws, ln = record.nombre_capa_geoserver.split(":", 1)
+                try:
+                    wfs_query_url = GeoServerService.get_layer_url(
+                        ws, ln, cql_filter="", property_name='fecha'
+                    )
+                    geoserver_periodicity = get_periodicity(wfs_query_url)
+                    periodicity = geoserver_periodicity["fecha"]
+                except Exception as e:
+                    Logger.error(f"Error fetching periodicity for {record.nombre_capa_geoserver}: {str(e)}")
 
         numeralia = []
         for i in range(1, 9):

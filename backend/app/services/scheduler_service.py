@@ -3,6 +3,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.services.search_cache_service import SearchCacheService
+from app.services.periodicity_cache_service import PeriodicityCacheService
 from app.utils.logger import Logger
 
 class SchedulerService:
@@ -45,9 +46,17 @@ class SchedulerService:
             Logger.info("Starting scheduled cache regeneration...")
             cache = SearchCacheService.generate_cache()
             SearchCacheService.save_cache(cache)
-            Logger.info("Scheduled cache regeneration completed successfully")
+            Logger.info("Scheduled search cache regeneration completed successfully")
         except Exception as e:
-            Logger.error(f"Error during scheduled cache regeneration: {str(e)}")
+            Logger.error(f"Error during scheduled search cache regeneration: {str(e)}")
+
+        try:
+            Logger.info("Starting scheduled periodicity cache regeneration...")
+            periodicity_cache = PeriodicityCacheService.generate_cache()
+            PeriodicityCacheService.save_cache(periodicity_cache)
+            Logger.info("Scheduled periodicity cache regeneration completed successfully")
+        except Exception as e:
+            Logger.error(f"Error during scheduled periodicity cache regeneration: {str(e)}")
 
     @classmethod
     def is_running(cls):
