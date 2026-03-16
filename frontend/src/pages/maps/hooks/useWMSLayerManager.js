@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { hasWMSConfig, findWMSConfig } from '../helpers/wmsConfig';
 import { layers } from '../helpers/layers/index';
+import { findLayerById } from '../helpers/layers/utils/layerHelpers';
 import { filtersInitializationComplete } from './useInitializeFromUrl';
 import { useDebounce } from '@hooks/useDebounce';
 import { useLayerLoading } from '@hooks/useLayerLoading';
@@ -118,6 +119,9 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 const stylesParam = wmsLayersOrdered.map(l => l.styles).join(',');
 
                 const cqlFilterParam = wmsLayersOrdered.map(merged => {
+                    const hasDD = merged.subLayers.some(sub => findLayerById(sub.id, layers)?.defaultDate);
+                    if (hasDD) return '1=0';
+
                     const filters = merged.subLayers
                         .map(sub => sub.wmsConfig.cqlFilter)
                         .filter(f => f && f.trim() !== '');
@@ -127,7 +131,9 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 }).join(';');
 
                 const hasAnyFilter = wmsLayersOrdered.some(merged =>
-                    merged.subLayers.some(sub => sub.wmsConfig.cqlFilter)
+                    merged.subLayers.some(sub =>
+                        sub.wmsConfig.cqlFilter || findLayerById(sub.id, layers)?.defaultDate
+                    )
                 );
                 const finalCqlFilter = hasAnyFilter ? cqlFilterParam : null;
 
