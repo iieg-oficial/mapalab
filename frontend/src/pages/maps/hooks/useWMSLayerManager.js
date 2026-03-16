@@ -172,6 +172,20 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 } else {
                     const layer = wmsLayersRef.current.get(groupKey);
                     if (layer) {
+                        const oldMerged = layer.get('mergedLayers');
+                        const newSubLayerIds = new Set();
+                        wmsLayersOrdered.forEach(merged => {
+                            merged.subLayers.forEach(sub => newSubLayerIds.add(sub.id));
+                        });
+                        if (oldMerged) {
+                            oldMerged.forEach(merged => {
+                                merged.subLayers.forEach(sub => {
+                                    if (!newSubLayerIds.has(sub.id)) {
+                                        handleLoadEnd(sub.id);
+                                    }
+                                });
+                            });
+                        }
                         layer.set('mergedLayers', wmsLayersOrdered);
 
                         if (layer.getZIndex() !== maxZIndex) {
