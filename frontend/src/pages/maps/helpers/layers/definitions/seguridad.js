@@ -3,7 +3,7 @@ import { createMunicipioConfig } from '../../../components/InfoBox/utils/cardTem
 
 const createSeguridadLayer = createLayerFactory('seguridad');
 
-const TASA_DEFAULT_DATE = 'latest';
+const TASA_DEFAULT_DATE = { year: 2025 };
 
 const TASA_STATS_HOMICIDIO = [
     { label: 'Tasa', field: 'tasa_carpetas_investigacion' },
