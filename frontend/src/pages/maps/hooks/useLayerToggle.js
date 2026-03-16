@@ -54,6 +54,10 @@ export const useLayerToggle = ({
             if (cql) applyFilter(layerId, 'date', cql);
         } catch (err) {
             console.error('Error resolving default date for layer', err);
+            if (layer.defaultDate && layer.defaultDate !== 'latest') {
+                const fallbackCql = generateDefaultDateFilter(layer.defaultDate, layer.defaultDate?.column || 'fecha');
+                if (fallbackCql) applyFilter(layerId, 'date', fallbackCql);
+            }
         }
     }, [findLayerById, applyFilter, resolveDefaultDate]);
 
