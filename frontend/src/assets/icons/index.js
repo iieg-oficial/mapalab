@@ -79,6 +79,7 @@ import simbologiaNormal from './ico_simbologia_normal.svg';
 
 import visibleNormal from './ico_mostrar.svg';
 import visibleHover from './ico_ocultar.svg';
+import visibleGray from './ico_mostrar_gray.svg';
 
 import moveNormal from './ico_move_normal.svg';
 import moveHover from './ico_move_hover.svg';
@@ -120,6 +121,9 @@ import sharedClick from './ico_shared_click.svg';
 import rendimientoNormal from './ico_rendimiento_capas.svg';
 import tiempoAlertNormal from './ico_tiempo_alert.svg';
 
+import opcionesNormal from './ico_opciones.svg';
+import warningDropdownNormal from './ico_warning_dropdown.svg';
+
 export const externalIcons = {
     base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
     salud_normal: saludNormal, salud_hover: saludHover, economia_normal: economiaNormal, economia_hover: economiaHover,
@@ -132,11 +136,12 @@ export const externalIcons = {
     linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover, lista_normal: listaNormal, lista_hover: listaHover,
     emoji_normal: emojiNormal, emoji_hover: emojiHover, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,
     info_normal: infoNormal, info_hover: infoHover, shared_normal: sharedNormal, shared_hover: sharedHover, capa_activa_normal: capaActivaNormal,
-    visible_normal: visibleNormal, visible_hover: visibleHover, move_normal: moveNormal, move_hover: moveHover, simbologia_normal: simbologiaNormal,
+    visible_normal: visibleNormal, visible_hover: visibleHover, visible_gray: visibleGray, move_normal: moveNormal, move_hover: moveHover, simbologia_normal: simbologiaNormal,
     eliminar_normal: eliminarNormal, eliminar_hover: eliminarHover, big_card_normal: bigCardNormal, big_card_hover: bigCardHover, upArrow_normal: upArrowNormal,
     alert_normal: alertNormal, deshacer_normal: deshacerNormal, center_normal: centerNormal, center_hover: centerHover, aviso_privacidad_normal: avisoPrivacidadNormal,
     info_warning_normal: infoWarningNormal, coordenadas_normal: coordenadasNormal, n_normal: nNormal, sin_mapalab_normal: sinMapalabNormal, sin_mapalab_hover: sinMapalabHover,
     satelite_normal: sateliteNormal, satelite_hover: sateliteHover, position_normal: positionNormal, position_hover: positionHover, voyager_normal: voyagerNormal,
     voyager_hover: voyagerHover, ubicacion_normal: ubicacionNormal, celular_normal: celularNormal, hombre_normal: hombreNormal, mujer_normal: mujerNormal,
-    rendimiento_normal: rendimientoNormal, tiempo_alert_normal: tiempoAlertNormal,
+    rendimiento_normal: rendimientoNormal, tiempo_alert_normal: tiempoAlertNormal, opciones_normal: opcionesNormal,
+    warning_dropdown_normal: warningDropdownNormal,
 };

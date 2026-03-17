@@ -16,6 +16,19 @@ export const useSymbology = ({
     const [selectedLayerForSymbology, setSelectedLayerForSymbology] = useState(null);
     const [hiddenLayerIds, setHiddenLayerIds] = useState([]);
 
+    const showAllLayers = useCallback(() => {
+        setHiddenLayerIds([]);
+    }, []);
+
+    const hideAllLayers = useCallback(() => {
+        const allIds = new Set();
+        activeLayerIds.forEach(id => {
+            allIds.add(id);
+            getAllChildLayerIds(id).forEach(cid => allIds.add(cid));
+        });
+        setHiddenLayerIds([...allIds]);
+    }, [activeLayerIds, getAllChildLayerIds]);
+
     const toggleLayerVisibility = useCallback((layerId) => {
         setHiddenLayerIds(prev => {
             const childIds = getAllChildLayerIds(layerId);
@@ -161,6 +174,8 @@ export const useSymbology = ({
         hiddenLayerIds,
         toggleLayerVisibility,
         isLayerVisible,
+        showAllLayers,
+        hideAllLayers,
         getLayersForSymbology,
         groupedActiveLayers,
         activeLayers
