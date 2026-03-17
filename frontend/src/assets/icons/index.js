@@ -124,6 +124,13 @@ import tiempoAlertNormal from './ico_tiempo_alert.svg';
 import opcionesNormal from './ico_opciones.svg';
 import warningDropdownNormal from './ico_warning_dropdown.svg';
 
+import leftArrowFillNormal from './ico_left_arrow_fill_normal.svg';
+import leftArrowFillHover from './ico_left_arrow_fill_hover.svg';
+import rightArrowFillNormal from './ico_right_arrow_fill_normal.svg';
+import rightArrowFillHover from './ico_right_arrow_fill_hover.svg';
+import downArrowFillNormal from './ico_down_arrow_fill_normal.svg';
+import downArrowFillHover from './ico_down_arrow_fill_hover.svg';
+
 export const externalIcons = {
     base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
     salud_normal: saludNormal, salud_hover: saludHover, economia_normal: economiaNormal, economia_hover: economiaHover,
@@ -144,4 +151,7 @@ export const externalIcons = {
     voyager_hover: voyagerHover, ubicacion_normal: ubicacionNormal, celular_normal: celularNormal, hombre_normal: hombreNormal, mujer_normal: mujerNormal,
     rendimiento_normal: rendimientoNormal, tiempo_alert_normal: tiempoAlertNormal, opciones_normal: opcionesNormal,
     warning_dropdown_normal: warningDropdownNormal,
+    left_arrow_fill_normal: leftArrowFillNormal, left_arrow_fill_hover: leftArrowFillHover,
+    right_arrow_fill_normal: rightArrowFillNormal, right_arrow_fill_hover: rightArrowFillHover,
+    down_arrow_fill_normal: downArrowFillNormal, down_arrow_fill_hover: downArrowFillHover,
 };
