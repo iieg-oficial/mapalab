@@ -41,10 +41,15 @@ The file structure should be like this:
 │   └── nginx/             # Reverse proxy
 ```
 
+Configure the git hooks for the project:
+```bash
+make setup-hooks
+```
+
 It is necessary to modify and accommodate with the information required in the environment variables.
 ```bash
 mv env.example .env
-vi .env 
+vi .env
 ```
 
 ## 🗂️ Documentation
