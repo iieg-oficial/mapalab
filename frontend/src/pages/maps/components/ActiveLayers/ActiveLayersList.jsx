@@ -9,6 +9,11 @@ import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
 import ScrollContainer from '@components/ScrollContainer';
+import { useMapsContext } from '@hooks/useMaps';
+import { useSider } from '@contexts/SiderContext';
+
+const STICKY_SIZE = 52;
+const STICKY_SIZE_MOBILE = 100;
 
 const ActiveLayersList = ({ onCollapseChange }) => {
     const {
@@ -17,6 +22,8 @@ const ActiveLayersList = ({ onCollapseChange }) => {
         reorderActiveLayerIds,
         hiddenLayerIds
     } = useContext(MapsContext);
+    const { selectedLayerForSymbology } = useMapsContext();
+    const { isMobile } = useSider();
 
     const { unifiedLayers } = useActiveLayersLogic(activeLayerIds, hiddenLayerIds);
     const collapse = useLayerCollapse(unifiedLayers);
@@ -24,6 +31,7 @@ const ActiveLayersList = ({ onCollapseChange }) => {
     const { handleDragEnd } = useLayerSorting(activeLayerIds, unifiedLayers, reorderActiveLayerIds);
     const sortableItems = useMemo(() => unifiedLayers.map(l => l.id), [unifiedLayers]);
     const isInegiMode = activeLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id));
+    const isMobileSticky = isMobile ? STICKY_SIZE_MOBILE : STICKY_SIZE;
 
     const handleToggleBaseMode = useCallback(() => {
         if (isInegiMode) {
@@ -75,14 +83,14 @@ const ActiveLayersList = ({ onCollapseChange }) => {
                 </div>
             </div>
 
-            <ScrollContainer className="flex-1 min-h-0 -mx-1 px-1">
+            <ScrollContainer className="flex-1 min-h-0 -mx-0 px-1" overlayFade stickySize={isMobileSticky}>
                 <SortableList
                     items={sortableItems}
                     onSortEnd={handleDragEnd}
                 >
                     <div className="space-y-1 py-1">
                         {unifiedLayers.map((layer) => (
-                            <SortableItem key={layer.id} id={layer.id}>
+                            <SortableItem key={layer.id} id={layer.id} isSticky={selectedLayerForSymbology?.id === layer.id}>
                                 <ActiveLayerItem layer={layer} />
                             </SortableItem>
                         ))}

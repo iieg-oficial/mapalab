@@ -3,6 +3,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, TouchS
 import { verticalListSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
+import { useSider } from '@contexts/SiderContext';
 
 const POINTER_SENSOR_OPTIONS = {
     activationConstraint: {
@@ -46,6 +47,7 @@ export const SortableList = ({ items, onSortEnd, children, strategy = verticalLi
 };
 
 export function SortableItem(props) {
+    const { isMobile } = useSider();
     const {
         attributes,
         listeners,
@@ -55,16 +57,20 @@ export function SortableItem(props) {
         isDragging,
     } = useSortable({ id: props.id });
 
+    const isSticky = props.isSticky && !isDragging;
+
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        position: 'relative',
-        zIndex: isDragging ? 999 : 'auto',
+        position: isSticky ? 'sticky' : 'relative',
+        top: isSticky ? 1 : undefined,
+        bottom: isSticky ? (isMobile ? 1 : 0) : undefined,
+        zIndex: isDragging ? 999 : isSticky ? 5 : 'auto',
     };
 
     return (
-        <div ref={setNodeRef} style={style}>
+        <div ref={setNodeRef} style={style} {...(isSticky ? { 'data-sticky': '' } : {})}>
             {React.Children.map(props.children, child => {
                 if (React.isValidElement(child)) {
                     return React.cloneElement(child, {

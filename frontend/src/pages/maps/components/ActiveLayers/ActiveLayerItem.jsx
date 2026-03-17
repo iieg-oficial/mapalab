@@ -2,7 +2,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 import { useSider } from '@contexts/SiderContext';
 import Loading from '@components/Loading';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
@@ -28,10 +28,17 @@ const ActiveLayerItem = ({
         toggleLoop
     } = useMapsContext();
 
+    const itemRef = useRef(null);
     const [isDeleteHovered, setIsDeleteHovered] = useState(false);
     const [isCardHovered, setIsCardHovered] = useState(false);
     const [isMoveActive, setIsMoveActive] = useState(false);
     const isSelected = selectedLayerForSymbology?.id === layer.id;
+
+    useEffect(() => {
+        if (isSelected && itemRef.current) {
+            itemRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }, [isSelected]);
     const canOpenModal = layer.id !== 'curvas_de_nivel';
 
     const handleClickOnLayer = () => {
@@ -134,6 +141,7 @@ const ActiveLayerItem = ({
 
     return (
         <div
+            ref={itemRef}
             className={`
                 group rounded-[7px] border border-transparent hover:border-[#EAEFFA]
                 transition-all hover:shadow-sm cursor-pointer overflow-hidden
