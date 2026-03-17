@@ -1,17 +1,13 @@
 import { useEffect } from 'react';
-import { useDebounce } from '@hooks/useDebounce';
 import { resolveTimeStyle } from '../helpers/wmsConfig';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
 export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds }) => {
-    const debouncedFilters = useDebounce(filters, 150);
-    const debouncedActiveLayers = useDebounce(activeLayerIds, 150);
-
     useEffect(() => {
         if (!mapRef.current || !getFilter) return;
 
-        const isInegiMode = debouncedActiveLayers.some(id => INEGI_LAYER_IDS.includes(id));
+        const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
         const envParam = isInegiMode ? 'geom:geom_inegi' : 'geom:geom_iieg';
 
         requestAnimationFrame(() => {
@@ -85,5 +81,5 @@ export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, 
             });
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedFilters, debouncedActiveLayers, getFilter, combineCQLFilters]);
+    }, [filters, activeLayerIds, getFilter, combineCQLFilters]);
 };
