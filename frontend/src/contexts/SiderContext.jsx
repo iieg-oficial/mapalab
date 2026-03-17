@@ -50,7 +50,7 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
             }
             if (prev === 'collapsed') {
                 setIsHovered(false);
-                return 'zen';
+                return 'mobile';
             }
             return 'auto';
         });
@@ -157,7 +157,7 @@ export const useSiderHover = ({
     };
 
     const handleMouseEnter = () => {
-        if (lockMode === 'collapsed' || lockMode === 'zen') return;
+        if (lockMode === 'collapsed' || lockMode === 'mobile') return;
 
         clearTimers();
 

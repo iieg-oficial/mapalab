@@ -46,17 +46,13 @@ const MapSider = ({ className = '' }) => {
         toggleLock
     } = useSider();
     const handleToggleLock = useCallback(() => {
-        const labels = { auto: 'expandido', expanded: 'colapsado', collapsed: 'zen', zen: 'automatico' };
+        const labels = { auto: 'expandido', expanded: 'colapsado', collapsed: 'mobile', mobile: 'automatico' };
         trackSiderLock(labels[lockMode] || 'automatico');
         toggleLock();
     }, [lockMode, toggleLock]);
 
     const { shouldAutoOpenSearch, clearAutoOpen } = useSearch();
-    const { isZenMode, setIsZenMode } = useZenMode();
-
-    useEffect(() => {
-        setIsZenMode(lockMode === 'zen');
-    }, [lockMode, setIsZenMode]);
+    const { isZenMode } = useZenMode();
     const contentRef = useRef(null);
     const { canScrollUp, canScrollDown } = useScrollOverflow(contentRef);
     const [autoOpenMenuId, setAutoOpenMenuId] = useState(null);
@@ -64,7 +60,7 @@ const MapSider = ({ className = '' }) => {
     const autoOpenProcessedRef = useRef(false);
     const navigate = useNavigate();
 
-    const treatAsMobile = isMobile || isZenMode;
+    const treatAsMobile = isMobile || isZenMode || lockMode === 'mobile';
 
     useEffect(() => {
         if (shouldAutoOpenSearch && !autoOpenProcessedRef.current) {
