@@ -3,7 +3,6 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, TouchS
 import { verticalListSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
-import { useSider } from '@contexts/SiderContext';
 
 const POINTER_SENSOR_OPTIONS = {
     activationConstraint: {
@@ -47,7 +46,6 @@ export const SortableList = ({ items, onSortEnd, children, strategy = verticalLi
 };
 
 export function SortableItem(props) {
-    const { isMobile } = useSider();
     const {
         attributes,
         listeners,

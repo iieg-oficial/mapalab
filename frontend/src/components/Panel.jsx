@@ -42,7 +42,7 @@ const Panel = ({
     const hasFloatingPosition = anchorRef != null;
     const siderContext = useSider();
     const isMobile = treatAsMobileProp ?? siderContext?.isMobile ?? false;
-    const { canScrollUp, canScrollDown } = useScrollOverflow(panelRef, { enabled: open && variant === 'menu' });
+    useScrollOverflow(panelRef, { enabled: open && variant === 'menu' });
 
     const shouldUseMobileFullscreen = mobileFullscreen !== undefined
         ? mobileFullscreen

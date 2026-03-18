@@ -8,7 +8,7 @@ import { useLayerLoading } from '@hooks/useLayerLoading';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
-export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getAllChildLayerIds, getLayerOpacity, layerOpacities, getFilter, combineCQLFilters }) => {
+export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getLayerOpacity, layerOpacities, getFilter, combineCQLFilters }) => {
     const wmsLayersRef = useRef(new Map());
     const isFirstRender = useRef(true);
     const debouncedActiveLayerIds = useDebounce(activeLayerIds, 30);

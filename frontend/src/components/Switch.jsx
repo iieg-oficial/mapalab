@@ -21,40 +21,40 @@ const Switch = ({ checked, indeterminate, onChange, disabled, className = '', on
         return undefined;
     };
 
-    const Wrap = ({ children }) => tooltip ? <Tooltip content={tooltip}>{children}</Tooltip> : children;
+    const renderButtonWithLabels = (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            disabled={disabled}
+            onClick={(e) => {
+                e.stopPropagation();
+                if (!disabled && onChange) onChange(!checked);
+            }}
+            className={`
+                inline-flex h-6 shrink-0 items-center rounded-full gap-0
+                transition-colors duration-200 ease-in-out bg-[#E9EDF7]
+                ${checked ? 'flex-row-reverse pl-1.5 pr-1' : 'flex-row pl-1 pr-1.5'}
+                ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
+                ${className}
+            `}
+        >
+            <span
+                className="w-[18px] h-[18px] rounded-full shadow-[0px_3px_6px_#00000029] shrink-0 transition-colors duration-200 ease-in-out"
+                style={{ backgroundColor: getDotColor() || undefined }}
+            />
+            <span className="text-[9px] font-garet font-bold text-[#465055] select-none px-1.5">
+                {checked ? onLabel : offLabel}
+            </span>
+        </button>
+    );
 
     if (hasLabels) {
-        return (
-            <Wrap><button
-                type="button"
-                role="switch"
-                aria-checked={checked}
-                disabled={disabled}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (!disabled && onChange) onChange(!checked);
-                }}
-                className={`
-                    inline-flex h-6 shrink-0 items-center rounded-full gap-0
-                    transition-colors duration-200 ease-in-out bg-[#E9EDF7]
-                    ${checked ? 'flex-row-reverse pl-1.5 pr-1' : 'flex-row pl-1 pr-1.5'}
-                    ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
-                    ${className}
-                `}
-            >
-                <span
-                    className="w-[18px] h-[18px] rounded-full shadow-[0px_3px_6px_#00000029] shrink-0 transition-colors duration-200 ease-in-out"
-                    style={{ backgroundColor: getDotColor() || undefined }}
-                />
-                <span className="text-[9px] font-garet font-bold text-[#465055] select-none px-1.5">
-                    {checked ? onLabel : offLabel}
-                </span>
-            </button></Wrap>
-        );
+        return tooltip ? <Tooltip content={tooltip}>{renderButtonWithLabels}</Tooltip> : renderButtonWithLabels;
     }
 
-    return (
-        <Wrap><button
+    const renderButton = (
+        <button
             type="button"
             role="switch"
             aria-checked={checked}
@@ -80,8 +80,10 @@ const Switch = ({ checked, indeterminate, onChange, disabled, className = '', on
                     ${getTranslateClass()} ${getBackgroundColor()}
                 `}
             />
-        </button></Wrap>
+        </button>
     );
+
+    return tooltip ? <Tooltip content={tooltip}>{renderButton}</Tooltip> : renderButton;
 };
 
 export default Switch;
