@@ -88,7 +88,7 @@ const Body = ({ isModal = false }) => {
                                 loading="lazy"
                             />
                             <div className="flex flex-col justify-start items-center text-center">
-                                <h3 className="blockfont-garet font-bold text-orange text-[16px] xl:leading-16 tracking-normal mb-5 mt-3 xl:mb-0 xl:mt-0">
+                                <h3 className="blockfont-garet font-bold text-orange text-[16px] xl:leading-8 xl:mb-2.5 tracking-normal mb-5 mt-3 2xl:mb-0 xl:mt-0">
                                     {item.header}
                                 </h3>
                                 <p className="font-garet font-book text-[#2E4372] text-[14px]/[24px] tracking-normal min-h-[93px]">
