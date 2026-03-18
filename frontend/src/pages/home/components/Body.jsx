@@ -79,11 +79,11 @@ const Body = ({ isModal = false }) => {
                     {guideConfig.steps.map((item) => (
                         <div
                             key={item.id}
-                            className="flex flex-col gap-3 items-center justify-end rounded-[13px] py-6 px-10 bg-white w-full max-w-[400px] h-[360px] shadow-[0px_6px_12px_#ACBFE533]"
+                            className="items-center justify-end rounded-[13px] py-6 px-10 bg-white w-full max-w-[400px] h-auto shadow-[0px_6px_12px_#ACBFE533]"
                         >
                             <img
                                 src={item.image}
-                                className="bg-[transparent linear-gradient(0deg, #F3EBFF 0%, #F4EBFF00 100%) 0% 0% no-repeat padding-box] size-[122px] rounded-[16px]"
+                                className="bg-[transparent linear-gradient(0deg, #F3EBFF 0%, #F4EBFF00 100%) 0% 0% no-repeat padding-box] size-[122px] rounded-[16px] mx-auto"
                                 alt=""
                                 loading="lazy"
                             />
