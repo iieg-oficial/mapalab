@@ -111,8 +111,8 @@ const Header = () => {
             </header>
             <div
                 className={`
-                    sticky top-2.5 z-50 bg-[#5C2472] flex items-center justify-between rounded-[9px]
-                    mx-2.5 px-2 md:px-20 xl:px-45 py-5 transition-all duration-300
+                    sticky top-0 z-50 bg-purple flex items-center justify-between
+                    px-2 md:px-20 xl:px-45 py-5 transition-all duration-300
                     ${showSticky ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}
                 `}
             >
