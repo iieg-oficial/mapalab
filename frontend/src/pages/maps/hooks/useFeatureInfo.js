@@ -7,6 +7,8 @@ import { findLayerById, layers as allLayers, collectLayersWithWMS, findParentGro
 
 const FEATURE_INFO_LOADING_ID = 'feature_info_query';
 
+const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
+
 export const useFeatureInfo = () => {
     const { hiddenLayerIds, setSelectedFeatureInfo, clickPosition, activeLayerIds, getFilter, selectedLayerForSymbology, setSelectedLayerForSymbology } = useContext(MapsContext);
     const { setLayerLoading } = useLayerLoading();
@@ -90,7 +92,8 @@ export const useFeatureInfo = () => {
         setLayerLoading(FEATURE_INFO_LOADING_ID, true);
 
         try {
-            const results = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter);
+            const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
+            const results = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode);
             const [lng, lat] = toLonLat(coordinate);
 
             if (results && results.length > 0) {
@@ -108,7 +111,7 @@ export const useFeatureInfo = () => {
                 let alternativeLayers = [];
 
                 if (otherActiveLayers.length > 0) {
-                    const altResults = await getFeatureInfoForActiveLayers(otherActiveLayers, map, coordinate, getFilter);
+                    const altResults = await getFeatureInfoForActiveLayers(otherActiveLayers, map, coordinate, getFilter, isInegiMode);
                     if (altResults && altResults.length > 0) {
                         const groupedAlternatives = new Map();
 
@@ -224,7 +227,8 @@ export const useFeatureInfo = () => {
         setLoading(true);
         setLayerLoading(FEATURE_INFO_LOADING_ID, true);
         try {
-            const results = await getFeaturesInPolygonForActiveLayers(activeLayers, map, polygonGeometry, getFilter);
+            const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
+            const results = await getFeaturesInPolygonForActiveLayers(activeLayers, map, polygonGeometry, getFilter, isInegiMode);
             const [lng, lat] = toLonLat(centerCoordinate);
 
             if (results && results.length > 0) {

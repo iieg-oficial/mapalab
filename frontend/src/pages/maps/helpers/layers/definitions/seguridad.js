@@ -245,6 +245,7 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
                         defaultDate: TASA_DEFAULT_DATE,
+                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -256,6 +257,7 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
                         defaultDate: TASA_DEFAULT_DATE,
+                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -267,6 +269,7 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
                         defaultDate: TASA_DEFAULT_DATE,
+                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -278,6 +281,7 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
                         defaultDate: TASA_DEFAULT_DATE,
+                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -365,6 +369,7 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer.withFilterAndStyles('personas_desaparecidas', `${not} IS NOT NULL`, style, { metadataLayer: style }),
                         defaultDate: TASA_DEFAULT_DATE,
+                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -376,6 +381,7 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
                         defaultDate: TASA_DEFAULT_DATE,
+                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
