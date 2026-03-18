@@ -5,7 +5,6 @@ import { useLayerCollapse } from './hooks/useLayerCollapse';
 import { useLayerSorting } from './hooks/useLayerSorting';
 import { SortableList, SortableItem } from './SortableList';
 import ActiveLayerItem from './ActiveLayerItem';
-import BaseLayersDropdown from './BaseLayersDropdown';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
@@ -177,7 +176,6 @@ const ActiveLayersList = ({ onCollapseChange }) => {
                             offColor="#FF8300"
                             tooltip={isInegiMode ? 'Cambiar a IIEG' : 'Cambiar a INEGI'}
                         />
-                        <BaseLayersDropdown isInegiMode={isInegiMode} />
                     </div>
                 </div>
             )}
