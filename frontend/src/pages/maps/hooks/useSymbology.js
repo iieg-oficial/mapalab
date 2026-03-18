@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
     isParentLayer,
     hasWMSConfig,
@@ -116,6 +116,8 @@ export const useSymbology = ({
         });
     }, [activeLayerIds, getAllChildLayerIds]);
 
+    const isStartupRef = useRef(true);
+
     useEffect(() => {
         if (!activeLayerIds || activeLayerIds.length === 0) {
             setSelectedLayerForSymbology(prev => prev ? null : prev);
@@ -153,6 +155,14 @@ export const useSymbology = ({
 
             if (!shouldAutoSelect) {
                 return prev;
+            }
+
+            if (isStartupRef.current) {
+                isStartupRef.current = false;
+                const limiteLayer = allParentLayers.find(l => l.id === 'limite_iieg') || allIndividualLayers.find(l => l.id === 'limite_iieg');
+                if (limiteLayer) {
+                    return limiteLayer;
+                }
             }
 
             if (nonBaseParentLayers.length > 0) {
