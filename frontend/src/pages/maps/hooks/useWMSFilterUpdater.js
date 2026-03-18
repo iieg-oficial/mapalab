@@ -1,13 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { resolveTimeStyle } from '../helpers/wmsConfig';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
 export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds }) => {
+    const activeLayerIdsRef = useRef(activeLayerIds);
+    activeLayerIdsRef.current = activeLayerIds;
+
     useEffect(() => {
         if (!mapRef.current || !getFilter) return;
 
-        const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
+        const isInegiMode = activeLayerIdsRef.current.some(id => INEGI_LAYER_IDS.includes(id));
         const envParam = isInegiMode ? 'geom:geom_inegi' : 'geom:geom_iieg';
 
         requestAnimationFrame(() => {
@@ -81,5 +84,5 @@ export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, 
             });
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filters, activeLayerIds, getFilter, combineCQLFilters]);
+    }, [filters, getFilter, combineCQLFilters]);
 };
