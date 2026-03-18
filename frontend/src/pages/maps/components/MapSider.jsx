@@ -15,6 +15,7 @@ import { trackSiderLock } from '@services/analyticsService';
 import { useZenMode } from './ZenMode';
 
 import MenuItem from './MenuItem';
+import SiderModeButton from './SiderModeButton';
 
 const MapSider = ({ className = '' }) => {
     const {
@@ -45,8 +46,8 @@ const MapSider = ({ className = '' }) => {
         toggleLock
     } = useSider();
     const handleToggleLock = useCallback(() => {
-        const nextModeLabel = lockMode === 'auto' ? 'expandido' : lockMode === 'expanded' ? 'colapsado' : 'automatico';
-        trackSiderLock(nextModeLabel);
+        const labels = { auto: 'expandido', expanded: 'colapsado', collapsed: 'mobile', mobile: 'automatico' };
+        trackSiderLock(labels[lockMode] || 'automatico');
         toggleLock();
     }, [lockMode, toggleLock]);
 
@@ -55,10 +56,11 @@ const MapSider = ({ className = '' }) => {
     const contentRef = useRef(null);
     const { canScrollUp, canScrollDown } = useScrollOverflow(contentRef);
     const [autoOpenMenuId, setAutoOpenMenuId] = useState(null);
+    const [showModeBtn, setShowModeBtn] = useState(false);
     const autoOpenProcessedRef = useRef(false);
     const navigate = useNavigate();
 
-    const treatAsMobile = isMobile || isZenMode;
+    const treatAsMobile = isMobile || isZenMode || lockMode === 'mobile';
 
     useEffect(() => {
         if (shouldAutoOpenSearch && !autoOpenProcessedRef.current) {
@@ -75,7 +77,7 @@ const MapSider = ({ className = '' }) => {
         const handleKeyDown = (e) => {
             if (e.altKey && e.key.toLowerCase() === 'b') {
                 e.preventDefault();
-                if (!treatAsMobile) {
+                if (!isMobile) {
                     handleToggleLock();
                 }
             }
@@ -83,7 +85,7 @@ const MapSider = ({ className = '' }) => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [treatAsMobile, handleToggleLock]);
+    }, [isMobile, handleToggleLock]);
 
     const { handleMouseEnter, handleMouseLeave } = useSiderHover({
         setIsHovered,
@@ -166,7 +168,7 @@ const MapSider = ({ className = '' }) => {
             ref={siderRef}
             className={[
                 'absolute top-4 left-4 z-20 max-md:z-22 flex flex-col',
-                'max-h-[calc(100dvh-2rem)] bg-white shadow-[0_5px_20px_#1A26641A] rounded-[10px]',
+                'max-h-[calc(100dvh-2rem)] bg-white shadow-[0_5px_20px_#1A26641A] rounded-[10px] overflow-visible',
                 'transition-all duration-500',
                 className,
             ].join(' ')}
@@ -178,11 +180,13 @@ const MapSider = ({ className = '' }) => {
             onMouseLeave={!treatAsMobile ? handleMouseLeave : undefined}
         >
             <div
-                className="shrink-0 flex justify-center"
+                className="shrink-0 flex justify-center relative"
                 onTouchStart={handleLogoTouchStart}
                 onTouchEnd={handleLogoTouchEnd}
                 onTouchCancel={handleLogoTouchEnd}
                 onContextMenu={(e) => treatAsMobile && e.preventDefault()}
+                onMouseEnter={() => setShowModeBtn(true)}
+                onMouseLeave={() => setShowModeBtn(false)}
             >
                 <Logo
                     name="mapalab"
@@ -193,6 +197,14 @@ const MapSider = ({ className = '' }) => {
                     tooltip={!treatAsMobile ? 'Ir al inicio' : ''}
                     className="shrink-0 p-3 flex justify-center"
                 />
+                {!isMobile && (
+                    <div className={[
+                        'absolute right-0 bottom-0 translate-x-1/2 translate-y-1/2 z-10 transition-opacity duration-200',
+                        lockMode !== 'auto' || showModeBtn ? 'opacity-100' : 'opacity-0',
+                    ].join(' ')}>
+                        <SiderModeButton lockMode={lockMode} onToggle={handleToggleLock} />
+                    </div>
+                )}
             </div>
             {(!treatAsMobile || isOpen) && (
                 <div
@@ -209,11 +221,15 @@ const MapSider = ({ className = '' }) => {
                                     : ''
                     ].join(' ')}
                 >
-                    <div className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3">
+                    <div
+                        className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3"
+                        onMouseEnter={() => setShowModeBtn(true)}
+                        onMouseLeave={() => setShowModeBtn(false)}
+                    >
                         {menuItems.slice(0, 3).map((item, index) => (
                             <div
                                 key={item.id || index}
-                                className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
+                                className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
                                 title={item.tooltip}
                             >
                                 <MenuItem
@@ -228,7 +244,7 @@ const MapSider = ({ className = '' }) => {
                     {menuItems.slice(3).map((item, index) => (
                         <div
                             key={item.id || index}
-                            className={`transition-opacity duration-500 w-full shrink-0 overflow-x-hidden`}
+                            className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
                             title={item.tooltip}
                         >
                             <MenuItem
@@ -246,10 +262,6 @@ const MapSider = ({ className = '' }) => {
                 name="iieg"
                 size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'}
                 expanded={isExpanded}
-                tooltip={!treatAsMobile && 'Fijar menú: Lila = Expandido, Naranja = Colapsado, Negro = Automático. Interaccion con click o (Alt + B)'}
-                tooltipPlacement="right"
-                colorFilter={lockMode === 'expanded' ? '#CBC5F1' : lockMode === 'collapsed' ? '#FFB98E' : null}
-                onClick={!treatAsMobile && handleToggleLock}
                 visible={!treatAsMobile || isOpen}
                 className="shrink-0 p-3 my-2 w-full"
             />

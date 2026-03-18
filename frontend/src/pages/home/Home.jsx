@@ -7,6 +7,7 @@ import useThemeColor from '@hooks/useThemeColor'
 
 const Home = () => {
     useThemeColor('#5C2472');
+
     return (
         <>
             <SEO

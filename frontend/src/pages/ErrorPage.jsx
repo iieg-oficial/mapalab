@@ -18,12 +18,7 @@ const ErrorPage = () => {
             <h1 className="font-garet font-bold text-[28px]/[40px] md:text-[40px]/[56px] text-[#2E4372] tracking-[0px] mb-4 whitespace-pre-line">
                 {title}
             </h1>
-            {!is404 && error && (
-                <p className="text-[#2E4372]/60 text-sm mb-6 max-w-md">
-                    {error.statusText || error.message || 'Ha ocurrido un error inesperado.'}
-                </p>
-            )}
-            <div className="flex gap-4 mt-4">
+            <div className="flex flex-col w-full md:w-auto md:flex-row gap-4 mt-4">
                 <Link
                     to="/"
                     className="px-10 py-3 bg-[#703089] text-white rounded-[30px] hover:bg-[#5C2472] hover:shadow-[0_6px_6px_#5C247234] transition font-garet font-bold text-[14px]"

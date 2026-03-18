@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import LayerItem from '@mapsComponents/LayerItem';
 import Icon from '@components/Icon';
+import ScrollContainer from '@components/ScrollContainer';
 
 const LabelItem = ({ layer, activeLayerIds, onToggleLayer }) => {
     return (
@@ -82,40 +83,42 @@ const CategoryItem = ({ layer, activeLayerIds, onToggleLayer }) => {
 
 const ThemeMenu = ({ theme, activeLayerIds, onToggleLayer, closeButton }) => {
     return (
-        <div className="w-full">
-            <div className="px-4 pt-3 flex items-center justify-between">
+        <div className="w-full flex flex-col flex-1 min-h-0 py-3">
+            <div className="px-4 flex items-center justify-between shrink-0">
                 <h3 className="text-[#5C2472] font-garet font-bold text-[18px]/[47px]">
                     {theme.label}
                 </h3>
                 {closeButton}
             </div>
-            <div className="ml-4 bg-white rounded-[7px] py-2">
-                {theme.children && theme.children
-                    .filter(layer => !layer.hiddenInMenu)
-                    .map(layer => {
-                        if (layer.isLabel) {
-                            return <LabelItem key={layer.id} layer={layer} activeLayerIds={activeLayerIds} onToggleLayer={onToggleLayer} />;
-                        }
-                        if (layer.isCategory) {
+            <ScrollContainer className="flex-1 overflow-y-auto">
+                <div className="ml-4 bg-white rounded-[7px] py-2">
+                    {theme.children && theme.children
+                        .filter(layer => !layer.hiddenInMenu)
+                        .map(layer => {
+                            if (layer.isLabel) {
+                                return <LabelItem key={layer.id} layer={layer} activeLayerIds={activeLayerIds} onToggleLayer={onToggleLayer} />;
+                            }
+                            if (layer.isCategory) {
+                                return (
+                                    <CategoryItem
+                                        key={layer.id}
+                                        layer={layer}
+                                        onToggleLayer={onToggleLayer}
+                                        activeLayerIds={activeLayerIds}
+                                    />
+                                );
+                            }
                             return (
-                                <CategoryItem
+                                <LayerItem
                                     key={layer.id}
                                     layer={layer}
-                                    onToggleLayer={onToggleLayer}
+                                    onToggle={onToggleLayer}
                                     activeLayerIds={activeLayerIds}
                                 />
                             );
-                        }
-                        return (
-                            <LayerItem
-                                key={layer.id}
-                                layer={layer}
-                                onToggle={onToggleLayer}
-                                activeLayerIds={activeLayerIds}
-                            />
-                        );
-                    })}
-            </div>
+                        })}
+                </div>
+            </ScrollContainer>
         </div>
     );
 };
