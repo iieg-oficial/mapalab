@@ -45,7 +45,7 @@ network-remove:
 	@echo "Eliminando red $(NETWORK_NAME)..."
 	@docker network rm $(NETWORK_NAME) 2>/dev/null || echo "Red $(NETWORK_NAME) no existe"
 
-dev: network-create
+dev: network-create setup-hooks
 	@echo ""
 	@echo "MODO DESARROLLO"
 	@echo "=================="
