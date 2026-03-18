@@ -37,7 +37,7 @@ const ActiveLayersList = ({ onCollapseChange }) => {
     useEffect(() => { onCollapseChange?.(collapse.isCollapsed); }, [collapse.isCollapsed, onCollapseChange]);
     const { handleDragEnd } = useLayerSorting(activeLayerIds, unifiedLayers, reorderActiveLayerIds);
     const sortableItems = useMemo(() => unifiedLayers.map(l => l.id), [unifiedLayers]);
-    const isInegiMode = activeLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id));
+    const isInegiMode = useMemo(() => activeLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id)), [activeLayerIds]);
     const isMobileSticky = isMobile ? STICKY_SIZE_MOBILE : STICKY_SIZE;
 
     const allHidden = useMemo(() => {
