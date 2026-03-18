@@ -161,10 +161,10 @@ describe('downloadLayerBundle — vectorial individual', () => {
         expect(result.success).toBe(true);
     });
 
-    it('llama a fetch con WFS para 4 formatos', async () => {
+    it('llama a fetch con WFS para 3 formatos', async () => {
         await downloadLayerBundle('single-vec');
         const wfsCalls = global.fetch.mock.calls.filter(c => c[0].includes('WFS'));
-        expect(wfsCalls).toHaveLength(4);
+        expect(wfsCalls).toHaveLength(3);
     });
 
     it('genera nombre de archivo con label y fecha', async () => {
