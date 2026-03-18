@@ -42,7 +42,7 @@ const Panel = ({
     const hasFloatingPosition = anchorRef != null;
     const siderContext = useSider();
     const isMobile = treatAsMobileProp ?? siderContext?.isMobile ?? false;
-    const { canScrollUp, canScrollDown } = useScrollOverflow(panelRef, { enabled: open && variant === 'menu' });
+    useScrollOverflow(panelRef, { enabled: open && variant === 'menu' });
 
     const shouldUseMobileFullscreen = mobileFullscreen !== undefined
         ? mobileFullscreen
@@ -184,7 +184,7 @@ const Panel = ({
                 ${mobileMenuClasses}
                 ${shadowClass || ''}
                 flex
-                ${variant === 'menu' ? `z-50 outline-none ${HIDDEN_SCROLLBAR}` : ''}
+                ${variant === 'menu' ? 'z-50 outline-none overflow-hidden' : ''}
                 ${variant === 'menu' ? 'transition-opacity duration-150' : ''}
                 ${variant === 'menu' && !isReady ? 'opacity-0' : 'opacity-100'}
             `}
@@ -193,19 +193,7 @@ const Panel = ({
             }}
         >
             {variant === 'menu' ? (
-                <>
-                    {canScrollUp && (
-                        <div className="sticky top-2 left-0 right-0 flex justify-center pointer-events-none z-10">
-                            <Icon name="downArrow" className="w-3 h-3 rotate-180 animate-[bounce_4s_ease-in-out_infinite]" />
-                        </div>
-                    )}
-                    {typeof children === 'function' ? children({ close: onClose }) : children}
-                    {canScrollDown && (
-                        <div className="sticky bottom-2 left-0 right-0 flex justify-center pointer-events-none">
-                            <Icon name="downArrow" className="w-3 h-3 animate-[bounce_4s_ease-in-out_infinite]" />
-                        </div>
-                    )}
-                </>
+                typeof children === 'function' ? children({ close: onClose }) : children
             ) : (
                 <>
                     {showHeader && (

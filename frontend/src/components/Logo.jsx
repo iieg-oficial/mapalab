@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react';
 import Lottie from 'lottie-react';
 import Tooltip from '@components/Tooltip';
 import logoIiegLarge from '@assets/logos/iieg_large.svg';
+import logoIiegLargeDark from '@assets/logos/iieg_large_dark.svg';
 import logoIiegShort from '@assets/logos/iieg_short.svg';
 import logoMapalabLarge from '@assets/logos/mapalab_large.svg';
 import logoMapalabLargeDark from '@assets/logos/mapalab_large_dark.svg';
@@ -77,7 +78,7 @@ const Logo = ({
                 short: logoIiegShort
             },
             dark: {
-                large: logoIiegLarge,
+                large: logoIiegLargeDark,
                 short: logoIiegShort
             }
         }
