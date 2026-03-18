@@ -65,7 +65,7 @@ export function SortableItem(props) {
         opacity: isDragging ? 0.5 : 1,
         position: isSticky ? 'sticky' : 'relative',
         top: isSticky ? 1 : undefined,
-        bottom: isSticky ? (isMobile ? 1 : 0) : undefined,
+        bottom: isSticky ? 1 : undefined,
         zIndex: isDragging ? 999 : isSticky ? 5 : 'auto',
     };
 

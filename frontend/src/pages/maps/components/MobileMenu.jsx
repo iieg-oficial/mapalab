@@ -85,10 +85,9 @@ const MobileMenu = ({
                 className={`
                     absolute bottom-0 left-0 right-0
                     bg-[#F9FBFF] rounded-t-2xl
-                    max-h-[85vh] overflow-y-auto
+                    max-h-[85vh] flex flex-col overflow-hidden
                     shadow-[0_-5px_20px_#1A26641A]
                     transform transition-transform duration-300 ease-out
-                    ${HIDDEN_SCROLLBAR}
                 `}
                 style={{
                     transform: open ? 'translateY(0)' : 'translateY(100%)'

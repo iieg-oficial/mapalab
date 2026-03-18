@@ -1,9 +1,30 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import bannerConfig from '../config/bannerConfig';
 import Logo from '../../../components/Logo';
 
 const Header = () => {
     const activeBanner = bannerConfig.banners.find(banner => banner.active) || bannerConfig.banners[0];
+    const headerRef = useRef(null);
+    const [showSticky, setShowSticky] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        const header = headerRef.current;
+        if (!header) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => setShowSticky(!entry.isIntersecting),
+            { threshold: 0 }
+        );
+        observer.observe(header);
+        return () => observer.disconnect();
+    }, []);
 
     const mobileStyle = {
         background: `linear-gradient(359deg, rgba(92, 36, 114, 0.9) 0%, rgba(150, 60, 186, 0.9) 100%) center center / cover no-repeat`
@@ -22,7 +43,7 @@ const Header = () => {
 
     return (
         <>
-            <header className="relative px-4 h-dvh md:h-[90dvh] 2xl:h-[80dvh] min-h-[600px] w-full overflow-visible">
+            <header ref={headerRef} className="relative px-4 h-dvh md:h-[90dvh] 2xl:h-[80dvh] min-h-[600px] w-full overflow-visible">
                 <div
                     className="absolute inset-0 md:hidden"
                     style={mobileStyle}
@@ -84,9 +105,9 @@ const Header = () => {
                                 {activeBanner.content.button.label}
                             </Link>
                         </div>
-                    </div>                
+                    </div>
                 </div>
-                
+
             </header>
             <div
                 className={`
@@ -96,7 +117,7 @@ const Header = () => {
                 `}
             >
                 <Logo name="mapalab" variant="dark" size="w-84 h-13" expanded />
-                <Logo name="iieg" variant="dark" size="w-44 h-13" expanded visible={!isMobile}/>
+                <Logo name="iieg" variant="dark" size="w-44 h-13" expanded visible={!isMobile} />
             </div>
         </>
     );
