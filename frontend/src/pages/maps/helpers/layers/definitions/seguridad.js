@@ -145,7 +145,7 @@ const DELITOS_PATRIMONIO = [
 ];
 
 const DESAPARECIDAS = [
-    ['tasa_personas_desaparecidas', 'Personas desaparecidas (tasa)', 'personas_desaparecidas', 'tasa_personas',
+    ['tasa_personas_desaparecidas', 'Personas desaparecidas (tasa)', 'personas_desaparecidas', 'tasa_total',
         ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
         createMunicipioConfig({
             title: 'Personas desaparecidas (tasa)',
@@ -159,7 +159,7 @@ const DESAPARECIDAS = [
                 { label: 'Tasa hombres', field: 'tasa_hombres' },
             ]
         })],
-    ['tasa_mujeres_desaparecidas', 'Mujeres desaparecidas (tasa)', 'desaparecidos_mujeres', 'tasa_mujeres',
+    ['tasa_mujeres_desaparecidas', 'Mujeres desaparecidas (tasa)', 'mujeres_desaparecidas_tasa', 'tasa_mujeres',
         ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
         createMunicipioConfig({
             title: 'Mujeres desaparecidas (tasa)',
@@ -169,7 +169,7 @@ const DESAPARECIDAS = [
                 { label: 'Tasa mujeres', field: 'tasa_mujeres' },
             ]
         })],
-    ['tasa_hombres_desaparecidos', 'Hombres desaparecidos (tasa)', 'desaparecidos_hombres', 'tasa_hombres',
+    ['tasa_hombres_desaparecidos', 'Hombres desaparecidos (tasa)', 'hombres_desaparecidos_tasa', 'tasa_hombres',
         ['seguridad', 'delito', 'desaparecidos', 'tasa', 'incidencia'],
         createMunicipioConfig({
             title: 'Hombres desaparecidos (tasa)',
@@ -364,6 +364,7 @@ export const seguridadLayers = {
                     children: DESAPARECIDAS.map(([id, label, style, not, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer.withFilterAndStyles('personas_desaparecidas', `${not} IS NOT NULL`, style, { metadataLayer: style }),
+                        defaultDate: TASA_DEFAULT_DATE,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -374,6 +375,7 @@ export const seguridadLayers = {
                     children: LOCALIZADAS.map(([id, label, layerName, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
+                        defaultDate: TASA_DEFAULT_DATE,
                         littleCard,
                         searchMeta: { tags }
                     }))
