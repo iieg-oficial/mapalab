@@ -10,16 +10,23 @@ import suportConfig from '../config/suportConfig';
 
 const Body = ({ isModal = false }) => {
     const carouselRef = useRef(null);
+    const faqRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
     const [scrollLeft, setScrollLeft] = useState(0);
     const [expandedSection, setExpandedSection] = useState(null);
     const [expandedFaq, setExpandedFaq] = useState({});
-    const [activeBtn, setActiveBtn] = useState(0); 
+    const [activeBtn, setActiveBtn] = useState(0);
 
     const toggleSection = (id) => {
+        const isOpening = expandedSection !== id;
         setExpandedSection(expandedSection === id ? null : id);
         setActiveBtn(!activeBtn);
+        if (isOpening) {
+            setTimeout(() => {
+                faqRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
     };
 
     const toggleFaq = (sectionId, index) => {
@@ -155,48 +162,73 @@ const Body = ({ isModal = false }) => {
                     ))}
                 </div>
             </div>
-            <div className="w-full flex items-center justify-center my-10 md:my-[61px]">
-                {suportConfig.sections.map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => toggleSection(item.id)}
-                        className={`
-                            ${activeBtn ? 'bg-purple active' : ''} group relative bg-[#F3EBFF] flex flex-col sm:flex-row items-center justify-center md:justify-end rounded-[50px]
-                            w-full max-w-[522px] h-[150px] sm:h-[110px] transition-all border border-transparent md:pl-0 pl-0 md:pr-22 py-5 md:py-0 mx-4
-s                            ${expandedSection === item.id ? 'border-purple' : 'hover:border-purple'} cursor-pointer 
-                        `}
-                    >
-                        <div className="sm:absolute left-4 md:left-[43px] flex items-center justify-center bg-white rounded-full p-4 size-[74px] group-hover:bg-[#E3CAF2] group-active:bg-[#E3CAF2]">
-                            <img
-                                src={item.icon}
-                                alt=""
-                                className={`size-full ${expandedSection === item.id ? 'hidden' : 'block group-hover:hidden'}`}
-                                loading="lazy"
-                            />
-                            <img
-                                src={item.iconHover}
-                                alt=""
-                                className={`size-full ${expandedSection === item.id ? 'block' : 'hidden group-hover:block'}`}
-                                loading="lazy"
-                            />
-                        </div>
-                        <h2 className={`font-garet font-medium ${activeBtn ? 'text-white' : 'text-[#8936AB]'} text-[24px]/[28px] tracking-normal pt-4 sm:pt-0`}>
-                            {item.label}
-                        </h2>
-                    </button>
-                ))}
+            <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 my-10 md:my-[61px] mx-1 sm:mx-4">
+                {suportConfig.map((item) => {
+                    const baseClassName = `
+                        group relative bg-[#F3EBFF] flex flex-col sm:flex-row items-center justify-center md:justify-end rounded-[50px]
+                        w-full max-w-[522px] h-[150px] sm:h-[110px] transition-all border border-transparent md:pl-0 pl-0 md:pr-22 py-5 md:py-0
+                        hover:border-purple cursor-pointer
+                    `;
+                    const isActive = expandedSection === item.id;
+
+                    const inner = (
+                        <>
+                            <div className="sm:absolute left-4 md:left-[43px] flex items-center justify-center bg-white rounded-full p-4 size-[74px] group-hover:bg-[#E3CAF2] group-active:bg-[#E3CAF2]">
+                                <img
+                                    src={item.icon}
+                                    alt=""
+                                    className={`size-full ${isActive ? 'hidden' : 'block group-hover:hidden'}`}
+                                    loading="lazy"
+                                />
+                                <img
+                                    src={item.iconHover}
+                                    alt=""
+                                    className={`size-full ${isActive ? 'block' : 'hidden group-hover:block'}`}
+                                    loading="lazy"
+                                />
+                            </div>
+                            <h2 className={`font-garet font-medium ${isActive ? 'text-white' : 'text-[#8936AB]'} text-[24px]/[28px] tracking-normal pt-4 sm:pt-0`}>
+                                {item.label}
+                            </h2>
+                        </>
+                    );
+
+                    if (item.link) {
+                        return (
+                            <a
+                                key={item.id}
+                                href={item.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`${baseClassName} no-underline`}
+                            >
+                                {inner}
+                            </a>
+                        );
+                    }
+
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => toggleSection(item.id)}
+                            className={`${isActive ? 'bg-purple active' : ''} ${baseClassName} ${isActive ? 'border-purple' : ''}`}
+                        >
+                            {inner}
+                        </button>
+                    );
+                })}
             </div>
 
-            <div className={`w-full flex flex-col items-center justify-center px-2 bg-[#F9FBFF] ${expandedSection === 1 ? 'block' : 'hidden'}`}>
-                {suportConfig.sections.map((item) => (
-                    <div key={item.id} className="w-full max-w-[1330px] bg-transparent mb-4 lg:mb-20">
+            <div ref={faqRef} className={`w-full px-2 bg-[#F9FBFF] ${expandedSection === 1 ? 'flex flex-col items-center justify-center' : 'hidden'}`}>
+                {suportConfig.filter(item => item.content?.length > 0).map((item) => (
+                    <div key={item.id} className="w-full max-w-[1330px] bg-transparent mb-4">
                         {item.content.map((contentItem, index) => {
                             const isExpanded = expandedFaq[`${item.id}-${index}`];
                             return (
                                 <div
                                     key={index}
                                     onClick={() => toggleFaq(item.id, index)}
-                                    className="bg-white rounded-[13px] mb-4 py-8 px-4 lg:pr-9 lg:pl-[106px] cursor-pointer"
+                                    className={`bg-white rounded-[13px] my-4 py-8 px-4 lg:pr-9 lg:pl-[106px] cursor-pointer ${isModal ? 'md:mx-10' : ''}`}
                                 >
                                     <div className="flex items-center justify-between">
                                         <h3 className="font-garet font-medium text-[#2E4372] text-[19px]/[28px] tracking-normal">

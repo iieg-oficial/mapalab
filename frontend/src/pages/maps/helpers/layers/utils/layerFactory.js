@@ -5,6 +5,7 @@ const buildWmsConfig = (workspace, layerName, options = {}) => {
 
     return {
         ...createWMSConfig(workspace, layerName, styles, cqlFilter),
+        wmsGroup: layerName,
         ...rest
     };
 };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import Alert from '@components/Alert';
+import { formatNumber } from '@pages/maps/helpers/formatNumber';
 
 const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpand, onToggleExpand, onClose }) => {
     const [showWarning, setShowWarning] = useState(false);
@@ -48,7 +49,7 @@ const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpan
             <div className="p-4 pb-3 pr-6 shrink-0">
                 <h3 className="text-sm font-bold text-gray-900 mb-2">Resumen de selección</h3>
                 <div className="text-xs text-gray-600">
-                    <span className="font-medium">Total de elementos:</span> {totalFeatures}
+                    <span className="font-medium">Total de elementos:</span> {formatNumber(totalFeatures)}
                 </div>
             </div>
 
@@ -61,7 +62,7 @@ const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpan
                         >
                             <span className="text-xs font-medium text-gray-700">{layer.name}</span>
                             <span className="text-xs font-bold text-gray-900 bg-white rounded-full px-2 py-0.5">
-                                {layer.count}
+                                {formatNumber(layer.count)}
                             </span>
                         </div>
                     ))}
@@ -74,7 +75,7 @@ const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpan
                         <Alert
                             severity="warning"
                             title="Gran cantidad de elementos"
-                            message={`Has seleccionado ${totalFeatures.toLocaleString()} elementos. Mostrar todos los detalles puede tardar un momento y hacer más lento tu navegador. ¿Deseas continuar?`}
+                            message={`Has seleccionado ${formatNumber(totalFeatures)} elementos. Mostrar todos los detalles puede tardar un momento y hacer más lento tu navegador. ¿Deseas continuar?`}
                             onClose={handleToggle}
                             closeButtonLabel="Sí, mostrar detalles"
                         />

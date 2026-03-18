@@ -55,16 +55,20 @@ export function SortableItem(props) {
         isDragging,
     } = useSortable({ id: props.id });
 
+    const isSticky = props.isSticky && !isDragging;
+
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        position: 'relative',
-        zIndex: isDragging ? 999 : 'auto',
+        position: isSticky ? 'sticky' : 'relative',
+        top: isSticky ? 1 : undefined,
+        bottom: isSticky ? 1 : undefined,
+        zIndex: isDragging ? 999 : isSticky ? 5 : 'auto',
     };
 
     return (
-        <div ref={setNodeRef} style={style}>
+        <div ref={setNodeRef} style={style} {...(isSticky ? { 'data-sticky': '' } : {})}>
             {React.Children.map(props.children, child => {
                 if (React.isValidElement(child)) {
                     return React.cloneElement(child, {

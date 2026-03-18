@@ -4,7 +4,8 @@ import List from '../components/List';
 import IconText from '../components/IconText';
 import Cards from '../components/Cards';
 import Text from '../components/Text';
-import { cardTemplates } from './cardTemplates';
+import { cardTemplates, CARACTERISTICA_STYLE } from './cardTemplates';
+import { formatNumber } from '@pages/maps/helpers/formatNumber';
 
 const extractSuffixFromLayerId = (layerId) => {
     if (!layerId) return null;
@@ -36,7 +37,7 @@ const shouldIncludeField = (fieldName, suffix) => {
     return !otherSuffixes.some(otherSuffix => fieldLower.includes(otherSuffix));
 };
 
-export const renderCard = (properties, config, onClose, layerId = null) => {
+export const renderCard = (properties, config, onClose, layerId = null, featureId = null) => {
     const suffix = extractSuffixFromLayerId(layerId);
 
     const getValue = (field) => {
@@ -55,7 +56,8 @@ export const renderCard = (properties, config, onClose, layerId = null) => {
 
     if (finalConfig.headerField) {
         const headerValueFromProperties = getValue(finalConfig.headerField);
-        const finalHeaderValue = headerValueFromProperties || finalConfig.headerField;
+        const rawHeaderValue = headerValueFromProperties || finalConfig.headerField;
+        const finalHeaderValue = finalConfig.headerTransform ? finalConfig.headerTransform(rawHeaderValue, featureId) : rawHeaderValue;
 
         if (finalHeaderValue) {
             header.push(
@@ -76,7 +78,8 @@ export const renderCard = (properties, config, onClose, layerId = null) => {
                     <Label
                         key={`label-${idx}`}
                         value={properties[field]}
-                        index={idx}
+                        color={CARACTERISTICA_STYLE.color}
+                        bg={CARACTERISTICA_STYLE.bg}
                     />
                 );
             }
@@ -96,42 +99,49 @@ export const renderCard = (properties, config, onClose, layerId = null) => {
 
             if (group.staticValues) {
                 group.staticValues.forEach((value, idx) => {
-                    const labelIndex = group.colorIndex !== undefined ? group.colorIndex : idx;
                     groupElements.push(
                         <Label
                             key={`labelgroup-${groupIdx}-static-${idx}`}
                             value={value}
-                            index={labelIndex}
+                            color={group.color}
+                            bg={group.bg}
                         />
                     );
                 });
             }
 
             if (group.fields) {
-                const values = group.fields
-                    .map(field => properties[field])
-                    .filter(v => v !== null && v !== undefined && v !== '');
+                const fieldDefs = group.fields.map(f => typeof f === 'string' ? { field: f } : f);
 
-                values.forEach((value, idx) => {
+                fieldDefs.forEach((def, idx) => {
+                    if (!def || !def.field) return;
+                    const value = properties[def.field];
+                    if (value === null || value === undefined || value === '') return;
+
+                    const color = def.color || group.color;
+                    const bg = def.bg || group.bg;
+
                     if (group.splitValues && typeof value === 'string') {
                         const splitItems = value.split(/,\s*|\s+y\s+/).filter(item => item.trim() !== '');
                         splitItems.forEach((item, splitIdx) => {
-                            const labelIndex = group.colorIndex !== undefined ? group.colorIndex : (finalConfig.labels ? finalConfig.labels.length + idx + splitIdx : idx + splitIdx);
                             groupElements.push(
                                 <Label
                                     key={`labelgroup-${groupIdx}-${idx}-${splitIdx}`}
                                     value={item.trim()}
-                                    index={labelIndex}
+                                    color={color}
+                                    bg={bg}
+                                    fullWidth={def.fullWidth}
                                 />
                             );
                         });
                     } else {
-                        const labelIndex = group.colorIndex !== undefined ? group.colorIndex : (finalConfig.labels ? finalConfig.labels.length + idx : idx);
                         groupElements.push(
                             <Label
                                 key={`labelgroup-${groupIdx}-${idx}`}
                                 value={value}
-                                index={labelIndex}
+                                color={color}
+                                bg={bg}
+                                fullWidth={def.fullWidth}
                             />
                         );
                     }
@@ -167,14 +177,20 @@ export const renderCard = (properties, config, onClose, layerId = null) => {
         }
     }
 
-    if (finalConfig.iconText && properties[finalConfig.iconText.field]) {
-        body.push(
-            <IconText
-                key="icontext"
-                icon={finalConfig.iconText.icon}
-                value={properties[finalConfig.iconText.field]}
-            />
-        );
+    if (finalConfig.iconText) {
+        const iconTextItems = Array.isArray(finalConfig.iconText) ? finalConfig.iconText : [finalConfig.iconText];
+        const validItems = iconTextItems.filter(item => item && properties[item.field]);
+        validItems.forEach((item, idx) => {
+            body.push(
+                <IconText
+                    key={`icontext-${idx}`}
+                    icon={item.icon}
+                    value={properties[item.field]}
+                    showDivider={idx === 0}
+                    isLast={idx === validItems.length - 1}
+                />
+            );
+        });
     }
 
     if (finalConfig.text) {
@@ -199,7 +215,9 @@ export const renderCard = (properties, config, onClose, layerId = null) => {
             .map(card => {
                 let value = properties[card.field];
                 if (card.decimals != null && typeof value === 'number') {
-                    value = value.toFixed(card.decimals);
+                    value = formatNumber(value.toFixed(card.decimals));
+                } else if (typeof value === 'number') {
+                    value = formatNumber(value);
                 }
                 return {
                     label: card.label,

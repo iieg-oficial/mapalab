@@ -1,16 +1,18 @@
 import { Link } from 'react-router';
+import imgLupa from '@assets/images/img_lupa.svg';
 
 const NotFound = () => {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-center">
-            <h1 className="text-6xl font-bold text-red-500">404</h1>
-            <p className="text-xl text-gray-700 mt-4">Página no encontrada</p>
-            
-            <Link 
+        <div className="flex flex-col items-center justify-center min-h-screen text-center px-4" style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F7F0FA 100%)' }}>
+            <img src={imgLupa} alt="Página no encontrada" className="w-64 md:w-80 mb-8" />
+            <h1 className="font-garet font-bold text-[28px]/[40px] md:text-[40px]/[56px] text-[#2E4372] tracking-[0px] mb-8">
+                No encontramos la página<br />que estás buscando...
+            </h1>
+            <Link
                 to="/"
-                className="mt-6 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                className="px-10 py-3 bg-[#703089] text-white rounded-[30px] hover:bg-[#5C2472] hover:shadow-[0_6px_6px_#5C247234] transition font-garet font-bold text-[14px]"
             >
-                Volver al Inicio
+                Regresar al inicio
             </Link>
         </div>
     );

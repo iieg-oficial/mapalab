@@ -79,6 +79,7 @@ import simbologiaNormal from './ico_simbologia_normal.svg';
 
 import visibleNormal from './ico_mostrar.svg';
 import visibleHover from './ico_ocultar.svg';
+import visibleGray from './ico_mostrar_gray.svg';
 
 import moveNormal from './ico_move_normal.svg';
 import moveHover from './ico_move_hover.svg';
@@ -97,6 +98,7 @@ import infoWarningNormal from './ico_info_warning_normal.svg';
 import coordenadasNormal from './ico_coordenadas_normal.svg';
 import nNormal from './ico_n.svg';
 import ubicacionNormal from './ico_ubicacion.svg';
+import celularNormal from './ico_celular.svg';
 import hombreNormal from './ico_hombre.svg';
 import mujerNormal from './ico_mujer.svg';
 
@@ -112,6 +114,23 @@ import sateliteHover from './ico_satelital_hover.svg';
 import positionNormal from './ico_positron_normal.svg';
 import positionHover from './ico_positron_hover.svg';
 
+import avisoPrivacidadNormal from './ico_aviso_privacidad.svg';
+import copieNormal from './ico_copie_normal.svg';
+import copieHover from './ico_copie.svg';
+import sharedClick from './ico_shared_click.svg';
+import rendimientoNormal from './ico_rendimiento_capas.svg';
+import tiempoAlertNormal from './ico_tiempo_alert.svg';
+
+import opcionesNormal from './ico_opciones.svg';
+import warningDropdownNormal from './ico_warning_dropdown.svg';
+
+import leftArrowFillNormal from './ico_left_arrow_fill_normal.svg';
+import leftArrowFillHover from './ico_left_arrow_fill_hover.svg';
+import rightArrowFillNormal from './ico_right_arrow_fill_normal.svg';
+import rightArrowFillHover from './ico_right_arrow_fill_hover.svg';
+import downArrowFillNormal from './ico_down_arrow_fill_normal.svg';
+import downArrowFillHover from './ico_down_arrow_fill_hover.svg';
+
 export const externalIcons = {
     base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
     salud_normal: saludNormal, salud_hover: saludHover, economia_normal: economiaNormal, economia_hover: economiaHover,
@@ -120,14 +139,19 @@ export const externalIcons = {
     gobierno_normal: gobiernoNormal, gobierno_hover: gobiernoHover, search_normal: buscadorNormal, search_hover: buscadorHover,
     tools_normal: herramientasNormal, tools_hover: herramientasHover, basemaps_normal: mapasNormal, basemaps_hover: mapasHover,
     searchInput_normal: search, check_normal: checkNormal, check_active: checkActive, downArrow_normal: downArrow, cerrarModal_normal: cerrarModal,
-    zoomin_normal: zoominNormal, zoomin_hover: zoominHover, zoomout_normal: zoomoutNormal, zoomout_hover: zoomoutHover,
+    zoomin_normal: zoominNormal, zoomin_hover: zoominHover, zoomout_normal: zoomoutNormal, zoomout_hover: zoomoutHover, copie_normal: copieNormal, copie_hover: copieHover, shared_click_normal: sharedClick, shared_click_hover: sharedClick,
     linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover, lista_normal: listaNormal, lista_hover: listaHover,
     emoji_normal: emojiNormal, emoji_hover: emojiHover, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,
     info_normal: infoNormal, info_hover: infoHover, shared_normal: sharedNormal, shared_hover: sharedHover, capa_activa_normal: capaActivaNormal,
-    visible_normal: visibleNormal, visible_hover: visibleHover, move_normal: moveNormal, move_hover: moveHover, simbologia_normal: simbologiaNormal,
+    visible_normal: visibleNormal, visible_hover: visibleHover, visible_gray: visibleGray, move_normal: moveNormal, move_hover: moveHover, simbologia_normal: simbologiaNormal,
     eliminar_normal: eliminarNormal, eliminar_hover: eliminarHover, big_card_normal: bigCardNormal, big_card_hover: bigCardHover, upArrow_normal: upArrowNormal,
-    alert_normal: alertNormal, deshacer_normal: deshacerNormal, center_normal: centerNormal, center_hover: centerHover,
+    alert_normal: alertNormal, deshacer_normal: deshacerNormal, center_normal: centerNormal, center_hover: centerHover, aviso_privacidad_normal: avisoPrivacidadNormal,
     info_warning_normal: infoWarningNormal, coordenadas_normal: coordenadasNormal, n_normal: nNormal, sin_mapalab_normal: sinMapalabNormal, sin_mapalab_hover: sinMapalabHover,
-    satelite_normal: sateliteNormal, satelite_hover: sateliteHover, position_normal: positionNormal, position_hover: positionHover, voyager_normal: voyagerNormal, 
-    voyager_hover: voyagerHover, ubicacion_normal: ubicacionNormal, hombre_normal: hombreNormal, mujer_normal: mujerNormal,
+    satelite_normal: sateliteNormal, satelite_hover: sateliteHover, position_normal: positionNormal, position_hover: positionHover, voyager_normal: voyagerNormal,
+    voyager_hover: voyagerHover, ubicacion_normal: ubicacionNormal, celular_normal: celularNormal, hombre_normal: hombreNormal, mujer_normal: mujerNormal,
+    rendimiento_normal: rendimientoNormal, tiempo_alert_normal: tiempoAlertNormal, opciones_normal: opcionesNormal,
+    warning_dropdown_normal: warningDropdownNormal,
+    left_arrow_fill_normal: leftArrowFillNormal, left_arrow_fill_hover: leftArrowFillHover,
+    right_arrow_fill_normal: rightArrowFillNormal, right_arrow_fill_hover: rightArrowFillHover,
+    down_arrow_fill_normal: downArrowFillNormal, down_arrow_fill_hover: downArrowFillHover,
 };

@@ -211,7 +211,7 @@ export const recursosLayers = {
                     id,
                     label,
                     wmsConfig: createRasterLayer(layerName, wmsOptions),
-                    rasterPeriodicity: isMonthly ? buildMonthlyTime([RASTER_YEAR - 1]) : undefined,
+                    rasterPeriodicity: isMonthly ? buildMonthlyTime([RASTER_YEAR]) : undefined,
                     littleCard: CLIMA_CARDS[id],
                     searchMeta: { tags }
                 };

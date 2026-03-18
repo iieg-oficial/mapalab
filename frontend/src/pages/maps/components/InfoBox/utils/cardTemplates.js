@@ -44,7 +44,7 @@ const generateDefaultConfig = (properties) => {
     }
 
     if (municipioMatch) {
-        config.labelGroups = [{ fields: [municipioMatch.field] }];
+        config.labelGroups = [createMunicipioGroup(municipioMatch.field)];
     }
 
     if (remainingFields.length > 0) {
@@ -55,40 +55,53 @@ const generateDefaultConfig = (properties) => {
     }
 
     if (locationMatch) {
-        config.iconText = { icon: 'location', field: locationMatch.field };
+        config.iconText = [{ icon: 'ubicacion', field: locationMatch.field }];
     }
 
     return Object.keys(config).length > 0 ? config : null;
 };
 
-const toArray = (v) => Array.isArray(v) ? v : [v];
+const toArray = (v) => v == null ? [] : (Array.isArray(v) ? v : [v]);
+
+export const MUNICIPIO_STYLE = { color: '#FF8300', bg: '#FFF2E5' };
+export const CARACTERISTICA_STYLE = { color: '#7B61FF', bg: '#F3F0FF' };
+
+const createMunicipioGroup = (municipio) => ({
+    fields: toArray(municipio),
+    ...MUNICIPIO_STYLE
+});
+
+const createCaracteristicaGroup = (caracteristica) => ({
+    fields: toArray(caracteristica),
+    ...CARACTERISTICA_STYLE
+});
 
 const createTDEMEC = ({ title, municipio, caracteristica }) => ({
     headerField: title,
     labelGroups: [
-        { fields: toArray(municipio) },
-        { fields: toArray(caracteristica) }
+        createMunicipioGroup(municipio),
+        createCaracteristicaGroup(caracteristica)
     ]
 });
 
-const createTDEMECLU = ({ title, municipio, caracteristica, list, ubicacion }) => ({
+const createTDEMECLU = ({ title, municipio, caracteristica, list, iconTexts = [] }) => ({
     headerField: title,
     labelGroups: [
-        { fields: toArray(municipio) },
-        { fields: toArray(caracteristica) }
+        createMunicipioGroup(municipio),
+        createCaracteristicaGroup(caracteristica)
     ],
     list,
-    iconText: { icon: 'location', field: ubicacion }
+    iconText: iconTexts
 });
 
-const createTDEMECLUEV = ({ title, municipio, caracteristica, list, ubicacion, stats, text }) => ({
+const createTDEMECLUEV = ({ title, municipio, caracteristica, list, iconTexts = [], stats, text }) => ({
     headerField: title,
     labelGroups: [
-        { fields: toArray(municipio) },
-        { fields: toArray(caracteristica) }
+        createMunicipioGroup(municipio),
+        createCaracteristicaGroup(caracteristica)
     ],
     list,
-    iconText: ubicacion ? { icon: 'location', field: ubicacion } : undefined,
+    iconText: iconTexts.length > 0 ? iconTexts : undefined,
     ...(text && { text }),
     cards: stats,
     cardsColumns: 1
@@ -97,7 +110,7 @@ const createTDEMECLUEV = ({ title, municipio, caracteristica, list, ubicacion, s
 const createTEEMLXEV = ({ title, municipio, list, text, stats }) => ({
     headerField: title,
     labelGroups: [
-        { fields: toArray(municipio) }
+        createMunicipioGroup(municipio)
     ],
     list,
     ...(text && { text }),
@@ -108,16 +121,16 @@ const createTEEMLXEV = ({ title, municipio, list, text, stats }) => ({
 const createTEEC = ({ title, caracteristica, staticLabel }) => ({
     headerField: title,
     labelGroups: [
-        ...(staticLabel ? [{ staticValues: [staticLabel] }] : []),
-        { fields: toArray(caracteristica) }
+        ...(staticLabel ? [{ staticValues: [staticLabel], ...CARACTERISTICA_STYLE }] : []),
+        createCaracteristicaGroup(caracteristica)
     ]
 });
 
 export const createMunicipioConfig = ({ title, municipio = 'nombre', text, stats, columns = 1 }) => ({
     headerField: title,
     labelGroups: [
-        { fields: [municipio] },
-        { fields: ['fecha'] }
+        createMunicipioGroup(municipio),
+        { fields: ['fecha'], ...CARACTERISTICA_STYLE }
     ],
     ...(text && { text: [{ label: text }] }),
     cards: stats,

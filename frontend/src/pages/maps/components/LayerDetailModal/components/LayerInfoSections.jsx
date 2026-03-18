@@ -31,7 +31,17 @@ const LayerInfoSections = ({ metadata, layerName }) => {
             {(metadata.fuentes_texto_largo || metadata.fuentes_enlace) && (
                 <InfoSection title="Fuente">
                     {metadata.fuentes_texto_largo && <TextBlock text={metadata.fuentes_texto_largo} />}
-                    <ExternalLink href={metadata.fuentes_enlace} label="Ver fuente" />
+                    {metadata.fuentes_enlace && (() => {
+                        const links = metadata.fuentes_enlace.split(',').map(l => l.trim()).filter(Boolean);
+                        if (links.length <= 1) return <ExternalLink href={metadata.fuentes_enlace} label="Ver fuente" />;
+                        return (
+                            <div className="flex flex-row gap-2">
+                                {links.map((link, i) => (
+                                    <ExternalLink key={i} href={link} label={`Fuente ${i + 1}`} />
+                                ))}
+                            </div>
+                        );
+                    })()}
                 </InfoSection>
             )}
             {(metadata.metodologia_texto || metadata.metodologia_archivo_enlace) && (

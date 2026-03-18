@@ -15,7 +15,7 @@ class LayerResponse(BaseModel):
     nombre_capa_usuario: Optional[str] = Field(default=None)
     descripcion: Optional[str] = Field(default=None)
     frecuencia_actualizacion: Optional[str] = Field(default=None)
-    fecha_ultima_actualizacion: Optional[date] = Field(default=None)
+    fecha_ultima_actualizacion: Optional[str] = Field(default=None)
     metodologia_texto: Optional[str] = Field(default=None)
     metodologia_archivo_enlace: Optional[str] = Field(default=None)
     fuentes_texto_largo: Optional[str] = Field(default=None)

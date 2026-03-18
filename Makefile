@@ -1,4 +1,4 @@
-.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod logs logs-backend logs-frontend logs-nginx clean status
+.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod deploy logs logs-backend logs-frontend logs-nginx clean status refresh-cache refresh-periodicity-cache refresh-search-cache
 
 FRONTEND_DIR=frontend
 BACKEND_DIR=backend
@@ -18,6 +18,11 @@ help:
 	@echo "  make ssl-local        - Modo HTTPS local (certificado autofirmado, APP_DOMAIN puede ser IP)"
 	@echo "  make build-prod       - Construir imágenes de producción"
 	@echo "  make logs-prod        - Ver logs de producción"
+	@echo ""
+	@echo "CACHÉ:"
+	@echo "  make refresh-cache               - Regenerar todos los cachés"
+	@echo "  make refresh-periodicity-cache   - Regenerar caché de periodicidad"
+	@echo "  make refresh-search-cache        - Regenerar caché de búsqueda"
 	@echo ""
 	@echo "GENERAL:"
 	@echo "  make down             - Detener todos los servicios"
@@ -196,6 +201,27 @@ build-prod:
 	@cd $(NGINX_DIR) && docker compose build
 	@echo "Imágenes construidas"
 
+deploy: network-create
+	@echo ""
+	@echo "DEPLOY (REBUILD + RESTART)"
+	@echo "==========================="
+	@echo ""
+	@echo "Construyendo frontend..."
+	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
+	@echo ""
+	@echo "Reiniciando servicios..."
+	@cd $(BACKEND_DIR) && cp .env.production .env && docker compose -f docker-compose.prod.yaml up -d --build
+	@if grep -q '^SSL_MODE=true' $(NGINX_DIR)/.env 2>/dev/null; then \
+		cd $(NGINX_DIR) && docker compose -f docker-compose.ssl.yml up -d --build; \
+	else \
+		cd $(NGINX_DIR) && docker compose up -d --build; \
+	fi
+	@echo "Recargando Nginx..."
+	@docker exec mapalab-nginx nginx -s reload 2>/dev/null || true
+	@echo ""
+	@echo "Deploy completado"
+	@echo ""
+
 down:
 	@echo "Deteniendo todos los servicios..."
 	@cd $(NGINX_DIR) && docker compose down 2>/dev/null || true
@@ -233,6 +259,19 @@ logs-frontend:
 
 logs-nginx:
 	@cd $(NGINX_DIR) && docker compose logs -f
+
+refresh-cache: refresh-search-cache refresh-periodicity-cache
+	@echo "Todos los cachés regenerados"
+
+refresh-periodicity-cache:
+	@echo "Regenerando caché de periodicidad..."
+	@docker exec $$(docker ps -qf "name=mapalab.*backend" | head -1) python -c \
+		"from app.services import PeriodicityCacheService; c = PeriodicityCacheService.generate_cache(); PeriodicityCacheService.save_cache(c); print('OK')"
+
+refresh-search-cache:
+	@echo "Regenerando caché de búsqueda..."
+	@docker exec $$(docker ps -qf "name=mapalab.*backend" | head -1) python -c \
+		"from app.services import SearchCacheService; c = SearchCacheService.generate_cache(); SearchCacheService.save_cache(c); print('OK')"
 
 status:
 	@echo "Estado de los servicios:"
