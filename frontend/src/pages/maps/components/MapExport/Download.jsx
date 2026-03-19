@@ -93,6 +93,7 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
             });
         } else {
             setSelectedLegendLayers([layer]);
+            setTitle(layer?.label || layer?.name || 'Capas mapalab');
         }
     };
 
