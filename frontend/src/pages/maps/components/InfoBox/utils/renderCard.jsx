@@ -114,6 +114,7 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
                 const fieldDefs = group.fields.map(f => typeof f === 'string' ? { field: f } : f);
 
                 fieldDefs.forEach((def, idx) => {
+                    if (!def || !def.field) return;
                     const value = properties[def.field];
                     if (value === null || value === undefined || value === '') return;
 

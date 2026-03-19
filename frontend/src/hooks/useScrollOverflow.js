@@ -3,7 +3,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 export const useScrollOverflow = (containerRef, { enabled = true } = {}) => {
     const [scrollState, setScrollState] = useState({
         canScrollUp: false,
-        canScrollDown: false
+        canScrollDown: false,
+        stickyAtTop: false,
+        stickyAtBottom: false
     });
     const rafId = useRef(null);
 
@@ -17,9 +19,29 @@ export const useScrollOverflow = (containerRef, { enabled = true } = {}) => {
                 const newCanScrollUp = scrollTop > 1;
                 const newCanScrollDown = scrollTop + clientHeight < scrollHeight - 1;
 
+                let newStickyAtTop = false;
+                let newStickyAtBottom = false;
+                const stickyEl = containerRef.current.querySelector('[data-sticky]');
+                if (stickyEl) {
+                    const containerRect = containerRef.current.getBoundingClientRect();
+                    const elRect = stickyEl.getBoundingClientRect();
+                    newStickyAtTop = newCanScrollUp && Math.abs(elRect.top - containerRect.top) < 2;
+                    newStickyAtBottom = newCanScrollDown && Math.abs(elRect.bottom - containerRect.bottom) < 2;
+                }
+
                 setScrollState(prev => {
-                    if (prev.canScrollUp !== newCanScrollUp || prev.canScrollDown !== newCanScrollDown) {
-                        return { canScrollUp: newCanScrollUp, canScrollDown: newCanScrollDown };
+                    if (
+                        prev.canScrollUp !== newCanScrollUp ||
+                        prev.canScrollDown !== newCanScrollDown ||
+                        prev.stickyAtTop !== newStickyAtTop ||
+                        prev.stickyAtBottom !== newStickyAtBottom
+                    ) {
+                        return {
+                            canScrollUp: newCanScrollUp,
+                            canScrollDown: newCanScrollDown,
+                            stickyAtTop: newStickyAtTop,
+                            stickyAtBottom: newStickyAtBottom
+                        };
                     }
                     return prev;
                 });

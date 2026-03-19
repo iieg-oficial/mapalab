@@ -8,13 +8,16 @@ import { useLayerLoading } from '@hooks/useLayerLoading';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
-export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, unifiedLayers, createWMSLayer, getAllChildLayerIds, getLayerOpacity, layerOpacities }) => {
+export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getLayerOpacity, layerOpacities, getFilter, combineCQLFilters }) => {
     const wmsLayersRef = useRef(new Map());
     const isFirstRender = useRef(true);
     const debouncedActiveLayerIds = useDebounce(activeLayerIds, 30);
     const debouncedHiddenLayerIds = useDebounce(hiddenLayerIds, 30);
-    const debouncedUnifiedLayers = useDebounce(unifiedLayers, 30);
     const { setLayerLoading } = useLayerLoading();
+    const getFilterRef = useRef(getFilter);
+    getFilterRef.current = getFilter;
+    const combineCQLFiltersRef = useRef(combineCQLFilters);
+    combineCQLFiltersRef.current = combineCQLFilters;
 
     const handleLoadStart = useCallback((layerId) => {
         setLayerLoading(layerId, true);
@@ -118,24 +121,22 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
                 const layersParam = wmsLayersOrdered.map(l => l.layerName).join(',');
                 const stylesParam = wmsLayersOrdered.map(l => l.styles).join(',');
 
-                const cqlFilterParam = wmsLayersOrdered.map(merged => {
-                    const hasDD = merged.subLayers.some(sub => findLayerById(sub.id, layers)?.defaultDate);
-                    if (hasDD) return '1=0';
+                const cqlFilterSegments = wmsLayersOrdered.map(merged => {
+                    const subFilters = merged.subLayers.map(sub => {
+                        const baseCqlFilter = sub.wmsConfig.cqlFilter?.trim() || null;
+                        const dynamicFilter = getFilterRef.current?.(sub.id);
+                        return combineCQLFiltersRef.current?.(baseCqlFilter, dynamicFilter) ?? null;
+                    }).filter(f => f);
 
-                    const filters = merged.subLayers
-                        .map(sub => sub.wmsConfig.cqlFilter)
-                        .filter(f => f && f.trim() !== '');
+                    if (subFilters.length === 0) {
+                        const hasDD = merged.subLayers.some(sub => findLayerById(sub.id, layers)?.defaultDate);
+                        return hasDD ? '1=0' : 'INCLUDE';
+                    }
+                    return subFilters.map(f => `(${f})`).join(' OR ');
+                });
 
-                    if (filters.length === 0) return 'INCLUDE';
-                    return filters.map(f => `(${f})`).join(' OR ');
-                }).join(';');
-
-                const hasAnyFilter = wmsLayersOrdered.some(merged =>
-                    merged.subLayers.some(sub =>
-                        sub.wmsConfig.cqlFilter || findLayerById(sub.id, layers)?.defaultDate
-                    )
-                );
-                const finalCqlFilter = hasAnyFilter ? cqlFilterParam : null;
+                const allInclude = cqlFilterSegments.every(f => f === 'INCLUDE');
+                const finalCqlFilter = allInclude ? null : cqlFilterSegments.join(';');
 
                 const customParams = {
                     LAYERS: layersParam,
@@ -249,49 +250,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, uni
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedActiveLayerIds, debouncedHiddenLayerIds, wmsConfigCache, createWMSLayer]);
 
-    const layerUpdates = useMemo(() => {
-        return debouncedUnifiedLayers.map((layer, index) => {
-            const zIndex = 100 + (debouncedUnifiedLayers.length - index);
-            return {
-                id: layer.id,
-                visible: layer.visible,
-                zIndex
-            };
-        });
-    }, [debouncedUnifiedLayers]);
-
-    const updateLayerProperties = useCallback(() => {
-        if (!mapRef.current) return;
-
-        requestAnimationFrame(() => {
-            layerUpdates.forEach(update => {
-                const wmsConfig = findWMSConfig(update.id, layers);
-                if (!wmsConfig) return;
-
-                const groupKey = wmsConfig.layerName;
-                const layer = wmsLayersRef.current.get(groupKey);
-
-                if (layer) {
-                    if (layer.getVisible() !== update.visible) {
-                        layer.setVisible(update.visible);
-                    }
-                    if (layer.getZIndex() !== update.zIndex) {
-                        layer.setZIndex(update.zIndex);
-                        layer.changed();
-                    }
-                }
-            });
-
-            if (mapRef.current) {
-                mapRef.current.render();
-            }
-        });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [layerUpdates, getAllChildLayerIds]);
-
     useEffect(updateActiveLayers, [updateActiveLayers]);
-
-    useEffect(updateLayerProperties, [updateLayerProperties]);
 
     useEffect(() => {
         if (!mapRef.current || !getLayerOpacity) return;

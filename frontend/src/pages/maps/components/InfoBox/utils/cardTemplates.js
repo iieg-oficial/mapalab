@@ -61,7 +61,7 @@ const generateDefaultConfig = (properties) => {
     return Object.keys(config).length > 0 ? config : null;
 };
 
-const toArray = (v) => Array.isArray(v) ? v : [v];
+const toArray = (v) => v == null ? [] : (Array.isArray(v) ? v : [v]);
 
 export const MUNICIPIO_STYLE = { color: '#FF8300', bg: '#FFF2E5' };
 export const CARACTERISTICA_STYLE = { color: '#7B61FF', bg: '#F3F0FF' };

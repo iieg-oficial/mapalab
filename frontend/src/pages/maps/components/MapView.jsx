@@ -9,7 +9,6 @@ import { useWMSLayerFactory } from '@hooksMaps/useWMSLayerFactory';
 import { useWMSLayerManager } from '@hooksMaps/useWMSLayerManager';
 import { useMapInteractions } from '@hooksMaps/useMapInteractions';
 import { useWMSFilterUpdater } from '@hooksMaps/useWMSFilterUpdater';
-import { useActiveLayersLogic } from '@hooksMaps/useActiveLayersLogic';
 
 const MapView = () => {
     const {
@@ -18,8 +17,6 @@ const MapView = () => {
     } = useMapsContext();
     const { queryFeatures, queryFeaturesInPolygon } = useFeatureInfo();
     const baseMapRef = useRef(null);
-
-    const { unifiedLayers } = useActiveLayersLogic(activeLayerIds, hiddenLayerIds);
 
     useEffect(() => {
         queryFeaturesInPolygonRef.current = queryFeaturesInPolygon;
@@ -30,9 +27,9 @@ const MapView = () => {
     useBaseMapManager(baseMapRef, basemaps, baseMapId, mapRef);
 
     const { createWMSLayer, combineCQLFilters } = useWMSLayerFactory();
-    const { wmsLayersRef } = useWMSLayerManager({ 
-        mapRef, activeLayerIds, hiddenLayerIds, unifiedLayers, createWMSLayer, getAllChildLayerIds, 
-        getLayerOpacity, layerOpacities 
+    const { wmsLayersRef } = useWMSLayerManager({
+        mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getAllChildLayerIds,
+        getLayerOpacity, layerOpacities, getFilter, combineCQLFilters
     });
 
     useMapInteractions(mapRef, queryFeatures, isDrawing);

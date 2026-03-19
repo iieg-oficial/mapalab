@@ -5,7 +5,6 @@ import { getLayerMetadata } from './layerMetadataService';
 const VECTOR_FORMATS = [
     { id: 'shape-zip', extension: 'shp.zip', mimeType: 'application/zip', srs: 'EPSG:4326' },
     { id: 'geopackage', extension: 'gpkg', mimeType: 'application/geopackage+sqlite3', srs: 'EPSG:6368' },
-    { id: 'json', extension: 'geojson', mimeType: 'application/json', srs: 'EPSG:4326' },
     { id: 'csv', extension: 'csv', mimeType: 'text/csv', srs: 'EPSG:4326' }
 ];
 

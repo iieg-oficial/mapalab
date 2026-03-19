@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useRef } from 'react';
 import { isParentLayer } from '../helpers/symbologyHelpers';
 import { MOBILE_BREAKPOINT } from '@constants/sider';
 import MapsContext from '@contexts/MapsContext';
@@ -10,7 +10,7 @@ import { useZenMode } from './ZenMode';
 
 const SymbologyPanel = ({ onCollapseChange }) => {
     const { selectedLayerForSymbology, findLayerById, getLayersForSymbology } = useContext(MapsContext);
-    const [isManuallyCollapsed, setIsManuallyCollapsed] = useState(() => window.innerWidth < MOBILE_BREAKPOINT);
+    const [isManuallyCollapsed, setIsManuallyCollapsed] = useState(true);
     const { isZenMode } = useZenMode();
 
     useEffect(() => {
@@ -23,6 +23,19 @@ const SymbologyPanel = ({ onCollapseChange }) => {
     const isCollapsed = isManuallyCollapsed || !hasLayer;
 
     useEffect(() => { onCollapseChange?.(isCollapsed); }, [isCollapsed, onCollapseChange]);
+
+    const prevSelectedIdRef = useRef(selectedLayerForSymbology?.id);
+
+    useEffect(() => {
+        const currentId = selectedLayerForSymbology?.id;
+        const prevId = prevSelectedIdRef.current;
+
+        if (prevId && currentId && prevId !== currentId) {
+            setIsManuallyCollapsed(false);
+        }
+
+        prevSelectedIdRef.current = currentId;
+    }, [selectedLayerForSymbology]);
 
     const handleManualCollapse = () => {
         setIsManuallyCollapsed(true);

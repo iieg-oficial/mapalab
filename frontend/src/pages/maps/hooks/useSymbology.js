@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
     isParentLayer,
     hasWMSConfig,
@@ -15,6 +15,19 @@ export const useSymbology = ({
 }) => {
     const [selectedLayerForSymbology, setSelectedLayerForSymbology] = useState(null);
     const [hiddenLayerIds, setHiddenLayerIds] = useState([]);
+
+    const showAllLayers = useCallback(() => {
+        setHiddenLayerIds([]);
+    }, []);
+
+    const hideAllLayers = useCallback(() => {
+        const allIds = new Set();
+        activeLayerIds.forEach(id => {
+            allIds.add(id);
+            getAllChildLayerIds(id).forEach(cid => allIds.add(cid));
+        });
+        setHiddenLayerIds([...allIds]);
+    }, [activeLayerIds, getAllChildLayerIds]);
 
     const toggleLayerVisibility = useCallback((layerId) => {
         setHiddenLayerIds(prev => {
@@ -103,6 +116,8 @@ export const useSymbology = ({
         });
     }, [activeLayerIds, getAllChildLayerIds]);
 
+    const isStartupRef = useRef(true);
+
     useEffect(() => {
         if (!activeLayerIds || activeLayerIds.length === 0) {
             setSelectedLayerForSymbology(prev => prev ? null : prev);
@@ -142,6 +157,14 @@ export const useSymbology = ({
                 return prev;
             }
 
+            if (isStartupRef.current) {
+                isStartupRef.current = false;
+                const limiteLayer = allParentLayers.find(l => l.id === 'limite_iieg') || allIndividualLayers.find(l => l.id === 'limite_iieg');
+                if (limiteLayer) {
+                    return limiteLayer;
+                }
+            }
+
             if (nonBaseParentLayers.length > 0) {
                 return nonBaseParentLayers[0];
             } else if (nonBaseIndividualLayers.length > 0) {
@@ -161,6 +184,8 @@ export const useSymbology = ({
         hiddenLayerIds,
         toggleLayerVisibility,
         isLayerVisible,
+        showAllLayers,
+        hideAllLayers,
         getLayersForSymbology,
         groupedActiveLayers,
         activeLayers

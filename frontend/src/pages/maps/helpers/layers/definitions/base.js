@@ -130,7 +130,7 @@ const mapGeneralLayer = ([id, label, layerName, tags, littleCard]) => ({
     label,
     wmsConfig: {
         ...createGeneralLayer(layerName),
-        wmsGroup: 'default',
+        wmsGroup: id,
         wfsAvailable: true
     },
     littleCard,
@@ -164,7 +164,6 @@ export const BASE_INITIAL_ORDER = [
     'regiones',
     'limite_municipal',
     'cabeceras_municipales',
-    'aeropuertos',
     'cuerpos_de_agua_50k',
     'curvas_de_nivel',
 ];
@@ -195,7 +194,7 @@ export const baseLayers = {
                         label,
                         wmsConfig: {
                             ...createGeneralLayer.withFilter(layerName, `transito = '${matchValue}'`),
-                            wmsGroup: 'default',
+                            wmsGroup: 'carreteras',
                             wfsAvailable: true
                         },
                         littleCard,
@@ -211,7 +210,7 @@ export const baseLayers = {
                         label,
                         wmsConfig: {
                             ...createGeneralLayer.withFilter(layerName, `tipo = '${matchValue}'`),
-                            wmsGroup: 'default',
+                            wmsGroup: 'aeropuertos',
                             wfsAvailable: true
                         },
                         littleCard,
