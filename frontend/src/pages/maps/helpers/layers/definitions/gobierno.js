@@ -52,7 +52,7 @@ const FINZANZAS_MUNICIPALES = [
             stats: [
                 { label: 'Ingresos totales', field: 'ingresos_totales' },
                 { label: 'Ingresos propios', field: 'ingresos_propios' },
-                { label: 'Porcentaje de ingresos propios', field: 'porcentaje_ingresos_propios' },
+                { label: 'Porcentaje de ingresos propios', field: 'porcentaje_de_ingresos_propios' },
             ]
         })],
 ];

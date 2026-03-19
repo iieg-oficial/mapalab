@@ -1,11 +1,6 @@
-.env
-.env.local
-.env.*.local
-.env.development
+*.env*
+!.env.example
 docker-compose.local.yaml
-.env.production
-*.env
-!*.env.example
 *.log
 logs/
 .DS_Store
