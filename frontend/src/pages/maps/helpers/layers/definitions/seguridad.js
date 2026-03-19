@@ -1,5 +1,5 @@
 import { createLayerFactory } from '../utils/layerFactory';
-import { createMunicipioConfig } from '../../../components/InfoBox/utils/cardTemplates';
+import { createMunicipioConfig, MUNICIPIO_STYLE } from '../../../components/InfoBox/utils/cardTemplates';
 
 const createSeguridadLayer = createLayerFactory('seguridad');
 
@@ -35,7 +35,7 @@ const createTasaConfig = (title, stats, text) => createMunicipioConfig({
 const delitoConfig = {
     headerField: 'delito',
     labelGroups: [
-        { fields: ['municipio'] },
+        { fields: ['municipio'], ...MUNICIPIO_STYLE },
         { fields: ['dia_semana'] }
     ],
     list: [
@@ -47,7 +47,7 @@ const delitoConfig = {
 const delitoRoboConfig = {
     headerField: 'delito',
     labelGroups: [
-        { fields: ['municipio'] },
+        { fields: ['municipio'], ...MUNICIPIO_STYLE },
         { fields: ['modalidad'] },
         { fields: ['dia_semana'] }
     ],

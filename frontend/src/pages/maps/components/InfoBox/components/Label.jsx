@@ -1,4 +1,6 @@
-const FeatureLabel = ({ value, color, bg, fullWidth = false }) => {
+import { CARACTERISTICA_STYLE } from '../utils/cardTemplates';
+
+const FeatureLabel = ({ value, color = CARACTERISTICA_STYLE.color, bg = CARACTERISTICA_STYLE.bg, fullWidth = false }) => {
     if (!value) return null;
 
     if (fullWidth) {
