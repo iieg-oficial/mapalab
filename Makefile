@@ -1,4 +1,4 @@
-.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod deploy logs logs-backend logs-frontend logs-nginx clean status refresh-cache refresh-periodicity-cache refresh-search-cache
+.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod deploy logs logs-backend logs-frontend logs-nginx clean status refresh-cache refresh-periodicity-cache refresh-search-cache setup-hooks
 
 FRONTEND_DIR=frontend
 BACKEND_DIR=backend
@@ -29,7 +29,13 @@ help:
 	@echo "  make clean            - Detener servicios y limpiar todo"
 	@echo "  make status           - Ver estado de los servicios"
 	@echo "  make network-create   - Crear la red compartida"
+	@echo "  make setup-hooks      - Configurar git hooks del proyecto"
 	@echo ""
+
+setup-hooks:
+	@echo "Configurando git hooks..."
+	@git config core.hooksPath .githooks
+	@echo "Hooks configurados en .githooks/"
 
 network-create:
 	@echo "Creando red $(NETWORK_NAME)..."
@@ -39,7 +45,7 @@ network-remove:
 	@echo "Eliminando red $(NETWORK_NAME)..."
 	@docker network rm $(NETWORK_NAME) 2>/dev/null || echo "Red $(NETWORK_NAME) no existe"
 
-dev: network-create
+dev: network-create setup-hooks
 	@echo ""
 	@echo "MODO DESARROLLO"
 	@echo "=================="
