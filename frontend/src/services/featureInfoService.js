@@ -24,7 +24,7 @@ const matchesFilter = (properties, cqlFilter) => {
     return true;
 };
 
-export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinate, getFilterFn = null) => {
+export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinate, getFilterFn = null, isInegiMode = false) => {
     const validLayers = filterValidLayers(activeLayers, layers, findWMSConfig);
 
     if (validLayers.length === 0) return [];
@@ -92,6 +92,7 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
                 X: Math.floor(pixel[0]).toString(),
                 Y: Math.floor(pixel[1]).toString(),
                 CQL_FILTER: cqlFilters.join(';'),
+                ENV: isInegiMode ? 'geom:geom_inegi' : 'geom:geom_iieg',
                 ...(timeValue ? { TIME: timeValue } : {})
             };
 
@@ -149,7 +150,7 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
     return results.flat().filter(r => r !== null);
 };
 
-export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, polygonGeometry, getFilterFn = null) => {
+export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, polygonGeometry, getFilterFn = null, isInegiMode = false) => {
     const validLayers = filterValidLayers(activeLayers, layers, findWMSConfig)
         .filter(({ wmsConfig }) => wmsConfig.wfsAvailable !== false);
 
@@ -185,7 +186,8 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
                 layerMap[localName] = layerList[0].layer;
                 layerListMap[localName] = layerList;
 
-                const geomCol = geomColumns[typeName] || 'the_geom';
+                let geomCol = geomColumns[typeName] || 'the_geom';
+                if (isInegiMode && geomCol === 'geom_iieg') geomCol = 'geom_inegi';
 
                 const typeFilters = layerList.map(({ layer, wmsConfig }) => {
                     const dynamicFilter = getFilterFn ? getFilterFn(layer.id) : null;

@@ -13,7 +13,7 @@ import { usePdfExport } from './hooks/usePdfExport';
 import { layers as allLayers, findLayerById } from '../../helpers/layers/index';
 import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from './utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
-import Loading from '@components/Loading';
+import Logo from '@components/Logo';
 import Icon from '@components/Icon';
 
 const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propSelectedLegends = [], initialTitle = '', quality = QUALITY_PRESETS[1] }) => {
@@ -177,16 +177,14 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
                         ref={containerRef}
                         className="relative shadow-2xl flex flex-col max-w-[85vw] max-h-[85vh]"
                     >
-                        <div className="absolute top-0 left-0 bg-[#703089] text-white text-[10px] px-2 py-1 font-bold uppercase tracking-wide z-10">
-                            Vista Previa
-                        </div>
-
                         <div className="flex items-center justify-center p-4 min-h-[300px]">
                             {isGenerating && (
-                                <Loading
-                                    visible={true}
-                                    size="h-12 w-12"
-                                    color="border-[#703089]"
+                                <Logo
+                                    name="mapalab"
+                                    type="square"
+                                    variant="dark"
+                                    size="size-24"
+                                    isLoading={true}
                                 />
                             )}
                             {!isGenerating && previewUrl && (
@@ -197,11 +195,13 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
                                 />
                             )}
                             {!isGenerating && !previewUrl && (
-                                <p className="text-gray-500">
-                                    {activeLayers.length === 0
-                                        ? 'Agrega capas para generar preview'
-                                        : 'Generando...'}
-                                </p>
+                                <Logo
+                                    name="mapalab"
+                                    type="square"
+                                    variant="dark"
+                                    size="size-24"
+                                    isLoading={true}
+                                />
                             )}
                         </div>
                     </div>

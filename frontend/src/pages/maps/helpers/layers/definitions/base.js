@@ -164,7 +164,6 @@ export const BASE_INITIAL_ORDER = [
     'regiones',
     'limite_municipal',
     'cabeceras_municipales',
-    'aeropuertos',
     'cuerpos_de_agua_50k',
     'curvas_de_nivel',
 ];

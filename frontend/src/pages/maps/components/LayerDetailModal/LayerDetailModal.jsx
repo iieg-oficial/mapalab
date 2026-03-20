@@ -21,13 +21,17 @@ import Message from '@components/Message';
 import { downloadLayerBundle } from '@services/downloadService';
 
 const LayerDetailModal = () => {
-    const { selectedLayer, setSelectedLayer, applyFilter, clearFilter, getFilter, getLayerOpacity, setLayerOpacity, activeLayerIds } = useContext(MapsContext);
+    const { 
+        selectedLayer, setSelectedLayer, applyFilter, clearFilter, getFilter, getSpecificFilter, 
+        getLayerOpacity, setLayerOpacity, activeLayerIds 
+    } = useContext(MapsContext);
 
-    const rasterPeriodicity = useMemo(() => {
+    const layerDef = useMemo(() => {
         if (!selectedLayer?.id) return null;
-        const layerDef = findLayerDef(selectedLayer.id, allLayers);
-        return layerDef?.rasterPeriodicity || null;
+        return findLayerDef(selectedLayer.id, allLayers);
     }, [selectedLayer?.id]);
+    const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
+    const requireDateForDownload = layerDef?.requireDateForDownload || false;
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
@@ -86,11 +90,12 @@ const LayerDetailModal = () => {
     }, [cooldownEnd]);
 
     const cooldown = cooldownRemaining > 0;
-
     const hasPeriodicity = metadata?.periodicity != null || rasterPeriodicity != null;
+    const hasDateFilter = !!getSpecificFilter(selectedLayer?.id, 'date');
+    const downloadDisabled = cooldown || (requireDateForDownload && !hasDateFilter);
 
     const handleDownloadClick = useCallback(async () => {
-        if (!selectedLayer?.id || downloading || cooldown) return;
+        if (!selectedLayer?.id || downloading || downloadDisabled) return;
         setDownloading(true);
         const result = await downloadLayerBundle(selectedLayer.id, { activeLayerIds, getFilter });
         setDownloading(false);
@@ -99,7 +104,7 @@ const LayerDetailModal = () => {
         const end = Date.now() + COOLDOWN_MS;
         sessionStorage.setItem(storageKey, String(end));
         setCooldownEnd(end);
-    }, [selectedLayer?.id, activeLayerIds, getFilter, downloading, cooldown, storageKey]);
+    }, [selectedLayer?.id, activeLayerIds, getFilter, downloading, downloadDisabled, storageKey]);
 
     const handlePeriodicityClick = useCallback((e) => {
         if (e.ctrlKey || e.metaKey) {
@@ -147,14 +152,18 @@ const LayerDetailModal = () => {
                                 downloading
                                     ? <Logo name="mapalab" size="size-15" isLoading />
                                     : (
-                                        <Tooltip content="Descarga la tabla completa con metadatos en .ZIP" variant="warning">
+                                        <Tooltip
+                                            content={requireDateForDownload && !hasDateFilter
+                                                ? 'Selecciona un año en periodicidad para descargar'
+                                                : 'Descarga la tabla completa con metadatos en .ZIP'}
+                                            variant={requireDateForDownload && !hasDateFilter ? 'default' : 'warning'}
+                                        >
                                             <button
                                                 onClick={handleDownloadClick}
-                                                disabled={cooldown}
+                                                disabled={downloadDisabled}
                                                 className={`
                                                     w-auto md:min-w-[180px] px-10 text-[14px]/[47px] text-white rounded-[30px]
-                                                    transition-colors h-12.5 font-bold font-garet
-                                                    disabled:opacity-60 disabled:cursor-wait
+                                                    transition-colors h-12.5 font-bold font-garet disabled:opacity-60 disabled:cursor-not-allowed
                                                     bg-[#703089] hover:bg-[#5C2472] hover:shadow-[0px_6px_6px_#5C247234]
                                                 `}
                                             >

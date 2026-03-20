@@ -1,4 +1,4 @@
-.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod deploy logs logs-backend logs-frontend logs-nginx clean status refresh-cache refresh-periodicity-cache refresh-search-cache
+.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod deploy logs logs-backend logs-frontend logs-nginx clean status refresh-cache refresh-periodicity-cache refresh-search-cache setup-hooks
 
 FRONTEND_DIR=frontend
 BACKEND_DIR=backend
@@ -13,7 +13,7 @@ help:
 	@echo "  make logs-dev         - Ver logs de desarrollo"
 	@echo ""
 	@echo "PRODUCCIÓN:"
-	@echo "  make prod             - Modo producción HTTP (Nginx + Frontend estático + Backend sin /docs)"
+	@echo "  make prod             - Modo administración (subruta /mapalab/, Nginx + Frontend estático + Backend)"
 	@echo "  make ssl              - Modo HTTPS GCP (Let's Encrypt, requiere APP_DOMAIN y SSL_EMAIL en nginx/.env)"
 	@echo "  make ssl-local        - Modo HTTPS local (certificado autofirmado, APP_DOMAIN puede ser IP)"
 	@echo "  make build-prod       - Construir imágenes de producción"
@@ -29,7 +29,13 @@ help:
 	@echo "  make clean            - Detener servicios y limpiar todo"
 	@echo "  make status           - Ver estado de los servicios"
 	@echo "  make network-create   - Crear la red compartida"
+	@echo "  make setup-hooks      - Configurar git hooks del proyecto"
 	@echo ""
+
+setup-hooks:
+	@echo "Configurando git hooks..."
+	@git config core.hooksPath .githooks
+	@echo "Hooks configurados en .githooks/"
 
 network-create:
 	@echo "Creando red $(NETWORK_NAME)..."
@@ -39,7 +45,7 @@ network-remove:
 	@echo "Eliminando red $(NETWORK_NAME)..."
 	@docker network rm $(NETWORK_NAME) 2>/dev/null || echo "Red $(NETWORK_NAME) no existe"
 
-dev: network-create
+dev: network-create setup-hooks
 	@echo ""
 	@echo "MODO DESARROLLO"
 	@echo "=================="
@@ -71,8 +77,8 @@ dev: network-create
 
 prod: network-create
 	@echo ""
-	@echo "MODO PRODUCCIÓN"
-	@echo "=================="
+	@echo "MODO PRODUCCIÓN (ADMINISTRACIÓN - /mapalab/)"
+	@echo "==============================================="
 	@echo ""
 	@echo "Configurando variables de entorno..."
 	@cd $(FRONTEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
@@ -80,9 +86,10 @@ prod: network-create
 	@cd $(NGINX_DIR) && if [ ! -f .env ]; then \
 		cp .env.example .env 2>/dev/null || true; \
 	fi
+	@sed -i "s|^VITE_BASE_PATH=.*|VITE_BASE_PATH=/mapalab/|" $(FRONTEND_DIR)/.env.production
+	@sed -i "s|^VITE_BACKEND_API_HOST=.*|VITE_BACKEND_API_HOST=/mapalab/api/|" $(FRONTEND_DIR)/.env.production
 	@echo ""
-	@echo "Construyendo frontend..."
-	@echo "Instalando dependencias y construyendo en Docker..."
+	@echo "Construyendo frontend (base: /mapalab/)..."
 	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"
 	@echo ""
 	@echo "Levantando servicios de producción..."
@@ -92,11 +99,11 @@ prod: network-create
 	@echo "SERVICIOS LEVANTADOS EN PRODUCCIÓN"
 	@echo "======================================"
 	@echo ""
-	@echo "  Aplicación:           http://localhost"
+	@echo "  Aplicación:           http://localhost/mapalab/"
 	@echo "  Backend API:          http://localhost/api"
 	@echo "  GeoServer:            http://localhost/geoserver/"
 	@echo ""
-	@echo "Frontend servido como archivos estáticos desde nginx"
+	@echo "Frontend servido en subruta /mapalab/ desde nginx"
 	@echo "/docs y /redoc están deshabilitados en producción"
 	@echo ""
 
@@ -115,6 +122,8 @@ ssl: network-create
 	echo "Dominio: $$DOMAIN"; \
 	echo ""; \
 	echo "Configurando dominio en archivos de entorno..."; \
+	sed -i "s|^VITE_BASE_PATH=.*|VITE_BASE_PATH=/|" $(FRONTEND_DIR)/.env.production; \
+	sed -i "s|^VITE_BACKEND_API_HOST=.*|VITE_BACKEND_API_HOST=/api/|" $(FRONTEND_DIR)/.env.production; \
 	sed -i "s|^VITE_SITE_URL=.*|VITE_SITE_URL=https://$$DOMAIN|" $(FRONTEND_DIR)/.env.production; \
 	sed -i "s|^CORS_ALLOWED_ORIGIN=.*|CORS_ALLOWED_ORIGIN=https://$$DOMAIN|" $(FRONTEND_DIR)/.env.production; \
 	sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=[\"https://$$DOMAIN\"]|" $(BACKEND_DIR)/.env.production; \
@@ -155,6 +164,8 @@ ssl-local: network-create
 	@cd $(FRONTEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
 	@cd $(BACKEND_DIR) && if [ ! -f .env.production ]; then cp .env.example .env.production; fi
 	@cd $(NGINX_DIR) && if [ ! -f .env ]; then cp .env.example .env 2>/dev/null || true; fi
+	@sed -i "s|^VITE_BASE_PATH=.*|VITE_BASE_PATH=/|" $(FRONTEND_DIR)/.env.production
+	@sed -i "s|^VITE_BACKEND_API_HOST=.*|VITE_BACKEND_API_HOST=/api/|" $(FRONTEND_DIR)/.env.production
 	@echo ""
 	@echo "Generando certificado autofirmado..."
 	@mkdir -p $(NGINX_DIR)/ssl
@@ -205,6 +216,16 @@ deploy: network-create
 	@echo ""
 	@echo "DEPLOY (REBUILD + RESTART)"
 	@echo "==========================="
+	@echo ""
+	@if grep -q '^SSL_MODE=true' $(NGINX_DIR)/.env 2>/dev/null; then \
+		sed -i "s|^VITE_BASE_PATH=.*|VITE_BASE_PATH=/|" $(FRONTEND_DIR)/.env.production; \
+		sed -i "s|^VITE_BACKEND_API_HOST=.*|VITE_BACKEND_API_HOST=/api/|" $(FRONTEND_DIR)/.env.production; \
+		echo "Modo: GCP (raíz /)"; \
+	else \
+		sed -i "s|^VITE_BASE_PATH=.*|VITE_BASE_PATH=/mapalab/|" $(FRONTEND_DIR)/.env.production; \
+		sed -i "s|^VITE_BACKEND_API_HOST=.*|VITE_BACKEND_API_HOST=/mapalab/api/|" $(FRONTEND_DIR)/.env.production; \
+		echo "Modo: Administración (subruta /mapalab/)"; \
+	fi
 	@echo ""
 	@echo "Construyendo frontend..."
 	@docker run --rm -v $(CURDIR)/$(FRONTEND_DIR):/app -w /app node:24-alpine /bin/sh -c "(npm install || npm install --legacy-peer-deps) && npm run build"

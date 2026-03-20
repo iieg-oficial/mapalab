@@ -4,6 +4,7 @@ from app.consts.databases import DatabaseType
 from app.config import settings
 
 class DatabaseFactory:
+    _connections: dict[DatabaseType, PostgresConnection] = {}
 
     @staticmethod
     def _select_db_name(db_type: DatabaseType) -> str:
@@ -27,5 +28,7 @@ class DatabaseFactory:
 
     @staticmethod
     def get_connection(db_type: DatabaseType) -> PostgresConnection:
-        db_url = DatabaseFactory._build_db_url(db_type)
-        return PostgresConnection(db_url)
+        if db_type not in DatabaseFactory._connections:
+            db_url = DatabaseFactory._build_db_url(db_type)
+            DatabaseFactory._connections[db_type] = PostgresConnection(db_url)
+        return DatabaseFactory._connections[db_type]

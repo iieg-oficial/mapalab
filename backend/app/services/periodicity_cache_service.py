@@ -1,11 +1,15 @@
+import fcntl
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Dict, Optional
 
 from app.services.geoserver_service import GeoServerService
 from app.services.periodicity import get_periodicity
 from app.utils.logger import Logger
 from app.consts import PERIODICITY_CACHE_FILE, CACHE_EXPIRY_HOURS
+
+LOCK_FILE = Path("/tmp/periodicity_cache.lock")
 
 
 class PeriodicityCacheService:
@@ -95,8 +99,27 @@ class PeriodicityCacheService:
         cache = PeriodicityCacheService.load_cache()
 
         if not cache or PeriodicityCacheService.is_cache_expired(cache):
-            Logger.warning("Periodicity cache missing or expired. Generating new cache")
-            cache = PeriodicityCacheService.generate_cache()
-            PeriodicityCacheService.save_cache(cache)
+            lock_fd = open(LOCK_FILE, 'w')
+            acquired = False
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                acquired = True
+            except OSError:
+                Logger.info("Cache generation already in progress in another worker, returning stale cache")
+                lock_fd.close()
+                return cache or {}
+
+            if acquired:
+                try:
+                    cache = PeriodicityCacheService.load_cache()
+                    if cache and not PeriodicityCacheService.is_cache_expired(cache):
+                        return cache
+
+                    Logger.warning("Periodicity cache missing or expired. Generating new cache")
+                    cache = PeriodicityCacheService.generate_cache()
+                    PeriodicityCacheService.save_cache(cache)
+                finally:
+                    fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                    lock_fd.close()
 
         return cache
