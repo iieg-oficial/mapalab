@@ -86,16 +86,16 @@ const Body = ({ isModal = false }) => {
                     {guideConfig.steps.map((item) => (
                         <div
                             key={item.id}
-                            className="flex flex-col gap-3 items-center justify-end rounded-[13px] py-6 px-10 bg-white w-full max-w-[400px] h-[360px] shadow-[0px_6px_12px_#ACBFE533]"
+                            className="items-center justify-end rounded-[13px] py-6 px-10 bg-white w-full max-w-[400px] h-auto shadow-[0px_6px_12px_#ACBFE533]"
                         >
                             <img
                                 src={item.image}
-                                className="bg-[transparent linear-gradient(0deg, #F3EBFF 0%, #F4EBFF00 100%) 0% 0% no-repeat padding-box] size-[122px] rounded-[16px]"
+                                className="bg-[transparent linear-gradient(0deg, #F3EBFF 0%, #F4EBFF00 100%) 0% 0% no-repeat padding-box] size-[122px] rounded-[16px] mx-auto"
                                 alt=""
                                 loading="lazy"
                             />
                             <div className="flex flex-col justify-start items-center text-center">
-                                <h3 className="blockfont-garet font-bold text-orange text-[16px] xl:leading-16 tracking-normal mb-5 mt-3 xl:mb-0 xl:mt-0">
+                                <h3 className="blockfont-garet font-bold text-orange text-[16px] xl:leading-8 xl:mb-2.5 tracking-normal mb-5 mt-3 2xl:mb-0 xl:mt-0">
                                     {item.header}
                                 </h3>
                                 <p className="font-garet font-book text-[#2E4372] text-[14px]/[24px] tracking-normal min-h-[93px]">
