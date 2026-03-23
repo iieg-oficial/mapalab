@@ -94,6 +94,7 @@ export const economiaLayers = {
                 id,
                 label,
                 wmsConfig: createEconomiaLayer(layerName),
+                ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
                 searchMeta: { tags },
                 littleCard
             }))

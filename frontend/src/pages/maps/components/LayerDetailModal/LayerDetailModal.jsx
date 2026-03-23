@@ -32,6 +32,7 @@ const LayerDetailModal = () => {
     }, [selectedLayer?.id]);
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
     const requireDateForDownload = layerDef?.requireDateForDownload || false;
+    const hidePeriodicity = layerDef?.hidePeriodicity || false;
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
@@ -62,7 +63,7 @@ const LayerDetailModal = () => {
         return () => { cancelled = true; };
     }, [selectedLayer?.id, rasterPeriodicity]);
 
-    const COOLDOWN_MS = 60000;
+    const COOLDOWN_MS = 5000;
     const storageKey = selectedLayer?.id ? `dl_cd_${selectedLayer.id}` : null;
 
     const [cooldownEnd, setCooldownEnd] = useState(() =>
@@ -90,7 +91,7 @@ const LayerDetailModal = () => {
     }, [cooldownEnd]);
 
     const cooldown = cooldownRemaining > 0;
-    const hasPeriodicity = metadata?.periodicity != null || rasterPeriodicity != null;
+    const hasPeriodicity = !hidePeriodicity && (metadata?.periodicity != null || rasterPeriodicity != null);
     const hasDateFilter = !!getSpecificFilter(selectedLayer?.id, 'date');
     const downloadDisabled = cooldown || (requireDateForDownload && !hasDateFilter);
 

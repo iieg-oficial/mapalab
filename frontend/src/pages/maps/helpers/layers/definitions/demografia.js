@@ -82,7 +82,7 @@ export const demografiaLayers = {
                 id,
                 label,
                 wmsConfig: createDemografiaLayer(layerName),
-                ...(defaultDate && { defaultDate }),
+                ...((defaultDate || id.startsWith('tasa_')) && { defaultDate: defaultDate || 'latest' }),
                 littleCard,
                 searchMeta: { tags }
             }))
