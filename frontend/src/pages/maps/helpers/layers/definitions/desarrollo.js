@@ -122,6 +122,7 @@ export const desarrolloLayers = {
                 id,
                 label,
                 wmsConfig: createDesarrolloLayer(layerName),
+                ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
                 littleCard: createMunicipioConfig({
                     title: label,
                     text: pobrezaText(concepto),
@@ -137,6 +138,7 @@ export const desarrolloLayers = {
                 id,
                 label,
                 wmsConfig: createDesarrolloLayer(layerName),
+                ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
                 littleCard,
                 searchMeta: { tags }
             }))
