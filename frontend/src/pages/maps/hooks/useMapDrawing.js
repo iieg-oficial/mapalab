@@ -478,6 +478,11 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         };
     }, [measureType, stopDrawing, updateSketchingState]);
 
+    const finishCurrentSketch = useCallback(() => {
+        if (!drawInteractionRef.current || !isSketchingRef.current) return;
+        drawInteractionRef.current.finishDrawing();
+    }, []);
+
     const clearDrawings = useCallback(() => {
         if (vectorSourceRef.current) {
             vectorSourceRef.current.clear();
@@ -639,6 +644,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         setRotation,
         measurementConfig,
         setMeasurementConfig,
+        finishCurrentSketch,
         restoreLastSelection,
         showSelectionByIndex,
         updateSelectionCount

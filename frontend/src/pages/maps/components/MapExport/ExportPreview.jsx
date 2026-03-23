@@ -175,7 +175,7 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
                 <div className="fixed inset-0 bg-black/80 z-[9999] flex flex-col items-center justify-center p-4 gap-6">
                     <div
                         ref={containerRef}
-                        className="relative shadow-2xl flex flex-col max-w-[85vw] max-h-[85vh]"
+                        className="relative flex flex-col max-w-[85vw] max-h-[85vh]"
                     >
                         <div className="flex items-center justify-center p-4 min-h-[300px]">
                             {isGenerating && (
@@ -206,21 +206,21 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
                         </div>
                     </div>
 
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 flex-wrap justify-center">
                         <button
                             onClick={handleClose}
-                            className="flex items-center gap-2 px-6 py-2 bg-white text-gray-700 rounded-full shadow-lg hover:bg-gray-50 transition-all font-bold text-sm cursor-pointer"
+                            className="flex items-center gap-2 px-6 py-2 bg-white text-gray-700 rounded-full shadow-lg hover:bg-gray-50 transition-all font-bold text-sm cursor-pointer whitespace-nowrap"
                         >
-                            <Icon name="close" className="w-4 h-4" />
+                            <Icon name="close" className="w-4 h-4 shrink-0" />
                             Cancelar
                         </button>
                         {!isGenerating && (
                             <button
                                 onClick={handleDownload}
                                 disabled={!previewUrl || isGenerating}
-                                className="flex items-center gap-2 px-6 py-2 bg-[#703089] text-white rounded-full shadow-lg hover:bg-[#5C2472] transition-all font-bold text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center gap-2 px-6 py-2 bg-[#703089] text-white rounded-full shadow-lg hover:bg-[#5C2472] transition-all font-bold text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             >
-                                <Icon name="download" className="w-4 h-4" />
+                                <Icon name="download" className="w-4 h-4 shrink-0" />
                                 Descargar {format.toUpperCase()}
                             </button>
                         )}
