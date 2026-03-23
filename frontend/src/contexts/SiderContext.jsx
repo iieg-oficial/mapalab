@@ -208,18 +208,22 @@ export const useSiderAnchoredPosition = ({ offset = 12 } = {}) => {
 };
 
 export const useSiderAdaptivePosition = ({ bottomOffset = 60, leftOffset = 16, siderOffset = 28, anchorRef = null } = {}) => {
-    const { siderRef, toolsButtonRef, width, collapsedWidth, expandedWidth } = useSider();
+    const { siderRef, toolsButtonRef, width, collapsedWidth, expandedWidth, isMobile, isOpen } = useSider();
     const [isOverlapping, setIsOverlapping] = useState(false);
     const [topPosition, setTopPosition] = useState(null);
 
     const targetAnchor = anchorRef === 'tools' ? toolsButtonRef : anchorRef;
+    const isMobileCollapsed = isMobile && !isOpen && anchorRef != null;
 
     useLayoutEffect(() => {
         const checkOverlap = () => {
             if (!siderRef.current) return;
             const siderRect = siderRef.current.getBoundingClientRect();
 
-            if (targetAnchor?.current) {
+            if (isMobileCollapsed) {
+                setTopPosition(siderRect.bottom + 20);
+                setIsOverlapping(false);
+            } else if (targetAnchor?.current) {
                 const anchorRect = targetAnchor.current.getBoundingClientRect();
                 setTopPosition(anchorRect.top);
                 setIsOverlapping(siderRect.bottom >= anchorRect.top);
@@ -248,9 +252,11 @@ export const useSiderAdaptivePosition = ({ bottomOffset = 60, leftOffset = 16, s
             resizeObserver.disconnect();
             window.removeEventListener('resize', checkOverlap);
         };
-    }, [siderRef, targetAnchor, bottomOffset, collapsedWidth, expandedWidth]);
+    }, [siderRef, targetAnchor, bottomOffset, collapsedWidth, expandedWidth, isMobileCollapsed]);
 
-    const leftPosition = isOverlapping ? width + siderOffset : leftOffset;
+    const leftPosition = isMobileCollapsed
+        ? leftOffset
+        : isOverlapping ? width + siderOffset : leftOffset;
 
     const style = topPosition !== null
         ? { left: `${leftPosition}px`, top: `${topPosition}px` }

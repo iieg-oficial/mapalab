@@ -1,30 +1,23 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
-import ConfirmModal from '@components/ConfirmModal';
+import ConfirmDropdown from '@components/ConfirmDropdown';
 
 const CloseButton = ({
     onConfirm,
     visible = true,
     className = ''
 }) => {
-    const buttonRef = useRef(null);
     const [isOpen, setIsOpen] = useState(false);
 
     if (!visible) return null;
 
-    const handleConfirm = () => {
-        onConfirm?.();
-        setIsOpen(false);
-    };
-
     const iconState = isOpen ? 'hover' : 'normal';
 
     return (
-        <>
+        <div className="relative">
             <Tooltip content="Cerrar herramienta de mediciones" placement="right" delay={500}>
                 <button
-                    ref={buttonRef}
                     type="button"
                     onClick={() => setIsOpen(true)}
                     className={[
@@ -38,24 +31,17 @@ const CloseButton = ({
                 </button>
             </Tooltip>
 
-            <ConfirmModal
+            <ConfirmDropdown
                 open={isOpen}
-                anchorRef={buttonRef}
                 onClose={() => setIsOpen(false)}
-                onConfirm={handleConfirm}
-                title="Cerrar herramienta de mediciones"
-                confirmText="Cerrar herramienta"
-            >
-                <p>
-                    Al cerrar la herramienta de mediciones se eliminarán todos los trazos y anotaciones actuales.
-                </p>
-                <p className="text-xs text-gray-500 ">
-                    Esta acción no se puede deshacer.
-                </p>
-            </ConfirmModal>
-        </>
+                onConfirm={onConfirm}
+                title="¿Cerrar herramientas de medición?"
+                description="Se eliminarán todos los trazos y anotaciones actuales. Esta acción no se puede deshacer."
+                confirmText="Sí, cerrar herramientas"
+                className="left-0"
+            />
+        </div>
     );
 };
 
 export default CloseButton;
-

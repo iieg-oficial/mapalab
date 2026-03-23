@@ -1,4 +1,4 @@
-import { useContext, useCallback, useMemo, useEffect, useState, useRef } from 'react';
+import { useContext, useCallback, useMemo, useEffect, useState } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useActiveLayersLogic } from '../../hooks/useActiveLayersLogic';
 import { useLayerCollapse } from './hooks/useLayerCollapse';
@@ -10,6 +10,7 @@ import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
 import Switch from '@components/Switch';
 import ScrollContainer from '@components/ScrollContainer';
+import ConfirmDropdown from '@components/ConfirmDropdown';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
 
@@ -72,15 +73,6 @@ const ActiveLayersList = ({ onCollapseChange }) => {
 
     const [isDeleteHovered, setIsDeleteHovered] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const deleteDropdownRef = useRef(null);
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (deleteDropdownRef.current && !deleteDropdownRef.current.contains(e.target)) setShowDeleteConfirm(false);
-        };
-        if (showDeleteConfirm) document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [showDeleteConfirm]);
 
     if (collapse.isCollapsed) {
         return (
@@ -124,7 +116,7 @@ const ActiveLayersList = ({ onCollapseChange }) => {
                             <span className="text-[7.5px] md:text-[8px] font-garet font-medium text-[#465055] whitespace-nowrap truncate leading-none pt-[1.5px]">{allHidden ? 'Mostrar mis capas' : 'Ocultar mis capas'}</span>
                         </div>
 
-                        <div className="relative shrink md:shrink-0" ref={deleteDropdownRef}>
+                        <div className="relative shrink md:shrink-0">
                             <div
                                 onClick={() => setShowDeleteConfirm(p => !p)}
                                 onMouseEnter={() => setIsDeleteHovered(true)}
@@ -136,33 +128,15 @@ const ActiveLayersList = ({ onCollapseChange }) => {
                                 </span>
                                 <span className="text-[7.5px] md:text-[8px] font-garet font-medium text-[#465055] group-hover/del:text-[#FF577D] whitespace-nowrap truncate leading-none pt-[1.5px] transition-colors">Eliminar mis capas</span>
                             </div>
-                            {showDeleteConfirm && (
-                                <div className="absolute right-0 md:right-0 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 top-full mt-1 z-50 bg-white rounded-[8px] shadow-[0px_3px_24px_#00000029] w-[342px] max-w-[calc(100vw-2rem)] p-4">
-                                    <button
-                                        onClick={() => setShowDeleteConfirm(false)}
-                                        className="absolute top-3 right-3 cursor-pointer"
-                                    >
-                                        <Icon name="cerrarModal" className="size-7" />
-                                    </button>
-                                    <div className="flex gap-3 pr-3 pt-5">
-                                        <Icon name="warning_dropdown" className="size-8 shrink-0" />
-                                        <div>
-                                            <p className="text-[12px]/[18px] font-garet font-bold text-[#2E4372]">
-                                                ¿Estás seguro de borrar todas las capas que tienes activas? 
-                                            </p>
-                                            <p className="text-[12px]/[18px] font-garet font-medium text-[#2E4372]">
-                                                Si las borras deberás activar una por una nuevamente
-                                            </p>
-                                            <button
-                                                onClick={() => { handleRemoveAll(); setShowDeleteConfirm(false); }}
-                                                className="mt-3 py-[7px] px-4 rounded-[30px] bg-[#FF577D] text-white text-[12px] font-garet font-bold cursor-pointer hover:bg-[#e84d6f] transition-colors"
-                                            >
-                                                Sí. Quiero borrar todas las capas
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            <ConfirmDropdown
+                                open={showDeleteConfirm}
+                                onClose={() => setShowDeleteConfirm(false)}
+                                onConfirm={handleRemoveAll}
+                                title="¿Estás seguro de borrar todas las capas que tienes activas?"
+                                description="Si las borras deberás activar una por una nuevamente"
+                                confirmText="Sí. Quiero borrar todas las capas"
+                                className="right-0 md:right-0 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0"
+                            />
                         </div>
                     </div>
 
