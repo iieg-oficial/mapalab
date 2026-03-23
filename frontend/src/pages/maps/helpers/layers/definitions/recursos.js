@@ -136,8 +136,8 @@ const AGUA = [
 
 const AREAS_NATURALES = [
     ['bosque_de_la_primavera', 'Bosque de la Primavera', 'area_de_proteccion_bosque_la_primavera', ['recursos', 'ambiente', 'primavera', 'bosque', 'conservacion', 'limites'], bosquePrimaveraConfig],
-    ['agave_primavera', 'Agave dentro del APFyF La Primavera', 'agave_en_area_de_proteccion_de_flora_y_fauna_bosque_la_primaver', ['recursos', 'ambiente', 'primavera', 'cultivo', 'agave', 'conservacion', 'impacto'], parcelaPrimaveraConfig('Agave dentro del Área de Protección de Flora y Fauna La Primavera')],
-    ['parcelas_primavera', 'Parcelas dentro del APFyF La Primavera', 'parcelas_dentro_de_anp_bosque_de_la_primavera', ['recursos', 'ambiente', 'primavera', 'propiedad', 'tierra', 'conservacion', 'limites'], parcelaPrimaveraConfig('Parcela dentro del Área de Protección de Flora y Fauna La Primavera')],
+    ['agave_primavera', 'Agave dentro del APFyF La Primavera', 'agave_en_area_de_proteccion_de_flora_y_fauna_bosque_la_primaver', ['recursos', 'ambiente', 'primavera', 'cultivo', 'agave', 'conservacion', 'impacto'], parcelaPrimaveraConfig('Agave dentro del Área de Protección de Flora y Fauna La Primavera'), { hidePeriodicity: true }],
+    ['parcelas_primavera', 'Parcelas dentro del APFyF La Primavera', 'parcelas_dentro_de_anp_bosque_de_la_primavera', ['recursos', 'ambiente', 'primavera', 'propiedad', 'tierra', 'conservacion', 'limites'], parcelaPrimaveraConfig('Parcela dentro del Área de Protección de Flora y Fauna La Primavera'), { hidePeriodicity: true }],
 ];
 
 const ITUR = [
@@ -243,12 +243,13 @@ export const recursosLayers = {
             label: 'Áreas Protegidas',
             isCategory: true,
             children: [
-                ...AREAS_NATURALES.map(([id, label, layerName, tags, littleCard]) => ({
+                ...AREAS_NATURALES.map(([id, label, layerName, tags, littleCard, extraProps]) => ({
                     id,
                     label,
                     wmsConfig: createRecursosLayer(layerName),
                     littleCard,
-                    searchMeta: { tags }
+                    searchMeta: { tags },
+                    ...extraProps
                 }))]
         }, {
             id: 'territorio',
