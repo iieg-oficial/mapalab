@@ -7,7 +7,7 @@ from typing import Dict, Optional
 from app.services.geoserver_service import GeoServerService
 from app.services.periodicity import get_periodicity
 from app.utils.logger import Logger
-from app.consts import PERIODICITY_CACHE_FILE, CACHE_EXPIRY_HOURS
+from app.consts import PERIODICITY_CACHE_FILE, CACHE_EXPIRY_HOURS, MAX_CONSECUTIVE_FAILURES
 
 LOCK_FILE = Path("/tmp/periodicity_cache.lock")
 
@@ -57,11 +57,15 @@ class PeriodicityCacheService:
     def generate_cache() -> Dict:
         Logger.info("Starting periodicity cache generation")
 
+        existing = PeriodicityCacheService.load_cache()
+        existing_layers = existing.get("layers", {})
+
         cache_data = {
             "last_updated": datetime.now(timezone.utc).isoformat(),
             "layers": {}
         }
 
+        active_layers = set()
         workspaces = GeoServerService.get_workspaces()
         exclude_workspaces = {'raster'}
 
@@ -74,6 +78,9 @@ class PeriodicityCacheService:
 
             for layer_name in layer_names:
                 layer_key = f"{workspace}:{layer_name}"
+                active_layers.add(layer_key)
+                previous = existing_layers.get(layer_key, {})
+
                 try:
                     wfs_url = GeoServerService.get_layer_url(
                         workspace, layer_name, cql_filter="", property_name='fecha'
@@ -82,9 +89,39 @@ class PeriodicityCacheService:
                     periodicity = result.get("fecha")
 
                     if periodicity:
-                        cache_data["layers"][layer_key] = periodicity
+                        cache_data["layers"][layer_key] = {
+                            "periodicity": periodicity,
+                            "consecutive_failures": 0
+                        }
+                    elif previous.get("periodicity"):
+                        cache_data["layers"][layer_key] = {
+                            "periodicity": previous["periodicity"],
+                            "consecutive_failures": previous.get("consecutive_failures", 0)
+                        }
                 except Exception as e:
                     Logger.error(f"Error fetching periodicity for {layer_key}: {str(e)}")
+                    failures = previous.get("consecutive_failures", 0) + 1
+
+                    if failures < MAX_CONSECUTIVE_FAILURES and previous.get("periodicity"):
+                        cache_data["layers"][layer_key] = {
+                            "periodicity": previous["periodicity"],
+                            "consecutive_failures": failures
+                        }
+                        Logger.warning(f"Keeping cached periodicity for {layer_key} (failure {failures}/{MAX_CONSECUTIVE_FAILURES})")
+                    elif previous.get("periodicity"):
+                        Logger.warning(f"Removing periodicity for {layer_key} after {failures} consecutive failures")
+
+        for layer_key, data in existing_layers.items():
+            if layer_key not in active_layers and data.get("periodicity"):
+                failures = data.get("consecutive_failures", 0) + 1
+                if failures < MAX_CONSECUTIVE_FAILURES:
+                    cache_data["layers"][layer_key] = {
+                        "periodicity": data["periodicity"],
+                        "consecutive_failures": failures
+                    }
+                    Logger.warning(f"Layer {layer_key} not found in GeoServer (failure {failures}/{MAX_CONSECUTIVE_FAILURES})")
+                else:
+                    Logger.warning(f"Removing {layer_key} from cache after {failures} consecutive failures")
 
         Logger.info(f"Periodicity cache generation completed: {len(cache_data['layers'])} layers with dates")
         return cache_data
@@ -92,7 +129,10 @@ class PeriodicityCacheService:
     @staticmethod
     def get_periodicity(layer_key: str) -> Optional[Dict]:
         cache = PeriodicityCacheService._get_valid_cache()
-        return cache.get("layers", {}).get(layer_key)
+        layer_data = cache.get("layers", {}).get(layer_key)
+        if isinstance(layer_data, dict) and "periodicity" in layer_data:
+            return layer_data["periodicity"]
+        return layer_data
 
     @staticmethod
     def _get_valid_cache() -> Dict:

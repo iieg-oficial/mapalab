@@ -62,7 +62,7 @@ const fetchBlob = async (url) => {
 };
 
 const addMetadataToZip = async (zip, metadata) => {
-    const files = [metadata?.metadato_txt, metadata?.metadato_xlsx].filter(Boolean);
+    const files = metadata?.metadato?.map(m => m.enlace).filter(Boolean) ?? [];
     if (files.length === 0) return;
     for (const url of files) {
         try {
