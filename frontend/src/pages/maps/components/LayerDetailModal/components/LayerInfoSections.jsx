@@ -14,7 +14,7 @@ const TextBlock = ({ text }) => (
 );
 
 const ExternalLink = ({ href, label }) => {
-    if (!href?.startsWith('https://')) return null;
+    if (!href?.startsWith('https://') && !href?.startsWith('http://')) return null;
     return (
         <a href={href} target="_blank" rel="noopener noreferrer"
             className="text-[12px]/[18px] font-garet font-medium text-[#5C2472] underline">
