@@ -107,10 +107,26 @@ const LayerDetailModal = () => {
         setCooldownEnd(end);
     }, [selectedLayer?.id, activeLayerIds, getFilter, downloading, downloadDisabled, storageKey]);
 
+    const periodicityLongPressRef = useRef(null);
+
     const handlePeriodicityClick = useCallback((e) => {
         if (e.ctrlKey || e.metaKey) {
             setIsAdvancedMode(prev => !prev);
         }
+    }, []);
+
+    const handlePeriodicityTouchStart = useCallback(() => {
+        periodicityLongPressRef.current = setTimeout(() => {
+            periodicityLongPressRef.current = 'fired';
+            setIsAdvancedMode(prev => !prev);
+        }, 1000);
+    }, []);
+
+    const handlePeriodicityTouchEnd = useCallback(() => {
+        if (periodicityLongPressRef.current && periodicityLongPressRef.current !== 'fired') {
+            clearTimeout(periodicityLongPressRef.current);
+        }
+        periodicityLongPressRef.current = null;
     }, []);
 
     const handleDateFilterApply = (filterData) => {
@@ -260,6 +276,9 @@ const LayerDetailModal = () => {
                                             <span
                                                 className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer"
                                                 onClick={handlePeriodicityClick}
+                                                onTouchStart={handlePeriodicityTouchStart}
+                                                onTouchEnd={handlePeriodicityTouchEnd}
+                                                onTouchCancel={handlePeriodicityTouchEnd}
                                             >
                                                 Periodicidad:
                                             </span>

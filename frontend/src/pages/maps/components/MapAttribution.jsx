@@ -41,8 +41,13 @@ const MapAttribution = () => {
                             © PostGIS
                         </a>
                         <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="text-[#8936AB] hover:underline hover:text-[#5C2472] flex items-center gap-1.5 py-1.5 my-0.5">
-                            CC BY 4.0 <img src={openDataImg} alt="Open Data" className="h-[15px] w-auto" />
+                            CC BY 4.0
                         </a>
+                        <div className="flex justify-center pt-1 mt-1 border-t border-gray-100">
+                            <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">
+                                <img src={openDataImg} alt="Open Data" className="h-[15px] w-auto opacity-70" />
+                            </a>
+                        </div>
                     </div>
                 )}
                 <button

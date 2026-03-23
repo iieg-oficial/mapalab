@@ -137,7 +137,7 @@ const ActiveLayersList = ({ onCollapseChange }) => {
                                 <span className="text-[7.5px] md:text-[8px] font-garet font-medium text-[#465055] group-hover/del:text-[#FF577D] whitespace-nowrap truncate leading-none pt-[1.5px] transition-colors">Eliminar mis capas</span>
                             </div>
                             {showDeleteConfirm && (
-                                <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-[8px] shadow-[0px_3px_24px_#00000029] w-[342px] p-4">
+                                <div className="absolute right-0 md:right-0 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 top-full mt-1 z-50 bg-white rounded-[8px] shadow-[0px_3px_24px_#00000029] w-[342px] max-w-[calc(100vw-2rem)] p-4">
                                     <button
                                         onClick={() => setShowDeleteConfirm(false)}
                                         className="absolute top-3 right-3 cursor-pointer"

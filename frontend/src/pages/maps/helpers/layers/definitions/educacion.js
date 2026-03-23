@@ -23,14 +23,14 @@ const escuelasConfig = cardTemplates.TDEMECLUEV({
 });
 
 const NIVELES = [
+    ['inicial', 'Inicial', 'inicial', ['educacion', 'escuela', 'inicial', 'guarderia', 'estancia_infantil', 'bebes', 'ninos_pequenos']],
     ['preescolar', 'Preescolar', 'preescolar', ['educacion', 'escuela', 'kinder', 'jardin', 'infantil', 'niños', 'preescolar', 'inicial']],
-    ['bachillerato', 'Bachillerato', 'Bachillerato', ['educacion', 'escuela', 'bachillerato', 'preparatoria', 'media_superior', 'prepa', 'cobaej', 'cecytej', 'conalep']],
     ['primaria', 'Primaria', 'primaria', ['educacion', 'escuela', 'primaria', 'basica', 'niños', 'elemental', 'primer_grado']],
     ['secundaria', 'Secundaria', 'secundaria', ['educacion', 'escuela', 'secundaria', 'media_basica', 'adolescentes', 'telesecundaria', 'tecnica']],
-    ['especial', 'Especial', 'especial', ['educacion', 'escuela', 'especial', 'discapacitados', 'necesidades_especiales']],
-    ['inicial', 'Inicial', 'inicial', ['educacion', 'escuela', 'inicial', 'guarderia', 'estancia_infantil', 'bebes', 'ninos_pequenos']],
+    ['bachillerato', 'Bachillerato', 'Bachillerato', ['educacion', 'escuela', 'bachillerato', 'preparatoria', 'media_superior', 'prepa', 'cobaej', 'cecytej', 'conalep']],
     ['profesional_tecnico', 'Profesional técnico', 'profesional_tecnico', ['educacion', 'escuela', 'profesional_tecnico', 'tecnico', 'profesional', 'tecnica', 'tecnologico', 'utc', 'cbtis', 'cetis']],
-    ['licenciaturas', 'Licenciaturas', 'Licenciatura', ['educacion', 'escuela', 'licenciatura', 'universidad', 'superior', 'carrera', 'facultad', 'campus', 'posgrado', 'maestria', 'doctorado']],
+    ['licenciaturas', 'Licenciatura', 'Licenciatura', ['educacion', 'escuela', 'licenciatura', 'universidad', 'superior', 'carrera', 'facultad', 'campus', 'posgrado', 'maestria', 'doctorado']],
+    ['especial', 'Especial', 'especial', ['educacion', 'escuela', 'especial', 'discapacitados', 'necesidades_especiales']],
 ];
 
 export const educacionLayers = {

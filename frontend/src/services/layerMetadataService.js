@@ -85,7 +85,7 @@ export const getLayersSources = async (layerIds) => {
     if (!entries.length) return {};
 
     const keys = entries.map((e) => e.key).join(',');
-    const url = new URL(SOURCES_ENDPOINT);
+    const url = new URL(SOURCES_ENDPOINT, window.location.origin);
     url.searchParams.set('layers', keys);
 
     const response = await fetch(url.toString(), {

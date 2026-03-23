@@ -95,6 +95,17 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [], closeButton }) => {
                 </button>
             </div>
 
+            {debouncedQuery && !isLoading && selectedLayers.length === 0 && (
+                <div className="mt-6 text-center py-6">
+                    <p className="text-[13px]/[19px] font-garet font-medium text-[#465055]">
+                        No se encontraron resultados para <span className="font-bold text-[#5C2472]">"{debouncedQuery}"</span>
+                    </p>
+                    <p className="text-[11px]/[16px] font-garet font-normal text-[#6E7477] mt-1">
+                        Intenta con otro término de búsqueda
+                    </p>
+                </div>
+            )}
+
             {selectedLayers.length > 0 && (
                 <div className="relative mt-6 bg-white rounded-[7px] p-2">
                     <ScrollContainer className="max-h-100 space-y-3">
