@@ -62,7 +62,7 @@ const LayerDetailModal = () => {
         return () => { cancelled = true; };
     }, [selectedLayer?.id, rasterPeriodicity]);
 
-    const COOLDOWN_MS = 60000;
+    const COOLDOWN_MS = 5000;
     const storageKey = selectedLayer?.id ? `dl_cd_${selectedLayer.id}` : null;
 
     const [cooldownEnd, setCooldownEnd] = useState(() =>
