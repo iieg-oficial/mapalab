@@ -26,7 +26,7 @@ def get_sources_batch(
         return [
             LayerSourceResponse(
                 nombre_capa_geoserver=row.nombre_capa_geoserver,
-                fuentes_texto_corto=NanToNone(row.fuentes_texto_corto),
+                fuentes_texto_corto=NanToNone(row.fuentes_texto_corto) or NanToNone(row.fuentes_texto_largo),
             )
             for row in results
         ]

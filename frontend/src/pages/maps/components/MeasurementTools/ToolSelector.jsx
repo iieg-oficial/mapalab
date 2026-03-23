@@ -47,6 +47,7 @@ const ToolSelector = ({
     textButtonRef,
     emojiButtonRef,
     onUndo,
+    onFinish,
     canUndo,
     showAdvancedTools,
     onToggleAdvanced,
@@ -152,13 +153,23 @@ const ToolSelector = ({
                             {renderButton(type, buttonProps, isActive, isEmoji)}
                         </Tooltip>
 
-                        {showUndoButton && (
-                            <div className="absolute left-full top-1/2 -translate-y-1/2 -ml-4 animate-[slideIn_0.2s_ease-out] -z-10">
+                        {showUndoButton && canUndo && (
+                            <div className="absolute left-full top-1/2 -translate-y-1/2 -ml-4 animate-[slideIn_0.2s_ease-out] -z-10 flex">
                                 <UndoButton
                                     onClick={onUndo}
                                     disabled={!canUndo}
                                     showLabel={false}
                                 />
+                                <Tooltip content="Terminar trazo" placement="right" delay={300}>
+                                    <button
+                                        type="button"
+                                        onClick={onFinish}
+                                        className="flex items-center rounded-r-[8px] border border-transparent p-1 justify-center w-15 bg-white text-[#703089] hover:border-[#5C2472] active:bg-[#703089] active:text-white transition-all"
+                                        aria-label="Terminar trazo"
+                                    >
+                                        <Icon name="shared_click" state="normal" className="size-5.5 shrink-0" />
+                                    </button>
+                                </Tooltip>
                             </div>
                         )}
                     </div>

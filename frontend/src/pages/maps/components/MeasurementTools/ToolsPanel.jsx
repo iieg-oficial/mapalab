@@ -21,6 +21,7 @@ const ToolsPanel = () => {
         toggleMeasurementVisibility,
         cancel,
         undoLastPoint,
+        finishCurrentSketch,
         areMeasurementToolsVisible,
         textTemplate,
         setEmojiTemplate,
@@ -139,6 +140,7 @@ const ToolsPanel = () => {
                 textButtonRef={textPanelButtonRef}
                 emojiButtonRef={emojiPickerButtonRef}
                 onUndo={undoLastPoint}
+                onFinish={finishCurrentSketch}
                 canUndo={isSketching}
                 showAdvancedTools={showAdvancedTools}
                 onToggleAdvanced={() => setShowAdvancedTools(prev => !prev)}

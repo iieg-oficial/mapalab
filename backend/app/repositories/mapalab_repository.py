@@ -26,6 +26,7 @@ class MapalabRepository:
             session.query(
                 Mapalab_Card.nombre_capa_geoserver,
                 Mapalab_Card.fuentes_texto_corto,
+                Mapalab_Card.fuentes_texto_largo,
             )
             .filter(Mapalab_Card.nombre_capa_geoserver.in_(layer_keys))
             .all()
