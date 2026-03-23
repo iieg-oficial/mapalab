@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import Icon from '@components/Icon';
 
 const ConfirmDropdown = ({
