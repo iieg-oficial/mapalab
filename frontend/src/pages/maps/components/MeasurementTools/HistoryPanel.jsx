@@ -26,14 +26,23 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
     return (
         <div
             className={`
-                fixed z-10 flex-col gap-2 ml-14 items-start w-[334px] px-3 pb-4
+                fixed z-10 flex-col gap-2 ml-14 items-start w-[334px] max-md:max-w-[calc(100vw-5rem)] px-3 pb-4
                 border border-transparent bg-[#F9FBFF] rounded-[12px] shadow-none
                 ${open ? 'flex' : 'hidden'} ${positionClass}
             `}
         >
-            <div className="flex items-center font-garet font-bold text-[14px]/[47px] text-[#465055] gap-5">
-                Mis mediciones
-                <Badge count={measurements.length} />
+            <div className="flex items-center justify-between w-full">
+                <div className="flex items-center font-garet font-bold text-[14px]/[47px] text-[#465055] gap-5">
+                    Mis mediciones
+                    <Badge count={measurements.length} />
+                </div>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="cursor-pointer"
+                >
+                    <Icon name="cerrarModal" className="size-7" />
+                </button>
             </div>
             
             <div className="px-1.5 py-3 rounded-[7px] bg-white space-y-3 w-full">
