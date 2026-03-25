@@ -62,8 +62,16 @@ const fetchBlob = async (url) => {
 };
 
 const addMetadataToZip = async (zip, metadata) => {
-    const files = metadata?.metadato?.map(m => m.enlace).filter(Boolean) ?? [];
+    let metadatoList = [];
+    if (Array.isArray(metadata?.metadato)) {
+        metadatoList = metadata.metadato;
+    } else if (metadata?.metadato && typeof metadata.metadato === 'object') {
+        metadatoList = [metadata.metadato];
+    }
+    
+    const files = metadatoList.map(m => m.enlace).filter(Boolean);
     if (files.length === 0) return;
+    
     for (const url of files) {
         try {
             const blob = await fetchBlob(url);
