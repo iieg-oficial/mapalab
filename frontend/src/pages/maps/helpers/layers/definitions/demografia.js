@@ -78,11 +78,11 @@ export const demografiaLayers = {
             id: 'poblacion',
             label: 'Población',
             isCategory: true,
-            children: TASAS_POBLACION.map(([id, label, layerName, tags, littleCard, defaultDate]) => ({
+            children: TASAS_POBLACION.map(([id, label, layerName, tags, littleCard, date]) => ({
                 id,
                 label,
                 wmsConfig: createDemografiaLayer(layerName),
-                ...((defaultDate || id.startsWith('tasa_')) && { defaultDate: defaultDate || 'latest' }),
+                ...((date || id.startsWith('tasa_')) && { defaultDate: date || 'latest' }),
                 littleCard,
                 searchMeta: { tags }
             }))

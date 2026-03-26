@@ -75,7 +75,7 @@ const IGUALDAD_GENERO = [
                 { label: 'Feminicidios', field: 'carpetas_investigacion' },
             ]
         })],
-    ['brecha_salarial', 'Brecha salarial entre mujeres y hombres', 'brecha_salarial',
+    ['tasa_brecha_salarial', 'Brecha salarial entre mujeres y hombres', 'brecha_salarial',
         ['desarrollo', 'social', 'genero', 'salario', 'ingreso', 'mujer', 'hombre', 'trabajo', 'remuneracion', 'equidad', 'desigualdad'],
         createMunicipioConfig({
             title: 'Brecha salarial',

@@ -3,8 +3,7 @@ import { trackLayerToggle } from '@services/analyticsService';
 import { generateDefaultDateFilter } from '@pages/maps/helpers/dateFilterHelpers';
 import { findParentGroup } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { layers as allLayers } from '@pages/maps/helpers/layers/index';
-
-import { getLayerMetadata } from '@services/layerMetadataService';
+import { getLayerPeriodicity } from '@services/layerMetadataService';
 
 export const useLayerToggle = ({
     setActiveLayerIds,
@@ -12,11 +11,14 @@ export const useLayerToggle = ({
     findLayerById,
     setSelectedLayer,
     applyFilter,
-    clearFilter
+    clearFilter,
+    periodicityCache
 }) => {
     const resolveDefaultDate = useCallback(async (dateToApply, layerId) => {
-        const metadata = await getLayerMetadata(layerId);
-        const periodicity = metadata?.periodicity?.fecha || metadata?.periodicity;
+        let periodicity = periodicityCache.getPeriodicity(layerId);
+        if (!periodicity) {
+            periodicity = await getLayerPeriodicity(layerId);
+        }
         if (!periodicity || typeof periodicity !== 'object') return dateToApply === 'latest' ? null : dateToApply;
 
         const availableYears = Object.keys(periodicity).map(Number).sort((a, b) => b - a);
@@ -40,7 +42,7 @@ export const useLayerToggle = ({
             resolved.month = availableMonths[0];
         }
         return resolved;
-    }, []);
+    }, [periodicityCache]);
 
     const applyDefaultDate = useCallback(async (layerId) => {
         const layer = findLayerById(layerId);

@@ -3,8 +3,6 @@ import { createMunicipioConfig, MUNICIPIO_STYLE } from '../../../components/Info
 
 const createSeguridadLayer = createLayerFactory('seguridad');
 
-const TASA_DEFAULT_DATE = { year: 2025 };
-
 const TASA_STATS_HOMICIDIO = [
     { label: 'Tasa', field: 'tasa_carpetas_investigacion' },
     { label: 'Carpetas de investigación', field: 'carpetas_investigacion' },
@@ -244,7 +242,7 @@ export const seguridadLayers = {
                     children: TASAS_DELITOS_FUERO.map(([id, label, layerName, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
-                        defaultDate: TASA_DEFAULT_DATE,
+                        ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
                         requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
@@ -256,7 +254,7 @@ export const seguridadLayers = {
                     children: TASA_DELITOS_LIBERTAD.map(([id, label, layerName, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
-                        defaultDate: TASA_DEFAULT_DATE,
+                        ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
                         requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
@@ -268,7 +266,7 @@ export const seguridadLayers = {
                     children: TASA_DELITOS_FAMILIA.map(([id, label, layerName, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
-                        defaultDate: TASA_DEFAULT_DATE,
+                        ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
                         requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
@@ -280,7 +278,7 @@ export const seguridadLayers = {
                     children: TASA_DELITOS_PATRIMONIO.map(([id, label, layerName, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
-                        defaultDate: TASA_DEFAULT_DATE,
+                        ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
                         requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
@@ -368,7 +366,7 @@ export const seguridadLayers = {
                     children: DESAPARECIDAS.map(([id, label, style, not, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer.withFilterAndStyles('personas_desaparecidas', `${not} IS NOT NULL`, style, { metadataLayer: style }),
-                        defaultDate: TASA_DEFAULT_DATE,
+                        ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
                         requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
@@ -380,7 +378,7 @@ export const seguridadLayers = {
                     children: LOCALIZADAS.map(([id, label, layerName, tags, littleCard]) => ({
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
-                        defaultDate: TASA_DEFAULT_DATE,
+                        ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
                         requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }

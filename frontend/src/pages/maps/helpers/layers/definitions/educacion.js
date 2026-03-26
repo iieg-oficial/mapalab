@@ -60,7 +60,7 @@ export const educacionLayers = {
             label: 'Capacidades y alfabetización',
             isCategory: true,
             children: [{
-                id: 'rezago_educativo',
+                id: 'tasa_rezago_educativo_educacion',
                 label: 'Rezago educativo',
                 wmsConfig: createDesarrolloLayer('rezago_educativo'),
                 littleCard: createMunicipioConfig({
@@ -72,6 +72,7 @@ export const educacionLayers = {
                         { label: 'Carencias promedio', field: 'carencias_promedio' },
                     ]
                 }),
+                defaultDate: 'latest',
                 searchMeta: { tags: ['educacion', 'rezago', 'alfabetizacion', 'escuela'] }
             }]
         }
