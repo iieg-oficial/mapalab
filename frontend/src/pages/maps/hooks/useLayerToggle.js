@@ -10,6 +10,7 @@ export const useLayerToggle = ({
     getAllChildLayerIds,
     findLayerById,
     setSelectedLayer,
+    setSelectedLayerForSymbology,
     applyFilter,
     clearFilter,
     periodicityCache
@@ -86,11 +87,12 @@ export const useLayerToggle = ({
             const childLayerIds = getAllChildLayerIds(layerId);
             [layerId, ...childLayerIds].forEach(applyDefaultDate);
 
-            if (!skipAnalytics) {
-                const layer = findLayerById(layerId);
-                if (layer) {
-                    const groupAncestor = findParentGroup(layerId, allLayers);
-                    const displayLayer = groupAncestor || layer;
+            const layer = findLayerById(layerId);
+            if (layer) {
+                const groupAncestor = findParentGroup(layerId, allLayers);
+                const displayLayer = groupAncestor || layer;
+                setSelectedLayerForSymbology(displayLayer);
+                if (!skipAnalytics) {
                     setSelectedLayer({ id: displayLayer.id, name: displayLayer.label });
                 }
             }
@@ -98,7 +100,7 @@ export const useLayerToggle = ({
             const childLayerIds = getAllChildLayerIds(layerId);
             [layerId, ...childLayerIds].forEach(clearDefaultDate);
         }
-    }, [setActiveLayerIds, getAllChildLayerIds, findLayerById, setSelectedLayer, applyDefaultDate, clearDefaultDate]);
+    }, [setActiveLayerIds, getAllChildLayerIds, findLayerById, setSelectedLayer, setSelectedLayerForSymbology, applyDefaultDate, clearDefaultDate]);
 
     return { handleToggleLayer };
 };

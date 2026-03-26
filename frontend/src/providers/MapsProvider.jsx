@@ -36,6 +36,7 @@ const MapsProvider = ({ children }) => {
     const layerToggle = useLayerToggle({
         ...layerManagement,
         setSelectedLayer,
+        setSelectedLayerForSymbology: symbology.setSelectedLayerForSymbology,
         applyFilter: cqlFilter.applyFilter,
         clearFilter: cqlFilter.clearFilter,
         periodicityCache
