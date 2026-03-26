@@ -2,8 +2,7 @@ import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from app.services.search_cache_service import SearchCacheService
-from app.services.periodicity_cache_service import PeriodicityCacheService
+from app.services.periodicity_service import PeriodicityService
 from app.utils.logger import Logger
 
 class SchedulerService:
@@ -22,16 +21,15 @@ class SchedulerService:
             timezone=pytz.timezone('America/Mexico_City')
         )
         cls._scheduler.add_job(
-            cls._regenerate_cache,
+            cls._refresh_periodicity,
             trigger,
-            id="cache_regeneration",
-            name="Daily cache regeneration",
+            id="periodicity_refresh",
+            name="Daily periodicity refresh",
             replace_existing=True
         )
 
         cls._scheduler.start()
         Logger.info("Scheduler started")
-        Logger.info("Cache will be regenerated daily at 3:00 AM")
 
     @classmethod
     def stop_scheduler(cls):
@@ -41,22 +39,11 @@ class SchedulerService:
             Logger.info("Scheduler stopped")
 
     @classmethod
-    def _regenerate_cache(cls):
+    def _refresh_periodicity(cls):
         try:
-            Logger.info("Starting scheduled cache regeneration...")
-            cache = SearchCacheService.generate_cache()
-            SearchCacheService.save_cache(cache)
-            Logger.info("Scheduled search cache regeneration completed successfully")
+            PeriodicityService.refresh()
         except Exception as e:
-            Logger.error(f"Error during scheduled search cache regeneration: {str(e)}")
-
-        try:
-            Logger.info("Starting scheduled periodicity cache regeneration...")
-            periodicity_cache = PeriodicityCacheService.generate_cache()
-            PeriodicityCacheService.save_cache(periodicity_cache)
-            Logger.info("Scheduled periodicity cache regeneration completed successfully")
-        except Exception as e:
-            Logger.error(f"Error during scheduled periodicity cache regeneration: {str(e)}")
+            Logger.error(f"Error during scheduled periodicity refresh: {str(e)}")
 
     @classmethod
     def is_running(cls):

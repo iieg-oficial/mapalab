@@ -1,4 +1,4 @@
-.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod deploy logs logs-backend logs-frontend logs-nginx clean status refresh-cache refresh-periodicity-cache refresh-search-cache setup-hooks
+.PHONY: help network-create network-remove dev prod ssl ssl-local ssl-down down build-prod deploy logs logs-backend logs-frontend logs-nginx clean status setup-hooks
 
 FRONTEND_DIR=frontend
 BACKEND_DIR=backend
@@ -18,11 +18,6 @@ help:
 	@echo "  make ssl-local        - Modo HTTPS local (certificado autofirmado, APP_DOMAIN puede ser IP)"
 	@echo "  make build-prod       - Construir imágenes de producción"
 	@echo "  make logs-prod        - Ver logs de producción"
-	@echo ""
-	@echo "CACHÉ:"
-	@echo "  make refresh-cache               - Regenerar todos los cachés"
-	@echo "  make refresh-periodicity-cache   - Regenerar caché de periodicidad"
-	@echo "  make refresh-search-cache        - Regenerar caché de búsqueda"
 	@echo ""
 	@echo "GENERAL:"
 	@echo "  make down             - Detener todos los servicios"
@@ -281,18 +276,6 @@ logs-frontend:
 logs-nginx:
 	@cd $(NGINX_DIR) && docker compose logs -f
 
-refresh-cache: refresh-search-cache refresh-periodicity-cache
-	@echo "Todos los cachés regenerados"
-
-refresh-periodicity-cache:
-	@echo "Regenerando caché de periodicidad..."
-	@docker exec $$(docker ps -qf "name=mapalab.*backend" | head -1) python -c \
-		"from app.services import PeriodicityCacheService; c = PeriodicityCacheService.generate_cache(); PeriodicityCacheService.save_cache(c); print('OK')"
-
-refresh-search-cache:
-	@echo "Regenerando caché de búsqueda..."
-	@docker exec $$(docker ps -qf "name=mapalab.*backend" | head -1) python -c \
-		"from app.services import SearchCacheService; c = SearchCacheService.generate_cache(); SearchCacheService.save_cache(c); print('OK')"
 
 status:
 	@echo "Estado de los servicios:"

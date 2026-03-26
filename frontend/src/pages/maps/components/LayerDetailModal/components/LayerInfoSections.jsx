@@ -51,7 +51,7 @@ const LayerInfoSections = ({ metadata, layerName }) => {
                 </InfoSection>
             )}
             {(metadata.texto_leyenda_juridico || metadata.tipo_mapa) && (
-                <InfoSection title="Referencia cartográfica">
+                <InfoSection title="Referencia cartográfica del límite municipal">
                     {metadata.texto_leyenda_juridico && <TextBlock text={metadata.texto_leyenda_juridico} />}
                     {metadata.tipo_mapa && (
                         <div className="flex flex-col gap-2 mt-1">

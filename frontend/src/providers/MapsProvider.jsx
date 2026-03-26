@@ -9,6 +9,7 @@ import { useLayerToggle } from '@hooksMaps/useLayerToggle';
 import { useCQLFilter } from '@hooksMaps/useCQLFilter';
 import { useRasterLoop } from '@hooksMaps/useRasterLoop';
 import { useMapDrawing } from '@hooksMaps/useMapDrawing';
+import { usePeriodicityCache } from '@hooksMaps/usePeriodicityCache';
 import { layers as allLayers } from '@pages/maps/helpers/layers/index';
 import { toLonLat } from 'ol/proj';
 
@@ -31,11 +32,13 @@ const MapsProvider = ({ children }) => {
     });
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
     const cqlFilter = useCQLFilter();
+    const periodicityCache = usePeriodicityCache(layerManagement.activeLayerIds);
     const layerToggle = useLayerToggle({
         ...layerManagement,
         setSelectedLayer,
         applyFilter: cqlFilter.applyFilter,
-        clearFilter: cqlFilter.clearFilter
+        clearFilter: cqlFilter.clearFilter,
+        periodicityCache
     });
     const rasterLoop = useRasterLoop({
         applyFilter: cqlFilter.applyFilter,
@@ -89,6 +92,7 @@ const MapsProvider = ({ children }) => {
         ...cqlFilter,
         ...rasterLoop,
         ...mapDrawing,
+        periodicityCache,
         isLocating,
         setIsLocating
     }), [
@@ -106,6 +110,7 @@ const MapsProvider = ({ children }) => {
         cqlFilter,
         rasterLoop,
         mapDrawing,
+        periodicityCache,
         isLocating
     ]);
 
