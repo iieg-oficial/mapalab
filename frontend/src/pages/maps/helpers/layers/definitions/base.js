@@ -119,8 +119,8 @@ const HIDDEN_LAYERS = [
     ['limite_municipal', 'Límites municipales administrativos IIEG', 'limite_municipal', ['base', 'limite', 'frontera', 'municipio', 'division', 'iieg', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites municipales administrativos IIEG')],
     ['limite_municipal_inegi', 'Límites geoestadísticos municipales INEGI', 'limite_municipal_inegi', ['base', 'limite', 'frontera', 'municipio', 'division', 'inegi', 'demarcacion', 'territorio', 'alcaldia'], limiteMunicipalConfig('Límites geoestadísticos municipales INEGI')],
     ['regiones', 'Regiones del estado', 'regiones', ['base', 'region', 'administrativo', 'division', 'iieg', 'zona', 'distrito', 'sector'], regionesConfig],
-    ['limite_iieg', 'Límites estatales IIEG', 'limite_iieg', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'iieg', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig],
-    ['limite_inegi', 'Límites estatales INEGI', 'limite_inegi', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'inegi', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig],
+    ['limite_iieg', 'Límites estatales IIEG', 'limite_iieg', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'iieg', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig, 'limite_estatal'],
+    ['limite_inegi', 'Límites estatales INEGI', 'limite_inegi', ['base', 'limite', 'frontera', 'estado', 'jalisco', 'inegi', 'entidad_federativa', 'marco_geoestadistico', 'contorno'], limiteEstatalConfig, 'limite_estatal_inegi'],
     ['curvas_de_nivel', 'Curvas de nivel', 'curvas_de_nivel', ['base', 'topografia', 'altitud', 'relieve', 'elevacion', 'isolineas', 'pendiente', 'terreno', 'cotas'], null],
     ['caminos_2012', 'Red de Caminos', 'caminos_2012', ['base', 'camino', 'vialidad', 'transporte', 'rural', 'brecha', 'terraceria', 'sendero'], caminosConfig],
 ];
@@ -137,7 +137,7 @@ const mapGeneralLayer = ([id, label, layerName, tags, littleCard]) => ({
     searchMeta: { tags }
 });
 
-const mapHiddenLayer = ([id, label, layerName, tags, littleCard]) => {
+const mapHiddenLayer = ([id, label, layerName, tags, littleCard, wfsLayerName]) => {
     let wmsGroup = 'default';
     if (id.includes('inegi')) {
         wmsGroup = 'inegi';
@@ -152,7 +152,8 @@ const mapHiddenLayer = ([id, label, layerName, tags, littleCard]) => {
         wmsConfig: {
             ...createGeneralLayer(layerName),
             wmsGroup,
-            wfsAvailable: !['limite_iieg', 'limite_inegi'].includes(id)
+            wfsAvailable: true,
+            ...(wfsLayerName && { wfsLayerName: `general:${wfsLayerName}` })
         },
         littleCard,
         searchMeta: { tags }
