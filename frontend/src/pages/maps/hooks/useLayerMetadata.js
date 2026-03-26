@@ -1,21 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getLayerMetadata } from '@services/layerMetadataService';
 
 export const useLayerMetadata = (layerId) => {
     const [metadata, setMetadata] = useState(null);
     const [loading, setLoading] = useState(Boolean(layerId));
     const [error, setError] = useState(null);
+    const prevIdRef = useRef(layerId);
 
-    useEffect(() => {
-        if (!layerId) {
+    if (prevIdRef.current !== layerId) {
+        prevIdRef.current = layerId;
+        if (layerId) {
+            setLoading(true);
             setMetadata(null);
             setError(null);
+        } else {
             setLoading(false);
-            return;
+            setMetadata(null);
+            setError(null);
         }
+    }
 
-        setLoading(true);
-        setError(null);
+    useEffect(() => {
+        if (!layerId) return;
 
         let cancelled = false;
         getLayerMetadata(layerId)
