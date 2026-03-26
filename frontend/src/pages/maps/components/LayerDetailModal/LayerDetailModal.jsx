@@ -1,6 +1,7 @@
 import { useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { trackLayerDetailOpen, trackLayerDownload, trackPeriodicityAdvanced } from '@services/analyticsService';
 import { useLayerMetadata } from '../../hooks/useLayerMetadata';
+import { useLayerPeriodicity } from '../../hooks/useLayerPeriodicity';
 import { useSider } from '@contexts/SiderContext';
 import MapsContext from '@contexts/MapsContext';
 import { findLayerDef, findWMSConfig } from '../../helpers/wmsConfig';
@@ -18,7 +19,6 @@ import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Logo from '@components/Logo';
 import Loading from '@components/Loading';
-import Message from '@components/Message';
 import { downloadLayerBundle } from '@services/downloadService';
 
 const LayerDetailModal = () => {
@@ -38,21 +38,9 @@ const LayerDetailModal = () => {
     const [downloading, setDownloading] = useState(false);
     const abortRef = useRef(null);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
+    const { periodicity, loading: periodicityLoading } = useLayerPeriodicity(selectedLayer?.id);
     const { isMobile } = useSider();
     const [singleSelectOnly, setSingleSelectOnly] = useState(false);
-    const [slowMetadata, setSlowMetadata] = useState(false);
-    const slowTimerRef = useRef(null);
-
-    useEffect(() => {
-        if (loading) {
-            slowTimerRef.current = setTimeout(() => setSlowMetadata(true), 5000);
-        } else {
-            setSlowMetadata(false);
-        }
-        return () => {
-            if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-        };
-    }, [loading]);
 
     useEffect(() => {
         if (!selectedLayer?.id || rasterPeriodicity) return;
@@ -93,7 +81,7 @@ const LayerDetailModal = () => {
     }, [cooldownEnd]);
 
     const cooldown = cooldownRemaining > 0;
-    const hasPeriodicity = !hidePeriodicity && (metadata?.periodicity != null || rasterPeriodicity != null);
+    const hasPeriodicity = !hidePeriodicity && (periodicity != null || periodicityLoading || rasterPeriodicity != null);
     const hasDateFilter = !!getSpecificFilter(selectedLayer?.id, 'date');
     const downloadDisabled = cooldown || (requireDateForDownload && !hasDateFilter);
 
@@ -202,14 +190,6 @@ const LayerDetailModal = () => {
                     {loading ? (
                         <div className="flex flex-col items-center">
                             <Logo name="mapalab" size="size-36" className="mt-40 lg:mt-52" isLoading />
-                            {slowMetadata && (
-                                <Message
-                                    variant="info"
-                                    title="Esta acción está tomando tiempo"
-                                    description="Estas capas contienen una mayor cantidad de datos por lo que podrían tardar más tiempo en cargarse."
-                                    className="mt-6"
-                                />
-                            )}
                         </div>
                     ) : (
                         <>
@@ -269,10 +249,15 @@ const LayerDetailModal = () => {
                                             )}
                                         </div>
                                     </div>
-                                    {isAdvancedMode && !rasterPeriodicity ? (
-                                        <DateTreeSelector layerId={selectedLayer.id} periodicity={metadata.periodicity} onFilterApply={handleDateFilterApply} onClearFilter={handleClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} />
+                                    {periodicityLoading ? (
+                                        <div className="flex items-center gap-2 py-4">
+                                            <Loading visible size="size-5" border="border-2" color="border-[#703089]" />
+                                            <span className="text-[12px] font-garet text-[#465055]">Cargando periodicidad...</span>
+                                        </div>
+                                    ) : isAdvancedMode && !rasterPeriodicity ? (
+                                        <DateTreeSelector layerId={selectedLayer.id} periodicity={periodicity} onFilterApply={handleDateFilterApply} onClearFilter={handleClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} />
                                     ) : (
-                                        <SimpleDateSelector layerId={selectedLayer.id} periodicity={metadata?.periodicity} rasterPeriodicity={rasterPeriodicity} onFilterApply={handleDateFilterApply} onClearFilter={handleClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} />
+                                        <SimpleDateSelector layerId={selectedLayer.id} periodicity={periodicity} rasterPeriodicity={rasterPeriodicity} onFilterApply={handleDateFilterApply} onClearFilter={handleClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} />
                                     )}
                                 </div>
                             )}

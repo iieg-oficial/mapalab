@@ -3,6 +3,8 @@ import { findLayerById, layers } from '@pages/maps/helpers/layers';
 const API_HOST = import.meta.env.VITE_BACKEND_API_HOST?.replace(/\/+$/, '');
 const METADATA_ENDPOINT = `${API_HOST}/metadata/`;
 const SOURCES_ENDPOINT = `${API_HOST}/metadata/sources`;
+const PERIODICITY_ENDPOINT = `${API_HOST}/periodicity/`;
+const PERIODICITY_BATCH_ENDPOINT = `${API_HOST}/periodicity/batch`;
 
 const cleanNaN = (value) => (value === 'NaN' ? null : value);
 
@@ -59,6 +61,21 @@ const getLayerRequestParams = (layerId) => {
 
     const { wmsConfig } = layerWithConfig;
     const layerName = wmsConfig.metadataLayer || wmsConfig.layerName?.split(':').pop();
+    const workspace = extractWorkspaceFromBaseUrl(wmsConfig.baseUrl) || wmsConfig.workspace;
+
+    if (!workspace || !layerName) return null;
+    return { workspace, layer: layerName };
+};
+
+const getPeriodicityRequestParams = (layerId) => {
+    const layerNode = findLayerById(layerId, layers);
+    if (!layerNode) return null;
+
+    const layerWithConfig = findLayerWithWMS(layerNode);
+    if (!layerWithConfig?.wmsConfig) return null;
+
+    const { wmsConfig } = layerWithConfig;
+    const layerName = wmsConfig.layerName?.split(':').pop();
     const workspace = extractWorkspaceFromBaseUrl(wmsConfig.baseUrl) || wmsConfig.workspace;
 
     if (!workspace || !layerName) return null;
@@ -155,4 +172,59 @@ export const getLayerMetadata = async (layerId) => {
         }
         throw error;
     }
+};
+
+export const getLayerPeriodicity = async (layerId) => {
+    if (!API_HOST) return null;
+
+    const params = getPeriodicityRequestParams(layerId);
+    if (!params) return null;
+
+    const url = new URL(PERIODICITY_ENDPOINT, window.location.origin);
+    url.searchParams.set('workspace', params.workspace);
+    url.searchParams.set('layer', params.layer);
+
+    const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+
+    const data = await response.json();
+    return data.periodicity || null;
+};
+
+export const getLayersPeriodicities = async (layerIds) => {
+    if (!API_HOST) return {};
+
+    const seen = new Set();
+    const entries = layerIds
+        .map((id) => {
+            const params = getPeriodicityRequestParams(id);
+            if (!params) return null;
+            return { id, key: `${params.workspace}:${params.layer}` };
+        })
+        .filter(Boolean)
+        .filter(({ key }) => {
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
+    if (!entries.length) return {};
+
+    const keys = entries.map((e) => e.key).join(',');
+    const url = new URL(PERIODICITY_BATCH_ENDPOINT, window.location.origin);
+    url.searchParams.set('layers', keys);
+
+    const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+
+    const results = await response.json();
+    return Object.fromEntries(entries.map(({ id, key }) => [id, results[key] ?? null]));
 };

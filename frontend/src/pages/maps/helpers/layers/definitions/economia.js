@@ -38,7 +38,7 @@ const OCUPACION_Y_EMPLEO_FORMAL_SUBCAPAS = [
                 { label: 'Error estándar asociado (± pp)', field: 'error_estandar' },
             ]
         })],
-    ['ocupacion_informal', 'Ocupación informal (%)', 'ocupacion_informal',
+    ['tasa_ocupacion_informal', 'Ocupación informal (%)', 'ocupacion_informal',
         ['economia', 'empleo', 'trabajo', 'informalidad', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador'],
         createOcupacionConfig({
             title: 'Ocupación informal (%)',
@@ -48,7 +48,7 @@ const OCUPACION_Y_EMPLEO_FORMAL_SUBCAPAS = [
                 { label: 'Error estándar asociado (± pp)', field: 'error_estandar' },
             ]
         })],
-    ['trabajadores_asegurados', 'Trabajadores asegurados en el IMSS', 'trabajadores_asegurados',
+    ['tasa_trabajadores_asegurados', 'Trabajadores asegurados en el IMSS', 'trabajadores_asegurados',
         ['economia', 'empleo', 'trabajo', 'informalidad', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador'],
         createMunicipioConfig({
             title: 'Trabajadores asegurados en el IMSS',
@@ -60,7 +60,7 @@ const OCUPACION_Y_EMPLEO_FORMAL_SUBCAPAS = [
                 { label: 'Total no binario', field: 'total_no_binario' },
             ]
         })],
-    ['trabajadores_asegurados_mujeres', 'Mujeres entre trabajadores asegurados en el IMSS (%)', 'trabajadores_asegurados_mujeres',
+    ['tasa_trabajadores_asegurados_mujeres', 'Mujeres entre trabajadores asegurados en el IMSS (%)', 'trabajadores_asegurados_mujeres',
         ['economia', 'empleo', 'trabajo', 'ocupacion', 'laboral', 'mercado', 'indicador'],
         createMunicipioConfig({
             title: 'Mujeres entre trabajadores asegurados en el IMSS (%)',
@@ -70,7 +70,7 @@ const OCUPACION_Y_EMPLEO_FORMAL_SUBCAPAS = [
                 { label: 'Total mujeres', field: 'total_mujeres' },
             ]
         })],
-    ['trabajadores_asegurados_hombres', 'Hombres entre trabajadores asegurados en el IMSS (%)', 'trabajadores_asegurados_hombres',
+    ['tasa_trabajadores_asegurados_hombres', 'Hombres entre trabajadores asegurados en el IMSS (%)', 'trabajadores_asegurados_hombres',
         ['economia', 'empleo', 'trabajo', 'aseguramiento', 'laboral', 'precariedad', 'sin_seguridad_social', 'indicador'],
         createMunicipioConfig({
             title: 'Hombres entre trabajadores asegurados en el IMSS (%)',
