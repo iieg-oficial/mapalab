@@ -79,9 +79,9 @@ const TASA_DELITOS_LIBERTAD = [
 ];
 
 const TASA_DELITOS_FAMILIA = [
-    ['tasa_violencia_de_genero', 'Violencia de género (tasa)', 'datos_delitos_violencia_genero_no_familiar_secretariado',
-        ['seguridad', 'delito', 'violencia', 'genero', 'tasa', 'domestica'],
-        createTasaConfig('Violencia de género', TASA_STATS_BASE, 'Las cifras se refieren a violencia de género en todas sus modalidades distintas a la violencia familiar. Las tasas se presentan respecto al periodo seleccionado, por cada 100 mil habitantes')],
+    // ['tasa_violencia_de_genero', 'Violencia de género (tasa)', 'datos_delitos_violencia_genero_no_familiar_secretariado',
+    //     ['seguridad', 'delito', 'violencia', 'genero', 'tasa', 'domestica'],
+    //     createTasaConfig('Violencia de género', TASA_STATS_BASE, 'Las cifras se refieren a violencia de género en todas sus modalidades distintas a la violencia familiar. Las tasas se presentan respecto al periodo seleccionado, por cada 100 mil habitantes')],
     ['tasa_violencia_familiar', 'Violencia familiar (tasa)', 'datos_delitos_violencia_familiar_secretariado',
         ['seguridad', 'delito', 'violencia', 'familia', 'tasa', 'domestica'],
         createTasaConfig('Violencia familiar', TASA_STATS_BASE)],

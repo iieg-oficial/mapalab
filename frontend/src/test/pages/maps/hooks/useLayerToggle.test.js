@@ -19,7 +19,8 @@ const makeSetup = (initialIds = []) => {
     });
     const findLayerById = vi.fn((id) => ({ id, name: id }));
     const setSelectedLayer = vi.fn();
-    return { setActiveLayerIds, getAllChildLayerIds, findLayerById, setSelectedLayer, getActiveIds: () => activeIds };
+    const setSelectedLayerForSymbology = vi.fn();
+    return { setActiveLayerIds, getAllChildLayerIds, findLayerById, setSelectedLayer, setSelectedLayerForSymbology, getActiveIds: () => activeIds };
 };
 
 beforeEach(() => { vi.clearAllMocks(); });
