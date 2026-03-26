@@ -248,3 +248,27 @@ describe('downloadLayerBundle — metadata', () => {
         expect(mockGetLayerMetadata).toHaveBeenCalledWith('single-vec');
     });
 });
+
+describe('downloadLayerBundle — cancelación', () => {
+    it('retorna cancelled true al abortar', async () => {
+        const controller = new AbortController();
+        global.fetch = vi.fn().mockRejectedValue({ name: 'AbortError' });
+        const promise = downloadLayerBundle('single-vec', { signal: controller.signal });
+        controller.abort();
+        const result = await promise;
+        expect(result.success).toBe(false);
+        expect(result.cancelled).toBe(true);
+    });
+
+    it('pasa signal a fetch', async () => {
+        const controller = new AbortController();
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            headers: { get: () => 'application/json' },
+            blob: () => Promise.resolve(new Blob())
+        });
+        await downloadLayerBundle('single-vec', { signal: controller.signal });
+        const firstCallArgs = global.fetch.mock.calls[0][1];
+        expect(firstCallArgs).toMatchObject({ signal: controller.signal });
+    });
+});
