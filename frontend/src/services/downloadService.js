@@ -14,7 +14,7 @@ const buildWFSUrl = (wmsConfig, format) => {
         service: 'WFS',
         version: '1.1.0',
         request: 'GetFeature',
-        typeName: wmsConfig.layerName,
+        typeName: wmsConfig.wfsLayerName || wmsConfig.layerName,
         outputFormat: format.id,
         srsName: format.srs || 'EPSG:4326'
     };
@@ -51,8 +51,8 @@ const triggerDownload = (blob, filename) => {
     URL.revokeObjectURL(url);
 };
 
-const fetchBlob = async (url) => {
-    const response = await fetch(url);
+const fetchBlob = async (url, signal) => {
+    const response = await fetch(url, { signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('xml') || contentType.includes('html')) {
@@ -98,28 +98,28 @@ const getActiveSubLayers = (layerId, activeLayerIds) => {
     );
 };
 
-const downloadSingleVector = async (wmsConfig, layerName, zip, folder) => {
+const downloadSingleVector = async (wmsConfig, layerName, zip, folder, signal) => {
     const target = folder || zip;
     const results = await Promise.allSettled(
         VECTOR_FORMATS.map(async (fmt) => {
             const url = buildWFSUrl(wmsConfig, fmt);
-            const blob = await fetchBlob(url);
+            const blob = await fetchBlob(url, signal);
             target.file(`${layerName}.${fmt.extension}`, blob);
         })
     );
     return results;
 };
 
-const downloadSingleRaster = async (wmsConfig, layerName, zip, timeValue) => {
+const downloadSingleRaster = async (wmsConfig, layerName, zip, timeValue, signal) => {
     const url = buildWCSUrl(wmsConfig, timeValue);
     const result = await Promise.allSettled([
-        fetchBlob(url).then(blob => zip.file(`${layerName}.tiff`, blob))
+        fetchBlob(url, signal).then(blob => zip.file(`${layerName}.tiff`, blob))
     ]);
     return result;
 };
 
 export const downloadLayerBundle = async (layerId, options = {}) => {
-    const { activeLayerIds = [], getFilter } = options;
+    const { activeLayerIds = [], getFilter, signal } = options;
 
     try {
         const wmsConfig = findWMSConfig(layerId, layers);
@@ -152,24 +152,27 @@ export const downloadLayerBundle = async (layerId, options = {}) => {
 
         if (isGrouped) {
             for (const sub of subLayers) {
+                signal?.throwIfAborted();
                 const subConfig = findWMSConfig(sub.id, layers);
                 if (!raster && subConfig.wfsAvailable === false) continue;
                 const subName = subConfig.layerName.split(':').pop();
                 const folder = zip.folder(subName);
                 if (raster) {
-                    await downloadSingleRaster(subConfig, subName, folder, getTimeValue(sub.id, subConfig));
+                    await downloadSingleRaster(subConfig, subName, folder, getTimeValue(sub.id, subConfig), signal);
                 } else {
-                    await downloadSingleVector(subConfig, subName, zip, folder);
+                    await downloadSingleVector(subConfig, subName, zip, folder, signal);
                 }
             }
         } else if (raster) {
-            await downloadSingleRaster(wmsConfig, layerName, zip, getTimeValue(layerId, wmsConfig));
+            await downloadSingleRaster(wmsConfig, layerName, zip, getTimeValue(layerId, wmsConfig), signal);
         } else if (wmsConfig.wfsAvailable !== false) {
-            await downloadSingleVector(wmsConfig, layerName, zip);
+            await downloadSingleVector(wmsConfig, layerName, zip, null, signal);
         }
 
+        signal?.throwIfAborted();
         await addMetadataToZip(zip, metadata);
 
+        signal?.throwIfAborted();
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const layerNode = findLayerById(layerId, layers);
         const userLabel = (layerNode?.label || layerNode?.name || layerName).replace(/\s+/g, '_');
@@ -178,6 +181,9 @@ export const downloadLayerBundle = async (layerId, options = {}) => {
 
         return { success: true };
     } catch (error) {
+        if (error.name === 'AbortError') {
+            return { success: false, cancelled: true };
+        }
         console.error('Error downloading layer bundle:', error);
         return { success: false, error: error.message };
     }

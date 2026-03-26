@@ -17,13 +17,14 @@ import LayerThemeAvatar from './components/LayerThemeAvatar';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Logo from '@components/Logo';
+import Loading from '@components/Loading';
 import Message from '@components/Message';
 import { downloadLayerBundle } from '@services/downloadService';
 
 const LayerDetailModal = () => {
-    const { 
-        selectedLayer, setSelectedLayer, applyFilter, clearFilter, getFilter, getSpecificFilter, 
-        getLayerOpacity, setLayerOpacity, activeLayerIds 
+    const {
+        selectedLayer, setSelectedLayer, applyFilter, clearFilter, getFilter, getSpecificFilter,
+        getLayerOpacity, setLayerOpacity, activeLayerIds
     } = useContext(MapsContext);
 
     const layerDef = useMemo(() => {
@@ -35,6 +36,7 @@ const LayerDetailModal = () => {
     const hidePeriodicity = layerDef?.hidePeriodicity || false;
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
     const [downloading, setDownloading] = useState(false);
+    const abortRef = useRef(null);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
     const { isMobile } = useSider();
     const [singleSelectOnly, setSingleSelectOnly] = useState(false);
@@ -97,8 +99,11 @@ const LayerDetailModal = () => {
 
     const handleDownloadClick = useCallback(async () => {
         if (!selectedLayer?.id || downloading || downloadDisabled) return;
+        const controller = new AbortController();
+        abortRef.current = controller;
         setDownloading(true);
-        const result = await downloadLayerBundle(selectedLayer.id, { activeLayerIds, getFilter });
+        const result = await downloadLayerBundle(selectedLayer.id, { activeLayerIds, getFilter, signal: controller.signal });
+        abortRef.current = null;
         setDownloading(false);
         if (!result?.success) return;
         trackLayerDownload(selectedLayer.id);
@@ -106,6 +111,10 @@ const LayerDetailModal = () => {
         sessionStorage.setItem(storageKey, String(end));
         setCooldownEnd(end);
     }, [selectedLayer?.id, activeLayerIds, getFilter, downloading, downloadDisabled, storageKey]);
+
+    const handleCancelDownload = useCallback(() => {
+        abortRef.current?.abort();
+    }, []);
 
     const periodicityLongPressRef = useRef(null);
 
@@ -155,7 +164,7 @@ const LayerDetailModal = () => {
     return (
         <div className="fixed top-4 sm:top-4 bottom-0 right-0 sm:right-4 z-30 w-full sm:w-[643px] pointer-events-none">
             <div className={`
-                h-full bg-white shadow-[0_5px_20px_#1A26641A] backdrop-blur-sm overflow-y-auto pointer-events-auto rounded-[20px]
+                h-full bg-white shadow-[0_5px_20px_#1A26641A] backdrop-blur-sm overflow-y-auto pointer-events-auto rounded-t-[20px] rounded-b-none
                 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400
             `}>
                 <div className="sticky top-0 z-10 bg-white backdrop-blur-sm p-4 sm:px-6 sm:pt-6">
@@ -164,41 +173,27 @@ const LayerDetailModal = () => {
                             value={getLayerOpacity(selectedLayer.id)}
                             onChange={(opacity) => setLayerOpacity(selectedLayer.id, opacity)}
                         />
-                        <div className="flex items-center gap-5 md:gap-10">
+                        <div className="flex items-center gap-2 md:gap-5">
                             {metadata?.capa_descargable !== false && (
                                 downloading
-                                    ? <Logo name="mapalab" size="size-15" isLoading />
+                                    ? (
+                                        <button onClick={handleCancelDownload} className="relative flex items-center justify-center gap-2 w-auto md:min-w-[180px] px-5 md:px-10 text-[14px]/[47px] text-white rounded-[30px] transition-colors h-12.5 font-bold font-garet bg-[#FF8300] hover:bg-[#E67500] hover:shadow-[0px_6px_6px_#FF830034] overflow-hidden" title="Cancelar descarga">
+                                            <Loading visible size="size-25 md:size-50" border="border-1 md:border-3" color="border-current" className="absolute inset-1 !animate-[spin_3s_cubic-bezier(0.68,-0.55,0.27,1.55)_infinite]" />
+                                            <span className="relative z-10"> {isMobile ? 'Cancelar' : 'Cancelar descarga'} </span>
+                                        </button>
+                                    )
                                     : (
                                         <Tooltip
-                                            content={requireDateForDownload && !hasDateFilter
-                                                ? 'Selecciona un año en periodicidad para descargar'
-                                                : 'Descarga la tabla completa con metadatos en .ZIP'}
+                                            content={requireDateForDownload && !hasDateFilter ? 'Selecciona un año en periodicidad para descargar' : 'Descarga la tabla completa con metadatos en .ZIP'}
                                             variant={requireDateForDownload && !hasDateFilter ? 'default' : 'warning'}
                                         >
-                                            <button
-                                                onClick={handleDownloadClick}
-                                                disabled={downloadDisabled}
-                                                className={`
-                                                    w-auto md:min-w-[180px] px-10 text-[14px]/[47px] text-white rounded-[30px]
-                                                    transition-colors h-12.5 font-bold font-garet disabled:opacity-60 disabled:cursor-not-allowed
-                                                    bg-[#703089] hover:bg-[#5C2472] hover:shadow-[0px_6px_6px_#5C247234]
-                                                `}
-                                            >
-                                                {cooldown
-                                                    ? (isMobile ? <Icon name="download" /> : `Espera ${Math.ceil(cooldownRemaining / 1000)}s`)
-                                                    : (isMobile ? <Icon name="download" /> : 'Descargar capa')
-                                                }
+                                            <button onClick={handleDownloadClick} disabled={downloadDisabled} className="w-auto md:min-w-[180px] px-10 text-[14px]/[47px] text-white rounded-[30px] transition-colors h-12.5 font-bold font-garet disabled:opacity-60 disabled:cursor-not-allowed bg-[#703089] hover:bg-[#5C2472] hover:shadow-[0px_6px_6px_#5C247234]">
+                                                {cooldown ? (isMobile ? <Icon name="download" /> : `Espera ${Math.ceil(cooldownRemaining / 1000)}s`) : (isMobile ? <Icon name="download" /> : 'Descargar capa')}
                                             </button>
                                         </Tooltip>
                                     )
                             )}
-                            <Icon
-                                name="cerrarModal"
-                                aria-label="Cerrar"
-                                onClick={() => setSelectedLayer(null)}
-                                classNameBG="rounded-full hover:shadow-[0px_5px_20px_#101F3629]"
-                                className="size-10 "
-                            />
+                            <Icon name="cerrarModal" aria-label="Cerrar" onClick={() => setSelectedLayer(null)} classNameBG="rounded-full hover:shadow-[0px_5px_20px_#101F3629]" className="cursor-pointer" />
                         </div>
                     </div>
                 </div>
@@ -229,15 +224,9 @@ const LayerDetailModal = () => {
                             </h3>
 
                             {(metadata?.frecuencia_actualizacion || metadata?.fecha_ultima_actualizacion) && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 sm:gap-6 mb-3">
-                                    <InfoCard
-                                        label="Frecuencia de actualización"
-                                        value={metadata.frecuencia_actualizacion}
-                                    />
-                                    <InfoCard
-                                        label="Última actualización"
-                                        value={formatDateString(metadata.fecha_ultima_actualizacion)}
-                                    />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                    <InfoCard label="Frecuencia de actualización" value={metadata.frecuencia_actualizacion} />
+                                    <InfoCard label="Última actualización" value={formatDateString(metadata.fecha_ultima_actualizacion)} />
                                 </div>
                             )}
 
@@ -253,12 +242,7 @@ const LayerDetailModal = () => {
                                 <div className="mb-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {metadata.numeralia.filter(s => s.nombre || s.valor).map((stat, index) => (
-                                            <StatCard
-                                                key={index}
-                                                label={stat.nombre}
-                                                value={stat.valor}
-                                                simbolo={stat.simbolo}
-                                            />
+                                            <StatCard key={index} label={stat.nombre} value={stat.valor} simbolo={stat.simbolo} />
                                         ))}
                                     </div>
                                     {metadata?.nombre_pie_numeralia && (
@@ -273,13 +257,7 @@ const LayerDetailModal = () => {
                                 <div className="mb-4">
                                     <div className="flex items-center justify-between my-5">
                                         <div className="flex items-center gap-2">
-                                            <span
-                                                className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer"
-                                                onClick={handlePeriodicityClick}
-                                                onTouchStart={handlePeriodicityTouchStart}
-                                                onTouchEnd={handlePeriodicityTouchEnd}
-                                                onTouchCancel={handlePeriodicityTouchEnd}
-                                            >
+                                            <span className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer" onClick={handlePeriodicityClick} onTouchStart={handlePeriodicityTouchStart} onTouchEnd={handlePeriodicityTouchEnd} onTouchCancel={handlePeriodicityTouchEnd}>
                                                 Periodicidad:
                                             </span>
                                             {isAdvancedMode && (
@@ -292,24 +270,9 @@ const LayerDetailModal = () => {
                                         </div>
                                     </div>
                                     {isAdvancedMode && !rasterPeriodicity ? (
-                                        <DateTreeSelector
-                                            layerId={selectedLayer.id}
-                                            periodicity={metadata.periodicity}
-                                            onFilterApply={handleDateFilterApply}
-                                            onClearFilter={handleClearFilter}
-                                            filterName="date"
-                                            singleSelectOnly={singleSelectOnly}
-                                        />
+                                        <DateTreeSelector layerId={selectedLayer.id} periodicity={metadata.periodicity} onFilterApply={handleDateFilterApply} onClearFilter={handleClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} />
                                     ) : (
-                                        <SimpleDateSelector
-                                            layerId={selectedLayer.id}
-                                            periodicity={metadata?.periodicity}
-                                            rasterPeriodicity={rasterPeriodicity}
-                                            onFilterApply={handleDateFilterApply}
-                                            onClearFilter={handleClearFilter}
-                                            filterName="date"
-                                            singleSelectOnly={singleSelectOnly}
-                                        />
+                                        <SimpleDateSelector layerId={selectedLayer.id} periodicity={metadata?.periodicity} rasterPeriodicity={rasterPeriodicity} onFilterApply={handleDateFilterApply} onClearFilter={handleClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} />
                                     )}
                                 </div>
                             )}
