@@ -5,9 +5,7 @@ import Tooltip from '@components/Tooltip';
 import Divider from '@components/Divider';
 import { useFloatingPosition } from '@hooks/useFloatingPosition';
 import { useSiderMenuPosition } from '@hooks/useSiderMenuPosition';
-import { useScrollOverflow } from '@hooks/useScrollOverflow';
 import { useSider } from '@contexts/SiderContext';
-import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const Panel = ({
     open = true,
@@ -42,7 +40,6 @@ const Panel = ({
     const hasFloatingPosition = anchorRef != null;
     const siderContext = useSider();
     const isMobile = treatAsMobileProp ?? siderContext?.isMobile ?? false;
-    useScrollOverflow(panelRef, { enabled: open && variant === 'menu' });
 
     const shouldUseMobileFullscreen = mobileFullscreen !== undefined
         ? mobileFullscreen
