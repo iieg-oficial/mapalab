@@ -7,79 +7,223 @@
 <div align="center">
 
 ![build succeeded](https://img.shields.io/badge/Application-MAPALAB-blue?style=for-the-badge)
-![build succeeded](https://img.shields.io/badge/Version-0.9.5-yellow?style=for-the-badge)
-![Static Badge](https://img.shields.io/badge/React-19.2.1-brightgreen?style=for-the-badge)
+![build succeeded](https://img.shields.io/badge/Version-1.0.0-yellow?style=for-the-badge)
+![Static Badge](https://img.shields.io/badge/React-19.2.4-brightgreen?style=for-the-badge)
 ![build succeeded](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)
 
 </div>
 
 [[_TOC_]]
 
-## 📖 Overview
-MapaLab is a web application for creating, managing, and visualizing interactive maps using IIEG's geographic data. It provides tools for data analysis and cartographic visualization.
+## Overview
+MapaLab es una aplicación web para crear, gestionar y visualizar mapas interactivos utilizando datos geográficos del IIEG. Proporciona herramientas para análisis de datos y visualización cartográfica.
 
-## 📦 Requirements
+## Requisitos
 - Docker >= v28.2.2
-- Docker compose >= v2.36.2
-- node/npm >= v22.22.0(LTS)
+- Docker Compose >= v2.36.2
+- Node/npm >= v22.22.0 (LTS)
 - Git >= 2.48.1
-- Web Browser (Firefox, Chrome, Brave, etc.)
+- Navegador web (Firefox, Chrome, Brave, etc.)
 
-## 🏁 Getting started
-### Clone the repository
-Clone the repository frontend and backend in the same folder.
+## Estructura del proyecto
+```
+mapalab/
+├── frontend/          # Aplicación React (Vite + TailwindCSS + OpenLayers)
+├── backend/           # API REST (FastAPI + SQLAlchemy)
+├── nginx/             # Reverse proxy (producción/SSL)
+├── .githooks/         # Git hooks del proyecto
+└── Makefile           # Comandos de automatización
+```
 
+## Configuración inicial
+
+### 1. Clonar el repositorio
 ```bash
 git clone https://iieg-app.jalisco.gob.mx/iieg/mapalab-frontend.git
+cd mapalab
 ```
 
-The file structure should be like this:
-```
-├── mapalab/
-│   ├── frontend/          # Frontend React application
-│   ├── backend/           # Backend API
-│   └── nginx/             # Reverse proxy
-```
-
-Configure the git hooks for the project:
+### 2. Configurar git hooks
 ```bash
 make setup-hooks
 ```
 
-It is necessary to modify and accommodate with the information required in the environment variables.
+### 3. Configurar variables de entorno
+Copiar los archivos de ejemplo y completar con los valores requeridos:
+
+**Frontend (desarrollo):**
 ```bash
-mv env.example .env
-vi .env
+cd frontend
+cp .env.development.example .env.development
 ```
 
-## 🗂️ Documentation
-Documentation is available in the following sections:
+Variables principales:
+| Variable | Descripción |
+| --- | --- |
+| `VITE_BACKEND_API_HOST` | URL del backend API |
+| `VITE_GEOSERVER_URL` | Path al GeoServer |
+| `VITE_HOST_FRONTEND` | Host del frontend (default: 0.0.0.0) |
+| `VITE_PORT` | Puerto del dev server (default: 5173) |
+| `GEOSERVER_DEV_TARGET` | Target del proxy a GeoServer en desarrollo |
+
+**Frontend (producción):**
+```bash
+cp .env.example .env.production
+```
+
+Variables principales:
+| Variable | Descripción |
+| --- | --- |
+| `VITE_GTM_ID` | ID de Google Tag Manager |
+| `VITE_SITE_URL` | URL pública del sitio |
+| `VITE_BACKEND_API_HOST` | Path al backend API |
+| `VITE_BASE_PATH` | Ruta base de la app (/ o /mapalab/) |
+| `MAPALAB_BACKEND_URL` | URL interna del backend para Nginx |
+| `CORS_ALLOWED_ORIGIN` | Origen permitido para CORS |
+
+**Backend:**
+```bash
+cd backend
+cp .env.example .env.development
+```
+
+Variables principales:
+| Variable | Descripción |
+| --- | --- |
+| `ENVIRONMENT` | development / production |
+| `DEBUG` | True / False |
+| `CORS_ORIGINS` | Orígenes permitidos (JSON array) |
+| `GEOSERVER_URL` | URL del GeoServer |
+| `GEOSERVER_USER` / `GEOSERVER_PASSWORD` | Credenciales GeoServer |
+| `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` / `DB_NAME` | Conexión PostgreSQL |
+| `ACERVO_PUBLIC_URL` | URL pública del acervo de metadatos |
+
+**Nginx:**
+```bash
+cd nginx
+cp .env.example .env
+```
+
+Variables principales:
+| Variable | Descripción |
+| --- | --- |
+| `NGINX_PORT` | Puerto de Nginx |
+| `BACKEND_HOST` | Host del backend |
+| `GEOSERVER_HOST` | Host del GeoServer |
+| `APP_DOMAIN` | Dominio o IP de la aplicación |
+| `SSL_EMAIL` | Email para certificado Let's Encrypt |
+
+## Desarrollo
+
+```bash
+make dev
+```
+
+Levanta los servicios en modo desarrollo con hot-reload:
+
+| Servicio | URL | Descripción |
+| --- | --- | --- |
+| Frontend | http://localhost:5173 | Vite dev server con HMR |
+| Backend API | http://localhost:8000 | FastAPI con --reload |
+| Backend Docs | http://localhost:8000/docs | Swagger UI |
+| Backend ReDoc | http://localhost:8000/redoc | ReDoc |
+
+Nginx **no** se usa en desarrollo. El frontend hace proxy directo al backend y GeoServer vía Vite.
+
+### Logs de desarrollo
+```bash
+make logs-dev
+```
+
+## Testing
+
+### Ejecutar tests
+```bash
+cd frontend
+npm test              # Modo watch
+npm run test:ui       # Interfaz visual de Vitest
+npm run test:coverage # Reporte de cobertura
+```
+
+### Ejecutar linter
+```bash
+npm run lint
+```
+
+## Producción
+
+### Modo administración (subruta /mapalab/)
+```bash
+make prod
+```
+
+| Servicio | URL |
+| --- | --- |
+| Aplicación | http://localhost/mapalab/ |
+| Backend API | http://localhost/api |
+| GeoServer | http://localhost/geoserver/ |
+
+Frontend servido como estáticos desde Nginx. `/docs` y `/redoc` están deshabilitados.
+
+### Modo SSL con Let's Encrypt (GCP)
+```bash
+make ssl
+```
+Requiere `APP_DOMAIN` y `SSL_EMAIL` configurados en `nginx/.env`. Obtiene certificado de Let's Encrypt automáticamente.
+
+| Servicio | URL |
+| --- | --- |
+| Aplicación | https://\<APP_DOMAIN\> |
+| Backend API | https://\<APP_DOMAIN\>/api |
+
+### Modo SSL local (certificado autofirmado)
+```bash
+make ssl-local
+```
+Genera un certificado autofirmado. Útil para pruebas locales de HTTPS.
+
+### Deploy (rebuild + restart)
+```bash
+make deploy
+```
+Detecta automáticamente el modo (SSL o administración) y reconstruye frontend + reinicia servicios.
+
+### Logs de producción
+```bash
+make logs-prod
+```
+
+## Comandos disponibles
+
+| Comando | Descripción |
+| --- | --- |
+| `make dev` | Modo desarrollo (Vite dev server + Backend con /docs) |
+| `make prod` | Modo producción (subruta /mapalab/, Nginx + estáticos) |
+| `make ssl` | Modo HTTPS GCP (Let's Encrypt) |
+| `make ssl-local` | Modo HTTPS local (certificado autofirmado) |
+| `make deploy` | Rebuild + restart (detecta modo automáticamente) |
+| `make build-prod` | Construir imágenes de producción |
+| `make down` | Detener todos los servicios |
+| `make clean` | Detener servicios y limpiar todo (dist, node_modules, volúmenes) |
+| `make status` | Ver estado de los servicios |
+| `make setup-hooks` | Configurar git hooks del proyecto |
+| `make logs-dev` | Ver logs de desarrollo |
+| `make logs-prod` | Ver logs de producción |
+| `make logs-backend` | Ver logs del backend |
+| `make logs-frontend` | Ver logs del frontend |
+| `make logs-nginx` | Ver logs de Nginx |
+
+## Documentación
 
 - [Arquitectura del proyecto](./ARCHITECTURE.md)
-- [Codigo de conducta](./CODE_OF_CONDUCT.md)
+- [Código de conducta](./CODE_OF_CONDUCT.md)
 - [Contributing Guidelines](./CONTRIBUTING.md)
-- [Changelog](./CHANGELOG.md)
-- [Environment Variables](./.env.example)
+- [Changelog](./CHANGELOG)
+- [Variables de entorno](./.env.example)
 - [Licencia](./LICENSE)
 
-## 🩺 Project status
-```mermaid
-pie title Project Status
-    "Complete" : 30
-    "Work in progress" : 70
-```
-
-## 🧭 Roadmap
-- [x] Basic map visualization - Q3 2025
-- [x] Layer management - Q4 2025
-- [ ] Data analysis tools - Q1 2026
-- [ ] Advanced visualization features - Q2 2026
-
-## 🖌️ Styling
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling and [OpenLayers](https://openlayers.org/) for map rendering.
-
-## 🖍️ Mockup
-[MapaLab UI Design](https://xd.adobe.com/view/mapalab-design)
+## Styling
+Este proyecto usa [Tailwind CSS](https://tailwindcss.com/) para estilos y [OpenLayers](https://openlayers.org/) para renderizado de mapas.
 
 # Esquema Completo de z-index del Mapa
 

@@ -1,7 +1,8 @@
 import { useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { trackLayerDetailOpen, trackLayerDownload, trackPeriodicityAdvanced } from '@services/analyticsService';
+import { trackLayerDetailOpen, trackPeriodicityAdvanced } from '@services/analyticsService';
 import { useLayerMetadata } from '../../hooks/useLayerMetadata';
 import { useLayerPeriodicity } from '../../hooks/useLayerPeriodicity';
+import { useLayerDownload } from '../../hooks/useLayerDownload';
 import { useSider } from '@contexts/SiderContext';
 import MapsContext from '@contexts/MapsContext';
 import { findLayerDef, findWMSConfig } from '../../helpers/wmsConfig';
@@ -15,16 +16,16 @@ import InfoCard from './components/InfoCard';
 import StatCard from './components/StatCard';
 import LayerInfoSections from './components/LayerInfoSections';
 import LayerThemeAvatar from './components/LayerThemeAvatar';
+import DownloadButton from './components/DownloadButton';
+import DownloadMenu from './components/DownloadMenu';
 import Icon from '@components/Icon';
-import Tooltip from '@components/Tooltip';
 import Logo from '@components/Logo';
 import Loading from '@components/Loading';
-import { downloadLayerBundle } from '@services/downloadService';
 
 const LayerDetailModal = () => {
     const {
         selectedLayer, setSelectedLayer, applyFilter, clearFilter, getFilter, getSpecificFilter,
-        getLayerOpacity, setLayerOpacity, activeLayerIds
+        getLayerOpacity, setLayerOpacity
     } = useContext(MapsContext);
 
     const layerDef = useMemo(() => {
@@ -32,15 +33,14 @@ const LayerDetailModal = () => {
         return findLayerDef(selectedLayer.id, allLayers);
     }, [selectedLayer?.id]);
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
-    const requireDateForDownload = layerDef?.requireDateForDownload || false;
     const hidePeriodicity = layerDef?.hidePeriodicity || false;
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
-    const [downloading, setDownloading] = useState(false);
-    const abortRef = useRef(null);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
     const { periodicity, loading: periodicityLoading } = useLayerPeriodicity(selectedLayer?.id);
     const { isMobile } = useSider();
     const [singleSelectOnly, setSingleSelectOnly] = useState(false);
+
+    const download = useLayerDownload(selectedLayer?.id, { getFilter, getSpecificFilter, metadata });
 
     useEffect(() => {
         if (!selectedLayer?.id || rasterPeriodicity) return;
@@ -53,56 +53,7 @@ const LayerDetailModal = () => {
         return () => { cancelled = true; };
     }, [selectedLayer?.id, rasterPeriodicity]);
 
-    const COOLDOWN_MS = 5000;
-    const storageKey = selectedLayer?.id ? `dl_cd_${selectedLayer.id}` : null;
-
-    const [cooldownEnd, setCooldownEnd] = useState(() =>
-        parseInt(sessionStorage.getItem(storageKey) || '0', 10)
-    );
-    const [cooldownRemaining, setCooldownRemaining] = useState(() =>
-        Math.max(0, cooldownEnd - Date.now())
-    );
-
-    useEffect(() => {
-        const stored = parseInt(sessionStorage.getItem(storageKey) || '0', 10);
-        setCooldownEnd(stored);
-    }, [storageKey]);
-
-    useEffect(() => {
-        const remaining = Math.max(0, cooldownEnd - Date.now());
-        setCooldownRemaining(remaining);
-        if (remaining <= 0) return;
-        const interval = setInterval(() => {
-            const r = Math.max(0, cooldownEnd - Date.now());
-            setCooldownRemaining(r);
-            if (r <= 0) clearInterval(interval);
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [cooldownEnd]);
-
-    const cooldown = cooldownRemaining > 0;
     const hasPeriodicity = !hidePeriodicity && (periodicity != null || periodicityLoading || rasterPeriodicity != null);
-    const hasDateFilter = !!getSpecificFilter(selectedLayer?.id, 'date');
-    const downloadDisabled = cooldown || (requireDateForDownload && !hasDateFilter);
-
-    const handleDownloadClick = useCallback(async () => {
-        if (!selectedLayer?.id || downloading || downloadDisabled) return;
-        const controller = new AbortController();
-        abortRef.current = controller;
-        setDownloading(true);
-        const result = await downloadLayerBundle(selectedLayer.id, { activeLayerIds, getFilter, signal: controller.signal });
-        abortRef.current = null;
-        setDownloading(false);
-        if (!result?.success) return;
-        trackLayerDownload(selectedLayer.id);
-        const end = Date.now() + COOLDOWN_MS;
-        sessionStorage.setItem(storageKey, String(end));
-        setCooldownEnd(end);
-    }, [selectedLayer?.id, activeLayerIds, getFilter, downloading, downloadDisabled, storageKey]);
-
-    const handleCancelDownload = useCallback(() => {
-        abortRef.current?.abort();
-    }, []);
 
     const periodicityLongPressRef = useRef(null);
 
@@ -148,7 +99,6 @@ const LayerDetailModal = () => {
 
     if (!selectedLayer) return null;
 
-
     return (
         <div className="fixed top-4 sm:top-4 bottom-0 right-0 sm:right-4 z-30 w-full sm:w-[643px] pointer-events-none">
             <div className={`
@@ -163,23 +113,27 @@ const LayerDetailModal = () => {
                         />
                         <div className="flex items-center gap-2 md:gap-5">
                             {metadata?.capa_descargable !== false && (
-                                downloading
-                                    ? (
-                                        <button onClick={handleCancelDownload} className="relative flex items-center justify-center gap-2 w-auto md:min-w-[180px] px-5 md:px-10 text-[14px]/[47px] text-white rounded-[30px] transition-colors h-12.5 font-bold font-garet bg-[#FF8300] hover:bg-[#E67500] hover:shadow-[0px_6px_6px_#FF830034] overflow-hidden" title="Cancelar descarga">
-                                            <Loading visible size="size-25 md:size-50" border="border-1 md:border-3" color="border-current" className="absolute inset-1 !animate-[spin_3s_cubic-bezier(0.68,-0.55,0.27,1.55)_infinite]" />
-                                            <span className="relative z-10"> {isMobile ? 'Cancelar' : 'Cancelar descarga'} </span>
-                                        </button>
-                                    )
-                                    : (
-                                        <Tooltip
-                                            content={requireDateForDownload && !hasDateFilter ? 'Selecciona un año en periodicidad para descargar' : 'Descarga la tabla completa con metadatos en .ZIP'}
-                                            variant={requireDateForDownload && !hasDateFilter ? 'default' : 'warning'}
-                                        >
-                                            <button onClick={handleDownloadClick} disabled={downloadDisabled} className="w-auto md:min-w-[180px] px-10 text-[14px]/[47px] text-white rounded-[30px] transition-colors h-12.5 font-bold font-garet disabled:opacity-60 disabled:cursor-not-allowed bg-[#703089] hover:bg-[#5C2472] hover:shadow-[0px_6px_6px_#5C247234]">
-                                                {cooldown ? (isMobile ? <Icon name="download" /> : `Espera ${Math.ceil(cooldownRemaining / 1000)}s`) : (isMobile ? <Icon name="download" /> : 'Descargar capa')}
-                                            </button>
-                                        </Tooltip>
-                                    )
+                                <>
+                                    <DownloadButton
+                                        downloading={download.downloading}
+                                        progress={download.progress}
+                                        disabled={download.downloadDisabled}
+                                        onDownload={download.handleQuickDownload}
+                                        onCancel={download.handleCancelDownload}
+                                        onMenuToggle={() => download.setMenuOpen(prev => !prev)}
+                                        menuAnchorRef={download.menuAnchorRef}
+                                        isMobile={isMobile}
+                                    />
+                                    <DownloadMenu
+                                        open={download.menuOpen}
+                                        anchorRef={download.menuAnchorRef}
+                                        onClose={() => download.setMenuOpen(false)}
+                                        isRaster={download.isRaster}
+                                        hasDateFilter={download.hasDateFilter}
+                                        availableMetadata={download.availableMetadata}
+                                        onDownload={download.handleMenuDownload}
+                                    />
+                                </>
                             )}
                             <Icon name="cerrarModal" aria-label="Cerrar" onClick={() => setSelectedLayer(null)} classNameBG="rounded-full hover:shadow-[0px_5px_20px_#101F3629]" className="cursor-pointer" />
                         </div>

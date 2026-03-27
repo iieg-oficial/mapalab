@@ -7,7 +7,7 @@ export const filtersInitializationComplete = { value: false };
 
 export const useInitializeFromUrl = () => {
     const [searchParams] = useSearchParams();
-    const { setActiveLayerIds, getAllChildLayerIds, applyFilter } = useMapsContext();
+    const { setActiveLayerIds, getAllChildLayerIds, applyFilter, onToggleLayer } = useMapsContext();
     const initialized = useRef(false);
 
     useEffect(() => {
@@ -29,17 +29,18 @@ export const useInitializeFromUrl = () => {
                 .map(id => id.trim())
                 .filter(id => id.length > 0);
 
-            const allIds = [];
-            layerIds.forEach(id => {
-                if (!allIds.includes(id)) {
-                    allIds.push(id);
+            const baseIds = [];
+            BASE_INITIAL_ORDER.forEach(id => {
+                if (!baseIds.includes(id)) {
+                    baseIds.push(id);
                     getAllChildLayerIds(id).forEach(childId => {
-                        if (!allIds.includes(childId)) allIds.push(childId);
+                        if (!baseIds.includes(childId)) baseIds.push(childId);
                     });
                 }
             });
+            setActiveLayerIds(baseIds);
 
-            setActiveLayerIds(allIds);
+            layerIds.forEach(id => onToggleLayer(id, true, true));
 
             filterParams.forEach(({ layerId, cqlFilter }) => {
                 applyFilter(layerId, 'date', cqlFilter);
@@ -68,5 +69,5 @@ export const useInitializeFromUrl = () => {
             filtersInitializationComplete.value = true;
             initialized.current = true;
         }
-    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter]);
+    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter, onToggleLayer]);
 };

@@ -13,16 +13,20 @@ export const useCarouselOverflow = () => {
     }, []);
 
     useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+
         checkOverflow();
+
+        const observer = new ResizeObserver(checkOverflow);
+        observer.observe(el);
         window.addEventListener('resize', checkOverflow);
 
-        const timeoutId = setTimeout(checkOverflow, 100);
-
         return () => {
+            observer.disconnect();
             window.removeEventListener('resize', checkOverflow);
-            clearTimeout(timeoutId);
         };
-    }, [checkOverflow]);
+    });
 
     const scroll = useCallback((direction) => {
         if (scrollRef.current) {

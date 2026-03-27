@@ -1,6 +1,85 @@
 # Registro de Cambios
 Todos los cambios notables de este proyecto serán documentados en este archivo.
 
+## [1.0.0] - 2026-03-27
+### Añadido
+- Descarga de capas desde el servidor con componentes frontend y API backend dedicada.
+- Cancelación de descargas de capas en lote con actualización de UI.
+- Servicio y API dedicados de periodicidad para capas, reemplazando el mecanismo de caché anterior.
+- Caché de periodicidad robusto con lógica de reintentos y control de fallos consecutivos.
+- Modo INEGI para consultas de información de features, ajustando dinámicamente columnas de geometría y parámetros WMS.
+- Componente `ConfirmDropdown` integrado en `ActiveLayersList` y `CloseButton` para estandarizar prompts de confirmación.
+- Botón de cierre en el panel de historial de mediciones con ancho responsive.
+- Funcionalidad de finalizar dibujo en herramientas de medición.
+- Iconos SVG dedicados de play/pause para animación de capas raster con nuevos estilos de botón y estados hover.
+- Selector de calidad de exportación de mapa con dimensiones dinámicas de captura.
+- Barra de escala en exportación de mapa, fuentes de capas, y pie de página con disclaimer.
+- Minimapa dinámico, soporte de múltiples leyendas y composición PDF mejorada en exportación.
+- Fecha actual en nombres de archivo de mapas exportados, PDFs, imágenes y datos descargados.
+- Propiedad `isCategory` para capas y lógica de procesamiento asociada.
+- Configuraciones detalladas de InfoBox para capas climáticas raster con formato de fecha y precisión decimal.
+- Etiquetas estáticas en plantillas de tarjetas InfoBox.
+- Configuraciones detalladas de InfoBox para diversas capas del mapa.
+- Mejora del esquema de metadatos con campos de descarga, fuentes, metodología y símbolos de StatCard.
+- Capas raster habilitadas por tiempo con funcionalidad de loop y selección de fecha mejorada.
+- Soporte de despliegue bajo ruta base configurable (`/mapalab/`).
+- CORS configurables y headers de seguridad en Nginx del frontend.
+- Header sticky con fondo blanco y contenedor interior púrpura redondeado.
+- Flag `hidePeriodicity` en definiciones de capas para controlar la periodicidad en el modal de detalles.
+- Flag `hiddenInMenu` para ocultar capas del menú de temas.
+- Subtemas en configuraciones de temas.
+- Componente `Message` y hook `useSlowLoading` para mensajes de carga lenta.
+- Iconos SVG de advertencia y tooltips responsive en items de capas activas.
+- Rediseño de páginas de error y not found.
+- Icono de aviso de privacidad y estado de éxito de copiado en botón de compartir.
+- Atribución del mapa con funcionalidad hover-to-expand e imagen Open Data.
+- Atribución Creative Commons BY 4.0.
+- Helper `formatNumber` para formato consistente con separadores de miles.
+- Helper `formatDateString` para formato de fecha de última actualización.
+- Soporte de múltiples enlaces externos separados por coma en sección 'Fuente'.
+- Hooks de configuración para ejecutarse con Docker en modo desarrollo.
+- Propiedad `wmsGroup` en configuración WMS para prevenir merge de requests.
+- Posicionamiento sticky de capa activa seleccionada con overlays de fade.
+- Panel de simbología inicializado colapsado con auto-expansión al seleccionar capa.
+- Modo zen/mobile en sider con botón de toggle y dropdown de capas base.
+- Selector de fecha con auto-selección de mes único y navegación de carrusel por año.
+- Cálculo dinámico de zona UTM para exportación de mapas.
+
+### Modificado
+- Estandarización de IDs de capas en configuraciones de temas y lógica de activación por URL.
+- Mejora del posicionamiento sticky de `ScrollContainer` con flexbox.
+- Detección de overflow de carrusel con `ResizeObserver` en lugar de `setTimeout`.
+- Renombrado de campo 'ingresos_propios' a 'porcentaje_ingresos_propios'.
+- Externalización de configuración Nginx a `entrypoint.sh`.
+- Consolidación de URLs de backend y GeoServer en un solo `MAPALAB_BACKEND_URL`.
+- Introducción de variables `BACKEND_HOST` y `NETWORK_NAME`.
+- Estandarización de estilos de etiquetas con constantes `MUNICIPIO_STYLE` y `CARACTERISTICA_STYLE`.
+- Renombrado del modo 'zen' a 'mobile' en sider.
+- Asignación de `wmsGroup` específicos a capas en lugar de 'default'.
+- Eliminación de debouncing en filtros WMS y actualizaciones de capas activas.
+- Integración de filtrado CQL dinámico directamente en el WMS layer manager.
+- Extracción de secciones de información de capa en componente `LayerInfoSections`.
+- Eliminación de `BaseLayersDropdown` y su uso en `ActiveLayersList`.
+- Eliminación de GeoJSON de formatos de descarga vectorial disponibles.
+- Estandarización de definiciones de capas de seguridad y actualización de `RASTER_YEAR`.
+- Actualización de dependencias del frontend.
+
+### Corregido
+- Procesamiento correcto de `metadata.metadato` como array u objeto individual al agregar archivos al zip.
+- Reducción del cooldown de `LayerDetailModal` de 60 a 5 segundos.
+- Manejo de null y undefined en utilidad `toArray` y procesamiento de campos `renderCard`.
+- Errores gramaticales y de acentuación en nombres de capas de robo.
+- Nombres de display de capas de límite municipal en `HIDDEN_LAYERS`.
+- Resolución de URL de endpoint de metadatos relativa al origin.
+- Renderizado del variante menu de Panel usando `createPortal` a `document.body`.
+
+### Rendimiento
+- File locking para generación atómica de caché y connection pooling de base de datos.
+- Memoización del cálculo `isInegiMode` con `useMemo`.
+- Headers de seguridad, compresión gzip, timeouts de proxy aumentados y includes modulares en Nginx.
+- Caché de proxy Nginx para GeoServer con bypass por request.
+- Capas WMS tileadas para mejor rendimiento de carga.
+
 ## [0.9.5] - 2026-02-06
 ### Añadido
 - Selector de fecha en detalles de capa con opción de modo avanzado.

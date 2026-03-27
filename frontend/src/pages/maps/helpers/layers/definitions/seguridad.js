@@ -243,7 +243,6 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
                         ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
-                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -255,7 +254,6 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
                         ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
-                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -267,7 +265,6 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
                         ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
-                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -279,7 +276,6 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
                         ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
-                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -367,7 +363,6 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer.withFilterAndStyles('personas_desaparecidas', `${not} IS NOT NULL`, style, { metadataLayer: style }),
                         ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
-                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
@@ -379,7 +374,6 @@ export const seguridadLayers = {
                         id, label,
                         wmsConfig: createSeguridadLayer(layerName),
                         ...(id.startsWith('tasa_') && { defaultDate: 'latest' }),
-                        requireDateForDownload: true,
                         littleCard,
                         searchMeta: { tags }
                     }))
