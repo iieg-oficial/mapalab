@@ -3,6 +3,10 @@ import MapsContext from '@contexts/MapsContext';
 import { useCarouselOverflow } from '@pages/maps/hooks/useCarouselOverflow';
 import { generateCQLFilter, parseCQLToSelections, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import Icon from '@components/Icon';
+import icoPlayNormal from '@assets/icons/ico_play_normal.svg';
+import icoPlayHover from '@assets/icons/ico_play_hover.svg';
+import icoPauseNormal from '@assets/icons/ico_pause_normal.svg';
+import icoPauseHover from '@assets/icons/ico_pause_hover.svg';
 
 const BackButton = ({ onClick }) => (
     <button onClick={onClick}>
@@ -21,20 +25,25 @@ const YearBadge = ({ year }) => (
     </span>
 );
 
-const PlayPauseButton = ({ isPlaying, onToggle }) => (
-    <button
-        onClick={onToggle}
-        className="size-7.5 rounded-full bg-[#F9FBFF] flex items-center justify-center hover:bg-[#F0EAF3] transition-colors"
-        title={isPlaying ? 'Pausar' : 'Reproducir'}
-    >
-        <svg width="12" height="12" viewBox="0 0 12 12" className="text-[#703089]">
-            {isPlaying
-                ? <><rect x="1" y="1" width="3.5" height="10" rx="1" fill="currentColor" /><rect x="7.5" y="1" width="3.5" height="10" rx="1" fill="currentColor" /></>
-                : <path d="M2 1.5v9l8.5-4.5L2 1.5z" fill="currentColor" />
-            }
-        </svg>
-    </button>
-);
+const PlayPauseButton = ({ isPlaying, onToggle }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const icon = isPlaying
+        ? (isHovered ? icoPauseHover : icoPauseNormal)
+        : (isHovered ? icoPlayHover : icoPlayNormal);
+    const label = isPlaying ? 'PAUSAR' : 'VER ANIMACIÓN';
+
+    return (
+        <button
+            onClick={onToggle}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            className="flex items-center gap-2 px-2 py-1.5 rounded-[12px] bg-[#FFF2E5] border border-[#FF8300] text-[#FF8300] text-[8px]/[16px] font-bold font-garet transition-colors hover:bg-[#FFE4C4]"
+        >
+            <img src={icon} alt="" className="w-[10px] h-[10px]" />
+            {label}
+        </button>
+    );
+};
 
 const CarouselArrow = ({ direction, onClick }) => (
     <button onClick={onClick}>

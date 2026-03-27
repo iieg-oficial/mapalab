@@ -7,6 +7,10 @@ import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
+import icoPlayNormal from '@assets/icons/ico_play_normal.svg';
+import icoPlayHover from '@assets/icons/ico_play_hover.svg';
+import icoPauseNormal from '@assets/icons/ico_pause_normal.svg';
+import icoPauseHover from '@assets/icons/ico_pause_hover.svg';
 
 const SIZE_BUTTON = 'size-5';
 
@@ -159,18 +163,10 @@ const ActiveLayerItem = ({
                     {loopState && monthAbbr && (
                         <button
                             onClick={(e) => { e.stopPropagation(); toggleLoop?.(layer.id); }}
-                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#F0EAF3] text-[#465055] text-[14px] font-garet font-medium shrink-0 hover:bg-[#E5DAE9] transition-colors"
+                            className="group/loop flex items-center gap-1 p-1.5 rounded-[12px] bg-[#FFF2E5] border border-[#FF8300] text-[#FF8300] text-[9px] font-garet font-bold shrink-0 hover:bg-[#FFE4C4] transition-colors"
                         >
-                            {isLooping ? (
-                                <svg width="10" height="10" viewBox="0 0 12 12">
-                                    <rect x="1" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
-                                    <rect x="7.5" y="1" width="3.5" height="10" rx="1" fill="currentColor" />
-                                </svg>
-                            ) : (
-                                <svg width="10" height="10" viewBox="0 0 12 12">
-                                    <path d="M2 1.5v9l8.5-4.5L2 1.5z" fill="currentColor" />
-                                </svg>
-                            )}
+                            <img src={isLooping ? icoPauseNormal : icoPlayNormal} alt="" className="size-[9px] block group-hover/loop:hidden" />
+                            <img src={isLooping ? icoPauseHover : icoPlayHover} alt="" className="size-[9px] hidden group-hover/loop:block" />
                             {monthAbbr}
                         </button>
                     )}
