@@ -33,10 +33,16 @@ export default defineConfig(({ mode }) => {
         build: {
             rollupOptions: {
                 output: {
-                    manualChunks: {
-                        'vendor-react': ['react', 'react-dom', 'react-router'],
-                        'vendor-ol': ['ol'],
-                        'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/modifiers', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+                    manualChunks(id) {
+                        if (id.includes('react-dom') || id.includes('react-router') || id.includes('/react/')) {
+                            return 'vendor-react';
+                        }
+                        if (id.includes('/ol/')) {
+                            return 'vendor-ol';
+                        }
+                        if (id.includes('@dnd-kit')) {
+                            return 'vendor-dnd';
+                        }
                     }
                 }
             }

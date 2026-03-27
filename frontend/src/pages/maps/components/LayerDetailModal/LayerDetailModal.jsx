@@ -25,7 +25,7 @@ import Loading from '@components/Loading';
 const LayerDetailModal = () => {
     const {
         selectedLayer, setSelectedLayer, applyFilter, clearFilter, getFilter, getSpecificFilter,
-        getLayerOpacity, setLayerOpacity, activeLayerIds
+        getLayerOpacity, setLayerOpacity
     } = useContext(MapsContext);
 
     const layerDef = useMemo(() => {

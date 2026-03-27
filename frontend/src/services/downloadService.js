@@ -1,6 +1,5 @@
 import { findWMSConfig } from '../pages/maps/helpers/wmsConfig';
-import { layers, findLayerById, collectLayersWithWMS } from '../pages/maps/helpers/layers/index';
-import { getLayerMetadata } from './layerMetadataService';
+import { layers, findLayerById } from '../pages/maps/helpers/layers/index';
 
 const getApiHost = () => import.meta.env.VITE_BACKEND_API_HOST?.replace(/\/+$/, '');
 

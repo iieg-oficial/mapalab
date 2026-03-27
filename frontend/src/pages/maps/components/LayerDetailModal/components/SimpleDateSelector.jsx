@@ -324,19 +324,14 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
         );
     }
 
+    const yearBtnClass = (year) => `shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200 text-[14px]/[16px] text-[#2E4372] font-medium font-garet bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089] ${selectedYear === year ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]' : ''}`;
     return (
         <div className="space-y-3">
             <div className="flex items-center gap-2">
                 {yearsCarousel.hasOverflow && <CarouselArrow direction="left" onClick={() => yearsCarousel.scroll('left')} />}
                 <div ref={yearsCarousel.scrollRef} className="flex gap-2 overflow-x-auto scrollbar-hide flex-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {availableYears.map((year) => (
-                        <button
-                            key={year}
-                            onClick={() => handleYearClick(year)}
-                            className={`shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200 text-[14px]/[16px] text-[#2E4372] font-medium font-garet bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089] ${selectedYear === year ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]' : ''}`}
-                        >
-                            {year}
-                        </button>
+                        <button key={year} onClick={() => handleYearClick(year)} className={yearBtnClass(year)}>{year}</button>
                     ))}
                 </div>
                 {yearsCarousel.hasOverflow && <CarouselArrow direction="right" onClick={() => yearsCarousel.scroll('right')} />}

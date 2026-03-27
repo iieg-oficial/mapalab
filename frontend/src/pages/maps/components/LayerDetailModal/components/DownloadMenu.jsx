@@ -29,7 +29,7 @@ const DownloadMenu = ({
 
     useEffect(() => {
         setSelectedFormat(formats[0]?.id);
-    }, [isRaster]);
+    }, [isRaster, formats]);
 
     useFloatingPosition({
         open,
@@ -95,10 +95,10 @@ const DownloadMenu = ({
                                     onClick={() => setSelectedFormat(fmt.id)}
                                     className={`
                                         px-3 py-1.5 text-sm rounded-[14px] border transition-colors
-                                        ${selectedFormat === fmt.id
-                                            ? 'bg-[#FF8300] border-transparent text-white font-medium'
-                                            : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-                                        }
+                                    ${selectedFormat === fmt.id
+                                    ? 'bg-[#FF8300] border-transparent text-white font-medium'
+                                    : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+                                }
                                     `}
                                 >
                                     {fmt.label}
@@ -123,12 +123,12 @@ const DownloadMenu = ({
                                             disabled={isDisabled}
                                             className={`
                                                 px-3 py-1.5 text-sm rounded-[14px] border transition-colors
-                                                ${isDisabled
-                                                    ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                                                    : isSelected
-                                                        ? 'bg-[#FF8300] border-transparent text-white font-medium'
-                                                        : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-                                                }
+                                            ${isDisabled
+                                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                            : isSelected
+                                                ? 'bg-[#FF8300] border-transparent text-white font-medium'
+                                                : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+                                        }
                                             `}
                                         >
                                             {opt.label}
