@@ -30,23 +30,7 @@ export default defineConfig(({ mode }) => {
     return {
         base: BASE_PATH,
         plugins: [react(), tailwindcss(), deferCssPlugin()],
-        build: {
-            rollupOptions: {
-                output: {
-                    manualChunks(id) {
-                        if (id.includes('react-dom') || id.includes('react-router') || id.includes('/react/')) {
-                            return 'vendor-react';
-                        }
-                        if (id.includes('/ol/')) {
-                            return 'vendor-ol';
-                        }
-                        if (id.includes('@dnd-kit')) {
-                            return 'vendor-dnd';
-                        }
-                    }
-                }
-            }
-        },
+        build: {},
         server: {
             host: HOST_FRONTEND,
             port: PORT,
