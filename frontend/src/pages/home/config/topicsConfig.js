@@ -23,7 +23,7 @@ const topicsConfig = {
             description: 'Descubre cómo se mueve la economía con estadísticas de empleo, producción y actividad económica.',
             icon: 'economia',
             subtopics: [
-                { label: 'Ocupación y empleo', layerIds: ['trabajadores_asegurados'] },
+                { label: 'Ocupación y empleo', layerIds: ['tasa_trabajadores_asegurados'] },
                 { label: 'Sector primario', layerIds: ['agave'] }
             ]
         }, {
@@ -64,7 +64,7 @@ const topicsConfig = {
             icon: 'educacion',
             subtopics: [
                 { label: 'Oferta e infraestructura', layerIds: ['cat-centros-educativos'] },
-                { label: 'Capacidades y alfabetización', layerIds: ['rezago_educativo'] }
+                { label: 'Capacidades y alfabetización', layerIds: ['tasa_rezago_educativo'] }
             ]
         }, {
             id: 'desarrollo',
@@ -73,7 +73,7 @@ const topicsConfig = {
             icon: 'desarrollo',
             subtopics: [
                 { label: 'Pobreza y vulnerabilidades', layerIds: ['tasa_pobreza'] },
-                { label: 'Igualdad de género', layerIds: ['brecha_salarial'] }
+                { label: 'Igualdad de género', layerIds: ['tasa_brecha_salarial'] }
             ]
         }, {
             id: 'gobierno',
@@ -81,7 +81,7 @@ const topicsConfig = {
             description: 'Explora cómo se manejan los recursos municipales con estadísticas sobre ingresos y gastos.',
             icon: 'gobierno',
             subtopics: [
-                { label: 'Finanzas municipales', layerIds: ['ingreso_per_capita'] }
+                { label: 'Finanzas municipales', layerIds: ['tasa_ingreso_per_capita'] }
             ]
         }
     ]
