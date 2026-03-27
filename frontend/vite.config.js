@@ -30,7 +30,14 @@ export default defineConfig(({ mode }) => {
     return {
         base: BASE_PATH,
         plugins: [react(), tailwindcss(), deferCssPlugin()],
-        build: {},
+        build: {
+            rolldownOptions: {
+                onwarn(warning, warn) {
+                    if (warning.code === 'EVAL' && warning.id?.includes('lottie-web')) return;
+                    warn(warning);
+                },
+            },
+        },
         server: {
             host: HOST_FRONTEND,
             port: PORT,
