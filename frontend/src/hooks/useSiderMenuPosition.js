@@ -16,6 +16,7 @@ export const useSiderMenuPosition = ({
     const [isReady, setIsReady] = useState(false);
     const updateFrameRef = useRef(null);
     const lastPositionRef = useRef(null);
+    const naturalHeightRef = useRef(0);
 
     const calculatePosition = useCallback(() => {
         const anchor = anchorRef?.current;
@@ -36,7 +37,11 @@ export const useSiderMenuPosition = ({
 
         const anchorRect = anchor.getBoundingClientRect();
         const siderRect = sider.getBoundingClientRect();
-        const contentHeight = content.scrollHeight || content.offsetHeight;
+        const rawHeight = content.scrollHeight || content.offsetHeight;
+        if (rawHeight > naturalHeightRef.current) {
+            naturalHeightRef.current = rawHeight;
+        }
+        const contentHeight = naturalHeightRef.current;
 
         if (isMobile) {
             const top = anchorRect.bottom + offset;
@@ -122,6 +127,7 @@ export const useSiderMenuPosition = ({
         if (!open) {
             setIsReady(false);
             lastPositionRef.current = null;
+            naturalHeightRef.current = 0;
             return;
         }
 
@@ -146,7 +152,6 @@ export const useSiderMenuPosition = ({
             el.style.left = '';
             el.style.top = '';
             el.style.maxHeight = '';
-            el.style.overflowY = '';
             updateFrameRef.current = requestAnimationFrame(() => {
                 setIsReady(true);
             });
@@ -167,10 +172,8 @@ export const useSiderMenuPosition = ({
 
         if (position.maxHeight) {
             el.style.maxHeight = `${position.maxHeight}px`;
-            el.style.overflowY = 'auto';
         } else {
             el.style.maxHeight = '';
-            el.style.overflowY = '';
         }
 
         updateFrameRef.current = requestAnimationFrame(() => {
