@@ -41,56 +41,84 @@ architecture-beta
 ## Diagrama de flujo de red
 
 ```mermaid
-graph LR
-    subgraph INTERNET["Internet"]
-        USER["Usuario Final"]
+graph TB
+    %% --- EXTERNOS ---
+    USER["Ciudadano"]
+    GTM["GTM & Analytics"]
+    GITHUB{{GitHub<br>CI/CD}}
+
+    %% --- ENTORNO TESTING (GCP) ---
+    subgraph GCP["GCP"]
+        TESTING_NODE["mapalab-iieg.app<br>(Testing)"]
     end
 
-    subgraph DNS["DNS Publico"]
-        DOM["mapalab-iieg.app"]
+    %% --- ENTORNO PRINCIPAL (PRODUCCIÓN) ---
+    DOM_MAIN["iieg.jalisco.gob.mx"]
+    
+    %% Agrupación del Servidor MapaLab
+    subgraph S_MAPA["Servidor MapaLab"]
+        FE["Frontend"]
+        BE["Backend"]
     end
+    
+    GEO["GeoServer"]
+    DE["DataEngine"]
+    ACERVO["Acervo"]
+    HUACHICOL["Huachicol"]
 
-    subgraph GCP["Google Cloud Platform"]
-        subgraph VPC["VPC Interna"]
-            subgraph VM_MAPA["VM — MapaLab"]
-                NGINX["Nginx :443 HTTPS / :80 → 443 SSL + HTTP2"]
-                FE["Frontend /usr/share/nginx/html"]
-                BE["Backend :8000"]
-            end
+    %% --- FLUJOS DE DESPLIEGUE (GitHub) ---
+    GITHUB ==>|"CI/CD"| TESTING_NODE
+    GITHUB ==>|"CI"| S_MAPA
 
-            subgraph VM_DE["VM — DataEngine"]
-                PG_PRI["PostgreSQL Primary PostGIS 18-3.6 :5432 SSL + SCRAM-SHA-256"]
-                PG_REP["PostgreSQL Replica :5433"]
-                PG_BKP["pg-backup → Acervo"]
-            end
+    %% --- ACCESOS DEL USUARIO Y REDIRECCIONAMIENTO ---
+    USER -->|"HTTPS"| TESTING_NODE
+    USER -->|"HTTPS"| DOM_MAIN
+    
+    %% Conexión de Testing a Producción (Redireccionamiento)
+    TESTING_NODE -->|"Redireccionamiento"| DOM_MAIN
 
-            subgraph VM_GEO["VM — GeoServer"]
-                GEO["GeoServer 2.27.0 Kartoza / Tomcat :8080"]
-            end
-        end
-    end
+    %% Tracking a GTM
+    FE -.->|"Tracking"| GTM
+    TESTING_NODE -.->|"Tracking"| GTM
 
-    USER -->|"HTTPS :443"| DOM
-    DOM --> NGINX
+    %% --- FLUJOS DEL ENTORNO PRINCIPAL ---
+    DOM_MAIN -->|"/mapalab"| FE
+    DOM_MAIN -->|"/geoserver"| GEO
+    
+    %% Flujo interno de la App: Frontend a Backend
+    FE --> BE
 
-    NGINX -->|"/ → static files"| FE
-    NGINX -->|"proxy /api/ → :8000"| BE
-    NGINX -->|"proxy /geoserver/ → :8080"| GEO
+    %% Conexiones a Datos y Almacenamiento (desde el Backend)
+    BE -->|"SQL"| DE
+    BE -->|"Metadatos"| ACERVO
+    GEO -->|"SQL Espacial"| DE
 
-    BE -->|"SQL :5433 SSL"| PG_REP
-    GEO -->|"SQL :5432"| PG_PRI
+    %% --- MONITOREO (Mediciones) ---
+    FE -.->|"Mediciones"| HUACHICOL
+    BE -.->|"Mediciones"| HUACHICOL
+    DE -.->|"Mediciones"| HUACHICOL
+    GEO -.->|"Mediciones"| HUACHICOL
 
-    PG_PRI -->|"replicacion"| PG_REP
-    PG_PRI -->|"dump"| PG_BKP
-    PG_BKP -->|"Acervo :443"| acervo["Object Storage Backups"]
+    %% --- ESTILOS ---
+    style USER fill:#f1f5f9,stroke:#64748b,color:#000
+    style GTM fill:#fbbc04,stroke:#e65100,color:#000
+    style GITHUB fill:#24292e,color:#fff,stroke:#fafafa
+    
+    %% Estilo de Testing (GCP)
+    style TESTING_NODE fill:#e2e8f0,stroke:#475569,color:#000
+    style GCP fill:#f8fafc,stroke:#4285f4,stroke-dasharray: 5 5,color:#000
 
-    style INTERNET fill:#f66,stroke:#7b2d8e,color:#000
-    style DNS fill:#1a24,stroke:#16213e,color:#000
-    style GCP fill:#4285f4,stroke:#1a73e8,color:#fff
-    style VPC fill:#e8f0fe,stroke:#4285f4,color:#000
-    style VM_MAPA fill:#34a853,stroke:#1e8e3e,color:#fff
-    style VM_DE fill:#ea4335,stroke:#c5221f,color:#fff
-    style VM_GEO fill:#ff6d01,stroke:#e65100,color:#fff
+    %% Estilos del Entorno Principal
+    style DOM_MAIN fill:#e2e8f0,stroke:#475569,color:#000
+    
+    %% Estilos para Frontend y Backend
+    style FE fill:#16a34a,color:#fff
+    style BE fill:#16a34a,color:#fff
+    
+    style GEO fill:#ea580c,color:#fff
+    style DE fill:#dc2626,color:#fff
+    style ACERVO fill:#0284c7,color:#fff
+    style HUACHICOL fill:#991b1b,color:#fff
 ```
 
 [Diagrama de red](https://mermaid.live/edit#pako:eNqVldtum0AQhl9lRS7rA8aHIC4q-YAdK7FDjVNVratoDAumARYtS5U0idSrPkDVJ8yTdBYwsWO7UrlA7PJ__-7ODMOj4jCXKobic0g25GqxigleabYuJqbzpbmYm8svK2UaC8pjKlbK10IkrxvbXOC7mzQDHjAyDmIIKwGN3VX8xnA0t1GPd2Jl6zBw2J7d6HqGbyNIIIR1PQio34Ak-afhZGghMmHMDykZhixziRWC8BiP9qwr4KM1RADvpDgR7Mn2pbPbWd_qS_mMvPz8Q2a4sytYHxDymk-m808onftBfE-MTqdNLpZLyyZNYugqefn1m8g5274i7_I32lGbsYkeY85wb7FLmlnKm-kGOG3G0re5EVF4lBtIbgDOncRwQVU9kO2E79hRR-brQUcgwJQr0qOLWZNbazFFucVS4XNqf7giFg8i4A9ETk2mNmnp9XajR4xup62Vp7aHi_6sbl_061q3d8p4YVr7xguaYKFA7tQ-RQ0uJZX49TWGIEvycPcdyr-z_w3DxLx-jcOEMhtNKD-6biGtNERraOcNlVwCF-wHYOKXLHJAyHToJ9JxMNjZnfy4SL3-_mmlFJUki2qlPMnPpFDggxQUtbfF8kHJNfNApAJE4BAvCGkq-bF5qEw4u38gTUiCgilL6AkL66TYpyzNT14heo5gXLabGZglIjOZZ1DWghQVqS5UCLyRaaUEy2xrVYxKHS-KwglY_NZsT-dmUVIKsEQqAT6XgqJIqtBCPsSsXq-_UUcQWzAOPiWDvKzSPIllBxIP2HG2DVIGNzTOvF6vlgrO7qhxdr7WXJ3WHBYybpzJaO5wsgMWSAu0TsW0elqrfYrBVlcyHU3vejsUnLepvqU8z9ulZKcrKKp7qkcrqjQ5vlbZ-kqy3QG9235dj-r0dZdv15OdZLsiYMK7Fed0Na3lneZkGZRx9Hqu2qpA2uu2VHUHVGr4xwpcxRA8ozUlojwCOVQepeVKERsaYesy8NGlHmQh_rZW8TNiCcSfGYu2JGeZv1EMD8IUR1nigqCjALAbRNUsx2-S8iHLYqEYmqo9_wXdGB2e)

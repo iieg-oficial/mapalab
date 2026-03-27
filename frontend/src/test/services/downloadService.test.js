@@ -1,23 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+vi.stubEnv('VITE_BACKEND_API_HOST', 'http://api.test');
+
 const testLayers = [
-    {
-        id: 'grupo-vec',
-        label: 'Grupo Vectorial',
-        forceGroup: true,
-        children: [
-            {
-                id: 'vec-1',
-                label: 'Vectorial 1',
-                wmsConfig: { workspace: 'economia', baseUrl: 'http://geo.test/geoserver/economia/wms', layerName: 'economia:empleo' }
-            },
-            {
-                id: 'vec-2',
-                label: 'Vectorial 2',
-                wmsConfig: { workspace: 'economia', baseUrl: 'http://geo.test/geoserver/economia/wms', layerName: 'economia:desempleo' }
-            }
-        ]
-    },
     {
         id: 'single-vec',
         label: 'Capa Sola',
@@ -27,18 +12,6 @@ const testLayers = [
         id: 'single-raster',
         label: 'Capa Raster',
         wmsConfig: { workspace: 'raster', baseUrl: 'http://geo.test/geoserver/raster/wms', layerName: 'raster:lluvia_2024', timeEnabled: true }
-    },
-    {
-        id: 'grupo-raster',
-        label: 'Grupo Raster',
-        forceGroup: true,
-        children: [
-            {
-                id: 'rast-1',
-                label: 'Raster 1',
-                wmsConfig: { workspace: 'raster', baseUrl: 'http://geo.test/geoserver/raster/wms', layerName: 'raster:temp_2024', timeEnabled: true }
-            }
-        ]
     },
     {
         id: 'wfs-disabled',
@@ -63,37 +36,10 @@ const findWMS = (id, arr) => {
     return null;
 };
 
-const collectWMS = (layer) => {
-    if (!layer) return [];
-    const result = [];
-    const traverse = (n) => { if (!n) return; if (n.wmsConfig) result.push(n); if (n.children) n.children.forEach(traverse); };
-    traverse(layer);
-    return result;
-};
-
-const { mockGetLayerMetadata, MockJSZip } = vi.hoisted(() => {
-    const mockFile = vi.fn();
-    const mockFolder = vi.fn(() => ({ file: vi.fn() }));
-    const mockGenerateAsync = vi.fn(() => Promise.resolve(new Blob(['zip'])));
-
-    class MockJSZip {
-        constructor() {
-            this.file = mockFile;
-            this.folder = mockFolder;
-            this.generateAsync = mockGenerateAsync;
-        }
-    }
-
-    return {
-        mockGetLayerMetadata: vi.fn(),
-        MockJSZip
-    };
-});
-
 vi.mock('@pages/maps/helpers/layers/index', () => ({
     layers: testLayers,
     findLayerById: (id, arr) => findById(id, arr || testLayers),
-    collectLayersWithWMS: collectWMS
+    collectLayersWithWMS: () => []
 }));
 
 vi.mock('@pages/maps/helpers/wmsConfig', () => ({
@@ -101,29 +47,22 @@ vi.mock('@pages/maps/helpers/wmsConfig', () => ({
 }));
 
 vi.mock('@services/layerMetadataService', () => ({
-    getLayerMetadata: (...args) => mockGetLayerMetadata(...args)
+    getLayerMetadata: vi.fn().mockResolvedValue({})
 }));
-
-vi.mock('jszip', () => ({ default: MockJSZip }));
 
 const mockBlob = new Blob(['data']);
 let clickedLink = null;
 
 beforeEach(() => {
-    mockGetLayerMetadata.mockReset();
-    mockGetLayerMetadata.mockResolvedValue({
-        metadato_txt: 'http://meta.test/doc.txt',
-        metadato_xlsx: 'http://meta.test/doc.xlsx'
-    });
-    vi.spyOn(console, 'error').mockImplementation(() => { });
-    vi.spyOn(console, 'warn').mockImplementation(() => { });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     clickedLink = null;
 
     global.fetch = vi.fn(() =>
         Promise.resolve({
             ok: true,
             headers: { get: () => 'application/octet-stream' },
-            blob: () => Promise.resolve(mockBlob)
+            blob: () => Promise.resolve(mockBlob),
+            body: null,
         })
     );
 
@@ -131,15 +70,15 @@ beforeEach(() => {
     global.URL.revokeObjectURL = vi.fn();
 
     vi.spyOn(document.body, 'appendChild').mockImplementation((el) => { clickedLink = el; });
-    vi.spyOn(document.body, 'removeChild').mockImplementation(() => { });
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => { });
+    vi.spyOn(document.body, 'removeChild').mockImplementation(() => {});
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 });
 
 afterEach(() => {
     vi.restoreAllMocks();
 });
 
-const { isRasterLayer, downloadLayerBundle } = await import('@services/downloadService');
+const { isRasterLayer, getLayerConfig, downloadSingleFormat, getAvailableMetadata } = await import('@services/downloadService');
 
 describe('isRasterLayer', () => {
     it('retorna true para workspace raster', () => {
@@ -155,120 +94,142 @@ describe('isRasterLayer', () => {
     });
 });
 
-describe('downloadLayerBundle — vectorial individual', () => {
-    it('descarga exitosamente', async () => {
-        const result = await downloadLayerBundle('single-vec');
-        expect(result.success).toBe(true);
+describe('getLayerConfig', () => {
+    it('retorna config para capa vectorial', () => {
+        const config = getLayerConfig('single-vec');
+        expect(config.workspace).toBe('salud');
+        expect(config.layerName).toBe('hospitales');
+        expect(config.isRaster).toBe(false);
     });
 
-    it('llama a fetch con WFS para 3 formatos', async () => {
-        await downloadLayerBundle('single-vec');
-        const wfsCalls = global.fetch.mock.calls.filter(c => c[0].includes('WFS'));
-        expect(wfsCalls).toHaveLength(3);
+    it('retorna config para capa raster', () => {
+        const config = getLayerConfig('single-raster');
+        expect(config.workspace).toBe('raster');
+        expect(config.isRaster).toBe(true);
     });
 
-    it('genera nombre de archivo con label y fecha', async () => {
-        await downloadLayerBundle('single-vec');
-        expect(clickedLink).not.toBeNull();
-        expect(clickedLink.download).toMatch(/Capa_Sola_\d{4}-\d{2}-\d{2}\.zip/);
+    it('retorna null para ID inexistente', () => {
+        expect(getLayerConfig('fantasma')).toBeNull();
     });
 });
 
-describe('downloadLayerBundle — raster individual', () => {
-    it('descarga exitosamente con WCS', async () => {
-        const result = await downloadLayerBundle('single-raster');
+describe('downloadSingleFormat — CSV vectorial', () => {
+    it('descarga CSV desde backend', async () => {
+        const result = await downloadSingleFormat('single-vec', 'csv');
         expect(result.success).toBe(true);
-        const wcsCalls = global.fetch.mock.calls.filter(c => c[0].includes('GetCoverage'));
-        expect(wcsCalls.length).toBeGreaterThan(0);
+        const call = global.fetch.mock.calls[0][0];
+        expect(call).toContain('/download/salud/hospitales');
     });
 
-    it('incluye SUBSET con timeValue si getFilter lo provee', async () => {
+    it('genera nombre con label y fecha', async () => {
+        await downloadSingleFormat('single-vec', 'csv');
+        expect(clickedLink).not.toBeNull();
+        expect(clickedLink.download).toMatch(/Capa_Sola_\d{4}-\d{2}-\d{2}\.csv/);
+    });
+
+    it('pasa date_from y date_to al backend', async () => {
+        await downloadSingleFormat('single-vec', 'csv', { dateFrom: '2024-01-01', dateTo: '2024-12-31' });
+        const call = global.fetch.mock.calls[0][0];
+        expect(call).toContain('date_from=2024-01-01');
+        expect(call).toContain('date_to=2024-12-31');
+    });
+});
+
+describe('downloadSingleFormat — GeoServer WFS', () => {
+    it('descarga GPKG via WFS', async () => {
+        const result = await downloadSingleFormat('single-vec', 'geopackage');
+        expect(result.success).toBe(true);
+        const call = global.fetch.mock.calls[0][0];
+        expect(call).toContain('WFS');
+        expect(call).toContain('geopackage');
+    });
+
+    it('descarga SHP via WFS', async () => {
+        const result = await downloadSingleFormat('single-vec', 'shape-zip');
+        expect(result.success).toBe(true);
+        const call = global.fetch.mock.calls[0][0];
+        expect(call).toContain('shape-zip');
+    });
+});
+
+describe('downloadSingleFormat — raster', () => {
+    it('descarga GeoTIFF via WCS', async () => {
+        const result = await downloadSingleFormat('single-raster', 'geotiff');
+        expect(result.success).toBe(true);
+        const call = global.fetch.mock.calls[0][0];
+        expect(call).toContain('GetCoverage');
+    });
+
+    it('incluye SUBSET con timeValue si getFilter provee', async () => {
         const getFilter = vi.fn(() => '2024-03');
-        await downloadLayerBundle('single-raster', { getFilter });
-        const wcsCall = global.fetch.mock.calls.find(c => c[0].includes('GetCoverage'));
-        expect(wcsCall[0]).toContain('SUBSET');
-        expect(wcsCall[0]).toContain('2024-03');
+        await downloadSingleFormat('single-raster', 'geotiff', { getFilter });
+        const call = global.fetch.mock.calls[0][0];
+        expect(call).toContain('SUBSET');
+        expect(call).toContain('2024-03');
     });
 
     it('no incluye SUBSET si getFilter retorna undefined', async () => {
         const getFilter = vi.fn(() => undefined);
-        await downloadLayerBundle('single-raster', { getFilter });
-        const wcsCall = global.fetch.mock.calls.find(c => c[0].includes('GetCoverage'));
-        expect(wcsCall[0]).not.toContain('SUBSET');
+        await downloadSingleFormat('single-raster', 'geotiff', { getFilter });
+        const call = global.fetch.mock.calls[0][0];
+        expect(call).not.toContain('SUBSET');
     });
 });
 
-describe('downloadLayerBundle — grupo vectorial', () => {
-    it('retorna error si no hay subcapas activas', async () => {
-        const result = await downloadLayerBundle('grupo-vec', { activeLayerIds: [] });
-        expect(result.success).toBe(false);
-        expect(result.error).toContain('subcapas activas');
-    });
-
-    it('descarga todas las subcapas activas', async () => {
-        const result = await downloadLayerBundle('grupo-vec', { activeLayerIds: ['vec-1', 'vec-2'] });
-        expect(result.success).toBe(true);
-    });
-});
-
-describe('downloadLayerBundle — grupo raster', () => {
-    it('descarga con subcapas activas', async () => {
-        const result = await downloadLayerBundle('grupo-raster', { activeLayerIds: ['rast-1'] });
-        expect(result.success).toBe(true);
-    });
-});
-
-describe('downloadLayerBundle — wfsAvailable false', () => {
-    it('no hace llamadas WFS y finaliza ok', async () => {
-        const result = await downloadLayerBundle('wfs-disabled');
-        const wfsCalls = global.fetch.mock.calls.filter(c => c[0].includes('WFS'));
-        expect(wfsCalls).toHaveLength(0);
-        expect(result.success).toBe(true);
-    });
-});
-
-describe('downloadLayerBundle — error handling', () => {
-    it('tolera fetch fallido gracias a Promise.allSettled', async () => {
-        global.fetch = vi.fn(() => Promise.resolve({ ok: false, status: 500, headers: { get: () => '' } }));
-        const result = await downloadLayerBundle('single-vec');
-        expect(result.success).toBe(true);
-    });
-
-    it('retorna success false cuando triggerDownload lanza excepción', async () => {
-        global.URL.createObjectURL = vi.fn(() => { throw new Error('Blob error'); });
-        const result = await downloadLayerBundle('single-vec');
-        expect(result.success).toBe(false);
-        expect(result.error).toBe('Blob error');
-    });
-});
-
-describe('downloadLayerBundle — metadata', () => {
-    it('solicita metadata para la capa descargada', async () => {
-        await downloadLayerBundle('single-vec');
-        expect(mockGetLayerMetadata).toHaveBeenCalledWith('single-vec');
-    });
-});
-
-describe('downloadLayerBundle — cancelación', () => {
+describe('downloadSingleFormat — cancelación', () => {
     it('retorna cancelled true al abortar', async () => {
-        const controller = new AbortController();
-        global.fetch = vi.fn().mockRejectedValue({ name: 'AbortError' });
-        const promise = downloadLayerBundle('single-vec', { signal: controller.signal });
-        controller.abort();
-        const result = await promise;
+        const abortError = new Error('Aborted');
+        abortError.name = 'AbortError';
+        global.fetch = vi.fn().mockRejectedValue(abortError);
+        const result = await downloadSingleFormat('single-vec', 'csv');
         expect(result.success).toBe(false);
         expect(result.cancelled).toBe(true);
     });
 
     it('pasa signal a fetch', async () => {
         const controller = new AbortController();
-        global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            headers: { get: () => 'application/json' },
-            blob: () => Promise.resolve(new Blob())
-        });
-        await downloadLayerBundle('single-vec', { signal: controller.signal });
-        const firstCallArgs = global.fetch.mock.calls[0][1];
-        expect(firstCallArgs).toMatchObject({ signal: controller.signal });
+        await downloadSingleFormat('single-vec', 'geopackage', { signal: controller.signal });
+        const fetchArgs = global.fetch.mock.calls[0][1];
+        expect(fetchArgs).toMatchObject({ signal: controller.signal });
+    });
+});
+
+describe('downloadSingleFormat — errores', () => {
+    it('retorna error cuando capa no existe', async () => {
+        const result = await downloadSingleFormat('fantasma', 'csv');
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('no encontrada');
+    });
+
+    it('retorna error para formato no soportado', async () => {
+        const result = await downloadSingleFormat('single-vec', 'xml-invalido');
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('getAvailableMetadata', () => {
+    it('detecta TXT y XLSX', () => {
+        const meta = {
+            metadato: [
+                { nombre: 'TXT', enlace: 'http://test/doc.txt' },
+                { nombre: 'XLSX', enlace: 'http://test/doc.xlsx' }
+            ]
+        };
+        const result = getAvailableMetadata(meta);
+        expect(result.hasTxt).toBe(true);
+        expect(result.hasXlsx).toBe(true);
+    });
+
+    it('retorna false cuando no hay metadata', () => {
+        const result = getAvailableMetadata({});
+        expect(result.hasTxt).toBe(false);
+        expect(result.hasXlsx).toBe(false);
+    });
+
+    it('maneja metadato como objeto singular', () => {
+        const meta = { metadato: { nombre: 'TXT', enlace: 'http://test/doc.txt' } };
+        const result = getAvailableMetadata(meta);
+        expect(result.hasTxt).toBe(true);
+        expect(result.hasXlsx).toBe(false);
     });
 });

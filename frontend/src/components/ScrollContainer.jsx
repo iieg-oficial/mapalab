@@ -50,33 +50,35 @@ const ScrollContainer = ({
             {...props}
         >
             {overlayFade && (
-                <div
-                    className={`sticky left-0 right-0 h-8 pointer-events-none z-[3] transition-[top,opacity] duration-300 ${canScrollUp ? 'opacity-100' : 'opacity-0'}`}
-                    style={{ top: topOffset, background: `linear-gradient(to bottom, ${overlayColor}, transparent)` }}
-                />
+                <div className="sticky left-0 right-0 h-0 pointer-events-none z-[3]" style={{ top: topOffset }}>
+                    <div
+                        className={`h-8 transition-opacity duration-300 ${canScrollUp ? 'opacity-100' : 'opacity-0'}`}
+                        style={{ background: `linear-gradient(to bottom, ${overlayColor}, transparent)` }}
+                    />
+                </div>
             )}
             {showArrows && (
-                <div
-                    className={`sticky left-0 right-0 flex justify-center pointer-events-none z-10 transition-[top,opacity] duration-300 ${canScrollUp ? 'opacity-100' : 'opacity-0'}`}
-                    style={{ top: topOffset + 8 }}
-                >
-                    <Icon name={arrowIcon} className={`${arrowClassName} rotate-180 animate-[bounce_4s_ease-in-out_infinite]`} />
+                <div className="sticky left-0 right-0 h-0 pointer-events-none z-10" style={{ top: topOffset + 8 }}>
+                    <div className={`flex justify-center transition-opacity duration-300 ${canScrollUp ? 'opacity-100' : 'opacity-0'}`}>
+                        <Icon name={arrowIcon} className={`${arrowClassName} rotate-180 animate-[bounce_4s_ease-in-out_infinite]`} />
+                    </div>
                 </div>
             )}
             {children}
             {showArrows && (
-                <div
-                    className={`sticky left-0 right-0 flex justify-center pointer-events-none z-10 transition-[bottom,opacity] duration-300 ${canScrollDown ? 'opacity-100' : 'opacity-0'}`}
-                    style={{ bottom: bottomOffset + 8 }}
-                >
-                    <Icon name={arrowIcon} className={`${arrowClassName} animate-[bounce_4s_ease-in-out_infinite]`} />
+                <div className="sticky left-0 right-0 h-0 pointer-events-none z-10" style={{ bottom: bottomOffset + 8 }}>
+                    <div className={`flex justify-center -translate-y-full transition-opacity duration-300 ${canScrollDown ? 'opacity-100' : 'opacity-0'}`}>
+                        <Icon name={arrowIcon} className={`${arrowClassName} animate-[bounce_4s_ease-in-out_infinite]`} />
+                    </div>
                 </div>
             )}
             {overlayFade && (
-                <div
-                    className={`sticky left-0 right-0 h-8 pointer-events-none z-[3] transition-[bottom,opacity] duration-300 ${canScrollDown ? 'opacity-100' : 'opacity-0'}`}
-                    style={{ bottom: bottomOffset, background: `linear-gradient(to top, ${overlayColor}, transparent)` }}
-                />
+                <div className="sticky left-0 right-0 h-0 pointer-events-none z-[3]" style={{ bottom: bottomOffset }}>
+                    <div
+                        className={`h-8 -translate-y-full transition-opacity duration-300 ${canScrollDown ? 'opacity-100' : 'opacity-0'}`}
+                        style={{ background: `linear-gradient(to top, ${overlayColor}, transparent)` }}
+                    />
+                </div>
             )}
         </Component>
     );
