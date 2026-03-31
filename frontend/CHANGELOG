@@ -1,6 +1,18 @@
 # Registro de Cambios
 Todos los cambios notables de este proyecto serán documentados en este archivo.
 
+## [1.0.1] - 2026-03-30
+### Modificado
+- Simplificación de infraestructura de 4 modos de despliegue (dev, prod, ssl, ssl-local) a 2 (dev, prod), delegando SSL y proxy de GeoServer al gateway-hub externo.
+- Eliminación de configuraciones Nginx redundantes (nginx.base.conf, nginx.ssl.conf, entrypoint.sh, docker-compose.ssl.yml, conf.d/, includes/, error/, ssl/).
+- Eliminación del stack standalone del frontend (Dockerfile, docker-compose.yml, nginx.conf).
+- Simplificación del Makefile removiendo targets ssl, ssl-local, ssl-down y deploy.
+- Comunicación entre servicios vía host IP:port con `extra_hosts: host.docker.internal:host-gateway` para compatibilidad Linux.
+
+### Corregido
+- URLs de descarga de metadatos retornaban 404 por prefijo `metadato_` en el nombre de archivo que no existe en el bucket de Acervo. Se remueve el prefijo al construir la URL en el backend.
+- Variable `ACERVO_PUBLIC_URL` apuntaba a `host.docker.internal` que el navegador no puede resolver. Corregido a IP del host.
+
 ## [1.0.0] - 2026-03-27
 ### Añadido
 - Descarga de capas desde el servidor con componentes frontend y API backend dedicada.

@@ -64,10 +64,12 @@ def get_metadata(
         metadato_xlsx = NanToNone(record.metadato_xlsx)
         acervo_base = settings.ACERVO_PUBLIC_URL.rstrip("/") if settings.ACERVO_PUBLIC_URL else ""
         if metadato_txt:
-            enlace = f"{acervo_base}/mapalab/metadata/txt/{metadato_txt.lstrip('/')}" if acervo_base else metadato_txt
+            filename_txt = metadato_txt.lstrip('/').removeprefix('metadato_')
+            enlace = f"{acervo_base}/mapalab/metadata/txt/{filename_txt}" if acervo_base else metadato_txt
             metadato.append({"nombre": "Metadato TXT", "enlace": enlace})
         if metadato_xlsx:
-            enlace = f"{acervo_base}/mapalab/metadata/xlsx/{metadato_xlsx.lstrip('/')}" if acervo_base else metadato_xlsx
+            filename_xlsx = metadato_xlsx.lstrip('/').removeprefix('metadato_')
+            enlace = f"{acervo_base}/mapalab/metadata/xlsx/{filename_xlsx}" if acervo_base else metadato_xlsx
             metadato.append({"nombre": "Metadato XLSX", "enlace": enlace})
 
         item = MetadataResponse(
