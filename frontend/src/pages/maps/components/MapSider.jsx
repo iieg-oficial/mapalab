@@ -16,6 +16,7 @@ import { useZenMode } from './ZenMode';
 
 import MenuItem from './MenuItem';
 import SiderModeButton from './SiderModeButton';
+import EnvBadge from './EnvBadge';
 
 const MapSider = ({ className = '' }) => {
     const {
@@ -195,8 +196,10 @@ const MapSider = ({ className = '' }) => {
                     isLoading={isLoading}
                     onClick={handleLogoClick}
                     tooltip={!treatAsMobile ? 'Ir al inicio' : ''}
+                    tooltipPlacement='bottom'
                     className="shrink-0 p-3 flex justify-center"
                 />
+                <EnvBadge />
                 {!isMobile && (
                     <div className={[
                         'absolute right-0 bottom-0 translate-x-1/2 translate-y-1/2 z-10 transition-opacity duration-200',
