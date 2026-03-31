@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useDebounce } from '@hooks/useDebounce';
 
 beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 });
 
 afterEach(() => {

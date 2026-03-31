@@ -9,7 +9,7 @@ El proyecto está diseñado con **desarrollo y producción**:
 ### MODO DESARROLLO
 
 ![Application](https://img.shields.io/badge/Application-MAPALAB-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-0.9.7-yellow?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.0.1-yellow?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19.2.1-brightgreen?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)
 
