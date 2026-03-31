@@ -124,7 +124,7 @@ const MapSider = ({ className = '' }) => {
 
     const menuItems = useMemo(() =>
         createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible }),
-        [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible]);
+    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible]);
 
     const clearAutoOpenMenu = useCallback(() => {
         setAutoOpenMenuId(null);
