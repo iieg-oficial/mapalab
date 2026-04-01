@@ -54,7 +54,7 @@ const topicsConfig = {
             description: 'Visualiza información sobre clínicas, hospitales y servicios médicos municipales, estatales y federales.',
             icon: 'salud',
             subtopics: [
-                { label: 'Oferta e infraestructura', layerIds: ['establecimeintos_salud'] },
+                { label: 'Oferta e infraestructura', layerIds: ['establecimientos_salud'] },
                 { label: 'Acceso a servicios de salud', layerIds: ['carencia_acceso'] }
             ]
         }, {

@@ -9,6 +9,7 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 
 ### Corregido
 - La auto-selección de simbología siempre revertía a "Límites" al recargar, ignorando la capa seleccionada por el usuario. Se corrigió la lógica de auto-selección en `useSymbology` para respetar selecciones explícitas desde URL.
+- Typo en `topicsConfig.js`: el ID `establecimeintos_salud` impedía activar la capa de establecimientos de salud desde los subtópicos del inicio.
 
 ## [1.0.3] - 2026-04-01
 ### Corregido
