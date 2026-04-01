@@ -120,7 +120,6 @@ export const useSymbology = ({
 
     useEffect(() => {
         if (!activeLayerIds || activeLayerIds.length === 0) {
-            setSelectedLayerForSymbology(prev => prev ? null : prev);
             return;
         }
 
@@ -146,14 +145,7 @@ export const useSymbology = ({
                 getAllChildLayerIds(prev.id).some(id => activeLayerIds.includes(id))
             ) && !hiddenLayerIds.includes(prev.id);
 
-            const isCurrentSelectionBaseLayer = prev && baseLayerIds.has(prev.id);
-            const hasNonBaseLayers = nonBaseParentLayers.length > 0 || nonBaseIndividualLayers.length > 0;
-
-            const shouldAutoSelect = !prev ||
-                !isCurrentSelectionValid ||
-                (isCurrentSelectionBaseLayer && hasNonBaseLayers);
-
-            if (!shouldAutoSelect) {
+            if (prev && isCurrentSelectionValid) {
                 return prev;
             }
 

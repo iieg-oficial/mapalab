@@ -88,6 +88,7 @@ const MapsProvider = ({ children }) => {
 
         ...layerManagement,
         onToggleLayer: layerToggle.handleToggleLayer,
+        applyDefaultDate: layerToggle.applyDefaultDate,
         ...symbology,
         ...layerOpacity,
         ...cqlFilter,
@@ -103,6 +104,7 @@ const MapsProvider = ({ children }) => {
         mapsAnalyticsEvent,
         layerManagement,
         layerToggle.handleToggleLayer,
+        layerToggle.applyDefaultDate,
         symbology,
         layerOpacity,
         selectedFeatureInfo,
