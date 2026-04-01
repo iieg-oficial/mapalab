@@ -8,8 +8,6 @@ coloredlogs
 pydantic
 pydantic-settings
 gunicorn
-rapidfuzz
 apscheduler
-requests
 rich
 pytz

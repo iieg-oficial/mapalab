@@ -49,33 +49,33 @@ const ScrollContainer = ({
             ].join(' ')}
             {...props}
         >
-            {overlayFade && (
+            {overlayFade && canScrollUp && (
                 <div className="sticky left-0 right-0 h-0 pointer-events-none z-[3]" style={{ top: topOffset }}>
                     <div
-                        className={`h-8 transition-opacity duration-300 ${canScrollUp ? 'opacity-100' : 'opacity-0'}`}
+                        className="h-8"
                         style={{ background: `linear-gradient(to bottom, ${overlayColor}, transparent)` }}
                     />
                 </div>
             )}
-            {showArrows && (
+            {showArrows && canScrollUp && (
                 <div className="sticky left-0 right-0 h-0 pointer-events-none z-10" style={{ top: topOffset + 8 }}>
-                    <div className={`flex justify-center transition-opacity duration-300 ${canScrollUp ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className="flex justify-center">
                         <Icon name={arrowIcon} className={`${arrowClassName} rotate-180 animate-[bounce_4s_ease-in-out_infinite]`} />
                     </div>
                 </div>
             )}
             {children}
-            {showArrows && (
+            {showArrows && canScrollDown && (
                 <div className="sticky left-0 right-0 h-0 pointer-events-none z-10" style={{ bottom: bottomOffset + 8 }}>
-                    <div className={`flex justify-center -translate-y-full transition-opacity duration-300 ${canScrollDown ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className="flex justify-center -translate-y-full">
                         <Icon name={arrowIcon} className={`${arrowClassName} animate-[bounce_4s_ease-in-out_infinite]`} />
                     </div>
                 </div>
             )}
-            {overlayFade && (
+            {overlayFade && canScrollDown && (
                 <div className="sticky left-0 right-0 h-0 pointer-events-none z-[3]" style={{ bottom: bottomOffset }}>
                     <div
-                        className={`h-8 -translate-y-full transition-opacity duration-300 ${canScrollDown ? 'opacity-100' : 'opacity-0'}`}
+                        className="h-8 -translate-y-full"
                         style={{ background: `linear-gradient(to top, ${overlayColor}, transparent)` }}
                     />
                 </div>
