@@ -5,13 +5,15 @@ import { useMapsContext } from '@hooks/useMaps';
 import { filtersInitializationComplete } from './useInitializeFromUrl';
 
 export const useUrlSync = () => {
-    const { activeLayerIds, filters, findLayerById } = useMapsContext();
+    const { activeLayerIds, filters, findLayerById, selectedLayerForSymbology } = useMapsContext();
+    const selectedId = selectedLayerForSymbology?.id || null;
     const [_searchParams, setSearchParams] = useSearchParams();
     const isFirstRender = useRef(true);
     const previousState = useRef({ layerIds: [], filters: {} });
 
     const debouncedActiveLayerIds = useDebounce(activeLayerIds, 500);
     const debouncedFilters = useDebounce(filters, 500);
+    const debouncedSelectedId = useDebounce(selectedId, 500);
 
     const expectedParams = useMemo(() => {
         const result = {};
@@ -22,7 +24,9 @@ export const useUrlSync = () => {
             return layer && !layer.isLabel && !layer.isCategory;
         });
         if (validLayerIds.length > 0) {
-            result.layers = validLayerIds.join(',');
+            result.layers = validLayerIds
+                .map(id => id === debouncedSelectedId ? `*${id}` : id)
+                .join(',');
         }
 
         Object.entries(debouncedFilters).forEach(([layerId, layerFilters]) => {
@@ -41,14 +45,15 @@ export const useUrlSync = () => {
         });
 
         return result;
-    }, [debouncedActiveLayerIds, debouncedFilters, findLayerById]);
+    }, [debouncedActiveLayerIds, debouncedFilters, debouncedSelectedId, findLayerById]);
 
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false;
             previousState.current = {
                 layerIds: debouncedActiveLayerIds,
-                filters: debouncedFilters
+                filters: debouncedFilters,
+                selectedId: debouncedSelectedId
             };
             return;
         }
@@ -65,20 +70,24 @@ export const useUrlSync = () => {
             JSON.stringify(debouncedFilters) !==
             JSON.stringify(previousState.current.filters);
 
-        if (!layersChanged && !filtersChanged) {
+        const selectedChanged =
+            debouncedSelectedId !== previousState.current.selectedId;
+
+        if (!layersChanged && !filtersChanged && !selectedChanged) {
             return;
         }
 
         previousState.current = {
             layerIds: debouncedActiveLayerIds,
-            filters: debouncedFilters
+            filters: debouncedFilters,
+            selectedId: debouncedSelectedId
         };
 
         setSearchParams(prev => {
             const newParams = new URLSearchParams(prev);
 
             const keysToDelete = Array.from(newParams.keys()).filter(key =>
-                key === 'layers' || key.startsWith('filter_') || key.startsWith('swap_')
+                key === 'layers' || key === 'selected' || key.startsWith('filter_') || key.startsWith('swap_')
             );
             keysToDelete.forEach(key => newParams.delete(key));
 
@@ -88,5 +97,5 @@ export const useUrlSync = () => {
 
             return newParams;
         }, { replace: true });
-    }, [expectedParams, debouncedActiveLayerIds, debouncedFilters, setSearchParams]);
+    }, [expectedParams, debouncedActiveLayerIds, debouncedFilters, debouncedSelectedId, setSearchParams]);
 };

@@ -169,6 +169,9 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
                     };
 
                     const opacity = getLayerOpacity ? getLayerOpacity(representativeId) : 1;
+                    wmsLayersOrdered.forEach(merged => {
+                        merged.subLayers.forEach(sub => handleLoadStart(sub.id));
+                    });
                     const layer = createWMSLayer(representativeId, true, maxZIndex, customParams, onStart, onEnd, opacity);
                     if (layer && mapRef.current) {
                         layerRef.current = layer;

@@ -102,5 +102,5 @@ export const useLayerToggle = ({
         }
     }, [setActiveLayerIds, getAllChildLayerIds, findLayerById, setSelectedLayer, setSelectedLayerForSymbology, applyDefaultDate, clearDefaultDate]);
 
-    return { handleToggleLayer };
+    return { handleToggleLayer, applyDefaultDate };
 };

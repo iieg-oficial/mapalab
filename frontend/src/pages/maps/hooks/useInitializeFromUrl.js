@@ -7,7 +7,7 @@ export const filtersInitializationComplete = { value: false };
 
 export const useInitializeFromUrl = () => {
     const [searchParams] = useSearchParams();
-    const { setActiveLayerIds, getAllChildLayerIds, applyFilter } = useMapsContext();
+    const { setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById } = useMapsContext();
     const initialized = useRef(false);
 
     useEffect(() => {
@@ -24,10 +24,19 @@ export const useInitializeFromUrl = () => {
         }
 
         if (layersParam) {
+            let selectedId = null;
             const layerIds = layersParam
                 .split(',')
                 .map(id => id.trim())
-                .filter(id => id.length > 0);
+                .filter(id => id.length > 0)
+                .map(id => {
+                    if (id.startsWith('*')) {
+                        const cleanId = id.slice(1);
+                        selectedId = cleanId;
+                        return cleanId;
+                    }
+                    return id;
+                });
 
             const allIds = [];
             layerIds.forEach(id => {
@@ -39,6 +48,16 @@ export const useInitializeFromUrl = () => {
                 }
             });
             setActiveLayerIds(allIds);
+
+            if (selectedId) {
+                const selectedLayer = findLayerById(selectedId);
+                if (selectedLayer) setSelectedLayerForSymbology(selectedLayer);
+            }
+
+            const filterLayerIds = new Set(filterParams.map(f => f.layerId));
+            allIds.forEach(id => {
+                if (!filterLayerIds.has(id)) applyDefaultDate(id);
+            });
 
             filterParams.forEach(({ layerId, cqlFilter }) => {
                 applyFilter(layerId, 'date', cqlFilter);
@@ -60,6 +79,11 @@ export const useInitializeFromUrl = () => {
 
             setActiveLayerIds(allIds);
 
+            const filterLayerIdsBase = new Set(filterParams.map(f => f.layerId));
+            allIds.forEach(id => {
+                if (!filterLayerIdsBase.has(id)) applyDefaultDate(id);
+            });
+
             filterParams.forEach(({ layerId, cqlFilter }) => {
                 applyFilter(layerId, 'date', cqlFilter);
             });
@@ -67,5 +91,5 @@ export const useInitializeFromUrl = () => {
             filtersInitializationComplete.value = true;
             initialized.current = true;
         }
-    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter]);
+    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById]);
 };

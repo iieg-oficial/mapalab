@@ -2,16 +2,21 @@
 Todos los cambios notables de este proyecto serán documentados en este archivo.
 
 ## [1.0.4] - 2026-04-01
+### Añadido
+- Marcador de capa seleccionada en la URL mediante prefijo `*` dentro del parámetro `layers` (ej: `?layers=limite_iieg,*economia_pib`), permitiendo preservar la selección al recargar y compartir enlaces con subtópico pre-seleccionado.
+- Aplicación de filtros de fecha por defecto (`defaultDate`) al inicializar capas desde URL, igualando el comportamiento de activación desde el sider.
+- Indicador de carga inmediato al crear capas WMS, garantizando que el spinner aparezca desde el inicio de la petición.
+
 ### Corregido
-- Corrección de la auto-selección al optar por los subtópicos.
+- La auto-selección de simbología siempre revertía a "Límites" al recargar, ignorando la capa seleccionada por el usuario. Se corrigió la lógica de auto-selección en `useSymbology` para respetar selecciones explícitas desde URL.
 
 ## [1.0.3] - 2026-04-01
 ### Corregido
-- Corrección del orden de capas activas al recargar la página sobre el panel de capas activas.
+- El orden de capas activas se invertía al recargar la página. Se reemplazó el uso de `onToggleLayer` (que anteponía cada capa al inicio del array) por asignación directa de IDs respetando el orden de la URL.
 
 ## [1.0.2] - 2026-04-01
 ### Corregido
-- Corrección del componente ScrollContainer que mostraba flechas de navegación sin overflow real en el contenido.
+- Las flechas de navegación del componente `ScrollContainer` aparecían sin overflow real. Se cambió a renderizado condicional para evitar que el contenido de las flechas inflara el `scrollHeight` del contenedor.
 
 ## [1.0.1] - 2026-03-30
 ### Modificado
