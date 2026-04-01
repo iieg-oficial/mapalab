@@ -17,23 +17,54 @@ export { VECTOR_FORMATS, RASTER_FORMATS };
 
 const RASTER_WORKSPACES = new Set(['raster', 'lluvia', 'temperatura']);
 
-export const isRasterLayer = (layerId) => {
-    const wmsConfig = findWMSConfig(layerId, layers);
-    return RASTER_WORKSPACES.has(wmsConfig?.workspace);
+const findFirstWMSConfig = (node) => {
+    if (!node) return null;
+    if (node.wmsConfig) return node.wmsConfig;
+    if (Array.isArray(node.children)) {
+        for (const child of node.children) {
+            const found = findFirstWMSConfig(child);
+            if (found) return found;
+        }
+    }
+    return null;
 };
 
-export const getLayerConfig = (layerId) => {
-    const wmsConfig = findWMSConfig(layerId, layers);
-    if (!wmsConfig) return null;
+const resolveWMSConfig = (layerId) => {
+    const direct = findWMSConfig(layerId, layers);
+    if (direct) return { wmsConfig: direct, isGroup: false };
+
+    const node = findLayerById(layerId, layers);
+    if (!node) return null;
+
+    const childConfig = findFirstWMSConfig(node);
+    if (!childConfig) return null;
+
     return {
-        wmsConfig,
-        workspace: wmsConfig.workspace,
-        layerName: wmsConfig.layerName.split(':').pop(),
-        isRaster: RASTER_WORKSPACES.has(wmsConfig.workspace),
+        wmsConfig: { ...childConfig, cqlFilter: '' },
+        isGroup: true,
     };
 };
 
-const buildWFSUrl = (wmsConfig, format) => {
+export const isRasterLayer = (layerId) => {
+    const resolved = resolveWMSConfig(layerId);
+    return RASTER_WORKSPACES.has(resolved?.wmsConfig?.workspace);
+};
+
+export const getLayerConfig = (layerId) => {
+    const resolved = resolveWMSConfig(layerId);
+    if (!resolved) return null;
+    const { wmsConfig } = resolved;
+    const downloadLayerName = (wmsConfig.wfsLayerName || wmsConfig.layerName).split(':').pop();
+    return {
+        wmsConfig,
+        workspace: wmsConfig.workspace,
+        layerName: downloadLayerName,
+        isRaster: RASTER_WORKSPACES.has(wmsConfig.workspace),
+        hasFilter: !!wmsConfig.cqlFilter,
+    };
+};
+
+const buildWFSUrl = (wmsConfig, format, cqlFilter) => {
     const baseUrl = wmsConfig.baseUrl.replace('/wms', '/wfs');
     const params = {
         service: 'WFS',
@@ -45,6 +76,10 @@ const buildWFSUrl = (wmsConfig, format) => {
     };
     const url = new URL(baseUrl, window.location.origin);
     Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
+    const filter = cqlFilter || wmsConfig.cqlFilter;
+    if (filter) {
+        url.searchParams.append('CQL_FILTER', filter);
+    }
     return url.toString();
 };
 
@@ -167,7 +202,7 @@ export const downloadSingleFormat = async (layerId, formatId, options = {}) => {
         const config = getLayerConfig(layerId);
         if (!config) return { success: false, error: 'Capa no encontrada' };
 
-        const { wmsConfig, workspace, layerName, isRaster } = config;
+        const { wmsConfig, workspace, layerName, isRaster, hasFilter } = config;
         let blob;
 
         if (isRaster) {
@@ -176,13 +211,19 @@ export const downloadSingleFormat = async (layerId, formatId, options = {}) => {
             blob = await fetchWithProgress(url, signal, onProgress);
             triggerDownload(blob, buildFilename(layerId, 'tiff'));
         } else if (formatId === 'csv') {
-            try {
-                const url = buildBackendCSVUrl(workspace, layerName, dateFrom, dateTo);
-                blob = await fetchWithProgress(url, signal, onProgress);
-            } catch {
+            if (hasFilter) {
                 const csvFmt = VECTOR_FORMATS.find(f => f.id === 'csv');
                 const url = buildWFSUrl(wmsConfig, csvFmt);
                 blob = await fetchWithProgress(url, signal, onProgress);
+            } else {
+                try {
+                    const url = buildBackendCSVUrl(workspace, layerName, dateFrom, dateTo);
+                    blob = await fetchWithProgress(url, signal, onProgress);
+                } catch {
+                    const csvFmt = VECTOR_FORMATS.find(f => f.id === 'csv');
+                    const url = buildWFSUrl(wmsConfig, csvFmt);
+                    blob = await fetchWithProgress(url, signal, onProgress);
+                }
             }
             triggerDownload(blob, buildFilename(layerId, 'csv'));
         } else {
@@ -216,7 +257,7 @@ export const downloadWithMenu = async (layerId, menuOptions = {}) => {
         const config = getLayerConfig(layerId);
         if (!config) return { success: false, error: 'Capa no encontrada' };
 
-        const { wmsConfig, workspace, layerName, isRaster } = config;
+        const { wmsConfig, workspace, layerName, isRaster, hasFilter } = config;
         const hasMetadata = metadataSelections.txt || metadataSelections.xlsx;
         const metadatoList = hasMetadata ? getMetadataFiles(metadata) : [];
         const needsZip = hasMetadata && metadatoList.length > 0;
@@ -246,13 +287,19 @@ export const downloadWithMenu = async (layerId, menuOptions = {}) => {
             zip.file(`${layerName}.tiff`, blob);
         } else if (formatId === 'csv') {
             let blob;
-            try {
-                const url = buildBackendCSVUrl(workspace, layerName, dateFrom, dateTo);
-                blob = await fetchWithProgress(url, signal, onProgress);
-            } catch {
+            if (hasFilter) {
                 const csvFmt = VECTOR_FORMATS.find(f => f.id === 'csv');
                 const url = buildWFSUrl(wmsConfig, csvFmt);
                 blob = await fetchWithProgress(url, signal, onProgress);
+            } else {
+                try {
+                    const url = buildBackendCSVUrl(workspace, layerName, dateFrom, dateTo);
+                    blob = await fetchWithProgress(url, signal, onProgress);
+                } catch {
+                    const csvFmt = VECTOR_FORMATS.find(f => f.id === 'csv');
+                    const url = buildWFSUrl(wmsConfig, csvFmt);
+                    blob = await fetchWithProgress(url, signal, onProgress);
+                }
             }
             zip.file(`${layerName}.csv`, blob);
         } else {
