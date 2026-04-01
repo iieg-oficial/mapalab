@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import (metadata, search, periodicity, download)
+from app.routers import (metadata, periodicity, download)
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.scheduler_service import SchedulerService
 from app.services.periodicity_service import PeriodicityService
@@ -65,7 +65,6 @@ app.add_exception_handler(BaseAppException, app_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
 app.include_router(metadata.router)
-app.include_router(search.router)
 app.include_router(periodicity.router)
 app.include_router(download.router)
 @app.get('/')

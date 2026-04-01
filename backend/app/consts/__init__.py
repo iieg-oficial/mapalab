@@ -1,7 +1,3 @@
-from app.consts.geoserver import (
-    FILTER_KEY,
-    CACHE_FILE,
-    CACHE_EXPIRY_HOURS,
-)
+from app.consts.workspaces import WORKSPACE_SCHEMA_MAP, resolve_schema
 
-__all__ = ['FILTER_KEY', 'CACHE_FILE', 'CACHE_EXPIRY_HOURS']
+__all__ = ['WORKSPACE_SCHEMA_MAP', 'resolve_schema']
