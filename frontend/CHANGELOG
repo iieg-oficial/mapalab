@@ -1,6 +1,18 @@
 # Registro de Cambios
 Todos los cambios notables de este proyecto serán documentados en este archivo.
 
+## [1.0.4] - 2026-04-01
+### Corregido
+- Corrección de la auto-selección al optar por los subtópicos.
+
+## [1.0.3] - 2026-04-01
+### Corregido
+- Corrección del orden de capas activas al recargar la página sobre el panel de capas activas.
+
+## [1.0.2] - 2026-04-01
+### Corregido
+- Corrección del componente ScrollContainer que mostraba flechas de navegación sin overflow real en el contenido.
+
 ## [1.0.1] - 2026-03-30
 ### Modificado
 - Simplificación de infraestructura de 4 modos de despliegue (dev, prod, ssl, ssl-local) a 2 (dev, prod), delegando SSL y proxy de GeoServer al gateway-hub externo.
