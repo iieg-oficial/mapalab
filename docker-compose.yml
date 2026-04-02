@@ -86,6 +86,9 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      - default
+      - iieg-network
     restart: unless-stopped
 
 volumes:
@@ -94,3 +97,5 @@ volumes:
 networks:
   default:
     name: mapalab-network
+  iieg-network:
+    external: true
