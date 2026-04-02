@@ -174,3 +174,35 @@ graph TB
 
 - PostgreSQL (VM DataEngine)
 - GeoServer (VM GeoServer)
+
+## Arquitectura del Frontend
+
+```mermaid
+graph TD
+    subgraph Frontend
+        UI[User Interface/React]
+        SM[State Management/Context API]
+        RT[Routing/React Router]
+        MAP[OpenLayers Maps]
+    end
+
+    subgraph Servicios GIS
+        WMS[WMS Services]
+        INEGI[INEGI Services]
+        GEO[GeoServer]
+    end
+
+    UI --> SM
+    UI --> RT
+    UI --> MAP
+    MAP --> WMS
+    MAP --> INEGI
+    MAP --> GEO
+```
+
+### Componentes clave
+
+- **Sistema de Mapas:** Visualizacion de capas, gestion de basemaps, interaccion con servicios WMS
+- **Gestion de Estado:** `MapsContext` (control de mapas y capas), `LayersContext` (capas visibles)
+- **Componentes UI:** `MapView`, `LayerControl`, `Download`, `MapSider`, `BasemapSelector`
+- **Servicios GIS:** WMS de INEGI, GeoServer local, mapas base (OSM, CARTO, ESRI)
