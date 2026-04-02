@@ -1,0 +1,96 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    profiles: ["dev"]
+    environment:
+      VITE_BACKEND_API_HOST: ${VITE_BACKEND_API_HOST:-/api/}
+      VITE_GEOSERVER_URL: ${VITE_GEOSERVER_URL:-/geoserver/}
+      VITE_NODE_ENV: ${VITE_NODE_ENV:-development}
+      VITE_APP_ENV: ${VITE_APP_ENV:-dev}
+      VITE_PORT: ${VITE_PORT:-5173}
+      VITE_SITE_URL: ${VITE_SITE_URL:-}
+      VITE_BASE_PATH: ${VITE_BASE_PATH:-/}
+      VITE_GTM_ID: ${VITE_GTM_ID:-}
+      VITE_GOOGLE_ANALYTICS_ID: ${VITE_GOOGLE_ANALYTICS_ID:-}
+      GEOSERVER_DEV_TARGET: ${GEOSERVER_DEV_TARGET:-}
+      BACKEND_DEV_TARGET: ${BACKEND_DEV_TARGET:-}
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+      - ./frontend/index.html:/app/index.html:ro
+      - ./frontend/vite.config.js:/app/vite.config.js:ro
+      - ./frontend/vitest.config.js:/app/vitest.config.js:ro
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "${FRONTEND_PORT:-5173}:${VITE_PORT:-5173}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend-build:
+    build:
+      context: ./frontend
+      args:
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/mapalab/}
+        VITE_BACKEND_API_HOST: ${VITE_BACKEND_API_HOST:-/mapalab/api/}
+        VITE_GEOSERVER_URL: ${VITE_GEOSERVER_URL:-/geoserver/}
+        VITE_SITE_URL: ${VITE_SITE_URL:-}
+        VITE_GTM_ID: ${VITE_GTM_ID:-}
+        VITE_GOOGLE_ANALYTICS_ID: ${VITE_GOOGLE_ANALYTICS_ID:-}
+        VITE_NODE_ENV: ${VITE_NODE_ENV:-production}
+        VITE_APP_ENV: ${VITE_APP_ENV:-beta}
+    profiles: ["build"]
+    volumes:
+      - ./frontend/dist:/output
+    entrypoint: ["sh", "-c", "rm -rf /output/* && cp -r /app/dist/* /output/"]
+
+  backend:
+    build:
+      context: ./backend
+      target: ${BACKEND_TARGET:-development}
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-True}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["*"]}
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
+      BACKEND_PORT: ${BACKEND_PORT:-8001}
+      GEOSERVER_URL: ${GEOSERVER_URL}
+      GEOSERVER_USER: ${GEOSERVER_USER}
+      GEOSERVER_PASSWORD: ${GEOSERVER_PASSWORD}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME}
+      ACERVO_PUBLIC_URL: ${ACERVO_PUBLIC_URL}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:${BACKEND_PORT:-8000}/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./nginx
+    profiles: ["staging"]
+    ports:
+      - "${NGINX_PORT:-3006}:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  frontend-node-modules:
+
+networks:
+  default:
+    name: mapalab-network

@@ -1,0 +1,12 @@
+__pycache__
+.pytest_cache
+*.venv
+.git
+.gitignore
+*.log
+*.md
+.env*
+.vscode
+.idea
+*tmp
+mapalab_*_cache.json
