@@ -6,23 +6,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Setup Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: 24
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci || npm install --legacy-peer-deps
-      - name: Lint
-        working-directory: ./frontend
-        run: npm run lint
-      - name: Test
-        working-directory: ./frontend
-        run: npm run test -- --run
+    uses: ./.github/workflows/test-frontend.yml
 
   deploy:
     needs: test

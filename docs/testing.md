@@ -1,34 +1,28 @@
 # Testing con Vitest
 
-Este proyecto usa [Vitest](https://vitest.dev/) para testing con las siguientes librerías:
-- **@testing-library/react**: Para testing de componentes React
+Este proyecto usa [Vitest](https://vitest.dev/) para testing con las siguientes librerias:
+- **@testing-library/react**: Testing de componentes React
 - **@testing-library/jest-dom**: Matchers adicionales para el DOM
-- **@testing-library/user-event**: Para simular interacciones de usuario
+- **@testing-library/user-event**: Simulacion de interacciones de usuario
 - **jsdom**: Entorno de DOM para Node.js
 
-## Instalación
+## Comandos
 
 ```bash
-npm install --legacy-peer-deps
-```
-
-## Comandos disponibles
-
-```bash
-# Ejecutar tests en modo watch (recomendado durante desarrollo)
+# Tests en modo watch (desarrollo)
 npm test
 
-# Ejecutar tests una sola vez
+# Tests una sola vez
 npx vitest run
 
-# Ejecutar tests con interfaz visual
+# Interfaz visual
 npm run test:ui
 
-# Ejecutar tests con reporte de cobertura
+# Cobertura
 npm run test:coverage
 ```
 
-## � Inventario de tests — 24 archivos, 344 tests
+## Inventario de tests — 24 archivos, 344 tests
 
 ### Componentes UI (5 archivos — 57 tests)
 
@@ -91,42 +85,19 @@ npm run test:coverage
 
 ## Estructura de tests
 
-Convención `*.test.js` / `*.test.jsx`, ubicados en `src/test/`:
+Convencion `*.test.js` / `*.test.jsx`, ubicados en `src/test/`:
 
 ```
 src/test/
 ├── setup.js
 ├── example.test.jsx
 ├── components/
-│   ├── Alert.test.jsx
-│   ├── Badge.test.jsx
-│   ├── Checkbox.test.jsx
-│   ├── Modal.test.jsx
-│   └── Switch.test.jsx
 ├── hooks/
-│   ├── useDebounce.test.js
-│   ├── useOutsideClick.test.js
-│   └── useScrollOverflow.test.js
 ├── pages/maps/
 │   ├── helpers/
-│   │   ├── layerHelpers.test.js
-│   │   └── wmsConfig.test.js
 │   └── hooks/
-│       ├── useAccordion.test.js
-│       ├── useActiveLayersLogic.test.js
-│       ├── useCQLFilter.test.js
-│       ├── useDateSelections.test.js
-│       ├── useLayerManagement.test.js
-│       ├── useLayerOpacity.test.js
-│       └── useLayerToggle.test.js
 ├── services/
-│   ├── analyticsService.test.js
-│   ├── downloadService.test.js
-│   ├── layerMetadataService.test.js
-│   ├── searchConfig.test.js
-│   └── searchService.test.js
 └── utils/
-    └── featureInfoUtils.test.js
 ```
 
 ## Escribir un test
@@ -175,7 +146,7 @@ beforeEach(() => {
 });
 ```
 
-## Matchers útiles de jest-dom
+## Matchers utiles de jest-dom
 
 ```jsx
 expect(element).toBeInTheDocument()
@@ -185,15 +156,3 @@ expect(element).toBeVisible()
 expect(element).toBeDisabled()
 expect(element).toHaveAttribute('attr', 'value')
 ```
-
-## Cobertura de código
-
-```bash
-npm run test:coverage
-```
-
-## Enlaces útiles
-
-- [Vitest Documentation](https://vitest.dev/)
-- [Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
-- [Jest DOM Matchers](https://github.com/testing-library/jest-dom)
