@@ -7,6 +7,14 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.0.6] - 2026-04-13
+
+### Cambiado
+- Renombrar proyecto Docker Compose de produccion de `mapalab-staging` a `mapalab`
+
+### Agregado
+- Target `ensure-networks` en Makefile para crear redes Docker automaticamente antes de deploy/staging/prod
+
 ## [1.0.5] - 2026-04-02
 
 ### Cambiado
