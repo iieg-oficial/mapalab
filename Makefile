@@ -3,7 +3,7 @@
 # Compose base commands por entorno
 COMPOSE_DEV     = docker compose -p mapalab-dev --env-file .env.development
 COMPOSE_STAGING = docker compose -p mapalab-staging -f docker-compose.yml --env-file .env.staging
-COMPOSE_PROD    = docker compose -p mapalab-staging -f docker-compose.yml --env-file .env.production
+COMPOSE_PROD    = docker compose -p mapalab -f docker-compose.yml --env-file .env.production
 
 help:
 	@echo "MapaLab - Comandos disponibles:"
