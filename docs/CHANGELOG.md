@@ -7,6 +7,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.0.10] - 2026-04-13
+
+### Agregado
+- Capa "Carencia por calidad y espacios de la vivienda (%)" en Desarrollo Social > Pobreza y vulnerabilidades
+
 ## [1.0.9] - 2026-04-13
 
 ### Corregido

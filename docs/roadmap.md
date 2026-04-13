@@ -37,7 +37,7 @@ timeline
             : Simplificar infra y delegar SSL a gateway-hub
             : Fixes de URL sync y capas activas
             : Marcador de capa seleccionada en URL
-        Abril 2026 (v1.0.5 - v1.0.9)
+        Abril 2026 (v1.0.5 - v1.0.10)
             : Unificacion Docker Compose y env vars
             : Automatizacion de redes Docker
             : Centralizar GTM en gateway-hub
@@ -147,6 +147,9 @@ timeline
 #### v1.0.9
 - [x] Propiedad `raw` en InfoBox para omitir `formatNumber` en campos de fecha y folio
 - [x] Links clickeables en InfoBox: ubicacion (Google Maps) y telefono (`tel:`)
+
+#### v1.0.10
+- [x] Capa "Carencia por calidad y espacios de la vivienda (%)" en Desarrollo Social
 
 ### v1.1.0 — Abril 2026
 - [ ] Migrar lista de capas del sidebar a endpoint del backend
