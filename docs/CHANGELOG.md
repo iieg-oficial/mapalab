@@ -7,6 +7,14 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.0.9] - 2026-04-13
+
+### Corregido
+- `formatNumber` se aplicaba a campos de fecha y folio en InfoBox. Se agrega propiedad `raw` en definiciones de `list` y `cards` para omitir el formateo numerico (aplicado en salud, educacion y recursos)
+
+### Cambiado
+- Componente `IconText` del InfoBox: ubicacion abre Google Maps, telefono abre marcador (`tel:`), mejor alineacion de icono y texto, espaciado entre items
+
 ## [1.0.8] - 2026-04-13
 
 ### Corregido

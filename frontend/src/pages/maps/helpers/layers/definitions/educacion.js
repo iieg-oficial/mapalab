@@ -9,7 +9,7 @@ const escuelasConfig = cardTemplates.TDEMECLUEV({
     municipio: 'municipio',
     caracteristica: ['nivel_educativo', 'sostenimiento', 'turno'],
     list: [
-        { label: 'Año de la información', field: 'fecha' },
+        { label: 'Año de la información', field: 'fecha', raw: true },
     ],
     iconTexts: [
         { icon: 'ubicacion', field: 'domicilio' }

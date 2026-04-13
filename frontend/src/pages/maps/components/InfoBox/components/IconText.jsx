@@ -1,17 +1,32 @@
 import Divider from '@components/Divider';
 import Icon from '@components/Icon';
 
+const buildHref = (icon, value) => {
+    if (icon === 'celular') return `tel:${String(value).replace(/\s+/g, '')}`;
+    if (icon === 'ubicacion') return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value)}`;
+    return null;
+};
+
 const IconText = ({ value, icon = 'ubicacion', showDivider = true, isLast = false }) => {
     if (!value) return null;
 
+    const href = buildHref(icon, value);
+    const textClass = 'flex-1 font-garet font-medium text-[10px]/[14px] tracking-normal';
+
     return (
         <>
-            {showDivider && <Divider className="m-0" />}
-            <div className={`flex items-start gap-2 pt-3${isLast ? ' mb-3' : ''}`}>
-                <Icon name={icon} className="w-3.5 h-3.5" />
-                <span className="flex-1 font-garet font-medium text-[10px]/[14px] text-[#454545] tracking-normal">
-                    {value}
-                </span>
+            {showDivider && <Divider className="my-2" />}
+            <div className={`flex items-center gap-2 py-1${isLast ? ' mb-3' : ''}`}>
+                <Icon name={icon} className="w-3.5 h-3.5 shrink-0" />
+                {href ? (
+                    <a href={href} target="_blank" rel="noopener noreferrer" className={`${textClass} text-[#5C2472] underline`}>
+                        {value}
+                    </a>
+                ) : (
+                    <span className={`${textClass} text-[#454545]`}>
+                        {value}
+                    </span>
+                )}
             </div>
         </>
     );

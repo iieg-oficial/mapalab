@@ -163,7 +163,8 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
             .filter(row => shouldIncludeField(row.field, suffix))
             .map(row => ({
                 label: row.label,
-                value: properties[row.field]
+                value: properties[row.field],
+                raw: row.raw,
             }))
             .filter(row => row.value !== null && row.value !== undefined && row.value !== '');
 
@@ -214,7 +215,9 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
             .filter(card => shouldIncludeField(card.field, suffix))
             .map(card => {
                 let value = properties[card.field];
-                if (card.decimals != null && typeof value === 'number') {
+                if (card.raw) {
+                    value = value ?? '';
+                } else if (card.decimals != null && typeof value === 'number') {
                     value = formatNumber(value.toFixed(card.decimals));
                 } else if (typeof value === 'number') {
                     value = formatNumber(value);

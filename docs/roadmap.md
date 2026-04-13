@@ -37,7 +37,7 @@ timeline
             : Simplificar infra y delegar SSL a gateway-hub
             : Fixes de URL sync y capas activas
             : Marcador de capa seleccionada en URL
-        Abril 2026 (v1.0.5 - v1.0.8)
+        Abril 2026 (v1.0.5 - v1.0.9)
             : Unificacion Docker Compose y env vars
             : Automatizacion de redes Docker
             : Centralizar GTM en gateway-hub
@@ -143,6 +143,10 @@ timeline
 - [x] Warm-up del pool de conexiones PostgreSQL al iniciar workers
 - [x] Eliminar archivos `.env` remanentes de `frontend/`, `backend/` y `nginx/`
 - [x] Crear `docs/context.md` con referencia completa del proyecto
+
+#### v1.0.9
+- [x] Propiedad `raw` en InfoBox para omitir `formatNumber` en campos de fecha y folio
+- [x] Links clickeables en InfoBox: ubicacion (Google Maps) y telefono (`tel:`)
 
 ### v1.1.0 — Abril 2026
 - [ ] Migrar lista de capas del sidebar a endpoint del backend
