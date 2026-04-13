@@ -3,7 +3,7 @@
     "description": "Interfaz web para Mapa Lab del Instituto de Información Estadística y Geográfica de Jalisco.",
     "license": "MIT",
     "author": "Edgar Alejandro Villarreal Padilla <edgar.villarreal@iieg.gob.mx>",
-    "version": "1.0.8",
+    "version": "1.0.10",
     "private": true,
     "type": "module",
     "scripts": {

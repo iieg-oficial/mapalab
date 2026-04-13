@@ -30,7 +30,7 @@ const FeatureList = ({ rows }) => {
                         {row.label}:
                     </span>
                     <span className="font-medium text-[#465055] text-[10px] tracking-normal break-words">
-                        {formatNumber(formatValue(row.label, row.value))}
+                        {row.raw ? formatValue(row.label, row.value) : formatNumber(formatValue(row.label, row.value))}
                     </span>
                 </div>
             ))}

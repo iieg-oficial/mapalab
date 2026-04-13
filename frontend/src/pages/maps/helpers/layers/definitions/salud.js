@@ -16,7 +16,7 @@ const establecimientosSaludConfig = cardTemplates.TDEMECLU({
         { field: 'estatus_operacion', color: '#0FC136', bg: '#DDFFE4', fullWidth: true }
     ],
     list: [
-        { label: 'Año de la información', field: 'fecha' },
+        { label: 'Año de la información', field: 'fecha', raw: true },
     ],
     iconTexts: [
         { icon: 'ubicacion', field: 'domicilio' },
