@@ -108,10 +108,9 @@ docker image prune -f --filter "until=168h"
 
 ### `make deploy`
 
-1. Construye el frontend en Docker (Node 24 Alpine)
-2. Copia `.env.production` a `.env` y rebuild del backend (Gunicorn + Uvicorn, 4 workers)
-3. Detecta `SSL_MODE=true` en `nginx/.env` y levanta con SSL o HTTP segun corresponda
-4. Limpia imagenes Docker de mas de 7 dias
+1. Crea la red `iieg-network` si no existe (`ensure-networks`)
+2. Construye el frontend en Docker (Node 24 Alpine) con `--profile build`
+3. Levanta backend + nginx con `--profile staging`, `--force-recreate` y `--env-file .env.production`
 
 ## Health Check
 
