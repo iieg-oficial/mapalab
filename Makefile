@@ -1,4 +1,4 @@
-.PHONY: help dev staging prod deploy down down-dev down-staging build logs logs-dev logs-staging status clean setup-hooks
+.PHONY: help dev staging prod deploy down down-dev down-staging build logs logs-dev logs-staging status clean setup-hooks ensure-networks
 
 # Compose base commands por entorno
 COMPOSE_DEV     = docker compose -p mapalab-dev --env-file .env.development
@@ -26,6 +26,9 @@ help:
 	@echo "  make status       - Ver estado de los servicios"
 	@echo "  make setup-hooks  - Configurar git hooks del proyecto"
 
+ensure-networks:
+	@docker network create iieg-network 2>/dev/null || true
+
 setup-hooks:
 	@git config core.hooksPath .githooks
 	@echo "Hooks configurados en .githooks/"
@@ -41,7 +44,7 @@ dev: setup-hooks
 	@echo ""
 	@echo "Hot-reload activado en frontend y backend"
 
-staging:
+staging: ensure-networks
 	@echo ""
 	@echo "Construyendo frontend..."
 	@$(COMPOSE_STAGING) --profile build run --rm --build frontend-build
@@ -51,7 +54,7 @@ staging:
 	@echo ""
 	@echo "Aplicacion: http://localhost:3006"
 
-prod:
+prod: ensure-networks
 	@echo ""
 	@echo "Construyendo frontend..."
 	@$(COMPOSE_PROD) --profile build run --rm --build frontend-build
@@ -61,7 +64,7 @@ prod:
 	@echo ""
 	@echo "Aplicacion lista"
 
-deploy:
+deploy: ensure-networks
 	@echo "Desplegando en produccion..."
 	@$(COMPOSE_PROD) --profile build run --rm --build frontend-build
 	@$(COMPOSE_PROD) --profile staging up -d --build --force-recreate
