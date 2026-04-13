@@ -2,7 +2,7 @@
 
 Los eventos se envian a `window.dataLayer` para ser consumidos por GTM. En desarrollo se muestran en el panel de debug flotante (esquina inferior izquierda).
 
-> **Integracion:** El portal `iieg.jalisco.gob.mx` debe tener GTM instalado con un tag GA4 configurado para escuchar estos eventos desde `dataLayer`.
+> **Integracion:** GTM se inyecta via `sub_filter` en gateway-hub (Nginx). El frontend solo hace push a `window.dataLayer`; no necesita `VITE_GTM_ID` ni ningun script de GTM propio.
 
 ## Eventos
 
