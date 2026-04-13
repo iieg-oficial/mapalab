@@ -55,7 +55,7 @@ const delitoRoboConfig = {
     ]
 };
 
-const desaparecidosText = 'Las tasas se calculan respecto a la población total (ambos sexos), por cada 100,000 habitantes.';
+const desaparecidosText = 'Las tasas se calculan respecto a la población total (ambos sexos), por cada 100 000 habitantes.';
 
 const TASAS_DELITOS_FUERO = [
     ['tasa_feminicidio', 'Feminicidios (tasa)', 'datos_delitos_feminicidio_secretariado',

@@ -171,10 +171,11 @@ cd frontend && npm run lint
 
 ```bash
 cd frontend
-cp ../.env.example .env.development  # Ajustar valores de desarrollo
 npm install
 npm run dev
 # http://localhost:5173
+# Vite lee las variables VITE_* desde .env.development via docker-compose
+# Para correr sin Docker, crear frontend/.env con las variables VITE_* necesarias
 ```
 
 ### Backend
@@ -184,6 +185,7 @@ conda create -n mapalab-backend python=3.12 -y
 conda activate mapalab-backend
 cd backend
 pip install -r requirements.txt
+# Crear backend/.env con las variables necesarias (ver .env.example)
 uvicorn app.server:app --reload --host 0.0.0.0 --port 8000
 # http://localhost:8000/docs
 ```
