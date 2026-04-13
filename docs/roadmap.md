@@ -37,10 +37,11 @@ timeline
             : Simplificar infra y delegar SSL a gateway-hub
             : Fixes de URL sync y capas activas
             : Marcador de capa seleccionada en URL
-        Abril 2026 (v1.0.5 - v1.0.7)
+        Abril 2026 (v1.0.5 - v1.0.8)
             : Unificacion Docker Compose y env vars
             : Automatizacion de redes Docker
             : Centralizar GTM en gateway-hub
+            : Timeouts de descarga y pool warmup
     section v1.x — Consolidacion y mejoras
         Abril 2026 (v1.1.0)
             : Capas del sidebar desde backend
@@ -136,6 +137,12 @@ timeline
 #### v1.0.7
 - [x] Eliminar inyeccion de GTM del frontend (centralizada en gateway-hub)
 - [x] Eliminar variables `VITE_GTM_ID` y `VITE_GOOGLE_ANALYTICS_ID`
+
+#### v1.0.8
+- [x] Timeout de 600s para descargas grandes en nginx y gateway-hub
+- [x] Warm-up del pool de conexiones PostgreSQL al iniciar workers
+- [x] Eliminar archivos `.env` remanentes de `frontend/`, `backend/` y `nginx/`
+- [x] Crear `docs/context.md` con referencia completa del proyecto
 
 ### v1.1.0 — Abril 2026
 - [ ] Migrar lista de capas del sidebar a endpoint del backend

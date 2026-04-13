@@ -4,10 +4,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from sqlalchemy import text
 from app.routers import (metadata, periodicity, download)
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.scheduler_service import SchedulerService
 from app.services.periodicity_service import PeriodicityService
+from app.consts.databases import DatabaseType
+from app.databases.factory import DatabaseFactory
 from app.config import settings
 from app.utils.logger import Logger
 from app.handlers.handle_exceptions import (
@@ -32,6 +35,11 @@ def _try_acquire_leader() -> bool:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+    with conn.get_session() as session:
+        session.execute(text("SELECT 1"))
+    Logger.info(f"Worker {os.getpid()} database pool warmed up")
+
     is_leader = _try_acquire_leader()
     if is_leader:
         Logger.info(f"Worker {os.getpid()} is leader, initializing schema and scheduler")
