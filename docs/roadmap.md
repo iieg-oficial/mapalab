@@ -24,7 +24,7 @@ timeline
             : Periodicidad dinamica raster
             : FAQ y exportacion de mapa
         Febrero 2026 (v0.9.7)
-            : Google Analytics
+            : Analytics (dataLayer + GTM via gateway-hub)
             : SEO y Open Graph
         Marzo 2026 (v0.9.9)
             : Tests unitarios e integracion
@@ -33,6 +33,14 @@ timeline
             : Deploy a produccion
             : Pruebas en entorno productivo
             : Documentacion de despliegue
+        Marzo - Abril 2026 (v1.0.1 - v1.0.4)
+            : Simplificar infra y delegar SSL a gateway-hub
+            : Fixes de URL sync y capas activas
+            : Marcador de capa seleccionada en URL
+        Abril 2026 (v1.0.5 - v1.0.7)
+            : Unificacion Docker Compose y env vars
+            : Automatizacion de redes Docker
+            : Centralizar GTM en gateway-hub
     section v1.x — Consolidacion y mejoras
         Abril 2026 (v1.1.0)
             : Capas del sidebar desde backend
@@ -83,21 +91,51 @@ timeline
 - [x] Exportacion del mapa visible (JPG, PNG, PDF)
 
 ### v0.9.7 — Febrero 2026
-- [x] Google Analytics (integracion y eventos clave)
+- [x] Analytics (eventos via `dataLayer`, GTM inyectado por gateway-hub)
 - [x] SEO (metatags, Open Graph, sitemap.xml, heading structure)
 
 ### v0.9.9 — Marzo 2026
-- [ ] Creacion de tests unitarios y de integracion
+- [x] Creacion de tests unitarios y de integracion
 - [x] CI/CD con GitHub Actions (lint, build, deploy automatico)
-
-### v1.0.0 — Marzo 2026
-- [x] Deploy a produccion (servidor IIEG)
-- [ ] Pruebas finales en entorno productivo
-- [x] Documentacion de despliegue
 
 ---
 
 ## v1.x — Consolidacion y mejoras
+### v1.0.0 — Marzo 2026
+- [x] Deploy a produccion (servidor IIEG)
+- [x] Pruebas finales en entorno productivo
+- [x] Documentacion de despliegue
+
+#### v1.0.1
+- [x] Simplificar infraestructura de 4 modos de despliegue a 2 (dev, prod)
+- [x] Delegar SSL y proxy de GeoServer al gateway-hub externo
+- [x] Comunicacion entre servicios via `host.docker.internal` para compatibilidad Linux
+
+#### v1.0.2
+- [x] Corregir flechas de navegacion de `ScrollContainer` que aparecian sin overflow real
+
+#### v1.0.3
+- [x] Corregir orden invertido de capas activas al recargar desde URL
+
+#### v1.0.4
+- [x] Marcador de capa seleccionada en URL con prefijo `*`
+- [x] Filtros de fecha por defecto al inicializar capas desde URL
+- [x] Indicador de carga inmediato al crear capas WMS
+- [x] Corregir auto-seleccion de simbologia al recargar
+- [x] Corregir typo en ID de capa de establecimientos de salud
+
+#### v1.0.5
+- [x] Unificar Docker Compose con profiles (dev/staging)
+- [x] Centralizar variables de entorno en `.env.example` raiz
+- [x] Extraer workflow reutilizable de test en CI/CD
+
+#### v1.0.6
+- [x] Target `ensure-networks` en Makefile para creacion automatica de redes Docker
+- [x] Renombrar proyecto Docker Compose de produccion a `mapalab`
+
+#### v1.0.7
+- [x] Eliminar inyeccion de GTM del frontend (centralizada en gateway-hub)
+- [x] Eliminar variables `VITE_GTM_ID` y `VITE_GOOGLE_ANALYTICS_ID`
 
 ### v1.1.0 — Abril 2026
 - [ ] Migrar lista de capas del sidebar a endpoint del backend

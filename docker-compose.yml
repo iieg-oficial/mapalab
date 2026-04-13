@@ -12,8 +12,6 @@ services:
       VITE_PORT: ${VITE_PORT:-5173}
       VITE_SITE_URL: ${VITE_SITE_URL:-}
       VITE_BASE_PATH: ${VITE_BASE_PATH:-/}
-      VITE_GTM_ID: ${VITE_GTM_ID:-}
-      VITE_GOOGLE_ANALYTICS_ID: ${VITE_GOOGLE_ANALYTICS_ID:-}
       GEOSERVER_DEV_TARGET: ${GEOSERVER_DEV_TARGET:-}
       BACKEND_DEV_TARGET: ${BACKEND_DEV_TARGET:-}
     volumes:
@@ -37,8 +35,6 @@ services:
         VITE_BACKEND_API_HOST: ${VITE_BACKEND_API_HOST:-/mapalab/api/}
         VITE_GEOSERVER_URL: ${VITE_GEOSERVER_URL:-/geoserver/}
         VITE_SITE_URL: ${VITE_SITE_URL:-}
-        VITE_GTM_ID: ${VITE_GTM_ID:-}
-        VITE_GOOGLE_ANALYTICS_ID: ${VITE_GOOGLE_ANALYTICS_ID:-}
         VITE_NODE_ENV: ${VITE_NODE_ENV:-production}
         VITE_APP_ENV: ${VITE_APP_ENV:-beta}
     profiles: ["build"]
