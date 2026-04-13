@@ -6,7 +6,12 @@ from app.utils.logger import Logger
 class PostgresConnection:
     def __init__(self, db_url: str):
         self.db_url = db_url
-        self.engine = create_engine(self.db_url, pool_pre_ping=True)
+        self.engine = create_engine(
+            self.db_url,
+            pool_pre_ping=True,
+            pool_size=4,
+            max_overflow=4,
+        )
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
 
     @contextmanager

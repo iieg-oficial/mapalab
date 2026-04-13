@@ -7,6 +7,21 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.0.8] - 2026-04-13
+
+### Corregido
+- Descargas de capas grandes (>1GB) fallaban por timeout de 120s en la cadena de proxies (nginx mapalab y gateway-hub). Timeout aumentado a 600s con `proxy_buffering off` para rutas de descarga
+- Primera descarga lenta por cold start del pool de conexiones a PostgreSQL. Se agrega warm-up del pool al iniciar cada worker de Gunicorn
+
+### Cambiado
+- Configuracion del pool de conexiones SQLAlchemy con `pool_size=4` y `max_overflow=4`
+
+### Eliminado
+- Archivos `.env` remanentes en `frontend/`, `backend/` y `nginx/` (consolidados en `.env.*` raiz desde v1.0.5)
+
+### Agregado
+- `docs/context.md` con referencia completa del proyecto para onboarding y contexto en nuevas conversaciones
+
 ## [1.0.7] - 2026-04-13
 
 ### Eliminado
