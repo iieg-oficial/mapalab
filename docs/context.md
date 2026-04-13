@@ -1,0 +1,414 @@
+# Contexto del Proyecto MapaLab
+
+Interfaz web para la creacion, gestion y visualizacion de mapas interactivos con datos geoespaciales del IIEG Jalisco. Este documento sirve como referencia completa para entender el proyecto sin necesidad de contexto previo.
+
+## Stack
+
+| Componente | Tecnologia |
+|---|---|
+| Frontend | React 19, Vite 7, Tailwind CSS 4, OpenLayers 10, React Router 7 |
+| Backend | FastAPI, Gunicorn + Uvicorn, SQLAlchemy, Python 3.12 |
+| Base de datos | PostgreSQL 18 + PostGIS 3.6 (externa, no gestionada por este repo) |
+| GeoServer | 2.27.0 Kartoza (WMS, WFS, WCS — externo) |
+| Proxy | Nginx stable-alpine |
+| Contenedores | Docker + Docker Compose con profiles (dev, staging, build) |
+| Testing | Vitest + Testing Library (344 tests) |
+| CI/CD | GitHub Actions (lint, test, deploy SSH, health check, Discord) |
+| Monitoreo | Huachicol (Grafana + Prometheus + Loki) |
+
+## Ecosistema IIEG
+
+MapaLab opera dentro de una infraestructura compartida en GCP con multiples servicios interconectados via Docker network (`iieg-network`).
+
+### Entornos de infraestructura
+
+| Entorno | Infra | Descripcion |
+|---|---|---|
+| Local | Docker en maquina del desarrollador | `make dev` con Vite + Uvicorn, proxy a GeoServer via Vite |
+| GCP (staging) | Una sola VM con todos los servicios | Todos los contenedores en el mismo servidor, CI/CD automatico desde `production` branch |
+| Administracion (produccion) | Cada repositorio en servidor separado | Gestionado por otra dependencia, no tenemos acceso directo a la consola GCP. Cambios de infra se solicitan al equipo administrador |
+
+### Servicios y conexiones
+
+```
+gateway-hub (Nginx central)
+├── /mapalab/     → mapalab-nginx (este proyecto)
+├── /geoserver/   → GeoServer (WMS/WFS/WCS, cache 6h, proteccion de bots)
+├── /acervo/      → MinIO (almacenamiento S3, metadatos de capas)
+├── /api/         → Portal IIEG (FastAPI)
+├── /             → Portal frontend
+├── /huachicol/   → Grafana (solo VPN)
+└── /mariachi/    → Analytics (solo VPN)
+```
+
+### gateway-hub
+
+Reverse proxy central que maneja:
+- SSL/TLS termination (unico punto HTTPS)
+- Inyeccion de GTM via `sub_filter` en Nginx (el frontend NO inyecta GTM)
+- Rate limiting, IP filtering, seguridad headers
+- Cache de GeoServer (2GB, 6h TTL)
+- Logs JSON a Loki via Promtail
+
+Configuracion clave en `/IIEG/gateway-hub/`:
+- `nginx/templates/gateway.conf.template` — todas las reglas de ruteo
+- `nginx/includes/geoserver-locations.inc` — cache y proteccion de GeoServer
+- `.env` — direcciones de upstreams (MAPALAB_HOST, GEOSERVER_HOST, etc.)
+
+### GeoServer
+
+Servidor OGC que provee capas geoespaciales. MapaLab consume WMS/WFS/WCS.
+- Frontend hace requests a `/geoserver/` (proxy via gateway-hub en prod, via Vite en dev)
+- Backend usa `GEOSERVER_URL` directamente para consultas REST
+- Datos vienen de PostgreSQL/PostGIS (dataengine)
+- 10 workspaces: `general`, `economia`, `salud`, `educacion`, `seguridad`, `recursos`, `demografia`, `desarrollo`, `gobierno`, `raster`
+- 4 workspaces con alias: `seguridad` → `seguridad_y_proteccion_ciudadana`, `gobierno` → `gobierno_y_ciudadania`, `desarrollo` → `desarrollo_social`, `recursos` → `recursos_y_calidad_de_vida`
+
+### mapalab-dataengine
+
+Cluster PostgreSQL 18 + PostGIS 3.6 con primary (5432) + replica (5433) + backups automaticos a Acervo.
+- GeoServer lee datos espaciales de aqui
+- Backend de MapaLab consulta tabla `mapalab_card` para metadatos
+- Download service hace `COPY TO STDOUT` para exportar CSV
+
+### Acervo (MinIO)
+
+Almacenamiento S3-compatible. MapaLab usa el bucket `mapalab` para:
+- Metadatos de capas en `/mapalab/metadata/txt/` y `/mapalab/metadata/xlsx/`
+- URLs publicas via `ACERVO_PUBLIC_URL`
+
+## Estructura del proyecto
+
+```
+mapalab/
+├── frontend/              # React SPA
+│   ├── src/
+│   │   ├── main.jsx       # Entry point, router, providers
+│   │   ├── pages/
+│   │   │   ├── home/      # Landing page
+│   │   │   └── maps/      # Visor de mapas (pagina principal)
+│   │   │       ├── components/   # MapView, MapSider, InfoBox, ActiveLayers, etc.
+│   │   │       ├── hooks/        # 28 hooks especializados del mapa
+│   │   │       └── helpers/      # wmsConfig, layers/definitions/, basemaps, etc.
+│   │   ├── components/    # Componentes compartidos (Modal, Panel, Alert, etc.)
+│   │   ├── contexts/      # MapsContext, SiderContext, LayerLoadingContext, SearchContext
+│   │   ├── providers/     # MapsProvider (orquestador central), MainProvider
+│   │   ├── services/      # downloadService, featureInfoService, analyticsService, etc.
+│   │   ├── hooks/         # Hooks globales (useDebounce, useMaps, etc.)
+│   │   └── test/          # 24 archivos, 344 tests
+│   ├── Dockerfile         # Build de produccion (Node 24 Alpine)
+│   └── Dockerfile.dev     # Dev con hot-reload
+├── backend/
+│   └── app/
+│       ├── server.py      # FastAPI, CORS, lifespan, leader-follower locking
+│       ├── config.py      # Settings desde env vars
+│       ├── routers/       # metadata, periodicity, download
+│       ├── services/      # periodicity_service (refresh diario 3AM), scheduler
+│       ├── repositories/  # mapalab_repository, download_repository
+│       ├── models/        # Mapalab_Card (SQLAlchemy)
+│       └── databases/     # Connection pooling, factory pattern
+├── nginx/
+│   ├── nginx.conf         # Proxy a backend, SPA routing, gzip, cache
+│   └── Dockerfile
+├── docker-compose.yml     # Profiles: dev, staging, build
+├── Makefile               # dev, staging, prod, deploy, ensure-networks
+├── .env.example           # Template de variables
+├── .github/workflows/     # ci, cd, auto-merge, commit-lint, test-frontend
+└── docs/                  # arquitectura, ci-cd, testing, analytics, roadmap, etc.
+```
+
+## Arquitectura del frontend
+
+### Jerarquia de providers
+
+```
+Router (React Router 7)
+└── MainProvider (SearchProvider)
+    └── MapsProvider (estado central del mapa)
+        ├── useLayerManagement    — IDs de capas activas, lookup en arbol
+        ├── useSymbology          — visibilidad, hiddenLayerIds
+        ├── useLayerOpacity       — opacidad por capa
+        ├── useCQLFilter          — filtros CQL por capa
+        ├── useRasterLoop         — animacion temporal raster
+        ├── useMapDrawing         — herramientas de dibujo/medicion
+        └── usePeriodicityCache   — cache de fechas disponibles
+```
+
+### Ciclo de vida de capas WMS
+
+1. Usuario activa capa en menu → `onToggleLayer(id)` agrega a `activeLayerIds`
+2. `useLayerToggle` aplica `defaultDate` si la capa lo tiene configurado
+3. `useWMSLayerManager` detecta cambio → agrupa capas por `baseUrl|wmsGroup`
+4. Crea `TileWMS` de OpenLayers con parametros mergeados (LAYERS, STYLES, CQL_FILTER)
+5. `useWMSFilterUpdater` actualiza parametros WMS cuando cambian filtros
+6. `useUrlSync` persiste estado en URL: `?layers=id1,id2,*selected&filter_id=cql`
+
+### Filtros CQL
+
+- Estado: `filters[layerId][filterName] = cqlExpression`
+- Multiples filtros por capa se combinan con AND
+- Filtros se heredan de padre a hijo en la jerarquia
+- Claves con prefijo `_` son internas (excluidas de combinacion CQL)
+- Capas con `timeEnabled` usan parametro TIME de WMS en lugar de CQL_FILTER
+
+### Definiciones de capas
+
+9 archivos en `frontend/src/pages/maps/helpers/layers/definitions/` (uno por tema).
+Cada capa define: `id`, `label`, `wmsConfig`, `children`, `littleCard` (InfoBox template), `defaultDate`, `searchMeta`.
+
+Factory: `createLayerFactory(workspace)` con `.withFilter()`, `.withStyles()` para crear capas de forma consistente.
+
+### URL sync bidireccional
+
+- `useInitializeFromUrl` — al montar, parsea `?layers`, `?filter_*`, activa capas y aplica filtros
+- `useUrlSync` — debounced 500ms, actualiza URL cuando cambian capas/filtros/seleccion
+- Formato: `?layers=id1,id2,*selectedId&filter_layerId=cqlExpression`
+
+## API del backend
+
+### Endpoints
+
+| Metodo | Ruta | Funcion |
+|---|---|---|
+| GET | `/health` | Health check |
+| GET | `/metadata/?workspace=X&layer=Y` | Metadata completa de capa (numeralia, fuentes, metodologia) |
+| GET | `/metadata/sources?layers=w:l,w:l` | Fuentes por lotes |
+| GET | `/periodicity/?workspace=X&layer=Y` | Fechas disponibles (estructura year/month/day) |
+| GET | `/periodicity/batch?layers=w:l,w:l` | Periodicidad por lotes |
+| GET | `/download/{workspace}/{layer}?date_from&date_to` | CSV streaming via PostgreSQL COPY |
+
+### Modelo principal: Mapalab_Card
+
+Tabla de metadatos con: tema, subtema, nombre de capa GeoServer, descripcion, 8 campos de numeralia, fuentes, metodologia, archivos de metadato (TXT/XLSX), descargabilidad.
+
+### Scheduler
+
+APScheduler ejecuta refresh de periodicidad diario a las 3:00 AM (Mexico City). Escanea todas las tablas con columna `fecha` y construye estructura JSONB en `public.layer_periodicity`.
+
+### Leader-follower
+
+En produccion (4 workers Gunicorn), solo el leader inicializa DB schema y scheduler usando file locking (`/tmp/mapalab_scheduler.lock`).
+
+## Descargas
+
+El frontend maneja tres tipos de descarga:
+
+| Tipo | Mecanismo | Formatos |
+|---|---|---|
+| Vector | WFS GetFeature | GeoPackage (EPSG:6368), Shapefile (EPSG:4326), CSV |
+| Raster | WCS GetCoverage | GeoTIFF |
+| CSV (backend) | PostgreSQL COPY | CSV con filtro de fechas |
+
+Las descargas pueden incluir metadatos (TXT, XLSX) empaquetados en ZIP.
+
+Timeouts de descarga (600s) configurados en:
+- mapalab nginx: `/api/download/` (backend CSV)
+- gateway-hub: `/mapalab/api/download/` (backend CSV), `/geoserver/{workspace}/(wfs|wcs)` (WFS/WCS por workspace), `/geoserver/(wfs|wcs)` (WFS/WCS directo)
+
+## Capas raster/temporales
+
+- Capas con `timeEnabled: true` usan parametro TIME de WMS (no CQL_FILTER)
+- `timeStylePattern` permite estilos dinamicos por fecha: `lluvia_total_mensual_{year}_{month}`
+- `useRasterLoop` anima ciclando valores TIME con intervalo configurable
+- Cada capa raster tiene `wmsGroup` unico para evitar merge de requests WMS
+
+## Docker y despliegue
+
+### Profiles
+
+| Profile | Servicios | Uso |
+|---|---|---|
+| `dev` | frontend (Vite :5173) | Desarrollo con hot-reload |
+| `build` | frontend-build | Genera `dist/` para produccion |
+| `staging` | backend + nginx | Produccion/staging |
+
+### Makefile
+
+| Comando | Accion |
+|---|---|
+| `make dev` | Levanta desarrollo (Vite + Uvicorn) |
+| `make staging` | Build frontend + Nginx + Gunicorn |
+| `make prod` | Staging con `.env.production` |
+| `make deploy` | ensure-networks + build + up --force-recreate |
+| `make down` | Detiene todos los servicios |
+| `make clean` | Detiene + limpia volumenes y dist |
+
+### Redes Docker
+
+- `mapalab-network` — red interna del compose (default)
+- `iieg-network` — red externa compartida con gateway-hub (creada por `ensure-networks`)
+
+### Variables de entorno clave
+
+**Frontend (Vite):**
+- `VITE_BACKEND_API_HOST` — ruta relativa al backend (`/api/` o `/mapalab/api/`)
+- `VITE_GEOSERVER_URL` — ruta relativa a GeoServer (`/geoserver/`)
+- `VITE_BASE_PATH` — base path del SPA (`/` en dev, `/mapalab/` en prod)
+- `VITE_NODE_ENV` — `development`|`production` (controla debug panels)
+- `VITE_APP_ENV` — `dev`|`beta` (controla modal de pruebas y badge)
+- `GEOSERVER_DEV_TARGET` / `BACKEND_DEV_TARGET` — targets del proxy de Vite (solo dev)
+
+**Backend:**
+- `GEOSERVER_URL` — URL directa a GeoServer
+- `GEOSERVER_USER` / `GEOSERVER_PASSWORD` — credenciales GeoServer
+- `DB_*` — conexion a PostgreSQL
+- `ACERVO_PUBLIC_URL` — URL publica para metadatos
+
+## CI/CD
+
+```
+Push a develop → CI (lint + test) → Auto PR a production → Auto-merge
+Push a production → CD: test → deploy SSH (make deploy) → health check → Discord
+```
+
+- Branch principal de desarrollo: `develop`
+- Branch de produccion: `production`
+- Conventional commits obligatorios
+- Deploy via SSH al servidor GCP ejecutando `make deploy`
+
+## Analytics
+
+Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gateway-hub). En desarrollo aparece un panel de debug flotante. Eventos principales: `layer_toggle`, `feature_click`, `map_zoom_level`, `layer_search`, `layer_download`, `map_export`, `raster_loop_start/stop`, `drawing_tool_use`, `basemap_change`, `share_map`.
+
+## Proximos pasos (roadmap)
+
+- **v1.1.0** — Migrar definiciones de capas del frontend a endpoint del backend (DB + CRUD + editor)
+- **v1.2.0** — Comparador de periodicidad (vista lado a lado)
+- **v1.3.0** — Editor de Home desde admin, compartir estado completo del mapa via URL
+- **v1.4.0** — Login ciudadano, capas favoritas
+- **v2.0.0** — Integracion IGIBot, 3D, dashboards, API publica
+
+Ver `docs/planes/PLAN_MIGRACION_CAPAS.md` para el plan detallado de v1.1.0.
+
+## Archivos .env por entorno
+
+| Archivo | Proposito |
+|---|---|
+| `.env.example` | Template con todas las variables (copiar a `.env.development`, `.env.staging`, `.env.production`) |
+| `.env.development` | Variables para `make dev` (Vite + Uvicorn local) |
+| `.env.staging` | Variables para `make staging` |
+| `.env.production` | Variables para `make deploy` / `make prod` |
+
+Docker Compose usa `--env-file` apuntando al archivo correspondiente segun el entorno. Las variables `VITE_*` se pasan al contenedor via `environment` (dev) o `args` (build) en el compose.
+
+## Frontend en produccion es estatico
+
+En produccion no existe un contenedor de frontend corriendo. El flujo es:
+
+1. `frontend-build` (profile `build`) ejecuta `npm run build` y copia `dist/` al host
+2. El contenedor muere despues del build
+3. Nginx monta `frontend/dist/` como volumen read-only y sirve los archivos estaticos
+4. Cualquier cambio de frontend requiere rebuild (`make deploy` lo hace automaticamente)
+
+## Import aliases (Vite)
+
+```
+@components    → src/components/
+@mapsComponents → src/pages/maps/components/
+@pages         → src/pages/
+@contexts      → src/contexts/
+@providers     → src/providers/
+@hooks         → src/hooks/
+@hooksMaps     → src/pages/maps/hooks/
+@helpers       → src/helpers/
+@services      → src/services/
+@constants     → src/constants/
+@icons         → src/assets/icons/
+@logos         → src/assets/logos/
+@png           → src/assets/png/
+@assets        → src/assets/
+@layouts       → src/layouts/
+```
+
+Siempre usar estos aliases en imports. Nunca usar rutas relativas como `../../components/`.
+
+## Jerarquia de nodos del arbol de capas
+
+```
+tema (raiz: "Seguridad", "General", etc.)
+└── category (isCategory: true — carpeta expandible/colapsable)
+    └── label (isLabel: true — encabezado de seccion, sin toggle)
+        └── leaf (capa con wmsConfig — se renderiza en el mapa)
+            └── [opcional] sub-capas con filtro CQL (forceGroup: true — hijos se renderizan como unidad)
+```
+
+- `isCategory` → nodo expandible en el menu
+- `isLabel` → titulo de seccion sin checkbox
+- `forceGroup` → agrupa hijos, no se pueden togglear individualmente
+- `hiddenInMenu` → no aparece en menu pero puede estar activa
+- `label` con prefijo `*` → capa deshabilitada (opacity 50%, sin toggle)
+
+## Templates de InfoBox
+
+| Template | Uso | Que genera |
+|---|---|---|
+| `TEEC` | Puntos simples (cabeceras, cultivos) | header + badges |
+| `TDEMEC` | Con municipio (aeropuertos) | + municipio(naranja) + caracteristica(morado) |
+| `TDEMECLU` | Con ubicacion (salud) | + list + iconTexts |
+| `TDEMECLUEV` | Puntos completos (escuelas) | + stats + text |
+| `TEEMLXEV` | Municipio con stats (empleo) | header + municipio + list + text + stats |
+| `createMunicipioConfig` | Tasas municipales (mayoria de capas) | header + municipio + fecha + text + cards |
+| Config manual | Casos especiales | Definicion libre |
+
+## Proyeccion
+
+- Datos y WMS: `EPSG:6368` (Mexico ITRF2008 / LCC)
+- Shapefiles de descarga: `EPSG:4326` (WGS84, compatibilidad universal)
+- Mapa en browser: Web Mercator (OpenLayers default)
+
+## Patrones a evitar
+
+- **No mergear capas raster con otras** — cada capa raster necesita `wmsGroup` unico para evitar que el WMS layer manager las combine en una sola request
+- **No usar CQL_FILTER en capas `timeEnabled`** — estas usan el parametro TIME de WMS. El filtro de fecha se aplica via `applyFilter(id, 'date', isoDate)` y `useWMSFilterUpdater` lo traduce a TIME
+- **No crear commits** — los commits los hace el usuario manualmente, nunca crear commits automaticos
+- **No usar rutas relativas en imports** — siempre usar los aliases de Vite (@components, @hooks, etc.)
+- **No agregar comentarios en codigo** — ni crear markdowns de explicacion a menos que se indique
+- **No duplicar logica** — reutilizar componentes, funciones, helpers y hooks existentes antes de crear nuevos
+
+## Instrucciones de trabajo
+
+### Validacion antes de commit
+
+Siempre ejecutar en `frontend/` antes de considerar una tarea terminada:
+
+```bash
+npm install        # Asegurar dependencias actualizadas
+npm run lint       # Validar reglas ESLint
+npm test           # Correr los 344+ tests con Vitest
+```
+
+Si alguno falla, corregir antes de continuar.
+
+### Versionado y documentacion
+
+Al completar cambios que se van a versionar:
+
+1. **CHANGELOG** (`docs/CHANGELOG.md`) — agregar entrada en `[No publicado]` o nueva version siguiendo la sintaxis existente (Keep a Changelog + Semver). Secciones: Agregado, Cambiado, Corregido, Eliminado, Rendimiento.
+2. **Version** — actualizar en todos los archivos que la contienen:
+   - `README.md` (linea `**Version:**`)
+   - `frontend/package.json` (campo `version`)
+   - `frontend/package-lock.json` (ejecutar `npm install --package-lock-only` en `frontend/`)
+3. **Roadmap** (`docs/roadmap.md`) — agregar la version en el checklist y en el timeline mermaid si aplica.
+4. **Documentacion afectada** — si los cambios modifican comportamiento documentado en `docs/` (ci-cd, analytics, periodicidad, arquitectura, etc.), actualizar esos archivos tambien.
+5. **Planes** (`docs/planes/`) — si se completa una tarea o fase de un plan existente, marcarla como completada o actualizar el estado.
+
+### Conventional commits
+
+Formato: `<tipo>[(ambito)]: <descripcion>`
+
+Tipos: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `style`, `build`, `revert`
+
+## Documentacion relacionada
+
+| Archivo | Contenido |
+|---|---|
+| `docs/arquitectura.md` | Diagramas de infraestructura, red y componentes |
+| `docs/ci-cd.md` | Pipeline CI/CD, workflows, secrets, troubleshooting |
+| `docs/testing.md` | Inventario de tests, estructura, ejemplos |
+| `docs/analytics.md` | Eventos GTM/GA4, parametros, debug |
+| `docs/periodicidad.md` | Sistema de filtrado temporal (vectorial y raster) |
+| `docs/z-index.md` | Jerarquia de z-index (UI y capas del mapa) |
+| `docs/roadmap.md` | Timeline completo y checklist por version |
+| `docs/CHANGELOG.md` | Registro de cambios por version |
+| `docs/backend.md` | Stack, estructura y desarrollo local del backend |
+| `docs/planes/PLAN_MIGRACION_CAPAS.md` | Plan de migracion de capas hardcodeadas a endpoint |
