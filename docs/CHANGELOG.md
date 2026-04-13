@@ -7,6 +7,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.0.7] - 2026-04-13
+
+### Eliminado
+- Inyeccion de GTM desde el frontend (`main.jsx`), ahora centralizada en gateway-hub via `sub_filter`
+- Variables `VITE_GTM_ID` y `VITE_GOOGLE_ANALYTICS_ID` de `.env.example`, `docker-compose.yml` y `Dockerfile`
+
 ## [1.0.6] - 2026-04-13
 
 ### Cambiado

@@ -17,27 +17,6 @@ const Maps = lazy(() => import('@pages/maps/Maps'));
 
 const isDev = import.meta.env.VITE_NODE_ENV === 'development';
 
-window.dataLayer = window.dataLayer || [];
-
-const gtmId = import.meta.env.VITE_GTM_ID;
-if (gtmId) {
-    window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtm.js?id=${gtmId}`;
-    document.head.appendChild(script);
-
-    const noscript = document.createElement('noscript');
-    const iframe = document.createElement('iframe');
-    iframe.src = `https://www.googletagmanager.com/ns.html?id=${gtmId}`;
-    iframe.height = '0';
-    iframe.width = '0';
-    iframe.style.display = 'none';
-    iframe.style.visibility = 'hidden';
-    noscript.appendChild(iframe);
-    document.body.prepend(noscript);
-}
-
 isDev && console.info('¡Tú estás viendo esto, porque estás en modo de desarrollo!');
 
 const router = createBrowserRouter([
