@@ -43,8 +43,8 @@ const parcelaPrimaveraConfig = (title) => ({
     ],
     list: [
         { label: 'Nombre del predio', field: 'nombre' },
-        { label: 'Folio', field: 'folio' },
-        { label: 'Fecha de registro', field: 'fecha_registro' },
+        { label: 'Folio', field: 'folio', raw: true },
+        { label: 'Fecha de registro', field: 'fecha_registro', raw: true },
     ]
 });
 
@@ -115,9 +115,9 @@ const CLIMA_CARDS = {
 
 const CLIMA_RASTER = [
     ['temperatura_media_mensual', 'Temperatura media mensual', 'temperaturas', RASTER_TAGS],
-    ['temperatura_media_anual', 'Temperatura media promedio', `temperatura_media_anual_${RASTER_YEAR}_promedio`, RASTER_TAGS],
+    ['temperatura_media_anual', 'Temperatura media anual', `temperatura_media_anual_${RASTER_YEAR}_promedio`, RASTER_TAGS],
     ['precipitacion_mensual', 'Precipitación mensual', 'precipitacion', RASTER_TAGS],
-    ['precipitacion_anual', 'Precipitación acumulada', `lluvia_anual_${RASTER_YEAR}`, RASTER_TAGS],
+    ['precipitacion_anual', 'Precipitación total anual', `lluvia_anual_${RASTER_YEAR}`, RASTER_TAGS],
 ];
 
 const ESPACIOS_PUBLICOS = [

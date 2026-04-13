@@ -96,10 +96,10 @@ Estructura del objeto littleCard:
     { fields: string[], color?, bg?, splitValues?, staticValues?, fullWidth? }
   ],
   list?: [                       // Lista de campo-valor
-    { label: string, field: string }
+    { label: string, field: string, raw? }
   ],
   cards?: [                      // Tarjetas de estadísticas
-    { label: string, field: string, decimals? }
+    { label: string, field: string, decimals?, raw? }
   ],
   cardsColumns?: number,         // Columnas del grid de cards (1 o 2)
   text?: [                       // Texto descriptivo
