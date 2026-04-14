@@ -13,7 +13,8 @@ import { useWMSFilterUpdater } from '@hooksMaps/useWMSFilterUpdater';
 const MapView = () => {
     const {
         baseMapId, basemaps, targetRef, mapRef, activeLayerIds, hiddenLayerIds, getFilter, filters,
-        isDrawing, queryFeaturesInPolygonRef, getAllChildLayerIds, getLayerOpacity, layerOpacities
+        isDrawing, queryFeaturesInPolygonRef, getAllChildLayerIds, getLayerOpacity, layerOpacities,
+        markerClickedRef
     } = useMapsContext();
     const { queryFeatures, queryFeaturesInPolygon } = useFeatureInfo();
     const baseMapRef = useRef(null);
@@ -32,7 +33,7 @@ const MapView = () => {
         getLayerOpacity, layerOpacities, getFilter, combineCQLFilters
     });
 
-    useMapInteractions(mapRef, queryFeatures, isDrawing);
+    useMapInteractions(mapRef, queryFeatures, isDrawing, markerClickedRef);
     useWMSFilterUpdater({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds });
 
     return <div ref={targetRef} className="absolute inset-0 w-full h-full" />;

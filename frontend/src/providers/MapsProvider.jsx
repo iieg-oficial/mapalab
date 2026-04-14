@@ -10,6 +10,7 @@ import { useCQLFilter } from '@hooksMaps/useCQLFilter';
 import { useRasterLoop } from '@hooksMaps/useRasterLoop';
 import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { usePeriodicityCache } from '@hooksMaps/usePeriodicityCache';
+import { useMapMarker } from '@hooksMaps/useMapMarker';
 import { layers as allLayers } from '@pages/maps/helpers/layers/index';
 import { toLonLat } from 'ol/proj';
 
@@ -33,13 +34,17 @@ const MapsProvider = ({ children }) => {
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
     const cqlFilter = useCQLFilter();
     const periodicityCache = usePeriodicityCache(layerManagement.activeLayerIds);
+    const mapMarker = useMapMarker(mapRef, { setSelectedFeatureInfo, clickPosition });
     const layerToggle = useLayerToggle({
         ...layerManagement,
         setSelectedLayer,
         setSelectedLayerForSymbology: symbology.setSelectedLayerForSymbology,
         applyFilter: cqlFilter.applyFilter,
         clearFilter: cqlFilter.clearFilter,
-        periodicityCache
+        periodicityCache,
+        mapRef,
+        showMarker: mapMarker.showMarker,
+        hideMarker: mapMarker.hideMarker
     });
     const rasterLoop = useRasterLoop({
         applyFilter: cqlFilter.applyFilter,
@@ -94,6 +99,7 @@ const MapsProvider = ({ children }) => {
         ...cqlFilter,
         ...rasterLoop,
         ...mapDrawing,
+        ...mapMarker,
         periodicityCache,
         isLocating,
         setIsLocating
@@ -113,6 +119,7 @@ const MapsProvider = ({ children }) => {
         cqlFilter,
         rasterLoop,
         mapDrawing,
+        mapMarker,
         periodicityCache,
         isLocating
     ]);

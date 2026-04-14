@@ -147,6 +147,9 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
                     customParams.CQL_FILTER = finalCqlFilter;
                 }
 
+                const layerDef = findLayerById(representativeId, layers);
+                const zoomRange = layerDef?.zoomRange;
+
                 if (!wmsLayersRef.current.has(groupKey)) {
                     const layerRef = { current: null };
 
@@ -174,6 +177,8 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
                     });
                     const layer = createWMSLayer(representativeId, true, maxZIndex, customParams, onStart, onEnd, opacity);
                     if (layer && mapRef.current) {
+                        if (zoomRange?.min != null) layer.setMinZoom(zoomRange.min);
+                        if (zoomRange?.max != null) layer.setMaxZoom(zoomRange.max);
                         layerRef.current = layer;
                         layer.set('mergedLayers', wmsLayersOrdered);
                         mapRef.current.addLayer(layer);
@@ -197,6 +202,9 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
                             });
                         }
                         layer.set('mergedLayers', wmsLayersOrdered);
+
+                        if (zoomRange?.min != null && layer.getMinZoom() !== zoomRange.min) layer.setMinZoom(zoomRange.min);
+                        if (zoomRange?.max != null && layer.getMaxZoom() !== zoomRange.max) layer.setMaxZoom(zoomRange.max);
 
                         if (layer.getZIndex() !== maxZIndex) {
                             layer.setZIndex(maxZIndex);

@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+"$REPO_ROOT/scripts/sync-version.sh"
+
+git add README.md frontend/package-lock.json
