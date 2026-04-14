@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     GEOSERVER_USER: Optional[str] = Field(default="")
     GEOSERVER_PASSWORD: Optional[str] = Field(default="")
     ACERVO_PUBLIC_URL: Optional[str] = Field(default=None)
+    DB_POOL_SIZE: int = Field(default=8)
+    DB_MAX_OVERFLOW: int = Field(default=8)
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod

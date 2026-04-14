@@ -4,13 +4,13 @@ from contextlib import contextmanager
 from app.utils.logger import Logger
 
 class PostgresConnection:
-    def __init__(self, db_url: str):
+    def __init__(self, db_url: str, pool_size: int = 8, max_overflow: int = 8):
         self.db_url = db_url
         self.engine = create_engine(
             self.db_url,
             pool_pre_ping=True,
-            pool_size=4,
-            max_overflow=4,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
         )
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
 
@@ -18,7 +18,6 @@ class PostgresConnection:
     def get_session(self):
         session = self.SessionLocal()
         try:
-            Logger.info(f"Conexión establecida con PostgreSQL: {self.db_url}")
             yield session
         except Exception as e:
             Logger.error(f"Error en la base de datos: {str(e)}")

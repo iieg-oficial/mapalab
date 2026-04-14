@@ -61,6 +61,9 @@ services:
       DB_PORT: ${DB_PORT:-5432}
       DB_NAME: ${DB_NAME}
       ACERVO_PUBLIC_URL: ${ACERVO_PUBLIC_URL}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-8}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-8}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-8}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:

@@ -131,7 +131,7 @@ graph TB
 |----------|-----------|--------|-------------|
 | Nginx | nginx:stable-alpine | 80, 443 | Reverse proxy, SSL termination, cache de GeoServer |
 | Frontend | React 19 + Vite | — | Archivos estaticos servidos por Nginx |
-| Backend | FastAPI + Gunicorn | 8000 | API REST, 4 workers Uvicorn |
+| Backend | FastAPI + Gunicorn | 8000 | API REST, 8 workers async Uvicorn (configurable via GUNICORN_WORKERS) |
 
 ### VM DataEngine
 
