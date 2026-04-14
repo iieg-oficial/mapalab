@@ -1,4 +1,4 @@
-import { useContext, useRef, useState, useEffect } from 'react';
+import { useContext, useRef, useState, useEffect, useCallback } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { trackFeatureClick } from '@services/analyticsService';
 import { useOutsideClick } from '@hooks/useOutsideClick';
@@ -10,9 +10,11 @@ import { findLayerById, layers as allLayers } from '../../helpers/layers/index';
 import SummaryCard from './components/SummaryCard';
 import EmptySuggestions from './components/EmptySuggestions';
 import ActionsToolbar from './components/ActionsToolbar';
+import WhatsNewModal from '../WhatsNewModal';
 
 const InfoBox = () => {
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter } = useContext(MapsContext);
+    const [whatsNewOpen, setWhatsNewOpen] = useState(false);
     const { selectAlternativeLayer } = useFeatureInfo();
     const panelRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -23,6 +25,7 @@ const InfoBox = () => {
         clickPosition.clearPosition();
         setIsExpanded(false);
         setIsLoadingExpand(false);
+        setWhatsNewOpen(false);
     };
 
     const handleToggleExpand = () => {
@@ -43,6 +46,10 @@ const InfoBox = () => {
         selectAlternativeLayer(layer);
         handleClose();
     };
+
+    const handleAction = useCallback((action) => {
+        if (action === 'whats_new') setWhatsNewOpen(true);
+    }, []);
 
     useOutsideClick([panelRef], handleClose);
     useViewportContainment(panelRef, [selectedFeatureInfo, clickPosition]);
@@ -90,13 +97,12 @@ const InfoBox = () => {
         }
     };
 
-    const renderItem = (feature, layerId, onClose) => {
-        const layerNode = findLayerById(layerId, allLayers);
-        const rawConfig = layerNode?.littleCard;
+    const renderItem = (feature, layerId, onClose, resultLittleCard) => {
+        const rawConfig = resultLittleCard || findLayerById(layerId, allLayers)?.littleCard;
         const config = typeof rawConfig === 'function'
             ? rawConfig(getSpecificFilter?.(layerId, 'date'))
             : rawConfig;
-        return renderCard(feature.properties, config, onClose, layerId, feature.id);
+        return renderCard(feature.properties, config, onClose, layerId, feature.id, handleAction);
     };
 
     const handleDownload = () => {
@@ -165,7 +171,8 @@ const InfoBox = () => {
                                             {renderItem(
                                                 feature,
                                                 result.layerId,
-                                                () => handleRemoveFeature(result.layerId, featureIdx)
+                                                () => handleRemoveFeature(result.layerId, featureIdx),
+                                                result.littleCard
                                             )}
                                         </div>
                                     ))}
@@ -181,6 +188,8 @@ const InfoBox = () => {
                 onClear={handleClose}
                 onDownload={handleDownload}
             />
+
+            <WhatsNewModal isOpen={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
         </div>
     );
 };

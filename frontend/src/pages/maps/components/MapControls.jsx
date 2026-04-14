@@ -1,12 +1,18 @@
 import { useMapsContext } from '@hooks/useMaps';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useCallback, useState, useEffect, useRef } from 'react';
+import { fromLonLat } from 'ol/proj';
 import Icon from '@components/Icon';
 import { trackMapZoomLevel, trackGeolocate } from '@services/analyticsService';
+import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
+
+const isTouchDevice = () => 'ontouchstart' in window;
 
 const MapControls = () => {
     const { mapRef, isLocating, setIsLocating } = useMapsContext();
     const [hoveredButton, setHoveredButton] = useState(null);
+    const [showFitExtent, setShowFitExtent] = useState(false);
+    const fitExtentTimeoutRef = useRef(null);
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 180 });
     const locationLayerRef = useRef(null);
 
@@ -34,7 +40,43 @@ const MapControls = () => {
             view.animate({ zoom: currentZoom - 1, duration: 250 });
             trackMapZoomLevel(currentZoom - 1);
         }
+
+        if (isTouchDevice()) {
+            clearTimeout(fitExtentTimeoutRef.current);
+            setShowFitExtent(true);
+            fitExtentTimeoutRef.current = setTimeout(() => setShowFitExtent(false), 3000);
+        }
     }, [mapRef]);
+
+    const handleFitJalisco = useCallback(() => {
+        if (!mapRef.current) return;
+        const view = mapRef.current.getView();
+        view.animate({
+            center: fromLonLat(JALISCO_BOUNDS.center),
+            zoom: JALISCO_BOUNDS.zoom,
+            duration: 500
+        });
+        setShowFitExtent(false);
+    }, [mapRef]);
+
+    const handleZoomOutEnter = useCallback(() => {
+        if (isTouchDevice()) return;
+        clearTimeout(fitExtentTimeoutRef.current);
+        setHoveredButton('zoomout');
+        setShowFitExtent(true);
+    }, []);
+
+    const handleFitExtentEnter = useCallback(() => {
+        if (isTouchDevice()) return;
+        clearTimeout(fitExtentTimeoutRef.current);
+        setHoveredButton('fit_extent');
+    }, []);
+
+    const handleFitExtentLeave = useCallback(() => {
+        if (isTouchDevice()) return;
+        setHoveredButton(null);
+        fitExtentTimeoutRef.current = setTimeout(() => setShowFitExtent(false), 300);
+    }, []);
 
     const handleLocateMe = useCallback(() => {
         if (!mapRef.current || !navigator.geolocation) return;
@@ -79,7 +121,7 @@ const MapControls = () => {
                 locationFeature.setStyle(new Style({
                     image: new Circle({
                         radius: 8,
-                        fill: new Fill({ color: '#3b82f6' }),
+                        fill: new Fill({ color: '#f97316' }),
                         stroke: new Stroke({
                             color: '#ffffff',
                             width: 3
@@ -124,6 +166,7 @@ const MapControls = () => {
         const mapInstance = mapRef.current;
 
         return () => {
+            clearTimeout(fitExtentTimeoutRef.current);
             const locationLayer = locationLayerRef.current;
 
             if (locationLayer && mapInstance) {
@@ -134,10 +177,10 @@ const MapControls = () => {
 
     return (
         <div
-            className={`fixed bottom-15 z-10 flex flex-col w-10 ${className}`}
+            className={`fixed bottom-15 z-10 flex items-end ${className}`}
             style={style}
         >
-            <div className="flex flex-col justify-center items-center rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
+            <div className="relative flex flex-col justify-center items-center rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
                 <button
                     onClick={handleZoomIn}
                     onMouseEnter={() => setHoveredButton('zoomin')}
@@ -169,8 +212,8 @@ const MapControls = () => {
                 </button>
                 <button
                     onClick={handleZoomOut}
-                    onMouseEnter={() => setHoveredButton('zoomout')}
-                    onMouseLeave={() => setHoveredButton(null)}
+                    onMouseEnter={handleZoomOutEnter}
+                    onMouseLeave={() => { setHoveredButton(null); handleFitExtentLeave(); }}
                     className="p-2"
                     title="Alejar"
                     aria-label="Alejar zoom"
@@ -178,6 +221,24 @@ const MapControls = () => {
                     <Icon
                         name="zoomout"
                         state={hoveredButton === 'zoomout' ? 'hover' : 'normal'}
+                        className="w-6 h-6"
+                    />
+                </button>
+            </div>
+            <div
+                className={`transition-all duration-200 overflow-hidden ${showFitExtent ? 'w-10 opacity-100 ml-1.5' : 'w-0 opacity-0 ml-0'}`}
+                onMouseEnter={handleFitExtentEnter}
+                onMouseLeave={handleFitExtentLeave}
+            >
+                <button
+                    onClick={handleFitJalisco}
+                    className="p-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A]"
+                    title="Centrar en Jalisco"
+                    aria-label="Centrar vista en Jalisco"
+                >
+                    <Icon
+                        name="fit_extent"
+                        state={hoveredButton === 'fit_extent' ? 'hover' : 'normal'}
                         className="w-6 h-6"
                     />
                 </button>

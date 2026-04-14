@@ -4,8 +4,10 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'));
 
 function deferCssPlugin() {
     return {
@@ -29,6 +31,9 @@ export default defineConfig(({ mode }) => {
 
     return {
         base: BASE_PATH,
+        define: {
+            __APP_VERSION__: JSON.stringify(pkg.version)
+        },
         plugins: [react(), tailwindcss(), deferCssPlugin()],
         build: {},
         server: {

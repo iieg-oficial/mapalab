@@ -1,9 +1,12 @@
 import { useCallback } from 'react';
+import { fromLonLat } from 'ol/proj';
+import { transformExtent } from 'ol/proj';
 import { trackLayerToggle } from '@services/analyticsService';
 import { generateDefaultDateFilter } from '@pages/maps/helpers/dateFilterHelpers';
 import { findParentGroup } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { layers as allLayers } from '@pages/maps/helpers/layers/index';
 import { getLayerPeriodicity } from '@services/layerMetadataService';
+import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 
 export const useLayerToggle = ({
     setActiveLayerIds,
@@ -13,7 +16,10 @@ export const useLayerToggle = ({
     setSelectedLayerForSymbology,
     applyFilter,
     clearFilter,
-    periodicityCache
+    periodicityCache,
+    mapRef,
+    showMarker,
+    hideMarker
 }) => {
     const resolveDefaultDate = useCallback(async (dateToApply, layerId) => {
         let periodicity = periodicityCache.getPeriodicity(layerId);
@@ -69,6 +75,30 @@ export const useLayerToggle = ({
         if (layer?.defaultDate) clearFilter(layerId, 'date');
     }, [findLayerById, clearFilter]);
 
+    const applyDefaultZoom = useCallback((layerId) => {
+        const layer = findLayerById(layerId);
+        if (!layer?.defaultZoom || !mapRef?.current) return;
+
+        const view = mapRef.current.getView();
+        const config = layer.defaultZoom;
+
+        if (typeof config === 'number') {
+            view.animate({
+                center: fromLonLat(JALISCO_BOUNDS.center),
+                zoom: config,
+                duration: 500
+            });
+        } else if (config.extent) {
+            const extent = transformExtent(config.extent, 'EPSG:4326', 'EPSG:3857');
+            view.fit(extent, { duration: 500, maxZoom: 18 });
+        } else if (config.zoom) {
+            const center = config.center
+                ? fromLonLat(config.center)
+                : fromLonLat(JALISCO_BOUNDS.center);
+            view.animate({ center, zoom: config.zoom, duration: 500 });
+        }
+    }, [findLayerById, mapRef]);
+
     const handleToggleLayer = useCallback((layerId, isActive, skipAnalytics = false) => {
         if (!skipAnalytics) trackLayerToggle(layerId, isActive);
         setActiveLayerIds(prevActiveIds => {
@@ -87,6 +117,15 @@ export const useLayerToggle = ({
             const childLayerIds = getAllChildLayerIds(layerId);
             [layerId, ...childLayerIds].forEach(applyDefaultDate);
 
+            if (!skipAnalytics) {
+                applyDefaultZoom(layerId);
+                const layerDef = findLayerById(layerId);
+                if (layerDef?.marker) {
+                    const markerConfig = Array.isArray(layerDef.marker) ? layerDef.marker : [layerDef.marker];
+                    markerConfig.forEach(m => showMarker?.({ id: `layer_${layerId}_${m.center.join(',')}`, ...m }));
+                }
+            }
+
             const layer = findLayerById(layerId);
             if (layer) {
                 const groupAncestor = findParentGroup(layerId, allLayers);
@@ -99,8 +138,14 @@ export const useLayerToggle = ({
         } else {
             const childLayerIds = getAllChildLayerIds(layerId);
             [layerId, ...childLayerIds].forEach(clearDefaultDate);
+
+            const layerDef = findLayerById(layerId);
+            if (layerDef?.marker) {
+                const markerConfig = Array.isArray(layerDef.marker) ? layerDef.marker : [layerDef.marker];
+                markerConfig.forEach(m => hideMarker?.(`layer_${layerId}_${m.center.join(',')}`));
+            }
         }
-    }, [setActiveLayerIds, getAllChildLayerIds, findLayerById, setSelectedLayer, setSelectedLayerForSymbology, applyDefaultDate, clearDefaultDate]);
+    }, [setActiveLayerIds, getAllChildLayerIds, findLayerById, setSelectedLayer, setSelectedLayerForSymbology, applyDefaultDate, clearDefaultDate, applyDefaultZoom, showMarker, hideMarker]);
 
     return { handleToggleLayer, applyDefaultDate };
 };

@@ -63,6 +63,10 @@ jobs:
         run: |
           PR_NUMBER=$(gh pr list --base production --head develop --state open --json number --jq '.[0].number')
           if [ -n "$PR_NUMBER" ]; then
-            gh pr merge "$PR_NUMBER" --auto --merge
-            echo "Auto-merge habilitado en PR #$PR_NUMBER"
+            for i in 1 2 3; do
+              gh pr merge "$PR_NUMBER" --auto --merge && break
+              echo "Intento $i fallido, esperando 30s..."
+              sleep 30
+            done
+            echo "Auto-merge procesado en PR #$PR_NUMBER"
           fi

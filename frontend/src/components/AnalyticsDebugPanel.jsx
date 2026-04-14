@@ -50,13 +50,18 @@ const AnalyticsDebugPanel = () => {
             style={{ left: position.x, top: position.y }}
         >
             <div className="bg-gray-900 text-white rounded-xl shadow-2xl w-72">
-                <button
-                    onClick={() => setCollapsed(p => !p)}
-                    className="w-full flex items-center justify-between px-3 py-2 border-b border-gray-700 rounded-t-xl hover:bg-gray-800 transition-colors"
-                >
-                    <span className="font-bold text-green-400">Analytics Debug</span>
-                    <span className="text-gray-400">{events.length} eventos {collapsed ? '▲' : '▼'}</span>
-                </button>
+                <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700 rounded-t-xl">
+                    <div className="flex items-center gap-2">
+                        <span className="text-white text-[10px] cursor-grab active:cursor-grabbing">⠿</span>
+                        <span className="font-bold text-green-400">Analytics Debug</span>
+                    </div>
+                    <button
+                        onClick={() => setCollapsed(p => !p)}
+                        className="text-gray-400 hover:text-white transition-colors px-1"
+                    >
+                        {events.length} eventos {collapsed ? '▲' : '▼'}
+                    </button>
+                </div>
                 {!collapsed && (
                     <div className="max-h-64 overflow-y-auto rounded-b-xl">
                         {events.length === 0 ? (

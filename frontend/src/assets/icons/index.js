@@ -131,6 +131,12 @@ import rightArrowFillHover from './ico_right_arrow_fill_hover.svg';
 import downArrowFillNormal from './ico_down_arrow_fill_normal.svg';
 import downArrowFillHover from './ico_down_arrow_fill_hover.svg';
 
+import fitExtentNormal from './ico_fit_extent_normal.svg';
+import fitExtentHover from './ico_fit_extent_hover.svg';
+
+import webNormal from './ico_web.svg';
+import novedadesNormal from './ico_novedades.svg';
+
 export const externalIcons = {
     base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
     salud_normal: saludNormal, salud_hover: saludHover, economia_normal: economiaNormal, economia_hover: economiaHover,
@@ -154,4 +160,6 @@ export const externalIcons = {
     left_arrow_fill_normal: leftArrowFillNormal, left_arrow_fill_hover: leftArrowFillHover,
     right_arrow_fill_normal: rightArrowFillNormal, right_arrow_fill_hover: rightArrowFillHover,
     down_arrow_fill_normal: downArrowFillNormal, down_arrow_fill_hover: downArrowFillHover,
+    fit_extent_normal: fitExtentNormal, fit_extent_hover: fitExtentHover,
+    web_normal: webNormal, novedades_normal: novedadesNormal,
 };

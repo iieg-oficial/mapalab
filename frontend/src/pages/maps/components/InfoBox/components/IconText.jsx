@@ -7,10 +7,11 @@ const buildHref = (icon, value) => {
     return null;
 };
 
-const IconText = ({ value, icon = 'ubicacion', showDivider = true, isLast = false }) => {
+const IconText = ({ value, icon = 'ubicacion', showDivider = true, isLast = false, href: externalHref = null, onClick = null }) => {
     if (!value) return null;
 
-    const href = buildHref(icon, value);
+    const href = externalHref || buildHref(icon, value);
+    const isClickable = href || onClick;
     const textClass = 'flex-1 font-garet font-medium text-[10px]/[14px] tracking-normal';
 
     return (
@@ -22,8 +23,12 @@ const IconText = ({ value, icon = 'ubicacion', showDivider = true, isLast = fals
                     <a href={href} target="_blank" rel="noopener noreferrer" className={`${textClass} text-[#5C2472] underline`}>
                         {value}
                     </a>
+                ) : onClick ? (
+                    <button onClick={onClick} className={`${textClass} text-[#5C2472] underline text-left cursor-pointer`}>
+                        {value}
+                    </button>
                 ) : (
-                    <span className={`${textClass} text-[#454545]`}>
+                    <span className={`${textClass} ${isClickable ? 'text-[#5C2472] underline' : 'text-[#454545]'}`}>
                         {value}
                     </span>
                 )}
