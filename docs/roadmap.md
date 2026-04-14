@@ -44,8 +44,10 @@ timeline
             : Timeouts de descarga y pool warmup
     section v1.x — Consolidacion y mejoras
         Abril 2026 (v1.1.0)
-            : Capas del sidebar desde backend
-            : Endpoint de busqueda de capas
+            : Zoom automatico y rango de visibilidad por capa
+            : Marcadores interactivos con InfoBox
+            : Boton centrar Jalisco y version global
+            : Modal de novedades desde marker IIEG
         Mayo - Junio 2026 (v1.2.0)
             : Comparador de periodicidad
         Julio - Agosto 2026 (v1.3.0)
@@ -152,6 +154,21 @@ timeline
 - [x] Capa "Carencia por calidad y espacios de la vivienda (%)" en Desarrollo Social
 
 ### v1.1.0 — Abril 2026
+- [x] Propiedad `defaultZoom` en definiciones de capas (3 formatos: numero, zoom+center, extent)
+- [x] Propiedad `zoomRange` en definiciones de capas (min/max visibilidad)
+- [x] Boton "Centrar en Jalisco" en controles del mapa (isla hover en zoom-out)
+- [x] Hook `useMapMarker` reutilizable con InfoBox, minZoom/maxZoom y auto-hide
+- [x] Marker IIEG con InfoBox (version, contacto, novedades)
+- [x] Prioridad de click: marker sobre capas WFS
+- [x] Constante global `APP_VERSION` via Vite define + script sync-version + pre-commit hook
+- [x] Modal "Que hay de nuevo" con tags por tipo y scroll de versiones anteriores
+- [x] Prop `href` en componente Logo
+- [x] Iconos: fit_extent, web, novedades
+- [x] Docs: zoom.md, markers.md
+- [x] Color naranja en geolocalizacion
+- [x] Grip drag visible en AnalyticsDebugPanel
+
+### v1.2.0 — Migrar capas a backend
 - [ ] Migrar lista de capas del sidebar a endpoint del backend
 - [ ] Endpoint de busqueda de capas desde backend
 
