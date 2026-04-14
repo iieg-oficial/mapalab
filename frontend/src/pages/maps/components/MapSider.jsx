@@ -12,6 +12,7 @@ import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 import { trackSiderLock } from '@services/analyticsService';
+import { IIEG_MARKER } from '@pages/maps/helpers/markerDefinitions';
 import { useZenMode } from './ZenMode';
 
 import MenuItem from './MenuItem';
@@ -25,7 +26,8 @@ const MapSider = ({ className = '' }) => {
         toggleMeasurementTools,
         areMeasurementToolsVisible,
         isLocating,
-        rasterLoops
+        rasterLoops,
+        showMarker
     } = useMapsContext();
     const { loadingLayers } = useLayerLoading();
     const hasNonLoopLoading = [...loadingLayers].some(id => !rasterLoops[id]?.isPlaying && contextActiveLayerIds.includes(id));
@@ -158,6 +160,10 @@ const MapSider = ({ className = '' }) => {
         }
     }, []);
 
+    const handleIiegLogoClick = useCallback(() => {
+        showMarker?.(IIEG_MARKER);
+    }, [showMarker]);
+
     const sizeLogo = {
         expanded: 'w-57 h-17',
         collapsed: 'w-14 h-17',
@@ -266,6 +272,9 @@ const MapSider = ({ className = '' }) => {
                 size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'}
                 expanded={isExpanded}
                 visible={!treatAsMobile || isOpen}
+                onClick={handleIiegLogoClick}
+                tooltip="Acerca de Mapa Lab"
+                tooltipPlacement="top"
                 className="shrink-0 p-3 my-2 w-full"
             />
         </aside>

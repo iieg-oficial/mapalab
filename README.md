@@ -3,7 +3,7 @@
 Interfaz web para la creacion, gestion y visualizacion de mapas interactivos
 con datos geoespaciales del IIEG Jalisco.
 
-**Version:** 1.0.10
+**Version:** 1.1.0
 
 ## Requisitos
 
@@ -215,6 +215,8 @@ Ver documentacion completa en [docs/ci-cd.md](docs/ci-cd.md).
 | [Roadmap](docs/roadmap.md) | Timeline del proyecto y features planeadas |
 | [Analytics](docs/analytics.md) | Eventos GTM/GA4 y KPIs |
 | [Arquitectura](docs/arquitectura.md) | Diagramas de infraestructura y componentes |
+| [Zoom](docs/zoom.md) | Zoom automatico por capa, rango de visibilidad y boton centrar Jalisco |
+| [Markers](docs/markers.md) | Marcadores temporales con icono en el mapa |
 
 ## Licencia
 

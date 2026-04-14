@@ -7,6 +7,25 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.1.0] - 2026-04-14
+
+### Agregado
+- Propiedad `defaultZoom` en definiciones de capas: zoom automatico al activar (3 formatos: numero, zoom+center, extent)
+- Propiedad `zoomRange` en definiciones de capas: rango de zoom para visibilidad via `minZoom`/`maxZoom` de OpenLayers
+- Boton "Centrar en Jalisco" en controles del mapa: aparece al hacer hover sobre zoom-in, resetea vista a bounds de Jalisco
+- Hook `useMapMarker`: marcadores temporales reutilizables con icono, zoom, fondo circular, `minZoom`/`maxZoom` y auto-hide
+- InfoBox para markers: click en marcadores muestra InfoBox con datos estaticos via propiedad `infoBox` en definiciones
+- Prioridad de click en markers: si el click cae sobre un marker visible, bloquea el query WFS de capas
+- Click en logo IIEG del sider muestra marcador de MapaLab sobre el instituto con InfoBox (version, contacto, tecnologias)
+- Constante global `APP_VERSION` inyectada desde `package.json` via `define` en Vite
+- Archivo centralizado `markerDefinitions.js` para definiciones de markers reutilizables
+- Script `scripts/sync-version.sh` y pre-commit hook para sincronizar version en README y package-lock
+- Documentacion: `docs/zoom.md`, `docs/markers.md`
+- Iconos `fit_extent` (normal/hover) para boton de centrar vista
+
+### Cambiado
+- Color del punto de geolocalizacion de azul (`#3b82f6`) a naranja (`#f97316`)
+
 ## [1.0.10] - 2026-04-13
 
 ### Agregado
