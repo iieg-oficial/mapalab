@@ -37,7 +37,7 @@ const shouldIncludeField = (fieldName, suffix) => {
     return !otherSuffixes.some(otherSuffix => fieldLower.includes(otherSuffix));
 };
 
-export const renderCard = (properties, config, onClose, layerId = null, featureId = null) => {
+export const renderCard = (properties, config, onClose, layerId = null, featureId = null, onAction = null) => {
     const suffix = extractSuffixFromLayerId(layerId);
 
     const getValue = (field) => {
@@ -180,17 +180,17 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
 
     if (finalConfig.iconText) {
         const iconTextItems = Array.isArray(finalConfig.iconText) ? finalConfig.iconText : [finalConfig.iconText];
-        const validItems = iconTextItems.filter(item => item && properties[item.field]);
+        const validItems = iconTextItems.filter(item => item && (properties[item.field] || item.value));
         validItems.forEach((item, idx) => {
-            body.push(
-                <IconText
-                    key={`icontext-${idx}`}
-                    icon={item.icon}
-                    value={properties[item.field]}
-                    showDivider={idx === 0}
-                    isLast={idx === validItems.length - 1}
-                />
-            );
+            const iconTextProps = {
+                icon: item.icon,
+                value: item.value || properties[item.field],
+                showDivider: idx === 0,
+                isLast: idx === validItems.length - 1,
+            };
+            if (item.href) iconTextProps.href = item.href;
+            if (item.action && onAction) iconTextProps.onClick = () => onAction(item.action);
+            body.push(<IconText key={`icontext-${idx}`} {...iconTextProps} />);
         });
     }
 

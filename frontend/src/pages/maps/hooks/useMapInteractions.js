@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export const useMapInteractions = (mapRef, queryFeatures, disableFeatureSelection = false) => {
+export const useMapInteractions = (mapRef, queryFeatures, disableFeatureSelection = false, markerClickedRef = null) => {
     const lastPointerCheckRef = useRef(0);
     const disableSelectionRef = useRef(disableFeatureSelection);
 
@@ -21,6 +21,11 @@ export const useMapInteractions = (mapRef, queryFeatures, disableFeatureSelectio
                 if (evt.originalEvent && typeof evt.originalEvent.preventDefault === 'function') {
                     evt.originalEvent.preventDefault();
                 }
+                return;
+            }
+
+            if (markerClickedRef?.current) {
+                markerClickedRef.current = false;
                 return;
             }
 
@@ -73,5 +78,5 @@ export const useMapInteractions = (mapRef, queryFeatures, disableFeatureSelectio
             map.un('singleclick', handleMapClick);
             map.un('pointermove', handlePointerMove);
         };
-    }, [mapRef, queryFeatures]);
+    }, [mapRef, queryFeatures, markerClickedRef]);
 };

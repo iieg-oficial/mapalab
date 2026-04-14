@@ -28,6 +28,8 @@ const Logo = ({
     tooltipPlacement = 'right',
     colorFilter = null,
     onClick = null,
+    href = null,
+    target = '_blank',
     visible = true
 }) => {
     const lottieRef = useRef(null);
@@ -94,10 +96,15 @@ const Logo = ({
 
 
 
+    const Wrapper = href ? 'a' : 'div';
+    const wrapperProps = href
+        ? { href, target, rel: 'noopener noreferrer', className: `flex items-center justify-center ${className} cursor-pointer` }
+        : { onClick, className: `flex items-center justify-center ${className} ${onClick ? 'cursor-pointer' : ''}` };
+
     const renderContent = () => {
         if (type && currentLogo[type]) {
             return (
-                <div onClick={onClick} className={`flex items-center justify-center ${className} ${onClick ? 'cursor-pointer' : ''}`}>
+                <Wrapper {...wrapperProps}>
                     <div className={`relative ${size}`}>
                         <Lottie
                             lottieRef={lottieRef}
@@ -125,12 +132,12 @@ const Logo = ({
                             `}
                         />
                     </div>
-                </div>
+                </Wrapper>
             );
         }
 
         return (
-            <div onClick={onClick} className={`flex items-center justify-center ${className} ${onClick ? 'cursor-pointer' : ''}`}>
+            <Wrapper {...wrapperProps}>
                 <div className={`relative ${size}`}>
                     <Lottie
                         lottieRef={lottieRef}
@@ -169,7 +176,7 @@ const Logo = ({
                         `}
                     />
                 </div>
-            </div>
+            </Wrapper>
         );
     };
 
