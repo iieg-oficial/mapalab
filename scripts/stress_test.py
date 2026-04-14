@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
 """
-Stress test con usuarios reales — iieg.jalisco.gob.mx/mapalab/mapa
+Stress test con usuarios reales — MapaLab
 
 Uso:
-  python stress_test.py                          # rampa por defecto
-  python stress_test.py --mode fixed --users 80 --duration 60
-  python stress_test.py --mode ramp  --users 200 --ramp-steps 8 --step-duration 20
-  python stress_test.py --mode ramp  --users 200 --ramp-steps 1 --step-duration 60 --sessions 5
+  python stress_test.py --env local                          # local (https://localhost)
+  python stress_test.py --env staging                        # GCP staging
+  python stress_test.py --env production                     # produccion
+  python stress_test.py --url https://mi-dominio.com/mapalab/mapa  # URL custom
+
+  python stress_test.py --env local --mode fixed --users 80
+  python stress_test.py --env staging --mode ramp --users 200 --ramp-steps 8
+  python stress_test.py --env production --mode ramp --users 200 --ramp-steps 1 --sessions 5
+
+Entornos:
+  local       https://localhost/mapalab/mapa      (ssl=False)
+  staging     Leer de env var STRESS_TEST_STAGING_URL o pasar --url
+  production  Leer de env var STRESS_TEST_PRODUCTION_URL o pasar --url
 
 Simula visitas completas (igual que un navegador real):
   1. GET página principal → HTML + cookies de sesión
@@ -23,6 +32,7 @@ Reporta:
 import asyncio
 import aiohttp
 import argparse
+import os
 import random
 import re
 import statistics
@@ -31,10 +41,49 @@ from collections import defaultdict
 from datetime import datetime
 from urllib.parse import urljoin, urlparse
 
-URL      = "https://iieg.jalisco.gob.mx/mapalab/mapa"
-BASE_URL = "https://iieg.jalisco.gob.mx"
+ENVS = {
+    "local": {
+        "url": "https://localhost/mapalab/mapa",
+        "ssl": False,
+    },
+    "staging": {
+        "url": os.environ.get("STRESS_TEST_STAGING_URL", ""),
+        "ssl": True,
+    },
+    "production": {
+        "url": os.environ.get("STRESS_TEST_PRODUCTION_URL", ""),
+        "ssl": True,
+    },
+}
+
+URL      = ""
+BASE_URL = ""
+SSL_VERIFY = True
 
 TIMEOUT = aiohttp.ClientTimeout(total=30, connect=10)
+
+
+def configure_target(env: str, url: str):
+    global URL, BASE_URL, SSL_VERIFY
+
+    if url:
+        URL = url
+    elif env and env in ENVS:
+        cfg = ENVS[env]
+        URL = cfg["url"]
+        SSL_VERIFY = cfg["ssl"]
+    else:
+        URL = ENVS["local"]["url"]
+        SSL_VERIFY = False
+
+    if not URL:
+        print(f"\n  Error: No hay URL para el entorno '{env}'.")
+        print(f"  Configura la variable de entorno STRESS_TEST_{env.upper()}_URL")
+        print(f"  o usa --url para pasar la URL directamente.\n")
+        raise SystemExit(1)
+
+    parsed = urlparse(URL)
+    BASE_URL = f"{parsed.scheme}://{parsed.netloc}"
 
 # ── Criterios de quiebre ──────────────────────────────────────────────────────
 BREAK_ERROR_RATE = 30.0   # % de sesiones fallidas
@@ -300,7 +349,7 @@ async def run_ramp(max_users, ramp_steps, step_duration, sessions_per_user):
 
     for step in range(ramp_steps):
         concurrent = min(step_size * (step + 1), max_users)
-        connector   = aiohttp.TCPConnector(ssl=False, limit=concurrent * 15)
+        connector   = aiohttp.TCPConnector(ssl=SSL_VERIFY, limit=concurrent * 15)
         start_barrier = asyncio.Event()
         stop_event    = asyncio.Event()
         bucket        = []
@@ -374,6 +423,10 @@ async def run_fixed(users, duration, sessions_per_user):
 
 def main():
     parser = argparse.ArgumentParser(description="Stress test con usuarios reales para mapalab")
+    parser.add_argument("--env", choices=["local", "staging", "production"], default="local",
+                        help="Entorno objetivo (default: local)")
+    parser.add_argument("--url", type=str, default="",
+                        help="URL custom (sobreescribe --env)")
     parser.add_argument("--mode", choices=["fixed", "ramp"], default="ramp",
                         help="fixed: N usuarios fijos por T segundos  |  ramp: incremento gradual (default: ramp)")
     parser.add_argument("--users", type=int, default=100,
@@ -388,7 +441,10 @@ def main():
                         help="Número de sesiones que realiza cada usuario (default: 1)")
     args = parser.parse_args()
 
+    configure_target(args.env, args.url)
+
     print(f"\n  Iniciando prueba: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"  Entorno: {args.env}  |  SSL verify: {SSL_VERIFY}")
     print(f"  Target: {URL}")
 
     if args.mode == "ramp":

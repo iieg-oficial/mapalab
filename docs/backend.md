@@ -63,6 +63,7 @@ uvicorn app.server:app --reload --host 0.0.0.0 --port 8000
 El Dockerfile usa multi-stage builds con dos targets:
 
 - **development**: Uvicorn con `--reload` para hot-reload
-- **production**: Gunicorn con workers UvicornWorker
+- **production**: Gunicorn con workers UvicornWorker (configurable via `GUNICORN_WORKERS`, default 8)
 
 El target se selecciona via la variable `BACKEND_TARGET` en el docker-compose.
+Pool de conexiones configurable via `DB_POOL_SIZE` y `DB_MAX_OVERFLOW` (default 8 cada uno).

@@ -7,7 +7,7 @@ Interfaz web para la creacion, gestion y visualizacion de mapas interactivos con
 | Componente | Tecnologia |
 |---|---|
 | Frontend | React 19, Vite 7, Tailwind CSS 4, OpenLayers 10, React Router 7 |
-| Backend | FastAPI, Gunicorn + Uvicorn, SQLAlchemy, Python 3.12 |
+| Backend | FastAPI, Gunicorn + Uvicorn (8 workers async), SQLAlchemy, Python 3.12 |
 | Base de datos | PostgreSQL 18 + PostGIS 3.6 (externa, no gestionada por este repo) |
 | GeoServer | 2.27.0 Kartoza (WMS, WFS, WCS — externo) |
 | Proxy | Nginx stable-alpine |
@@ -25,8 +25,19 @@ MapaLab opera dentro de una infraestructura compartida en GCP con multiples serv
 | Entorno | Infra | Descripcion |
 |---|---|---|
 | Local | Docker en maquina del desarrollador | `make dev` con Vite + Uvicorn, proxy a GeoServer via Vite |
-| GCP (staging) | Una sola VM con todos los servicios | Todos los contenedores en el mismo servidor, CI/CD automatico desde `production` branch |
-| Administracion (produccion) | Cada repositorio en servidor separado | Gestionado por otra dependencia, no tenemos acceso directo a la consola GCP. Cambios de infra se solicitan al equipo administrador |
+| GCP (staging) | 1 VM: 2 cores, 7.8 GB RAM, 145 GB disco | Todos los contenedores en el mismo servidor, CI/CD automatico desde `production` branch |
+| Administracion (produccion) | 4 servidores dedicados | Gestionado por otra dependencia, no tenemos acceso directo a la consola GCP. Cambios de infra se solicitan al equipo administrador |
+
+#### Servidores de produccion
+
+| Servidor | CPU | RAM | Disco | Servicios |
+|---|---|---|---|---|
+| S1: Gateway + Huachicol + Acervo | 8 cores | 15 GB | 637 GB | Nginx gateway, Prometheus, Grafana, Loki, MinIO |
+| S2: MapaLab | 4 cores | 7.7 GB | 96 GB | Nginx + Gunicorn backend |
+| S3: GeoServer | 8 cores | 15 GB | 490 GB | GeoServer (WMS/WFS/WCS) |
+| S4: DataEngine | 4 cores | 7.7 GB | 490 GB | PostgreSQL 18 + PostGIS 3.6 |
+
+Documentacion completa de recursos en `/IIEG/gateway-hub/docs/recursos-servidores.md`.
 
 ### Servicios y conexiones
 
@@ -46,13 +57,19 @@ gateway-hub (Nginx central)
 Reverse proxy central que maneja:
 - SSL/TLS termination (unico punto HTTPS)
 - Inyeccion de GTM via `sub_filter` en Nginx (el frontend NO inyecta GTM)
-- Rate limiting, IP filtering, seguridad headers
+- Rate limiting por zonas: `general` (10r/s), `api` (10r/s), `static` (50r/s). Responde 429 al exceder
+- Cache de assets de MapaLab (500MB, 7 dias, stale serving en errores)
 - Cache de GeoServer (2GB, 6h TTL)
+- Paginas de error personalizadas (400, 401, 403, 404, 429, 500)
 - Logs JSON a Loki via Promtail
+
+Ruta `/mapalab/assets/` tiene rate limit separado (zona `static`, burst 100) y cache a nivel gateway.
+Los assets con hash de Vite se sirven como `immutable` con cache de 1 año.
 
 Configuracion clave en `/IIEG/gateway-hub/`:
 - `nginx/templates/gateway.conf.template` — todas las reglas de ruteo
 - `nginx/includes/geoserver-locations.inc` — cache y proteccion de GeoServer
+- `docs/rendimiento.md` — configuracion de rate limiting, cache y capacidades
 - `.env` — direcciones de upstreams (MAPALAB_HOST, GEOSERVER_HOST, etc.)
 
 ### GeoServer
@@ -108,7 +125,8 @@ mapalab/
 │       ├── models/        # Mapalab_Card (SQLAlchemy)
 │       └── databases/     # Connection pooling, factory pattern
 ├── nginx/
-│   ├── nginx.conf         # Proxy a backend, SPA routing, gzip, cache
+│   ├── nginx-main.conf    # Config principal: workers auto, connections 2048, open_file_cache
+│   ├── nginx.conf         # Server block: proxy a backend (keepalive 32), SPA routing, gzip, cache
 │   └── Dockerfile
 ├── docker-compose.yml     # Profiles: dev, staging, build
 ├── Makefile               # dev, staging, prod, deploy, ensure-networks
@@ -187,7 +205,18 @@ APScheduler ejecuta refresh de periodicidad diario a las 3:00 AM (Mexico City). 
 
 ### Leader-follower
 
-En produccion (4 workers Gunicorn), solo el leader inicializa DB schema y scheduler usando file locking (`/tmp/mapalab_scheduler.lock`).
+En produccion (8 workers Gunicorn), solo el leader inicializa DB schema y scheduler usando file locking (`/tmp/mapalab_scheduler.lock`).
+
+### Connection pool
+
+Pool SQLAlchemy configurable via variables de entorno `DB_POOL_SIZE` y `DB_MAX_OVERFLOW`. Workers de Gunicorn configurables via `GUNICORN_WORKERS`.
+
+| Entorno | Workers | Pool size | Max overflow | Total conexiones DB |
+|---|---|---|---|---|
+| Produccion (4 cores) | 8 | 8 | 8 | 128 max |
+| GCP staging (2 cores) | 4 | 4 | 4 | 32 max |
+
+DataEngine tiene `max_connections=200`.
 
 ## Descargas
 
@@ -384,13 +413,11 @@ Si alguno falla, corregir antes de continuar.
 Al completar cambios que se van a versionar:
 
 1. **CHANGELOG** (`docs/CHANGELOG.md`) — agregar entrada en `[No publicado]` o nueva version siguiendo la sintaxis existente (Keep a Changelog + Semver). Secciones: Agregado, Cambiado, Corregido, Eliminado, Rendimiento.
-2. **Version** — actualizar en todos los archivos que la contienen:
-   - `README.md` (linea `**Version:**`)
-   - `frontend/package.json` (campo `version`)
-   - `frontend/package-lock.json` (ejecutar `npm install --package-lock-only` en `frontend/`)
-3. **Roadmap** (`docs/roadmap.md`) — agregar la version en el checklist y en el timeline mermaid si aplica.
-4. **Documentacion afectada** — si los cambios modifican comportamiento documentado en `docs/` (ci-cd, analytics, periodicidad, arquitectura, etc.), actualizar esos archivos tambien.
-5. **Planes** (`docs/planes/`) — si se completa una tarea o fase de un plan existente, marcarla como completada o actualizar el estado.
+2. **Version** — actualizar solo en `frontend/package.json` (campo `version`). El pre-commit hook sincroniza automaticamente `README.md` y `package-lock.json` via `scripts/sync-version.sh`.
+3. **Notas de version** (`frontend/src/pages/maps/helpers/releaseNotes.js`) — agregar entrada al inicio del array `FALLBACK_NOTES` con los cambios visibles para el usuario. Redactar en lenguaje simple sin datos tecnicos sensibles (no mencionar servidores, credenciales, IPs, puertos, infraestructura interna). Cada item lleva un `tag`: `added`, `fixed`, `changed`, `removed` o `perf`. Se muestran en el modal "Que hay de nuevo" del marker IIEG.
+4. **Roadmap** (`docs/roadmap.md`) — agregar la version en el checklist y en el timeline mermaid si aplica.
+5. **Documentacion afectada** — si los cambios modifican comportamiento documentado en `docs/` (ci-cd, analytics, periodicidad, arquitectura, etc.), actualizar esos archivos tambien.
+6. **Planes** (`docs/planes/`) — si se completa una tarea o fase de un plan existente, marcarla como completada o actualizar el estado.
 
 ### Conventional commits
 

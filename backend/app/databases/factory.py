@@ -30,5 +30,9 @@ class DatabaseFactory:
     def get_connection(db_type: DatabaseType) -> PostgresConnection:
         if db_type not in DatabaseFactory._connections:
             db_url = DatabaseFactory._build_db_url(db_type)
-            DatabaseFactory._connections[db_type] = PostgresConnection(db_url)
+            DatabaseFactory._connections[db_type] = PostgresConnection(
+                db_url,
+                pool_size=settings.DB_POOL_SIZE,
+                max_overflow=settings.DB_MAX_OVERFLOW,
+            )
         return DatabaseFactory._connections[db_type]
