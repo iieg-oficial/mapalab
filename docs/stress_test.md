@@ -1,6 +1,6 @@
 # Stress Test — Mapalab IIEG
 
-Herramienta de prueba de carga para `https://iieg.jalisco.gob.mx/mapalab/mapa`.
+Herramienta de prueba de carga para MapaLab. Soporta multiples entornos: local, staging y produccion.
 
 Simula visitas completas de usuarios reales y detecta automáticamente el punto en que el servidor comienza a fallar.
 
@@ -33,7 +33,7 @@ pip install aiohttp
 Sube la carga gradualmente en pasos hasta llegar al máximo. Se detiene automáticamente al detectar quiebre.
 
 ```bash
-python stress_test.py --mode ramp --users 200 --ramp-steps 10 --sessions 1
+python stress_test.py --env local --mode ramp --users 200 --ramp-steps 10 --sessions 1
 ```
 
 ### Modo fijo (para validar resistencia a una carga concreta)
@@ -41,7 +41,7 @@ python stress_test.py --mode ramp --users 200 --ramp-steps 10 --sessions 1
 Lanza exactamente N usuarios simultáneos, cada uno hace su número de sesiones y termina.
 
 ```bash
-python stress_test.py --mode fixed --users 80 --sessions 3
+python stress_test.py --env staging --mode fixed --users 80 --sessions 3
 ```
 
 ---
@@ -50,6 +50,8 @@ python stress_test.py --mode fixed --users 80 --sessions 3
 
 | Parámetro | Default | Descripción |
 |---|---|---|
+| `--env` | `local` | `local` (https://localhost) \| `staging` (env var) \| `production` (env var) |
+| `--url` | — | URL custom, sobreescribe `--env` |
 | `--mode` | `ramp` | `ramp`: sube carga gradualmente \| `fixed`: carga fija |
 | `--users` | `100` | Número máximo de usuarios simultáneos |
 | `--sessions` | `1` | Número de visitas completas que hace cada usuario |
@@ -57,16 +59,20 @@ python stress_test.py --mode fixed --users 80 --sessions 3
 | `--step-duration` | `20` | *(no tiene efecto actualmente)* La duración real la determina el servidor |
 | `--duration` | `60` | *(no tiene efecto actualmente)* La duración real la determina el servidor |
 
+Para staging y production, configurar la URL via variables de entorno:
+- `STRESS_TEST_STAGING_URL` — URL completa de staging
+- `STRESS_TEST_PRODUCTION_URL` — URL completa de produccion
+
 ### Ejemplos prácticos
 
 ```bash
 # Flujo recomendado:
 
-# 1. Encontrar el umbral con rampa de 10 pasos
-python stress_test.py --mode ramp --users 200 --ramp-steps 10
+# 1. Encontrar el umbral en local
+python stress_test.py --env local --mode ramp --users 200 --ramp-steps 10
 
-# 2. Si el quiebre ocurrió en 120 usuarios, validar que aguanta sostenido en 80
-python stress_test.py --mode fixed --users 80 --sessions 5
+# 2. Validar staging con carga sostenida
+python stress_test.py --env staging --mode fixed --users 80 --sessions 5
 
 # 3. Prueba rápida de un solo nivel de carga
 python stress_test.py --mode ramp --users 50 --ramp-steps 1 --sessions 3

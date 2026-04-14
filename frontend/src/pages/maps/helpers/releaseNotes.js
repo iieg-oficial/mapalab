@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.1.1',
+        items: [
+            { text: 'Información del IIEG mejorada con tecnologías como etiquetas', tag: 'changed' }
+        ]
+    },
+    {
         version: '1.1.0',
         items: [
             { text: 'Zoom automático al activar capas específicas', tag: 'added' },

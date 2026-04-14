@@ -7,6 +7,17 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.1.1] - 2026-04-14
+
+### Cambiado
+- InfoBox del marker IIEG: tecnologias como etiquetas individuales, nombre del instituto como campo "Organismo"
+- Retry con 3 intentos en workflow de auto-merge para PR inestables
+- Instrucciones de versionado en context.md incluyen actualizacion de release notes
+
+### Corregido
+- Orden de renderizado en renderCard restaurado al original (list → iconText → text → cards) para no afectar otros InfoBox
+- Label opcional en componente List del InfoBox
+
 ## [1.1.0] - 2026-04-14
 
 ### Agregado
