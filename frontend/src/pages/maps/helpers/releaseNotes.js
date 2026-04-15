@@ -12,6 +12,14 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.1.4',
+        items: [
+            { text: 'Aviso de licencia IIEG al descargar datos con link a la declaración oficial', tag: 'added' },
+            { text: 'Información detallada de Áreas Naturales Protegidas al hacer click', tag: 'added' },
+            { text: 'Proceso de despliegue optimizado', tag: 'perf' }
+        ]
+    },
+    {
         version: '1.1.3',
         items: [
             { text: 'Capa "Áreas Naturales Protegidas" disponible en Recursos', tag: 'added' },
