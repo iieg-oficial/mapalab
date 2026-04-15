@@ -7,6 +7,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.1.2] - 2026-04-15
+
+### Agregado
+- Control de SEO por entorno: `SEO_ENABLED` en Nginx bloquea robots.txt, sitemap.xml y agrega `X-Robots-Tag: noindex` en staging. Produccion lo habilita con `SEO_ENABLED=true`
+- Retry con 3 intentos en workflow de auto-merge para PR inestables
+
 ### Cambiado
 - Descripcion del proyecto actualizada en package.json y marker IIEG
 

@@ -3,7 +3,7 @@
     "description": "Mapa interactivo de Jalisco con capas geoespaciales. La herramienta oficial para visualizar y analizar información territorial del estado.",
     "license": "MIT",
     "author": "Edgar Alejandro Villarreal Padilla <edgar.villarreal@iieg.gob.mx>",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "private": true,
     "type": "module",
     "scripts": {

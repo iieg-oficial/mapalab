@@ -80,6 +80,8 @@ services:
     profiles: ["staging"]
     ports:
       - "${NGINX_PORT:-3006}:80"
+    environment:
+      SEO_ENABLED: ${SEO_ENABLED:-false}
     volumes:
       - ./frontend/dist:/usr/share/nginx/html:ro
     depends_on:
