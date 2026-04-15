@@ -186,6 +186,12 @@ timeline
 - [x] Centrar Jalisco responsive con `view.fit()` + padding proporcional
 - [x] Fix modal scroll en mobile, fix click accidental en InfoBox links
 
+#### v1.1.4
+- [x] Tooltip de licencia IIEG en descargas con link clickeable (`interactive` tooltip)
+- [x] LittleCard ANP Jalisco con campos reales (nombre, jurisdiccion, tipo, area)
+- [x] CI/CD: tests 1 vez, cache npm, `git reset --hard` en deploy
+- [x] Emojis: sin banderas, sin 💩, z-index fix en mobile
+
 ### v1.2.0 — Migrar capas a backend
 - [ ] Migrar lista de capas del sidebar a endpoint del backend
 - [ ] Endpoint de busqueda de capas desde backend
