@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.1.2',
+        items: [
+            { text: 'Descripción del proyecto actualizada', tag: 'changed' }
+        ]
+    },
+    {
         version: '1.1.1',
         items: [
             { text: 'Información del IIEG mejorada con tecnologías como etiquetas', tag: 'changed' }
