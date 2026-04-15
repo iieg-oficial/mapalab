@@ -3,7 +3,6 @@ name: CI
 on:
   push:
     branches-ignore: [develop, production]
-  pull_request:
 
 jobs:
   test:
