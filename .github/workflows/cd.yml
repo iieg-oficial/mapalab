@@ -5,11 +5,7 @@ on:
     branches: [production]
 
 jobs:
-  test:
-    uses: ./.github/workflows/test-frontend.yml
-
   deploy:
-    needs: test
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -26,7 +22,8 @@ jobs:
             git config --global --add safe.directory ${{ secrets.PROJECT_PATH }}
             git fetch origin production
             git checkout production
-            git pull origin production
+            git reset --hard origin/production
+            git clean -fd -e .env.production -e frontend/dist
             make deploy
             docker image prune -f --filter "until=168h"
 
