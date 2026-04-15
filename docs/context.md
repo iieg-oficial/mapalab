@@ -12,7 +12,7 @@ Interfaz web para la creacion, gestion y visualizacion de mapas interactivos con
 | GeoServer | 2.27.0 Kartoza (WMS, WFS, WCS — externo) |
 | Proxy | Nginx stable-alpine |
 | Contenedores | Docker + Docker Compose con profiles (dev, staging, build) |
-| Testing | Vitest + Testing Library (344 tests) |
+| Testing | Vitest + Testing Library (350 tests) |
 | CI/CD | GitHub Actions (lint, test, deploy SSH, health check, Discord) |
 | Monitoreo | Huachicol (Grafana + Prometheus + Loki) |
 
@@ -57,6 +57,7 @@ gateway-hub (Nginx central)
 Reverse proxy central que maneja:
 - SSL/TLS termination (unico punto HTTPS)
 - Inyeccion de GTM via `sub_filter` en Nginx (el frontend NO inyecta GTM)
+- Control de SEO via `SEO_ENABLED`: produccion permite indexacion, staging la bloquea (robots.txt, sitemap, X-Robots-Tag). MapaLab no gestiona SEO — se controla desde gateway
 - Rate limiting por zonas: `general` (10r/s), `api` (10r/s), `static` (50r/s). Responde 429 al exceder
 - Cache de assets de MapaLab (500MB, 7 dias, stale serving en errores)
 - Cache de GeoServer (2GB, 6h TTL)
@@ -112,7 +113,7 @@ mapalab/
 │   │   ├── providers/     # MapsProvider (orquestador central), MainProvider
 │   │   ├── services/      # downloadService, featureInfoService, analyticsService, etc.
 │   │   ├── hooks/         # Hooks globales (useDebounce, useMaps, etc.)
-│   │   └── test/          # 24 archivos, 344 tests
+│   │   └── test/          # 24 archivos, 350 tests
 │   ├── Dockerfile         # Build de produccion (Node 24 Alpine)
 │   └── Dockerfile.dev     # Dev con hot-reload
 ├── backend/

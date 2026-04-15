@@ -3,14 +3,14 @@ import imgDescargadaBanner from '@assets/images/img_descargada_banner.png';
 import imgHerramientasBanner from '@assets/images/img_herramientas_banner.png';
 
 const selectConfig = {
-    title: 'No te pierdas estás funcionalidades del mapa',
+    title: 'No te pierdas estas funcionalidades del mapa',
     description: '* La visualización de las capas dependerá de tu navegador; te sugerimos eliminar las capas que no estés utilizando para un mejor rendimiento del mapa.',
     options: [
         {
             id: 1,
             image: imgInfoBanner,
             header: 'Tarjeta de información específica por capa',
-            label: 'Al seleccionar una capa desde el menú, se mostrará en el panel de capas activas con sus acciones: ocultarla, cambiar el orden del listado, ver su tarjeta de información, así como eliminar la capa. \n \n Al activar la tarjeta informativa de la capa podrás descargar la capa, ajustar su opacidad, consultar su descripción, numeralia, filtrar información por periodo de tiempo, así como conocer la metodología, fuente y fecha de actualización.',
+            label: 'Al seleccionar una capa desde el menú, se mostrará en el panel de capas activas con sus acciones específicas: ocultarla, cambiar el orden del listado, ver su tarjeta de información, así como eliminar la capa. Al activar la tarjeta informativa podrás descargar la capa completa, ajustar su opacidad, consultar su descripción, ver numeralia, filtrar información según el año, así como conocer la metodología, fuente y fecha de actualización de la capa que tienes seleccionada.',
             color: '#FFB98E'
         }, {
             id: 2,

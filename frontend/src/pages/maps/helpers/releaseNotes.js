@@ -12,6 +12,18 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.1.3',
+        items: [
+            { text: 'Capa "Áreas Naturales Protegidas" disponible en Recursos', tag: 'added' },
+            { text: 'Catálogo completo de emojis con categorías en herramientas de medición', tag: 'added' },
+            { text: 'Video explicativo en la página de inicio', tag: 'added' },
+            { text: 'Vista previa mejorada al compartir enlaces (imagen y descripción)', tag: 'added' },
+            { text: 'Centrar Jalisco se adapta correctamente a pantallas móviles', tag: 'fixed' },
+            { text: 'El modal de novedades ya no se cierra al hacer scroll en móvil', tag: 'fixed' },
+            { text: 'Licencia actualizada a Licencia IIEG 2026', tag: 'changed' }
+        ]
+    },
+    {
         version: '1.1.2',
         items: [
             { text: 'Descripción del proyecto actualizada', tag: 'changed' }

@@ -168,6 +168,24 @@ timeline
 - [x] Color naranja en geolocalizacion
 - [x] Grip drag visible en AnalyticsDebugPanel
 
+#### v1.1.1
+- [x] InfoBox marker IIEG: tecnologias como etiquetas, campo "Organismo"
+- [x] Retry en workflow auto-merge
+- [x] Instrucciones de release notes en context.md
+
+#### v1.1.2
+- [x] Control de SEO por entorno (`SEO_ENABLED`)
+- [x] Descripcion del proyecto actualizada
+
+#### v1.1.3
+- [x] Capa "Areas Naturales Protegidas" en Recursos
+- [x] Catalogo completo de emojis con 9 categorias
+- [x] Video de YouTube en pagina de inicio
+- [x] Meta tags Open Graph y Twitter Card con imagen de branding
+- [x] Licencia IIEG 2026 en atribucion del mapa
+- [x] Centrar Jalisco responsive con `view.fit()` + padding proporcional
+- [x] Fix modal scroll en mobile, fix click accidental en InfoBox links
+
 ### v1.2.0 — Migrar capas a backend
 - [ ] Migrar lista de capas del sidebar a endpoint del backend
 - [ ] Endpoint de busqueda de capas desde backend

@@ -7,6 +7,31 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.1.3] - 2026-04-15
+
+### Agregado
+- Capa "Areas Naturales Protegidas" en Recursos > Areas Protegidas
+- Catalogo completo de emojis con 9 categorias y tabs en herramienta de mediciones
+- Video de YouTube en pagina de inicio despues de la guia
+- Meta tags Open Graph y Twitter Card para compartir enlaces con imagen y descripcion
+- Plugin Vite `htmlMetaPlugin` para inyectar URL del sitio en meta tags en build time
+
+### Cambiado
+- Licencia Creative Commons BY 4.0 reemplazada por Licencia IIEG 2026 en atribucion del mapa
+- Titulo de guia en home: "¿Que puedes hacer en MapaLab?" en lugar de "¿Como navegar en MapaLab?"
+- Titulo de la pagina: "MapaLab — IIEG"
+- Meses en fechas de ultima actualizacion en minusculas
+- Boton centrar Jalisco usa `view.fit()` con padding proporcional al viewport (responsive)
+- Panel de emojis homologado al ancho de Mis Mediciones (334px)
+
+### Corregido
+- ID de capa `areas_naturales_protegidas` colisionaba con ID de categoria, renombrado a `anp_jalisco`
+- InfoBox: links no se activan accidentalmente al aparecer (200ms delay de pointer-events)
+- Modal: scroll en mobile no cierra el modal (stopPropagation en touchstart/mousedown)
+- Modal: backdrop solo cierra con tap, no con swipe (deteccion de movimiento < 5px)
+- Boton centrar Jalisco ahora aparece correctamente en mobile (fix mouseLeave en touch devices)
+- useOutsideClick ignora eventos dentro de elementos con role="dialog"
+
 ## [1.1.2] - 2026-04-15
 
 ### Agregado
