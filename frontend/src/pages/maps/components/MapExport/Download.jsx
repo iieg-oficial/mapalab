@@ -8,7 +8,15 @@ import Checkbox from '@components/Checkbox';
 import Icon from '@components/Icon';
 import Panel from '@components/Panel';
 import Tooltip from '@components/Tooltip';
+import { LICENCIA_URL, LICENCIA_TEXTO } from '@constants/app';
 import ScrollContainer from '@components/ScrollContainer';
+
+const licenciaContent = (
+    <span className="text-[11px]/[15px]">
+        {LICENCIA_TEXTO}{' '}
+        <a href={LICENCIA_URL} target="_blank" rel="noopener noreferrer" className="underline font-semibold">Licencia IIEG 2026</a>
+    </span>
+);
 import QualitySelector from './QualitySelector';
 
 const Download = ({ onOpenPreview, onOpenChange }) => {
@@ -99,11 +107,7 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
 
     return (
         <div className="flex flex-col relative">
-            <Tooltip
-                content={!canDownload ? 'Necesitas tener al menos una capa activa para descargar' : 'Descargar mapa'}
-                placement="top"
-                delay={300}
-            >
+            <Tooltip content={licenciaContent} placement="top" delay={300} interactive>
                 <button
                     ref={anchorRef}
                     type="button"

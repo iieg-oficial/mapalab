@@ -64,7 +64,7 @@ Reverse proxy central que maneja:
 - Paginas de error personalizadas (400, 401, 403, 404, 429, 500)
 - Logs JSON a Loki via Promtail
 
-Ruta `/mapalab/assets/` tiene rate limit separado (zona `static`, burst 100) y cache a nivel gateway.
+Ruta `/mapalab/assets/` tiene rate limit separado (zona `static`, burst 200) y cache a nivel gateway.
 Los assets con hash de Vite se sirven como `immutable` con cache de 1 año.
 
 Configuracion clave en `/IIEG/gateway-hub/`:
