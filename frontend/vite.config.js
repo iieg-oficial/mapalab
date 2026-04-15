@@ -9,6 +9,16 @@ import { readFileSync } from 'fs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'));
 
+function htmlMetaPlugin(env) {
+    const siteUrl = (env.VITE_SITE_URL || '').replace(/\/$/, '');
+    return {
+        name: 'html-meta',
+        transformIndexHtml(html) {
+            return html.replace(/__SITE_URL__/g, siteUrl);
+        }
+    };
+}
+
 function deferCssPlugin() {
     return {
         name: 'defer-css',
@@ -34,7 +44,7 @@ export default defineConfig(({ mode }) => {
         define: {
             __APP_VERSION__: JSON.stringify(pkg.version)
         },
-        plugins: [react(), tailwindcss(), deferCssPlugin()],
+        plugins: [react(), tailwindcss(), deferCssPlugin(), htmlMetaPlugin(env)],
         build: {},
         server: {
             host: HOST_FRONTEND,

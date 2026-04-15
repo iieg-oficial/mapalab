@@ -37,7 +37,8 @@ describe('Modal', () => {
         const onClose = vi.fn();
         render(<Modal isOpen={true} onClose={onClose} />);
         const backdrop = document.querySelector('.absolute.inset-0');
-        fireEvent.click(backdrop);
+        fireEvent.pointerDown(backdrop, { clientX: 100, clientY: 100 });
+        fireEvent.pointerUp(backdrop, { clientX: 100, clientY: 100 });
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 

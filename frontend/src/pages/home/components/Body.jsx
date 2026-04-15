@@ -106,6 +106,18 @@ const Body = ({ isModal = false }) => {
                     ))}
                 </div>
             </div>
+            <div className="my-9 mx-4 flex justify-center">
+                <div className="w-full max-w-[900px] aspect-video rounded-[20px] overflow-hidden shadow-[0px_6px_12px_#ACBFE533]">
+                    <iframe
+                        src="https://www.youtube.com/embed/MzuImZuDM3E"
+                        title="MapaLab — IIEG"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                        loading="lazy"
+                    />
+                </div>
+            </div>
             <div className="pt-5 relative">
                 <TitleAndNote title={selectConfig.title} description={selectConfig.description} />
                 <div

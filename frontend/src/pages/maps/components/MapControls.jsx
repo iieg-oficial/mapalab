@@ -1,7 +1,7 @@
 import { useMapsContext } from '@hooks/useMaps';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { fromLonLat } from 'ol/proj';
+import { transformExtent } from 'ol/proj';
 import Icon from '@components/Icon';
 import { trackMapZoomLevel, trackGeolocate } from '@services/analyticsService';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
@@ -51,11 +51,11 @@ const MapControls = () => {
     const handleFitJalisco = useCallback(() => {
         if (!mapRef.current) return;
         const view = mapRef.current.getView();
-        view.animate({
-            center: fromLonLat(JALISCO_BOUNDS.center),
-            zoom: JALISCO_BOUNDS.zoom,
-            duration: 500
-        });
+        const extent = transformExtent(JALISCO_BOUNDS.coords, 'EPSG:4326', 'EPSG:3857');
+        const size = mapRef.current.getSize();
+        const shortSide = Math.min(size[0], size[1]);
+        const pad = Math.round(shortSide * 0.08);
+        view.fit(extent, { duration: 500, padding: [pad, pad, pad, pad] });
         setShowFitExtent(false);
     }, [mapRef]);
 
@@ -213,7 +213,7 @@ const MapControls = () => {
                 <button
                     onClick={handleZoomOut}
                     onMouseEnter={handleZoomOutEnter}
-                    onMouseLeave={() => { setHoveredButton(null); handleFitExtentLeave(); }}
+                    onMouseLeave={() => { if (!isTouchDevice()) { setHoveredButton(null); handleFitExtentLeave(); } }}
                     className="p-2"
                     title="Alejar"
                     aria-label="Alejar zoom"

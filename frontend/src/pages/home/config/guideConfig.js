@@ -6,7 +6,7 @@ import imgHerramientas from '@assets/images/img_herramientas.svg';
 import imgDescargarCapaNormal from '@assets/images/img_descargar_capa_normal.svg';
 
 const guideConfig = {
-    title: '¿Cómo navegar en MapaLab?',
+    title: '¿Qué puedes hacer en MapaLab?',
     note: '*Para un mejor funcionamiento, te sugerimos acceder desde una computadora.',
     steps: [
         {

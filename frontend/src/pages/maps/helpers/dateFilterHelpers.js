@@ -117,7 +117,7 @@ export const formatDateString = (dateString) => {
     if (parts.length >= 2) {
         const year = parts[0];
         const month = MONTHS.find(m => m.num === parseInt(parts[1]));
-        const monthName = month?.name || parts[1];
+        const monthName = (month?.name || parts[1]).toLowerCase();
         if (parts.length >= 3 && parseInt(parts[2]) > 0) {
             return `${parseInt(parts[2])} de ${monthName} de ${year}`;
         }
