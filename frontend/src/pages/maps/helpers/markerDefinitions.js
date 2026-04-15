@@ -17,7 +17,7 @@ export const IIEG_MARKER = {
             nombre: 'MapaLab',
             version: `v${APP_VERSION}`,
             institucion: 'Instituto de Información Estadística y Geográfica del Estado de Jalisco',
-            descripcion: 'Plataforma de visualización de datos geoespaciales de Jalisco',
+            descripcion: 'Mapa interactivo de Jalisco con capas geoespaciales. La herramienta oficial para visualizar y analizar información territorial del estado.',
             direccion: 'Calz. de los Pirules #71, Ciudad Granja, 45010 Zapopan, Jal.',
             telefono: '(33) 3777 1770',
             correo: 'iieg@jalisco.gob.mx',

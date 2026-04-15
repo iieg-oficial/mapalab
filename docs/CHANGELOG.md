@@ -7,6 +7,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+### Cambiado
+- Descripcion del proyecto actualizada en package.json y marker IIEG
+
 ## [1.1.1] - 2026-04-14
 
 ### Cambiado
