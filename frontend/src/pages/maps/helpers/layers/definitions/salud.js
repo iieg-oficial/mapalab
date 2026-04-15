@@ -117,7 +117,7 @@ export const saludLayers = {
                     isLabel: true,
                     children: INSTITUCIONES_OTROS_NIVEL.map(([id, label, layerName, tags]) => ({
                         id, label,
-                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'Otros'`),
+                        wmsConfig: createSaludLayer.withFilter(SALUD_LAYER, `nombre_institucion =  '${layerName}' AND nivel_atencion = 'No aplica'`),
                         littleCard: establecimientosSaludConfig,
                         searchMeta: { tags }
                     }))
