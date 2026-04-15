@@ -7,6 +7,22 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.1.4] - 2026-04-15
+
+### Agregado
+- Tooltip de licencia IIEG en botones de descarga de capas y visualizacion con link clickeable al PDF
+- Prop `interactive` en componente Tooltip para permitir clicks en contenido (links, botones)
+- Constantes `LICENCIA_URL` y `LICENCIA_TEXTO` en `@constants/app`
+- LittleCard especifica para capa ANP Jalisco con campos nombre, jurisdiccion, tipo, area_ha
+
+### Cambiado
+- CI/CD optimizado: tests corren 1 vez (en auto-merge) en lugar de 3, cache de npm en CI, deploy con `git reset --hard` para evitar conflictos
+- Emojis: eliminada categoria Banderas y emoji 💩
+
+### Corregido
+- ID de capa ANP colisionaba con ID de categoria (fix en v1.1.3 incompleto)
+- Panel de emojis aparecia detras del boton cerrar herramientas en mobile (z-index)
+
 ## [1.1.3] - 2026-04-15
 
 ### Agregado

@@ -44,7 +44,8 @@ const Tooltip = ({
     icon = null,
     variant = 'normal',
     showArrow = true,
-    forceVisible = false
+    forceVisible = false,
+    interactive = false
 }) => {
     const disabled = disabledProp || (disableMobile && window.innerWidth < 768);
     const [isVisible, setIsVisible] = useState(false);
@@ -150,10 +151,16 @@ const Tooltip = ({
         }, delay);
     };
 
-    const handleMouseLeave = () => {
+    const handleMouseLeave = (e) => {
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
+        if (interactive && tooltipRef.current?.contains(e.relatedTarget)) return;
+        setIsVisible(false);
+    };
+
+    const handleTooltipMouseLeave = (e) => {
+        if (interactive && triggerRef.current?.contains(e.relatedTarget)) return;
         setIsVisible(false);
     };
 
@@ -236,10 +243,11 @@ const Tooltip = ({
         <div
             ref={tooltipRef}
             role="tooltip"
+            onMouseLeave={interactive ? handleTooltipMouseLeave : undefined}
             className={`
                 ${variantConfig.className}
-                fixed z-[9999] px-2.5 py-1 text-[10px]/[12px] font-bold font-garet rounded-[12px] 
-                max-w-xs pointer-events-none flex items-center gap-2 border tracking-normal
+                fixed z-[9999] px-2.5 py-1 text-[10px]/[12px] font-bold font-garet rounded-[12px]
+                max-w-xs ${interactive ? 'pointer-events-auto' : 'pointer-events-none'} flex items-center gap-2 border tracking-normal
             `}
             style={{
                 top: `${position.top}px`,
