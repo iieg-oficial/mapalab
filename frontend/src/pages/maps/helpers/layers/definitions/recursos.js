@@ -136,9 +136,11 @@ const AGUA = [
 
 const AREAS_NATURALES = [
     ['anp_jalisco', 'Áreas Naturales Protegidas', 'areas_naturales_protegidas', ['recursos', 'ambiente', 'area_natural', 'protegida', 'conservacion', 'biodiversidad', 'reserva', 'parque', 'santuario'], {
-        headerField: 'nombre',
-        labelGroups: [
-            { fields: ['jurisdiccion', 'tipo'] }
+        headerField: 'Áreas Naturales Protegidas',
+        list: [
+            { label: 'Nombre', field: 'nombre', raw: true },
+            { label: 'Jurisdicción', field: 'jurisdiccion', raw: true },
+            { label: 'Tipo', field: 'tipo', raw: true },
         ],
         cards: [
             { label: 'Área (ha)', field: 'area_ha' },

@@ -11,10 +11,12 @@ const pkg = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'ut
 
 function htmlMetaPlugin(env) {
     const siteUrl = (env.VITE_SITE_URL || '').replace(/\/$/, '');
+    const basePath = (env.VITE_BASE_PATH || '/').replace(/\/$/, '');
+    const fullUrl = basePath !== '/' ? `${siteUrl}${basePath}` : siteUrl;
     return {
         name: 'html-meta',
         transformIndexHtml(html) {
-            return html.replace(/__SITE_URL__/g, siteUrl);
+            return html.replace(/__SITE_URL__/g, fullUrl);
         }
     };
 }
