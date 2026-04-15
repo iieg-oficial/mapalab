@@ -1,4 +1,4 @@
-import { useEffect, useRef, useId } from 'react';
+import { useEffect, useRef, useId, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from '@components/Icon';
 
@@ -32,13 +32,28 @@ const Modal = ({
         };
     }, [isOpen, onClose]);
 
+    const pointerStartRef = useRef(null);
+
+    const handleBackdropPointerDown = useCallback((e) => {
+        pointerStartRef.current = { x: e.clientX, y: e.clientY };
+    }, []);
+
+    const handleBackdropPointerUp = useCallback((e) => {
+        if (!pointerStartRef.current) return;
+        const dx = Math.abs(e.clientX - pointerStartRef.current.x);
+        const dy = Math.abs(e.clientY - pointerStartRef.current.y);
+        pointerStartRef.current = null;
+        if (dx < 5 && dy < 5) onClose();
+    }, [onClose]);
+
     if (!isOpen) return null;
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6">
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-                onClick={onClose}
+                onPointerDown={handleBackdropPointerDown}
+                onPointerUp={handleBackdropPointerUp}
             />
 
             <div
@@ -47,6 +62,8 @@ const Modal = ({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={title ? titleId : undefined}
+                onTouchStart={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
             >
                 {showHeader && (title || showCloseButton) && (
                     <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 bg-white z-10">

@@ -54,10 +54,18 @@ const InfoBox = () => {
     useOutsideClick([panelRef], handleClose);
     useViewportContainment(panelRef, [selectedFeatureInfo, clickPosition]);
 
+    const [interactive, setInteractive] = useState(false);
+
     useEffect(() => {
-        if (!selectedFeatureInfo?.results?.length) return;
+        if (!selectedFeatureInfo?.results?.length) {
+            setInteractive(false);
+            return;
+        }
         const layerId = selectedFeatureInfo.results[0]?.layerId;
         if (layerId) trackFeatureClick(layerId);
+        setInteractive(false);
+        const timer = setTimeout(() => setInteractive(true), 200);
+        return () => clearTimeout(timer);
     }, [selectedFeatureInfo]);
 
     if (!selectedFeatureInfo) return null;
@@ -159,7 +167,10 @@ const InfoBox = () => {
                 />
 
                 {!showEmptySuggestions && !hasNoResults && (!isPolygonSelection || isExpanded) && (
-                    <div className={`${totalFeatures <= 1 ? 'h-fit' : 'max-h-[60vh] overflow-y-auto'} [&::-webkit-scrollbar]:hidden [scrollbar-width:none] rounded-lg`}>
+                    <div
+                        className={`${totalFeatures <= 1 ? 'h-fit' : 'max-h-[60vh] overflow-y-auto'} [&::-webkit-scrollbar]:hidden [scrollbar-width:none] rounded-lg transition-[pointer-events] duration-0`}
+                        style={{ pointerEvents: interactive ? 'auto' : 'none' }}
+                    >
                         <div className="space-y-2">
                             {results.map((result, idx) => (
                                 <div key={idx} className="space-y-2">

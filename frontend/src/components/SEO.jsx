@@ -35,7 +35,7 @@ const upsertJsonLd = (data) => {
 const SEO = ({ title, description, path = '', image, schemaType = 'WebSite' }) => {
     useEffect(() => {
         const pageUrl = path ? `${SITE_URL}/${path}` : SITE_URL;
-        const ogImage = image || `${SITE_URL}/og-image.png`;
+        const ogImage = image || `${SITE_URL}/img_link_share.png`;
 
         document.title = title;
 
