@@ -162,7 +162,8 @@ const MapSider = ({ className = '' }) => {
 
     const handleIiegLogoClick = useCallback(() => {
         showMarker?.(IIEG_MARKER);
-    }, [showMarker]);
+        if (treatAsMobile) closeSider();
+    }, [showMarker, treatAsMobile, closeSider]);
 
     const sizeLogo = {
         expanded: 'w-57 h-17',

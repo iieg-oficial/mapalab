@@ -7,6 +7,14 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+### Agregado
+- Flag `openOnShow` en definiciones de marker para abrir automaticamente la InfoBox al aparecer (opt-in, activo en marker del IIEG)
+- Helper `openMarkerCard(feature)` exportado de `useMapMarker` y reutilizado en el click handler
+
+### Cambiado
+- Click en el logo IIEG del sider colapsa el sider en mobile (`closeSider`) ademas de mostrar el marker
+- `showMarker` llama a `openMarkerCard` como callback de `view.animate`, garantizando que la InfoBox quede centrada sobre el icono al terminar la animacion
+
 ## [1.1.4] - 2026-04-15
 
 ### Agregado

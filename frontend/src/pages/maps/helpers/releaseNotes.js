@@ -12,6 +12,13 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: 'No publicado',
+        items: [
+            { text: 'Al tocar el logo del IIEG se abre automaticamente la tarjeta de informacion centrada sobre el marcador', tag: 'added' },
+            { text: 'En celulares el panel lateral se colapsa al tocar el logo del IIEG para ver mejor el mapa', tag: 'changed' }
+        ]
+    },
+    {
         version: '1.1.4',
         items: [
             { text: 'Aviso de licencia IIEG al descargar datos con link a la declaración oficial', tag: 'added' },
