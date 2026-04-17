@@ -11,11 +11,13 @@ const UndoButton = ({
     placement = 'right'
 }) => {
     const baseClasses = [
-        'flex items-center border border-transparent rounded-r-none transition-all',
-        showLabel ? 'gap-2 px-3 py-1 justify-center rounded-l-[8px]' : 'p-1 justify-end w-15',
+        'flex items-center justify-center border border-transparent transition-all',
+        showLabel
+            ? 'h-12.5 gap-2 px-3 rounded-[8px] bg-white'
+            : 'size-8 rounded-full',
         disabled
-            ? 'bg-[#EAEFFA] text-[#703089]/40 cursor-not-allowed'
-            : 'bg-white text-[#703089] hover:border-[#5C2472] active:bg-[#703089] active:text-white'
+            ? (showLabel ? 'bg-[#EAEFFA] text-[#703089]/40 cursor-not-allowed' : 'text-[#703089]/40 cursor-not-allowed')
+            : 'text-[#703089] hover:border-[#5C2472] active:bg-[#703089] active:text-white'
     ].concat(className).join(' ').trim();
 
     return (
@@ -27,7 +29,7 @@ const UndoButton = ({
                 className={baseClasses}
                 aria-label={tooltip}
             >
-                <Icon name="deshacer" state="normal" className="size-7.5 shrink-0 min-w-[30px] min-h-[30px]" />
+                <Icon name="deshacer" state="normal" className="size-5.5 shrink-0" />
                 {showLabel && <span className="text-xs font-semibold">{label}</span>}
             </button>
         </Tooltip>

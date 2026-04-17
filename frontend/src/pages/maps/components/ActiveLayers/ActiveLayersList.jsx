@@ -13,6 +13,7 @@ import ScrollContainer from '@components/ScrollContainer';
 import ConfirmDropdown from '@components/ConfirmDropdown';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
+import { getDefaultMapView } from '@pages/maps/helpers/defaultView';
 
 const STICKY_SIZE = 52;
 const STICKY_SIZE_MOBILE = 100;
@@ -26,10 +27,12 @@ const ActiveLayersList = ({ onCollapseChange }) => {
     } = useContext(MapsContext);
     const {
         selectedLayerForSymbology,
+        setSelectedLayerForSymbology,
         clearLayerFilters,
         getAllChildLayerIds,
         showAllLayers,
-        hideAllLayers
+        hideAllLayers,
+        mapRef
     } = useMapsContext();
     const { isMobile } = useSider();
 
@@ -41,11 +44,17 @@ const ActiveLayersList = ({ onCollapseChange }) => {
     const isInegiMode = useMemo(() => activeLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id)), [activeLayerIds]);
     const isMobileSticky = isMobile ? STICKY_SIZE_MOBILE : STICKY_SIZE;
 
+    const noLayers = activeLayerIds.length === 0;
+
     const allHidden = useMemo(() => {
         return activeLayerIds.length > 0 && activeLayerIds.every(id => hiddenLayerIds.includes(id));
     }, [activeLayerIds, hiddenLayerIds]);
 
     const handleToggleBaseMode = useCallback(() => {
+        if (activeLayerIds.length === 0) {
+            ['limite_iieg', 'limite_municipal', 'regiones'].forEach(id => onToggleLayer(id, true, true));
+            return;
+        }
         if (isInegiMode) {
             ['limite_inegi', 'limite_municipal_inegi'].forEach(id => onToggleLayer(id, false, true));
             ['regiones', 'limite_municipal', 'limite_iieg'].forEach(id => onToggleLayer(id, true, true));
@@ -53,7 +62,7 @@ const ActiveLayersList = ({ onCollapseChange }) => {
             ['limite_iieg', 'limite_municipal', 'regiones'].forEach(id => onToggleLayer(id, false, true));
             ['limite_municipal_inegi', 'limite_inegi'].forEach(id => onToggleLayer(id, true, true));
         }
-    }, [isInegiMode, onToggleLayer]);
+    }, [activeLayerIds.length, isInegiMode, onToggleLayer]);
 
     const handleRemoveAll = useCallback(() => {
         activeLayerIds.forEach(id => {
@@ -61,7 +70,12 @@ const ActiveLayersList = ({ onCollapseChange }) => {
             [id, ...childIds].forEach(cid => clearLayerFilters(cid));
             onToggleLayer(id, false);
         });
-    }, [activeLayerIds, getAllChildLayerIds, clearLayerFilters, onToggleLayer]);
+        setSelectedLayerForSymbology(null);
+        if (mapRef?.current) {
+            const { center, zoom } = getDefaultMapView();
+            mapRef.current.getView().animate({ center, zoom, duration: 500 });
+        }
+    }, [activeLayerIds, getAllChildLayerIds, clearLayerFilters, onToggleLayer, setSelectedLayerForSymbology, mapRef]);
 
     const handleToggleVisibilityAll = useCallback(() => {
         if (allHidden) {
@@ -79,9 +93,8 @@ const ActiveLayersList = ({ onCollapseChange }) => {
             <div className={`w-auto flex items-center justify-end pt-1 pl-1`}>
                 <Tooltip content={unifiedLayers.length > 0 ? 'Expandir capas activas' : 'No hay capas activas'}>
                     <button
-                        onClick={() => (unifiedLayers.length > 0 || collapse.isManuallyCollapsed) && collapse.handleExpand()}
-                        className={`size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors relative ${(unifiedLayers.length > 0 || collapse.isManuallyCollapsed) ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer' : 'cursor-default opacity-50'}`}
-                        disabled={unifiedLayers.length === 0 && !collapse.isManuallyCollapsed}
+                        onClick={collapse.handleExpand}
+                        className="size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors relative hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer"
                     >
                         <Icon name="capa_activa" className="size-10" />
                         <Badge visible={unifiedLayers.length > 0} count={unifiedLayers.length} className="absolute -top-1 -left-1" />
@@ -106,55 +119,63 @@ const ActiveLayersList = ({ onCollapseChange }) => {
                 </Tooltip>
             </div>
 
-            {activeLayerIds.length > 0 && (
-                <div className="flex items-center justify-between shrink-0 mb-2 gap-1.5">
-                    <div className="flex items-center gap-3 shrink md:shrink-0 min-w-0">
-                        <div className="group/vis flex items-center gap-1 cursor-pointer shrink md:shrink-0" onClick={handleToggleVisibilityAll}>
-                            <span className="p-0.5 rounded-full border border-transparent group-hover/vis:border-[#70308A] transition-colors">
-                                <Icon name="visible" state={allHidden ? 'hover' : 'gray'} className="size-5 shrink-0" />
-                            </span>
-                            <span className="text-[7.5px] md:text-[8px] font-garet font-medium text-[#465055] whitespace-nowrap truncate leading-none pt-[1.5px]">{allHidden ? 'Mostrar mis capas' : 'Ocultar mis capas'}</span>
-                        </div>
-
-                        <div className="relative shrink md:shrink-0">
-                            <div
-                                onClick={() => setShowDeleteConfirm(p => !p)}
-                                onMouseEnter={() => setIsDeleteHovered(true)}
-                                onMouseLeave={() => setIsDeleteHovered(false)}
-                                className="group/del flex items-center gap-1 cursor-pointer"
-                            >
-                                <span className="p-0.5 rounded-full border border-transparent group-hover/del:border-[#FF577D] transition-colors">
-                                    <Icon name="eliminar" state={isDeleteHovered ? 'hover' : 'normal'} className="size-5 shrink-0" />
-                                </span>
-                                <span className="text-[7.5px] md:text-[8px] font-garet font-medium text-[#465055] group-hover/del:text-[#FF577D] whitespace-nowrap truncate leading-none pt-[1.5px] transition-colors">Eliminar mis capas</span>
-                            </div>
-                            <ConfirmDropdown
-                                open={showDeleteConfirm}
-                                onClose={() => setShowDeleteConfirm(false)}
-                                onConfirm={handleRemoveAll}
-                                title="¿Estás seguro de borrar todas las capas que tienes activas?"
-                                description="Si las borras deberás activar una por una nuevamente"
-                                confirmText="Sí. Quiero borrar todas las capas"
-                                className="right-0 md:right-0 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0"
-                            />
-                        </div>
+            <div className="flex items-center justify-between shrink-0 mb-2 gap-1.5">
+                <div className="flex items-center gap-3 shrink md:shrink-0 min-w-0">
+                    <div
+                        className={`group/vis flex items-center gap-1 shrink md:shrink-0 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                        onClick={noLayers ? undefined : handleToggleVisibilityAll}
+                    >
+                        <span className={`p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/vis:border-[#70308A]'}`}>
+                            <Icon name="visible" state={allHidden ? 'hover' : 'gray'} className="size-5 shrink-0" />
+                        </span>
+                        <span className="text-[7.5px] md:text-[8px] font-garet font-medium text-[#465055] whitespace-nowrap truncate leading-none pt-[1.5px]">{allHidden ? 'Mostrar mis capas' : 'Ocultar mis capas'}</span>
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0">
-                        <Switch
-                            checked={!isInegiMode}
-                            onChange={handleToggleBaseMode}
-                            onLabel="IIEG"
-                            offLabel="INEGI"
-                            onColor="#70308A"
-                            offColor="#FF8300"
-                            tooltip={isInegiMode ? 'Cambiar a IIEG' : 'Cambiar a INEGI'}
+                    <div className="relative shrink md:shrink-0">
+                        <div
+                            onClick={noLayers ? undefined : () => setShowDeleteConfirm(p => !p)}
+                            onMouseEnter={() => !noLayers && setIsDeleteHovered(true)}
+                            onMouseLeave={() => !noLayers && setIsDeleteHovered(false)}
+                            className={`group/del flex items-center gap-1 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                        >
+                            <span className={`p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/del:border-[#FF577D]'}`}>
+                                <Icon name="eliminar" state={isDeleteHovered ? 'hover' : 'normal'} className="size-5 shrink-0" />
+                            </span>
+                            <span className={`text-[7.5px] md:text-[8px] font-garet font-medium text-[#465055] whitespace-nowrap truncate leading-none pt-[1.5px] transition-colors ${noLayers ? '' : 'group-hover/del:text-[#FF577D]'}`}>Eliminar mis capas</span>
+                        </div>
+                        <ConfirmDropdown
+                            open={showDeleteConfirm}
+                            onClose={() => setShowDeleteConfirm(false)}
+                            onConfirm={handleRemoveAll}
+                            title="¿Estás seguro de borrar todas las capas que tienes activas?"
+                            description="Si las borras deberás activar una por una nuevamente"
+                            confirmText="Sí. Quiero borrar todas las capas"
+                            className="right-0 md:right-0 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0"
                         />
                     </div>
                 </div>
-            )}
 
-            <ScrollContainer className="flex-1 min-h-0 -mx-0 px-1" overlayFade stickySize={isMobileSticky}>
+                <div className="flex items-center gap-1 shrink-0">
+                    <Switch
+                        checked={!isInegiMode}
+                        onChange={handleToggleBaseMode}
+                        onLabel="IIEG"
+                        offLabel="INEGI"
+                        onColor={noLayers ? '#d1d5db' : '#70308A'}
+                        offColor="#FF8300"
+                        tooltip={noLayers ? 'Activar capas IIEG' : (isInegiMode ? 'Cambiar a IIEG' : 'Cambiar a INEGI')}
+                    />
+                </div>
+            </div>
+
+            <ScrollContainer
+                className="flex-1 min-h-0 -mx-0 px-1"
+                overlayFade
+                stickySize={isMobileSticky}
+                clickableArrows
+                minItemsForClick={5}
+                itemCount={unifiedLayers.length}
+            >
                 <SortableList
                     items={sortableItems}
                     onSortEnd={handleDragEnd}

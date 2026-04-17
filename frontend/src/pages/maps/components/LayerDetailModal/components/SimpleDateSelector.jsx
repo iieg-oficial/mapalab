@@ -1,63 +1,12 @@
 import { useState, useEffect, useMemo, useRef, useContext } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useCarouselOverflow } from '@pages/maps/hooks/useCarouselOverflow';
-import { generateCQLFilter, parseCQLToSelections, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
-import Icon from '@components/Icon';
-import icoPlayNormal from '@assets/icons/ico_play_normal.svg';
-import icoPlayHover from '@assets/icons/ico_play_hover.svg';
-import icoPauseNormal from '@assets/icons/ico_pause_normal.svg';
-import icoPauseHover from '@assets/icons/ico_pause_hover.svg';
+import { generateCQLFilter, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
+import { computeSelectorInitialState } from '@pages/maps/helpers/dateLoopHelpers';
+import { BackButton, YearBadge, CarouselArrow } from './SimpleDateSelectorParts';
 
-const BackButton = ({ onClick }) => (
-    <button onClick={onClick}>
-        <Icon
-            name="downArrow"
-            tooltip="Regresar"
-            classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
-            className="w-5 h-2 transition-transform duration-300 rotate-90"
-        />
-    </button>
-);
-
-const YearBadge = ({ year }) => (
-    <span className="shrink-0 px-5 py-3 rounded-[9px] text-[14px]/[16px] font-medium font-garet bg-[#F0EAF3] border border-[#703089] text-[#703089]">
-        {year}
-    </span>
-);
-
-const PlayPauseButton = ({ isPlaying, onToggle }) => {
-    const [isHovered, setIsHovered] = useState(false);
-    const icon = isPlaying
-        ? (isHovered ? icoPauseHover : icoPauseNormal)
-        : (isHovered ? icoPlayHover : icoPlayNormal);
-    const label = isPlaying ? 'PAUSAR' : 'VER ANIMACIÓN';
-
-    return (
-        <button
-            onClick={onToggle}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-[12px] bg-[#FFF2E5] border border-[#FF8300] text-[#FF8300] text-[8px]/[16px] font-bold font-garet transition-colors hover:bg-[#FFE4C4]"
-        >
-            <img src={icon} alt="" className="w-[10px] h-[10px]" />
-            {label}
-        </button>
-    );
-};
-
-const CarouselArrow = ({ direction, onClick }) => (
-    <button onClick={onClick}>
-        <Icon
-            name="downArrow"
-            tooltip={direction === 'left' ? 'Anterior' : 'Siguiente'}
-            classNameBG="bg-[#F9FBFF] size-7.5 rounded-full flex items-center justify-center p-2"
-            className={`w-5 h-2 transition-transform duration-300 ${direction === 'left' ? 'rotate-90' : '-rotate-90'}`}
-        />
-    </button>
-);
-
-const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false }) => {
-    const { getSpecificFilter, startLoop, stopLoop: contextStopLoop, getLoopState } = useContext(MapsContext);
+const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, onExpandedYearChange }) => {
+    const { getSpecificFilter, stopLoop: contextStopLoop, getLoopState } = useContext(MapsContext);
     const isRaster = !!rasterPeriodicity;
 
     const periodicityData = useMemo(() => {
@@ -71,60 +20,57 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
     }, [periodicity, rasterPeriodicity, isRaster]);
 
     const initialState = useMemo(() => {
-        if (isRaster) {
-            if (!rasterPeriodicity) return { year: null, months: new Set() };
-
-            const currentFilter = getSpecificFilter ? getSpecificFilter(layerId, filterName) : null;
-            if (currentFilter) {
-                for (const [year, yearData] of Object.entries(rasterPeriodicity)) {
-                    if (typeof yearData === 'string' && yearData === currentFilter) {
-                        return { year: parseInt(year), months: new Set() };
-                    }
-                    if (typeof yearData === 'object') {
-                        for (const [month, cqlValue] of Object.entries(yearData)) {
-                            if (cqlValue === currentFilter) {
-                                return { year: parseInt(year), months: new Set([parseInt(month)]) };
-                            }
-                        }
-                    }
-                }
-            }
-
-            const years = Object.keys(rasterPeriodicity).map(Number).sort((a, b) => b - a);
-            return { year: years[0] || null, months: new Set() };
-        }
-
         const currentFilter = getSpecificFilter ? getSpecificFilter(layerId, filterName) : null;
-        const parsed = parseCQLToSelections(currentFilter);
-        let year = null;
-        const months = new Set();
-
-        for (const sel of parsed) {
-            const parts = sel.split('-');
-            if (parts.length >= 2) {
-                year = parseInt(parts[0]);
-                months.add(parseInt(parts[1]));
-            } else if (parts.length === 1) {
-                year = parseInt(parts[0]);
-            }
-        }
-
-        return { year, months };
+        return computeSelectorInitialState({ isRaster, rasterPeriodicity, currentFilter });
     }, [layerId, filterName, getSpecificFilter, isRaster, rasterPeriodicity]);
 
     const [selectedYear, setSelectedYear] = useState(initialState.year);
     const [selectedMonths, setSelectedMonths] = useState(initialState.months);
+    const [expandedYear, setExpandedYear] = useState(initialState.year);
+    const activeYearRef = useRef(null);
 
     const loopState = getLoopState?.(layerId);
-    const isPlaying = loopState?.isPlaying ?? false;
 
     const onFilterApplyRef = useRef(onFilterApply);
     const onClearFilterRef = useRef(onClearFilter);
+    const externalFilter = getSpecificFilter?.(layerId, filterName);
+    const prevExternalFilterRef = useRef(externalFilter);
 
     useEffect(() => {
         onFilterApplyRef.current = onFilterApply;
         onClearFilterRef.current = onClearFilter;
     });
+
+    useEffect(() => {
+        if (prevExternalFilterRef.current && !externalFilter) {
+            setSelectedYear(null);
+            setSelectedMonths(new Set());
+            setExpandedYear(null);
+        }
+        prevExternalFilterRef.current = externalFilter;
+    }, [externalFilter]);
+
+    useEffect(() => {
+        onExpandedYearChange?.(expandedYear);
+    }, [expandedYear, onExpandedYearChange]);
+
+    useEffect(() => {
+        if (!loopState?.isPlaying || loopState?.mode !== 'year') return;
+        const el = activeYearRef.current;
+        const container = yearsCarousel.scrollRef?.current;
+        if (!el || !container) return;
+        const elLeft = el.offsetLeft;
+        const elRight = elLeft + el.offsetWidth;
+        const scrollLeft = container.scrollLeft;
+        const scrollRight = scrollLeft + container.clientWidth;
+        if (elLeft < scrollLeft || elRight > scrollRight) {
+            container.scrollTo({
+                left: elLeft - (container.clientWidth - el.offsetWidth) / 2,
+                behavior: 'smooth'
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loopState?.currentKey, loopState?.isPlaying, loopState?.mode]);
 
     useEffect(() => {
         if (isRaster) {
@@ -167,21 +113,24 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
     }, [selectedYear, selectedMonths, periodicityData, filterName, isRaster]);
 
     useEffect(() => {
-        if (loopState?.isPlaying && loopState?.currentMonth != null) {
-            setSelectedMonths(new Set([loopState.currentMonth]));
+        if (!loopState?.isPlaying || loopState?.currentKey == null) return;
+        if (loopState.mode === 'month') {
+            setSelectedMonths(new Set([loopState.currentKey]));
             if (loopState.year != null && selectedYear !== loopState.year) {
                 setSelectedYear(loopState.year);
+                setExpandedYear(loopState.year);
             }
+        } else if (loopState.mode === 'year') {
+            if (selectedYear !== loopState.currentKey) {
+                setSelectedYear(loopState.currentKey);
+            }
+            setSelectedMonths(new Set());
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [loopState?.currentMonth, loopState?.isPlaying, loopState?.year]);
+    }, [loopState?.currentKey, loopState?.isPlaying, loopState?.mode, loopState?.year]);
 
     const handleStopLoop = () => {
         contextStopLoop?.(layerId);
-    };
-
-    const handleStartLoop = () => {
-        startLoop?.(layerId, selectedYear, periodicityData?.fecha);
     };
 
     const yearsCarousel = useCarouselOverflow();
@@ -192,11 +141,21 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
     if (availableYears.length === 0) return null;
 
     const handleYearClick = (year) => {
+        if (loopState?.isPlaying && loopState?.mode === 'year') {
+            handleStopLoop();
+        }
+
+        if (singleSelectOnly && selectedYear === year) {
+            setExpandedYear(year);
+            return;
+        }
+
         const yearData = periodicityData.fecha[year];
 
         if (isRaster && typeof yearData === 'string') {
             setSelectedYear(year);
             setSelectedMonths(new Set());
+            setExpandedYear(year);
             return;
         }
 
@@ -205,18 +164,23 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
             if (monthKeys.length === 1) {
                 setSelectedYear(year);
                 setSelectedMonths(new Set([monthKeys[0]]));
+                setExpandedYear(year);
                 return;
             }
         }
 
         setSelectedYear(year);
         setSelectedMonths(new Set());
+        setExpandedYear(year);
     };
 
     const handleBackToYears = () => {
         handleStopLoop();
-        setSelectedYear(null);
-        setSelectedMonths(new Set());
+        setExpandedYear(null);
+        if (!singleSelectOnly) {
+            setSelectedYear(null);
+            setSelectedMonths(new Set());
+        }
     };
 
     const handleMonthToggle = (monthNum) => {
@@ -246,15 +210,8 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
         });
     };
 
-    const handleClearMonths = () => {
-        handleStopLoop();
-        setSelectedMonths(new Set());
-    };
-
-    const hasSelection = selectedMonths.size > 0;
-
-    if (selectedYear !== null) {
-        const yearData = periodicityData.fecha[selectedYear];
+    if (expandedYear !== null) {
+        const yearData = periodicityData.fecha[expandedYear];
         const isAnnual = typeof yearData === 'string';
 
         if (isAnnual) {
@@ -262,7 +219,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                 <div className="space-y-3">
                     <div className="flex items-center gap-4">
                         <BackButton onClick={handleBackToYears} />
-                        <YearBadge year={selectedYear} />
+                        <YearBadge year={expandedYear} />
                     </div>
                 </div>
             );
@@ -273,26 +230,9 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
 
         return (
             <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <BackButton onClick={handleBackToYears} />
-                        <YearBadge year={selectedYear} />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {isRaster && !isSingleMonth && (
-                            <PlayPauseButton isPlaying={isPlaying} onToggle={() => isPlaying ? handleStopLoop() : handleStartLoop()} />
-                        )}
-                        {hasSelection && !isSingleMonth && (
-                            <button onClick={handleClearMonths}>
-                                <Icon
-                                    tooltip="Limpiar selecciones"
-                                    name="eliminar"
-                                    state="hover"
-                                    className="size-5 cursor-pointer"
-                                />
-                            </button>
-                        )}
-                    </div>
+                <div className="flex items-center gap-4">
+                    <BackButton onClick={handleBackToYears} />
+                    <YearBadge year={expandedYear} />
                 </div>
                 {!isSingleMonth && (
                     <div className="flex flex-wrap gap-1">
@@ -300,16 +240,20 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                             const monthObj = MONTHS.find(m => m.num === monthNum);
                             const abbr = monthObj ? monthObj.name.slice(0, 3).toUpperCase() : monthNum;
                             const isActive = selectedMonths.has(monthNum);
+                            const isLoopTick = loopState?.isPlaying && loopState?.mode === 'month' && loopState?.currentKey === monthNum;
+                            const activeStyle = isLoopTick
+                                ? 'bg-[#FFF2E5] border border-transparent text-[#FF8300]'
+                                : 'bg-[#F0EAF3] border border-[#703089] text-[#703089]';
 
                             return (
                                 <button
-                                    key={`${selectedYear}-${monthNum}`}
+                                    key={`${expandedYear}-${monthNum}`}
                                     onClick={() => handleMonthToggle(monthNum)}
                                     className={`
                                         shrink-0 px-4 py-2 rounded-[9px] transition-all duration-200
                                         text-[12px]/[14px] text-[#2E4372] font-medium font-garet
                                         ${isActive
-                                    ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]'
+                                    ? activeStyle
                                     : 'bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089]'
                                 }
                                     `}
@@ -324,17 +268,29 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
         );
     }
 
-    const yearBtnClass = (year) => `shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200 text-[14px]/[16px] text-[#2E4372] font-medium font-garet bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089] ${selectedYear === year ? 'bg-[#F0EAF3] border border-[#703089] text-[#703089]' : ''}`;
+    const yearBtnClass = (year) => {
+        const isActive = selectedYear === year;
+        const isLoopTick = loopState?.isPlaying && loopState?.mode === 'year' && loopState?.currentKey === year;
+        const activeClasses = (isLoopTick || singleSelectOnly)
+            ? 'bg-[#FFF2E5] border border-[#FF8300] text-[#FF8300]'
+            : 'bg-[#F0EAF3] border border-[#703089] text-[#703089]';
+        return `shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200 text-[14px]/[16px] text-[#2E4372] font-medium font-garet bg-[#F9FBFF] border border-transparent hover:bg-[#F0EAF3] hover:text-[#703089] hover:border-[#703089] ${isActive ? activeClasses : ''}`;
+    };
     return (
         <div className="space-y-3">
             <div className="flex items-center gap-2">
-                {yearsCarousel.hasOverflow && <CarouselArrow direction="left" onClick={() => yearsCarousel.scroll('left')} />}
+                {yearsCarousel.hasOverflow && yearsCarousel.canScrollLeft && <CarouselArrow direction="left" onClick={() => yearsCarousel.scroll('left')} />}
                 <div ref={yearsCarousel.scrollRef} className="flex gap-2 overflow-x-auto scrollbar-hide flex-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {availableYears.map((year) => (
-                        <button key={year} onClick={() => handleYearClick(year)} className={yearBtnClass(year)}>{year}</button>
+                        <button
+                            key={year}
+                            ref={loopState?.isPlaying && loopState?.mode === 'year' && loopState?.currentKey === year ? activeYearRef : null}
+                            onClick={() => handleYearClick(year)}
+                            className={yearBtnClass(year)}
+                        >{year}</button>
                     ))}
                 </div>
-                {yearsCarousel.hasOverflow && <CarouselArrow direction="right" onClick={() => yearsCarousel.scroll('right')} />}
+                {yearsCarousel.hasOverflow && yearsCarousel.canScrollRight && <CarouselArrow direction="right" onClick={() => yearsCarousel.scroll('right')} />}
             </div>
         </div>
     );

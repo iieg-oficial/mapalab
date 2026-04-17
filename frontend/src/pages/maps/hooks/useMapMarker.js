@@ -51,7 +51,32 @@ export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } =
         markersRef.current.forEach((_, id) => hideMarker(id));
     }, [hideMarker]);
 
-    const showMarker = useCallback(async ({ id = '_default', center, zoom, icon, scale = 1, duration, anchor = [0.5, 1], minZoom, maxZoom, bgColor, bgRadius = 18, infoBox } = {}) => {
+    const openMarkerCard = useCallback((feature) => {
+        if (!mapRef.current || !setSelectedFeatureInfo || !clickPosition) return;
+        const infoBox = feature.get('markerInfoBox');
+        if (!infoBox) return;
+
+        const coord = feature.getGeometry().getCoordinates();
+        const pixel = mapRef.current.getPixelFromCoordinate(coord);
+        clickPosition.updatePosition({ pixel });
+
+        const [lng, lat] = toLonLat(coord);
+        setSelectedFeatureInfo({
+            lngLat: { lng, lat },
+            results: [{
+                layerId: `marker_${infoBox.layerName}`,
+                layerName: infoBox.layerName,
+                features: [{
+                    id: `marker_${infoBox.layerName}`,
+                    properties: infoBox.properties
+                }],
+                totalFeatures: 1,
+                littleCard: infoBox.littleCard
+            }]
+        });
+    }, [mapRef, setSelectedFeatureInfo, clickPosition]);
+
+    const showMarker = useCallback(async ({ id = '_default', center, zoom, icon, scale = 1, duration, anchor = [0.5, 1], minZoom, maxZoom, bgColor, bgRadius = 18, infoBox, openOnShow = false } = {}) => {
         if (!mapRef.current || !center) return;
 
         hideMarker(id);
@@ -94,19 +119,25 @@ export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } =
         mapRef.current.addLayer(layer);
         markersRef.current.set(id, layer);
 
+        const finalize = () => {
+            if (openOnShow && infoBox) openMarkerCard(feature);
+        };
+
         if (zoom) {
             mapRef.current.getView().animate({
                 center: coords,
                 zoom,
                 duration: 500
-            });
+            }, finalize);
+        } else {
+            finalize();
         }
 
         if (duration) {
             const timer = setTimeout(() => hideMarker(id), duration);
             timersRef.current.set(id, timer);
         }
-    }, [mapRef, hideMarker]);
+    }, [mapRef, hideMarker, openMarkerCard]);
 
     const showMarkers = useCallback(async (markers = []) => {
         for (const marker of markers) {
@@ -122,34 +153,15 @@ export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } =
             markerClickedRef.current = false;
             map.forEachFeatureAtPixel(evt.pixel, (feature) => {
                 if (markerClickedRef.current) return;
-                const infoBox = feature.get('markerInfoBox');
-                if (!infoBox) return;
+                if (!feature.get('markerInfoBox')) return;
                 markerClickedRef.current = true;
-
-                const coord = feature.getGeometry().getCoordinates();
-                const pixel = map.getPixelFromCoordinate(coord);
-                clickPosition.updatePosition({ pixel });
-
-                const [lng, lat] = toLonLat(coord);
-                setSelectedFeatureInfo({
-                    lngLat: { lng, lat },
-                    results: [{
-                        layerId: `marker_${infoBox.layerName}`,
-                        layerName: infoBox.layerName,
-                        features: [{
-                            id: `marker_${infoBox.layerName}`,
-                            properties: infoBox.properties
-                        }],
-                        totalFeatures: 1,
-                        littleCard: infoBox.littleCard
-                    }]
-                });
+                openMarkerCard(feature);
             });
         };
 
         map.on('click', handleClick);
         return () => map.un('click', handleClick);
-    }, [mapRef, setSelectedFeatureInfo, clickPosition]);
+    }, [mapRef, setSelectedFeatureInfo, clickPosition, openMarkerCard]);
 
     return { showMarker, showMarkers, hideMarker, hideAllMarkers, markerClickedRef };
 };

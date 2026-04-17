@@ -192,23 +192,36 @@ timeline
 - [x] CI/CD: tests 1 vez, cache npm, `git reset --hard` en deploy
 - [x] Emojis: sin banderas, sin 💩, z-index fix en mobile
 
-### v1.2.0 — Migrar capas a backend
+### v1.2.0 — Abril 2026
+- [x] Sistema de loop de fechas generalizado (`useDateLoop`) para capas raster y vectoriales con modos `year` y `month`
+- [x] Controles de animacion en header "Periodicidad:" (play/pause, velocidad 250-3000ms, direccion LTR/RTL, eliminar filtro)
+- [x] Etiqueta compacta de fecha en `ActiveLayerItem` con formatos year/month-year/multi y anchos fijos por tipo
+- [x] Auto-scroll del carrusel de años al valor activo del loop
+- [x] Color naranja en el tick activo del loop dentro del selector de periodicidad
+- [x] Polígonos mantienen el año seleccionado al regresar a vista de años
+- [x] Edicion en-mapa de Emoji/Texto (drag, rotacion, escala, eliminar) via `useMapEditing` y `FeatureEditToolbar`
+- [x] InfoBox mobile como bottom-sheet con `MobileSheet` primitivo, `InfoBoxTools`, `SwipeToRemove`, headers adaptativos
+- [x] Cache de `alternativeResults` en `selectedFeatureInfo` (filtrado en memoria)
+- [x] `docs/cache.md` con inventario de caches del proyecto
+- [x] `getDefaultMapView()` / `getMinZoom()` en `helpers/defaultView.js`
+
+### v1.3.0 — Migrar capas a backend
 - [ ] Migrar lista de capas del sidebar a endpoint del backend
 - [ ] Endpoint de busqueda de capas desde backend
 
-### v1.2.0 — Mayo / Junio 2026
+### v1.4.0 — Mayo / Junio 2026
 - [ ] Herramienta para comparar periodicidad de mapas (vista lado a lado)
 
-### v1.3.0 — Julio / Agosto 2026
+### v1.5.0 — Julio / Agosto 2026
 - [ ] Modo edicion de Home integrado al administrador de portal
 - [ ] Compartir estado del mapa via URL (para el componente comparar, ademas de agregar orden de capas, opacidad, etc)
 
-### v1.4.0 — Septiembre / Octubre 2026
+### v1.6.0 — Septiembre / Octubre 2026
 - [ ] Sistema de login para ciudadanos
 - [ ] Guardar compartidos
 - [ ] Sistema de capas favoritas por usuario
 
-### v1.5.0 — Noviembre 2026 / Enero 2027
+### v1.7.0 — Noviembre 2026 / Enero 2027
 - [ ] Arquitectura de capas para agilizar integracion de otras dependencias
 - [ ] Optimizacion de carga inicial y lazy loading de componentes
 

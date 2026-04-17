@@ -14,7 +14,7 @@ const MapView = () => {
     const {
         baseMapId, basemaps, targetRef, mapRef, activeLayerIds, hiddenLayerIds, getFilter, filters,
         isDrawing, queryFeaturesInPolygonRef, getAllChildLayerIds, getLayerOpacity, layerOpacities,
-        markerClickedRef
+        markerClickedRef, editingClickedRef
     } = useMapsContext();
     const { queryFeatures, queryFeaturesInPolygon } = useFeatureInfo();
     const baseMapRef = useRef(null);
@@ -33,7 +33,7 @@ const MapView = () => {
         getLayerOpacity, layerOpacities, getFilter, combineCQLFilters
     });
 
-    useMapInteractions(mapRef, queryFeatures, isDrawing, markerClickedRef);
+    useMapInteractions(mapRef, queryFeatures, isDrawing, markerClickedRef, editingClickedRef);
     useWMSFilterUpdater({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds });
 
     return <div ref={targetRef} className="absolute inset-0 w-full h-full" />;

@@ -33,11 +33,21 @@ const SymbologyItem = ({
         }
     };
 
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleClick(e);
+        }
+    };
+
     return (
         <>
-            <button
+            <div
+                role="button"
+                tabIndex={0}
                 onClick={handleClick}
-                className="w-full pl-2 pr-2 py-1.5 mb-3 flex items-center justify-between transition-colors text-left"
+                onKeyDown={handleKeyDown}
+                className="w-full pl-2 pr-2 py-1.5 mb-3 flex items-center justify-between transition-colors text-left cursor-pointer"
             >
                 <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                     {prefix && (
@@ -52,7 +62,7 @@ const SymbologyItem = ({
                     </Tooltip>
                 </div>
                 <Icon name={internalExpanded ? 'upArrow' : 'downArrow'} className="size-4" visible={!simple} />
-            </button>
+            </div>
 
             {internalExpanded && (
                 <div className="px-2 pb-2">

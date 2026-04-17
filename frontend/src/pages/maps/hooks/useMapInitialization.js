@@ -4,6 +4,7 @@ import OLMap from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import { fromLonLat } from 'ol/proj';
+import { getDefaultMapView, getMinZoom } from '@pages/maps/helpers/defaultView';
 
 export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, baseMapId }) => {
     const [searchParams] = useSearchParams();
@@ -12,10 +13,13 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, 
         const zoom = searchParams.get('zoom');
         const lat = searchParams.get('lat');
         const lon = searchParams.get('lon');
+        const layersParam = searchParams.get('layers');
+        const hasLayers = !!(layersParam && layersParam.trim().length > 0);
+        const defaults = getDefaultMapView();
 
         return {
-            center: (lat && lon) ? fromLonLat([parseFloat(lon), parseFloat(lat)]) : fromLonLat(window.innerWidth < 768 ? [-103.6, 20.6] : [-103.8, 20.85]),
-            zoom: zoom ? parseFloat(zoom) : (window.innerWidth < 768 ? 7 : 8.3)
+            center: (hasLayers && lat && lon) ? fromLonLat([parseFloat(lon), parseFloat(lat)]) : defaults.center,
+            zoom: (hasLayers && zoom) ? parseFloat(zoom) : defaults.zoom
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -45,7 +49,7 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, 
             view: new View({
                 center: initialViewParams.center,
                 zoom: initialViewParams.zoom,
-                minZoom: window.innerWidth < 768 ? 7 : 8,
+                minZoom: getMinZoom(),
                 maxZoom: 18,
                 projection: 'EPSG:3857'
             }),

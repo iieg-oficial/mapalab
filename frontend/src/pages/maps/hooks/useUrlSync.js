@@ -21,7 +21,9 @@ export const useUrlSync = () => {
         const validLayerIds = debouncedActiveLayerIds.filter(id => {
             if (!id || id.trim().length === 0) return false;
             const layer = findLayerById(id);
-            return layer && !layer.isLabel && !layer.isCategory;
+            if (!layer || layer.isLabel) return false;
+            if (layer.isCategory && id !== debouncedSelectedId) return false;
+            return true;
         });
         if (validLayerIds.length > 0) {
             result.layers = validLayerIds
