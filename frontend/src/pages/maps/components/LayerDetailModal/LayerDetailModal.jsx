@@ -9,8 +9,10 @@ import { findLayerDef, findWMSConfig } from '../../helpers/wmsConfig';
 import { layers as allLayers } from '../../helpers/layers/index';
 import { fetchGeometryType } from '../../../../utils/featureInfoUtils';
 import { formatDateString } from '../../helpers/dateFilterHelpers';
+import { buildLoopValues } from '../../helpers/dateLoopHelpers';
 import DateTreeSelector from './components/DateTreeSelector';
 import SimpleDateSelector from './components/SimpleDateSelector';
+import { PlayPauseButton, LoopIntervalButton, LoopDirectionButton } from './components/SimpleDateSelectorParts';
 import OpacityControl from './components/OpacityControl';
 import InfoCard from './components/InfoCard';
 import StatCard from './components/StatCard';
@@ -25,8 +27,12 @@ import Loading from '@components/Loading';
 const LayerDetailModal = () => {
     const {
         selectedLayer, setSelectedLayer, applyFilter, clearFilter, getFilter, getSpecificFilter,
-        getLayerOpacity, setLayerOpacity
+        getLayerOpacity, setLayerOpacity,
+        getLoopState, startLoop, toggleLoop, stopLoop, inferLoopConfig,
+        loopIntervalMs, setLoopIntervalMs,
+        loopDirection, setLoopDirection
     } = useContext(MapsContext);
+    const [expandedYear, setExpandedYear] = useState(null);
 
     const layerDef = useMemo(() => {
         if (!selectedLayer?.id) return null;
@@ -87,6 +93,47 @@ const LayerDetailModal = () => {
         if (selectedLayer && selectedLayer.id) {
             clearFilter(selectedLayer.id, 'date');
         }
+    };
+
+    const loopState = selectedLayer?.id ? getLoopState?.(selectedLayer.id) : null;
+    const isLoopPlaying = loopState?.isPlaying ?? false;
+    const dateFilter = selectedLayer?.id ? getSpecificFilter?.(selectedLayer.id, 'date') : null;
+    const hasDateFilter = !!dateFilter;
+
+    const viewLoopConfig = () => {
+        if (!selectedLayer?.id) return null;
+        const rp = rasterPeriodicity;
+        const p = periodicity;
+        if (expandedYear != null) {
+            const values = buildLoopValues({ mode: 'month', year: expandedYear, rasterPeriodicity: rp, periodicity: p });
+            return values.length >= 2 ? { mode: 'month', year: expandedYear, values } : null;
+        }
+        const values = buildLoopValues({ mode: 'year', rasterPeriodicity: rp, periodicity: p });
+        return values.length >= 2 ? { mode: 'year', values } : null;
+    };
+
+    const canPlay = !!selectedLayer?.id && (!!loopState || viewLoopConfig() != null || inferLoopConfig?.(selectedLayer.id) != null);
+
+    const handleTogglePeriodicityLoop = () => {
+        if (!selectedLayer?.id) return;
+        if (loopState?.isPlaying) {
+            stopLoop?.(selectedLayer.id);
+            return;
+        }
+        const desiredMode = expandedYear != null ? 'month' : 'year';
+        if (loopState && loopState.mode === desiredMode) {
+            toggleLoop?.(selectedLayer.id);
+            return;
+        }
+        if (loopState) stopLoop?.(selectedLayer.id);
+        const config = viewLoopConfig() || inferLoopConfig?.(selectedLayer.id);
+        if (config) startLoop?.(selectedLayer.id, config);
+    };
+
+    const handleClearDateFilter = () => {
+        if (!selectedLayer?.id) return;
+        stopLoop?.(selectedLayer.id);
+        clearFilter(selectedLayer.id, 'date');
     };
 
     useEffect(() => {
@@ -189,7 +236,7 @@ const LayerDetailModal = () => {
 
                             {hasPeriodicity && (
                                 <div className="mb-4">
-                                    <div className="flex items-center justify-between my-5">
+                                    <div className="flex items-center justify-between gap-2 my-5 flex-wrap">
                                         <div className="flex items-center gap-2">
                                             <span className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer" onClick={handlePeriodicityClick} onTouchStart={handlePeriodicityTouchStart} onTouchEnd={handlePeriodicityTouchEnd} onTouchCancel={handlePeriodicityTouchEnd}>
                                                 Periodicidad:
@@ -202,6 +249,25 @@ const LayerDetailModal = () => {
                                                 />
                                             )}
                                         </div>
+                                        <div className="flex items-center gap-2">
+                                            {canPlay && (
+                                                <>
+                                                    <LoopIntervalButton value={loopIntervalMs} onChange={setLoopIntervalMs} />
+                                                    <LoopDirectionButton value={loopDirection} onChange={setLoopDirection} />
+                                                    <PlayPauseButton isPlaying={isLoopPlaying} onToggle={handleTogglePeriodicityLoop} />
+                                                </>
+                                            )}
+                                            {hasDateFilter && (
+                                                <button onClick={handleClearDateFilter} className="inline-flex items-center justify-center h-[30px] leading-none align-middle">
+                                                    <Icon
+                                                        tooltip="Eliminar filtro"
+                                                        name="eliminar"
+                                                        state="hover"
+                                                        className="size-5 cursor-pointer block"
+                                                    />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                     {periodicityLoading ? (
                                         <div className="flex items-center gap-2 py-4">
@@ -211,7 +277,7 @@ const LayerDetailModal = () => {
                                     ) : isAdvancedMode && !rasterPeriodicity ? (
                                         <DateTreeSelector layerId={selectedLayer.id} periodicity={periodicity} onFilterApply={handleDateFilterApply} onClearFilter={handleClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} />
                                     ) : (
-                                        <SimpleDateSelector layerId={selectedLayer.id} periodicity={periodicity} rasterPeriodicity={rasterPeriodicity} onFilterApply={handleDateFilterApply} onClearFilter={handleClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} />
+                                        <SimpleDateSelector layerId={selectedLayer.id} periodicity={periodicity} rasterPeriodicity={rasterPeriodicity} onFilterApply={handleDateFilterApply} onClearFilter={handleClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} onExpandedYearChange={setExpandedYear} />
                                     )}
                                 </div>
                             )}

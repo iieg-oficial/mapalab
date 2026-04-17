@@ -111,7 +111,7 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
             )}
 
             <div className="flex items-center gap-2">
-                {yearsCarousel.hasOverflow && (
+                {yearsCarousel.hasOverflow && yearsCarousel.canScrollLeft && (
                     <button onClick={() => yearsCarousel.scroll('left')}>
                         <Icon
                             name="downArrow"
@@ -151,7 +151,7 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
                         );
                     })}
                 </div>
-                {yearsCarousel.hasOverflow && (
+                {yearsCarousel.hasOverflow && yearsCarousel.canScrollRight && (
                     <button onClick={() => yearsCarousel.scroll('right')}>
                         <Icon
                             name="downArrow"
@@ -214,7 +214,7 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
                 return (
                     <div className="mt-2">
                         <div className="flex items-center gap-2">
-                            {daysCarousel.hasOverflow && (
+                            {daysCarousel.hasOverflow && daysCarousel.canScrollLeft && (
                                 <button onClick={() => daysCarousel.scroll('left')}>
                                     <Icon
                                         name="downArrow"
@@ -251,7 +251,7 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
                                     );
                                 })}
                             </div>
-                            {daysCarousel.hasOverflow && (
+                            {daysCarousel.hasOverflow && daysCarousel.canScrollRight && (
                                 <button onClick={() => daysCarousel.scroll('right')}>
                                     <Icon
                                         name="downArrow"

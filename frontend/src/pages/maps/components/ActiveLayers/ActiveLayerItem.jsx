@@ -5,10 +5,11 @@ import Loading from '@components/Loading';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
-import { MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
+import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
+import { layers as allLayers } from '@pages/maps/helpers/layers/index';
+import { describeDateFilter, formatLoopLabel } from '@pages/maps/helpers/dateLoopHelpers';
+import { DEFAULT_LOOP_INTERVAL_MS, LOOP_INTERVAL_PRESETS } from '@hooksMaps/useDateLoop';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
-import icoPlayNormal from '@assets/icons/ico_play_normal.svg';
-import icoPlayHover from '@assets/icons/ico_play_hover.svg';
 import icoPauseNormal from '@assets/icons/ico_pause_normal.svg';
 import icoPauseHover from '@assets/icons/ico_pause_hover.svg';
 
@@ -29,7 +30,13 @@ const ActiveLayerItem = ({
         toggleLayerVisibility,
         setSelectedLayer,
         getLoopState,
-        toggleLoop
+        toggleLoop,
+        inferLoopConfig,
+        getSpecificFilter,
+        loopIntervalMs,
+        setLoopIntervalMs,
+        loopDirection,
+        setLoopDirection
     } = useMapsContext();
 
     const itemRef = useRef(null);
@@ -69,10 +76,53 @@ const ActiveLayerItem = ({
 
     const loopState = getLoopState?.(layer.id);
     const isLooping = loopState?.isPlaying;
-    const loopMonth = loopState?.currentMonth;
-    const monthAbbr = loopMonth != null
-        ? MONTHS.find(m => m.num === loopMonth)?.name.slice(0, 3).toUpperCase()
-        : null;
+
+    const layerDef = useMemo(() => findLayerDef(layer.id, allLayers), [layer.id]);
+    const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
+    const dateFilter = getSpecificFilter?.(layer.id, 'date') || null;
+    const { dateLabel, labelKind } = useMemo(() => {
+        const desc = describeDateFilter({ filter: dateFilter, rasterPeriodicity });
+        const label = formatLoopLabel(desc);
+        let kind = null;
+        if (desc) {
+            if (desc.multi) kind = 'multi-year';
+            else if (desc.annual || !desc.months?.length) kind = 'year';
+            else if (desc.months.length === 1) kind = 'month-year';
+            else kind = 'multi-month';
+        }
+        return { dateLabel: label, labelKind: kind };
+    }, [dateFilter, rasterPeriodicity]);
+
+    const LABEL_WIDTHS = {
+        'year': { static: 'w-[40px]', loop: 'w-[54px]' },
+        'month-year': { static: 'w-[60px]', loop: 'w-[74px]' },
+        'multi-year': { static: 'w-[50px]', loop: 'w-[64px]' },
+        'multi-month': { static: 'w-[86px]', loop: 'w-[100px]' }
+    };
+    const labelWidthClass = (LABEL_WIDTHS[labelKind] || { static: 'min-w-[48px]', loop: 'min-w-[64px]' })[isLooping ? 'loop' : 'static'];
+
+    const handleDateLabelClick = (e) => {
+        e.stopPropagation();
+        if (loopState) {
+            toggleLoop?.(layer.id);
+            return;
+        }
+        const config = inferLoopConfig?.(layer.id);
+        if (config) toggleLoop?.(layer.id);
+        else setSelectedLayer(layer);
+    };
+
+    const handleIntervalClick = (e) => {
+        e.stopPropagation();
+        const idx = LOOP_INTERVAL_PRESETS.indexOf(loopIntervalMs);
+        const nextIdx = idx === -1 ? 0 : (idx + 1) % LOOP_INTERVAL_PRESETS.length;
+        setLoopIntervalMs?.(LOOP_INTERVAL_PRESETS[nextIdx]);
+    };
+
+    const handleDirectionClick = (e) => {
+        e.stopPropagation();
+        setLoopDirection?.(loopDirection === 'rtl' ? 'ltr' : 'rtl');
+    };
 
     const isLoading = useMemo(() => {
         if (loadingLayers.has(layer.id)) return true;
@@ -115,7 +165,7 @@ const ActiveLayerItem = ({
                 </Tooltip>
             )}
 
-            {!isLoading && canOpenModal && (
+            {(!isLoading || isLooping) && canOpenModal && (
                 <Tooltip content="Ver detalles de capa">
                     <button
                         className="p-1.5 rounded-full cursor-pointer border border-transparent hover:border-[#70308A] transition-colors bg-[#F9FBFF]"
@@ -160,15 +210,44 @@ const ActiveLayerItem = ({
                 disabled={!isSelected}
             >
                 <div className="flex items-center gap-3 px-2 py-4 h-12">
-                    {loopState && monthAbbr && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); toggleLoop?.(layer.id); }}
-                            className="group/loop flex items-center gap-1 p-1.5 rounded-[12px] bg-[#FFF2E5] border border-[#FF8300] text-[#FF8300] text-[9px] font-garet font-bold shrink-0 hover:bg-[#FFE4C4] transition-colors"
-                        >
-                            <img src={isLooping ? icoPauseNormal : icoPlayNormal} alt="" className="size-[9px] block group-hover/loop:hidden" />
-                            <img src={isLooping ? icoPauseHover : icoPlayHover} alt="" className="size-[9px] hidden group-hover/loop:block" />
-                            {monthAbbr}
-                        </button>
+                    {dateLabel && (
+                        <div className="flex items-center gap-1 shrink-0">
+                            <button
+                                onClick={handleDateLabelClick}
+                                className={`group/loop flex items-center justify-center gap-1 h-[22px] px-2 rounded-full bg-[#FFF2E5] border border-[#FF8300] text-[#FF8300] text-[10px] font-garet font-bold shrink-0 hover:bg-[#FFE4C4] transition-all tabular-nums ${labelWidthClass}`}
+                            >
+                                {isLooping && (
+                                    <>
+                                        <img src={icoPauseNormal} alt="" className="size-[10px] block group-hover/loop:hidden" />
+                                        <img src={icoPauseHover} alt="" className="size-[10px] hidden group-hover/loop:block" />
+                                    </>
+                                )}
+                                <span className="whitespace-nowrap">{dateLabel}</span>
+                            </button>
+                            {isLooping && loopIntervalMs !== DEFAULT_LOOP_INTERVAL_MS && (
+                                <Tooltip content="Cambiar velocidad">
+                                    <button
+                                        onClick={handleIntervalClick}
+                                        className="flex items-center justify-center size-[22px] rounded-full bg-[#F0EAF3] border border-[#703089] text-[#703089] text-[9px] font-garet font-bold tabular-nums hover:bg-[#E2D1EB] transition-colors shrink-0"
+                                    >
+                                        {(loopIntervalMs / 1000).toString().replace(/\.?0+$/, '') || '0'}s
+                                    </button>
+                                </Tooltip>
+                            )}
+                            {isLooping && (
+                                <Tooltip content={loopDirection === 'rtl' ? 'Dirección: derecha a izquierda' : 'Dirección: izquierda a derecha'}>
+                                    <button
+                                        onClick={handleDirectionClick}
+                                        className="flex items-center justify-center size-[22px] rounded-full bg-[#F0EAF3] border border-[#703089] hover:bg-[#E2D1EB] transition-colors shrink-0"
+                                    >
+                                        <Icon
+                                            name="downArrow"
+                                            className={`w-3 h-1.5 transition-transform duration-300 ${loopDirection === 'rtl' ? 'rotate-90' : '-rotate-90'}`}
+                                        />
+                                    </button>
+                                </Tooltip>
+                            )}
+                        </div>
                     )}
 
                     {isLoading && !loopState && (

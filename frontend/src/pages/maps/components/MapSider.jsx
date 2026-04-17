@@ -26,11 +26,11 @@ const MapSider = ({ className = '' }) => {
         toggleMeasurementTools,
         areMeasurementToolsVisible,
         isLocating,
-        rasterLoops,
+        dateLoops,
         showMarker
     } = useMapsContext();
     const { loadingLayers } = useLayerLoading();
-    const hasNonLoopLoading = [...loadingLayers].some(id => !rasterLoops[id]?.isPlaying && contextActiveLayerIds.includes(id));
+    const hasNonLoopLoading = [...loadingLayers].some(id => !dateLoops[id]?.isPlaying && contextActiveLayerIds.includes(id));
     const isLoading = hasNonLoopLoading || isLocating;
     const {
         siderRef,
