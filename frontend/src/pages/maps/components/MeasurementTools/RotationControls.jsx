@@ -1,140 +1,106 @@
 import { useState } from 'react';
 import Icon from '@components/Icon';
+import Tooltip from '@components/Tooltip';
 
-const RotationControls = ({ showTitle = true, rotation, onChange, compact = false }) => {
+const STEP = 45;
+
+const RotationControls = ({ rotation = 0, onChange, title = 'Rotación' }) => {
     const currentDegrees = Math.round((rotation * 180) / Math.PI);
     const [inputValue, setInputValue] = useState(currentDegrees.toString());
     const [isEditing, setIsEditing] = useState(false);
 
-    const handleRotate = (degrees) => {
+    const setDegrees = (degrees) => {
         onChange?.((degrees * Math.PI) / 180);
     };
 
-    const handleInputClick = () => {
+    const handleEditStart = () => {
         setIsEditing(true);
         setInputValue(currentDegrees.toString());
     };
 
-    const handleInputChange = (e) => {
-        setInputValue(e.target.value);
-    };
-
     const handleInputBlur = () => {
         setIsEditing(false);
-        const numValue = parseInt(inputValue, 10);
-        if (!isNaN(numValue)) {
-            const normalizedValue = ((numValue % 360) + 360) % 360;
-            handleRotate(normalizedValue);
+        const num = parseInt(inputValue, 10);
+        if (!isNaN(num)) {
+            setDegrees(((num % 360) + 360) % 360);
         }
     };
 
-    const handleInputKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.target.blur();
-        } else if (e.key === 'Escape') {
+    const handleInputKey = (e) => {
+        if (e.key === 'Enter') e.target.blur();
+        else if (e.key === 'Escape') {
             setIsEditing(false);
             setInputValue(currentDegrees.toString());
         }
     };
 
+    const iconBtn = 'size-7 flex items-center justify-center rounded-full border border-transparent hover:border-[#70308A] hover:bg-[#F9FBFF] transition-colors cursor-pointer';
+
     const degreeDisplay = isEditing ? (
         <input
             type="text"
             value={inputValue}
-            onChange={handleInputChange}
+            onChange={(e) => setInputValue(e.target.value)}
             onBlur={handleInputBlur}
-            onKeyDown={handleInputKeyDown}
+            onKeyDown={handleInputKey}
             autoFocus
-            className="w-16 text-center text-sm font-semibold text-zinc-700  bg-transparent border border-blue-500 rounded px-1 outline-none"
+            className="w-14 text-center font-garet font-medium text-[12px] text-[#465055] bg-transparent border border-[#70308A] rounded px-1 outline-none"
         />
     ) : (
         <button
             type="button"
-            onClick={handleInputClick}
-            className="w-16 text-center text-sm font-semibold text-zinc-700  hover:bg-black/5  rounded px-1 transition"
+            onClick={handleEditStart}
+            className="w-14 text-center font-garet font-medium text-[12px] text-[#465055] hover:bg-black/5 rounded px-1 cursor-pointer transition-colors"
             title="Click para editar"
         >
             {currentDegrees}°
         </button>
     );
 
-    if (compact) {
-        return (
-            <div className="flex items-center gap-2">
-                <button
-                    type="button"
-                    onClick={() => handleRotate(currentDegrees - 45)}
-                    className="p-1.5 hover:bg-black/5  rounded-lg transition"
-                    aria-label="Rotar -45°"
-                    title="Rotar -45°"
-                >
-                    <Icon name="undo" />
-                </button>
-                {degreeDisplay}
-                <button
-                    type="button"
-                    onClick={() => handleRotate(currentDegrees + 45)}
-                    className="p-1.5 hover:bg-black/5  rounded-lg transition"
-                    aria-label="Rotar +45°"
-                    title="Rotar +45°"
-                >
-                    <div className="transform scale-x-[-1]">
-                        <Icon name="undo" />
-                    </div>
-                </button>
-                <button
-                    type="button"
-                    onClick={() => handleRotate(0)}
-                    className="p-1.5 hover:bg-black/5  rounded-lg transition"
-                    aria-label="Resetear rotación"
-                    title="Resetear"
-                >
-                    <Icon name="refresh" />
-                </button>
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-2">
-
-            {showTitle && (
-                <div className="text-xs font-semibold text-gray-600 ">
-                    Rotation
-                </div>
+        <div className="flex items-center gap-2">
+            {title && (
+                <span className="font-garet font-bold text-[12px] text-[#465055] shrink-0 mr-1">
+                    {title}
+                </span>
             )}
-            <div className="flex items-center gap-2">
+
+            <Tooltip content={`Rotar -${STEP}°`} delay={500}>
                 <button
                     type="button"
-                    onClick={() => handleRotate(currentDegrees - 45)}
-                    className="p-1.5 hover:bg-black/5  rounded-lg transition"
-                    aria-label="Rotar -45°"
-                    title="Rotar -45°"
+                    onClick={() => setDegrees(currentDegrees - STEP)}
+                    className={iconBtn}
+                    aria-label={`Rotar -${STEP}°`}
                 >
-                    <Icon name="undo" />
+                    <Icon name="undo" className="size-4" />
                 </button>
-                {degreeDisplay}
+            </Tooltip>
+
+            {degreeDisplay}
+
+            <Tooltip content={`Rotar +${STEP}°`} delay={500}>
                 <button
                     type="button"
-                    onClick={() => handleRotate(currentDegrees + 45)}
-                    className="p-1.5 hover:bg-black/5  rounded-lg transition"
-                    aria-label="Rotar +45°"
-                    title="Rotar +45°"
+                    onClick={() => setDegrees(currentDegrees + STEP)}
+                    className={iconBtn}
+                    aria-label={`Rotar +${STEP}°`}
                 >
-                    <div className="transform scale-x-[-1]">
-                        <Icon name="undo" />
-                    </div>
+                    <span className="inline-flex scale-x-[-1]">
+                        <Icon name="undo" className="size-4" />
+                    </span>
                 </button>
+            </Tooltip>
+
+            <Tooltip content="Resetear" delay={500}>
                 <button
                     type="button"
-                    onClick={() => handleRotate(0)}
-                    className="p-1.5 hover:bg-black/5  rounded-lg transition"
+                    onClick={() => setDegrees(0)}
+                    className={iconBtn}
                     aria-label="Resetear rotación"
-                    title="Resetear"
                 >
-                    <Icon name="refresh" />
+                    <Icon name="refresh" className="size-4" />
                 </button>
-            </div>
+            </Tooltip>
         </div>
     );
 };

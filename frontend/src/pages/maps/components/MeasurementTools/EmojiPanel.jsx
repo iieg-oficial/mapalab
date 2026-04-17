@@ -88,7 +88,7 @@ const EmojiPanel = ({ open, anchorRef, onSelect, onClose, rotation, onRotationCh
             </ScrollContainer>
 
             <div className="w-full pt-1">
-                <RotationControls showTitle={false} rotation={rotation} onChange={onRotationChange} />
+                <RotationControls title={null} rotation={rotation} onChange={onRotationChange} />
             </div>
         </div>
     );
