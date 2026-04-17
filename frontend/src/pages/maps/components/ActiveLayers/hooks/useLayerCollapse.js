@@ -11,8 +11,6 @@ export const useLayerCollapse = (unifiedLayers) => {
         if (isZenMode) {
             setIsCollapsed(true);
             setIsManuallyCollapsed(true);
-        } else if (unifiedLayers.length === 0 && !isManuallyCollapsed) {
-            setIsCollapsed(true);
         } else if (isCollapsed && unifiedLayers.length > 0 && !isManuallyCollapsed) {
             setIsCollapsed(false);
         }
