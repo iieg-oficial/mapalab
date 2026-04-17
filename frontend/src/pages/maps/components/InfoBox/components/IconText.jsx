@@ -7,12 +7,13 @@ const buildHref = (icon, value) => {
     return null;
 };
 
-const IconText = ({ value, icon = 'ubicacion', showDivider = true, isLast = false, href: externalHref = null, onClick = null }) => {
+const IconText = ({ value, icon = 'ubicacion', showDivider = true, isLast = false, href: externalHref = null, onClick = null, variant = 'desktop' }) => {
     if (!value) return null;
 
     const href = externalHref || buildHref(icon, value);
     const isClickable = href || onClick;
-    const textClass = 'flex-1 font-garet font-medium text-[10px]/[14px] tracking-normal';
+    const size = variant === 'mobile' ? 'text-[12px]/[16px]' : 'text-[10px]/[14px]';
+    const textClass = `flex-1 font-garet font-medium ${size} tracking-normal`;
 
     return (
         <>

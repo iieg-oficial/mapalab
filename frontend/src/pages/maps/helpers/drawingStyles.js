@@ -3,8 +3,8 @@ import { Point } from 'ol/geom';
 
 const DEFAULT_STYLES = {
     LineString: {
-        stroke: '#3b82f6',
-        fill: 'rgba(59, 130, 246, 0.2)'
+        stroke: '#703089',
+        fill: 'rgba(112, 48, 137, 0.2)'
     },
     Polygon: {
         stroke: '#f97316',
@@ -15,8 +15,8 @@ const DEFAULT_STYLES = {
         fill: 'rgba(139, 92, 246, 0.15)'
     },
     Point: {
-        stroke: '#3b82f6',
-        fill: '#3b82f6'
+        stroke: '#703089',
+        fill: '#703089'
     }
 };
 
@@ -163,31 +163,96 @@ export const computeAndCacheStyle = (feature, measurementValue = null, config = 
     return styles;
 };
 
-export const createTextStyle = (text, rotation = 0) => (
+const createSelectionHalo = ({ radius = 22, scale = 1 } = {}) => (
     new Style({
-        text: new TextStyle({
-            text: text || 'Texto',
-            font: '600 16px "Inter", sans-serif',
-            fill: new Fill({ color: '#111827' }),
-            stroke: new Stroke({ color: '#ffffff', width: 3 }),
-            offsetY: -4,
-            rotation
+        image: new CircleStyle({
+            radius: radius * scale,
+            fill: new Fill({ color: 'rgba(112, 48, 138, 0.18)' }),
+            stroke: new Stroke({ color: '#70308A', width: 2 })
         })
     })
 );
 
-export const createEmojiStyle = (emoji, rotation = 0) => (
-    new Style({
+const TEXT_FONT = 'bold 16px "Garet", "Inter", sans-serif';
+const TEXT_FONT_SIZE = 16;
+
+const createRoundedTextBg = (text, rotation, scale) => new Style({
+    renderer: (coords, state) => {
+        const ctx = state.context;
+        const pixelRatio = state.pixelRatio || 1;
+        const [x, y] = coords;
+
+        ctx.save();
+        ctx.font = TEXT_FONT;
+        ctx.textBaseline = 'alphabetic';
+
+        const metrics = ctx.measureText(text || 'Texto');
+        const width = metrics.width;
+        const aAsc = metrics.actualBoundingBoxAscent ?? TEXT_FONT_SIZE * 0.75;
+        const aDesc = metrics.actualBoundingBoxDescent ?? TEXT_FONT_SIZE * 0.2;
+        const fAsc = metrics.fontBoundingBoxAscent ?? TEXT_FONT_SIZE * 0.8;
+        const fDesc = metrics.fontBoundingBoxDescent ?? TEXT_FONT_SIZE * 0.2;
+
+        const emMidToBaseline = (fAsc - fDesc) / 2;
+        const visualCenterY = emMidToBaseline + (aDesc - aAsc) / 2;
+        const visualH = aAsc + aDesc;
+
+        const padX = 8;
+        const padY = 4;
+        const radius = 6;
+
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        ctx.scale(scale * pixelRatio, scale * pixelRatio);
+
+        const w = width + padX * 2;
+        const h = visualH + padY * 2;
+
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(-w / 2, visualCenterY - h / 2, w, h, radius);
+        } else {
+            ctx.rect(-w / 2, visualCenterY - h / 2, w, h);
+        }
+        ctx.fillStyle = 'rgba(112, 48, 138, 0.18)';
+        ctx.fill();
+        ctx.strokeStyle = '#70308A';
+        ctx.lineWidth = 2 / (scale * pixelRatio);
+        ctx.stroke();
+        ctx.restore();
+    }
+});
+
+export const createTextStyle = (text, rotation = 0, scale = 1, selected = false) => {
+    const main = new Style({
+        text: new TextStyle({
+            text: text || 'Texto',
+            font: TEXT_FONT,
+            fill: new Fill({ color: '#111827' }),
+            stroke: new Stroke({ color: '#ffffff', width: 3 }),
+            textBaseline: 'middle',
+            rotation,
+            scale
+        })
+    });
+
+    return selected ? [createRoundedTextBg(text || 'Texto', rotation, scale), main] : main;
+};
+
+export const createEmojiStyle = (emoji, rotation = 0, scale = 1, selected = false) => {
+    const main = new Style({
         text: new TextStyle({
             text: emoji || '🙂',
             font: '32px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji", sans-serif',
             fill: new Fill({ color: '#111827' }),
             stroke: new Stroke({ color: '#ffffff', width: 2 }),
-            offsetY: -6,
-            rotation
+            textBaseline: 'middle',
+            rotation,
+            scale
         })
-    })
-);
+    });
+    return selected ? [createSelectionHalo({ radius: 22, scale }), main] : main;
+};
 
 export const createFreehandStyle = () => (
     new Style({

@@ -22,7 +22,9 @@ showMarker({
     anchor: [0.5, 1],              // opcional, punto de anclaje del icono (default: [0.5, 1])
     minZoom: 11,                   // opcional, zoom minimo para que el marcador sea visible
     maxZoom: 18,                   // opcional, zoom maximo para que el marcador sea visible
-    duration: 5000                  // opcional, ms antes de ocultarse automaticamente
+    duration: 5000,                 // opcional, ms antes de ocultarse automaticamente
+    infoBox: { ... },               // opcional, define layerName/properties/littleCard para click y openOnShow
+    openOnShow: true                // opcional, abre la InfoBox automaticamente al terminar la animacion de zoom
 });
 ```
 
@@ -78,7 +80,11 @@ Propiedad `marker` (objeto o array). Se muestra al activar la capa y se oculta a
 
 ## Logo IIEG en el sider
 
-Click en el logo IIEG del sider muestra el marcador de MapaLab sobre la ubicacion del instituto (`[-103.4195, 20.6597]`) y hace zoom a nivel 16. El marcador solo es visible desde zoom 11 en adelante.
+Click en el logo IIEG del sider muestra el marcador de MapaLab sobre la ubicacion del instituto y hace zoom a nivel 16. Como `IIEG_MARKER` define `openOnShow: true`, al terminar la animacion se abre la InfoBox centrada sobre el icono. En mobile ademas se colapsa el sider (`closeSider`) para dejar visible el mapa.
+
+## Click en marker
+
+Los markers con `infoBox` se pueden clickear en el mapa para abrir su `littleCard`. El handler vive en `useMapMarker` y delega en el helper `openMarkerCard(feature)`, el mismo que usa `openOnShow` internamente.
 
 ## Comportamiento
 
@@ -87,3 +93,4 @@ Click en el logo IIEG del sider muestra el marcador de MapaLab sobre la ubicacio
 - `showMarker` directo (desde componentes) es independiente del ciclo de capas
 - Cada marcador tiene `zIndex: 999`, siempre visible sobre las capas WMS
 - `minZoom`/`maxZoom` controlan el rango de zoom en el que el marcador es visible
+- `openOnShow` dispara la apertura de la InfoBox como callback de la animacion de zoom para que el pixel calculado sea el final

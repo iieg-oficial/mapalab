@@ -1,15 +1,10 @@
 import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import Tooltip from '@components/Tooltip';
-import { LICENCIA_URL, LICENCIA_TEXTO } from '@constants/app';
+import LicenseTooltipContent from '@components/LicenseTooltipContent';
 import { formatBytes } from '../../../hooks/useLayerDownload';
 
-const licenciaContent = (
-    <span className="text-[11px]/[15px]">
-        {LICENCIA_TEXTO}{' '}
-        <a href={LICENCIA_URL} target="_blank" rel="noopener noreferrer" className="underline font-semibold">Licencia IIEG 2026</a>
-    </span>
-);
+const licenciaContent = <LicenseTooltipContent />;
 
 const DownloadButton = ({
     downloading,

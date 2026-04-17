@@ -7,10 +7,11 @@ import { useSymbology } from '@hooksMaps/useSymbology';
 import { useLayerOpacity } from '@hooksMaps/useLayerOpacity';
 import { useLayerToggle } from '@hooksMaps/useLayerToggle';
 import { useCQLFilter } from '@hooksMaps/useCQLFilter';
-import { useRasterLoop } from '@hooksMaps/useRasterLoop';
+import { useDateLoop } from '@hooksMaps/useDateLoop';
 import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { usePeriodicityCache } from '@hooksMaps/usePeriodicityCache';
 import { useMapMarker } from '@hooksMaps/useMapMarker';
+import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { layers as allLayers } from '@pages/maps/helpers/layers/index';
 import { toLonLat } from 'ol/proj';
 
@@ -46,10 +47,12 @@ const MapsProvider = ({ children }) => {
         showMarker: mapMarker.showMarker,
         hideMarker: mapMarker.hideMarker
     });
-    const rasterLoop = useRasterLoop({
+    const dateLoop = useDateLoop({
         applyFilter: cqlFilter.applyFilter,
         clearFilter: cqlFilter.clearFilter,
-        activeLayerIds: layerManagement.activeLayerIds
+        activeLayerIds: layerManagement.activeLayerIds,
+        getSpecificFilter: cqlFilter.getSpecificFilter,
+        getPeriodicity: periodicityCache.getPeriodicity
     });
 
     const handlePolygonComplete = useCallback((geometry, centerCoordinate, onFeatureCountUpdate) => {
@@ -72,6 +75,17 @@ const MapsProvider = ({ children }) => {
     }, [clickPosition, setSelectedFeatureInfo]);
 
     const mapDrawing = useMapDrawing(mapRef, handlePolygonComplete, handleShowCachedSelection);
+
+    const mapEditing = useMapEditing({
+        mapRef,
+        vectorSourceRef: mapDrawing.vectorSourceRef,
+        vectorLayerRef: mapDrawing.vectorLayerRef,
+        measurements: mapDrawing.measurements,
+        setMeasurements: mapDrawing.setMeasurements,
+        isDrawing: mapDrawing.isDrawing,
+        measureType: mapDrawing.measureType,
+        lastPlacedAnnotation: mapDrawing.lastPlacedAnnotation
+    });
 
     const mapsAnalyticsEvent = useCallback(() => { }, []);
 
@@ -97,8 +111,9 @@ const MapsProvider = ({ children }) => {
         ...symbology,
         ...layerOpacity,
         ...cqlFilter,
-        ...rasterLoop,
+        ...dateLoop,
         ...mapDrawing,
+        ...mapEditing,
         ...mapMarker,
         periodicityCache,
         isLocating,
@@ -117,8 +132,9 @@ const MapsProvider = ({ children }) => {
         setSelectedFeatureInfo,
         clickPosition,
         cqlFilter,
-        rasterLoop,
+        dateLoop,
         mapDrawing,
+        mapEditing,
         mapMarker,
         periodicityCache,
         isLocating

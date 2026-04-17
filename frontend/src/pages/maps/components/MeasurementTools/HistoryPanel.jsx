@@ -26,7 +26,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
     return (
         <div
             className={`
-                fixed z-10 flex-col gap-2 ml-14 items-start w-[334px] max-md:max-w-[calc(100vw-5rem)] px-3 pb-4
+                fixed z-10 flex-col gap-2 ml-15 items-start w-[334px] max-md:max-w-[calc(100vw-5rem)] px-3 pb-3
                 border border-transparent bg-[#F9FBFF] rounded-[12px] shadow-none
                 ${open ? 'flex' : 'hidden'} ${positionClass}
             `}

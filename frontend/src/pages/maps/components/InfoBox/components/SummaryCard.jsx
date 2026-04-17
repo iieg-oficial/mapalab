@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import Alert from '@components/Alert';
+import ScrollContainer from '@components/ScrollContainer';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
+import InfoCard from './InfoCard';
 
-const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpand, onToggleExpand, onClose }) => {
+const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpand, onToggleExpand, onClose, variant = 'desktop' }) => {
     const [showWarning, setShowWarning] = useState(false);
 
     if (!visible) return null;
+
+    const isMobile = variant === 'mobile';
+    const padX = isMobile ? 'px-5' : 'px-4';
+    const bodySize = isMobile ? 'text-[12px]/[16px]' : 'text-[10px]/[14px]';
+    const badgeSize = isMobile ? 'text-[11px]/[14px]' : 'text-[10px]/[14px]';
 
     const totalFeatures = results.reduce((total, result) => total + result.features.length, 0);
     const hasMany = totalFeatures > 5000;
@@ -33,43 +39,47 @@ const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpan
     };
 
     return (
-        <div className="bg-white rounded-[10px] shadow-[0px_6px_12px_#2F495C14] mb-2 relative flex flex-col max-h-[60vh]">
-            {onClose && (
-                <div
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onClose();
-                    }}
-                    className="absolute right-2 top-2 cursor-pointer text-gray-400 hover:text-gray-600 transition-colors z-10"
-                >
-                    <Icon name="close" size={14} />
-                </div>
+        <InfoCard
+            title={isExpanded ? null : 'Resumen de selección'}
+            variant={variant}
+            onClose={isExpanded ? undefined : onClose}
+            maxHeightClass={isExpanded ? '' : 'max-h-[60vh]'}
+            className="mb-2"
+        >
+            {!isExpanded && (
+                <>
+                    <div className={`${padX} pt-3 pb-2 shrink-0`}>
+                        <div className={`font-garet font-medium ${bodySize} text-[#465055]`}>
+                            <span className="font-bold">Total de elementos:</span> {formatNumber(totalFeatures)}
+                        </div>
+                    </div>
+
+                    <ScrollContainer
+                        className={`${padX} flex-1`}
+                        overlayFade
+                        overlayColor="#FFFFFF"
+                        clickableArrows
+                        minItemsForClick={4}
+                        itemCount={layerBreakdown.length}
+                    >
+                        <div className="space-y-1 mb-3">
+                            {layerBreakdown.map((layer, idx) => (
+                                <div
+                                    key={idx}
+                                    className="bg-[#EFF3FC] rounded-[5px] py-2 px-3 flex justify-between items-center"
+                                >
+                                    <span className={`font-garet font-medium ${bodySize} text-[#465055] truncate`}>{layer.name}</span>
+                                    <span className={`font-garet font-bold ${badgeSize} text-[#FF8300] bg-white px-2 py-0.5 rounded-full shrink-0 ml-2`}>
+                                        {formatNumber(layer.count)}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollContainer>
+                </>
             )}
 
-            <div className="p-4 pb-3 pr-6 shrink-0">
-                <h3 className="text-sm font-bold text-gray-900 mb-2">Resumen de selección</h3>
-                <div className="text-xs text-gray-600">
-                    <span className="font-medium">Total de elementos:</span> {formatNumber(totalFeatures)}
-                </div>
-            </div>
-
-            <div className="px-4 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-                <div className="space-y-1 mb-3">
-                    {layerBreakdown.map((layer, idx) => (
-                        <div
-                            key={idx}
-                            className="bg-[#EFF3FC] rounded-[5px] py-2 px-3 flex justify-between items-center"
-                        >
-                            <span className="text-xs font-medium text-gray-700">{layer.name}</span>
-                            <span className="text-xs font-bold text-gray-900 bg-white rounded-full px-2 py-0.5">
-                                {formatNumber(layer.count)}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="p-4 pt-0 shrink-0">
+            <div className={`${padX} ${isExpanded ? 'py-3' : 'pt-0 pb-4'} shrink-0`}>
                 {showWarning && (
                     <div className="mb-3">
                         <Alert
@@ -81,7 +91,7 @@ const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpan
                         />
                         <button
                             onClick={handleCancelWarning}
-                            className="mt-2 w-full text-xs text-gray-600 hover:text-gray-800 font-medium"
+                            className={`mt-2 w-full font-garet font-medium ${bodySize} text-[#465055] hover:text-[#5C2472]`}
                         >
                             Cancelar
                         </button>
@@ -91,18 +101,17 @@ const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpan
                 <button
                     onClick={handleToggle}
                     disabled={isLoadingExpand || showWarning}
-                    className={`w-full bg-[#2F495C] text-white text-xs font-medium py-2 px-4 rounded-[5px] transition-colors flex items-center justify-center gap-2 ${(isLoadingExpand || showWarning) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#1e2f3c]'
-                    }`}
+                    className={`w-full bg-[#703089] text-white font-garet font-bold ${bodySize} py-2 px-4 rounded-[30px] transition-all flex items-center justify-center gap-2 ${(isLoadingExpand || showWarning) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#5C2472] hover:shadow-[0_6px_6px_#5C247234]'}`}
                 >
                     {isLoadingExpand ? (
                         <>
-                            <Loading visible={true} className="h-4 w-4" />
+                            <Loading visible size="size-4" border="border-2" color="border-white" />
                             Cargando detalles...
                         </>
                     ) : isExpanded ? 'Ocultar detalles' : 'Ver detalles'}
                 </button>
             </div>
-        </div>
+        </InfoCard>
     );
 };
 

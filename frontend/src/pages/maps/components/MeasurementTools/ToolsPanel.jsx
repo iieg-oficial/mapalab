@@ -8,6 +8,7 @@ import ToolSelector from './ToolSelector';
 import EmojiPanel from './EmojiPanel';
 import TextPanel from './TextPanel';
 import HistoryPanel from './HistoryPanel';
+import FeatureEditToolbar from './FeatureEditToolbar';
 
 const ToolsPanel = () => {
     const {
@@ -20,17 +21,23 @@ const ToolsPanel = () => {
         deleteMeasurement,
         toggleMeasurementVisibility,
         cancel,
+        cancelCurrentSketch,
         undoLastPoint,
         finishCurrentSketch,
         areMeasurementToolsVisible,
         textTemplate,
         setEmojiTemplate,
         setTextTemplate,
-        rotation,
-        setRotation,
         hideMeasurementTools,
         restoreLastSelection,
-        showSelectionByIndex
+        showSelectionByIndex,
+        mapRef,
+        selectedFeature,
+        selectionTick,
+        updateRotation: updateFeatureRotation,
+        updateScale: updateFeatureScale,
+        deleteSelected: deleteSelectedFeature,
+        deselectFeature
     } = useMapsContext();
     const { style, className } = useSiderAdaptivePosition({ anchorRef: 'tools' });
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
@@ -141,6 +148,7 @@ const ToolsPanel = () => {
                 emojiButtonRef={emojiPickerButtonRef}
                 onUndo={undoLastPoint}
                 onFinish={finishCurrentSketch}
+                onCancel={cancelCurrentSketch}
                 canUndo={isSketching}
                 showAdvancedTools={showAdvancedTools}
                 onToggleAdvanced={() => setShowAdvancedTools(prev => !prev)}
@@ -151,8 +159,7 @@ const ToolsPanel = () => {
                 anchorRef={emojiPickerButtonRef}
                 onSelect={handleEmojiSelect}
                 onClose={() => setIsEmojiPickerOpen(false)}
-                rotation={rotation}
-                onRotationChange={setRotation}
+                placedCount={measurements.filter(m => m.type === 'Emoji').length}
             />
 
             <TextPanel
@@ -162,8 +169,7 @@ const ToolsPanel = () => {
                 onChange={setTextDraft}
                 onSave={handleSaveText}
                 onClose={() => setIsTextPanelOpen(false)}
-                rotation={rotation}
-                onRotationChange={setRotation}
+                placedCount={measurements.filter(m => m.type === 'Text').length}
             />
 
             <HistoryPanel
@@ -174,6 +180,18 @@ const ToolsPanel = () => {
                 onClose={() => setIsMeasurementListOpen(false)}
                 onShowSelection={showSelectionByIndex}
             />
+
+            {selectedFeature && (
+                <FeatureEditToolbar
+                    mapRef={mapRef}
+                    feature={selectedFeature}
+                    selectionTick={selectionTick}
+                    onRotate={updateFeatureRotation}
+                    onScale={updateFeatureScale}
+                    onDelete={deleteSelectedFeature}
+                    onClose={deselectFeature}
+                />
+            )}
 
             <CloseButton
                 visible={isDrawing || areMeasurementToolsVisible}

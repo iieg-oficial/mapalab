@@ -7,6 +7,61 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.2.0] - 2026-04-17
+
+### Agregado
+- **Sistema de loop de fechas generalizado** (`useDateLoop`, renombrado desde `useRasterLoop`): soporta modo `year` y `month` tanto para capas raster como vectoriales (CQL_FILTER). Helpers nuevos en `dateLoopHelpers.js` (`describeDateFilter`, `formatLoopLabel`, `buildLoopValues`, `computeSelectorInitialState`). El loop infiere modo segun vista del selector (`expandedYear`) o filtro activo
+- Controles de loop en header "Periodicidad:" del LayerDetailModal: `PlayPauseButton`, `LoopIntervalButton` (morado, cicla 250/500/1000/2000/3000 ms), `LoopDirectionButton` (morado, toggle LTR/RTL), boton eliminar filtro
+- Componentes extraidos a `SimpleDateSelectorParts.jsx`: `BackButton`, `YearBadge`, `PlayPauseButton`, `CarouselArrow`, `LoopIntervalButton`, `LoopDirectionButton`
+- Etiqueta de fecha activa en `ActiveLayerItem` con formatos `"2024"` / `"JUN 2024"` / `"3 MESES 2024"` / `"N AÑOS"`. Anchos fijos por tipo (static vs loop) para evitar rebote. Click: toggle loop si es posible, si no abre modal
+- Badge morado de intervalo (`"1s"`, `"2s"`) junto al label en `ActiveLayerItem` cuando `loopIntervalMs !== DEFAULT_LOOP_INTERVAL_MS` y el loop corre
+- Auto-scroll del carrusel de años al valor current del loop durante mode `year` (si queda fuera del viewport, scroll suave para centrarlo)
+- Prop `onExpandedYearChange` en `SimpleDateSelector` para que el modal conozca la vista (año vs mes) y decida el modo del loop
+- Edicion en-mapa de Emoji/Texto colocados: click para seleccionar (halo morado), drag para mover, sliders de rotacion y escala 50-300%, boton eliminar. Toolbar flotante posicionado via `ol.Overlay` que sigue pan/zoom. Escape o cambio de herramienta deseleccionan. Ver `docs/draw.md`
+- `useMapEditing` hook con `ol.interaction.Translate` + `editingClickedRef` (evita conflicto con el query de InfoBox)
+- `FeatureEditToolbar` componente reutilizable para controles de transformacion
+- `createEmojiStyle` / `createTextStyle` extendidos con `scale` y `selected`
+- Flag `openOnShow` en definiciones de marker para abrir automaticamente la InfoBox al aparecer (opt-in, activo en marker del IIEG)
+- Helper `openMarkerCard(feature)` exportado de `useMapMarker` y reutilizado en el click handler
+- Componente primitivo `MobileSheet` (`components/MobileSheet.jsx`) con portal, backdrop, translateY, Escape, click-fuera y body lock configurables
+- Rama mobile en InfoBox: bottom-sheet con indicadores "hay mas arriba/abajo" (via `useScrollOverflow`) y seccion de herramientas (`InfoBoxTools`) extensible en el header
+- Componente `InfoBoxTools` con API `tools=[{ id, icon, label, tooltip, onClick, disabled }]` para crecer con mas acciones a futuro
+- `MobileFeatureHeader` — header alternativo para cards en mobile: barra lateral morada + titulo tipografico, sin bloque `#EFF3FC` fijo
+- `renderCard(variant)` acepta `'desktop'` (default) o `'mobile'` y elige el header correspondiente
+- `SwipeToRemove` — wrapper que permite eliminar cards deslizando horizontalmente (solo mobile) con etiqueta guia "Desliza para eliminar"/"Eliminando…"
+- `LicenseTooltipContent` — extraido de `DownloadButton` a `@components/` para reuso (tooltip legal de descarga)
+- Tipografias aumentadas en `Text`, `List`, `Cards`, `IconText`, `Label` cuando `variant='mobile'` (de 10px a 12px, y de `text-sm` a `text-[15px]` en valores de cards)
+- Grid de `Cards` fuerza `grid-cols-2` en mobile aunque el template indique 1 columna
+- `ScrollContainer` reemplaza el scroll manual de InfoBox mobile — incluye flechas bounce arriba/abajo y fade gradient nativos
+- `InfoCard` — wrapper compartido con shell `bg-white rounded-[10px] shadow-[...]` y header adaptativo (`desktop`/`mobile`). Unifica renderCard, `EmptySuggestions`, `SummaryCard` y el estado "sin capa seleccionada", elimina duplicacion de la cascara y los 3 estilos de header
+- Cache de `alternativeResults` en `selectedFeatureInfo` — al tapar una capa sugerida se filtra en memoria sin re-consultar GeoServer. Limpieza proactiva por cambio de `activeLayerIds` o `filters`. Ver `docs/cache.md`
+- `docs/cache.md` — inventario centralizado de todos los caches del proyecto (frontend memoria/storage, backend, nginx, assets)
+- `getDefaultMapView()` y `getMinZoom()` en `helpers/defaultView.js` — centralizan la vista inicial y minZoom del mapa
+- Capa de salud con `defaultDate: 'latest'`
+- Icon `done` en `Icon.jsx`
+
+### Corregido
+- Vectoriales tambien pueden animar periodo (antes solo raster). Al iterar, el `ActiveLayerItem` mantiene visible el boton de detalle durante el loop (antes desaparecia por `isLoading`)
+- En polígonos, regresar a "todos los años" mantiene el año seleccionado en naranja (antes se perdía la selección visual al volver). Re-click del mismo año preserva la selección del mes
+- Sincronización con filter externo: al limpiar el filtro desde el header, el selector vuelve a la vista de años limpia (antes quedaba el state local desincronizado)
+- Al tapar una capa alternativa en EmptySuggestions ahora se muestran sus features en el punto clickeado (antes solo cerraba el panel sin mostrar nada)
+- Documentacion `docs/mobile-sheet.md` y `docs/infobox.md`
+
+### Cambiado
+- Etiqueta de fecha en `ActiveLayerItem` no muestra el ícono play estático (solo pause cuando corre el loop)
+- Padding reducido en etiqueta (`p-1.5` → `p-1`, `rounded-[12px]` → `rounded-[10px]`), fuente 9px → 10px
+- Años ordenados descendente en `buildLoopValues` para matchear el orden visual del carrusel
+- Cuando el loop corre, el año/mes actual se pinta en naranja institucional (no morado) para indicar el tick
+- En vista de meses el tick del loop no muestra borde naranja (más sutil), manteniendo `border-transparent` para no rebotar
+- Click en el logo IIEG del sider colapsa el sider en mobile (`closeSider`) ademas de mostrar el marker
+- `showMarker` llama a `openMarkerCard` como callback de `view.animate`, garantizando que la InfoBox quede centrada sobre el icono al terminar la animacion
+- `MobileMenu` refactorizado como wrapper delgado de `MobileSheet` conservando `registerInSider`
+- `Header` y `EmptySuggestions` del InfoBox usan `w-full` en lugar de `w-[239px]` fijo, el ancho lo determina el contenedor padre
+- `useMapInitialization` respeta `layers` en URL para decidir si aplicar `lat/lon/zoom` (evita centrar en coordenadas sin capas)
+- `SymbologyPanel` boton siempre clickeable (abre panel aunque no haya capa)
+- `iturConfig` cards con `decimals: 2` para métricas proporcionales
+- ActiveLayersList: boton de modo base también activa capas si no hay ninguna activa
+
 ## [1.1.4] - 2026-04-15
 
 ### Agregado

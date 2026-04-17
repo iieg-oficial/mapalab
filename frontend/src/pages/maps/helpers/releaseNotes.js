@@ -12,6 +12,28 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.2.0',
+        items: [
+            { text: 'Animación de periodicidad para todas las capas con fechas (antes solo raster). Los años o meses pueden ciclar automáticamente desde el modal de detalle', tag: 'added' },
+            { text: 'Controles de animación junto a "Periodicidad:" en el modal: velocidad (0.25s a 3s), dirección (→/←), play/pausa y eliminar filtro de fecha', tag: 'added' },
+            { text: 'El modal detecta si estás viendo años o meses y al dar play inicia la animación en el modo correcto', tag: 'added' },
+            { text: 'Etiqueta compacta de fecha en el panel de capas activas con formatos "2024", "JUN 2024", "3 MESES 2024". Al hacer clic se inicia la animación si es posible, si no abre el detalle', tag: 'added' },
+            { text: 'Durante la animación, el año o mes actual se resalta en naranja institucional y el carrusel hace scroll para mantenerlo visible', tag: 'added' },
+            { text: 'Las flechas del carrusel de años solo aparecen cuando realmente se puede scrollear en esa dirección', tag: 'changed' },
+            { text: 'En polígonos, al regresar a "todos los años" el año seleccionado permanece destacado', tag: 'fixed' },
+            { text: 'El botón de detalle de capa permanece visible durante la animación (antes desaparecía por el indicador de carga)', tag: 'fixed' },
+            { text: 'Al tocar el logo del IIEG se abre automaticamente la tarjeta de informacion centrada sobre el marcador', tag: 'added' },
+            { text: 'En celulares el panel lateral se colapsa al tocar el logo del IIEG para ver mejor el mapa', tag: 'changed' },
+            { text: 'En celulares la tarjeta de informacion ahora aparece como panel inferior de pantalla completa, con indicadores cuando hay mas tarjetas arriba o abajo', tag: 'changed' },
+            { text: 'Nueva barra de herramientas en la tarjeta de informacion movil con opcion de descargar multiples tarjetas y lista para crecer con mas acciones', tag: 'added' },
+            { text: 'En celulares cada tarjeta tiene un header compacto (barra lateral morada) que se adapta al ancho del panel', tag: 'changed' },
+            { text: 'En celulares puedes eliminar una tarjeta deslizandola horizontalmente', tag: 'added' },
+            { text: 'Mensajes "sin informacion aqui" y "resumen de seleccion por area" ahora se ven igual de pulidos en celular con encabezado y tipografia adaptada', tag: 'changed' },
+            { text: 'Al tocar una capa sugerida en la tarjeta vacia ahora se muestra su informacion en el punto clickeado', tag: 'fixed' },
+            { text: 'Ahora puedes editar emojis y textos colocados en el mapa: toca uno para seleccionarlo y aparece una barra con controles para arrastrar, rotar, cambiar el tamaño y eliminar', tag: 'added' }
+        ]
+    },
+    {
         version: '1.1.4',
         items: [
             { text: 'Aviso de licencia IIEG al descargar datos con link a la declaración oficial', tag: 'added' },

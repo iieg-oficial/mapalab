@@ -3,13 +3,16 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 export const useCarouselOverflow = () => {
     const scrollRef = useRef(null);
     const [hasOverflow, setHasOverflow] = useState(false);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
 
     const checkOverflow = useCallback(() => {
-        if (scrollRef.current) {
-            setHasOverflow(
-                scrollRef.current.scrollWidth > scrollRef.current.clientWidth
-            );
-        }
+        const el = scrollRef.current;
+        if (!el) return;
+        const overflow = el.scrollWidth > el.clientWidth;
+        setHasOverflow(overflow);
+        setCanScrollLeft(el.scrollLeft > 1);
+        setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
     }, []);
 
     useEffect(() => {
@@ -20,10 +23,12 @@ export const useCarouselOverflow = () => {
 
         const observer = new ResizeObserver(checkOverflow);
         observer.observe(el);
+        el.addEventListener('scroll', checkOverflow);
         window.addEventListener('resize', checkOverflow);
 
         return () => {
             observer.disconnect();
+            el.removeEventListener('scroll', checkOverflow);
             window.removeEventListener('resize', checkOverflow);
         };
     });
@@ -38,5 +43,5 @@ export const useCarouselOverflow = () => {
         }
     }, []);
 
-    return { scrollRef, hasOverflow, scroll, checkOverflow };
+    return { scrollRef, hasOverflow, canScrollLeft, canScrollRight, scroll, checkOverflow };
 };

@@ -11,6 +11,7 @@ export const IIEG_MARKER = {
     minZoom: 15,
     bgColor: '#5c2472',
     bgRadius: 45,
+    openOnShow: true,
     infoBox: {
         layerName: 'MapaLab — IIEG Jalisco',
         properties: {
