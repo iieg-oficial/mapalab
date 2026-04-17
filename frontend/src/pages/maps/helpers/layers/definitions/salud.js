@@ -143,6 +143,7 @@ export const saludLayers = {
                         { label: 'Carencias promedio', field: 'carencias_promedio' },
                     ]
                 }),
+                defaultDate: 'latest',
                 searchMeta: { tags: ['salud', 'carencia', 'acceso', 'servicios', 'pobreza', 'vulnerabilidad', 'coneval'] }
             }
         ]

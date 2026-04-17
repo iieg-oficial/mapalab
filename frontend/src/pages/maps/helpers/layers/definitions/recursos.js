@@ -69,13 +69,13 @@ const iturConfig = {
     ],
     cards: [
         { label: 'Tamaño de la población', field: 'poblacion_total_habitantes' },
-        { label: 'Densidad de población', field: 'densidad_poblacion_por_kilometro' },
-        { label: 'Distancia a localidades de más de 50 mil hab.', field: 'distancia_localidades_mas_50k_habitantes' },
-        { label: 'Carencia de servicios básicos en la vivienda', field: 'carencia_servicios_vivienda' },
-        { label: 'Proporción de uso productivo - vegetación', field: 'proporcion_uso_productivo_vegetacion' },
-        { label: 'Uso de suelo construido', field: 'uso_suelo_construido' },
-        { label: 'Condiciones de accesibilidad', field: 'condiciones_accesibilidad' },
-        { label: 'Equipamiento urbano', field: 'equipamiento_urbano' },
+        { label: 'Densidad de población', field: 'densidad_poblacion_por_kilometro', decimals: 2 },
+        { label: 'Distancia a localidades de más de 50 mil hab.', field: 'distancia_localidades_mas_50k_habitantes', decimals: 2 },
+        { label: 'Carencia de servicios básicos en la vivienda', field: 'carencia_servicios_vivienda', decimals: 2 },
+        { label: 'Proporción de uso productivo - vegetación', field: 'proporcion_uso_productivo_vegetacion', decimals: 2 },
+        { label: 'Uso de suelo construido', field: 'uso_suelo_construido', decimals: 2 },
+        { label: 'Condiciones de accesibilidad', field: 'condiciones_accesibilidad', decimals: 2 },
+        { label: 'Equipamiento urbano', field: 'equipamiento_urbano', decimals: 2 },
     ],
     cardsColumns: 1
 };

@@ -50,15 +50,8 @@ const SymbologyPanel = ({ onCollapseChange }) => {
             <div className="w-auto flex items-center justify-end">
                 <Tooltip content={hasLayer ? 'Expandir Panel de Simbología' : 'Selecciona una capa para ver sus simbologías'} placement="left">
                     <button
-                        onClick={() => (hasLayer || isManuallyCollapsed) && handleExpand()}
-                        className={`
-                            size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors
-                            ${(hasLayer || isManuallyCollapsed)
-                ? 'hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer'
-                : 'cursor-default opacity-50'
-            }
-                        `}
-                        disabled={!hasLayer && !isManuallyCollapsed}
+                        onClick={handleExpand}
+                        className="size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer"
                     >
                         <Icon name="simbologia" className="size-10" />
                     </button>
@@ -75,7 +68,7 @@ const SymbologyPanel = ({ onCollapseChange }) => {
     const displayLayers = getLayersForSymbology(fullLayer);
 
     return (
-        <div className="w-auto px-4.5 pb-6 pt-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] shrink-0">
+        <div className="w-auto px-4.5 pb-2 pt-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] shrink-0">
             <div className="flex justify-between items-center mb-2 shrink-0">
                 <div className="flex items-center gap-3">
                     <Icon name="simbologia" className="size-8" />
