@@ -10,10 +10,29 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 ### Agregado
 - Flag `openOnShow` en definiciones de marker para abrir automaticamente la InfoBox al aparecer (opt-in, activo en marker del IIEG)
 - Helper `openMarkerCard(feature)` exportado de `useMapMarker` y reutilizado en el click handler
+- Componente primitivo `MobileSheet` (`components/MobileSheet.jsx`) con portal, backdrop, translateY, Escape, click-fuera y body lock configurables
+- Rama mobile en InfoBox: bottom-sheet con indicadores "hay mas arriba/abajo" (via `useScrollOverflow`) y seccion de herramientas (`InfoBoxTools`) extensible en el header
+- Componente `InfoBoxTools` con API `tools=[{ id, icon, label, tooltip, onClick, disabled }]` para crecer con mas acciones a futuro
+- `MobileFeatureHeader` — header alternativo para cards en mobile: barra lateral morada + titulo tipografico, sin bloque `#EFF3FC` fijo
+- `renderCard(variant)` acepta `'desktop'` (default) o `'mobile'` y elige el header correspondiente
+- `SwipeToRemove` — wrapper que permite eliminar cards deslizando horizontalmente (solo mobile) con etiqueta guia "Desliza para eliminar"/"Eliminando…"
+- `LicenseTooltipContent` — extraido de `DownloadButton` a `@components/` para reuso (tooltip legal de descarga)
+- Tipografias aumentadas en `Text`, `List`, `Cards`, `IconText`, `Label` cuando `variant='mobile'` (de 10px a 12px, y de `text-sm` a `text-[15px]` en valores de cards)
+- Grid de `Cards` fuerza `grid-cols-2` en mobile aunque el template indique 1 columna
+- `ScrollContainer` reemplaza el scroll manual de InfoBox mobile — incluye flechas bounce arriba/abajo y fade gradient nativos
+- `InfoCard` — wrapper compartido con shell `bg-white rounded-[10px] shadow-[...]` y header adaptativo (`desktop`/`mobile`). Unifica renderCard, `EmptySuggestions`, `SummaryCard` y el estado "sin capa seleccionada", elimina duplicacion de la cascara y los 3 estilos de header
+- Cache de `alternativeResults` en `selectedFeatureInfo` — al tapar una capa sugerida se filtra en memoria sin re-consultar GeoServer. Limpieza proactiva por cambio de `activeLayerIds` o `filters`. Ver `docs/cache.md`
+- `docs/cache.md` — inventario centralizado de todos los caches del proyecto (frontend memoria/storage, backend, nginx, assets)
+
+### Corregido
+- Al tapar una capa alternativa en EmptySuggestions ahora se muestran sus features en el punto clickeado (antes solo cerraba el panel sin mostrar nada)
+- Documentacion `docs/mobile-sheet.md` y `docs/infobox.md`
 
 ### Cambiado
 - Click en el logo IIEG del sider colapsa el sider en mobile (`closeSider`) ademas de mostrar el marker
 - `showMarker` llama a `openMarkerCard` como callback de `view.animate`, garantizando que la InfoBox quede centrada sobre el icono al terminar la animacion
+- `MobileMenu` refactorizado como wrapper delgado de `MobileSheet` conservando `registerInSider`
+- `Header` y `EmptySuggestions` del InfoBox usan `w-full` en lugar de `w-[239px]` fijo, el ancho lo determina el contenedor padre
 
 ## [1.1.4] - 2026-04-15
 

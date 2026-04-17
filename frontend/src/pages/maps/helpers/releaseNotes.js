@@ -15,7 +15,13 @@ const FALLBACK_NOTES = [
         version: 'No publicado',
         items: [
             { text: 'Al tocar el logo del IIEG se abre automaticamente la tarjeta de informacion centrada sobre el marcador', tag: 'added' },
-            { text: 'En celulares el panel lateral se colapsa al tocar el logo del IIEG para ver mejor el mapa', tag: 'changed' }
+            { text: 'En celulares el panel lateral se colapsa al tocar el logo del IIEG para ver mejor el mapa', tag: 'changed' },
+            { text: 'En celulares la tarjeta de informacion ahora aparece como panel inferior de pantalla completa, con indicadores cuando hay mas tarjetas arriba o abajo', tag: 'changed' },
+            { text: 'Nueva barra de herramientas en la tarjeta de informacion movil con opcion de descargar multiples tarjetas y lista para crecer con mas acciones', tag: 'added' },
+            { text: 'En celulares cada tarjeta tiene un header compacto (barra lateral morada) que se adapta al ancho del panel', tag: 'changed' },
+            { text: 'En celulares puedes eliminar una tarjeta deslizandola horizontalmente', tag: 'added' },
+            { text: 'Mensajes "sin informacion aqui" y "resumen de seleccion por area" ahora se ven igual de pulidos en celular con encabezado y tipografia adaptada', tag: 'changed' },
+            { text: 'Al tocar una capa sugerida en la tarjeta vacia ahora se muestra su informacion en el punto clickeado', tag: 'fixed' }
         ]
     },
     {

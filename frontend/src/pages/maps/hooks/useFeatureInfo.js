@@ -109,10 +109,12 @@ export const useFeatureInfo = () => {
                 );
 
                 let alternativeLayers = [];
+                let altResultsCache = null;
 
                 if (otherActiveLayers.length > 0) {
                     const altResults = await getFeatureInfoForActiveLayers(otherActiveLayers, map, coordinate, getFilter, isInegiMode);
                     if (altResults && altResults.length > 0) {
+                        altResultsCache = altResults;
                         const groupedAlternatives = new Map();
 
                         altResults.forEach(r => {
@@ -141,7 +143,8 @@ export const useFeatureInfo = () => {
                     lngLat: { lng, lat },
                     results: [],
                     queriedLayerName,
-                    alternativeLayers
+                    alternativeLayers,
+                    alternativeResults: altResultsCache
                 });
 
                 return null;
@@ -164,7 +167,29 @@ export const useFeatureInfo = () => {
                 name: layerNode.label || layer.name
             });
         }
-    }, [setSelectedLayerForSymbology]);
+
+        setSelectedFeatureInfo(current => {
+            if (!current?.alternativeResults) return current;
+
+            let matchingResults;
+            if (layer.isGroup && layerNode) {
+                const descendantIds = new Set(collectLayersWithWMS(layerNode).map(n => n.id));
+                matchingResults = current.alternativeResults.filter(r => descendantIds.has(r.layerId));
+            } else {
+                matchingResults = current.alternativeResults.filter(r => r.layerId === layer.id);
+            }
+
+            if (matchingResults.length === 0) return current;
+
+            return {
+                ...current,
+                results: matchingResults,
+                queriedLayerName: layer.name,
+                alternativeLayers: null,
+                alternativeResults: current.alternativeResults
+            };
+        });
+    }, [setSelectedLayerForSymbology, setSelectedFeatureInfo]);
 
     const queryFeaturesInPolygon = useCallback(async (map, polygonGeometry, centerCoordinate, onFeatureCountUpdate) => {
         if (!map || !polygonGeometry) {

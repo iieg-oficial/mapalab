@@ -1,4 +1,4 @@
-import Header from '../components/Header';
+import InfoCard from '../components/InfoCard';
 import Label from '../components/Label';
 import List from '../components/List';
 import IconText from '../components/IconText';
@@ -37,8 +37,9 @@ const shouldIncludeField = (fieldName, suffix) => {
     return !otherSuffixes.some(otherSuffix => fieldLower.includes(otherSuffix));
 };
 
-export const renderCard = (properties, config, onClose, layerId = null, featureId = null, onAction = null) => {
+export const renderCard = (properties, config, onClose, layerId = null, featureId = null, onAction = null, variant = 'desktop', cardIndex = null, cardTotal = null) => {
     const suffix = extractSuffixFromLayerId(layerId);
+    const isMobile = variant === 'mobile';
 
     const getValue = (field) => {
         if (!field) return '';
@@ -51,23 +52,13 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
     const finalConfig = config || cardTemplates.generateDefaultConfig(properties);
     if (!finalConfig) return null;
 
-    const header = [];
+    let titleValue = null;
     const body = [];
 
     if (finalConfig.headerField) {
         const headerValueFromProperties = getValue(finalConfig.headerField);
         const rawHeaderValue = headerValueFromProperties || finalConfig.headerField;
-        const finalHeaderValue = finalConfig.headerTransform ? finalConfig.headerTransform(rawHeaderValue, featureId) : rawHeaderValue;
-
-        if (finalHeaderValue) {
-            header.push(
-                <Header
-                    key="header"
-                    value={finalHeaderValue}
-                    onClose={onClose}
-                />
-            );
-        }
+        titleValue = finalConfig.headerTransform ? finalConfig.headerTransform(rawHeaderValue, featureId) : rawHeaderValue;
     }
 
     if (finalConfig.labels) {
@@ -80,6 +71,7 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
                         value={properties[field]}
                         color={CARACTERISTICA_STYLE.color}
                         bg={CARACTERISTICA_STYLE.bg}
+                        variant={variant}
                     />
                 );
             }
@@ -131,6 +123,7 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
                                     color={color}
                                     bg={bg}
                                     fullWidth={def.fullWidth}
+                                    variant={variant}
                                 />
                             );
                         });
@@ -142,6 +135,7 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
                                 color={color}
                                 bg={bg}
                                 fullWidth={def.fullWidth}
+                                variant={variant}
                             />
                         );
                     }
@@ -173,6 +167,7 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
                 <List
                     key="list"
                     rows={rows}
+                    variant={variant}
                 />
             );
         }
@@ -190,7 +185,7 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
             };
             if (item.href) iconTextProps.href = item.href;
             if (item.action && onAction) iconTextProps.onClick = () => onAction(item.action);
-            body.push(<IconText key={`icontext-${idx}`} {...iconTextProps} />);
+            body.push(<IconText key={`icontext-${idx}`} {...iconTextProps} variant={variant} />);
         });
     }
 
@@ -203,6 +198,7 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
                         key={`text-${idx}`}
                         label={textItem.label}
                         value={value}
+                        variant={variant}
                     />
                 );
             }
@@ -231,26 +227,34 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
             .filter(card => card.value !== null && card.value !== undefined && card.value !== '');
 
         if (cards.length > 0) {
+            const effectiveColumns = variant === 'mobile' ? 2 : (finalConfig.cardsColumns || 1);
             body.push(
                 <Cards
                     key="cards"
                     cards={cards}
-                    columns={finalConfig.cardsColumns || 1}
+                    columns={effectiveColumns}
+                    variant={variant}
                 />
             );
         }
     }
 
-    if (header.length === 0 && body.length === 0) return null;
+    if (!titleValue && body.length === 0) return null;
 
     return (
-        <>
-            {header}
+        <InfoCard
+            title={titleValue}
+            variant={variant}
+            index={cardIndex}
+            total={cardTotal}
+            onClose={onClose}
+            className="pb-2"
+        >
             {body.length > 0 && (
-                <div className="px-4">
+                <div className={isMobile ? 'px-5' : 'px-4'}>
                     {body}
                 </div>
             )}
-        </>
+        </InfoCard>
     );
 };
