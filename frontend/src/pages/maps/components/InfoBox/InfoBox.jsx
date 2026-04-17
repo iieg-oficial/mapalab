@@ -202,6 +202,9 @@ const InfoBox = () => {
                         className="flex-1 px-3 pb-3 transition-[pointer-events] duration-0"
                         overlayFade
                         overlayColor="#F9FBFF"
+                        clickableArrows
+                        minItemsForClick={3}
+                        itemCount={totalFeatures}
                         style={{ pointerEvents: interactive ? 'auto' : 'none' }}
                     >
                         <div className="space-y-2">
