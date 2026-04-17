@@ -40,39 +40,46 @@ const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpan
 
     return (
         <InfoCard
-            title="Resumen de selección"
+            title={isExpanded ? null : 'Resumen de selección'}
             variant={variant}
-            onClose={onClose}
-            maxHeightClass="max-h-[60vh]"
+            onClose={isExpanded ? undefined : onClose}
+            maxHeightClass={isExpanded ? '' : 'max-h-[60vh]'}
             className="mb-2"
         >
-            <div className={`${padX} pt-3 pb-2 shrink-0`}>
-                <div className={`font-garet font-medium ${bodySize} text-[#465055]`}>
-                    <span className="font-bold">Total de elementos:</span> {formatNumber(totalFeatures)}
-                </div>
-            </div>
-
-            <ScrollContainer
-                className={`${padX} flex-1`}
-                overlayFade
-                overlayColor="#FFFFFF"
-            >
-                <div className="space-y-1 mb-3">
-                    {layerBreakdown.map((layer, idx) => (
-                        <div
-                            key={idx}
-                            className="bg-[#EFF3FC] rounded-[5px] py-2 px-3 flex justify-between items-center"
-                        >
-                            <span className={`font-garet font-medium ${bodySize} text-[#465055] truncate`}>{layer.name}</span>
-                            <span className={`font-garet font-bold ${badgeSize} text-[#FF8300] bg-white px-2 py-0.5 rounded-full shrink-0 ml-2`}>
-                                {formatNumber(layer.count)}
-                            </span>
+            {!isExpanded && (
+                <>
+                    <div className={`${padX} pt-3 pb-2 shrink-0`}>
+                        <div className={`font-garet font-medium ${bodySize} text-[#465055]`}>
+                            <span className="font-bold">Total de elementos:</span> {formatNumber(totalFeatures)}
                         </div>
-                    ))}
-                </div>
-            </ScrollContainer>
+                    </div>
 
-            <div className={`${padX} pt-0 pb-4 shrink-0`}>
+                    <ScrollContainer
+                        className={`${padX} flex-1`}
+                        overlayFade
+                        overlayColor="#FFFFFF"
+                        clickableArrows
+                        minItemsForClick={4}
+                        itemCount={layerBreakdown.length}
+                    >
+                        <div className="space-y-1 mb-3">
+                            {layerBreakdown.map((layer, idx) => (
+                                <div
+                                    key={idx}
+                                    className="bg-[#EFF3FC] rounded-[5px] py-2 px-3 flex justify-between items-center"
+                                >
+                                    <span className={`font-garet font-medium ${bodySize} text-[#465055] truncate`}>{layer.name}</span>
+                                    <span className={`font-garet font-bold ${badgeSize} text-[#FF8300] bg-white px-2 py-0.5 rounded-full shrink-0 ml-2`}>
+                                        {formatNumber(layer.count)}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollContainer>
+                </>
+            )}
+
+            <div className={`${padX} ${isExpanded ? 'py-3' : 'pt-0 pb-4'} shrink-0`}>
                 {showWarning && (
                     <div className="mb-3">
                         <Alert
