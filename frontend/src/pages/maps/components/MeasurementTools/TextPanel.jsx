@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
-import Panel from '@components/Panel';
-import RotationControls from './RotationControls';
+import { useSiderAdaptivePosition } from '@contexts/SiderContext';
+import { useOutsideClick } from '@hooks/useOutsideClick';
+import Icon from '@components/Icon';
+import Badge from '@components/Badge';
 
 const TextPanel = ({
     open,
@@ -9,65 +11,81 @@ const TextPanel = ({
     onChange,
     onSave,
     onClose,
-    rotation,
-    onRotationChange
+    placedCount = 0
 }) => {
     const inputRef = useRef(null);
-
-    useEffect(() => {
-        if (open) {
-            inputRef.current?.focus();
-        }
-    }, [open]);
+    const panelRef = useRef(null);
+    const { className: positionClass } = useSiderAdaptivePosition({ anchorRef: 'textPanel' });
 
     const hasContent = Boolean(value?.trim());
 
-    const footer = (
-        <div className="flex gap-2">
-            <button
-                type="button"
-                onClick={() => hasContent && onSave?.()}
-                disabled={!hasContent}
-                className={[
-                    'flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
-                    hasContent
-                        ? 'bg-blue-500 text-white hover:bg-blue-600'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                ].join(' ')}
-            >
-                Guardar
-            </button>
-            <button
-                type="button"
-                onClick={onClose}
-                className="rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:text-gray-800  "
-            >
-                Cerrar
-            </button>
-        </div>
+    useEffect(() => {
+        if (open) inputRef.current?.focus();
+    }, [open]);
+
+    useOutsideClick(
+        anchorRef ? [panelRef, anchorRef] : [panelRef],
+        () => { if (open) onClose?.(); }
     );
 
+    useEffect(() => {
+        if (!open) return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') onClose?.();
+            if (e.key === 'Enter' && hasContent) onSave?.();
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [open, onClose, onSave, hasContent]);
+
     return (
-        <Panel
-            open={open}
-            anchorRef={anchorRef}
-            onClose={onClose}
-            title="Texto a colocar"
-            width="w-64"
-            footer={footer}
-            shadow="shadow-[0_5px_20px_#1A26641A]"
+        <div
+            ref={panelRef}
+            className={`
+                fixed z-10 flex-col gap-2 ml-15 items-start w-[334px] max-md:max-w-[calc(100vw-5rem)] px-3 pb-3
+                border border-transparent bg-[#F9FBFF] rounded-[12px] shadow-none
+                ${open ? 'flex' : 'hidden'} ${positionClass}
+            `}
         >
-            <div className="p-3 space-y-3">
+            <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-5 font-garet font-bold text-[14px]/[47px] text-[#465055]">
+                    Texto
+                    <Badge visible={placedCount > 0} count={placedCount} />
+                </div>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="cursor-pointer"
+                    aria-label="Cerrar panel de texto"
+                >
+                    <Icon name="cerrarModal" className="size-7" />
+                </button>
+            </div>
+
+            <div className="w-full rounded-[7px] bg-white p-3">
                 <input
                     ref={inputRef}
                     value={value}
                     onChange={(event) => onChange?.(event.target.value)}
                     placeholder="Escribe el texto a colocar"
-                    className="w-full rounded-lg border border-gray-200  bg-transparent px-2 py-1.5 text-sm text-gray-700  focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-[#E6E9F0] bg-transparent px-3 py-2 font-garet font-medium text-[13px] text-[#465055] placeholder:text-[#8A9199] focus:outline-none focus:border-[#70308A] transition-colors"
                 />
-                <RotationControls rotation={rotation} onChange={onRotationChange} />
             </div>
-        </Panel>
+
+            <button
+                type="button"
+                onClick={() => hasContent && onSave?.()}
+                disabled={!hasContent}
+                className={`
+                    w-full py-2 px-4 rounded-[30px] font-garet font-bold text-[13px] transition-all
+                    ${hasContent
+            ? 'bg-[#703089] text-white hover:bg-[#5C2472] hover:shadow-[0_6px_6px_#5C247234] cursor-pointer'
+            : 'bg-[#E6E9F0] text-[#8A9199] cursor-not-allowed'}
+                `}
+            >
+                Colocar texto
+            </button>
+        </div>
     );
 };
 

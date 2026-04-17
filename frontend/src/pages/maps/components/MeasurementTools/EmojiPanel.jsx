@@ -4,10 +4,9 @@ import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Badge from '@components/Badge';
 import ScrollContainer from '@components/ScrollContainer';
-import RotationControls from './RotationControls';
 import { emojiCatalog } from '@pages/maps/helpers/emojiCatalog';
 
-const EmojiPanel = ({ open, anchorRef, onSelect, onClose, rotation, onRotationChange, placedCount = 0 }) => {
+const EmojiPanel = ({ open, anchorRef, onSelect, onClose, placedCount = 0 }) => {
     const [activeCategory, setActiveCategory] = useState(0);
     const panelRef = useRef(null);
     const { className: positionClass } = useSiderAdaptivePosition({ anchorRef: 'emojiPanel' });
@@ -49,7 +48,7 @@ const EmojiPanel = ({ open, anchorRef, onSelect, onClose, rotation, onRotationCh
                     <Icon name="cerrarModal" className="size-7" />
                 </button>
             </div>
-            <div className="w-full p-1 rounded-[7px] bg-white">      
+            <div className="w-full rounded-[7px] bg-white">      
                 <div className="flex border-b border-gray-100 gap-0.5 w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
                     {emojiCatalog.map((cat, idx) => (
                         <button
@@ -86,10 +85,6 @@ const EmojiPanel = ({ open, anchorRef, onSelect, onClose, rotation, onRotationCh
                         ))}
                     </div>
                 </ScrollContainer>
-            </div>
-
-            <div className="w-full pt-1">
-                <RotationControls title={null} rotation={rotation} onChange={onRotationChange} />
             </div>
         </div>
     );

@@ -48,6 +48,7 @@ const ToolSelector = ({
     emojiButtonRef,
     onUndo,
     onFinish,
+    onCancel,
     canUndo,
     showAdvancedTools,
     onToggleAdvanced,
@@ -154,20 +155,30 @@ const ToolSelector = ({
                         </Tooltip>
 
                         {showUndoButton && canUndo && (
-                            <div className="absolute left-full top-1/2 -translate-y-1/2 -ml-4 animate-[slideIn_0.2s_ease-out] -z-10 flex">
+                            <div className="absolute left-full top-1/2 -translate-y-1/2 -ml-5 animate-[slideIn_0.2s_ease-out] -z-10 flex gap-1 bg-white rounded-r-[10px] rounded-l-none pl-6 pr-1.5 py-1 shadow-[0_5px_20px_#1A26641A]">
                                 <UndoButton
                                     onClick={onUndo}
                                     disabled={!canUndo}
                                     showLabel={false}
                                 />
-                                <Tooltip content="Terminar trazo" placement="right" delay={300}>
+                                <Tooltip content="Terminar trazo" placement="top" delay={300}>
                                     <button
                                         type="button"
                                         onClick={onFinish}
-                                        className="flex items-center rounded-r-[8px] border border-transparent p-1 justify-center w-15 bg-white text-[#703089] hover:border-[#5C2472] active:bg-[#703089] active:text-white transition-all"
+                                        className="flex items-center justify-center rounded-full border border-transparent size-8 text-[#703089] hover:border-[#5C2472] active:bg-[#703089] active:text-white transition-all"
                                         aria-label="Terminar trazo"
                                     >
-                                        <Icon name="shared_click" state="normal" className="size-5.5 shrink-0" />
+                                        <Icon name="shared_click" state="normal" className="size-5 shrink-0" />
+                                    </button>
+                                </Tooltip>
+                                <Tooltip content="Cancelar trazo" placement="right" delay={300}>
+                                    <button
+                                        type="button"
+                                        onClick={onCancel}
+                                        className="flex items-center justify-center rounded-full border border-transparent size-8 text-[#FF577D] hover:border-[#FF577D] active:bg-[#FF577D] active:text-white transition-all"
+                                        aria-label="Cancelar trazo"
+                                    >
+                                        <Icon name="close" className="size-5 shrink-0" />
                                     </button>
                                 </Tooltip>
                             </div>

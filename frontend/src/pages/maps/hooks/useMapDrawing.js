@@ -12,6 +12,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     const [measurements, setMeasurements] = useState([]);
     const [isSketching, setIsSketching] = useState(false);
     const [areMeasurementToolsVisible, setMeasurementToolsVisible] = useState(false);
+    const [lastPlacedAnnotation, setLastPlacedAnnotation] = useState(null);
     const { textTemplate, setTextTemplate, textTemplateRef } = useTextTemplate('');
     const [rotation, setRotation] = useState(0);
     const rotationRef = useRef(0);
@@ -119,9 +120,11 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         const geometry = feature.getGeometry();
         const geometryType = geometry?.getType();
         const featureRotation = feature.get('rotation') || 0;
+        const featureScale = feature.get('scale') || 1;
+        const featureSelected = feature.get('selected') === true;
 
         if (annotationType === 'Emoji') {
-            const style = createEmojiStyle(feature.get('textLabel'), featureRotation);
+            const style = createEmojiStyle(feature.get('textLabel'), featureRotation, featureScale, featureSelected);
             if (!isSketch) {
                 feature.set('cachedStyle', style, true);
             }
@@ -129,7 +132,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         }
 
         if (annotationType === 'Text') {
-            const style = createTextStyle(feature.get('textLabel'), featureRotation);
+            const style = createTextStyle(feature.get('textLabel'), featureRotation, featureScale, featureSelected);
             if (!isSketch) {
                 feature.set('cachedStyle', style, true);
             }
@@ -253,10 +256,12 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             if (type === 'Emoji') {
                 event.feature.set('textLabel', emojiTemplateRef.current);
                 event.feature.set('rotation', rotationRef.current);
+                event.feature.set('scale', 1);
             }
             if (type === 'Text') {
                 event.feature.set('textLabel', textTemplateRef.current);
                 event.feature.set('rotation', rotationRef.current);
+                event.feature.set('scale', 1);
             }
             updateSketchingState(true);
 
@@ -380,6 +385,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 const rotation = feature.get('rotation') || 0;
                 const style = createEmojiStyle(emojiValue, rotation);
                 feature.set('cachedStyle', style, true);
+                setLastPlacedAnnotation({ feature, placedAt: Date.now() });
             } else if (type === 'Text') {
                 const textValue = feature.get('textLabel') || '';
                 measurementData.value = textValue;
@@ -387,6 +393,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 const rotation = feature.get('rotation') || 0;
                 const style = createTextStyle(textValue, rotation);
                 feature.set('cachedStyle', style, true);
+                setLastPlacedAnnotation({ feature, placedAt: Date.now() });
             }
 
             setMeasurements(prev => {
@@ -520,6 +527,17 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         clearDrawings();
     }, [stopDrawing, clearDrawings]);
 
+    const cancelCurrentSketch = useCallback(() => {
+        if (!drawInteractionRef.current || !isSketchingRef.current) return;
+        try {
+            drawInteractionRef.current.abortDrawing();
+        } catch (error) {
+            console.debug('No se pudo cancelar el trazo actual', error);
+        }
+        updateSketchingState(false);
+        sketchFeatureRef.current = null;
+    }, [updateSketchingState]);
+
     const undoLastPoint = useCallback(() => {
         if (
             measureType === 'Point' ||
@@ -621,10 +639,15 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     }, []);
 
     return {
+        vectorSourceRef,
+        vectorLayerRef,
         measureType,
         measurements,
+        setMeasurements,
+        lastPlacedAnnotation,
         startDrawing,
         stopDrawing,
+        cancelCurrentSketch,
         clearDrawings,
         deleteMeasurement,
         toggleMeasurementVisibility,
