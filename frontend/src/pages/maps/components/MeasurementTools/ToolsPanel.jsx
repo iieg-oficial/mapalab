@@ -153,6 +153,7 @@ const ToolsPanel = () => {
                 onClose={() => setIsEmojiPickerOpen(false)}
                 rotation={rotation}
                 onRotationChange={setRotation}
+                placedCount={measurements.filter(m => m.type === 'Emoji').length}
             />
 
             <TextPanel

@@ -34,6 +34,7 @@ const Panel = ({
     rounded,
     bg,
     treatAsMobile: treatAsMobileProp,
+    hideHeader = false,
 }) => {
     const panelRef = useRef(null);
     const menuId = useId();
@@ -138,7 +139,7 @@ const Panel = ({
     const defaultBg = variant === 'floating' ? 'bg-white/80' : 'bg-white';
     const bgClass = bg !== undefined ? bg : defaultBg;
     const positionClass = position ? `absolute ${position}` : 'fixed';
-    const showHeader = title || onClose;
+    const showHeader = !hideHeader && (title || onClose);
     const mobileFullscreenClasses = shouldUseMobileFullscreen && isMobile
         ? 'inset-x-0 bottom-0 top-auto left-0! right-0! w-full h-auto max-h-[85vh] rounded-t-2xl rounded-b-none'
         : shouldUseMobileFullscreen && !isMobile

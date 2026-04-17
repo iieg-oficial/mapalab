@@ -104,14 +104,14 @@ const ScrollContainer = ({
             {overlayFade && canScrollUp && (
                 <div className="sticky left-0 right-0 h-0 pointer-events-none z-[3]" style={{ top: topOffset }}>
                     <div
-                        className="h-8"
+                        className="absolute left-0 right-0 top-0 h-8"
                         style={{ background: `linear-gradient(to bottom, ${overlayColor}, transparent)` }}
                     />
                 </div>
             )}
             {showArrows && canScrollUp && (
                 <div className={`sticky left-0 right-0 h-0 ${arrowWrapperPointerClass} z-10`} style={{ top: topOffset + 8 }}>
-                    <div className="flex justify-center">
+                    <div className="absolute left-0 right-0 top-0 flex justify-center">
                         <ScrollArrow
                             direction="up"
                             onClick={scrollToTop}
@@ -126,7 +126,7 @@ const ScrollContainer = ({
             {children}
             {showArrows && canScrollDown && (
                 <div className={`sticky left-0 right-0 h-0 ${arrowWrapperPointerClass} z-10`} style={{ bottom: bottomOffset + 8 }}>
-                    <div className="flex justify-center -translate-y-full">
+                    <div className="absolute left-0 right-0 bottom-0 flex justify-center">
                         <ScrollArrow
                             direction="down"
                             onClick={scrollToBottom}
@@ -141,7 +141,7 @@ const ScrollContainer = ({
             {overlayFade && canScrollDown && (
                 <div className="sticky left-0 right-0 h-0 pointer-events-none z-[3]" style={{ bottom: bottomOffset }}>
                     <div
-                        className="h-8 -translate-y-full"
+                        className="absolute left-0 right-0 bottom-0 h-8"
                         style={{ background: `linear-gradient(to top, ${overlayColor}, transparent)` }}
                     />
                 </div>
