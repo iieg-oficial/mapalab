@@ -30,7 +30,7 @@ const EmojiPanel = ({ open, anchorRef, onSelect, onClose, rotation, onRotationCh
         <div
             ref={panelRef}
             className={`
-                fixed z-10 flex-col gap-2 ml-14 items-start w-[334px] max-md:max-w-[calc(100vw-5rem)] px-3 pb-3
+                fixed z-10 flex-col gap-2 ml-15 items-start w-[334px] max-md:max-w-[calc(100vw-5rem)] px-3 pb-3
                 border border-transparent bg-[#F9FBFF] rounded-[12px] shadow-none
                 ${open ? 'flex' : 'hidden'} ${positionClass}
             `}
@@ -49,43 +49,44 @@ const EmojiPanel = ({ open, anchorRef, onSelect, onClose, rotation, onRotationCh
                     <Icon name="cerrarModal" className="size-7" />
                 </button>
             </div>
-
-            <div className="flex border-b border-gray-100 px-1 pt-1 gap-0.5 w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-                {emojiCatalog.map((cat, idx) => (
-                    <button
-                        key={cat.name}
-                        type="button"
-                        onClick={() => setActiveCategory(idx)}
-                        className={`p-1.5 text-base rounded-t-lg shrink-0 transition-colors ${activeCategory === idx ? 'bg-[#F3EBFF]' : 'hover:bg-gray-50'}`}
-                        title={cat.name}
-                    >
-                        {cat.icon}
-                    </button>
-                ))}
-            </div>
-
-            <ScrollContainer
-                className="w-full max-h-56"
-                overlayFade
-                overlayColor="#F9FBFF"
-                clickableArrows
-                minItemsForClick={21}
-                itemCount={emojiCatalog[activeCategory].emojis.length}
-            >
-                <div className="grid grid-cols-7 gap-0.5">
-                    {emojiCatalog[activeCategory].emojis.map((emoji, idx) => (
+            <div className="w-full p-1 rounded-[7px] bg-white">      
+                <div className="flex border-b border-gray-100 gap-0.5 w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+                    {emojiCatalog.map((cat, idx) => (
                         <button
-                            key={`${activeCategory}-${idx}`}
+                            key={cat.name}
                             type="button"
-                            onClick={() => onSelect?.(emoji)}
-                            className="text-lg hover:bg-black/5 rounded-lg p-1 transition"
-                            aria-label={`Insertar ${emoji}`}
+                            onClick={() => setActiveCategory(idx)}
+                            className={`p-1.5 text-base rounded-t-lg shrink-0 transition-colors ${activeCategory === idx ? 'bg-[#F3EBFF]' : 'hover:bg-gray-50'}`}
+                            title={cat.name}
                         >
-                            {emoji}
+                            {cat.icon}
                         </button>
                     ))}
                 </div>
-            </ScrollContainer>
+
+                <ScrollContainer
+                    className="w-full max-h-56"
+                    overlayFade
+                    overlayColor="#F9FBFF"
+                    clickableArrows
+                    minItemsForClick={21}
+                    itemCount={emojiCatalog[activeCategory].emojis.length}
+                >
+                    <div className="grid grid-cols-7 gap-0.5">
+                        {emojiCatalog[activeCategory].emojis.map((emoji, idx) => (
+                            <button
+                                key={`${activeCategory}-${idx}`}
+                                type="button"
+                                onClick={() => onSelect?.(emoji)}
+                                className="text-lg hover:bg-black/5 rounded-lg p-1 transition"
+                                aria-label={`Insertar ${emoji}`}
+                            >
+                                {emoji}
+                            </button>
+                        ))}
+                    </div>
+                </ScrollContainer>
+            </div>
 
             <div className="w-full pt-1">
                 <RotationControls title={null} rotation={rotation} onChange={onRotationChange} />
