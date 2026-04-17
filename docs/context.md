@@ -148,8 +148,9 @@ Router (React Router 7)
         ├── useSymbology          — visibilidad, hiddenLayerIds
         ├── useLayerOpacity       — opacidad por capa
         ├── useCQLFilter          — filtros CQL por capa
-        ├── useRasterLoop         — animacion temporal raster
+        ├── useDateLoop           — animacion temporal (raster y vectorial)
         ├── useMapDrawing         — herramientas de dibujo/medicion
+        ├── useMapEditing         — edicion en-mapa de emojis y texto
         └── usePeriodicityCache   — cache de fechas disponibles
 ```
 
@@ -239,7 +240,7 @@ Timeouts de descarga (600s) configurados en:
 
 - Capas con `timeEnabled: true` usan parametro TIME de WMS (no CQL_FILTER)
 - `timeStylePattern` permite estilos dinamicos por fecha: `lluvia_total_mensual_{year}_{month}`
-- `useRasterLoop` anima ciclando valores TIME con intervalo configurable
+- `useDateLoop` (antes `useRasterLoop`) anima ciclando valores CQL/TIME con modo `year`/`month`, intervalo configurable (250-3000ms) y dirección LTR/RTL; funciona para capas raster y vectoriales
 - Cada capa raster tiene `wmsGroup` unico para evitar merge de requests WMS
 
 ## Docker y despliegue
