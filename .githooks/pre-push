@@ -2,3 +2,4 @@
 cd frontend || exit 1
 npm run lint || exit 1
 npm run test -- --run || exit 1
+npm run check:dead-code:strict || exit 1
