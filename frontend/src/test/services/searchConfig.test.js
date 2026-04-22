@@ -52,6 +52,7 @@ vi.mock('@pages/maps/helpers/layers/index', () => ({
 }));
 
 import {
+    rebuildSearchConfig,
     getSearchConfig,
     getAllLayerIds,
     isLayerSearchable,
@@ -62,6 +63,9 @@ import {
     getLayersWithMunicipioSearch,
     getLayersWithDireccionSearch
 } from '@/services/searchConfig';
+import { layers as mockTree } from '@pages/maps/helpers/layers/index';
+
+rebuildSearchConfig(mockTree);
 
 describe('getSearchConfig', () => {
     it('retorna la config de una capa existente', () => {

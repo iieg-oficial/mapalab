@@ -1,15 +1,18 @@
-import { layers } from '../pages/maps/helpers/layers/index';
 
 const processLayerTree = (layer, tema, temaLabel, subtema, subtemaLabel) => {
     const result = {};
 
     if (!layer || !layer.id) return result;
 
-    if (layer.children) {
+    const hasChildren = Array.isArray(layer.children) && layer.children.length > 0;
+
+    if (hasChildren) {
         layer.children.forEach(child => {
             if (!child || !child.id) return;
 
-            if (child.children) {
+            const childHasChildren = Array.isArray(child.children) && child.children.length > 0;
+
+            if (childHasChildren) {
                 Object.assign(
                     result,
                     processLayerTree(child, tema, temaLabel, child.id, child.label)
@@ -36,7 +39,7 @@ const processLayerTree = (layer, tema, temaLabel, subtema, subtemaLabel) => {
                 };
             }
         });
-    } else if (layer.wmsConfig) {
+    } else if (!hasChildren && layer.wmsConfig) {
         const searchMeta = layer.searchMeta || {};
         const label = layer.label || layer.id || '';
         if (!label) return result;
@@ -61,17 +64,18 @@ const processLayerTree = (layer, tema, temaLabel, subtema, subtemaLabel) => {
     return result;
 };
 
-const buildSearchConfig = () => {
+let SEARCH_CONFIG = {};
+
+export const rebuildSearchConfig = (tree) => {
     const config = {};
-
-    layers.forEach(temaLayer => {
-        Object.assign(config, processLayerTree(temaLayer, temaLayer.id, temaLayer.label));
-    });
-
+    if (Array.isArray(tree)) {
+        tree.forEach(temaLayer => {
+            Object.assign(config, processLayerTree(temaLayer, temaLayer.id, temaLayer.label));
+        });
+    }
+    SEARCH_CONFIG = config;
     return config;
 };
-
-const SEARCH_CONFIG = buildSearchConfig();
 
 export const getSearchConfig = (layerId) => {
     return SEARCH_CONFIG[layerId] || null;
