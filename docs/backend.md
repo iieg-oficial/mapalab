@@ -38,6 +38,28 @@ backend/
 - `GET /docs` - Swagger UI (solo en desarrollo)
 - `GET /redoc` - ReDoc (solo en desarrollo)
 
+### Capas (v1.4.0+)
+
+- `GET /layers/tree` - Arbol completo, ETag, 304 con If-None-Match
+- `GET /layers/initial-order` - Capas activas al cargar
+- `GET /layers/workspaces` - Lista de workspaces
+- `GET /layers/search?q=X` - Busqueda por tags/label/id
+- `POST /layers/refresh-cache` - Reconstruye materializacion (invocable externamente, usado por mariachi al editar)
+- `POST /layers/invalidate-cache` - Solo invalida cache de memoria del proceso
+
+### Metadata (v1.4.0+)
+
+- `GET /metadata/?workspace=X&layer=Y` - Lee exclusivamente de `mapalab.layer_metadata` + `mapalab.layer_stats` (fallback legacy `public.mapalab_card` eliminado en v1.7.0).
+- `GET /metadata/sources?layers=w:l,w:l` - Fuentes por lotes.
+
+Edicion de metadata: via mariachi `/administrador/mapalab/layers` → `PUT /api/administrador/layer-metadata/{layer_key}`.
+
+### Observabilidad (v1.7.0+)
+
+- `GET /metrics` - Formato Prometheus plain text. Contadores: `mapalab_tree_requests_total`, `mapalab_tree_cache_hits_total`, `mapalab_tree_refresh_total`, `mapalab_search_requests_total`, `mapalab_download_requests_total`.
+- Consumido por `huachicol` (stack IIEG de monitoreo) vía target `MAPALAB_BACKEND_TARGET`.
+- Implementacion: `app/metrics.py` (`defaultdict[str, int]` + `threading.Lock`, sin dependencias nuevas).
+
 ## Desarrollo Local sin Docker
 
 ```bash

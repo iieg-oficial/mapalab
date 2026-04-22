@@ -7,6 +7,197 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.7.0] - 2026-04-22
+
+### Agregado
+- **Drag & drop de reorden** en el árbol del editor (Ant Design `Tree.draggable`). Solo admin, solo entre hermanos del mismo padre. Llama `PATCH /layers/reorder` y recarga
+- **Preview InfoBox con datos dummy** en el drawer: muestra `headerField`, badges (municipio / característica), listas, iconText, stats y texto adicional según el preset seleccionado
+- **Formularios dinámicos por preset InfoBox**: `municipio`, `punto`, `punto_municipio`, `punto_ubicacion`, `punto_completo` exponen sólo los campos que aplican. `caracteristicas`, `list`, `iconTexts` usan `Select mode="tags"`
+- **Editor JSON para `infobox_config` custom**: textarea monospace + validación en vivo + remount por `key={layer.id}` para evitar contaminación entre capas
+- **Endpoint `/metrics` Prometheus** en mariachi (`app/api/metrics.py`) con contadores in-memory: `mariachi_rate_limit_hits_total`, `mariachi_tree_notify_total`, `mariachi_geoserver_calls_total`. Formato `text/plain; version=0.0.4`. Sin deps nuevas (defaultdict + threading.Lock)
+- **Endpoint `/metrics` Prometheus** en mapalab backend (`app/metrics.py`): `mapalab_tree_requests_total`, `mapalab_tree_cache_hits_total`, `mapalab_tree_refresh_total`, `mapalab_search_requests_total`, `mapalab_download_requests_total`
+- **Integración huachicol**: `MARIACHI_BACKEND_TARGET` en `.env.example` y `scripts/generate-targets.sh`. `docs/agregar-proyecto.md` actualizado
+- **Code-split admin mariachi**: `React.lazy()` + `Suspense` en `Users`, `MenuManager`, `PageEditor`, `Media`, `RevisionQueue`, `MapalabLayers`. Chunks separados por página (MapalabLayers: 43 kB gzip 15 kB). Bundle inicial ya no carga editor rico ni tree
+- **Tests integración cruzada mariachi → mapalab** (`test_integration_notify.py`): notifier skip sin URL, POST correcto con mock transport, debounce consolida 5 calls en 1, /metrics Prometheus format, thread-safety del contador (10 threads × 1000 incr = 10_000)
+- **Tests `/metrics`** en mapalab (`test_smoke.py::TestMetrics`): response plaintext, increment en `/layers/tree`, increment de cache hits en 304
+
+### Cambiado
+- `useLayerTreeAdmin` expone `reorderLayers(parentId, orderedIds)`
+- `LayerEditDrawer` usa `Form.useWatch` en `workspaceAlias` / `geoserverLayer` / `infoboxTemplate` / `infoboxParams` / `infoboxConfig` (elimina state paralelo)
+
+### Eliminado / Deuda legacy
+- **`public.mapalab_card` deprecado** en el backend mapalab:
+    - `MapalabRepository` borrado (`app/repositories/mapalab_repository.py`)
+    - `Mapalab_Card` model borrado (`app/models/mapalab.py`)
+    - `routers/metadata.py` eliminó fallback legacy: lee solo de `mapalab.layer_metadata`/`layer_stats`
+    - `download_repository.resolve_db_name` ahora consulta `mapalab.layer_metadata.layer_name_db`
+- **ETL Google Sheet eliminado en dataengine-jobs**:
+    - Borrados: `jobs/run_bootstrap.py`, `jobs/core/mapalab_card/*`, `jobs/core/schemas/mapalab_card.py`, `jobs/alembic/mapalab_card/*`
+    - Borradas deps de runtime: `pandas`, `gspread`, `google-auth`, `alembic` en `requirements.txt`
+    - Credenciales Google (`iieg2025-cloud-*.json`) purgadas del container
+    - **Preservado:** `jobs/bootstrap/run_migrate_mapalab_card.py` (migración 1-shot self-contained) + target `make migrate-mapalab-card`
+- Env vars `MAPALAB_CARD_DB_*` renombradas a `DATAENGINE_DB_*` en los jobs y Makefile de dataengine
+
+### Notas de despliegue
+- En producción la tabla `public.mapalab_card` todavía existe. Secuencia obligatoria antes del pull del backend mapalab:
+    1. `cd /IIEG/mapalab-dataengine && git pull && make up`
+    2. `make bootstrap-v14 LAYERS_JSON=...` (idempotente: crea schema + seed + migra `mapalab_card` → `layer_metadata`/`layer_stats`)
+    3. Verificar counts en `mapalab.layer_metadata` (esperado ~107) y `mapalab.layer_stats` (~102)
+    4. `cd /IIEG/mapalab && git pull && make up`
+- Documentada en `mapalab-dataengine/docs/bootstrap-v14.md` sección "Despliegue en produccion (primera vez)"
+
+## [1.6.0] - 2026-04-22
+
+### Agregado
+- **Selector GeoServer en `LayerEditDrawer`**: los campos `workspaceAlias`, `geoserverLayer` y `styles` se poblan desde `/geoserver/workspaces` y `/geoserver/workspaces/{alias}/layers/{layer}/styles`, reemplazando inputs libres por `Select` + `AutoComplete`. Evita errores de captura manual y deriva `layers` por workspace
+- **Edición masiva de tags** (`BulkTagsDrawer` + `PATCH /layers/bulk-tags`): drawer con textarea que acepta paste-from-Excel (TSV). Parsea filas `layer_id [TAB] tag1, tag2`, muestra preview en tabla y aplica hasta 500 capas por request. Reporta `not_found` por capa inexistente
+- **Rate limiter en memoria** (`app/api/rate_limit.py`) con sliding window per user_id: `60 req/min` en writes de `layers.py` + `layer_metadata.py`, `120 req/min` en reads de `geoserver.py` (protege llamadas a GeoServer REST). Responde `429` con `Retry-After`
+- `useLayerTreeAdmin` expone `listGeoserverWorkspaces`, `listGeoserverFields`, `listGeoserverStyles`, `bulkUpdateTags`
+
+### Cambiado
+- Endpoints write de `layers.py` (`POST`, `PUT`, `DELETE`, `PATCH /reorder`, `PATCH /initial-order`, `PATCH /bulk-tags`, `POST /duplicate`) añaden dependencia `_write_rate_limit`
+- Endpoints write de `layer_metadata.py` (`PUT /{layer_key}`, `PUT /{layer_key}/stats`) añaden dependencia `_write_rate_limit`
+
+## [1.5.1] - 2026-04-22
+
+### Agregado
+- **Workflow editora → borrador → admin aprueba**: UI del editor diferencia role. Editora ve "Guardar borrador" y "Enviar a revisión"; admin ve "Guardar" directo. Usa `PUT /borradores/layer/{id}` + `POST /borradores/layer/{id}/solicitar-revision` (endpoints genéricos existentes). Admin aprueba con `/borradores/por-id/{id}/aprobar` que materializa en DataEngine
+- `useLayerTreeAdmin.js` expone `saveLayerDraft`, `requestReview`, `getLayerDraft`
+- `LayerEditDrawer.jsx` recibe prop `isAdmin` y ajusta botones
+- **Tests smoke mapalab backend** (8 tests): `/health`, `/layers/tree` con ETag + 304, `/layers/initial-order`, `/layers/workspaces`, validación `/search`. Primer test backend del repo (antes: 0)
+- **Tests unit mariachi** (18 nuevos): `test_stats_templates.py` cubre validación de SQL injection, identificadores, positions duplicadas, todas las operaciones + `build_query` con placeholders
+- **`docs/runbook-layers.md`** con 8 escenarios de recuperación: cache corrupta, layers vacío, stats desactualizadas, permisos mariachi, cron parado, ETag stale, rollback, Alembic roto
+
+### Cambiado
+- mapalab backend: primer `test/` directory con `conftest.py` que mockea DB + SchedulerService
+
+## [1.5.0] - 2026-04-22
+
+### Seguridad
+- **Template catalog reemplaza SQL libre en `stats_config`**: eliminada la capacidad de escribir SQL arbitrario. Ahora 8 operaciones validadas: `count`, `count_distinct`, `count_where`, `sum`, `avg`, `min`, `max`, `latest`. `schema`, `table`, `field`, `where_field`, `order_field` validados como identificadores (`[A-Za-z0-9_]{1,100}`). Valores interpolados por `:param` (no concatenados)
+- **Debounce de `notify_tree_changed()` en mariachi** (5s): múltiples writes disparan solo 1 refresh del tree cache
+- `WORKSPACE_SCHEMA_MAP` hardcoded eliminado en mapalab backend: `resolve_schema()` ahora hace lookup cacheado a `mapalab.workspaces`
+
+### Agregado
+- `app/services/stats_templates.py` en mariachi con `validate_stats_config`
+- Diagrama de secuencia Mermaid en `docs/layers.md` (flujo editora → admin → visor)
+
+### Cambiado
+- `run_refresh_layer_stats.py` en dataengine-jobs usa el mismo template catalog
+
+### Breaking (MINOR bump)
+- `stats_config` en `mapalab.layer_stats` cambió de shape: antes `{query, format}`, ahora `{operation, schema, table, field, ...}`. Rows con el viejo shape se marcan como inválidas en el refresh job (skipped). Admin debe reconfigurar desde el editor.
+
+## [1.4.8] - 2026-04-22
+
+### Corregido
+- **Búsqueda no encontraba leaves** tras migración: `processLayerTree` en `searchConfig.js` usaba `if (child.children)` pero el backend devuelve `children: []` consistentemente, marcando los leaves como "no-leaf" y saltando su indexación
+- Cambio: usar `Array.isArray(children) && children.length > 0` como chequeo
+
+### Agregado
+- `docs/search.md` (reescrito) describe el flujo completo: scoring, edición de tags, ejemplos prácticos
+
+## [1.4.7] - 2026-04-22
+
+### Corregido
+- **Búsqueda de capas no encontraba resultados** tras el refactor de v1.4.3: `searchConfig.js` construía `SEARCH_CONFIG` al importarse desde el barrel `layers` (ya eliminado), quedándose vacío
+- Ahora `SEARCH_CONFIG` es mutable y se construye via `rebuildSearchConfig(tree)` invocado en `LayersProvider` tras el fetch
+- Mantiene el scoring sofisticado del cliente (Levenshtein, normalización de plurales, pesos por label/tag) — cero round-trips por keystroke
+
+### Notas de arquitectura
+- La búsqueda de **nombres de capas** sigue siendo 100% client-side (latencia cero)
+- El endpoint `GET /mapalab/api/layers/search` se mantiene para otros consumidores (links compartidos, API pública futura)
+- Para que una capa sea encontrada por palabras clave sinónimas (ej. "IMSS" cuando se busca "hospital"), usar el campo `search_tags` en el editor mariachi (`mapalab.layers.search_tags TEXT[]`). El scoring ya asigna hasta +25 puntos por tag match
+
+## [1.4.6] - 2026-04-22
+
+### Corregido
+- **InfoBox no mostraba información de features** y **descargas WFS fallaban**: los servicios `featureInfoService.js` y `downloadService.js` importaban `layers` del barrel obsoleto (v1.4.3 eliminó esa exportación)
+- `featureInfoService.js`: `getFeatureInfoForActiveLayers` y `getFeaturesInPolygonForActiveLayers` reciben `allLayers` como parámetro; los callers en `useFeatureInfo.js` lo pasan desde `MapsContext.allLayers`
+- `downloadService.js`: setter module-level `setLayersForDownloadService(layers)` (mismo patrón que `layerMetadataService`), invocado en `LayersProvider` tras el fetch
+
+### Cambiado
+- Tests de `downloadService.test.js` actualizados al nuevo shape de mocks
+
+## [1.4.5] - 2026-04-22
+
+### Corregido
+- **Capas WMS no se renderizaban**: el backend devuelve `wmsConfig` con campos estructurales (`geoserverWorkspace`, `geoserverLayer`, etc.) pero el frontend esperaba `baseUrl` + `layerName` completos para OpenLayers
+- `hydrateLayerTree(tree)` en `helpers/wmsConfig.js` construye `baseUrl` y `layerName` en cliente usando `VITE_GEOSERVER_URL`, aplicado en `LayersProvider` justo después del fetch
+- Consumidores (`useWMSLayerFactory`, `useWMSLayerManager`, `useWMSLegend`) no cambian — siguen leyendo `wmsConfig.baseUrl` y `wmsConfig.layerName` transparentemente
+
+### Cambiado
+- Backend permanece agnóstico de la URL pública del GeoServer; si cambia el dominio no hay que redeployar backend
+- Tests: 9 nuevos en `wmsConfig.test.js` (477 → 478); `createWMSConfig` (eliminado en v1.4.3) reemplazado por `hydrateWmsConfig` + `hydrateLayerTree`
+
+## [1.4.4] - 2026-04-22
+
+### Agregado
+- `docs/layers.md` con arquitectura completa del sistema de capas v1.4.x
+- Script idempotente de bootstrap para DataEngine (`mapalab-dataengine/scripts/bootstrap-v14.sh`) que orquesta rol, schema, migraciones y seed en un solo comando
+- `make bootstrap-v14 LAYERS_JSON=...` en `mapalab-dataengine`
+
+### Eliminado
+- `docs/planes/PLAN_MIGRACION_CAPAS.md` y `docs/planes/ADR_001_capas_architecture.md` (ya implementados)
+- Flag `VITE_LAYERS_FROM_BACKEND` (siempre on)
+
+## [1.4.3] - 2026-04-22
+
+### Cambiado
+- **Refactor total del sistema de capas**: eliminados los 9 archivos `frontend/src/pages/maps/helpers/layers/definitions/*.js` (~1590 líneas), `rasterHelpers.js` y `layerFactory.js`
+- Nuevo `LayersContext` + `LayersProvider` + hook `useLayers()` como fuente única del árbol
+- Los 20 consumidores migrados a consumir vía `useLayers()` o `MapsContext.allLayers`
+- `layerMetadataService` usa setter module-level (`setLayersForMetadataService`) inyectado por `LayersProvider`
+- `layers/index.js` reducido a 1 línea (re-export de `findLayerById`)
+
+### Eliminado
+- `frontend/src/hooks/useLayerTree.js` (reemplazado por `useLayers`)
+- `frontend/scripts/export_layers_to_json.mjs` (ya no hay JS que bundlear)
+
+## [1.4.2] - 2026-04-22
+
+### Agregado
+- **Metadata de capas en DataEngine**: tablas nuevas `mapalab.layer_metadata` (descriptiva) y `mapalab.layer_stats` (numeralia + `stats_config` con queries SQL)
+- Endpoints CRUD en mariachi: `/api/administrador/layer-metadata/{layer_key}` + `/stats`
+- Script 1-shot `mariachi/api/scripts/migrate_mapalab_card.py` que copia `public.mapalab_card` → `mapalab.layer_metadata` + `mapalab.layer_stats` (idempotente)
+- Job diario `run_refresh_layer_stats.py` en `dataengine-jobs` que ejecuta `stats_config` (whitelist SELECT-only) y popula `values`
+- `make refresh-layer-stats` y `make refresh-all` (incluye stats)
+
+### Cambiado
+- `mapalab/backend/app/routers/metadata.py` lee de `mapalab.layer_metadata` primero, fallback a `public.mapalab_card` legacy
+- `jobs/run_bootstrap.py` (ETL Google Sheet) emite deprecation warning; requiere `FORCE_LEGACY_ETL=1` para correr
+
+## [1.4.1] - 2026-04-22
+
+### Agregado
+- **Tree materializado** en tabla `mapalab.layer_tree_cache` (singleton JSONB). `GET /mapalab/api/layers/tree` sirve desde DB + caché en memoria del proceso
+- Container `dataengine-jobs` (renombrado de `dataengine-mapalab-card`) ahora corre cron con tres tareas diarias: `refresh_periodicity` (03:00), `refresh_layer_tree` (04:00), `refresh_layer_stats` (04:30)
+- `make refresh-layer-tree`, `make refresh-periodicity`, `make refresh-all` en `mapalab-dataengine`
+- Endpoint `POST /mapalab/api/layers/refresh-cache` para trigger HTTP desde mariachi
+- `mariachi/api/app/services/mapalab_notifier.py` invoca el refresh tras cada write
+
+### Cambiado
+- `mapalab/backend/app/services/scheduler_service.py` vaciado — los jobs periódicos viven ahora en DataEngine
+- Carpeta `mapalab-dataengine/mapalab_card/` → `jobs/` (git mv)
+
+## [1.4.0] - 2026-04-22
+
+### Agregado
+- **Arquitectura de capas dinámica**: definiciones ya no se leen de archivos JS hardcodeados. Tablas en DataEngine schema `mapalab`: `layers` (250 nodos seed), `workspaces` (11), `initial_layer_order` (6)
+- **Editor de capas** en mariachi `/administrador/mapalab/layers` con Ant Design Tree + drawer de edición (Collapse: Identidad, Visibilidad, WMS, Descarga, InfoBox template)
+- **Borradores polimórficos**: `editora` crea borrador via `/borradores/layer/{id}`, admin aprueba con endpoint nuevo `/borradores/por-id/{id}/aprobar` que materializa en DataEngine
+- Backend mapalab: `GET /layers/{tree, initial-order, workspaces, search}` con ETag `W/"..."` (304 si coincide)
+- Backend mariachi: CRUD `/api/administrador/layers/*` + introspección GeoServer REST (`/geoserver/workspaces`, `.../fields`, `.../styles`)
+- `GeoServerClient` con `httpx` para listar workspaces, capas, campos y estilos desde GeoServer REST
+- Frontend: `layerTreeService.js` con fetch + ETag/If-None-Match + dedup de in-flight requests
+- Templates InfoBox: `municipio`, `punto`, `punto_municipio`, `punto_ubicacion`, `punto_completo`, `custom` (expanden `infobox_params` a `infobox_config` JSON al guardar)
+- Tests: 8 nuevos en `layerTreeService.test.js` (469 → 477 totales); 14 en `test_layer_service.py` mariachi
+
+### Infraestructura
+- Alembic multi-env en mariachi: `-x db=mariachi` (iieg_portal) y `-x db=dataengine` (schema `mapalab`)
+- Rol `mariachi_layers` owner del schema `mapalab` en DataEngine
+- `httpx` movido de dev a prod deps de mariachi
+
 ## [1.3.0] - 2026-04-21
 
 ### Agregado
@@ -74,8 +265,6 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - **Swipe-to-remove en InfoBox mobile**: bug de "index as key" que causaba que los estilos inline del card eliminado (translateX, maxHeight: 0) se aplicaran al siguiente card que tomaba su slot en el array. Fix: `key={feature.id ?? \`${result.layerId}-${featureIdx}\`}` para que React desmonte el card correcto y las animaciones queden aisladas
 
 ### Eliminado
-- Dependencia `axios` (no usada, el proyecto usa `fetch` nativo)
-- devDep `@testing-library/user-event` (sin usos en tests)
 - 4 PNGs huérfanos en `src/assets/images/`: `img_link_share.png` (el OG image vive en `public/`), `testBG.png`, `search.png`, `80x15_open_data.png`
 - 9 componentes `.jsx` detectados por knip como muertos: `components/ConfirmModal.jsx`, `components/HamburgerMenu.jsx`, `components/Navigation.jsx`, `components/MenuItem.jsx`, `pages/home/components/PrimaryButton.jsx`, `pages/maps/components/NavigationButton.jsx`, `pages/maps/components/InfoBox/components/LabelGroup.jsx`, `pages/maps/components/MapExport/ExportMapFooter.jsx`, `pages/maps/components/MapExport/utils/layoutHeader.jsx`
 - Funciones sin usar: `getLayersWithWMS`, `loadLayerSymbology`, `loadMultipleLayersSymbology` (`layerHelpers.js`); `isCategoryLayer` (`symbologyHelpers.js`); `getSearchConfigByTheme` (`searchConfig.js`); hook `useSiderAnchoredPosition` (`SiderContext.jsx`)
@@ -390,7 +579,6 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - Eliminacion de `BaseLayersDropdown` y su uso en `ActiveLayersList`.
 - Eliminacion de GeoJSON de formatos de descarga vectorial disponibles.
 - Estandarizacion de definiciones de capas de seguridad y actualizacion de `RASTER_YEAR`.
-- Actualizacion de dependencias del frontend.
 
 ### Corregido
 - Procesamiento correcto de `metadata.metadato` como array u objeto individual al agregar archivos al zip.
