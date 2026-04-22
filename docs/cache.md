@@ -22,9 +22,9 @@ Inventario centralizado de todos los mecanismos de cache del proyecto: memoria f
 | `wmsLayersRef` | `hooks/useWMSLayerManager.js:12` | Map de `TileWMS` de OpenLayers ya construidas | Sesion; cleanup al desmontar | Al desactivar capa elimina entrada |
 | `wmsConfigCache` | `hooks/useWMSLayerManager.js:30` | Set de IDs con WMS activo (lookup rapido) | Debounce 30ms sobre `activeLayerIds` | Recalcula por cambio de capas |
 | `layerOpacities` | `hooks/useLayerOpacity.js:4` | Map `layerId → opacity` | Sesion | Sync con `activeLayerIds`, reset manual |
-| `loopDataRef` | `hooks/useRasterLoop.js:10` | Estado de animacion raster (mes/ano actual) | Mientras loop activo | `cleanupLoop` al desactivar capa |
-| `timersRef` | `hooks/useRasterLoop.js:11` | Map de `setTimeout` handles | Duracion del loop | `clearTimer()` / cleanup |
-| `appliedDefaultsRef` | `hooks/useRasterLoop.js:12` | Set de capas con default date aplicado | Sesion | Remove al desactivar capa |
+| `loopDataRef` | `hooks/useDateLoop.js:17` | Estado de animacion temporal (mes/ano actual) | Mientras loop activo | `cleanupLoop` al desactivar capa |
+| `timersRef` | `hooks/useDateLoop.js:18` | Map de `setTimeout` handles | Duracion del loop | `clearTimer()` / cleanup |
+| `appliedDefaultsRef` | `hooks/useDateLoop.js:19` | Set de capas con default date aplicado | Sesion | Remove al desactivar capa |
 | `cachedResults` en measurements | `hooks/useMapDrawing.js:575,606,613` | Features WFS del poligono de seleccion | Vive con la medicion en el array `measurements` | Usuario borra la medicion |
 | `measurements` | `hooks/useMapDrawing.js:12` | Array de selecciones/poligonos con geometria + results cacheados | Sesion | `clearDrawings()` o usuario elimina entrada |
 
@@ -32,10 +32,8 @@ Inventario centralizado de todos los mecanismos de cache del proyecto: memoria f
 
 | Cache | Ubicacion | Datos | Lifecycle | Invalidacion |
 |---|---|---|---|---|
-| `geometryColumnCache` | `utils/featureInfoUtils.js:2` | Mapeo `URL:tipo → columna geometria` de WFS DescribeFeatureType | Vida del proceso (sin limite) | Manual (nunca hoy) |
-| `geometryTypeCache` | `utils/featureInfoUtils.js:3` | Mapeo `URL:tipo → tipo geometrico` | Vida del proceso (sin limite) | Manual |
-
-> **Nota**: estos dos caches son globales y sin TTL. En sesiones muy largas crecen indefinidamente. Candidato a migrar a `WeakMap` o limitar con LRU si el set de capas crece mucho.
+| `geometryColumnCache` | `utils/featureInfoUtils.js:4` | Mapeo `URL:tipo → columna geometria` de WFS DescribeFeatureType | Vida del proceso, limitado a 500 entradas | LRU por insercion (al llegar a `MAX_GEOMETRY_CACHE_SIZE` evicta la mas antigua) |
+| `geometryTypeCache` | `utils/featureInfoUtils.js:5` | Mapeo `URL:tipo → tipo geometrico` | Vida del proceso, limitado a 500 entradas | LRU por insercion |
 
 ---
 
@@ -148,7 +146,7 @@ Evitar siempre: caches de modulo sin TTL ni limite (como los `geometryColumnCach
 
 ## Deuda tecnica identificada
 
-1. **`geometryColumnCache` / `geometryTypeCache`** globales sin TTL → migrar a `WeakMap` o limitar con LRU
-2. **`measurements[].cachedResults`** crece sin limite → considerar limitar a ultimos N
-3. **Falta indice** en `public.layer_periodicity.layer_key` para lookups batch rapidos
-4. **No hay Redis** — si empezamos a necesitar cache cross-worker en backend (ej. periodicity en memoria caliente), Redis seria el siguiente paso
+1. **`measurements[].cachedResults`** crece sin limite → considerar limitar a ultimos N
+2. **No hay Redis** — si empezamos a necesitar cache cross-worker en backend (ej. periodicity en memoria caliente), Redis seria el siguiente paso
+
+> `public.layer_periodicity.layer_key` ya tiene indice automatico por la `PRIMARY KEY`, los lookups `= ANY(keys)` del batch lo aprovechan sin configuracion extra.
