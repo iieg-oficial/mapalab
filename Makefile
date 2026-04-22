@@ -1,5 +1,9 @@
 .PHONY: help dev staging prod deploy down down-dev down-staging build logs logs-dev logs-staging status clean setup-hooks ensure-networks
 
+# UID/GID del host para que volumes escritos por contenedores (ej. frontend-build → dist/) tengan ownership correcto
+export UID := $(shell id -u)
+export GID := $(shell id -g)
+
 # Compose base commands por entorno
 COMPOSE_DEV     = docker compose -p mapalab-dev --env-file .env.development
 COMPOSE_STAGING = docker compose -p mapalab-staging -f docker-compose.yml --env-file .env.staging
