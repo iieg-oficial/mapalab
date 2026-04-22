@@ -1,10 +1,11 @@
 import { useCallback, useContext } from 'react';
 import { findWMSConfig, hasWMSConfig, resolveTimeStyle } from '../helpers/wmsConfig';
-import { layers } from '../helpers/layers/index';
+import { useLayers } from '@hooks/useLayers';
 import MapsContext from '@contexts/MapsContext';
 
 export const useWMSLegend = () => {
     const { getFilter } = useContext(MapsContext);
+    const { layers } = useLayers();
 
     const getLegendUrl = useCallback((layer, {
         dpi = 100,

@@ -1,15 +1,17 @@
 import { useCallback, useMemo } from 'react';
-import { layers } from '@pages/maps/helpers/layers/index';
+import { useLayers } from '@hooks/useLayers';
 import { findLayerById as findLayerByIdHelper, getAllChildLayerIds as getAllChildLayerIdsHelper } from '@pages/maps/helpers/layers/utils/layerHelpers';
 
 export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
+    const { layers } = useLayers();
+
     const findLayerById = useCallback((id) => {
         return findLayerByIdHelper(id, layers);
-    }, []);
+    }, [layers]);
 
     const getAllChildLayerIds = useCallback((layerId) => {
         return getAllChildLayerIdsHelper(layerId, layers);
-    }, []);
+    }, [layers]);
 
     const findForceGroupAncestor = useCallback((layerId) => {
         const findPath = (currentLayers, targetId, path = []) => {

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useActiveLayersLogic } from '@hooksMaps/useActiveLayersLogic';
 
-vi.mock('@pages/maps/helpers/layers/index', () => {
+vi.mock('@hooks/useLayers', () => {
     const mockLayers = [
         {
             id: 'parent-layer',
@@ -52,9 +52,9 @@ vi.mock('@pages/maps/helpers/layers/index', () => {
     };
 
     return {
-        layers: mockLayers,
-        findLayerById: (id) => findById(id, mockLayers),
-        getAllChildLayerIds: (id) => {
+        useLayers: () => ({ layers: mockLayers, initialOrder: [], loading: false, error: null }),
+        _findById: (id) => findById(id, mockLayers),
+        _collect: (id) => {
             const layer = findById(id, mockLayers);
             return layer ? collectChildIds(layer) : [];
         }

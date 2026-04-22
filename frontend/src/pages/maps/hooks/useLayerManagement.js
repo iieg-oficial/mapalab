@@ -1,17 +1,18 @@
 import { useState, useCallback } from 'react';
-import { layers } from '@pages/maps/helpers/layers/index';
+import { useLayers } from '@hooks/useLayers';
 import { findLayerById as findLayerByIdHelper, getAllChildLayerIds as getAllChildLayerIdsHelper } from '@pages/maps/helpers/layers/utils/layerHelpers';
 
 export const useLayerManagement = () => {
+    const { layers } = useLayers();
     const [activeLayerIds, setActiveLayerIds] = useState([]);
 
     const findLayerById = useCallback((layerId) => {
         return findLayerByIdHelper(layerId, layers);
-    }, []);
+    }, [layers]);
 
     const getAllChildLayerIds = useCallback((layerId) => {
         return getAllChildLayerIdsHelper(layerId, layers);
-    }, []);
+    }, [layers]);
 
     const findParent = useCallback((layerId) => {
         const findDirectParent = (layersList, targetId) => {

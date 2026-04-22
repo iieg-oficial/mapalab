@@ -4,7 +4,6 @@ import Icon from '@components/Icon';
 import BaseMapList from '@mapsComponents/BaseMapList';
 import SearchMenu from '@mapsComponents/SearchMenu';
 import ThemeMenu from '@mapsComponents/ThemeMenu';
-import { layers } from '@pages/maps/helpers/layers/index';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 
 const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpen = false, categoryId = null }) => {
@@ -108,7 +107,7 @@ const hasActiveChildLayers = (category, activeLayerIds) => {
     return descendantIds.some(id => activeLayerIds.includes(id));
 };
 
-const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer }) =>
+const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer, layers = [] }) =>
     layers.map(category => {
         const hasActiveLayers = hasActiveChildLayers(category, activeLayerIds);
 

@@ -6,7 +6,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
-import { layers as allLayers } from '@pages/maps/helpers/layers/index';
 import { describeDateFilter, formatLoopLabel } from '@pages/maps/helpers/dateLoopHelpers';
 import { LOOP_INTERVAL_PRESETS } from '@hooksMaps/useDateLoop';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
@@ -38,7 +37,8 @@ const ActiveLayerItem = ({
         getSpecificFilter,
         getLoopPrefs,
         setLoopIntervalMs,
-        setLoopDirection
+        setLoopDirection,
+        allLayers
     } = useMapsContext();
 
     const { intervalMs: loopIntervalMs, direction: loopDirection } = getLoopPrefs?.(layer.id) || {};
@@ -81,7 +81,7 @@ const ActiveLayerItem = ({
     const loopState = getLoopState?.(layer.id);
     const isLooping = loopState?.isPlaying;
 
-    const layerDef = useMemo(() => findLayerDef(layer.id, allLayers), [layer.id]);
+    const layerDef = useMemo(() => findLayerDef(layer.id, allLayers), [layer.id, allLayers]);
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
     const dateFilter = getSpecificFilter?.(layer.id, 'date') || null;
     const { dateLabel, labelKind } = useMemo(() => {
