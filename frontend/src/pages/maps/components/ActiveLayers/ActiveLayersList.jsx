@@ -174,7 +174,7 @@ const ActiveLayersList = ({ onCollapseChange }) => {
                                     className="absolute -top-1 -right-1 pointer-events-none"
                                 />
                             </span>
-                            <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium whitespace-nowrap truncate leading-none pt-[1.5px] transition-colors ${noLayers ? 'text-[#465055]' : 'text-[#FF577D]'}`}>Eliminar mis capas</span>
+                            <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium whitespace-nowrap truncate leading-none pt-[1.5px] transition-colors ${noLayers ? 'text-[#465055]' : isDeleteHovered ? 'text-[#FF577D]' : 'text-[#465055]'}`}>Eliminar mis capas</span>
                         </button>
                         <ConfirmDropdown
                             open={showDeleteConfirm}
