@@ -1,33 +1,15 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { fromLonLat, toLonLat } from 'ol/proj';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import Feature from 'ol/Feature';
+import Point from 'ol/geom/Point';
+import Style from 'ol/style/Style';
+import IconStyle from 'ol/style/Icon';
+import CircleStyle from 'ol/style/Circle';
+import { Fill } from 'ol/style';
 
 const MARKER_Z_INDEX = 999;
-
-let olModules = null;
-const loadOLModules = async () => {
-    if (olModules) return olModules;
-    const [
-        { default: VectorLayer },
-        { default: VectorSource },
-        { default: Feature },
-        { default: Point },
-        { default: Style },
-        { default: IconStyle },
-        { default: CircleStyle },
-        { Fill }
-    ] = await Promise.all([
-        import('ol/layer/Vector'),
-        import('ol/source/Vector'),
-        import('ol/Feature'),
-        import('ol/geom/Point'),
-        import('ol/style/Style'),
-        import('ol/style/Icon'),
-        import('ol/style/Circle'),
-        import('ol/style')
-    ]);
-    olModules = { VectorLayer, VectorSource, Feature, Point, Style, IconStyle, CircleStyle, Fill };
-    return olModules;
-};
 
 export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } = {}) => {
     const markersRef = useRef(new Map());
@@ -80,8 +62,6 @@ export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } =
         if (!mapRef.current || !center) return;
 
         hideMarker(id);
-
-        const { VectorLayer, VectorSource, Feature, Point, Style, IconStyle, CircleStyle, Fill } = await loadOLModules();
 
         const coords = fromLonLat(center);
         const feature = new Feature({ geometry: new Point(coords) });
