@@ -11,34 +11,34 @@ export const JALISCO_BOUNDS = {
     zoom: 8
 };
 
-const WMS_WORKSPACES = {
-    general: `${import.meta.env.VITE_GEOSERVER_URL}general/wms`,
-    economia: `${import.meta.env.VITE_GEOSERVER_URL}economia/wms`,
-    salud: `${import.meta.env.VITE_GEOSERVER_URL}salud/wms`,
-    educacion: `${import.meta.env.VITE_GEOSERVER_URL}educacion/wms`,
-    seguridad: `${import.meta.env.VITE_GEOSERVER_URL}seguridad_y_proteccion_ciudadana/wms`,
-    recursos: `${import.meta.env.VITE_GEOSERVER_URL}recursos_y_calidad_de_vida/wms`,
-    demografia: `${import.meta.env.VITE_GEOSERVER_URL}demografia/wms`,
-    desarrollo: `${import.meta.env.VITE_GEOSERVER_URL}desarrollo_social/wms`,
-    gobierno: `${import.meta.env.VITE_GEOSERVER_URL}gobierno_y_ciudadania/wms`,
-    raster: `${import.meta.env.VITE_GEOSERVER_URL}raster/wms`,
+const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
+
+export const hydrateWmsConfig = (wmsConfig) => {
+    if (!wmsConfig) return null;
+    const gsWorkspace = wmsConfig.geoserverWorkspace || wmsConfig.workspace;
+    const gsLayer = wmsConfig.geoserverLayer;
+    if (!gsWorkspace || !gsLayer) return null;
+    return {
+        ...WMS_BASE_CONFIG,
+        ...wmsConfig,
+        baseUrl: `${GEOSERVER_BASE}/${gsWorkspace}/wms`,
+        layerName: `${gsWorkspace}:${gsLayer}`,
+    };
 };
 
-const WORKSPACE_REAL_NAMES = {
-    seguridad: 'seguridad_y_proteccion_ciudadana',
-    gobierno: 'gobierno_y_ciudadania',
-    desarrollo: 'desarrollo_social',
-    recursos: 'recursos_y_calidad_de_vida'
+const hydrateNode = (node) => {
+    if (!node) return node;
+    const result = {
+        ...node,
+        wmsConfig: node.wmsConfig ? hydrateWmsConfig(node.wmsConfig) : node.wmsConfig,
+    };
+    if (Array.isArray(node.children)) {
+        result.children = node.children.map(hydrateNode);
+    }
+    return result;
 };
 
-export const createWMSConfig = (workspace, layerName, styles = '', cqlFilter = '') => ({
-    baseUrl: WMS_WORKSPACES[workspace],
-    layerName: `${WORKSPACE_REAL_NAMES[workspace] || workspace}:${layerName}`,
-    workspace,
-    styles,
-    cqlFilter,
-    ...WMS_BASE_CONFIG
-});
+export const hydrateLayerTree = (tree) => Array.isArray(tree) ? tree.map(hydrateNode) : tree;
 
 export const findWMSConfig = (layerId, layersArray) => {
     for (const layer of layersArray) {
