@@ -141,3 +141,13 @@ export const MONTHS = [
     { num: 11, name: 'Noviembre', shortName: 'NO' },
     { num: 12, name: 'Diciembre', shortName: 'DI' }
 ];
+
+export const formatIsoAsMonthYear = (isoDate) => {
+    if (!isoDate || typeof isoDate !== 'string') return null;
+    const parts = isoDate.split('-');
+    if (parts.length < 2) return null;
+    const year = parts[0];
+    const monthNum = parseInt(parts[1], 10);
+    const monthName = MONTHS.find(m => m.num === monthNum)?.name || '';
+    return `${monthName} ${year}`.trim();
+};

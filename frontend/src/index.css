@@ -80,6 +80,28 @@
     background-color: rgb(107 114 128 / 0.7);
 }
 
+html {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(156 163 175 / 0.5) transparent;
+}
+
+html::-webkit-scrollbar {
+    width: 6px;
+}
+
+html::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+    background-color: rgb(156 163 175 / 0.5);
+    border-radius: 3px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(107 114 128 / 0.7);
+}
+
 .mask-bottom {
     mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);

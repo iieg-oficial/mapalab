@@ -30,7 +30,7 @@ const MapSider = ({ className = '' }) => {
         showMarker
     } = useMapsContext();
     const { loadingLayers } = useLayerLoading();
-    const hasNonLoopLoading = [...loadingLayers].some(id => !dateLoops[id]?.isPlaying && contextActiveLayerIds.includes(id));
+    const hasNonLoopLoading = [...loadingLayers].some(id => !dateLoops[id] && contextActiveLayerIds.includes(id));
     const isLoading = hasNonLoopLoading || isLocating;
     const {
         siderRef,
