@@ -7,6 +7,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.3.0] - 2026-04-21
+
 ### Agregado
 - `Badge` component extendido: props `color` (`orange`/`purple`/`pink`/`violet`), `size` (`sm`/`md`), `variant` (`count`/`pill`), `text`, `onClick`. Default retrocompatible (orange, md, count)
 - Sistema de "nueva característica" en `Badge` via prop `featureKey`: marca visualmente un feature nuevo, al hacer click se persiste en `localStorage` (`mapalab:feature-seen:<key>`) y no vuelve a aparecer hasta que otra key diferente active un nuevo feature
@@ -69,6 +71,7 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Corregido
 - Import no usado `openDataImg` en `MapAttribution.jsx` — limpia el error de lint preexistente
+- **Swipe-to-remove en InfoBox mobile**: bug de "index as key" que causaba que los estilos inline del card eliminado (translateX, maxHeight: 0) se aplicaran al siguiente card que tomaba su slot en el array. Fix: `key={feature.id ?? \`${result.layerId}-${featureIdx}\`}` para que React desmonte el card correcto y las animaciones queden aisladas
 
 ### Eliminado
 - Dependencia `axios` (no usada, el proyecto usa `fetch` nativo)
