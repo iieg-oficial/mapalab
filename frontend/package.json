@@ -47,19 +47,19 @@
         "@types/react": "19.2.14",
         "@types/react-dom": "19.2.3",
         "@vitejs/plugin-react": "5.2.0",
-        "@vitest/coverage-v8": "4.1.2",
-        "@vitest/ui": "4.1.2",
+        "@vitest/coverage-v8": "4.1.5",
+        "@vitest/ui": "4.1.5",
         "eslint": "10.2.1",
         "eslint-plugin-jsx-a11y": "^6.10.2",
         "eslint-plugin-react-hooks": "7.1.1",
         "eslint-plugin-react-refresh": "0.5.2",
         "globals": "17.4.0",
-        "happy-dom": "^20.8.9",
+        "happy-dom": "^20.9.0",
         "knip": "^6.6.0",
         "lint-staged": "^16.4.0",
         "rollup-plugin-visualizer": "^7.0.1",
         "vite": "7.3.2",
-        "vitest": "4.1.2"
+        "vitest": "4.1.5"
     },
     "overrides": {
         "eslint-plugin-react-hooks": {
