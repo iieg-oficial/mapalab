@@ -19,8 +19,17 @@ export default defineConfig({
                 'node_modules/',
                 'src/test/',
                 '**/*.config.js',
-                '**/dist/**'
-            ]
+                '**/dist/**',
+                'src/main.jsx',
+                'src/**/*.test.{js,jsx}',
+                'src/assets/**'
+            ],
+            thresholds: {
+                lines: 60,
+                functions: 65,
+                branches: 40,
+                statements: 55
+            }
         }
     },
     resolve: {
