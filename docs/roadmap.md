@@ -52,9 +52,12 @@ timeline
             : Loop de fechas generalizado (raster y vectorial)
             : Edicion en-mapa de Emoji/Texto
             : InfoBox mobile como bottom-sheet
-        Abril - Mayo 2026 (v1.3.0)
-            : Migrar definiciones de capas al backend
+        Abril 2026 (v1.3.0)
+            : Performance (chunk splitting, WebP, lazy Lottie)
+            : Accesibilidad y Sentry
+            : Knip, Dependabot y Docker optimizado
         Mayo - Junio 2026 (v1.4.0)
+            : Migrar definiciones de capas al backend
             : Comparador de periodicidad
         Julio - Agosto 2026 (v1.5.0)
             : Editor de Home desde admin
@@ -209,12 +212,25 @@ timeline
 - [x] `docs/cache.md` con inventario de caches del proyecto
 - [x] `getDefaultMapView()` / `getMinZoom()` en `helpers/defaultView.js`
 
-### v1.3.0 — Abril / Mayo 2026
+### v1.3.0 — Abril 2026
+- [x] Chunk splitting via `manualChunks` (bundle inicial 678→105 kB gz)
+- [x] Assets: SVGs optimizados con SVGO, 11 PNG → WebP, 4 PNGs huérfanos eliminados
+- [x] `knip` (dead-code) + `lint-staged` + regla ESLint para bloquear imports de PNG
+- [x] Plugin `eslint-plugin-jsx-a11y` con fix de 25 violations (divs clickeables → buttons o role=button+keyboard)
+- [x] Sentry SDK integrado (frontend + backend), gated por `VITE_SENTRY_DSN`
+- [x] Lottie lazy-loaded en `<Logo>` (82 kB gz fuera del path inicial)
+- [x] `defaultZoom: 'fit'` dinámico via `layerExtentService` (WFS GetFeature + cache)
+- [x] Coverage thresholds en Vitest (60/65/40/55) + 17 tests nuevos (452→469)
+- [x] Security headers en nginx (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)
+- [x] Dependabot (npm + pip + github-actions) con agrupación por familias
+- [x] Dockerfiles optimizados (`npm ci` + BuildKit cache mounts + init + healthcheck + host-user para evitar dist/ root-owned)
+- [x] Plan de GlitchTip self-hosted (`docs/planes/PLAN_GLITCHTIP.md`) para migración futura a observability interna
+- [x] 7 Dependabot upgrades mergeados (React 19.2.5, OL 10.9.0, Tailwind 4.2.4, eslint, testing, checkout v6, setup-node v6)
+
+### v1.4.0 — Mayo / Junio 2026
 - [ ] Migrar lista de capas del sidebar a endpoint del backend
 - [ ] Endpoint de busqueda de capas desde backend
 - [ ] Refactor de `littleCard` a forma JSON-serializable (`headerTransform`, raster mensual)
-
-### v1.4.0 — Mayo / Junio 2026
 - [ ] Herramienta para comparar periodicidad de mapas (vista lado a lado)
 
 ### v1.5.0 — Julio / Agosto 2026
