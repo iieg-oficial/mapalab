@@ -12,6 +12,22 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.3.0',
+        items: [
+            { text: 'Carga inicial del sitio significativamente más rápida gracias a la separación del código en paquetes independientes y optimización de imágenes', tag: 'perf' },
+            { text: 'El spinner de carga solo se descarga cuando realmente se necesita, reduciendo el peso inicial de la página', tag: 'perf' },
+            { text: 'Las animaciones de fechas en las capas se detienen automáticamente al ocultar la capa para evitar consumo innecesario', tag: 'perf' },
+            { text: 'Mejor accesibilidad: todos los botones y controles clickeables ahora responden a navegación con teclado (Enter/Espacio) y lectores de pantalla', tag: 'added' },
+            { text: 'Sistema visual para destacar características nuevas: un punto naranja aparece sobre las funciones recién agregadas y desaparece al usarlas', tag: 'added' },
+            { text: 'En las capas del Bosque de La Primavera el mapa se encuadra automáticamente al área real de la capa, sin zoom hardcodeado', tag: 'added' },
+            { text: 'Al eliminar tarjetas en móvil deslizando, la animación es más fluida: las tarjetas colapsan suavemente en lugar de saltar', tag: 'changed' },
+            { text: 'Al eliminar una tarjeta en móvil ya no se mueven ni desaparecen otras tarjetas por error', tag: 'fixed' },
+            { text: 'En móvil, ahora puedes hacer mediciones y clicks en el mapa tocando entre los paneles laterales (zonas vacías del panel dejan pasar la interacción)', tag: 'fixed' },
+            { text: 'Nueva barra de scroll vertical personalizada en toda la aplicación, más sutil', tag: 'changed' },
+            { text: 'Actualización de dependencias clave: React 19.2.5, OpenLayers 10.9, Tailwind 4.2.4 y otras mejoras internas', tag: 'changed' }
+        ]
+    },
+    {
         version: '1.2.0',
         items: [
             { text: 'Animación de periodicidad para todas las capas con fechas (antes solo raster). Los años o meses pueden ciclar automáticamente desde el modal de detalle', tag: 'added' },
