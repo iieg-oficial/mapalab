@@ -1,12 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="30" height="30" viewBox="0 0 30 30">
-  <defs>
-    <clipPath id="clip-path">
-      <rect id="Rectángulo_14239" data-name="Rectángulo 14239" width="30" height="30" fill="#fff"/>
-    </clipPath>
-  </defs>
-  <g id="ico_cerrar_mediciones" data-name="ico_cerrar mediciones" transform="translate(4 4)">
-    <g id="Grupo_16245" data-name="Grupo 16245" transform="translate(-4 -4)" clip-path="url(#clip-path)">
-      <path id="Unión_5" data-name="Unión 5" d="M7432.228,19740.725a1.425,1.425,0,0,1-.289-2l3.513-4.615-3.979-4.2a1.415,1.415,0,0,1,.07-2.02,1.465,1.465,0,0,1,2.052.068l3.908,4.123,3.548-4.187a1.466,1.466,0,0,1,2.045-.184,1.418,1.418,0,0,1,.184,2.014l-3.755,4.428,3.755,4.4a1.412,1.412,0,0,1-.184,2.014,1.463,1.463,0,0,1-2.045-.174l-3.567-4.186-3.223,4.232a1.448,1.448,0,0,1-1.16.572A1.467,1.467,0,0,1,7432.228,19740.725Z" transform="translate(-7422.525 -19718.926)" fill="#fff"/>
-    </g>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><defs><clipPath id="a"><path fill="#fff" d="M0 0h30v30H0z" data-name="Rectángulo 14239"/></clipPath></defs><g data-name="ico_cerrar mediciones"><g clip-path="url(#a)" data-name="Grupo 16245"><path fill="#fff" d="M9.703 21.799a1.425 1.425 0 0 1-.289-2l3.513-4.615-3.979-4.2a1.415 1.415 0 0 1 .07-2.02 1.465 1.465 0 0 1 2.052.068l3.908 4.123 3.548-4.187a1.466 1.466 0 0 1 2.045-.184 1.42 1.42 0 0 1 .184 2.014L17 15.226l3.755 4.4a1.41 1.41 0 0 1-.184 2.014 1.463 1.463 0 0 1-2.045-.174l-3.567-4.186-3.223 4.232a1.45 1.45 0 0 1-1.16.572 1.47 1.47 0 0 1-.873-.285" data-name="Unión 5"/></g></g></svg>
