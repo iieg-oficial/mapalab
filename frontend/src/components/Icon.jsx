@@ -136,9 +136,14 @@ const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visibl
             onClick ? 'cursor-pointer' : ''
         ].filter(Boolean).join(' ');
 
-        iconElement = (
-            <span onClick={onClick} className={finalWrapperClasses || undefined}>
-                {tooltip ? <Tooltip content={tooltip}>{iconElement}</Tooltip> : iconElement}
+        const content = tooltip ? <Tooltip content={tooltip}>{iconElement}</Tooltip> : iconElement;
+        iconElement = onClick ? (
+            <button type="button" onClick={onClick} className={finalWrapperClasses || undefined}>
+                {content}
+            </button>
+        ) : (
+            <span className={finalWrapperClasses || undefined}>
+                {content}
             </span>
         );
         return iconElement;

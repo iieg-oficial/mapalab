@@ -32,7 +32,10 @@ const ActiveLayersList = ({ onCollapseChange }) => {
         getAllChildLayerIds,
         showAllLayers,
         hideAllLayers,
-        mapRef
+        mapRef,
+        hasActiveLoops,
+        pauseAllLoops,
+        dateLoops
     } = useMapsContext();
     const { isMobile } = useSider();
 
@@ -49,6 +52,15 @@ const ActiveLayersList = ({ onCollapseChange }) => {
     const allHidden = useMemo(() => {
         return activeLayerIds.length > 0 && activeLayerIds.every(id => hiddenLayerIds.includes(id));
     }, [activeLayerIds, hiddenLayerIds]);
+
+    const visibilityCount = useMemo(() => {
+        if (allHidden) return activeLayerIds.length;
+        return activeLayerIds.filter(id => !hiddenLayerIds.includes(id)).length;
+    }, [activeLayerIds, hiddenLayerIds, allHidden]);
+
+    const activeLoopsCount = useMemo(() => {
+        return Object.values(dateLoops || {}).filter(l => l?.isPlaying).length;
+    }, [dateLoops]);
 
     const handleToggleBaseMode = useCallback(() => {
         if (activeLayerIds.length === 0) {
@@ -88,13 +100,16 @@ const ActiveLayersList = ({ onCollapseChange }) => {
     const [isDeleteHovered, setIsDeleteHovered] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+    const visibleHeaderButtons = 2 + (hasActiveLoops ? 1 : 0);
+    const hideHeaderLabels = visibleHeaderButtons > 2;
+
     if (collapse.isCollapsed) {
         return (
             <div className={`w-auto flex items-center justify-end pt-1 pl-1`}>
                 <Tooltip content={unifiedLayers.length > 0 ? 'Expandir capas activas' : 'No hay capas activas'}>
                     <button
                         onClick={collapse.handleExpand}
-                        className="size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors relative hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer"
+                        className="size-12.5 flex items-center justify-center bg-[#EAEFFA] rounded-full transition-colors relative hover:bg-[#F2EBFF] hover:border-[#5C2472] hover:border cursor-pointer max-md:pointer-events-auto"
                     >
                         <Icon name="capa_activa" className="size-10" />
                         <Badge visible={unifiedLayers.length > 0} count={unifiedLayers.length} className="absolute -top-1 -left-1" />
@@ -105,7 +120,7 @@ const ActiveLayersList = ({ onCollapseChange }) => {
     }
 
     return (
-        <div className="w-auto px-4.5 pb-6 pt-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] flex-1 min-h-0 flex flex-col">
+        <div className="w-auto px-4.5 pb-6 pt-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] flex-1 min-h-0 flex flex-col max-md:pointer-events-auto">
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                     <Icon name="capa_activa" className="size-8" />
@@ -120,29 +135,47 @@ const ActiveLayersList = ({ onCollapseChange }) => {
             </div>
 
             <div className="flex items-center justify-between shrink-0 mb-2 gap-1.5">
-                <div className="flex items-center gap-3 shrink md:shrink-0 min-w-0">
-                    <div
-                        className={`group/vis flex items-center gap-1 shrink md:shrink-0 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                        onClick={noLayers ? undefined : handleToggleVisibilityAll}
+                <div className="flex items-center gap-2 md:gap-3 shrink md:shrink-0 min-w-0">
+                    <button
+                        type="button"
+                        disabled={noLayers}
+                        className={`group/vis flex items-center gap-1 shrink-0 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                        onClick={handleToggleVisibilityAll}
                     >
-                        <span className={`p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/vis:border-[#70308A]'}`}>
+                        <span className={`relative p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/vis:border-[#70308A]'}`}>
                             <Icon name="visible" state={allHidden ? 'hover' : 'gray'} className="size-5 shrink-0" />
+                            <Badge
+                                visible={visibilityCount > 0}
+                                count={visibilityCount}
+                                color="purple"
+                                size="sm"
+                                className="absolute -top-1 -right-1 pointer-events-none"
+                            />
                         </span>
-                        <span className="text-[7.5px] md:text-[8px] font-garet font-medium text-[#465055] whitespace-nowrap truncate leading-none pt-[1.5px]">{allHidden ? 'Mostrar mis capas' : 'Ocultar mis capas'}</span>
-                    </div>
+                        <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium text-[#465055] whitespace-nowrap truncate leading-none pt-[1.5px]`}>{allHidden ? 'Mostrar mis capas' : 'Ocultar mis capas'}</span>
+                    </button>
 
-                    <div className="relative shrink md:shrink-0">
-                        <div
-                            onClick={noLayers ? undefined : () => setShowDeleteConfirm(p => !p)}
+                    <div className="relative shrink-0">
+                        <button
+                            type="button"
+                            disabled={noLayers}
+                            onClick={() => setShowDeleteConfirm(p => !p)}
                             onMouseEnter={() => !noLayers && setIsDeleteHovered(true)}
                             onMouseLeave={() => !noLayers && setIsDeleteHovered(false)}
                             className={`group/del flex items-center gap-1 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                         >
-                            <span className={`p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/del:border-[#FF577D]'}`}>
+                            <span className={`relative p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/del:border-[#FF577D]'}`}>
                                 <Icon name="eliminar" state={isDeleteHovered ? 'hover' : 'normal'} className="size-5 shrink-0" />
+                                <Badge
+                                    visible={activeLayerIds.length > 0}
+                                    count={activeLayerIds.length}
+                                    color="pink"
+                                    size="sm"
+                                    className="absolute -top-1 -right-1 pointer-events-none"
+                                />
                             </span>
-                            <span className={`text-[7.5px] md:text-[8px] font-garet font-medium text-[#465055] whitespace-nowrap truncate leading-none pt-[1.5px] transition-colors ${noLayers ? '' : 'group-hover/del:text-[#FF577D]'}`}>Eliminar mis capas</span>
-                        </div>
+                            <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium whitespace-nowrap truncate leading-none pt-[1.5px] transition-colors ${noLayers ? 'text-[#465055]' : 'text-[#FF577D]'}`}>Eliminar mis capas</span>
+                        </button>
                         <ConfirmDropdown
                             open={showDeleteConfirm}
                             onClose={() => setShowDeleteConfirm(false)}
@@ -153,6 +186,31 @@ const ActiveLayersList = ({ onCollapseChange }) => {
                             className="right-0 md:right-0 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0"
                         />
                     </div>
+
+                    {hasActiveLoops && (
+                        <button
+                            type="button"
+                            className="group/pauseall flex items-center gap-1 shrink-0 cursor-pointer"
+                            onClick={pauseAllLoops}
+                        >
+                            <span className="relative p-0.5 rounded-full border border-transparent transition-colors group-hover/pauseall:border-[#FF8300]">
+                                <span className="size-5 flex items-center justify-center text-[#5C2472] group-hover/pauseall:text-[#FF8300] transition-colors">
+                                    <svg viewBox="0 0 12 14" fill="currentColor" className="size-3 shrink-0">
+                                        <rect x="1" y="1" width="3" height="12" rx="1" />
+                                        <rect x="8" y="1" width="3" height="12" rx="1" />
+                                    </svg>
+                                </span>
+                                <Badge
+                                    visible={activeLoopsCount > 0}
+                                    count={activeLoopsCount}
+                                    color="orange"
+                                    size="sm"
+                                    className="absolute -top-1 -right-1 pointer-events-none"
+                                />
+                            </span>
+                            <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium whitespace-nowrap truncate leading-none pt-[1.5px] text-[#FF8300]`}>Pausar animaciones</span>
+                        </button>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">

@@ -29,8 +29,7 @@ const LayerDetailModal = () => {
         selectedLayer, setSelectedLayer, applyFilter, clearFilter, getFilter, getSpecificFilter,
         getLayerOpacity, setLayerOpacity,
         getLoopState, startLoop, toggleLoop, stopLoop, inferLoopConfig,
-        loopIntervalMs, setLoopIntervalMs,
-        loopDirection, setLoopDirection
+        getLoopPrefs, setLoopIntervalMs, setLoopDirection
     } = useContext(MapsContext);
     const [expandedYear, setExpandedYear] = useState(null);
 
@@ -99,6 +98,9 @@ const LayerDetailModal = () => {
     const isLoopPlaying = loopState?.isPlaying ?? false;
     const dateFilter = selectedLayer?.id ? getSpecificFilter?.(selectedLayer.id, 'date') : null;
     const hasDateFilter = !!dateFilter;
+    const layerPrefs = selectedLayer?.id ? getLoopPrefs?.(selectedLayer.id) : null;
+    const layerIntervalMs = layerPrefs?.intervalMs;
+    const layerDirection = layerPrefs?.direction;
 
     const viewLoopConfig = () => {
         if (!selectedLayer?.id) return null;
@@ -238,9 +240,9 @@ const LayerDetailModal = () => {
                                 <div className="mb-4">
                                     <div className="flex items-center justify-between gap-2 my-5 flex-wrap">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer" onClick={handlePeriodicityClick} onTouchStart={handlePeriodicityTouchStart} onTouchEnd={handlePeriodicityTouchEnd} onTouchCancel={handlePeriodicityTouchEnd}>
+                                            <button type="button" className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer" onClick={handlePeriodicityClick} onTouchStart={handlePeriodicityTouchStart} onTouchEnd={handlePeriodicityTouchEnd} onTouchCancel={handlePeriodicityTouchEnd}>
                                                 Periodicidad:
-                                            </span>
+                                            </button>
                                             {isAdvancedMode && (
                                                 <Icon
                                                     name="info_warning"
@@ -252,8 +254,8 @@ const LayerDetailModal = () => {
                                         <div className="flex items-center gap-2">
                                             {canPlay && (
                                                 <>
-                                                    <LoopIntervalButton value={loopIntervalMs} onChange={setLoopIntervalMs} />
-                                                    <LoopDirectionButton value={loopDirection} onChange={setLoopDirection} />
+                                                    <LoopIntervalButton value={layerIntervalMs} onChange={(ms) => setLoopIntervalMs(selectedLayer.id, ms)} />
+                                                    <LoopDirectionButton value={layerDirection} onChange={(dir) => setLoopDirection(selectedLayer.id, dir)} />
                                                     <PlayPauseButton isPlaying={isLoopPlaying} onToggle={handleTogglePeriodicityLoop} />
                                                 </>
                                             )}

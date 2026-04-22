@@ -56,6 +56,7 @@ const Modal = ({
                 onPointerUp={handleBackdropPointerUp}
             />
 
+            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- stopPropagation only; no user action to be keyboard-equivalent */}
             <div
                 ref={modalRef}
                 className={`relative bg-white rounded-2xl shadow-2xl flex flex-col w-full ${width} ${height} ${className} overflow-hidden animate-in fade-in zoom-in-95 duration-200`}

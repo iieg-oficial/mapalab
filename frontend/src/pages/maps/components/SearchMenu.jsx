@@ -67,9 +67,9 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [], closeButton }) => {
     return (
         <div className={`pt-6 ${selectedLayers.length > 0 ? 'pb-2' : 'pb-6'} px-4 w-full ${HIDDEN_SCROLLBAR}`}>
             <div className="flex items-center justify-between">
-                <label className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
+                <h3 className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
                     Buscador
-                </label>
+                </h3>
                 {closeButton}
             </div>
             <div className="relative">

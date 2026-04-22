@@ -63,7 +63,9 @@ const MobileSheet = ({
 
     return createPortal(
         <div className="fixed inset-0 z-50">
-            <div
+            <button
+                type="button"
+                aria-label="Cerrar"
                 className={`absolute inset-0 bg-black/30 transition-opacity duration-300 ${backdropClassName}`}
                 style={{ opacity: open ? 1 : 0 }}
                 onClick={onClose}

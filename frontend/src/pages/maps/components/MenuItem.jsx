@@ -18,9 +18,9 @@ const MenuItem = ({ item, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => 
     if (!item.hasMenu) {
         if (item.onClick) {
             return (
-                <div ref={item.ref} onClick={item.onClick} className="cursor-pointer">
+                <button type="button" ref={item.ref} onClick={item.onClick} className="cursor-pointer">
                     {item.component}
-                </div>
+                </button>
             );
         }
         return item.component;
@@ -61,6 +61,7 @@ const MenuItem = ({ item, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => 
                     variant="menu"
                     role="menu"
                     closeOnEscape={true}
+                    // eslint-disable-next-line jsx-a11y/no-autofocus -- menus abren con foco para navegación de teclado esperada
                     autoFocus={true}
                     registerInSider={true}
                     width="w-88"

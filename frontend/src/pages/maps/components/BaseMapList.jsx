@@ -11,9 +11,9 @@ const BaseMapList = ({ closeButton }) => {
     return (
         <div className="py-6 px-4">
             <div className="flex items-center justify-between">
-                <label className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
+                <h3 className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
                     Mapas Base
-                </label>
+                </h3>
                 {closeButton}
             </div>
             <div className="grid grid-cols-2 gap-4">

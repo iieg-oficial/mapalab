@@ -92,15 +92,17 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
                         className="mt-2"
                     />
                 )}
-                <span
+                <button
+                    type="button"
+                    disabled={isDisabled}
                     className={`
-                        flex-grow font-garet font-normal text-[12px] my-1.5 text-[#454545] tracking-normal
+                        flex-grow text-left font-garet font-normal text-[12px] my-1.5 text-[#454545] tracking-normal
                         ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
                     `}
                     onClick={handleLabelClick}
                 >
                     {layer.label}
-                </span>
+                </button>
             </div>
 
             {isExpanded && (
