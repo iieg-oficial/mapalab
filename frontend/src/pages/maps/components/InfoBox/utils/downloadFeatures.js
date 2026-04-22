@@ -1,4 +1,4 @@
-import { findLayerById, layers as allLayers } from '../../../helpers/layers/index';
+import { findLayerById } from '../../../helpers/layers/utils/layerHelpers';
 
 const escapeCSVValue = (value) => {
     if (value === null || value === undefined) return '';
@@ -9,7 +9,7 @@ const escapeCSVValue = (value) => {
     return stringValue;
 };
 
-export const downloadFeaturesAsCSV = (results) => {
+export const downloadFeaturesAsCSV = (results, allLayers = []) => {
     if (!results || results.length === 0) return;
 
     const rows = [];

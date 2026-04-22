@@ -1,5 +1,11 @@
 import { findWMSConfig } from '../pages/maps/helpers/wmsConfig';
-import { layers, findLayerById } from '../pages/maps/helpers/layers/index';
+import { findLayerById } from '../pages/maps/helpers/layers/utils/layerHelpers';
+
+let currentLayers = [];
+
+export const setLayersForDownloadService = (newLayers) => {
+    currentLayers = Array.isArray(newLayers) ? newLayers : [];
+};
 
 const getApiHost = () => import.meta.env.VITE_BACKEND_API_HOST?.replace(/\/+$/, '');
 
@@ -30,10 +36,10 @@ const findFirstWMSConfig = (node) => {
 };
 
 const resolveWMSConfig = (layerId) => {
-    const direct = findWMSConfig(layerId, layers);
+    const direct = findWMSConfig(layerId, currentLayers);
     if (direct) return { wmsConfig: direct, isGroup: false };
 
-    const node = findLayerById(layerId, layers);
+    const node = findLayerById(layerId, currentLayers);
     if (!node) return null;
 
     const childConfig = findFirstWMSConfig(node);
@@ -189,7 +195,7 @@ const addMetadataToZip = async (zip, metadatoList, selections) => {
 };
 
 const buildFilename = (layerId, extension) => {
-    const layerNode = findLayerById(layerId, layers);
+    const layerNode = findLayerById(layerId, currentLayers);
     const label = (layerNode?.label || layerNode?.name || layerId).replace(/\s+/g, '_');
     const date = new Date().toISOString().slice(0, 10);
     return `${label}_${date}.${extension}`;

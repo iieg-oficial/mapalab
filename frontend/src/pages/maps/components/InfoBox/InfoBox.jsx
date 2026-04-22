@@ -9,7 +9,7 @@ import { useViewportContainment } from './hooks/useViewportContainment';
 import { useFeatureInfo } from '../../hooks/useFeatureInfo';
 import { renderCard } from './utils/renderCard.jsx';
 import { downloadFeaturesAsCSV } from './utils/downloadFeatures';
-import { findLayerById, layers as allLayers } from '../../helpers/layers/index';
+import { findLayerById } from '../../helpers/layers/utils/layerHelpers';
 import LicenseTooltipContent from '@components/LicenseTooltipContent';
 import SummaryCard from './components/SummaryCard';
 import EmptySuggestions from './components/EmptySuggestions';
@@ -20,7 +20,7 @@ import SwipeToRemove from './components/SwipeToRemove';
 import WhatsNewModal from '../WhatsNewModal';
 
 const InfoBox = () => {
-    const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters } = useContext(MapsContext);
+    const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers } = useContext(MapsContext);
     const { isMobile } = useSider();
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
     const { selectAlternativeLayer } = useFeatureInfo();
@@ -131,7 +131,7 @@ const InfoBox = () => {
 
     const handleDownload = () => {
         if (results && results.length > 0) {
-            downloadFeaturesAsCSV(results);
+            downloadFeaturesAsCSV(results, allLayers);
         }
     };
 

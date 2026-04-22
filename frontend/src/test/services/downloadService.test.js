@@ -36,14 +36,13 @@ const findWMS = (id, arr) => {
     return null;
 };
 
-vi.mock('@pages/maps/helpers/layers/index', () => ({
-    layers: testLayers,
-    findLayerById: (id, arr) => findById(id, arr || testLayers),
+vi.mock('@pages/maps/helpers/layers/utils/layerHelpers', () => ({
+    findLayerById: (id, arr) => findById(id, arr && arr.length ? arr : testLayers),
     collectLayersWithWMS: () => []
 }));
 
 vi.mock('@pages/maps/helpers/wmsConfig', () => ({
-    findWMSConfig: (id, arr) => findWMS(id, arr || testLayers)
+    findWMSConfig: (id, arr) => findWMS(id, arr && arr.length ? arr : testLayers)
 }));
 
 vi.mock('@services/layerMetadataService', () => ({

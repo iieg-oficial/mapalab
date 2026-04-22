@@ -7,7 +7,7 @@ import { useMapView } from './useMapView';
 import { useMapCapture } from './useMapCapture';
 import { useImageComposition } from './useImageComposition';
 import { usePdfExport } from './usePdfExport';
-import { layers as allLayers, findLayerById } from '../../../helpers/layers/index';
+import { findLayerById } from '../../../helpers/layers/utils/layerHelpers';
 import { transformExtent } from 'ol/proj';
 import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from '../utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
@@ -20,12 +20,12 @@ export const useMapDownload = () => {
     const { prepareScaleControl, getMapSnapshot } = useMapCapture();
     const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
-    const { activeLayerIds, selectedLayer, groupedActiveLayers } = useContext(MapsContext);
+    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers } = useContext(MapsContext);
     const [isDownloading, setIsDownloading] = useState(false);
 
     const activeLayers = useMemo(() => activeLayerIds
         .map(id => findLayerById(id, allLayers))
-        .filter(Boolean), [activeLayerIds]);
+        .filter(Boolean), [activeLayerIds, allLayers]);
 
     const layersWithLegends = useMemo(() => {
         return groupedActiveLayers.filter(layer => hasLegend(layer));

@@ -10,7 +10,7 @@ import { useMinimap } from './hooks/useMinimap';
 import { useMapCapture } from './hooks/useMapCapture';
 import { useImageComposition } from './hooks/useImageComposition';
 import { usePdfExport } from './hooks/usePdfExport';
-import { layers as allLayers, findLayerById } from '../../helpers/layers/index';
+import { findLayerById } from '../../helpers/layers/utils/layerHelpers';
 import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from './utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
 import Logo from '@components/Logo';
@@ -19,7 +19,7 @@ import Icon from '@components/Icon';
 const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propSelectedLegends = [], initialTitle = '', quality = QUALITY_PRESETS[1] }) => {
     const { targetRef } = useMapsContext();
     const { getLegendUrl } = useWMSLegend();
-    const { activeLayerIds, groupedActiveLayers } = useContext(MapsContext);
+    const { activeLayerIds, groupedActiveLayers, allLayers } = useContext(MapsContext);
     const { getGuideExtent } = useMapDownload();
     const { generateMinimapImage } = useMinimap();
     const { getMapSnapshot } = useMapCapture();
