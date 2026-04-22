@@ -9,6 +9,7 @@ import NotFound from '@pages/NotFound';
 import ErrorPage from '@pages/ErrorPage';
 import MainProvider from '@providers/MainProvider';
 import MapsProvider from '@providers/MapsProvider';
+import { LayersProvider } from '@providers/LayersProvider';
 import { LayerLoadingProvider } from '@contexts/LayerLoadingContext';
 import Loading from '@components/Loading';
 import.meta.env;
@@ -37,7 +38,7 @@ const router = createBrowserRouter([
         errorElement: <ErrorPage />,
         children: [
             { index: true, element: <Home /> },
-            { path: 'mapa', element: <LayerLoadingProvider><MapsProvider><Maps /></MapsProvider></LayerLoadingProvider> },
+            { path: 'mapa', element: <LayersProvider><LayerLoadingProvider><MapsProvider><Maps /></MapsProvider></LayerLoadingProvider></LayersProvider> },
             { path: '*', element: <NotFound /> },
         ],
     },
