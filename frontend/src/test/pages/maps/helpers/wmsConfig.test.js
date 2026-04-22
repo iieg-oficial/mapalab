@@ -3,7 +3,8 @@ import { describe, it, expect, vi } from 'vitest';
 vi.stubEnv('VITE_GEOSERVER_URL', 'http://geo.test/geoserver/');
 
 const {
-    createWMSConfig,
+    hydrateWmsConfig,
+    hydrateLayerTree,
     findWMSConfig,
     hasWMSConfig,
     resolveTimeStyle,
@@ -37,53 +38,87 @@ describe('JALISCO_BOUNDS', () => {
     });
 });
 
-describe('createWMSConfig', () => {
-    it('genera baseUrl usando el workspace', () => {
-        const cfg = createWMSConfig('economia', 'empleo');
-        expect(cfg.baseUrl).toBe('http://geo.test/geoserver/economia/wms');
+describe('hydrateWmsConfig', () => {
+    it('retorna null para input nulo', () => {
+        expect(hydrateWmsConfig(null)).toBeNull();
+        expect(hydrateWmsConfig(undefined)).toBeNull();
     });
 
-    it('genera layerName con nombre real para workspaces mapeados', () => {
-        const cfg = createWMSConfig('seguridad', 'delitos');
+    it('retorna null si falta geoserverWorkspace o geoserverLayer', () => {
+        expect(hydrateWmsConfig({ workspace: 'seguridad' })).toBeNull();
+        expect(hydrateWmsConfig({ geoserverWorkspace: 'x' })).toBeNull();
+    });
+
+    it('construye baseUrl y layerName desde geoserverWorkspace + geoserverLayer', () => {
+        const cfg = hydrateWmsConfig({
+            workspace: 'seguridad',
+            geoserverWorkspace: 'seguridad_y_proteccion_ciudadana',
+            geoserverLayer: 'delitos',
+        });
+        expect(cfg.baseUrl).toBe('http://geo.test/geoserver/seguridad_y_proteccion_ciudadana/wms');
         expect(cfg.layerName).toBe('seguridad_y_proteccion_ciudadana:delitos');
     });
 
-    it('genera layerName directo para workspaces sin mapeo', () => {
-        const cfg = createWMSConfig('salud', 'hospitales');
-        expect(cfg.layerName).toBe('salud:hospitales');
-    });
-
     it('incluye propiedades base WMS', () => {
-        const cfg = createWMSConfig('general', 'limites');
+        const cfg = hydrateWmsConfig({
+            workspace: 'general',
+            geoserverWorkspace: 'general',
+            geoserverLayer: 'limites',
+        });
         expect(cfg.format).toBe('image/png');
         expect(cfg.transparent).toBe(true);
         expect(cfg.version).toBe('1.1.0');
         expect(cfg.srs).toBe('EPSG:6368');
     });
 
-    it('respeta styles y cqlFilter pasados', () => {
-        const cfg = createWMSConfig('economia', 'empleo', 'mi_estilo', 'col > 5');
+    it('preserva styles, cqlFilter y otros campos del backend', () => {
+        const cfg = hydrateWmsConfig({
+            workspace: 'economia',
+            geoserverWorkspace: 'economia',
+            geoserverLayer: 'empleo',
+            styles: 'mi_estilo',
+            cqlFilter: 'col > 5',
+            wmsGroup: 'grupo-x',
+            wfsAvailable: false,
+        });
         expect(cfg.styles).toBe('mi_estilo');
         expect(cfg.cqlFilter).toBe('col > 5');
+        expect(cfg.wmsGroup).toBe('grupo-x');
+        expect(cfg.wfsAvailable).toBe(false);
+    });
+});
+
+describe('hydrateLayerTree', () => {
+    it('hidrata wmsConfig recursivamente en hijos', () => {
+        const tree = [
+            {
+                id: 'tema',
+                children: [
+                    {
+                        id: 'hoja',
+                        wmsConfig: {
+                            workspace: 'seguridad',
+                            geoserverWorkspace: 'seguridad_y_proteccion_ciudadana',
+                            geoserverLayer: 'delitos',
+                        },
+                    },
+                ],
+            },
+        ];
+        const hydrated = hydrateLayerTree(tree);
+        expect(hydrated[0].children[0].wmsConfig.layerName).toBe('seguridad_y_proteccion_ciudadana:delitos');
+        expect(hydrated[0].children[0].wmsConfig.baseUrl).toContain('seguridad_y_proteccion_ciudadana/wms');
     });
 
-    it('usa defaults vacíos para styles y cqlFilter', () => {
-        const cfg = createWMSConfig('economia', 'empleo');
-        expect(cfg.styles).toBe('');
-        expect(cfg.cqlFilter).toBe('');
+    it('retorna el input tal cual si no es array', () => {
+        expect(hydrateLayerTree(null)).toBeNull();
+        expect(hydrateLayerTree('foo')).toBe('foo');
     });
 
-    it('mapea todos los workspaces con nombre real', () => {
-        const mappings = {
-            seguridad: 'seguridad_y_proteccion_ciudadana',
-            gobierno: 'gobierno_y_ciudadania',
-            desarrollo: 'desarrollo_social',
-            recursos: 'recursos_y_calidad_de_vida'
-        };
-        Object.entries(mappings).forEach(([alias, real]) => {
-            const cfg = createWMSConfig(alias, 'layer');
-            expect(cfg.layerName).toBe(`${real}:layer`);
-        });
+    it('conserva nodos sin wmsConfig sin modificar', () => {
+        const tree = [{ id: 'x', label: 'X', isCategory: true, children: [] }];
+        const hydrated = hydrateLayerTree(tree);
+        expect(hydrated[0].wmsConfig).toBeUndefined();
     });
 });
 
