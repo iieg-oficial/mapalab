@@ -53,8 +53,11 @@ No hay uso de `localStorage` hoy. Si un dato debe persistir entre sesiones, `loc
 | Cache | Ubicacion | Datos | Lifecycle | Invalidacion |
 |---|---|---|---|---|
 | `DatabaseFactory._connections` | `backend/app/databases/factory.py:7` | Pool de conexiones `PostgresConnection` por tipo de DB | Vida del worker Gunicorn | Al cerrar worker |
-| `WORKSPACE_SCHEMA_MAP` | `backend/app/consts/workspaces.py:1` | Mapa workspace → schema PostgreSQL | Compile-time | Modificar constante en codigo |
-| `public.layer_periodicity` (tabla DB) | `backend/app/services/periodicity_service.py:10-14` | JSONB de periodicidad calculada por capa | Vive en PostgreSQL hasta proximo refresh | Scheduler APScheduler diario 3:00 AM (Mexico City) o trigger manual `refresh_layer_periodicity()` |
+| `WORKSPACE_SCHEMA_MAP` | `backend/app/consts/workspaces.py:1` | Mapa workspace → schema PostgreSQL (**legacy**: nueva fuente es `mapalab.workspaces`) | Compile-time | Modificar constante en codigo |
+| `public.layer_periodicity` (tabla DB) | fn `public.refresh_layer_periodicity()` | JSONB de periodicidad calculada por capa | Vive en PostgreSQL hasta proximo refresh | **Cron en `dataengine-jobs` container diario 3:00 AM** o `make refresh-periodicity` |
+| `mapalab.layer_tree_cache` (tabla DB) | `backend/app/services/layer_tree_service.py` | JSONB del arbol completo de capas (singleton, 250 nodos, ~30KB JSONB) | Hasta proximo refresh | Cron `dataengine-jobs` diario 4:00 AM, `POST /layers/refresh-cache` (HTTP), o `make refresh-layer-tree` |
+| `_MEM_CACHE` del tree | `backend/app/services/layer_tree_service.py:18` | tree + etag + initial_order + workspaces en memoria del proceso | Se rehidrata desde DB si esta vacio | ETag mismatch o `POST /layers/invalidate-cache` |
+| `mapalab.layer_stats.values` (tabla DB) | fn via `run_refresh_layer_stats.py` | Numeralia calculada ejecutando `stats_config` queries | `ttl_minutes` column (default 1440) | Cron `dataengine-jobs` diario 4:30 AM o `make refresh-layer-stats` |
 
 El backend no usa Redis ni memcached. El cache mas "real" es `layer_periodicity`: se calcula una vez al dia y vive en DB.
 

@@ -56,16 +56,29 @@ timeline
             : Performance (chunk splitting, WebP, lazy Lottie)
             : Accesibilidad y Sentry
             : Knip, Dependabot y Docker optimizado
-        Mayo - Junio 2026 (v1.4.0)
-            : Migrar definiciones de capas al backend
-            : Comparador de periodicidad
-        Julio - Agosto 2026 (v1.5.0)
+        Abril 2026 (v1.4.0 - v1.5.1)
+            : Capas dinamicas (backend + editor mariachi)
+            : Tree materializado y schedulers en DataEngine
+            : Refactor total a LayersContext
+            : Security hardening (template catalog, rate limits)
+            : Tests smoke + runbook
+        Abril 2026 (v1.6.0)
+            : Selector GeoServer dinamico
+            : Edicion masiva de tags (paste-from-Excel)
+            : Rate limiter en memoria
+        Abril 2026 (v1.7.0)
+            : Drop mapalab_card legacy
+            : Drag & drop de reorden (@dnd-kit)
+            : Preview InfoBox + editor JSON custom
+            : Forms dinamicos por preset
+            : Code-split admin + /metrics Prometheus
+        Julio - Agosto 2026 (v1.8.0)
             : Editor de Home desde admin
             : Compartir estado del mapa via URL
-        Septiembre - Octubre 2026 (v1.6.0)
+        Septiembre - Octubre 2026 (v1.9.0)
             : Login para ciudadanos
             : Capas favoritas por usuario
-        Noviembre 2026 - Enero 2027 (v1.7.0)
+        Noviembre 2026 - Enero 2027 (v2.0.0)
             : Arquitectura de capas para dependencias
             : Lazy loading y optimizacion
     section v2.0.0 — MapaLab Platform
@@ -227,22 +240,106 @@ timeline
 - [x] Plan de GlitchTip self-hosted (`docs/planes/PLAN_GLITCHTIP.md`) para migración futura a observability interna
 - [x] 7 Dependabot upgrades mergeados (React 19.2.5, OL 10.9.0, Tailwind 4.2.4, eslint, testing, checkout v6, setup-node v6)
 
-### v1.4.0 — Mayo / Junio 2026
-- [ ] Migrar lista de capas del sidebar a endpoint del backend
-- [ ] Endpoint de busqueda de capas desde backend
-- [ ] Refactor de `littleCard` a forma JSON-serializable (`headerTransform`, raster mensual)
+### v1.4.0 — Abril 2026 — Capas dinamicas (base)
+- [x] Tablas `mapalab.layers`, `mapalab.workspaces`, `mapalab.initial_layer_order` en DataEngine
+- [x] Rol `mariachi_layers` + schema dedicado
+- [x] Alembic multi-env (`-x db=mariachi|dataengine`)
+- [x] Backend mapalab `GET /layers/{tree,initial-order,workspaces,search}` con ETag
+- [x] Editor UI en mariachi (`/administrador/mapalab/layers`)
+- [x] CRUD completo + borradores polimorficos con aprobacion
+- [x] GeoServer REST introspeccion (workspaces, fields, styles)
+- [x] Templates InfoBox expandibles
+- [x] `GeoServerClient` con httpx
+- [x] 22 tests nuevos (8 frontend + 14 backend mariachi)
+
+### v1.4.1 — Abril 2026 — Tree materializado + schedulers en DataEngine
+- [x] Tabla `mapalab.layer_tree_cache` (JSONB singleton)
+- [x] `dataengine-jobs` container (renombrado de `dataengine-mapalab-card`) con cron
+- [x] Jobs diarios: periodicity (03:00), layer_tree (04:00)
+- [x] `make refresh-layer-tree`, `refresh-all` en `mapalab-dataengine`
+- [x] `POST /layers/refresh-cache` para trigger HTTP desde mariachi
+- [x] mapalab backend `scheduler_service` vaciado (no-op)
+
+### v1.4.2 — Abril 2026 — Metadata y stats
+- [x] Tablas `mapalab.layer_metadata` + `mapalab.layer_stats` en DataEngine
+- [x] CRUD endpoints mariachi (`/layer-metadata/*`)
+- [x] Migracion 1-shot `public.mapalab_card` → nuevas tablas (107 + 102 rows)
+- [x] Job `run_refresh_layer_stats.py` con whitelist SELECT-only
+- [x] `/metadata/` lee de nuevas tablas con fallback legacy
+- [x] ETL Google Sheet deprecado
+
+### v1.4.3 — Abril 2026 — Refactor total LayersContext
+- [x] Eliminados 9 archivos `definitions/*.js` (~1590 lineas)
+- [x] Nuevo `LayersContext` + `LayersProvider` + `useLayers()`
+- [x] 20 consumidores migrados
+- [x] `layerMetadataService` con setter module-level
+- [x] Flag `VITE_LAYERS_FROM_BACKEND` eliminado
+
+### v1.4.4 — Abril 2026 — Docs y bootstrap
+- [x] `docs/layers.md` con arquitectura completa
+- [x] Script `bootstrap-v14.sh` idempotente
+- [x] Eliminados plan y ADR obsoletos
+
+### v1.4.5 — Abril 2026 — Fix renderizado WMS
+- [x] `hydrateLayerTree` en `wmsConfig.js` construye `baseUrl` y `layerName` en cliente
+- [x] Aplicado en `LayersProvider` tras fetch
+- [x] 9 tests nuevos en `wmsConfig.test.js`
+
+### v1.4.6 — Abril 2026 — Fix InfoBox y descargas WFS
+- [x] `featureInfoService`: `getFeatureInfoForActiveLayers`/`getFeaturesInPolygonForActiveLayers` reciben `allLayers` como param
+- [x] `downloadService`: `setLayersForDownloadService` setter module-level
+- [x] `LayersProvider` invoca ambos setters tras el fetch
+
+### v1.4.7 — Abril 2026 — Fix búsqueda de capas
+- [x] `searchConfig.js`: `SEARCH_CONFIG` mutable + `rebuildSearchConfig(tree)` invocado en `LayersProvider`
+- [x] Scoring client-side con tags preservado (latencia cero)
+- [x] Endpoint backend `GET /layers/search` conservado como segundo camino
+
+### v1.4.8 — Abril 2026 — Fix indexación de leaves + docs search
+- [x] `processLayerTree` usa `Array.isArray && length > 0` en vez de truthy-check
+- [x] `docs/search.md` reescrito con flujo completo, scoring, tags, troubleshooting
+
+### v1.5.0 — Abril 2026 — Security hardening
+- [x] Template catalog para stats (reemplaza SQL libre): 8 operaciones predefinidas
+- [x] Debounce de `notify_tree_changed()` (ventana 5s)
+- [x] Eliminado `WORKSPACE_SCHEMA_MAP`: `resolve_schema` hace lookup cacheado a `mapalab.workspaces`
+- [x] Diagrama de secuencia Mermaid en `docs/layers.md`
+
+### v1.5.1 — Abril 2026 — Tests + Workflow editora + Runbook
+- [x] Workflow editora via borradores (UI diferencia por role, backend ya existía)
+- [x] Tests smoke mapalab backend (8 tests, antes había 0)
+- [x] Tests unit mariachi template catalog (18 nuevos)
+- [x] `docs/runbook-layers.md` con 8 escenarios de recuperación
+
+### v1.6.0 — Abril 2026 — Editor hardening
+- [x] Selector GeoServer dinámico en `LayerEditDrawer` (workspace / layer / styles poblados desde REST)
+- [x] Edición masiva de tags (`BulkTagsDrawer` + `PATCH /layers/bulk-tags` paste-from-Excel)
+- [x] Rate limiter en memoria sliding window (60/min writes, 120/min reads GeoServer)
+- [x] `Form.useWatch` elimina state paralelo (lint `react-hooks/set-state-in-effect`)
+
+### v1.7.0 — Abril 2026 — Editor avanzado y observabilidad
+- [x] Drop `public.mapalab_card` + remover fallbacks legacy del backend mapalab
+- [x] Drag & drop de reorden con `@dnd-kit` en el árbol del admin
+- [x] Preview InfoBox con datos dummy en el drawer
+- [x] Editor JSON para `infobox_config` custom
+- [x] Formularios dinámicos por preset InfoBox (municipio, punto, punto_municipio, punto_ubicacion, punto_completo)
+- [x] Code-split admin mariachi (lazy-load de páginas grandes)
+- [x] Endpoint `/metrics` Prometheus en mariachi API (rate_limit_hits, tree_notify, geoserver_calls, latency)
+- [x] Tests integración cruzada mariachi → DataEngine → mapalab backend
+
+### Pendiente — Diferido
 - [ ] Herramienta para comparar periodicidad de mapas (vista lado a lado)
 
-### v1.5.0 — Julio / Agosto 2026
+### v1.8.0 — Julio / Agosto 2026
 - [ ] Modo edicion de Home integrado al administrador de portal
 - [ ] Compartir estado del mapa via URL (para el componente comparar, ademas de agregar orden de capas, opacidad, etc)
 
-### v1.6.0 — Septiembre / Octubre 2026
+### v1.9.0 — Septiembre / Octubre 2026
 - [ ] Sistema de login para ciudadanos
 - [ ] Guardar compartidos
 - [ ] Sistema de capas favoritas por usuario
 
-### v1.7.0 — Noviembre 2026 / Enero 2027
+### v2.0.0 — Noviembre 2026 / Enero 2027
 - [ ] Arquitectura de capas para agilizar integracion de otras dependencias
 - [ ] Optimizacion de carga inicial y lazy loading de componentes
 

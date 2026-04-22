@@ -86,8 +86,9 @@ Servidor OGC que provee capas geoespaciales. MapaLab consume WMS/WFS/WCS.
 
 Cluster PostgreSQL 18 + PostGIS 3.6 con primary (5432) + replica (5433) + backups automaticos a Acervo.
 - GeoServer lee datos espaciales de aqui
-- Backend de MapaLab consulta tabla `mapalab_card` para metadatos
-- Download service hace `COPY TO STDOUT` para exportar CSV
+- Backend de MapaLab consulta `mapalab.layer_metadata` + `mapalab.layer_stats` (esquema `mapalab`) para metadatos y numeralia
+- Download service hace `COPY TO STDOUT` para exportar CSV; resuelve `layer_name_db` desde `mapalab.layer_metadata`
+- Container `dataengine-jobs` corre cron diario (periodicity, layer_tree, layer_stats)
 
 ### Acervo (MinIO)
 
@@ -107,7 +108,7 @@ mapalab/
 │   │   │   └── maps/      # Visor de mapas (pagina principal)
 │   │   │       ├── components/   # MapView, MapSider, InfoBox, ActiveLayers, etc.
 │   │   │       ├── hooks/        # 28 hooks especializados del mapa
-│   │   │       └── helpers/      # wmsConfig, layers/definitions/, basemaps, etc.
+│   │   │       └── helpers/      # wmsConfig, basemaps, menuItems, etc.
 │   │   ├── components/    # Componentes compartidos (Modal, Panel, Alert, etc.)
 │   │   ├── contexts/      # MapsContext, SiderContext, LayerLoadingContext, SearchContext
 │   │   ├── providers/     # MapsProvider (orquestador central), MainProvider
@@ -173,10 +174,7 @@ Router (React Router 7)
 
 ### Definiciones de capas
 
-9 archivos en `frontend/src/pages/maps/helpers/layers/definitions/` (uno por tema).
-Cada capa define: `id`, `label`, `wmsConfig`, `children`, `littleCard` (InfoBox template), `defaultDate`, `searchMeta`.
-
-Factory: `createLayerFactory(workspace)` con `.withFilter()`, `.withStyles()` para crear capas de forma consistente.
+Definiciones viven en DataEngine (schema `mapalab`). Frontend las carga via `GET /mapalab/api/layers/tree` en `LayersProvider`. El editor vive en mariachi `/administrador/mapalab/layers`. Ver `docs/layers.md` para detalles.
 
 ### URL sync bidireccional
 
@@ -191,23 +189,52 @@ Factory: `createLayerFactory(workspace)` con `.withFilter()`, `.withStyles()` pa
 | Metodo | Ruta | Funcion |
 |---|---|---|
 | GET | `/health` | Health check |
-| GET | `/metadata/?workspace=X&layer=Y` | Metadata completa de capa (numeralia, fuentes, metodologia) |
+| GET | `/metadata/?workspace=X&layer=Y` | Metadata de capa. Lee exclusivamente de `mapalab.layer_metadata` + `mapalab.layer_stats` (fallback legacy eliminado en v1.7.0) |
 | GET | `/metadata/sources?layers=w:l,w:l` | Fuentes por lotes |
+| GET | `/metrics` | Métricas Prometheus (v1.7.0+) |
 | GET | `/periodicity/?workspace=X&layer=Y` | Fechas disponibles (estructura year/month/day) |
 | GET | `/periodicity/batch?layers=w:l,w:l` | Periodicidad por lotes |
 | GET | `/download/{workspace}/{layer}?date_from&date_to` | CSV streaming via PostgreSQL COPY |
+| GET | `/layers/tree` | Árbol jerárquico de capas (ETag, lee de `mapalab.layer_tree_cache`) |
+| GET | `/layers/initial-order` | Capas activas al cargar |
+| GET | `/layers/workspaces` | Lista de workspaces |
+| GET | `/layers/search?q=X` | Búsqueda flat con path |
+| POST | `/layers/refresh-cache` | Regenera cache materializada (invocable desde mariachi) |
+| POST | `/layers/invalidate-cache` | Invalida solo caché en memoria del proceso |
 
-### Modelo principal: Mapalab_Card
+### Modelos y tablas DataEngine (schema `mapalab` + legacy `public`)
 
-Tabla de metadatos con: tema, subtema, nombre de capa GeoServer, descripcion, 8 campos de numeralia, fuentes, metodologia, archivos de metadato (TXT/XLSX), descargabilidad.
+**Fuente única (v1.4.0+):**
+- `mapalab.layers` — árbol jerárquico (250 nodos, editado por mariachi)
+- `mapalab.workspaces` — alias + geoserver_workspace + db_schema
+- `mapalab.initial_layer_order` — capas al cargar
+- `mapalab.layer_tree_cache` — JSON materializado del árbol (singleton, refresh diario)
+- `mapalab.layer_metadata` — descripción, fuentes, metodología, downloadable
+- `mapalab.layer_stats` — stats_config (queries) + values cacheadas + pie_numeralia (refresh diario)
 
-### Scheduler
+**Auxiliar:**
+- `public.layer_periodicity` — tabla autogenerada por función SQL (refresh diario)
 
-APScheduler ejecuta refresh de periodicidad diario a las 3:00 AM (Mexico City). Escanea todas las tablas con columna `fecha` y construye estructura JSONB en `public.layer_periodicity`.
+**Legacy (eliminado en v1.7.0):**
+- `public.mapalab_card` — ya no se lee desde el backend. La tabla puede seguir viva en producción como respaldo histórico hasta que se confirme que todo está migrado a `mapalab.layer_metadata`. El ETL del Google Sheet está eliminado; la migración 1-shot `make migrate-mapalab-card` sigue disponible como herramienta de recuperación idempotente.
+
+### Schedulers (viven en DataEngine, no en mapalab backend)
+
+Container `dataengine-jobs` corre cron con tres tareas diarias:
+
+| Hora | Job | Qué hace |
+|---|---|---|
+| 03:00 | `run_refresh_periodicity.py` | Invoca `SELECT public.refresh_layer_periodicity()` |
+| 04:00 | `run_refresh_layer_tree.py` | Reconstruye `mapalab.layer_tree_cache` desde `layers` |
+| 04:30 | `run_refresh_layer_stats.py` | Ejecuta los SQL de `stats_config` y guarda en `values` |
+
+Trigger manual desde cualquier repo: `make refresh-layer-tree`, `make refresh-layer-stats`, `make refresh-all` (en mapalab-dataengine).
+
+Mariachi invoca `POST /mapalab/api/layers/refresh-cache` al aprobar borradores o editar capas para refresh inmediato.
 
 ### Leader-follower
 
-En produccion (8 workers Gunicorn), solo el leader inicializa DB schema y scheduler usando file locking (`/tmp/mapalab_scheduler.lock`).
+Legacy; desde v1.4.0 el scheduler ya no corre en mapalab backend. El leader-follower de `server.py` queda para inicializaciones puntuales (`PeriodicityService.ensure_schema` idempotente).
 
 ### Connection pool
 
@@ -303,14 +330,14 @@ Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gatew
 
 ## Proximos pasos (roadmap)
 
-- **v1.3.0** — Migrar definiciones de capas del frontend a endpoint del backend (DB + CRUD + editor) — Abril/Mayo 2026
-- **v1.4.0** — Comparador de periodicidad (vista lado a lado) — Mayo/Junio 2026
-- **v1.5.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
-- **v1.6.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
-- **v1.7.0** — Arquitectura de capas, lazy loading — Noviembre 2026/Enero 2027
-- **v2.0.0** — Integracion IGIBot, 3D, dashboards, API publica — Febrero 2027+
+- **v1.4.0 — v1.5.1** — Capas dinámicas desde backend (mariachi CMS + DataEngine schema `mapalab`), security hardening, tests smoke — Abril 2026 ✅
+- **v1.6.0** — Selector GeoServer dinámico, edición masiva de tags, rate limiter en memoria — Abril 2026 ✅
+- **v1.7.0** — Drag & drop del árbol, preview InfoBox, editor JSON custom, forms dinámicos por preset, `/metrics` Prometheus, code-split admin, drop legacy `mapalab_card` — Abril 2026 ✅
+- **v1.8.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
+- **v1.9.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
+- **v2.0.0** — Arquitectura de capas para dependencias, lazy loading, IGIBot, 3D, dashboards, API publica — Febrero 2027+
 
-Ver `docs/planes/PLAN_MIGRACION_CAPAS.md` para el plan detallado de v1.3.0.
+Ver `docs/layers.md` para arquitectura de capas y `docs/roadmap.md` para timeline completo.
 
 ## Archivos .env por entorno
 
@@ -457,4 +484,4 @@ Tipos: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `style`
 | `docs/roadmap.md` | Timeline completo y checklist por version |
 | `docs/CHANGELOG.md` | Registro de cambios por version |
 | `docs/backend.md` | Stack, estructura y desarrollo local del backend |
-| `docs/planes/PLAN_MIGRACION_CAPAS.md` | Plan de migracion de capas hardcodeadas a endpoint |
+| `docs/layers.md` | Arquitectura completa del sistema de capas (v1.4.0+) |
