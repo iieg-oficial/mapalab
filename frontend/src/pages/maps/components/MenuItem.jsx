@@ -18,7 +18,7 @@ const MenuItem = ({ item, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => 
     if (!item.hasMenu) {
         if (item.onClick) {
             return (
-                <button type="button" ref={item.ref} onClick={item.onClick} className="cursor-pointer">
+                <button type="button" ref={item.ref} onClick={item.onClick} className="cursor-pointer w-full">
                     {item.component}
                 </button>
             );
