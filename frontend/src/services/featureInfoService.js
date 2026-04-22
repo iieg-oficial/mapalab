@@ -1,5 +1,4 @@
 import { findWMSConfig } from '../pages/maps/helpers/wmsConfig';
-import { layers } from '../pages/maps/helpers/layers/index';
 import { combineCQLFilters, fetchGeometryColumns, getWmsUrl, getWfsUrl, filterValidLayers, groupLayersByUrl, parseResponse } from '../utils/featureInfoUtils';
 
 const matchesFilter = (properties, cqlFilter) => {
@@ -24,8 +23,8 @@ const matchesFilter = (properties, cqlFilter) => {
     return true;
 };
 
-export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinate, getFilterFn = null, isInegiMode = false) => {
-    const validLayers = filterValidLayers(activeLayers, layers, findWMSConfig);
+export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinate, getFilterFn = null, isInegiMode = false, allLayers = []) => {
+    const validLayers = filterValidLayers(activeLayers, allLayers, findWMSConfig);
 
     if (validLayers.length === 0) return [];
 
@@ -150,8 +149,8 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
     return results.flat().filter(r => r !== null);
 };
 
-export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, polygonGeometry, getFilterFn = null, isInegiMode = false) => {
-    const validLayers = filterValidLayers(activeLayers, layers, findWMSConfig)
+export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, polygonGeometry, getFilterFn = null, isInegiMode = false, allLayers = []) => {
+    const validLayers = filterValidLayers(activeLayers, allLayers, findWMSConfig)
         .filter(({ wmsConfig }) => wmsConfig.wfsAvailable !== false);
 
     if (validLayers.length === 0) return [];

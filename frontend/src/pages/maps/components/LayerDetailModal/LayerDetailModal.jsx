@@ -6,7 +6,6 @@ import { useLayerDownload } from '../../hooks/useLayerDownload';
 import { useSider } from '@contexts/SiderContext';
 import MapsContext from '@contexts/MapsContext';
 import { findLayerDef, findWMSConfig } from '../../helpers/wmsConfig';
-import { layers as allLayers } from '../../helpers/layers/index';
 import { fetchGeometryType } from '../../../../utils/featureInfoUtils';
 import { formatDateString } from '../../helpers/dateFilterHelpers';
 import { buildLoopValues } from '../../helpers/dateLoopHelpers';
@@ -29,7 +28,8 @@ const LayerDetailModal = () => {
         selectedLayer, setSelectedLayer, applyFilter, clearFilter, getFilter, getSpecificFilter,
         getLayerOpacity, setLayerOpacity,
         getLoopState, startLoop, toggleLoop, stopLoop, inferLoopConfig,
-        getLoopPrefs, setLoopIntervalMs, setLoopDirection
+        getLoopPrefs, setLoopIntervalMs, setLoopDirection,
+        allLayers
     } = useContext(MapsContext);
     const [expandedYear, setExpandedYear] = useState(null);
 

@@ -4,8 +4,7 @@ const { mockFindLayerById } = vi.hoisted(() => ({
     mockFindLayerById: vi.fn()
 }));
 
-vi.mock('@pages/maps/helpers/layers', () => ({
-    layers: [],
+vi.mock('@pages/maps/helpers/layers/utils/layerHelpers', () => ({
     findLayerById: mockFindLayerById
 }));
 

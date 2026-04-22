@@ -1,4 +1,10 @@
-import { findLayerById, layers } from '@pages/maps/helpers/layers';
+import { findLayerById } from '@pages/maps/helpers/layers/utils/layerHelpers';
+
+let currentLayers = [];
+
+export const setLayersForMetadataService = (newLayers) => {
+    currentLayers = Array.isArray(newLayers) ? newLayers : [];
+};
 
 const API_HOST = import.meta.env.VITE_BACKEND_API_HOST?.replace(/\/+$/, '');
 const METADATA_ENDPOINT = `${API_HOST}/metadata/`;
@@ -53,7 +59,7 @@ const extractWorkspaceFromBaseUrl = (baseUrl) => {
 };
 
 const getLayerRequestParams = (layerId) => {
-    const layerNode = findLayerById(layerId, layers);
+    const layerNode = findLayerById(layerId, currentLayers);
     if (!layerNode) return null;
 
     const layerWithConfig = findLayerWithWMS(layerNode);
@@ -68,7 +74,7 @@ const getLayerRequestParams = (layerId) => {
 };
 
 const getPeriodicityRequestParams = (layerId) => {
-    const layerNode = findLayerById(layerId, layers);
+    const layerNode = findLayerById(layerId, currentLayers);
     if (!layerNode) return null;
 
     const layerWithConfig = findLayerWithWMS(layerNode);
