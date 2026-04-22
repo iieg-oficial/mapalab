@@ -17,7 +17,10 @@ vi.mock('@pages/maps/helpers/layers/index', () => ({
             ]
         },
         { id: 'orphan' }
-    ],
+    ]
+}));
+
+vi.mock('@pages/maps/helpers/layers/utils/layerHelpers', () => ({
     findLayerById: mockFindLayerById,
     getAllChildLayerIds: mockGetAllChildLayerIds
 }));
@@ -36,6 +39,31 @@ describe('useLayerManagement - activeLayerIds', () => {
         const { result } = renderHook(() => useLayerManagement());
         act(() => result.current.setActiveLayerIds(['capa-1']));
         expect(result.current.activeLayerIds).toEqual(['capa-1']);
+    });
+
+    it('soporta setActiveLayerIds con updater funcional', () => {
+        const { result } = renderHook(() => useLayerManagement());
+        act(() => result.current.setActiveLayerIds(['a', 'b']));
+        act(() => result.current.setActiveLayerIds(prev => [...prev, 'c']));
+        expect(result.current.activeLayerIds).toEqual(['a', 'b', 'c']);
+    });
+});
+
+describe('useLayerManagement - delegación a helpers', () => {
+    it('findLayerById delega al helper con la lista de layers', () => {
+        mockFindLayerById.mockReturnValue({ id: 'x', name: 'X' });
+        const { result } = renderHook(() => useLayerManagement());
+        const layer = result.current.findLayerById('x');
+        expect(mockFindLayerById).toHaveBeenCalledWith('x', expect.any(Array));
+        expect(layer).toEqual({ id: 'x', name: 'X' });
+    });
+
+    it('getAllChildLayerIds delega al helper con la lista de layers', () => {
+        mockGetAllChildLayerIds.mockReturnValue(['c-1', 'c-2']);
+        const { result } = renderHook(() => useLayerManagement());
+        const ids = result.current.getAllChildLayerIds('parent');
+        expect(mockGetAllChildLayerIds).toHaveBeenCalledWith('parent', expect.any(Array));
+        expect(ids).toEqual(['c-1', 'c-2']);
     });
 });
 

@@ -63,13 +63,14 @@ const QualitySelector = ({ value, onChange, isPanelOpen }) => {
             </div>
             <div className="flex justify-between mt-1">
                 {QUALITY_PRESETS.map((p, i) => (
-                    <span
+                    <button
+                        type="button"
                         key={i}
                         onClick={() => onChange(i)}
                         className={`text-xs cursor-pointer transition-colors ${i === value ? 'text-[#FF8300] font-bold' : 'text-gray-400'}`}
                     >
                         {p.label}
-                    </span>
+                    </button>
                 ))}
             </div>
         </div>

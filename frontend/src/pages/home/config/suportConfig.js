@@ -1,4 +1,4 @@
-import icoQuestion from '@assets/icons/ico_preguntas.png';
+import icoQuestion from '@assets/icons/ico_preguntas.webp';
 import icoAvisoPrivacidad from '@assets/icons/ico_aviso_privacidad.svg';
 
 const suportConfig = [{

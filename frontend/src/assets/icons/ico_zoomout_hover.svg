@@ -1,6 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-  <g id="ico_zoomout_hover" transform="translate(-8 -8)">
-    <rect id="Rectángulo_14222" data-name="Rectángulo 14222" width="24" height="24" transform="translate(8 8)" fill="none"/>
-    <path id="Trazado_34858" data-name="Trazado 34858" d="M10,1.5H0A1.5,1.5,0,0,1-1.5,0,1.5,1.5,0,0,1,0-1.5H10A1.5,1.5,0,0,1,11.5,0,1.5,1.5,0,0,1,10,1.5Z" transform="translate(15 20.5)" fill="#5c2472"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z" data-name="Rectángulo 14222"/><path fill="#5c2472" d="M17 14H7a1.5 1.5 0 0 1-1.5-1.5A1.5 1.5 0 0 1 7 11h10a1.5 1.5 0 0 1 1.5 1.5A1.5 1.5 0 0 1 17 14" data-name="Trazado 34858"/></svg>

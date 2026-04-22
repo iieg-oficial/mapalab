@@ -15,7 +15,7 @@ const Home = () => {
                 description="Explora información geoespacial del estado de Jalisco con mapas interactivos, capas temáticas y datos estadísticos del IIEG."
             />
             <div
-                className='min-h-screen bg-white'
+                className='min-h-screen bg-white overflow-x-hidden'
                 style={{
                     backgroundImage: `url(${bgHome})`,
                     backgroundSize: 'cover',

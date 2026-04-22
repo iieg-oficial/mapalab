@@ -19,8 +19,10 @@ backend/
 │   ├── consts/            # Constantes del proyecto
 │   ├── databases/         # Conexiones a bases de datos
 │   ├── exceptions/        # Excepciones personalizadas
-│   ├── routes/            # Endpoints de la API
+│   ├── routers/           # Endpoints de la API
 │   ├── schemas/           # Modelos Pydantic/SQLModel
+│   ├── models/            # Modelos SQLAlchemy
+│   ├── repositories/      # Acceso a datos
 │   ├── services/          # Logica de negocio
 │   └── utils/             # Utilidades comunes
 │       └── logger.py      # Configuracion de logging

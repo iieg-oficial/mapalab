@@ -48,15 +48,21 @@ timeline
             : Marcadores interactivos con InfoBox
             : Boton centrar Jalisco y version global
             : Modal de novedades desde marker IIEG
-        Mayo - Junio 2026 (v1.2.0)
+        Abril 2026 (v1.2.0)
+            : Loop de fechas generalizado (raster y vectorial)
+            : Edicion en-mapa de Emoji/Texto
+            : InfoBox mobile como bottom-sheet
+        Abril - Mayo 2026 (v1.3.0)
+            : Migrar definiciones de capas al backend
+        Mayo - Junio 2026 (v1.4.0)
             : Comparador de periodicidad
-        Julio - Agosto 2026 (v1.3.0)
+        Julio - Agosto 2026 (v1.5.0)
             : Editor de Home desde admin
             : Compartir estado del mapa via URL
-        Septiembre - Octubre 2026 (v1.4.0)
+        Septiembre - Octubre 2026 (v1.6.0)
             : Login para ciudadanos
             : Capas favoritas por usuario
-        Noviembre 2026 - Enero 2027 (v1.5.0)
+        Noviembre 2026 - Enero 2027 (v1.7.0)
             : Arquitectura de capas para dependencias
             : Lazy loading y optimizacion
     section v2.0.0 — MapaLab Platform
@@ -66,8 +72,6 @@ timeline
             : Dashboards geoespaciales
             : API publica
 ```
-
-[Diagrama de timeline online](https://mermaid.live/edit#pako:eNp9Vdty4kYQ_ZUuPWVrbRawDTFvGGzWWyZml022KsVLo2nkyUrT2rlQxi5X5SPyhfmStCQMBMk7xcOIOTN9-kz3mecoZkXRIPI6o1QbWhiQ4bVPCaaY4x0u4QujyjCvlhzFXrOBdafVbrXh37__gRFm2jAg5JZViGNZrrDF-I3XmrKlJei2uxfwy7rdkp3v9oBiDODaeRtiHyzCEh1BxoYt5XyMG3P8nSxsXicjznJ2dAyb4ndaaclB0VrABbE9ZKzjY0oXDZT-0I6tHACSOzq4z8nc4YasOwbeGk-JxSJvmBDPya6F2bfp_MO3m_kx-AqFt1Fwg84PZ7fwHmbsfGJp_vluj702ZLmg1yvp9RvozbWiJZYE45JgLOFjFCpsNdZIztBQugej3OK6jpqywhKlyGMq-m1k5mK0Ce6hNyTaHdK7bF3U6I3KMOVdbiDVmfbkIAtGtM8xpQYRV3zFj0XsFaEUQh0yI6tZyQEKFShtpOxiBCtCkj3G3gw_S1x6zNn66ma2F_nTNPq1NCbMicgwNJhuvI5rnObX9xKnqA2YWMwf9utTtE__O_yydvhXct6BaOJRMnNAoPelVBP09sNoXF7yRPuPYQnDshHdGxHL9qxFHFOe8uaNVt2qbIPUlZAx8vNspbMrsBRMUzuGTGA7iaVa8lRTEqhmF4-VWQhlTuUKyx0byOgvtoeFOFxane6zaDKLqraU1LPbNYGT4Muqt2reYlTOomzBbxncj0AKd51wKN-G4RQ-yX0cqNhtii-mgxZVZQ_5QVnukZ9Cqovjhom098F5Z03mp7SvzvrIGW2TEc_Vpjmy1xakdIRAKUJR1rDWCL9_ObCQOeV-a3OncC_WujW8isZ5A407TrSBIjOIdZBs0LBr1n6Fa3EZLzNpMAguFAX8hun3JP7Oz_pl9Ca7HdofQUyiegN2PlWyUST9pcjEDb52h0_iL_JCaZNIObEknemngw7aVWB392C9PmyzFP2KbdboCf33P_P5og9vJ7dX7BuejYDplgKcjWstg-5hyWiVg4RY2kWATYZYPA55WKbicdFJlFitooG8kXQSZWQzLD6j52LTIvIPlNEiGshU0QpD6hfRwrzIthzNn8zZ607LIXmIBitMnXyFXMlzMdYoSWW7f20htR1xMD4aiA7lIdHgOXqMBqfnrU73rHt-3r3o9i57nV6_T6f9k2gjSyJuMfqdbrv3a-dcBDy77Jz1X06ip5KBCWn68h_f-GrN)
 
 ## Camino a MapaLab Platform
 
@@ -205,9 +209,10 @@ timeline
 - [x] `docs/cache.md` con inventario de caches del proyecto
 - [x] `getDefaultMapView()` / `getMinZoom()` en `helpers/defaultView.js`
 
-### v1.3.0 — Migrar capas a backend
+### v1.3.0 — Abril / Mayo 2026
 - [ ] Migrar lista de capas del sidebar a endpoint del backend
 - [ ] Endpoint de busqueda de capas desde backend
+- [ ] Refactor de `littleCard` a forma JSON-serializable (`headerTransform`, raster mensual)
 
 ### v1.4.0 — Mayo / Junio 2026
 - [ ] Herramienta para comparar periodicidad de mapas (vista lado a lado)

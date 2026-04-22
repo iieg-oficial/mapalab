@@ -3,6 +3,7 @@ import SearchBar from './SearchBar';
 import Card from './Card';
 import TitleAndNote from './TitleAndNote';
 import Icon from '@components/Icon';
+import { handleKeyActivate } from '@utils/a11y';
 import topicsConfig from '../config/topicsConfig';
 import guideConfig from '../config/guideConfig';
 import selectConfig from '../config/selectConfig';
@@ -120,15 +121,19 @@ const Body = ({ isModal = false }) => {
             </div>
             <div className="pt-5 relative">
                 <TitleAndNote title={selectConfig.title} description={selectConfig.description} />
+                {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- drag-scroll en contenedor con rol region; keyboard users usan scroll nativo con flechas */}
                 <div
                     ref={carouselRef}
+                    role="region"
+                    aria-label="Carrusel de opciones"
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseLeave}
                     className="
                         flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth ml-[3%] xl:ml-[5%]
-                        mt-8 px-4 md:px-10 scrollbar-thin scrollbar-hidden cursor-grab select-none
+                        mt-8 px-4 md:px-10 cursor-grab select-none
+                        [&::-webkit-scrollbar]:hidden [scrollbar-width:none]
                     "
                 >
                     
@@ -239,7 +244,11 @@ const Body = ({ isModal = false }) => {
                             return (
                                 <div
                                     key={index}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-expanded={isExpanded}
                                     onClick={() => toggleFaq(item.id, index)}
+                                    onKeyDown={handleKeyActivate(() => toggleFaq(item.id, index))}
                                     className={`bg-white rounded-[13px] my-4 py-8 px-4 lg:pr-9 lg:pl-[106px] cursor-pointer ${isModal ? 'md:mx-10' : ''}`}
                                 >
                                     <div className="flex items-center justify-between">

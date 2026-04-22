@@ -3,7 +3,8 @@ import MapsContext from '@contexts/MapsContext';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 import { getFeatureInfoForActiveLayers, getFeaturesInPolygonForActiveLayers } from '@services/featureInfoService';
 import { toLonLat } from 'ol/proj';
-import { findLayerById, layers as allLayers, collectLayersWithWMS, findParentGroup } from '../helpers/layers/index';
+import { layers as allLayers } from '../helpers/layers/index';
+import { findLayerById, collectLayersWithWMS, findParentGroup } from '../helpers/layers/utils/layerHelpers';
 
 const FEATURE_INFO_LOADING_ID = 'feature_info_query';
 

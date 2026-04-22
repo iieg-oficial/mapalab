@@ -167,6 +167,7 @@ Detalles:
 - La herramienta `Descargar N tarjeta(s)` aparece solo cuando `totalFeatures > 1`, muestra el contador en naranja (`#FF8300`) y lleva el tooltip legal de `LicenseTooltipContent`
 - Cada card usa `MobileFeatureHeader` (barra lateral morada + titulo, sin bloque `#EFF3FC`) en vez del `Header` desktop. La bifurcacion vive en `renderCard(variant)` pasando `'mobile'` desde `InfoBox`
 - Cada card se envuelve en `SwipeToRemove` — deslizar horizontalmente (umbral 100px) elimina la tarjeta. Muestra etiqueta "Desliza para eliminar" (gris) y "Eliminando…" (rosa) cruzando el umbral. No hay boton X en el header mobile para evitar saturacion
+- Al confirmar el swipe, `SwipeToRemove` mide `offsetHeight` del wrapper, fija esa altura y transiciona `max-height` y `margin-top` a `0px` (220ms ease-out) en paralelo con el `translateX` horizontal. Esto evita el salto de las cards restantes: se deslizan hacia arriba ocupando el espacio que va liberando la card eliminada
 - `renderCard(variant='mobile')` propaga `variant` a `Text`, `List`, `Cards`, `IconText`, `Label` para usar tipografias mas grandes (`text-[12px]` vs `text-[10px]` desktop). Los `Cards` fuerzan `grid-cols-2` aunque el template no lo especifique
 - El area scrollable usa `<ScrollContainer>` (`@components/ScrollContainer`) con `overlayFade` + `overlayColor="#F9FBFF"`, que ya incluye las flechas bounce arriba/abajo y el gradient fade
 - `useViewportContainment` queda inerte porque `panelRef.current` es `null` (el panel desktop no se renderiza)

@@ -77,6 +77,7 @@ const FeatureEditToolbar = ({
         const scaleUp = () => onScale?.(Math.min(SCALE_MAX, +(currentScale + SCALE_STEP).toFixed(2)));
 
         return (
+            // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- toolbar contenedor; stopPropagation previene que el mapa reciba drag/touch
             <div
                 className="flex items-center gap-1 px-2 py-2 bg-[#F9FBFF] rounded-[12px] shadow-[0_5px_20px_#1A26641A] border border-[#E6E9F0]"
                 onMouseDown={(e) => e.stopPropagation()}

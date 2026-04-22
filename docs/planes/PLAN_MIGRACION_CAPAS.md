@@ -1,5 +1,7 @@
 # Plan de Migración: Definiciones de Capas Hardcodeadas → Endpoint Dinámico
 
+> **Estado:** Diseño, sin iniciar implementación. Las tablas `layers`, `initial_layer_order`, `workspaces` y los endpoints `/api/layers/*` / `/api/geoserver/*` aún no existen en el backend. Planeado para v1.3.0 del roadmap.
+
 ## 1. Estado Actual (Lo que hay)
 
 ### Frontend — 9 archivos hardcodeados en `frontend/src/pages/maps/helpers/layers/definitions/`

@@ -6,6 +6,26 @@ import Cards from '../components/Cards';
 import Text from '../components/Text';
 import { cardTemplates, CARACTERISTICA_STYLE } from './cardTemplates';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
+import { formatIsoAsMonthYear } from '@pages/maps/helpers/dateFilterHelpers';
+
+export const applyHeaderTransform = (transform, value, featureId) => {
+    if (!transform) return value;
+    let result = transform.valueMap?.[value] ?? value;
+    if (transform.featureIdSuffix) {
+        const { match, ifMatch, ifNoMatch } = transform.featureIdSuffix;
+        const suffix = featureId?.includes(match) ? ifMatch : ifNoMatch;
+        if (suffix) result = `${result} ${suffix}`;
+    }
+    return result;
+};
+
+export const resolveStaticValue = (value, dateValue) => {
+    if (typeof value !== 'object' || value === null) return value;
+    if (value.dynamic === 'rasterDate') {
+        return formatIsoAsMonthYear(dateValue) || value.fallback;
+    }
+    return value;
+};
 
 const extractSuffixFromLayerId = (layerId) => {
     if (!layerId) return null;
@@ -37,7 +57,7 @@ const shouldIncludeField = (fieldName, suffix) => {
     return !otherSuffixes.some(otherSuffix => fieldLower.includes(otherSuffix));
 };
 
-export const renderCard = (properties, config, onClose, layerId = null, featureId = null, onAction = null, variant = 'desktop', cardIndex = null, cardTotal = null) => {
+export const renderCard = (properties, config, onClose, layerId = null, featureId = null, onAction = null, variant = 'desktop', cardIndex = null, cardTotal = null, dateValue = null) => {
     const suffix = extractSuffixFromLayerId(layerId);
     const isMobile = variant === 'mobile';
 
@@ -58,7 +78,7 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
     if (finalConfig.headerField) {
         const headerValueFromProperties = getValue(finalConfig.headerField);
         const rawHeaderValue = headerValueFromProperties || finalConfig.headerField;
-        titleValue = finalConfig.headerTransform ? finalConfig.headerTransform(rawHeaderValue, featureId) : rawHeaderValue;
+        titleValue = applyHeaderTransform(finalConfig.headerTransform, rawHeaderValue, featureId);
     }
 
     if (finalConfig.labels) {
@@ -91,10 +111,12 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
 
             if (group.staticValues) {
                 group.staticValues.forEach((value, idx) => {
+                    const resolvedValue = resolveStaticValue(value, dateValue);
+                    if (resolvedValue == null || resolvedValue === '') return;
                     groupElements.push(
                         <Label
                             key={`labelgroup-${groupIdx}-static-${idx}`}
-                            value={value}
+                            value={resolvedValue}
                             color={group.color}
                             bg={group.bg}
                         />

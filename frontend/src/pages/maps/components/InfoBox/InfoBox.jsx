@@ -124,11 +124,9 @@ const InfoBox = () => {
     };
 
     const renderItem = (feature, layerId, onClose, resultLittleCard, cardIndex = null, cardTotal = null) => {
-        const rawConfig = resultLittleCard || findLayerById(layerId, allLayers)?.littleCard;
-        const config = typeof rawConfig === 'function'
-            ? rawConfig(getSpecificFilter?.(layerId, 'date'))
-            : rawConfig;
-        return renderCard(feature.properties, config, onClose, layerId, feature.id, handleAction, isMobile ? 'mobile' : 'desktop', cardIndex, cardTotal);
+        const config = resultLittleCard || findLayerById(layerId, allLayers)?.littleCard;
+        const dateValue = getSpecificFilter?.(layerId, 'date');
+        return renderCard(feature.properties, config, onClose, layerId, feature.id, handleAction, isMobile ? 'mobile' : 'desktop', cardIndex, cardTotal, dateValue);
     };
 
     const handleDownload = () => {

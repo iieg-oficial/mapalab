@@ -7,6 +7,83 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+### Agregado
+- `Badge` component extendido: props `color` (`orange`/`purple`/`pink`/`violet`), `size` (`sm`/`md`), `variant` (`count`/`pill`), `text`, `onClick`. Default retrocompatible (orange, md, count)
+- Sistema de "nueva característica" en `Badge` via prop `featureKey`: marca visualmente un feature nuevo, al hacer click se persiste en `localStorage` (`mapalab:feature-seen:<key>`) y no vuelve a aparecer hasta que otra key diferente active un nuevo feature
+- Hook `useFeatureSeen(key)` en `@hooks/useFeatureSeen` — retorna `[seen, markSeen]`, tolera errores de localStorage (modo privado, quota)
+- Auto-pausa de loops temporales al ocultar una capa: `useDateLoop` recibe `hiddenLayerIds` y detiene cualquier loop activo cuya capa pase a estado oculto (evita tile requests WMS desperdiciados)
+- **Chunk splitting en Vite**: `build.rollupOptions.output.manualChunks` separa `vendor-react`, `vendor-router`, `vendor-ol`, `vendor-dnd`, `vendor-lottie` y `vendor-export`. El chunk de entrada baja de 678 kB → 105 kB (gzip 205 → 30 kB)
+- `rollup-plugin-visualizer` detrás de `VITE_ANALYZE=1` para treemap y JSON de stats (`dist/stats.html`, `dist/stats.json`)
+- Regla ESLint `no-restricted-imports` que bloquea todo import `.png` con mensaje explicando la alternativa (WebP/SVG). Rompe el build si se intenta meter un PNG sin `eslint-disable-next-line` justificado
+- `knip` (dead-code checker) + scripts `check:dead-code` (informativo) y `check:dead-code:strict` (bloqueante). Config en `frontend/knip.json`
+- `lint-staged` corriendo ESLint solo sobre archivos staged en el pre-commit hook
+- `.githooks/pre-commit` agrega `npx lint-staged` tras el sync-version
+- `.githooks/pre-push` agrega `npm run check:dead-code:strict` después de lint y tests
+- CI (`.github/workflows/test-frontend.yml`) agrega los pasos `Dead code check` y `Build` al final del pipeline
+- **Sentry** (`@sentry/react` + `@sentry/vite-plugin`) para error tracking en producción. Init en `main.jsx` gated por `VITE_SENTRY_DSN` (sin DSN, SDK no se activa — zero impacto en dev). `<Sentry.ErrorBoundary>` envuelve el `RouterProvider`. Sourcemap upload automático en CI si `SENTRY_AUTH_TOKEN` está configurado. Filtros anti-ruido: GTM, Google Analytics, YouTube embed (que genera `ERR_BLOCKED_BY_CLIENT` en navegadores con adblocker)
+- Plugin **jsx-a11y** de ESLint con `flatConfigs.recommended`. Reglas noisy (`click-events-have-key-events`, `no-static-element-interactions`) en `off` por ahora — migrar `<div onClick>` → `<button>` queda como follow-up. El resto (labels, autofocus, non-interactive handlers) enforced desde ahora
+- **Coverage thresholds** en `vitest.config.js`: lines 60%, functions 65%, branches 40%, statements 55%. CI corre `npm run test:coverage` en lugar de `npm test` para enforzarlos
+- **Dependabot** configurado (`.github/dependabot.yml`): scan semanal de deps npm + GitHub Actions, agrupado por familias (eslint, testing, sentry, openlayers, react) para reducir ruido de PRs
+- Chunk `vendor-sentry` separado en `manualChunks` (14 kB gz, se carga solo si `VITE_SENTRY_DSN` está seteado)
+- Plan `docs/planes/PLAN_GLITCHTIP.md` para migrar a GlitchTip self-hosted sobre huachicol cuando haya capacidad (evitar datos de errores en SaaS externo)
+- **Sentry Python SDK en backend**: `sentry-sdk[fastapi]` en requirements, init gated por `SENTRY_DSN` en `server.py`. Instrumentación automática de FastAPI. Variables `SENTRY_DSN` y `SENTRY_TRACES_SAMPLE_RATE` en `.env.example`
+- **Dependabot para pip** (backend): scan semanal, grupos `fastapi-stack` y `sqlalchemy`
+- **Security headers conservadores** en `nginx/nginx.conf`: `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` (geolocation=self, microphone/camera=none). CSP queda como follow-up (requiere inventario completo de orígenes)
+- Util `@utils/a11y.js` con `handleKeyActivate(callback)` para agregar soporte de teclado (Enter/Space) a elementos interactivos
+- Alias `@utils` en `vite.config.js` (ya estaba en vitest)
+- Tests: `LottieSpinner.test.jsx` (2 tests), `useFeatureSeen.test.js` (7 tests), `layerExtentService.test.js` (8 tests) — 452 → 469 tests
+- **Servicio `layerExtentService.js`** con `fetchLayerExtent(layer)`: hace WFS `GetFeature` en `EPSG:3857`, parsea GeoJSON con `ol/format/GeoJSON` + `ol/source/Vector`, retorna `source.getExtent()`. Cachea por `baseUrl|layerName|cqlFilter` (LRU max 50), timeout 10s, tolera errores retornando `null`. Exporta `clearExtentCache()` para tests/reset
+- **Modo dinámico `defaultZoom: 'fit'`** (también `{ fit: true }`) en `applyDefaultZoom` (`useLayerToggle.js`): hace fetch del extent real de las features y llama `view.fit(extent, { padding: [40,40,40,40], maxZoom: 18, duration: 500 })`. Alternativa al extent hardcoded para capas donde el bbox es incierto o cambia en GeoServer. Documentado en `docs/zoom.md`
+- **3 capas Primavera** (`bosque_de_la_primavera`, `agave_primavera`, `parcelas_primavera`) usan `defaultZoom: 'fit'` — encuadran al extent real del ANP dinámicamente
+- Constantes `FIT_PADDING`, `FIT_MAX_ZOOM`, `FIT_DURATION` en `useLayerToggle.js` para unificar los parámetros de `view.fit` / `view.animate`
+- `role="region"` en carrusel de opciones en Home para etiquetado semántico
+- `aria-pressed` en `ActiveLayerItem` para indicar estado seleccionado
+- `aria-expanded` en cards de FAQ en Home para indicar estado colapsado/expandido
+
+### Cambiado
+- Labels de los botones del header de `ActiveLayersList` (Mostrar/Ocultar, Eliminar, Pausar animaciones) ahora son visibles siempre cuando hay ≤ 2 botones; se ocultan automáticamente cuando hay > 2 (ej. cuando aparece el de pausa global). Lógica a prueba de futuros botones via `visibleHeaderButtons`
+- 3 badges hardcodeados en `ActiveLayersList` (conteo de visibles, eliminar, loops activos) y el pill `index/total` de `MobileFeatureHeader` migrados al componente `Badge` con sus props semánticos
+- Controles de periodicidad en `ActiveLayerItem` (label de fecha, play/pause, velocidad, dirección) se ocultan cuando `layer.visible === false` — un solo guard en el contenedor padre
+- Botón play/pause en `ActiveLayerItem` siempre se renderiza junto a velocidad/dirección (antes desaparecía cuando `canPlayLoop === false`). Si no hay config inferible de loop, se renderiza `disabled` con `opacity-50 cursor-not-allowed`
+- `gap-3` → `gap-2 md:gap-3` en el row de botones del header de `ActiveLayersList` para mejor ajuste en viewports angostos
+- `SwipeToRemove`: al confirmar el swipe, la card eliminada ahora colapsa su `max-height` y `margin-top` a `0` en paralelo con el `translateX` (transición 220ms ease-out). Las cards restantes se deslizan hacia arriba suavemente en vez de saltar al desaparecer la eliminada
+- **Mobile — paneles de capas ya no bloquean clicks del mapa**: `MapLayersPanels` añade `max-md:pointer-events-none` al contenedor `Panel` (transparente), y los paneles internos (`ActiveLayersList`, `SymbologyPanel`, wrapper del `Message`) añaden `max-md:pointer-events-auto`. En mobile los clicks pasan por las zonas vacías/gap del panel al mapa, permitiendo mediciones a la altura de Simbología/Capas Activas
+- **Home — scroll**: `min-h-screen` root con `overflow-x-hidden` (previene overflow horizontal residual de `mx-[3%]` / `ml-[3%]` + cards del carrusel). Carrusel de opciones con `[&::-webkit-scrollbar]:hidden [scrollbar-width:none]` (antes usaba `scrollbar-thin scrollbar-hidden`, clases inexistentes)
+- **Scrollbar vertical global personalizado** en `index.css`: `html { scrollbar-width: thin; scrollbar-color: rgb(156 163 175 / 0.5) transparent }` + `html::-webkit-scrollbar { width: 6px }` con thumb gris translúcido y hover más oscuro. Aplica a toda la app
+- **11 assets PNG → WebP** (lossless `cwebp -lossless`): `ico_preguntas`, `bannerHeader`, `img_info_banner`, `img_descargada_banner`, `img_herramientas_banner`, y los 6 `minimap_{estatal,federal}_{voyager,positron,sin_mapa}`. Ahorro ~170 kB sobre la optimización previa con `oxipng`. Imports actualizados en `selectConfig.js`, `bannerConfig.js`, `suportConfig.js`, `minimapImages.js`
+- Imports dinámicos de OpenLayers (`ol/style`, `ol/layer/Vector`, etc.) en `useMapMarker.js` y `MapControls.jsx` convertidos a estáticos (ya estaban en el bundle; el `import()` no lograba code-split)
+- Barrel `pages/maps/helpers/layers/index.js` reducido a solo re-exportar `findLayerById` y `layers`. Los consumidores (`useLayerManagement`, `useActiveLayersLogic`, `useFeatureInfo`) importan directo desde `utils/layerHelpers`
+- Barrel `pages/maps/components/ActiveLayers/index.js` reducido a solo `ActiveLayersList`
+- **Lottie lazy-loaded**: extraído `LottieSpinner.jsx` como componente dedicado, cargado via `React.lazy` + `Suspense` en `Logo.jsx`. El chunk `vendor-lottie` (82 kB gz) ya no está en el path inicial — se carga solo cuando Logo monta, en paralelo al resto
+- **`vendor-export` dividido** en dos chunks: `vendor-download` (jszip + pako + fast-png + fflate + iobuffer, 46 kB gz — solo para descargas) y `vendor-export` (jspdf + html2canvas + deps, 220 kB gz — solo para MapExport). Usuarios que solo descargan ya no cargan las libs de PDF
+- CI usa `npm run test:coverage -- --run` en lugar de `npm run test -- --run` para que los thresholds rompan el build si la cobertura baja
+- **Lottie condicionado a `isLoading`**: `LottieSpinner` ya no se renderiza si el usuario nunca ha disparado un estado de carga — el chunk `vendor-lottie` (82 kB gz) se descarga solo bajo demanda real. Estado `lottieNeeded` se activa en el primer `isLoading=true` y se mantiene para permitir fade-outs subsecuentes
+- **A11y: `<div onClick>` refactorizados a `<button type="button">` o con `role="button" tabIndex={0} onKeyDown`** en:
+  - `Badge`, `Icon`: span clickeable ahora condicionalmente `<button>` cuando hay onClick
+  - `MobileSheet`: backdrop como `<button aria-label="Cerrar">` con fondo full-bleed
+  - `Body.jsx`: FAQ cards con `role=button`, `aria-expanded`, `onKeyDown` para teclado
+  - `ActiveLayerItem`: capa clickeable con `role=button`, `tabIndex=0`, `aria-pressed`
+  - `ActiveLayersList`: 3 toggles del header (visibilidad, eliminar, pausar) convertidos a `<button>` con `disabled` apropiado
+  - `LayerItem`, `LayerDetailModal`, `QualitySelector`, `MenuItem`: span/div con click → `<button>`
+  - Reglas ESLint `click-events-have-key-events` y `no-static-element-interactions` reactivadas
+
+### Corregido
+- Import no usado `openDataImg` en `MapAttribution.jsx` — limpia el error de lint preexistente
+
+### Eliminado
+- Dependencia `axios` (no usada, el proyecto usa `fetch` nativo)
+- devDep `@testing-library/user-event` (sin usos en tests)
+- 4 PNGs huérfanos en `src/assets/images/`: `img_link_share.png` (el OG image vive en `public/`), `testBG.png`, `search.png`, `80x15_open_data.png`
+- 9 componentes `.jsx` detectados por knip como muertos: `components/ConfirmModal.jsx`, `components/HamburgerMenu.jsx`, `components/Navigation.jsx`, `components/MenuItem.jsx`, `pages/home/components/PrimaryButton.jsx`, `pages/maps/components/NavigationButton.jsx`, `pages/maps/components/InfoBox/components/LabelGroup.jsx`, `pages/maps/components/MapExport/ExportMapFooter.jsx`, `pages/maps/components/MapExport/utils/layoutHeader.jsx`
+- Funciones sin usar: `getLayersWithWMS`, `loadLayerSymbology`, `loadMultipleLayersSymbology` (`layerHelpers.js`); `isCategoryLayer` (`symbologyHelpers.js`); `getSearchConfigByTheme` (`searchConfig.js`); hook `useSiderAnchoredPosition` (`SiderContext.jsx`)
+- Constantes sin usar: `SIDER_TRANSITION_LEFT`, `SIDER_TRANSITION_BOTH` (`constants/sider.js`)
+- `export default` sin consumir en `SiderContext.jsx`, `SearchContext.jsx`, `useFeatureSeen.js`
+- Exports degradados a locales (usados solo internamente): `createBaseItems`/`createCategoryItems` (`menuItems.jsx`), `getWMSLayerName` (`symbologyHelpers.js`), `fetchWithProgress` (`downloadService.js`), `SEARCH_CONFIG` (`searchConfig.js`), `isMobileViewport` (`defaultView.js`), `FEATURE_SEEN_PREFIX` (`useFeatureSeen.js`)
+
+### Rendimiento
+- Bundle inicial menor y chunks con hash estable: los `vendor-*` cambian solo cuando se actualiza la librería, mientras el código de app cambia seguido. Mejor cacheo en navegadores y gateway-hub
+- Assets estáticos (imágenes de branding y minimaps) ~170 kB totales menos tras migración a WebP
+
 ## [1.2.0] - 2026-04-17
 
 ### Agregado

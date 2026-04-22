@@ -1,18 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="50" height="50" viewBox="0 0 50 50">
-  <defs>
-    <clipPath id="clip-path">
-      <rect id="Rectángulo_14102" data-name="Rectángulo 14102" width="26.402" height="27.593" fill="#703088"/>
-    </clipPath>
-  </defs>
-  <g id="Grupo_16241" data-name="Grupo 16241" transform="translate(-1600 -412)">
-    <g id="Elipse_9" data-name="Elipse 9" transform="translate(1600 412)" fill="#f7f0fa" stroke="#703088" stroke-width="1">
-      <circle cx="25" cy="25" r="25" stroke="none"/>
-      <circle cx="25" cy="25" r="24.5" fill="none"/>
-    </g>
-    <g id="Grupo_16086" data-name="Grupo 16086" transform="translate(1611.799 423.203)">
-      <g id="Grupo_16085" data-name="Grupo 16085" transform="translate(0 0)" clip-path="url(#clip-path)">
-        <path id="Trazado_34506" data-name="Trazado 34506" d="M13.119,0a13.1,13.1,0,0,0-11.6,19.227L.741,24.9a2.372,2.372,0,0,0,.836,2.169A2.329,2.329,0,0,0,3,27.593a2.253,2.253,0,0,0,.751-.128l5.459-1.886h0A13.116,13.116,0,1,0,13.119,0Zm0,24.1a10.909,10.909,0,0,1-3.545-.6.975.975,0,0,0-.694,0l-5.8,2a.138.138,0,0,1-.156,0,.238.238,0,0,1-.085-.241L3.676,19.2a1.11,1.11,0,0,0-.128-.667,10.988,10.988,0,1,1,9.571,5.573ZM15.6,19.143a1.079,1.079,0,0,1-1.063,1.063H11.7a1.063,1.063,0,0,1,0-2.127h.355V11.7H11.7a1.063,1.063,0,1,1,0-2.127h1.418a1.079,1.079,0,0,1,1.063,1.063v7.444h.355A1.079,1.079,0,0,1,15.6,19.143ZM11.347,7.09a1.418,1.418,0,1,1,1.417,1.418A1.419,1.419,0,0,1,11.347,7.09Z" transform="translate(0 0)" fill="#703088"/>
-      </g>
-    </g>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50"><defs><clipPath id="a"><path fill="#703088" d="M0 0h26.402v27.593H0z" data-name="Rectángulo 14102"/></clipPath></defs><g data-name="Grupo 16241"><g fill="#f7f0fa" stroke="#703088" data-name="Elipse 9"><circle cx="25" cy="25" r="25" stroke="none"/><circle cx="25" cy="25" r="24.5" fill="none"/></g><g data-name="Grupo 16086"><g clip-path="url(#a)" data-name="Grupo 16085" transform="translate(11.799 11.203)"><path fill="#703088" d="M13.119 0a13.1 13.1 0 0 0-11.6 19.227L.741 24.9a2.37 2.37 0 0 0 .836 2.169A2.33 2.33 0 0 0 3 27.593a2.3 2.3 0 0 0 .751-.128l5.459-1.886A13.116 13.116 0 1 0 13.119 0m0 24.1a10.9 10.9 0 0 1-3.545-.6.98.98 0 0 0-.694 0l-5.8 2a.14.14 0 0 1-.156 0 .24.24 0 0 1-.085-.241l.837-6.059a1.1 1.1 0 0 0-.128-.667 10.988 10.988 0 1 1 9.571 5.573Zm2.481-4.957a1.08 1.08 0 0 1-1.063 1.063H11.7a1.064 1.064 0 0 1 0-2.127h.355V11.7H11.7a1.064 1.064 0 1 1 0-2.127h1.418a1.08 1.08 0 0 1 1.063 1.063v7.444h.355a1.08 1.08 0 0 1 1.064 1.063M11.347 7.09a1.418 1.418 0 1 1 1.417 1.418 1.42 1.42 0 0 1-1.417-1.418" data-name="Trazado 34506"/></g></g></g></svg>

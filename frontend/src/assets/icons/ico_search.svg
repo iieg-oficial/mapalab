@@ -1,6 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
-  <g id="Grupo_9148" data-name="Grupo 9148" transform="translate(-18 -14)">
-    <path id="Icon_akar-search" data-name="Icon akar-search" d="M19.854,19.854l-3.979-3.986m2.205-5.327A7.54,7.54,0,1,1,10.54,3a7.54,7.54,0,0,1,7.54,7.54Z" transform="translate(21 16.573)" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="3"/>
-    <rect id="Rectángulo_8414" data-name="Rectángulo 8414" width="28" height="28" transform="translate(18 14)" fill="none"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><g fill="none" data-name="Grupo 9148"><path stroke="#fff" stroke-linecap="round" stroke-width="3" d="m22.854 22.427-3.979-3.986m2.205-5.327a7.54 7.54 0 1 1-7.54-7.541 7.54 7.54 0 0 1 7.54 7.54Z" data-name="Icon akar-search"/><path d="M0 0h28v28H0z" data-name="Rectángulo 8414"/></g></svg>

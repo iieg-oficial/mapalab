@@ -1,4 +1,5 @@
 import Divider from '@components/Divider';
+import Badge from '@components/Badge';
 
 const MobileFeatureHeader = ({ value, index, total }) => {
     if (!value) return null;
@@ -11,11 +12,12 @@ const MobileFeatureHeader = ({ value, index, total }) => {
                 <h3 className="font-garet font-bold text-[13px]/[17px] text-[#2E4372] flex-1">
                     {value}
                 </h3>
-                {showBadge && (
-                    <span className="shrink-0 font-garet font-bold text-[10px]/[16px] px-2 py-0.5 rounded-full bg-[#F4EFF9] text-[#5C2472] tabular-nums">
-                        {index}/{total}
-                    </span>
-                )}
+                <Badge
+                    visible={showBadge}
+                    variant="pill"
+                    color="violet"
+                    text={`${index}/${total}`}
+                />
             </div>
             <Divider className="mx-5 mb-3" />
         </>

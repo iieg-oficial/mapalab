@@ -1,5 +1,4 @@
-import { useRef, useEffect } from 'react';
-import Lottie from 'lottie-react';
+import { useRef, useEffect, useState, lazy, Suspense } from 'react';
 import Tooltip from '@components/Tooltip';
 import logoIiegLarge from '@assets/logos/iieg_large.svg';
 import logoIiegLargeDark from '@assets/logos/iieg_large_dark.svg';
@@ -7,8 +6,9 @@ import logoIiegShort from '@assets/logos/iieg_short.svg';
 import logoMapalabLarge from '@assets/logos/mapalab_large.svg';
 import logoMapalabLargeDark from '@assets/logos/mapalab_large_dark.svg';
 import logoMapalabShort from '@assets/logos/mapalab_short.svg';
-import spinnerAnimation from '@assets/Loading/spinner.json';
 import logoMapalabSquare from '@assets/logos/mapalab_square.svg';
+
+const LottieSpinner = lazy(() => import('./LottieSpinner'));
 
 const colorFilters = {
     '#CBC5F1': 'brightness(0) saturate(100%) invert(83%) sepia(12%) saturate(746%) hue-rotate(206deg) brightness(101%) contrast(92%)',
@@ -34,9 +34,12 @@ const Logo = ({
 }) => {
     const lottieRef = useRef(null);
     const isLoadingRef = useRef(isLoading);
+    const [lottieNeeded, setLottieNeeded] = useState(isLoading);
 
     useEffect(() => {
         isLoadingRef.current = isLoading;
+
+        if (isLoading && !lottieNeeded) setLottieNeeded(true);
 
         if (!lottieRef.current) return;
 
@@ -45,7 +48,7 @@ const Logo = ({
         } else {
             lottieRef.current.stop();
         }
-    }, [isLoading]);
+    }, [isLoading, lottieNeeded]);
 
     const handleDOMLoaded = () => {
         if (isLoadingRef.current && lottieRef.current) {
@@ -106,20 +109,21 @@ const Logo = ({
             return (
                 <Wrapper {...wrapperProps}>
                     <div className={`relative ${size}`}>
-                        <Lottie
-                            lottieRef={lottieRef}
-                            animationData={spinnerAnimation}
-                            loop={false}
-                            autoplay={false}
-                            onDOMLoaded={handleDOMLoaded}
-                            onComplete={handleComplete}
-                            className={`
-                                absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                                h-full aspect-square
-                                transition-opacity duration-300 ease-in-out
-                                ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-                            `}
-                        />
+                        {lottieNeeded && (
+                            <Suspense fallback={null}>
+                                <LottieSpinner
+                                    lottieRef={lottieRef}
+                                    onDOMLoaded={handleDOMLoaded}
+                                    onComplete={handleComplete}
+                                    className={`
+                                        absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                                        h-full aspect-square
+                                        transition-opacity duration-300 ease-in-out
+                                        ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+                                    `}
+                                />
+                            </Suspense>
+                        )}
                         <img
                             src={currentLogo[type]}
                             alt={alt || `Logo ${name} ${type}`}
@@ -139,20 +143,19 @@ const Logo = ({
         return (
             <Wrapper {...wrapperProps}>
                 <div className={`relative ${size}`}>
-                    <Lottie
-                        lottieRef={lottieRef}
-                        animationData={spinnerAnimation}
-                        loop={false}
-                        autoplay={false}
-                        onDOMLoaded={handleDOMLoaded}
-                        onComplete={handleComplete}
-                        className={`
-                            absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                            h-full aspect-square
-                            transition-opacity duration-300 ease-in-out
-                            ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-                        `}
-                    />
+                    <Suspense fallback={null}>
+                        <LottieSpinner
+                            lottieRef={lottieRef}
+                            onDOMLoaded={handleDOMLoaded}
+                            onComplete={handleComplete}
+                            className={`
+                                absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                                h-full aspect-square
+                                transition-opacity duration-300 ease-in-out
+                                ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+                            `}
+                        />
+                    </Suspense>
                     <img
                         src={currentLogo.short}
                         alt={alt || `Logo ${name} corto`}

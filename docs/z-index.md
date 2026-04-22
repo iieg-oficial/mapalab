@@ -5,7 +5,6 @@
 | z-index | Componente                    | Ubicacion           | Descripcion                                    |
 |---------|-------------------------------|---------------------|------------------------------------------------|
 | **50**  | FeatureInfoPanel              | Flotante            | Panel de informacion de features (mas arriba)  |
-| **30**  | MeasurementConfigPanel        | Flotante            | Panel de configuracion de mediciones           |
 | **30**  | LayerDetailModal              | Centro inferior     | Modal de detalle de capas                      |
 | **20**  | MapSider                      | Lateral izquierdo   | Menu lateral de capas                          |
 | **11**  | Barra de busqueda             | Superior derecho    | Busqueda y descarga                            |
@@ -63,7 +62,7 @@
 +-------------------------------------------------------------+
 |  UI: FeatureInfoPanel                         [50]           |  <- Mas arriba
 +-------------------------------------------------------------+
-|  UI: MeasurementConfigPanel, LayerDetailModal [30]           |
+|  UI: LayerDetailModal                         [30]           |
 |  UI: MapSider                                 [20]           |
 |  UI: Barra de busqueda                        [11]           |
 |  UI: Paneles y Controles                      [10]           |

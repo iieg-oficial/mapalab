@@ -1,11 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <g id="ico_eliminar" transform="translate(-1655 -1875)">
-    <g id="Icon_feather-trash-2" data-name="Icon feather-trash-2" transform="translate(1658.019 1877.466)">
-      <path id="Trazado_19480" data-name="Trazado 19480" d="M14.462,9.5H4.5a.5.5,0,0,1,0-1h9.962a.5.5,0,0,1,0,1Z" transform="translate(-4.5 -6.786)" fill="#465055"/>
-      <path id="Trazado_19481" data-name="Trazado 19481" d="M15.248,5.214v7.748a1.107,1.107,0,0,1-1.107,1.107H8.607A1.107,1.107,0,0,1,7.5,12.962V5.214m1.66,0V4.107A1.107,1.107,0,0,1,10.267,3h2.214a1.107,1.107,0,0,1,1.107,1.107V5.214" transform="translate(-6.393 -3)" fill="none" stroke="#465055" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      <path id="Trazado_19482" data-name="Trazado 19482" d="M15,16.5v3.321" transform="translate(-11.126 -11.519)" fill="none" stroke="#465055" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      <path id="Trazado_19483" data-name="Trazado 19483" d="M21,16.5v3.321" transform="translate(-14.912 -11.519)" fill="none" stroke="#465055" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-    </g>
-    <rect id="Rectángulo_14458" data-name="Rectángulo 14458" width="16" height="16" transform="translate(1655 1875)" fill="none"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><g data-name="Icon feather-trash-2"><path fill="#465055" d="M12.981 5.18H3.019a.5.5 0 0 1 0-1h9.962a.5.5 0 0 1 0 1" data-name="Trazado 19480"/><path fill="none" stroke="#465055" stroke-linecap="round" stroke-linejoin="round" d="M11.874 4.68v7.748a1.107 1.107 0 0 1-1.107 1.107H5.233a1.107 1.107 0 0 1-1.107-1.107V4.68m1.66 0V3.573a1.107 1.107 0 0 1 1.107-1.107h2.214a1.107 1.107 0 0 1 1.107 1.107V4.68" data-name="Trazado 19481"/><path fill="none" stroke="#465055" stroke-linecap="round" stroke-linejoin="round" d="M6.893 7.447v3.321" data-name="Trazado 19482"/><path fill="none" stroke="#465055" stroke-linecap="round" stroke-linejoin="round" d="M9.107 7.447v3.321" data-name="Trazado 19483"/></g><path fill="none" d="M0 0h16v16H0z" data-name="Rectángulo 14458"/></svg>

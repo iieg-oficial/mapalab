@@ -48,7 +48,7 @@ const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpe
     );
 };
 
-export const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible }) => [
+const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible }) => [
     {
         id: 'search',
         hasMenu: true,
@@ -108,7 +108,7 @@ const hasActiveChildLayers = (category, activeLayerIds) => {
     return descendantIds.some(id => activeLayerIds.includes(id));
 };
 
-export const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer }) =>
+const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer }) =>
     layers.map(category => {
         const hasActiveLayers = hasActiveChildLayers(category, activeLayerIds);
 

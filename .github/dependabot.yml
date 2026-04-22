@@ -1,0 +1,82 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Mexico_City
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - frontend
+    commit-message:
+      prefix: chore
+      prefix-development: chore
+      include: scope
+    groups:
+      eslint:
+        patterns:
+          - eslint
+          - eslint-plugin-*
+          - "@eslint/*"
+      testing:
+        patterns:
+          - vitest
+          - "@vitest/*"
+          - "@testing-library/*"
+          - happy-dom
+      sentry:
+        patterns:
+          - "@sentry/*"
+      openlayers:
+        patterns:
+          - ol
+      react:
+        patterns:
+          - react
+          - react-dom
+          - react-router
+
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Mexico_City
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - backend
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      fastapi-stack:
+        patterns:
+          - fastapi
+          - uvicorn
+          - gunicorn
+          - pydantic
+          - pydantic-settings
+      sqlalchemy:
+        patterns:
+          - sqlalchemy
+          - alembic
+          - psycopg2-binary
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Mexico_City
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: ci

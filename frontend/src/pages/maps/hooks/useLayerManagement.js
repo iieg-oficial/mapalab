@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { layers } from '@pages/maps/helpers/layers/index';
-import { findLayerById as findLayerByIdHelper, getAllChildLayerIds as getAllChildLayerIdsHelper } from '@pages/maps/helpers/layers/index';
+import { findLayerById as findLayerByIdHelper, getAllChildLayerIds as getAllChildLayerIdsHelper } from '@pages/maps/helpers/layers/utils/layerHelpers';
 
 export const useLayerManagement = () => {
     const [activeLayerIds, setActiveLayerIds] = useState([]);
