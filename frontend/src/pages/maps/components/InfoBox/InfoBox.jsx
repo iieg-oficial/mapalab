@@ -140,10 +140,11 @@ const InfoBox = () => {
     let globalCardIdx = 0;
     const featuresList = !showEmptySuggestions && !hasNoResults && (!isPolygonSelection || isExpanded) && (
         <div className="space-y-2">
-            {results.map((result, idx) => (
-                <div key={idx} className="space-y-2">
+            {results.map((result) => (
+                <div key={result.layerId} className="space-y-2">
                     {result.features.map((feature, featureIdx) => {
                         globalCardIdx += 1;
+                        const stableKey = feature.id ?? `${result.layerId}-${featureIdx}`;
                         const card = renderItem(
                             feature,
                             result.layerId,
@@ -155,14 +156,14 @@ const InfoBox = () => {
                         if (isMobile) {
                             return (
                                 <SwipeToRemove
-                                    key={featureIdx}
+                                    key={stableKey}
                                     onRemove={() => handleRemoveFeature(result.layerId, featureIdx)}
                                 >
                                     {card}
                                 </SwipeToRemove>
                             );
                         }
-                        return <div key={featureIdx}>{card}</div>;
+                        return <div key={stableKey}>{card}</div>;
                     })}
                 </div>
             ))}
