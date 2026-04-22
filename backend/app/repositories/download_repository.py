@@ -15,9 +15,9 @@ class DownloadRepository:
     def resolve_db_name(session: Session, geoserver_key: str) -> Optional[tuple[str, str]]:
         result = session.execute(
             text(
-                'SELECT nombre_capa_db FROM public.mapalab_card '
-                'WHERE nombre_capa_geoserver = :key AND nombre_capa_db IS NOT NULL '
-                "AND nombre_capa_db != '' LIMIT 1"
+                'SELECT layer_name_db FROM mapalab.layer_metadata '
+                'WHERE layer_key = :key AND layer_name_db IS NOT NULL '
+                "AND layer_name_db != '' LIMIT 1"
             ),
             {'key': geoserver_key},
         )

@@ -5,7 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from sqlalchemy import text
-from app.routers import (metadata, periodicity, download)
+from app import metrics as metrics_module
+from app.routers import (metadata, periodicity, download, layers)
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.scheduler_service import SchedulerService
 from app.services.periodicity_service import PeriodicityService
@@ -84,6 +85,8 @@ app.add_exception_handler(Exception, general_exception_handler)
 app.include_router(metadata.router)
 app.include_router(periodicity.router)
 app.include_router(download.router)
+app.include_router(layers.router)
+app.include_router(metrics_module.router)
 @app.get('/')
 def root():
     return {'message':'MapaLab Backend API'}
