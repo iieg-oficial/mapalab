@@ -27,7 +27,8 @@ const MapSider = ({ className = '' }) => {
         areMeasurementToolsVisible,
         isLocating,
         dateLoops,
-        showMarker
+        showMarker,
+        allLayers
     } = useMapsContext();
     const { loadingLayers } = useLayerLoading();
     const hasNonLoopLoading = [...loadingLayers].some(id => !dateLoops[id] && contextActiveLayerIds.includes(id));
@@ -125,8 +126,8 @@ const MapSider = ({ className = '' }) => {
     }, [toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
 
     const menuItems = useMemo(() =>
-        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible }),
-    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible]);
+        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers }),
+    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, allLayers]);
 
     const clearAutoOpenMenu = useCallback(() => {
         setAutoOpenMenuId(null);

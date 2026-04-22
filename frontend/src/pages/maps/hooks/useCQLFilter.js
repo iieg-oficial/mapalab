@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
-import { findLayerById, layers as allLayers } from '@pages/maps/helpers/layers';
+import { useLayers } from '@hooks/useLayers';
+import { findLayerById } from '@pages/maps/helpers/layers/utils/layerHelpers';
 
 export const useCQLFilter = () => {
+    const { layers: allLayers } = useLayers();
     const [filters, setFilters] = useState({});
 
     const combineFilters = useCallback((layerFilters) => {

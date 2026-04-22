@@ -2,9 +2,10 @@ import { useCallback } from 'react';
 import ImageLayer from 'ol/layer/Image';
 import ImageWMS from 'ol/source/ImageWMS';
 import { findWMSConfig } from '../helpers/wmsConfig';
-import { layers } from '../helpers/layers/index';
+import { useLayers } from '@hooks/useLayers';
 
 export const useWMSLayerFactory = () => {
+    const { layers } = useLayers();
     const combineCQLFilters = useCallback((baseFilter, dynamicFilter) => {
         if (!baseFilter && !dynamicFilter) return null;
         if (!baseFilter) return dynamicFilter;

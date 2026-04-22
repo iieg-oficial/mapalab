@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { findLayerDef } from '../helpers/wmsConfig';
-import { layers as allLayers } from '../helpers/layers/index';
+import { useLayers } from '@hooks/useLayers';
 import { trackRasterLoop } from '@services/analyticsService';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 import { buildLoopValues, describeDateFilter } from '../helpers/dateLoopHelpers';
@@ -13,6 +13,7 @@ const clampIntervalMs = (ms) => Math.max(100, Math.min(10000, Number(ms) || DEFA
 const normalizeDirection = (dir) => (dir === 'rtl' ? 'rtl' : 'ltr');
 
 export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLayerIds = [], getSpecificFilter, getPeriodicity }) => {
+    const { layers: allLayers } = useLayers();
     const { loadingLayers } = useLayerLoading();
     const [dateLoops, setDateLoops] = useState({});
     const [loopPrefs, setLoopPrefs] = useState({});

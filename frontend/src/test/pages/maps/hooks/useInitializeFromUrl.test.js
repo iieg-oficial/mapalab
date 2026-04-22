@@ -14,8 +14,13 @@ vi.mock('@hooks/useMaps', () => ({
     useMapsContext: () => mockUseMapsContext()
 }));
 
-vi.mock('@pages/maps/helpers/layers/definitions/base', () => ({
-    BASE_INITIAL_ORDER: ['base-1', 'base-2']
+vi.mock('@hooks/useLayers', () => ({
+    useLayers: () => ({
+        layers: [],
+        initialOrder: ['base-1', 'base-2'],
+        loading: false,
+        error: null
+    })
 }));
 
 import { useInitializeFromUrl, filtersInitializationComplete } from '@hooksMaps/useInitializeFromUrl';

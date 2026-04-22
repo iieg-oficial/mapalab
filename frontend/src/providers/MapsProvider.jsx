@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useClickPosition } from '@hooks/useClickPosition';
+import { useLayers } from '@hooks/useLayers';
 import MapsContext from '@contexts/MapsContext';
 import { BASEMAPS } from '@pages/maps/helpers/basemaps';
 import { useLayerManagement } from '@hooksMaps/useLayerManagement';
@@ -12,10 +13,10 @@ import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { usePeriodicityCache } from '@hooksMaps/usePeriodicityCache';
 import { useMapMarker } from '@hooksMaps/useMapMarker';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
-import { layers as allLayers } from '@pages/maps/helpers/layers/index';
 import { toLonLat } from 'ol/proj';
 
 const MapsProvider = ({ children }) => {
+    const { layers: allLayers } = useLayers();
     const [baseMapId, setBaseMapId] = useState('voyager');
     const [siderCollapsed, setSiderCollapsed] = useState(true);
     const [selectedLayer, setSelectedLayer] = useState(null);
@@ -105,6 +106,7 @@ const MapsProvider = ({ children }) => {
         setSelectedFeatureInfo,
         clickPosition,
         queryFeaturesInPolygonRef,
+        allLayers,
 
         ...layerManagement,
         onToggleLayer: layerToggle.handleToggleLayer,
@@ -138,7 +140,8 @@ const MapsProvider = ({ children }) => {
         mapEditing,
         mapMarker,
         periodicityCache,
-        isLocating
+        isLocating,
+        allLayers
     ]);
 
     return (
