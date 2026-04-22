@@ -36,6 +36,8 @@ const bosquePrimaveraConfig = {
     cardsColumns: 1
 };
 
+const PRIMAVERA_DEFAULT_ZOOM = 'fit';
+
 const parcelaPrimaveraConfig = (title) => ({
     headerField: title,
     labelGroups: [
@@ -147,9 +149,9 @@ const AREAS_NATURALES = [
         ],
         cardsColumns: 1
     }],
-    ['bosque_de_la_primavera', 'Bosque de la Primavera', 'area_de_proteccion_bosque_la_primavera', ['recursos', 'ambiente', 'primavera', 'bosque', 'conservacion', 'limites'], bosquePrimaveraConfig],
-    ['agave_primavera', 'Agave dentro del APFyF La Primavera', 'agave_en_area_de_proteccion_de_flora_y_fauna_bosque_la_primaver', ['recursos', 'ambiente', 'primavera', 'cultivo', 'agave', 'conservacion', 'impacto'], parcelaPrimaveraConfig('Agave dentro del Área de Protección de Flora y Fauna La Primavera'), { hidePeriodicity: true }],
-    ['parcelas_primavera', 'Parcelas dentro del APFyF La Primavera', 'parcelas_dentro_de_anp_bosque_de_la_primavera', ['recursos', 'ambiente', 'primavera', 'propiedad', 'tierra', 'conservacion', 'limites'], parcelaPrimaveraConfig('Parcela dentro del Área de Protección de Flora y Fauna La Primavera'), { hidePeriodicity: true }],
+    ['bosque_de_la_primavera', 'Bosque de la Primavera', 'area_de_proteccion_bosque_la_primavera', ['recursos', 'ambiente', 'primavera', 'bosque', 'conservacion', 'limites'], bosquePrimaveraConfig, { defaultZoom: PRIMAVERA_DEFAULT_ZOOM }],
+    ['agave_primavera', 'Agave dentro del APFyF La Primavera', 'agave_en_area_de_proteccion_de_flora_y_fauna_bosque_la_primaver', ['recursos', 'ambiente', 'primavera', 'cultivo', 'agave', 'conservacion', 'impacto'], parcelaPrimaveraConfig('Agave dentro del Área de Protección de Flora y Fauna La Primavera'), { hidePeriodicity: true, defaultZoom: PRIMAVERA_DEFAULT_ZOOM }],
+    ['parcelas_primavera', 'Parcelas dentro del APFyF La Primavera', 'parcelas_dentro_de_anp_bosque_de_la_primavera', ['recursos', 'ambiente', 'primavera', 'propiedad', 'tierra', 'conservacion', 'limites'], parcelaPrimaveraConfig('Parcela dentro del Área de Protección de Flora y Fauna La Primavera'), { hidePeriodicity: true, defaultZoom: PRIMAVERA_DEFAULT_ZOOM }],
 ];
 
 const ITUR = [

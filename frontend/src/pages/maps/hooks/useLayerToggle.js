@@ -6,7 +6,12 @@ import { generateDefaultDateFilter } from '@pages/maps/helpers/dateFilterHelpers
 import { findParentGroup } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { layers as allLayers } from '@pages/maps/helpers/layers/index';
 import { getLayerPeriodicity } from '@services/layerMetadataService';
+import { fetchLayerExtent } from '@services/layerExtentService';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
+
+const FIT_PADDING = [40, 40, 40, 40];
+const FIT_MAX_ZOOM = 18;
+const FIT_DURATION = 500;
 
 export const useLayerToggle = ({
     setActiveLayerIds,
@@ -75,27 +80,35 @@ export const useLayerToggle = ({
         if (layer?.defaultDate) clearFilter(layerId, 'date');
     }, [findLayerById, clearFilter]);
 
-    const applyDefaultZoom = useCallback((layerId) => {
+    const applyDefaultZoom = useCallback(async (layerId) => {
         const layer = findLayerById(layerId);
         if (!layer?.defaultZoom || !mapRef?.current) return;
 
         const view = mapRef.current.getView();
         const config = layer.defaultZoom;
 
+        if (config === 'fit' || config?.fit === true) {
+            const extent = await fetchLayerExtent(layer);
+            if (extent && mapRef.current) {
+                view.fit(extent, { duration: FIT_DURATION, maxZoom: FIT_MAX_ZOOM, padding: FIT_PADDING });
+            }
+            return;
+        }
+
         if (typeof config === 'number') {
             view.animate({
                 center: fromLonLat(JALISCO_BOUNDS.center),
                 zoom: config,
-                duration: 500
+                duration: FIT_DURATION
             });
         } else if (config.extent) {
             const extent = transformExtent(config.extent, 'EPSG:4326', 'EPSG:3857');
-            view.fit(extent, { duration: 500, maxZoom: 18 });
+            view.fit(extent, { duration: FIT_DURATION, maxZoom: FIT_MAX_ZOOM });
         } else if (config.zoom) {
             const center = config.center
                 ? fromLonLat(config.center)
                 : fromLonLat(JALISCO_BOUNDS.center);
-            view.animate({ center, zoom: config.zoom, duration: 500 });
+            view.animate({ center, zoom: config.zoom, duration: FIT_DURATION });
         }
     }, [findLayerById, mapRef]);
 

@@ -60,10 +60,13 @@ const ETIQUETA_LABELS = {
 
 const limiteEstatalConfig = {
     headerField: 'etiqueta',
-    headerTransform: (value, featureId) => {
-        const label = ETIQUETA_LABELS[value] || value;
-        const suffix = featureId?.includes('secundario') ? '(Trasera)' : '(Frontal)';
-        return `${label} ${suffix}`;
+    headerTransform: {
+        valueMap: ETIQUETA_LABELS,
+        featureIdSuffix: {
+            match: 'secundario',
+            ifMatch: '(Trasera)',
+            ifNoMatch: '(Frontal)'
+        }
     },
     cards: [
         { label: 'Área (km²)', field: 'area_km2' },
