@@ -196,17 +196,6 @@ export const useSiderHover = ({
     };
 };
 
-export const useSiderAnchoredPosition = ({ offset = 12 } = {}) => {
-    const { width } = useSider();
-    const leftPosition = width + offset;
-
-    return {
-        leftPosition,
-        style: { left: `${leftPosition}px` },
-        className: SIDER_TRANSITION_CLASSES,
-    };
-};
-
 export const useSiderAdaptivePosition = ({ bottomOffset = 60, leftOffset = 16, siderOffset = 28, anchorRef = null } = {}) => {
     const { siderRef, toolsButtonRef, width, collapsedWidth, expandedWidth, isMobile, isOpen } = useSider();
     const [isOverlapping, setIsOverlapping] = useState(false);
@@ -270,5 +259,3 @@ export const useSiderAdaptivePosition = ({ bottomOffset = 60, leftOffset = 16, s
         className: SIDER_TRANSITION_CLASSES,
     };
 };
-
-export default SiderContext;

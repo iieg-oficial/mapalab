@@ -130,7 +130,7 @@ const fetchBlob = async (url, signal) => {
     return response.blob();
 };
 
-export const fetchWithProgress = async (url, signal, onProgress) => {
+const fetchWithProgress = async (url, signal, onProgress) => {
     const response = await fetch(url, { signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 

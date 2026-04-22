@@ -71,7 +71,7 @@ const buildSearchConfig = () => {
     return config;
 };
 
-export const SEARCH_CONFIG = buildSearchConfig();
+const SEARCH_CONFIG = buildSearchConfig();
 
 export const getSearchConfig = (layerId) => {
     return SEARCH_CONFIG[layerId] || null;
@@ -91,33 +91,6 @@ export const getLayersWithDireccionSearch = () => {
     return Object.entries(SEARCH_CONFIG)
         .filter(([, config]) => config.hasDireccion)
         .map(([id, config]) => ({ id, ...config }));
-};
-
-export const getSearchConfigByTheme = () => {
-    const grouped = {};
-
-    Object.entries(SEARCH_CONFIG).forEach(([layerId, config]) => {
-        if (!grouped[config.tema]) {
-            grouped[config.tema] = {
-                label: config.temaLabel,
-                subtemas: {}
-            };
-        }
-
-        if (!grouped[config.tema].subtemas[config.subtema]) {
-            grouped[config.tema].subtemas[config.subtema] = {
-                label: config.subtemaLabel,
-                layers: []
-            };
-        }
-
-        grouped[config.tema].subtemas[config.subtema].layers.push({
-            id: layerId,
-            ...config
-        });
-    });
-
-    return grouped;
 };
 
 export const getThemes = () => {

@@ -11,52 +11,6 @@ export const findLayerById = (layerId, layersArray) => {
     return null;
 };
 
-export const getLayersWithWMS = (layersArray) => {
-    const result = [];
-    
-    const traverse = (layers) => {
-        for (const layer of layers) {
-            if (layer.wmsConfig) {
-                result.push(layer);
-            }
-            if (layer.children) {
-                traverse(layer.children);
-            }
-        }
-    };
-    
-    traverse(layersArray);
-    return result;
-};
-
-export const loadLayerSymbology = async (layer) => {
-    if (!layer.wmsConfig) {
-        return layer;
-    }
-
-    try {
-        
-        return {
-            ...layer,
-            symbologyLoaded: true,
-            symbologyError: null
-        };
-    } catch (error) {
-        console.error(`❌ Error cargando simbología para ${layer.label}:`, error);
-        
-        return {
-            ...layer,
-            symbologyLoaded: false,
-            symbologyError: error.message
-        };
-    }
-};
-
-export const loadMultipleLayersSymbology = async (layers) => {
-    const promises = layers.map(layer => loadLayerSymbology(layer));
-    return Promise.all(promises);
-};
-
 export const validateLayer = (layer) => {
     const requiredFields = ['id', 'label'];
     return requiredFields.every(field => field in layer);

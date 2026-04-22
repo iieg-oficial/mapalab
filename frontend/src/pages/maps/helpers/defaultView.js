@@ -1,6 +1,6 @@
 import { fromLonLat } from 'ol/proj';
 
-export const isMobileViewport = () => window.innerWidth < 768;
+const isMobileViewport = () => window.innerWidth < 768;
 
 export const getDefaultMapView = () => {
     const mobile = isMobileViewport();

@@ -2,15 +2,11 @@ export const isParentLayer = (layer) => {
     return layer && layer.children && layer.children.length > 0;
 };
 
-export const isCategoryLayer = (layer) => {
-    return layer && layer.isCategory === true;
-};
-
 export const hasWMSConfig = (layer) => {
     return layer && layer.wmsConfig && typeof layer.wmsConfig === 'object';
 };
 
-export const getWMSLayerName = (layer) => {
+const getWMSLayerName = (layer) => {
     return layer?.wmsConfig?.layerName || null;
 };
 
