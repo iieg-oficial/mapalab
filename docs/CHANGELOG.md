@@ -19,6 +19,7 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - **Integración huachicol**: `MARIACHI_BACKEND_TARGET` en `.env.example` y `scripts/generate-targets.sh`. `docs/agregar-proyecto.md` actualizado
 - **Code-split admin mariachi**: `React.lazy()` + `Suspense` en `Users`, `MenuManager`, `PageEditor`, `Media`, `RevisionQueue`, `MapalabLayers`. Chunks separados por página (MapalabLayers: 43 kB gzip 15 kB). Bundle inicial ya no carga editor rico ni tree
 - **Tests integración cruzada mariachi → mapalab** (`test_integration_notify.py`): notifier skip sin URL, POST correcto con mock transport, debounce consolida 5 calls en 1, /metrics Prometheus format, thread-safety del contador (10 threads × 1000 incr = 10_000)
+- **Documentación de API de Taiga**: Agregada la guía `docs/taiga.md` con referencias de autenticación y flujos automatizados en Bash/Python para proyectos, épicas, historias, tareas y Wiki.
 - **Tests `/metrics`** en mapalab (`test_smoke.py::TestMetrics`): response plaintext, increment en `/layers/tree`, increment de cache hits en 304
 
 ### Cambiado
