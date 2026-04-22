@@ -8,6 +8,7 @@ from app.consts.databases import DatabaseType
 from app.consts.workspaces import resolve_schema
 from app.databases.factory import DatabaseFactory
 from app.exceptions.common_exceptions import NotFoundException, BadRequestException
+from app.metrics import COUNTER_DOWNLOAD_REQUESTS, incr
 from app.repositories.download_repository import DownloadRepository
 from app.utils.api_responses import api_responses
 from app.utils.logger import Logger
@@ -52,6 +53,7 @@ def download_layer(
     date_from: Optional[str] = Query(default=None, description='Fecha inicio (YYYY-MM-DD)'),
     date_to: Optional[str] = Query(default=None, description='Fecha fin (YYYY-MM-DD)'),
 ):
+    incr(COUNTER_DOWNLOAD_REQUESTS)
     date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
     if date_from and not date_pattern.match(date_from):
         raise BadRequestException('date_from debe tener formato YYYY-MM-DD')
