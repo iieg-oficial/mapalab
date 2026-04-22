@@ -18,6 +18,15 @@ from app.handlers.handle_exceptions import (
     general_exception_handler
 )
 
+if settings.SENTRY_DSN:
+    import sentry_sdk
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.ENVIRONMENT,
+        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+        send_default_pii=False,
+    )
+
 _lock_file = None
 
 def _try_acquire_leader() -> bool:

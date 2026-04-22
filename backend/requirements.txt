@@ -11,3 +11,4 @@ gunicorn
 apscheduler
 rich
 pytz
+sentry-sdk[fastapi]

@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     ACERVO_PUBLIC_URL: Optional[str] = Field(default=None)
     DB_POOL_SIZE: int = Field(default=8)
     DB_MAX_OVERFLOW: int = Field(default=8)
+    SENTRY_DSN: Optional[str] = Field(default=None)
+    SENTRY_TRACES_SAMPLE_RATE: float = Field(default=0.1)
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod
