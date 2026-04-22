@@ -63,7 +63,7 @@ const generateDefaultConfig = (properties) => {
 
 const toArray = (v) => v == null ? [] : (Array.isArray(v) ? v : [v]);
 
-export const MUNICIPIO_STYLE = { color: '#FF8300', bg: '#FFF2E5' };
+const MUNICIPIO_STYLE = { color: '#FF8300', bg: '#FFF2E5' };
 export const CARACTERISTICA_STYLE = { color: '#7B61FF', bg: '#F3F0FF' };
 
 const createMunicipioGroup = (municipio) => ({
@@ -126,16 +126,7 @@ const createTEEC = ({ title, caracteristica, staticLabel }) => ({
     ]
 });
 
-export const createMunicipioConfig = ({ title, municipio = 'nombre', text, stats, columns = 1 }) => ({
-    headerField: title,
-    labelGroups: [
-        createMunicipioGroup(municipio),
-        { fields: ['fecha'], ...CARACTERISTICA_STYLE }
-    ],
-    ...(text && { text: [{ label: text }] }),
-    cards: stats,
-    cardsColumns: columns
-});
+
 
 export const cardTemplates = {
     TDEMEC: createTDEMEC,
