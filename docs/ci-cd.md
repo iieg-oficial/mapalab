@@ -35,8 +35,15 @@ graph LR
 ### CI (`.github/workflows/ci.yml`)
 
 - **Trigger**: Push a feature branches (excluye `develop` y `production`), PRs
-- **Que hace**: Lint (ESLint) + Tests (Vitest)
-- **Proposito**: Validar codigo antes de mergear a `develop`
+- **Que hace**: Lint (ESLint) + Tests (Vitest con coverage thresholds) + Dead-code check (knip) + Build (Vite, con upload de sourcemaps a Sentry si hay token)
+- **Proposito**: Validar codigo antes de mergear a `develop`. CI es la autoridad final — es donde las reglas no se pueden saltar con `--no-verify`
+
+### Dependabot (`.github/dependabot.yml`)
+
+- **Trigger**: Scan semanal (lunes 09:00 America/Mexico_City)
+- **Ecosistemas**: npm (`/frontend`), github-actions (raíz)
+- **Agrupación**: PRs unificados por familia (eslint, testing, sentry, openlayers, react) para reducir ruido
+- **Límite**: 5 PRs abiertos máx para npm, 3 para actions
 
 ### Commit Lint (`.github/workflows/commit-lint.yml`)
 
@@ -61,10 +68,57 @@ graph LR
 
 | Job | Depende de | Que hace |
 |-----|-----------|----------|
-| `test` | — | Lint + tests |
-| `deploy` | `test` | Conecta via SSH al servidor y ejecuta `make deploy` |
+| `deploy` | — | Conecta via SSH al servidor y ejecuta `make deploy` |
 | `health-check` | `deploy` | Verifica que `https://mapalab-iieg.app` responda HTTP 200 |
 | `notify` | `deploy`, `health-check` | Envia notificacion a Discord (exito o fallo) |
+
+Los tests ya se ejecutaron en `auto-merge.yml` antes del merge a `production`, por eso el CD no los repite.
+
+## Git hooks locales (`.githooks/`)
+
+El repo usa hooks nativos en `.githooks/` via `core.hooksPath` (configurado por el script `prepare` de `frontend/package.json`). La filosofía sigue el patrón estándar de la industria: **pre-commit rápido, pre-push exhaustivo, CI autoritativo**.
+
+| Hook | Qué corre | Objetivo |
+|---|---|---|
+| `commit-msg` | Valida [Conventional Commits](https://www.conventionalcommits.org/) | Formato consistente de mensajes |
+| `pre-commit` | `scripts/sync-version.sh` + `npx lint-staged` | Sincroniza versión y corre ESLint solo sobre archivos staged (< 2s) |
+| `pre-push` | `npm run lint` + `npm test -- --run` + `npm run check:dead-code:strict` | Última línea de defensa antes de compartir. Tarda más pero atrapa problemas cross-módulo |
+
+### lint-staged
+
+Configurado en `frontend/package.json`:
+
+```json
+"lint-staged": {
+    "*.{js,jsx}": "eslint --max-warnings=0"
+}
+```
+
+Solo corre ESLint sobre archivos staged, no sobre todo el proyecto. Feedback casi instantáneo al commit.
+
+### knip (dead-code checker)
+
+Configurado en `frontend/knip.json` (mínimo: solo ignora `lint-staged` como devDep porque el hook lo consume, no el código fuente). Dos scripts:
+
+- `npm run check:dead-code` — informativo (`--no-exit-code`), útil para revisiones locales
+- `npm run check:dead-code:strict` — bloqueante, corre en `pre-push` y en CI
+
+Si knip detecta código/exports/dependencias muertas, falla el push. Falsos positivos legítimos se agregan a `ignore` en `knip.json`.
+
+### Regla ESLint: no PNGs
+
+`frontend/eslint.config.js` incluye `no-restricted-imports` bloqueando todo import `.png`:
+
+```js
+'no-restricted-imports': ['error', {
+    patterns: [{
+        group: ['*.png', '**/*.png'],
+        message: 'PNG imports no permitidos. Convierte a WebP (cwebp -lossless) o usa SVG. Si es estrictamente necesario, justifica en PR y usa eslint-disable-next-line.'
+    }]
+}]
+```
+
+La regla se ejecuta en editor, en pre-commit (via lint-staged) y en CI. El OG image (`public/img_link_share.png`) no usa import — vive directo en `public/` y se referencia por URL desde `index.html`.
 
 ## Branches
 
@@ -142,6 +196,11 @@ Configurados en **Settings → Environments → production → Environment secre
 | `SSH_PORT` | Puerto SSH | `22` |
 | `PROJECT_PATH` | Ruta absoluta del proyecto en el servidor | `/home/egar.guapo/mapalab` |
 | `DISCORD_WEBHOOK_URL` | URL del webhook de Discord | `https://discord.com/api/webhooks/...` |
+| `SENTRY_DSN` | DSN público de Sentry (solo para build de prod, opcional) | `https://...@sentry.io/...` |
+| `SENTRY_AUTH_TOKEN` | Token para subir sourcemaps en build (opcional) | `sntrys_...` |
+| `SENTRY_ORG` | Nombre de organización Sentry | `iieg` |
+| `SENTRY_PROJECT` | Nombre de proyecto Sentry | `mapalab` |
+| `SENTRY_URL` | URL base de Sentry (SaaS o self-hosted) | `https://sentry.io/` |
 
 ## Configuracion del repositorio
 

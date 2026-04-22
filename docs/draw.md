@@ -40,7 +40,7 @@ frontend/src/pages/maps/
 
 ## Estado principal: `useMapDrawing`
 
-Hook central en `hooks/useMapDrawing.js:10-652`.
+Hook central en `hooks/useMapDrawing.js:10-675`.
 
 ### State
 
@@ -109,7 +109,7 @@ const {
 
 ## Renderizado de estilos — `getStyleForType`
 
-`useMapDrawing.js:105-175`. Funcion que OL llama por cada feature en la capa:
+`useMapDrawing.js:106-178`. Funcion que OL llama por cada feature en la capa:
 
 1. Si `visible === false` → retorna null (no se pinta)
 2. Si hay `cachedStyle` y no es sketch → retorna cache
@@ -141,7 +141,7 @@ Invalidacion de cache: `feature.unset('cachedStyle', true)` + `vectorLayerRef.cu
   → stopDrawing() o finishCurrentSketch() segun el contexto
 ```
 
-### Escape handling (`useMapDrawing.js:431-479`)
+### Escape handling (`useMapDrawing.js:438-486`)
 
 - Si hay sketch con suficientes puntos (≥2 para Line, ≥3 para Polygon) → termina el dibujo
 - Si no → aborta y vuelve a modo Point

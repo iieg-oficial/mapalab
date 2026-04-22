@@ -1,13 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="6.583" height="13.167" viewBox="0 0 6.583 13.167">
-  <defs>
-    <clipPath id="clip-path">
-      <rect id="Rectángulo_13884" data-name="Rectángulo 13884" width="6.583" height="13.167" fill="#2e4372"/>
-    </clipPath>
-  </defs>
-  <g id="ico_mujer" transform="translate(0 0)">
-    <g id="Grupo_16002" data-name="Grupo 16002" transform="translate(0 0)" clip-path="url(#clip-path)">
-      <path id="Trazado_34492" data-name="Trazado 34492" d="M12.582,3.292a1.646,1.646,0,1,0-1.646-1.646,1.648,1.648,0,0,0,1.646,1.646m0-2.351a.705.705,0,1,1-.705.705.706.706,0,0,1,.705-.705" transform="translate(-9.29 0)" fill="#2e4372"/>
-      <path id="Trazado_34493" data-name="Trazado 34493" d="M1.43,25.336.02,30.038a.471.471,0,0,0,.45.605h.94v3.292a.47.47,0,0,0,.94,0V30.644H4.232v3.292a.47.47,0,0,0,.94,0V30.644h.94a.469.469,0,0,0,.45-.6l-1.411-4.7A.47.47,0,0,0,4.7,25H1.88A.47.47,0,0,0,1.43,25.336Zm.8.605H4.352L5.481,29.7H1.1Z" transform="translate(0 -21.239)" fill="#2e4372"/>
-    </g>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="6.583" height="13.167" viewBox="0 0 6.583 13.167"><defs><clipPath id="a"><path fill="#2e4372" d="M0 0h6.583v13.167H0z" data-name="Rectángulo 13884"/></clipPath></defs><g fill="#2e4372" clip-path="url(#a)" data-name="Grupo 16002"><path d="M3.292 3.292a1.646 1.646 0 1 0-1.646-1.646 1.65 1.65 0 0 0 1.646 1.646m0-2.351a.705.705 0 1 1-.705.705.706.706 0 0 1 .705-.705" data-name="Trazado 34492"/><path d="M1.43 4.097.02 8.799a.47.47 0 0 0 .45.605h.94v3.292a.47.47 0 0 0 .94 0V9.405h1.882v3.292a.47.47 0 0 0 .94 0V9.405h.94a.47.47 0 0 0 .45-.6l-1.411-4.7a.47.47 0 0 0-.451-.344H1.88a.47.47 0 0 0-.45.336m.8.605h2.122l1.129 3.759H1.1Z" data-name="Trazado 34493"/></g></svg>

@@ -1,6 +1,17 @@
 
-const geometryColumnCache = {};
-const geometryTypeCache = {};
+const MAX_GEOMETRY_CACHE_SIZE = 500;
+
+const geometryColumnCache = new Map();
+const geometryTypeCache = new Map();
+
+const setBounded = (map, key, value) => {
+    if (map.has(key)) map.delete(key);
+    map.set(key, value);
+    if (map.size > MAX_GEOMETRY_CACHE_SIZE) {
+        const oldestKey = map.keys().next().value;
+        map.delete(oldestKey);
+    }
+};
 
 export const combineCQLFilters = (baseFilter, dynamicFilter) => {
     if (!baseFilter && !dynamicFilter) return null;
@@ -11,7 +22,7 @@ export const combineCQLFilters = (baseFilter, dynamicFilter) => {
 
 export const fetchGeometryColumns = async (baseUrl, typeNames) => {
     const globalWfsUrl = baseUrl.replace(/\/(?:[^/]+\/)?wms$/, '/wfs');
-    const missingTypes = typeNames.filter(name => !geometryColumnCache[`${baseUrl}:${name}`]);
+    const missingTypes = typeNames.filter(name => !geometryColumnCache.has(`${baseUrl}:${name}`));
 
     if (missingTypes.length > 0) {
         try {
@@ -56,8 +67,8 @@ export const fetchGeometryColumns = async (baseUrl, typeNames) => {
                 const matchedTypeName = missingTypes.find(t => t.endsWith(':' + typeName) || t === typeName);
                 if (matchedTypeName) {
                     const cacheKey = `${baseUrl}:${matchedTypeName}`;
-                    geometryColumnCache[cacheKey] = geomName;
-                    geometryTypeCache[cacheKey] = geomType;
+                    setBounded(geometryColumnCache, cacheKey, geomName);
+                    setBounded(geometryTypeCache, cacheKey, geomType);
                 }
             }
 
@@ -66,16 +77,16 @@ export const fetchGeometryColumns = async (baseUrl, typeNames) => {
 
     const result = {};
     typeNames.forEach(name => {
-        result[name] = geometryColumnCache[`${baseUrl}:${name}`] || 'the_geom';
+        result[name] = geometryColumnCache.get(`${baseUrl}:${name}`) || 'the_geom';
     });
     return result;
 };
 
 export const fetchGeometryType = async (baseUrl, typeName) => {
     const cacheKey = `${baseUrl}:${typeName}`;
-    if (geometryTypeCache[cacheKey]) return geometryTypeCache[cacheKey];
+    if (geometryTypeCache.has(cacheKey)) return geometryTypeCache.get(cacheKey);
     await fetchGeometryColumns(baseUrl, [typeName]);
-    return geometryTypeCache[cacheKey] || 'unknown';
+    return geometryTypeCache.get(cacheKey) || 'unknown';
 };
 
 export const getWmsUrl = (url) => {

@@ -9,32 +9,49 @@ export const DEFAULT_LOOP_INTERVAL_MS = 500;
 export const LOOP_INTERVAL_PRESETS = [250, 500, 1000, 2000, 3000];
 export const DEFAULT_LOOP_DIRECTION = 'ltr';
 
-export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, getSpecificFilter, getPeriodicity }) => {
+const clampIntervalMs = (ms) => Math.max(100, Math.min(10000, Number(ms) || DEFAULT_LOOP_INTERVAL_MS));
+const normalizeDirection = (dir) => (dir === 'rtl' ? 'rtl' : 'ltr');
+
+export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLayerIds = [], getSpecificFilter, getPeriodicity }) => {
     const { loadingLayers } = useLayerLoading();
     const [dateLoops, setDateLoops] = useState({});
-    const [loopIntervalMs, setLoopIntervalMsState] = useState(DEFAULT_LOOP_INTERVAL_MS);
-    const [loopDirection, setLoopDirectionState] = useState(DEFAULT_LOOP_DIRECTION);
+    const [loopPrefs, setLoopPrefs] = useState({});
     const loopDataRef = useRef({});
     const timersRef = useRef(new Map());
     const appliedDefaultsRef = useRef(new Set());
-    const intervalRef = useRef(DEFAULT_LOOP_INTERVAL_MS);
-    const directionRef = useRef(DEFAULT_LOOP_DIRECTION);
+    const prefsRef = useRef({});
     const refs = useRef({});
     refs.current.applyFilter = applyFilter;
     refs.current.loadingLayers = loadingLayers;
     refs.current.getSpecificFilter = getSpecificFilter;
     refs.current.getPeriodicity = getPeriodicity;
 
-    const setLoopIntervalMs = useCallback((ms) => {
-        const clamped = Math.max(100, Math.min(10000, Number(ms) || DEFAULT_LOOP_INTERVAL_MS));
-        intervalRef.current = clamped;
-        setLoopIntervalMsState(clamped);
+    const getLoopPrefs = useCallback((layerId) => {
+        const prefs = prefsRef.current[layerId];
+        return {
+            intervalMs: prefs?.intervalMs ?? DEFAULT_LOOP_INTERVAL_MS,
+            direction: prefs?.direction ?? DEFAULT_LOOP_DIRECTION
+        };
     }, []);
 
-    const setLoopDirection = useCallback((dir) => {
-        const normalized = dir === 'rtl' ? 'rtl' : 'ltr';
-        directionRef.current = normalized;
-        setLoopDirectionState(normalized);
+    const setLoopIntervalMs = useCallback((layerId, ms) => {
+        if (!layerId) return;
+        const clamped = clampIntervalMs(ms);
+        prefsRef.current[layerId] = { ...(prefsRef.current[layerId] || {}), intervalMs: clamped };
+        setLoopPrefs(prev => ({
+            ...prev,
+            [layerId]: { ...(prev[layerId] || {}), intervalMs: clamped }
+        }));
+    }, []);
+
+    const setLoopDirection = useCallback((layerId, dir) => {
+        if (!layerId) return;
+        const normalized = normalizeDirection(dir);
+        prefsRef.current[layerId] = { ...(prefsRef.current[layerId] || {}), direction: normalized };
+        setLoopPrefs(prev => ({
+            ...prev,
+            [layerId]: { ...(prev[layerId] || {}), direction: normalized }
+        }));
     }, []);
 
     const clearTimer = useCallback((layerId) => {
@@ -52,6 +69,10 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, getSpeci
             const data = loopDataRef.current[layerId];
             if (!data || !data.isPlaying) return;
 
+            const prefs = prefsRef.current[layerId] || {};
+            const intervalMs = prefs.intervalMs ?? DEFAULT_LOOP_INTERVAL_MS;
+            const direction = prefs.direction ?? DEFAULT_LOOP_DIRECTION;
+
             if (refs.current.loadingLayers.has(layerId)) {
                 timersRef.current.set(layerId, setTimeout(doTick, 100));
                 return;
@@ -59,7 +80,7 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, getSpeci
 
             const { values } = data;
             const currentIdx = values.findIndex(v => v.key === data.currentKey);
-            const step = directionRef.current === 'rtl' ? -1 : 1;
+            const step = direction === 'rtl' ? -1 : 1;
             const nextIdx = (currentIdx + step + values.length) % values.length;
             const next = values[nextIdx];
 
@@ -70,10 +91,12 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, getSpeci
                 [layerId]: { ...prev[layerId], currentKey: next.key }
             }));
 
-            timersRef.current.set(layerId, setTimeout(doTick, intervalRef.current));
+            timersRef.current.set(layerId, setTimeout(doTick, intervalMs));
         };
 
-        timersRef.current.set(layerId, setTimeout(doTick, intervalRef.current));
+        const prefs = prefsRef.current[layerId] || {};
+        const intervalMs = prefs.intervalMs ?? DEFAULT_LOOP_INTERVAL_MS;
+        timersRef.current.set(layerId, setTimeout(doTick, intervalMs));
     }, [clearTimer]);
 
     const startLoop = useCallback((layerId, config) => {
@@ -164,11 +187,29 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, getSpeci
         trackRasterLoop(layerId, true);
     }, [stopLoop, startLoop, runNextTick, inferLoopConfig]);
 
+    const pauseAllLoops = useCallback(() => {
+        Object.keys(loopDataRef.current).forEach(layerId => {
+            const data = loopDataRef.current[layerId];
+            if (data?.isPlaying) {
+                stopLoop(layerId);
+                trackRasterLoop(layerId, false);
+            }
+        });
+    }, [stopLoop]);
+
     const cleanupLoop = useCallback((layerId) => {
         stopLoop(layerId);
         delete loopDataRef.current[layerId];
+        delete prefsRef.current[layerId];
 
         setDateLoops(prev => {
+            const next = { ...prev };
+            delete next[layerId];
+            return next;
+        });
+
+        setLoopPrefs(prev => {
+            if (!prev[layerId]) return prev;
             const next = { ...prev };
             delete next[layerId];
             return next;
@@ -219,5 +260,31 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, getSpeci
         });
     }, [activeLayerIds, dateLoops, cleanupLoop]);
 
-    return { dateLoops, startLoop, stopLoop, toggleLoop, cleanupLoop, getLoopState, inferLoopConfig, loopIntervalMs, setLoopIntervalMs, loopDirection, setLoopDirection };
+    useEffect(() => {
+        hiddenLayerIds.forEach(layerId => {
+            const data = loopDataRef.current[layerId];
+            if (data?.isPlaying) {
+                stopLoop(layerId);
+                trackRasterLoop(layerId, false);
+            }
+        });
+    }, [hiddenLayerIds, stopLoop]);
+
+    const hasActiveLoops = Object.values(dateLoops).some(l => l.isPlaying);
+
+    return {
+        dateLoops,
+        hasActiveLoops,
+        startLoop,
+        stopLoop,
+        pauseAllLoops,
+        toggleLoop,
+        cleanupLoop,
+        getLoopState,
+        inferLoopConfig,
+        loopPrefs,
+        getLoopPrefs,
+        setLoopIntervalMs,
+        setLoopDirection
+    };
 };

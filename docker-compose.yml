@@ -4,6 +4,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     profiles: ["dev"]
+    init: true
     environment:
       VITE_BACKEND_API_HOST: ${VITE_BACKEND_API_HOST:-/api/}
       VITE_GEOSERVER_URL: ${VITE_GEOSERVER_URL:-/geoserver/}
@@ -25,6 +26,12 @@ services:
       - "${FRONTEND_PORT:-5173}:${VITE_PORT:-5173}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${VITE_PORT:-5173}/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   frontend-build:
@@ -38,6 +45,7 @@ services:
         VITE_NODE_ENV: ${VITE_NODE_ENV:-production}
         VITE_APP_ENV: ${VITE_APP_ENV:-beta}
     profiles: ["build"]
+    user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - ./frontend/dist:/output
     entrypoint: ["sh", "-c", "rm -rf /output/* && cp -r /app/dist/* /output/"]
@@ -46,6 +54,7 @@ services:
     build:
       context: ./backend
       target: ${BACKEND_TARGET:-development}
+    init: true
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       DEBUG: ${DEBUG:-True}
@@ -64,10 +73,12 @@ services:
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-8}
       DB_POOL_SIZE: ${DB_POOL_SIZE:-8}
       DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-8}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.1}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:${BACKEND_PORT:-8000}/health')\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:${BACKEND_PORT:-8000}/health')\""]
       interval: 10s
       timeout: 5s
       retries: 3

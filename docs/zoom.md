@@ -26,6 +26,18 @@ defaultZoom: { zoom: 14, center: [-103.34, 20.67] }
 defaultZoom: { extent: [-103.5, 20.5, -103.2, 20.8] }
 ```
 
+**Ajuste dinamico a las features (`'fit'`)** — hace WFS `GetFeature` de la capa, computa el extent real de sus geometrias y llama `view.fit(extent)`. Util cuando no conoces el bounding box ahead of time o cuando la capa puede cambiar de forma en GeoServer sin que el frontend se entere:
+
+```javascript
+defaultZoom: 'fit'
+// equivalente:
+defaultZoom: { fit: true }
+```
+
+El fetch vive en `services/layerExtentService.js` (`fetchLayerExtent(layer)`), cachea el extent por `baseUrl|layerName|cqlFilter` (LRU max 50), tolera timeouts de 10s y errores (retorna `null` sin throw, sin zoom). Si WFS falla, el mapa mantiene su vista actual.
+
+**Tradeoff:** `'fit'` agrega un request WFS (~100-500ms segun la capa y el numero de features). Para capas grandes (municipios, miles de puntos) preferir `{ extent: [...] }` hardcoded. Para capas chicas o dinamicas (poligonos de ANP, areas editables desde admin) usar `'fit'`.
+
 ### Comportamiento
 
 - Solo aplica al **activar** la capa manualmente (click del usuario)
@@ -53,4 +65,4 @@ zoomRange: { min: 10, max: 16 } // visible entre zoom 10 y 16
 
 ## Boton "Centrar en Jalisco"
 
-En los controles del mapa, al pasar el cursor sobre el boton de zoom-in (+) aparece un boton adicional con icono de viewfinder que resetea la vista a los bounds de Jalisco (`zoom: 8`, `center: [-103.585, 20.85]`).
+En los controles del mapa, al pasar el cursor sobre el boton de zoom-in (+) aparece un boton adicional con icono de viewfinder que resetea la vista a los bounds de Jalisco usando `view.fit(JALISCO_BOUNDS.coords)` con padding proporcional al viewport. El zoom final se calcula segun el tamano de pantalla, no es fijo — `zoom: 8` es solo el valor default de la constante `JALISCO_BOUNDS` en `wmsConfig.js`, usado como fallback.

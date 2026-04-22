@@ -1,4 +1,4 @@
-import bannerHeader from '@assets/images/bannerHeader.png';
+import bannerHeader from '@assets/images/bannerHeader.webp';
 
 const bannerConfig = {
     banners: [

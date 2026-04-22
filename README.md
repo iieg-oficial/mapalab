@@ -114,7 +114,7 @@ mapalab/
 │   └── app/                    # Codigo fuente Python
 │       ├── server.py           # Punto de entrada FastAPI
 │       ├── config.py           # Configuracion y variables de entorno
-│       ├── routes/             # Endpoints de la API
+│       ├── routers/            # Endpoints de la API
 │       ├── schemas/            # Modelos Pydantic/SQLModel
 │       ├── services/           # Logica de negocio
 │       └── databases/          # Conexiones a bases de datos
@@ -140,6 +140,7 @@ mapalab/
 | `@helpers` | `src/helpers` |
 | `@icons` | `src/assets/icons` |
 | `@logos` | `src/assets/logos` |
+| `@png` | `src/assets/png` |
 | `@assets` | `src/assets` |
 
 ### Backend - Endpoints principales
@@ -217,6 +218,9 @@ Ver documentacion completa en [docs/ci-cd.md](docs/ci-cd.md).
 | [Arquitectura](docs/arquitectura.md) | Diagramas de infraestructura y componentes |
 | [Zoom](docs/zoom.md) | Zoom automatico por capa, rango de visibilidad y boton centrar Jalisco |
 | [Markers](docs/markers.md) | Marcadores temporales con icono en el mapa |
+| [URL sync](docs/url-sync.md) | Sincronizacion bidireccional de estado con query params |
+| [Busqueda](docs/search.md) | Sistema de busqueda: scoring, searchMeta, backend planeado |
+| [Sider](docs/sider.md) | Sidebar: estados, lockMode, hover y menus flotantes |
 
 ## Licencia
 

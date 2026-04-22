@@ -1,6 +1,6 @@
-import imgInfoBanner from '@assets/images/img_info_banner.png';
-import imgDescargadaBanner from '@assets/images/img_descargada_banner.png';
-import imgHerramientasBanner from '@assets/images/img_herramientas_banner.png';
+import imgInfoBanner from '@assets/images/img_info_banner.webp';
+import imgDescargadaBanner from '@assets/images/img_descargada_banner.webp';
+import imgHerramientasBanner from '@assets/images/img_herramientas_banner.webp';
 
 const selectConfig = {
     title: 'No te pierdas estas funcionalidades del mapa',

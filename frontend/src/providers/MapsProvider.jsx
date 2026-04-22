@@ -51,6 +51,7 @@ const MapsProvider = ({ children }) => {
         applyFilter: cqlFilter.applyFilter,
         clearFilter: cqlFilter.clearFilter,
         activeLayerIds: layerManagement.activeLayerIds,
+        hiddenLayerIds: symbology.hiddenLayerIds,
         getSpecificFilter: cqlFilter.getSpecificFilter,
         getPeriodicity: periodicityCache.getPeriodicity
     });

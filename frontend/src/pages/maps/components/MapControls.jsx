@@ -1,7 +1,14 @@
 import { useMapsContext } from '@hooks/useMaps';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { transformExtent } from 'ol/proj';
+import { transformExtent, fromLonLat } from 'ol/proj';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import Feature from 'ol/Feature';
+import Point from 'ol/geom/Point';
+import Style from 'ol/style/Style';
+import Circle from 'ol/style/Circle';
+import { Fill, Stroke } from 'ol/style';
 import Icon from '@components/Icon';
 import { trackMapZoomLevel, trackGeolocate } from '@services/analyticsService';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
@@ -87,26 +94,6 @@ const MapControls = () => {
             async (position) => {
                 const view = mapRef.current.getView();
                 const coords = [position.coords.longitude, position.coords.latitude];
-
-                const [
-                    { fromLonLat },
-                    { default: VectorLayer },
-                    { default: VectorSource },
-                    { default: Feature },
-                    { default: Point },
-                    { default: Style },
-                    { default: Circle },
-                    { Fill, Stroke }
-                ] = await Promise.all([
-                    import('ol/proj'),
-                    import('ol/layer/Vector'),
-                    import('ol/source/Vector'),
-                    import('ol/Feature'),
-                    import('ol/geom/Point'),
-                    import('ol/style/Style'),
-                    import('ol/style/Circle'),
-                    import('ol/style')
-                ]);
 
                 const transformedCoords = fromLonLat(coords);
 

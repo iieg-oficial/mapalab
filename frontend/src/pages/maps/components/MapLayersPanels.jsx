@@ -23,16 +23,18 @@ const MapLayersPanels = () => {
             flexDirection="flex-col"
             contentClassName="gap-4 overflow-visible"
             noPadding={true}
-            className="bg-transparent! border-transparent! shadow-none! overflow-visible"
+            className="bg-transparent! border-transparent! shadow-none! overflow-visible max-md:pointer-events-none"
         >
             {isSlow && (
-                <Message
-                    variant="warning"
-                    title="Recuerda que..."
-                    description="El funcionamiento del mapa puede verse afectado de acuerdo al número de capas que tengas activas."
-                    closable
-                    storageKey="slow_loading_warning"
-                />
+                <div className="max-md:pointer-events-auto">
+                    <Message
+                        variant="warning"
+                        title="Recuerda que..."
+                        description="El funcionamiento del mapa puede verse afectado de acuerdo al número de capas que tengas activas."
+                        closable
+                        storageKey="slow_loading_warning"
+                    />
+                </div>
             )}
             <ActiveLayersList onCollapseChange={handleLayersCollapse} />
             <SymbologyPanel onCollapseChange={handleSymbologyCollapse} />

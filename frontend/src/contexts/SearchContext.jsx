@@ -48,5 +48,3 @@ export const useSearch = () => {
     }
     return context;
 };
-
-export default SearchContext;

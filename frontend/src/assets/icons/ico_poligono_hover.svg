@@ -1,12 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="30" height="30" viewBox="0 0 30 30">
-  <defs>
-    <clipPath id="clip-path">
-      <rect id="Rectángulo_14239" data-name="Rectángulo 14239" width="30" height="30" fill="#fff" stroke="#fff" stroke-width="1"/>
-    </clipPath>
-  </defs>
-  <g id="ico_poligono" transform="translate(4 4)">
-    <g id="Grupo_16245" data-name="Grupo 16245" transform="translate(-4 -4)" clip-path="url(#clip-path)">
-      <path id="Trazado_34868" data-name="Trazado 34868" d="M23.525,19.114,13.747,2.205a1.242,1.242,0,0,0,.221-.735,1.47,1.47,0,0,0-2.941,0,1.242,1.242,0,0,0,.221.735L1.47,19.114a1.47,1.47,0,0,0,0,2.941,1.423,1.423,0,0,0,1.25-.735H22.275a1.423,1.423,0,0,0,1.25.735,1.47,1.47,0,0,0,0-2.941m-1.25.735H2.794L12.571,2.941Z" transform="translate(2.895 3.453)" fill="#fff" stroke="#fff" stroke-width="0.5"/>
-    </g>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><defs><clipPath id="a"><path fill="#fff" stroke="#fff" d="M0 0h30v30H0z" data-name="Rectángulo 14239"/></clipPath></defs><g clip-path="url(#a)" data-name="Grupo 16245"><path fill="#fff" stroke="#fff" stroke-width=".5" d="M26.42 22.567 16.642 5.658a1.24 1.24 0 0 0 .221-.735 1.47 1.47 0 0 0-2.941 0 1.24 1.24 0 0 0 .221.735L4.365 22.567a1.47 1.47 0 0 0 0 2.941 1.42 1.42 0 0 0 1.25-.735H25.17a1.42 1.42 0 0 0 1.25.735 1.47 1.47 0 0 0 0-2.941m-1.25.735H5.689l9.777-16.908Z" data-name="Trazado 34868"/></g></svg>

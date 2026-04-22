@@ -12,7 +12,7 @@ Interfaz web para la creacion, gestion y visualizacion de mapas interactivos con
 | GeoServer | 2.27.0 Kartoza (WMS, WFS, WCS — externo) |
 | Proxy | Nginx stable-alpine |
 | Contenedores | Docker + Docker Compose con profiles (dev, staging, build) |
-| Testing | Vitest + Testing Library (350 tests) |
+| Testing | Vitest + Testing Library (ver `docs/testing.md`) |
 | CI/CD | GitHub Actions (lint, test, deploy SSH, health check, Discord) |
 | Monitoreo | Huachicol (Grafana + Prometheus + Loki) |
 
@@ -113,7 +113,7 @@ mapalab/
 │   │   ├── providers/     # MapsProvider (orquestador central), MainProvider
 │   │   ├── services/      # downloadService, featureInfoService, analyticsService, etc.
 │   │   ├── hooks/         # Hooks globales (useDebounce, useMaps, etc.)
-│   │   └── test/          # 24 archivos, 350 tests
+│   │   └── test/          # Tests con Vitest (ver docs/testing.md)
 │   ├── Dockerfile         # Build de produccion (Node 24 Alpine)
 │   └── Dockerfile.dev     # Dev con hot-reload
 ├── backend/
@@ -240,7 +240,7 @@ Timeouts de descarga (600s) configurados en:
 
 - Capas con `timeEnabled: true` usan parametro TIME de WMS (no CQL_FILTER)
 - `timeStylePattern` permite estilos dinamicos por fecha: `lluvia_total_mensual_{year}_{month}`
-- `useDateLoop` (antes `useRasterLoop`) anima ciclando valores CQL/TIME con modo `year`/`month`, intervalo configurable (250-3000ms) y dirección LTR/RTL; funciona para capas raster y vectoriales
+- `useDateLoop` (antes `useRasterLoop`) anima ciclando valores CQL/TIME con modo `year`/`month`, intervalo configurable (presets 250-3000ms, clamp 100-10000ms) y dirección LTR/RTL; funciona para capas raster y vectoriales
 - Cada capa raster tiene `wmsGroup` unico para evitar merge de requests WMS
 
 ## Docker y despliegue
@@ -303,13 +303,14 @@ Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gatew
 
 ## Proximos pasos (roadmap)
 
-- **v1.1.0** — Migrar definiciones de capas del frontend a endpoint del backend (DB + CRUD + editor)
-- **v1.2.0** — Comparador de periodicidad (vista lado a lado)
-- **v1.3.0** — Editor de Home desde admin, compartir estado completo del mapa via URL
-- **v1.4.0** — Login ciudadano, capas favoritas
-- **v2.0.0** — Integracion IGIBot, 3D, dashboards, API publica
+- **v1.3.0** — Migrar definiciones de capas del frontend a endpoint del backend (DB + CRUD + editor) — Abril/Mayo 2026
+- **v1.4.0** — Comparador de periodicidad (vista lado a lado) — Mayo/Junio 2026
+- **v1.5.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
+- **v1.6.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
+- **v1.7.0** — Arquitectura de capas, lazy loading — Noviembre 2026/Enero 2027
+- **v2.0.0** — Integracion IGIBot, 3D, dashboards, API publica — Febrero 2027+
 
-Ver `docs/planes/PLAN_MIGRACION_CAPAS.md` para el plan detallado de v1.1.0.
+Ver `docs/planes/PLAN_MIGRACION_CAPAS.md` para el plan detallado de v1.3.0.
 
 ## Archivos .env por entorno
 
@@ -403,12 +404,24 @@ tema (raiz: "Seguridad", "General", etc.)
 Siempre ejecutar en `frontend/` antes de considerar una tarea terminada:
 
 ```bash
-npm install        # Asegurar dependencias actualizadas
-npm run lint       # Validar reglas ESLint
-npm test           # Correr los 344+ tests con Vitest
+npm install                       # Asegurar dependencias actualizadas
+npm run lint                      # Validar reglas ESLint (incluye bloqueo de PNG imports)
+npm test                          # Correr tests con Vitest (ver docs/testing.md)
+npm run check:dead-code           # Detectar código/exports/dependencias muertas (knip)
 ```
 
 Si alguno falla, corregir antes de continuar.
+
+Los git hooks del repo (`.githooks/`) automatizan parte de esto:
+- **pre-commit**: ESLint sobre archivos staged (via `lint-staged`, rápido)
+- **pre-push**: lint completo + tests + knip strict (última línea de defensa)
+- **CI**: además ejecuta `npm run build`
+
+Ver `docs/ci-cd.md` para detalles de los hooks y la filosofía de layering (pre-commit rápido, pre-push exhaustivo, CI autoritativo).
+
+### Assets
+
+Los assets importados desde código (`src/assets/`) deben ser **SVG** (preferido) o **WebP** (lossless via `cwebp -lossless`). La regla ESLint `no-restricted-imports` bloquea cualquier `import` de `.png`. El único PNG del proyecto es `frontend/public/img_link_share.png` (OG image referenciado por URL desde `index.html`, no por import).
 
 ### Versionado y documentacion
 
@@ -437,6 +450,10 @@ Tipos: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `style`
 | `docs/analytics.md` | Eventos GTM/GA4, parametros, debug |
 | `docs/periodicidad.md` | Sistema de filtrado temporal (vectorial y raster) |
 | `docs/z-index.md` | Jerarquia de z-index (UI y capas del mapa) |
+| `docs/url-sync.md` | Sincronizacion bidireccional de estado con query params |
+| `docs/search.md` | Sistema de busqueda: scoring, searchMeta, backend planeado |
+| `docs/sider.md` | Sidebar: estados, lockMode, hover y menus flotantes |
+| `docs/cache.md` | Inventario de caches (memoria, storage, backend, nginx) |
 | `docs/roadmap.md` | Timeline completo y checklist por version |
 | `docs/CHANGELOG.md` | Registro de cambios por version |
 | `docs/backend.md` | Stack, estructura y desarrollo local del backend |

@@ -67,7 +67,7 @@ Capas raster (ImageMosaic en GeoServer) que usan el parámetro WMS `TIME` en vez
 - `wmsGroup` — cada capa raster necesita un wmsGroup único para evitar merge de requests
 
 **Flujo:**
-1. Capa se activa → `useRasterLoop` aplica TIME del mes 1 por defecto
+1. Capa se activa → `useDateLoop` aplica TIME del último mes disponible del año más reciente
 2. `useWMSFilterUpdater` detecta `timeEnabled` y usa `TIME` param en vez de `CQL_FILTER`
 3. Si tiene `timeStylePattern`, resuelve el estilo dinámico con `resolveTimeStyle`
 4. `SimpleDateSelector` muestra meses con botón play/pause para animación
@@ -86,7 +86,7 @@ Capas raster (ImageMosaic en GeoServer) que usan el parámetro WMS `TIME` en vez
 
 **Archivos clave:**
 - `frontend/src/pages/maps/helpers/layers/definitions/recursos.js` — definiciones de capas raster
-- `frontend/src/pages/maps/hooks/useRasterLoop.js` — animación de loop temporal
+- `frontend/src/pages/maps/hooks/useDateLoop.js` — animación de loop temporal
 - `frontend/src/pages/maps/hooks/useWMSFilterUpdater.js` — aplica TIME y STYLES
 - `frontend/src/pages/maps/helpers/wmsConfig.js` — `resolveTimeStyle`
 
@@ -193,10 +193,14 @@ Desde v1.2.0 el loop (`useDateLoop`, antes `useRasterLoop`) es general: anima ta
 
 | Control | Estilo | Función |
 |---------|--------|---------|
-| `LoopIntervalButton` | Morado, cicla `250/500/1000/2000/3000` ms | Velocidad del tick |
-| `LoopDirectionButton` | Morado, flecha `←` / `→` | Dirección del ciclo (LTR / RTL) |
+| `LoopIntervalButton` | Morado, cicla `250/500/1000/2000/3000` ms | Velocidad del tick **per-layer** |
+| `LoopDirectionButton` | Morado, flecha `←` / `→` | Dirección del ciclo (LTR / RTL) **per-layer** |
 | `PlayPauseButton` | Naranja (acción principal) | Inicia/pausa el loop |
 | Botón eliminar filtro | Ícono naranja | Limpia el filtro de fecha (detiene loop y resetea selector) |
+
+Cada capa mantiene sus propias preferencias de velocidad y dirección en runtime (no se persisten entre sesiones ni en backend). Se almacenan en `loopPrefs[layerId]` dentro de `useDateLoop`, con fallback a los defaults globales (`DEFAULT_LOOP_INTERVAL_MS = 500`, `DEFAULT_LOOP_DIRECTION = 'ltr'`) cuando el usuario aún no ha configurado nada. La preferencia se elimina automáticamente al desactivar la capa (`cleanupLoop`).
+
+**Decisión:** la preferencia se borra en `cleanupLoop` (al desactivar la capa). Si en el futuro se quiere que sobreviva a un toggle off/on dentro de la misma sesión, basta con quitar el `delete prefsRef.current[layerId]` y el `setLoopPrefs(...)` dentro de `cleanupLoop` — el resto del sistema sigue funcionando igual.
 
 El modal decide el modo del loop según la vista actual del selector (`onExpandedYearChange`):
 - Vista de años (`expandedYear === null`) → `mode: 'year'`.
@@ -220,17 +224,31 @@ startLoop(layerId, {
 **Flujo:**
 1. Usuario selecciona vista (años o meses).
 2. Click en play: el modal construye `values` con `buildLoopValues({mode, year, rasterPeriodicity, periodicity, monthsSelection})`.
-3. `startLoop` guarda el config en `loopDataRef` y arranca `setTimeout(doTick, intervalRef.current)`.
-4. Cada tick avanza `nextIdx = (currentIdx + step + values.length) % values.length` (step = +1 en LTR, -1 en RTL) y aplica el `filterValue`.
+3. `startLoop` guarda el config en `loopDataRef` y arranca `setTimeout(doTick, intervalMs)` leyendo de `prefsRef.current[layerId]`.
+4. Cada tick avanza `nextIdx = (currentIdx + step + values.length) % values.length` (step = +1 en LTR, -1 en RTL según `prefsRef.current[layerId].direction`) y aplica el `filterValue`.
 5. El selector se sincroniza con `loopState.currentKey` (destaca en naranja el tick actual).
 6. El carrusel de años auto-scrollea para mantener visible el año activo.
 
 ### Botones en `ActiveLayerItem`
 
-- **Label de fecha**: `"2024"`, `"JUN 2024"`, `"3 MESES 2024"`, `"N AÑOS"`. Anchos fijos por tipo (estático vs con loop) para evitar rebote.
-- **Hover** sobre el label expone:
-  - Botón morado de velocidad (si `loopIntervalMs !== DEFAULT_LOOP_INTERVAL_MS`).
-  - Botón morado de dirección.
+Los controles están desacoplados en botones independientes, todos a la derecha del label de fecha:
+
+- **Label de fecha** (naranja): `"2024"`, `"JUN 2024"`, `"3 MESES 2024"`, `"N AÑOS"`. Anchos fijos por tipo. Click abre el modal de detalle (no toggle del loop). Ancho estático — ya no crece con el ícono de pause, porque el play es un botón aparte. Pulsea (`animate-pulse`) cuando `isLooping && isLoading` para indicar que el siguiente tick está esperando que carguen los tiles.
+- **Botón morado de velocidad**: visible siempre mientras hay loop; en desktop aparece también en hover sobre la tarjeta cuando no hay loop (para permitir configurar antes de arrancar). Cicla por `LOOP_INTERVAL_PRESETS`.
+- **Botón morado de dirección**: misma regla de visibilidad. Alterna entre LTR y RTL con flecha animada.
+- **Botón naranja de play/pausa**: círculo con ícono play o pause según estado. Visible cuando `canPlayLoop` (hay loop activo o `inferLoopConfig` encuentra valores). Es la única acción que dispara `toggleLoop(layerId)`.
+
+Los botones llaman a `setLoopIntervalMs(layerId, ms)` y `setLoopDirection(layerId, dir)` → afectan solo a esa capa.
+
+### Capa oculta → sin controles de periodicidad
+
+Cuando el usuario oculta una capa (`hiddenLayerIds` incluye su id, bandera `layer.visible === false`), todo el bloque de periodicidad en `ActiveLayerItem` se oculta: label de fecha, play/pause, velocidad y dirección. El guard está en el contenedor padre (`{dateLabel && layer.visible && (...)}`).
+
+Además, `useDateLoop` recibe `hiddenLayerIds` desde `MapsProvider` y en un `useEffect` detiene cualquier loop activo de capas recién ocultadas (`stopLoop(id)` + `trackRasterLoop(id, false)`). Esto evita gastar requests WMS mientras la capa no se ve en el mapa.
+
+### Controles globales en el header de `ActiveLayersList`
+
+- **Pausar animaciones** (ícono naranja): aparece solo cuando `hasActiveLoops === true`. Llama a `pauseAllLoops()` que itera `loopDataRef` y detiene cada loop activo (dispara también el analytics `trackRasterLoop(layerId, false)` por capa).
 - Click en label: toggle loop si `inferLoopConfig` encuentra valores; si no, abre el modal.
 
 ### Orden visual
@@ -241,7 +259,7 @@ startLoop(layerId, {
 
 ### Archivos clave
 
-- `frontend/src/pages/maps/hooks/useDateLoop.js` — loop state, ticks, `inferLoopConfig`, `loopIntervalMs`, `loopDirection`
+- `frontend/src/pages/maps/hooks/useDateLoop.js` — loop state, ticks, `inferLoopConfig`, `loopPrefs[layerId]`, `getLoopPrefs`, `setLoopIntervalMs(layerId, ms)`, `setLoopDirection(layerId, dir)`, `pauseAllLoops()`, `hasActiveLoops`
 - `frontend/src/pages/maps/helpers/dateLoopHelpers.js` — `describeDateFilter`, `formatLoopLabel`, `buildLoopValues`, `computeSelectorInitialState`
 - `frontend/src/pages/maps/components/LayerDetailModal/components/SimpleDateSelectorParts.jsx` — `PlayPauseButton`, `LoopIntervalButton`, `LoopDirectionButton`, `YearBadge`, `BackButton`, `CarouselArrow`
 
