@@ -39,7 +39,9 @@ __pycache__/
 .pytest_cache/
 *.venv/
 *tmp/
+.tmp-export/
 backend/mapalab_*_cache.json
+scripts/layers_export.json
 
 node_modules/
 dist/

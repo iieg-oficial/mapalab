@@ -240,9 +240,30 @@ Cuando `queryFeatures` no encuentra resultados en la capa primaria pero sí en o
 
 Ver el inventario completo de caches en `docs/cache.md`.
 
+## Edicion desde mariachi (v1.7.0+)
+
+El administrador puede configurar el InfoBox de cada capa desde el drawer en `/administrador/mapalab/layers`. Los presets disponibles son:
+
+| Preset | Campos que renderiza |
+|---|---|
+| `municipio` | header + badge municipio + fecha + text libre + cards de stats |
+| `punto` | header + badge caracteristica |
+| `punto_municipio` | header + badge municipio + badge caracteristica |
+| `punto_ubicacion` | header + badge municipio + N badges de caracteristicas + list + iconText |
+| `punto_completo` | idem `punto_ubicacion` + stats + text libre |
+| `custom` | JSON libre (compatible con la estructura que el renderer espera) |
+
+Componentes en mariachi admin (`src/components/layersEditor/`):
+
+- `InfoBoxPresetForm.jsx` — formulario con los campos del preset seleccionado (`Select mode="tags"` para arrays de caracteristicas/list/iconTexts).
+- `InfoBoxJsonEditor.jsx` — textarea monospace con validacion JSON en vivo; usa `key={layer.id}` para evitar que el estado local persista entre capas distintas.
+- `InfoBoxPreview.jsx` — render visual con datos dummy (nombre, municipio, tipo, fecha, direccion, etc.) para que el editor vea en vivo como queda el InfoBox antes de guardar.
+
+La resolucion de params → `infobox_config` ocurre en mariachi API (`app/services/layer_service.py::resolve_infobox`). El frontend del visor consume el `infoboxConfig` ya resuelto (sin conocer el preset).
+
 ## Referencias cruzadas
 
 - `docs/markers.md` — markers con `infoBox` y flag `openOnShow`
 - `docs/analytics.md` — evento `feature_click`
 - `docs/cache.md` — inventario de todos los caches del proyecto
-- `docs/context.md` — templates de `littleCard` y proyecciones
+- `docs/layers.md` — arquitectura completa del sistema de capas

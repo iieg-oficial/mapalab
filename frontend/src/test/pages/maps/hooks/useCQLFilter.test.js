@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCQLFilter } from '@hooksMaps/useCQLFilter';
 
-vi.mock('@pages/maps/helpers/layers', () => {
+vi.mock('@hooks/useLayers', () => {
     const mockLayers = [
         {
             id: 'parent',
@@ -11,17 +11,7 @@ vi.mock('@pages/maps/helpers/layers', () => {
         { id: 'standalone' }
     ];
     return {
-        layers: mockLayers,
-        findLayerById: (id) => {
-            const find = (list) => {
-                for (const l of list) {
-                    if (l.id === id) return l;
-                    if (l.children) { const f = find(l.children); if (f) return f; }
-                }
-                return null;
-            };
-            return find(mockLayers);
-        }
+        useLayers: () => ({ layers: mockLayers, initialOrder: [], loading: false, error: null })
     };
 });
 

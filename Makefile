@@ -1,4 +1,4 @@
-.PHONY: help dev staging prod deploy down down-dev down-staging build logs logs-dev logs-staging status clean setup-hooks ensure-networks
+.PHONY: help dev staging prod deploy down down-dev down-staging build logs logs-dev logs-staging status clean setup-hooks ensure-networks refresh-layer-tree
 
 # UID/GID del host para que volumes escritos por contenedores (ej. frontend-build → dist/) tengan ownership correcto
 export UID := $(shell id -u)
@@ -25,10 +25,11 @@ help:
 	@echo "  make down-staging - Detener servicios de staging"
 	@echo ""
 	@echo "GENERAL:"
-	@echo "  make down         - Detener todos los servicios"
-	@echo "  make clean        - Detener servicios y limpiar todo"
-	@echo "  make status       - Ver estado de los servicios"
-	@echo "  make setup-hooks  - Configurar git hooks del proyecto"
+	@echo "  make down              - Detener todos los servicios"
+	@echo "  make clean             - Detener servicios y limpiar todo"
+	@echo "  make status            - Ver estado de los servicios"
+	@echo "  make setup-hooks       - Configurar git hooks del proyecto"
+	@echo "  make refresh-layer-tree - Regenerar cache del arbol de capas en DB"
 
 ensure-networks:
 	@docker network create iieg-network 2>/dev/null || true
@@ -106,3 +107,14 @@ status:
 	@echo ""
 	@echo "=== STAGING ==="
 	@$(COMPOSE_STAGING) ps 2>/dev/null || echo "  No hay servicios de staging corriendo"
+
+BACKEND_HOST ?= http://localhost:8000
+DATAENGINE_DIR ?= ../mapalab-dataengine
+
+refresh-layer-tree:
+	@if [ -d $(DATAENGINE_DIR) ] && docker ps --format '{{.Names}}' | grep -q '^dataengine-jobs$$'; then \
+		$(MAKE) -C $(DATAENGINE_DIR) refresh-layer-tree; \
+	else \
+		echo "Fallback: trigger vía endpoint del backend"; \
+		curl -fsS -X POST $(BACKEND_HOST)/layers/refresh-cache | python3 -m json.tool; \
+	fi

@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
-import { BASE_INITIAL_ORDER } from '../helpers/layers/definitions/base';
+import { useLayers } from '@hooks/useLayers';
 
 export const filtersInitializationComplete = { value: false };
 
 export const useInitializeFromUrl = () => {
     const [searchParams] = useSearchParams();
     const { setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById } = useMapsContext();
+    const { initialOrder: BASE_INITIAL_ORDER } = useLayers();
     const initialized = useRef(false);
 
     useEffect(() => {

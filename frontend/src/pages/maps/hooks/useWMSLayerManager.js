@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { hasWMSConfig, findWMSConfig } from '../helpers/wmsConfig';
-import { layers } from '../helpers/layers/index';
+import { useLayers } from '@hooks/useLayers';
 import { findLayerById } from '../helpers/layers/utils/layerHelpers';
 import { filtersInitializationComplete } from './useInitializeFromUrl';
 import { useDebounce } from '@hooks/useDebounce';
@@ -9,6 +9,7 @@ import { useLayerLoading } from '@hooks/useLayerLoading';
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
 export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getLayerOpacity, layerOpacities, getFilter, combineCQLFilters }) => {
+    const { layers } = useLayers();
     const wmsLayersRef = useRef(new Map());
     const isFirstRender = useRef(true);
     const debouncedActiveLayerIds = useDebounce(activeLayerIds, 30);

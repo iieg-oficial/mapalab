@@ -12,6 +12,101 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.7.0',
+        items: [
+            { text: 'Editor de capas: reordenar capas del árbol arrastrándolas (drag & drop) entre hermanos del mismo grupo', tag: 'added' },
+            { text: 'Editor de capas: preview del InfoBox con datos de ejemplo al seleccionar un preset', tag: 'added' },
+            { text: 'Editor de capas: formulario dinámico que muestra solo los campos que aplican al preset elegido', tag: 'added' },
+            { text: 'Editor de capas: editor de JSON libre para el preset "custom"', tag: 'added' },
+            { text: 'Observabilidad: endpoints /metrics en formato Prometheus para monitoreo centralizado', tag: 'added' },
+            { text: 'Limpieza de arquitectura interna: removida la dependencia del Google Sheet heredado', tag: 'changed' }
+        ]
+    },
+    {
+        version: '1.6.0',
+        items: [
+            { text: 'Editor de capas: los campos de GeoServer (workspace, capa, estilo) se eligen desde listas dinámicas en lugar de escribirse a mano', tag: 'changed' },
+            { text: 'Edición masiva de tags desde el editor con pegado directo de Excel (hasta 500 capas por envío)', tag: 'added' },
+            { text: 'Límites de tasa en el panel de administración para proteger el servicio ante ráfagas de peticiones', tag: 'added' }
+        ]
+    },
+    {
+        version: '1.5.1',
+        items: [
+            { text: 'Editoras ahora pueden guardar cambios en capas como borradores que un administrador revisa antes de publicar', tag: 'added' }
+        ]
+    },
+    {
+        version: '1.5.0',
+        items: [
+            { text: 'Seguridad reforzada en configuración de numeralia: las estadísticas ahora se configuran con operaciones predefinidas (contar, sumar, promedio...) en lugar de escribir consultas', tag: 'changed' },
+            { text: 'Actualización más estable: cuando un administrador edita varias capas seguidas, el sistema agrupa los refrescos para no saturar el servidor', tag: 'perf' }
+        ]
+    },
+    {
+        version: '1.4.8',
+        items: [
+            { text: 'Corregido: la búsqueda ahora indexa correctamente las capas y responde con resultados', tag: 'fixed' }
+        ]
+    },
+    {
+        version: '1.4.7',
+        items: [
+            { text: 'Corregido: la búsqueda de capas no encontraba resultados tras la migración al backend', tag: 'fixed' }
+        ]
+    },
+    {
+        version: '1.4.6',
+        items: [
+            { text: 'Corregido: la información al hacer click sobre una capa (InfoBox) y las descargas vectoriales no funcionaban por una desconexión interna', tag: 'fixed' }
+        ]
+    },
+    {
+        version: '1.4.5',
+        items: [
+            { text: 'Corregido: algunas capas no se dibujaban en el mapa porque la dirección del servicio WMS no se construía correctamente', tag: 'fixed' }
+        ]
+    },
+    {
+        version: '1.4.4',
+        items: [
+            { text: 'Documentación completa del sistema de capas (docs/layers.md)', tag: 'added' },
+            { text: 'Script idempotente de bootstrap para configurar el esquema de capas en DataEngine', tag: 'added' }
+        ]
+    },
+    {
+        version: '1.4.3',
+        items: [
+            { text: 'Refactor total del sistema de capas: el frontend ya no contiene definiciones hardcodeadas, toda la información se obtiene del backend en tiempo real', tag: 'changed' },
+            { text: 'Nuevo hook `useLayers` como única fuente del árbol de capas; 20 componentes migrados', tag: 'changed' }
+        ]
+    },
+    {
+        version: '1.4.2',
+        items: [
+            { text: 'Metadata de capas (descripción, fuentes, metodología, numeralia) migrada a tabla editable desde mariachi', tag: 'added' },
+            { text: 'Numeralia dinámica: los valores se calculan con queries SQL configurables y se actualizan automáticamente cada día', tag: 'added' },
+            { text: 'Editor de metadata en panel de administrador', tag: 'added' }
+        ]
+    },
+    {
+        version: '1.4.1',
+        items: [
+            { text: 'Mejora de rendimiento: el árbol de capas ahora se sirve desde una caché materializada, cargando en menos de 5ms', tag: 'perf' },
+            { text: 'Los procesos de actualización diaria (periodicidad, árbol de capas, numeralia) se centralizaron en DataEngine', tag: 'changed' }
+        ]
+    },
+    {
+        version: '1.4.0',
+        items: [
+            { text: 'Sistema de capas dinámico: admin puede agregar, editar y quitar capas sin tocar código desde el panel de administración', tag: 'added' },
+            { text: 'Editor visual de capas con árbol jerárquico, búsqueda y formularios por sección', tag: 'added' },
+            { text: 'Flujo de revisión: editoras crean borradores, administradores aprueban y publican', tag: 'added' },
+            { text: 'Introspección de GeoServer desde el editor: selección visual de workspace, capa, campos y estilos disponibles', tag: 'added' },
+            { text: 'Búsqueda de capas desde el servidor con caché ETag para respuestas instantáneas cuando el contenido no ha cambiado', tag: 'perf' }
+        ]
+    },
+    {
         version: '1.3.0',
         items: [
             { text: 'Carga inicial del sitio significativamente más rápida gracias a la separación del código en paquetes independientes y optimización de imágenes', tag: 'perf' },

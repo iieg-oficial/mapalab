@@ -3,7 +3,7 @@ import MapsContext from '@contexts/MapsContext';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 import { getFeatureInfoForActiveLayers, getFeaturesInPolygonForActiveLayers } from '@services/featureInfoService';
 import { toLonLat } from 'ol/proj';
-import { layers as allLayers } from '../helpers/layers/index';
+import { useLayers } from '@hooks/useLayers';
 import { findLayerById, collectLayersWithWMS, findParentGroup } from '../helpers/layers/utils/layerHelpers';
 
 const FEATURE_INFO_LOADING_ID = 'feature_info_query';
@@ -12,6 +12,7 @@ const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
 export const useFeatureInfo = () => {
     const { hiddenLayerIds, setSelectedFeatureInfo, clickPosition, activeLayerIds, getFilter, selectedLayerForSymbology, setSelectedLayerForSymbology } = useContext(MapsContext);
+    const { layers: allLayers } = useLayers();
     const { setLayerLoading } = useLayerLoading();
     const [loading, setLoading] = useState(false);
 
@@ -94,7 +95,7 @@ export const useFeatureInfo = () => {
 
         try {
             const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
-            const results = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode);
+            const results = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers);
             const [lng, lat] = toLonLat(coordinate);
 
             if (results && results.length > 0) {
@@ -113,7 +114,7 @@ export const useFeatureInfo = () => {
                 let altResultsCache = null;
 
                 if (otherActiveLayers.length > 0) {
-                    const altResults = await getFeatureInfoForActiveLayers(otherActiveLayers, map, coordinate, getFilter, isInegiMode);
+                    const altResults = await getFeatureInfoForActiveLayers(otherActiveLayers, map, coordinate, getFilter, isInegiMode, allLayers);
                     if (altResults && altResults.length > 0) {
                         altResultsCache = altResults;
                         const groupedAlternatives = new Map();
@@ -254,7 +255,7 @@ export const useFeatureInfo = () => {
         setLayerLoading(FEATURE_INFO_LOADING_ID, true);
         try {
             const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
-            const results = await getFeaturesInPolygonForActiveLayers(activeLayers, map, polygonGeometry, getFilter, isInegiMode);
+            const results = await getFeaturesInPolygonForActiveLayers(activeLayers, map, polygonGeometry, getFilter, isInegiMode, allLayers);
             const [lng, lat] = toLonLat(centerCoordinate);
 
             if (results && results.length > 0) {

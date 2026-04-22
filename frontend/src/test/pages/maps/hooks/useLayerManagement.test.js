@@ -7,17 +7,22 @@ const { mockFindLayerById, mockGetAllChildLayerIds } = vi.hoisted(() => ({
     mockGetAllChildLayerIds: vi.fn()
 }));
 
-vi.mock('@pages/maps/helpers/layers/index', () => ({
-    layers: [
-        {
-            id: 'parent',
-            children: [
-                { id: 'child-1' },
-                { id: 'label-node', isLabel: true, children: [{ id: 'child-3' }] }
-            ]
-        },
-        { id: 'orphan' }
-    ]
+vi.mock('@hooks/useLayers', () => ({
+    useLayers: () => ({
+        layers: [
+            {
+                id: 'parent',
+                children: [
+                    { id: 'child-1' },
+                    { id: 'label-node', isLabel: true, children: [{ id: 'child-3' }] }
+                ]
+            },
+            { id: 'orphan' }
+        ],
+        initialOrder: [],
+        loading: false,
+        error: null
+    })
 }));
 
 vi.mock('@pages/maps/helpers/layers/utils/layerHelpers', () => ({

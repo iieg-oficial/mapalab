@@ -4,7 +4,7 @@ import { transformExtent } from 'ol/proj';
 import { trackLayerToggle } from '@services/analyticsService';
 import { generateDefaultDateFilter } from '@pages/maps/helpers/dateFilterHelpers';
 import { findParentGroup } from '@pages/maps/helpers/layers/utils/layerHelpers';
-import { layers as allLayers } from '@pages/maps/helpers/layers/index';
+import { useLayers } from '@hooks/useLayers';
 import { getLayerPeriodicity } from '@services/layerMetadataService';
 import { fetchLayerExtent } from '@services/layerExtentService';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
@@ -26,6 +26,8 @@ export const useLayerToggle = ({
     showMarker,
     hideMarker
 }) => {
+    const { layers: allLayers } = useLayers();
+
     const resolveDefaultDate = useCallback(async (dateToApply, layerId) => {
         let periodicity = periodicityCache.getPeriodicity(layerId);
         if (!periodicity) {
