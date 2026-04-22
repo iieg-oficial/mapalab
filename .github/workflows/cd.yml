@@ -34,8 +34,9 @@ jobs:
       - name: Health check
         run: |
           echo "Esperando que MapaLab responda..."
+          UA="Mozilla/5.0 (compatible; MapaLab-HealthCheck/1.0)"
           for i in $(seq 1 10); do
-            STATUS=$(curl -sL -o /dev/null -w "%{http_code}" https://mapalab-iieg.app || true)
+            STATUS=$(curl -sL -o /dev/null -w "%{http_code}" -A "$UA" https://mapalab-iieg.app || true)
             if [ "$STATUS" = "200" ]; then
               echo "MapaLab respondiendo correctamente (HTTP 200)"
               exit 0
