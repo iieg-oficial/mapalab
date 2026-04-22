@@ -201,46 +201,37 @@ const buildFilename = (layerId, extension) => {
     return `${label}_${date}.${extension}`;
 };
 
-export const downloadSingleFormat = async (layerId, formatId, options = {}) => {
-    const { signal, onProgress, dateFrom, dateTo, getFilter } = options;
+const fetchLayerBlob = async (config, formatId, { signal, onProgress, dateFrom, dateTo, getFilter, layerId }) => {
+    const { wmsConfig, workspace, layerName, isRaster, hasFilter } = config;
 
-    try {
-        const config = getLayerConfig(layerId);
-        if (!config) return { success: false, error: 'Capa no encontrada' };
+    if (isRaster) {
+        const timeValue = getFilter?.(layerId) || undefined;
+        const url = buildWCSUrl(wmsConfig, timeValue);
+        return { blob: await fetchWithProgress(url, signal, onProgress), ext: 'tiff' };
+    }
 
-        const { wmsConfig, workspace, layerName, isRaster, hasFilter } = config;
+    if (formatId === 'csv') {
         let blob;
-
-        if (isRaster) {
-            const timeValue = getFilter?.(layerId) || undefined;
-            const url = buildWCSUrl(wmsConfig, timeValue);
-            blob = await fetchWithProgress(url, signal, onProgress);
-            triggerDownload(blob, buildFilename(layerId, 'tiff'));
-        } else if (formatId === 'csv') {
-            if (hasFilter) {
-                const csvFmt = VECTOR_FORMATS.find(f => f.id === 'csv');
-                const url = buildWFSUrl(wmsConfig, csvFmt);
-                blob = await fetchWithProgress(url, signal, onProgress);
-            } else {
-                try {
-                    const url = buildBackendCSVUrl(workspace, layerName, dateFrom, dateTo);
-                    blob = await fetchWithProgress(url, signal, onProgress);
-                } catch {
-                    const csvFmt = VECTOR_FORMATS.find(f => f.id === 'csv');
-                    const url = buildWFSUrl(wmsConfig, csvFmt);
-                    blob = await fetchWithProgress(url, signal, onProgress);
-                }
-            }
-            triggerDownload(blob, buildFilename(layerId, 'csv'));
+        if (hasFilter) {
+            blob = await fetchWithProgress(buildWFSUrl(wmsConfig, VECTOR_FORMATS.find(f => f.id === 'csv')), signal, onProgress);
         } else {
-            const fmt = VECTOR_FORMATS.find(f => f.id === formatId);
-            if (!fmt) return { success: false, error: 'Formato no soportado' };
-            const url = buildWFSUrl(wmsConfig, fmt);
-            blob = await fetchWithProgress(url, signal, onProgress);
-            triggerDownload(blob, buildFilename(layerId, fmt.extension));
+            try {
+                blob = await fetchWithProgress(buildBackendCSVUrl(workspace, layerName, dateFrom, dateTo), signal, onProgress);
+            } catch {
+                blob = await fetchWithProgress(buildWFSUrl(wmsConfig, VECTOR_FORMATS.find(f => f.id === 'csv')), signal, onProgress);
+            }
         }
+        return { blob, ext: 'csv' };
+    }
 
-        return { success: true };
+    const fmt = VECTOR_FORMATS.find(f => f.id === formatId);
+    if (!fmt) return null;
+    return { blob: await fetchWithProgress(buildWFSUrl(wmsConfig, fmt), signal, onProgress), ext: fmt.extension };
+};
+
+const wrapDownload = async (fn) => {
+    try {
+        return await fn();
     } catch (error) {
         if (error.name === 'AbortError') return { success: false, cancelled: true };
         console.error('Error downloading:', error);
@@ -248,74 +239,40 @@ export const downloadSingleFormat = async (layerId, formatId, options = {}) => {
     }
 };
 
-export const downloadWithMenu = async (layerId, menuOptions = {}) => {
-    const {
-        formatId = 'csv',
-        dateMode = 'all',
-        metadataSelections = { txt: false, xlsx: false },
-        metadata,
-        signal,
-        onProgress,
-        getFilter,
-    } = menuOptions;
-
-    try {
+export const downloadSingleFormat = (layerId, formatId, options = {}) =>
+    wrapDownload(async () => {
         const config = getLayerConfig(layerId);
         if (!config) return { success: false, error: 'Capa no encontrada' };
+        const result = await fetchLayerBlob(config, formatId, { ...options, layerId });
+        if (!result) return { success: false, error: 'Formato no soportado' };
+        triggerDownload(result.blob, buildFilename(layerId, result.ext));
+        return { success: true };
+    });
 
-        const { wmsConfig, workspace, layerName, isRaster, hasFilter } = config;
-        const hasMetadata = metadataSelections.txt || metadataSelections.xlsx;
-        const metadatoList = hasMetadata ? getMetadataFiles(metadata) : [];
-        const needsZip = hasMetadata && metadatoList.length > 0;
+export const downloadWithMenu = (layerId, menuOptions = {}) =>
+    wrapDownload(async () => {
+        const { formatId = 'csv', dateMode = 'all', metadataSelections = { txt: false, xlsx: false }, metadata, signal, onProgress, getFilter } = menuOptions;
+        const config = getLayerConfig(layerId);
+        if (!config) return { success: false, error: 'Capa no encontrada' };
 
         let dateFrom, dateTo;
         if (dateMode === 'active' && getFilter) {
             const filterValue = getFilter(layerId);
-            if (filterValue) {
-                dateFrom = filterValue;
-                dateTo = filterValue;
-            }
+            if (filterValue) { dateFrom = filterValue; dateTo = filterValue; }
         }
 
-        if (!needsZip) {
+        const hasMetadata = metadataSelections.txt || metadataSelections.xlsx;
+        const metadatoList = hasMetadata ? getMetadataFiles(metadata) : [];
+        if (!hasMetadata || metadatoList.length === 0) {
             return downloadSingleFormat(layerId, formatId, { signal, onProgress, dateFrom, dateTo, getFilter });
         }
 
         const { default: JSZip } = await import('jszip');
         const zip = new JSZip();
-
         signal?.throwIfAborted();
 
-        if (isRaster) {
-            const timeValue = getFilter?.(layerId) || undefined;
-            const url = buildWCSUrl(wmsConfig, timeValue);
-            const blob = await fetchWithProgress(url, signal, onProgress);
-            zip.file(`${layerName}.tiff`, blob);
-        } else if (formatId === 'csv') {
-            let blob;
-            if (hasFilter) {
-                const csvFmt = VECTOR_FORMATS.find(f => f.id === 'csv');
-                const url = buildWFSUrl(wmsConfig, csvFmt);
-                blob = await fetchWithProgress(url, signal, onProgress);
-            } else {
-                try {
-                    const url = buildBackendCSVUrl(workspace, layerName, dateFrom, dateTo);
-                    blob = await fetchWithProgress(url, signal, onProgress);
-                } catch {
-                    const csvFmt = VECTOR_FORMATS.find(f => f.id === 'csv');
-                    const url = buildWFSUrl(wmsConfig, csvFmt);
-                    blob = await fetchWithProgress(url, signal, onProgress);
-                }
-            }
-            zip.file(`${layerName}.csv`, blob);
-        } else {
-            const fmt = VECTOR_FORMATS.find(f => f.id === formatId);
-            if (fmt) {
-                const url = buildWFSUrl(wmsConfig, fmt);
-                const blob = await fetchWithProgress(url, signal, onProgress);
-                zip.file(`${layerName}.${fmt.extension}`, blob);
-            }
-        }
+        const result = await fetchLayerBlob(config, formatId, { signal, onProgress, dateFrom, dateTo, getFilter, layerId });
+        if (result) zip.file(`${config.layerName}.${result.ext}`, result.blob);
 
         signal?.throwIfAborted();
         await addMetadataToZip(zip, metadatoList, metadataSelections);
@@ -323,14 +280,8 @@ export const downloadWithMenu = async (layerId, menuOptions = {}) => {
         signal?.throwIfAborted();
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         triggerDownload(zipBlob, buildFilename(layerId, 'zip'));
-
         return { success: true };
-    } catch (error) {
-        if (error.name === 'AbortError') return { success: false, cancelled: true };
-        console.error('Error downloading:', error);
-        return { success: false, error: error.message };
-    }
-};
+    });
 
 export const getAvailableMetadata = (metadata) => {
     const metadatoList = getMetadataFiles(metadata);
