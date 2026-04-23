@@ -62,7 +62,8 @@ make refresh-layer-tree    # reconstruye desde layers
 ```bash
 # Opción A: si tienes el JSON más reciente exportado
 cd /IIEG/mapalab-dataengine
-make bootstrap-v14 LAYERS_JSON=/path/to/layers_export.json BOOTSTRAP_FLAGS="--skip-role --skip-schema --skip-migrate"
+cd /IIEG/mapalab-dataengine
+make prod-migration PROD_MIGRATION_FLAGS="--skip-etl --layers-json /path/to/layers_export.json"
 
 # Opción B: restaurar desde backup diario de DataEngine
 docker exec dataengine-backup /scripts/restore-from-latest.sh mapalab  # nombre aprox., ver dataengine docs
@@ -183,10 +184,9 @@ No hay rollback granular hoy (v1.5.x lo agrega con `layers_audit`). Opciones act
 # Opción A: restaurar snapshot del schema mapalab (si tienes backup puntual)
 docker exec -i -e PGPASSWORD='...' dataengine-primary psql -U gisuser -d iieg_gis < /backups/mapalab_schema_YYYY-MM-DD.sql
 
-# Opción B: re-seed completo desde JSON
+# Opción B: re-seed completo desde JSON (sin tocar el Sheet ETL)
 cd /IIEG/mapalab-dataengine
-make bootstrap-v14 LAYERS_JSON=/path/to/known-good.json \
-    BOOTSTRAP_FLAGS="--skip-role --skip-schema --skip-migrate"
+make prod-migration PROD_MIGRATION_FLAGS="--skip-etl --layers-json /path/to/known-good.json"
 ```
 
 ---
@@ -215,7 +215,7 @@ docker exec -i -e PGPASSWORD='...' dataengine-primary psql -U gisuser -d iieg_gi
 DROP SCHEMA mapalab CASCADE;
 CREATE SCHEMA mapalab AUTHORIZATION mariachi_layers;
 SQL
-make bootstrap-v14 LAYERS_JSON=/path/to/latest.json
+make prod-migration PROD_MIGRATION_FLAGS="--skip-etl --layers-json /path/to/latest.json"
 ```
 
 ---
