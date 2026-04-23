@@ -208,17 +208,19 @@ def refresh_cache() -> dict[str, Any]:
 
 
 def get_cached_state() -> dict[str, Any]:
-    with _MEM_LOCK:
-        if _MEM_CACHE['etag'] and _MEM_CACHE['tree']:
-            return {
-                'etag': _MEM_CACHE['etag'],
-                'tree': _MEM_CACHE['tree'],
-                'initial_order': _MEM_CACHE['initial_order'],
-                'workspaces': _MEM_CACHE['workspaces'],
-            }
-
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
     with conn.get_session() as session:
+        db_etag = session.query(LayerTreeCache.etag).filter(LayerTreeCache.id == 1).scalar()
+
+        with _MEM_LOCK:
+            if db_etag and _MEM_CACHE['etag'] == db_etag and _MEM_CACHE['tree']:
+                return {
+                    'etag': _MEM_CACHE['etag'],
+                    'tree': _MEM_CACHE['tree'],
+                    'initial_order': _MEM_CACHE['initial_order'],
+                    'workspaces': _MEM_CACHE['workspaces'],
+                }
+
         row = session.query(LayerTreeCache).filter(LayerTreeCache.id == 1).first()
         if row is None:
             result = refresh_cache()
