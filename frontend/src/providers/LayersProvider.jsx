@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import LottieSpinner from '@components/LottieSpinner';
 import { LayersContext } from '@contexts/LayersContext';
+import ErrorPage from '@pages/ErrorPage';
 import { fetchLayerTree, fetchInitialOrder } from '@services/layerTreeService';
 import { setLayersForMetadataService } from '@services/layerMetadataService';
 import { setLayersForDownloadService } from '@services/downloadService';
@@ -51,12 +52,10 @@ export const LayersProvider = ({ children }) => {
 
     if (state.error) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24 }}>
-                <div style={{ maxWidth: 480, textAlign: 'center' }}>
-                    <h2>No se pudo cargar el visor</h2>
-                    <p>No fue posible obtener las capas desde el servidor. Intenta recargar la página.</p>
-                </div>
-            </div>
+            <ErrorPage
+                title="No se pudo cargar el visor"
+                description="No fue posible obtener las capas desde el servidor. Intenta recargar la página."
+            />
         );
     }
 

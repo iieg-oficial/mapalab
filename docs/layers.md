@@ -251,7 +251,9 @@ Primer deploy a prod de DataEngine requiere correr el script de bootstrap:
 
 ```bash
 cd /IIEG/mapalab-dataengine
-make bootstrap-v14 LAYERS_JSON=/path/to/layers_export.json
+make prod-migration           # pull final del Sheet + bootstrap + seed + migrate + stamp
+# o sin ETL (si ya corriste el Sheet hoy o estas en dev sin credenciales):
+make prod-migration PROD_MIGRATION_FLAGS="--skip-etl"
 ```
 
 Pasos idempotentes:

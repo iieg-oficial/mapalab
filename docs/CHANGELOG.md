@@ -7,6 +7,13 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+### Corregido
+- `layer_tree_service.get_cached_state()` revalida contra DB via etag check en cada llamada. Cierra la ventana de staleness cross-workers: cuando mariachi (o el cron nocturno) actualiza `mapalab.layer_tree_cache`, los N workers Gunicorn se autosincronizan en su siguiente request sin necesidad de restart ni pub/sub.
+- `.env.development`: `DB_HOST=localhost` → `host.docker.internal` para que el backend en container alcance el Postgres de dataengine.
+
+### Documentacion
+- `docs/context.md`, `docs/layers.md`, `docs/runbook-layers.md` actualizados para reflejar `make prod-migration` como entrypoint unico de bootstrap en dataengine (antes eran `bootstrap-v14{,-dry}` y `migrate-mapalab-card`).
+
 ## [1.7.0] - 2026-04-22
 
 ### Agregado
