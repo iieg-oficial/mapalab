@@ -216,7 +216,7 @@ Definiciones viven en DataEngine (schema `mapalab`). Frontend las carga via `GET
 - `public.layer_periodicity` — tabla autogenerada por función SQL (refresh diario)
 
 **Legacy (eliminado en v1.7.0):**
-- `public.mapalab_card` — ya no se lee desde el backend. La tabla puede seguir viva en producción como respaldo histórico hasta que se confirme que todo está migrado a `mapalab.layer_metadata`. El ETL del Google Sheet está eliminado; la migración 1-shot `make migrate-mapalab-card` sigue disponible como herramienta de recuperación idempotente.
+- `public.mapalab_card` — ya no se lee desde el backend. La tabla puede seguir viva en producción como respaldo histórico hasta que se confirme que todo está migrado a `mapalab.layer_metadata`. El ETL del Google Sheet fue eliminado del código de runtime; se restaura temporalmente desde git (commit `1f70a88~1`) en el flujo `make prod-migration` de `mapalab-dataengine`, que hace el pull final del Sheet + bootstrap + seed + migrate + stamp en una sola invocación.
 
 ### Schedulers (viven en DataEngine, no en mapalab backend)
 
