@@ -1,16 +1,18 @@
 import { useRouteError, Link } from 'react-router';
 import imgLupa from '@assets/images/img_lupa.svg';
 
-const ErrorPage = () => {
-    const error = useRouteError();
+const ErrorPage = ({ title: titleProp, description }) => {
+    const routeError = useRouteError();
 
-    console.error('Error capturado por React Router:', error);
+    if (routeError) {
+        console.error('Error capturado por React Router:', routeError);
+    }
 
-    const is404 = error?.status === 404;
+    const is404 = !titleProp && routeError?.status === 404;
 
-    const title = is404
+    const title = titleProp ?? (is404
         ? 'No encontramos la página\nque estás buscando...'
-        : 'Algo salió mal...';
+        : 'Algo salió mal...');
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen text-center px-4" style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F7F0FA 100%)' }}>
@@ -18,6 +20,11 @@ const ErrorPage = () => {
             <h1 className="font-garet font-bold text-[28px]/[40px] md:text-[40px]/[56px] text-[#2E4372] tracking-[0px] mb-4 whitespace-pre-line">
                 {title}
             </h1>
+            {description && (
+                <p className="font-garet text-[16px]/[24px] md:text-[18px]/[28px] text-[#2E4372] max-w-xl mb-4 whitespace-pre-line">
+                    {description}
+                </p>
+            )}
             <div className="flex flex-col w-full md:w-auto md:flex-row gap-4 mt-4">
                 <Link
                     to="/"
