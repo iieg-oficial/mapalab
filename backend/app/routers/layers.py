@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Header, Query, Response
+from fastapi import APIRouter, Header, HTTPException, Query, Response
 
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
@@ -105,6 +105,7 @@ def search_layers(
         path = entry['path'][:-1]
         results.append({
             'id': row.id,
+            'slug': row.slug,
             'label': row.label,
             'workspace': row.workspace_alias,
             'path': ' > '.join(path) if path else None,
@@ -112,3 +113,20 @@ def search_layers(
             'searchMeta': node.get('searchMeta'),
         })
     return results
+
+
+@router.get('/resolve', responses=api_responses(404, 500))
+def resolve_layer_ref(
+    ref: str = Query(min_length=1, description='slug o alias publico'),
+):
+    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+    with conn.get_session() as session:
+        layer = LayersRepository.find_layer_by_slug_or_alias(session, ref)
+        if layer is None:
+            raise HTTPException(status_code=404, detail=f"No existe capa para ref '{ref}'")
+        return {
+            'id': layer.id,
+            'slug': layer.slug,
+            'label': layer.label,
+            'workspace': layer.workspace_alias,
+        }
