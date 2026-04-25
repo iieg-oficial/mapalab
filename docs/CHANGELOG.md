@@ -7,12 +7,37 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+### Pendiente (Fase 3 en desarrollo)
+- `<CompareView>`: split UI con dos `<MapView>` reusando `MapsProvider`. Hoy queda el JSON envelope `kind: "compare"` validado en backend y deserializer preparado para `kind: "single"`. La instanciacion de paneles + `useDateOverride(paneIndex)` es el siguiente paso.
+
+## [1.8.0] - 2026-04-24
+
+### Agregado
+- **Slugs publicos por capa** (`mapalab.layers.slug`): identificadores legibles tipo `establecimientos-salud` que reemplazan los IDs internos de GeoServer en URLs publicas. Configurables desde mariachi admin con auto-suggest desde el label.
+- **Aliases de capa** (`mapalab.layer_aliases`): atajos cortos opcionales (ej: `esalud`) que tambien resuelven a la capa. CRUD via `GET/POST/DELETE /layers/{id}/aliases` en mariachi y nueva tab "Aliases" en `LayerEditPage`.
+- **Endpoint `/layers/resolve?ref=<slug-or-alias>`** en mapalab backend para resolucion publica.
+- **Deeplink por capa** via `?layer=<slug>`: aterriza con esa capa unica activa + su `defaultDate`.
+- **URL viva con slugs** en lugar de IDs: `useUrlSync` y `useInitializeFromUrl` operan en slugs con fallback automatico a id legacy durante 2 releases.
+- **Migracion Alembic 0004** en `mapalab-dataengine/jobs/alembic/versions/`: slug + aliases.
+
+### Cambiado
+- **Ownership de migraciones del schema `mapalab.*`** revisado (ecosystem.md §7.3 v2): movido de mariachi a mapalab-dataengine. Razon: en prod mariachi y dataengine corren en servidores distintos. Ahora `make prod-migration` y `make migrate` aplican migraciones desde el container `dataengine-jobs` sin depender de mariachi.
+- **`bootstrap-v14.sh`** corre `alembic upgrade head` automaticamente al final del bootstrap (idempotente; aplica solo lo nuevo si ya estaba stamped).
+- **`prod-migration.sh`** ahora idempotente y re-ejecutable. Default cambia a `--skip-etl` (ETL legacy del Sheet desactivado); para incluirlo `--with-etl` opcional.
+- **Container `dataengine-jobs`** incluye `alembic==1.13.3` en sus deps.
+- **Targets `make migrate` y `make migrate-status`** en `mapalab-dataengine/Makefile`.
+- **`run_refresh_layer_tree.py`**: incluye `slug` y `aliases` en cada nodo del JSON cacheado.
+- **Mariachi**: removida la rama `dataengine` de su Alembic (`alembic.ini`, `env.py`, `versions/dataengine/`); `init_db.py` ya no la invoca. Mariachi solo gestiona schema `public.*`/`mariachi.*`.
+
 ### Corregido
 - `layer_tree_service.get_cached_state()` revalida contra DB via etag check en cada llamada. Cierra la ventana de staleness cross-workers: cuando mariachi (o el cron nocturno) actualiza `mapalab.layer_tree_cache`, los N workers Gunicorn se autosincronizan en su siguiente request sin necesidad de restart ni pub/sub.
 - `.env.development`: `DB_HOST=localhost` → `host.docker.internal` para que el backend en container alcance el Postgres de dataengine.
 
 ### Documentacion
-- `docs/context.md`, `docs/layers.md`, `docs/runbook-layers.md` actualizados para reflejar `make prod-migration` como entrypoint unico de bootstrap en dataengine (antes eran `bootstrap-v14{,-dry}` y `migrate-mapalab-card`).
+- `docs/context.md`, `docs/layers.md`, `docs/runbook-layers.md` actualizados para reflejar `make prod-migration` como entrypoint unico de bootstrap en dataengine.
+- `docs/planes/PLAN_URL_SHARES_SLUGS.md` agregado: plan completo del feature (slugs + aliases + shares + comparador).
+- `mariachi/docs/ALEMBIC_MULTI_ENV.md`: reescrito como single-env con pointer a mapalab-dataengine.
+- `gateway-hub/docs/ecosystem.md §7.3` revisado con la nueva politica de ownership de schema.
 
 ## [1.7.0] - 2026-04-22
 

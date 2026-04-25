@@ -12,6 +12,14 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.8.0',
+        items: [
+            { text: 'Las capas ahora tienen identificadores publicos legibles que aparecen en la URL (por ejemplo "establecimientos-salud" en lugar de IDs internos)', tag: 'changed' },
+            { text: 'Acceso directo a una capa con un link tipo "?layer=establecimientos-salud" — abre el mapa con esa capa activa', tag: 'added' },
+            { text: 'Cada capa puede tener atajos cortos opcionales (aliases). Por ejemplo "?layer=esalud" tambien funciona', tag: 'added' },
+        ]
+    },
+    {
         version: '1.7.0',
         items: [
             { text: 'Editor de capas: reordenar capas del árbol arrastrándolas (drag & drop) entre hermanos del mismo grupo', tag: 'added' },

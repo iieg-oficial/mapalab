@@ -74,3 +74,30 @@ export const findLayerDef = (layerId, layersArray) => {
     }
     return null;
 };
+
+const findLayerBySlugOrAlias = (ref, layersArray) => {
+    if (!ref) return null;
+    const lowered = String(ref).toLowerCase();
+    for (const layer of layersArray) {
+        if (layer.slug === lowered) return layer;
+        if (Array.isArray(layer.aliases) && layer.aliases.includes(lowered)) return layer;
+        if (layer.children) {
+            const found = findLayerBySlugOrAlias(lowered, layer.children);
+            if (found) return found;
+        }
+    }
+    return null;
+};
+
+export const resolveRefToId = (ref, layersArray) => {
+    if (!ref) return null;
+    const directHit = findLayerDef(ref, layersArray);
+    if (directHit) return directHit.id;
+    const slugHit = findLayerBySlugOrAlias(ref, layersArray);
+    return slugHit ? slugHit.id : null;
+};
+
+export const slugForLayer = (layerId, layersArray) => {
+    const layer = findLayerDef(layerId, layersArray);
+    return layer?.slug || layerId;
+};

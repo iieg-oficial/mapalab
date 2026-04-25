@@ -2,10 +2,13 @@ import { useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { useDebounce } from '@hooks/useDebounce';
 import { useMapsContext } from '@hooks/useMaps';
+import { useLayers } from '@hooks/useLayers';
+import { slugForLayer } from '@pages/maps/helpers/wmsConfig';
 import { filtersInitializationComplete } from './useInitializeFromUrl';
 
 export const useUrlSync = () => {
     const { activeLayerIds, filters, findLayerById, selectedLayerForSymbology } = useMapsContext();
+    const { layers: layerTree } = useLayers();
     const selectedId = selectedLayerForSymbology?.id || null;
     const [_searchParams, setSearchParams] = useSearchParams();
     const isFirstRender = useRef(true);
@@ -27,7 +30,10 @@ export const useUrlSync = () => {
         });
         if (validLayerIds.length > 0) {
             result.layers = validLayerIds
-                .map(id => id === debouncedSelectedId ? `*${id}` : id)
+                .map(id => {
+                    const ref = slugForLayer(id, layerTree);
+                    return id === debouncedSelectedId ? `*${ref}` : ref;
+                })
                 .join(',');
         }
 
@@ -41,13 +47,14 @@ export const useUrlSync = () => {
                     const combinedFilter = filterExpressions.length === 1
                         ? filterExpressions[0]
                         : filterExpressions.map(f => `(${f})`).join(' AND ');
-                    result[`filter_${layerId}`] = combinedFilter;
+                    const refKey = slugForLayer(layerId, layerTree);
+                    result[`filter_${refKey}`] = combinedFilter;
                 }
             }
         });
 
         return result;
-    }, [debouncedActiveLayerIds, debouncedFilters, debouncedSelectedId, findLayerById]);
+    }, [debouncedActiveLayerIds, debouncedFilters, debouncedSelectedId, findLayerById, layerTree]);
 
     useEffect(() => {
         if (isFirstRender.current) {
@@ -89,7 +96,7 @@ export const useUrlSync = () => {
             const newParams = new URLSearchParams(prev);
 
             const keysToDelete = Array.from(newParams.keys()).filter(key =>
-                key === 'layers' || key === 'selected' || key.startsWith('filter_') || key.startsWith('swap_')
+                key === 'layers' || key === 'layer' || key === 'selected' || key.startsWith('filter_') || key.startsWith('swap_')
             );
             keysToDelete.forEach(key => newParams.delete(key));
 
