@@ -10,6 +10,21 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 ### Pendiente (Fase 3 en desarrollo)
 - `<CompareView>`: split UI con dos `<MapView>` reusando `MapsProvider`. Hoy queda el JSON envelope `kind: "compare"` validado en backend y deserializer preparado para `kind: "single"`. La instanciacion de paneles + `useDateOverride(paneIndex)` es el siguiente paso.
 
+## [1.9.0] - 2026-04-24
+
+### Agregado
+- **Snapshots persistidos del mapa** (`mapalab.map_shares`): `POST /shares` guarda el estado completo (capas, orden, visibilidad, opacidad, filtros, periodicidad, loop, basemap, vista) en DB y devuelve un hash corto. `GET /shares/{id}` lo restaura. URL: `?s=k3jx9p2m`.
+- **Pinning de shares por 1 ano** (`POST /shares/{id}/pin`). Default: retencion sliding window 30 dias desde ultimo acceso.
+- **Modal "Compartir mapa"**: reemplaza al `ShareButton` legacy. Crear enlace, copiar, fijar 1 ano. Detecta `?s=hash` en `useInitializeFromUrl` y restaura el estado completo al cargar.
+- **Hash determinista** (SHA-256 del JSON canonicalizado, base32 truncado a 10 chars): dos usuarios que arman el mismo mapa comparten el mismo hash → deduplicacion automatica.
+- **Rate limiting in-memory** en `POST /shares` (10 req/min por IP-hash) + tamano max payload 64KB.
+- **Métricas Prometheus** nuevas en `/metrics`: `mapalab_shares_created_total{kind}`, `mapalab_shares_accessed_total{kind}`, `mapalab_shares_pinned_total`. `incr()` ahora soporta labels.
+- **Cron diario `run_cleanup_shares.py`** (04:45 en `dataengine-jobs`): elimina shares no-pinned con `last_accessed_at > 30 dias` y pinned-expirados.
+- **Migracion Alembic 0005** en `mapalab-dataengine/jobs/alembic/versions/`: tabla `mapalab.map_shares` con índices condicionales (sliding-window y pinned).
+
+### Cambiado
+- **`ShareButton`**: ya no copia el URL viva al portapapeles; ahora abre el `<ShareModal>` que mintea un share persistente. El componente `helpers/handleShare.jsx` legacy se elimina.
+
 ## [1.8.0] - 2026-04-24
 
 ### Agregado
