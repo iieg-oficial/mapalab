@@ -411,6 +411,25 @@ curl -sk "$TAIGA_URL/api/v1/resolver?project=mapalab&task=<REF>" \
 
 ---
 
+## Convenciones
+
+### Asignación por default
+
+Cuando crees o modifiques épicas, historias, tareas o issues:
+
+- Si el item **no tiene `assigned_to`** (es `null` o no viene en el body), asignarlo a `$TAIGA_USER_ID` por default.
+- Si ya tiene `assigned_to` (otro usuario), **no sobrescribir** — respetar la asignación existente.
+
+Aplica al crear (POST) y al actualizar (PATCH). En PATCH, si la respuesta de `GET` previa muestra `assigned_to: null`, incluir `"assigned_to": <USER_ID>` en el cuerpo del PATCH antes de enviar.
+
+```python
+target = api('GET', f'/userstories/{us_id}')
+patch = {'version': target['version'], ...resto_de_cambios}
+if target.get('assigned_to') is None:
+    patch['assigned_to'] = TAIGA_USER_ID
+api('PATCH', f'/userstories/{us_id}', patch)
+```
+
 ## Notas generales
 
 - El SSL del servidor usa una CA local. Usar `-sk` en curl (skip verify) en entornos de desarrollo.
