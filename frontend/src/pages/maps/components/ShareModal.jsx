@@ -3,6 +3,7 @@ import Modal from '@components/Modal';
 import { useShareSerializer } from '@pages/maps/hooks/useShareSerializer';
 import { createShare, pinShare } from '@services/shareService';
 import { trackShareMap } from '@services/analyticsService';
+import CompareButton from './CompareButton';
 
 const buildShareUrl = (id) => {
     const base = window.location.origin;
@@ -118,6 +119,12 @@ export default function ShareModal({ open, onClose }) {
                     </>
                 )}
                 {error && <p className="text-sm text-red-600">{error}</p>}
+
+                <hr className="border-gray-200" />
+                <div className="flex flex-col gap-2">
+                    <p className="text-sm text-gray-700">Comparador por fecha (proximamente):</p>
+                    <CompareButton disabled />
+                </div>
             </div>
         </Modal>
     );
