@@ -12,6 +12,14 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.9.0',
+        items: [
+            { text: 'Compartir mapa: el boton ahora genera un enlace corto que recuerda el estado completo (capas activas, orden, filtros, opacidad, fechas, basemap, posicion)', tag: 'changed' },
+            { text: 'Boton "Fijar 1 ano" en el modal de compartir para que el enlace no expire por inactividad', tag: 'added' },
+            { text: 'Los enlaces compartidos no fijados se conservan 30 dias desde el ultimo acceso', tag: 'added' },
+        ]
+    },
+    {
         version: '1.8.0',
         items: [
             { text: 'Las capas ahora tienen identificadores publicos legibles que aparecen en la URL (por ejemplo "establecimientos-salud" en lugar de IDs internos)', tag: 'changed' },

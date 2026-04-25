@@ -3,6 +3,9 @@ import { useSearchParams } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
+import { useShareDeserializer } from '@pages/maps/hooks/useShareDeserializer';
+import { fetchShare } from '@services/shareService';
+import { trackShareMap } from '@services/analyticsService';
 
 export const filtersInitializationComplete = { value: false };
 
@@ -10,6 +13,7 @@ export const useInitializeFromUrl = () => {
     const [searchParams] = useSearchParams();
     const { setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById } = useMapsContext();
     const { initialOrder: BASE_INITIAL_ORDER, layers: layerTree } = useLayers();
+    const deserialize = useShareDeserializer();
     const initialized = useRef(false);
 
     useEffect(() => {
@@ -17,6 +21,29 @@ export const useInitializeFromUrl = () => {
 
         const tree = Array.isArray(layerTree) ? layerTree : [];
         const resolveRef = (ref) => resolveRefToId(ref, tree);
+
+        const shareId = searchParams.get('s');
+        if (shareId) {
+            initialized.current = true;
+            (async () => {
+                try {
+                    const envelope = await fetchShare(shareId);
+                    if (envelope) {
+                        const applied = deserialize(envelope);
+                        if (applied) {
+                            trackShareMap('opened');
+                            filtersInitializationComplete.value = true;
+                            return;
+                        }
+                    }
+                    trackShareMap('not_found');
+                } catch {
+                    trackShareMap('error');
+                }
+                filtersInitializationComplete.value = true;
+            })();
+            return;
+        }
 
         const layersParam = searchParams.get('layers');
         const layerSingleParam = searchParams.get('layer');
@@ -118,5 +145,5 @@ export const useInitializeFromUrl = () => {
             filtersInitializationComplete.value = true;
             initialized.current = true;
         }
-    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById, layerTree, BASE_INITIAL_ORDER]);
+    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById, layerTree, BASE_INITIAL_ORDER, deserialize]);
 };
