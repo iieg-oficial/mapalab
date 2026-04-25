@@ -12,6 +12,13 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.10.0',
+        items: [
+            { text: 'Etiquetas visuales BETA / NUEVA / DEV / TEST para indicar el estado de funciones (componente reutilizable)', tag: 'added' },
+            { text: 'Boton "Comparar fechas" como vista previa en el modal de Compartir (proximamente disponible)', tag: 'added' },
+        ]
+    },
+    {
         version: '1.9.0',
         items: [
             { text: 'Compartir mapa: el boton ahora genera un enlace corto que recuerda el estado completo (capas activas, orden, filtros, opacidad, fechas, basemap, posicion)', tag: 'changed' },

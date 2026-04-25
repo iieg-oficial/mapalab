@@ -8,7 +8,13 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 ## [No publicado]
 
 ### Pendiente (Fase 3 en desarrollo)
-- `<CompareView>`: split UI con dos `<MapView>` reusando `MapsProvider`. Hoy queda el JSON envelope `kind: "compare"` validado en backend y deserializer preparado para `kind: "single"`. La instanciacion de paneles + `useDateOverride(paneIndex)` es el siguiente paso.
+- `<CompareView>`: split UI con dos `<MapView>` reusando `MapsProvider`. Hoy queda el JSON envelope `kind: "compare"` validado en backend, `<CompareButton>` (disabled, con tag BETA) en el modal, y deserializer preparado para `kind: "single"`. La instanciacion de paneles + `useDateOverride(paneIndex)` es el siguiente paso.
+
+## [1.10.0] - 2026-04-24
+
+### Agregado
+- **Componente `<Tag>`** (`@components/Tag`) para etiquetas semanticas: `state` = `beta` | `dev` | `nueva` | `test`, `size` = `xs` | `sm` | `md`. Estilos por estado.
+- **Componente `<CompareButton>`** con tag BETA: scaffold visual del comparador por fecha. Hoy se monta `disabled` dentro de `<ShareModal>` como teaser; la funcionalidad de split-view + `useDateOverride(paneIndex)` viene en una version posterior.
 
 ## [1.9.0] - 2026-04-24
 
