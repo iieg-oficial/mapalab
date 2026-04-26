@@ -77,6 +77,26 @@ export default [
         },
     },
     {
+        files: ['**/InfoBox/InfoBox.jsx'],
+        rules: {
+            'max-lines': ['error', {
+                'max': 400,
+                'skipBlankLines': true,
+                'skipComments': true
+            }],
+        },
+    },
+    {
+        files: ['**/releaseNotes.js'],
+        rules: {
+            'max-lines': ['error', {
+                'max': 1000,
+                'skipBlankLines': true,
+                'skipComments': true
+            }],
+        },
+    },
+    {
         files: ['**/test/**/*.{js,jsx}', '**/*.test.{js,jsx}'],
         languageOptions: {
             globals: globals.node,

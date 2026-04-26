@@ -1,6 +1,9 @@
 import { findWMSConfig } from '../pages/maps/helpers/wmsConfig';
 import { combineCQLFilters, fetchGeometryColumns, getWmsUrl, getWfsUrl, filterValidLayers, groupLayersByUrl, parseResponse } from '../utils/featureInfoUtils';
 
+export const FEATURE_COUNT_CAP = 50;
+export const FEATURE_COUNT_TOTAL = 2000;
+
 const matchesFilter = (properties, cqlFilter) => {
     if (!cqlFilter || !properties) return true;
 
@@ -23,7 +26,7 @@ const matchesFilter = (properties, cqlFilter) => {
     return true;
 };
 
-export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinate, getFilterFn = null, isInegiMode = false, allLayers = []) => {
+export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinate, getFilterFn = null, isInegiMode = false, allLayers = [], featureCount = FEATURE_COUNT_CAP) => {
     const validLayers = filterValidLayers(activeLayers, allLayers, findWMSConfig);
 
     if (validLayers.length === 0) return [];
@@ -87,7 +90,7 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
                 SRS: projectionCode,
                 FORMAT: 'image/png',
                 INFO_FORMAT: 'application/json',
-                FEATURE_COUNT: '50',
+                FEATURE_COUNT: String(featureCount),
                 X: Math.floor(pixel[0]).toString(),
                 Y: Math.floor(pixel[1]).toString(),
                 CQL_FILTER: cqlFilters.join(';'),
@@ -282,3 +285,5 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
         .flat()
         .filter(info => info !== null && info.features && info.features.length > 0);
 };
+
+export { fetchTotalsForClick, fetchMoreFeaturesForLayer } from './featureInfoPagination';

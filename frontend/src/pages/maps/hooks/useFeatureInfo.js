@@ -1,7 +1,8 @@
 import { useState, useCallback, useContext } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useLayerLoading } from '@hooks/useLayerLoading';
-import { getFeatureInfoForActiveLayers, getFeaturesInPolygonForActiveLayers } from '@services/featureInfoService';
+import { getFeatureInfoForActiveLayers, getFeaturesInPolygonForActiveLayers, FEATURE_COUNT_CAP, FEATURE_COUNT_TOTAL } from '@services/featureInfoService';
+import { useLoadMoreFeatures } from './useLoadMoreFeatures';
 import { toLonLat } from 'ol/proj';
 import { useLayers } from '@hooks/useLayers';
 import { findLayerById, collectLayersWithWMS, findParentGroup } from '../helpers/layers/utils/layerHelpers';
@@ -43,6 +44,7 @@ export const useFeatureInfo = () => {
             }
             return [];
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeLayerIds, hiddenLayerIds]);
 
     const queryFeatures = useCallback(async (map, coordinate, event) => {
@@ -95,16 +97,37 @@ export const useFeatureInfo = () => {
 
         try {
             const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
-            const results = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers);
+            const [results, totalResults] = await Promise.all([
+                getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_CAP),
+                getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_TOTAL),
+            ]);
             const [lng, lat] = toLonLat(coordinate);
 
             if (results && results.length > 0) {
+                const totalsByLayerId = {};
+                (totalResults || []).forEach((tr) => {
+                    totalsByLayerId[tr.layerId] = tr.features || [];
+                });
+                const enriched = results.map((r) => {
+                    const fullFeatures = totalsByLayerId[r.layerId] || r.features;
+                    const totalAvailable = fullFeatures.length;
+                    const visible = Math.min(r.features?.length || 0, totalAvailable);
+                    const cappedAtLimit = totalAvailable >= FEATURE_COUNT_TOTAL;
+                    return {
+                        ...r,
+                        features: fullFeatures.slice(0, visible),
+                        cachedFeatures: fullFeatures,
+                        totalAvailable,
+                        cappedAtLimit,
+                        displayCap: visible,
+                    };
+                });
                 setSelectedFeatureInfo({
                     lngLat: { lng, lat },
-                    results,
+                    results: enriched,
                     queriedLayerName
                 });
-                return results;
+                return enriched;
             } else {
                 const otherActiveLayers = getAllActiveLayers().filter(l =>
                     !layersToQuery.some(q => q.id === l.id)
@@ -159,6 +182,7 @@ export const useFeatureInfo = () => {
             setLoading(false);
             setLayerLoading(FEATURE_INFO_LOADING_ID, false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, selectedLayerForSymbology, setLayerLoading, getAllActiveLayers]);
 
     const selectAlternativeLayer = useCallback((layer) => {
@@ -191,6 +215,7 @@ export const useFeatureInfo = () => {
                 alternativeResults: current.alternativeResults
             };
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [setSelectedLayerForSymbology, setSelectedFeatureInfo]);
 
     const queryFeaturesInPolygon = useCallback(async (map, polygonGeometry, centerCoordinate, onFeatureCountUpdate) => {
@@ -299,6 +324,7 @@ export const useFeatureInfo = () => {
             setLoading(false);
             setLayerLoading(FEATURE_INFO_LOADING_ID, false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, setLayerLoading]);
 
     const clearFeatureInfo = useCallback(() => {
@@ -306,11 +332,14 @@ export const useFeatureInfo = () => {
         clickPosition.clearPosition();
     }, [setSelectedFeatureInfo, clickPosition]);
 
+    const loadMoreFeatures = useLoadMoreFeatures(setSelectedFeatureInfo);
+
     return {
         queryFeatures,
         queryFeaturesInPolygon,
         clearFeatureInfo,
         selectAlternativeLayer,
+        loadMoreFeatures,
         loading
     };
 };
