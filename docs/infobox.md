@@ -261,6 +261,69 @@ Componentes en mariachi admin (`src/components/layersEditor/`):
 
 La resolucion de params → `infobox_config` ocurre en mariachi API (`app/services/layer_service.py::resolve_infobox`). El frontend del visor consume el `infoboxConfig` ya resuelto (sin conocer el preset).
 
+## Lazy load + total real (v1.11.0)
+
+Cuando se hace click sobre un punto donde se apilan muchos features (clusters densos), el InfoBox ya no muestra solo 50 sin saber el total. Implementacion:
+
+### Doble fetch WMS en paralelo
+
+`useFeatureInfo.queryFeatures` lanza dos `GetFeatureInfo` simultaneos al mismo pixel + bbox:
+
+| Fetch | `FEATURE_COUNT` | Proposito |
+|---|---|---|
+| Primario | 50 (`FEATURE_COUNT_CAP`) | Paint inicial rapido — primeras 50 cards |
+| Total | 2000 (`FEATURE_COUNT_TOTAL`) | Conocer total real + cachear features para lazy load instantaneo |
+
+El segundo fetch alimenta `result.cachedFeatures` y `result.totalAvailable`. Si el cluster tiene >2000 features, `cappedAtLimit = true` y el contador muestra `2000+`.
+
+**Por que doble fetch WMS y no WFS hits**: WMS es el mismo endpoint que ya consume el visor, sin riesgos de CORS/version/auth distintos. WFS `resultType=hits` resulto fragil en algunos GeoServers (no responde con `numberMatched`/`numberOfFeatures`).
+
+### Lazy load por slicing local
+
+`useLoadMoreFeatures` no hace requests adicionales. Slicea desde `cachedFeatures`:
+
+```javascript
+const nextCap = Math.min(currentLen + pageSize, total);
+const nextFeatures = cache.slice(0, nextCap);
+```
+
+`useInfoBoxLazyLoad` monta un `IntersectionObserver` con sentinel al final del listado. **Auto-detecta el contenedor scrolleable ancestro** caminando el DOM hacia arriba hasta encontrar un padre con `overflow-y: auto/scroll` — funciona identico en mobile (dentro de `MobileSheet`/`ScrollContainer`) y desktop (dentro del `ScrollContainer` que ahora envuelve el listado en lugar de un `<div max-h-[60vh] overflow-y-auto>` plano).
+
+### Contador por card
+
+Cada card muestra `${index}/${totalAvailable}` (ej. `1/482`). Antes mostraba `${index}/${visible}` (ej. `1/50`), confundiendo al usuario sobre cuantos features hay realmente. La separacion entre `features` (visible, controla que cards se renderizan) y `cachedFeatures` (full, alimenta el counter y el download) lo permite.
+
+### Decremento al eliminar card
+
+`handleRemoveFeature` filtra del `cachedFeatures` por **referencia** (con fallback por `id`). Para que esto funcione, `useFeatureInfo` inicializa `features = cachedFeatures.slice(0, displayCap)` — ambos arrays comparten referencias a los mismos objetos. Sin esto, el filter por id no decrementaba porque las dos fetches WMS devuelven objetos distintos aunque representen las mismas features.
+
+### Header del card
+
+`Header.jsx` cambio de `flex` con 3 columnas (`w-10` counter + `flex-1` titulo + `w-10` X) a:
+
+- Container `position: relative` con `px-12 py-2`
+- Counter `position: absolute left-2 top-2`
+- X `position: absolute right-2 top-2`
+- Titulo `w-full text-center my-3 break-words`
+
+El titulo se centra respecto al **header completo**, sin importar el ancho del counter (`200/482`, `9999/99999`, etc.). El padding lateral (48px) reserva espacio visual para los flotantes; `my-3` separa el titulo verticalmente del counter+X.
+
+### Boton Descargar (desktop)
+
+`ActionsToolbar.jsx` ahora muestra un badge naranja en bottom-right del boton con el `downloadDisplayCount` (= `totalAvailable` capado a 5000). Tooltip detallado: "Descargar 482 de 482 tarjetas". Cuando `cappedAtFetchLimit && !hasMoreKnown`, aparece como `2000+`.
+
+### Hooks y archivos nuevos
+
+- `hooks/useInfoBoxLazyLoad.js` — observer + counts agregados + enrichResultsForDownload
+- `hooks/useLoadMoreFeatures.js` — slicing del cache (sin red)
+- `services/featureInfoPagination.js` — helpers WFS (legacy hits + GetFeature paginado, no en uso por main flow)
+
+### Constantes
+
+- `FEATURE_COUNT_CAP = 50` (display inicial, fetch primario)
+- `FEATURE_COUNT_TOTAL = 2000` (cap del fetch paralelo, fuente de cache)
+- `DOWNLOAD_HARD_CAP = 5000` (limite de descarga CSV desde InfoBox)
+
 ## Referencias cruzadas
 
 - `docs/markers.md` — markers con `infoBox` y flag `openOnShow`

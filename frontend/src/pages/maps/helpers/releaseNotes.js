@@ -12,6 +12,17 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.11.0',
+        items: [
+            { text: 'Al hacer click en zonas con muchos puntos, el panel de información ahora muestra el total real desde el primer momento (por ejemplo "1/482" en lugar de "1/50")', tag: 'changed' },
+            { text: 'Carga progresiva de tarjetas: las primeras 50 aparecen al instante y se van cargando 50 más conforme deslizas hasta el final del panel', tag: 'added' },
+            { text: 'Botón Descargar (escritorio): nuevo distintivo con el número total de tarjetas y descripción detallada al pasar el cursor', tag: 'added' },
+            { text: 'Al eliminar una tarjeta con la X, el contador y la descarga se ajustan automáticamente para no incluirla', tag: 'added' },
+            { text: 'Encabezado del detalle de capa: el tema y su ícono ahora se determinan correctamente desde la jerarquía del árbol de capas', tag: 'fixed' },
+            { text: 'Título del encabezado de cada tarjeta queda centrado horizontalmente aunque el contador sea muy largo', tag: 'fixed' },
+        ]
+    },
+    {
         version: '1.10.0',
         items: [
             { text: 'Etiquetas visuales BETA / NUEVA / DEV / TEST para indicar el estado de funciones (componente reutilizable)', tag: 'added' },
