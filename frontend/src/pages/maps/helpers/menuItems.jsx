@@ -4,6 +4,8 @@ import Icon from '@components/Icon';
 import BaseMapList from '@mapsComponents/BaseMapList';
 import SearchMenu from '@mapsComponents/SearchMenu';
 import ThemeMenu from '@mapsComponents/ThemeMenu';
+import EventoMenu from '@mapsComponents/EventoMenu';
+import EventoIconButton from '@mapsComponents/EventoIconButton';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 
 const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpen = false, categoryId = null }) => {
@@ -137,9 +139,34 @@ const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer, layers 
         };
     });
 
+const createEventoItems = ({ activeLayerIds, onToggleLayer, eventos = [] }) =>
+    eventos.map((evento) => ({
+        id: `evento-${evento.id}`,
+        hasMenu: true,
+        tooltip: evento.titulo,
+        menuContent: ({ closeButton } = {}) => (
+            <EventoMenu
+                evento={evento}
+                activeLayerIds={activeLayerIds}
+                onToggleLayer={onToggleLayer}
+                closeButton={closeButton}
+            />
+        ),
+        renderComponent: ({ isMenuOpen }) => (
+            <EventoIconButton
+                iconUrl={evento.iconoUrl}
+                title={evento.titulo}
+                isMenuOpen={isMenuOpen}
+            />
+        ),
+    }));
+
 export const createMenuItems = (props) => {
     return [
         ...createBaseItems(props),
+        ...createEventoItems(props),
         ...createCategoryItems(props)
     ];
 };
+
+export const BASE_ITEMS_COUNT = 3;

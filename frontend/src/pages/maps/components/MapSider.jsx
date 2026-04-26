@@ -7,9 +7,10 @@ import { useSearch } from '@contexts/SearchContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import { useScrollOverflow } from '@hooks/useScrollOverflow';
 import Logo from '@components/Logo';
-import { createMenuItems } from '@pages/maps/helpers/menuItems';
+import { createMenuItems, BASE_ITEMS_COUNT } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
+import { useEventos } from '@hooks/useEventos';
 
 import { trackSiderLock } from '@services/analyticsService';
 import { IIEG_MARKER } from '@pages/maps/helpers/markerDefinitions';
@@ -125,9 +126,15 @@ const MapSider = ({ className = '' }) => {
         }
     }, [toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
 
+    const { eventos } = useEventos();
+
     const menuItems = useMemo(() =>
-        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers }),
-    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, allLayers]);
+        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers, eventos }),
+    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, allLayers, eventos]);
+
+    const eventCount = eventos?.length || 0;
+    const baseItemsEnd = BASE_ITEMS_COUNT;
+    const eventItemsEnd = baseItemsEnd + eventCount;
 
     const clearAutoOpenMenu = useCallback(() => {
         setAutoOpenMenuId(null);
@@ -237,7 +244,7 @@ const MapSider = ({ className = '' }) => {
                         onMouseEnter={() => setShowModeBtn(true)}
                         onMouseLeave={() => setShowModeBtn(false)}
                     >
-                        {menuItems.slice(0, 3).map((item, index) => (
+                        {menuItems.slice(0, baseItemsEnd).map((item, index) => (
                             <div
                                 key={item.id || index}
                                 className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
@@ -252,7 +259,29 @@ const MapSider = ({ className = '' }) => {
                             </div>
                         ))}
                     </div>
-                    {menuItems.slice(3).map((item, index) => (
+                    {eventCount > 0 && (
+                        <div
+                            className="bg-[#FAF2FD] rounded-[8px] py-2 flex flex-col gap-2 border border-[#E3CAF2]"
+                            onMouseEnter={() => setShowModeBtn(true)}
+                            onMouseLeave={() => setShowModeBtn(false)}
+                        >
+                            {menuItems.slice(baseItemsEnd, eventItemsEnd).map((item, index) => (
+                                <div
+                                    key={item.id || index}
+                                    className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
+                                    title={item.tooltip}
+                                >
+                                    <MenuItem
+                                        item={item}
+                                        isMobileView={treatAsMobile}
+                                        autoOpenMenuId={autoOpenMenuId}
+                                        clearAutoOpenMenu={clearAutoOpenMenu}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {menuItems.slice(eventItemsEnd).map((item, index) => (
                         <div
                             key={item.id || index}
                             className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
