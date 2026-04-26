@@ -15,10 +15,13 @@ function htmlMetaPlugin(env) {
     const siteUrl = (env.VITE_SITE_URL || '').replace(/\/$/, '');
     const basePath = (env.VITE_BASE_PATH || '/').replace(/\/$/, '');
     const fullUrl = basePath !== '/' ? `${siteUrl}${basePath}` : siteUrl;
+    const acervoOrigin = (env.VITE_ACERVO_ORIGIN || '').trim();
     return {
         name: 'html-meta',
         transformIndexHtml(html) {
-            return html.replace(/__SITE_URL__/g, fullUrl);
+            return html
+                .replace(/__SITE_URL__/g, fullUrl)
+                .replace(/__ACERVO_ORIGIN__/g, acervoOrigin);
         }
     };
 }
@@ -105,6 +108,12 @@ export default defineConfig(({ mode }) => {
                 ...(env.GEOSERVER_DEV_TARGET && {
                     '/geoserver': {
                         target: env.GEOSERVER_DEV_TARGET,
+                        changeOrigin: true,
+                    }
+                }),
+                ...(env.MARIACHI_DEV_TARGET && {
+                    '/api/mapalab': {
+                        target: env.MARIACHI_DEV_TARGET,
                         changeOrigin: true,
                     }
                 }),

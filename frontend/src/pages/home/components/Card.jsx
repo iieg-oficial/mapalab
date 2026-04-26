@@ -44,7 +44,11 @@ const Card = ({ topics = [] }) => {
                                     flex items-center justify-center rounded-full size-[82px] shrink-0
                                     ${isOpen ? 'bg-[#FAF2FD] self-start' : ''}
                                 `}>
-                                    <Icon name={topic.icon} state="hover" className="size-[50px]" />
+                                    {topic.imageUrl ? (
+                                        <img src={topic.imageUrl} alt="" className="size-[50px] object-contain" />
+                                    ) : (
+                                        <Icon name={topic.icon} state="hover" className="size-[50px]" />
+                                    )}
                                 </div>
                                 <div className={`
                                     flex flex-col flex-1 transition-all duration-300
