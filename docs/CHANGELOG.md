@@ -7,8 +7,38 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+### Cambiado
+- `renderCard.jsx`: refactor del cuerpo del infobox para soportar `blockOrder` (opcional, persistido en `infobox_config`). Cada bloque body (`labels`, `labelGroups`, `list`, `iconText`, `text`, `cards`) extraído a su propia función pura. Si el config trae `blockOrder` con keys válidas, se usa ese orden + remaining defaults al final. Si no trae `blockOrder`, mantiene el orden hardcoded actual (backwards-compatible — los 250 configs existentes siguen renderizando idénticos).
+
 ### Pendiente (Fase 3 en desarrollo)
 - `<CompareView>`: split UI con dos `<MapView>` reusando `MapsProvider`. Hoy queda el JSON envelope `kind: "compare"` validado en backend, `<CompareButton>` (disabled, con tag BETA) en el modal, y deserializer preparado para `kind: "single"`. La instanciacion de paneles + `useDateOverride(paneIndex)` es el siguiente paso.
+
+## [1.11.0] - 2026-04-26
+
+### Agregado
+- **Lazy load infinito en InfoBox** (caso click multi-feature): muestra 50 cards inicial y carga 50 mas conforme scrolleas hasta el fondo. Implementado con `IntersectionObserver` que auto-detecta el contenedor scrolleable ancestro (`overflow-y: auto/scroll`), funciona idéntico en mobile (dentro de `MobileSheet`/`ScrollContainer`) y desktop (dentro del nuevo `ScrollContainer` que reemplazo al `<div max-h-[60vh]>` plano).
+- **Total real desde el primer click**: doble fetch WMS GetFeatureInfo en paralelo — el primero con `FEATURE_COUNT=50` para paint inicial rápido, el segundo con `FEATURE_COUNT=2000` para conocer el total real. El segundo se cachea localmente (`cachedFeatures`) y lazy load slicea desde memoria — cero requests adicionales al scrollear. Reemplaza el intento previo de WFS `resultType=hits` que era frágil (CORS/version mismatches en algunos GeoServers).
+- **Counter por card con total real**: cada card muestra `1/482` directo en lugar de `1/50` del display cap. El total refleja todos los features del cluster, no los visibles.
+- **Decremento al eliminar card con X**: `handleRemoveFeature` ahora filtra del `cachedFeatures` (por referencia + fallback por id), bajando `totalAvailable`. Counter pasa de `1/482` → `1/481` y el download CSV ya no incluye el eliminado.
+- **Badge de count en botón Descargar (desktop)**: pill naranja en bottom-right del botón con el total real (ej. `482`). Tooltip muestra "Descargar 482 de 482 tarjetas". Para clusters > 2000 muestra `2000+`.
+- **`ScrollContainer` propagado a desktop**: el InfoBox de desktop ahora usa el mismo `<ScrollContainer>` que mobile (con flechas, fade, click-arrows). Cuando hay 1 sola card, render plano sin scroll.
+- **Header del card con título centrado siempre**: counter y X cambian a `position: absolute` (top-left y top-right). El `<h3>` toma `w-full` con `text-center` y se centra respecto al header completo, sin importar el ancho del counter (ej. `999/9999` ya no comprime el título). Padding lateral `px-12` reserva espacio para los flotantes; `my-3` separa título verticalmente del counter+X.
+
+### Cambiado
+- **`FEATURE_COUNT_CAP`**: 50 (display inicial). El counter muestra el total real desde el primer paint, así no necesitamos cargar 200 desde el inicio.
+- **`FEATURE_COUNT_TOTAL`**: 2000 (cap del segundo fetch en paralelo, fuente de `cachedFeatures` y `totalAvailable`).
+- **`enrichResultsForDownload`** consume directo del `cachedFeatures` (cap 5000) — antes paginaba via WFS GetFeature, ahora slicing local instantáneo.
+- **`useFeatureInfo`** crea `features` como `cachedFeatures.slice(0, visible)` para garantizar que ambos arrays compartan referencias (fix de bug donde el filter por id no decrementaba el total porque las dos fetches devolvían objetos distintos).
+
+### Corregido
+- **LayerDetailModal: tema y avatar correctos** — el campo `tema` derivado del backend (`layer_name_usuario.split(':')[0]`) no funciona con la migración v1.4.0 si el formato `Tema:Nombre` ya no se respeta. Fix: nuevo helper `findLayerTheme(layerId, layerTree)` en `wmsConfig.js` que recorre el árbol y devuelve el ancestro `nodeType: 'tema'`. `LayerDetailModal` ahora prefiere ese valor (con fallback a `metadata.tema` y `'General'`). El avatar e icono se resuelven automáticamente.
+- **mariachi admin: redirect 401 ya no manda a `/administrador/login`** (path legacy roto post-v0.21.0). `api.js` usa `import.meta.env.BASE_URL` para construir el URL → `${BASE_URL}/administrador/login` con basename `/mariachi/`.
+
+### Arquitectura interna (no visible al usuario)
+- **`useInfoBoxLazyLoad`** (nuevo hook): encapsula `IntersectionObserver`, totales agregados, contexto de carga y `enrichResultsForDownload`. Auto-detecta scroll root ancestor para que el observer funcione en cualquier wrapper.
+- **`useLoadMoreFeatures`** (nuevo hook): mutador puro de `selectedFeatureInfo.results` que extiende `features` slicing del `cachedFeatures` (sin red, instantáneo).
+- **`featureInfoPagination.js`**: helpers WFS para `fetchTotalsForClick` (legacy WFS hits, ya no usado en main flow) y `fetchMoreFeaturesForLayer` (paginación WFS por si en el futuro se quiere fetch incremental real).
+- **eslint override** para `InfoBox.jsx` con `max-lines: 400` siguiendo el patrón existente de `useMapDrawing.js`.
 
 ## [1.10.0] - 2026-04-24
 

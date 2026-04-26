@@ -57,6 +57,212 @@ const shouldIncludeField = (fieldName, suffix) => {
     return !otherSuffixes.some(otherSuffix => fieldLower.includes(otherSuffix));
 };
 
+const renderLabels = ({ finalConfig, properties, variant, body }) => {
+    if (!finalConfig.labels) return;
+    const labelElements = [];
+    finalConfig.labels.forEach((field, idx) => {
+        if (properties[field]) {
+            labelElements.push(
+                <Label
+                    key={`label-${idx}`}
+                    value={properties[field]}
+                    color={CARACTERISTICA_STYLE.color}
+                    bg={CARACTERISTICA_STYLE.bg}
+                    variant={variant}
+                />
+            );
+        }
+    });
+    if (labelElements.length > 0) {
+        body.push(
+            <div key="labels-group" className="flex flex-wrap gap-1 mb-3">
+                {labelElements}
+            </div>
+        );
+    }
+};
+
+const renderLabelGroups = ({ finalConfig, properties, variant, dateValue, body }) => {
+    if (!finalConfig.labelGroups) return;
+    finalConfig.labelGroups.forEach((group, groupIdx) => {
+        const groupElements = [];
+
+        if (group.staticValues) {
+            group.staticValues.forEach((value, idx) => {
+                const resolvedValue = resolveStaticValue(value, dateValue);
+                if (resolvedValue == null || resolvedValue === '') return;
+                groupElements.push(
+                    <Label
+                        key={`labelgroup-${groupIdx}-static-${idx}`}
+                        value={resolvedValue}
+                        color={group.color}
+                        bg={group.bg}
+                    />
+                );
+            });
+        }
+
+        if (group.fields) {
+            const fieldDefs = group.fields.map(f => typeof f === 'string' ? { field: f } : f);
+
+            fieldDefs.forEach((def, idx) => {
+                if (!def || !def.field) return;
+                const value = properties[def.field];
+                if (value === null || value === undefined || value === '') return;
+
+                const color = def.color || group.color;
+                const bg = def.bg || group.bg;
+
+                if (group.splitValues && typeof value === 'string') {
+                    const splitItems = value.split(/,\s*|\s+y\s+/).filter(item => item.trim() !== '');
+                    splitItems.forEach((item, splitIdx) => {
+                        groupElements.push(
+                            <Label
+                                key={`labelgroup-${groupIdx}-${idx}-${splitIdx}`}
+                                value={item.trim()}
+                                color={color}
+                                bg={bg}
+                                fullWidth={def.fullWidth}
+                                variant={variant}
+                            />
+                        );
+                    });
+                } else {
+                    groupElements.push(
+                        <Label
+                            key={`labelgroup-${groupIdx}-${idx}`}
+                            value={value}
+                            color={color}
+                            bg={bg}
+                            fullWidth={def.fullWidth}
+                            variant={variant}
+                        />
+                    );
+                }
+            });
+        }
+
+        if (groupElements.length > 0) {
+            body.push(
+                <div key={`labelgroup-${groupIdx}`} className="flex flex-wrap gap-1 mb-3">
+                    {groupElements}
+                </div>
+            );
+        }
+    });
+};
+
+const renderList = ({ finalConfig, properties, suffix, variant, body }) => {
+    if (!finalConfig.list) return;
+    const rows = finalConfig.list
+        .filter(row => shouldIncludeField(row.field, suffix))
+        .map(row => ({
+            label: row.label,
+            value: properties[row.field],
+            raw: row.raw,
+        }))
+        .filter(row => row.value !== null && row.value !== undefined && row.value !== '');
+
+    if (rows.length > 0) {
+        body.push(
+            <List
+                key="list"
+                rows={rows}
+                variant={variant}
+            />
+        );
+    }
+};
+
+const renderIconText = ({ finalConfig, properties, onAction, variant, body }) => {
+    if (!finalConfig.iconText) return;
+    const iconTextItems = Array.isArray(finalConfig.iconText) ? finalConfig.iconText : [finalConfig.iconText];
+    const validItems = iconTextItems.filter(item => item && (properties[item.field] || item.value));
+    validItems.forEach((item, idx) => {
+        const iconTextProps = {
+            icon: item.icon,
+            value: item.value || properties[item.field],
+            showDivider: idx === 0,
+            isLast: idx === validItems.length - 1,
+        };
+        if (item.href) iconTextProps.href = item.href;
+        if (item.action && onAction) iconTextProps.onClick = () => onAction(item.action);
+        body.push(<IconText key={`icontext-${idx}`} {...iconTextProps} variant={variant} />);
+    });
+};
+
+const renderText = ({ finalConfig, getValue, variant, body }) => {
+    if (!finalConfig.text) return;
+    finalConfig.text.forEach((textItem, idx) => {
+        const value = textItem.field ? getValue(textItem.field) : null;
+        if (textItem.label || value) {
+            body.push(
+                <Text
+                    key={`text-${idx}`}
+                    label={textItem.label}
+                    value={value}
+                    variant={variant}
+                />
+            );
+        }
+    });
+};
+
+const renderCards = ({ finalConfig, properties, suffix, variant, body }) => {
+    if (!finalConfig.cards) return;
+    const cards = finalConfig.cards
+        .filter(Boolean)
+        .filter(card => shouldIncludeField(card.field, suffix))
+        .map(card => {
+            let value = properties[card.field];
+            if (card.raw) {
+                value = value ?? '';
+            } else if (card.decimals != null && typeof value === 'number') {
+                value = formatNumber(value.toFixed(card.decimals));
+            } else if (typeof value === 'number') {
+                value = formatNumber(value);
+            }
+            return {
+                label: card.label,
+                value,
+                suffix: card.suffix || ''
+            };
+        })
+        .filter(card => card.value !== null && card.value !== undefined && card.value !== '');
+
+    if (cards.length > 0) {
+        const effectiveColumns = variant === 'mobile' ? 2 : (finalConfig.cardsColumns || 1);
+        body.push(
+            <Cards
+                key="cards"
+                cards={cards}
+                columns={effectiveColumns}
+                variant={variant}
+            />
+        );
+    }
+};
+
+const BODY_RENDERERS = {
+    labels: renderLabels,
+    labelGroups: renderLabelGroups,
+    list: renderList,
+    iconText: renderIconText,
+    text: renderText,
+    cards: renderCards,
+};
+
+export const DEFAULT_BODY_ORDER = ['labels', 'labelGroups', 'list', 'iconText', 'text', 'cards'];
+
+const resolveBodyOrder = (configOrder) => {
+    const validKeys = Object.keys(BODY_RENDERERS);
+    const explicit = Array.isArray(configOrder)
+        ? configOrder.filter(k => validKeys.includes(k))
+        : [];
+    const remaining = DEFAULT_BODY_ORDER.filter(k => !explicit.includes(k));
+    return [...explicit, ...remaining];
+};
+
 export const renderCard = (properties, config, onClose, layerId = null, featureId = null, onAction = null, variant = 'desktop', cardIndex = null, cardTotal = null, dateValue = null) => {
     const suffix = extractSuffixFromLayerId(layerId);
     const isMobile = variant === 'mobile';
@@ -81,185 +287,10 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
         titleValue = applyHeaderTransform(finalConfig.headerTransform, rawHeaderValue, featureId);
     }
 
-    if (finalConfig.labels) {
-        const labelElements = [];
-        finalConfig.labels.forEach((field, idx) => {
-            if (properties[field]) {
-                labelElements.push(
-                    <Label
-                        key={`label-${idx}`}
-                        value={properties[field]}
-                        color={CARACTERISTICA_STYLE.color}
-                        bg={CARACTERISTICA_STYLE.bg}
-                        variant={variant}
-                    />
-                );
-            }
-        });
-        if (labelElements.length > 0) {
-            body.push(
-                <div key="labels-group" className="flex flex-wrap gap-1 mb-3">
-                    {labelElements}
-                </div>
-            );
-        }
-    }
-
-    if (finalConfig.labelGroups) {
-        finalConfig.labelGroups.forEach((group, groupIdx) => {
-            const groupElements = [];
-
-            if (group.staticValues) {
-                group.staticValues.forEach((value, idx) => {
-                    const resolvedValue = resolveStaticValue(value, dateValue);
-                    if (resolvedValue == null || resolvedValue === '') return;
-                    groupElements.push(
-                        <Label
-                            key={`labelgroup-${groupIdx}-static-${idx}`}
-                            value={resolvedValue}
-                            color={group.color}
-                            bg={group.bg}
-                        />
-                    );
-                });
-            }
-
-            if (group.fields) {
-                const fieldDefs = group.fields.map(f => typeof f === 'string' ? { field: f } : f);
-
-                fieldDefs.forEach((def, idx) => {
-                    if (!def || !def.field) return;
-                    const value = properties[def.field];
-                    if (value === null || value === undefined || value === '') return;
-
-                    const color = def.color || group.color;
-                    const bg = def.bg || group.bg;
-
-                    if (group.splitValues && typeof value === 'string') {
-                        const splitItems = value.split(/,\s*|\s+y\s+/).filter(item => item.trim() !== '');
-                        splitItems.forEach((item, splitIdx) => {
-                            groupElements.push(
-                                <Label
-                                    key={`labelgroup-${groupIdx}-${idx}-${splitIdx}`}
-                                    value={item.trim()}
-                                    color={color}
-                                    bg={bg}
-                                    fullWidth={def.fullWidth}
-                                    variant={variant}
-                                />
-                            );
-                        });
-                    } else {
-                        groupElements.push(
-                            <Label
-                                key={`labelgroup-${groupIdx}-${idx}`}
-                                value={value}
-                                color={color}
-                                bg={bg}
-                                fullWidth={def.fullWidth}
-                                variant={variant}
-                            />
-                        );
-                    }
-                });
-            }
-
-            if (groupElements.length > 0) {
-                body.push(
-                    <div key={`labelgroup-${groupIdx}`} className="flex flex-wrap gap-1 mb-3">
-                        {groupElements}
-                    </div>
-                );
-            }
-        });
-    }
-
-    if (finalConfig.list) {
-        const rows = finalConfig.list
-            .filter(row => shouldIncludeField(row.field, suffix))
-            .map(row => ({
-                label: row.label,
-                value: properties[row.field],
-                raw: row.raw,
-            }))
-            .filter(row => row.value !== null && row.value !== undefined && row.value !== '');
-
-        if (rows.length > 0) {
-            body.push(
-                <List
-                    key="list"
-                    rows={rows}
-                    variant={variant}
-                />
-            );
-        }
-    }
-
-    if (finalConfig.iconText) {
-        const iconTextItems = Array.isArray(finalConfig.iconText) ? finalConfig.iconText : [finalConfig.iconText];
-        const validItems = iconTextItems.filter(item => item && (properties[item.field] || item.value));
-        validItems.forEach((item, idx) => {
-            const iconTextProps = {
-                icon: item.icon,
-                value: item.value || properties[item.field],
-                showDivider: idx === 0,
-                isLast: idx === validItems.length - 1,
-            };
-            if (item.href) iconTextProps.href = item.href;
-            if (item.action && onAction) iconTextProps.onClick = () => onAction(item.action);
-            body.push(<IconText key={`icontext-${idx}`} {...iconTextProps} variant={variant} />);
-        });
-    }
-
-    if (finalConfig.text) {
-        finalConfig.text.forEach((textItem, idx) => {
-            const value = textItem.field ? getValue(textItem.field) : null;
-            if (textItem.label || value) {
-                body.push(
-                    <Text
-                        key={`text-${idx}`}
-                        label={textItem.label}
-                        value={value}
-                        variant={variant}
-                    />
-                );
-            }
-        });
-    }
-
-    if (finalConfig.cards) {
-        const cards = finalConfig.cards
-            .filter(Boolean)
-            .filter(card => shouldIncludeField(card.field, suffix))
-            .map(card => {
-                let value = properties[card.field];
-                if (card.raw) {
-                    value = value ?? '';
-                } else if (card.decimals != null && typeof value === 'number') {
-                    value = formatNumber(value.toFixed(card.decimals));
-                } else if (typeof value === 'number') {
-                    value = formatNumber(value);
-                }
-                return {
-                    label: card.label,
-                    value,
-                    suffix: card.suffix || ''
-                };
-            })
-            .filter(card => card.value !== null && card.value !== undefined && card.value !== '');
-
-        if (cards.length > 0) {
-            const effectiveColumns = variant === 'mobile' ? 2 : (finalConfig.cardsColumns || 1);
-            body.push(
-                <Cards
-                    key="cards"
-                    cards={cards}
-                    columns={effectiveColumns}
-                    variant={variant}
-                />
-            );
-        }
-    }
+    const ctx = { finalConfig, properties, suffix, variant, dateValue, onAction, getValue, body };
+    resolveBodyOrder(finalConfig.blockOrder).forEach(key => {
+        BODY_RENDERERS[key]?.(ctx);
+    });
 
     if (!titleValue && body.length === 0) return null;
 
