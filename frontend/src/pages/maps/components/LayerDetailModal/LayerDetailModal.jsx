@@ -5,7 +5,7 @@ import { useLayerPeriodicity } from '../../hooks/useLayerPeriodicity';
 import { useLayerDownload } from '../../hooks/useLayerDownload';
 import { useSider } from '@contexts/SiderContext';
 import MapsContext from '@contexts/MapsContext';
-import { findLayerDef, findWMSConfig } from '../../helpers/wmsConfig';
+import { findLayerDef, findLayerTheme, findWMSConfig } from '../../helpers/wmsConfig';
 import { fetchGeometryType } from '../../../../utils/featureInfoUtils';
 import { formatDateString } from '../../helpers/dateFilterHelpers';
 import { buildLoopValues } from '../../helpers/dateLoopHelpers';
@@ -36,11 +36,17 @@ const LayerDetailModal = () => {
     const layerDef = useMemo(() => {
         if (!selectedLayer?.id) return null;
         return findLayerDef(selectedLayer.id, allLayers);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedLayer?.id]);
+    const themeNode = useMemo(() => {
+        if (!selectedLayer?.id) return null;
+        return findLayerTheme(selectedLayer.id, allLayers);
+    }, [selectedLayer?.id, allLayers]);
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
     const hidePeriodicity = layerDef?.hidePeriodicity || false;
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
+    const themeName = themeNode?.label || metadata?.tema || 'General';
     const { periodicity, loading: periodicityLoading } = useLayerPeriodicity(selectedLayer?.id);
     const { isMobile } = useSider();
     const [singleSelectOnly, setSingleSelectOnly] = useState(false);
@@ -56,6 +62,7 @@ const LayerDetailModal = () => {
             if (!cancelled) setSingleSelectOnly(type === 'polygon');
         });
         return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedLayer?.id, rasterPeriodicity]);
 
     const hasPeriodicity = !hidePeriodicity && (periodicity != null || periodicityLoading || rasterPeriodicity != null);
@@ -197,9 +204,9 @@ const LayerDetailModal = () => {
                     ) : (
                         <>
                             <div className="flex items-center gap-3">
-                                <LayerThemeAvatar name={metadata?.tema} size="md" />
+                                <LayerThemeAvatar name={themeName} size="md" />
                                 <span className="text-[14px]/[47px] font-garet font-bold text-[#465055] tracking-normal">
-                                    {metadata?.tema || 'General'}
+                                    {themeName}
                                 </span>
                             </div>
                             <h3 className="text-[18px]/[47px] font-garet font-extrabold text-[#5C2472] tracking-normal">

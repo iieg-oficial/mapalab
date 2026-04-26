@@ -101,3 +101,19 @@ export const slugForLayer = (layerId, layersArray) => {
     const layer = findLayerDef(layerId, layersArray);
     return layer?.slug || layerId;
 };
+
+const containsLayer = (node, layerId) => {
+    if (!node) return false;
+    if (node.id === layerId) return true;
+    return Array.isArray(node.children) && node.children.some((c) => containsLayer(c, layerId));
+};
+
+export const findLayerTheme = (layerId, layersArray) => {
+    if (!layerId || !Array.isArray(layersArray)) return null;
+    for (const node of layersArray) {
+        if (containsLayer(node, layerId)) {
+            return node?.nodeType === 'tema' ? node : null;
+        }
+    }
+    return null;
+};
