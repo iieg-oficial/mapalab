@@ -68,8 +68,8 @@ export default function ShareModal({ open, onClose }) {
     const url = share ? buildShareUrl(share.id) : null;
 
     return (
-        <Modal open={open} onClose={handleClose} title="Compartir mapa">
-            <div className="flex flex-col gap-4 p-4 min-w-[320px] max-w-[480px]">
+        <Modal isOpen={open} onClose={handleClose} title="Compartir mapa" width="max-w-lg">
+            <div className="flex flex-col gap-4 p-4">
                 <p className="text-sm text-gray-700">
                     Genera un enlace permanente al estado actual del mapa. Los enlaces se conservan
                     30 dias desde el ultimo acceso. Fija el enlace para garantizar 1 ano.
