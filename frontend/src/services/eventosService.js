@@ -49,13 +49,6 @@ export const fetchHomeContent = async () => {
     return cache.homeInFlight;
 };
 
-export const clearMapalabPublicCache = () => {
-    cache.eventos = null;
-    cache.home = null;
-    cache.eventosInFlight = null;
-    cache.homeInFlight = null;
-};
-
 const POLL_INTERVAL_MS = 30000;
 const VERSION_EVENT_EVENTOS = 'mapalab:eventos-changed';
 const VERSION_EVENT_HOME = 'mapalab:home-changed';
