@@ -22,10 +22,18 @@ const MapsProvider = ({ children }) => {
     const [selectedLayer, setSelectedLayer] = useState(null);
     const [selectedFeatureInfo, setSelectedFeatureInfo] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
+    const [compareMode, setCompareMode] = useState({ active: false, axis: 'date', panes: [], layout: 'split', swipePosition: 0.5 });
+    const exitCompareMode = useCallback(() => {
+        setCompareMode({ active: false, axis: 'date', panes: [], layout: 'split', swipePosition: 0.5 });
+    }, []);
+    const setSwipePosition = useCallback((pos) => {
+        setCompareMode(prev => ({ ...prev, swipePosition: Math.max(0.05, Math.min(0.95, pos)) }));
+    }, []);
     const queryFeaturesInPolygonRef = useRef(null);
     const clickPosition = useClickPosition();
     const targetRef = useRef(null);
     const mapRef = useRef(null);
+    const paneMapRefs = useRef({});
     const layerManagement = useLayerManagement();
     const symbology = useSymbology({
         activeLayerIds: layerManagement.activeLayerIds,
@@ -120,7 +128,12 @@ const MapsProvider = ({ children }) => {
         ...mapMarker,
         periodicityCache,
         isLocating,
-        setIsLocating
+        setIsLocating,
+        compareMode,
+        setCompareMode,
+        exitCompareMode,
+        setSwipePosition,
+        paneMapRefs
     }), [
         baseMapId,
         siderCollapsed,
@@ -141,7 +154,10 @@ const MapsProvider = ({ children }) => {
         mapMarker,
         periodicityCache,
         isLocating,
-        allLayers
+        allLayers,
+        compareMode,
+        exitCompareMode,
+        setSwipePosition
     ]);
 
     return (
