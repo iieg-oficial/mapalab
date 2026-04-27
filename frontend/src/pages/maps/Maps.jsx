@@ -1,6 +1,8 @@
 import 'ol/ol.css';
 import SEO from '@components/SEO';
 import MapView from '@mapsComponents/MapView';
+import CompareView from '@mapsComponents/CompareView';
+import SwipeView from '@mapsComponents/SwipeView';
 import MapSider from '@mapsComponents/MapSider';
 import MapToolsPanel from '@mapsComponents/MapToolsPanel';
 import MapLayersPanels from '@mapsComponents/MapLayersPanels';
@@ -11,15 +13,19 @@ import MeasurementTools from './components/MeasurementTools/ToolsPanel';
 import ScaleLineControl from './components/ScaleLineControl';
 import MapAttribution from './components/MapAttribution';
 import { useInitializeFromUrl } from './hooks/useInitializeFromUrl';
-import { useUrlSync } from './hooks/useUrlSync';
+import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { SiderProvider } from '@contexts/SiderContext';
 import { ZenModeProvider } from './components/ZenMode';
 import useThemeColor from '@hooks/useThemeColor';
+import { useMapsContext } from '@hooks/useMaps';
 
 const Maps = () => {
     useThemeColor('#ffffff');
     useInitializeFromUrl();
-    useUrlSync();
+    useSessionPersistence();
+    const { compareMode } = useMapsContext();
+    const isComparing = !!compareMode?.active;
+    const layout = compareMode?.layout || 'split';
 
     return (
         <SiderProvider>
@@ -35,12 +41,14 @@ const Maps = () => {
                     <MapToolsPanel />
                     <MapLayersPanels />
                     <LayerDetailModal />
-                    <InfoBox />
+                    {!isComparing && <InfoBox />}
                     <ScaleLineControl />
                     <MapAttribution />
                     <MapControls />
-                    <MeasurementTools />
-                    <MapView />
+                    {!isComparing && <MeasurementTools />}
+                    {isComparing
+                        ? (layout === 'swipe' ? <SwipeView /> : <CompareView />)
+                        : <MapView />}
                 </div>
             </ZenModeProvider>
         </SiderProvider>

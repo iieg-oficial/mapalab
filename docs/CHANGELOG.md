@@ -10,8 +10,57 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 ### Cambiado
 - `renderCard.jsx`: refactor del cuerpo del infobox para soportar `blockOrder` (opcional, persistido en `infobox_config`). Cada bloque body (`labels`, `labelGroups`, `list`, `iconText`, `text`, `cards`) extraído a su propia función pura. Si el config trae `blockOrder` con keys válidas, se usa ese orden + remaining defaults al final. Si no trae `blockOrder`, mantiene el orden hardcoded actual (backwards-compatible — los 250 configs existentes siguen renderizando idénticos).
 
-### Pendiente (Fase 3 en desarrollo)
-- `<CompareView>`: split UI con dos `<MapView>` reusando `MapsProvider`. Hoy queda el JSON envelope `kind: "compare"` validado en backend, `<CompareButton>` (disabled, con tag BETA) en el modal, y deserializer preparado para `kind: "single"`. La instanciacion de paneles + `useDateOverride(paneIndex)` es el siguiente paso.
+## [1.13.0] - 2026-04-27
+
+### Agregado — Comparador Fase 3
+- **`<CompareView>` (split lado-a-lado)**: dos `<MapView>` independientes con sus propios `mapRef`/`targetRef` locales. Header por panel con la etiqueta de la fecha. Layout `flex` 50/50 con borde divisor blanco.
+- **`<SwipeView>` (barra divisora)**: dos `<MapView>` superpuestos, el de la derecha con `clip-path: inset(0 0 0 ${pos}%)`. Barra naranja vertical draggable (rango 5%–95%) con handle circular, posicion persistida via debounce 200ms. Cursor `ew-resize`, `touch-none` para mobile. Pan/zoom sincronizados.
+- **`useViewSync(paneMapRefs, active)`**: engancha listeners `change:center`/`change:resolution`/`change:rotation` en ambos `View` de OL con flag anti-loop. Polling de mount con backoff hasta que ambos `mapRef.current` estén poblados.
+- **`useDateOverride` via `dateOverride` prop**: `<MapView paneIndex dateOverride>` propaga el valor al `useWMSFilterUpdater`, que lo usa como `TIME` en lugar de `getFilter(sub.id)` para capas con `wmsConfig.timeEnabled`. Capas vectoriales con CQL `date` quedan fuera de scope v1 (renderizan idénticas en ambos lados).
+- **`<CompareDateModal>`**: dos `<input type="date">` + etiquetas opcionales ("Antes"/"Después"). Validación YYYY-MM-DD + dos fechas distintas. Acepta prop `layout: 'split' | 'swipe'` para diferenciar el flujo.
+- **`compareMode` en `MapsProvider`**: `{ active, axis: 'date', panes, layout, swipePosition }`. Setter `setCompareMode`, `exitCompareMode`, `setSwipePosition` (debounced en SwipeView). `paneMapRefs` registry indexado por `paneIndex` para que `useViewSync` acceda a cada `Map`.
+
+### Agregado — Submenu de Herramientas
+- **Reorganizacion del item `tools`** en el sider de `hasMenu: false` con `onClick: toggleMeasurementTools` directo a `hasMenu: true` con `<ToolsMenu>` como `menuContent`.
+- **`<ToolsMenu>`**: grid 2x2 de tres iconos en el patron de `<BaseMapList>`: **Mediciones** (dispara el toggle existente que abre `<MeasurementTools>`), **Comparar fechas** (abre `CompareDateModal` con `layout='split'`), **Barra divisora** (abre `CompareDateModal` con `layout='swipe'`). Estado activo por icono: Mediciones se muestra activo si `areMeasurementToolsVisible`; Comparar/Swipe segun `compareMode.layout`.
+- **Iconos SVG inline**: una regla con punto para Mediciones, dos paneles juntos para Comparar fechas, mapa con linea naranja vertical y flechas para Swipe. Estilo por hover/active siguiendo el patron del basemap.
+
+### Agregado — Persistencia compartida del comparador
+- **`kind: 'swipe'`** en serializer/deserializer: estructura igual a `kind: 'compare'` pero con `payload.position` (0..1). Bumpea share, recarga estado completo (capas + filtros + fechas + posicion del divisor) al abrir el link.
+- **`kind: 'compare'`** ya soportado: hidrata `compareMode` con `axis` + `panes` desde el envelope. Default `layout: 'split'` cuando no viene. Tests actualizados (`useShareDeserializer.test.js`, nuevo `useShareSerializer.test.js`).
+
+### Agregado — URL viva limpia + persistencia local
+- **Refactor URL strategy**: removidos `useUrlSync`, `useMapViewUrlSync` y test asociado. La URL viva ya no muta con cada cambio de capa/filtro. Solo se modifica al pulsar "Compartir": queda `?s=<hash>`. Deeplinks por capa via `?layer=<slug>` siguen funcionando para invitar a una capa unica.
+- **`useSessionPersistence`**: serializa el estado actual (mismo envelope que el share) a `sessionStorage` con debounce. Sobrevive un refresh, se pierde al cerrar la pestaña. `hasBeenPopulatedRef` evita borrar el storage durante el primer mount cuando aun no hay capas cargadas (corner case que perdia el estado previo).
+- **`useInitializeFromUrl`**: orden de precedencia `?s=` → `?layer=` → `?layers=` (legacy) → sessionStorage → `BASE_INITIAL_ORDER`. Valida `layers.length > 0` antes de deserializar el sessionStorage para que un envelope vacio caiga al fallback.
+
+### Agregado — Indicadores de estado del share
+- **`useShareDirtiness`**: detecta si el estado vivo divergio del share cargado. Trackea `activeLayerIds`, `filters`, `layerOpacities`, `hiddenLayerIds`, `selectedLayerForSymbology`, `baseMapId`. **No** rastrea pan/zoom (decision: el share guarda el encuadre como starting view, no como invariante; explorar zonas vecinas no debe marcar dirty).
+- **Badge "Usando link compartido: hash"** (verde, no interactivo) en `<MapToolsPanel>` cuando `inSyncWithShare`.
+- **Boton "Regresar a: hash"** (gris, clickeable, hace `window.location.reload()`) cuando el estado fue modificado tras cargar el link.
+- **Badge "Comparando: A vs B ×"** (azul) en compare mode, click sale.
+- **`<ShareButton>` con tres estados**: verde claro + icono `done` cuando sincronizado, gris cuando modificado, lavanda/morado normal. SVG `done` usa `currentColor` para que el check tome el color del texto.
+
+### Cambiado — InfoBox y feature info
+- **Filter por id en `useFeatureInfo.handleRemoveFeature`**: cuando se borra una card del cluster, el `cachedFeatures` se filtra por id (con fallback a referencia). Counter pasa de `1/482` → `1/481` y el download CSV refleja el set actual.
+- **Re-poblacion al borrar la ultima visible**: si la cache aun tiene items, se restauran `features` con un slice — antes destruia el resultEntry y la card desaparecia con cache disponible.
+- **`useLoadMoreFeatures` recibe `selectedFeatureInfo` por argumento** en lugar de leer state via setter. Test nuevo (`useLoadMoreFeatures.test.js`).
+- **`useDateLoop` no pisa filtros del share**: chequea `getSpecificFilter(layerId, 'date')` antes del default-date apply, skipea si ya hay filtro (tipico de share-loaded).
+
+### Eliminado
+- `frontend/src/pages/maps/components/CompareButton.jsx`: el scaffold de v1.10.0 ya no se usa, su funcionalidad vive en `<ToolsMenu>`.
+- `frontend/src/pages/maps/hooks/useUrlSync.js`, `useMapViewUrlSync.js`: reemplazados por inicializacion via `?s=`/`?layer=` + `useSessionPersistence`.
+- `frontend/src/services/featureInfoPagination.js`: doble-fetch WMS + cache local hizo innecesaria la paginacion WFS.
+- `frontend/src/test/pages/maps/hooks/useUrlSync.test.js`: cubria los hooks borrados.
+
+### Corregido
+- **EPSG:3857 vs WGS84 en serializer**: `view.getCenter()` devuelve coordenadas en `EPSG:3857`. El serializer las pasaba directo y el deserializer hacia `fromLonLat([lon, lat])` asumiendo WGS84 → centro del mapa al espacio sideral, OL retry-loop infinito al abrir el share. Fix: `toLonLat(center)` en el serializer.
+- **`selectedLayerForSymbology` en serializer**: leia `selectedLayer` (modal) en lugar de `selectedLayerForSymbology` (sider). El deserializer setea el segundo, asi que round-trip no respetaba la simbología.
+- **`Modal isOpen vs open`**: `<ShareModal>` pasaba `open={open}` cuando `<Modal>` espera `isOpen`. El modal nunca aparecia visiblemente.
+
+### Backend
+- `backend/app/routers/shares.py`: ajustes menores en validacion del envelope.
+- `backend/app/services/layer_tree_service.py`: pequeño tweak.
 
 ## [1.11.0] - 2026-04-26
 
