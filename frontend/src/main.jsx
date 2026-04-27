@@ -12,7 +12,10 @@ import MapsProvider from '@providers/MapsProvider';
 import { LayersProvider } from '@providers/LayersProvider';
 import { LayerLoadingProvider } from '@contexts/LayerLoadingContext';
 import Loading from '@components/Loading';
+import { startMapalabCacheVersionWatcher } from '@services/eventosService';
 import.meta.env;
+
+startMapalabCacheVersionWatcher();
 
 const Home = lazy(() => import('@pages/home/Home'));
 const Maps = lazy(() => import('@pages/maps/Maps'));

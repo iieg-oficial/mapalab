@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchHomeContent } from '@services/eventosService';
+import { fetchHomeContent, onHomeChanged } from '@services/eventosService';
 
 
 export const useHomeContent = () => {
@@ -9,11 +9,15 @@ export const useHomeContent = () => {
 
     useEffect(() => {
         let cancelled = false;
-        fetchHomeContent()
-            .then((data) => { if (!cancelled) setHome(data); })
-            .catch((err) => { if (!cancelled) setError(err); })
-            .finally(() => { if (!cancelled) setLoading(false); });
-        return () => { cancelled = true; };
+        const load = () => {
+            fetchHomeContent()
+                .then((data) => { if (!cancelled) setHome(data); })
+                .catch((err) => { if (!cancelled) setError(err); })
+                .finally(() => { if (!cancelled) setLoading(false); });
+        };
+        load();
+        const off = onHomeChanged(load);
+        return () => { cancelled = true; off(); };
     }, []);
 
     return { home, loading, error };

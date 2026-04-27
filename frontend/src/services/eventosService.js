@@ -55,3 +55,56 @@ export const clearMapalabPublicCache = () => {
     cache.eventosInFlight = null;
     cache.homeInFlight = null;
 };
+
+const POLL_INTERVAL_MS = 30000;
+const VERSION_EVENT_EVENTOS = 'mapalab:eventos-changed';
+const VERSION_EVENT_HOME = 'mapalab:home-changed';
+let watcherTimer = null;
+let lastVersions = { eventos: null, home: null };
+
+const fetchVersions = async () => {
+    const res = await fetch(buildUrl('cache-version'), { credentials: 'include' });
+    if (!res.ok) throw new Error(`GET /cache-version fallo ${res.status}`);
+    return res.json();
+};
+
+const checkVersions = async () => {
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+    try {
+        const versions = await fetchVersions();
+        if (lastVersions.eventos === null && lastVersions.home === null) {
+            lastVersions = versions;
+            return;
+        }
+        if (versions.eventos !== lastVersions.eventos) {
+            cache.eventos = null;
+            cache.eventosInFlight = null;
+            window.dispatchEvent(new CustomEvent(VERSION_EVENT_EVENTOS));
+        }
+        if (versions.home !== lastVersions.home) {
+            cache.home = null;
+            cache.homeInFlight = null;
+            window.dispatchEvent(new CustomEvent(VERSION_EVENT_HOME));
+        }
+        lastVersions = versions;
+    } catch { /* silencioso */ }
+};
+
+export const startMapalabCacheVersionWatcher = () => {
+    if (watcherTimer || typeof window === 'undefined') return;
+    checkVersions();
+    watcherTimer = setInterval(checkVersions, POLL_INTERVAL_MS);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') checkVersions();
+    });
+};
+
+export const onEventosChanged = (handler) => {
+    window.addEventListener(VERSION_EVENT_EVENTOS, handler);
+    return () => window.removeEventListener(VERSION_EVENT_EVENTOS, handler);
+};
+
+export const onHomeChanged = (handler) => {
+    window.addEventListener(VERSION_EVENT_HOME, handler);
+    return () => window.removeEventListener(VERSION_EVENT_HOME, handler);
+};

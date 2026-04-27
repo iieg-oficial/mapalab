@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { fromLonLat } from 'ol/proj';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
@@ -13,12 +14,18 @@ export const useShareDeserializer = () => {
         setLayerOpacity,
         setHiddenLayerIds,
         setBaseMapId,
+        mapRef,
+        setCompareMode,
     } = useMapsContext();
     const { layers: layerTree } = useLayers();
 
     return useCallback((envelope) => {
-        if (!envelope || envelope.version !== 1 || envelope.kind !== 'single') return false;
-        const payload = envelope.payload || {};
+        if (!envelope || envelope.version !== 1) return false;
+        if (envelope.kind !== 'single' && envelope.kind !== 'compare' && envelope.kind !== 'swipe') return false;
+        const isCompare = envelope.kind === 'compare';
+        const isSwipe = envelope.kind === 'swipe';
+        const wraps = isCompare || isSwipe;
+        const payload = wraps ? (envelope.payload?.base || {}) : (envelope.payload || {});
         const layers = Array.isArray(payload.layers) ? payload.layers : [];
 
         const resolvedIds = [];
@@ -52,6 +59,20 @@ export const useShareDeserializer = () => {
             setBaseMapId(payload.basemap);
         }
 
+        if (payload.view && mapRef?.current) {
+            const map = mapRef.current;
+            const olView = map.getView();
+            if (typeof payload.view.lon === 'number' && typeof payload.view.lat === 'number') {
+                olView.setCenter(fromLonLat([payload.view.lon, payload.view.lat]));
+            }
+            if (typeof payload.view.zoom === 'number') {
+                olView.setZoom(payload.view.zoom);
+            }
+            if (typeof payload.view.rotation === 'number') {
+                olView.setRotation(payload.view.rotation);
+            }
+        }
+
         if (payload.selected) {
             const selectedId = resolveRefToId(payload.selected, layerTree);
             if (selectedId) {
@@ -60,6 +81,20 @@ export const useShareDeserializer = () => {
             }
         }
 
+        if (wraps && typeof setCompareMode === 'function') {
+            const axis = envelope.payload?.axis || 'date';
+            const panes = Array.isArray(envelope.payload?.panes) ? envelope.payload.panes : [];
+            const layout = isSwipe ? 'swipe' : 'split';
+            const swipePosition = isSwipe && typeof envelope.payload?.position === 'number'
+                ? envelope.payload.position
+                : 0.5;
+            if (panes.length >= 2) {
+                setCompareMode({ active: true, axis, panes, layout, swipePosition });
+            }
+        } else if (typeof setCompareMode === 'function') {
+            setCompareMode({ active: false, axis: 'date', panes: [], layout: 'split', swipePosition: 0.5 });
+        }
+
         return true;
-    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, setSelectedLayerForSymbology, findLayerById, setLayerOpacity, setHiddenLayerIds, setBaseMapId, layerTree]);
+    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, setSelectedLayerForSymbology, findLayerById, setLayerOpacity, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode]);
 };

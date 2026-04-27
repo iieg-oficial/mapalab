@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { toLonLat } from 'ol/proj';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { findLayerDef, slugForLayer } from '@pages/maps/helpers/wmsConfig';
@@ -40,7 +41,7 @@ export const useShareSerializer = () => {
         hiddenLayerIds,
         layerOpacities,
         filters,
-        selectedLayer,
+        selectedLayerForSymbology,
         baseMapId,
         dateLoops,
         loopPrefs,
@@ -56,7 +57,7 @@ export const useShareSerializer = () => {
             const center = olView.getCenter();
             const zoom = olView.getZoom();
             if (!center) return null;
-            const [lon, lat] = center;
+            const [lon, lat] = toLonLat(center);
             return {
                 zoom: round(zoom, 2),
                 lon: round(lon, 6),
@@ -80,7 +81,7 @@ export const useShareSerializer = () => {
             })
             .filter(Boolean);
 
-        const selectedSlug = selectedLayer?.id ? slugForLayer(selectedLayer.id, layerTree) : null;
+        const selectedSlug = selectedLayerForSymbology?.id ? slugForLayer(selectedLayerForSymbology.id, layerTree) : null;
 
         const basePayload = {
             view,
@@ -102,10 +103,23 @@ export const useShareSerializer = () => {
             };
         }
 
+        if (kind === 'swipe') {
+            return {
+                version: 1,
+                kind: 'swipe',
+                payload: {
+                    base: basePayload,
+                    axis: extra.axis || 'date',
+                    panes: extra.panes || [],
+                    position: typeof extra.position === 'number' ? extra.position : 0.5,
+                },
+            };
+        }
+
         return {
             version: 1,
             kind: 'single',
             payload: basePayload,
         };
-    }, [activeLayerIds, hiddenLayerIds, layerOpacities, filters, selectedLayer, baseMapId, dateLoops, loopPrefs, mapRef, layerTree]);
+    }, [activeLayerIds, hiddenLayerIds, layerOpacities, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree]);
 };

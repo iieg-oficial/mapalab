@@ -19,7 +19,8 @@ const Body = ({ isModal = false }) => {
     const [activeBtn, setActiveBtn] = useState(0);
     const { home } = useHomeContent();
     const videoConfig = home?.video;
-    const videoId = videoConfig?.activo && videoConfig.youtubeId ? videoConfig.youtubeId : DEFAULT_VIDEO_ID;
+    const showVideo = videoConfig === undefined ? true : Boolean(videoConfig?.activo);
+    const videoId = videoConfig?.youtubeId || DEFAULT_VIDEO_ID;
     const videoTitle = videoConfig?.titulo || 'MapaLab — IIEG';
 
     const topicsList = useMemo(() => buildTopics(home?.topics?.items), [home]);
@@ -122,18 +123,20 @@ const Body = ({ isModal = false }) => {
                     ))}
                 </div>
             </div>
-            <div className="my-9 mx-4 flex justify-center">
-                <div className="w-full max-w-[900px] aspect-video rounded-[20px] overflow-hidden shadow-[0px_6px_12px_#ACBFE533]">
-                    <iframe
-                        src={`https://www.youtube.com/embed/${videoId}`}
-                        title={videoTitle}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="w-full h-full border-0"
-                        loading="lazy"
-                    />
+            {showVideo && (
+                <div className="my-9 mx-4 flex justify-center">
+                    <div className="w-full max-w-[900px] aspect-video rounded-[20px] overflow-hidden shadow-[0px_6px_12px_#ACBFE533]">
+                        <iframe
+                            src={`https://www.youtube.com/embed/${videoId}`}
+                            title={videoTitle}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="w-full h-full border-0"
+                            loading="lazy"
+                        />
+                    </div>
                 </div>
-            </div>
+            )}
             <div className="pt-5 relative">
                 <TitleAndNote title="No te pierdas estas funcionalidades del mapa" description="* La visualización de las capas dependerá de tu navegador; te sugerimos eliminar las capas que no estés utilizando para un mejor rendimiento del mapa." />
                 {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- drag-scroll en contenedor con rol region; keyboard users usan scroll nativo con flechas */}

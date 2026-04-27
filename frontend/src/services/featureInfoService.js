@@ -286,4 +286,3 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
         .filter(info => info !== null && info.features && info.features.length > 0);
 };
 
-export { fetchTotalsForClick, fetchMoreFeaturesForLayer } from './featureInfoPagination';
