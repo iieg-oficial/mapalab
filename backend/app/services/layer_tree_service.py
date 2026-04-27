@@ -100,6 +100,9 @@ def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace], aliases_ma
     elif layer.node_type == 'group':
         result['forceGroup'] = True
 
+    if layer.node_type == 'tema' and getattr(layer, 'icon_url', None):
+        result['iconUrl'] = layer.icon_url
+
     if layer.hidden_in_menu:
         result['hiddenInMenu'] = True
 
