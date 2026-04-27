@@ -3,10 +3,11 @@ from typing import Optional
 from collections import deque
 from threading import Lock
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.metrics import (
@@ -29,6 +30,15 @@ router = APIRouter(prefix='/shares', tags=['Shares'])
 
 
 PIN_DURATION_DAYS = 365
+PERMANENT_SENTINEL = datetime(9999, 12, 31)
+
+
+def _require_internal_token(x_internal_token: Optional[str] = Header(default=None, alias='X-Internal-Token')) -> None:
+    expected = settings.MAPALAB_INTERNAL_TOKEN
+    if not expected:
+        raise HTTPException(status_code=503, detail='MAPALAB_INTERNAL_TOKEN no configurado')
+    if not x_internal_token or x_internal_token != expected:
+        raise HTTPException(status_code=401, detail='Token interno inválido')
 RATE_WINDOW_SECONDS = 60.0
 RATE_MAX_REQUESTS = 10
 
@@ -173,12 +183,30 @@ def pin_share(share_id: str):
         return {'ok': True, 'pinnedUntil': until.isoformat() + 'Z'}
 
 
-@router.delete('/{share_id}/pin', status_code=204, responses=api_responses(404, 500))
-def unpin_share(share_id: str):
+@router.delete('/{share_id}/pin', status_code=204, responses=api_responses(401, 404, 500))
+def unpin_share(share_id: str, x_internal_token: Optional[str] = Header(default=None, alias='X-Internal-Token')):
     with _get_session() as session:
         share = ShareRepository.get(session, share_id)
         if share is None:
             raise HTTPException(status_code=404, detail='Share no existe o expiro')
+        if share.pinned_until == PERMANENT_SENTINEL:
+            expected = settings.MAPALAB_INTERNAL_TOKEN
+            if not expected or not x_internal_token or x_internal_token != expected:
+                raise HTTPException(status_code=401, detail='Share permanente requiere token interno para despinear')
         ShareRepository.unpin(session, share)
         session.commit()
         return None
+
+
+@router.post('/{share_id}/pin-permanent', responses=api_responses(401, 404, 500), dependencies=[Depends(_require_internal_token)])
+def pin_share_permanent(share_id: str):
+    with _get_session() as session:
+        share = ShareRepository.get(session, share_id)
+        if share is None:
+            raise HTTPException(status_code=404, detail='Share no existe o expiro')
+        ShareRepository.pin(session, share, PERMANENT_SENTINEL)
+        session.commit()
+
+        incr(COUNTER_SHARES_PINNED)
+
+        return {'ok': True, 'pinnedUntil': PERMANENT_SENTINEL.isoformat() + 'Z', 'permanent': True}
