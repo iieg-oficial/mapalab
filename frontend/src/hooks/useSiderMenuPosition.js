@@ -111,6 +111,16 @@ export const useSiderMenuPosition = ({
                 const top = anchorRect.bottom - contentHeight;
                 const left = anchorRect.right + offset;
                 return { placement: 'right-end', top, left, maxHeight: null };
+            },
+            'bottom-start': () => {
+                const top = anchorRect.bottom + offset;
+                const left = anchorRect.left;
+                return { placement: 'bottom-start', top, left, maxHeight: null };
+            },
+            'bottom-end': () => {
+                const top = anchorRect.bottom + offset;
+                const left = anchorRect.right - (content.offsetWidth || 320);
+                return { placement: 'bottom-end', top, left, maxHeight: null };
             }
         };
 

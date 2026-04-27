@@ -70,7 +70,8 @@ const MenuItem = ({ item, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => 
                     className="border-none"
                     shadow="shadow-none"
                     offset={10}
-                    rounded="rounded-r-2xl"
+                    placement={item.panelPlacement || 'right-start'}
+                    rounded={item.panelRounded || 'rounded-r-2xl'}
                     bg="bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A]"
                 >
                     {item.menuContent({ close: handleClose })}

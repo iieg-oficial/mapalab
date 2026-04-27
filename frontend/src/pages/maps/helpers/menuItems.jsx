@@ -6,9 +6,10 @@ import SearchMenu from '@mapsComponents/SearchMenu';
 import ThemeMenu from '@mapsComponents/ThemeMenu';
 import EventoMenu from '@mapsComponents/EventoMenu';
 import EventoIconButton from '@mapsComponents/EventoIconButton';
+import ToolsMenu from '@mapsComponents/ToolsMenu';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 
-const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpen = false, categoryId = null }) => {
+const MenuButton = ({ icon, imageUrl, label, isHovered, hasActiveLayers = false, isMenuOpen = false, categoryId = null }) => {
     const [isHovering, setIsHovering] = useState(false);
 
     const iconName = categoryId || icon;
@@ -30,12 +31,20 @@ const MenuButton = ({ icon, label, isHovered, hasActiveLayers = false, isMenuOpe
                     ${isMenuOpen ? 'bg-[#FF8300] opacity-100' : 'opacity-0'}
                 `}
             />
-            <Icon
-                name={iconName}
-                state={iconState}
-                size="size-8"
-                className={`transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
-            />
+            {imageUrl ? (
+                <img
+                    src={imageUrl}
+                    alt={label || ''}
+                    className={`size-8 object-contain transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
+                />
+            ) : (
+                <Icon
+                    name={iconName}
+                    state={iconState}
+                    size="size-8"
+                    className={`transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
+                />
+            )}
             <span
                 className={`
                     transition-all duration-500 truncate whitespace-nowrap font-garet ml-5
@@ -65,16 +74,25 @@ const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, toggleMeasu
         )
     }, {
         id: 'tools',
-        hasMenu: false,
+        hasMenu: true,
         tooltip: 'Herramientas',
-        onClick: toggleMeasurementTools,
         ref: toolsButtonRef,
-        component: <MenuButton
-            icon="tools"
-            label="Herramientas"
-            isHovered={isHovered}
-            hasActiveLayers={areMeasurementToolsVisible}
-        />
+        menuContent: ({ closeButton } = {}) => (
+            <ToolsMenu
+                closeButton={closeButton}
+                toggleMeasurementTools={toggleMeasurementTools}
+                areMeasurementToolsVisible={areMeasurementToolsVisible}
+            />
+        ),
+        renderComponent: ({ isMenuOpen }) => (
+            <MenuButton
+                icon="tools"
+                label="Herramientas"
+                isHovered={isHovered}
+                hasActiveLayers={areMeasurementToolsVisible}
+                isMenuOpen={isMenuOpen}
+            />
+        )
     }, {
         id: 'basemaps',
         hasMenu: true,
@@ -130,6 +148,7 @@ const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer, layers 
                 <MenuButton
                     icon="layers"
                     categoryId={category.id}
+                    imageUrl={category.iconUrl}
                     label={category.label}
                     isHovered={isHovered}
                     hasActiveLayers={hasActiveLayers}
@@ -139,7 +158,7 @@ const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer, layers 
         };
     });
 
-const createEventoItems = ({ activeLayerIds, onToggleLayer, eventos = [] }) =>
+const createEventoItems = ({ isHovered, activeLayerIds, onToggleLayer, eventos = [] }) =>
     eventos.map((evento) => ({
         id: `evento-${evento.id}`,
         hasMenu: true,
@@ -155,8 +174,10 @@ const createEventoItems = ({ activeLayerIds, onToggleLayer, eventos = [] }) =>
         renderComponent: ({ isMenuOpen }) => (
             <EventoIconButton
                 iconUrl={evento.iconoUrl}
+                imageUrl={evento.imagenUrl}
                 title={evento.titulo}
                 isMenuOpen={isMenuOpen}
+                isHovered={isHovered}
             />
         ),
     }));
