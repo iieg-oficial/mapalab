@@ -3,7 +3,7 @@ import guideConfig from '../config/guideConfig';
 import selectConfig from '../config/selectConfig';
 
 export const DEFAULT_VIDEO_ID = 'MzuImZuDM3E';
-export const DEFAULT_SELECT_COLOR = '#FFE09B';
+const DEFAULT_SELECT_COLOR = '#FFE09B';
 
 
 export const buildTopics = (apiTopics) => {

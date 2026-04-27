@@ -252,7 +252,7 @@ const BODY_RENDERERS = {
     cards: renderCards,
 };
 
-export const DEFAULT_BODY_ORDER = ['labels', 'labelGroups', 'list', 'iconText', 'text', 'cards'];
+const DEFAULT_BODY_ORDER = ['labels', 'labelGroups', 'list', 'iconText', 'text', 'cards'];
 
 const resolveBodyOrder = (configOrder) => {
     const validKeys = Object.keys(BODY_RENDERERS);
