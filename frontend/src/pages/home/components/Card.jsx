@@ -7,7 +7,17 @@ const Card = ({ topics = [] }) => {
     const [hoveredIndex, setHoveredIndex] = useState(null);
     const lastTouchRef = useRef(0);
 
-    const handleSubtopicClick = (layerIds) => {
+    const handleSubtopicClick = (subtopic) => {
+        if (subtopic?.link) {
+            const link = subtopic.link;
+            if (/^https?:\/\//i.test(link)) {
+                window.open(link, '_blank', 'noopener,noreferrer');
+            } else {
+                navigate(link);
+            }
+            return;
+        }
+        const layerIds = subtopic?.layerIds;
         const layers = Array.isArray(layerIds) ? layerIds.join(',') : layerIds;
         navigate(`/mapa?layers=${layers}`);
     };
@@ -75,7 +85,7 @@ const Card = ({ topics = [] }) => {
                                             {topic.subtopics.map((subtopic, idx) => (
                                                 <li key={idx}>
                                                     <button
-                                                        onClick={() => handleSubtopicClick(subtopic.layerIds)}
+                                                        onClick={() => handleSubtopicClick(subtopic)}
                                                         onTouchStart={(e) => e.stopPropagation()}
                                                         className="
                                                             w-full text-left px-3 py-2 rounded-lg

@@ -6,6 +6,7 @@ import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
 import { useShareDeserializer } from '@pages/maps/hooks/useShareDeserializer';
 import { fetchShare } from '@services/shareService';
 import { trackShareMap } from '@services/analyticsService';
+import { SESSION_STORAGE_KEY } from '@pages/maps/hooks/useSessionPersistence';
 
 export const filtersInitializationComplete = { value: false };
 
@@ -25,9 +26,11 @@ export const useInitializeFromUrl = () => {
         const shareId = searchParams.get('s');
         if (shareId) {
             initialized.current = true;
+            const abortRef = { cancelled: false };
             (async () => {
                 try {
                     const envelope = await fetchShare(shareId);
+                    if (abortRef.cancelled) return;
                     if (envelope) {
                         const applied = deserialize(envelope);
                         if (applied) {
@@ -36,13 +39,13 @@ export const useInitializeFromUrl = () => {
                             return;
                         }
                     }
-                    trackShareMap('not_found');
+                    if (!abortRef.cancelled) trackShareMap('not_found');
                 } catch {
-                    trackShareMap('error');
+                    if (!abortRef.cancelled) trackShareMap('error');
                 }
-                filtersInitializationComplete.value = true;
+                if (!abortRef.cancelled) filtersInitializationComplete.value = true;
             })();
-            return;
+            return () => { abortRef.cancelled = true; };
         }
 
         const layersParam = searchParams.get('layers');
@@ -120,6 +123,25 @@ export const useInitializeFromUrl = () => {
             filtersInitializationComplete.value = true;
             initialized.current = true;
         } else {
+            // Antes del fallback a capas iniciales, intentamos restaurar el estado
+            // desde sessionStorage (sobrevive un refresh, se pierde al cerrar pestana)
+            try {
+                const saved = sessionStorage.getItem(SESSION_STORAGE_KEY);
+                if (saved) {
+                    const envelope = JSON.parse(saved);
+                    const savedLayers = envelope?.payload?.layers;
+                    // Solo restauramos si el envelope tiene capas. Un guardado vacio
+                    // significa "user cleared all" → debe caer a BASE_INITIAL_ORDER.
+                    if (Array.isArray(savedLayers) && savedLayers.length > 0 && deserialize(envelope)) {
+                        filtersInitializationComplete.value = true;
+                        initialized.current = true;
+                        return;
+                    }
+                    // Limpiamos basura del storage para no reprocesarla
+                    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+                }
+            } catch { /* sessionStorage no disponible o JSON invalido — fallback */ }
+
             const allIds = [];
 
             BASE_INITIAL_ORDER.forEach(id => {

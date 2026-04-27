@@ -12,7 +12,7 @@ const FEATURE_INFO_LOADING_ID = 'feature_info_query';
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
 export const useFeatureInfo = () => {
-    const { hiddenLayerIds, setSelectedFeatureInfo, clickPosition, activeLayerIds, getFilter, selectedLayerForSymbology, setSelectedLayerForSymbology } = useContext(MapsContext);
+    const { hiddenLayerIds, selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, activeLayerIds, getFilter, selectedLayerForSymbology, setSelectedLayerForSymbology } = useContext(MapsContext);
     const { layers: allLayers } = useLayers();
     const { setLayerLoading } = useLayerLoading();
     const [loading, setLoading] = useState(false);
@@ -97,10 +97,13 @@ export const useFeatureInfo = () => {
 
         try {
             const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
-            const [results, totalResults] = await Promise.all([
-                getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_CAP),
-                getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_TOTAL),
-            ]);
+            const results = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_CAP);
+            // Solo lanzamos el segundo fetch (cap 2000) si alguna capa llego al cap.
+            // Si todas devuelven < 50, ya tenemos todo y nos ahorramos la request.
+            const needsTotal = (results || []).some(r => (r.features?.length || 0) >= FEATURE_COUNT_CAP);
+            const totalResults = needsTotal
+                ? await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_TOTAL)
+                : results;
             const [lng, lat] = toLonLat(coordinate);
 
             if (results && results.length > 0) {
@@ -332,7 +335,7 @@ export const useFeatureInfo = () => {
         clickPosition.clearPosition();
     }, [setSelectedFeatureInfo, clickPosition]);
 
-    const loadMoreFeatures = useLoadMoreFeatures(setSelectedFeatureInfo);
+    const loadMoreFeatures = useLoadMoreFeatures(selectedFeatureInfo, setSelectedFeatureInfo);
 
     return {
         queryFeatures,

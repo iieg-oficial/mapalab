@@ -110,6 +110,8 @@ const InfoBox = () => {
     const handleRemoveFeature = (layerId, featureIndex) => {
         if (!results) return;
 
+        const REFILL_PAGE = 50;
+
         const newResults = results.map(result => {
             if (result.layerId === layerId) {
                 const removed = result.features[featureIndex];
@@ -117,15 +119,28 @@ const InfoBox = () => {
                 newFeatures.splice(featureIndex, 1);
                 const cache = result.cachedFeatures || result.features;
                 const newCache = cache.filter(f => f !== removed && (removed?.id == null || f.id !== removed.id));
+
+                // Si se vacian las visibles pero el cache aun tiene features, repoblar
+                let nextFeatures = newFeatures;
+                let nextDisplayCap = result.displayCap ?? newFeatures.length;
+                if (newFeatures.length === 0 && newCache.length > 0) {
+                    nextFeatures = newCache.slice(0, Math.min(REFILL_PAGE, newCache.length));
+                    nextDisplayCap = nextFeatures.length;
+                }
+
                 return {
                     ...result,
-                    features: newFeatures,
+                    features: nextFeatures,
                     cachedFeatures: newCache,
                     totalAvailable: newCache.length,
+                    displayCap: nextDisplayCap,
                 };
             }
             return result;
-        }).filter(result => result.features.length > 0);
+        }).filter(result => {
+            const cacheLen = (result.cachedFeatures || []).length;
+            return result.features.length > 0 || cacheLen > 0;
+        });
 
         if (newResults.length === 0) {
             setSelectedFeatureInfo(null);

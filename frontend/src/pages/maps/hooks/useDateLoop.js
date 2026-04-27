@@ -160,6 +160,7 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLa
         }
 
         return null;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const toggleLoop = useCallback((layerId) => {
@@ -229,6 +230,14 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLa
             const layerDef = findLayerDef(layerId, allLayers);
             if (!layerDef?.rasterPeriodicity) return;
 
+            // Si la capa ya tiene un filtro date (por share o navegacion previa),
+            // marcarla como ya inicializada y no sobreescribir
+            const existingDate = refs.current.getSpecificFilter?.(layerId, 'date');
+            if (existingDate) {
+                appliedDefaultsRef.current.add(layerId);
+                return;
+            }
+
             const periodicity = layerDef.rasterPeriodicity;
             const years = Object.keys(periodicity).map(Number).sort((a, b) => b - a);
             const firstYear = years[0];
@@ -251,6 +260,7 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLa
                 appliedDefaultsRef.current.delete(id);
             }
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeLayerIds, applyFilter]);
 
     useEffect(() => {

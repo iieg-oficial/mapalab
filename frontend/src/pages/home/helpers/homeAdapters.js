@@ -19,6 +19,7 @@ export const buildTopics = (apiTopics) => {
             subtopics: (t.subtopics || []).map((s) => ({
                 label: s.label,
                 layerIds: s.layerIds || s.layer_ids || [],
+                link: s.link || '',
             })),
         }));
 };

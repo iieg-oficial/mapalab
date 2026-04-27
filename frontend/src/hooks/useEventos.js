@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchEventos } from '@services/eventosService';
+import { fetchEventos, onEventosChanged } from '@services/eventosService';
 
 
 export const useEventos = () => {
@@ -8,10 +8,14 @@ export const useEventos = () => {
 
     useEffect(() => {
         let cancelled = false;
-        fetchEventos()
-            .then((data) => { if (!cancelled) setEventos(data); })
-            .catch((err) => { if (!cancelled) setError(err); });
-        return () => { cancelled = true; };
+        const load = () => {
+            fetchEventos()
+                .then((data) => { if (!cancelled) setEventos(data); })
+                .catch((err) => { if (!cancelled) setError(err); });
+        };
+        load();
+        const off = onEventosChanged(load);
+        return () => { cancelled = true; off(); };
     }, []);
 
     return { eventos, error };
