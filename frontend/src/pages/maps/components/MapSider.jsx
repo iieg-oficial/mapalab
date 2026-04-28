@@ -7,14 +7,15 @@ import { useSearch } from '@contexts/SearchContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import { useScrollOverflow } from '@hooks/useScrollOverflow';
 import Logo from '@components/Logo';
-import { createMenuItems } from '@pages/maps/helpers/menuItems';
+import { createMenuItems, BASE_ITEMS_COUNT } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
+import { useEventos } from '@hooks/useEventos';
+import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
 
 import { trackSiderLock } from '@services/analyticsService';
 import { IIEG_MARKER } from '@pages/maps/helpers/markerDefinitions';
 import { useZenMode } from './ZenMode';
-
 import MenuItem from './MenuItem';
 import SiderModeButton from './SiderModeButton';
 import EnvBadge from './EnvBadge';
@@ -99,9 +100,7 @@ const MapSider = ({ className = '' }) => {
     });
 
     useOutsideClick([siderRef], () => {
-        if (treatAsMobile && isOpen && openMenusCount === 0) {
-            closeSider();
-        }
+        if (treatAsMobile && isOpen && openMenusCount === 0) closeSider();
     });
 
     const computeWidth = () => {
@@ -125,9 +124,15 @@ const MapSider = ({ className = '' }) => {
         }
     }, [toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
 
+    const { eventos } = useEventos();
+
     const menuItems = useMemo(() =>
-        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers }),
-    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, allLayers]);
+        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers, eventos }),
+    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, allLayers, eventos]);
+
+    const eventCount = eventos?.length || 0;
+    const baseItemsEnd = BASE_ITEMS_COUNT;
+    const eventItemsEnd = baseItemsEnd + eventCount;
 
     const clearAutoOpenMenu = useCallback(() => {
         setAutoOpenMenuId(null);
@@ -173,71 +178,109 @@ const MapSider = ({ className = '' }) => {
     }
 
     return (
-        <aside
-            ref={siderRef}
-            className={[
-                'absolute top-4 left-4 z-20 max-md:z-22 flex flex-col',
-                'max-h-[calc(100dvh-2rem)] bg-white shadow-[0_5px_20px_#1A26641A] rounded-[10px] overflow-visible',
-                'transition-all duration-500',
-                className,
-            ].join(' ')}
-            style={{
-                transitionTimingFunction: SIDER_TRANSITION_TIMING,
-                width: `${width}px`
-            }}
-            onMouseEnter={!treatAsMobile ? handleMouseEnter : undefined}
-            onMouseLeave={!treatAsMobile ? handleMouseLeave : undefined}
-        >
-            <div
-                className="shrink-0 flex justify-center relative"
-                onTouchStart={handleLogoTouchStart}
-                onTouchEnd={handleLogoTouchEnd}
-                onTouchCancel={handleLogoTouchEnd}
-                onContextMenu={(e) => treatAsMobile && e.preventDefault()}
-                onMouseEnter={() => setShowModeBtn(true)}
-                onMouseLeave={() => setShowModeBtn(false)}
+        <>
+            <aside
+                ref={siderRef}
+                className={[
+                    'absolute top-4 left-4 z-20 max-md:z-22 flex flex-col',
+                    'max-h-[calc(100dvh-2rem)] bg-white shadow-[0_5px_20px_#1A26641A] rounded-[10px] overflow-visible',
+                    'transition-all duration-500',
+                    className,
+                ].join(' ')}
+                style={{
+                    transitionTimingFunction: SIDER_TRANSITION_TIMING,
+                    width: `${width}px`
+                }}
+                onMouseEnter={!treatAsMobile ? handleMouseEnter : undefined}
+                onMouseLeave={!treatAsMobile ? handleMouseLeave : undefined}
             >
-                <Logo
-                    name="mapalab"
-                    size={sizeLogo[isLoading ? 'loading' : isExpanded ? 'expanded' : 'collapsed']}
-                    expanded={isExpanded}
-                    isLoading={isLoading}
-                    onClick={handleLogoClick}
-                    tooltip={!treatAsMobile ? 'Ir al inicio' : ''}
-                    tooltipPlacement='bottom'
-                    className="shrink-0 p-3 flex justify-center"
-                />
-                <EnvBadge />
-                {!isMobile && (
-                    <div className={[
-                        'absolute right-0 bottom-0 translate-x-1/2 translate-y-1/2 z-10 transition-opacity duration-200',
-                        lockMode !== 'auto' || showModeBtn ? 'opacity-100' : 'opacity-0',
-                    ].join(' ')}>
-                        <SiderModeButton lockMode={lockMode} onToggle={handleToggleLock} />
-                    </div>
-                )}
-            </div>
-            {(!treatAsMobile || isOpen) && (
                 <div
-                    ref={contentRef}
-                    className={[
-                        'flex-1 flex flex-col gap-3 px-3',
-                        `${HIDDEN_SCROLLBAR}`,
-                        canScrollUp && canScrollDown
-                            ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]'
-                            : canScrollUp
-                                ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%)]'
-                                : canScrollDown
-                                    ? '[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]'
-                                    : ''
-                    ].join(' ')}
+                    className="shrink-0 flex justify-center relative"
+                    onTouchStart={handleLogoTouchStart}
+                    onTouchEnd={handleLogoTouchEnd}
+                    onTouchCancel={handleLogoTouchEnd}
+                    onContextMenu={(e) => treatAsMobile && e.preventDefault()}
+                    onMouseEnter={() => setShowModeBtn(true)}
+                    onMouseLeave={() => setShowModeBtn(false)}
                 >
+                    <Logo
+                        name="mapalab"
+                        size={sizeLogo[isLoading ? 'loading' : isExpanded ? 'expanded' : 'collapsed']}
+                        expanded={isExpanded}
+                        isLoading={isLoading}
+                        onClick={handleLogoClick}
+                        tooltip={!treatAsMobile ? 'Ir al inicio' : ''}
+                        tooltipPlacement='bottom'
+                        className="shrink-0 p-3 flex justify-center"
+                    />
+                    <EnvBadge />
+                    {!isMobile && (
+                        <div className={[
+                            'absolute right-0 bottom-0 translate-x-1/2 translate-y-1/2 z-10 transition-opacity duration-200',
+                            lockMode !== 'auto' || showModeBtn ? 'opacity-100' : 'opacity-0',
+                        ].join(' ')}>
+                            <SiderModeButton lockMode={lockMode} onToggle={handleToggleLock} />
+                        </div>
+                    )}
+                </div>
+                {(!treatAsMobile || isOpen) && (
                     <div
-                        className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3"
-                        onMouseEnter={() => setShowModeBtn(true)}
-                        onMouseLeave={() => setShowModeBtn(false)}
+                        ref={contentRef}
+                        className={[
+                            'flex-1 flex flex-col gap-3 px-3',
+                            `${HIDDEN_SCROLLBAR}`,
+                            canScrollUp && canScrollDown
+                                ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]'
+                                : canScrollUp
+                                    ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%)]'
+                                    : canScrollDown
+                                        ? '[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]'
+                                        : ''
+                        ].join(' ')}
                     >
-                        {menuItems.slice(0, 3).map((item, index) => (
+                        <div
+                            className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3"
+                            onMouseEnter={() => setShowModeBtn(true)}
+                            onMouseLeave={() => setShowModeBtn(false)}
+                        >
+                            {menuItems.slice(0, baseItemsEnd).map((item, index) => (
+                                <div
+                                    key={item.id || index}
+                                    className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
+                                    title={item.tooltip}
+                                >
+                                    <MenuItem
+                                        item={item}
+                                        isMobileView={treatAsMobile}
+                                        autoOpenMenuId={autoOpenMenuId}
+                                        clearAutoOpenMenu={clearAutoOpenMenu}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        {!treatAsMobile && eventCount > 0 && (
+                            <div
+                                className="flex flex-col gap-2"
+                                onMouseEnter={() => setShowModeBtn(true)}
+                                onMouseLeave={() => setShowModeBtn(false)}
+                            >
+                                {menuItems.slice(baseItemsEnd, eventItemsEnd).map((item, index) => (
+                                    <div
+                                        key={item.id || index}
+                                        className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
+                                        title={item.tooltip}
+                                    >
+                                        <MenuItem
+                                            item={item}
+                                            isMobileView={treatAsMobile}
+                                            autoOpenMenuId={autoOpenMenuId}
+                                            clearAutoOpenMenu={clearAutoOpenMenu}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {menuItems.slice(eventItemsEnd).map((item, index) => (
                             <div
                                 key={item.id || index}
                                 className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
@@ -252,34 +295,29 @@ const MapSider = ({ className = '' }) => {
                             </div>
                         ))}
                     </div>
-                    {menuItems.slice(3).map((item, index) => (
-                        <div
-                            key={item.id || index}
-                            className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
-                            title={item.tooltip}
-                        >
-                            <MenuItem
-                                item={item}
-                                isMobileView={treatAsMobile}
-                                autoOpenMenuId={autoOpenMenuId}
-                                clearAutoOpenMenu={clearAutoOpenMenu}
-                            />
-                        </div>
-                    ))}
-                </div>
-            )}
+                )}
 
-            <Logo
-                name="iieg"
-                size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'}
-                expanded={isExpanded}
-                visible={!treatAsMobile || isOpen}
-                onClick={handleIiegLogoClick}
-                tooltip="Acerca de Mapa Lab"
-                tooltipPlacement="top"
-                className="shrink-0 p-3 my-2 w-full"
+                <Logo
+                    name="iieg"
+                    size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'}
+                    expanded={isExpanded}
+                    visible={!treatAsMobile || isOpen}
+                    onClick={handleIiegLogoClick}
+                    tooltip="Acerca de Mapa Lab"
+                    tooltipPlacement="top"
+                    className="shrink-0 p-3 my-2 w-full"
+                />
+            </aside>
+            <ExternalEventoWidget
+                eventos={eventos}
+                activeLayerIds={contextActiveLayerIds}
+                onToggleLayer={onToggleLayer}
+                treatAsMobile={treatAsMobile}
+                isOpen={isOpen}
+                areMeasurementToolsVisible={areMeasurementToolsVisible}
+                siderWidth={width}
             />
-        </aside>
+        </>
     );
 };
 

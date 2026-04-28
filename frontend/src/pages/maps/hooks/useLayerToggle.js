@@ -160,7 +160,7 @@ export const useLayerToggle = ({
                 markerConfig.forEach(m => hideMarker?.(`layer_${layerId}_${m.center.join(',')}`));
             }
         }
-    }, [setActiveLayerIds, getAllChildLayerIds, findLayerById, setSelectedLayer, setSelectedLayerForSymbology, applyDefaultDate, clearDefaultDate, applyDefaultZoom, showMarker, hideMarker]);
+    }, [setActiveLayerIds, getAllChildLayerIds, findLayerById, setSelectedLayer, setSelectedLayerForSymbology, applyDefaultDate, clearDefaultDate, applyDefaultZoom, showMarker, hideMarker, allLayers]);
 
     return { handleToggleLayer, applyDefaultDate };
 };

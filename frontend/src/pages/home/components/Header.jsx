@@ -1,10 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import bannerConfig from '../config/bannerConfig';
 import Logo from '../../../components/Logo';
+import { useHomeContent } from '@hooks/useHomeContent';
 
 const Header = () => {
-    const activeBanner = bannerConfig.banners.find(banner => banner.active) || bannerConfig.banners[0];
+    const { home } = useHomeContent();
+
+    const activeBanner = useMemo(() => {
+        const fallback = bannerConfig.banners.find((b) => b.active) || bannerConfig.banners[0];
+        const apiBanners = home?.banner?.items || [];
+        const apiActive = apiBanners.find((b) => b.activo && b.titulo);
+        if (!apiActive) {
+            return fallback;
+        }
+        return {
+            ...fallback,
+            logoUrl: apiActive.logoUrl || '',
+            image: {
+                src: apiActive.imagenUrl || fallback.image.src,
+                alt: apiActive.titulo,
+            },
+            content: {
+                titleHighlight: '',
+                titleRest: apiActive.titulo,
+                description: apiActive.descripcion || fallback.content.description,
+                button: {
+                    label: apiActive.ctaLabel || fallback.content.button.label,
+                    link: apiActive.ctaHref || fallback.content.button.link,
+                },
+            },
+        };
+    }, [home]);
     const headerRef = useRef(null);
     const [showSticky, setShowSticky] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -27,18 +54,21 @@ const Header = () => {
     }, []);
 
     const mobileStyle = {
-        background: `linear-gradient(359deg, rgba(92, 36, 114, 0.9) 0%, rgba(150, 60, 186, 0.9) 100%) center center / cover no-repeat`
+        backgroundImage: `linear-gradient(359deg, rgba(92, 36, 114, 0.9) 0%, rgba(150, 60, 186, 0.9) 100%)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
     };
 
     const tableStyle = {
-        background: `linear-gradient(${activeBanner.gradient.angle}, ${activeBanner.gradient.from}E6 0%, ${activeBanner.gradient.to}E6 100%), url(${activeBanner.image.src})`,
+        backgroundImage: `linear-gradient(${activeBanner.gradient.angle}, ${activeBanner.gradient.from}E6 0%, ${activeBanner.gradient.to}E6 100%), url(${activeBanner.image.src})`,
         backgroundSize: 'cover, cover',
         backgroundPosition: 'center, center',
-        backgroundRepeat: 'no-repeat, no-repeat'
+        backgroundRepeat: 'no-repeat, no-repeat',
     };
 
     const desktopStyle = {
-        background: `linear-gradient(${activeBanner.gradient.angle}, ${activeBanner.gradient.from} 0%, ${activeBanner.gradient.to} 100%)`
+        backgroundImage: `linear-gradient(${activeBanner.gradient.angle}, ${activeBanner.gradient.from} 0%, ${activeBanner.gradient.to} 100%)`,
     };
 
     return (
@@ -57,32 +87,48 @@ const Header = () => {
                     style={desktopStyle}
                 />
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 2xl:hidden z-10">
-                    <Logo
-                        name="mapalab"
-                        variant="dark"
-                        size="w-80 h-25"
-                        alt="Logo MapaLab banner mobile"
-                        expanded
-                    />
+                    {activeBanner.logoUrl ? (
+                        <img
+                            src={activeBanner.logoUrl}
+                            alt="Logo banner"
+                            className="w-80 h-25 object-contain"
+                        />
+                    ) : (
+                        <Logo
+                            name="mapalab"
+                            variant="dark"
+                            size="w-80 h-25"
+                            alt="Logo MapaLab banner mobile"
+                            expanded
+                        />
+                    )}
                 </div>
 
-                <div className="hidden xl:block w-[35vw] absolute right-0 top-[20%] 2xl:top-[12%] 3xl:top-[10%]">
+                <div className="hidden xl:block w-[35vw] absolute right-0 top-[20%] 2xl:top-[12%] 3xl:top-[10%] overflow-visible">
                     <img
                         src={activeBanner.image.src}
                         alt={activeBanner.image.alt}
-                        className="w-full h-auto 2xl:w-full 2xl:h-auto 3xl:max-w-[723px] 3xl:max-h-[583px] object-cover overflow-visible float-right"
+                        className="w-full h-auto 2xl:w-full 2xl:h-auto 3xl:max-w-[723px] 3xl:max-h-[583px] object-cover float-right"
                     />
                 </div>
 
                 <div className="relative z-10 h-full 2xl:h-[70%] flex flex-col xl:flex-row items-center justify-center xl:justify-start 2xl:gap-36 xl:container xl:mx-auto">
                     <div className="hidden 2xl:flex 2xl:w-[20vw] 3xl:w-[25vw] justify-end 2xl:mb-18">
-                        <Logo
-                            name="mapalab"
-                            variant="dark"
-                            size="w-[216px] h-[232px]"
-                            alt="Logo MapaLab banner desktop"
-                            type="square"
-                        />
+                        {activeBanner.logoUrl ? (
+                            <img
+                                src={activeBanner.logoUrl}
+                                alt="Logo banner desktop"
+                                className="w-[216px] h-[232px] object-contain"
+                            />
+                        ) : (
+                            <Logo
+                                name="mapalab"
+                                variant="dark"
+                                size="w-[216px] h-[232px]"
+                                alt="Logo MapaLab banner desktop"
+                                type="square"
+                            />
+                        )}
                     </div>
                     <div className="w-full mt-15 md:mt-0 2xl:w-[35vw] px-4 flex justify-center xl:justify-start">
                         <div className="w-full max-w-[497px] xl:max-w-[600px] xl:pl-40 2xl:pl-0 2xl:max-w-[497] flex flex-col gap-3">

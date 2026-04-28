@@ -2,25 +2,78 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
+import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
+import { useShareDeserializer } from '@pages/maps/hooks/useShareDeserializer';
+import { fetchShare } from '@services/shareService';
+import { trackShareMap } from '@services/analyticsService';
+import { SESSION_STORAGE_KEY } from '@pages/maps/hooks/useSessionPersistence';
 
 export const filtersInitializationComplete = { value: false };
 
 export const useInitializeFromUrl = () => {
     const [searchParams] = useSearchParams();
     const { setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById } = useMapsContext();
-    const { initialOrder: BASE_INITIAL_ORDER } = useLayers();
+    const { initialOrder: BASE_INITIAL_ORDER, layers: layerTree } = useLayers();
+    const deserialize = useShareDeserializer();
     const initialized = useRef(false);
 
     useEffect(() => {
         if (initialized.current || !setActiveLayerIds || !applyFilter) return;
 
-        const layersParam = searchParams.get('layers');
-        const filterParams = [];
+        const tree = Array.isArray(layerTree) ? layerTree : [];
+        const resolveRef = (ref) => resolveRefToId(ref, tree);
 
+        const shareId = searchParams.get('s');
+        if (shareId) {
+            initialized.current = true;
+            const abortRef = { cancelled: false };
+            (async () => {
+                try {
+                    const envelope = await fetchShare(shareId);
+                    if (abortRef.cancelled) return;
+                    if (envelope) {
+                        const applied = deserialize(envelope);
+                        if (applied) {
+                            trackShareMap('opened');
+                            filtersInitializationComplete.value = true;
+                            return;
+                        }
+                    }
+                    if (!abortRef.cancelled) trackShareMap('not_found');
+                } catch {
+                    if (!abortRef.cancelled) trackShareMap('error');
+                }
+                if (!abortRef.cancelled) filtersInitializationComplete.value = true;
+            })();
+            return () => { abortRef.cancelled = true; };
+        }
+
+        const layersParam = searchParams.get('layers');
+        const layerSingleParam = searchParams.get('layer');
+
+        const filterParams = [];
         for (const [key, value] of searchParams.entries()) {
             if (key.startsWith('filter_')) {
-                const layerId = key.replace('filter_', '');
-                filterParams.push({ layerId, cqlFilter: value });
+                const refKey = key.replace('filter_', '');
+                const resolved = resolveRef(refKey) || refKey;
+                filterParams.push({ layerId: resolved, cqlFilter: value });
+            }
+        }
+
+        if (layerSingleParam) {
+            const resolved = resolveRef(layerSingleParam);
+            if (resolved) {
+                const allIds = [resolved];
+                getAllChildLayerIds(resolved).forEach(childId => {
+                    if (!allIds.includes(childId)) allIds.push(childId);
+                });
+                setActiveLayerIds(allIds);
+                const selectedLayer = findLayerById(resolved);
+                if (selectedLayer) setSelectedLayerForSymbology(selectedLayer);
+                allIds.forEach(id => applyDefaultDate(id));
+                filtersInitializationComplete.value = true;
+                initialized.current = true;
+                return;
             }
         }
 
@@ -28,15 +81,18 @@ export const useInitializeFromUrl = () => {
             let selectedId = null;
             const layerIds = layersParam
                 .split(',')
-                .map(id => id.trim())
-                .filter(id => id.length > 0)
-                .map(id => {
-                    if (id.startsWith('*')) {
-                        const cleanId = id.slice(1);
-                        selectedId = cleanId;
-                        return cleanId;
+                .map(token => token.trim())
+                .filter(token => token.length > 0)
+                .map(token => {
+                    let ref = token;
+                    let isSelected = false;
+                    if (ref.startsWith('*')) {
+                        ref = ref.slice(1);
+                        isSelected = true;
                     }
-                    return id;
+                    const resolved = resolveRef(ref) || ref;
+                    if (isSelected) selectedId = resolved;
+                    return resolved;
                 });
 
             const allIds = [];
@@ -67,6 +123,25 @@ export const useInitializeFromUrl = () => {
             filtersInitializationComplete.value = true;
             initialized.current = true;
         } else {
+            // Antes del fallback a capas iniciales, intentamos restaurar el estado
+            // desde sessionStorage (sobrevive un refresh, se pierde al cerrar pestana)
+            try {
+                const saved = sessionStorage.getItem(SESSION_STORAGE_KEY);
+                if (saved) {
+                    const envelope = JSON.parse(saved);
+                    const savedLayers = envelope?.payload?.layers;
+                    // Solo restauramos si el envelope tiene capas. Un guardado vacio
+                    // significa "user cleared all" → debe caer a BASE_INITIAL_ORDER.
+                    if (Array.isArray(savedLayers) && savedLayers.length > 0 && deserialize(envelope)) {
+                        filtersInitializationComplete.value = true;
+                        initialized.current = true;
+                        return;
+                    }
+                    // Limpiamos basura del storage para no reprocesarla
+                    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+                }
+            } catch { /* sessionStorage no disponible o JSON invalido — fallback */ }
+
             const allIds = [];
 
             BASE_INITIAL_ORDER.forEach(id => {
@@ -92,5 +167,5 @@ export const useInitializeFromUrl = () => {
             filtersInitializationComplete.value = true;
             initialized.current = true;
         }
-    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById]);
+    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById, layerTree, BASE_INITIAL_ORDER, deserialize]);
 };

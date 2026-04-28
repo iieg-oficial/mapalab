@@ -9,6 +9,7 @@ import { useViewportContainment } from './hooks/useViewportContainment';
 import { useFeatureInfo } from '../../hooks/useFeatureInfo';
 import { renderCard } from './utils/renderCard.jsx';
 import { downloadFeaturesAsCSV } from './utils/downloadFeatures';
+import { useInfoBoxLazyLoad } from '../../hooks/useInfoBoxLazyLoad';
 import { findLayerById } from '../../helpers/layers/utils/layerHelpers';
 import LicenseTooltipContent from '@components/LicenseTooltipContent';
 import SummaryCard from './components/SummaryCard';
@@ -23,7 +24,7 @@ const InfoBox = () => {
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers } = useContext(MapsContext);
     const { isMobile } = useSider();
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
-    const { selectAlternativeLayer } = useFeatureInfo();
+    const { selectAlternativeLayer, loadMoreFeatures } = useFeatureInfo();
     const panelRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLoadingExpand, setIsLoadingExpand] = useState(false);
@@ -86,10 +87,16 @@ const InfoBox = () => {
         return () => clearTimeout(timer);
     }, [selectedFeatureInfo]);
 
+    const lazyLoad = useInfoBoxLazyLoad({
+        results: selectedFeatureInfo?.results,
+        isPolygonSelection: selectedFeatureInfo?.isPolygonSelection,
+        loadMoreFeatures,
+    });
+
     if (!selectedFeatureInfo) return null;
 
     const { results, isPolygonSelection, queriedLayerName, alternativeLayers } = selectedFeatureInfo;
-    const totalFeatures = results ? results.reduce((total, result) => total + result.features.length, 0) : 0;
+    const { sentinelRef: loadMoreSentinelRef, loadingMore, totalAvailable, totalFeatures, hasMore, downloadDisplayCount, downloadShowsPlus, downloadTooltipText, enrichResultsForDownload } = lazyLoad;
     const isSingleFeature = totalFeatures === 1;
     const hasNoResults = !results || results.length === 0 || totalFeatures === 0;
     const hasAlternatives = alternativeLayers && alternativeLayers.length > 0;
@@ -103,14 +110,37 @@ const InfoBox = () => {
     const handleRemoveFeature = (layerId, featureIndex) => {
         if (!results) return;
 
+        const REFILL_PAGE = 50;
+
         const newResults = results.map(result => {
             if (result.layerId === layerId) {
+                const removed = result.features[featureIndex];
                 const newFeatures = [...result.features];
                 newFeatures.splice(featureIndex, 1);
-                return { ...result, features: newFeatures };
+                const cache = result.cachedFeatures || result.features;
+                const newCache = cache.filter(f => f !== removed && (removed?.id == null || f.id !== removed.id));
+
+                // Si se vacian las visibles pero el cache aun tiene features, repoblar
+                let nextFeatures = newFeatures;
+                let nextDisplayCap = result.displayCap ?? newFeatures.length;
+                if (newFeatures.length === 0 && newCache.length > 0) {
+                    nextFeatures = newCache.slice(0, Math.min(REFILL_PAGE, newCache.length));
+                    nextDisplayCap = nextFeatures.length;
+                }
+
+                return {
+                    ...result,
+                    features: nextFeatures,
+                    cachedFeatures: newCache,
+                    totalAvailable: newCache.length,
+                    displayCap: nextDisplayCap,
+                };
             }
             return result;
-        }).filter(result => result.features.length > 0);
+        }).filter(result => {
+            const cacheLen = (result.cachedFeatures || []).length;
+            return result.features.length > 0 || cacheLen > 0;
+        });
 
         if (newResults.length === 0) {
             setSelectedFeatureInfo(null);
@@ -129,15 +159,16 @@ const InfoBox = () => {
         return renderCard(feature.properties, config, onClose, layerId, feature.id, handleAction, isMobile ? 'mobile' : 'desktop', cardIndex, cardTotal, dateValue);
     };
 
-    const handleDownload = () => {
-        if (results && results.length > 0) {
-            downloadFeaturesAsCSV(results, allLayers);
-        }
+    const handleDownload = async () => {
+        if (!results || results.length === 0) return;
+        const enriched = await enrichResultsForDownload();
+        downloadFeaturesAsCSV(enriched, allLayers);
     };
 
     const showToolbar = !hasNoResults && totalFeatures > 1;
 
     let globalCardIdx = 0;
+    const cardTotal = totalAvailable > 0 ? totalAvailable : totalFeatures;
     const featuresList = !showEmptySuggestions && !hasNoResults && (!isPolygonSelection || isExpanded) && (
         <div className="space-y-2">
             {results.map((result) => (
@@ -151,7 +182,7 @@ const InfoBox = () => {
                             () => handleRemoveFeature(result.layerId, featureIdx),
                             result.littleCard,
                             globalCardIdx,
-                            totalFeatures
+                            cardTotal
                         );
                         if (isMobile) {
                             return (
@@ -167,8 +198,14 @@ const InfoBox = () => {
                     })}
                 </div>
             ))}
+            {hasMore && (
+                <div ref={loadMoreSentinelRef} className="py-3 text-center text-[11px]/[14px] font-garet text-[#7e8a91]">
+                    {loadingMore ? 'Cargando mas...' : 'Sigue desplazando para cargar mas'}
+                </div>
+            )}
         </div>
     );
+
 
     const mobileTools = [
         showToolbar && {
@@ -176,7 +213,7 @@ const InfoBox = () => {
             icon: 'download',
             label: (
                 <>
-                    Descargar <span className="text-[#FF8300] font-bold">{totalFeatures}</span> {totalFeatures === 1 ? 'tarjeta' : 'tarjetas'}
+                    Descargar <span className="text-[#FF8300] font-bold">{downloadDisplayCount}{downloadShowsPlus ? '+' : ''}</span> {downloadDisplayCount === 1 ? 'tarjeta' : 'tarjetas'}
                 </>
             ),
             tooltip: <LicenseTooltipContent />,
@@ -289,12 +326,26 @@ const InfoBox = () => {
                 />
 
                 {featuresList && (
-                    <div
-                        className={`${totalFeatures <= 1 ? 'h-fit' : 'max-h-[60vh] overflow-y-auto'} [&::-webkit-scrollbar]:hidden [scrollbar-width:none] rounded-lg transition-[pointer-events] duration-0`}
-                        style={{ pointerEvents: interactive ? 'auto' : 'none' }}
-                    >
-                        {featuresList}
-                    </div>
+                    totalFeatures <= 1 ? (
+                        <div
+                            className="h-fit rounded-lg transition-[pointer-events] duration-0"
+                            style={{ pointerEvents: interactive ? 'auto' : 'none' }}
+                        >
+                            {featuresList}
+                        </div>
+                    ) : (
+                        <ScrollContainer
+                            className="max-h-[60vh] rounded-lg transition-[pointer-events] duration-0"
+                            overlayFade
+                            overlayColor="#F9FBFF"
+                            clickableArrows
+                            minItemsForClick={3}
+                            itemCount={totalFeatures}
+                            style={{ pointerEvents: interactive ? 'auto' : 'none' }}
+                        >
+                            {featuresList}
+                        </ScrollContainer>
+                    )
                 )}
             </div>
 
@@ -302,6 +353,9 @@ const InfoBox = () => {
                 visible={showToolbar}
                 onClear={handleClose}
                 onDownload={handleDownload}
+                downloadCount={downloadDisplayCount}
+                downloadShowsPlus={downloadShowsPlus}
+                downloadTooltip={downloadTooltipText}
             />
 
             <WhatsNewModal isOpen={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />

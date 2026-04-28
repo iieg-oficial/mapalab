@@ -12,6 +12,40 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.11.0',
+        items: [
+            { text: 'Al hacer click en zonas con muchos puntos, el panel de información ahora muestra el total real desde el primer momento (por ejemplo "1/482" en lugar de "1/50")', tag: 'changed' },
+            { text: 'Carga progresiva de tarjetas: las primeras 50 aparecen al instante y se van cargando 50 más conforme deslizas hasta el final del panel', tag: 'added' },
+            { text: 'Botón Descargar (escritorio): nuevo distintivo con el número total de tarjetas y descripción detallada al pasar el cursor', tag: 'added' },
+            { text: 'Al eliminar una tarjeta con la X, el contador y la descarga se ajustan automáticamente para no incluirla', tag: 'added' },
+            { text: 'Encabezado del detalle de capa: el tema y su ícono ahora se determinan correctamente desde la jerarquía del árbol de capas', tag: 'fixed' },
+            { text: 'Título del encabezado de cada tarjeta queda centrado horizontalmente aunque el contador sea muy largo', tag: 'fixed' },
+        ]
+    },
+    {
+        version: '1.10.0',
+        items: [
+            { text: 'Etiquetas visuales BETA / NUEVA / DEV / TEST para indicar el estado de funciones (componente reutilizable)', tag: 'added' },
+            { text: 'Boton "Comparar fechas" como vista previa en el modal de Compartir (proximamente disponible)', tag: 'added' },
+        ]
+    },
+    {
+        version: '1.9.0',
+        items: [
+            { text: 'Compartir mapa: el boton ahora genera un enlace corto que recuerda el estado completo (capas activas, orden, filtros, opacidad, fechas, basemap, posicion)', tag: 'changed' },
+            { text: 'Boton "Fijar 1 ano" en el modal de compartir para que el enlace no expire por inactividad', tag: 'added' },
+            { text: 'Los enlaces compartidos no fijados se conservan 30 dias desde el ultimo acceso', tag: 'added' },
+        ]
+    },
+    {
+        version: '1.8.0',
+        items: [
+            { text: 'Las capas ahora tienen identificadores publicos legibles que aparecen en la URL (por ejemplo "establecimientos-salud" en lugar de IDs internos)', tag: 'changed' },
+            { text: 'Acceso directo a una capa con un link tipo "?layer=establecimientos-salud" — abre el mapa con esa capa activa', tag: 'added' },
+            { text: 'Cada capa puede tener atajos cortos opcionales (aliases). Por ejemplo "?layer=esalud" tambien funciona', tag: 'added' },
+        ]
+    },
+    {
         version: '1.7.0',
         items: [
             { text: 'Editor de capas: reordenar capas del árbol arrastrándolas (drag & drop) entre hermanos del mismo grupo', tag: 'added' },

@@ -1,4 +1,4 @@
-.PHONY: help dev staging prod deploy down down-dev down-staging build logs logs-dev logs-staging status clean setup-hooks ensure-networks refresh-layer-tree
+.PHONY: help dev staging prod deploy down down-dev down-staging build logs logs-dev logs-staging status clean setup-hooks ensure-networks refresh-layer-tree reset-dist-perms
 
 # UID/GID del host para que volumes escritos por contenedores (ej. frontend-build → dist/) tengan ownership correcto
 export UID := $(shell id -u)
@@ -69,11 +69,14 @@ prod: ensure-networks
 	@echo ""
 	@echo "Aplicacion lista"
 
-deploy: ensure-networks
+deploy: ensure-networks reset-dist-perms
 	@echo "Desplegando en produccion..."
 	@$(COMPOSE_PROD) --profile build run --rm --build frontend-build
 	@$(COMPOSE_PROD) --profile staging up -d --build --force-recreate
 	@echo "Deploy completado"
+
+reset-dist-perms:
+	@docker run --rm -v "$(PWD)/frontend":/w alpine sh -c "rm -rf /w/dist && mkdir -m 0755 /w/dist && chown $$(id -u):$$(id -g) /w/dist" 2>/dev/null || true
 
 down: down-dev down-staging
 

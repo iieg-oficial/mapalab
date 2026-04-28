@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
-from app.models.layer import Layer, LayerTreeCache, Workspace
+from app.models.layer import Layer, LayerAlias, LayerTreeCache, Workspace
 from app.repositories.layers_repository import LayersRepository
 from app.utils.logger import Logger
 
@@ -73,7 +73,7 @@ def _layer_to_search_meta(layer: Layer) -> Optional[dict]:
     return meta
 
 
-def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace]) -> dict:
+def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace], aliases_map: dict[str, list[str]]) -> dict:
     label = layer.label
     if layer.disabled:
         label = f'*{label}'
@@ -86,12 +86,22 @@ def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace]) -> dict:
         'children': [],
     }
 
+    if layer.slug:
+        result['slug'] = layer.slug
+
+    layer_aliases = aliases_map.get(layer.id)
+    if layer_aliases:
+        result['aliases'] = layer_aliases
+
     if layer.node_type == 'category':
         result['isCategory'] = True
     elif layer.node_type == 'label':
         result['isLabel'] = True
     elif layer.node_type == 'group':
         result['forceGroup'] = True
+
+    if layer.node_type == 'tema' and getattr(layer, 'icon_url', None):
+        result['iconUrl'] = layer.icon_url
 
     if layer.hidden_in_menu:
         result['hiddenInMenu'] = True
@@ -124,12 +134,16 @@ def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace]) -> dict:
     return result
 
 
-def _build_tree_from_rows(layers: list[Layer], workspace_map: dict[str, Workspace]) -> list[dict]:
+def _build_tree_from_rows(
+    layers: list[Layer],
+    workspace_map: dict[str, Workspace],
+    aliases_map: dict[str, list[str]],
+) -> list[dict]:
     nodes_by_id: dict[str, dict] = {}
     roots: list[dict] = []
 
     for layer in layers:
-        nodes_by_id[layer.id] = _layer_to_dict(layer, workspace_map)
+        nodes_by_id[layer.id] = _layer_to_dict(layer, workspace_map, aliases_map)
 
     for layer in layers:
         node = nodes_by_id[layer.id]
@@ -156,10 +170,11 @@ def refresh_cache() -> dict[str, Any]:
         workspaces = LayersRepository.get_all_workspaces(session)
         ws_map = {w.alias: w for w in workspaces}
         layers = LayersRepository.get_all_layers(session)
+        aliases_map = LayersRepository.get_aliases_by_layer(session)
         max_updated_at = LayersRepository.get_max_updated_at(session)
         count = len(layers)
 
-        tree = _build_tree_from_rows(layers, ws_map)
+        tree = _build_tree_from_rows(layers, ws_map, aliases_map)
         initial_order = LayersRepository.get_initial_order(session)
         ws_list = [_workspace_to_dict(w) for w in workspaces]
         etag = _compute_etag(max_updated_at, count)

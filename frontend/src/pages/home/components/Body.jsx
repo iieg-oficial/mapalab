@@ -1,13 +1,12 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import SearchBar from './SearchBar';
 import Card from './Card';
 import TitleAndNote from './TitleAndNote';
 import Icon from '@components/Icon';
 import { handleKeyActivate } from '@utils/a11y';
-import topicsConfig from '../config/topicsConfig';
-import guideConfig from '../config/guideConfig';
-import selectConfig from '../config/selectConfig';
 import suportConfig from '../config/suportConfig';
+import { useHomeContent } from '@hooks/useHomeContent';
+import { buildTopics, buildGuide, buildSelect, buildFaqContent, DEFAULT_VIDEO_ID } from '../helpers/homeAdapters';
 
 const Body = ({ isModal = false }) => {
     const carouselRef = useRef(null);
@@ -18,6 +17,23 @@ const Body = ({ isModal = false }) => {
     const [expandedSection, setExpandedSection] = useState(null);
     const [expandedFaq, setExpandedFaq] = useState({});
     const [activeBtn, setActiveBtn] = useState(0);
+    const { home } = useHomeContent();
+    const videoConfig = home?.video;
+    const showVideo = videoConfig === undefined ? true : Boolean(videoConfig?.activo);
+    const videoId = videoConfig?.youtubeId || DEFAULT_VIDEO_ID;
+    const videoTitle = videoConfig?.titulo || 'MapaLab — IIEG';
+
+    const topicsList = useMemo(() => buildTopics(home?.topics?.items), [home]);
+    const guideSteps = useMemo(() => buildGuide(home?.guide?.items), [home]);
+    const selectOptions = useMemo(() => buildSelect(home?.select?.items), [home]);
+    const faqOverride = useMemo(() => buildFaqContent(home?.faq?.items), [home]);
+    const privacyHref = home?.footer?.privacyPolicyHref || suportConfig[1]?.link || '';
+    const privacyLabel = home?.footer?.privacyPolicyLabel || suportConfig[1]?.label || 'Aviso de Privacidad';
+    const supportItems = useMemo(() => suportConfig.map((item) => {
+        if (item.id === 1 && faqOverride) return { ...item, content: faqOverride };
+        if (item.id === 2 && privacyHref) return { ...item, link: privacyHref, label: privacyLabel };
+        return item;
+    }), [faqOverride, privacyHref, privacyLabel]);
 
     const toggleSection = (id) => {
         const isOpening = expandedSection !== id;
@@ -78,13 +94,13 @@ const Body = ({ isModal = false }) => {
                     </span>
                     <SearchBar className="relative mx-auto mb-2" />
                     
-                    <Card topics={topicsConfig.topics} />
+                    <Card topics={topicsList} />
                 </div>
             )}
             <div className="my-9 mx-4 flex flex-col justify-center items-center">
-                <TitleAndNote title={guideConfig.title} description={guideConfig.note} />
+                <TitleAndNote title="¿Qué puedes hacer en MapaLab?" description="*Para un mejor funcionamiento, te sugerimos acceder desde una computadora." />
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 lg:gap-x-16 2xl:gap-x-36 2xl:gap-y-14 md:mx-10 mt-8">
-                    {guideConfig.steps.map((item) => (
+                    {guideSteps.map((item) => (
                         <div
                             key={item.id}
                             className="items-center justify-end rounded-[13px] py-6 px-10 bg-white w-full max-w-[400px] h-auto shadow-[0px_6px_12px_#ACBFE533]"
@@ -107,20 +123,22 @@ const Body = ({ isModal = false }) => {
                     ))}
                 </div>
             </div>
-            <div className="my-9 mx-4 flex justify-center">
-                <div className="w-full max-w-[900px] aspect-video rounded-[20px] overflow-hidden shadow-[0px_6px_12px_#ACBFE533]">
-                    <iframe
-                        src="https://www.youtube.com/embed/MzuImZuDM3E"
-                        title="MapaLab — IIEG"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="w-full h-full border-0"
-                        loading="lazy"
-                    />
+            {showVideo && (
+                <div className="my-9 mx-4 flex justify-center">
+                    <div className="w-full max-w-[900px] aspect-video rounded-[20px] overflow-hidden shadow-[0px_6px_12px_#ACBFE533]">
+                        <iframe
+                            src={`https://www.youtube.com/embed/${videoId}`}
+                            title={videoTitle}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="w-full h-full border-0"
+                            loading="lazy"
+                        />
+                    </div>
                 </div>
-            </div>
+            )}
             <div className="pt-5 relative">
-                <TitleAndNote title={selectConfig.title} description={selectConfig.description} />
+                <TitleAndNote title="No te pierdas estas funcionalidades del mapa" description="* La visualización de las capas dependerá de tu navegador; te sugerimos eliminar las capas que no estés utilizando para un mejor rendimiento del mapa." />
                 {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- drag-scroll en contenedor con rol region; keyboard users usan scroll nativo con flechas */}
                 <div
                     ref={carouselRef}
@@ -137,7 +155,7 @@ const Body = ({ isModal = false }) => {
                     "
                 >
                     
-                    {selectConfig.options.map((item) => (
+                    {selectOptions.map((item) => (
                         <div
                             key={item.id}
                             className="relative flex-shrink-0 snap-start rounded-[40px] overflow-hidden h-auto pb-10 xl:h-[575px] w-full md:w-[calc(95%-24px)] max-w-[1422px]"
@@ -180,7 +198,7 @@ const Body = ({ isModal = false }) => {
                 </div>
             </div>
             <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 my-10 md:my-[61px] mx-1 sm:mx-4">
-                {suportConfig.map((item) => {
+                {supportItems.map((item) => {
                     const baseClassName = `
                         group relative bg-[#F3EBFF] flex flex-col sm:flex-row items-center justify-center md:justify-end rounded-[50px]
                         w-full max-w-[522px] h-[150px] sm:h-[110px] transition-all border border-transparent md:pl-0 pl-0 md:pr-22 py-5 md:py-0
@@ -237,7 +255,7 @@ const Body = ({ isModal = false }) => {
             </div>
 
             <div ref={faqRef} className={`w-full px-2 bg-[#F9FBFF] ${expandedSection === 1 ? 'flex flex-col items-center justify-center' : 'hidden'}`}>
-                {suportConfig.filter(item => item.content?.length > 0).map((item) => (
+                {supportItems.filter(item => item.content?.length > 0).map((item) => (
                     <div key={item.id} className="w-full max-w-[1330px] bg-transparent mb-4">
                         {item.content.map((contentItem, index) => {
                             const isExpanded = expandedFaq[`${item.id}-${index}`];

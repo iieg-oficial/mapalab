@@ -38,13 +38,6 @@ graph LR
 - **Que hace**: Lint (ESLint) + Tests (Vitest con coverage thresholds) + Dead-code check (knip) + Build (Vite, con upload de sourcemaps a Sentry si hay token)
 - **Proposito**: Validar codigo antes de mergear a `develop`. CI es la autoridad final — es donde las reglas no se pueden saltar con `--no-verify`
 
-### Dependabot (`.github/dependabot.yml`)
-
-- **Trigger**: Scan semanal (lunes 09:00 America/Mexico_City)
-- **Ecosistemas**: npm (`/frontend`), github-actions (raíz)
-- **Agrupación**: PRs unificados por familia (eslint, testing, sentry, openlayers, react) para reducir ruido
-- **Límite**: 5 PRs abiertos máx para npm, 3 para actions
-
 ### Commit Lint (`.github/workflows/commit-lint.yml`)
 
 - **Trigger**: Pull requests

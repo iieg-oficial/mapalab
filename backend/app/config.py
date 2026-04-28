@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW: int = Field(default=8)
     SENTRY_DSN: Optional[str] = Field(default=None)
     SENTRY_TRACES_SAMPLE_RATE: float = Field(default=0.1)
+    MAPALAB_INTERNAL_TOKEN: Optional[str] = Field(default=None)
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod

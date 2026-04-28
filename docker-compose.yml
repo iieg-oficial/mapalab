@@ -8,6 +8,7 @@ services:
     environment:
       VITE_BACKEND_API_HOST: ${VITE_BACKEND_API_HOST:-/api/}
       VITE_GEOSERVER_URL: ${VITE_GEOSERVER_URL:-/geoserver/}
+      VITE_ACERVO_ORIGIN: ${VITE_ACERVO_ORIGIN:-}
       VITE_NODE_ENV: ${VITE_NODE_ENV:-development}
       VITE_APP_ENV: ${VITE_APP_ENV:-dev}
       VITE_PORT: ${VITE_PORT:-5173}
@@ -15,6 +16,7 @@ services:
       VITE_BASE_PATH: ${VITE_BASE_PATH:-/}
       GEOSERVER_DEV_TARGET: ${GEOSERVER_DEV_TARGET:-}
       BACKEND_DEV_TARGET: ${BACKEND_DEV_TARGET:-}
+      MARIACHI_DEV_TARGET: ${MARIACHI_DEV_TARGET:-}
     volumes:
       - ./frontend/src:/app/src:ro
       - ./frontend/public:/app/public:ro
@@ -75,6 +77,7 @@ services:
       DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-8}
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.1}
+      MAPALAB_INTERNAL_TOKEN: ${MAPALAB_INTERNAL_TOKEN:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:

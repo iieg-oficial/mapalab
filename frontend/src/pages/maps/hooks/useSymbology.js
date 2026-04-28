@@ -174,6 +174,7 @@ export const useSymbology = ({
         selectedLayerForSymbology,
         setSelectedLayerForSymbology,
         hiddenLayerIds,
+        setHiddenLayerIds,
         toggleLayerVisibility,
         isLayerVisible,
         showAllLayers,

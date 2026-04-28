@@ -38,10 +38,15 @@ class Layer(LayerBase):
             f"node_type IN {NODE_TYPES}",
             name='ck_layers_node_type',
         ),
+        CheckConstraint(
+            "slug IS NULL OR (slug ~ '^[a-z0-9-]+$' AND length(slug) <= 60)",
+            name='ck_layers_slug_format',
+        ),
         {'schema': 'mapalab'},
     )
 
     id = Column(String(100), primary_key=True)
+    slug = Column(String(60), unique=True, nullable=True)
     parent_id = Column(
         String(100),
         ForeignKey('mapalab.layers.id', ondelete='CASCADE'),
@@ -90,6 +95,8 @@ class Layer(LayerBase):
     infobox_params = Column(JSONB, nullable=True)
     infobox_config = Column(JSONB, nullable=True)
 
+    icon_url = Column(Text, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=text('NOW()'), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
@@ -110,6 +117,26 @@ class InitialLayerOrder(LayerBase):
         primary_key=True,
     )
     sort_order = Column(Integer, nullable=False)
+
+
+class LayerAlias(LayerBase):
+    __tablename__ = 'layer_aliases'
+    __table_args__ = (
+        CheckConstraint(
+            "alias ~ '^[a-z0-9-]+$' AND length(alias) <= 60",
+            name='ck_layer_aliases_format',
+        ),
+        {'schema': 'mapalab'},
+    )
+
+    alias = Column(String(60), primary_key=True)
+    layer_id = Column(
+        String(100),
+        ForeignKey('mapalab.layers.id', ondelete='CASCADE'),
+        nullable=False,
+    )
+    created_by = Column(String(100), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=text('NOW()'), nullable=False)
 
 
 class LayerMetadata(LayerBase):

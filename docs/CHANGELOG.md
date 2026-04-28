@@ -7,12 +7,145 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+### Agregado
+- **`GET /ontoy`** en mapalab-backend: devuelve `{slug, label, version}` para que mariachi-admin pueda detectar la versión y healthy del backend desde el dashboard `/inicio`. La versión se lee de `app/__version__.py` (nuevo archivo) que se mantiene sincronizado con `frontend/package.json` al bumpear el repo. Convención del ecosistema IIEG: cada repo expone su `/ontoy` para que se descubra.
+
+## [1.13.1] - 2026-04-28
+
+### Agregado
+- **Click en label de padre activa/desactiva todos los hijos** (`<LayerItem>`): antes el click en el texto del nodo padre solo expandía/colapsaba — el toggle del subárbol estaba escondido detrás del `<Switch>` lateral. Ahora el click en label calcula `isOn = activeLayerIds.includes(layer.id) || allChildrenActive` (la misma señal que ya usaba el switch), llama `onToggle(layer.id, !isOn)` y se apoya en la propagación recursiva existente de `useLayerToggle.handleToggleLayer` (líneas 117-129) que añade/quita `[layerId, ...getAllChildLayerIds(layerId)]`. Si el resultado es activar, fuerza `setIsManuallyExpanded(true)` para que el subárbol quede abierto y se vean los checks marcados; si es desactivar, respeta la expansión actual. Hojas (sin hijos) no cambian. El switch lateral queda intacto.
+
+### Cambiado
+- `renderCard.jsx`: refactor del cuerpo del infobox para soportar `blockOrder` (opcional, persistido en `infobox_config`). Cada bloque body (`labels`, `labelGroups`, `list`, `iconText`, `text`, `cards`) extraído a su propia función pura. Si el config trae `blockOrder` con keys válidas, se usa ese orden + remaining defaults al final. Si no trae `blockOrder`, mantiene el orden hardcoded actual (backwards-compatible — los 250 configs existentes siguen renderizando idénticos).
+
+## [1.13.0] - 2026-04-27
+
+### Agregado — Comparador Fase 3
+- **`<CompareView>` (split lado-a-lado)**: dos `<MapView>` independientes con sus propios `mapRef`/`targetRef` locales. Header por panel con la etiqueta de la fecha. Layout `flex` 50/50 con borde divisor blanco.
+- **`<SwipeView>` (barra divisora)**: dos `<MapView>` superpuestos, el de la derecha con `clip-path: inset(0 0 0 ${pos}%)`. Barra naranja vertical draggable (rango 5%–95%) con handle circular, posicion persistida via debounce 200ms. Cursor `ew-resize`, `touch-none` para mobile. Pan/zoom sincronizados.
+- **`useViewSync(paneMapRefs, active)`**: engancha listeners `change:center`/`change:resolution`/`change:rotation` en ambos `View` de OL con flag anti-loop. Polling de mount con backoff hasta que ambos `mapRef.current` estén poblados.
+- **`useDateOverride` via `dateOverride` prop**: `<MapView paneIndex dateOverride>` propaga el valor al `useWMSFilterUpdater`, que lo usa como `TIME` en lugar de `getFilter(sub.id)` para capas con `wmsConfig.timeEnabled`. Capas vectoriales con CQL `date` quedan fuera de scope v1 (renderizan idénticas en ambos lados).
+- **`<CompareDateModal>`**: dos `<input type="date">` + etiquetas opcionales ("Antes"/"Después"). Validación YYYY-MM-DD + dos fechas distintas. Acepta prop `layout: 'split' | 'swipe'` para diferenciar el flujo.
+- **`compareMode` en `MapsProvider`**: `{ active, axis: 'date', panes, layout, swipePosition }`. Setter `setCompareMode`, `exitCompareMode`, `setSwipePosition` (debounced en SwipeView). `paneMapRefs` registry indexado por `paneIndex` para que `useViewSync` acceda a cada `Map`.
+
+### Agregado — Submenu de Herramientas
+- **Reorganizacion del item `tools`** en el sider de `hasMenu: false` con `onClick: toggleMeasurementTools` directo a `hasMenu: true` con `<ToolsMenu>` como `menuContent`.
+- **`<ToolsMenu>`**: grid 2x2 de tres iconos en el patron de `<BaseMapList>`: **Mediciones** (dispara el toggle existente que abre `<MeasurementTools>`), **Comparar fechas** (abre `CompareDateModal` con `layout='split'`), **Barra divisora** (abre `CompareDateModal` con `layout='swipe'`). Estado activo por icono: Mediciones se muestra activo si `areMeasurementToolsVisible`; Comparar/Swipe segun `compareMode.layout`.
+- **Iconos SVG inline**: una regla con punto para Mediciones, dos paneles juntos para Comparar fechas, mapa con linea naranja vertical y flechas para Swipe. Estilo por hover/active siguiendo el patron del basemap.
+
+### Agregado — Persistencia compartida del comparador
+- **`kind: 'swipe'`** en serializer/deserializer: estructura igual a `kind: 'compare'` pero con `payload.position` (0..1). Bumpea share, recarga estado completo (capas + filtros + fechas + posicion del divisor) al abrir el link.
+- **`kind: 'compare'`** ya soportado: hidrata `compareMode` con `axis` + `panes` desde el envelope. Default `layout: 'split'` cuando no viene. Tests actualizados (`useShareDeserializer.test.js`, nuevo `useShareSerializer.test.js`).
+
+### Agregado — URL viva limpia + persistencia local
+- **Refactor URL strategy**: removidos `useUrlSync`, `useMapViewUrlSync` y test asociado. La URL viva ya no muta con cada cambio de capa/filtro. Solo se modifica al pulsar "Compartir": queda `?s=<hash>`. Deeplinks por capa via `?layer=<slug>` siguen funcionando para invitar a una capa unica.
+- **`useSessionPersistence`**: serializa el estado actual (mismo envelope que el share) a `sessionStorage` con debounce. Sobrevive un refresh, se pierde al cerrar la pestaña. `hasBeenPopulatedRef` evita borrar el storage durante el primer mount cuando aun no hay capas cargadas (corner case que perdia el estado previo).
+- **`useInitializeFromUrl`**: orden de precedencia `?s=` → `?layer=` → `?layers=` (legacy) → sessionStorage → `BASE_INITIAL_ORDER`. Valida `layers.length > 0` antes de deserializar el sessionStorage para que un envelope vacio caiga al fallback.
+
+### Agregado — Indicadores de estado del share
+- **`useShareDirtiness`**: detecta si el estado vivo divergio del share cargado. Trackea `activeLayerIds`, `filters`, `layerOpacities`, `hiddenLayerIds`, `selectedLayerForSymbology`, `baseMapId`. **No** rastrea pan/zoom (decision: el share guarda el encuadre como starting view, no como invariante; explorar zonas vecinas no debe marcar dirty).
+- **Badge "Usando link compartido: hash"** (verde, no interactivo) en `<MapToolsPanel>` cuando `inSyncWithShare`.
+- **Boton "Regresar a: hash"** (gris, clickeable, hace `window.location.reload()`) cuando el estado fue modificado tras cargar el link.
+- **Badge "Comparando: A vs B ×"** (azul) en compare mode, click sale.
+- **`<ShareButton>` con tres estados**: verde claro + icono `done` cuando sincronizado, gris cuando modificado, lavanda/morado normal. SVG `done` usa `currentColor` para que el check tome el color del texto.
+
+### Cambiado — InfoBox y feature info
+- **Filter por id en `useFeatureInfo.handleRemoveFeature`**: cuando se borra una card del cluster, el `cachedFeatures` se filtra por id (con fallback a referencia). Counter pasa de `1/482` → `1/481` y el download CSV refleja el set actual.
+- **Re-poblacion al borrar la ultima visible**: si la cache aun tiene items, se restauran `features` con un slice — antes destruia el resultEntry y la card desaparecia con cache disponible.
+- **`useLoadMoreFeatures` recibe `selectedFeatureInfo` por argumento** en lugar de leer state via setter. Test nuevo (`useLoadMoreFeatures.test.js`).
+- **`useDateLoop` no pisa filtros del share**: chequea `getSpecificFilter(layerId, 'date')` antes del default-date apply, skipea si ya hay filtro (tipico de share-loaded).
+
+### Eliminado
+- `frontend/src/pages/maps/components/CompareButton.jsx`: el scaffold de v1.10.0 ya no se usa, su funcionalidad vive en `<ToolsMenu>`.
+- `frontend/src/pages/maps/hooks/useUrlSync.js`, `useMapViewUrlSync.js`: reemplazados por inicializacion via `?s=`/`?layer=` + `useSessionPersistence`.
+- `frontend/src/services/featureInfoPagination.js`: doble-fetch WMS + cache local hizo innecesaria la paginacion WFS.
+- `frontend/src/test/pages/maps/hooks/useUrlSync.test.js`: cubria los hooks borrados.
+
+### Corregido
+- **EPSG:3857 vs WGS84 en serializer**: `view.getCenter()` devuelve coordenadas en `EPSG:3857`. El serializer las pasaba directo y el deserializer hacia `fromLonLat([lon, lat])` asumiendo WGS84 → centro del mapa al espacio sideral, OL retry-loop infinito al abrir el share. Fix: `toLonLat(center)` en el serializer.
+- **`selectedLayerForSymbology` en serializer**: leia `selectedLayer` (modal) en lugar de `selectedLayerForSymbology` (sider). El deserializer setea el segundo, asi que round-trip no respetaba la simbología.
+- **`Modal isOpen vs open`**: `<ShareModal>` pasaba `open={open}` cuando `<Modal>` espera `isOpen`. El modal nunca aparecia visiblemente.
+
+### Backend
+- `backend/app/routers/shares.py`: ajustes menores en validacion del envelope.
+- `backend/app/services/layer_tree_service.py`: pequeño tweak.
+
+## [1.11.0] - 2026-04-26
+
+### Agregado
+- **Lazy load infinito en InfoBox** (caso click multi-feature): muestra 50 cards inicial y carga 50 mas conforme scrolleas hasta el fondo. Implementado con `IntersectionObserver` que auto-detecta el contenedor scrolleable ancestro (`overflow-y: auto/scroll`), funciona idéntico en mobile (dentro de `MobileSheet`/`ScrollContainer`) y desktop (dentro del nuevo `ScrollContainer` que reemplazo al `<div max-h-[60vh]>` plano).
+- **Total real desde el primer click**: doble fetch WMS GetFeatureInfo en paralelo — el primero con `FEATURE_COUNT=50` para paint inicial rápido, el segundo con `FEATURE_COUNT=2000` para conocer el total real. El segundo se cachea localmente (`cachedFeatures`) y lazy load slicea desde memoria — cero requests adicionales al scrollear. Reemplaza el intento previo de WFS `resultType=hits` que era frágil (CORS/version mismatches en algunos GeoServers).
+- **Counter por card con total real**: cada card muestra `1/482` directo en lugar de `1/50` del display cap. El total refleja todos los features del cluster, no los visibles.
+- **Decremento al eliminar card con X**: `handleRemoveFeature` ahora filtra del `cachedFeatures` (por referencia + fallback por id), bajando `totalAvailable`. Counter pasa de `1/482` → `1/481` y el download CSV ya no incluye el eliminado.
+- **Badge de count en botón Descargar (desktop)**: pill naranja en bottom-right del botón con el total real (ej. `482`). Tooltip muestra "Descargar 482 de 482 tarjetas". Para clusters > 2000 muestra `2000+`.
+- **`ScrollContainer` propagado a desktop**: el InfoBox de desktop ahora usa el mismo `<ScrollContainer>` que mobile (con flechas, fade, click-arrows). Cuando hay 1 sola card, render plano sin scroll.
+- **Header del card con título centrado siempre**: counter y X cambian a `position: absolute` (top-left y top-right). El `<h3>` toma `w-full` con `text-center` y se centra respecto al header completo, sin importar el ancho del counter (ej. `999/9999` ya no comprime el título). Padding lateral `px-12` reserva espacio para los flotantes; `my-3` separa título verticalmente del counter+X.
+
+### Cambiado
+- **`FEATURE_COUNT_CAP`**: 50 (display inicial). El counter muestra el total real desde el primer paint, así no necesitamos cargar 200 desde el inicio.
+- **`FEATURE_COUNT_TOTAL`**: 2000 (cap del segundo fetch en paralelo, fuente de `cachedFeatures` y `totalAvailable`).
+- **`enrichResultsForDownload`** consume directo del `cachedFeatures` (cap 5000) — antes paginaba via WFS GetFeature, ahora slicing local instantáneo.
+- **`useFeatureInfo`** crea `features` como `cachedFeatures.slice(0, visible)` para garantizar que ambos arrays compartan referencias (fix de bug donde el filter por id no decrementaba el total porque las dos fetches devolvían objetos distintos).
+
+### Corregido
+- **LayerDetailModal: tema y avatar correctos** — el campo `tema` derivado del backend (`layer_name_usuario.split(':')[0]`) no funciona con la migración v1.4.0 si el formato `Tema:Nombre` ya no se respeta. Fix: nuevo helper `findLayerTheme(layerId, layerTree)` en `wmsConfig.js` que recorre el árbol y devuelve el ancestro `nodeType: 'tema'`. `LayerDetailModal` ahora prefiere ese valor (con fallback a `metadata.tema` y `'General'`). El avatar e icono se resuelven automáticamente.
+- **mariachi admin: redirect 401 ya no manda a `/administrador/login`** (path legacy roto post-v0.21.0). `api.js` usa `import.meta.env.BASE_URL` para construir el URL → `${BASE_URL}/administrador/login` con basename `/mariachi/`.
+
+### Arquitectura interna (no visible al usuario)
+- **`useInfoBoxLazyLoad`** (nuevo hook): encapsula `IntersectionObserver`, totales agregados, contexto de carga y `enrichResultsForDownload`. Auto-detecta scroll root ancestor para que el observer funcione en cualquier wrapper.
+- **`useLoadMoreFeatures`** (nuevo hook): mutador puro de `selectedFeatureInfo.results` que extiende `features` slicing del `cachedFeatures` (sin red, instantáneo).
+- **`featureInfoPagination.js`**: helpers WFS para `fetchTotalsForClick` (legacy WFS hits, ya no usado en main flow) y `fetchMoreFeaturesForLayer` (paginación WFS por si en el futuro se quiere fetch incremental real).
+- **eslint override** para `InfoBox.jsx` con `max-lines: 400` siguiendo el patrón existente de `useMapDrawing.js`.
+
+## [1.10.0] - 2026-04-24
+
+### Agregado
+- **Componente `<Tag>`** (`@components/Tag`) para etiquetas semanticas: `state` = `beta` | `dev` | `nueva` | `test`, `size` = `xs` | `sm` | `md`. Estilos por estado.
+- **Componente `<CompareButton>`** con tag BETA: scaffold visual del comparador por fecha. Hoy se monta `disabled` dentro de `<ShareModal>` como teaser; la funcionalidad de split-view + `useDateOverride(paneIndex)` viene en una version posterior.
+
+## [1.9.0] - 2026-04-24
+
+### Agregado
+- **Snapshots persistidos del mapa** (`mapalab.map_shares`): `POST /shares` guarda el estado completo (capas, orden, visibilidad, opacidad, filtros, periodicidad, loop, basemap, vista) en DB y devuelve un hash corto. `GET /shares/{id}` lo restaura. URL: `?s=k3jx9p2m`.
+- **Pinning de shares por 1 ano** (`POST /shares/{id}/pin`). Default: retencion sliding window 30 dias desde ultimo acceso.
+- **Modal "Compartir mapa"**: reemplaza al `ShareButton` legacy. Crear enlace, copiar, fijar 1 ano. Detecta `?s=hash` en `useInitializeFromUrl` y restaura el estado completo al cargar.
+- **Hash determinista** (SHA-256 del JSON canonicalizado, base32 truncado a 10 chars): dos usuarios que arman el mismo mapa comparten el mismo hash → deduplicacion automatica.
+- **Rate limiting in-memory** en `POST /shares` (10 req/min por IP-hash) + tamano max payload 64KB.
+- **Métricas Prometheus** nuevas en `/metrics`: `mapalab_shares_created_total{kind}`, `mapalab_shares_accessed_total{kind}`, `mapalab_shares_pinned_total`. `incr()` ahora soporta labels.
+- **Cron diario `run_cleanup_shares.py`** (04:45 en `dataengine-jobs`): elimina shares no-pinned con `last_accessed_at > 30 dias` y pinned-expirados.
+- **Migracion Alembic 0005** en `mapalab-dataengine/jobs/alembic/versions/`: tabla `mapalab.map_shares` con índices condicionales (sliding-window y pinned).
+
+### Cambiado
+- **`ShareButton`**: ya no copia el URL viva al portapapeles; ahora abre el `<ShareModal>` que mintea un share persistente. El componente `helpers/handleShare.jsx` legacy se elimina.
+
+## [1.8.0] - 2026-04-24
+
+### Agregado
+- **Slugs publicos por capa** (`mapalab.layers.slug`): identificadores legibles tipo `establecimientos-salud` que reemplazan los IDs internos de GeoServer en URLs publicas. Configurables desde mariachi admin con auto-suggest desde el label.
+- **Aliases de capa** (`mapalab.layer_aliases`): atajos cortos opcionales (ej: `esalud`) que tambien resuelven a la capa. CRUD via `GET/POST/DELETE /layers/{id}/aliases` en mariachi y nueva tab "Aliases" en `LayerEditPage`.
+- **Endpoint `/layers/resolve?ref=<slug-or-alias>`** en mapalab backend para resolucion publica.
+- **Deeplink por capa** via `?layer=<slug>`: aterriza con esa capa unica activa + su `defaultDate`.
+- **URL viva con slugs** en lugar de IDs: `useUrlSync` y `useInitializeFromUrl` operan en slugs con fallback automatico a id legacy durante 2 releases.
+- **Migracion Alembic 0004** en `mapalab-dataengine/jobs/alembic/versions/`: slug + aliases.
+
+### Cambiado
+- **Ownership de migraciones del schema `mapalab.*`** revisado (ecosystem.md §7.3 v2): movido de mariachi a mapalab-dataengine. Razon: en prod mariachi y dataengine corren en servidores distintos. Ahora `make prod-migration` y `make migrate` aplican migraciones desde el container `dataengine-jobs` sin depender de mariachi.
+- **`bootstrap-v14.sh`** corre `alembic upgrade head` automaticamente al final del bootstrap (idempotente; aplica solo lo nuevo si ya estaba stamped).
+- **`prod-migration.sh`** ahora idempotente y re-ejecutable. Default cambia a `--skip-etl` (ETL legacy del Sheet desactivado); para incluirlo `--with-etl` opcional.
+- **Container `dataengine-jobs`** incluye `alembic==1.13.3` en sus deps.
+- **Targets `make migrate` y `make migrate-status`** en `mapalab-dataengine/Makefile`.
+- **`run_refresh_layer_tree.py`**: incluye `slug` y `aliases` en cada nodo del JSON cacheado.
+- **Mariachi**: removida la rama `dataengine` de su Alembic (`alembic.ini`, `env.py`, `versions/dataengine/`); `init_db.py` ya no la invoca. Mariachi solo gestiona schema `public.*`/`mariachi.*`.
+
 ### Corregido
 - `layer_tree_service.get_cached_state()` revalida contra DB via etag check en cada llamada. Cierra la ventana de staleness cross-workers: cuando mariachi (o el cron nocturno) actualiza `mapalab.layer_tree_cache`, los N workers Gunicorn se autosincronizan en su siguiente request sin necesidad de restart ni pub/sub.
 - `.env.development`: `DB_HOST=localhost` → `host.docker.internal` para que el backend en container alcance el Postgres de dataengine.
 
 ### Documentacion
-- `docs/context.md`, `docs/layers.md`, `docs/runbook-layers.md` actualizados para reflejar `make prod-migration` como entrypoint unico de bootstrap en dataengine (antes eran `bootstrap-v14{,-dry}` y `migrate-mapalab-card`).
+- `docs/context.md`, `docs/layers.md`, `docs/runbook-layers.md` actualizados para reflejar `make prod-migration` como entrypoint unico de bootstrap en dataengine.
+- `docs/planes/PLAN_URL_SHARES_SLUGS.md` agregado: plan completo del feature (slugs + aliases + shares + comparador).
+- `mariachi/docs/ALEMBIC_MULTI_ENV.md`: reescrito como single-env con pointer a mapalab-dataengine.
+- `gateway-hub/docs/ecosystem.md §7.3` revisado con la nueva politica de ownership de schema.
 
 ## [1.7.0] - 2026-04-22
 

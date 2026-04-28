@@ -45,7 +45,7 @@ export const useWMSLegend = () => {
             return url;
         }
         return null;
-    }, [getFilter]);
+    }, [getFilter, layers]);
 
     const getLegendJson = useCallback(async (layer) => {
         const wmsConfig = findWMSConfig(layer.id, layers);
@@ -63,11 +63,11 @@ export const useWMSLegend = () => {
             console.error('Error fetching legend JSON:', error);
             return null;
         }
-    }, []);
+    }, [layers]);
 
     const hasLegend = useCallback((layer) => {
         return hasWMSConfig(layer.id, layers);
-    }, []);
+    }, [layers]);
 
     const baseUrl = useCallback((layer) => {
         const wmsConfig = findWMSConfig(layer.id, layers);
@@ -77,7 +77,7 @@ export const useWMSLegend = () => {
         }
 
         return null;
-    }, []);
+    }, [layers]);
 
     return {
         getLegendUrl,
