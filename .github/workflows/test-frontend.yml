@@ -23,7 +23,7 @@ jobs:
         run: npm run lint
       - name: Test (with coverage thresholds)
         working-directory: ./frontend
-        run: npm run test:coverage -- --run
+        run: npm run test:coverage
       - name: Dead code check
         working-directory: ./frontend
         run: npm run check:dead-code:strict
