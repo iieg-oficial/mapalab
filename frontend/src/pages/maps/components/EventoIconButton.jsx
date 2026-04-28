@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Badge from '@components/Badge';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 
 
@@ -10,7 +11,7 @@ const EventoIconButton = ({ iconUrl, imageUrl, title, isMenuOpen, isHovered = fa
         const collapsedSrc = iconUrl || imageUrl;
         return (
             <div
-                className="flex items-center justify-center w-full h-full"
+                className="relative flex items-center justify-center w-full h-full"
                 style={{ transitionTimingFunction: SIDER_TRANSITION_TIMING }}
                 onMouseEnter={() => setHovering(true)}
                 onMouseLeave={() => setHovering(false)}
@@ -25,6 +26,12 @@ const EventoIconButton = ({ iconUrl, imageUrl, title, isMenuOpen, isHovered = fa
                         <span className="text-[#5C2472] font-bold text-[18px]">★</span>
                     )}
                 </div>
+                <Badge
+                    variant="pill"
+                    color="orange"
+                    text="BETA"
+                    className="absolute -top-1 -right-1"
+                />
             </div>
         );
     }
@@ -33,7 +40,7 @@ const EventoIconButton = ({ iconUrl, imageUrl, title, isMenuOpen, isHovered = fa
     return (
         <div
             className={`
-                w-full overflow-hidden rounded-lg cursor-pointer transition-opacity duration-200
+                relative w-full overflow-hidden rounded-lg cursor-pointer transition-opacity duration-200
                 ${isMenuOpen ? 'opacity-100' : 'opacity-90 hover:opacity-100'}
             `}
             style={{ transitionTimingFunction: SIDER_TRANSITION_TIMING }}
@@ -47,6 +54,12 @@ const EventoIconButton = ({ iconUrl, imageUrl, title, isMenuOpen, isHovered = fa
                     className="w-full h-auto block"
                 />
             )}
+            <Badge
+                variant="pill"
+                color="orange"
+                text="BETA"
+                className="absolute top-2 right-2"
+            />
         </div>
     );
 };
