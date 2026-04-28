@@ -58,12 +58,14 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
 
     const handleLabelClick = useCallback(() => {
         if (isDisabled) return;
-        if (hasChildren) {
-            setIsManuallyExpanded(prev => !prev);
-        } else {
+        if (!hasChildren) {
             onToggle(layer.id, !isActive);
+            return;
         }
-    }, [onToggle, layer.id, isActive, hasChildren, isDisabled]);
+        const isOn = activeLayerIds.includes(layer.id) || allChildrenActive;
+        onToggle(layer.id, !isOn);
+        if (!isOn) setIsManuallyExpanded(true);
+    }, [onToggle, layer.id, isActive, hasChildren, isDisabled, activeLayerIds, allChildrenActive]);
 
     const switchChecked = hasChildren ? (activeLayerIds.includes(layer.id) || allChildrenActive) : isActive;
     const switchIndeterminate = hasChildren ? hasPartialSelection : false;

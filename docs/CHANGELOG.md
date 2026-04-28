@@ -7,6 +7,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.13.1] - 2026-04-28
+
+### Agregado
+- **Click en label de padre activa/desactiva todos los hijos** (`<LayerItem>`): antes el click en el texto del nodo padre solo expandía/colapsaba — el toggle del subárbol estaba escondido detrás del `<Switch>` lateral. Ahora el click en label calcula `isOn = activeLayerIds.includes(layer.id) || allChildrenActive` (la misma señal que ya usaba el switch), llama `onToggle(layer.id, !isOn)` y se apoya en la propagación recursiva existente de `useLayerToggle.handleToggleLayer` (líneas 117-129) que añade/quita `[layerId, ...getAllChildLayerIds(layerId)]`. Si el resultado es activar, fuerza `setIsManuallyExpanded(true)` para que el subárbol quede abierto y se vean los checks marcados; si es desactivar, respeta la expansión actual. Hojas (sin hijos) no cambian. El switch lateral queda intacto.
+
 ### Cambiado
 - `renderCard.jsx`: refactor del cuerpo del infobox para soportar `blockOrder` (opcional, persistido en `infobox_config`). Cada bloque body (`labels`, `labelGroups`, `list`, `iconText`, `text`, `cards`) extraído a su propia función pura. Si el config trae `blockOrder` con keys válidas, se usa ese orden + remaining defaults al final. Si no trae `blockOrder`, mantiene el orden hardcoded actual (backwards-compatible — los 250 configs existentes siguen renderizando idénticos).
 
