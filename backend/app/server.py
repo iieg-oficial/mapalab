@@ -95,3 +95,9 @@ def root():
 @app.get('/health')
 def health_check():
     return {'message':'ok'}
+
+
+@app.get('/ontoy')
+def ontoy():
+    from app.__version__ import __version__
+    return {'slug': 'mapalab-backend', 'label': 'MapaLab Backend', 'version': __version__}

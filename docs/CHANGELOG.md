@@ -7,6 +7,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+### Agregado
+- **`GET /ontoy`** en mapalab-backend: devuelve `{slug, label, version}` para que mariachi-admin pueda detectar la versión y healthy del backend desde el dashboard `/inicio`. La versión se lee de `app/__version__.py` (nuevo archivo) que se mantiene sincronizado con `frontend/package.json` al bumpear el repo. Convención del ecosistema IIEG: cada repo expone su `/ontoy` para que se descubra.
+
 ## [1.13.1] - 2026-04-28
 
 ### Agregado
