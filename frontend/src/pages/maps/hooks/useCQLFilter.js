@@ -74,7 +74,7 @@ export const useCQLFilter = () => {
         };
 
         return findParentFilter(layerId);
-    }, [filters, combineFilters]);
+    }, [filters, combineFilters, allLayers]);
 
     const getFilter = useCallback((layerId) => {
         return findFilterInHierarchy(layerId);

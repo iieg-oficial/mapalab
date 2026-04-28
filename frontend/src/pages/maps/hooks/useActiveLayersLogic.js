@@ -38,7 +38,7 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
         }
 
         return null;
-    }, []);
+    }, [layers]);
 
     const unifiedLayers = useMemo(() => {
         const processedIds = new Set();
