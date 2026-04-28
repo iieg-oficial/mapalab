@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
+import Badge from '@components/Badge';
 import CompareDateModal from './CompareDateModal';
 
 const tools = [
@@ -35,6 +36,7 @@ const tools = [
         id: 'compare-swipe',
         label: 'Barra divisora',
         description: 'Swipe vertical',
+        beta: true,
         icon: (
             <svg viewBox="0 0 60 60" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-12 h-12">
                 <rect x="6" y="12" width="48" height="36" rx="2" />
@@ -89,12 +91,20 @@ const ToolsMenu = ({ closeButton, toggleMeasurementTools, areMeasurementToolsVis
                                 onMouseEnter={() => setHoveredId(tool.id)}
                                 onMouseLeave={() => setHoveredId(null)}
                                 className={`
-                                    flex flex-col items-center justify-center gap-2 cursor-pointer
+                                    relative flex flex-col items-center justify-center gap-2 cursor-pointer
                                     w-[138px] h-[142px] p-3 rounded-[9px] bg-transparent border
                                     ${active ? 'border-[#70308A]' : 'border-transparent hover:border-[#70308A]'}
                                 `}
                                 title={tool.description}
                             >
+                                {tool.beta && (
+                                    <Badge
+                                        variant="pill"
+                                        color="orange"
+                                        text="BETA"
+                                        className="absolute top-2 right-2"
+                                    />
+                                )}
                                 <div className={`flex items-center justify-center ${active || hovered ? 'text-[#5C2472]' : 'text-[#465055]'}`}>
                                     {tool.icon}
                                 </div>
