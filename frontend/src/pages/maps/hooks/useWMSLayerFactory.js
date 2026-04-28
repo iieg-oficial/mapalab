@@ -67,7 +67,7 @@ export const useWMSLayerFactory = () => {
         });
 
         return wmsLayer;
-    }, []);
+    }, [layers]);
 
     return { createWMSLayer, combineCQLFilters };
 };

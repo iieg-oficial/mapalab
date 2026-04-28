@@ -36,7 +36,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
             }
         });
         return cache;
-    }, [debouncedActiveLayerIds]);
+    }, [debouncedActiveLayerIds, layers]);
 
     const updateActiveLayers = useCallback(() => {
         if (!mapRef.current) return;

@@ -34,7 +34,7 @@ export const useLayerManagement = () => {
             parent = findDirectParent(layers, parent.id);
         }
         return parent;
-    }, []);
+    }, [layers]);
 
     const findAllAncestors = useCallback((layerId) => {
         const ancestors = [];
