@@ -5,6 +5,7 @@ import MapsContext from '@contexts/MapsContext';
 import SymbologyItem from './SymbologyItem';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
+import Switch from '@components/Switch';
 
 import { useZenMode } from './ZenMode';
 
@@ -87,22 +88,15 @@ const SymbologyPanel = ({ onCollapseChange }) => {
             {isComparing && (
                 <div className="flex items-center gap-2 mb-2 px-1 text-[11px] font-garet text-[#465055]">
                     <span>Leyenda de</span>
-                    <button
-                        type="button"
-                        onClick={() => setActiveSlot('A')}
-                        aria-pressed={activeSlot === 'A'}
-                        className={`size-7 flex items-center justify-center rounded-full border font-bold transition-all ${activeSlot === 'A' ? 'bg-[#1D4ED8] text-white border-transparent' : 'bg-[#EAEFFA] text-[#1D4ED8] border-transparent hover:border-[#1D4ED8]'}`}
-                    >
-                        A
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setActiveSlot('B')}
-                        aria-pressed={activeSlot === 'B'}
-                        className={`size-7 flex items-center justify-center rounded-full border font-bold transition-all ${activeSlot === 'B' ? 'bg-[#FF8300] text-white border-transparent' : 'bg-[#FFF1E0] text-[#B35A00] border-transparent hover:border-[#FF8300]'}`}
-                    >
-                        B
-                    </button>
+                    <Switch
+                        checked={activeSlot === 'A'}
+                        onChange={(next) => setActiveSlot(next ? 'A' : 'B')}
+                        onLabel="A"
+                        offLabel="B"
+                        onColor="#5C2472"
+                        offColor="#FF8300"
+                        tooltip={`Mostrando leyenda de ${activeSlot}`}
+                    />
                 </div>
             )}
 
