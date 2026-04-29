@@ -49,7 +49,7 @@ const SwipeView = () => {
     const labelB = compareMode.paneB.label || 'B';
 
     return (
-        <div ref={containerRef} className="absolute inset-0 overflow-hidden">
+        <div ref={containerRef} data-swipe-composite="true" className="absolute inset-0 overflow-hidden">
             <MapView paneIndex={0} className="absolute inset-0 w-full h-full" />
             <div
                 className="absolute inset-0 pointer-events-none"
