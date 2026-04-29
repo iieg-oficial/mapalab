@@ -15,6 +15,8 @@ import icoPauseHover from '@assets/icons/ico_pause_hover.svg';
 import icoPlayNormal from '@assets/icons/ico_play_normal.svg';
 import icoPlayHover from '@assets/icons/ico_play_hover.svg';
 
+import SlotBadge from './SlotBadge';
+
 const SIZE_BUTTON = 'size-5';
 
 const ActiveLayerItem = ({
@@ -38,8 +40,19 @@ const ActiveLayerItem = ({
         getLoopPrefs,
         setLoopIntervalMs,
         setLoopDirection,
-        allLayers
+        allLayers,
+        compareMode
     } = useMapsContext();
+
+    const slotMembership = useMemo(() => {
+        if (!compareMode?.active) return null;
+        const inA = (compareMode.paneA?.activeLayerIds || []).includes(layer.id);
+        const inB = (compareMode.paneB?.activeLayerIds || []).includes(layer.id);
+        if (inA && inB) return 'AB';
+        if (inA) return 'A';
+        if (inB) return 'B';
+        return null;
+    }, [compareMode?.active, compareMode?.paneA?.activeLayerIds, compareMode?.paneB?.activeLayerIds, layer.id]);
 
     const { intervalMs: loopIntervalMs, direction: loopDirection } = getLoopPrefs?.(layer.id) || {};
 
@@ -282,6 +295,8 @@ const ActiveLayerItem = ({
                     <div className="hidden md:group-hover:flex items-center gap-1 shrink-0">
                         {actionButtons}
                     </div>
+
+                    {slotMembership && <SlotBadge membership={slotMembership} />}
 
                     <div className={`flex-1 min-w-0 pr-2 ${HIDDEN_SCROLLBAR}`}>
                         <Tooltip content={layer.name} disableMobile>
