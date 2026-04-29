@@ -21,18 +21,6 @@ const tools = [
         ),
     },
     {
-        id: 'compare-split',
-        label: 'Comparar fechas',
-        description: 'Lado a lado',
-        icon: (
-            <svg viewBox="0 0 60 60" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-12 h-12">
-                <rect x="6" y="12" width="20" height="36" rx="2" />
-                <rect x="34" y="12" width="20" height="36" rx="2" />
-                <path d="M11 22h10M11 28h10M11 34h6M39 22h10M39 28h10M39 34h6" />
-            </svg>
-        ),
-    },
-    {
         id: 'compare-swipe',
         label: 'Barra divisora',
         description: 'Swipe vertical',
@@ -50,7 +38,7 @@ const tools = [
 const ToolsMenu = ({ closeButton, toggleMeasurementTools, areMeasurementToolsVisible }) => {
     const { compareMode, exitCompareMode } = useMapsContext();
     const [hoveredId, setHoveredId] = useState(null);
-    const [modalLayout, setModalLayout] = useState(null);
+    const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
 
     const handleClick = (id) => {
         if (id === 'mediciones') {
@@ -60,13 +48,12 @@ const ToolsMenu = ({ closeButton, toggleMeasurementTools, areMeasurementToolsVis
         if (compareMode?.active) {
             exitCompareMode();
         }
-        setModalLayout(id === 'compare-swipe' ? 'swipe' : 'split');
+        setIsCompareModalOpen(true);
     };
 
     const isActive = (id) => {
         if (id === 'mediciones') return !!areMeasurementToolsVisible;
-        if (id === 'compare-split') return compareMode?.active && compareMode?.layout === 'split';
-        if (id === 'compare-swipe') return compareMode?.active && compareMode?.layout === 'swipe';
+        if (id === 'compare-swipe') return !!compareMode?.active;
         return false;
     };
 
@@ -117,9 +104,8 @@ const ToolsMenu = ({ closeButton, toggleMeasurementTools, areMeasurementToolsVis
                 </div>
             </div>
             <CompareDateModal
-                open={!!modalLayout}
-                onClose={() => setModalLayout(null)}
-                layout={modalLayout || 'split'}
+                open={isCompareModalOpen}
+                onClose={() => setIsCompareModalOpen(false)}
             />
         </>
     );

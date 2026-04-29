@@ -21,11 +21,9 @@ export const useShareDeserializer = () => {
 
     return useCallback((envelope) => {
         if (!envelope || envelope.version !== 1) return false;
-        if (envelope.kind !== 'single' && envelope.kind !== 'compare' && envelope.kind !== 'swipe') return false;
-        const isCompare = envelope.kind === 'compare';
+        if (envelope.kind !== 'single' && envelope.kind !== 'swipe') return false;
         const isSwipe = envelope.kind === 'swipe';
-        const wraps = isCompare || isSwipe;
-        const payload = wraps ? (envelope.payload?.base || {}) : (envelope.payload || {});
+        const payload = isSwipe ? (envelope.payload?.base || {}) : (envelope.payload || {});
         const layers = Array.isArray(payload.layers) ? payload.layers : [];
 
         const resolvedIds = [];
@@ -81,18 +79,17 @@ export const useShareDeserializer = () => {
             }
         }
 
-        if (wraps && typeof setCompareMode === 'function') {
+        if (isSwipe && typeof setCompareMode === 'function') {
             const axis = envelope.payload?.axis || 'date';
             const panes = Array.isArray(envelope.payload?.panes) ? envelope.payload.panes : [];
-            const layout = isSwipe ? 'swipe' : 'split';
-            const swipePosition = isSwipe && typeof envelope.payload?.position === 'number'
+            const swipePosition = typeof envelope.payload?.position === 'number'
                 ? envelope.payload.position
                 : 0.5;
             if (panes.length >= 2) {
-                setCompareMode({ active: true, axis, panes, layout, swipePosition });
+                setCompareMode({ active: true, axis, panes, swipePosition });
             }
         } else if (typeof setCompareMode === 'function') {
-            setCompareMode({ active: false, axis: 'date', panes: [], layout: 'split', swipePosition: 0.5 });
+            setCompareMode({ active: false, axis: 'date', panes: [], swipePosition: 0.5 });
         }
 
         return true;

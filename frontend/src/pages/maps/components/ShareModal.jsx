@@ -32,14 +32,12 @@ export default function ShareModal({ open, onClose, isDirty = false, loadedShare
         setPinned(false);
         try {
             let envelope;
-            if (compareMode?.active && compareMode?.layout === 'swipe') {
+            if (compareMode?.active) {
                 envelope = serialize('swipe', {
                     axis: compareMode.axis,
                     panes: compareMode.panes,
                     position: compareMode.swipePosition ?? 0.5,
                 });
-            } else if (compareMode?.active) {
-                envelope = serialize('compare', { axis: compareMode.axis, panes: compareMode.panes });
             } else {
                 envelope = serialize('single');
             }
