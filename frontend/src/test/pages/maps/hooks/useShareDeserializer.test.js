@@ -56,33 +56,21 @@ describe('useShareDeserializer', () => {
         expect(result.current({ version: 1, kind: 'whatever', payload: {} })).toBe(false);
     });
 
-    it('acepta envelopes kind:"compare" y activa compareMode', () => {
-        const ctx = makeCtx();
-        mockUseMapsContext.mockReturnValue(ctx);
+    it('rechaza envelopes con kind:"compare" (legacy eliminado)', () => {
+        mockUseMapsContext.mockReturnValue(makeCtx());
         const { result } = renderHook(() => useShareDeserializer());
-        const ok = result.current({
+        expect(result.current({
             version: 1,
             kind: 'compare',
             payload: {
-                base: { layers: [{ slug: 'establecimientos-salud', visible: true, opacity: 1, filters: {} }] },
+                base: { layers: [] },
                 axis: 'date',
                 panes: [
                     { value: '2020-01-01', label: 'Antes' },
                     { value: '2024-01-01', label: 'Despues' },
                 ],
             },
-        });
-        expect(ok).toBe(true);
-        expect(ctx.setCompareMode).toHaveBeenCalledWith({
-            active: true,
-            axis: 'date',
-            panes: [
-                { value: '2020-01-01', label: 'Antes' },
-                { value: '2024-01-01', label: 'Despues' },
-            ],
-            layout: 'split',
-            swipePosition: 0.5,
-        });
+        })).toBe(false);
     });
 
     it('acepta envelopes kind:"swipe" con position', () => {
@@ -110,7 +98,6 @@ describe('useShareDeserializer', () => {
                 { value: '2020-01-01', label: 'A' },
                 { value: '2024-01-01', label: 'B' },
             ],
-            layout: 'swipe',
             swipePosition: 0.7,
         });
     });

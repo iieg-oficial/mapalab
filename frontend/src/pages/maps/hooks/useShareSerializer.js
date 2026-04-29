@@ -91,18 +91,6 @@ export const useShareSerializer = () => {
             loop: serializeLoop(dateLoops, loopPrefs, layerTree),
         };
 
-        if (kind === 'compare') {
-            return {
-                version: 1,
-                kind: 'compare',
-                payload: {
-                    base: basePayload,
-                    axis: extra.axis || 'date',
-                    panes: extra.panes || [],
-                },
-            };
-        }
-
         if (kind === 'swipe') {
             return {
                 version: 1,

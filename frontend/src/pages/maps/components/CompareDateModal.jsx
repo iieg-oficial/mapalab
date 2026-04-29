@@ -4,7 +4,7 @@ import { useMapsContext } from '@hooks/useMaps';
 
 const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
 
-export default function CompareDateModal({ open, onClose, layout = 'split' }) {
+export default function CompareDateModal({ open, onClose }) {
     const { setCompareMode, filters, selectedLayerForSymbology } = useMapsContext();
     const [dateA, setDateA] = useState('');
     const [dateB, setDateB] = useState('');
@@ -39,7 +39,6 @@ export default function CompareDateModal({ open, onClose, layout = 'split' }) {
                 { value: dateA, label: labelA || dateA },
                 { value: dateB, label: labelB || dateB },
             ],
-            layout,
             swipePosition: 0.5,
         });
         onClose?.();
@@ -47,10 +46,8 @@ export default function CompareDateModal({ open, onClose, layout = 'split' }) {
 
     if (!open) return null;
 
-    const title = layout === 'swipe' ? 'Comparador con barra divisora' : 'Comparar por fecha';
-    const description = layout === 'swipe'
-        ? 'Elige dos fechas. Veras el mapa con la barra divisora vertical: a la izquierda la primera fecha, a la derecha la segunda. Solo aplica a capas con dimension temporal.'
-        : 'Elige dos fechas para comparar el estado del mapa lado a lado. Solo se aplicara a las capas con dimension temporal.';
+    const title = 'Comparador con barra divisora';
+    const description = 'Elige dos fechas. Veras el mapa con la barra divisora vertical: a la izquierda la primera fecha, a la derecha la segunda. Solo aplica a capas con dimension temporal.';
 
     return (
         <Modal isOpen={open} onClose={onClose} title={title} width="max-w-md">

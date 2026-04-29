@@ -22,9 +22,9 @@ const MapsProvider = ({ children }) => {
     const [selectedLayer, setSelectedLayer] = useState(null);
     const [selectedFeatureInfo, setSelectedFeatureInfo] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
-    const [compareMode, setCompareMode] = useState({ active: false, axis: 'date', panes: [], layout: 'split', swipePosition: 0.5 });
+    const [compareMode, setCompareMode] = useState({ active: false, axis: 'date', panes: [], swipePosition: 0.5 });
     const exitCompareMode = useCallback(() => {
-        setCompareMode({ active: false, axis: 'date', panes: [], layout: 'split', swipePosition: 0.5 });
+        setCompareMode({ active: false, axis: 'date', panes: [], swipePosition: 0.5 });
     }, []);
     const setSwipePosition = useCallback((pos) => {
         setCompareMode(prev => ({ ...prev, swipePosition: Math.max(0.05, Math.min(0.95, pos)) }));
