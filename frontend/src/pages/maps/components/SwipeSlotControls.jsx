@@ -26,7 +26,7 @@ const downloadSwipeComposite = async () => {
 };
 
 const SwipeSlotControls = () => {
-    const { compareMode, setActiveSlot, clearPaneB, exitCompareMode, keepSlot } = useMapsContext();
+    const { compareMode, setActiveSlot, exitCompareMode } = useMapsContext();
     const [isDownloading, setIsDownloading] = useState(false);
 
     if (!compareMode?.active) return null;
@@ -56,32 +56,6 @@ const SwipeSlotControls = () => {
             />
 
             <div className="w-px h-8 bg-gray-200 mx-1" />
-
-            <Tooltip content="Vaciar slot B (descarta sus capas)" placement="bottom" delay={300}>
-                <button
-                    type="button"
-                    onClick={clearPaneB}
-                    className="size-10 flex items-center justify-center rounded-full border border-transparent text-[#FF577D] hover:border-[#FF577D] active:bg-[#FF577D] active:text-white transition-all cursor-pointer"
-                    aria-label="Vaciar slot B"
-                >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                    </svg>
-                </button>
-            </Tooltip>
-
-            <Tooltip content={`Mantener slot ${activeSlot} y salir del comparador`} placement="bottom" delay={300}>
-                <button
-                    type="button"
-                    onClick={() => keepSlot(activeSlot)}
-                    className="size-10 flex items-center justify-center rounded-full border border-transparent text-[#16A34A] hover:border-[#16A34A] active:bg-[#16A34A] active:text-white transition-all cursor-pointer"
-                    aria-label={`Mantener slot ${activeSlot}`}
-                >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                        <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                </button>
-            </Tooltip>
 
             <Tooltip content="Descargar PNG (composite con barra)" placement="bottom" delay={300}>
                 <button
