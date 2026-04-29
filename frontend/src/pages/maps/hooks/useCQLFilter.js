@@ -2,29 +2,49 @@ import { useState, useCallback } from 'react';
 import { useLayers } from '@hooks/useLayers';
 import { findLayerById } from '@pages/maps/helpers/layers/utils/layerHelpers';
 
+export const combineLayerFilters = (layerFilters) => {
+    if (!layerFilters || Object.keys(layerFilters).length === 0) return null;
+    const filterExpressions = Object.entries(layerFilters)
+        .filter(([key, val]) => val && !key.startsWith('_'))
+        .map(([, val]) => val);
+    if (filterExpressions.length === 0) return null;
+    if (filterExpressions.length === 1) return filterExpressions[0];
+    return filterExpressions.map(f => `(${f})`).join(' AND ');
+};
+
+export const findFilterFromState = (filters, layerId, allLayers) => {
+    if (filters[layerId]) return combineLayerFilters(filters[layerId]);
+
+    const findParent = (node, targetId, parent = null) => {
+        if (node.id === targetId) return parent;
+        if (Array.isArray(node.children)) {
+            for (const child of node.children) {
+                const found = findParent(child, targetId, node);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
+    const recurse = (currentLayerId) => {
+        const layerNode = findLayerById(currentLayerId, allLayers);
+        if (!layerNode) return null;
+        for (const rootLayer of allLayers) {
+            const parent = findParent(rootLayer, currentLayerId);
+            if (parent) {
+                if (filters[parent.id]) return combineLayerFilters(filters[parent.id]);
+                return recurse(parent.id);
+            }
+        }
+        return null;
+    };
+
+    return recurse(layerId);
+};
+
 export const useCQLFilter = () => {
     const { layers: allLayers } = useLayers();
     const [filters, setFilters] = useState({});
-
-    const combineFilters = useCallback((layerFilters) => {
-        if (!layerFilters || Object.keys(layerFilters).length === 0) {
-            return null;
-        }
-
-        const filterExpressions = Object.entries(layerFilters)
-            .filter(([key, val]) => val && !key.startsWith('_'))
-            .map(([, val]) => val);
-
-        if (filterExpressions.length === 0) {
-            return null;
-        }
-
-        if (filterExpressions.length === 1) {
-            return filterExpressions[0];
-        }
-
-        return filterExpressions.map(f => `(${f})`).join(' AND ');
-    }, []);
 
     const applyFilter = useCallback((layerId, filterName, cqlExpression) => {
         setFilters(prev => ({
@@ -36,49 +56,9 @@ export const useCQLFilter = () => {
         }));
     }, []);
 
-    const findFilterInHierarchy = useCallback((layerId) => {
-        if (filters[layerId]) {
-            return combineFilters(filters[layerId]);
-        }
-
-        const findParentFilter = (currentLayerId) => {
-            const layerNode = findLayerById(currentLayerId, allLayers);
-            if (!layerNode) return null;
-
-            const findParent = (node, targetId, parent = null) => {
-                if (node.id === targetId) {
-                    return parent;
-                }
-
-                if (Array.isArray(node.children)) {
-                    for (const child of node.children) {
-                        const found = findParent(child, targetId, node);
-                        if (found) return found;
-                    }
-                }
-
-                return null;
-            };
-
-            for (const rootLayer of allLayers) {
-                const parent = findParent(rootLayer, currentLayerId);
-                if (parent) {
-                    if (filters[parent.id]) {
-                        return combineFilters(filters[parent.id]);
-                    }
-                    return findParentFilter(parent.id);
-                }
-            }
-
-            return null;
-        };
-
-        return findParentFilter(layerId);
-    }, [filters, combineFilters, allLayers]);
-
     const getFilter = useCallback((layerId) => {
-        return findFilterInHierarchy(layerId);
-    }, [findFilterInHierarchy]);
+        return findFilterFromState(filters, layerId, allLayers);
+    }, [filters, allLayers]);
 
     const getSpecificFilter = useCallback((layerId, filterName) => {
         return filters[layerId]?.[filterName] || null;

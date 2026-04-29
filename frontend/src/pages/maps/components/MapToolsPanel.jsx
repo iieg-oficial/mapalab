@@ -65,7 +65,7 @@ const MapToolsPanel = () => {
                     className="hidden md:inline-flex fixed top-4 right-[calc(16px+373px+8px+150px)] z-11 items-center text-[11px]/[16px] font-garet bg-[#DBEAFE] hover:bg-[#BFDBFE] text-[#1D4ED8] border border-[#3B82F6] px-3 py-2 rounded-full whitespace-nowrap shadow-[0_5px_20px_#1A26641A] cursor-pointer transition-colors"
                     title="Salir del modo comparacion"
                 >
-                    Comparando: <span className="font-bold ml-1">{compareMode.panes.map(p => p.label).join(' vs ')}</span>
+                    Comparando: <span className="font-bold ml-1">{compareMode.paneA.label || 'A'} vs {compareMode.paneB.label || 'B'}</span>
                     <span className="ml-2 text-gray-500">×</span>
                 </button>
             )}

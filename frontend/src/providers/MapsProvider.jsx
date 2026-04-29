@@ -15,6 +15,30 @@ import { useMapMarker } from '@hooksMaps/useMapMarker';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { toLonLat } from 'ol/proj';
 
+const emptyPane = (label) => ({
+    activeLayerIds: [],
+    hiddenLayerIds: [],
+    layerOpacities: new Map(),
+    filters: {},
+    label,
+});
+
+const initialCompareMode = () => ({
+    active: false,
+    activeSlot: 'A',
+    paneA: emptyPane('A'),
+    paneB: emptyPane('B'),
+    swipePosition: 0.5,
+});
+
+const cloneSnapshot = (snapshot) => ({
+    activeLayerIds: [...snapshot.activeLayerIds],
+    hiddenLayerIds: [...snapshot.hiddenLayerIds],
+    layerOpacities: new Map(snapshot.layerOpacities),
+    filters: structuredClone(snapshot.filters),
+    label: snapshot.label,
+});
+
 const MapsProvider = ({ children }) => {
     const { layers: allLayers } = useLayers();
     const [baseMapId, setBaseMapId] = useState('voyager');
@@ -22,13 +46,7 @@ const MapsProvider = ({ children }) => {
     const [selectedLayer, setSelectedLayer] = useState(null);
     const [selectedFeatureInfo, setSelectedFeatureInfo] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
-    const [compareMode, setCompareMode] = useState({ active: false, axis: 'date', panes: [], swipePosition: 0.5 });
-    const exitCompareMode = useCallback(() => {
-        setCompareMode({ active: false, axis: 'date', panes: [], swipePosition: 0.5 });
-    }, []);
-    const setSwipePosition = useCallback((pos) => {
-        setCompareMode(prev => ({ ...prev, swipePosition: Math.max(0.05, Math.min(0.95, pos)) }));
-    }, []);
+    const [compareMode, setCompareMode] = useState(initialCompareMode);
     const queryFeaturesInPolygonRef = useRef(null);
     const clickPosition = useClickPosition();
     const targetRef = useRef(null);
@@ -64,6 +82,95 @@ const MapsProvider = ({ children }) => {
         getSpecificFilter: cqlFilter.getSpecificFilter,
         getPeriodicity: periodicityCache.getPeriodicity
     });
+
+    const liveStateRef = useRef();
+    liveStateRef.current = {
+        activeLayerIds: layerManagement.activeLayerIds,
+        setActiveLayerIds: layerManagement.setActiveLayerIds,
+        hiddenLayerIds: symbology.hiddenLayerIds,
+        setHiddenLayerIds: symbology.setHiddenLayerIds,
+        layerOpacities: layerOpacity.layerOpacities,
+        setLayerOpacities: layerOpacity.setLayerOpacities,
+        filters: cqlFilter.filters,
+        setFilters: cqlFilter.setFilters,
+        pauseAllLoops: dateLoop.pauseAllLoops,
+    };
+
+    const snapshotLive = useCallback((label) => ({
+        activeLayerIds: [...liveStateRef.current.activeLayerIds],
+        hiddenLayerIds: [...liveStateRef.current.hiddenLayerIds],
+        layerOpacities: new Map(liveStateRef.current.layerOpacities),
+        filters: structuredClone(liveStateRef.current.filters),
+        label,
+    }), []);
+
+    const applySnapshotToLive = useCallback((snapshot) => {
+        const live = liveStateRef.current;
+        live.setActiveLayerIds(snapshot.activeLayerIds);
+        live.setHiddenLayerIds(snapshot.hiddenLayerIds);
+        live.setLayerOpacities(new Map(snapshot.layerOpacities));
+        live.setFilters(structuredClone(snapshot.filters));
+    }, []);
+
+    const enterSwipeMode = useCallback(() => {
+        const current = snapshotLive('A');
+        liveStateRef.current.pauseAllLoops();
+        setCompareMode({
+            active: true,
+            activeSlot: 'B',
+            paneA: current,
+            paneB: cloneSnapshot({ ...current, label: 'B' }),
+            swipePosition: 0.5,
+        });
+    }, [snapshotLive]);
+
+    const setActiveSlot = useCallback((nextSlot) => {
+        if (nextSlot !== 'A' && nextSlot !== 'B') return;
+        setCompareMode(prev => {
+            if (!prev.active || prev.activeSlot === nextSlot) return prev;
+            const currentSnapshot = snapshotLive(prev[`pane${prev.activeSlot}`].label);
+            const targetSnapshot = prev[`pane${nextSlot}`];
+            applySnapshotToLive(targetSnapshot);
+            return {
+                ...prev,
+                activeSlot: nextSlot,
+                [`pane${prev.activeSlot}`]: currentSnapshot,
+            };
+        });
+    }, [snapshotLive, applySnapshotToLive]);
+
+    const clearPaneB = useCallback(() => {
+        setCompareMode(prev => {
+            if (!prev.active) return prev;
+            const empty = emptyPane(prev.paneB.label || 'B');
+            if (prev.activeSlot === 'B') {
+                applySnapshotToLive(empty);
+            }
+            return { ...prev, paneB: empty };
+        });
+    }, [applySnapshotToLive]);
+
+    const discardSlot = useCallback((slotToDiscard) => {
+        setCompareMode(prev => {
+            if (!prev.active) return prev;
+            const slotToKeep = slotToDiscard === 'A' ? 'B' : 'A';
+            if (slotToDiscard === prev.activeSlot) {
+                applySnapshotToLive(prev[`pane${slotToKeep}`]);
+            }
+            return initialCompareMode();
+        });
+    }, [applySnapshotToLive]);
+
+    const exitCompareMode = useCallback(() => {
+        setCompareMode(initialCompareMode());
+    }, []);
+
+    const setSwipePosition = useCallback((pos) => {
+        setCompareMode(prev => ({
+            ...prev,
+            swipePosition: Math.max(0.05, Math.min(0.95, pos)),
+        }));
+    }, []);
 
     const handlePolygonComplete = useCallback((geometry, centerCoordinate, onFeatureCountUpdate) => {
         if (queryFeaturesInPolygonRef.current && mapRef.current) {
@@ -131,6 +238,10 @@ const MapsProvider = ({ children }) => {
         setIsLocating,
         compareMode,
         setCompareMode,
+        enterSwipeMode,
+        setActiveSlot,
+        clearPaneB,
+        discardSlot,
         exitCompareMode,
         setSwipePosition,
         paneMapRefs
@@ -156,6 +267,10 @@ const MapsProvider = ({ children }) => {
         isLocating,
         allLayers,
         compareMode,
+        enterSwipeMode,
+        setActiveSlot,
+        clearPaneB,
+        discardSlot,
         exitCompareMode,
         setSwipePosition
     ]);
