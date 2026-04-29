@@ -28,6 +28,7 @@ const initialCompareMode = () => ({
     activeSlot: 'A',
     paneA: emptyPane('A'),
     paneB: emptyPane('B'),
+    originalSnapshot: null,
     swipePosition: 0.5,
 });
 
@@ -120,6 +121,7 @@ const MapsProvider = ({ children }) => {
             activeSlot: 'B',
             paneA: current,
             paneB: cloneSnapshot({ ...current, label: 'B' }),
+            originalSnapshot: cloneSnapshot({ ...current, label: 'original' }),
             swipePosition: 0.5,
         });
     }, [snapshotLive]);
@@ -150,11 +152,11 @@ const MapsProvider = ({ children }) => {
         });
     }, [applySnapshotToLive]);
 
-    const discardSlot = useCallback((slotToDiscard) => {
+    const keepSlot = useCallback((slotToKeep) => {
+        if (slotToKeep !== 'A' && slotToKeep !== 'B') return;
         setCompareMode(prev => {
             if (!prev.active) return prev;
-            const slotToKeep = slotToDiscard === 'A' ? 'B' : 'A';
-            if (slotToDiscard === prev.activeSlot) {
+            if (slotToKeep !== prev.activeSlot) {
                 applySnapshotToLive(prev[`pane${slotToKeep}`]);
             }
             return initialCompareMode();
@@ -162,8 +164,13 @@ const MapsProvider = ({ children }) => {
     }, [applySnapshotToLive]);
 
     const exitCompareMode = useCallback(() => {
-        setCompareMode(initialCompareMode());
-    }, []);
+        setCompareMode(prev => {
+            if (prev.active && prev.originalSnapshot) {
+                applySnapshotToLive(prev.originalSnapshot);
+            }
+            return initialCompareMode();
+        });
+    }, [applySnapshotToLive]);
 
     const setSwipePosition = useCallback((pos) => {
         setCompareMode(prev => ({
@@ -241,7 +248,7 @@ const MapsProvider = ({ children }) => {
         enterSwipeMode,
         setActiveSlot,
         clearPaneB,
-        discardSlot,
+        keepSlot,
         exitCompareMode,
         setSwipePosition,
         paneMapRefs
@@ -270,7 +277,7 @@ const MapsProvider = ({ children }) => {
         enterSwipeMode,
         setActiveSlot,
         clearPaneB,
-        discardSlot,
+        keepSlot,
         exitCompareMode,
         setSwipePosition
     ]);

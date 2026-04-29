@@ -30,12 +30,11 @@ const slotColor = {
 };
 
 const SwipeSlotControls = () => {
-    const { compareMode, setActiveSlot, clearPaneB, exitCompareMode, discardSlot } = useMapsContext();
+    const { compareMode, setActiveSlot, clearPaneB, exitCompareMode, keepSlot } = useMapsContext();
     const [isDownloading, setIsDownloading] = useState(false);
 
     if (!compareMode?.active) return null;
     const activeSlot = compareMode.activeSlot;
-    const otherSlot = activeSlot === 'A' ? 'B' : 'A';
 
     const handleDownload = async () => {
         if (isDownloading) return;
@@ -85,13 +84,13 @@ const SwipeSlotControls = () => {
                 </button>
             </Tooltip>
 
-            <Tooltip content={`Descartar ${otherSlot} y conservar ${activeSlot}`} placement="bottom" delay={300}>
+            <Tooltip content={`Mantener slot ${activeSlot} al cerrar`} placement="bottom" delay={300}>
                 <button
                     type="button"
-                    onClick={() => discardSlot(otherSlot)}
-                    className="px-3 h-10 flex items-center rounded-full border border-transparent text-[12px] font-garet font-medium text-[#FF577D] hover:border-[#FF577D] active:bg-[#FF577D] active:text-white transition-all"
+                    onClick={() => keepSlot(activeSlot)}
+                    className="px-3 h-10 flex items-center rounded-full border border-transparent text-[12px] font-garet font-medium text-[#16A34A] hover:border-[#16A34A] active:bg-[#16A34A] active:text-white transition-all"
                 >
-                    Descartar {otherSlot}
+                    Mantener {activeSlot}
                 </button>
             </Tooltip>
 
@@ -109,7 +108,7 @@ const SwipeSlotControls = () => {
                 </button>
             </Tooltip>
 
-            <Tooltip content="Salir del comparador (conserva slot activo)" placement="bottom" delay={300}>
+            <Tooltip content="Cerrar y volver al estado original" placement="bottom" delay={300}>
                 <button
                     type="button"
                     onClick={exitCompareMode}
