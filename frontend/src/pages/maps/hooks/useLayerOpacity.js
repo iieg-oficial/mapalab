@@ -58,6 +58,7 @@ export const useLayerOpacity = (getAllChildLayerIds, activeLayerIds) => {
 
     return {
         layerOpacities,
+        setLayerOpacities,
         setLayerOpacity,
         getLayerOpacity,
         resetLayerOpacity
