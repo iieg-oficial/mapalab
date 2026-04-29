@@ -43,6 +43,7 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
             paneB: emptyPane('B'),
             originalSnapshot: current,
             swipePosition: 0.5,
+            swipeOrientation: 'vertical',
         });
     }, [snapshotLive, applySnapshotToLive, liveStateRef]);
 
@@ -172,6 +173,13 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
         }));
     }, []);
 
+    const toggleSwipeOrientation = useCallback(() => {
+        setCompareMode(prev => ({
+            ...prev,
+            swipeOrientation: prev.swipeOrientation === 'horizontal' ? 'vertical' : 'horizontal',
+        }));
+    }, []);
+
     const paneMapRefs = useRef({});
 
     return {
@@ -184,6 +192,7 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
         setLayerSlotMembership,
         exitCompareMode,
         setSwipePosition,
+        toggleSwipeOrientation,
         paneMapRefs,
     };
 };

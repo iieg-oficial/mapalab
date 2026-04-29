@@ -26,12 +26,13 @@ const downloadSwipeComposite = async () => {
 };
 
 const SwipeSlotControls = () => {
-    const { compareMode, setActiveSlot, exitCompareMode } = useMapsContext();
+    const { compareMode, setActiveSlot, exitCompareMode, toggleSwipeOrientation } = useMapsContext();
     const [isDownloading, setIsDownloading] = useState(false);
 
     if (!compareMode?.active) return null;
     const activeSlot = compareMode.activeSlot;
     const isAActive = activeSlot === 'A';
+    const isHorizontal = compareMode.swipeOrientation === 'horizontal';
 
     const handleDownload = async () => {
         if (isDownloading) return;
@@ -56,6 +57,21 @@ const SwipeSlotControls = () => {
             />
 
             <div className="w-px h-8 bg-gray-200 mx-1" />
+
+            <Tooltip content={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'} placement="bottom" delay={300}>
+                <button
+                    type="button"
+                    onClick={toggleSwipeOrientation}
+                    className="size-10 flex items-center justify-center rounded-full bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white transition-all cursor-pointer"
+                    aria-label={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 transition-transform ${isHorizontal ? '' : 'rotate-90'}`}>
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <polyline points="7 8 3 12 7 16" />
+                        <polyline points="17 8 21 12 17 16" />
+                    </svg>
+                </button>
+            </Tooltip>
 
             <Tooltip content="Descargar PNG (composite con barra)" placement="bottom" delay={300}>
                 <button
