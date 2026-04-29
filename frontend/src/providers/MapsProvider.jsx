@@ -14,50 +14,13 @@ import { usePeriodicityCache } from '@hooksMaps/usePeriodicityCache';
 import { useMapMarker } from '@hooksMaps/useMapMarker';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { toLonLat } from 'ol/proj';
-
-const emptyPane = (label) => ({
-    activeLayerIds: [],
-    hiddenLayerIds: [],
-    layerOpacities: new Map(),
-    filters: {},
-    label,
-});
-
-const initialCompareMode = () => ({
-    active: false,
-    activeSlot: 'A',
-    paneA: emptyPane('A'),
-    paneB: emptyPane('B'),
-    originalSnapshot: null,
-    swipePosition: 0.5,
-});
-
-export const SWIPE_ORIGINAL_STORAGE_KEY = 'mapalab.swipe.original_snapshot';
-
-const serializeSnapshotForStorage = (snapshot) => ({
-    activeLayerIds: snapshot.activeLayerIds,
-    hiddenLayerIds: snapshot.hiddenLayerIds,
-    layerOpacities: Array.from(snapshot.layerOpacities.entries()),
-    filters: snapshot.filters,
-    label: snapshot.label,
-});
-
-const deserializeSnapshotFromStorage = (raw) => {
-    if (!raw) return null;
-    try {
-        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-        if (!parsed) return null;
-        return {
-            activeLayerIds: Array.isArray(parsed.activeLayerIds) ? parsed.activeLayerIds : [],
-            hiddenLayerIds: Array.isArray(parsed.hiddenLayerIds) ? parsed.hiddenLayerIds : [],
-            layerOpacities: new Map(Array.isArray(parsed.layerOpacities) ? parsed.layerOpacities : []),
-            filters: parsed.filters || {},
-            label: parsed.label || 'original',
-        };
-    } catch {
-        return null;
-    }
-};
+import {
+    SWIPE_ORIGINAL_STORAGE_KEY,
+    emptyPane,
+    initialCompareMode,
+    serializeSnapshotForStorage,
+    deserializeSnapshotFromStorage,
+} from '@pages/maps/helpers/swipeMode';
 
 const MapsProvider = ({ children }) => {
     const { layers: allLayers } = useLayers();
@@ -167,6 +130,55 @@ const MapsProvider = ({ children }) => {
         });
     }, [snapshotLive, applySnapshotToLive]);
 
+    const removeLayerFromSlot = useCallback((layerId, slot) => {
+        if (slot !== 'A' && slot !== 'B') return;
+        const childIds = liveStateRef.current.activeLayerIds;
+        const allIds = [layerId, ...(layerManagement.getAllChildLayerIds(layerId) || [])];
+        const idsSet = new Set(allIds);
+        setCompareMode(prev => {
+            if (!prev.active) return prev;
+            const pane = prev[`pane${slot}`];
+            if (!pane) return prev;
+            const newPane = {
+                ...pane,
+                activeLayerIds: pane.activeLayerIds.filter(id => !idsSet.has(id)),
+                hiddenLayerIds: pane.hiddenLayerIds.filter(id => !idsSet.has(id)),
+                layerOpacities: new Map(Array.from(pane.layerOpacities.entries()).filter(([id]) => !idsSet.has(id))),
+                filters: Object.fromEntries(Object.entries(pane.filters).filter(([id]) => !idsSet.has(id))),
+            };
+            if (slot === prev.activeSlot) {
+                liveStateRef.current.setActiveLayerIds(childIds.filter(id => !idsSet.has(id)));
+                liveStateRef.current.setHiddenLayerIds(liveStateRef.current.hiddenLayerIds.filter(id => !idsSet.has(id)));
+                const newOpacities = new Map(liveStateRef.current.layerOpacities);
+                idsSet.forEach(id => newOpacities.delete(id));
+                liveStateRef.current.setLayerOpacities(newOpacities);
+                const newFilters = { ...liveStateRef.current.filters };
+                idsSet.forEach(id => { delete newFilters[id]; });
+                liveStateRef.current.setFilters(newFilters);
+            }
+            return { ...prev, [`pane${slot}`]: newPane };
+        });
+    }, [layerManagement]);
+
+    const toggleLayerVisibilityInSlot = useCallback((layerId, slot) => {
+        if (slot !== 'A' && slot !== 'B') return;
+        const allIds = [layerId, ...(layerManagement.getAllChildLayerIds(layerId) || [])];
+        setCompareMode(prev => {
+            if (!prev.active) return prev;
+            const pane = prev[`pane${slot}`];
+            if (!pane) return prev;
+            const isHidden = pane.hiddenLayerIds.includes(layerId);
+            const newHidden = isHidden
+                ? pane.hiddenLayerIds.filter(id => !allIds.includes(id))
+                : Array.from(new Set([...pane.hiddenLayerIds, ...allIds]));
+            const newPane = { ...pane, hiddenLayerIds: newHidden };
+            if (slot === prev.activeSlot) {
+                liveStateRef.current.setHiddenLayerIds(newHidden);
+            }
+            return { ...prev, [`pane${slot}`]: newPane };
+        });
+    }, [layerManagement]);
+
     const exitCompareMode = useCallback(() => {
         setCompareMode(prev => {
             if (!prev.active) return prev;
@@ -260,6 +272,8 @@ const MapsProvider = ({ children }) => {
         setCompareMode,
         enterSwipeMode,
         setActiveSlot,
+        removeLayerFromSlot,
+        toggleLayerVisibilityInSlot,
         exitCompareMode,
         setSwipePosition,
         paneMapRefs
@@ -287,6 +301,8 @@ const MapsProvider = ({ children }) => {
         compareMode,
         enterSwipeMode,
         setActiveSlot,
+        removeLayerFromSlot,
+        toggleLayerVisibilityInSlot,
         exitCompareMode,
         setSwipePosition
     ]);
