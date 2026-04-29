@@ -3,6 +3,7 @@ import SEO from '@components/SEO';
 import MapView from '@mapsComponents/MapView';
 import SwipeView from '@mapsComponents/SwipeView';
 import SwipeSlotControls from '@mapsComponents/SwipeSlotControls';
+import SwipeSlotPickerModal from '@mapsComponents/SwipeSlotPickerModal';
 import MapSider from '@mapsComponents/MapSider';
 import MapToolsPanel from '@mapsComponents/MapToolsPanel';
 import MapLayersPanels from '@mapsComponents/MapLayersPanels';
@@ -47,6 +48,7 @@ const Maps = () => {
                     {!isComparing && <MeasurementTools />}
                     {isComparing ? <SwipeView /> : <MapView />}
                     {isComparing && <SwipeSlotControls />}
+                    <SwipeSlotPickerModal />
                 </div>
             </ZenModeProvider>
         </SiderProvider>

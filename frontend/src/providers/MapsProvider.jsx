@@ -76,6 +76,42 @@ const MapsProvider = ({ children }) => {
         getAllChildLayerIds: layerManagement.getAllChildLayerIds,
     });
 
+    const [pendingSlotPick, setPendingSlotPick] = useState(null);
+
+    const onToggleLayer = useCallback((layerId, force, options) => {
+        const cm = swipeMode.compareMode;
+        if (!cm.active) {
+            return layerToggle.handleToggleLayer(layerId, force, options);
+        }
+        const inA = cm.paneA.activeLayerIds.includes(layerId);
+        const inB = cm.paneB.activeLayerIds.includes(layerId);
+        const wantsActivate = force === true || (force === undefined && !inA && !inB);
+        if (wantsActivate && !inA && !inB) {
+            setPendingSlotPick({ layerId });
+            return undefined;
+        }
+        if (!wantsActivate) {
+            if (inA) swipeMode.removeLayerFromSlot(layerId, 'A');
+            if (inB) swipeMode.removeLayerFromSlot(layerId, 'B');
+            return undefined;
+        }
+        return undefined;
+    }, [swipeMode, layerToggle]);
+
+    const confirmPendingSlot = useCallback((target) => {
+        if (!pendingSlotPick) return;
+        const layerId = pendingSlotPick.layerId;
+        setPendingSlotPick(null);
+        layerToggle.handleToggleLayer(layerId, true);
+        if (target === 'A' || target === 'B') {
+            swipeMode.setLayerSlotMembership(layerId, target);
+        } else {
+            swipeMode.setLayerSlotMembership(layerId, 'AB');
+        }
+    }, [pendingSlotPick, layerToggle, swipeMode]);
+
+    const cancelPendingSlot = useCallback(() => setPendingSlotPick(null), []);
+
     const handlePolygonComplete = useCallback((geometry, centerCoordinate, onFeatureCountUpdate) => {
         if (queryFeaturesInPolygonRef.current && mapRef.current) {
             queryFeaturesInPolygonRef.current(mapRef.current, geometry, centerCoordinate, onFeatureCountUpdate);
@@ -128,8 +164,11 @@ const MapsProvider = ({ children }) => {
         allLayers,
 
         ...layerManagement,
-        onToggleLayer: layerToggle.handleToggleLayer,
+        onToggleLayer,
         applyDefaultDate: layerToggle.applyDefaultDate,
+        pendingSlotPick,
+        confirmPendingSlot,
+        cancelPendingSlot,
         ...symbology,
         ...layerOpacity,
         ...cqlFilter,
@@ -147,8 +186,11 @@ const MapsProvider = ({ children }) => {
         selectedLayer,
         mapsAnalyticsEvent,
         layerManagement,
-        layerToggle.handleToggleLayer,
+        onToggleLayer,
         layerToggle.applyDefaultDate,
+        pendingSlotPick,
+        confirmPendingSlot,
+        cancelPendingSlot,
         symbology,
         layerOpacity,
         selectedFeatureInfo,
