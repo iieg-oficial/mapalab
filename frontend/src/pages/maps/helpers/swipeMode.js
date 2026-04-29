@@ -15,6 +15,7 @@ export const initialCompareMode = () => ({
     paneB: emptyPane('B'),
     originalSnapshot: null,
     swipePosition: 0.5,
+    swipeOrientation: 'vertical',
 });
 
 export const serializeSnapshotForStorage = (snapshot) => ({
