@@ -128,6 +128,7 @@ export const useCQLFilter = () => {
 
     return {
         filters,
+        setFilters,
         applyFilter,
         getFilter,
         getSpecificFilter,
