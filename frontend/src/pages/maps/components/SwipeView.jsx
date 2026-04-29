@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import MapView from './MapView';
 import { useMapsContext } from '@hooks/useMaps';
 import { useViewSync } from '@pages/maps/hooks/useViewSync';
@@ -6,7 +6,6 @@ import { useViewSync } from '@pages/maps/hooks/useViewSync';
 const SwipeView = () => {
     const { compareMode, paneMapRefs, setSwipePosition } = useMapsContext();
     const containerRef = useRef(null);
-    const draggingRef = useRef(false);
     const [pos, setPos] = useState((compareMode?.swipePosition ?? 0.5) * 100);
     const lastPersistedRef = useRef(pos);
 
@@ -28,22 +27,28 @@ const SwipeView = () => {
         return () => clearTimeout(handle);
     }, [pos, setSwipePosition]);
 
-    if (!compareMode?.active) return null;
-
-    const onPointerDown = (e) => {
-        draggingRef.current = true;
-        e.currentTarget.setPointerCapture?.(e.pointerId);
-    };
-    const onPointerMove = (e) => {
-        if (!draggingRef.current || !containerRef.current) return;
+    const updatePosFromClientX = useCallback((clientX) => {
+        if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        if (rect.width <= 0) return;
+        const x = ((clientX - rect.left) / rect.width) * 100;
         setPos(Math.max(5, Math.min(95, x)));
-    };
-    const onPointerUp = (e) => {
-        draggingRef.current = false;
-        e.currentTarget.releasePointerCapture?.(e.pointerId);
-    };
+    }, []);
+
+    const onPointerDown = useCallback((e) => {
+        e.preventDefault();
+        const handleMove = (ev) => updatePosFromClientX(ev.clientX);
+        const handleUp = () => {
+            window.removeEventListener('pointermove', handleMove);
+            window.removeEventListener('pointerup', handleUp);
+            window.removeEventListener('pointercancel', handleUp);
+        };
+        window.addEventListener('pointermove', handleMove);
+        window.addEventListener('pointerup', handleUp);
+        window.addEventListener('pointercancel', handleUp);
+    }, [updatePosFromClientX]);
+
+    if (!compareMode?.active) return null;
 
     const labelA = compareMode.paneA.label || 'A';
     const labelB = compareMode.paneB.label || 'B';
@@ -69,9 +74,6 @@ const SwipeView = () => {
             </div>
             <div
                 onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerUp}
                 role="separator"
                 aria-orientation="vertical"
                 aria-valuenow={Math.round(pos)}
