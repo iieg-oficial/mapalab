@@ -41,7 +41,9 @@ const ActiveLayerItem = ({
         setLoopIntervalMs,
         setLoopDirection,
         allLayers,
-        compareMode
+        compareMode,
+        removeLayerFromSlot,
+        toggleLayerVisibilityInSlot
     } = useMapsContext();
 
     const slotMembership = useMemo(() => {
@@ -73,16 +75,19 @@ const ActiveLayerItem = ({
         setSelectedLayerForSymbology(layer);
     };
 
+    const applyToMembership = (perSlotFn) => {
+        if (slotMembership === 'A' || slotMembership === 'AB') perSlotFn('A');
+        if (slotMembership === 'B' || slotMembership === 'AB') perSlotFn('B');
+    };
     const handleRemoveClick = (e) => {
         e.stopPropagation();
-        const childIds = getAllChildLayerIds(layer.id);
-        const allIds = [layer.id, ...childIds];
-        allIds.forEach(id => clearLayerFilters(id));
+        if (compareMode?.active && slotMembership) return applyToMembership(s => removeLayerFromSlot?.(layer.id, s));
+        [layer.id, ...getAllChildLayerIds(layer.id)].forEach(id => clearLayerFilters(id));
         onToggleLayer(layer.id, false);
     };
-
     const handleToggleVisibilityClick = (e) => {
         e.stopPropagation();
+        if (compareMode?.active && slotMembership) return applyToMembership(s => toggleLayerVisibilityInSlot?.(layer.id, s));
         toggleLayerVisibility(layer.id);
     };
 
