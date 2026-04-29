@@ -18,28 +18,32 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
     const targetRef = isCompare ? localTargetRef : ctx.targetRef;
     const mapRef = isCompare ? localMapRef : ctx.mapRef;
 
-    const paneSnapshot = useMemo(() => {
-        if (!isCompare) return null;
-        return paneIndex === 0 ? ctx.compareMode.paneA : ctx.compareMode.paneB;
-    }, [isCompare, paneIndex, ctx.compareMode.paneA, ctx.compareMode.paneB]);
+    const isActiveSlotPane = isCompare && (
+        (paneIndex === 0 && ctx.compareMode?.activeSlot === 'A')
+        || (paneIndex === 1 && ctx.compareMode?.activeSlot === 'B')
+    );
+    const useLiveState = !isCompare || isActiveSlotPane;
 
-    const activeLayerIds = isCompare ? paneSnapshot.activeLayerIds : ctx.activeLayerIds;
-    const hiddenLayerIds = isCompare ? paneSnapshot.hiddenLayerIds : ctx.hiddenLayerIds;
-    const layerOpacities = isCompare ? paneSnapshot.layerOpacities : ctx.layerOpacities;
-    const filters = isCompare ? paneSnapshot.filters : ctx.filters;
+    const paneSnapshot = useMemo(() => {
+        if (useLiveState) return null;
+        return paneIndex === 0 ? ctx.compareMode.paneA : ctx.compareMode.paneB;
+    }, [useLiveState, paneIndex, ctx.compareMode?.paneA, ctx.compareMode?.paneB]);
+
+    const activeLayerIds = useLiveState ? ctx.activeLayerIds : paneSnapshot.activeLayerIds;
+    const hiddenLayerIds = useLiveState ? ctx.hiddenLayerIds : paneSnapshot.hiddenLayerIds;
+    const layerOpacities = useLiveState ? ctx.layerOpacities : paneSnapshot.layerOpacities;
+    const filters = useLiveState ? ctx.filters : paneSnapshot.filters;
 
     const paneGetFilter = useCallback((layerId) => {
-        if (!isCompare) return null;
         return findFilterFromState(filters, layerId, ctx.allLayers);
-    }, [isCompare, filters, ctx.allLayers]);
+    }, [filters, ctx.allLayers]);
 
     const paneGetLayerOpacity = useCallback((layerId) => {
-        if (!isCompare) return 1;
-        return layerOpacities.get(layerId) ?? 1;
-    }, [isCompare, layerOpacities]);
+        return layerOpacities?.get?.(layerId) ?? 1;
+    }, [layerOpacities]);
 
-    const getFilter = isCompare ? paneGetFilter : ctx.getFilter;
-    const getLayerOpacity = isCompare ? paneGetLayerOpacity : ctx.getLayerOpacity;
+    const getFilter = useLiveState ? ctx.getFilter : paneGetFilter;
+    const getLayerOpacity = useLiveState ? ctx.getLayerOpacity : paneGetLayerOpacity;
 
     const { isDrawing, queryFeaturesInPolygonRef, getAllChildLayerIds, markerClickedRef, editingClickedRef, paneMapRefs } = ctx;
 
