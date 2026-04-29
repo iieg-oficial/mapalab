@@ -7,7 +7,6 @@ const SwipeView = () => {
     const { compareMode, paneMapRefs, setSwipePosition } = useMapsContext();
     const containerRef = useRef(null);
     const draggingRef = useRef(false);
-    const panes = Array.isArray(compareMode?.panes) ? compareMode.panes : [];
     const [pos, setPos] = useState((compareMode?.swipePosition ?? 0.5) * 100);
     const lastPersistedRef = useRef(pos);
 
@@ -29,7 +28,7 @@ const SwipeView = () => {
         return () => clearTimeout(handle);
     }, [pos, setSwipePosition]);
 
-    if (panes.length < 2) return null;
+    if (!compareMode?.active) return null;
 
     const onPointerDown = (e) => {
         draggingRef.current = true;
@@ -46,24 +45,27 @@ const SwipeView = () => {
         e.currentTarget.releasePointerCapture?.(e.pointerId);
     };
 
+    const labelA = compareMode.paneA.label || 'A';
+    const labelB = compareMode.paneB.label || 'B';
+
     return (
         <div ref={containerRef} className="absolute inset-0 overflow-hidden">
-            <MapView paneIndex={0} dateOverride={panes[0].value} className="absolute inset-0 w-full h-full" />
+            <MapView paneIndex={0} className="absolute inset-0 w-full h-full" />
             <div
                 className="absolute inset-0 pointer-events-none"
                 style={{ clipPath: `inset(0 0 0 ${pos}%)` }}
             >
-                <MapView paneIndex={1} dateOverride={panes[1].value} className="absolute inset-0 w-full h-full pointer-events-auto" />
+                <MapView paneIndex={1} className="absolute inset-0 w-full h-full pointer-events-auto" />
             </div>
             <div
                 className="absolute top-3 left-4 z-10 px-3 py-1 bg-white/90 border border-gray-300 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none"
             >
-                {panes[0].label || panes[0].value}
+                {labelA}
             </div>
             <div
                 className="absolute top-3 right-4 z-10 px-3 py-1 bg-white/90 border border-gray-300 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none"
             >
-                {panes[1].label || panes[1].value}
+                {labelB}
             </div>
             <div
                 onPointerDown={onPointerDown}

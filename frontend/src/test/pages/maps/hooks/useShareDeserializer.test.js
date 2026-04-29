@@ -32,6 +32,8 @@ const makeCtx = (overrides = {}) => ({
     setSelectedLayerForSymbology: vi.fn(),
     findLayerById: vi.fn((id) => TREE.flatMap(t => t.children).find(l => l.id === id)),
     setLayerOpacity: vi.fn(),
+    setLayerOpacities: vi.fn(),
+    setFilters: vi.fn(),
     setHiddenLayerIds: vi.fn(),
     setBaseMapId: vi.fn(),
     setCompareMode: vi.fn(),
@@ -73,7 +75,7 @@ describe('useShareDeserializer', () => {
         })).toBe(false);
     });
 
-    it('acepta envelopes kind:"swipe" con position', () => {
+    it('acepta envelopes kind:"swipe" con paneA/paneB y position', () => {
         const ctx = makeCtx();
         mockUseMapsContext.mockReturnValue(ctx);
         const { result } = renderHook(() => useShareDeserializer());
@@ -81,25 +83,50 @@ describe('useShareDeserializer', () => {
             version: 1,
             kind: 'swipe',
             payload: {
-                base: { layers: [{ slug: 'establecimientos-salud', visible: true, opacity: 1, filters: {} }] },
-                axis: 'date',
-                panes: [
-                    { value: '2020-01-01', label: 'A' },
-                    { value: '2024-01-01', label: 'B' },
-                ],
+                shared: { basemap: 'voyager', selected: 'establecimientos-salud' },
+                paneA: {
+                    label: '2020',
+                    layers: [{ slug: 'establecimientos-salud', visible: true, opacity: 1, filters: { date: "fecha = '2020-01-01'" } }],
+                },
+                paneB: {
+                    label: '2024',
+                    layers: [{ slug: 'establecimientos-salud', visible: true, opacity: 0.5, filters: { date: "fecha = '2024-01-01'" } }],
+                },
+                activeSlot: 'A',
                 position: 0.7,
             },
         });
         expect(ok).toBe(true);
-        expect(ctx.setCompareMode).toHaveBeenCalledWith({
-            active: true,
-            axis: 'date',
-            panes: [
-                { value: '2020-01-01', label: 'A' },
-                { value: '2024-01-01', label: 'B' },
-            ],
-            swipePosition: 0.7,
+        expect(ctx.setCompareMode).toHaveBeenCalledTimes(1);
+        const callArg = ctx.setCompareMode.mock.calls[0][0];
+        expect(callArg.active).toBe(true);
+        expect(callArg.activeSlot).toBe('A');
+        expect(callArg.swipePosition).toBe(0.7);
+        expect(callArg.paneA.label).toBe('2020');
+        expect(callArg.paneB.label).toBe('2024');
+        expect(callArg.paneA.activeLayerIds).toContain('establecimientos_salud');
+        expect(callArg.paneB.layerOpacities.get('establecimientos_salud')).toBe(0.5);
+        expect(callArg.paneA.filters['establecimientos_salud'].date).toBe("fecha = '2020-01-01'");
+    });
+
+    it('aplica el slot activo al estado global cuando deserializa swipe', () => {
+        const ctx = makeCtx();
+        mockUseMapsContext.mockReturnValue(ctx);
+        const { result } = renderHook(() => useShareDeserializer());
+        result.current({
+            version: 1,
+            kind: 'swipe',
+            payload: {
+                shared: {},
+                paneA: { label: 'A', layers: [{ slug: 'establecimientos-salud', visible: true, opacity: 1, filters: {} }] },
+                paneB: { label: 'B', layers: [{ slug: 'carreteras-estatales', visible: true, opacity: 0.4, filters: {} }] },
+                activeSlot: 'B',
+                position: 0.5,
+            },
         });
+        expect(ctx.setActiveLayerIds).toHaveBeenCalledWith(expect.arrayContaining(['carreteras_estatales']));
+        const opaCall = ctx.setLayerOpacities.mock.calls[0][0];
+        expect(opaCall.get('carreteras_estatales')).toBe(0.4);
     });
 
     it('resuelve slugs y aliases a layer ids reales', () => {

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import Badge from '@components/Badge';
-import CompareDateModal from './CompareDateModal';
 
 const tools = [
     {
@@ -36,19 +35,21 @@ const tools = [
 ];
 
 const ToolsMenu = ({ closeButton, toggleMeasurementTools, areMeasurementToolsVisible }) => {
-    const { compareMode, exitCompareMode } = useMapsContext();
+    const { compareMode, exitCompareMode, enterSwipeMode } = useMapsContext();
     const [hoveredId, setHoveredId] = useState(null);
-    const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
 
     const handleClick = (id) => {
         if (id === 'mediciones') {
             toggleMeasurementTools?.();
             return;
         }
-        if (compareMode?.active) {
-            exitCompareMode();
+        if (id === 'compare-swipe') {
+            if (compareMode?.active) {
+                exitCompareMode();
+            } else {
+                enterSwipeMode();
+            }
         }
-        setIsCompareModalOpen(true);
     };
 
     const isActive = (id) => {
@@ -58,56 +59,50 @@ const ToolsMenu = ({ closeButton, toggleMeasurementTools, areMeasurementToolsVis
     };
 
     return (
-        <>
-            <div className="py-6 px-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
-                        Herramientas
-                    </h3>
-                    {closeButton}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    {tools.map(tool => {
-                        const active = isActive(tool.id);
-                        const hovered = hoveredId === tool.id;
-                        return (
-                            <button
-                                key={tool.id}
-                                type="button"
-                                onClick={() => handleClick(tool.id)}
-                                onMouseEnter={() => setHoveredId(tool.id)}
-                                onMouseLeave={() => setHoveredId(null)}
-                                className={`
-                                    relative flex flex-col items-center justify-center gap-2 cursor-pointer
-                                    w-[138px] h-[142px] p-3 rounded-[9px] bg-transparent border
-                                    ${active ? 'border-[#70308A]' : 'border-transparent hover:border-[#70308A]'}
-                                `}
-                                title={tool.description}
-                            >
-                                {tool.beta && (
-                                    <Badge
-                                        variant="pill"
-                                        color="orange"
-                                        text="BETA"
-                                        className="absolute top-2 right-2"
-                                    />
-                                )}
-                                <div className={`flex items-center justify-center ${active || hovered ? 'text-[#5C2472]' : 'text-[#465055]'}`}>
-                                    {tool.icon}
-                                </div>
-                                <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-[#5C2472]' : 'font-medium text-[#465055]'}`}>
-                                    {tool.label}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
+        <div className="py-6 px-4">
+            <div className="flex items-center justify-between">
+                <h3 className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
+                    Herramientas
+                </h3>
+                {closeButton}
             </div>
-            <CompareDateModal
-                open={isCompareModalOpen}
-                onClose={() => setIsCompareModalOpen(false)}
-            />
-        </>
+            <div className="grid grid-cols-2 gap-4">
+                {tools.map(tool => {
+                    const active = isActive(tool.id);
+                    const hovered = hoveredId === tool.id;
+                    return (
+                        <button
+                            key={tool.id}
+                            type="button"
+                            onClick={() => handleClick(tool.id)}
+                            onMouseEnter={() => setHoveredId(tool.id)}
+                            onMouseLeave={() => setHoveredId(null)}
+                            className={`
+                                relative flex flex-col items-center justify-center gap-2 cursor-pointer
+                                w-[138px] h-[142px] p-3 rounded-[9px] bg-transparent border
+                                ${active ? 'border-[#70308A]' : 'border-transparent hover:border-[#70308A]'}
+                            `}
+                            title={tool.description}
+                        >
+                            {tool.beta && (
+                                <Badge
+                                    variant="pill"
+                                    color="orange"
+                                    text="BETA"
+                                    className="absolute top-2 right-2"
+                                />
+                            )}
+                            <div className={`flex items-center justify-center ${active || hovered ? 'text-[#5C2472]' : 'text-[#465055]'}`}>
+                                {tool.icon}
+                            </div>
+                            <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-[#5C2472]' : 'font-medium text-[#465055]'}`}>
+                                {tool.label}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
     );
 };
 
