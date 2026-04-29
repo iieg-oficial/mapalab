@@ -5,7 +5,6 @@ import InfoModal from './InfoModal';
 import Panel from '@components/Panel';
 import ExportPreview from './MapExport/ExportPreview';
 import { useShareDirtiness } from '@pages/maps/hooks/useShareDirtiness';
-import { useMapsContext } from '@hooks/useMaps';
 
 const MapToolsPanel = () => {
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -15,10 +14,8 @@ const MapToolsPanel = () => {
     const [previewTitle, setPreviewTitle] = useState('');
     const [previewQuality, setPreviewQuality] = useState(null);
     const { isDirty, loadedShareId } = useShareDirtiness();
-    const { compareMode, exitCompareMode } = useMapsContext();
     const inSyncWithShare = !!loadedShareId && !isDirty;
     const isModifiedFromShare = !!loadedShareId && isDirty;
-    const isComparing = !!compareMode?.active;
 
     const handleRevert = useCallback(() => {
         window.location.reload();
@@ -56,17 +53,6 @@ const MapToolsPanel = () => {
                     title={`Volver al estado del enlace ${loadedShareId}`}
                 >
                     Regresar a: <span className="font-bold tabular-nums ml-1">{loadedShareId}</span>
-                </button>
-            )}
-            {isComparing && (
-                <button
-                    type="button"
-                    onClick={exitCompareMode}
-                    className="hidden md:inline-flex fixed top-4 right-[calc(16px+373px+8px+150px)] z-11 items-center text-[11px]/[16px] font-garet bg-[#DBEAFE] hover:bg-[#BFDBFE] text-[#1D4ED8] border border-[#3B82F6] px-3 py-2 rounded-full whitespace-nowrap shadow-[0_5px_20px_#1A26641A] cursor-pointer transition-colors"
-                    title="Salir del modo comparacion"
-                >
-                    Comparando: <span className="font-bold ml-1">{compareMode.paneA.label || 'A'} vs {compareMode.paneB.label || 'B'}</span>
-                    <span className="ml-2 text-gray-500">×</span>
                 </button>
             )}
             <Panel
