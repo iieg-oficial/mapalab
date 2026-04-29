@@ -43,7 +43,8 @@ const ActiveLayerItem = ({
         allLayers,
         compareMode,
         removeLayerFromSlot,
-        toggleLayerVisibilityInSlot
+        toggleLayerVisibilityInSlot,
+        setLayerSlotMembership
     } = useMapsContext();
 
     const slotMembership = useMemo(() => {
@@ -301,7 +302,7 @@ const ActiveLayerItem = ({
                         {actionButtons}
                     </div>
 
-                    {slotMembership && <SlotBadge membership={slotMembership} />}
+                    {slotMembership && <SlotBadge membership={slotMembership} onCycle={(n) => setLayerSlotMembership?.(layer.id, n)} />}
 
                     <div className={`flex-1 min-w-0 pr-2 ${HIDDEN_SCROLLBAR}`}>
                         <Tooltip content={layer.name} disableMobile>
