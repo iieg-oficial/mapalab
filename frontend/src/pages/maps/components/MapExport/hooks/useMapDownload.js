@@ -20,7 +20,7 @@ export const useMapDownload = () => {
     const { prepareScaleControl, getMapSnapshot } = useMapCapture();
     const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
-    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers } = useContext(MapsContext);
+    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode } = useContext(MapsContext);
     const [isDownloading, setIsDownloading] = useState(false);
 
     const activeLayers = useMemo(() => activeLayerIds
@@ -39,7 +39,7 @@ export const useMapDownload = () => {
         return layersWithLegends[0] || null;
     }, [selectedLayer, layersWithLegends]);
 
-    const canDownload = activeLayers.length > 0;
+    const canDownload = activeLayers.length > 0 && !compareMode?.active;
 
     const getGuideExtent = () => {
         if (!mapRef.current) return null;
