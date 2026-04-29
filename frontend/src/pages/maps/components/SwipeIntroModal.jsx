@@ -19,13 +19,13 @@ const SwipeIntroModal = ({ open, onCancel, onConfirm }) => {
         <Modal isOpen={open} onClose={onCancel} title="Comparador con barra divisora" width="max-w-md">
             <div className="flex flex-col gap-4 p-4">
                 <p className="text-sm text-gray-700">
-                    Tus capas activas se duplican al lado <span className="font-bold">B</span> para que empieces a comparar de inmediato.
+                    El comparador empieza con los dos slots <span className="font-bold">vacios</span>. Tus capas actuales quedan guardadas y volveran al cerrar.
                 </p>
                 <p className="text-sm text-gray-700">
-                    Para mejor rendimiento te recomendamos agregar tus capas <span className="font-bold">una por una</span> en cada slot mientras editas.
+                    Agrega capas en cada slot (A o B) para compararlas lado a lado. Para mejor rendimiento conviene agregar las capas <span className="font-bold">una por una</span>.
                 </p>
                 <p className="text-sm text-gray-700">
-                    Al cerrar el comparador (X) volveras al estado en el que estabas. Para conservar la version A o B usa el boton <span className="font-bold">Mantener</span>.
+                    Al cerrar el comparador (X) volveras a tus capas originales.
                 </p>
 
                 <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 mt-2">

@@ -32,13 +32,32 @@ const initialCompareMode = () => ({
     swipePosition: 0.5,
 });
 
-const cloneSnapshot = (snapshot) => ({
-    activeLayerIds: [...snapshot.activeLayerIds],
-    hiddenLayerIds: [...snapshot.hiddenLayerIds],
-    layerOpacities: new Map(snapshot.layerOpacities),
-    filters: structuredClone(snapshot.filters),
+export const SWIPE_ORIGINAL_STORAGE_KEY = 'mapalab.swipe.original_snapshot';
+
+const serializeSnapshotForStorage = (snapshot) => ({
+    activeLayerIds: snapshot.activeLayerIds,
+    hiddenLayerIds: snapshot.hiddenLayerIds,
+    layerOpacities: Array.from(snapshot.layerOpacities.entries()),
+    filters: snapshot.filters,
     label: snapshot.label,
 });
+
+const deserializeSnapshotFromStorage = (raw) => {
+    if (!raw) return null;
+    try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (!parsed) return null;
+        return {
+            activeLayerIds: Array.isArray(parsed.activeLayerIds) ? parsed.activeLayerIds : [],
+            hiddenLayerIds: Array.isArray(parsed.hiddenLayerIds) ? parsed.hiddenLayerIds : [],
+            layerOpacities: new Map(Array.isArray(parsed.layerOpacities) ? parsed.layerOpacities : []),
+            filters: parsed.filters || {},
+            label: parsed.label || 'original',
+        };
+    } catch {
+        return null;
+    }
+};
 
 const MapsProvider = ({ children }) => {
     const { layers: allLayers } = useLayers();
@@ -114,17 +133,24 @@ const MapsProvider = ({ children }) => {
     }, []);
 
     const enterSwipeMode = useCallback(() => {
-        const current = snapshotLive('A');
+        const current = snapshotLive('original');
+        try {
+            localStorage.setItem(
+                SWIPE_ORIGINAL_STORAGE_KEY,
+                JSON.stringify(serializeSnapshotForStorage(current))
+            );
+        } catch { /* storage no disponible — el snapshot vive en memoria */ }
         liveStateRef.current.pauseAllLoops();
+        applySnapshotToLive(emptyPane('A'));
         setCompareMode({
             active: true,
-            activeSlot: 'B',
-            paneA: current,
-            paneB: cloneSnapshot({ ...current, label: 'B' }),
-            originalSnapshot: cloneSnapshot({ ...current, label: 'original' }),
+            activeSlot: 'A',
+            paneA: emptyPane('A'),
+            paneB: emptyPane('B'),
+            originalSnapshot: current,
             swipePosition: 0.5,
         });
-    }, [snapshotLive]);
+    }, [snapshotLive, applySnapshotToLive]);
 
     const setActiveSlot = useCallback((nextSlot) => {
         if (nextSlot !== 'A' && nextSlot !== 'B') return;
@@ -141,33 +167,20 @@ const MapsProvider = ({ children }) => {
         });
     }, [snapshotLive, applySnapshotToLive]);
 
-    const clearPaneB = useCallback(() => {
-        setCompareMode(prev => {
-            if (!prev.active) return prev;
-            const empty = emptyPane(prev.paneB.label || 'B');
-            if (prev.activeSlot === 'B') {
-                applySnapshotToLive(empty);
-            }
-            return { ...prev, paneB: empty };
-        });
-    }, [applySnapshotToLive]);
-
-    const keepSlot = useCallback((slotToKeep) => {
-        if (slotToKeep !== 'A' && slotToKeep !== 'B') return;
-        setCompareMode(prev => {
-            if (!prev.active) return prev;
-            if (slotToKeep !== prev.activeSlot) {
-                applySnapshotToLive(prev[`pane${slotToKeep}`]);
-            }
-            return initialCompareMode();
-        });
-    }, [applySnapshotToLive]);
-
     const exitCompareMode = useCallback(() => {
         setCompareMode(prev => {
-            if (prev.active && prev.originalSnapshot) {
-                applySnapshotToLive(prev.originalSnapshot);
+            if (!prev.active) return prev;
+            let snapshotToRestore = prev.originalSnapshot;
+            if (!snapshotToRestore) {
+                try {
+                    const raw = localStorage.getItem(SWIPE_ORIGINAL_STORAGE_KEY);
+                    snapshotToRestore = deserializeSnapshotFromStorage(raw);
+                } catch { /* ignore */ }
             }
+            if (snapshotToRestore) {
+                applySnapshotToLive(snapshotToRestore);
+            }
+            try { localStorage.removeItem(SWIPE_ORIGINAL_STORAGE_KEY); } catch { /* ignore */ }
             return initialCompareMode();
         });
     }, [applySnapshotToLive]);
@@ -247,8 +260,6 @@ const MapsProvider = ({ children }) => {
         setCompareMode,
         enterSwipeMode,
         setActiveSlot,
-        clearPaneB,
-        keepSlot,
         exitCompareMode,
         setSwipePosition,
         paneMapRefs
@@ -276,8 +287,6 @@ const MapsProvider = ({ children }) => {
         compareMode,
         enterSwipeMode,
         setActiveSlot,
-        clearPaneB,
-        keepSlot,
         exitCompareMode,
         setSwipePosition
     ]);
