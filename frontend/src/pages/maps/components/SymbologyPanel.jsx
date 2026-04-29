@@ -9,7 +9,9 @@ import Icon from '@components/Icon';
 import { useZenMode } from './ZenMode';
 
 const SymbologyPanel = ({ onCollapseChange }) => {
-    const { selectedLayerForSymbology, findLayerById, getLayersForSymbology } = useContext(MapsContext);
+    const { selectedLayerForSymbology, findLayerById, getLayersForSymbology, compareMode, setActiveSlot } = useContext(MapsContext);
+    const isComparing = !!compareMode?.active;
+    const activeSlot = compareMode?.activeSlot;
     const [isManuallyCollapsed, setIsManuallyCollapsed] = useState(true);
     const { isZenMode } = useZenMode();
 
@@ -81,6 +83,28 @@ const SymbologyPanel = ({ onCollapseChange }) => {
                     </button>
                 </div>
             </div>
+
+            {isComparing && (
+                <div className="flex items-center gap-2 mb-2 px-1 text-[11px] font-garet text-[#465055]">
+                    <span>Leyenda de</span>
+                    <button
+                        type="button"
+                        onClick={() => setActiveSlot('A')}
+                        aria-pressed={activeSlot === 'A'}
+                        className={`size-7 flex items-center justify-center rounded-full border font-bold transition-all ${activeSlot === 'A' ? 'bg-[#1D4ED8] text-white border-transparent' : 'bg-[#EAEFFA] text-[#1D4ED8] border-transparent hover:border-[#1D4ED8]'}`}
+                    >
+                        A
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveSlot('B')}
+                        aria-pressed={activeSlot === 'B'}
+                        className={`size-7 flex items-center justify-center rounded-full border font-bold transition-all ${activeSlot === 'B' ? 'bg-[#FF8300] text-white border-transparent' : 'bg-[#FFF1E0] text-[#B35A00] border-transparent hover:border-[#FF8300]'}`}
+                    >
+                        B
+                    </button>
+                </div>
+            )}
 
             <div className="rounded-[7px] bg-white px-3.5 py-3">
                 {displayLayers.length === 0 ? (
