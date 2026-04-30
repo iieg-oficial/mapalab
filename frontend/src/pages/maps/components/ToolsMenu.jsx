@@ -3,8 +3,6 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
 import Tooltip from '@components/Tooltip';
-import SwipeIntroModal from './SwipeIntroModal';
-import { isSwipeIntroDismissed } from '@pages/maps/helpers/swipeIntroStorage';
 
 const tools = [
     {
@@ -42,7 +40,6 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     const { compareMode, exitCompareMode, enterSwipeMode } = useMapsContext();
     const { closeSider } = useSider();
     const [hoveredId, setHoveredId] = useState(null);
-    const [isIntroOpen, setIsIntroOpen] = useState(false);
 
     const startSwipe = () => {
         enterSwipeMode();
@@ -60,11 +57,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                 exitCompareMode();
                 return;
             }
-            if (isSwipeIntroDismissed()) {
-                startSwipe();
-            } else {
-                setIsIntroOpen(true);
-            }
+            startSwipe();
         }
     };
 
@@ -88,9 +81,10 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                         const active = isActive(tool.id);
                         const hovered = hoveredId === tool.id;
                         const tooltipContent = tool.id === 'compare-swipe' ? (
-                            <div className="flex flex-col gap-1 max-w-[200px]">
+                            <div className="flex flex-col gap-1.5 max-w-[240px]">
                                 <span className="font-bold">{tool.label}</span>
-                                <span className="text-[11px] opacity-90">Tus capas activas se guardan y se restauran al cerrar la herramienta.</span>
+                                <span className="text-[11px] opacity-90">Compara dos mapas con barra divisora. Empieza con los dos slots <span className="font-bold">vacíos</span>; tus capas actuales se guardan y vuelven al cerrar.</span>
+                                <span className="text-[11px] opacity-90">Agrega capas en cada slot (A o B) <span className="font-bold">una por una</span> para mejor rendimiento.</span>
                             </div>
                         ) : tool.label;
                         return (
@@ -126,14 +120,6 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                     })}
                 </div>
             </div>
-            <SwipeIntroModal
-                open={isIntroOpen}
-                onCancel={() => setIsIntroOpen(false)}
-                onConfirm={() => {
-                    setIsIntroOpen(false);
-                    startSwipe();
-                }}
-            />
         </>
     );
 };
