@@ -15,17 +15,15 @@ const SlotBadge = ({ membership, onCycle }) => {
         onCycle?.(nextMembership);
         setHighlightedSlots?.(nextMembership);
     };
-    const handleMouseEnter = (e) => {
-        e.stopPropagation();
+    const handleMouseEnter = () => {
         setHighlightedSlots?.(membership);
     };
-    const handleMouseLeave = (e) => {
-        e.stopPropagation();
+    const handleMouseLeave = () => {
         setHighlightedSlots?.(null);
     };
 
     return (
-        <Tooltip content={tooltip}>
+        <Tooltip content={tooltip} key={membership}>
             <button
                 type="button"
                 onClick={handleClick}
