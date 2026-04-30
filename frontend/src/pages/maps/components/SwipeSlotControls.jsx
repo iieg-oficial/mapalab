@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import Tooltip from '@components/Tooltip';
-import Switch from '@components/Switch';
 
 const downloadSwipeComposite = async () => {
     const target = document.querySelector('[data-swipe-composite="true"]');
@@ -26,12 +25,10 @@ const downloadSwipeComposite = async () => {
 };
 
 const SwipeSlotControls = () => {
-    const { compareMode, setActiveSlot, exitCompareMode, toggleSwipeOrientation } = useMapsContext();
+    const { compareMode, exitCompareMode, toggleSwipeOrientation } = useMapsContext();
     const [isDownloading, setIsDownloading] = useState(false);
 
     if (!compareMode?.active) return null;
-    const activeSlot = compareMode.activeSlot;
-    const isAActive = activeSlot === 'A';
     const isHorizontal = compareMode.swipeOrientation === 'horizontal';
 
     const handleDownload = async () => {
@@ -46,18 +43,6 @@ const SwipeSlotControls = () => {
 
     return (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200">
-            <Switch
-                checked={isAActive}
-                onChange={(next) => setActiveSlot(next ? 'A' : 'B')}
-                onLabel="A"
-                offLabel="B"
-                onColor="#5C2472"
-                offColor="#FF8300"
-                tooltip={`Editando ${activeSlot} — click para cambiar a ${isAActive ? 'B' : 'A'}`}
-            />
-
-            <div className="w-px h-8 bg-gray-200 mx-1" />
-
             <Tooltip content={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'} placement="bottom" delay={300}>
                 <button
                     type="button"
