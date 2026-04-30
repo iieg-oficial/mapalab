@@ -258,7 +258,7 @@ const LayerDetailModal = () => {
                                         onSetLoopDirection={(dir) => setLoopDirection(selectedLayer.id, dir)}
                                         onTogglePeriodicityLoop={() => togglePeriodicityLoopInSlot('A')}
                                         getSpecificFilterOverride={makeSlotGetFilter('A')}
-                                        loopDisabled={isLoopPlaying && compareMode.activeSlot !== 'A'} loopDisabledHint="Pausa la animación del lado B para iniciar acá"
+                                        loopDisabled={isLoopPlaying && compareMode.activeSlot !== 'A'} loopDisabledHint="Pausa la animación del lado B para iniciar acá" loopAppliesToSlot={isLoopPlaying && compareMode.activeSlot === 'A'}
                                     />
                                     <PeriodicitySection
                                         layerId={selectedLayer.id}
@@ -284,7 +284,7 @@ const LayerDetailModal = () => {
                                         onSetLoopDirection={(dir) => setLoopDirection(selectedLayer.id, dir)}
                                         onTogglePeriodicityLoop={() => togglePeriodicityLoopInSlot('B')}
                                         getSpecificFilterOverride={makeSlotGetFilter('B')}
-                                        loopDisabled={isLoopPlaying && compareMode.activeSlot !== 'B'} loopDisabledHint="Pausa la animación del lado A para iniciar acá"
+                                        loopDisabled={isLoopPlaying && compareMode.activeSlot !== 'B'} loopDisabledHint="Pausa la animación del lado A para iniciar acá" loopAppliesToSlot={isLoopPlaying && compareMode.activeSlot === 'B'}
                                     />
                                 </>
                             ) : hasPeriodicity && (
@@ -306,6 +306,7 @@ const LayerDetailModal = () => {
                                     showLoopControls={!slotMembership || slotMembership === compareMode?.activeSlot}
                                     canPlay={canPlay}
                                     isLoopPlaying={isLoopPlaying}
+                                    loopAppliesToSlot={!slotMembership || (isLoopPlaying && slotMembership === compareMode?.activeSlot)}
                                     layerIntervalMs={layerIntervalMs}
                                     layerDirection={layerDirection}
                                     onSetLoopIntervalMs={(ms) => setLoopIntervalMs(selectedLayer.id, ms)}

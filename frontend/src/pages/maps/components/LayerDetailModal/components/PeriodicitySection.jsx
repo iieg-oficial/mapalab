@@ -31,6 +31,7 @@ const PeriodicitySection = ({
     slot,
     loopDisabled = false,
     loopDisabledHint,
+    loopAppliesToSlot = false,
 }) => {
     const longPressRef = useRef(null);
 
@@ -84,7 +85,7 @@ const PeriodicitySection = ({
             ) : isAdvancedMode && !rasterPeriodicity ? (
                 <DateTreeSelector layerId={layerId} periodicity={periodicity} onFilterApply={onFilterApply} onClearFilter={onClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} getSpecificFilterOverride={getSpecificFilterOverride} />
             ) : (
-                <SimpleDateSelector layerId={layerId} periodicity={periodicity} rasterPeriodicity={rasterPeriodicity} onFilterApply={onFilterApply} onClearFilter={onClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} onExpandedYearChange={onExpandedYearChange} getSpecificFilterOverride={getSpecificFilterOverride} slot={slot} />
+                <SimpleDateSelector layerId={layerId} periodicity={periodicity} rasterPeriodicity={rasterPeriodicity} onFilterApply={onFilterApply} onClearFilter={onClearFilter} filterName="date" singleSelectOnly={singleSelectOnly} onExpandedYearChange={onExpandedYearChange} getSpecificFilterOverride={getSpecificFilterOverride} slot={slot} loopAppliesToSlot={loopAppliesToSlot} />
             )}
         </div>
     );

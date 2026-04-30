@@ -23,10 +23,11 @@ const SLOT_COLORS = {
     },
 };
 
-const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, onExpandedYearChange, getSpecificFilterOverride, slot }) => {
+const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, onExpandedYearChange, getSpecificFilterOverride, slot, loopAppliesToSlot = false }) => {
     const { getSpecificFilter: getSpecificFilterCtx, stopLoop: contextStopLoop, getLoopState } = useContext(MapsContext);
     const getSpecificFilter = getSpecificFilterOverride || getSpecificFilterCtx;
     const palette = SLOT_COLORS[slot] || SLOT_COLORS.default;
+    const showLoopHighlight = !getSpecificFilterOverride || loopAppliesToSlot;
     const isRaster = !!rasterPeriodicity;
 
     const periodicityData = useMemo(() => {
@@ -49,7 +50,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
     const [expandedYear, setExpandedYear] = useState(initialState.year);
     const activeYearRef = useRef(null);
 
-    const loopState = getSpecificFilterOverride ? null : getLoopState?.(layerId);
+    const loopState = showLoopHighlight ? getLoopState?.(layerId) : null;
 
     const onFilterApplyRef = useRef(onFilterApply);
     const onClearFilterRef = useRef(onClearFilter);
