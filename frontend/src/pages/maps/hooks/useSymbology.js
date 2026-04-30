@@ -120,6 +120,7 @@ export const useSymbology = ({
 
     useEffect(() => {
         if (!activeLayerIds || activeLayerIds.length === 0) {
+            setSelectedLayerForSymbology(null);
             return;
         }
 

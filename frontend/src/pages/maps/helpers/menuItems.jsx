@@ -77,8 +77,9 @@ const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, toggleMeasu
         hasMenu: true,
         tooltip: 'Herramientas',
         ref: toolsButtonRef,
-        menuContent: ({ closeButton } = {}) => (
+        menuContent: ({ close, closeButton } = {}) => (
             <ToolsMenu
+                close={close}
                 closeButton={closeButton}
                 toggleMeasurementTools={toggleMeasurementTools}
                 areMeasurementToolsVisible={areMeasurementToolsVisible}

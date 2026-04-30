@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
+import { useSider } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
 import SwipeIntroModal from './SwipeIntroModal';
 import { isSwipeIntroDismissed } from '@pages/maps/helpers/swipeIntroStorage';
@@ -36,10 +37,17 @@ const tools = [
     },
 ];
 
-const ToolsMenu = ({ closeButton, toggleMeasurementTools, areMeasurementToolsVisible }) => {
+const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementToolsVisible }) => {
     const { compareMode, exitCompareMode, enterSwipeMode } = useMapsContext();
+    const { closeSider } = useSider();
     const [hoveredId, setHoveredId] = useState(null);
     const [isIntroOpen, setIsIntroOpen] = useState(false);
+
+    const startSwipe = () => {
+        enterSwipeMode();
+        close?.();
+        closeSider?.();
+    };
 
     const handleClick = (id) => {
         if (id === 'mediciones') {
@@ -52,7 +60,7 @@ const ToolsMenu = ({ closeButton, toggleMeasurementTools, areMeasurementToolsVis
                 return;
             }
             if (isSwipeIntroDismissed()) {
-                enterSwipeMode();
+                startSwipe();
             } else {
                 setIsIntroOpen(true);
             }
@@ -116,7 +124,7 @@ const ToolsMenu = ({ closeButton, toggleMeasurementTools, areMeasurementToolsVis
                 onCancel={() => setIsIntroOpen(false)}
                 onConfirm={() => {
                     setIsIntroOpen(false);
-                    enterSwipeMode();
+                    startSwipe();
                 }}
             />
         </>
