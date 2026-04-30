@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
+import Switch from '@components/Switch';
+import LayerOpacityPopover from './LayerOpacityPopover';
+import { useLegendsVisibility } from './hooks/useLegendsVisibility';
+import { useMapsContext } from '@hooks/useMaps';
 
 const SIZE_BUTTON = 'size-5';
 const BUTTON_BASE = 'p-1.5 rounded-full transition-colors cursor-pointer border border-transparent bg-[#F9FBFF]';
@@ -10,12 +14,27 @@ const LayerActionsBar = ({
     isLoading,
     isLooping,
     canOpenModal,
+    opacity = 1,
     onToggleVisibility,
     onOpenDetails,
-    onRemove
+    onChangeOpacity,
+    onRemove,
+    hasLegend = false,
+    slotMembership = null,
+    activeSlot = null,
+    onSwitchSlot
 }) => {
     const [isCardHovered, setIsCardHovered] = useState(false);
     const [isDeleteHovered, setIsDeleteHovered] = useState(false);
+    const [isVisibleHovered, setIsVisibleHovered] = useState(false);
+    const [isLegendsHovered, setIsLegendsHovered] = useState(false);
+    const [isOpacityOpen, setIsOpacityOpen] = useState(false);
+    const opacityButtonRef = useRef(null);
+    const { visible: legendsVisible, setVisible: setLegendsVisible } = useLegendsVisibility();
+    const { setHighlightedSlots } = useMapsContext();
+
+    const opacityPercent = Math.round(opacity * 100);
+    const opacityCustom = opacityPercent !== 100;
 
     return (
         <div className="flex items-center gap-1 w-full">
@@ -23,10 +42,12 @@ const LayerActionsBar = ({
                 <button
                     className={`${BUTTON_BASE} hover:border-[#70308A]`}
                     onClick={onToggleVisibility}
+                    onMouseEnter={() => setIsVisibleHovered(true)}
+                    onMouseLeave={() => setIsVisibleHovered(false)}
                 >
                     <Icon
                         name="visible"
-                        state={visible ? 'normal' : 'hover'}
+                        state={visible ? (isVisibleHovered ? 'normal' : 'gray') : 'hover'}
                         className={SIZE_BUTTON}
                     />
                 </button>
@@ -45,7 +66,63 @@ const LayerActionsBar = ({
                 </Tooltip>
             )}
 
+            <Tooltip content={`Opacidad${opacityCustom ? `: ${opacityPercent}%` : ''}`}>
+                <button
+                    ref={opacityButtonRef}
+                    className={`${BUTTON_BASE} hover:border-[#70308A] flex items-center justify-center text-gray-500 hover:text-[#5C2472]`}
+                    onClick={(e) => { e.stopPropagation(); setIsOpacityOpen(p => !p); }}
+                >
+                    {opacityCustom ? (
+                        <span className={`${SIZE_BUTTON} flex items-center justify-center text-[10px] font-garet font-bold tabular-nums leading-none`}>{opacityPercent}</span>
+                    ) : (
+                        <Icon name="opacity" className={SIZE_BUTTON} />
+                    )}
+                </button>
+            </Tooltip>
+            {isOpacityOpen && (
+                <LayerOpacityPopover
+                    anchorRef={opacityButtonRef}
+                    value={opacity}
+                    onChange={onChangeOpacity}
+                    onClose={() => setIsOpacityOpen(false)}
+                />
+            )}
+
+            {hasLegend && (
+                <Tooltip content={legendsVisible ? 'Ocultar leyendas' : 'Mostrar leyendas'}>
+                    <button
+                        className={`${BUTTON_BASE} hover:border-[#70308A] flex items-center justify-center size-8`}
+                        onClick={(e) => { e.stopPropagation(); setLegendsVisible(p => !p); }}
+                        onMouseEnter={() => setIsLegendsHovered(true)}
+                        onMouseLeave={() => setIsLegendsHovered(false)}
+                    >
+                        {legendsVisible ? (
+                            <Icon name="upArrow" className="size-3" />
+                        ) : (
+                            <Icon name="simbologia" state={isLegendsHovered ? 'normal' : 'gray'} className="size-[22px]" />
+                        )}
+                    </button>
+                </Tooltip>
+            )}
+
             <div className="flex-1" />
+
+            {slotMembership === 'AB' && (
+                <Switch
+                    checked={activeSlot === 'A'}
+                    onChange={(next) => {
+                        const target = next ? 'A' : 'B';
+                        onSwitchSlot?.(target);
+                        setHighlightedSlots?.(target);
+                        setTimeout(() => setHighlightedSlots?.(null), 1500);
+                    }}
+                    onLabel="A"
+                    offLabel="B"
+                    onColor="#5C2472"
+                    offColor="#FF8300"
+                    tooltip={`Editando lado ${activeSlot} — cambiar a ${activeSlot === 'A' ? 'B' : 'A'}`}
+                />
+            )}
 
             <Tooltip content="Eliminar capa">
                 <button

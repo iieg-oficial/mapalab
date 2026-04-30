@@ -3,6 +3,7 @@ import MapsContext from '@contexts/MapsContext';
 import { useActiveLayersLogic } from '../../hooks/useActiveLayersLogic';
 import { useLayerCollapse } from './hooks/useLayerCollapse';
 import { useLayerSorting } from './hooks/useLayerSorting';
+import { LegendsVisibilityProvider } from './hooks/useLegendsVisibility';
 import { SortableList, SortableItem } from './SortableList';
 import ActiveLayerItem from './ActiveLayerItem';
 import Icon from '@components/Icon';
@@ -18,7 +19,7 @@ import { getDefaultMapView } from '@pages/maps/helpers/defaultView';
 const STICKY_SIZE = 52;
 const STICKY_SIZE_MOBILE = 100;
 
-const ActiveLayersList = ({ onCollapseChange }) => {
+const ActiveLayersListInner = ({ onCollapseChange }) => {
     const {
         activeLayerIds,
         onToggleLayer,
@@ -53,12 +54,23 @@ const ActiveLayersList = ({ onCollapseChange }) => {
 
     const effectiveHiddenLayerIds = useMemo(() => {
         if (!isSwipe) return hiddenLayerIds;
-        const hidden = new Set([
-            ...(compareMode.paneA?.hiddenLayerIds || []),
-            ...(compareMode.paneB?.hiddenLayerIds || []),
-        ]);
-        return Array.from(hidden);
-    }, [isSwipe, hiddenLayerIds, compareMode?.paneA?.hiddenLayerIds, compareMode?.paneB?.hiddenLayerIds]);
+        const activeA = new Set(compareMode.paneA?.activeLayerIds || []);
+        const activeB = new Set(compareMode.paneB?.activeLayerIds || []);
+        const hiddenA = new Set(compareMode.paneA?.hiddenLayerIds || []);
+        const hiddenB = new Set(compareMode.paneB?.hiddenLayerIds || []);
+        const activeSlot = compareMode.activeSlot;
+        const result = [];
+        effectiveActiveLayerIds.forEach(id => {
+            const inA = activeA.has(id);
+            const inB = activeB.has(id);
+            let isHidden = false;
+            if (inA && inB) isHidden = activeSlot === 'A' ? hiddenA.has(id) : hiddenB.has(id);
+            else if (inA) isHidden = hiddenA.has(id);
+            else if (inB) isHidden = hiddenB.has(id);
+            if (isHidden) result.push(id);
+        });
+        return result;
+    }, [isSwipe, hiddenLayerIds, compareMode?.paneA, compareMode?.paneB, compareMode?.activeSlot, effectiveActiveLayerIds]);
 
     const { unifiedLayers } = useActiveLayersLogic(effectiveActiveLayerIds, effectiveHiddenLayerIds);
     const collapse = useLayerCollapse(unifiedLayers);
@@ -271,5 +283,11 @@ const ActiveLayersList = ({ onCollapseChange }) => {
         </div>
     );
 };
+
+const ActiveLayersList = (props) => (
+    <LegendsVisibilityProvider>
+        <ActiveLayersListInner {...props} />
+    </LegendsVisibilityProvider>
+);
 
 export default ActiveLayersList;
