@@ -1,38 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import Tooltip from '@components/Tooltip';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import DatePill from './ActiveLayers/DatePill';
 import { computeLabel } from './ActiveLayers/datePillHelpers';
 
-const downloadSwipeComposite = async () => {
-    const target = document.querySelector('[data-swipe-composite="true"]');
-    if (!target) return;
-    const html2canvas = (await import('html2canvas-pro')).default;
-    const canvas = await html2canvas(target, {
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-    });
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `mapalab-swipe-${new Date().toISOString().slice(0, 10)}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-};
-
 const SwipeSlotControls = () => {
     const {
         compareMode, exitCompareMode, toggleSwipeOrientation,
         selectedLayerForSymbology, allLayers, dateLoops, setSelectedLayer,
     } = useMapsContext();
-    const [isDownloading, setIsDownloading] = useState(false);
 
     const layerId = selectedLayerForSymbology?.id || null;
     const layerDef = useMemo(() => (layerId ? findLayerDef(layerId, allLayers) : null), [layerId, allLayers]);
@@ -50,16 +27,6 @@ const SwipeSlotControls = () => {
 
     if (!compareMode?.active) return null;
     const isHorizontal = compareMode.swipeOrientation === 'horizontal';
-
-    const handleDownload = async () => {
-        if (isDownloading) return;
-        setIsDownloading(true);
-        try {
-            await downloadSwipeComposite();
-        } finally {
-            setIsDownloading(false);
-        }
-    };
 
     const handlePillClick = () => {
         if (selectedLayerForSymbology) setSelectedLayer?.(selectedLayerForSymbology);
@@ -85,20 +52,6 @@ const SwipeSlotControls = () => {
                         <line x1="3" y1="12" x2="21" y2="12" />
                         <polyline points="7 8 3 12 7 16" />
                         <polyline points="17 8 21 12 17 16" />
-                    </svg>
-                </button>
-            </Tooltip>
-
-            <Tooltip content="Descargar PNG (composite con barra)" placement="bottom" delay={300}>
-                <button
-                    type="button"
-                    onClick={handleDownload}
-                    disabled={isDownloading}
-                    className="size-10 flex items-center justify-center rounded-full bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
-                    aria-label="Descargar composite"
-                >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
                     </svg>
                 </button>
             </Tooltip>
