@@ -86,12 +86,12 @@ const SwipeView = () => {
                 <MapView paneIndex={1} className="absolute inset-0 w-full h-full pointer-events-auto" />
             </div>
             {showA && (
-                <div className="absolute z-[1] flex items-center justify-center pointer-events-none transition-opacity duration-200 bg-[#5C2472]/60" style={overlayAStyle}>
+                <div className="absolute z-[1] flex items-center justify-center pointer-events-none transition-opacity duration-200 bg-[#5C2472]/10" style={overlayAStyle}>
                     <span className="font-garet font-bold text-white text-[120px] drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">A</span>
                 </div>
             )}
             {showB && (
-                <div className="absolute z-[1] flex items-center justify-center pointer-events-none transition-opacity duration-200 bg-[#FF8300]/60" style={overlayBStyle}>
+                <div className="absolute z-[1] flex items-center justify-center pointer-events-none transition-opacity duration-200 bg-[#FF8300]/10" style={overlayBStyle}>
                     <span className="font-garet font-bold text-white text-[120px] drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">B</span>
                 </div>
             )}
