@@ -28,7 +28,7 @@ const LayerDetailModal = () => {
         getLoopState, startLoop, toggleLoop, stopLoop, inferLoopConfig,
         getLoopPrefs, setLoopIntervalMs, setLoopDirection,
         allLayers,
-        compareMode, applyFilterToSlot, clearFilterFromSlot
+        compareMode, applyFilterToSlot, clearFilterFromSlot, setActiveSlot
     } = useContext(MapsContext);
     const [expandedYear, setExpandedYear] = useState(null);
 
@@ -80,16 +80,9 @@ const LayerDetailModal = () => {
         if (selectedLayer?.id) clearFilter(selectedLayer.id, 'date');
     };
 
-    const makeSlotApply = (slot) => (filterData) => {
-        if (selectedLayer?.id) applyFilterToSlot?.(selectedLayer.id, slot, filterData.filterName, filterData.cqlFilter);
-    };
-    const makeSlotClear = (slot) => () => {
-        if (selectedLayer?.id) clearFilterFromSlot?.(selectedLayer.id, slot, 'date');
-    };
-    const makeSlotGetFilter = (slot) => (lid, fname) => {
-        const pane = compareMode?.[`pane${slot}`];
-        return pane?.filters?.[lid]?.[fname] || null;
-    };
+    const makeSlotApply = (slot) => (fd) => selectedLayer?.id && applyFilterToSlot?.(selectedLayer.id, slot, fd.filterName, fd.cqlFilter);
+    const makeSlotClear = (slot) => () => selectedLayer?.id && clearFilterFromSlot?.(selectedLayer.id, slot, 'date');
+    const makeSlotGetFilter = (slot) => (lid, fname) => compareMode?.[`pane${slot}`]?.filters?.[lid]?.[fname] || null;
 
     const loopState = selectedLayer?.id ? getLoopState?.(selectedLayer.id) : null;
     const isLoopPlaying = loopState?.isPlaying ?? false;
@@ -127,6 +120,15 @@ const LayerDetailModal = () => {
         if (loopState) stopLoop?.(selectedLayer.id);
         const config = viewLoopConfig() || inferLoopConfig?.(selectedLayer.id);
         if (config) startLoop?.(selectedLayer.id, config);
+    };
+
+    const togglePeriodicityLoopInSlot = (slot) => {
+        if (!selectedLayer?.id) return;
+        if (slot && compareMode?.active && compareMode.activeSlot !== slot) {
+            if (loopState?.isPlaying) stopLoop?.(selectedLayer.id);
+            setActiveSlot?.(slot);
+            requestAnimationFrame(handleTogglePeriodicityLoop);
+        } else handleTogglePeriodicityLoop();
     };
 
     const handleClearDateFilter = () => {
@@ -250,14 +252,14 @@ const LayerDetailModal = () => {
                                         onExpandedYearChange={compareMode.activeSlot === 'A' ? setExpandedYear : undefined}
                                         singleSelectOnly={singleSelectOnly}
                                         hasDateFilter={!!makeSlotGetFilter('A')(selectedLayer.id, 'date')}
-                                        showLoopControls={compareMode.activeSlot === 'A'}
+                                        showLoopControls={true}
                                         canPlay={canPlay}
-                                        isLoopPlaying={isLoopPlaying}
+                                        isLoopPlaying={isLoopPlaying && compareMode.activeSlot === 'A'}
                                         layerIntervalMs={layerIntervalMs}
                                         layerDirection={layerDirection}
                                         onSetLoopIntervalMs={(ms) => setLoopIntervalMs(selectedLayer.id, ms)}
                                         onSetLoopDirection={(dir) => setLoopDirection(selectedLayer.id, dir)}
-                                        onTogglePeriodicityLoop={handleTogglePeriodicityLoop}
+                                        onTogglePeriodicityLoop={() => togglePeriodicityLoopInSlot('A')}
                                         getSpecificFilterOverride={makeSlotGetFilter('A')}
                                     />
                                     <PeriodicitySection
@@ -275,14 +277,14 @@ const LayerDetailModal = () => {
                                         onExpandedYearChange={compareMode.activeSlot === 'B' ? setExpandedYear : undefined}
                                         singleSelectOnly={singleSelectOnly}
                                         hasDateFilter={!!makeSlotGetFilter('B')(selectedLayer.id, 'date')}
-                                        showLoopControls={compareMode.activeSlot === 'B'}
+                                        showLoopControls={true}
                                         canPlay={canPlay}
-                                        isLoopPlaying={isLoopPlaying}
+                                        isLoopPlaying={isLoopPlaying && compareMode.activeSlot === 'B'}
                                         layerIntervalMs={layerIntervalMs}
                                         layerDirection={layerDirection}
                                         onSetLoopIntervalMs={(ms) => setLoopIntervalMs(selectedLayer.id, ms)}
                                         onSetLoopDirection={(dir) => setLoopDirection(selectedLayer.id, dir)}
-                                        onTogglePeriodicityLoop={handleTogglePeriodicityLoop}
+                                        onTogglePeriodicityLoop={() => togglePeriodicityLoopInSlot('B')}
                                         getSpecificFilterOverride={makeSlotGetFilter('B')}
                                     />
                                 </>
