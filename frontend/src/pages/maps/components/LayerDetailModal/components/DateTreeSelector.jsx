@@ -5,8 +5,9 @@ import { useDateSelections } from '@pages/maps/hooks/useDateSelections';
 import { generateCQLFilter, parseCQLToSelections, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import Icon from '@components/Icon';
 
-const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false }) => {
-    const { getSpecificFilter } = useContext(MapsContext);
+const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, getSpecificFilterOverride }) => {
+    const { getSpecificFilter: getSpecificFilterCtx } = useContext(MapsContext);
+    const getSpecificFilter = getSpecificFilterOverride || getSpecificFilterCtx;
 
     const periodicityData = useMemo(() => {
         if (!periodicity) return null;

@@ -94,6 +94,45 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
         });
     }, [collectAllIds, purgePaneOf, purgeLiveOf]);
 
+    const applyFilterToSlot = useCallback((layerId, slot, filterName, cqlExpression) => {
+        if (slot !== 'A' && slot !== 'B') return;
+        setCompareMode(prev => {
+            if (!prev.active) return prev;
+            const pane = prev[`pane${slot}`];
+            const layerFilters = { ...(pane.filters[layerId] || {}), [filterName]: cqlExpression };
+            const newFilters = { ...pane.filters, [layerId]: layerFilters };
+            if (slot === prev.activeSlot) {
+                const live = liveStateRef.current;
+                const liveLayerFilters = { ...(live.filters[layerId] || {}), [filterName]: cqlExpression };
+                live.setFilters({ ...live.filters, [layerId]: liveLayerFilters });
+            }
+            return { ...prev, [`pane${slot}`]: { ...pane, filters: newFilters } };
+        });
+    }, [liveStateRef]);
+
+    const clearFilterFromSlot = useCallback((layerId, slot, filterName) => {
+        if (slot !== 'A' && slot !== 'B') return;
+        setCompareMode(prev => {
+            if (!prev.active) return prev;
+            const pane = prev[`pane${slot}`];
+            const layerFilters = { ...(pane.filters[layerId] || {}) };
+            delete layerFilters[filterName];
+            const newFilters = { ...pane.filters };
+            if (Object.keys(layerFilters).length === 0) delete newFilters[layerId];
+            else newFilters[layerId] = layerFilters;
+            if (slot === prev.activeSlot) {
+                const live = liveStateRef.current;
+                const liveLayerFilters = { ...(live.filters[layerId] || {}) };
+                delete liveLayerFilters[filterName];
+                const newLiveFilters = { ...live.filters };
+                if (Object.keys(liveLayerFilters).length === 0) delete newLiveFilters[layerId];
+                else newLiveFilters[layerId] = liveLayerFilters;
+                live.setFilters(newLiveFilters);
+            }
+            return { ...prev, [`pane${slot}`]: { ...pane, filters: newFilters } };
+        });
+    }, [liveStateRef]);
+
     const toggleLayerVisibilityInSlot = useCallback((layerId, slot) => {
         if (slot !== 'A' && slot !== 'B') return;
         const allIds = collectAllIds(layerId);
@@ -190,6 +229,8 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
         removeLayerFromSlot,
         toggleLayerVisibilityInSlot,
         setLayerSlotMembership,
+        applyFilterToSlot,
+        clearFilterFromSlot,
         exitCompareMode,
         setSwipePosition,
         toggleSwipeOrientation,
