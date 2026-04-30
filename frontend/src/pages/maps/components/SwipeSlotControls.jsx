@@ -1,10 +1,28 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
 import Tooltip from '@components/Tooltip';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import DatePill from './ActiveLayers/DatePill';
 import { computeLabel } from './ActiveLayers/datePillHelpers';
+
+const ActionsHint = ({ visible }) => (
+    <div
+        className={`pointer-events-none absolute left-1/2 -translate-x-1/2 -top-14 transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}
+    >
+        <div className="bg-[#FFF1E3] border-2 border-[#FF8300] text-[#FF8300] py-2 px-5 rounded-full font-garet font-bold text-[12px] whitespace-nowrap shadow-[0_5px_20px_#1A26641A]">
+            Barra de acciones
+            <div
+                className="absolute left-1/2 -translate-x-1/2 -bottom-2 w-0 h-0"
+                style={{
+                    borderLeft: '7px solid transparent',
+                    borderRight: '7px solid transparent',
+                    borderTop: '7px solid #FF8300',
+                }}
+            />
+        </div>
+    </div>
+);
 
 const SwipeSlotControls = () => {
     const {
@@ -13,6 +31,14 @@ const SwipeSlotControls = () => {
     } = useMapsContext();
     const { width: siderWidth, isOpen: isSiderOpen, isMobile: isMobileSider } = useSider();
     const siderShift = !isMobileSider && isSiderOpen ? siderWidth / 2 : 0;
+    const [hintPhase, setHintPhase] = useState(isMobileSider ? 'hidden' : 'visible');
+
+    useEffect(() => {
+        if (isMobileSider) return;
+        const t1 = setTimeout(() => setHintPhase('fading'), 500);
+        const t2 = setTimeout(() => setHintPhase('hidden'), 1000);
+        return () => { clearTimeout(t1); clearTimeout(t2); };
+    }, [isMobileSider]);
 
     const layerId = selectedLayerForSymbology?.id || null;
     const layerDef = useMemo(() => (layerId ? findLayerDef(layerId, allLayers) : null), [layerId, allLayers]);
@@ -43,6 +69,9 @@ const SwipeSlotControls = () => {
             className={`fixed z-20 flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200 ${isMobileSider ? 'bottom-16' : 'bottom-4'}`}
             style={{ left: `calc(50% + ${siderShift}px)`, transform: 'translateX(-50%)' }}
         >
+            {!isMobileSider && hintPhase !== 'hidden' && (
+                <ActionsHint visible={hintPhase === 'visible'} />
+            )}
             {showA && (
                 <DatePill slot="A" label={labelA.label} kind={labelA.kind} onClick={handlePillClick} isLooping={isLoopingA} size="md" />
             )}
