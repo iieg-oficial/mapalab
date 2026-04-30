@@ -7,7 +7,7 @@ Cuando el usuario invoque "lee el plan de active layer item" significa retomar e
 ## Estado actual
 
 - Componente: `frontend/src/pages/maps/components/ActiveLayers/ActiveLayerItem.jsx`
-- Sub-componentes ya extraidos: `SlotBadge`, `LayerDateControls`
+- Sub-componentes ya extraidos: `SlotBadge`, `LayerDateControls`, `DatePill`, `datePillHelpers`. `DatePill` se reutiliza desde `SwipeSlotControls.jsx`, asi que cualquier ajuste de tamaño/estilo debe contemplar ambos consumidores.
 - Item se despliega horizontal a la derecha al hacer hover (botones de visibilidad, info, eliminar aparecen).
 - Pill de fecha + loop (play/intervalo/direccion) ya soporta swipe con `compareMode/slotMembership` via `LayerDateControls`.
 - Loop hoy se pinta del color del slot activo cuando swipe esta activo.
@@ -61,16 +61,12 @@ Todos los botones siguen el sistema unificado para alinear visualmente las colum
 |---|---|
 | Boton de accion (Fila 3) | **20 px** (`size-5`) |
 | Boton de loop (play, intervalo, direccion) | **20 px** (igualado a acciones) |
-| Pill de periodicidad (fecha) | **44 px** (= 2 botones + gap) |
-| Badge AB | **44 px** (mismo que pill, alineacion matematica) |
+| Pill de periodicidad (fecha) | **`min-w-[44px]` + auto-grow** (= 2 botones + gap, expande al contenido) |
+| Badge AB | **44 px** (mismo que pill base, alineacion matematica) |
 | Badge A solo o B solo | **20 px** (mismo que un boton de accion) |
 | Gap entre elementos | **4 px** (`gap-1`) |
 
-Pills con contenido largo (multi-month como `ene-feb-mar`):
-
-- Recomendado: `min-w-[44px]` y se expande al contenido. Pierde alineacion vertical solo en el item con multi.
-- Alternativa: `w-[44px]` fijo + truncate + tooltip con la fecha completa.
-- Decidir en implementacion segun feedback visual real.
+La pill se ensanchó en `5c2b5fb` para acomodar etiquetas de mes + play, asi que la version actual ya usa `min-w-[44px]` con expansion. Mantener ese comportamiento: la columna pierde alineacion vertical solo en el item con etiqueta multi-month (`ene-feb-mar`), pero el resto de items siguen alineados al ancho base. Verificar que cualquier cambio aqui se refleje tambien en `SwipeSlotControls`, que reutiliza `DatePill`.
 
 ### Modo no-swipe (status quo)
 
@@ -91,7 +87,8 @@ Layout simetrico hacia el centro, set de B en mirror (direccion → intervalo �
 - Pill A y loop A pintados en paleta morado `#5C2472`.
 - Pill B y loop B pintados en paleta naranja `#FF8300`.
 - Badge AB centrado, ancho 44 px (igual que las pills) — actua como pivote visual y como cicladbre de membresia (A → AB → B → A).
-- Loop solo del slot activo (V1). Cuando se haga loop por slot independiente, ver `PLAN_LOOP_POR_SLOT_SWIPE.md`.
+- Loop solo del slot activo (V1). `useDateLoop` aun esta indexado por `layerId` plano, sin slot — el loop por slot independiente sigue pendiente y se cubre en `PLAN_LOOP_POR_SLOT_SWIPE.md`.
+- Para mantener simetria visual sin loop real per-slot, replicar el patron del modal (`SimpleDateSelectorParts.jsx` + `PeriodicitySection.jsx`): renderizar los dos bloques de loop, pero el del slot **inactivo** va `disabled` con `loopDisabledHint` ("Cambia al lado X para controlar este loop"). El affordance refuerza que el badge AB es el pivote para cambiar slot activo.
 
 ### Modo swipe — capa solo A
 
@@ -180,9 +177,11 @@ Una vez que la leyenda vive inline en cada item, el `SymbologyPanel` separado pi
 
 ## Plan de commits sugerido
 
+Estado: **commits 1-4 completados en v1.14.0 (Abril 2026)**. Falta commit 5 (eliminar `SymbologyPanel`).
+
 Ejecutar en orden, cada uno verificable en aislamiento:
 
-1. **`refactor(maps): vertical layout for active layer item, drag handle in title row`**
+1. ✅ **`refactor(maps): vertical layout for active layer item, drag handle in title row`**
     - Reorganizar `ActiveLayerItem` a Filas 1, 2, 3 (sin Fila 4 todavia).
     - Drag handle en Fila 1, solo en item activo.
     - Botones de loop a `size-5` para igualar acciones.
@@ -192,15 +191,15 @@ Ejecutar en orden, cada uno verificable en aislamiento:
         - `LayerItemHeader.jsx` (Fila 1 con drag + titulo)
         - `LayerActionsBar.jsx` (Fila 3)
         - `LayerDateControls.jsx` (Fila 2 — ya existe, ajustar layout)
-2. **`feat(maps): opacity button with inline percentage display`**
+2. ✅ **`feat(maps): opacity button with inline percentage display`**
     - Nuevo SVG de opacidad (pedir al diseñador o crear con estilo del set existente).
     - Boton en `LayerActionsBar`. Por default icono, cuando opacidad ≠ 100% muestra `XX%`.
     - Click abre popover con `OpacityControl` reusado.
-3. **`feat(maps): inline WMS legend in active layer item`**
+3. ✅ **`feat(maps): inline WMS legend in active layer item`**
     - Fila 4 con `<img src={getLegendUrl(layer)} />` lazy.
     - Solo se renderiza si capa expandida + tiene leyenda + toggle global on.
     - En swipe AB, dos imgs (leyenda A y leyenda B).
-4. **`feat(maps): global toggle to hide all legends in active layers panel`**
+4. ✅ **`feat(maps): global toggle to hide all legends in active layers panel`** (relocalizado al `<LayerActionsBar>` por capa, no al header del panel)
     - Boton en header junto a "Pausar animaciones".
     - Persiste preferencia en `localStorage`.
     - Solo aparece si al menos una capa activa tiene leyenda WMS.

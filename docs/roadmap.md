@@ -327,8 +327,20 @@ timeline
 - [x] Endpoint `/metrics` Prometheus en mariachi API (rate_limit_hits, tree_notify, geoserver_calls, latency)
 - [x] Tests integración cruzada mariachi → DataEngine → mapalab backend
 
+### v1.14.0 — Abril 2026 — Item de capa activa rediseñado
+- [x] Layout vertical en filas (drag + título / periodicidad + badge / acciones / leyenda)
+- [x] `<SlotBadge>` centrado matemáticamente al medio del item via CSS Grid en swipe
+- [x] Botón de opacidad inline con popover y porcentaje compacto
+- [x] Leyenda WMS inline por item con DPI 200 y wrapper estilo `<SymbologyPanel>`
+- [x] Toggle global de leyendas persistido en `localStorage`
+- [x] Highlight del panel del swipe al cambiar `activeSlot` con el `<Switch>` A-B
+- [x] Loop controls del item activo sólo visibles cuando el loop está corriendo
+- [x] Modal de aviso del swipe reemplazado por tooltip en `<ToolsMenu>`
+- [x] Eliminado `<SwipeSlotFlash>` (letra centrada al cambiar slot)
+
 ### Pendiente — Diferido
 - [ ] Herramienta para comparar periodicidad de mapas (vista lado a lado)
+- [ ] Eliminar `<SymbologyPanel>` separado y relocalizar el chip A/B (commit 5 del plan de refactor del item activo)
 
 ### v1.8.0 — Julio / Agosto 2026
 - [ ] Modo edicion de Home integrado al administrador de portal

@@ -10,6 +10,30 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 ### Agregado
 - **`GET /ontoy`** en mapalab-backend: devuelve `{slug, label, version}` para que mariachi-admin pueda detectar la versión y healthy del backend desde el dashboard `/inicio`. La versión se lee de `app/__version__.py` (nuevo archivo) que se mantiene sincronizado con `frontend/package.json` al bumpear el repo. Convención del ecosistema IIEG: cada repo expone su `/ontoy` para que se descubra.
 
+## [1.14.0] - 2026-04-30
+
+### Agregado — Item de capa activa rediseñado a layout vertical
+- **`<ActiveLayerItem>` reorganizado en filas verticales** (sin más despliegue lateral en hover desktop): Fila 1 con drag handle (solo en seleccionado o hover) + título; Fila 2 con periodicidad + loop + `<SlotBadge>` centrado matemáticamente al medio del item via CSS Grid `grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]`; Fila 3 con barra de acciones; Fila 4 con leyenda WMS inline. Las filas 2-4 sólo aparecen cuando el item está seleccionado; en hover de no-activo siguen apareciendo los botones inline a un lado del título (`<LayerInlineActions>`).
+- **Sub-componentes nuevos** en `ActiveLayers/`: `LayerActionsBar`, `LayerInlineActions`, `LayerLegendInline`, `LayerOpacityPopover`. `LayerItemHeader` se separó en `DragHandle` + `LayerTitle` para permitir reordenar elementos en el header.
+- **Botón de opacidad inline** (`<LayerActionsBar>`): por defecto muestra el icono `opacity` (SVG inline nuevo en `Icon.jsx`); cuando la opacidad ≠ 100 % muestra el porcentaje (`75%`, `40%`, etc.). Click abre `<LayerOpacityPopover>` (portal a `document.body` + `position: fixed` calculado desde `getBoundingClientRect()` del botón) que envuelve el slider `<Bar>` reusado del `OpacityControl`. Click outside, Escape o cambio de scroll cierran/reposicionan.
+- **Leyenda WMS inline** (`<LayerLegendInline>`): GetLegendGraphic lazy (sólo se monta el `<img>` cuando el item está expandido). Wrapper `bg-white rounded-[10px] shadow` replica las dimensiones del `<SymbologyPanel>` y la imagen va a `dpi: 200` para nitidez retina, limitada visualmente con `max-w-[220px]`. En swipe AB respeta el `activeSlot` (una sola leyenda con el filtro del slot que estás editando).
+- **Toggle global "Mostrar/ocultar leyendas"** persistido en `localStorage` (`mapalab.activeLayers.legendsVisible`, default `true`). Hook + provider `useLegendsVisibility` viven en `ActiveLayers/hooks/`. El botón está dentro de `<LayerActionsBar>` por capa (sólo aparece si la capa tiene leyenda WMS): icono `simbologia` cuando off, `upArrow` cuando on. Para el icono off agregamos `ico_simbologia_gray.svg` con el gris `#465055` (mismo que el resto de iconos `*_gray`).
+- **Highlight de slot al cambiar `activeSlot` desde el `<Switch>` A-B**: en `<LayerActionsBar>`, click en el switch llama `setHighlightedSlots(target)` y un `setTimeout(() => setHighlightedSlots(null), 1500)` para destacar el panel correspondiente del swipe sin necesidad de hover.
+
+### Cambiado
+- **Loop controls sólo visibles cuando `isLooping`** (panel de capas activas): los botones de play/intervalo/dirección dentro del item ya no aparecen como invitación a iniciar el loop. Para arrancar el loop, se usa el "VER ANIMACIÓN" del `<LayerDetailModal>`. Una vez corriendo, los controles aparecen en el panel para pausar/ajustar.
+- **`<Tooltip>` global** acepta nuevas props opcionales `triggerBlock` (cambia el wrapper de `inline-flex` a `block`) y `triggerClassName` para que el contenedor pueda expandirse al ancho del padre. Se usa en el warning del item activo (`triggerBlock + w-full`) para que las filas 2-4 ocupen todo el ancho del item.
+- **`useWMSLegend.getLegendUrl`** acepta `dateValue` opcional para sobreescribir el filter de fecha; si no se pasa, sigue usando `getFilter(layerId)` (compatible con todos los consumidores existentes).
+- **Swipe Intro: modal → tooltip enriquecido**: la info clave (slots vacíos, capas se guardan, agregar una por una) ahora vive en el tooltip del botón "Barra divisora" del `<ToolsMenu>`. Click directo entra a swipe sin paso intermedio.
+
+### Corregido
+- **`<SlotBadge>` tooltip atorado al ciclar membership**: agregado `key={membership}` al `<Tooltip>` interno y removido `e.stopPropagation()` de los handlers de mouseEnter/mouseLeave del button — el `<Tooltip>` se desmonta y vuelve a montar al cambiar A → AB → B y el `mouseLeave` del wrapper del Tooltip ya recibe los eventos correctamente.
+- **Item activo se "encogía" al ser seleccionado**: el `<Tooltip>` warning del item envolvía el contenido en `display: inline-flex` y colapsaba el ancho. Resuelto con la prop `triggerBlock` nueva.
+
+### Eliminado
+- `frontend/src/pages/maps/components/SwipeIntroModal.jsx` y `frontend/src/pages/maps/helpers/swipeIntroStorage.js` — la info pasó al tooltip del `<ToolsMenu>`.
+- `frontend/src/pages/maps/components/SwipeSlotFlash.jsx` — el flash centrado tipo "círculo morado/naranja con A o B" al cambiar `activeSlot`. Se reemplaza por el highlight del overlay del panel correspondiente (mucho menos invasivo).
+
 ## [1.13.1] - 2026-04-28
 
 ### Agregado
