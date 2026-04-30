@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import Tooltip from '@components/Tooltip';
+import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
+import DatePill from './ActiveLayers/DatePill';
+import { computeLabel } from './ActiveLayers/datePillHelpers';
 
 const downloadSwipeComposite = async () => {
     const target = document.querySelector('[data-swipe-composite="true"]');
@@ -25,8 +28,25 @@ const downloadSwipeComposite = async () => {
 };
 
 const SwipeSlotControls = () => {
-    const { compareMode, exitCompareMode, toggleSwipeOrientation } = useMapsContext();
+    const {
+        compareMode, exitCompareMode, toggleSwipeOrientation,
+        selectedLayerForSymbology, allLayers, dateLoops, setSelectedLayer,
+    } = useMapsContext();
     const [isDownloading, setIsDownloading] = useState(false);
+
+    const layerId = selectedLayerForSymbology?.id || null;
+    const layerDef = useMemo(() => (layerId ? findLayerDef(layerId, allLayers) : null), [layerId, allLayers]);
+    const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
+
+    const inA = !!(layerId && compareMode?.paneA?.activeLayerIds?.includes(layerId));
+    const inB = !!(layerId && compareMode?.paneB?.activeLayerIds?.includes(layerId));
+    const filterA = compareMode?.paneA?.filters?.[layerId]?.date;
+    const filterB = compareMode?.paneB?.filters?.[layerId]?.date;
+    const labelA = useMemo(() => computeLabel(filterA, rasterPeriodicity), [filterA, rasterPeriodicity]);
+    const labelB = useMemo(() => computeLabel(filterB, rasterPeriodicity), [filterB, rasterPeriodicity]);
+    const isLooping = !!(layerId && dateLoops?.[layerId]?.isPlaying);
+    const isLoopingA = isLooping && compareMode?.activeSlot === 'A';
+    const isLoopingB = isLooping && compareMode?.activeSlot === 'B';
 
     if (!compareMode?.active) return null;
     const isHorizontal = compareMode.swipeOrientation === 'horizontal';
@@ -41,8 +61,19 @@ const SwipeSlotControls = () => {
         }
     };
 
+    const handlePillClick = () => {
+        if (selectedLayerForSymbology) setSelectedLayer?.(selectedLayerForSymbology);
+    };
+
+    const showA = inA && labelA.label;
+    const showB = inB && labelB.label;
+
     return (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200">
+            {showA && (
+                <DatePill slot="A" label={labelA.label} kind={labelA.kind} onClick={handlePillClick} isLooping={isLoopingA} size="md" />
+            )}
+
             <Tooltip content={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'} placement="bottom" delay={300}>
                 <button
                     type="button"
@@ -85,6 +116,10 @@ const SwipeSlotControls = () => {
                     </svg>
                 </button>
             </Tooltip>
+
+            {showB && (
+                <DatePill slot="B" label={labelB.label} kind={labelB.kind} onClick={handlePillClick} isLooping={isLoopingB} size="md" />
+            )}
         </div>
     );
 };
