@@ -29,6 +29,8 @@ const PeriodicitySection = ({
     onTogglePeriodicityLoop,
     getSpecificFilterOverride,
     slot,
+    loopDisabled = false,
+    loopDisabledHint,
 }) => {
     const longPressRef = useRef(null);
 
@@ -62,9 +64,9 @@ const PeriodicitySection = ({
                 <div className="flex items-center gap-2">
                     {showLoopControls && canPlay && (
                         <>
-                            <LoopIntervalButton value={layerIntervalMs} onChange={onSetLoopIntervalMs} />
-                            <LoopDirectionButton value={layerDirection} onChange={onSetLoopDirection} />
-                            <PlayPauseButton isPlaying={isLoopPlaying} onToggle={onTogglePeriodicityLoop} />
+                            <LoopIntervalButton value={layerIntervalMs} onChange={onSetLoopIntervalMs} slot={slot} disabled={loopDisabled} />
+                            <LoopDirectionButton value={layerDirection} onChange={onSetLoopDirection} slot={slot} disabled={loopDisabled} />
+                            <PlayPauseButton isPlaying={isLoopPlaying} onToggle={onTogglePeriodicityLoop} slot={slot} disabled={loopDisabled} disabledHint={loopDisabledHint} />
                         </>
                     )}
                     {hasDateFilter && (

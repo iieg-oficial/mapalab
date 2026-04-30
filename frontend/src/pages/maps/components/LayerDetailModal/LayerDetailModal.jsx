@@ -94,13 +94,11 @@ const LayerDetailModal = () => {
 
     const viewLoopConfig = () => {
         if (!selectedLayer?.id) return null;
-        const rp = rasterPeriodicity;
-        const p = periodicity;
         if (expandedYear != null) {
-            const values = buildLoopValues({ mode: 'month', year: expandedYear, rasterPeriodicity: rp, periodicity: p });
+            const values = buildLoopValues({ mode: 'month', year: expandedYear, rasterPeriodicity, periodicity });
             return values.length >= 2 ? { mode: 'month', year: expandedYear, values } : null;
         }
-        const values = buildLoopValues({ mode: 'year', rasterPeriodicity: rp, periodicity: p });
+        const values = buildLoopValues({ mode: 'year', rasterPeriodicity, periodicity });
         return values.length >= 2 ? { mode: 'year', values } : null;
     };
 
@@ -124,8 +122,7 @@ const LayerDetailModal = () => {
 
     const togglePeriodicityLoopInSlot = (slot) => {
         if (!selectedLayer?.id) return;
-        if (slot && compareMode?.active && compareMode.activeSlot !== slot) {
-            if (loopState?.isPlaying) stopLoop?.(selectedLayer.id);
+        if (slot && compareMode?.active && compareMode.activeSlot !== slot && !loopState?.isPlaying) {
             setActiveSlot?.(slot);
             requestAnimationFrame(handleTogglePeriodicityLoop);
         } else handleTogglePeriodicityLoop();
@@ -261,6 +258,7 @@ const LayerDetailModal = () => {
                                         onSetLoopDirection={(dir) => setLoopDirection(selectedLayer.id, dir)}
                                         onTogglePeriodicityLoop={() => togglePeriodicityLoopInSlot('A')}
                                         getSpecificFilterOverride={makeSlotGetFilter('A')}
+                                        loopDisabled={isLoopPlaying && compareMode.activeSlot !== 'A'} loopDisabledHint="Pausa la animación del lado B para iniciar acá"
                                     />
                                     <PeriodicitySection
                                         layerId={selectedLayer.id}
@@ -286,6 +284,7 @@ const LayerDetailModal = () => {
                                         onSetLoopDirection={(dir) => setLoopDirection(selectedLayer.id, dir)}
                                         onTogglePeriodicityLoop={() => togglePeriodicityLoopInSlot('B')}
                                         getSpecificFilterOverride={makeSlotGetFilter('B')}
+                                        loopDisabled={isLoopPlaying && compareMode.activeSlot !== 'B'} loopDisabledHint="Pausa la animación del lado A para iniciar acá"
                                     />
                                 </>
                             ) : hasPeriodicity && (
