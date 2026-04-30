@@ -252,7 +252,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
             <div className="space-y-3">
                 <div className="flex items-center gap-4">
                     <BackButton onClick={handleBackToYears} />
-                    <YearBadge year={expandedYear} />
+                    <YearBadge year={expandedYear} slot={slot} />
                 </div>
                 {!isSingleMonth && (
                     <div className="flex flex-wrap gap-1">
