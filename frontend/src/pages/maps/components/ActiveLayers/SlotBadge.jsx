@@ -13,6 +13,7 @@ const SlotBadge = ({ membership, onCycle }) => {
     const handleClick = (e) => {
         e.stopPropagation();
         onCycle?.(nextMembership);
+        setHighlightedSlots?.(nextMembership);
     };
     const handleMouseEnter = (e) => {
         e.stopPropagation();
