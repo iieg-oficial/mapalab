@@ -43,9 +43,9 @@ dev: setup-hooks
 	@echo "Levantando servicios de desarrollo..."
 	@$(COMPOSE_DEV) --profile dev up -d
 	@echo ""
-	@echo "Frontend (Vite):  http://localhost:5173"
-	@echo "Backend API:      http://localhost:8001"
-	@echo "Backend Docs:     http://localhost:8001/docs"
+	@echo "Frontend (Vite):  http://localhost:3006"
+	@echo "Backend API:      http://localhost:8000"
+	@echo "Backend Docs:     http://localhost:8000/docs"
 	@echo ""
 	@echo "Hot-reload activado en frontend y backend"
 
