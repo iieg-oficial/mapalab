@@ -1,6 +1,6 @@
 import { describeDateFilter, formatLoopLabel, formatLoopLabelLong } from '@pages/maps/helpers/dateLoopHelpers';
 
-export const LABEL_WIDTHS = {
+const LABEL_WIDTHS = {
     'year': { normal: 'w-[40px]', withPlay: 'w-[54px]' },
     'month-year': { normal: 'w-[72px]', withPlay: 'w-[86px]' },
     'multi-year': { normal: 'w-[50px]', withPlay: 'w-[64px]' },

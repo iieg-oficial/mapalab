@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useLayers } from '@hooks/useLayers';
 import { findLayerById } from '@pages/maps/helpers/layers/utils/layerHelpers';
 
-export const combineLayerFilters = (layerFilters) => {
+const combineLayerFilters = (layerFilters) => {
     if (!layerFilters || Object.keys(layerFilters).length === 0) return null;
     const filterExpressions = Object.entries(layerFilters)
         .filter(([key, val]) => val && !key.startsWith('_'))
