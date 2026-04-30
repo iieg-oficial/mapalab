@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
+import Tooltip from '@components/Tooltip';
 import SwipeIntroModal from './SwipeIntroModal';
 import { isSwipeIntroDismissed } from '@pages/maps/helpers/swipeIntroStorage';
 
@@ -86,35 +87,41 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                     {tools.map(tool => {
                         const active = isActive(tool.id);
                         const hovered = hoveredId === tool.id;
+                        const tooltipContent = tool.id === 'compare-swipe' ? (
+                            <div className="flex flex-col gap-1 max-w-[200px]">
+                                <span className="font-bold">{tool.label}</span>
+                                <span className="text-[11px] opacity-90">Tus capas activas se guardan y se restauran al cerrar la herramienta.</span>
+                            </div>
+                        ) : tool.label;
                         return (
-                            <button
-                                key={tool.id}
-                                type="button"
-                                onClick={() => handleClick(tool.id)}
-                                onMouseEnter={() => setHoveredId(tool.id)}
-                                onMouseLeave={() => setHoveredId(null)}
-                                className={`
-                                relative flex flex-col items-center justify-center gap-2 cursor-pointer
-                                w-[138px] h-[142px] p-3 rounded-[9px] bg-transparent border
-                                ${active ? 'border-[#70308A]' : 'border-transparent hover:border-[#70308A]'}
-                            `}
-                                title={tool.description}
-                            >
-                                {tool.beta && (
-                                    <Badge
-                                        variant="pill"
-                                        color="orange"
-                                        text="BETA"
-                                        className="absolute top-2 right-2"
-                                    />
-                                )}
-                                <div className={`flex items-center justify-center ${active || hovered ? 'text-[#5C2472]' : 'text-[#465055]'}`}>
-                                    {tool.icon}
-                                </div>
-                                <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-[#5C2472]' : 'font-medium text-[#465055]'}`}>
-                                    {tool.label}
-                                </span>
-                            </button>
+                            <Tooltip key={tool.id} content={tooltipContent} placement="bottom" delay={300}>
+                                <button
+                                    type="button"
+                                    onClick={() => handleClick(tool.id)}
+                                    onMouseEnter={() => setHoveredId(tool.id)}
+                                    onMouseLeave={() => setHoveredId(null)}
+                                    className={`
+                                    relative flex flex-col items-center justify-center gap-2 cursor-pointer
+                                    w-[138px] h-[142px] p-3 rounded-[9px] bg-transparent border
+                                    ${active ? 'border-[#70308A]' : 'border-transparent hover:border-[#70308A]'}
+                                `}
+                                >
+                                    {tool.beta && (
+                                        <Badge
+                                            variant="pill"
+                                            color="orange"
+                                            text="BETA"
+                                            className="absolute top-2 right-2"
+                                        />
+                                    )}
+                                    <div className={`flex items-center justify-center ${active || hovered ? 'text-[#5C2472]' : 'text-[#465055]'}`}>
+                                        {tool.icon}
+                                    </div>
+                                    <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-[#5C2472]' : 'font-medium text-[#465055]'}`}>
+                                        {tool.label}
+                                    </span>
+                                </button>
+                            </Tooltip>
                         );
                     })}
                 </div>
