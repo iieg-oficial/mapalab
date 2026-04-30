@@ -16,8 +16,9 @@ import { getLayersSources } from '@services/layerMetadataService';
 import Logo from '@components/Logo';
 import Icon from '@components/Icon';
 
-const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propSelectedLegends = [], initialTitle = '', quality = QUALITY_PRESETS[1] }) => {
-    const { targetRef } = useMapsContext();
+const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propSelectedLegends = [], initialTitle = '', quality = QUALITY_PRESETS[1], swipeOptions = null }) => {
+    const { targetRef, compareMode } = useMapsContext();
+    const isSwipe = !!compareMode?.active;
     const { getLegendUrl } = useWMSLegend();
     const { activeLayerIds, groupedActiveLayers, allLayers } = useContext(MapsContext);
     const { getGuideExtent } = useMapDownload();
@@ -81,7 +82,8 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
     }, [initialTitle, currentSelectedLegend, activeLayers]);
 
     const generatePreview = async () => {
-        if (!targetRef.current || activeLayers.length === 0 || !capturedExtent) return;
+        const captureRoot = isSwipe ? document.querySelector('[data-swipe-composite="true"]') : targetRef.current;
+        if (!captureRoot || activeLayers.length === 0 || !capturedExtent) return;
 
         setIsGenerating(true);
 
@@ -96,7 +98,8 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
                 viewType: 'viewport',
                 mapWidth,
                 mapHeight,
-                captureScale
+                captureScale,
+                swipeOptions
             });
 
             const sourcesMap = await getLayersSources(activeLayerIds).catch(() => ({}));

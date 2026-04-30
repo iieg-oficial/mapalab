@@ -13,6 +13,7 @@ const MapToolsPanel = () => {
     const [previewLegends, setPreviewLegends] = useState([]);
     const [previewTitle, setPreviewTitle] = useState('');
     const [previewQuality, setPreviewQuality] = useState(null);
+    const [previewSwipeOptions, setPreviewSwipeOptions] = useState(null);
     const { isDirty, loadedShareId } = useShareDirtiness();
     const inSyncWithShare = !!loadedShareId && !isDirty;
     const isModifiedFromShare = !!loadedShareId && isDirty;
@@ -21,11 +22,12 @@ const MapToolsPanel = () => {
         window.location.reload();
     }, []);
 
-    const handleOpenPreview = (format, selectedLegends, title, quality) => {
+    const handleOpenPreview = (format, selectedLegends, title, quality, swipeOptions) => {
         setPreviewFormat(format || 'png');
         setPreviewLegends(Array.isArray(selectedLegends) ? selectedLegends : (selectedLegends ? [selectedLegends] : []));
         setPreviewTitle(title || '');
         setPreviewQuality(quality || null);
+        setPreviewSwipeOptions(swipeOptions || null);
         setIsPreviewOpen(true);
     };
 
@@ -76,6 +78,7 @@ const MapToolsPanel = () => {
                     selectedLegends={previewLegends}
                     initialTitle={previewTitle}
                     quality={previewQuality}
+                    swipeOptions={previewSwipeOptions}
                 />
             )}
         </>

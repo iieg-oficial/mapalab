@@ -11,7 +11,8 @@ import Panel from '@components/Panel';
 import Tooltip from '@components/Tooltip';
 import { LICENCIA_URL, LICENCIA_TEXTO } from '@constants/app';
 import ScrollContainer from '@components/ScrollContainer';
-import SwipeDownloadPanel from './SwipeDownloadPanel';
+import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
+import { computeLabel } from '../ActiveLayers/datePillHelpers';
 
 const licenciaContent = (
     <span className="text-[11px]/[15px]">
@@ -32,11 +33,34 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
     const [qualityIndex, setQualityIndex] = useState(1);
 
     const {
-        downloadMap, downloadSwipeMap, isDownloading, canDownload,
+        downloadMap, isDownloading, canDownload,
         layersWithLegends, selectedLayer
     } = useMapDownload();
-    const { compareMode } = useMapsContext();
+    const { compareMode, selectedLayerForSymbology, allLayers } = useMapsContext();
     const isSwipe = !!compareMode?.active;
+    const [includeSwipeBar, setIncludeSwipeBar] = useState(true);
+    const [includeSwipeLabels, setIncludeSwipeLabels] = useState(true);
+    const [includeSwipePills, setIncludeSwipePills] = useState(true);
+
+    const swipePills = (() => {
+        if (!isSwipe) return [];
+        const layerId = selectedLayerForSymbology?.id;
+        if (!layerId) return [];
+        const layerDef = findLayerDef(layerId, allLayers);
+        const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
+        const inA = compareMode.paneA?.activeLayerIds?.includes(layerId);
+        const inB = compareMode.paneB?.activeLayerIds?.includes(layerId);
+        const list = [];
+        if (inA) {
+            const { label } = computeLabel(compareMode.paneA?.filters?.[layerId]?.date, rasterPeriodicity);
+            if (label) list.push({ slot: 'A', label });
+        }
+        if (inB) {
+            const { label } = computeLabel(compareMode.paneB?.filters?.[layerId]?.date, rasterPeriodicity);
+            if (label) list.push({ slot: 'B', label });
+        }
+        return list;
+    })();
 
     useEffect(() => {
         const layer = selectedLayer || layersWithLegends[0];
@@ -76,14 +100,18 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
         handleSetIsPanelOpen(true);
     };
 
+    const swipeOptions = isSwipe
+        ? { swipeBar: includeSwipeBar, swipeLabels: includeSwipeLabels, swipePills: includeSwipePills && swipePills.length > 0, pills: swipePills }
+        : null;
+
     const executeDownload = async () => {
         const quality = QUALITY_PRESETS[qualityIndex];
         if (viewType === 'viewport') {
             if (onOpenPreview) {
-                onOpenPreview(format, selectedLegendLayers, title, quality);
+                onOpenPreview(format, selectedLegendLayers, title, quality, swipeOptions);
             }
         } else {
-            await downloadMap(format, selectedLegendLayers, viewType, title, null, quality);
+            await downloadMap(format, selectedLegendLayers, viewType, title, null, quality, swipeOptions);
         }
     };
 
@@ -91,12 +119,6 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
         handleSetIsPanelOpen(false);
         trackMapExport(format, QUALITY_PRESETS[qualityIndex].label, viewType === 'viewport' ? 'vista_actual' : 'estado_completo');
         executeDownload();
-    };
-
-    const handleSwipeDownload = async (options) => {
-        handleSetIsPanelOpen(false);
-        trackMapExport('png', 'swipe', 'comparador');
-        await downloadSwipeMap(options);
     };
 
     const handleLayerSelect = (layer) => {
@@ -145,7 +167,7 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
                 placement="bottom-end"
                 title={<span className="font-garet font-bold text-[14px]/[47px]">{isSwipe ? 'Descargar comparador' : 'Descargar mapa'}</span>}
                 mobileFullscreen={false}
-                footer={isSwipe ? null : (
+                footer={
                     <div className="px-2 pb-2">
                         <button
                             onClick={handleConfirmDownload}
@@ -154,103 +176,119 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
                             {viewType === 'viewport' ? 'Ir a seleccionar área' : `Descargar ${format.toUpperCase()}`}
                         </button>
                     </div>
-                )}
+                }
             >
-                {isSwipe ? (
-                    <SwipeDownloadPanel onDownload={handleSwipeDownload} isDownloading={isDownloading} defaultTitle={title} />
-                ) : (
-                    <div className="flex flex-col px-4 pb-4 gap-4">
+                <div className="flex flex-col px-4 pb-4 gap-4">
 
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb">
                         Formato
-                        </div>
-                        <div className="flex gap-2 mb-2">
-                            {['png', 'jpeg', 'pdf'].map(fmt => (
-                                <button
-                                    key={fmt}
-                                    onClick={() => setFormat(fmt)}
-                                    className={`
+                    </div>
+                    <div className="flex gap-2 mb-2">
+                        {['png', 'jpeg', 'pdf'].map(fmt => (
+                            <button
+                                key={fmt}
+                                onClick={() => setFormat(fmt)}
+                                className={`
                                     px-3 py-1.5 text-sm rounded-[14px] border transition-colors
                                     ${format === fmt
-                                    ? 'bg-[#FF8300] border-transparent text-white font-medium'
-                                    : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-                                }
+                                ? 'bg-[#FF8300] border-transparent text-white font-medium'
+                                : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+                            }
                                 `}
-                                >
-                                    {fmt.toUpperCase()}
-                                </button>
-                            ))}
-                        </div>
+                            >
+                                {fmt.toUpperCase()}
+                            </button>
+                        ))}
+                    </div>
 
-                        <QualitySelector
-                            value={qualityIndex}
-                            onChange={setQualityIndex}
-                            isPanelOpen={isPanelOpen}
-                        />
+                    <QualitySelector
+                        value={qualityIndex}
+                        onChange={setQualityIndex}
+                        isPanelOpen={isPanelOpen}
+                    />
 
-                        <div>
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                    <div>
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                             Vista
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <button
-                                    onClick={() => setViewType('viewport')}
-                                    className={`
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <button
+                                onClick={() => setViewType('viewport')}
+                                className={`
                                     px-3 py-2 text-sm rounded-[14px] border transition-colors text-left
                                     ${viewType === 'viewport'
-                        ? 'bg-[#FF8300] border-transparent text-white font-medium'
-                        : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-                    }
+            ? 'bg-[#FF8300] border-transparent text-white font-medium'
+            : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+        }
                                 `}
-                                >
-                                    <div className="font-medium">Seleccionar Área (Vista actual)</div>
-                                    <div className="text-xs opacity-75">Activar recuadro de recorte manual</div>
-                                </button>
-                                <button
-                                    onClick={() => setViewType('full-state')}
-                                    className={`
+                            >
+                                <div className="font-medium">Seleccionar Área (Vista actual)</div>
+                                <div className="text-xs opacity-75">Activar recuadro de recorte manual</div>
+                            </button>
+                            <button
+                                onClick={() => setViewType('full-state')}
+                                className={`
                                     px-3 py-2 text-sm rounded-[14px] border transition-colors text-left
                                     ${viewType === 'full-state'
-                        ? 'bg-[#703089] border-[#703089] text-white font-medium'
-                        : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-                    }
+            ? 'bg-[#703089] border-[#703089] text-white font-medium'
+            : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
+        }
                                 `}
-                                >
-                                    <div className="font-medium">Estado completo</div>
-                                    <div className="text-xs opacity-75">Automático (Todo Jalisco)</div>
-                                </button>
-                            </div>
+                            >
+                                <div className="font-medium">Estado completo</div>
+                                <div className="text-xs opacity-75">Automático (Todo Jalisco)</div>
+                            </button>
                         </div>
-
-                        {layersWithLegends.length > 0 && (
-                            <div>
-                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                                    {format === 'pdf' ? 'Leyendas' : 'Leyenda'}
-                                </div>
-
-                                <ScrollContainer className="max-h-40 border border-gray-100 rounded">
-                                    {layersWithLegends.map(layer => {
-                                        const isSelected = selectedLegendLayers.some(l => l.id === layer.id);
-                                        return (
-                                            <SymbologyItem
-                                                key={layer.id}
-                                                layer={layer}
-                                                isExpanded={false}
-                                                onToggle={() => { }}
-                                                showDivider={true}
-                                                simple={true}
-                                                onClick={() => handleLayerSelect(layer)}
-                                                prefix={
-                                                    <Checkbox checked={isSelected} />
-                                                }
-                                            />
-                                        );
-                                    })}
-                                </ScrollContainer>
-                            </div>
-                        )}
                     </div>
-                )}
+
+                    {layersWithLegends.length > 0 && (
+                        <div>
+                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                                {format === 'pdf' ? 'Leyendas' : 'Leyenda'}
+                            </div>
+
+                            <ScrollContainer className="max-h-40 border border-gray-100 rounded">
+                                {layersWithLegends.map(layer => {
+                                    const isSelected = selectedLegendLayers.some(l => l.id === layer.id);
+                                    return (
+                                        <SymbologyItem
+                                            key={layer.id}
+                                            layer={layer}
+                                            isExpanded={false}
+                                            onToggle={() => { }}
+                                            showDivider={true}
+                                            simple={true}
+                                            onClick={() => handleLayerSelect(layer)}
+                                            prefix={
+                                                <Checkbox checked={isSelected} />
+                                            }
+                                        />
+                                    );
+                                })}
+                            </ScrollContainer>
+                        </div>
+                    )}
+
+                    {isSwipe && (
+                        <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Opciones del comparador
+                            </div>
+                            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                                <Checkbox checked={includeSwipeBar} onChange={() => setIncludeSwipeBar(p => !p)} />
+                                    Incluir barra divisora
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                                <Checkbox checked={includeSwipeLabels} onChange={() => setIncludeSwipeLabels(p => !p)} />
+                                    Incluir etiquetas A / B
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                                <Checkbox checked={includeSwipePills} onChange={() => setIncludeSwipePills(p => !p)} />
+                                    Incluir fechas de la capa seleccionada
+                            </label>
+                        </div>
+                    )}
+                </div>
             </Panel>
         </div>
     );

@@ -13,10 +13,10 @@ import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from '../utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
 
 export const useMapDownload = () => {
-    const { targetRef, mapRef } = useMapsContext();
+    const { targetRef } = useMapsContext();
     const { getLegendUrl, hasLegend } = useWMSLegend();
     const { generateMinimapImage } = useMinimap();
-    const { getViewportExtent } = useMapView();
+    const { getViewportExtent, getActiveMapRef } = useMapView();
     const { prepareScaleControl, getMapSnapshot } = useMapCapture();
     const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
@@ -44,13 +44,14 @@ export const useMapDownload = () => {
         : activeLayers.length > 0;
 
     const getGuideExtent = () => {
-        if (!mapRef.current) return null;
+        const ref = getActiveMapRef();
+        if (!ref?.current) return null;
 
         const guideFrame = document.getElementById('export-guide-frame');
         if (!guideFrame) return getViewportExtent();
 
         const rect = guideFrame.getBoundingClientRect();
-        const mapRect = mapRef.current.getTargetElement().getBoundingClientRect();
+        const mapRect = ref.current.getTargetElement().getBoundingClientRect();
 
         const topLeft = [
             Math.round(rect.left - mapRect.left),
@@ -61,8 +62,8 @@ export const useMapDownload = () => {
             Math.round(rect.bottom - mapRect.top)
         ];
 
-        const coord1 = mapRef.current.getCoordinateFromPixel(topLeft);
-        const coord2 = mapRef.current.getCoordinateFromPixel(bottomRight);
+        const coord1 = ref.current.getCoordinateFromPixel(topLeft);
+        const coord2 = ref.current.getCoordinateFromPixel(bottomRight);
 
         if (!coord1 || !coord2) return getViewportExtent();
 
@@ -74,11 +75,13 @@ export const useMapDownload = () => {
         return transformExtent([minX, minY, maxX, maxY], 'EPSG:3857', 'EPSG:4326');
     };
 
-    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa', forcedExtent = null, quality = QUALITY_PRESETS[1]) => {
-        if (!targetRef.current || !canDownload || isDownloading) return;
+    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa', forcedExtent = null, quality = QUALITY_PRESETS[1], swipeOptions = null) => {
+        const isSwipe = !!compareMode?.active;
+        const captureRoot = isSwipe ? document.querySelector('[data-swipe-composite="true"]') : targetRef.current;
+        if (!captureRoot || !canDownload || isDownloading) return;
 
         setIsDownloading(true);
-        const scaleControl = targetRef.current.querySelector('.ol-scale-line');
+        const scaleControl = captureRoot.querySelector('.ol-scale-line');
         prepareScaleControl(scaleControl);
 
         const { SIDE_PANEL_WIDTH } = EXPORT_DIMENSIONS;
@@ -98,7 +101,8 @@ export const useMapDownload = () => {
                 viewType,
                 mapWidth,
                 mapHeight,
-                captureScale
+                captureScale,
+                swipeOptions
             });
 
             if (!mapCanvas) throw new Error('Failed to capture map');
@@ -144,62 +148,8 @@ export const useMapDownload = () => {
         }
     };
 
-    const downloadSwipeMap = async ({ showBar = true, showLabels = true, showPills = false, pills = [], title = 'Mapa swipe' } = {}) => {
-        const composite = document.querySelector('[data-swipe-composite="true"]');
-        if (!composite || isDownloading) return;
-        setIsDownloading(true);
-
-        const handle = composite.querySelector('[role="separator"]');
-        const labels = composite.querySelectorAll('[data-swipe-label]');
-        const restoreList = [];
-        if (!showBar && handle) {
-            const prev = handle.style.display;
-            handle.style.display = 'none';
-            restoreList.push(() => { handle.style.display = prev; });
-        }
-        if (!showLabels) {
-            labels.forEach(el => {
-                const prev = el.style.display;
-                el.style.display = 'none';
-                restoreList.push(() => { el.style.display = prev; });
-            });
-        }
-
-        const tempPills = [];
-        if (showPills) {
-            pills.forEach(({ slot, label }) => {
-                if (!label) return;
-                const isA = slot === 'A';
-                const el = document.createElement('div');
-                el.className = `absolute top-3 ${isA ? 'left-4' : 'right-4'} px-3 py-1.5 rounded-full border font-garet font-bold text-[12px] z-[2] pointer-events-none ${isA ? 'bg-[#F0EAF3] border-[#5C2472] text-[#5C2472]' : 'bg-[#FFF2E5] border-[#FF8300] text-[#FF8300]'}`;
-                el.textContent = label;
-                composite.appendChild(el);
-                tempPills.push(el);
-            });
-        }
-
-        try {
-            await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 50)));
-            const html2canvas = (await import('html2canvas-pro')).default;
-            const canvas = await html2canvas(composite, {
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#ffffff',
-                logging: false,
-            });
-            exportToImage(canvas, 'png', title);
-        } catch (error) {
-            console.error('Error al descargar el mapa swipe:', error);
-        } finally {
-            tempPills.forEach(el => el.remove());
-            restoreList.forEach(fn => fn());
-            setIsDownloading(false);
-        }
-    };
-
     return {
         downloadMap,
-        downloadSwipeMap,
         isDownloading,
         canDownload,
         layersWithLegends,
