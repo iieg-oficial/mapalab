@@ -3,22 +3,16 @@ import { useLayerLoading } from '@hooks/useLayerLoading';
 import { useSider } from '@contexts/SiderContext';
 import Loading from '@components/Loading';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { LOOP_INTERVAL_PRESETS } from '@hooksMaps/useDateLoop';
-import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { handleKeyActivate } from '@utils/a11y';
 
-import SlotBadge from './SlotBadge';
+import LayerItemHeader from './LayerItemHeader';
 import LayerDateControls from './LayerDateControls';
+import LayerActionsBar from './LayerActionsBar';
 
-const SIZE_BUTTON = 'size-5';
-
-const ActiveLayerItem = ({
-    layer,
-    dragHandleProps
-}) => {
+const ActiveLayerItem = ({ layer, dragHandleProps }) => {
     const { loadingLayers } = useLayerLoading();
     const { isMobile } = useSider();
     const {
@@ -56,16 +50,17 @@ const ActiveLayerItem = ({
     const { intervalMs: loopIntervalMs, direction: loopDirection } = getLoopPrefs?.(layer.id) || {};
 
     const itemRef = useRef(null);
-    const [isDeleteHovered, setIsDeleteHovered] = useState(false);
-    const [isCardHovered, setIsCardHovered] = useState(false);
-    const [isMoveActive, setIsMoveActive] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
     const isSelected = selectedLayerForSymbology?.id === layer.id;
+    const isExpanded = isSelected;
+    const showHandle = isSelected || (!isMobile && isHovered);
 
     useEffect(() => {
         if (isSelected && itemRef.current) {
             itemRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
     }, [isSelected]);
+
     const canOpenModal = layer.id !== 'curvas_de_nivel';
 
     const handleClickOnLayer = () => {
@@ -76,12 +71,14 @@ const ActiveLayerItem = ({
         if (slotMembership === 'A' || slotMembership === 'AB') perSlotFn('A');
         if (slotMembership === 'B' || slotMembership === 'AB') perSlotFn('B');
     };
+
     const handleRemoveClick = (e) => {
         e.stopPropagation();
         if (compareMode?.active && slotMembership) return applyToMembership(s => removeLayerFromSlot?.(layer.id, s));
         [layer.id, ...getAllChildLayerIds(layer.id)].forEach(id => clearLayerFilters(id));
         onToggleLayer(layer.id, false);
     };
+
     const handleToggleVisibilityClick = (e) => {
         e.stopPropagation();
         if (compareMode?.active && slotMembership) return applyToMembership(s => toggleLayerVisibilityInSlot?.(layer.id, s));
@@ -127,6 +124,8 @@ const ActiveLayerItem = ({
         setLoopDirection?.(layer.id, loopDirection === 'rtl' ? 'ltr' : 'rtl');
     };
 
+    const handleCycleSlot = (next) => setLayerSlotMembership?.(layer.id, next);
+
     const isLoading = useMemo(() => {
         if (loadingLayers.has(layer.id)) return true;
         if (layer.childIds) {
@@ -134,65 +133,6 @@ const ActiveLayerItem = ({
         }
         return false;
     }, [loadingLayers, layer.id, layer.childIds]);
-
-    const actionButtons = (
-        <>
-            <Tooltip content={layer.visible ? 'Ocultar capa' : 'Mostrar capa'}>
-                <button
-                    className="p-1.5 rounded-full transition-colors cursor-pointer border border-transparent hover:border-[#70308A] bg-[#F9FBFF]"
-                    onClick={handleToggleVisibilityClick}
-                >
-                    <Icon
-                        name='visible'
-                        state={layer.visible ? 'normal' : 'hover'}
-                        className={SIZE_BUTTON}
-                    />
-                </button>
-            </Tooltip>
-
-            {dragHandleProps && (
-                <Tooltip content="Reordenar capa">
-                    <button
-                        {...dragHandleProps}
-                        className="cursor-grab active:cursor-grabbing p-1.5 rounded-full touch-none"
-                        onMouseDown={() => setIsMoveActive(true)}
-                        onMouseUp={() => setIsMoveActive(false)}
-                        onMouseLeave={() => setIsMoveActive(false)}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (dragHandleProps.onClick) dragHandleProps.onClick(e);
-                        }}
-                    >
-                        <Icon name="move" state={isMoveActive ? 'hover' : 'normal'} className="size-8" />
-                    </button>
-                </Tooltip>
-            )}
-
-            {(!isLoading || isLooping) && canOpenModal && (
-                <Tooltip content="Ver detalles de capa">
-                    <button
-                        className="p-1.5 rounded-full cursor-pointer border border-transparent hover:border-[#70308A] transition-colors bg-[#F9FBFF]"
-                        onClick={handleSetSelectedLayerClick}
-                        onMouseEnter={() => setIsCardHovered(true)}
-                        onMouseLeave={() => setIsCardHovered(false)}
-                    >
-                        <Icon name="big_card" state={isCardHovered ? 'hover' : 'normal'} className={SIZE_BUTTON} />
-                    </button>
-                </Tooltip>
-            )}
-
-            <Tooltip content="Eliminar capa">
-                <button
-                    className="p-1.5 rounded-full cursor-pointer border border-transparent hover:border-[#FF577D] transition-colors bg-[#F9FBFF]"
-                    onClick={handleRemoveClick}
-                    onMouseEnter={() => setIsDeleteHovered(true)}
-                    onMouseLeave={() => setIsDeleteHovered(false)}
-                >
-                    <Icon name="eliminar" state={isDeleteHovered ? 'hover' : 'normal'} className={SIZE_BUTTON} />
-                </button>
-            </Tooltip>
-        </>
-    );
 
     const warningContent = 'Al seleccionar un punto en el mapa, éste mostrará información de esta capa. Puedes cambiar la selección dando clic en la capa que necesites visualizar.';
 
@@ -203,12 +143,14 @@ const ActiveLayerItem = ({
             tabIndex={0}
             aria-pressed={isSelected}
             className={`
-                group rounded-[7px] border border-transparent hover:border-[#EAEFFA]
+                rounded-[7px] border border-transparent hover:border-[#EAEFFA]
                 transition-all hover:shadow-sm cursor-pointer overflow-hidden
                 ${isSelected ? 'bg-[#F7F0FA] ring-1 ring-[#70308A]' : layer.visible ? 'bg-white' : 'bg-[#EFF3FC]'}
             `}
             onClick={handleClickOnLayer}
             onKeyDown={handleKeyActivate(handleClickOnLayer)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
             <Tooltip
                 content={isSelected ? warningContent : null}
@@ -216,56 +158,47 @@ const ActiveLayerItem = ({
                 placement={isMobile ? 'top' : 'left'}
                 disabled={!isSelected}
             >
-                <div className="flex items-center gap-3 px-2 py-4 h-12">
-                    <LayerDateControls
-                        layerId={layer.id}
-                        layer={layer}
-                        rasterPeriodicity={rasterPeriodicity}
-                        compareMode={compareMode}
-                        slotMembership={slotMembership}
-                        liveDateFilter={dateFilter}
-                        isLooping={isLooping}
-                        isLoading={isLoading}
-                        canPlayLoop={canPlayLoop}
-                        loopIntervalMs={loopIntervalMs}
-                        loopDirection={loopDirection}
-                        onPillClick={handleDateLabelClick}
-                        onPlay={handlePlayClick}
-                        onInterval={handleIntervalClick}
-                        onDirection={handleDirectionClick}
-                    />
+                <div className="flex flex-col gap-1.5 px-2 py-2">
+                    <div className="flex items-center justify-between gap-2 min-h-8">
+                        <LayerItemHeader name={layer.name} showHandle={showHandle} dragHandleProps={dragHandleProps} />
+                        {isLoading && !isLooping && (
+                            <Loading visible={true} size="size-5" border="border-2" />
+                        )}
+                    </div>
 
-                    {isLoading && !loopState && (
-                        <div className="px-2 py-1 shrink-0">
-                            <Loading visible={true} size={SIZE_BUTTON} border="border-2" />
-                        </div>
+                    {isExpanded && (
+                        <>
+                            <LayerDateControls
+                                layerId={layer.id}
+                                layer={layer}
+                                rasterPeriodicity={rasterPeriodicity}
+                                compareMode={compareMode}
+                                slotMembership={slotMembership}
+                                liveDateFilter={dateFilter}
+                                isLooping={isLooping}
+                                isLoading={isLoading}
+                                canPlayLoop={canPlayLoop}
+                                loopIntervalMs={loopIntervalMs}
+                                loopDirection={loopDirection}
+                                onPillClick={handleDateLabelClick}
+                                onPlay={handlePlayClick}
+                                onInterval={handleIntervalClick}
+                                onDirection={handleDirectionClick}
+                                onCycleSlot={handleCycleSlot}
+                            />
+                            <LayerActionsBar
+                                visible={layer.visible}
+                                isLoading={isLoading}
+                                isLooping={isLooping}
+                                canOpenModal={canOpenModal}
+                                onToggleVisibility={handleToggleVisibilityClick}
+                                onOpenDetails={handleSetSelectedLayerClick}
+                                onRemove={handleRemoveClick}
+                            />
+                        </>
                     )}
-
-                    <div className="hidden md:group-hover:flex items-center gap-1 shrink-0">
-                        {actionButtons}
-                    </div>
-
-                    {slotMembership && <SlotBadge membership={slotMembership} onCycle={(n) => setLayerSlotMembership?.(layer.id, n)} />}
-
-                    <div className={`flex-1 min-w-0 pr-2 ${HIDDEN_SCROLLBAR}`}>
-                        <Tooltip content={layer.name} disableMobile>
-                            <span
-                                className="text-[14px] text-[#465055] font-garet font-medium block whitespace-nowrap pr-6"
-                            >
-                                {layer.name}
-                            </span>
-                        </Tooltip>
-                    </div>
-
                 </div>
-
             </Tooltip>
-
-            {isSelected && (
-                <div className="md:hidden flex items-center gap-1 px-2 pb-2">
-                    {actionButtons}
-                </div>
-            )}
         </div>
     );
 };
