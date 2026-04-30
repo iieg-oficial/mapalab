@@ -12,7 +12,8 @@ import Tooltip from '@components/Tooltip';
 import { LICENCIA_URL, LICENCIA_TEXTO } from '@constants/app';
 import ScrollContainer from '@components/ScrollContainer';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
-import { computeLabel } from '../ActiveLayers/datePillHelpers';
+import { computeLabelLong } from '../ActiveLayers/datePillHelpers';
+import Badge from '@components/Badge';
 
 const licenciaContent = (
     <span className="text-[11px]/[15px]">
@@ -52,15 +53,22 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
         const inB = compareMode.paneB?.activeLayerIds?.includes(layerId);
         const list = [];
         if (inA) {
-            const { label } = computeLabel(compareMode.paneA?.filters?.[layerId]?.date, rasterPeriodicity);
+            const { label } = computeLabelLong(compareMode.paneA?.filters?.[layerId]?.date, rasterPeriodicity);
             if (label) list.push({ slot: 'A', label });
         }
         if (inB) {
-            const { label } = computeLabel(compareMode.paneB?.filters?.[layerId]?.date, rasterPeriodicity);
+            const { label } = computeLabelLong(compareMode.paneB?.filters?.[layerId]?.date, rasterPeriodicity);
             if (label) list.push({ slot: 'B', label });
         }
         return list;
     })();
+
+    useEffect(() => {
+        if (isSwipe) {
+            if (format !== 'png') setFormat('png');
+            if (qualityIndex !== 1) setQualityIndex(1);
+        }
+    }, [isSwipe, format, qualityIndex]);
 
     useEffect(() => {
         const layer = selectedLayer || layersWithLegends[0];
@@ -183,29 +191,40 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb">
                         Formato
                     </div>
-                    <div className="flex gap-2 mb-2">
-                        {['png', 'jpeg', 'pdf'].map(fmt => (
+                    <div className="flex gap-2 mb-2 flex-wrap">
+                        {[
+                            { id: 'png', disabled: false, swipeOnly: false },
+                            { id: 'jpeg', disabled: isSwipe, swipeOnly: false },
+                            { id: 'pdf', disabled: isSwipe, swipeOnly: false },
+                            { id: 'gif', disabled: true, swipeOnly: true },
+                        ].filter(f => !f.swipeOnly || isSwipe).map(({ id: fmt, disabled }) => (
                             <button
                                 key={fmt}
-                                onClick={() => setFormat(fmt)}
-                                className={`
-                                    px-3 py-1.5 text-sm rounded-[14px] border transition-colors
-                                    ${format === fmt
-                                ? 'bg-[#FF8300] border-transparent text-white font-medium'
-                                : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-                            }
-                                `}
+                                type="button"
+                                onClick={() => !disabled && setFormat(fmt)}
+                                disabled={disabled}
+                                className={`relative px-3 py-1.5 text-sm rounded-[14px] border transition-colors ${disabled ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' : (format === fmt ? 'bg-[#FF8300] border-transparent text-white font-medium' : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white')}`}
                             >
                                 {fmt.toUpperCase()}
+                                {disabled && (
+                                    <Badge variant="pill" color="orange" text="PRÓXIMAMENTE" className="absolute -top-2 -right-2 text-[8px] px-1.5" />
+                                )}
                             </button>
                         ))}
                     </div>
 
-                    <QualitySelector
-                        value={qualityIndex}
-                        onChange={setQualityIndex}
-                        isPanelOpen={isPanelOpen}
-                    />
+                    {!isSwipe && (
+                        <QualitySelector
+                            value={qualityIndex}
+                            onChange={setQualityIndex}
+                            isPanelOpen={isPanelOpen}
+                        />
+                    )}
+                    {isSwipe && (
+                        <div className="text-[11px] text-gray-500">
+                            Calidad: <span className="font-bold">Normal</span>. Otras calidades quedan habilitadas en mapa simple.
+                        </div>
+                    )}
 
                     <div>
                         <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">

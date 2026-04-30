@@ -3,42 +3,7 @@ import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
 const { MAP_WIDTH, MAP_HEIGHT } = EXPORT_DIMENSIONS;
 import { transformExtent } from 'ol/proj';
 import { useMapView } from './useMapView';
-
-const applySwipeToggles = (composite, swipeOptions = {}) => {
-    if (!composite) return () => {};
-    const { swipeBar = true, swipeLabels = true, swipePills = false, pills = [] } = swipeOptions;
-    const restore = [];
-    const handle = composite.querySelector('[role="separator"]');
-    const labels = composite.querySelectorAll('[data-swipe-label]');
-    if (!swipeBar && handle) {
-        const prev = handle.style.display;
-        handle.style.display = 'none';
-        restore.push(() => { handle.style.display = prev; });
-    }
-    if (!swipeLabels) {
-        labels.forEach(el => {
-            const prev = el.style.display;
-            el.style.display = 'none';
-            restore.push(() => { el.style.display = prev; });
-        });
-    }
-    const tempPills = [];
-    if (swipePills && pills.length) {
-        pills.forEach(({ slot, label }) => {
-            if (!label) return;
-            const isA = slot === 'A';
-            const el = document.createElement('div');
-            el.className = `absolute top-3 ${isA ? 'left-4' : 'right-4'} px-3 py-1.5 rounded-full border font-garet font-bold text-[12px] z-[2] pointer-events-none ${isA ? 'bg-[#F0EAF3] border-[#5C2472] text-[#5C2472]' : 'bg-[#FFF2E5] border-[#FF8300] text-[#FF8300]'}`;
-            el.textContent = label;
-            composite.appendChild(el);
-            tempPills.push(el);
-        });
-    }
-    return () => {
-        tempPills.forEach(el => el.remove());
-        restore.forEach(fn => fn());
-    };
-};
+import { composeSwipeCanvas } from '../utils/swipeComposition';
 
 export const useMapCapture = () => {
     const { targetRef, mapRef, compareMode, paneMapRefs } = useMapsContext();
@@ -46,10 +11,10 @@ export const useMapCapture = () => {
 
     const isSwipe = !!compareMode?.active;
     const getSwipeComposite = () => document.querySelector('[data-swipe-composite="true"]');
+    const getPaneTarget = (i) => paneMapRefs?.current?.[i]?.current?.getTargetElement?.() || null;
 
     const prepareScaleControl = (scaleControl) => {
         if (!scaleControl) return null;
-
         const originalStyles = {
             left: scaleControl.style.left,
             bottom: scaleControl.style.bottom,
@@ -57,14 +22,12 @@ export const useMapCapture = () => {
             top: scaleControl.style.top,
             transform: scaleControl.style.transform
         };
-
         scaleControl.style.left = 'auto';
         scaleControl.style.bottom = '15px';
         scaleControl.style.right = '330px';
         scaleControl.style.top = 'auto';
         scaleControl.style.transform = 'scale(1.5)';
         scaleControl.style.transformOrigin = 'bottom right';
-
         return originalStyles;
     };
 
@@ -104,6 +67,31 @@ export const useMapCapture = () => {
         return captureElement(target, { scale, width: mapWidth, height: mapHeight });
     };
 
+    const captureSwipeComposite = async ({ mapWidth, mapHeight, captureScale, swipeOptions }) => {
+        const targetA = getPaneTarget(0);
+        const targetB = getPaneTarget(1);
+        if (!targetA || !targetB) return null;
+
+        const [canvasA, canvasB] = await Promise.all([
+            captureElement(targetA, { scale: captureScale, width: mapWidth, height: mapHeight }),
+            captureElement(targetB, { scale: captureScale, width: mapWidth, height: mapHeight }),
+        ]);
+
+        const finalWidth = Math.round(mapWidth * captureScale);
+        const finalHeight = Math.round(mapHeight * captureScale);
+        return composeSwipeCanvas({
+            canvasA,
+            canvasB,
+            width: finalWidth,
+            height: finalHeight,
+            swipePosition: (compareMode?.swipePosition ?? 0.5) * 100,
+            orientation: compareMode?.swipeOrientation || 'vertical',
+            swipeOptions: swipeOptions || {},
+            labelA: compareMode?.paneA?.label || 'A',
+            labelB: compareMode?.paneB?.label || 'B',
+        });
+    };
+
     const waitForImages = async (container) => {
         const images = container.querySelectorAll('img');
         await Promise.all(Array.from(images).map(img => {
@@ -137,11 +125,12 @@ export const useMapCapture = () => {
 
         let originalState = null;
         let layerResolutions = [];
-        let restoreSwipeToggles = () => {};
+        const targetsToResize = isSwipe
+            ? [target, getPaneTarget(0), getPaneTarget(1)].filter(Boolean)
+            : [target];
         try {
             originalState = {
-                width: target.style.width,
-                height: target.style.height,
+                targetSizes: targetsToResize.map(el => ({ el, width: el.style.width, height: el.style.height })),
                 center: anchorRef.current.getView().getCenter(),
                 resolution: anchorRef.current.getView().getResolution()
             };
@@ -150,8 +139,10 @@ export const useMapCapture = () => {
             layerResolutions = allLayersFlat.map(layer => ({ layer, minResolution: layer.getMinResolution() }));
             allLayersFlat.forEach(layer => layer.setMinResolution(0));
 
-            target.style.width = `${mapWidth}px`;
-            target.style.height = `${mapHeight}px`;
+            targetsToResize.forEach(el => {
+                el.style.width = `${mapWidth}px`;
+                el.style.height = `${mapHeight}px`;
+            });
             allManagedRefs.forEach(m => m.updateSize());
 
             if (viewType === 'full-state') {
@@ -172,20 +163,21 @@ export const useMapCapture = () => {
 
             await waitForTilesToLoad();
 
-            if (isSwipe) restoreSwipeToggles = applySwipeToggles(target, swipeOptions);
-
-            const canvas = await captureMap(captureScale, mapWidth, mapHeight);
-            return canvas;
+            if (isSwipe) {
+                return await captureSwipeComposite({ mapWidth, mapHeight, captureScale, swipeOptions });
+            }
+            return await captureMap(captureScale, mapWidth, mapHeight);
         } catch (error) {
             console.error('Error in getMapSnapshot:', error);
             throw error;
         } finally {
-            restoreSwipeToggles();
             layerResolutions.forEach(({ layer, minResolution }) => layer.setMinResolution(minResolution));
 
             if (originalState) {
-                target.style.width = originalState.width;
-                target.style.height = originalState.height;
+                originalState.targetSizes.forEach(({ el, width, height }) => {
+                    el.style.width = width;
+                    el.style.height = height;
+                });
                 allManagedRefs.forEach(m => m.updateSize());
 
                 if (viewType === 'full-state' || extent) {
