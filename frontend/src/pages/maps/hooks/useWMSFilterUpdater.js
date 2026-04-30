@@ -3,7 +3,7 @@ import { resolveTimeStyle } from '../helpers/wmsConfig';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
-export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds, dateOverride = null }) => {
+export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds }) => {
     const activeLayerIdsRef = useRef(activeLayerIds);
     activeLayerIdsRef.current = activeLayerIds;
 
@@ -30,7 +30,7 @@ export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, 
 
                     if (isTimeLayer) {
                         const sub = mergedLayers[0].subLayers[0];
-                        timeValue = (dateOverride || getFilter(sub.id)) || undefined;
+                        timeValue = getFilter(sub.id) || undefined;
                         timeStylePattern = sub.wmsConfig.timeStylePattern;
                     } else {
                         const filters = mergedLayers.map(merged => {
@@ -84,5 +84,5 @@ export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, 
             });
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filters, getFilter, combineCQLFilters, dateOverride]);
+    }, [filters, getFilter, combineCQLFilters]);
 };

@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback, useMemo } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useFeatureInfo } from '@hooksMaps/useFeatureInfo';
 import { useMapInitialization } from '@hooksMaps/useMapInitialization';
@@ -8,19 +8,44 @@ import { useWMSLayerFactory } from '@hooksMaps/useWMSLayerFactory';
 import { useWMSLayerManager } from '@hooksMaps/useWMSLayerManager';
 import { useMapInteractions } from '@hooksMaps/useMapInteractions';
 import { useWMSFilterUpdater } from '@hooksMaps/useWMSFilterUpdater';
+import { findFilterFromState } from '@hooksMaps/useCQLFilter';
 
-const MapView = ({ paneIndex = null, dateOverride = null, className = 'absolute inset-0 w-full h-full' }) => {
+const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full' }) => {
     const ctx = useMapsContext();
-    const {
-        baseMapId, basemaps, activeLayerIds, hiddenLayerIds, getFilter, filters,
-        isDrawing, queryFeaturesInPolygonRef, getAllChildLayerIds, getLayerOpacity, layerOpacities,
-        markerClickedRef, editingClickedRef, paneMapRefs
-    } = ctx;
     const localTargetRef = useRef(null);
     const localMapRef = useRef(null);
     const isCompare = paneIndex !== null;
     const targetRef = isCompare ? localTargetRef : ctx.targetRef;
     const mapRef = isCompare ? localMapRef : ctx.mapRef;
+
+    const isActiveSlotPane = isCompare && (
+        (paneIndex === 0 && ctx.compareMode?.activeSlot === 'A')
+        || (paneIndex === 1 && ctx.compareMode?.activeSlot === 'B')
+    );
+    const useLiveState = !isCompare || isActiveSlotPane;
+
+    const paneSnapshot = useMemo(() => {
+        if (useLiveState) return null;
+        return paneIndex === 0 ? ctx.compareMode.paneA : ctx.compareMode.paneB;
+    }, [useLiveState, paneIndex, ctx.compareMode?.paneA, ctx.compareMode?.paneB]);
+
+    const activeLayerIds = useLiveState ? ctx.activeLayerIds : paneSnapshot.activeLayerIds;
+    const hiddenLayerIds = useLiveState ? ctx.hiddenLayerIds : paneSnapshot.hiddenLayerIds;
+    const layerOpacities = useLiveState ? ctx.layerOpacities : paneSnapshot.layerOpacities;
+    const filters = useLiveState ? ctx.filters : paneSnapshot.filters;
+
+    const paneGetFilter = useCallback((layerId) => {
+        return findFilterFromState(filters, layerId, ctx.allLayers);
+    }, [filters, ctx.allLayers]);
+
+    const paneGetLayerOpacity = useCallback((layerId) => {
+        return layerOpacities?.get?.(layerId) ?? 1;
+    }, [layerOpacities]);
+
+    const getFilter = useLiveState ? ctx.getFilter : paneGetFilter;
+    const getLayerOpacity = useLiveState ? ctx.getLayerOpacity : paneGetLayerOpacity;
+
+    const { isDrawing, queryFeaturesInPolygonRef, getAllChildLayerIds, markerClickedRef, editingClickedRef, paneMapRefs } = ctx;
 
     useEffect(() => {
         if (!isCompare || !paneMapRefs?.current) return;
@@ -30,6 +55,7 @@ const MapView = ({ paneIndex = null, dateOverride = null, className = 'absolute 
             delete registry[paneIndex];
         };
     }, [isCompare, paneIndex, paneMapRefs]);
+
     const { queryFeatures, queryFeaturesInPolygon } = useFeatureInfo();
     const baseMapRef = useRef(null);
 
@@ -38,17 +64,17 @@ const MapView = ({ paneIndex = null, dateOverride = null, className = 'absolute 
         queryFeaturesInPolygonRef.current = queryFeaturesInPolygon;
     }, [queryFeaturesInPolygon, queryFeaturesInPolygonRef, isCompare]);
 
-    useMapInitialization({ targetRef, mapRef, baseMapRef, basemaps, baseMapId });
-    useBaseMapManager(baseMapRef, basemaps, baseMapId, mapRef);
+    useMapInitialization({ targetRef, mapRef, baseMapRef, basemaps: ctx.basemaps, baseMapId: ctx.baseMapId });
+    useBaseMapManager(baseMapRef, ctx.basemaps, ctx.baseMapId, mapRef);
 
     const { createWMSLayer, combineCQLFilters } = useWMSLayerFactory();
     const { wmsLayersRef } = useWMSLayerManager({
         mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getAllChildLayerIds,
-        getLayerOpacity, layerOpacities, getFilter, combineCQLFilters, dateOverride
+        getLayerOpacity, layerOpacities, getFilter, combineCQLFilters
     });
 
     useMapInteractions(mapRef, queryFeatures, isDrawing, markerClickedRef, editingClickedRef);
-    useWMSFilterUpdater({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds, dateOverride });
+    useWMSFilterUpdater({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds });
 
     return <div ref={targetRef} className={className} />;
 };

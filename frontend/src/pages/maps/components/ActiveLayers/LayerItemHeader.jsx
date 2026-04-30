@@ -1,0 +1,34 @@
+import { useState } from 'react';
+import Icon from '@components/Icon';
+import Tooltip from '@components/Tooltip';
+
+export const DragHandle = ({ dragHandleProps }) => {
+    const [isMoveActive, setIsMoveActive] = useState(false);
+    if (!dragHandleProps) return null;
+    return (
+        <Tooltip content="Reordenar capa">
+            <button
+                {...dragHandleProps}
+                className="p-0.5 rounded-full cursor-grab active:cursor-grabbing touch-none shrink-0 border border-transparent hover:border-[#70308A] bg-[#F9FBFF] transition-colors"
+                onMouseDown={() => setIsMoveActive(true)}
+                onMouseUp={() => setIsMoveActive(false)}
+                onMouseLeave={() => setIsMoveActive(false)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (dragHandleProps.onClick) dragHandleProps.onClick(e);
+                }}
+            >
+                <Icon name="move" state={isMoveActive ? 'hover' : 'normal'} className="size-7" />
+            </button>
+        </Tooltip>
+    );
+};
+
+export const LayerTitle = ({ name }) => (
+    <span
+        title={name}
+        className="flex-1 min-w-0 block text-[14px] text-[#465055] font-garet font-medium whitespace-nowrap truncate pr-2"
+    >
+        {name}
+    </span>
+);

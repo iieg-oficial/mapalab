@@ -74,7 +74,10 @@ const MenuItem = ({ item, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => 
                     rounded={item.panelRounded || 'rounded-r-2xl'}
                     bg="bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A]"
                 >
-                    {item.menuContent({ close: handleClose })}
+                    {item.menuContent({
+                        close: handleClose,
+                        closeButton: <MobileMenuCloseButton onClick={handleClose} />
+                    })}
                 </Panel>
             )}
         </>

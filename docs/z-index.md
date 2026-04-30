@@ -13,6 +13,7 @@
 | **10**  | ScaleLineControl              | Inferior centro     | Control de escala                              |
 | **10**  | MapControls                   | Inferior derecho    | Controles del mapa (zoom, ubicacion, etc.)     |
 | **10**  | MeasurementControls           | Inferior izquierdo  | Herramientas de medicion                       |
+| **1**   | SwipeView (barra/etiquetas)   | Sobre el mapa       | Barra divisora, etiquetas A/B y overlays de hover. Debajo de los paneles para no taparlos |
 
 ## Capas del Mapa (OpenLayers)
 

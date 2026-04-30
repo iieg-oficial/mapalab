@@ -5,11 +5,14 @@ import MapsContext from '@contexts/MapsContext';
 import SymbologyItem from './SymbologyItem';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
+import Switch from '@components/Switch';
 
 import { useZenMode } from './ZenMode';
 
 const SymbologyPanel = ({ onCollapseChange }) => {
-    const { selectedLayerForSymbology, findLayerById, getLayersForSymbology } = useContext(MapsContext);
+    const { selectedLayerForSymbology, findLayerById, getLayersForSymbology, compareMode, setActiveSlot } = useContext(MapsContext);
+    const isComparing = !!compareMode?.active;
+    const activeSlot = compareMode?.activeSlot;
     const [isManuallyCollapsed, setIsManuallyCollapsed] = useState(true);
     const { isZenMode } = useZenMode();
 
@@ -81,6 +84,21 @@ const SymbologyPanel = ({ onCollapseChange }) => {
                     </button>
                 </div>
             </div>
+
+            {isComparing && (
+                <div className="flex items-center gap-2 mb-2 px-1 text-[11px] font-garet text-[#465055]">
+                    <span>Leyenda de</span>
+                    <Switch
+                        checked={activeSlot === 'A'}
+                        onChange={(next) => setActiveSlot(next ? 'A' : 'B')}
+                        onLabel="A"
+                        offLabel="B"
+                        onColor="#5C2472"
+                        offColor="#FF8300"
+                        tooltip={`Mostrando leyenda de ${activeSlot}`}
+                    />
+                </div>
+            )}
 
             <div className="rounded-[7px] bg-white px-3.5 py-3">
                 {displayLayers.length === 0 ? (

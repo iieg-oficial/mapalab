@@ -5,7 +5,6 @@ import InfoModal from './InfoModal';
 import Panel from '@components/Panel';
 import ExportPreview from './MapExport/ExportPreview';
 import { useShareDirtiness } from '@pages/maps/hooks/useShareDirtiness';
-import { useMapsContext } from '@hooks/useMaps';
 
 const MapToolsPanel = () => {
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -14,21 +13,21 @@ const MapToolsPanel = () => {
     const [previewLegends, setPreviewLegends] = useState([]);
     const [previewTitle, setPreviewTitle] = useState('');
     const [previewQuality, setPreviewQuality] = useState(null);
+    const [previewSwipeOptions, setPreviewSwipeOptions] = useState(null);
     const { isDirty, loadedShareId } = useShareDirtiness();
-    const { compareMode, exitCompareMode } = useMapsContext();
     const inSyncWithShare = !!loadedShareId && !isDirty;
     const isModifiedFromShare = !!loadedShareId && isDirty;
-    const isComparing = !!compareMode?.active;
 
     const handleRevert = useCallback(() => {
         window.location.reload();
     }, []);
 
-    const handleOpenPreview = (format, selectedLegends, title, quality) => {
+    const handleOpenPreview = (format, selectedLegends, title, quality, swipeOptions) => {
         setPreviewFormat(format || 'png');
         setPreviewLegends(Array.isArray(selectedLegends) ? selectedLegends : (selectedLegends ? [selectedLegends] : []));
         setPreviewTitle(title || '');
         setPreviewQuality(quality || null);
+        setPreviewSwipeOptions(swipeOptions || null);
         setIsPreviewOpen(true);
     };
 
@@ -58,17 +57,6 @@ const MapToolsPanel = () => {
                     Regresar a: <span className="font-bold tabular-nums ml-1">{loadedShareId}</span>
                 </button>
             )}
-            {isComparing && (
-                <button
-                    type="button"
-                    onClick={exitCompareMode}
-                    className="hidden md:inline-flex fixed top-4 right-[calc(16px+373px+8px+150px)] z-11 items-center text-[11px]/[16px] font-garet bg-[#DBEAFE] hover:bg-[#BFDBFE] text-[#1D4ED8] border border-[#3B82F6] px-3 py-2 rounded-full whitespace-nowrap shadow-[0_5px_20px_#1A26641A] cursor-pointer transition-colors"
-                    title="Salir del modo comparacion"
-                >
-                    Comparando: <span className="font-bold ml-1">{compareMode.panes.map(p => p.label).join(' vs ')}</span>
-                    <span className="ml-2 text-gray-500">×</span>
-                </button>
-            )}
             <Panel
                 variant="floating"
                 position={`top-4 right-4 z-11 ${isAnyPanelOpen ? 'max-md:z-[60]' : 'max-md:z-21'}`}
@@ -90,6 +78,7 @@ const MapToolsPanel = () => {
                     selectedLegends={previewLegends}
                     initialTitle={previewTitle}
                     quality={previewQuality}
+                    swipeOptions={previewSwipeOptions}
                 />
             )}
         </>

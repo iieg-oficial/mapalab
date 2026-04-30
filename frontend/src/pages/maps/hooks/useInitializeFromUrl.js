@@ -129,15 +129,16 @@ export const useInitializeFromUrl = () => {
                 const saved = sessionStorage.getItem(SESSION_STORAGE_KEY);
                 if (saved) {
                     const envelope = JSON.parse(saved);
-                    const savedLayers = envelope?.payload?.layers;
-                    // Solo restauramos si el envelope tiene capas. Un guardado vacio
-                    // significa "user cleared all" → debe caer a BASE_INITIAL_ORDER.
-                    if (Array.isArray(savedLayers) && savedLayers.length > 0 && deserialize(envelope)) {
+                    const hasSingleLayers = Array.isArray(envelope?.payload?.layers) && envelope.payload.layers.length > 0;
+                    const hasSwipeLayers = envelope?.kind === 'swipe' && (
+                        (Array.isArray(envelope?.payload?.paneA?.layers) && envelope.payload.paneA.layers.length > 0)
+                        || (Array.isArray(envelope?.payload?.paneB?.layers) && envelope.payload.paneB.layers.length > 0)
+                    );
+                    if ((hasSingleLayers || hasSwipeLayers) && deserialize(envelope)) {
                         filtersInitializationComplete.value = true;
                         initialized.current = true;
                         return;
                     }
-                    // Limpiamos basura del storage para no reprocesarla
                     sessionStorage.removeItem(SESSION_STORAGE_KEY);
                 }
             } catch { /* sessionStorage no disponible o JSON invalido — fallback */ }

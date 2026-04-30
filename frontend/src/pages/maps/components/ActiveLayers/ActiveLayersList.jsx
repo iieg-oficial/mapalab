@@ -3,6 +3,7 @@ import MapsContext from '@contexts/MapsContext';
 import { useActiveLayersLogic } from '../../hooks/useActiveLayersLogic';
 import { useLayerCollapse } from './hooks/useLayerCollapse';
 import { useLayerSorting } from './hooks/useLayerSorting';
+import { LegendsVisibilityProvider } from './hooks/useLegendsVisibility';
 import { SortableList, SortableItem } from './SortableList';
 import ActiveLayerItem from './ActiveLayerItem';
 import Icon from '@components/Icon';
@@ -18,12 +19,13 @@ import { getDefaultMapView } from '@pages/maps/helpers/defaultView';
 const STICKY_SIZE = 52;
 const STICKY_SIZE_MOBILE = 100;
 
-const ActiveLayersList = ({ onCollapseChange }) => {
+const ActiveLayersListInner = ({ onCollapseChange }) => {
     const {
         activeLayerIds,
         onToggleLayer,
         reorderActiveLayerIds,
-        hiddenLayerIds
+        hiddenLayerIds,
+        compareMode
     } = useContext(MapsContext);
     const {
         selectedLayerForSymbology,
@@ -39,24 +41,55 @@ const ActiveLayersList = ({ onCollapseChange }) => {
     } = useMapsContext();
     const { isMobile } = useSider();
 
-    const { unifiedLayers } = useActiveLayersLogic(activeLayerIds, hiddenLayerIds);
+    const isSwipe = !!compareMode?.active;
+    const effectiveActiveLayerIds = useMemo(() => {
+        if (!isSwipe) return activeLayerIds;
+        const seen = new Set();
+        const union = [];
+        [...(compareMode.paneA?.activeLayerIds || []), ...(compareMode.paneB?.activeLayerIds || [])].forEach(id => {
+            if (!seen.has(id)) { seen.add(id); union.push(id); }
+        });
+        return union;
+    }, [isSwipe, activeLayerIds, compareMode?.paneA?.activeLayerIds, compareMode?.paneB?.activeLayerIds]);
+
+    const effectiveHiddenLayerIds = useMemo(() => {
+        if (!isSwipe) return hiddenLayerIds;
+        const activeA = new Set(compareMode.paneA?.activeLayerIds || []);
+        const activeB = new Set(compareMode.paneB?.activeLayerIds || []);
+        const hiddenA = new Set(compareMode.paneA?.hiddenLayerIds || []);
+        const hiddenB = new Set(compareMode.paneB?.hiddenLayerIds || []);
+        const activeSlot = compareMode.activeSlot;
+        const result = [];
+        effectiveActiveLayerIds.forEach(id => {
+            const inA = activeA.has(id);
+            const inB = activeB.has(id);
+            let isHidden = false;
+            if (inA && inB) isHidden = activeSlot === 'A' ? hiddenA.has(id) : hiddenB.has(id);
+            else if (inA) isHidden = hiddenA.has(id);
+            else if (inB) isHidden = hiddenB.has(id);
+            if (isHidden) result.push(id);
+        });
+        return result;
+    }, [isSwipe, hiddenLayerIds, compareMode?.paneA, compareMode?.paneB, compareMode?.activeSlot, effectiveActiveLayerIds]);
+
+    const { unifiedLayers } = useActiveLayersLogic(effectiveActiveLayerIds, effectiveHiddenLayerIds);
     const collapse = useLayerCollapse(unifiedLayers);
     useEffect(() => { onCollapseChange?.(collapse.isCollapsed); }, [collapse.isCollapsed, onCollapseChange]);
     const { handleDragEnd } = useLayerSorting(activeLayerIds, unifiedLayers, reorderActiveLayerIds);
     const sortableItems = useMemo(() => unifiedLayers.map(l => l.id), [unifiedLayers]);
-    const isInegiMode = useMemo(() => activeLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id)), [activeLayerIds]);
+    const isInegiMode = useMemo(() => effectiveActiveLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id)), [effectiveActiveLayerIds]);
     const isMobileSticky = isMobile ? STICKY_SIZE_MOBILE : STICKY_SIZE;
 
-    const noLayers = activeLayerIds.length === 0;
+    const noLayers = effectiveActiveLayerIds.length === 0;
 
     const allHidden = useMemo(() => {
-        return activeLayerIds.length > 0 && activeLayerIds.every(id => hiddenLayerIds.includes(id));
-    }, [activeLayerIds, hiddenLayerIds]);
+        return effectiveActiveLayerIds.length > 0 && effectiveActiveLayerIds.every(id => effectiveHiddenLayerIds.includes(id));
+    }, [effectiveActiveLayerIds, effectiveHiddenLayerIds]);
 
     const visibilityCount = useMemo(() => {
-        if (allHidden) return activeLayerIds.length;
-        return activeLayerIds.filter(id => !hiddenLayerIds.includes(id)).length;
-    }, [activeLayerIds, hiddenLayerIds, allHidden]);
+        if (allHidden) return effectiveActiveLayerIds.length;
+        return effectiveActiveLayerIds.filter(id => !effectiveHiddenLayerIds.includes(id)).length;
+    }, [effectiveActiveLayerIds, effectiveHiddenLayerIds, allHidden]);
 
     const activeLoopsCount = useMemo(() => {
         return Object.values(dateLoops || {}).filter(l => l?.isPlaying).length;
@@ -167,8 +200,8 @@ const ActiveLayersList = ({ onCollapseChange }) => {
                             <span className={`relative p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/del:border-[#FF577D]'}`}>
                                 <Icon name="eliminar" state={isDeleteHovered ? 'hover' : 'normal'} className="size-5 shrink-0" />
                                 <Badge
-                                    visible={activeLayerIds.length > 0}
-                                    count={activeLayerIds.length}
+                                    visible={effectiveActiveLayerIds.length > 0}
+                                    count={effectiveActiveLayerIds.length}
                                     color="pink"
                                     size="sm"
                                     className="absolute -top-1 -right-1 pointer-events-none"
@@ -250,5 +283,11 @@ const ActiveLayersList = ({ onCollapseChange }) => {
         </div>
     );
 };
+
+const ActiveLayersList = (props) => (
+    <LegendsVisibilityProvider>
+        <ActiveLayersListInner {...props} />
+    </LegendsVisibilityProvider>
+);
 
 export default ActiveLayersList;

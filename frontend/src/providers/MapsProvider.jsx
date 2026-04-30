@@ -13,6 +13,7 @@ import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { usePeriodicityCache } from '@hooksMaps/usePeriodicityCache';
 import { useMapMarker } from '@hooksMaps/useMapMarker';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
+import { useSwipeMode } from '@hooksMaps/useSwipeMode';
 import { toLonLat } from 'ol/proj';
 
 const MapsProvider = ({ children }) => {
@@ -22,24 +23,18 @@ const MapsProvider = ({ children }) => {
     const [selectedLayer, setSelectedLayer] = useState(null);
     const [selectedFeatureInfo, setSelectedFeatureInfo] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
-    const [compareMode, setCompareMode] = useState({ active: false, axis: 'date', panes: [], layout: 'split', swipePosition: 0.5 });
-    const exitCompareMode = useCallback(() => {
-        setCompareMode({ active: false, axis: 'date', panes: [], layout: 'split', swipePosition: 0.5 });
-    }, []);
-    const setSwipePosition = useCallback((pos) => {
-        setCompareMode(prev => ({ ...prev, swipePosition: Math.max(0.05, Math.min(0.95, pos)) }));
-    }, []);
     const queryFeaturesInPolygonRef = useRef(null);
     const clickPosition = useClickPosition();
     const targetRef = useRef(null);
     const mapRef = useRef(null);
-    const paneMapRefs = useRef({});
+    const compareModeRef = useRef(null);
     const layerManagement = useLayerManagement();
     const symbology = useSymbology({
         activeLayerIds: layerManagement.activeLayerIds,
         findLayerById: layerManagement.findLayerById,
         getAllChildLayerIds: layerManagement.getAllChildLayerIds,
-        allLayers
+        allLayers,
+        compareModeRef
     });
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
     const cqlFilter = useCQLFilter();
@@ -64,6 +59,46 @@ const MapsProvider = ({ children }) => {
         getSpecificFilter: cqlFilter.getSpecificFilter,
         getPeriodicity: periodicityCache.getPeriodicity
     });
+
+    const liveStateRef = useRef();
+    liveStateRef.current = {
+        activeLayerIds: layerManagement.activeLayerIds,
+        setActiveLayerIds: layerManagement.setActiveLayerIds,
+        hiddenLayerIds: symbology.hiddenLayerIds,
+        setHiddenLayerIds: symbology.setHiddenLayerIds,
+        layerOpacities: layerOpacity.layerOpacities,
+        setLayerOpacities: layerOpacity.setLayerOpacities,
+        filters: cqlFilter.filters,
+        setFilters: cqlFilter.setFilters,
+        pauseAllLoops: dateLoop.pauseAllLoops,
+    };
+
+    const swipeMode = useSwipeMode({
+        liveStateRef,
+        getAllChildLayerIds: layerManagement.getAllChildLayerIds,
+    });
+    compareModeRef.current = swipeMode.compareMode;
+
+    const onToggleLayer = useCallback((layerId, force, options) => {
+        const cm = swipeMode.compareMode;
+        if (!cm.active) {
+            return layerToggle.handleToggleLayer(layerId, force, options);
+        }
+        const inA = cm.paneA.activeLayerIds.includes(layerId);
+        const inB = cm.paneB.activeLayerIds.includes(layerId);
+        const wantsActivate = force === true || (force === undefined && !inA && !inB);
+        if (wantsActivate && !inA && !inB) {
+            layerToggle.handleToggleLayer(layerId, true);
+            swipeMode.setLayerSlotMembership(layerId, 'AB');
+            return undefined;
+        }
+        if (!wantsActivate) {
+            if (inA) swipeMode.removeLayerFromSlot(layerId, 'A');
+            if (inB) swipeMode.removeLayerFromSlot(layerId, 'B');
+            return undefined;
+        }
+        return undefined;
+    }, [swipeMode, layerToggle]);
 
     const handlePolygonComplete = useCallback((geometry, centerCoordinate, onFeatureCountUpdate) => {
         if (queryFeaturesInPolygonRef.current && mapRef.current) {
@@ -117,7 +152,7 @@ const MapsProvider = ({ children }) => {
         allLayers,
 
         ...layerManagement,
-        onToggleLayer: layerToggle.handleToggleLayer,
+        onToggleLayer,
         applyDefaultDate: layerToggle.applyDefaultDate,
         ...symbology,
         ...layerOpacity,
@@ -129,18 +164,14 @@ const MapsProvider = ({ children }) => {
         periodicityCache,
         isLocating,
         setIsLocating,
-        compareMode,
-        setCompareMode,
-        exitCompareMode,
-        setSwipePosition,
-        paneMapRefs
+        ...swipeMode,
     }), [
         baseMapId,
         siderCollapsed,
         selectedLayer,
         mapsAnalyticsEvent,
         layerManagement,
-        layerToggle.handleToggleLayer,
+        onToggleLayer,
         layerToggle.applyDefaultDate,
         symbology,
         layerOpacity,
@@ -155,9 +186,7 @@ const MapsProvider = ({ children }) => {
         periodicityCache,
         isLocating,
         allLayers,
-        compareMode,
-        exitCompareMode,
-        setSwipePosition
+        swipeMode,
     ]);
 
     return (

@@ -1,8 +1,8 @@
 import 'ol/ol.css';
 import SEO from '@components/SEO';
 import MapView from '@mapsComponents/MapView';
-import CompareView from '@mapsComponents/CompareView';
 import SwipeView from '@mapsComponents/SwipeView';
+import SwipeSlotControls from '@mapsComponents/SwipeSlotControls';
 import MapSider from '@mapsComponents/MapSider';
 import MapToolsPanel from '@mapsComponents/MapToolsPanel';
 import MapLayersPanels from '@mapsComponents/MapLayersPanels';
@@ -25,7 +25,6 @@ const Maps = () => {
     useSessionPersistence();
     const { compareMode } = useMapsContext();
     const isComparing = !!compareMode?.active;
-    const layout = compareMode?.layout || 'split';
 
     return (
         <SiderProvider>
@@ -46,9 +45,8 @@ const Maps = () => {
                     <MapAttribution />
                     <MapControls />
                     {!isComparing && <MeasurementTools />}
-                    {isComparing
-                        ? (layout === 'swipe' ? <SwipeView /> : <CompareView />)
-                        : <MapView />}
+                    {isComparing ? <SwipeView /> : <MapView />}
+                    {isComparing && <SwipeSlotControls />}
                 </div>
             </ZenModeProvider>
         </SiderProvider>

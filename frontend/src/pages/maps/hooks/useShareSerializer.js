@@ -35,6 +35,29 @@ const serializeLoop = (dateLoops, loopPrefs, layerTree) => {
     };
 };
 
+const opacityFor = (opacities, id) => {
+    if (opacities instanceof Map) return opacities.get(id) ?? 1;
+    return opacities?.[id] ?? 1;
+};
+
+const serializePaneLayers = (snapshot, layerTree) => {
+    const ids = snapshot?.activeLayerIds || [];
+    const hidden = new Set(snapshot?.hiddenLayerIds || []);
+    return ids
+        .map(id => {
+            const layer = findLayerDef(id, layerTree);
+            if (!layer || layer.isLabel || layer.isCategory) return null;
+            const slug = slugForLayer(id, layerTree);
+            return {
+                slug,
+                visible: !hidden.has(id),
+                opacity: round(opacityFor(snapshot?.layerOpacities, id), 2),
+                filters: serializeFilters(snapshot?.filters?.[id]),
+            };
+        })
+        .filter(Boolean);
+};
+
 export const useShareSerializer = () => {
     const {
         activeLayerIds,
@@ -46,6 +69,7 @@ export const useShareSerializer = () => {
         dateLoops,
         loopPrefs,
         mapRef,
+        compareMode,
     } = useMapsContext();
     const { layers: layerTree } = useLayers();
 
@@ -75,7 +99,7 @@ export const useShareSerializer = () => {
                 return {
                     slug,
                     visible: !hidden.has(id),
-                    opacity: round(layerOpacities?.[id] ?? 1, 2),
+                    opacity: round(opacityFor(layerOpacities, id), 2),
                     filters: serializeFilters(filters?.[id]),
                 };
             })
@@ -91,27 +115,38 @@ export const useShareSerializer = () => {
             loop: serializeLoop(dateLoops, loopPrefs, layerTree),
         };
 
-        if (kind === 'compare') {
-            return {
-                version: 1,
-                kind: 'compare',
-                payload: {
-                    base: basePayload,
-                    axis: extra.axis || 'date',
-                    panes: extra.panes || [],
-                },
-            };
-        }
-
         if (kind === 'swipe') {
+            const activeSlot = compareMode?.activeSlot || extra.activeSlot || 'A';
+            const livePane = {
+                ...(compareMode?.[`pane${activeSlot}`] || {}),
+                activeLayerIds: activeLayerIds || [],
+                hiddenLayerIds: hiddenLayerIds || [],
+                layerOpacities,
+                filters: filters || {},
+            };
+            const otherSlot = activeSlot === 'A' ? 'B' : 'A';
+            const frozenPane = compareMode?.[`pane${otherSlot}`] || {};
+            const paneA = activeSlot === 'A' ? livePane : frozenPane;
+            const paneB = activeSlot === 'A' ? frozenPane : livePane;
             return {
                 version: 1,
                 kind: 'swipe',
                 payload: {
-                    base: basePayload,
-                    axis: extra.axis || 'date',
-                    panes: extra.panes || [],
-                    position: typeof extra.position === 'number' ? extra.position : 0.5,
+                    shared: {
+                        view,
+                        basemap: baseMapId || null,
+                        selected: selectedSlug,
+                    },
+                    paneA: {
+                        label: paneA.label || 'A',
+                        layers: serializePaneLayers(paneA, layerTree),
+                    },
+                    paneB: {
+                        label: paneB.label || 'B',
+                        layers: serializePaneLayers(paneB, layerTree),
+                    },
+                    activeSlot,
+                    position: typeof extra.position === 'number' ? extra.position : (compareMode?.swipePosition ?? 0.5),
                 },
             };
         }
@@ -121,5 +156,5 @@ export const useShareSerializer = () => {
             kind: 'single',
             payload: basePayload,
         };
-    }, [activeLayerIds, hiddenLayerIds, layerOpacities, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree]);
+    }, [activeLayerIds, hiddenLayerIds, layerOpacities, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode]);
 };

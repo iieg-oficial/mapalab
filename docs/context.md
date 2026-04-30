@@ -397,6 +397,25 @@ tema (raiz: "Seguridad", "General", etc.)
 - `hiddenInMenu` → no aparece en menu pero puede estar activa
 - `label` con prefijo `*` → capa deshabilitada (opacity 50%, sin toggle)
 
+## Panel de capas activas
+
+Cada item de `<ActiveLayerItem>` tiene un layout vertical de hasta 4 filas, expandidas sólo cuando el item está seleccionado:
+
+1. **Fila 1**: drag handle (sólo visible en seleccionado o hover desktop) + título. En hover de no-activo aparecen los botones rápidos `<LayerInlineActions>` (visible / detalles / eliminar) entre el handle y el título.
+2. **Fila 2** (`<LayerDateControls>`): pill de periodicidad + loop controls + `<SlotBadge>`. Usa CSS Grid `grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]` para que el badge quede matemáticamente centrado al medio del item en todos los modos (no-swipe, AB, solo A, solo B). Loop controls (play/intervalo/dirección) sólo aparecen cuando el loop ya está corriendo; para iniciarlo se usa "Ver animación" del `<LayerDetailModal>`.
+3. **Fila 3** (`<LayerActionsBar>`): visible / detalles / opacidad / leyendas / `<Switch>` A-B (sólo en swipe AB) / eliminar. Click en el switch dispara `setHighlightedSlots(target)` con timeout de 1.5 s para destacar el panel del swipe correspondiente.
+4. **Fila 4** (`<LayerLegendInline>`): GetLegendGraphic lazy con DPI 200 (retina-friendly), `max-w-[220px]`, wrapper estilo `<SymbologyPanel>` (`bg-white rounded-[10px] shadow`). En swipe AB usa el filtro de fecha del `activeSlot`. Visibilidad controlada por toggle global persistido en `localStorage` (`mapalab.activeLayers.legendsVisible`, default `true`).
+
+Sub-componentes en `frontend/src/pages/maps/components/ActiveLayers/`:
+- `ActiveLayerItem.jsx` — container que orquesta las filas.
+- `LayerItemHeader.jsx` — exporta `DragHandle` y `LayerTitle` por separado para permitir reorden.
+- `LayerDateControls.jsx` — Fila 2 (pill + loop + badge en grid).
+- `LayerActionsBar.jsx` — Fila 3 (acciones del item expandido).
+- `LayerInlineActions.jsx` — botones rápidos en hover de no-activo.
+- `LayerLegendInline.jsx` — Fila 4 (leyenda WMS inline lazy).
+- `LayerOpacityPopover.jsx` — popover del slider de opacidad anclado al botón con `createPortal` + `position: fixed`.
+- `hooks/useLegendsVisibility.jsx` — context provider del toggle global de leyendas con persistencia en `localStorage`.
+
 ## Templates de InfoBox
 
 | Template | Uso | Que genera |

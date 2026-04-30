@@ -17,7 +17,8 @@ export const useWMSLegend = () => {
         fontStyle = 'normal',
         fontColor = '0x454545',
         labelMargin = 12,
-        forceLabels = 'on'
+        forceLabels = 'on',
+        dateValue
     } = {}) => {
         const wmsConfig = findWMSConfig(layer.id, layers);
 
@@ -34,8 +35,8 @@ export const useWMSLegend = () => {
             ].join(';');
 
             let style = wmsConfig.styles || '';
-            if (wmsConfig.timeStylePattern && getFilter) {
-                const timeValue = getFilter(layer.id);
+            if (wmsConfig.timeStylePattern) {
+                const timeValue = dateValue !== undefined ? dateValue : getFilter?.(layer.id);
                 if (timeValue) {
                     style = resolveTimeStyle(wmsConfig.timeStylePattern, timeValue);
                 }

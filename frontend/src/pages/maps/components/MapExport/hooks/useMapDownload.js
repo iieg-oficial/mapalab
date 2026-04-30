@@ -13,14 +13,14 @@ import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from '../utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
 
 export const useMapDownload = () => {
-    const { targetRef, mapRef } = useMapsContext();
+    const { targetRef } = useMapsContext();
     const { getLegendUrl, hasLegend } = useWMSLegend();
     const { generateMinimapImage } = useMinimap();
-    const { getViewportExtent } = useMapView();
+    const { getViewportExtent, getActiveMapRef } = useMapView();
     const { prepareScaleControl, getMapSnapshot } = useMapCapture();
     const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
-    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers } = useContext(MapsContext);
+    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode } = useContext(MapsContext);
     const [isDownloading, setIsDownloading] = useState(false);
 
     const activeLayers = useMemo(() => activeLayerIds
@@ -39,16 +39,19 @@ export const useMapDownload = () => {
         return layersWithLegends[0] || null;
     }, [selectedLayer, layersWithLegends]);
 
-    const canDownload = activeLayers.length > 0;
+    const canDownload = compareMode?.active
+        ? !!(compareMode.paneA?.activeLayerIds?.length || compareMode.paneB?.activeLayerIds?.length)
+        : activeLayers.length > 0;
 
     const getGuideExtent = () => {
-        if (!mapRef.current) return null;
+        const ref = getActiveMapRef();
+        if (!ref?.current) return null;
 
         const guideFrame = document.getElementById('export-guide-frame');
         if (!guideFrame) return getViewportExtent();
 
         const rect = guideFrame.getBoundingClientRect();
-        const mapRect = mapRef.current.getTargetElement().getBoundingClientRect();
+        const mapRect = ref.current.getTargetElement().getBoundingClientRect();
 
         const topLeft = [
             Math.round(rect.left - mapRect.left),
@@ -59,8 +62,8 @@ export const useMapDownload = () => {
             Math.round(rect.bottom - mapRect.top)
         ];
 
-        const coord1 = mapRef.current.getCoordinateFromPixel(topLeft);
-        const coord2 = mapRef.current.getCoordinateFromPixel(bottomRight);
+        const coord1 = ref.current.getCoordinateFromPixel(topLeft);
+        const coord2 = ref.current.getCoordinateFromPixel(bottomRight);
 
         if (!coord1 || !coord2) return getViewportExtent();
 
@@ -72,11 +75,13 @@ export const useMapDownload = () => {
         return transformExtent([minX, minY, maxX, maxY], 'EPSG:3857', 'EPSG:4326');
     };
 
-    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa', forcedExtent = null, quality = QUALITY_PRESETS[1]) => {
-        if (!targetRef.current || !canDownload || isDownloading) return;
+    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa', forcedExtent = null, quality = QUALITY_PRESETS[1], swipeOptions = null) => {
+        const isSwipe = !!compareMode?.active;
+        const captureRoot = isSwipe ? document.querySelector('[data-swipe-composite="true"]') : targetRef.current;
+        if (!captureRoot || !canDownload || isDownloading) return;
 
         setIsDownloading(true);
-        const scaleControl = targetRef.current.querySelector('.ol-scale-line');
+        const scaleControl = captureRoot.querySelector('.ol-scale-line');
         prepareScaleControl(scaleControl);
 
         const { SIDE_PANEL_WIDTH } = EXPORT_DIMENSIONS;
@@ -96,7 +101,8 @@ export const useMapDownload = () => {
                 viewType,
                 mapWidth,
                 mapHeight,
-                captureScale
+                captureScale,
+                swipeOptions
             });
 
             if (!mapCanvas) throw new Error('Failed to capture map');
