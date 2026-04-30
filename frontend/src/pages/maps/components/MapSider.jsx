@@ -29,8 +29,10 @@ const MapSider = ({ className = '' }) => {
         isLocating,
         dateLoops,
         showMarker,
-        allLayers
+        allLayers,
+        compareMode
     } = useMapsContext();
+    const isSwipe = !!compareMode?.active;
     const { loadingLayers } = useLayerLoading();
     const hasNonLoopLoading = [...loadingLayers].some(id => !dateLoops[id] && contextActiveLayerIds.includes(id));
     const isLoading = hasNonLoopLoading || isLocating;
@@ -308,15 +310,9 @@ const MapSider = ({ className = '' }) => {
                     className="shrink-0 p-3 my-2 w-full"
                 />
             </aside>
-            <ExternalEventoWidget
-                eventos={eventos}
-                activeLayerIds={contextActiveLayerIds}
-                onToggleLayer={onToggleLayer}
-                treatAsMobile={treatAsMobile}
-                isOpen={isOpen}
-                areMeasurementToolsVisible={areMeasurementToolsVisible}
-                siderWidth={width}
-            />
+            {!isSwipe && (
+                <ExternalEventoWidget eventos={eventos} activeLayerIds={contextActiveLayerIds} onToggleLayer={onToggleLayer} treatAsMobile={treatAsMobile} isOpen={isOpen} areMeasurementToolsVisible={areMeasurementToolsVisible} siderWidth={width} />
+            )}
         </>
     );
 };
