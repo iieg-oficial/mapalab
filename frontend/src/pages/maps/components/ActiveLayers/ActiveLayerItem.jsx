@@ -8,10 +8,12 @@ import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { LOOP_INTERVAL_PRESETS } from '@hooksMaps/useDateLoop';
 import { handleKeyActivate } from '@utils/a11y';
 
-import LayerItemHeader from './LayerItemHeader';
+import { DragHandle, LayerTitle } from './LayerItemHeader';
 import LayerDateControls from './LayerDateControls';
 import LayerActionsBar from './LayerActionsBar';
 import LayerInlineActions from './LayerInlineActions';
+import LayerLegendInline from './LayerLegendInline';
+import { useWMSLegend } from '@hooksMaps/useWMSLegend';
 
 const ActiveLayerItem = ({ layer, dragHandleProps }) => {
     const { loadingLayers } = useLayerLoading();
@@ -35,7 +37,10 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
         compareMode,
         removeLayerFromSlot,
         toggleLayerVisibilityInSlot,
-        setLayerSlotMembership
+        setLayerSlotMembership,
+        getLayerOpacity,
+        setLayerOpacity,
+        setActiveSlot
     } = useMapsContext();
 
     const slotMembership = useMemo(() => {
@@ -68,21 +73,18 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
         setSelectedLayerForSymbology(layer);
     };
 
-    const applyToMembership = (perSlotFn) => {
-        if (slotMembership === 'A' || slotMembership === 'AB') perSlotFn('A');
-        if (slotMembership === 'B' || slotMembership === 'AB') perSlotFn('B');
-    };
+    const targetSlot = slotMembership === 'AB' ? compareMode?.activeSlot : slotMembership;
 
     const handleRemoveClick = (e) => {
         e.stopPropagation();
-        if (compareMode?.active && slotMembership) return applyToMembership(s => removeLayerFromSlot?.(layer.id, s));
+        if (compareMode?.active && targetSlot) return removeLayerFromSlot?.(layer.id, targetSlot);
         [layer.id, ...getAllChildLayerIds(layer.id)].forEach(id => clearLayerFilters(id));
         onToggleLayer(layer.id, false);
     };
 
     const handleToggleVisibilityClick = (e) => {
         e.stopPropagation();
-        if (compareMode?.active && slotMembership) return applyToMembership(s => toggleLayerVisibilityInSlot?.(layer.id, s));
+        if (compareMode?.active && targetSlot) return toggleLayerVisibilityInSlot?.(layer.id, targetSlot);
         toggleLayerVisibility(layer.id);
     };
 
@@ -135,6 +137,9 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
         return false;
     }, [loadingLayers, layer.id, layer.childIds]);
 
+    const { hasLegend } = useWMSLegend();
+    const layerHasLegend = hasLegend(layer);
+
     const warningContent = 'Al seleccionar un punto en el mapa, éste mostrará información de esta capa. Puedes cambiar la selección dando clic en la capa que necesites visualizar.';
 
     return (
@@ -158,10 +163,12 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
                 variant="warning"
                 placement={isMobile ? 'top' : 'left'}
                 disabled={!isSelected}
+                triggerBlock
+                triggerClassName="w-full"
             >
                 <div className="flex flex-col gap-1.5 px-2 py-2 w-full">
-                    <div className="flex items-center justify-between gap-2 min-h-8 w-full">
-                        <LayerItemHeader name={layer.name} showHandle={showHandle} dragHandleProps={dragHandleProps} />
+                    <div className="flex items-center gap-2 min-h-8 w-full">
+                        {showHandle && <DragHandle dragHandleProps={dragHandleProps} />}
                         {!isSelected && !isMobile && isHovered && (
                             <LayerInlineActions
                                 visible={layer.visible}
@@ -173,6 +180,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
                                 onRemove={handleRemoveClick}
                             />
                         )}
+                        <LayerTitle name={layer.name} />
                         {isLoading && !isLooping && (
                             <Loading visible={true} size="size-5" border="border-2" />
                         )}
@@ -203,9 +211,20 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
                                 isLoading={isLoading}
                                 isLooping={isLooping}
                                 canOpenModal={canOpenModal}
+                                opacity={getLayerOpacity?.(layer.id) ?? 1}
                                 onToggleVisibility={handleToggleVisibilityClick}
                                 onOpenDetails={handleSetSelectedLayerClick}
+                                onChangeOpacity={(v) => setLayerOpacity?.(layer.id, v)}
                                 onRemove={handleRemoveClick}
+                                hasLegend={layerHasLegend}
+                                slotMembership={slotMembership}
+                                activeSlot={compareMode?.activeSlot}
+                                onSwitchSlot={setActiveSlot}
+                            />
+                            <LayerLegendInline
+                                layer={layer}
+                                compareMode={compareMode}
+                                slotMembership={slotMembership}
                             />
                         </>
                     )}
