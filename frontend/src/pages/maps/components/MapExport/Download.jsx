@@ -40,7 +40,6 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
     const { compareMode, selectedLayerForSymbology, allLayers } = useMapsContext();
     const isSwipe = !!compareMode?.active;
     const [includeSwipeBar, setIncludeSwipeBar] = useState(true);
-    const [includeSwipeLabels, setIncludeSwipeLabels] = useState(true);
     const [includeSwipePills, setIncludeSwipePills] = useState(true);
 
     const swipePills = (() => {
@@ -109,7 +108,7 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
     };
 
     const swipeOptions = isSwipe
-        ? { swipeBar: includeSwipeBar, swipeLabels: includeSwipeLabels, swipePills: includeSwipePills && swipePills.length > 0, pills: swipePills }
+        ? { swipeBar: includeSwipeBar, swipePills: includeSwipePills && swipePills.length > 0, pills: swipePills }
         : null;
 
     const executeDownload = async () => {
@@ -298,12 +297,8 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
                                     Incluir barra divisora
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-                                <Checkbox checked={includeSwipeLabels} onChange={() => setIncludeSwipeLabels(p => !p)} />
-                                    Incluir etiquetas A / B
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                                 <Checkbox checked={includeSwipePills} onChange={() => setIncludeSwipePills(p => !p)} />
-                                    Incluir fechas de la capa seleccionada
+                                    Incluir etiquetas A / B con fecha
                             </label>
                         </div>
                     )}

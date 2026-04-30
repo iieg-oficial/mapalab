@@ -56,23 +56,6 @@ const drawCombinedPill = (ctx, { x, y, label, slot, fontSize, paddingX, paddingY
     ctx.fillText(label, labelX + labelW / 2, y + h / 2);
 };
 
-const drawSimpleLabel = (ctx, { x, y, text, anchor = 'left', fontSize = 14 }) => {
-    ctx.font = `500 ${fontSize}px sans-serif`;
-    const w = ctx.measureText(text).width + 24;
-    const h = fontSize + 12;
-    const drawX = anchor === 'right' ? x - w : x;
-    drawRoundedRect(ctx, drawX, y, w, h, h / 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.fill();
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = '#d1d5db';
-    ctx.stroke();
-    ctx.fillStyle = '#374151';
-    ctx.textBaseline = 'middle';
-    ctx.textAlign = 'center';
-    ctx.fillText(text, drawX + w / 2, y + h / 2);
-};
-
 const drawDivider = (ctx, { width, height, position, orientation }) => {
     ctx.fillStyle = HANDLE_COLOR;
     if (orientation === 'horizontal') {
@@ -92,8 +75,6 @@ export const composeSwipeCanvas = ({
     swipePosition = 50,
     orientation = 'vertical',
     swipeOptions = {},
-    labelA = 'A',
-    labelB = 'B',
 }) => {
     const out = document.createElement('canvas');
     out.width = width;
@@ -117,30 +98,20 @@ export const composeSwipeCanvas = ({
         ctx.restore();
     }
 
-    const { swipeBar = true, swipeLabels = true, swipePills = false, pills = [] } = swipeOptions;
+    const { swipeBar = true, swipePills = true, pills = [] } = swipeOptions;
 
     if (swipeBar) drawDivider(ctx, { width, height, position: swipePosition, orientation });
 
-    if (swipeLabels) {
-        if (orientation === 'horizontal') {
-            drawSimpleLabel(ctx, { x: 16, y: 12, text: labelA });
-            drawSimpleLabel(ctx, { x: 16, y: height - 12 - 26, text: labelB });
-        } else {
-            drawSimpleLabel(ctx, { x: 16, y: 12, text: labelA });
-            drawSimpleLabel(ctx, { x: width - 16, y: 12, text: labelB, anchor: 'right' });
-        }
-    }
-
     if (swipePills && pills.length) {
-        const fontSize = 22;
-        const padX = 18;
-        const padY = 12;
-        const top = 60;
+        const fontSize = 32;
+        const padX = 26;
+        const padY = 16;
+        const top = 28;
         pills.forEach(({ slot, label }) => {
             if (!label) return;
             const isA = slot === 'A';
             drawCombinedPill(ctx, {
-                x: isA ? 16 : width - 16,
+                x: isA ? 24 : width - 24,
                 y: top,
                 label,
                 slot,
