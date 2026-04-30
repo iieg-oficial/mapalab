@@ -39,7 +39,9 @@ export const useMapDownload = () => {
         return layersWithLegends[0] || null;
     }, [selectedLayer, layersWithLegends]);
 
-    const canDownload = activeLayers.length > 0 && !compareMode?.active;
+    const canDownload = compareMode?.active
+        ? !!(compareMode.paneA?.activeLayerIds?.length || compareMode.paneB?.activeLayerIds?.length)
+        : activeLayers.length > 0;
 
     const getGuideExtent = () => {
         if (!mapRef.current) return null;
@@ -142,8 +144,62 @@ export const useMapDownload = () => {
         }
     };
 
+    const downloadSwipeMap = async ({ showBar = true, showLabels = true, showPills = false, pills = [], title = 'Mapa swipe' } = {}) => {
+        const composite = document.querySelector('[data-swipe-composite="true"]');
+        if (!composite || isDownloading) return;
+        setIsDownloading(true);
+
+        const handle = composite.querySelector('[role="separator"]');
+        const labels = composite.querySelectorAll('[data-swipe-label]');
+        const restoreList = [];
+        if (!showBar && handle) {
+            const prev = handle.style.display;
+            handle.style.display = 'none';
+            restoreList.push(() => { handle.style.display = prev; });
+        }
+        if (!showLabels) {
+            labels.forEach(el => {
+                const prev = el.style.display;
+                el.style.display = 'none';
+                restoreList.push(() => { el.style.display = prev; });
+            });
+        }
+
+        const tempPills = [];
+        if (showPills) {
+            pills.forEach(({ slot, label }) => {
+                if (!label) return;
+                const isA = slot === 'A';
+                const el = document.createElement('div');
+                el.className = `absolute top-3 ${isA ? 'left-4' : 'right-4'} px-3 py-1.5 rounded-full border font-garet font-bold text-[12px] z-[2] pointer-events-none ${isA ? 'bg-[#F0EAF3] border-[#5C2472] text-[#5C2472]' : 'bg-[#FFF2E5] border-[#FF8300] text-[#FF8300]'}`;
+                el.textContent = label;
+                composite.appendChild(el);
+                tempPills.push(el);
+            });
+        }
+
+        try {
+            await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 50)));
+            const html2canvas = (await import('html2canvas-pro')).default;
+            const canvas = await html2canvas(composite, {
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+            });
+            exportToImage(canvas, 'png', title);
+        } catch (error) {
+            console.error('Error al descargar el mapa swipe:', error);
+        } finally {
+            tempPills.forEach(el => el.remove());
+            restoreList.forEach(fn => fn());
+            setIsDownloading(false);
+        }
+    };
+
     return {
         downloadMap,
+        downloadSwipeMap,
         isDownloading,
         canDownload,
         layersWithLegends,
