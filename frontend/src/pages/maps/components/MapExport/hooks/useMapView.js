@@ -4,19 +4,28 @@ import { fromLonLat, transformExtent } from 'ol/proj';
 import { boundingExtent } from 'ol/extent';
 
 export const useMapView = () => {
-    const { mapRef } = useMapsContext();
+    const { mapRef, paneMapRefs, compareMode } = useMapsContext();
+
+    const getActiveMapRef = () => {
+        if (compareMode?.active && paneMapRefs?.current?.[0]?.current) {
+            return paneMapRefs.current[0];
+        }
+        return mapRef;
+    };
 
     const getViewportExtent = () => {
-        if (!mapRef?.current) return null;
-        const view = mapRef.current.getView();
-        const extent = view.calculateExtent(mapRef.current.getSize());
+        const ref = getActiveMapRef();
+        if (!ref?.current) return null;
+        const view = ref.current.getView();
+        const extent = view.calculateExtent(ref.current.getSize());
         return transformExtent(extent, 'EPSG:3857', 'EPSG:4326');
     };
 
     const adjustViewToFullState = () => {
-        if (!mapRef.current) return null;
+        const ref = getActiveMapRef();
+        if (!ref.current) return null;
 
-        const view = mapRef.current.getView();
+        const view = ref.current.getView();
         const originalCenter = view.getCenter();
         const originalZoom = view.getZoom();
 
@@ -35,9 +44,10 @@ export const useMapView = () => {
     };
 
     const restoreView = (originalView) => {
-        if (!mapRef.current || !originalView) return;
+        const ref = getActiveMapRef();
+        if (!ref.current || !originalView) return;
 
-        const view = mapRef.current.getView();
+        const view = ref.current.getView();
         view.setCenter(originalView.center);
         view.setZoom(originalView.zoom);
     };
@@ -45,6 +55,7 @@ export const useMapView = () => {
     return {
         getViewportExtent,
         adjustViewToFullState,
-        restoreView
+        restoreView,
+        getActiveMapRef
     };
 };
