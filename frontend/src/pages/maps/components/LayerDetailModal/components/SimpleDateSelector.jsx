@@ -5,8 +5,9 @@ import { generateCQLFilter, MONTHS } from '@pages/maps/helpers/dateFilterHelpers
 import { computeSelectorInitialState } from '@pages/maps/helpers/dateLoopHelpers';
 import { BackButton, YearBadge, CarouselArrow } from './SimpleDateSelectorParts';
 
-const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, onExpandedYearChange }) => {
-    const { getSpecificFilter, stopLoop: contextStopLoop, getLoopState } = useContext(MapsContext);
+const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, onExpandedYearChange, getSpecificFilterOverride }) => {
+    const { getSpecificFilter: getSpecificFilterCtx, stopLoop: contextStopLoop, getLoopState } = useContext(MapsContext);
+    const getSpecificFilter = getSpecificFilterOverride || getSpecificFilterCtx;
     const isRaster = !!rasterPeriodicity;
 
     const periodicityData = useMemo(() => {
@@ -29,7 +30,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
     const [expandedYear, setExpandedYear] = useState(initialState.year);
     const activeYearRef = useRef(null);
 
-    const loopState = getLoopState?.(layerId);
+    const loopState = getSpecificFilterOverride ? null : getLoopState?.(layerId);
 
     const onFilterApplyRef = useRef(onFilterApply);
     const onClearFilterRef = useRef(onClearFilter);
