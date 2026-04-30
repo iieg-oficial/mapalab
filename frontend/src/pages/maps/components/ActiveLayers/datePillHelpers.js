@@ -1,4 +1,4 @@
-import { describeDateFilter, formatLoopLabel } from '@pages/maps/helpers/dateLoopHelpers';
+import { describeDateFilter, formatLoopLabel, formatLoopLabelLong } from '@pages/maps/helpers/dateLoopHelpers';
 
 export const LABEL_WIDTHS = {
     'year': { normal: 'w-[40px]', withPlay: 'w-[54px]' },
@@ -30,4 +30,9 @@ export const computeLabel = (filter, rasterPeriodicity) => {
         else kind = 'multi-month';
     }
     return { label, kind };
+};
+
+export const computeLabelLong = (filter, rasterPeriodicity) => {
+    const desc = describeDateFilter({ filter, rasterPeriodicity });
+    return { label: formatLoopLabelLong(desc) };
 };
