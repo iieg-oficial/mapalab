@@ -3,43 +3,62 @@ const SLOT_BG = { A: '#F0EAF3', B: '#FFF2E5' };
 const HANDLE_COLOR = '#FF8300';
 
 const drawRoundedRect = (ctx, x, y, w, h, r) => {
+    const radius = Math.min(r, h / 2, w / 2);
     ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + w - radius, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+    ctx.lineTo(x + w, y + h - radius);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    ctx.lineTo(x + radius, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
     ctx.closePath();
 };
 
-const drawPill = (ctx, { x, y, label, slot, fontSize, paddingX, paddingY, anchor = 'left' }) => {
+const drawCombinedPill = (ctx, { x, y, label, slot, fontSize, paddingX, paddingY, anchor = 'left' }) => {
     ctx.font = `bold ${fontSize}px sans-serif`;
-    const metrics = ctx.measureText(label);
-    const textW = metrics.width;
-    const w = textW + paddingX * 2;
+    const badgeText = slot;
+    const badgeW = ctx.measureText(badgeText).width + paddingX * 1.4;
+    const labelW = ctx.measureText(label).width + paddingX * 1.4;
+    const totalW = badgeW + labelW;
     const h = fontSize + paddingY * 2;
-    const drawX = anchor === 'right' ? x - w : x;
+    const drawX = anchor === 'right' ? x - totalW : x;
     const radius = h / 2;
+    const badgeFirst = slot === 'A';
+    const badgeX = badgeFirst ? drawX : drawX + labelW;
+    const labelX = badgeFirst ? drawX + badgeW : drawX;
+
     ctx.fillStyle = SLOT_BG[slot] || '#ffffff';
-    drawRoundedRect(ctx, drawX, y, w, h, radius);
+    drawRoundedRect(ctx, drawX, y, totalW, h, radius);
     ctx.fill();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(badgeX, y, badgeW, h);
+    ctx.clip();
+    drawRoundedRect(ctx, drawX, y, totalW, h, radius);
+    ctx.fillStyle = SLOT_FILL[slot] || '#000000';
+    ctx.fill();
+    ctx.restore();
+
     ctx.lineWidth = 2;
     ctx.strokeStyle = SLOT_FILL[slot] || '#000000';
+    drawRoundedRect(ctx, drawX, y, totalW, h, radius);
     ctx.stroke();
-    ctx.fillStyle = SLOT_FILL[slot] || '#000000';
+
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
-    ctx.fillText(label, drawX + w / 2, y + h / 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(badgeText, badgeX + badgeW / 2, y + h / 2);
+    ctx.fillStyle = SLOT_FILL[slot] || '#000000';
+    ctx.fillText(label, labelX + labelW / 2, y + h / 2);
 };
 
 const drawSimpleLabel = (ctx, { x, y, text, anchor = 'left', fontSize = 14 }) => {
     ctx.font = `500 ${fontSize}px sans-serif`;
-    const metrics = ctx.measureText(text);
-    const w = metrics.width + 24;
+    const w = ctx.measureText(text).width + 24;
     const h = fontSize + 12;
     const drawX = anchor === 'right' ? x - w : x;
     drawRoundedRect(ctx, drawX, y, w, h, h / 2);
@@ -59,15 +78,9 @@ const drawDivider = (ctx, { width, height, position, orientation }) => {
     if (orientation === 'horizontal') {
         const y = (position / 100) * height;
         ctx.fillRect(0, y - 2, width, 4);
-        ctx.beginPath();
-        ctx.arc(width / 2, y, 28, 0, Math.PI * 2);
-        ctx.fill();
     } else {
         const x = (position / 100) * width;
         ctx.fillRect(x - 2, 0, 4, height);
-        ctx.beginPath();
-        ctx.arc(x, height / 2, 28, 0, Math.PI * 2);
-        ctx.fill();
     }
 };
 
@@ -126,7 +139,7 @@ export const composeSwipeCanvas = ({
         pills.forEach(({ slot, label }) => {
             if (!label) return;
             const isA = slot === 'A';
-            drawPill(ctx, {
+            drawCombinedPill(ctx, {
                 x: isA ? 16 : width - 16,
                 y: top,
                 label,

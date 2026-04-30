@@ -61,13 +61,13 @@ export const formatLoopLabelLong = (desc) => {
     if (desc.multi) return `${desc.yearCount} años`;
     if (desc.months?.length === 1) {
         const fullName = MONTHS.find(m => m.num === desc.months[0])?.name;
-        return `${fullName} ${desc.year}`;
+        return `${fullName} de ${desc.year}`;
     }
     if (desc.months?.length > 1) {
         const names = desc.months
             .map(n => MONTHS.find(m => m.num === n)?.name)
             .filter(Boolean);
-        return `${names.join(', ')} ${desc.year}`;
+        return `${names.join(', ')} de ${desc.year}`;
     }
     return `${desc.year}`;
 };
