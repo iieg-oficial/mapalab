@@ -12,6 +12,19 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.14.0',
+        items: [
+            { text: 'Cada capa activa se rediseñó con un layout en filas: arriba el título, abajo la fecha + animación + insignia A/B, después los botones de acciones y al final la leyenda', tag: 'changed' },
+            { text: 'Nuevo botón de opacidad: muestra el porcentaje en el mismo botón cuando es distinto a 100 % y abre una barra deslizable al hacer click', tag: 'added' },
+            { text: 'La leyenda de cada capa aparece dentro de su propia tarjeta en el panel de capas activas (antes vivía en un panel aparte)', tag: 'added' },
+            { text: 'Nuevo botón para mostrar u ocultar las leyendas; tu preferencia se recuerda entre sesiones', tag: 'added' },
+            { text: 'En el comparador, al cambiar entre lado A y B se ilumina brevemente el panel correspondiente', tag: 'added' },
+            { text: 'Los controles de animación (play / velocidad / dirección) sólo aparecen cuando ya hay una animación corriendo: se inicia desde "Ver animación" del detalle de la capa', tag: 'changed' },
+            { text: 'Quitamos el aviso emergente al activar la barra divisora: la información ahora aparece como tooltip sobre el botón', tag: 'changed' },
+            { text: 'Quitamos la letra A o B gigante en el centro al cambiar de lado en el comparador; conservamos el resaltado del panel', tag: 'removed' },
+        ]
+    },
+    {
         version: '1.11.0',
         items: [
             { text: 'Al hacer click en zonas con muchos puntos, el panel de información ahora muestra el total real desde el primer momento (por ejemplo "1/482" en lugar de "1/50")', tag: 'changed' },
