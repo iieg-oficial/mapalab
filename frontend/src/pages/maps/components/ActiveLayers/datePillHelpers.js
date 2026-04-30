@@ -1,10 +1,16 @@
 import { describeDateFilter, formatLoopLabel } from '@pages/maps/helpers/dateLoopHelpers';
 
 export const LABEL_WIDTHS = {
-    'year': 'w-[40px]',
-    'month-year': 'w-[60px]',
-    'multi-year': 'w-[50px]',
-    'multi-month': 'w-[86px]',
+    'year': { normal: 'w-[40px]', withPlay: 'w-[54px]' },
+    'month-year': { normal: 'w-[72px]', withPlay: 'w-[86px]' },
+    'multi-year': { normal: 'w-[50px]', withPlay: 'w-[64px]' },
+    'multi-month': { normal: 'w-[100px]', withPlay: 'w-[114px]' },
+};
+
+export const getLabelWidthClass = (kind, withPlay = false) => {
+    const entry = LABEL_WIDTHS[kind];
+    if (!entry) return withPlay ? 'min-w-[62px]' : 'min-w-[48px]';
+    return withPlay ? entry.withPlay : entry.normal;
 };
 
 export const SLOT_PILL = {

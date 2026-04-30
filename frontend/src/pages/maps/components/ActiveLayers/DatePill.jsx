@@ -1,5 +1,5 @@
 import Tooltip from '@components/Tooltip';
-import { LABEL_WIDTHS, SLOT_PILL } from './datePillHelpers';
+import { SLOT_PILL, getLabelWidthClass } from './datePillHelpers';
 import icoPlayNormal from '@assets/icons/ico_play_normal.svg';
 
 const SIZE_CLASSES = {
@@ -9,7 +9,7 @@ const SIZE_CLASSES = {
 
 const DatePill = ({ slot, label, kind, onClick, isLoopingPulse, isLooping = false, size = 'sm' }) => {
     const palette = SLOT_PILL[slot] || SLOT_PILL.none;
-    const widthClass = LABEL_WIDTHS[kind] || 'min-w-[48px]';
+    const widthClass = getLabelWidthClass(kind, isLooping);
     const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.sm;
     return (
         <Tooltip content={slot === 'none' ? 'Ver detalles de capa' : `Fecha del lado ${slot}${isLooping ? ' (en animación)' : ''}`}>
