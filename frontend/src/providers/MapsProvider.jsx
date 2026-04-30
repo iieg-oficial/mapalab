@@ -27,12 +27,14 @@ const MapsProvider = ({ children }) => {
     const clickPosition = useClickPosition();
     const targetRef = useRef(null);
     const mapRef = useRef(null);
+    const compareModeRef = useRef(null);
     const layerManagement = useLayerManagement();
     const symbology = useSymbology({
         activeLayerIds: layerManagement.activeLayerIds,
         findLayerById: layerManagement.findLayerById,
         getAllChildLayerIds: layerManagement.getAllChildLayerIds,
-        allLayers
+        allLayers,
+        compareModeRef
     });
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
     const cqlFilter = useCQLFilter();
@@ -75,6 +77,7 @@ const MapsProvider = ({ children }) => {
         liveStateRef,
         getAllChildLayerIds: layerManagement.getAllChildLayerIds,
     });
+    compareModeRef.current = swipeMode.compareMode;
 
     const onToggleLayer = useCallback((layerId, force, options) => {
         const cm = swipeMode.compareMode;
