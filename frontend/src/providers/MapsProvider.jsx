@@ -76,8 +76,6 @@ const MapsProvider = ({ children }) => {
         getAllChildLayerIds: layerManagement.getAllChildLayerIds,
     });
 
-    const [pendingSlotPick, setPendingSlotPick] = useState(null);
-
     const onToggleLayer = useCallback((layerId, force, options) => {
         const cm = swipeMode.compareMode;
         if (!cm.active) {
@@ -87,7 +85,8 @@ const MapsProvider = ({ children }) => {
         const inB = cm.paneB.activeLayerIds.includes(layerId);
         const wantsActivate = force === true || (force === undefined && !inA && !inB);
         if (wantsActivate && !inA && !inB) {
-            setPendingSlotPick({ layerId });
+            layerToggle.handleToggleLayer(layerId, true);
+            swipeMode.setLayerSlotMembership(layerId, 'AB');
             return undefined;
         }
         if (!wantsActivate) {
@@ -97,20 +96,6 @@ const MapsProvider = ({ children }) => {
         }
         return undefined;
     }, [swipeMode, layerToggle]);
-
-    const confirmPendingSlot = useCallback((target) => {
-        if (!pendingSlotPick) return;
-        const layerId = pendingSlotPick.layerId;
-        setPendingSlotPick(null);
-        layerToggle.handleToggleLayer(layerId, true);
-        if (target === 'A' || target === 'B') {
-            swipeMode.setLayerSlotMembership(layerId, target);
-        } else {
-            swipeMode.setLayerSlotMembership(layerId, 'AB');
-        }
-    }, [pendingSlotPick, layerToggle, swipeMode]);
-
-    const cancelPendingSlot = useCallback(() => setPendingSlotPick(null), []);
 
     const handlePolygonComplete = useCallback((geometry, centerCoordinate, onFeatureCountUpdate) => {
         if (queryFeaturesInPolygonRef.current && mapRef.current) {
@@ -166,9 +151,6 @@ const MapsProvider = ({ children }) => {
         ...layerManagement,
         onToggleLayer,
         applyDefaultDate: layerToggle.applyDefaultDate,
-        pendingSlotPick,
-        confirmPendingSlot,
-        cancelPendingSlot,
         ...symbology,
         ...layerOpacity,
         ...cqlFilter,
@@ -188,9 +170,6 @@ const MapsProvider = ({ children }) => {
         layerManagement,
         onToggleLayer,
         layerToggle.applyDefaultDate,
-        pendingSlotPick,
-        confirmPendingSlot,
-        cancelPendingSlot,
         symbology,
         layerOpacity,
         selectedFeatureInfo,
