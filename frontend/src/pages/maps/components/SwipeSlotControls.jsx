@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
+import { useSider } from '@contexts/SiderContext';
 import Tooltip from '@components/Tooltip';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import DatePill from './ActiveLayers/DatePill';
@@ -10,6 +11,8 @@ const SwipeSlotControls = () => {
         compareMode, exitCompareMode, toggleSwipeOrientation,
         selectedLayerForSymbology, allLayers, dateLoops, setSelectedLayer,
     } = useMapsContext();
+    const { width: siderWidth, isOpen: isSiderOpen, isMobile: isMobileSider } = useSider();
+    const siderShift = !isMobileSider && isSiderOpen ? siderWidth / 2 : 0;
 
     const layerId = selectedLayerForSymbology?.id || null;
     const layerDef = useMemo(() => (layerId ? findLayerDef(layerId, allLayers) : null), [layerId, allLayers]);
@@ -36,7 +39,10 @@ const SwipeSlotControls = () => {
     const showB = inB && labelB.label;
 
     return (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200">
+        <div
+            className="fixed bottom-4 z-20 flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200"
+            style={{ left: `calc(50% + ${siderShift}px)`, transform: 'translateX(-50%)' }}
+        >
             {showA && (
                 <DatePill slot="A" label={labelA.label} kind={labelA.kind} onClick={handlePillClick} isLooping={isLoopingA} size="md" />
             )}
