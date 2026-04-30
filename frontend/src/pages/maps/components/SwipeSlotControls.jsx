@@ -36,7 +36,7 @@ const SwipeSlotControls = () => {
     const showB = inB && labelB.label;
 
     return (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200">
             {showA && (
                 <DatePill slot="A" label={labelA.label} kind={labelA.kind} onClick={handlePillClick} isLooping={isLoopingA} size="md" />
             )}
