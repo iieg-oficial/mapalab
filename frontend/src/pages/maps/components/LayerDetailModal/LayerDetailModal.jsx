@@ -200,7 +200,7 @@ const LayerDetailModal = () => {
                                 </span>
                             </div>
                             <h3 className="text-[18px]/[47px] font-garet font-extrabold text-[#5C2472] tracking-normal">
-                                {selectedLayer.name || 'Capa sin nombre'}
+                                {selectedLayer.name || selectedLayer.label || layerDef?.label || 'Capa sin nombre'}
                             </h3>
 
                             {(metadata?.frecuencia_actualizacion || metadata?.fecha_ultima_actualizacion) && (
@@ -237,6 +237,7 @@ const LayerDetailModal = () => {
                                 <>
                                     <PeriodicitySection
                                         layerId={selectedLayer.id}
+                                        slot="A"
                                         label="Lado A"
                                         periodicity={periodicity}
                                         rasterPeriodicity={rasterPeriodicity}
@@ -261,6 +262,7 @@ const LayerDetailModal = () => {
                                     />
                                     <PeriodicitySection
                                         layerId={selectedLayer.id}
+                                        slot="B"
                                         label="Lado B"
                                         periodicity={periodicity}
                                         rasterPeriodicity={rasterPeriodicity}
@@ -287,6 +289,7 @@ const LayerDetailModal = () => {
                             ) : hasPeriodicity && (
                                 <PeriodicitySection
                                     layerId={selectedLayer.id}
+                                    slot={slotMembership === 'A' || slotMembership === 'B' ? slotMembership : undefined}
                                     label={slotMembership ? `Lado ${slotMembership}` : null}
                                     periodicity={periodicity}
                                     rasterPeriodicity={rasterPeriodicity}
