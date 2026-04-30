@@ -11,6 +11,7 @@ import { handleKeyActivate } from '@utils/a11y';
 import LayerItemHeader from './LayerItemHeader';
 import LayerDateControls from './LayerDateControls';
 import LayerActionsBar from './LayerActionsBar';
+import LayerInlineActions from './LayerInlineActions';
 
 const ActiveLayerItem = ({ layer, dragHandleProps }) => {
     const { loadingLayers } = useLayerLoading();
@@ -158,9 +159,20 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
                 placement={isMobile ? 'top' : 'left'}
                 disabled={!isSelected}
             >
-                <div className="flex flex-col gap-1.5 px-2 py-2">
-                    <div className="flex items-center justify-between gap-2 min-h-8">
+                <div className="flex flex-col gap-1.5 px-2 py-2 w-full">
+                    <div className="flex items-center justify-between gap-2 min-h-8 w-full">
                         <LayerItemHeader name={layer.name} showHandle={showHandle} dragHandleProps={dragHandleProps} />
+                        {!isSelected && !isMobile && isHovered && (
+                            <LayerInlineActions
+                                visible={layer.visible}
+                                isLoading={isLoading}
+                                isLooping={isLooping}
+                                canOpenModal={canOpenModal}
+                                onToggleVisibility={handleToggleVisibilityClick}
+                                onOpenDetails={handleSetSelectedLayerClick}
+                                onRemove={handleRemoveClick}
+                            />
+                        )}
                         {isLoading && !isLooping && (
                             <Loading visible={true} size="size-5" border="border-2" />
                         )}
