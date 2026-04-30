@@ -45,7 +45,9 @@ const Tooltip = ({
     variant = 'normal',
     showArrow = true,
     forceVisible = false,
-    interactive = false
+    interactive = false,
+    triggerClassName = '',
+    triggerBlock = false
 }) => {
     const disabled = disabledProp || (disableMobile && window.innerWidth < 768);
     const [isVisible, setIsVisible] = useState(false);
@@ -274,7 +276,8 @@ const Tooltip = ({
                 ref={triggerRef}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                style={{ display: 'inline-flex' }}
+                className={triggerClassName}
+                style={{ display: triggerBlock ? 'block' : 'inline-flex' }}
             >
                 {children}
             </div>
