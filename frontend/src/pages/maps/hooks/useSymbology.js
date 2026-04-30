@@ -11,7 +11,8 @@ export const useSymbology = ({
     activeLayerIds,
     findLayerById,
     getAllChildLayerIds,
-    allLayers
+    allLayers,
+    compareModeRef
 }) => {
     const [selectedLayerForSymbology, setSelectedLayerForSymbology] = useState(null);
     const [hiddenLayerIds, setHiddenLayerIds] = useState([]);
@@ -140,11 +141,14 @@ export const useSymbology = ({
         const nonBaseParentLayers = allParentLayers.filter(layer => !baseLayerIds.has(layer.id));
         const nonBaseIndividualLayers = allIndividualLayers.filter(layer => !baseLayerIds.has(layer.id));
 
+        const isSwipeActive = !!compareModeRef?.current?.active;
+
         setSelectedLayerForSymbology(prev => {
-            const isCurrentSelectionValid = prev && (
+            const stillActive = prev && (
                 activeLayerIds.includes(prev.id) ||
                 getAllChildLayerIds(prev.id).some(id => activeLayerIds.includes(id))
-            ) && !hiddenLayerIds.includes(prev.id);
+            );
+            const isCurrentSelectionValid = stillActive && (isSwipeActive || !hiddenLayerIds.includes(prev.id));
 
             if (prev && isCurrentSelectionValid) {
                 return prev;
@@ -169,7 +173,7 @@ export const useSymbology = ({
             }
             return null;
         });
-    }, [activeLayerIds, findLayerById, hiddenLayerIds, getAllChildLayerIds]);
+    }, [activeLayerIds, findLayerById, hiddenLayerIds, getAllChildLayerIds, compareModeRef]);
 
     return {
         selectedLayerForSymbology,
