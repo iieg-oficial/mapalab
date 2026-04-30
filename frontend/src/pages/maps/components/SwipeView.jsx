@@ -95,10 +95,10 @@ const SwipeView = () => {
                     <span className="font-garet font-bold text-white text-[120px] drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">B</span>
                 </div>
             )}
-            <div className="absolute top-3 left-4 z-[1] px-3 py-1 bg-white/90 border border-gray-300 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none">
+            <div data-swipe-label="A" className="absolute top-3 left-4 z-[1] px-3 py-1 bg-white/90 border border-gray-300 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none">
                 {labelA}
             </div>
-            <div className={`absolute z-[1] px-3 py-1 bg-white/90 border border-gray-300 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none ${isHorizontal ? 'bottom-3 left-4' : 'top-3 right-4'}`}>
+            <div data-swipe-label="B" className={`absolute z-[1] px-3 py-1 bg-white/90 border border-gray-300 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none ${isHorizontal ? 'bottom-3 left-4' : 'top-3 right-4'}`}>
                 {labelB}
             </div>
             <div
