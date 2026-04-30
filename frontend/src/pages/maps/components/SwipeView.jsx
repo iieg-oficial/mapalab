@@ -63,8 +63,8 @@ const SwipeView = () => {
         ? { top: `${pos}%`, height: '14px', marginTop: '-7px', left: 0, right: 0 }
         : { left: `${pos}%`, width: '14px', marginLeft: '-7px', top: 0, bottom: 0 };
     const handleBaseClass = isHorizontal
-        ? 'absolute z-10 cursor-ns-resize touch-none'
-        : 'absolute z-10 cursor-ew-resize touch-none';
+        ? 'absolute z-[1] cursor-ns-resize touch-none'
+        : 'absolute z-[1] cursor-ew-resize touch-none';
     const lineClass = isHorizontal
         ? 'absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-[#FF8300] shadow'
         : 'absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-[#FF8300] shadow';
@@ -86,19 +86,19 @@ const SwipeView = () => {
                 <MapView paneIndex={1} className="absolute inset-0 w-full h-full pointer-events-auto" />
             </div>
             {showA && (
-                <div className="absolute z-10 flex items-center justify-center pointer-events-none transition-opacity duration-200 bg-[#5C2472]/30" style={overlayAStyle}>
+                <div className="absolute z-[1] flex items-center justify-center pointer-events-none transition-opacity duration-200 bg-[#5C2472]/30" style={overlayAStyle}>
                     <span className="font-garet font-bold text-white text-[120px] drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">A</span>
                 </div>
             )}
             {showB && (
-                <div className="absolute z-10 flex items-center justify-center pointer-events-none transition-opacity duration-200 bg-[#FF8300]/30" style={overlayBStyle}>
+                <div className="absolute z-[1] flex items-center justify-center pointer-events-none transition-opacity duration-200 bg-[#FF8300]/30" style={overlayBStyle}>
                     <span className="font-garet font-bold text-white text-[120px] drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">B</span>
                 </div>
             )}
-            <div className="absolute top-3 left-4 z-10 px-3 py-1 bg-white/90 border border-gray-300 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none">
+            <div className="absolute top-3 left-4 z-[1] px-3 py-1 bg-white/90 border border-gray-300 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none">
                 {labelA}
             </div>
-            <div className={`absolute z-10 px-3 py-1 bg-white/90 border border-gray-300 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none ${isHorizontal ? 'bottom-3 left-4' : 'top-3 right-4'}`}>
+            <div className={`absolute z-[1] px-3 py-1 bg-white/90 border border-gray-300 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none ${isHorizontal ? 'bottom-3 left-4' : 'top-3 right-4'}`}>
                 {labelB}
             </div>
             <div
