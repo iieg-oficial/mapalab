@@ -40,7 +40,7 @@ const SwipeSlotControls = () => {
 
     return (
         <div
-            className="fixed bottom-4 z-20 flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200"
+            className={`fixed z-20 flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200 ${isMobileSider ? 'bottom-16' : 'bottom-4'}`}
             style={{ left: `calc(50% + ${siderShift}px)`, transform: 'translateX(-50%)' }}
         >
             {showA && (
