@@ -51,7 +51,7 @@ export const useMapCapture = () => {
     const captureMap = async (scale = 1, mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT) => {
         if (!targetRef.current) return null;
 
-        const html2canvas = (await import('html2canvas')).default;
+        const html2canvas = (await import('html2canvas-pro')).default;
         return html2canvas(targetRef.current, {
             useCORS: true,
             allowTaint: true,
@@ -65,7 +65,7 @@ export const useMapCapture = () => {
     const captureElement = async (element, options = {}) => {
         if (!element) return null;
 
-        const html2canvas = (await import('html2canvas')).default;
+        const html2canvas = (await import('html2canvas-pro')).default;
         return html2canvas(element, {
             useCORS: true,
             allowTaint: true,

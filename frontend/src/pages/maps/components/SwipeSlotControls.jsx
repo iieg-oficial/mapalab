@@ -6,7 +6,7 @@ import Switch from '@components/Switch';
 const downloadSwipeComposite = async () => {
     const target = document.querySelector('[data-swipe-composite="true"]');
     if (!target) return;
-    const html2canvas = (await import('html2canvas')).default;
+    const html2canvas = (await import('html2canvas-pro')).default;
     const canvas = await html2canvas(target, {
         useCORS: true,
         allowTaint: true,
