@@ -9,6 +9,7 @@ import {
 
 export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
     const [compareMode, setCompareMode] = useState(initialCompareMode);
+    const [highlightedSlots, setHighlightedSlots] = useState(null);
 
     const snapshotLive = useCallback((label) => ({
         activeLayerIds: [...liveStateRef.current.activeLayerIds],
@@ -235,5 +236,7 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
         setSwipePosition,
         toggleSwipeOrientation,
         paneMapRefs,
+        highlightedSlots,
+        setHighlightedSlots,
     };
 };
