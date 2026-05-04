@@ -27,6 +27,7 @@ const findLayerByWorkspaceLayer = (workspace, layer, nodes) => {
 const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
     const { mapRef, allLayers } = useMapsContext();
     const zoomedRef = useRef(false);
+    const autoActivatedRef = useRef(false);
 
     useEffect(() => {
         if (zoomedRef.current) return;
@@ -49,13 +50,76 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
     const themeChildren = useMemo(() => {
         if (!evento?.capas?.length || !allLayers?.length) return [];
         return evento.capas
-            .map((c) => {
+            .map((c, idx) => {
+                if (c.tipo === 'etiqueta') {
+                    return {
+                        id: `evento-etiqueta-${evento.id}-${idx}`,
+                        label: c.alias || '',
+                        isLabel: true,
+                    };
+                }
                 const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
                 if (!layer) return null;
                 return c.alias ? { ...layer, label: c.alias } : layer;
             })
             .filter(Boolean);
     }, [evento, allLayers]);
+
+    const eventoLayerIds = useMemo(() => {
+        const ids = new Set();
+        if (!evento?.capas?.length || !allLayers?.length) return ids;
+        for (const c of evento.capas) {
+            if (c.tipo === 'etiqueta') continue;
+            const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
+            if (layer) ids.add(layer.id);
+        }
+        return ids;
+    }, [evento, allLayers]);
+
+    const activeIdsRef = useRef(activeLayerIds);
+    useEffect(() => { activeIdsRef.current = activeLayerIds; }, [activeLayerIds]);
+
+    useEffect(() => {
+        if (autoActivatedRef.current) return;
+        if (!evento?.capas?.length || !allLayers?.length || !onToggleLayer) return;
+        const toActivate = [];
+        for (const c of evento.capas) {
+            if (c.tipo === 'etiqueta') continue;
+            if (c.autoActivar === false) continue;
+            const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
+            if (layer && !activeIdsRef.current?.includes(layer.id)) {
+                toActivate.push(layer.id);
+            }
+        }
+        if (toActivate.length === 0) return;
+        autoActivatedRef.current = true;
+        toActivate.forEach((id) => onToggleLayer(id, true));
+    }, [evento, allLayers, onToggleLayer]);
+
+    const externalActiveIds = useMemo(() => (
+        (activeLayerIds || []).filter((id) => !eventoLayerIds.has(id))
+    ), [activeLayerIds, eventoLayerIds]);
+
+    const handleApagarExternas = () => {
+        if (!onToggleLayer || externalActiveIds.length === 0) return;
+        externalActiveIds.forEach((id) => onToggleLayer(id, false));
+    };
+
+    const headerExtras = (
+        <div className="flex items-center gap-1">
+            {externalActiveIds.length > 0 && (
+                <button
+                    type="button"
+                    onClick={handleApagarExternas}
+                    title={`Eliminar ${externalActiveIds.length} capa${externalActiveIds.length === 1 ? '' : 's'} fuera del evento`}
+                    className="px-2 py-1 rounded-md text-[11px] font-bold text-[#5C2472] hover:bg-[#F0E6F6] transition-colors cursor-pointer"
+                >
+                    Eliminar ({externalActiveIds.length})
+                </button>
+            )}
+            {closeButton}
+        </div>
+    );
 
     const theme = useMemo(() => ({
         id: `evento-${evento?.id}`,
@@ -68,7 +132,7 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
             theme={theme}
             activeLayerIds={activeLayerIds}
             onToggleLayer={onToggleLayer}
-            closeButton={closeButton}
+            closeButton={headerExtras}
         />
     );
 };
