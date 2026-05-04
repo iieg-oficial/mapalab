@@ -19,11 +19,14 @@ import InfoBoxTools from './components/InfoBoxTools';
 import InfoCard from './components/InfoCard';
 import SwipeToRemove from './components/SwipeToRemove';
 import WhatsNewModal from '../WhatsNewModal';
+import MapReportButton from '../MapReportButton';
+import ReportModal from '@components/ReportModal';
 
 const InfoBox = () => {
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers } = useContext(MapsContext);
     const { isMobile } = useSider();
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+    const [reportOpen, setReportOpen] = useState(false);
     const { selectAlternativeLayer, loadMoreFeatures } = useFeatureInfo();
     const panelRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -57,6 +60,7 @@ const InfoBox = () => {
 
     const handleAction = useCallback((action) => {
         if (action === 'whats_new') setWhatsNewOpen(true);
+        if (action === 'report') setReportOpen(true);
     }, []);
 
     useOutsideClick([panelRef], isMobile ? undefined : handleClose);
@@ -120,7 +124,6 @@ const InfoBox = () => {
                 const cache = result.cachedFeatures || result.features;
                 const newCache = cache.filter(f => f !== removed && (removed?.id == null || f.id !== removed.id));
 
-                // Si se vacian las visibles pero el cache aun tiene features, repoblar
                 let nextFeatures = newFeatures;
                 let nextDisplayCap = result.displayCap ?? newFeatures.length;
                 if (newFeatures.length === 0 && newCache.length > 0) {
@@ -166,6 +169,14 @@ const InfoBox = () => {
     };
 
     const showToolbar = !hasNoResults && totalFeatures > 1;
+    const reportButton = !hasNoResults && (
+        <MapReportButton
+            variant="floating"
+            extraContext={results?.[0]?.features?.[0] ?? undefined}
+            label="Reportar"
+            className="md:bg-[#EAEFFA] md:text-[#703089] md:border md:border-transparent md:hover:border-[#5C2472] md:shadow-[0px_6px_12px_#2F495C14]"
+        />
+    );
 
     let globalCardIdx = 0;
     const cardTotal = totalAvailable > 0 ? totalAvailable : totalFeatures;
@@ -232,7 +243,10 @@ const InfoBox = () => {
                         <MobileSheetCloseButton onClick={handleClose} />
                     </div>
 
-                    <InfoBoxTools tools={mobileTools} className="pl-[13px] pr-4 pb-2" />
+                    <div className="flex items-center justify-between pl-[13px] pr-4 pb-2 gap-3">
+                        <InfoBoxTools tools={mobileTools} />
+                        {reportButton}
+                    </div>
 
                     <ScrollContainer
                         className="flex-1 px-3 pb-3 transition-[pointer-events] duration-0"
@@ -275,6 +289,7 @@ const InfoBox = () => {
                         </div>
                     </ScrollContainer>
                 </MobileSheet>
+                <ReportModal isOpen={reportOpen} onClose={() => setReportOpen(false)} extraContext={{ source: 'iieg_marker' }} />
                 <WhatsNewModal isOpen={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
             </>
         );
@@ -284,7 +299,7 @@ const InfoBox = () => {
         <div
             ref={panelRef}
             className={`
-                relative bg-transparent z-50 flex items-start gap-2
+                relative bg-transparent z-50 flex items-stretch gap-2
                 ${isSingleFeature ? '-translate-x-1/2 -translate-y-full' : ''}
             `}
             style={positionStyle}
@@ -349,14 +364,19 @@ const InfoBox = () => {
                 )}
             </div>
 
-            <ActionsToolbar
-                visible={showToolbar}
-                onClear={handleClose}
-                onDownload={handleDownload}
-                downloadCount={downloadDisplayCount}
-                downloadShowsPlus={downloadShowsPlus}
-                downloadTooltip={downloadTooltipText}
-            />
+            <div className="flex flex-col items-center justify-between pb-1">
+                <ActionsToolbar
+                    visible={showToolbar}
+                    onClear={handleClose}
+                    onDownload={handleDownload}
+                    downloadCount={downloadDisplayCount}
+                    downloadShowsPlus={downloadShowsPlus}
+                    downloadTooltip={downloadTooltipText}
+                />
+                <div className="mt-auto">
+                    {reportButton}
+                </div>
+            </div>
 
             <WhatsNewModal isOpen={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
         </div>

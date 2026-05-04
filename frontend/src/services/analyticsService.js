@@ -56,3 +56,6 @@ export const trackShareMap = (status) =>
 
 export const trackInfoOpen = () =>
     withMapInteraction('info_open', {});
+
+export const trackReportSubmitted = (tipo, sourceRoute) =>
+    trackEvent('report_submitted', { tipo, source_route: sourceRoute });
