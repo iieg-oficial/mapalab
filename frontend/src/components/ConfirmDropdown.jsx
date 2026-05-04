@@ -8,6 +8,7 @@ const ConfirmDropdown = ({
     title,
     description,
     confirmText = 'Confirmar',
+    placement = 'bottom',
     className = ''
 }) => {
     const dropdownRef = useRef(null);
@@ -22,11 +23,16 @@ const ConfirmDropdown = ({
 
     if (!open) return null;
 
+    const placementClasses = placement === 'top'
+        ? 'bottom-full mb-1'
+        : 'top-full mt-1';
+
     return (
         <div
             ref={dropdownRef}
             className={[
-                'absolute top-full mt-1 z-50 bg-white rounded-[8px] shadow-[0px_3px_24px_#00000029] w-[342px] max-w-[calc(100vw-2rem)] p-4',
+                'absolute z-50 bg-white rounded-[8px] shadow-[0px_3px_24px_#00000029] w-[342px] max-w-[calc(100vw-2rem)] p-4',
+                placementClasses,
                 className
             ].join(' ')}
         >

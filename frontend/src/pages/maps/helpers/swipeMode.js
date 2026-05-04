@@ -16,6 +16,7 @@ export const initialCompareMode = () => ({
     originalSnapshot: null,
     swipePosition: 0.5,
     swipeOrientation: 'vertical',
+    globalOrder: [],
 });
 
 export const serializeSnapshotForStorage = (snapshot) => ({

@@ -6,8 +6,8 @@ export const usePeriodicityCache = (activeLayerIds) => {
     const [loading, setLoading] = useState(new Set());
     const fetchedRef = useRef(new Set());
 
-    useEffect(() => {
-        const missing = activeLayerIds.filter(id => !fetchedRef.current.has(id));
+    const fetchIds = useCallback((ids) => {
+        const missing = ids.filter(id => id && !fetchedRef.current.has(id));
         if (missing.length === 0) return;
 
         missing.forEach(id => fetchedRef.current.add(id));
@@ -27,16 +27,25 @@ export const usePeriodicityCache = (activeLayerIds) => {
                 });
             })
             .catch(() => {
+                missing.forEach(id => fetchedRef.current.delete(id));
                 setLoading(prev => {
                     const next = new Set(prev);
                     missing.forEach(id => next.delete(id));
                     return next;
                 });
             });
-    }, [activeLayerIds]);
+    }, []);
+
+    useEffect(() => {
+        fetchIds(activeLayerIds);
+    }, [activeLayerIds, fetchIds]);
 
     const getPeriodicity = useCallback((layerId) => cache[layerId] ?? null, [cache]);
     const isLoading = useCallback((layerId) => loading.has(layerId), [loading]);
+    const ensureFetched = useCallback((layerId) => {
+        if (!layerId || fetchedRef.current.has(layerId)) return;
+        fetchIds([layerId]);
+    }, [fetchIds]);
 
-    return { cache, getPeriodicity, isLoading };
+    return { cache, getPeriodicity, isLoading, ensureFetched };
 };

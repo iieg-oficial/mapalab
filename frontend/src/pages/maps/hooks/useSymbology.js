@@ -34,14 +34,18 @@ export const useSymbology = ({
         setHiddenLayerIds(prev => {
             const childIds = getAllChildLayerIds(layerId);
             const allIds = [layerId, ...childIds];
+            const activeChildIds = childIds.filter(id => activeLayerIds.includes(id));
 
-            if (prev.includes(layerId)) {
+            const isCurrentlyHidden = prev.includes(layerId)
+                || (activeChildIds.length > 0 && activeChildIds.every(id => prev.includes(id)));
+
+            if (isCurrentlyHidden) {
                 return prev.filter(id => !allIds.includes(id));
             } else {
                 return [...new Set([...prev, ...allIds])];
             }
         });
-    }, [getAllChildLayerIds]);
+    }, [getAllChildLayerIds, activeLayerIds]);
 
     const isLayerVisible = useCallback((layerId) => {
         return !hiddenLayerIds.includes(layerId);
@@ -120,33 +124,51 @@ export const useSymbology = ({
     const isStartupRef = useRef(true);
 
     useEffect(() => {
-        if (!activeLayerIds || activeLayerIds.length === 0) {
+        const isSwipeActive = !!compareModeRef?.current?.active;
+        const swipeAllIds = isSwipeActive
+            ? [
+                ...(compareModeRef.current.paneA?.activeLayerIds || []),
+                ...(compareModeRef.current.paneB?.activeLayerIds || []),
+            ]
+            : null;
+
+        const hasAnyActive = (activeLayerIds && activeLayerIds.length > 0)
+            || (swipeAllIds && swipeAllIds.length > 0);
+
+        if (!hasAnyActive) {
             setSelectedLayerForSymbology(null);
             return;
         }
 
+        const candidateIds = swipeAllIds && swipeAllIds.length > 0
+            ? [...new Set([...(activeLayerIds || []), ...swipeAllIds])]
+            : activeLayerIds;
+
         const baseLayersNode = findLayerById('base_layers');
         const baseLayerIds = new Set(baseLayersNode?.children?.map(child => child.id) || []);
 
-        const allParentLayers = activeLayerIds
+        const allParentLayers = candidateIds
             .map(id => findLayerById(id))
             .filter(layer => layer && isParentLayer(layer))
-            .filter(layer => !hiddenLayerIds.includes(layer.id));
+            .filter(layer => isSwipeActive || !hiddenLayerIds.includes(layer.id));
 
-        const allIndividualLayers = activeLayerIds
+        const allIndividualLayers = candidateIds
             .map(id => findLayerById(id))
             .filter(layer => layer && !isParentLayer(layer) && hasWMSConfig(layer))
-            .filter(layer => !hiddenLayerIds.includes(layer.id));
+            .filter(layer => isSwipeActive || !hiddenLayerIds.includes(layer.id));
 
         const nonBaseParentLayers = allParentLayers.filter(layer => !baseLayerIds.has(layer.id));
         const nonBaseIndividualLayers = allIndividualLayers.filter(layer => !baseLayerIds.has(layer.id));
 
-        const isSwipeActive = !!compareModeRef?.current?.active;
-
         setSelectedLayerForSymbology(prev => {
+            const prevChildIds = prev ? getAllChildLayerIds(prev.id) : [];
             const stillActive = prev && (
                 activeLayerIds.includes(prev.id) ||
-                getAllChildLayerIds(prev.id).some(id => activeLayerIds.includes(id))
+                prevChildIds.some(id => activeLayerIds.includes(id)) ||
+                (swipeAllIds && (
+                    swipeAllIds.includes(prev.id) ||
+                    prevChildIds.some(id => swipeAllIds.includes(id))
+                ))
             );
             const isCurrentSelectionValid = stillActive && (isSwipeActive || !hiddenLayerIds.includes(prev.id));
 

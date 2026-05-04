@@ -45,6 +45,7 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
             originalSnapshot: current,
             swipePosition: 0.5,
             swipeOrientation: 'vertical',
+            globalOrder: [],
         });
     }, [snapshotLive, applySnapshotToLive, liveStateRef]);
 
@@ -91,7 +92,11 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
             if (!prev.active) return prev;
             const newPane = purgePaneOf(prev[`pane${slot}`], idsSet);
             if (slot === prev.activeSlot) purgeLiveOf(idsSet);
-            return { ...prev, [`pane${slot}`]: newPane };
+            const otherSlot = slot === 'A' ? 'B' : 'A';
+            const otherIds = new Set(prev[`pane${otherSlot}`].activeLayerIds);
+            const stillActiveIds = new Set([...newPane.activeLayerIds, ...otherIds]);
+            const newGlobalOrder = (prev.globalOrder || []).filter(id => stillActiveIds.has(id));
+            return { ...prev, [`pane${slot}`]: newPane, globalOrder: newGlobalOrder };
         });
     }, [collectAllIds, purgePaneOf, purgeLiveOf]);
 
@@ -186,7 +191,13 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
             if (activePaneNew !== prev[`pane${prev.activeSlot}`]) {
                 applySnapshotToLive(activePaneNew);
             }
-            return { ...prev, paneA: nextA, paneB: nextB };
+
+            const stillActiveIds = new Set([...nextA.activeLayerIds, ...nextB.activeLayerIds]);
+            const existingOrder = (prev.globalOrder || []).filter(id => stillActiveIds.has(id));
+            const newIds = allIds.filter(id => stillActiveIds.has(id) && !existingOrder.includes(id));
+            const newGlobalOrder = [...existingOrder, ...newIds];
+
+            return { ...prev, paneA: nextA, paneB: nextB, globalOrder: newGlobalOrder };
         });
     }, [collectAllIds, purgePaneOf, applySnapshotToLive]);
 
@@ -220,6 +231,17 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
         }));
     }, []);
 
+    const reorderInSlots = useCallback((newGlobalOrder) => {
+        setCompareMode(prev => {
+            if (!prev.active) return prev;
+            const reorder = (pane) => ({
+                ...pane,
+                activeLayerIds: newGlobalOrder.filter(id => pane.activeLayerIds.includes(id)),
+            });
+            return { ...prev, paneA: reorder(prev.paneA), paneB: reorder(prev.paneB), globalOrder: [...newGlobalOrder] };
+        });
+    }, []);
+
     const paneMapRefs = useRef({});
 
     return {
@@ -232,6 +254,7 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
         setLayerSlotMembership,
         applyFilterToSlot,
         clearFilterFromSlot,
+        reorderInSlots,
         exitCompareMode,
         setSwipePosition,
         toggleSwipeOrientation,
