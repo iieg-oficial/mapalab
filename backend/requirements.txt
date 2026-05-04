@@ -12,3 +12,4 @@ apscheduler
 rich
 pytz
 sentry-sdk[fastapi]
+fastmcp
