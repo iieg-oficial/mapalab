@@ -14,6 +14,9 @@ import LayerActionsBar from './LayerActionsBar';
 import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
+import { useLayerMetadata } from '@hooksMaps/useLayerMetadata';
+import { useLayerDownload } from '@hooksMaps/useLayerDownload';
+import DownloadMenu from '@mapsComponents/LayerDetailModal/components/DownloadMenu';
 
 const ActiveLayerItem = ({ layer, dragHandleProps }) => {
     const { loadingLayers } = useLayerLoading();
@@ -29,6 +32,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
         getLoopState,
         toggleLoop,
         inferLoopConfig,
+        getFilter,
         getSpecificFilter,
         getLoopPrefs,
         setLoopIntervalMs,
@@ -45,13 +49,16 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
 
     const slotMembership = useMemo(() => {
         if (!compareMode?.active) return null;
-        const inA = (compareMode.paneA?.activeLayerIds || []).includes(layer.id);
-        const inB = (compareMode.paneB?.activeLayerIds || []).includes(layer.id);
+        const idsToCheck = [layer.id, ...(layer.childIds || [])];
+        const paneAIds = compareMode.paneA?.activeLayerIds || [];
+        const paneBIds = compareMode.paneB?.activeLayerIds || [];
+        const inA = idsToCheck.some(id => paneAIds.includes(id));
+        const inB = idsToCheck.some(id => paneBIds.includes(id));
         if (inA && inB) return 'AB';
         if (inA) return 'A';
         if (inB) return 'B';
         return null;
-    }, [compareMode?.active, compareMode?.paneA?.activeLayerIds, compareMode?.paneB?.activeLayerIds, layer.id]);
+    }, [compareMode?.active, compareMode?.paneA?.activeLayerIds, compareMode?.paneB?.activeLayerIds, layer.id, layer.childIds]);
 
     const { intervalMs: loopIntervalMs, direction: loopDirection } = getLoopPrefs?.(layer.id) || {};
 
@@ -60,6 +67,14 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
     const isSelected = selectedLayerForSymbology?.id === layer.id;
     const isExpanded = isSelected;
     const showHandle = isSelected || (!isMobile && isHovered);
+
+    const { metadata } = useLayerMetadata(isExpanded ? layer.id : null);
+    const download = useLayerDownload(isExpanded ? layer.id : null, { getFilter, getSpecificFilter, metadata });
+    const canDownload = isExpanded && metadata?.capa_descargable !== false;
+    const handleDownloadClick = () => {
+        if (download.downloading) download.handleCancelDownload();
+        else download.setMenuOpen(p => !p);
+    };
 
     useEffect(() => {
         if (isSelected && itemRef.current) {
@@ -77,7 +92,11 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
 
     const handleRemoveClick = (e) => {
         e.stopPropagation();
-        if (compareMode?.active && targetSlot) return removeLayerFromSlot?.(layer.id, targetSlot);
+        if (compareMode?.active) {
+            if (slotMembership === 'A' || slotMembership === 'AB') removeLayerFromSlot?.(layer.id, 'A');
+            if (slotMembership === 'B' || slotMembership === 'AB') removeLayerFromSlot?.(layer.id, 'B');
+            return;
+        }
         [layer.id, ...getAllChildLayerIds(layer.id)].forEach(id => clearLayerFilters(id));
         onToggleLayer(layer.id, false);
     };
@@ -99,6 +118,18 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
     const layerDef = useMemo(() => findLayerDef(layer.id, allLayers), [layer.id, allLayers]);
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
     const dateFilter = getSpecificFilter?.(layer.id, 'date') || null;
+
+    const effectiveOpacity = useMemo(() => {
+        const own = getLayerOpacity?.(layer.id) ?? 1;
+        if (own !== 1) return own;
+        if (layer.childIds?.length) {
+            for (const id of layer.childIds) {
+                const op = getLayerOpacity?.(id);
+                if (op != null && op !== 1) return op;
+            }
+        }
+        return own;
+    }, [getLayerOpacity, layer.id, layer.childIds]);
 
     const canPlayLoop = useMemo(() => {
         if (isLooping) return true;
@@ -162,7 +193,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
                 content={isSelected ? warningContent : null}
                 variant="warning"
                 placement={isMobile ? 'top' : 'left'}
-                disabled={!isSelected}
+                disabled={!isSelected || download.menuOpen}
                 triggerBlock
                 triggerClassName="w-full"
             >
@@ -178,6 +209,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
                                 onToggleVisibility={handleToggleVisibilityClick}
                                 onOpenDetails={handleSetSelectedLayerClick}
                                 onRemove={handleRemoveClick}
+                                slotMembership={slotMembership}
+                                activeSlot={compareMode?.activeSlot}
                             />
                         )}
                         <LayerTitle name={layer.name} />
@@ -211,7 +244,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
                                 isLoading={isLoading}
                                 isLooping={isLooping}
                                 canOpenModal={canOpenModal}
-                                opacity={getLayerOpacity?.(layer.id) ?? 1}
+                                opacity={effectiveOpacity}
                                 onToggleVisibility={handleToggleVisibilityClick}
                                 onOpenDetails={handleSetSelectedLayerClick}
                                 onChangeOpacity={(v) => setLayerOpacity?.(layer.id, v)}
@@ -220,7 +253,22 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
                                 slotMembership={slotMembership}
                                 activeSlot={compareMode?.activeSlot}
                                 onSwitchSlot={setActiveSlot}
+                                canDownload={canDownload}
+                                isDownloading={download.downloading}
+                                onDownloadClick={handleDownloadClick}
+                                downloadButtonRef={download.menuAnchorRef}
                             />
+                            {canDownload && (
+                                <DownloadMenu
+                                    open={download.menuOpen}
+                                    anchorRef={download.menuAnchorRef}
+                                    onClose={() => download.setMenuOpen(false)}
+                                    isRaster={download.isRaster}
+                                    hasDateFilter={download.hasDateFilter}
+                                    availableMetadata={download.availableMetadata}
+                                    onDownload={download.handleMenuDownload}
+                                />
+                            )}
                             <LayerLegendInline
                                 layer={layer}
                                 compareMode={compareMode}

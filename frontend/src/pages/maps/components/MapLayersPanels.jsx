@@ -5,6 +5,8 @@ import Panel from '@components/Panel';
 import Message from '@components/Message';
 import { useSlowLoading } from '@hooks/useSlowLoading';
 
+const SYMBOLOGY_PANEL_ENABLED = false;
+
 const MapLayersPanels = () => {
     const [layersCollapsed, setLayersCollapsed] = useState(true);
     const [symbologyCollapsed, setSymbologyCollapsed] = useState(true);
@@ -12,7 +14,7 @@ const MapLayersPanels = () => {
     const handleSymbologyCollapse = useCallback((v) => setSymbologyCollapsed(v), []);
     const isSlow = useSlowLoading(5000);
 
-    const allCollapsed = layersCollapsed && symbologyCollapsed;
+    const allCollapsed = layersCollapsed && (!SYMBOLOGY_PANEL_ENABLED || symbologyCollapsed);
 
     return (
         <Panel
@@ -37,7 +39,7 @@ const MapLayersPanels = () => {
                 </div>
             )}
             <ActiveLayersList onCollapseChange={handleLayersCollapse} />
-            <SymbologyPanel onCollapseChange={handleSymbologyCollapse} />
+            {SYMBOLOGY_PANEL_ENABLED && <SymbologyPanel onCollapseChange={handleSymbologyCollapse} />}
         </Panel>
     );
 };

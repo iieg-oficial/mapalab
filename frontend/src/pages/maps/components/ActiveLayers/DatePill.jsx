@@ -7,9 +7,9 @@ const SIZE_CLASSES = {
     md: 'h-7 px-2.5 text-[11px]',
 };
 
-const DatePill = ({ slot, label, kind, onClick, isLoopingPulse, isLooping = false, size = 'sm' }) => {
+const DatePill = ({ slot, label, kind, onClick, isLoopingPulse, isLooping = false, size = 'sm', autoWidth = false }) => {
     const palette = SLOT_PILL[slot] || SLOT_PILL.none;
-    const widthClass = getLabelWidthClass(kind, isLooping);
+    const widthClass = autoWidth ? '' : getLabelWidthClass(kind, isLooping);
     const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.sm;
     return (
         <Tooltip content={slot === 'none' ? 'Ver detalles de capa' : `Fecha del lado ${slot}${isLooping ? ' (en animación)' : ''}`}>

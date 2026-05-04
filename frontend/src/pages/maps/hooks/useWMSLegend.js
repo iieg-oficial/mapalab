@@ -7,6 +7,15 @@ export const useWMSLegend = () => {
     const { getFilter } = useContext(MapsContext);
     const { layers } = useLayers();
 
+    const resolveWMSId = useCallback((layer) => {
+        if (!layer) return null;
+        if (hasWMSConfig(layer.id, layers)) return layer.id;
+        if (Array.isArray(layer.childIds)) {
+            return layer.childIds.find(cid => hasWMSConfig(cid, layers)) || null;
+        }
+        return null;
+    }, [layers]);
+
     const getLegendUrl = useCallback((layer, {
         dpi = 100,
         iconWidth = 20,
@@ -20,7 +29,9 @@ export const useWMSLegend = () => {
         forceLabels = 'on',
         dateValue
     } = {}) => {
-        const wmsConfig = findWMSConfig(layer.id, layers);
+        const effectiveId = resolveWMSId(layer);
+        if (!effectiveId) return null;
+        const wmsConfig = findWMSConfig(effectiveId, layers);
 
         if (wmsConfig) {
             const legendOptions = [
@@ -36,7 +47,7 @@ export const useWMSLegend = () => {
 
             let style = wmsConfig.styles || '';
             if (wmsConfig.timeStylePattern) {
-                const timeValue = dateValue !== undefined ? dateValue : getFilter?.(layer.id);
+                const timeValue = dateValue !== undefined ? dateValue : getFilter?.(effectiveId);
                 if (timeValue) {
                     style = resolveTimeStyle(wmsConfig.timeStylePattern, timeValue);
                 }
@@ -46,10 +57,12 @@ export const useWMSLegend = () => {
             return url;
         }
         return null;
-    }, [getFilter, layers]);
+    }, [getFilter, layers, resolveWMSId]);
 
     const getLegendJson = useCallback(async (layer) => {
-        const wmsConfig = findWMSConfig(layer.id, layers);
+        const effectiveId = resolveWMSId(layer);
+        if (!effectiveId) return null;
+        const wmsConfig = findWMSConfig(effectiveId, layers);
 
         if (!wmsConfig) return null;
 
@@ -64,21 +77,23 @@ export const useWMSLegend = () => {
             console.error('Error fetching legend JSON:', error);
             return null;
         }
-    }, [layers]);
+    }, [layers, resolveWMSId]);
 
     const hasLegend = useCallback((layer) => {
-        return hasWMSConfig(layer.id, layers);
-    }, [layers]);
+        return resolveWMSId(layer) !== null;
+    }, [resolveWMSId]);
 
     const baseUrl = useCallback((layer) => {
-        const wmsConfig = findWMSConfig(layer.id, layers);
+        const effectiveId = resolveWMSId(layer);
+        if (!effectiveId) return null;
+        const wmsConfig = findWMSConfig(effectiveId, layers);
 
         if (wmsConfig) {
             return { layer, wmsConfig };
         }
 
         return null;
-    }, [layers]);
+    }, [layers, resolveWMSId]);
 
     return {
         getLegendUrl,

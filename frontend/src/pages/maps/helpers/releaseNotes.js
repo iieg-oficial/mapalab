@@ -12,6 +12,30 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.16.0',
+        items: [
+            { text: 'Nuevo botón Descargar dentro del panel de cada capa activa: abre el menú de opciones de descarga sin tener que entrar al detalle', tag: 'added' },
+            { text: 'Mientras la leyenda de una capa carga, ahora aparece un pequeño logo animado en lugar de un espacio vacío', tag: 'added' },
+            { text: 'En el comparador, los tooltips de cada acción te indican de qué lado (A o B) estás trabajando', tag: 'added' },
+            { text: 'En el comparador, ahora puedes mover el orden de las capas aunque estén en lados distintos', tag: 'added' },
+            { text: 'El botón de cerrar comparador se separó de la barra de fechas y ahora pide confirmación antes de cerrar', tag: 'changed' },
+            { text: 'Ya puedes ver la barra de escala correctamente cuando estás en el comparador', tag: 'fixed' },
+            { text: 'Al activar la primera capa, la sección de fechas (periodicidad) ya aparece de inmediato en el detalle', tag: 'fixed' },
+            { text: 'Al ciclar la pildora A/B/AB ya no se "deselecciona" la capa que estabas viendo', tag: 'fixed' },
+            { text: 'La opacidad y la visibilidad de un grupo de capas ahora sí se conservan al refrescar la página', tag: 'fixed' },
+            { text: 'En el comparador, el botón Eliminar quita la capa de los dos lados a la vez (para mover entre lados se usa la pildora A|B)', tag: 'changed' },
+            { text: 'Los contadores del header del panel ahora muestran el número real de capas visibles, no de IDs internos', tag: 'fixed' },
+        ]
+    },
+    {
+        version: '1.15.0',
+        items: [
+            { text: 'Nuevo botón "Reportar" para enviar problemas, dudas o sugerencias desde el mapa, el InfoBox o la página principal', tag: 'added' },
+            { text: 'Al reportar desde el mapa, puedes adjuntar una captura de pantalla automática para darnos más contexto', tag: 'added' },
+            { text: 'El email es opcional: si lo dejas en blanco, tu reporte llega de forma anónima', tag: 'added' },
+        ]
+    },
+    {
         version: '1.14.0',
         items: [
             { text: 'Cada capa activa se rediseñó con un layout en filas: arriba el título, abajo la fecha + animación + insignia A/B, después los botones de acciones y al final la leyenda', tag: 'changed' },
