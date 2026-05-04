@@ -1,5 +1,6 @@
 import footerConfig from '../config/footerConfig';
 import { useHomeContent } from '@hooks/useHomeContent';
+import ReportButton from '@components/ReportButton';
 
 const LogoWrapper = ({ logo, children }) => {
     if (logo.link) return <a href={logo.link} target="_blank" rel="noopener noreferrer">{children}</a>;
@@ -28,7 +29,10 @@ const Footer = () => {
         : footerConfig.logos;
 
     return (
-        <footer className="bg-purple p-10">
+        <footer className="bg-purple p-10 relative">
+            <div className="absolute bottom-4 right-4">
+                <ReportButton variant="floating" label="Reportar un problema o sugerencia" />
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-10 mb-10 lg:gap-x-10 xl:my-[54px]">
                 {apiLogos.map((logo) => (
                     <div key={logo.id} className="flex items-center justify-center">

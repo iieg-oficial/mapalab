@@ -538,3 +538,4 @@ Tipos: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `style`
 | `docs/CHANGELOG.md` | Registro de cambios por version |
 | `docs/backend.md` | Stack, estructura y desarrollo local del backend |
 | `docs/layers.md` | Arquitectura completa del sistema de capas (v1.4.0+) |
+| `docs/mcp.md` | Servidor MCP: arquitectura, tools expuestos, cómo probar, auth, cómo agregar/quitar routers |

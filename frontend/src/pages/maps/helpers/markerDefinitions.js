@@ -39,7 +39,8 @@ export const IIEG_MARKER = {
                 { icon: 'ubicacion', field: 'direccion' },
                 { icon: 'celular', field: 'telefono' },
                 { icon: 'web', value: 'iieg.gob.mx', href: 'https://iieg.gob.mx/ns/' },
-                { icon: 'novedades', value: `Novedades v${APP_VERSION}`, action: 'whats_new' }
+                { icon: 'novedades', value: `Novedades v${APP_VERSION}`, action: 'whats_new' },
+                { icon: 'bug', value: 'Reportar problema o sugerencia', action: 'report' }
             ]
         }
     }

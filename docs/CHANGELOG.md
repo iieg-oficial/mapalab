@@ -7,13 +7,16 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.17.0] - 2026-05-04
+
 ### Agregado
 - **MCP server montado en `/mcp`** del backend (expuesto al exterior bajo `/api/mcp/`). Construido con FastMCP a partir de un sub-app FastAPI que registra los routers `metadata`, `periodicity`, `layers` y `shares` (se excluyen `download` por su tamaño/streaming y `metrics` por ser interno de Prometheus). El `lifespan` del backend se compone con el de FastMCP via `combine_lifespans` para preservar el warmup del pool, el leader election y el scheduler. `nginx/nginx.conf` agrega `location /api/mcp/` con `proxy_buffering off`, `proxy_cache off` y timeouts de 600s para soportar el transporte HTTP streamable de MCP. Por ahora el endpoint queda público (mismo perfil que el resto del API); restringir a futuro vía gateway si se requiere.
 - **`GET /ontoy`** en mapalab-backend: devuelve `{slug, label, version}` para que mariachi-admin pueda detectar la versión y healthy del backend desde el dashboard `/inicio`. La versión se lee de `app/__version__.py` (nuevo archivo) que se mantiene sincronizado con `frontend/package.json` al bumpear el repo. Convención del ecosistema IIEG: cada repo expone su `/ontoy` para que se descubra.
-- **Sistema de reportes ciudadanos**: nuevo botón "Reportar" (icono `bug`) en tres puntos del visor — flotante junto a `MapAttribution`, inline al pie del `InfoBox` cuando hay feature seleccionada (con `feature_id`/`layer_id`/`feature_properties` en el contexto), e inline en Home debajo de los botones de soporte. Modal con tipo (problema/solicitud/sugerencia/duda/datos incorrectos/bug), mensaje (max 2000), email opcional (queda anónimo si se omite) y captura de pantalla opcional reutilizando `captureElement` de `useMapCapture` (`html2canvas-pro`). Honeypot oculto y rate limit del lado de mariachi. Los reportes viajan a `POST /api/public/reportes` de mariachi y se administran desde la nueva sección "Reportes" del admin.
-- **`useReportContext` + `feedbackService`**: hook que arma `source_app`/`source_route`/`source_context` (app_version, user_agent, screen, basemap, capas activas, vista del mapa, swipe) y servicio que postea como `multipart/form-data`.
+- **Sistema de reportes ciudadanos**: nuevo botón "Reportar" (icono `bug`) en cuatro puntos del visor — flotante junto a `MapAttribution`, inline en la columna de acciones del `InfoBox` cuando hay feature seleccionada (con `feature_id`/`layer_id`/`feature_properties` en el contexto), entrada en el `iconText` del marker IIEG (`action: 'report'`), e icono flotante en la esquina inferior derecha del footer de Home. Modal con tipo (problema/solicitud/sugerencia/duda/datos incorrectos/bug), mensaje (max 2000), email opcional (queda anónimo si se omite) y captura de pantalla opcional reutilizando `captureElement` de `useMapCapture` (`html2canvas-pro`, `scale: 0.7`). Honeypot oculto y rate limit del lado de mariachi. Los reportes viajan a `POST /api/public/reportes` de mariachi y se administran desde la nueva sección "Reportes" del admin.
+- **`useReportContext` + `feedbackService`**: hook que arma `source_app`/`source_route`/`source_context` (app_version, user_agent, screen, basemap, capas activas, vista del mapa, swipe) y servicio que postea como `multipart/form-data` con manejo de 429 (`code: 'rate_limited'`).
 - **Evento de analytics `report_submitted`** con `tipo` y `source_route`.
 - **Icono `bug`** inline en `Icon.jsx`.
+- **Proxy `/api/public` → mariachi en Vite** (dev): nueva regla en `vite.config.js` para rutear el endpoint público de reportes al `MARIACHI_DEV_TARGET` (mismo target que `/api/mapalab`).
 
 ## [1.16.0] - 2026-05-04
 
