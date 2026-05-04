@@ -338,6 +338,26 @@ timeline
 - [x] Modal de aviso del swipe reemplazado por tooltip en `<ToolsMenu>`
 - [x] Eliminado `<SwipeSlotFlash>` (letra centrada al cambiar slot)
 
+### v1.16.0 — Mayo 2026 — Acciones del item activo y mejoras al swipe
+- [x] `<CloseButton>` reutilizable extraído de `MeasurementTools`
+- [x] `<ConfirmDropdown>` con prop `placement` (`top`/`bottom`)
+- [x] Botón Descargar inline en `<LayerActionsBar>` (abre `<DownloadMenu>`, no descarga directa)
+- [x] Spinner Lottie en leyenda inline mientras carga la imagen WMS
+- [x] Tooltips dinámicos por slot en swipe (`del lado A/B`, warning de `(seguirá en el lado X)`)
+- [x] `globalOrder` en `compareMode` + `reorderInSlots` para reordenar cross-slot
+- [x] Cerrar comparador con confirmación (separado de la barra de fechas)
+- [x] `<DatePill autoWidth>` y barra del comparador con `flex` ajustado al contenido
+- [x] Estado activo del botón leyendas con `bg-white border-[#70308A]`
+- [x] Botón Eliminar en swipe quita de ambos slots
+- [x] `useWMSLegend` resuelve hijos en grupos `forceGroup`
+- [x] `useScaleLineControl` con poll de `mapInstance` (funciona en swipe)
+- [x] Badges del header del panel cuentan items unificados
+- [x] `useLayerPeriodicity` con `ensureFetched` on-demand
+- [x] Fix bug ciclo `A → AB → B → A` deseleccionaba el item
+- [x] Fix persistencia de visibilidad/opacidad en grupos `forceGroup` (cleanup-effect skip cuando `activeLayerIds` vacío)
+- [x] Fix `slotMembership` para grupos (ancestor + childIds)
+- [x] `SymbologyPanel` viejo deshabilitado con flag
+
 ### Pendiente — Diferido
 - [ ] Herramienta para comparar periodicidad de mapas (vista lado a lado)
 - [ ] Eliminar `<SymbologyPanel>` separado y relocalizar el chip A/B (commit 5 del plan de refactor del item activo)

@@ -25,6 +25,7 @@ Los eventos se envian a `window.dataLayer` para ser consumidos por GTM. En desar
 | `sider_lock` | `mode: expandido\|colapsado\|automatico` | Preferencia de fijacion del menu lateral | Al cambiar el modo de bloqueo del sider (clic o Alt+B) | Interaccion de clics en el mapa |
 | `share_map` | `status: exito\|error` | Uso del boton de compartir y tasa de error | Al copiar el enlace del mapa al portapapeles | Interaccion de clics en el mapa |
 | `info_open` | — | Acceso a la informacion general de Mapalab | Al abrir el modal de informacion | Profundidad de desplazamiento |
+| `report_submitted` | `tipo: problema\|solicitud\|sugerencia\|duda\|datos_incorrectos\|bug`, `source_route` | Reportes y sugerencias enviados al admin | Al confirmar el envio del reporte (POST exitoso) | Calidad / Soporte |
 
 ## Debug en desarrollo
 

@@ -12,6 +12,7 @@ import MapControls from './components/MapControls';
 import MeasurementTools from './components/MeasurementTools/ToolsPanel';
 import ScaleLineControl from './components/ScaleLineControl';
 import MapAttribution from './components/MapAttribution';
+import MapReportButton from './components/MapReportButton';
 import { useInitializeFromUrl } from './hooks/useInitializeFromUrl';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { SiderProvider } from '@contexts/SiderContext';
@@ -42,6 +43,7 @@ const Maps = () => {
                     <LayerDetailModal />
                     {!isComparing && <InfoBox />}
                     <ScaleLineControl />
+                    <MapReportButton variant="floating" className="fixed bottom-4 right-14 md:bottom-2 md:right-38 z-9" />
                     <MapAttribution />
                     <MapControls />
                     {!isComparing && <MeasurementTools />}

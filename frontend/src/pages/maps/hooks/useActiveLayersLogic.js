@@ -56,8 +56,10 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
 
             if (forceGroupAncestor) {
                 if (!processedIds.has(forceGroupAncestor.id)) {
-                    const ancestorVisible = !hiddenLayerIds.includes(forceGroupAncestor.id);
                     const childIds = getAllChildLayerIds(forceGroupAncestor.id);
+                    const activeChildIds = childIds.filter(id => activeLayerIds.includes(id));
+                    const ancestorVisible = !hiddenLayerIds.includes(forceGroupAncestor.id)
+                        && (activeChildIds.length === 0 || !activeChildIds.every(id => hiddenLayerIds.includes(id)));
 
                     result.push({
                         id: forceGroupAncestor.id,
@@ -76,8 +78,10 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
             }
 
             const hasChildren = layer.children && layer.children.length > 0;
-            const visible = !hiddenLayerIds.includes(layerId);
             const childIds = hasChildren ? getAllChildLayerIds(layer.id) : [layer.id];
+            const activeChildIds = hasChildren ? childIds.filter(id => activeLayerIds.includes(id)) : childIds;
+            const visible = !hiddenLayerIds.includes(layerId)
+                && (!hasChildren || activeChildIds.length === 0 || !activeChildIds.every(id => hiddenLayerIds.includes(id)));
 
             result.push({
                 id: layer.id,

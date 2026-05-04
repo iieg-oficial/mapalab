@@ -3,7 +3,7 @@ import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useMapsContext } from '@hooks/useMaps';
 import { trackDrawingTool } from '@services/analyticsService';
 import HistoryButton from './HistoryButton';
-import CloseButton from './CloseButton';
+import CloseButton from '@components/CloseButton';
 import ToolSelector from './ToolSelector';
 import EmojiPanel from './EmojiPanel';
 import TextPanel from './TextPanel';
@@ -196,6 +196,10 @@ const ToolsPanel = () => {
             <CloseButton
                 visible={isDrawing || areMeasurementToolsVisible}
                 onConfirm={handleCloseToolsConfirm}
+                tooltip="Cerrar herramienta de mediciones"
+                confirmTitle="¿Cerrar herramientas de medición?"
+                confirmDescription="Se eliminarán todos los trazos y anotaciones actuales. Esta acción no se puede deshacer."
+                confirmText="Sí, cerrar herramientas"
             />
         </div>
     );

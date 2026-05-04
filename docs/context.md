@@ -201,6 +201,16 @@ Definiciones viven en DataEngine (schema `mapalab`). Frontend las carga via `GET
 | GET | `/layers/search?q=X` | Búsqueda flat con path |
 | POST | `/layers/refresh-cache` | Regenera cache materializada (invocable desde mariachi) |
 | POST | `/layers/invalidate-cache` | Invalida solo caché en memoria del proceso |
+| ANY  | `/mcp/` | Servidor MCP (FastMCP). Expone `metadata`, `periodicity`, `layers` y `shares` como tools. Excluye `download` y `metrics`. Transporte HTTP streamable; nginx lo proxea sin buffering ni cache |
+
+### MCP server
+
+Construido con `FastMCP.from_fastapi(...)` a partir de un sub-app FastAPI que registra sólo los routers que se quieren exponer como tools (`metadata`, `periodicity`, `layers`, `shares`). El sub-app **no** comparte instancia con `app` para que `download` y `metrics` queden fuera del MCP sin perderlos del REST.
+
+- Montaje: `app.mount("/mcp", mcp_app)` en `backend/app/server.py`. URL externa: `/api/mcp/` (vía nginx) o `/mapalab/api/mcp/` (vía gateway-hub).
+- Lifespan: `combine_lifespans(lifespan, mcp_app.lifespan)` preserva el warmup del pool, el leader election y el scheduler existentes.
+- Nginx: `location /api/mcp/` con `proxy_buffering off`, `proxy_cache off` y timeouts de 600s para el transporte HTTP streamable.
+- Auth: por ahora público (mismo perfil que el resto del backend). Si se requiere restringir, hacerlo en gateway-hub via allowlist o header secret.
 
 ### Modelos y tablas DataEngine (schema `mapalab` + legacy `public`)
 
@@ -326,7 +336,16 @@ Push a production → CD: test → deploy SSH (make deploy) → health check →
 
 ## Analytics
 
-Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gateway-hub). En desarrollo aparece un panel de debug flotante. Eventos principales: `layer_toggle`, `feature_click`, `map_zoom_level`, `layer_search`, `layer_download`, `map_export`, `raster_loop_start/stop`, `drawing_tool_use`, `basemap_change`, `share_map`.
+Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gateway-hub). En desarrollo aparece un panel de debug flotante. Eventos principales: `layer_toggle`, `feature_click`, `map_zoom_level`, `layer_search`, `layer_download`, `map_export`, `raster_loop_start/stop`, `drawing_tool_use`, `basemap_change`, `share_map`, `report_submitted`.
+
+## Reportes ciudadanos
+
+Sistema transversal de reportes (problemas, solicitudes, sugerencias, dudas, datos incorrectos, bugs) que vive en mariachi (modelo `Reporte`, tabla `reportes`). Mapalab solo envia reportes al endpoint publico de mariachi.
+
+- **Frontend**: `components/ReportButton.jsx` + `components/ReportModal.jsx`. Hook `useReportContext` arma `source_app`/`source_route`/`source_context` (app_version, user_agent, screen, basemap, capas activas, vista, swipe). Servicio `services/feedbackService.js` postea a `/api/public/reportes` (variable `VITE_MARIACHI_PUBLIC_API_HOST`, default `/api/public/`).
+- **Tres puntos de entrada**: flotante junto a `MapAttribution` en `/mapa` (usa `MapReportButton` que reutiliza `captureElement` de `useMapCapture` para screenshot), inline al pie del `InfoBox` cuando hay feature seleccionada (pasa `feature_id`/`layer_id`/`feature_properties`), inline en Home debajo de los botones de soporte (sin screenshot).
+- **Honeypot + screenshot**: campo `website` invisible (descarta bots) y captura opcional via `html2canvas-pro` con `scale: 0.7`. Email opcional → reporte anónimo.
+- **Storage del screenshot**: bucket privado `mariachi` con prefijo `reportes/AAAA/MM/<uuid>.png`. URL servida por proxy admin-only.
 
 ## Proximos pasos (roadmap)
 
@@ -403,8 +422,10 @@ Cada item de `<ActiveLayerItem>` tiene un layout vertical de hasta 4 filas, expa
 
 1. **Fila 1**: drag handle (sólo visible en seleccionado o hover desktop) + título. En hover de no-activo aparecen los botones rápidos `<LayerInlineActions>` (visible / detalles / eliminar) entre el handle y el título.
 2. **Fila 2** (`<LayerDateControls>`): pill de periodicidad + loop controls + `<SlotBadge>`. Usa CSS Grid `grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]` para que el badge quede matemáticamente centrado al medio del item en todos los modos (no-swipe, AB, solo A, solo B). Loop controls (play/intervalo/dirección) sólo aparecen cuando el loop ya está corriendo; para iniciarlo se usa "Ver animación" del `<LayerDetailModal>`.
-3. **Fila 3** (`<LayerActionsBar>`): visible / detalles / opacidad / leyendas / `<Switch>` A-B (sólo en swipe AB) / eliminar. Click en el switch dispara `setHighlightedSlots(target)` con timeout de 1.5 s para destacar el panel del swipe correspondiente.
-4. **Fila 4** (`<LayerLegendInline>`): GetLegendGraphic lazy con DPI 200 (retina-friendly), `max-w-[220px]`, wrapper estilo `<SymbologyPanel>` (`bg-white rounded-[10px] shadow`). En swipe AB usa el filtro de fecha del `activeSlot`. Visibilidad controlada por toggle global persistido en `localStorage` (`mapalab.activeLayers.legendsVisible`, default `true`).
+3. **Fila 3** (`<LayerActionsBar>`): visible / detalles / opacidad / **descargar** / leyendas / `<Switch>` A-B (sólo en swipe AB) / eliminar. Click en el switch dispara `setHighlightedSlots(target)` con timeout de 1.5 s para destacar el panel del swipe correspondiente. El botón descargar reutiliza `useLayerDownload` + `<DownloadMenu>` (mismo flujo que el modal de detalles, no descarga directa); sólo aparece si `metadata.capa_descargable !== false`. El botón leyendas en estado activo usa `bg-white border-[#70308A]`. Tooltips dinámicos en swipe: anexan `del lado A`/`del lado B` y, para acciones destructivas en `AB`, `(seguirá en el lado X)`.
+4. **Fila 4** (`<LayerLegendInline>`): GetLegendGraphic lazy con DPI 200 (retina-friendly), `max-w-[220px]`, wrapper estilo `<SymbologyPanel>` (`bg-white rounded-[10px] shadow`). En swipe AB usa el filtro de fecha del `activeSlot`. Visibilidad controlada por toggle global persistido en `localStorage` (`mapalab.activeLayers.legendsVisible`, default `true`). Mientras la imagen carga muestra `<Logo name="mapalab" isLoading />` (Lottie); el contenedor solo aplica `min-h-[40px]` mientras `!isLoaded`.
+
+El botón eliminar del item, en swipe, quita la capa de **ambos** slots (`paneA` + `paneB`); para mover entre slots se usa la pildora A|B. Los badges del header del panel cuentan items unificados (`unifiedLayers.length`) en lugar de IDs internos.
 
 Sub-componentes en `frontend/src/pages/maps/components/ActiveLayers/`:
 - `ActiveLayerItem.jsx` — container que orquesta las filas.
@@ -415,6 +436,19 @@ Sub-componentes en `frontend/src/pages/maps/components/ActiveLayers/`:
 - `LayerLegendInline.jsx` — Fila 4 (leyenda WMS inline lazy).
 - `LayerOpacityPopover.jsx` — popover del slider de opacidad anclado al botón con `createPortal` + `position: fixed`.
 - `hooks/useLegendsVisibility.jsx` — context provider del toggle global de leyendas con persistencia en `localStorage`.
+
+## Comparador (swipe)
+
+Estado central en `useSwipeMode` (`compareMode = { active, activeSlot, paneA, paneB, originalSnapshot, swipePosition, swipeOrientation, globalOrder }`). Al entrar a swipe se snapshotea el live state a `originalSnapshot` (+ persiste en `localStorage` por si recarga), se vacían los panes y el live state queda en `paneA`. La capa activa "viva" sigue siendo el live state (`activeLayerIds`, `hiddenLayerIds`, `layerOpacities`, `filters`); `applySnapshotToLive(pane)` lo sincroniza con el slot activo cada vez que cambia.
+
+- **`paneA` / `paneB`**: snapshots independientes con `activeLayerIds`, `hiddenLayerIds`, `layerOpacities`, `filters`. Una capa puede vivir en uno o en ambos slots.
+- **`globalOrder`**: array de IDs que dicta el orden de la unión `paneA + paneB` en `effectiveActiveLayerIds`. `setLayerSlotMembership` lo extiende, `removeLayerFromSlot` lo limpia, `reorderInSlots` lo reescribe. Sin este array, la unión siempre concatenaba paneA primero y el reorden cross-slot se "regresaba".
+- **`paneMapRefs`**: registro `{ 0: refPaneA, 1: refPaneB }` que cada `<MapView paneIndex>` puebla con su `localMapRef`. `useViewSync` mantiene los dos `View` de OL alineados (pan/zoom/rotation) con flag anti-loop.
+- **Pildora A|B (`<SlotBadge>`)**: cicla membership `A → AB → B → A`. `useSymbology` valida `stillActive` contra `paneA + paneB` (no solo el live state) para que el item no se deseleccione al pasar AB → B.
+- **Botón Eliminar en swipe**: quita la capa de **ambos** slots — para mover entre slots se usa la pildora, no el eliminar.
+- **`<SwipeSlotControls>`** (barra centrada al fondo de la pantalla): `[A · orientación · B]` con bg blanco unificado; el `<CloseButton>` (rosa, mismo de `MeasurementTools`) sale arriba si hay periodicidad seleccionada o queda dentro de la barra si no la hay. `<DatePill autoWidth>` para que cada pill tome su ancho real.
+- **`<SwipeView>`**: dos `<MapView>` superpuestos, el de la derecha clipeado (`inset()` H o V). Handle naranja draggable con knob, posición persistida (debounce 200ms). Overlays "A"/"B" cuando `highlightedSlots` los activa.
+- **`<ScaleLineControl>` en swipe**: usa `paneMapRefs.current[0].current` (paneA) en lugar de `ctx.mapRef.current` (que se desmonta al entrar a swipe). `useScaleLineControl` polea cambios cada 100ms y reattacha el `ScaleLine` cuando el `mapInstance` cambia.
 
 ## Templates de InfoBox
 
@@ -504,3 +538,4 @@ Tipos: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `style`
 | `docs/CHANGELOG.md` | Registro de cambios por version |
 | `docs/backend.md` | Stack, estructura y desarrollo local del backend |
 | `docs/layers.md` | Arquitectura completa del sistema de capas (v1.4.0+) |
+| `docs/mcp.md` | Servidor MCP: arquitectura, tools expuestos, cómo probar, auth, cómo agregar/quitar routers |

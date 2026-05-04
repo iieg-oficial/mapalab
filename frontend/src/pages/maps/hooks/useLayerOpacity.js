@@ -34,6 +34,7 @@ export const useLayerOpacity = (getAllChildLayerIds, activeLayerIds) => {
     }, [getAllChildLayerIds]);
 
     useEffect(() => {
+        if (!activeLayerIds || activeLayerIds.length === 0) return;
         setLayerOpacities(prev => {
             const allActiveIds = new Set();
             activeLayerIds.forEach(id => {

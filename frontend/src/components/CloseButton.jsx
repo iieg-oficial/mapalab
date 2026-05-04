@@ -6,7 +6,16 @@ import ConfirmDropdown from '@components/ConfirmDropdown';
 const CloseButton = ({
     onConfirm,
     visible = true,
-    className = ''
+    tooltip = 'Cerrar',
+    tooltipPlacement = 'right',
+    confirmTitle,
+    confirmDescription,
+    confirmText = 'Sí, cerrar',
+    confirmPlacement = 'bottom',
+    confirmClassName = 'left-0',
+    className = '',
+    size = 'size-12.5',
+    iconSize = 'size-10'
 }) => {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -16,18 +25,19 @@ const CloseButton = ({
 
     return (
         <div className="relative">
-            <Tooltip content="Cerrar herramienta de mediciones" placement="right" delay={500}>
+            <Tooltip content={tooltip} placement={tooltipPlacement} delay={500}>
                 <button
                     type="button"
                     onClick={() => setIsOpen(true)}
                     className={[
-                        'size-12.5 flex items-center justify-center rounded-full border border-transparent transition-all',
+                        size,
+                        'flex items-center justify-center rounded-full border border-transparent transition-all',
                         isOpen ? 'bg-[#FF577D]' : 'bg-[#FFE6EC] hover:border-[#FF577D] active:bg-[#FF577D]',
                         className
                     ].join(' ')}
-                    aria-label="Cerrar herramienta de mediciones"
+                    aria-label={tooltip}
                 >
-                    <Icon name="cerrar" state={iconState} className="size-10" />
+                    <Icon name="cerrar" state={iconState} className={iconSize} />
                 </button>
             </Tooltip>
 
@@ -35,10 +45,11 @@ const CloseButton = ({
                 open={isOpen}
                 onClose={() => setIsOpen(false)}
                 onConfirm={onConfirm}
-                title="¿Cerrar herramientas de medición?"
-                description="Se eliminarán todos los trazos y anotaciones actuales. Esta acción no se puede deshacer."
-                confirmText="Sí, cerrar herramientas"
-                className="left-0"
+                title={confirmTitle}
+                description={confirmDescription}
+                confirmText={confirmText}
+                placement={confirmPlacement}
+                className={confirmClassName}
             />
         </div>
     );

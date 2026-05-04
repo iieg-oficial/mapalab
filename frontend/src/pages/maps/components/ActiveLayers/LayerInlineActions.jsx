@@ -5,12 +5,18 @@ import Tooltip from '@components/Tooltip';
 const SIZE = 'size-5';
 const BTN = 'p-1 rounded-full transition-colors cursor-pointer border border-transparent bg-[#F9FBFF] shrink-0';
 
-const LayerInlineActions = ({ visible, isLoading, isLooping, canOpenModal, onToggleVisibility, onOpenDetails, onRemove }) => {
+const LayerInlineActions = ({ visible, isLoading, isLooping, canOpenModal, onToggleVisibility, onOpenDetails, onRemove, slotMembership = null, activeSlot = null }) => {
     const [isCardHovered, setIsCardHovered] = useState(false);
     const [isDeleteHovered, setIsDeleteHovered] = useState(false);
+
+    const targetSlot = slotMembership === 'AB' ? activeSlot : slotMembership;
+    const otherSlot = activeSlot === 'A' ? 'B' : 'A';
+    const sideTag = targetSlot ? ` del lado ${targetSlot}` : '';
+    const ABWarning = slotMembership === 'AB' ? ` (seguirá en el lado ${otherSlot})` : '';
+
     return (
         <div className="flex items-center gap-1 shrink-0">
-            <Tooltip content={visible ? 'Ocultar capa' : 'Mostrar capa'}>
+            <Tooltip content={`${visible ? 'Ocultar' : 'Mostrar'} capa${sideTag}${visible ? ABWarning : ''}`}>
                 <button className={`${BTN} hover:border-[#70308A]`} onClick={onToggleVisibility}>
                     <Icon name="visible" state={visible ? 'normal' : 'hover'} className={SIZE} />
                 </button>

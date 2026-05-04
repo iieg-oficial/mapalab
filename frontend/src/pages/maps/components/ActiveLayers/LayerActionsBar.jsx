@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Switch from '@components/Switch';
+import Loading from '@components/Loading';
 import LayerOpacityPopover from './LayerOpacityPopover';
 import { useLegendsVisibility } from './hooks/useLegendsVisibility';
 import { useMapsContext } from '@hooks/useMaps';
@@ -22,7 +23,11 @@ const LayerActionsBar = ({
     hasLegend = false,
     slotMembership = null,
     activeSlot = null,
-    onSwitchSlot
+    onSwitchSlot,
+    canDownload = false,
+    isDownloading = false,
+    onDownloadClick,
+    downloadButtonRef
 }) => {
     const [isCardHovered, setIsCardHovered] = useState(false);
     const [isDeleteHovered, setIsDeleteHovered] = useState(false);
@@ -36,9 +41,14 @@ const LayerActionsBar = ({
     const opacityPercent = Math.round(opacity * 100);
     const opacityCustom = opacityPercent !== 100;
 
+    const targetSlot = slotMembership === 'AB' ? activeSlot : slotMembership;
+    const otherSlot = activeSlot === 'A' ? 'B' : 'A';
+    const sideTag = targetSlot ? ` del lado ${targetSlot}` : '';
+    const ABWarning = slotMembership === 'AB' ? ` (seguirá en el lado ${otherSlot})` : '';
+
     return (
         <div className="flex items-center gap-1 w-full">
-            <Tooltip content={visible ? 'Ocultar capa' : 'Mostrar capa'}>
+            <Tooltip content={`${visible ? 'Ocultar' : 'Mostrar'} capa${sideTag}${visible ? ABWarning : ''}`}>
                 <button
                     className={`${BUTTON_BASE} hover:border-[#70308A]`}
                     onClick={onToggleVisibility}
@@ -66,7 +76,7 @@ const LayerActionsBar = ({
                 </Tooltip>
             )}
 
-            <Tooltip content={`Opacidad${opacityCustom ? `: ${opacityPercent}%` : ''}`}>
+            <Tooltip content={`Opacidad${sideTag}${opacityCustom ? `: ${opacityPercent}%` : ''}`}>
                 <button
                     ref={opacityButtonRef}
                     className={`${BUTTON_BASE} hover:border-[#70308A] flex items-center justify-center text-gray-500 hover:text-[#5C2472]`}
@@ -88,10 +98,26 @@ const LayerActionsBar = ({
                 />
             )}
 
-            {hasLegend && (
-                <Tooltip content={legendsVisible ? 'Ocultar leyendas' : 'Mostrar leyendas'}>
+            {canDownload && (
+                <Tooltip content={isDownloading ? 'Cancelar descarga' : `Descargar capa${sideTag}`}>
                     <button
-                        className={`${BUTTON_BASE} hover:border-[#70308A] flex items-center justify-center size-8`}
+                        ref={downloadButtonRef}
+                        className={`${BUTTON_BASE} hover:border-[#70308A] flex items-center justify-center text-gray-500 hover:text-[#5C2472]`}
+                        onClick={(e) => { e.stopPropagation(); onDownloadClick?.(); }}
+                    >
+                        {isDownloading ? (
+                            <Loading visible size={SIZE_BUTTON} border="border-2" color="border-[#FF8300]" />
+                        ) : (
+                            <Icon name="download" className={SIZE_BUTTON} />
+                        )}
+                    </button>
+                </Tooltip>
+            )}
+
+            {hasLegend && (
+                <Tooltip content={`${legendsVisible ? 'Ocultar' : 'Mostrar'} leyendas${targetSlot ? ` del lado ${targetSlot}` : ''}`}>
+                    <button
+                        className={`p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center size-8 ${legendsVisible ? 'bg-white border border-[#70308A]' : `${BUTTON_BASE} hover:border-[#70308A]`}`}
                         onClick={(e) => { e.stopPropagation(); setLegendsVisible(p => !p); }}
                         onMouseEnter={() => setIsLegendsHovered(true)}
                         onMouseLeave={() => setIsLegendsHovered(false)}

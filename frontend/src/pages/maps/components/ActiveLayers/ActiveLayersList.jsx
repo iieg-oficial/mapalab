@@ -37,20 +37,28 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         mapRef,
         hasActiveLoops,
         pauseAllLoops,
-        dateLoops
+        dateLoops,
+        reorderInSlots
     } = useMapsContext();
     const { isMobile } = useSider();
 
     const isSwipe = !!compareMode?.active;
     const effectiveActiveLayerIds = useMemo(() => {
         if (!isSwipe) return activeLayerIds;
+        const paneAIds = compareMode.paneA?.activeLayerIds || [];
+        const paneBIds = compareMode.paneB?.activeLayerIds || [];
+        const allIds = new Set([...paneAIds, ...paneBIds]);
+        const order = compareMode.globalOrder || [];
         const seen = new Set();
-        const union = [];
-        [...(compareMode.paneA?.activeLayerIds || []), ...(compareMode.paneB?.activeLayerIds || [])].forEach(id => {
-            if (!seen.has(id)) { seen.add(id); union.push(id); }
+        const result = [];
+        order.forEach(id => {
+            if (allIds.has(id) && !seen.has(id)) { seen.add(id); result.push(id); }
         });
-        return union;
-    }, [isSwipe, activeLayerIds, compareMode?.paneA?.activeLayerIds, compareMode?.paneB?.activeLayerIds]);
+        [...paneAIds, ...paneBIds].forEach(id => {
+            if (!seen.has(id)) { seen.add(id); result.push(id); }
+        });
+        return result;
+    }, [isSwipe, activeLayerIds, compareMode?.paneA?.activeLayerIds, compareMode?.paneB?.activeLayerIds, compareMode?.globalOrder]);
 
     const effectiveHiddenLayerIds = useMemo(() => {
         if (!isSwipe) return hiddenLayerIds;
@@ -75,21 +83,34 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
     const { unifiedLayers } = useActiveLayersLogic(effectiveActiveLayerIds, effectiveHiddenLayerIds);
     const collapse = useLayerCollapse(unifiedLayers);
     useEffect(() => { onCollapseChange?.(collapse.isCollapsed); }, [collapse.isCollapsed, onCollapseChange]);
-    const { handleDragEnd } = useLayerSorting(activeLayerIds, unifiedLayers, reorderActiveLayerIds);
+
+    const handleReorder = useCallback((newOrder) => {
+        if (isSwipe) {
+            reorderInSlots?.(newOrder);
+            const liveSlot = compareMode?.activeSlot;
+            const livePaneIds = compareMode?.[`pane${liveSlot}`]?.activeLayerIds || [];
+            const liveOrder = newOrder.filter(id => livePaneIds.includes(id));
+            reorderActiveLayerIds(liveOrder);
+        } else {
+            reorderActiveLayerIds(newOrder);
+        }
+    }, [isSwipe, compareMode, reorderInSlots, reorderActiveLayerIds]);
+
+    const { handleDragEnd } = useLayerSorting(effectiveActiveLayerIds, unifiedLayers, handleReorder);
     const sortableItems = useMemo(() => unifiedLayers.map(l => l.id), [unifiedLayers]);
     const isInegiMode = useMemo(() => effectiveActiveLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id)), [effectiveActiveLayerIds]);
     const isMobileSticky = isMobile ? STICKY_SIZE_MOBILE : STICKY_SIZE;
 
-    const noLayers = effectiveActiveLayerIds.length === 0;
+    const noLayers = unifiedLayers.length === 0;
 
     const allHidden = useMemo(() => {
-        return effectiveActiveLayerIds.length > 0 && effectiveActiveLayerIds.every(id => effectiveHiddenLayerIds.includes(id));
-    }, [effectiveActiveLayerIds, effectiveHiddenLayerIds]);
+        return unifiedLayers.length > 0 && unifiedLayers.every(l => !l.visible);
+    }, [unifiedLayers]);
 
     const visibilityCount = useMemo(() => {
-        if (allHidden) return effectiveActiveLayerIds.length;
-        return effectiveActiveLayerIds.filter(id => !effectiveHiddenLayerIds.includes(id)).length;
-    }, [effectiveActiveLayerIds, effectiveHiddenLayerIds, allHidden]);
+        if (allHidden) return unifiedLayers.length;
+        return unifiedLayers.filter(l => l.visible).length;
+    }, [unifiedLayers, allHidden]);
 
     const activeLoopsCount = useMemo(() => {
         return Object.values(dateLoops || {}).filter(l => l?.isPlaying).length;
@@ -153,7 +174,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
     }
 
     return (
-        <div className="w-auto px-4.5 pb-6 pt-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] flex-1 min-h-0 flex flex-col max-md:pointer-events-auto">
+        <div className="w-auto px-4.5 py-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] flex-1 min-h-0 flex flex-col max-md:pointer-events-auto">
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                     <Icon name="capa_activa" className="size-8" />
@@ -200,8 +221,8 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
                             <span className={`relative p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/del:border-[#FF577D]'}`}>
                                 <Icon name="eliminar" state={isDeleteHovered ? 'hover' : 'normal'} className="size-5 shrink-0" />
                                 <Badge
-                                    visible={effectiveActiveLayerIds.length > 0}
-                                    count={effectiveActiveLayerIds.length}
+                                    visible={unifiedLayers.length > 0}
+                                    count={unifiedLayers.length}
                                     color="pink"
                                     size="sm"
                                     className="absolute -top-1 -right-1 pointer-events-none"

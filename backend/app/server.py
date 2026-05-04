@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from sqlalchemy import text
+from fastmcp import FastMCP
+from fastmcp.utilities.lifespan import combine_lifespans
 from app import metrics as metrics_module
 from app.routers import (metadata, periodicity, download, layers, shares)
 from app.exceptions.common_exceptions import BaseAppException
@@ -64,9 +66,18 @@ async def lifespan(app: FastAPI):
             _lock_file.close()
 
 
+mcp_source_app = FastAPI(title="MapaLab MCP source")
+mcp_source_app.include_router(metadata.router)
+mcp_source_app.include_router(periodicity.router)
+mcp_source_app.include_router(layers.router)
+mcp_source_app.include_router(shares.router)
+
+mcp = FastMCP.from_fastapi(app=mcp_source_app, name="MapaLab MCP")
+mcp_app = mcp.http_app(path="/")
+
 app = FastAPI(
     title = "MAPALB",
-    lifespan=lifespan,
+    lifespan=combine_lifespans(lifespan, mcp_app.lifespan),
     docs_url=None if settings.ENVIRONMENT == "production" else "/docs",
     redoc_url=None if settings.ENVIRONMENT == "production" else "/redoc"
 )
@@ -88,6 +99,7 @@ app.include_router(download.router)
 app.include_router(layers.router)
 app.include_router(shares.router)
 app.include_router(metrics_module.router)
+app.mount("/mcp", mcp_app)
 @app.get('/')
 def root():
     return {'message':'MapaLab Backend API'}
