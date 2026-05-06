@@ -197,18 +197,18 @@ const Body = ({ isModal = false }) => {
                     ))}
                 </div>
             </div>
-            <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 my-10 md:my-[61px] mx-1 sm:mx-4">
+            <div className="w-full flex flex-col lg:flex-row items-center justify-center gap-4 my-10 md:my-[61px] mx-1 sm:mx-4">
                 {supportItems.map((item) => {
                     const baseClassName = `
-                        group relative bg-[#F3EBFF] flex flex-col sm:flex-row items-center justify-center md:justify-end rounded-[50px]
-                        w-full max-w-[522px] h-[150px] sm:h-[110px] transition-all border border-transparent md:pl-0 pl-0 md:pr-22 py-5 md:py-0
+                        group relative bg-[#F3EBFF] flex flex-col lg:flex-row items-center justify-center lg:justify-end rounded-[50px]
+                        w-full max-w-[522px] h-[150px] lg:h-[110px] transition-all border border-transparent pl-0 lg:pr-22 py-5 lg:py-0
                         hover:border-purple cursor-pointer
                     `;
                     const isActive = expandedSection === item.id;
 
                     const inner = (
                         <>
-                            <div className="sm:absolute left-4 md:left-[43px] flex items-center justify-center bg-white rounded-full p-4 size-[74px] group-hover:bg-[#E3CAF2] group-active:bg-[#E3CAF2]">
+                            <div className="lg:absolute lg:left-[43px] flex items-center justify-center bg-white rounded-full p-4 size-[74px] group-hover:bg-[#E3CAF2] group-active:bg-[#E3CAF2]">
                                 <img
                                     src={item.icon}
                                     alt=""
@@ -222,7 +222,7 @@ const Body = ({ isModal = false }) => {
                                     loading="lazy"
                                 />
                             </div>
-                            <h2 className={`font-garet font-medium ${isActive ? 'text-white' : 'text-[#8936AB]'} text-[24px]/[28px] tracking-normal pt-4 sm:pt-0`}>
+                            <h2 className={`font-garet font-medium ${isActive ? 'text-white' : 'text-[#8936AB]'} text-[24px]/[28px] tracking-normal pt-4 lg:pt-0`}>
                                 {item.label}
                             </h2>
                         </>
