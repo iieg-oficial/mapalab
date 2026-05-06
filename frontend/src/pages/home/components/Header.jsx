@@ -87,21 +87,13 @@ const Header = () => {
                     style={desktopStyle}
                 />
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 2xl:hidden z-10">
-                    {activeBanner.logoUrl ? (
-                        <img
-                            src={activeBanner.logoUrl}
-                            alt="Logo banner"
-                            className="w-80 h-25 object-contain"
-                        />
-                    ) : (
-                        <Logo
-                            name="mapalab"
-                            variant="dark"
-                            size="w-80 h-25"
-                            alt="Logo MapaLab banner mobile"
-                            expanded
-                        />
-                    )}
+                    <Logo
+                        name="mapalab"
+                        variant="dark"
+                        size="w-80 h-25"
+                        alt="Logo MapaLab banner mobile"
+                        expanded
+                    />
                 </div>
 
                 <div className="hidden xl:block w-[35vw] absolute right-0 top-[20%] 2xl:top-[12%] 3xl:top-[10%] overflow-visible">

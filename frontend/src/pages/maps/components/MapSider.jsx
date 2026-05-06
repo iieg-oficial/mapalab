@@ -14,7 +14,8 @@ import { useEventos } from '@hooks/useEventos';
 import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
 
 import { trackSiderLock } from '@services/analyticsService';
-import { IIEG_MARKER } from '@pages/maps/helpers/markerDefinitions';
+import { buildIiegMarker, computeIiegStats } from '@pages/maps/helpers/markerDefinitions';
+import { getDatabaseStats } from '@services/layerMetadataService';
 import { useZenMode } from './ZenMode';
 import MenuItem from './MenuItem';
 import SiderModeButton from './SiderModeButton';
@@ -168,10 +169,12 @@ const MapSider = ({ className = '' }) => {
         }
     }, []);
 
-    const handleIiegLogoClick = useCallback(() => {
-        showMarker?.(IIEG_MARKER);
+    const handleIiegLogoClick = useCallback(async () => {
         if (treatAsMobile) closeSider();
-    }, [showMarker, treatAsMobile, closeSider]);
+        const stats = computeIiegStats({ allLayers });
+        const dbStats = await getDatabaseStats();
+        showMarker?.(buildIiegMarker({ ...stats, totalRecords: dbStats?.total_records ?? null }));
+    }, [showMarker, treatAsMobile, closeSider, allLayers]);
 
     const sizeLogo = {
         expanded: 'w-57 h-17',

@@ -1,7 +1,17 @@
 import mapalabSquareIcon from '@logos/mapalab_square.svg';
-import { APP_VERSION } from '@constants/app';
+import { APP_VERSION, APP_LOC } from '@constants/app';
+import { collectLayersWithWMS } from './layers/utils/layerHelpers';
 
-export const IIEG_MARKER = {
+export const computeIiegStats = ({ allLayers = [] } = {}) => {
+    const wmsLayers = collectLayersWithWMS({ children: allLayers });
+    return {
+        totalLayers: wmsLayers.length,
+    };
+};
+
+const formatCount = (n) => (typeof n === 'number' ? n.toLocaleString('es-MX') : '—');
+
+export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) => ({
     id: 'iieg_hq',
     center: [-103.44669185275052, 20.68443473644039],
     zoom: 16,
@@ -23,10 +33,14 @@ export const IIEG_MARKER = {
             telefono: '(33) 3777 1770',
             correo: 'iieg@jalisco.gob.mx',
             sitio_web: 'iieg.gob.mx',
-            tecnologias: 'React, OpenLayers, FastAPI, GeoServer, PostGIS'
+            tecnologias: 'React, OpenLayers, FastAPI, GeoServer, PostGIS',
+            capas_disponibles: formatCount(totalLayers),
+            registros_geograficos: formatCount(totalRecords),
+            lineas_codigo: formatCount(APP_LOC)
         },
         littleCard: {
             headerField: 'nombre',
+            bodyOrder: ['labels', 'labelGroups', 'list', 'cards', 'iconText', 'text'],
             labelGroups: [
                 { fields: ['version'], color: '#ffffff', bg: '#5c2472' },
                 { fields: ['tecnologias'], splitValues: true, color: '#465055', bg: '#EFF3FC' }
@@ -35,6 +49,12 @@ export const IIEG_MARKER = {
                 { label: 'Organismo', field: 'institucion', raw: true },
                 { label: 'Descripción', field: 'descripcion', raw: true }
             ],
+            cards: [
+                { label: 'Capas disponibles', field: 'capas_disponibles' },
+                { label: 'Registros geográficos', field: 'registros_geograficos' },
+                { label: 'Líneas de código', field: 'lineas_codigo' }
+            ],
+            cardsColumns: 1,
             iconText: [
                 { icon: 'ubicacion', field: 'direccion' },
                 { icon: 'celular', field: 'telefono' },
@@ -44,4 +64,4 @@ export const IIEG_MARKER = {
             ]
         }
     }
-};
+});

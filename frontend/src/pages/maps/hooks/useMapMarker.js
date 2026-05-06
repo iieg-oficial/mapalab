@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef } from 'react';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
@@ -11,15 +11,23 @@ import { Fill } from 'ol/style';
 
 const MARKER_Z_INDEX = 999;
 
-export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } = {}) => {
+export const useMapMarker = (mapRef, paneMapRefs, compareModeRef, { setSelectedFeatureInfo, clickPosition } = {}) => {
     const markersRef = useRef(new Map());
     const timersRef = useRef(new Map());
     const markerClickedRef = useRef(false);
 
+    const getActiveMap = useCallback(() => {
+        if (compareModeRef?.current?.active) {
+            return paneMapRefs?.current?.[0]?.current ?? null;
+        }
+        return mapRef?.current ?? null;
+    }, [mapRef, paneMapRefs, compareModeRef]);
+
     const hideMarker = useCallback((id = '_default') => {
         const layer = markersRef.current.get(id);
-        if (layer && mapRef.current) {
-            mapRef.current.removeLayer(layer);
+        const map = getActiveMap();
+        if (layer && map) {
+            map.removeLayer(layer);
             markersRef.current.delete(id);
         }
         const timer = timersRef.current.get(id);
@@ -27,19 +35,20 @@ export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } =
             clearTimeout(timer);
             timersRef.current.delete(id);
         }
-    }, [mapRef]);
+    }, [getActiveMap]);
 
     const hideAllMarkers = useCallback(() => {
         markersRef.current.forEach((_, id) => hideMarker(id));
     }, [hideMarker]);
 
-    const openMarkerCard = useCallback((feature) => {
-        if (!mapRef.current || !setSelectedFeatureInfo || !clickPosition) return;
+    const openMarkerCard = useCallback((feature, mapInstance) => {
+        const map = mapInstance || getActiveMap();
+        if (!map || !setSelectedFeatureInfo || !clickPosition) return;
         const infoBox = feature.get('markerInfoBox');
         if (!infoBox) return;
 
         const coord = feature.getGeometry().getCoordinates();
-        const pixel = mapRef.current.getPixelFromCoordinate(coord);
+        const pixel = map.getPixelFromCoordinate(coord);
         clickPosition.updatePosition({ pixel });
 
         const [lng, lat] = toLonLat(coord);
@@ -56,10 +65,11 @@ export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } =
                 littleCard: infoBox.littleCard
             }]
         });
-    }, [mapRef, setSelectedFeatureInfo, clickPosition]);
+    }, [getActiveMap, setSelectedFeatureInfo, clickPosition]);
 
     const showMarker = useCallback(async ({ id = '_default', center, zoom, icon, scale = 1, duration, anchor = [0.5, 1], minZoom, maxZoom, bgColor, bgRadius = 18, infoBox, openOnShow = false } = {}) => {
-        if (!mapRef.current || !center) return;
+        const map = getActiveMap();
+        if (!map || !center) return;
 
         hideMarker(id);
 
@@ -96,7 +106,7 @@ export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } =
 
         const layer = new VectorLayer(layerOptions);
 
-        mapRef.current.addLayer(layer);
+        map.addLayer(layer);
         markersRef.current.set(id, layer);
 
         const finalize = () => {
@@ -104,7 +114,7 @@ export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } =
         };
 
         if (zoom) {
-            mapRef.current.getView().animate({
+            map.getView().animate({
                 center: coords,
                 zoom,
                 duration: 500
@@ -117,7 +127,7 @@ export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } =
             const timer = setTimeout(() => hideMarker(id), duration);
             timersRef.current.set(id, timer);
         }
-    }, [mapRef, hideMarker, openMarkerCard]);
+    }, [getActiveMap, hideMarker, openMarkerCard]);
 
     const showMarkers = useCallback(async (markers = []) => {
         for (const marker of markers) {
@@ -125,23 +135,5 @@ export const useMapMarker = (mapRef, { setSelectedFeatureInfo, clickPosition } =
         }
     }, [showMarker]);
 
-    useEffect(() => {
-        const map = mapRef.current;
-        if (!map || !setSelectedFeatureInfo || !clickPosition) return;
-
-        const handleClick = (evt) => {
-            markerClickedRef.current = false;
-            map.forEachFeatureAtPixel(evt.pixel, (feature) => {
-                if (markerClickedRef.current) return;
-                if (!feature.get('markerInfoBox')) return;
-                markerClickedRef.current = true;
-                openMarkerCard(feature);
-            });
-        };
-
-        map.on('click', handleClick);
-        return () => map.un('click', handleClick);
-    }, [mapRef, setSelectedFeatureInfo, clickPosition, openMarkerCard]);
-
-    return { showMarker, showMarkers, hideMarker, hideAllMarkers, markerClickedRef };
+    return { showMarker, showMarkers, hideMarker, hideAllMarkers, markerClickedRef, openMarkerCard };
 };

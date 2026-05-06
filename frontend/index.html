@@ -9,19 +9,59 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="msapplication-TileColor" content="#5C2472" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="google-site-verification" content="d6TbKvK4f3oVuW3AAFwTN3niNyTKhtrHXggolxossdc" />
         <title>MapaLab — IIEG</title>
-        <meta name="description" content="MapaLab del IIEG: Mapa interactivo de Jalisco con capas geoespaciales. La herramienta oficial para visualizar y analizar información territorial del estado." />
+        <meta name="description" content="Mapa interactivo de Jalisco del IIEG: visualiza y analiza información geoespacial del estado con capas temáticas de temperatura, precipitación, recursos naturales, eventos y más. Mapas oficiales de Jalisco para investigación, gestión territorial y consulta ciudadana." />
         <meta property="og:title" content="MapaLab — IIEG" />
-        <meta property="og:description" content="MapaLab del IIEG: Mapa interactivo de Jalisco con capas geoespaciales. La herramienta oficial para visualizar y analizar información territorial del estado." />
-        <meta property="og:url" content="__SITE_URL__" />
+        <meta property="og:description" content="Mapa interactivo de Jalisco del IIEG: visualiza y analiza información geoespacial del estado con capas temáticas de temperatura, precipitación, recursos naturales, eventos y más. Mapas oficiales de Jalisco para investigación, gestión territorial y consulta ciudadana." />
+        <link rel="canonical" href="__SITE_URL__/" />
+        <meta property="og:url" content="__SITE_URL__/" />
         <meta property="og:image" content="__SITE_URL__/img_link_share.png" />
         <meta property="og:site_name" content="MapaLab" />
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="es_MX" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="MapaLab — IIEG" />
-        <meta name="twitter:description" content="MapaLab del IIEG: Mapa interactivo de Jalisco con capas geoespaciales. La herramienta oficial para visualizar y analizar información territorial del estado." />
+        <meta name="twitter:description" content="Mapa interactivo de Jalisco del IIEG: visualiza y analiza información geoespacial del estado con capas temáticas de temperatura, precipitación, recursos naturales, eventos y más. Mapas oficiales de Jalisco para investigación, gestión territorial y consulta ciudadana." />
         <meta name="twitter:image" content="__SITE_URL__/img_link_share.png" />
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@graph": [
+                    {
+                        "@type": "GovernmentOrganization",
+                        "@id": "https://iieg.jalisco.gob.mx/#organization",
+                        "name": "Instituto de Información Estadística y Geográfica de Jalisco",
+                        "alternateName": "IIEG",
+                        "url": "https://iieg.jalisco.gob.mx",
+                        "logo": "__SITE_URL__/logo_iieg.svg"
+                    },
+                    {
+                        "@type": "Place",
+                        "@id": "https://iieg.jalisco.gob.mx/#jalisco",
+                        "name": "Jalisco",
+                        "containedInPlace": { "@type": "Country", "name": "México" },
+                        "geo": {
+                            "@type": "GeoCoordinates",
+                            "latitude": 20.6595,
+                            "longitude": -103.3494
+                        }
+                    },
+                    {
+                        "@type": "WebSite",
+                        "@id": "__SITE_URL__/#website",
+                        "name": "MapaLab",
+                        "url": "__SITE_URL__/",
+                        "description": "Mapa interactivo de Jalisco del IIEG: visualiza y analiza información geoespacial del estado con capas temáticas de temperatura, precipitación, recursos naturales, eventos y más. Mapas oficiales de Jalisco para investigación, gestión territorial y consulta ciudadana.",
+                        "inLanguage": "es-MX",
+                        "keywords": "mapa Jalisco, mapas Jalisco, mapa interactivo Jalisco, geoespacial Jalisco, IIEG, información territorial, capas geoespaciales, mapas oficiales Jalisco, datos geográficos Jalisco",
+                        "about": { "@id": "https://iieg.jalisco.gob.mx/#jalisco" },
+                        "spatialCoverage": { "@id": "https://iieg.jalisco.gob.mx/#jalisco" },
+                        "publisher": { "@id": "https://iieg.jalisco.gob.mx/#organization" }
+                    }
+                ]
+            }
+        </script>
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-hashes' 'sha256-F1noxsLOnJhyRSgc0zu5JgzoLjG2BBMaXaSG24k2mRM=' 'sha256-ieoeWczDHkReVBsRBqaal5AFMlBtNjMzgwKvLqi/tSU=' 'sha256-anLkrIW0/VNjoIAc1o4P7TANqc7MdbZe9P/9XhgGRoI=' 'sha256-7yEzcSHXRgQumlNO2rq/fvHvJz56rqDRNNgLUWIjPDw=' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://basemaps.cartocdn.com https://www.googletagmanager.com https://www.google-analytics.com __ACERVO_ORIGIN__; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://basemaps.cartocdn.com __ACERVO_ORIGIN__; font-src 'self'; frame-src https://www.googletagmanager.com https://www.youtube.com https://www.youtube-nocookie.com; child-src https://www.youtube.com https://www.youtube-nocookie.com blob:; worker-src blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
         <link rel="preload" href="/fonts/Garet-Book.otf" as="font" type="font/otf" crossorigin>
         <link rel="preload" href="/fonts/Garet-Regular.otf" as="font" type="font/otf" crossorigin>
@@ -30,7 +70,11 @@
     </head>
     <body>
         <div id="root"></div>
-        <noscript>Necesitas habilitar javascript para ejecutar este sistema.</noscript>
+        <noscript>
+            <h1>Mapa interactivo de Jalisco — MapaLab IIEG</h1>
+            <p>MapaLab es la herramienta oficial del Instituto de Información Estadística y Geográfica de Jalisco (IIEG) para consultar mapas interactivos del estado de Jalisco con capas geoespaciales de temperatura, precipitación, recursos naturales, eventos y más.</p>
+            <p>Para usar la herramienta interactiva necesitas habilitar JavaScript en tu navegador.</p>
+        </noscript>
         <script type="module" src="/src/main.jsx"></script>
     </body>
 </html>
