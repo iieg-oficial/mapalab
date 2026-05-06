@@ -12,6 +12,17 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.18.0',
+        items: [
+            { text: 'Al presionar el logotipo del IIEG, ahora se muestran estadísticas dinámicas de la base de datos (capas, registros y líneas de código).', tag: 'added' },
+            { text: 'Mejora en el comparador: al hacer zoom, click o centrar el mapa, los eventos ahora se aplican correctamente al lado correspondiente (A o B).', tag: 'changed' },
+            { text: 'Los controles de animación de tiempo ahora son siempre visibles directamente desde el panel de capas activas cuando están disponibles.', tag: 'added' },
+            { text: 'El logotipo de MapaLab en celulares ahora se adapta mejor a la pantalla y la información en la página principal se reorganizó a una sola columna.', tag: 'changed' },
+            { text: 'Mejoras en el posicionamiento de buscadores (SEO) para ayudar a que la plataforma se encuentre más fácilmente en internet.', tag: 'added' },
+            { text: 'Se limpió la interfaz quitando el botón "Reportar" dentro de las tarjetas de información para darle más espacio al contenido.', tag: 'changed' }
+        ]
+    },
+    {
         version: '1.17.0',
         items: [
             { text: 'Nuevo botón "Reportar" para enviar problemas, dudas o sugerencias desde el mapa, el InfoBox, el marker de IIEG y el footer de la página principal', tag: 'added' },
