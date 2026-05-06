@@ -129,7 +129,7 @@ const hasActiveChildLayers = (category, activeLayerIds) => {
 };
 
 const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer, layers = [] }) =>
-    layers.map(category => {
+    layers.filter(category => !category.hiddenInMenu).map(category => {
         const hasActiveLayers = hasActiveChildLayers(category, activeLayerIds);
 
         return {

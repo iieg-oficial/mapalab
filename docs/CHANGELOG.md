@@ -7,6 +7,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.18.1] - 2026-05-06
+
+### Cambiado
+- **Sidebar de mapas**: `createCategoryItems` ahora filtra los temas raíz con `hiddenInMenu=true`. Antes el filtro solo aplicaba a los hijos dentro de un tema, no a los temas mismos. Esto permite que mariachi cree temas-contenedor ocultos (como `eventos-auto`, padre de las capas auto-creadas para eventos) sin que aparezcan como botón de categoría en el sidebar; las capas siguen siendo encendibles desde el menú del evento o por la búsqueda global.
+
 ## [1.18.0] - 2026-05-06
 
 ### Agregado
