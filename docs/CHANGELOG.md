@@ -7,6 +7,23 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.18.0] - 2026-05-06
+
+### Agregado
+- **Marker IIEG con stats dinámicas**: Muestra tarjetas con capas activas, registros totales y líneas de código. Estadísticas cargadas vía backend `/metadata/database-stats` con caché de 1h y asíncronas al click del logo. Soporte para el comparador en paneles swipe.
+- **Loop controls visibles en panel**: Los controles de bucle temporal ahora son visibles directamente desde el panel de capas activas cuando `canPlayLoop` es verdadero, con nuevos layouts. Nuevo tamaño `lg` para DatePill y ajustes visuales en SlotBadge.
+- **Mejoras SEO**: Etiqueta canonical, JSON-LD estructurado enriquecido (@graph con Organization, Place, WebSite), tags de verificación y noscript expandido en `index.html`. H1 ocultos por página con keywords en `Home.jsx` y `Maps.jsx`. `sitemap.xml` y `robots.txt` eliminados de la carpeta public (servidos por gateway).
+- **Home UI**: El logo de Mapalab se muestra siempre extendido en móviles. Reorganización de columnas a una sola hasta el breakpoint `lg`.
+
+### Cambiado
+- **Fix Swipe**: El zoom, centrado, locate y clicks ahora activan correctamente el slot del pane correspondiente (A/B) utilizando `getActiveMap()`. Se introdujo `useViewSync` para compartir la vista de manera más eficiente entre paneles.
+- **Refactor InfoBox**: Se removió el botón "Reportar" inline del InfoBox para limpiar la interfaz.
+
+### Documentación
+- `swipe.md` reescrito para clarificar el flujo de paneles.
+- `periodicidad.md` actualizado incluyendo la lógica de backend y caché.
+- `context.md` actualizado con ajustes de redacción leader-follower.
+
 ## [1.17.0] - 2026-05-04
 
 ### Agregado

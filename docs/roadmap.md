@@ -72,10 +72,15 @@ timeline
             : Preview InfoBox + editor JSON custom
             : Forms dinamicos por preset
             : Code-split admin + /metrics Prometheus
-        Julio - Agosto 2026 (v1.8.0)
+        Mayo 2026 (v1.18.0)
+            : Marker IIEG con stats dinamicas
+            : Mejoras al Swipe View
+            : Loop controls en panel de capas
+            : Mejoras visuales y SEO
+        Julio - Agosto 2026 (v1.19.0)
             : Editor de Home desde admin
             : Compartir estado del mapa via URL
-        Septiembre - Octubre 2026 (v1.9.0)
+        Septiembre - Octubre 2026 (v1.20.0)
             : Login para ciudadanos
             : Capas favoritas por usuario
         Noviembre 2026 - Enero 2027 (v2.0.0)
@@ -362,11 +367,19 @@ timeline
 - [ ] Herramienta para comparar periodicidad de mapas (vista lado a lado)
 - [ ] Eliminar `<SymbologyPanel>` separado y relocalizar el chip A/B (commit 5 del plan de refactor del item activo)
 
-### v1.8.0 — Julio / Agosto 2026
+### v1.18.0 — Mayo 2026
+- [x] Marker IIEG con stats dinamicas y cards visuales
+- [x] Correcciones en la interaccion del comparador (swipe zoom/pan/click)
+- [x] Controles de loop visibles en el panel de capas activas
+- [x] Mejoras de UI en version movil (Header/Body en Home)
+- [x] Mejoras de SEO (canonical, JSON-LD estructurado, meta tags ocultos)
+- [x] Actualizacion de la documentacion de desarrollo y arquitectura
+
+### v1.19.0 — Julio / Agosto 2026
 - [ ] Modo edicion de Home integrado al administrador de portal
 - [ ] Compartir estado del mapa via URL (para el componente comparar, ademas de agregar orden de capas, opacidad, etc)
 
-### v1.9.0 — Septiembre / Octubre 2026
+### v1.20.0 — Septiembre / Octubre 2026
 - [ ] Sistema de login para ciudadanos
 - [ ] Guardar compartidos
 - [ ] Sistema de capas favoritas por usuario
