@@ -19,7 +19,6 @@ import InfoBoxTools from './components/InfoBoxTools';
 import InfoCard from './components/InfoCard';
 import SwipeToRemove from './components/SwipeToRemove';
 import WhatsNewModal from '../WhatsNewModal';
-import MapReportButton from '../MapReportButton';
 import ReportModal from '@components/ReportModal';
 
 const InfoBox = () => {
@@ -169,14 +168,6 @@ const InfoBox = () => {
     };
 
     const showToolbar = !hasNoResults && totalFeatures > 1;
-    const reportButton = !hasNoResults && (
-        <MapReportButton
-            variant="floating"
-            extraContext={results?.[0]?.features?.[0] ?? undefined}
-            label="Reportar"
-            className="md:bg-[#EAEFFA] md:text-[#703089] md:border md:border-transparent md:hover:border-[#5C2472] md:shadow-[0px_6px_12px_#2F495C14]"
-        />
-    );
 
     let globalCardIdx = 0;
     const cardTotal = totalAvailable > 0 ? totalAvailable : totalFeatures;
@@ -243,9 +234,8 @@ const InfoBox = () => {
                         <MobileSheetCloseButton onClick={handleClose} />
                     </div>
 
-                    <div className="flex items-center justify-between pl-[13px] pr-4 pb-2 gap-3">
+                    <div className="flex items-center pl-[13px] pr-4 pb-2 gap-3">
                         <InfoBoxTools tools={mobileTools} />
-                        {reportButton}
                     </div>
 
                     <ScrollContainer
@@ -373,9 +363,6 @@ const InfoBox = () => {
                     downloadShowsPlus={downloadShowsPlus}
                     downloadTooltip={downloadTooltipText}
                 />
-                <div className="mt-auto">
-                    {reportButton}
-                </div>
             </div>
 
             <WhatsNewModal isOpen={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
