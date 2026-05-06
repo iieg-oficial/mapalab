@@ -16,17 +16,24 @@ import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 const isTouchDevice = () => 'ontouchstart' in window;
 
 const MapControls = () => {
-    const { mapRef, isLocating, setIsLocating } = useMapsContext();
+    const { mapRef, compareMode, paneMapRefs, isLocating, setIsLocating } = useMapsContext();
     const [hoveredButton, setHoveredButton] = useState(null);
     const [showFitExtent, setShowFitExtent] = useState(false);
     const fitExtentTimeoutRef = useRef(null);
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 180 });
     const locationLayerRef = useRef(null);
+    const isSwipe = !!compareMode?.active;
+
+    const getActiveMap = useCallback(() => {
+        if (isSwipe) return paneMapRefs?.current?.[0]?.current ?? null;
+        return mapRef?.current ?? null;
+    }, [isSwipe, mapRef, paneMapRefs]);
 
     const handleZoomIn = useCallback(() => {
-        if (!mapRef.current) return;
+        const map = getActiveMap();
+        if (!map) return;
 
-        const view = mapRef.current.getView();
+        const view = map.getView();
         const currentZoom = view.getZoom();
         const maxZoom = view.getMaxZoom();
 
@@ -34,12 +41,13 @@ const MapControls = () => {
             view.animate({ zoom: currentZoom + 1, duration: 250 });
             trackMapZoomLevel(currentZoom + 1);
         }
-    }, [mapRef]);
+    }, [getActiveMap]);
 
     const handleZoomOut = useCallback(() => {
-        if (!mapRef.current) return;
+        const map = getActiveMap();
+        if (!map) return;
 
-        const view = mapRef.current.getView();
+        const view = map.getView();
         const currentZoom = view.getZoom();
         const minZoom = view.getMinZoom();
 
@@ -53,18 +61,19 @@ const MapControls = () => {
             setShowFitExtent(true);
             fitExtentTimeoutRef.current = setTimeout(() => setShowFitExtent(false), 3000);
         }
-    }, [mapRef]);
+    }, [getActiveMap]);
 
     const handleFitJalisco = useCallback(() => {
-        if (!mapRef.current) return;
-        const view = mapRef.current.getView();
+        const map = getActiveMap();
+        if (!map) return;
+        const view = map.getView();
         const extent = transformExtent(JALISCO_BOUNDS.coords, 'EPSG:4326', 'EPSG:3857');
-        const size = mapRef.current.getSize();
+        const size = map.getSize();
         const shortSide = Math.min(size[0], size[1]);
         const pad = Math.round(shortSide * 0.08);
         view.fit(extent, { duration: 500, padding: [pad, pad, pad, pad] });
         setShowFitExtent(false);
-    }, [mapRef]);
+    }, [getActiveMap]);
 
     const handleZoomOutEnter = useCallback(() => {
         if (isTouchDevice()) return;
@@ -86,45 +95,53 @@ const MapControls = () => {
     }, []);
 
     const handleLocateMe = useCallback(() => {
-        if (!mapRef.current || !navigator.geolocation) return;
+        const primaryMap = getActiveMap();
+        if (!primaryMap || !navigator.geolocation) return;
 
         setIsLocating(true);
 
         navigator.geolocation.getCurrentPosition(
             async (position) => {
-                const view = mapRef.current.getView();
+                const view = primaryMap.getView();
                 const coords = [position.coords.longitude, position.coords.latitude];
 
                 const transformedCoords = fromLonLat(coords);
 
+                const targetMaps = isSwipe
+                    ? [paneMapRefs?.current?.[0]?.current, paneMapRefs?.current?.[1]?.current].filter(Boolean)
+                    : [primaryMap];
+
                 if (locationLayerRef.current) {
-                    mapRef.current.removeLayer(locationLayerRef.current);
+                    const layers = Array.isArray(locationLayerRef.current) ? locationLayerRef.current : [locationLayerRef.current];
+                    layers.forEach(layer => {
+                        targetMaps.forEach(m => m.removeLayer(layer));
+                    });
                 }
 
-                const locationFeature = new Feature({
-                    geometry: new Point(transformedCoords)
-                });
-
-                locationFeature.setStyle(new Style({
-                    image: new Circle({
-                        radius: 8,
-                        fill: new Fill({ color: '#f97316' }),
-                        stroke: new Stroke({
-                            color: '#ffffff',
-                            width: 3
+                const newLayers = targetMaps.map(() => {
+                    const locationFeature = new Feature({
+                        geometry: new Point(transformedCoords)
+                    });
+                    locationFeature.setStyle(new Style({
+                        image: new Circle({
+                            radius: 8,
+                            fill: new Fill({ color: '#f97316' }),
+                            stroke: new Stroke({
+                                color: '#ffffff',
+                                width: 3
+                            })
                         })
-                    })
-                }));
-
-                const locationLayer = new VectorLayer({
-                    source: new VectorSource({
-                        features: [locationFeature]
-                    }),
-                    zIndex: 1000
+                    }));
+                    return new VectorLayer({
+                        source: new VectorSource({
+                            features: [locationFeature]
+                        }),
+                        zIndex: 1000
+                    });
                 });
 
-                locationLayerRef.current = locationLayer;
-                mapRef.current.addLayer(locationLayer);
+                targetMaps.forEach((m, i) => m.addLayer(newLayers[i]));
+                locationLayerRef.current = newLayers.length === 1 ? newLayers[0] : newLayers;
 
                 view.animate({
                     center: transformedCoords,
@@ -146,21 +163,28 @@ const MapControls = () => {
                 maximumAge: 0
             }
         );
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mapRef]);
+    }, [getActiveMap, isSwipe, paneMapRefs, setIsLocating]);
 
     useEffect(() => {
         const mapInstance = mapRef.current;
+        const paneRefs = paneMapRefs;
 
         return () => {
             clearTimeout(fitExtentTimeoutRef.current);
             const locationLayer = locationLayerRef.current;
+            if (!locationLayer) return;
 
-            if (locationLayer && mapInstance) {
-                mapInstance.removeLayer(locationLayer);
-            }
+            const layers = Array.isArray(locationLayer) ? locationLayer : [locationLayer];
+            const candidateMaps = [
+                mapInstance,
+                paneRefs?.current?.[0]?.current,
+                paneRefs?.current?.[1]?.current,
+            ].filter(Boolean);
+            layers.forEach(layer => {
+                candidateMaps.forEach(m => m.removeLayer(layer));
+            });
         };
-    }, [mapRef]);
+    }, [mapRef, paneMapRefs]);
 
     return (
         <div

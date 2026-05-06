@@ -45,7 +45,7 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
     const getFilter = useLiveState ? ctx.getFilter : paneGetFilter;
     const getLayerOpacity = useLiveState ? ctx.getLayerOpacity : paneGetLayerOpacity;
 
-    const { isDrawing, queryFeaturesInPolygonRef, getAllChildLayerIds, markerClickedRef, editingClickedRef, paneMapRefs } = ctx;
+    const { isDrawing, queryFeaturesInPolygonRef, getAllChildLayerIds, markerClickedRef, editingClickedRef, paneMapRefs, setActiveSlot, openMarkerCard } = ctx;
 
     useEffect(() => {
         if (!isCompare || !paneMapRefs?.current) return;
@@ -56,8 +56,19 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         };
     }, [isCompare, paneIndex, paneMapRefs]);
 
-    const { queryFeatures, queryFeaturesInPolygon } = useFeatureInfo();
+    const featureInfoOverrides = useMemo(() => (
+        isCompare ? { activeLayerIds, hiddenLayerIds, getFilter } : null
+    ), [isCompare, activeLayerIds, hiddenLayerIds, getFilter]);
+
+    const { queryFeatures, queryFeaturesInPolygon } = useFeatureInfo(featureInfoOverrides);
     const baseMapRef = useRef(null);
+
+    const handlePaneClick = useCallback(async (map, coordinate, evt) => {
+        if (isCompare && !isActiveSlotPane && setActiveSlot) {
+            setActiveSlot(paneIndex === 0 ? 'A' : 'B');
+        }
+        return queryFeatures(map, coordinate, evt);
+    }, [queryFeatures, isCompare, isActiveSlotPane, setActiveSlot, paneIndex]);
 
     useEffect(() => {
         if (isCompare) return;
@@ -73,8 +84,24 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         getLayerOpacity, layerOpacities, getFilter, combineCQLFilters
     });
 
-    useMapInteractions(mapRef, queryFeatures, isDrawing, markerClickedRef, editingClickedRef);
+    useMapInteractions(mapRef, handlePaneClick, isDrawing, markerClickedRef, editingClickedRef);
     useWMSFilterUpdater({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds });
+
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map || !openMarkerCard || !markerClickedRef) return undefined;
+        const handleMarkerClick = (evt) => {
+            markerClickedRef.current = false;
+            map.forEachFeatureAtPixel(evt.pixel, (feature) => {
+                if (markerClickedRef.current) return;
+                if (!feature.get('markerInfoBox')) return;
+                markerClickedRef.current = true;
+                openMarkerCard(feature, map);
+            });
+        };
+        map.on('click', handleMarkerClick);
+        return () => map.un('click', handleMarkerClick);
+    }, [mapRef, openMarkerCard, markerClickedRef]);
 
     return <div ref={targetRef} className={className} />;
 };

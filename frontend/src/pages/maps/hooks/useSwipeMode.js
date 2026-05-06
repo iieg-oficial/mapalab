@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
     SWIPE_ORIGINAL_STORAGE_KEY,
     emptyPane,
@@ -7,7 +7,7 @@ import {
     deserializeSnapshotFromStorage,
 } from '@pages/maps/helpers/swipeMode';
 
-export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
+export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs }) => {
     const [compareMode, setCompareMode] = useState(initialCompareMode);
     const [highlightedSlots, setHighlightedSlots] = useState(null);
 
@@ -241,8 +241,6 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds }) => {
             return { ...prev, paneA: reorder(prev.paneA), paneB: reorder(prev.paneB), globalOrder: [...newGlobalOrder] };
         });
     }, []);
-
-    const paneMapRefs = useRef({});
 
     return {
         compareMode,
