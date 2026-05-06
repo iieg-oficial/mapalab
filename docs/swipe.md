@@ -1,57 +1,108 @@
-# Swipe — Comparador de configuraciones con barra divisora
+# Swipe — Comparador A|B
 
-Documenta la herramienta de comparación tipo *swipe* (una sola vista de mapa con dos configuraciones de capas independientes lado a lado, separadas por una barra divisora vertical arrastrable).
+Documenta el comparador *swipe*: dos configuraciones de capas independientes lado a lado, separadas por una barra divisora arrastrable (vertical u horizontal).
 
-Desde v1.12 reemplaza al antiguo modo `compare-split` (lado a lado por fechas), que se elimina por completo.
+Reemplaza al antiguo `compare-split` y al `CompareDateModal`. La configuración de cada lado se hace desde el sider con la pildora A|B, no con un modal.
 
 ## Modelo
 
-Estado en `MapsProvider`:
+Estado central en `useSwipeMode`:
 
-```
+```js
 compareMode = {
     active: boolean,
     activeSlot: 'A' | 'B',
     paneA: { activeLayerIds, hiddenLayerIds, layerOpacities, filters, label },
     paneB: { activeLayerIds, hiddenLayerIds, layerOpacities, filters, label },
-    swipePosition: number,         // 0.05 .. 0.95
+    originalSnapshot: { ... } | null,
+    swipePosition: number,           // 0.05 .. 0.95 (clampado)
+    swipeOrientation: 'vertical' | 'horizontal',
+    globalOrder: string[],           // IDs en el orden global de la unión paneA + paneB
 }
 ```
 
-Cada pane es un **snapshot completo** de capas, opacidades, visibilidad y filtros. El estado global de capas espeja al `activeSlot`: toda mutación que el usuario hace desde el sider, panel de capas o filtros se aplica al slot activo, y al cambiar de slot se hace swap entre el global y el pane congelado.
+Cada pane es un **snapshot completo** de capas, opacidades, visibilidad y filtros. El estado global de capas (`activeLayerIds`, `hiddenLayerIds`, `layerOpacities`, `filters`) **espeja al `activeSlot`**: toda mutación que el usuario hace desde el sider, panel de capas o filtros se aplica al slot activo, y al cambiar de slot se hace swap entre el global y el pane que estaba congelado. Por eso al hablar de "live state" en swipe nos referimos al snapshot del slot activo.
+
+### `globalOrder`
+
+Array de IDs que dicta el orden de la unión `paneA + paneB` en `effectiveActiveLayerIds`. `setLayerSlotMembership` lo extiende, `removeLayerFromSlot` lo limpia, `reorderInSlots` lo reescribe. Sin este array, la unión siempre concatenaba paneA primero y el reorden cross-slot se "regresaba".
+
+### `originalSnapshot`
+
+Al entrar a swipe se snapshotea el live state actual + se persiste en `localStorage` (`mapalab.swipe.original_snapshot`) para sobrevivir recargas. Al salir, se restaura. Permite que la UX sea no-destructiva.
 
 ### Compartido entre A y B
 
-- `view` (centro, zoom, rotación) — sincronizado con `useViewSync`
+- `view` (centro, zoom, rotación) — **misma instancia de `View`** entre los dos `OLMap` (`useViewSync`)
 - `baseMapId`
 - `selectedLayerForSymbology`
-- Filtros espaciales (municipio, etc., cuando lleguen)
 
-### Renderizado
+## Arquitectura de render
 
-`SwipeView` monta dos `MapView` con `paneIndex={0|1}` y snapshot por prop. Cada `MapView` re-renderiza solo cuando su pane cambia. El lado derecho se recorta con `clipPath: inset(0 0 0 ${pos}%)`. La barra es un drag handle CSS — no dispara peticiones WMS.
+```
+Maps.jsx
+└── isComparing
+    ├── true  → <SwipeView />  (dos <MapView paneIndex={0|1}> apilados)
+    └── false → <MapView />    (un solo mapa)
+```
 
-### Entrada y salida
+`SwipeView.jsx` monta:
 
-- **Entrada**: botón "Barra divisora" en `ToolsMenu`. Al activar: `paneA = snapshot(estado actual)`, `paneB = copia(paneA)`, `activeSlot = 'B'`, `swipePosition = 0.5`.
-- **Salida**: botón "Salir" conserva el slot activo sin preguntar. Junto al botón hay un link "descartar A" / "descartar B" para conservar el otro.
-- **Vaciar slot B**: botón explícito en el header del sider para dejar B en estado limpio (sin capas).
+```jsx
+<div data-swipe-composite="true">
+    <MapView paneIndex={0} />                                    {/* paneA siempre visible */}
+    <div style={{ clipPath: inset(...) }}>
+        <MapView paneIndex={1} />                                {/* paneB clipeado */}
+    </div>
+    <Handle />                                                   {/* barra naranja draggable */}
+    <OverlayA /> <OverlayB />                                    {/* solo cuando highlightedSlots */}
+</div>
+```
 
-### Estilo visual
+- El recorte es **CSS clip-path** (no hay overhead de OL ni redibujo de tiles).
+- Pointer events: el clip-path nativo descarta clicks fuera del área visible → cada click llega al pane correcto.
+- La barra naranja es un `<div role="separator">` con listeners propios, no un `ol.control`.
 
-Todos los controles del swipe (selector A/B, leyenda chip, salir, descartar, vaciar) usan la paleta de la barra de mediciones (`MeasurementTools/ToolSelector.jsx`):
+### Implementación propia (no `ol-ext`)
 
-- Base inactivo: `bg-[#EAEFFA] text-[#703089] hover:border-[#5C2472]`, `rounded-full`, `size-12.5`
-- Activo / seleccionado: `bg-[#703089] text-white`
-- Destructivo (descartar, vaciar): `text-[#FF577D] hover:border-[#FF577D] active:bg-[#FF577D] active:text-white`
-- Tooltip con delay 300–400 ms
-- Color asociado al slot: A = azul, B = naranja (`#FF8300`, mismo del handle del swipe)
+No usamos `ol.control.Swipe` de `ol-ext`. La razón: ol-ext clipa **layers** dentro de un solo mapa con `prerender`/`postrender` events. Eso obliga a ambos lados a compartir layers, lo que rompe el modelo paneA/paneB con filtros y fechas independientes. Nuestra implementación tiene **dos `OLMap` completos**, cada uno con sus propias capas, listeners y feature info.
+
+Costo: dos `GetMap` por cada cambio de view (uno por pane). Beneficio: A y B son configurables totalmente independientes.
+
+## Sincronización de View
+
+`useViewSync` comparte la **misma instancia de `ol.View`** entre los dos mapas:
+
+```js
+m1.setView(m0.getView());
+```
+
+OL renderiza ambos mapas con la misma vista. Una sola animación de zoom emite un solo flujo de `change:resolution`/`change:center` y cada mapa hace **una** request final. Antes (con sync por eventos `setCenter`/`setZoom` directo en el segundo View), una animación `view.animate({ duration: 250 })` en pane A propagaba múltiples valores intermedios a pane B → varias `GetMap` extra en el lado B durante cada zoom.
+
+Cleanup conservador: si el segundo mapa sigue montado al desactivar swipe, restaura su View original. En el caso normal (salir de swipe → panes se desmontan) no hace nada — los maps se destruyen y el View compartido se libera.
+
+## `paneMapRefs`
+
+Registry `{ 0: refPaneA, 1: refPaneB }` creado en `MapsProvider` y pasado tanto a `useSwipeMode` como a `useMapMarker`. Cada `<MapView paneIndex={i}>` lo puebla en su effect de mount con su `localMapRef`. Consumers en swipe (`MapControls`, `ScaleLineControl`, `useMapView.getActiveMapRef`, `useMapMarker`, etc.) leen `paneMapRefs.current[0]?.current` (paneA) como anchor cuando `compareMode.active`.
+
+Crítico: **`mapRef.current` (live) es `null` en swipe** porque el `<MapView />` live no se monta. Cualquier consumer que lea `mapRef.current` directo necesita un fallback. Ver tabla de consumers más abajo.
+
+## Pildora A|B (`<SlotBadge>`)
+
+Cicla membership por capa: `A → AB → B → A`. Implementado por `setLayerSlotMembership(layerId, target)` en `useSwipeMode`. Cada toggle actualiza `paneA.activeLayerIds` y/o `paneB.activeLayerIds`, copia opacities/filters del pane fuente, y extiende `globalOrder` si la capa entra por primera vez.
+
+`useSymbology.stillActive` valida contra `paneA + paneB` (no solo el live state) para que el item no se deseleccione al pasar AB → B.
+
+**Botón Eliminar en swipe** quita la capa de **ambos** slots — para mover entre slots se usa la pildora.
+
+## Entrada y salida del swipe
+
+- **Entrada**: `enterSwipeMode()` en `useSwipeMode`. Snapshotea live → `originalSnapshot` y `localStorage`. Pausa todos los loops temporales. Vacía live state. `compareMode.active = true`, `activeSlot = 'A'`. Disparado desde el botón "Comparar" en `MapToolsPanel`.
+- **Salida**: `exitCompareMode()`. Restaura `originalSnapshot` (o lo lee de `localStorage` si no estaba en memoria). Limpia el storage. `<CloseButton>` rosa centrado en `<SwipeSlotControls>`, con confirmación.
 
 ## Persistencia
 
-### Share
-
-Envelope `kind: 'swipe'`:
+### Share envelope
 
 ```json
 {
@@ -59,86 +110,68 @@ Envelope `kind: 'swipe'`:
     "kind": "swipe",
     "payload": {
         "shared": { "view", "basemap", "selected" },
-        "paneA": { "label", "layers": [...], "opacities", "hidden", "filters" },
-        "paneB": { "label", "layers": [...], "opacities", "hidden", "filters" },
+        "paneA": { "label", "layers": [...] },
+        "paneB": { "label", "layers": [...] },
+        "activeSlot": "A" | "B",
         "position": 0.5
     }
 }
 ```
 
-`useShareSerializer` y `useShareDeserializer` aceptan únicamente `kind: 'single' | 'swipe'`. **No hay fallback** para envelopes legacy `kind: 'compare'` ni para el formato anterior de `kind: 'swipe'` (la herramienta no se había liberado, no existen enlaces vivos).
+`useShareSerializer.js:118-149` y `useShareDeserializer.js:56,107` lo manejan. El slot activo se serializa con el live state; el slot opuesto, con su snapshot del `compareMode`. Solo `kind: 'single' | 'swipe'`, sin fallback legacy.
 
-### URL viva
+### sessionStorage
 
-Refleja **solo el slot activo** + flag `?compare=swipe`. El estado completo (ambos snapshots) vive en `sessionStorage` y en el share generado. Si se entra con `?compare=swipe` sin sessionStorage, cae a modo single.
+`useSessionPersistence` serializa `kind: 'swipe'` con `position` para sobrevivir recargas dentro de la sesión. Si se entra con `?compare=swipe` sin sessionStorage, cae a modo single.
 
-`sessionStorage` ya no debe contener IDs de capas crudos; siempre se serializa por slug (consistente con shares).
+### `originalSnapshot`
 
-### Dirtiness
+Independiente del share. Solo vive durante la sesión de swipe (en `localStorage` clave `mapalab.swipe.original_snapshot`). Permite restaurar al salir.
 
-`useShareDirtiness` compara el envelope cargado contra **ambos** snapshots cuando el envelope es `kind: 'swipe'`. Si solo compara contra el slot activo, da falsos positivos/negativos.
+## Herramientas habilitadas en swipe
 
-## Herramientas que NO funcionan en swipe (V1)
-
-| Herramienta | Estado en swipe | Razón |
+| Herramienta | Estado | Notas |
 |---|---|---|
-| Mediciones | bloqueada | Pendiente — ver V2 abajo |
-| ZenMode | bloqueada | Pendiente — ver V2 abajo |
-| InfoBox / clicks | bloqueada | Pendiente — ver V2 abajo |
-| Loop temporal | se cancela al entrar | Pendiente — ver V2 abajo |
-| `CompareDateModal` | eliminado | Atajo "comparar dos fechas" se elimina por consistencia. Toda configuración se hace desde el sider con el toggle de slot |
+| Click → InfoBox | ✅ | Cada `<MapView>` tiene su listener; el feature info se consulta con los layers del pane que recibió el click. Click en pane no-activo dispara `setActiveSlot` para sincronizar la UI |
+| Zoom +/− y "Centrar en Jalisco" | ✅ | `MapControls.getActiveMap()` resuelve a paneA en swipe; el shared View propaga al pane B |
+| "Mi ubicación" | ✅ | El feature de geolocalización se agrega a **ambos** paneles en swipe (visible en cualquier orientación del clip) |
+| Compartir | ✅ | Envelope `kind: 'swipe'` con ambos snapshots |
+| Descarga del mapa (PNG/PDF) | ✅ | `useMapCapture.captureSwipeComposite` captura los dos canvases por separado y los compone con `composeSwipeCanvas` (respeta orientación y posición) |
+| Leyenda | ✅ | Inline en cada item del panel de capas activas. Usa el filtro de fecha del `activeSlot` |
+| Filtros CQL y fechas | ✅ | Cada slot mantiene los suyos; aplican solo al slot activo |
+| Marker IIEG (logo en sider) | ✅ | `useMapMarker.getActiveMap()` resuelve a paneA. El View compartido anima a ambos paneles |
 
-## Herramientas que SÍ funcionan en swipe (V1)
+## Pendientes (no habilitados en swipe)
 
-- **Compartir**: genera envelope `kind: 'swipe'` con ambos snapshots
-- **Descarga del mapa (PNG/PDF)**: captura el composite (los dos lados con la barra incluida — lo que ve el usuario)
-- **Leyenda**: una sola, con chip arriba "Mostrando leyenda de A | cambiar a B" usando estilos de mediciones
-- **Filtros sobre capas del slot activo**: cualquier filtro CQL que ya existía sigue funcionando, solo aplica al slot activo
+| Herramienta | Razón | Para retomar |
+|---|---|---|
+| Mediciones (`MeasurementTools`) | `useMapDrawing` opera sobre `mapRef` global. Decisión pendiente: una capa vector compartida entre paneles (recomendado), o una por slot. La medición es geográfica → globales tiene más sentido |
+| ZenMode | No prioritario; mayoritariamente CSS para condicionar render de overlays del swipe |
+| Loop temporal | `useDateLoop` se cancela al entrar a swipe. Tres opciones: por slot activo (simple), sincronizado con offset fijo entre A y B (recomendado, da valor diferencial), o independiente por slot |
 
----
+## Consumers de `mapRef` / `View` en swipe — referencia rápida
 
-# Pendientes — V2
+| Consumer | Comportamiento en swipe |
+|---|---|
+| `MapControls` | usa `getActiveMap()` → paneA |
+| `ScaleLineControl` | usa `paneMapRefs[0]` |
+| `useMapMarker` | `getActiveMap()` → paneA. `openMarkerCard` acepta un `mapInstance` opcional para usar el map exacto del click |
+| `useMapView.getActiveMapRef` | retorna paneA |
+| `useMapCapture.getMapSnapshot` | usa anchor (paneA), opera `view.setCenter/setResolution` que afecta a ambos panes vía View compartido |
+| `useFeatureInfo` | acepta `overrides` con `{ activeLayerIds, hiddenLayerIds, getFilter }`. `<MapView>` en swipe le pasa los del paneSnapshot |
+| `useShareSerializer` / `useShareDeserializer` | usan `mapRef.current` (live, `null` en swipe) — limitación conocida; el View se serializa desde el slot activo si está disponible |
+| `useMapMarker` listener click | registrado en cada `<MapView>` (no en el hook) → cada pane responde a sus propios clicks de marker |
 
-Funcionalidad fuera del alcance de la primera entrega del swipe. Se documenta aquí para no perder contexto.
+## Estilo visual
 
-## V2.1 — Loop temporal en swipe
+- Color asociado: A = morado IIEG (`#5C2472`), B = naranja (`#FF8300`, mismo del handle del swipe)
+- Handle naranja con knob blanco (`<svg>` con flechas según orientación)
+- Overlays "A"/"B" gigantes en `font-garet bold text-[120px]` cuando `highlightedSlots` está activo (al cambiar de slot por la pildora)
+- `<SwipeSlotControls>`: barra inferior centrada `[A · orientación · B]` con `<DatePill autoWidth>`. `<CloseButton>` rosa arriba si hay periodicidad seleccionada o dentro de la barra si no la hay
+- Tooltips dinámicos: anexan `del lado A`/`del lado B` y, para acciones destructivas en `AB`, `(seguirá en el lado X)`
 
-Hoy `useDateLoop` se cancela al entrar al swipe. Opciones cuando se retome:
+## Performance
 
-1. **Loop por slot activo**: el loop muta solo el slot seleccionado. Simple.
-2. **Loop sincronizado con desfase fijo**: ambos slots avanzan en paralelo manteniendo la diferencia inicial entre fechas (p.ej. A=2020 y B=2024 → tras un tick A=2021, B=2025). Útil para ver evolución temporal de dos años distintos lado a lado.
-3. **Loop independiente por slot**: cada uno con su propio intervalo y dirección. Probablemente innecesario.
+Costo inherente: en swipe son **dos `GetMap` por cada cambio de view** (uno por pane). En GCP staging (1 VM con 2 cores que comparte CPU con backend, GeoServer y nginx) ese doble request hace que el zoom sea perceptiblemente más lento. En producción real (4 servidores dedicados, GeoServer en su propio servidor con 8 cores) no se nota.
 
-Recomendación: arrancar por la (2) porque es la que da valor diferencial al swipe. Implica que el loop guarde un offset entre A y B en lugar de un valor absoluto.
-
-## V2.2 — InfoBox y clicks en swipe
-
-Hoy InfoBox está oculto en swipe. Habilitarlo requiere:
-
-- Determinar bajo cuál pane está el cursor en el momento del click (comparar `clientX` con `swipePosition * width`)
-- El click va al `MapView` de ese pane y el InfoBox lee del snapshot de ese slot
-- Estilo del InfoBox: badge "A" o "B" en el header para que quede claro de qué slot vienen los datos
-- Marker de click respeta el slot (color asociado A/B)
-
-Riesgo: si el usuario arrastra la barra justo sobre el cursor, el pane debajo cambia. El handler debe leer la posición en el momento del click, no en el render.
-
-## V2.3 — Mediciones en swipe
-
-`MeasurementTools` está bloqueado en swipe. Para habilitarlo:
-
-- Las mediciones viven en `useMapDrawing`, sobre un `VectorLayer` único atado a `mapRef` global. En swipe hay dos mapas, el `mapRef` global no aplica.
-- Opciones:
-    - **Mediciones globales**: dibujar en una capa vector compartida que se renderice en ambos panes (mismo `VectorSource` con dos `VectorLayer` montados, uno por pane). Más simple.
-    - **Mediciones por slot**: cada pane con su propia capa. Permite medir sobre lo que cada lado muestra independientemente. Más complejo, dudoso valor.
-- Recomendación: globales. La medición es geográfica, no depende de qué capa esté abajo.
-
-## V2.4 — ZenMode en swipe
-
-`ZenMode` colapsa toda la UI para dejar el mapa limpio. En swipe:
-
-- Esconder selector de slot, leyenda chip, etiquetas de pane
-- Mantener barra divisora visible (es la herramienta principal)
-- Mantener etiquetas de A/B reducidas en esquinas para no perder referencia
-- Salir de ZenMode debe seguir funcionando con la misma combinación de teclas
-
-Bajo riesgo, mayoritariamente CSS y condicionar render de overlays.
+El fix de "shared View" (mismo `View` instance en los dos mapas) elimina las requests intermedias del thrashing durante una animación de zoom — pero las dos requests finales son inherentes al diseño "dos mapas independientes". Cambiarlo requeriría perder la independencia de filtros/fechas entre A y B.

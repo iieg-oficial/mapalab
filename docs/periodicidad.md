@@ -265,6 +265,34 @@ Además, `useDateLoop` recibe `hiddenLayerIds` desde `MapsProvider` y en un `use
 
 ---
 
+## Backend de periodicidad
+
+### Endpoints
+
+| Método | Ruta | Función |
+|---|---|---|
+| GET | `/periodicity/?workspace=X&layer=Y` | Periodicidad de una capa. Devuelve `{fecha: {year: {month: [days]}}}` o `null` |
+| GET | `/periodicity/batch?layers=w1:l1,w2:l2,...` | Periodicidad de varias capas en un solo request. Devuelve `{layer_key: periodicity \| null}` |
+
+Ambos leen de `public.layer_periodicity` (tabla autogenerada). Los días sólo se incluyen si la columna `fecha` es de tipo date/timestamp; meses sin días se devuelven como `null`.
+
+### Schema y refresh
+
+- `PeriodicityService.ensure_schema()` (en `backend/app/services/periodicity_service.py`) crea idempotentemente la tabla `public.layer_periodicity` y la función SQL `public.refresh_layer_periodicity()`. Si la tabla está vacía dispara el primer refresh. Se ejecuta vía leader-follower en el `lifespan` de `server.py`.
+- La función `refresh_layer_periodicity()` recorre todas las tablas/vistas con columna `fecha` (excluyendo schemas internos) y construye el JSON `{year: {month: [days]}}` por `schema:tabla`.
+- El refresh diario corre desde `dataengine-jobs` (cron 03:00) que sólo invoca `SELECT public.refresh_layer_periodicity()`. Mapalab backend ya no agenda este job.
+
+### Cache en frontend
+
+`usePeriodicityCache(activeLayerIds)` en `frontend/src/pages/maps/hooks/usePeriodicityCache.js` mantiene un cache en memoria de las periodicidades de las capas activas:
+
+- Hace batch fetch (`/periodicity/batch`) cuando aparecen IDs nuevos en `activeLayerIds`.
+- Expone `getPeriodicity(layerId)`, `isLoading(layerId)` y `ensureFetched(layerId)`.
+- `fetchedRef` evita re-fetch de IDs ya pedidos. Si el request falla, el ID se libera para reintento futuro.
+- Vive en `MapsProvider` y se usa para mostrar pills de fecha y alimentar selectores sin abrir el modal.
+
+---
+
 ## Resumen de archivos
 
 | Archivo | Responsabilidad |
@@ -278,7 +306,10 @@ Además, `useDateLoop` recibe `hiddenLayerIds` desde `MapsProvider` y en un `use
 | `useCQLFilter.js` | Estado global de filtros CQL por capa |
 | `useWMSFilterUpdater.js` | Sincroniza filtros CQL/TIME con los sources WMS |
 | `useDateLoop.js` | Animación temporal generalizada (year/month, LTR/RTL, interval configurable) |
+| `usePeriodicityCache.js` | Cache batch en memoria de periodicidades por capa activa |
 | `useCarouselOverflow.js` | Scroll del carrusel de años con `canScrollLeft`/`canScrollRight` |
 | `wmsConfig.js` | `resolveTimeStyle` para estilos dinámicos por TIME |
 | `recursos.js` | Definiciones de capas raster con `timeEnabled` y `rasterPeriodicity` |
 | `seguridad.js` | Ejemplo de capas con `defaultDate` |
+| `backend/app/routers/periodicity.py` | Endpoints `/periodicity/` y `/periodicity/batch` |
+| `backend/app/services/periodicity_service.py` | `ensure_schema`, `refresh`, `get_periodicity`, `get_periodicities_batch` |

@@ -244,7 +244,7 @@ Mariachi invoca `POST /mapalab/api/layers/refresh-cache` al aprobar borradores o
 
 ### Leader-follower
 
-Legacy; desde v1.4.0 el scheduler ya no corre en mapalab backend. El leader-follower de `server.py` queda para inicializaciones puntuales (`PeriodicityService.ensure_schema` idempotente).
+Desde v1.4.0 el scheduler ya no corre en mapalab backend (lo hace `dataengine-jobs`). El leader-follower de `server.py` se conserva para `PeriodicityService.ensure_schema()`: crea idempotentemente la tabla `public.layer_periodicity` y la función SQL `public.refresh_layer_periodicity()` en la BD de mapalab, y dispara el primer refresh si la tabla está vacía. El cron de `dataengine-jobs` (03:00) sólo invoca la función ya creada.
 
 ### Connection pool
 
@@ -352,8 +352,10 @@ Sistema transversal de reportes (problemas, solicitudes, sugerencias, dudas, dat
 - **v1.4.0 — v1.5.1** — Capas dinámicas desde backend (mariachi CMS + DataEngine schema `mapalab`), security hardening, tests smoke — Abril 2026 ✅
 - **v1.6.0** — Selector GeoServer dinámico, edición masiva de tags, rate limiter en memoria — Abril 2026 ✅
 - **v1.7.0** — Drag & drop del árbol, preview InfoBox, editor JSON custom, forms dinámicos por preset, `/metrics` Prometheus, code-split admin, drop legacy `mapalab_card` — Abril 2026 ✅
-- **v1.8.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
-- **v1.9.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
+- **v1.14.0 — v1.17.0** — Item de capa activa rediseñado, Reportes ciudadanos, MCP Server — Abril/Mayo 2026 ✅
+- **v1.18.0** — Marker IIEG dinámico, swipe robusto, loop controls visibles, logo Mapalab responsive, optimizaciones SEO — Mayo 2026 ✅
+- **v1.19.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
+- **v1.20.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
 - **v2.0.0** — Arquitectura de capas para dependencias, lazy loading, IGIBot, 3D, dashboards, API publica — Febrero 2027+
 
 Ver `docs/layers.md` para arquitectura de capas y `docs/roadmap.md` para timeline completo.
