@@ -29,7 +29,7 @@ const SlotBadge = ({ membership, onCycle }) => {
                 onClick={handleClick}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                className="shrink-0 inline-flex h-5 rounded-full overflow-hidden border border-gray-200 text-[10px] font-garet font-bold leading-none cursor-pointer hover:opacity-80 transition-opacity"
+                className="shrink-0 inline-flex h-6 rounded-full overflow-hidden border border-gray-200 text-[10px] font-garet font-bold leading-none cursor-pointer hover:opacity-80 transition-opacity"
             >
                 {(membership === 'A' || membership === 'AB') && (
                     <span className="px-1.5 flex items-center bg-[#5C2472] text-white">A</span>
