@@ -22,7 +22,7 @@ const normalizedMap = Object.fromEntries(
 const resolveIcon = (name, icon) =>
     themeToIconMap[name] || normalizedMap[normalize(name)] || icon;
 
-const LayerThemeAvatar = ({ icon, name, size = 'md' }) => {
+const LayerThemeAvatar = ({ icon, name, imageUrl, size = 'md' }) => {
     const sizeClasses = {
         sm: 'size-10',
         md: 'size-16',
@@ -34,6 +34,14 @@ const LayerThemeAvatar = ({ icon, name, size = 'md' }) => {
         md: 'size-10',
         lg: 'size-12'
     };
+
+    if (imageUrl) {
+        return (
+            <div className={`${sizeClasses[size]} flex items-center justify-center overflow-hidden rounded-md`} title={name}>
+                <img src={imageUrl} alt={name || ''} className="size-full object-cover" />
+            </div>
+        );
+    }
 
     const iconName = resolveIcon(name, icon);
 
