@@ -439,6 +439,10 @@ Sub-componentes en `frontend/src/pages/maps/components/ActiveLayers/`:
 - `LayerOpacityPopover.jsx` — popover del slider de opacidad anclado al botón con `createPortal` + `position: fixed`.
 - `hooks/useLegendsVisibility.jsx` — context provider del toggle global de leyendas con persistencia en `localStorage`.
 
+## Modal de detalle de capa
+
+`<LayerDetailModal>` (panel derecho del visor) abre desde el botón de detalles del panel de capas activas o de los menús. El header arriba (`<LayerDetailHeader>`) muestra avatar + título del **tema** de la capa por defecto. Si la capa pertenece a un **evento** (configurado en mariachi), el header sustituye avatar y título por los del evento: prioriza `activeEvento` en `MapsContext` (lo setea `<EventoMenu>` mientras está montado); si está vacío (ej. tras refresh con la capa restaurada desde la URL), recorre `eventos` y resuelve por la primera coincidencia. Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`). `<LayerThemeAvatar>` acepta `imageUrl` para renderizar la imagen del evento sobre el círculo del avatar.
+
 ## Comparador (swipe)
 
 Estado central en `useSwipeMode` (`compareMode = { active, activeSlot, paneA, paneB, originalSnapshot, swipePosition, swipeOrientation, globalOrder }`). Al entrar a swipe se snapshotea el live state a `originalSnapshot` (+ persiste en `localStorage` por si recarga), se vacían los panes y el live state queda en `paneA`. La capa activa "viva" sigue siendo el live state (`activeLayerIds`, `hiddenLayerIds`, `layerOpacities`, `filters`); `applySnapshotToLive(pane)` lo sincroniza con el slot activo cada vez que cambia.
