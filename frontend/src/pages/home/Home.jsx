@@ -12,8 +12,13 @@ const Home = () => {
         <>
             <SEO
                 title="Mapalab"
-                description="Explora información geoespacial del estado de Jalisco con mapas interactivos, capas temáticas y datos estadísticos del IIEG."
+                description="Mapa interactivo de Jalisco del IIEG. Visualiza mapas oficiales del estado de Jalisco con capas geoespaciales de temperatura, precipitación, recursos naturales, eventos y datos estadísticos."
+                keywords="mapa Jalisco, mapas Jalisco, mapa interactivo Jalisco, mapa de Jalisco, geoespacial Jalisco, IIEG, mapas oficiales Jalisco, datos geográficos Jalisco, información territorial Jalisco"
             />
+            <h1 className="sr-only">Mapa interactivo de Jalisco — MapaLab IIEG</h1>
+            <p className="sr-only">
+                MapaLab es la plataforma oficial del Instituto de Información Estadística y Geográfica de Jalisco (IIEG) para consultar mapas de Jalisco con capas geoespaciales temáticas: temperatura, precipitación, recursos naturales, eventos, infraestructura y datos estadísticos del estado. Acceso público a los mapas oficiales de Jalisco.
+            </p>
             <div
                 className='min-h-screen bg-white overflow-x-hidden'
                 style={{

@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router';
 
-const SITE_URL = (import.meta.env.VITE_SITE_URL || '').replace(/\/$/, '');
+const SITE_URL_RAW = (import.meta.env.VITE_SITE_URL || '').replace(/\/$/, '');
+const BASE_PATH = (import.meta.env.VITE_BASE_PATH || '/').replace(/\/$/, '');
+const SITE_URL = BASE_PATH ? `${SITE_URL_RAW}${BASE_PATH}` : SITE_URL_RAW;
 
 const upsertMeta = (key, keyValue, content) => {
     let el = document.head.querySelector(`meta[${key}="${keyValue}"]`);
@@ -10,6 +13,11 @@ const upsertMeta = (key, keyValue, content) => {
         document.head.appendChild(el);
     }
     el.setAttribute('content', content);
+};
+
+const removeMeta = (key, keyValue) => {
+    const el = document.head.querySelector(`meta[${key}="${keyValue}"]`);
+    if (el) el.remove();
 };
 
 const upsertCanonical = (href) => {
@@ -23,18 +31,28 @@ const upsertCanonical = (href) => {
 };
 
 const upsertJsonLd = (data) => {
-    let el = document.head.querySelector('script[type="application/ld+json"]');
+    let el = document.head.querySelector('script[type="application/ld+json"][data-seo="page"]');
     if (!el) {
         el = document.createElement('script');
         el.setAttribute('type', 'application/ld+json');
+        el.setAttribute('data-seo', 'page');
         document.head.appendChild(el);
     }
     el.textContent = JSON.stringify(data);
 };
 
-const SEO = ({ title, description, path = '', image, schemaType = 'WebSite' }) => {
+const buildPageUrl = (routePath) => {
+    if (!routePath || routePath === '/') return `${SITE_URL}/`;
+    const normalized = routePath.startsWith('/') ? routePath : `/${routePath}`;
+    return `${SITE_URL}${normalized}`;
+};
+
+const SEO = ({ title, description, path, image, schemaType = 'WebSite', noindex = false, keywords }) => {
+    const location = useLocation();
+
     useEffect(() => {
-        const pageUrl = path ? `${SITE_URL}/${path}` : SITE_URL;
+        const routePath = path !== undefined ? path : location.pathname;
+        const pageUrl = buildPageUrl(routePath);
         const ogImage = image || `${SITE_URL}/img_link_share.png`;
 
         document.title = title;
@@ -52,6 +70,12 @@ const SEO = ({ title, description, path = '', image, schemaType = 'WebSite' }) =
         upsertMeta('name', 'twitter:image', ogImage);
 
         upsertCanonical(pageUrl);
+
+        if (noindex) {
+            upsertMeta('name', 'robots', 'noindex,nofollow');
+        } else {
+            removeMeta('name', 'robots');
+        }
 
         const jsonLd = {
             '@context': 'https://schema.org',
@@ -72,8 +96,13 @@ const SEO = ({ title, description, path = '', image, schemaType = 'WebSite' }) =
             jsonLd.operatingSystem = 'Web';
         }
 
+        if (keywords) {
+            jsonLd.keywords = keywords;
+            upsertMeta('name', 'keywords', keywords);
+        }
+
         upsertJsonLd(jsonLd);
-    }, [title, description, path, image, schemaType]);
+    }, [title, description, path, image, schemaType, noindex, keywords, location.pathname]);
 
     return null;
 };
