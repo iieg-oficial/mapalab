@@ -32,16 +32,20 @@ const Maps = () => {
             <ZenModeProvider>
                 <SEO
                     title="Mapa Interactivo | Mapalab"
-                    description="Visualiza capas de información geoespacial de Jalisco: temperatura, precipitación, recursos naturales y más."
-                    path="mapa"
+                    description="Mapa interactivo de Jalisco con capas geoespaciales: temperatura, precipitación, recursos naturales, eventos y más. Herramienta oficial del IIEG para consulta y análisis territorial."
                     schemaType="WebApplication"
+                    keywords="mapa interactivo Jalisco, capas geoespaciales Jalisco, mapa temperatura Jalisco, mapa precipitación Jalisco, mapa recursos naturales Jalisco, IIEG, GeoServer Jalisco"
                 />
+                <h1 className="sr-only">Mapa interactivo de Jalisco con capas geoespaciales — MapaLab IIEG</h1>
+                <p className="sr-only">
+                    Herramienta oficial del Instituto de Información Estadística y Geográfica de Jalisco (IIEG) para visualizar el mapa de Jalisco con capas temáticas: temperatura, precipitación, recursos naturales, eventos, infraestructura y datos estadísticos del estado.
+                </p>
                 <div className="relative w-full h-dvh">
                     <MapSider />
                     <MapToolsPanel />
                     <MapLayersPanels />
                     <LayerDetailModal />
-                    {!isComparing && <InfoBox />}
+                    <InfoBox />
                     <ScaleLineControl />
                     <MapReportButton variant="floating" className="fixed bottom-4 right-14 md:bottom-2 md:right-38 z-9" />
                     <MapAttribution />
