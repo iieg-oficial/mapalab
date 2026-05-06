@@ -19,6 +19,8 @@ const DISABLED_PRIMARY = 'bg-gray-100 border-gray-300';
 const DISABLED_SECONDARY = 'bg-gray-100 border-gray-300 text-gray-400';
 const DISABLED_ICON = 'text-gray-400';
 
+const LOOP_BUTTON_BASE = 'flex items-center justify-center size-6 rounded-full border transition-colors shrink-0 disabled:cursor-not-allowed';
+
 const LoopControls = ({
     isLooping,
     canPlayLoop,
@@ -46,17 +48,17 @@ const LoopControls = ({
             <button
                 onClick={onPlay}
                 disabled={disabled || !canPlayLoop}
-                className={`group/play flex items-center justify-center size-5 rounded-full border transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed ${primaryClasses}`}
+                className={`group/play ${LOOP_BUTTON_BASE} disabled:opacity-50 ${primaryClasses}`}
             >
                 {isLooping ? (
                     <>
-                        <img src={icoPauseNormal} alt="" className="size-[10px] block group-hover/play:hidden" />
-                        <img src={icoPauseHover} alt="" className="size-[10px] hidden group-hover/play:block" />
+                        <img src={icoPauseNormal} alt="" className="size-2.5 block group-hover/play:hidden" />
+                        <img src={icoPauseHover} alt="" className="size-2.5 hidden group-hover/play:block" />
                     </>
                 ) : (
                     <>
-                        <img src={icoPlayNormal} alt="" className="size-[10px] block group-hover/play:hidden" />
-                        <img src={icoPlayHover} alt="" className="size-[10px] hidden group-hover/play:block" />
+                        <img src={icoPlayNormal} alt="" className="size-2.5 block group-hover/play:hidden" />
+                        <img src={icoPlayHover} alt="" className="size-2.5 hidden group-hover/play:block" />
                     </>
                 )}
             </button>
@@ -68,7 +70,7 @@ const LoopControls = ({
             <button
                 onClick={onInterval}
                 disabled={disabled}
-                className={`flex items-center justify-center size-5 rounded-full border text-[9px] font-garet font-bold tabular-nums transition-colors shrink-0 disabled:cursor-not-allowed ${secondaryClasses}`}
+                className={`${LOOP_BUTTON_BASE} text-[9px] font-garet font-bold tabular-nums ${secondaryClasses}`}
             >
                 {(loopIntervalMs / 1000).toString().replace(/^0(?=\.)/, '').replace(/\.?0+$/, '') || '0'}s
             </button>
@@ -80,14 +82,14 @@ const LoopControls = ({
             <button
                 onClick={onDirection}
                 disabled={disabled}
-                className={`flex items-center justify-center size-5 rounded-full border transition-colors shrink-0 disabled:cursor-not-allowed ${secondaryClasses}`}
+                className={`${LOOP_BUTTON_BASE} ${secondaryClasses}`}
             >
                 <Icon name="downArrow" className={`w-3 h-1.5 transition-transform duration-300 ${iconColor} ${loopDirection === 'rtl' ? 'rotate-90' : '-rotate-90'}`} />
             </button>
         </Tooltip>
     );
 
-    if (!isLooping) return null;
+    if (!canPlayLoop && !isLooping) return null;
     const ordered = mirror ? [directionButton, intervalButton, playButton] : [playButton, intervalButton, directionButton];
     return <>{ordered}</>;
 };
@@ -119,7 +121,7 @@ const LayerDateControls = ({
         if (!liveLabel.label) return null;
         return (
             <div className="flex items-center gap-1 w-full">
-                <DatePill slot="none" label={liveLabel.label} kind={liveLabel.kind} onClick={onPillClick} isLoopingPulse={isLooping && isLoading} />
+                <DatePill slot="none" label={liveLabel.label} kind={liveLabel.kind} onClick={onPillClick} isLoopingPulse={isLooping && isLoading} size="lg" />
                 <LoopControls
                     isLooping={isLooping}
                     canPlayLoop={canPlayLoop}
@@ -141,15 +143,27 @@ const LayerDateControls = ({
     const showA = (slotMembership === 'A' || slotMembership === 'AB') && slotALabel.label;
     const showB = (slotMembership === 'B' || slotMembership === 'AB') && slotBLabel.label;
 
-    const gridClass = 'grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 w-full';
-
     if (slotMembership === 'AB') {
-        return (
-            <div className={gridClass}>
-                <div className="flex items-center gap-1 min-w-0">
-                    {showA && <DatePill slot="A" label={slotALabel.label} kind={slotALabel.kind} onClick={onPillClick} isLoopingPulse={isActiveA && isLooping && isLoading} />}
+        const hasLoopControls = canPlayLoop || isLooping;
+
+        if (!hasLoopControls) {
+            return (
+                <div className="flex items-center gap-1 w-full">
+                    {showA && <DatePill slot="A" label={slotALabel.label} kind={slotALabel.kind} onClick={onPillClick} size="lg" />}
+                    <div className="flex-1" />
+                    <SlotBadge membership="AB" onCycle={onCycleSlot} />
+                    <div className="flex-1" />
+                    {showB && <DatePill slot="B" label={slotBLabel.label} kind={slotBLabel.kind} onClick={onPillClick} size="lg" />}
+                </div>
+            );
+        }
+
+        if (isActiveA) {
+            return (
+                <div className="flex items-center gap-1 w-full">
+                    {showA && <DatePill slot="A" label={slotALabel.label} kind={slotALabel.kind} onClick={onPillClick} isLoopingPulse={isLooping && isLoading} size="lg" />}
                     <LoopControls
-                        isLooping={isActiveA && isLooping}
+                        isLooping={isLooping}
                         canPlayLoop={canPlayLoop}
                         loopIntervalMs={loopIntervalMs}
                         loopDirection={loopDirection}
@@ -157,62 +171,20 @@ const LayerDateControls = ({
                         onInterval={onInterval}
                         onDirection={onDirection}
                         slotPalette="A"
-                        disabled={!isActiveA}
-                        disabledHint={inactiveHint}
                     />
+                    <div className="flex-1" />
+                    <SlotBadge membership="AB" onCycle={onCycleSlot} />
+                    {showB && <DatePill slot="B" label={slotBLabel.label} kind={slotBLabel.kind} onClick={onPillClick} size="lg" />}
                 </div>
+            );
+        }
+        return (
+            <div className="flex items-center gap-1 w-full">
+                {showA && <DatePill slot="A" label={slotALabel.label} kind={slotALabel.kind} onClick={onPillClick} size="lg" />}
                 <SlotBadge membership="AB" onCycle={onCycleSlot} />
-                <div className="flex items-center justify-end gap-1 min-w-0">
-                    <LoopControls
-                        isLooping={!isActiveA && isLooping}
-                        canPlayLoop={canPlayLoop}
-                        loopIntervalMs={loopIntervalMs}
-                        loopDirection={loopDirection}
-                        onPlay={onPlay}
-                        onInterval={onInterval}
-                        onDirection={onDirection}
-                        slotPalette="B"
-                        mirror
-                        disabled={isActiveA}
-                        disabledHint={inactiveHint}
-                    />
-                    {showB && <DatePill slot="B" label={slotBLabel.label} kind={slotBLabel.kind} onClick={onPillClick} isLoopingPulse={!isActiveA && isLooping && isLoading} />}
-                </div>
-            </div>
-        );
-    }
-
-    if (slotMembership === 'A') {
-        return (
-            <div className={gridClass}>
-                <div className="flex items-center gap-1 min-w-0">
-                    {showA && <DatePill slot="A" label={slotALabel.label} kind={slotALabel.kind} onClick={onPillClick} isLoopingPulse={isActiveA && isLooping && isLoading} />}
-                    <LoopControls
-                        isLooping={isActiveA && isLooping}
-                        canPlayLoop={canPlayLoop}
-                        loopIntervalMs={loopIntervalMs}
-                        loopDirection={loopDirection}
-                        onPlay={onPlay}
-                        onInterval={onInterval}
-                        onDirection={onDirection}
-                        slotPalette="A"
-                        disabled={!isActiveA}
-                        disabledHint={inactiveHint}
-                    />
-                </div>
-                <SlotBadge membership="A" onCycle={onCycleSlot} />
-                <div />
-            </div>
-        );
-    }
-
-    return (
-        <div className={gridClass}>
-            <div />
-            <SlotBadge membership="B" onCycle={onCycleSlot} />
-            <div className="flex items-center justify-end gap-1 min-w-0">
+                <div className="flex-1" />
                 <LoopControls
-                    isLooping={!isActiveA && isLooping}
+                    isLooping={isLooping}
                     canPlayLoop={canPlayLoop}
                     loopIntervalMs={loopIntervalMs}
                     loopDirection={loopDirection}
@@ -221,11 +193,52 @@ const LayerDateControls = ({
                     onDirection={onDirection}
                     slotPalette="B"
                     mirror
-                    disabled={isActiveA}
+                />
+                {showB && <DatePill slot="B" label={slotBLabel.label} kind={slotBLabel.kind} onClick={onPillClick} isLoopingPulse={isLooping && isLoading} size="lg" />}
+            </div>
+        );
+    }
+
+    if (slotMembership === 'A') {
+        return (
+            <div className="flex items-center gap-1 w-full">
+                {showA && <DatePill slot="A" label={slotALabel.label} kind={slotALabel.kind} onClick={onPillClick} isLoopingPulse={isActiveA && isLooping && isLoading} size="lg" />}
+                <LoopControls
+                    isLooping={isActiveA && isLooping}
+                    canPlayLoop={canPlayLoop}
+                    loopIntervalMs={loopIntervalMs}
+                    loopDirection={loopDirection}
+                    onPlay={onPlay}
+                    onInterval={onInterval}
+                    onDirection={onDirection}
+                    slotPalette="A"
+                    disabled={!isActiveA}
                     disabledHint={inactiveHint}
                 />
-                {showB && <DatePill slot="B" label={slotBLabel.label} kind={slotBLabel.kind} onClick={onPillClick} isLoopingPulse={!isActiveA && isLooping && isLoading} />}
+                <div className="flex-1" />
+                <SlotBadge membership="A" onCycle={onCycleSlot} />
             </div>
+        );
+    }
+
+    return (
+        <div className="flex items-center gap-1 w-full">
+            <SlotBadge membership="B" onCycle={onCycleSlot} />
+            <div className="flex-1" />
+            <LoopControls
+                isLooping={!isActiveA && isLooping}
+                canPlayLoop={canPlayLoop}
+                loopIntervalMs={loopIntervalMs}
+                loopDirection={loopDirection}
+                onPlay={onPlay}
+                onInterval={onInterval}
+                onDirection={onDirection}
+                slotPalette="B"
+                mirror
+                disabled={isActiveA}
+                disabledHint={inactiveHint}
+            />
+            {showB && <DatePill slot="B" label={slotBLabel.label} kind={slotBLabel.kind} onClick={onPillClick} isLoopingPulse={!isActiveA && isLooping && isLoading} size="lg" />}
         </div>
     );
 };
