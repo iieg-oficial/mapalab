@@ -7,6 +7,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.19.0] - 2026-05-06
+
+### Agregado
+- **Modal de detalle: identidad del evento**: cuando la capa abierta en `<LayerDetailModal>` pertenece a un evento (configurado en mariachi), el header reemplaza el avatar/título del tema por el ícono y nombre del evento. Prioriza el evento activo en el menú lateral; si el menú está cerrado (por refresh u otra navegación), recorre la lista de eventos y resuelve por la primera coincidencia. Nuevo `<LayerDetailHeader>`. `<LayerThemeAvatar>` extendido con prop `imageUrl`. `MapsContext` expone `activeEvento` (`{ id, titulo, iconoUrl, imagenUrl, layerIds }`) que `<EventoMenu>` setea/limpia mientras está montado. Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`); `<EventoMenu>` deja de duplicar la lógica.
+
 ## [1.18.1] - 2026-05-06
 
 ### Cambiado

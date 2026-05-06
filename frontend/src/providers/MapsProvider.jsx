@@ -23,6 +23,7 @@ const MapsProvider = ({ children }) => {
     const [selectedLayer, setSelectedLayer] = useState(null);
     const [selectedFeatureInfo, setSelectedFeatureInfo] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
+    const [activeEvento, setActiveEvento] = useState(null);
     const queryFeaturesInPolygonRef = useRef(null);
     const clickPosition = useClickPosition();
     const targetRef = useRef(null);
@@ -166,6 +167,8 @@ const MapsProvider = ({ children }) => {
         periodicityCache,
         isLocating,
         setIsLocating,
+        activeEvento,
+        setActiveEvento,
         ...swipeMode,
     }), [
         baseMapId,
@@ -188,6 +191,7 @@ const MapsProvider = ({ children }) => {
         periodicityCache,
         isLocating,
         allLayers,
+        activeEvento,
         swipeMode,
     ]);
 

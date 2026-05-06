@@ -14,7 +14,7 @@ import OpacityControl from './components/OpacityControl';
 import InfoCard from './components/InfoCard';
 import StatCard from './components/StatCard';
 import LayerInfoSections from './components/LayerInfoSections';
-import LayerThemeAvatar from './components/LayerThemeAvatar';
+import LayerDetailHeader from './components/LayerDetailHeader';
 import DownloadButton from './components/DownloadButton';
 import DownloadMenu from './components/DownloadMenu';
 import Icon from '@components/Icon';
@@ -28,7 +28,8 @@ const LayerDetailModal = () => {
         getLoopState, startLoop, toggleLoop, stopLoop, inferLoopConfig,
         getLoopPrefs, setLoopIntervalMs, setLoopDirection,
         allLayers,
-        compareMode, applyFilterToSlot, clearFilterFromSlot, setActiveSlot
+        compareMode, applyFilterToSlot, clearFilterFromSlot, setActiveSlot,
+        activeEvento,
     } = useContext(MapsContext);
     const [expandedYear, setExpandedYear] = useState(null);
 
@@ -192,12 +193,11 @@ const LayerDetailModal = () => {
                         </div>
                     ) : (
                         <>
-                            <div className="flex items-center gap-3">
-                                <LayerThemeAvatar name={themeName} size="md" />
-                                <span className="text-[14px]/[47px] font-garet font-bold text-[#465055] tracking-normal">
-                                    {themeName}
-                                </span>
-                            </div>
+                            <LayerDetailHeader
+                                activeEvento={activeEvento}
+                                selectedLayerId={selectedLayer.id}
+                                themeName={themeName}
+                            />
                             <h3 className="text-[18px]/[47px] font-garet font-extrabold text-[#5C2472] tracking-normal">
                                 {selectedLayer.name || selectedLayer.label || layerDef?.label || 'Capa sin nombre'}
                             </h3>
