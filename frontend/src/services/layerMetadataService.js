@@ -9,8 +9,22 @@ export const setLayersForMetadataService = (newLayers) => {
 const API_HOST = import.meta.env.VITE_BACKEND_API_HOST?.replace(/\/+$/, '');
 const METADATA_ENDPOINT = `${API_HOST}/metadata/`;
 const SOURCES_ENDPOINT = `${API_HOST}/metadata/sources`;
+const DATABASE_STATS_ENDPOINT = `${API_HOST}/metadata/database-stats`;
 const PERIODICITY_ENDPOINT = `${API_HOST}/periodicity/`;
 const PERIODICITY_BATCH_ENDPOINT = `${API_HOST}/periodicity/batch`;
+
+let _databaseStatsCache = null;
+export const getDatabaseStats = async () => {
+    if (_databaseStatsCache) return _databaseStatsCache;
+    try {
+        const res = await fetch(DATABASE_STATS_ENDPOINT);
+        if (!res.ok) return null;
+        _databaseStatsCache = await res.json();
+        return _databaseStatsCache;
+    } catch {
+        return null;
+    }
+};
 
 const cleanNaN = (value) => (value === 'NaN' ? null : value);
 

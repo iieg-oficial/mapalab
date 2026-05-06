@@ -28,6 +28,7 @@ const MapsProvider = ({ children }) => {
     const targetRef = useRef(null);
     const mapRef = useRef(null);
     const compareModeRef = useRef(null);
+    const paneMapRefs = useRef({});
     const layerManagement = useLayerManagement();
     const symbology = useSymbology({
         activeLayerIds: layerManagement.activeLayerIds,
@@ -39,7 +40,7 @@ const MapsProvider = ({ children }) => {
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
     const cqlFilter = useCQLFilter();
     const periodicityCache = usePeriodicityCache(layerManagement.activeLayerIds);
-    const mapMarker = useMapMarker(mapRef, { setSelectedFeatureInfo, clickPosition });
+    const mapMarker = useMapMarker(mapRef, paneMapRefs, compareModeRef, { setSelectedFeatureInfo, clickPosition });
     const layerToggle = useLayerToggle({
         ...layerManagement,
         setSelectedLayer,
@@ -76,6 +77,7 @@ const MapsProvider = ({ children }) => {
     const swipeMode = useSwipeMode({
         liveStateRef,
         getAllChildLayerIds: layerManagement.getAllChildLayerIds,
+        paneMapRefs,
     });
     compareModeRef.current = swipeMode.compareMode;
 

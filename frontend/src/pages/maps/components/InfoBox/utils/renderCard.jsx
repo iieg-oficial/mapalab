@@ -231,7 +231,7 @@ const renderCards = ({ finalConfig, properties, suffix, variant, body }) => {
         .filter(card => card.value !== null && card.value !== undefined && card.value !== '');
 
     if (cards.length > 0) {
-        const effectiveColumns = variant === 'mobile' ? 2 : (finalConfig.cardsColumns || 1);
+        const effectiveColumns = finalConfig.cardsColumns ?? (variant === 'mobile' ? 2 : 1);
         body.push(
             <Cards
                 key="cards"

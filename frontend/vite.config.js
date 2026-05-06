@@ -6,10 +6,44 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
 import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync, statSync } from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'));
+
+function countLinesInDir(dir, extensions, excludeDirs) {
+    let total = 0;
+    let entries;
+    try {
+        entries = readdirSync(dir);
+    } catch {
+        return 0;
+    }
+    for (const name of entries) {
+        if (excludeDirs.includes(name)) continue;
+        const fullPath = path.join(dir, name);
+        let s;
+        try { s = statSync(fullPath); } catch { continue; }
+        if (s.isDirectory()) {
+            total += countLinesInDir(fullPath, extensions, excludeDirs);
+        } else if (extensions.some(ext => name.endsWith(ext))) {
+            try {
+                total += readFileSync(fullPath, 'utf-8').split('\n').length;
+            } catch { /* skip unreadable */ }
+        }
+    }
+    return total;
+}
+
+function countLinesOfCode() {
+    const repoRoot = path.resolve(__dirname, '..');
+    const exclude = ['node_modules', '.venv', '__pycache__', '.git', 'dist', 'coverage'];
+    const frontend = countLinesInDir(path.resolve(__dirname, 'src'), ['.js', '.jsx', '.css'], exclude);
+    const backend = countLinesInDir(path.resolve(repoRoot, 'backend'), ['.py'], exclude);
+    return frontend + backend;
+}
+
+const APP_LOC = countLinesOfCode();
 
 function htmlMetaPlugin(env) {
     const siteUrl = (env.VITE_SITE_URL || '').replace(/\/$/, '');
@@ -49,7 +83,8 @@ export default defineConfig(({ mode }) => {
     return {
         base: BASE_PATH,
         define: {
-            __APP_VERSION__: JSON.stringify(pkg.version)
+            __APP_VERSION__: JSON.stringify(pkg.version),
+            __APP_LOC__: JSON.stringify(APP_LOC)
         },
         plugins: [
             react(),
