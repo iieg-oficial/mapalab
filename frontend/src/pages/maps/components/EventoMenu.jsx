@@ -2,30 +2,11 @@ import { useEffect, useMemo, useRef } from 'react';
 import { transformExtent } from 'ol/proj';
 import { useMapsContext } from '@hooks/useMaps';
 import ThemeMenu from '@mapsComponents/ThemeMenu';
-
-
-const layerWorkspace = (n) =>
-    n.workspaceAlias || n.wmsConfig?.workspace || n.wmsConfig?.geoserverWorkspace || null;
-
-const layerName = (n) =>
-    n.geoserverLayer || n.wmsConfig?.geoserverLayer || n.wmsConfig?.wmsGroup || null;
-
-const findLayerByWorkspaceLayer = (workspace, layer, nodes) => {
-    for (const node of nodes || []) {
-        if (layerWorkspace(node) === workspace && layerName(node) === layer) {
-            return node;
-        }
-        if (node.children?.length) {
-            const found = findLayerByWorkspaceLayer(workspace, layer, node.children);
-            if (found) return found;
-        }
-    }
-    return null;
-};
+import { findLayerByWorkspaceLayer, getEventoLayerIds } from '@pages/maps/helpers/eventoHelpers';
 
 
 const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
-    const { mapRef, allLayers } = useMapsContext();
+    const { mapRef, allLayers, setActiveEvento } = useMapsContext();
     const zoomedRef = useRef(false);
     const autoActivatedRef = useRef(false);
 
@@ -65,16 +46,7 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
             .filter(Boolean);
     }, [evento, allLayers]);
 
-    const eventoLayerIds = useMemo(() => {
-        const ids = new Set();
-        if (!evento?.capas?.length || !allLayers?.length) return ids;
-        for (const c of evento.capas) {
-            if (c.tipo === 'etiqueta') continue;
-            const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
-            if (layer) ids.add(layer.id);
-        }
-        return ids;
-    }, [evento, allLayers]);
+    const eventoLayerIds = useMemo(() => getEventoLayerIds(evento, allLayers), [evento, allLayers]);
 
     const activeIdsRef = useRef(activeLayerIds);
     useEffect(() => { activeIdsRef.current = activeLayerIds; }, [activeLayerIds]);
@@ -99,6 +71,20 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
     const externalActiveIds = useMemo(() => (
         (activeLayerIds || []).filter((id) => !eventoLayerIds.has(id))
     ), [activeLayerIds, eventoLayerIds]);
+
+    useEffect(() => {
+        if (!evento?.id || !setActiveEvento) return;
+        setActiveEvento({
+            id: evento.id,
+            titulo: evento.titulo,
+            iconoUrl: evento.iconoUrl,
+            imagenUrl: evento.imagenUrl,
+            layerIds: Array.from(eventoLayerIds),
+        });
+        return () => {
+            setActiveEvento((current) => (current?.id === evento.id ? null : current));
+        };
+    }, [evento?.id, evento?.titulo, evento?.iconoUrl, evento?.imagenUrl, eventoLayerIds, setActiveEvento]);
 
     const handleApagarExternas = () => {
         if (!onToggleLayer || externalActiveIds.length === 0) return;
