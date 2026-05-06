@@ -53,13 +53,35 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Compute commit metadata
+        id: meta
+        run: |
+          SHA="${{ github.sha }}"
+          echo "short=${SHA:0:7}" >> "$GITHUB_OUTPUT"
+          MSG=$(echo '${{ github.event.head_commit.message }}' | head -1)
+          MSG_ESC=$(printf '%s' "$MSG" | sed 's/"/\\"/g')
+          echo "msg=$MSG_ESC" >> "$GITHUB_OUTPUT"
+
+          NEW=$(grep '"version":' frontend/package.json | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          OLD=$(git show HEAD~1:frontend/package.json 2>/dev/null | grep '"version":' | head -1 | sed -E 's/.*"([^"]+)".*/\1/' || true)
+          if [ -z "$OLD" ] || [ "$NEW" = "$OLD" ]; then
+            TRANS="$NEW (sin bump)"
+          else
+            TRANS="$OLD → $NEW"
+          fi
+          echo "version=$TRANS" >> "$GITHUB_OUTPUT"
+
       - name: Notify Discord - Success
         if: needs.deploy.result == 'success' && needs.health-check.result == 'success'
         continue-on-error: true
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          COMMIT_MSG=$(echo '${{ github.event.head_commit.message }}' | head -1)
           COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
@@ -68,12 +90,13 @@ jobs:
               "title": "Deploy exitoso",
               "color": 3066993,
               "fields": [
-                { "name": "Commit", "value": "[`'"${GITHUB_SHA::7}"'`]('"$COMMIT_URL"')", "inline": true },
+                { "name": "Commit", "value": "[`${{ steps.meta.outputs.short }}`]('"$COMMIT_URL"')", "inline": true },
                 { "name": "Autor", "value": "${{ github.actor }}", "inline": true },
                 { "name": "Branch", "value": "`production`", "inline": true },
-                { "name": "Cambios", "value": "'"$COMMIT_MSG"'" },
+                { "name": "Version", "value": "🟢 `${{ steps.meta.outputs.version }}`", "inline": true },
                 { "name": "Health Check", "value": "Passed", "inline": true },
-                { "name": "Workflow", "value": "[Ver ejecucion]('"$RUN_URL"')", "inline": true }
+                { "name": "Workflow", "value": "[Ver ejecución]('"$RUN_URL"')", "inline": true },
+                { "name": "Cambios", "value": "${{ steps.meta.outputs.msg }}" }
               ],
               "footer": { "text": "MapaLab" },
               "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
@@ -86,7 +109,6 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          COMMIT_MSG=$(echo '${{ github.event.head_commit.message }}' | head -1)
           COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
@@ -100,11 +122,13 @@ jobs:
               "title": "Deploy fallido",
               "color": 15158332,
               "fields": [
-                { "name": "Commit", "value": "[`'"${GITHUB_SHA::7}"'`]('"$COMMIT_URL"')", "inline": true },
+                { "name": "Commit", "value": "[`${{ steps.meta.outputs.short }}`]('"$COMMIT_URL"')", "inline": true },
                 { "name": "Autor", "value": "${{ github.actor }}", "inline": true },
                 { "name": "Branch", "value": "`production`", "inline": true },
+                { "name": "Version", "value": "🔴 `${{ steps.meta.outputs.version }}`", "inline": true },
                 { "name": "Fallo en", "value": "'"$FAILED_STEP"'" },
-                { "name": "Workflow", "value": "[Ver logs]('"$RUN_URL"')", "inline": true }
+                { "name": "Workflow", "value": "[Ver logs]('"$RUN_URL"')", "inline": true },
+                { "name": "Cambios", "value": "${{ steps.meta.outputs.msg }}" }
               ],
               "footer": { "text": "MapaLab" },
               "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
