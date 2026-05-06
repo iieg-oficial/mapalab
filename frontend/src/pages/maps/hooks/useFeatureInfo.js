@@ -11,8 +11,12 @@ const FEATURE_INFO_LOADING_ID = 'feature_info_query';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
-export const useFeatureInfo = () => {
-    const { hiddenLayerIds, selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, activeLayerIds, getFilter, selectedLayerForSymbology, setSelectedLayerForSymbology } = useContext(MapsContext);
+export const useFeatureInfo = (overrides = null) => {
+    const ctx = useContext(MapsContext);
+    const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, selectedLayerForSymbology, setSelectedLayerForSymbology } = ctx;
+    const activeLayerIds = overrides?.activeLayerIds ?? ctx.activeLayerIds;
+    const hiddenLayerIds = overrides?.hiddenLayerIds ?? ctx.hiddenLayerIds;
+    const getFilter = overrides?.getFilter ?? ctx.getFilter;
     const { layers: allLayers } = useLayers();
     const { setLayerLoading } = useLayerLoading();
     const [loading, setLoading] = useState(false);
