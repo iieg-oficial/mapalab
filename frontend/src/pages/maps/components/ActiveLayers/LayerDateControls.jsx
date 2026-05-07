@@ -117,6 +117,9 @@ const LayerDateControls = ({
     const slotALabel = useMemo(() => computeLabel(compareMode?.paneA?.filters?.[layerId]?.date, rasterPeriodicity), [compareMode?.paneA?.filters, layerId, rasterPeriodicity]);
     const slotBLabel = useMemo(() => computeLabel(compareMode?.paneB?.filters?.[layerId]?.date, rasterPeriodicity), [compareMode?.paneB?.filters, layerId, rasterPeriodicity]);
 
+    const hasAnyLabel = !!(liveLabel.label || slotALabel.label || slotBLabel.label);
+    if (!hasAnyLabel) return null;
+
     if (!isSwipe) {
         if (!liveLabel.label) return null;
         return (

@@ -13,6 +13,8 @@ import LayerDateControls from './LayerDateControls';
 import LayerActionsBar from './LayerActionsBar';
 import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
+import SlotBadge from './SlotBadge';
+import { computeLabel } from './datePillHelpers';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
 import { useLayerMetadata } from '@hooksMaps/useLayerMetadata';
 import { useLayerDownload } from '@hooksMaps/useLayerDownload';
@@ -119,6 +121,16 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
     const dateFilter = getSpecificFilter?.(layer.id, 'date') || null;
 
+    const hasAnyDateLabel = useMemo(() => {
+        const liveOk = computeLabel(dateFilter, rasterPeriodicity).label;
+        const aOk = computeLabel(compareMode?.paneA?.filters?.[layer.id]?.date, rasterPeriodicity).label;
+        const bOk = computeLabel(compareMode?.paneB?.filters?.[layer.id]?.date, rasterPeriodicity).label;
+        return !!(liveOk || aOk || bOk);
+    }, [dateFilter, rasterPeriodicity, compareMode?.paneA?.filters, compareMode?.paneB?.filters, layer.id]);
+
+    const showSlotBadgeInTitle = !!compareMode?.active && !!slotMembership && !hasAnyDateLabel;
+    const handleCycleSlot = (next) => setLayerSlotMembership?.(layer.id, next);
+
     const effectiveOpacity = useMemo(() => {
         const own = getLayerOpacity?.(layer.id) ?? 1;
         if (own !== 1) return own;
@@ -157,8 +169,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
         e.stopPropagation();
         setLoopDirection?.(layer.id, loopDirection === 'rtl' ? 'ltr' : 'rtl');
     };
-
-    const handleCycleSlot = (next) => setLayerSlotMembership?.(layer.id, next);
 
     const isLoading = useMemo(() => {
         if (loadingLayers.has(layer.id)) return true;
@@ -216,6 +226,9 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
                         <LayerTitle name={layer.name} />
                         {isLoading && !isLooping && (
                             <Loading visible={true} size="size-5" border="border-2" />
+                        )}
+                        {showSlotBadgeInTitle && (
+                            <SlotBadge membership={slotMembership} onCycle={handleCycleSlot} />
                         )}
                     </div>
 
