@@ -19,6 +19,40 @@ El token es JWT de corta duración. Regenerarlo al inicio de cada sesión de scr
 
 ---
 
+## Patrón estándar HTTP
+
+Todos los scripts que tocan la API deben usar este helper en Python puro (no shell, no `requests`, no axios). Resuelve los principales pitfalls: control de SSL con CA local, JSON con caracteres de control en descripciones, parsing seguro.
+
+```python
+import urllib.request, json, ssl
+
+BASE = 'https://proyectosiieg.jalisco.gob.mx/api/v1'
+TOKEN = '<auth_token>'  # ver §Autenticación
+HEADERS = {'Authorization': f'Bearer {TOKEN}', 'Content-Type': 'application/json'}
+
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE  # CA local, ver §Notas generales
+
+def api(method, path, body=None):
+    req = urllib.request.Request(
+        f'{BASE}{path}', headers=HEADERS, method=method,
+        data=json.dumps(body).encode() if body else None,
+    )
+    with urllib.request.urlopen(req, context=ctx) as r:
+        return json.loads(r.read())
+```
+
+Por qué Python puro y no shell:
+
+- Las `description` de tareas/historias contienen saltos de línea, tabs y otros caracteres de control. Si guardas la respuesta en una variable shell (`VAR=$(curl ...)`), el JSON queda corrupto y `json.load` revienta con `Invalid control character`.
+- Punto único de cambio si la API requiere headers nuevos (CSRF, paginación, tipos de contenido).
+- Manejo limpio de `urllib.error.HTTPError` con cuerpo del error: `e.read().decode()`.
+
+Todos los ejemplos posteriores (`api(...)`) asumen este helper inicializado.
+
+---
+
 ## Proyectos
 
 ### Listar proyectos del usuario
@@ -377,27 +411,9 @@ mis_tareas = [t for t in all_tasks if t.get('assigned_to') == TAIGA_USER_ID]
 pendientes  = [t for t in mis_tareas if not t.get('status_extra_info', {}).get('is_closed', False)]
 ```
 
-### Caracteres especiales en descripciones rompen variables de shell
+### Caracteres especiales en descripciones
 
-Las descripciones de tareas pueden contener saltos de línea, tabs y otros caracteres de control. Si se guarda la respuesta JSON en una variable de shell (`VAR=$(curl ...)`), el JSON queda corrupto y cualquier `json.load` posterior falla con `Invalid control character`.
-
-**Nunca usar variables de shell para almacenar respuestas JSON con descripciones.** Usar siempre `urllib.request` en Python puro:
-
-```python
-import urllib.request, json, ssl
-
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
-
-def api(method, path, body=None):
-    req = urllib.request.Request(
-        f"{BASE}{path}", headers=HEADERS, method=method,
-        data=json.dumps(body).encode() if body else None
-    )
-    with urllib.request.urlopen(req, context=ctx) as r:
-        return json.loads(r.read())
-```
+No guardes respuestas JSON en variables de shell — usa siempre el helper Python `api()` documentado en §Patrón estándar HTTP. Las descripciones de tareas suelen tener saltos de línea/tabs que rompen el shell.
 
 ### Resolver ref → ID interno
 
@@ -428,6 +444,94 @@ patch = {'version': target['version'], ...resto_de_cambios}
 if target.get('assigned_to') is None:
     patch['assigned_to'] = TAIGA_USER_ID
 api('PATCH', f'/userstories/{us_id}', patch)
+```
+
+### Títulos de tareas: sin prefijo de commit
+
+Las tareas se leen en Taiga por personas no técnicas (PMs, stakeholders). Los títulos deben usar la **descripción del commit** como subject, sin el prefijo `tipo(scope):`. El prefijo y el hash del commit van en la descripción de la tarea.
+
+- ❌ `feat(maps): exponer evento activo en MapsContext`
+- ✅ `Exponer evento activo en MapsContext`
+
+Aplica a tareas nuevas y a renombrado de tareas existentes que estén asignadas al usuario actual. **No renombrar tareas asignadas a otros**.
+
+### `description` viene truncado en endpoints de listado
+
+Los endpoints `/userstories`, `/tasks` y `/epics` devuelven `description` recortado o vacío en el listado. Para verificar si un item está hidratado, pedirlo individualmente:
+
+```python
+t = api('GET', f'/tasks/by_ref?project={PROJECT_ID}&ref={ref}')
+hidratada = bool((t.get('description') or '').strip())
+```
+
+No filtrar por `descLen==0` desde el listado: vas a "hidratar" items que ya tienen contenido y a sobrescribir trabajo previo.
+
+### Confirmar plan antes de operaciones bulk
+
+Antes de POST/PATCH masivos (épica + N user stories + M tareas, o renombrado de varias tareas), imprimir el plan completo (subjects, descriptions, vínculos) y esperar aprobación del usuario. Sólo después ejecutar.
+
+Una vez ejecutándose, el script debe ser idempotente: cada `ensure_*` busca por subject antes de crear (ver §Helpers idempotentes).
+
+### Estructura jerárquica de hidratación
+
+Para un release `vX.Y.Z`:
+
+1. **Épica** `Mapalab X.Y.x` — resumen ejecutivo de la versión en markdown, con secciones por subversión y viñetas por feature.
+2. **User Story** `vX.Y.Z — <feature>` — descripción técnica del bloque de cambios. Vincular a la épica via `PATCH /userstories/{id}` con campo `epic` (ver §Épicas).
+3. **Tareas** — una por commit relevante; descripción con bullets concretas + hash del commit al final (ver §Hash de commit en descripción).
+
+Cuando un release toca varios subsistemas (ej. comparador + eventos), una US por subsistema, no una US por release.
+
+### Status cerrado para trabajo ya mergeado
+
+Cuando creas items en Taiga para trabajo que **ya está mergeado** en `develop`/`production`, marcarlos al status con `is_closed=true` para que no se cuelen al sprint planning:
+
+```python
+us_statuses = api('GET', f'/userstory-statuses?project={PROJECT_ID}')
+task_statuses = api('GET', f'/task-statuses?project={PROJECT_ID}')
+US_DONE = next(s['id'] for s in us_statuses if s.get('is_closed'))
+TASK_DONE = next(s['id'] for s in task_statuses if s.get('is_closed'))
+```
+
+Aplicar el `status` cerrado en un PATCH separado (post-creación) o en el mismo POST si la API lo permite.
+
+### Helpers idempotentes `ensure_us` / `ensure_task`
+
+Re-ejecutar un script de hidratación no debe duplicar items. Buscar por subject exacto y aplicar `PATCH` si existe, `POST` si no:
+
+```python
+def ensure_us(subject, description, epic_id, status_id):
+    existing = api('GET', f'/userstories?project={PROJECT_ID}')
+    found = next((u for u in existing if u['subject'] == subject), None)
+    if found:
+        full = api('GET', f"/userstories/{found['id']}")
+        return api('PATCH', f"/userstories/{found['id']}", {
+            'description': description,
+            'epic': epic_id,
+            'status': status_id,
+            'version': full['version'],
+        })
+    us = api('POST', '/userstories', {
+        'project': PROJECT_ID, 'subject': subject,
+        'description': description,
+    })
+    full = api('GET', f"/userstories/{us['id']}")
+    return api('PATCH', f"/userstories/{us['id']}", {
+        'epic': epic_id, 'status': status_id, 'version': full['version'],
+    })
+```
+
+Misma estructura para `ensure_task(us_id, subject, description, status_id)`. La regla de §Asignación por default aplica dentro del helper.
+
+### Hash de commit en descripción
+
+Última línea de la descripción de toda tarea: `Commit \`<hash-corto>\`.` o `Commits: \`<hash1>\`, \`<hash2>\`.` cuando aplique. Permite saltar de Taiga al repo sin abrir GitHub:
+
+```
+- ...bullet técnico...
+- ...otro bullet...
+
+Commit `a776c28`.
 ```
 
 ## Notas generales
