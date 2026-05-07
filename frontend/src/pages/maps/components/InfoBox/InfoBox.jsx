@@ -17,7 +17,7 @@ import EmptySuggestions from './components/EmptySuggestions';
 import ActionsToolbar from './components/ActionsToolbar';
 import InfoBoxTools from './components/InfoBoxTools';
 import InfoCard from './components/InfoCard';
-import SwipeToRemove from './components/SwipeToRemove';
+import DismissGesture from './components/DismissGesture';
 import WhatsNewModal from '../WhatsNewModal';
 import ReportModal from '@components/ReportModal';
 
@@ -188,12 +188,12 @@ const InfoBox = () => {
                         );
                         if (isMobile) {
                             return (
-                                <SwipeToRemove
+                                <DismissGesture
                                     key={stableKey}
                                     onRemove={() => handleRemoveFeature(result.layerId, featureIdx)}
                                 >
                                     {card}
-                                </SwipeToRemove>
+                                </DismissGesture>
                             );
                         }
                         return <div key={stableKey}>{card}</div>;

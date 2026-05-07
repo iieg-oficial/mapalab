@@ -4,7 +4,7 @@ const THRESHOLD = 100;
 const MAX_OPACITY_FADE = 0.6;
 const COLLAPSE_MS = 220;
 
-const SwipeToRemove = ({ onRemove, children, className = '' }) => {
+const DismissGesture = ({ onRemove, children, className = '' }) => {
     const [dragX, setDragX] = useState(0);
     const [animate, setAnimate] = useState(false);
     const startRef = useRef({ x: 0, y: 0, active: false, committed: false });
@@ -114,4 +114,4 @@ const SwipeToRemove = ({ onRemove, children, className = '' }) => {
     );
 };
 
-export default SwipeToRemove;
+export default DismissGesture;
