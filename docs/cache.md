@@ -34,6 +34,7 @@ Inventario centralizado de todos los mecanismos de cache del proyecto: memoria f
 |---|---|---|---|---|
 | `geometryColumnCache` | `utils/featureInfoUtils.js:4` | Mapeo `URL:tipo → columna geometria` de WFS DescribeFeatureType | Vida del proceso, limitado a 500 entradas | LRU por insercion (al llegar a `MAX_GEOMETRY_CACHE_SIZE` evicta la mas antigua) |
 | `geometryTypeCache` | `utils/featureInfoUtils.js:5` | Mapeo `URL:tipo → tipo geometrico` | Vida del proceso, limitado a 500 entradas | LRU por insercion |
+| `eventos`, `home` (eventosService) | `services/eventosService.js:8` | Respuesta de `/api/mapalab/eventos` y `/api/mapalab/home` (de mariachi) | Vida del proceso; dedupe de in-flight con `eventosInFlight`/`homeInFlight` | Watcher de `cache-version` cada 30s mientras la pestana es visible. Se vacia cuando cambia el token de version y dispara `mapalab:eventos-changed` o `mapalab:home-changed` |
 
 ---
 
@@ -43,6 +44,8 @@ Inventario centralizado de todos los mecanismos de cache del proyecto: memoria f
 |---|---|---|---|---|
 | `message_closed_*` | `components/Message.jsx:30` | Flag boolean: mensaje ya cerrado en esta sesion | Hasta cerrar pestana | Manual via click en cerrar |
 | `test-env-modal-dismissed` | `components/TestEnvModal.jsx:5` | Flag: modal beta rechazado | Hasta cerrar pestana | Checkbox "no mostrar de nuevo" |
+| `evento:zoomed:{id}` | `pages/maps/components/EventoMenu.jsx` | Flag: ya se hizo bbox-fit del evento en esta sesion | Hasta cerrar pestana | Automatico al primer mount del `<EventoMenu>` |
+| `evento:auto-activated:{id}` | `pages/maps/components/EventoMenu.jsx` | Flag: ya se auto-activaron las capas con `autoActivar=true` del evento | Hasta cerrar pestana | Automatico al primer mount del `<EventoMenu>` |
 
 No hay uso de `localStorage` hoy. Si un dato debe persistir entre sesiones, `localStorage` o IndexedDB serian los siguientes candidatos.
 

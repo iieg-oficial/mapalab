@@ -77,10 +77,13 @@ timeline
             : Mejoras al Swipe View
             : Loop controls en panel de capas
             : Mejoras visuales y SEO
-        Julio - Agosto 2026 (v1.19.0)
+        Mayo 2026 (v1.19.0 - v1.20.0)
+            : Modal de detalle con identidad del evento
+            : Auditoria de eventos (perf, EventoContext, persistencia, telemetria)
+        Julio - Agosto 2026 (v1.21.0)
             : Editor de Home desde admin
             : Compartir estado del mapa via URL
-        Septiembre - Octubre 2026 (v1.20.0)
+        Septiembre - Octubre 2026 (v1.22.0)
             : Login para ciudadanos
             : Capas favoritas por usuario
         Noviembre 2026 - Enero 2027 (v2.0.0)
@@ -375,11 +378,31 @@ timeline
 - [x] Mejoras de SEO (canonical, JSON-LD estructurado, meta tags ocultos)
 - [x] Actualizacion de la documentacion de desarrollo y arquitectura
 
-### v1.19.0 — Julio / Agosto 2026
+### v1.19.0 — Mayo 2026 — Modal de detalle con identidad del evento
+- [x] `<LayerDetailHeader>` reemplaza avatar/título del tema por los del evento cuando la capa pertenece a uno
+- [x] `<LayerThemeAvatar>` acepta `imageUrl` para renderizar imagen del evento
+- [x] Helpers compartidos en `pages/maps/helpers/eventoHelpers.js`
+- [x] `MapsContext.activeEvento` (`{ id, titulo, iconoUrl, imagenUrl, layerIds }`) seteado por `<EventoMenu>`
+
+### v1.20.0 — Mayo 2026 — Auditoría de eventos (perf + arquitectura + persistencia)
+- [x] `EventoContext` separado del `MapsContext` (provider envuelve children dentro de `MapsProvider`)
+- [x] `useEventos` expone `{ eventos, loading, error }` (contrato homologado)
+- [x] `eventoHelpers` con index plano O(1) (`buildLayerIndex`, `buildEventoIndex`)
+- [x] `useEventoLayerIndex` hook centralizado (eventos × capas memoizado a nivel provider)
+- [x] `<ExternalEventoWidget>` con sub-componente por evento para evitar rebuild del array de items en cada toggle
+- [x] Polling de `cache-version` se pausa con `visibilitychange→hidden`
+- [x] Persistencia por sesión de bbox-fit y auto-activación (`evento:zoomed:*`, `evento:auto-activated:*` en `sessionStorage`)
+- [x] Telemetría `evento_open` / `evento_close`
+- [x] Tokens Tailwind (`--color-purple-soft`, `--color-purple-deep`, `--color-graphite`)
+- [x] Naming homologado en `<EventoIconButton>` (`iconoUrl`, `imagenUrl`, `titulo`)
+- [x] `<img>` de eventos con `loading="lazy"` y `decoding="async"`
+- [x] Backend mariachi: cache server-side de `/eventos` y `/home` en Redis bajo la versión, índice parcial `ix_eventos_publicados_visibles`, `notify_*_changed` directos sin debounce
+
+### v1.21.0 — Julio / Agosto 2026
 - [ ] Modo edicion de Home integrado al administrador de portal
 - [ ] Compartir estado del mapa via URL (para el componente comparar, ademas de agregar orden de capas, opacidad, etc)
 
-### v1.20.0 — Septiembre / Octubre 2026
+### v1.22.0 — Septiembre / Octubre 2026
 - [ ] Sistema de login para ciudadanos
 - [ ] Guardar compartidos
 - [ ] Sistema de capas favoritas por usuario

@@ -7,6 +7,33 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.20.0] - 2026-05-07
+
+### Agregado
+- **`EventoContext` separado del `MapsContext`**: nuevo provider en `providers/EventoProvider.jsx` que envuelve los children dentro de `MapsProvider` y expone `{ eventos, loading, error, activeEvento, setActiveEvento, findEventoByLayerId, getLayerIdsByEvento }`. Hook de acceso `useEventoContext` en `hooks/useEvento.js`. Reduce el rerender del árbol del visor cuando cambia el evento activo o cuando llega refresh de eventos por el watcher de versiones. `MapsProvider` deja de exponer `activeEvento`/`setActiveEvento`; consumidores (`EventoMenu`, `LayerDetailModal`, `LayerDetailHeader`, `MapSider`) leen del nuevo contexto.
+- **Persistencia por sesión de la apertura de evento**: `EventoMenu` ahora marca en `sessionStorage` (`evento:zoomed:{id}`, `evento:auto-activated:{id}`) que ya disparó el bbox-fit y la auto-activación de capas. Cerrar y reabrir el mismo evento dentro de la sesión ya no hace re-zoom ni vuelve a prender capas que el usuario haya apagado manualmente. Se resetea automáticamente al cerrar la pestaña.
+- **Telemetría de eventos**: nuevos `evento_open` y `evento_close` (con `withMapInteraction`) en `analyticsService.js`; `EventoMenu` los dispara en mount/unmount con `evento_id` y `titulo` (sólo en open).
+
+### Cambiado
+- **`useEventos` ahora expone `{ eventos, loading, error }`**: contrato homologado con el resto de hooks de datos del proyecto. Inicial `loading=true` para que los consumidores puedan diferenciar "todavía no llegaron" de "no hay eventos".
+- **`eventoHelpers` con index plano O(1)**: nueva `buildLayerIndex` aplana el árbol a un `Map` de claves `workspace|layer → node` y `buildEventoIndex` produce `{ eventoByLayerId, layerIdsByEvento }` reutilizable. `findLayerByWorkspaceLayer`, `getEventoLayerIds` y `findEventoByLayerId` siguen exportados pero ahora delegan al index. `LayerDetailHeader` usa el lookup centralizado en lugar de recorrer el árbol cada apertura del modal.
+- **`ExternalEventoWidget` con item por evento aislado**: nuevo sub-componente interno `ExternalEventoItem` que tiene su propio `useMemo` por evento. Al togglear capas ya no se reconstruye el array completo de items: cada `MenuItem` recibe la misma referencia mientras su evento no cambie.
+- **Polling de `cache-version` se pausa con la pestaña oculta**: `eventosService.startMapalabCacheVersionWatcher` ahora `clearInterval` en `visibilitychange→hidden` y reinicia con `setInterval` + `checkVersions` inmediato en `→visible`. Antes el `setInterval` seguía vivo aunque la pestaña no fuera visible.
+- **Naming homologado en eventos**: `EventoIconButton` recibe `iconoUrl`, `imagenUrl`, `titulo` (alineado con la API). Se elimina el mapping inglés (`iconUrl`, `imageUrl`, `title`) en `ExternalEventoWidget` y `menuItems`. `LayerThemeAvatar` se mantiene genérico (`imageUrl`).
+- **Tokens Tailwind para colores recurrentes de eventos**: nuevos `--color-purple-soft` (#F0E6F6), `--color-purple-deep` (#703088) y `--color-graphite` (#465055) en `index.css`. `EventoMenu`, `EventoIconButton` y `LayerDetailHeader` usan los tokens en lugar de literales `bg-[#...]`.
+- **Imágenes de eventos con `loading="lazy" decoding="async"`** en `EventoIconButton` y `LayerThemeAvatar` para evitar bloqueo del render al abrir el sider.
+- **Deps estables en `EventoMenu` para `setActiveEvento`**: en lugar de depender de la referencia del `Set` de `eventoLayerIds` (que cambiaba aunque el contenido fuera idéntico), se deriva una clave string ordenada (`Array.from(...).sort().join('|')`) y se usa esa como dep.
+
+### Rendimiento
+- **`EventoMenu` ya no causa re-set redundante del contexto** cuando se rebuilda el `Set` con el mismo contenido (gracias a la dep estable).
+- **`LayerDetailHeader` con lookup O(1)** del evento por `selectedLayerId` (antes recorría todos los eventos × capas × árbol de capas en cada cambio).
+- **`useEventos` y `useEventoLayerIndex` centralizados en el provider**: `MapSider` y `LayerDetailHeader` ya no llaman `useEventos()` por separado, comparten una sola suscripción a través del contexto.
+
+### Documentación
+- `context.md` actualizado con la nueva jerarquía de providers (`EventoProvider`), la sección de Modal de detalle ahora referencia `EventoContext` en lugar de `MapsContext`, y la lista de eventos de Analytics incluye `evento_open` / `evento_close`.
+- `analytics.md` agrega filas para `evento_open` y `evento_close`.
+- `cache.md` documenta las claves `evento:zoomed:*` y `evento:auto-activated:*` de sessionStorage y la pausa del watcher de versiones.
+
 ## [1.19.0] - 2026-05-06
 
 ### Agregado

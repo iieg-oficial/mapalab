@@ -152,8 +152,14 @@ Router (React Router 7)
         ├── useDateLoop           — animacion temporal (raster y vectorial)
         ├── useMapDrawing         — herramientas de dibujo/medicion
         ├── useMapEditing         — edicion en-mapa de emojis y texto
-        └── usePeriodicityCache   — cache de fechas disponibles
+        ├── usePeriodicityCache   — cache de fechas disponibles
+        └── EventoProvider (envuelve children, requiere allLayers de MapsContext)
+            ├── useEventos              — fetch + watcher de versiones
+            ├── useEventoLayerIndex     — Map plano workspace|layer→node + eventoByLayerId
+            └── activeEvento + setter   — evento abierto en el menu
 ```
+
+`EventoContext` es un sub-contexto separado del `MapsContext` para aislar rerenders: cambios en `activeEvento` o en la lista de eventos no fuerzan a rerender todo el árbol del visor. Acceso vía `useEventoContext()` en `hooks/useEvento.js`.
 
 ### Ciclo de vida de capas WMS
 
@@ -336,7 +342,7 @@ Push a production → CD: test → deploy SSH (make deploy) → health check →
 
 ## Analytics
 
-Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gateway-hub). En desarrollo aparece un panel de debug flotante. Eventos principales: `layer_toggle`, `feature_click`, `map_zoom_level`, `layer_search`, `layer_download`, `map_export`, `raster_loop_start/stop`, `drawing_tool_use`, `basemap_change`, `share_map`, `report_submitted`.
+Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gateway-hub). En desarrollo aparece un panel de debug flotante. Eventos principales: `layer_toggle`, `feature_click`, `map_zoom_level`, `layer_search`, `layer_download`, `map_export`, `raster_loop_start/stop`, `drawing_tool_use`, `basemap_change`, `share_map`, `report_submitted`, `evento_open`, `evento_close`.
 
 ## Reportes ciudadanos
 
@@ -354,8 +360,10 @@ Sistema transversal de reportes (problemas, solicitudes, sugerencias, dudas, dat
 - **v1.7.0** — Drag & drop del árbol, preview InfoBox, editor JSON custom, forms dinámicos por preset, `/metrics` Prometheus, code-split admin, drop legacy `mapalab_card` — Abril 2026 ✅
 - **v1.14.0 — v1.17.0** — Item de capa activa rediseñado, Reportes ciudadanos, MCP Server — Abril/Mayo 2026 ✅
 - **v1.18.0** — Marker IIEG dinámico, swipe robusto, loop controls visibles, logo Mapalab responsive, optimizaciones SEO — Mayo 2026 ✅
-- **v1.19.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
-- **v1.20.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
+- **v1.19.0** — Modal de detalle con identidad del evento — Mayo 2026 ✅
+- **v1.20.0** — Auditoría de eventos: perf (cache server-side, index O(1), polling pausado), arquitectura (`EventoContext` separado), persistencia por sesión, telemetría — Mayo 2026 ✅
+- **v1.21.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
+- **v1.22.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
 - **v2.0.0** — Arquitectura de capas para dependencias, lazy loading, IGIBot, 3D, dashboards, API publica — Febrero 2027+
 
 Ver `docs/layers.md` para arquitectura de capas y `docs/roadmap.md` para timeline completo.
@@ -441,7 +449,11 @@ Sub-componentes en `frontend/src/pages/maps/components/ActiveLayers/`:
 
 ## Modal de detalle de capa
 
-`<LayerDetailModal>` (panel derecho del visor) abre desde el botón de detalles del panel de capas activas o de los menús. El header arriba (`<LayerDetailHeader>`) muestra avatar + título del **tema** de la capa por defecto. Si la capa pertenece a un **evento** (configurado en mariachi), el header sustituye avatar y título por los del evento: prioriza `activeEvento` en `MapsContext` (lo setea `<EventoMenu>` mientras está montado); si está vacío (ej. tras refresh con la capa restaurada desde la URL), recorre `eventos` y resuelve por la primera coincidencia. Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`). `<LayerThemeAvatar>` acepta `imageUrl` para renderizar la imagen del evento sobre el círculo del avatar.
+`<LayerDetailModal>` (panel derecho del visor) abre desde el botón de detalles del panel de capas activas o de los menús. El header arriba (`<LayerDetailHeader>`) muestra avatar + título del **tema** de la capa por defecto. Si la capa pertenece a un **evento** (configurado en mariachi), el header sustituye avatar y título por los del evento: prioriza `activeEvento` en `EventoContext` (lo setea `<EventoMenu>` mientras está montado); si está vacío (ej. tras refresh con la capa restaurada desde la URL), usa `findEventoByLayerId(selectedLayerId)` que resuelve en O(1) contra el index centralizado del provider. `<LayerThemeAvatar>` acepta `imageUrl` para renderizar la imagen del evento sobre el círculo del avatar.
+
+`<EventoMenu>`, además de exponer las capas del evento y el botón "Eliminar (X)" para limpiar capas externas, persiste por sesión (`sessionStorage`) que ya disparó bbox-fit y auto-activación del evento. Cerrar y reabrir el mismo evento dentro de la sesión ya no fuerza el zoom ni vuelve a prender capas que el usuario apagó manualmente.
+
+Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`buildLayerIndex`, `buildEventoIndex`, plus los wrappers `findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`). El index plano `workspace|layer → node` se construye una vez por cambio de árbol y se reusa para todos los lookups.
 
 ## Comparador (swipe)
 

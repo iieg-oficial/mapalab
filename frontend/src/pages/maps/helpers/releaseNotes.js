@@ -12,6 +12,14 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.20.0',
+        items: [
+            { text: 'Los eventos ahora abren y muestran sus capas más rápido al recargar el visor.', tag: 'perf' },
+            { text: 'Si apagas una capa de un evento y luego cierras y vuelves a abrir el evento, esa capa ya no se vuelve a prender automáticamente durante la misma sesión.', tag: 'changed' },
+            { text: 'Al reabrir un evento ya no se vuelve a centrar el mapa al área del evento (respeta dónde te dejaste).', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.18.0',
         items: [
             { text: 'Al presionar el logotipo del IIEG, ahora se muestran estadísticas dinámicas de la base de datos (capas, registros y líneas de código).', tag: 'added' },
