@@ -87,6 +87,12 @@ const ExternalEventoWidget = ({
             }}
             onMouseEnter={() => setExternalHovered(true)}
             onMouseLeave={() => setExternalHovered(false)}
+            onFocus={() => setExternalHovered(true)}
+            onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget)) setExternalHovered(false);
+            }}
+            role="region"
+            aria-label="Eventos especiales"
         >
             {eventos.map((evento) => (
                 <div

@@ -2,6 +2,26 @@ import { useState } from 'react';
 import Badge from '@components/Badge';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 
+const SHOW_BETA_BADGE = import.meta.env.VITE_EVENTOS_BETA_BADGE !== 'false';
+
+const FallbackIcon = ({ size = 24 }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        className="text-purple"
+    >
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+        <circle cx="12" cy="10" r="3" />
+    </svg>
+);
 
 const EventoIconButton = ({ iconoUrl, imagenUrl, titulo, isMenuOpen, isHovered = false, compactClassName = 'size-9' }) => {
     const [hovering, setHovering] = useState(false);
@@ -29,15 +49,12 @@ const EventoIconButton = ({ iconoUrl, imagenUrl, titulo, isMenuOpen, isHovered =
                             className="size-full object-cover"
                         />
                     ) : (
-                        <span className="text-purple font-bold text-[18px]">★</span>
+                        <FallbackIcon size={20} />
                     )}
                 </div>
-                <Badge
-                    variant="pill"
-                    color="orange"
-                    text="BETA"
-                    className="absolute -top-1 -right-1"
-                />
+                {SHOW_BETA_BADGE && (
+                    <Badge variant="pill" color="orange" text="BETA" className="absolute -top-1 -right-1" />
+                )}
             </div>
         );
     }
@@ -53,7 +70,7 @@ const EventoIconButton = ({ iconoUrl, imagenUrl, titulo, isMenuOpen, isHovered =
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => setHovering(false)}
         >
-            {expandedSrc && (
+            {expandedSrc ? (
                 <img
                     src={expandedSrc}
                     alt={titulo || 'evento'}
@@ -61,13 +78,14 @@ const EventoIconButton = ({ iconoUrl, imagenUrl, titulo, isMenuOpen, isHovered =
                     decoding="async"
                     className="w-full h-auto block"
                 />
+            ) : (
+                <div className="flex items-center justify-center w-full py-6 bg-gray-50">
+                    <FallbackIcon size={32} />
+                </div>
             )}
-            <Badge
-                variant="pill"
-                color="orange"
-                text="BETA"
-                className="absolute top-2 right-2"
-            />
+            {SHOW_BETA_BADGE && (
+                <Badge variant="pill" color="orange" text="BETA" className="absolute top-2 right-2" />
+            )}
         </div>
     );
 };
