@@ -7,6 +7,15 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.20.2] - 2026-05-07
+
+### Corregido
+- **Eventos: revertir persistencia por sesión de bbox-fit y auto-activación de capas**: en v1.20.0 se introdujo un flag en `sessionStorage` (`evento:zoomed:{id}` y `evento:auto-activated:{id}`) para que cerrar y reabrir el menú del evento no volviera a centrar el mapa ni a prender las capas con `autoActivar=true`. La interacción con el editor (cambios de capas, redeploys, ediciones) podía dejar el flag obsoleto y bloquear la auto-activación de capas legítimas. Se elimina el `sessionStorage` y se vuelve al comportamiento original: cada apertura del menú dispara bbox-fit y auto-activa las capas marcadas. Si en el futuro se quiere reintroducir la persistencia, debe versionarse con un hash de las capas del evento o moverse a un toggle de configuración del usuario.
+
+### Documentación
+- `docs/cache.md`: removidas las filas de `evento:zoomed:*` y `evento:auto-activated:*` (ya no aplican).
+- `docs/context.md`: actualizado el comportamiento de `<EventoMenu>` (sin persistencia).
+
 ## [1.20.1] - 2026-05-07
 
 ### Corregido

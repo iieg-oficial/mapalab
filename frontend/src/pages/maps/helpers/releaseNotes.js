@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.20.2',
+        items: [
+            { text: 'Eventos: al abrir un evento, el visor vuelve a centrar el mapa en el área del evento y a prender automáticamente las capas marcadas como "auto-activar", aunque ya hayas abierto ese mismo evento antes en la sesión.', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.20.1',
         items: [
             { text: 'Comparador: ahora puedes mover la barra divisoria con el teclado (flechas, Inicio/Fin) y leerla con un lector de pantalla.', tag: 'added' },

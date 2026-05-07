@@ -6,17 +6,6 @@ import ThemeMenu from '@mapsComponents/ThemeMenu';
 import { findLayerByWorkspaceLayer } from '@pages/maps/helpers/eventoHelpers';
 import { trackEventoClose, trackEventoOpen } from '@services/analyticsService';
 
-const ZOOM_KEY = (id) => `evento:zoomed:${id}`;
-const AUTO_KEY = (id) => `evento:auto-activated:${id}`;
-
-const sessionFlag = (key) => {
-    if (typeof sessionStorage === 'undefined') return { get: () => false, set: () => {} };
-    return {
-        get: () => sessionStorage.getItem(key) === '1',
-        set: () => { try { sessionStorage.setItem(key, '1'); } catch { /* noop */ } },
-    };
-};
-
 
 const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
     const { mapRef, allLayers } = useMapsContext();
@@ -33,9 +22,7 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
     useEffect(() => {
         if (zoomedRef.current) return;
         const bbox = evento?.bbox;
-        if (!mapRef?.current || !bbox || !evento?.id) return;
-        const flag = sessionFlag(ZOOM_KEY(evento.id));
-        if (flag.get()) { zoomedRef.current = true; return; }
+        if (!mapRef?.current || !bbox) return;
 
         const view = mapRef.current.getView();
         const extent = transformExtent(
@@ -48,7 +35,6 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
         const pad = Math.round(shortSide * 0.08);
         view.fit(extent, { duration: 500, padding: [pad, pad, pad, pad] });
         zoomedRef.current = true;
-        flag.set();
     }, [evento, mapRef]);
 
     const eventoLayerIds = useMemo(
@@ -79,9 +65,7 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
 
     useEffect(() => {
         if (autoActivatedRef.current) return;
-        if (!evento?.id || !evento?.capas?.length || !allLayers?.length || !onToggleLayer) return;
-        const flag = sessionFlag(AUTO_KEY(evento.id));
-        if (flag.get()) { autoActivatedRef.current = true; return; }
+        if (!evento?.capas?.length || !allLayers?.length || !onToggleLayer) return;
 
         const toActivate = [];
         for (const c of evento.capas) {
@@ -93,7 +77,6 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
             }
         }
         autoActivatedRef.current = true;
-        flag.set();
         toActivate.forEach((id) => onToggleLayer(id, true));
     }, [evento, allLayers, onToggleLayer]);
 

@@ -44,8 +44,6 @@ Inventario centralizado de todos los mecanismos de cache del proyecto: memoria f
 |---|---|---|---|---|
 | `message_closed_*` | `components/Message.jsx:30` | Flag boolean: mensaje ya cerrado en esta sesion | Hasta cerrar pestana | Manual via click en cerrar |
 | `test-env-modal-dismissed` | `components/TestEnvModal.jsx:5` | Flag: modal beta rechazado | Hasta cerrar pestana | Checkbox "no mostrar de nuevo" |
-| `evento:zoomed:{id}` | `pages/maps/components/EventoMenu.jsx` | Flag: ya se hizo bbox-fit del evento en esta sesion | Hasta cerrar pestana | Automatico al primer mount del `<EventoMenu>` |
-| `evento:auto-activated:{id}` | `pages/maps/components/EventoMenu.jsx` | Flag: ya se auto-activaron las capas con `autoActivar=true` del evento | Hasta cerrar pestana | Automatico al primer mount del `<EventoMenu>` |
 
 No hay uso de `localStorage` hoy. Si un dato debe persistir entre sesiones, `localStorage` o IndexedDB serian los siguientes candidatos.
 

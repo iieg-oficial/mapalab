@@ -451,7 +451,7 @@ Sub-componentes en `frontend/src/pages/maps/components/ActiveLayers/`:
 
 `<LayerDetailModal>` (panel derecho del visor) abre desde el botón de detalles del panel de capas activas o de los menús. El header arriba (`<LayerDetailHeader>`) muestra avatar + título del **tema** de la capa por defecto. Si la capa pertenece a un **evento** (configurado en mariachi), el header sustituye avatar y título por los del evento: prioriza `activeEvento` en `EventoContext` (lo setea `<EventoMenu>` mientras está montado); si está vacío (ej. tras refresh con la capa restaurada desde la URL), usa `findEventoByLayerId(selectedLayerId)` que resuelve en O(1) contra el index centralizado del provider. `<LayerThemeAvatar>` acepta `imageUrl` para renderizar la imagen del evento sobre el círculo del avatar.
 
-`<EventoMenu>`, además de exponer las capas del evento y el botón "Eliminar (X)" para limpiar capas externas, persiste por sesión (`sessionStorage`) que ya disparó bbox-fit y auto-activación del evento. Cerrar y reabrir el mismo evento dentro de la sesión ya no fuerza el zoom ni vuelve a prender capas que el usuario apagó manualmente.
+`<EventoMenu>`, además de exponer las capas del evento y el botón "Eliminar (X)" para limpiar capas externas, dispara bbox-fit del mapa al área del evento y auto-activa las capas con `autoActivar=true` cada vez que se monta (cada apertura del menú).
 
 Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`buildLayerIndex`, `buildEventoIndex`, plus los wrappers `findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`). El index plano `workspace|layer → node` se construye una vez por cambio de árbol y se reusa para todos los lookups.
 
