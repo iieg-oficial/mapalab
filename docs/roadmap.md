@@ -398,6 +398,26 @@ timeline
 - [x] `<img>` de eventos con `loading="lazy"` y `decoding="async"`
 - [x] Backend mariachi: cache server-side de `/eventos` y `/home` en Redis bajo la versión, índice parcial `ix_eventos_publicados_visibles`, `notify_*_changed` directos sin debounce
 
+### v1.20.1 — Mayo 2026 — Auditoría profunda del comparador (swipe)
+- [x] Fix: `setLayerSlotMembership` hereda filtros del live (preserva `defaultDate`)
+- [x] Fix: deserializer arma `compareMode` desde `initialCompareMode()` (preserva `globalOrder`/`swipeOrientation`/`originalSnapshot`)
+- [x] Fix: `reorderInSlots` aplica snapshot al live para evitar divergencia de orden
+- [x] Fix: `useSymbology` reactivo a `compareMode` (efecto re-evalúa membership)
+- [x] Perf: `paneMapInstances` (state reactivo) reemplaza polling en `useViewSync` y `<ScaleLineControl>`
+- [x] Perf: `useMapInitialization` retorna `mapInstance` reactivo
+- [x] Perf: `liveStateRef` en `useLayoutEffect` (seguro con StrictMode)
+- [x] Perf: `paneSnapshot` con dep refinada (B independiente de A)
+- [x] Perf: `SwipeView` con flag `externallySetRef` (evita loop de `setSwipePosition`)
+- [x] Seguridad: `safeStructuredClone` con fallback, `isValidStoredSnapshot` y límite `SNAPSHOT_MAX_BYTES` (100 KB)
+- [x] Seguridad: `useInitializeFromUrl` valida shape y tamaño del `sessionStorage`
+- [x] A11y: handle del swipe `role="slider"`, teclado (←/→/↑/↓, Home/End), `aria-label` con posición. Overlays `aria-hidden="true"`. `<SlotBadge>` con `aria-label`
+- [x] UX: orientación del comparador persistida en `localStorage.mapalab.swipe.orientation`
+- [x] Refactor: helpers puros (`purgePane`, `addIdsToPane`, `computeGlobalOrder`, `snapshotFromLive`) en `helpers/swipeMode.js`
+- [x] Refactor: tema centralizado en `helpers/swipeTheme.js`; constantes nombradas reemplazan magic numbers
+- [x] Refactor: `enterSwipeMode` → `enterCompareMode` (simétrico). `SwipeToRemove` → `DismissGesture` (evita colisión con comparador)
+- [x] Tests: 13 casos de `useSwipeMode` (enter/exit, ciclo membership, herencia de filtros, reorden, clamp/persist)
+- [x] Docs: `swipe.md` con invariantes, tabla de constantes, sección de a11y; `context.md` actualizado
+
 ### v1.21.0 — Julio / Agosto 2026
 - [ ] Modo edicion de Home integrado al administrador de portal
 - [ ] Compartir estado del mapa via URL (para el componente comparar, ademas de agregar orden de capas, opacidad, etc)

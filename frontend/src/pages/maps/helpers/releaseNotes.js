@@ -12,6 +12,16 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.20.1',
+        items: [
+            { text: 'Comparador: ahora puedes mover la barra divisoria con el teclado (flechas, Inicio/Fin) y leerla con un lector de pantalla.', tag: 'added' },
+            { text: 'Comparador: la orientación que elijas (vertical u horizontal) se recuerda para la próxima vez que abras el comparador.', tag: 'added' },
+            { text: 'Comparador: al activar una capa con fecha por defecto, ahora se aplica correctamente al iniciar la comparación.', tag: 'fixed' },
+            { text: 'Comparador: los mapas son más eficientes al entrar y salir, evitando cargas innecesarias.', tag: 'perf' },
+            { text: 'Comparador: si recargas la página, el orden de las capas y la orientación se respetan al restaurar el estado compartido.', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.20.0',
         items: [
             { text: 'Los eventos ahora abren y muestran sus capas más rápido al recargar el visor.', tag: 'perf' },

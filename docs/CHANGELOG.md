@@ -7,6 +7,37 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.20.1] - 2026-05-07
+
+### Corregido
+- **Swipe — preservar `defaultDate` al activar capas durante swipe**: `setLayerSlotMembership` ahora hereda opacidades y filtros del live state cuando la capa no está en ningún slot previo (antes el snapshot recién creado sobreescribía el filtro de fecha aplicado por `applyDefaultDate`, dejando rasters mensuales sin TIME activo).
+- **Swipe — shape completo al deserializar**: `useShareSerializer`/`useShareDeserializer` arman `compareMode` partiendo de `initialCompareMode()` y reconstruyen `globalOrder` desde paneA+paneB. Así `exitCompareMode` siempre encuentra `originalSnapshot` y los reorden cross-slot conservan el orden del share.
+- **Swipe — `reorderInSlots` aplica el snapshot al live**: el orden visual y el live state ya no divergen tras un drag entre slots.
+- **Swipe — `useSymbology` reactivo a cambios de `compareMode`**: antes recibía un ref con identidad estable, así que el efecto que recalcula `selectedLayerForSymbology` no corría al cambiar membership de slots.
+
+### Cambiado
+- **Persistencia segura del comparador**: `helpers/swipeMode.js` agrega `safeStructuredClone` (con fallback `JSON.parse(JSON.stringify(...))`), `isValidStoredSnapshot` (validación de shape) y `SNAPSHOT_MAX_BYTES` (100 KB). `enterCompareMode` limpia el snapshot anterior antes de escribir uno nuevo, y solo escribe si el payload está bajo el límite. `useInitializeFromUrl` rechaza `sessionStorage` con tamaño mayor a 200 KB y valida `version`/`kind`/`payload` antes de invocar el deserializer.
+- **Comparador — orientación persistida**: la orientación del swipe (`vertical`/`horizontal`) se guarda en `localStorage.mapalab.swipe.orientation` y se restaura al entrar a swipe. Antes siempre arrancaba en vertical.
+- **Naming homologado**: `enterSwipeMode` → `enterCompareMode` (simétrico con `exitCompareMode`). El gesto táctil para descartar tarjetas del InfoBox `SwipeToRemove` se renombra a `DismissGesture` para evitar la colisión semántica con el modo comparador.
+- **Tema visual centralizado**: nuevo `helpers/swipeTheme.js` con `SLOT_COLORS = { A, B }` y `SWIPE_HANDLE_COLOR`. `<SwipeView>`, `<SlotBadge>` y `swipeComposition.js` consumen del tema en lugar de literales `#5C2472`/`#FF8300`/`#F0EAF3`/`#FFF2E5` repartidos.
+- **Helpers puros del comparador**: `purgePane`, `addIdsToPane`, `computeGlobalOrder`, `snapshotFromLive` extraídos a `helpers/swipeMode.js` (testables sin React). `useSwipeMode` queda como orquestador.
+- **Constantes nombradas**: `SWIPE_POS_MIN/MAX`, `SWIPE_HANDLE_MIN/MAX`, `SWIPE_KEYBOARD_STEP`, `SWIPE_DEBOUNCE_MS`, `SWIPE_POS_THRESHOLD`, `SWIPE_POS_JITTER` reemplazan magic numbers en `<SwipeView>` y `useSwipeMode`.
+- **Accesibilidad del comparador**: el handle del `<SwipeView>` pasa de `role="separator"` no-interactivo a `role="slider"` con `aria-label`, `tabIndex={0}` y soporte de teclado (←/→ vertical, ↑/↓ horizontal, paso 5%, `Home`/`End` para extremos). Overlays "A"/"B" gigantes marcados `aria-hidden="true"`. `<SlotBadge>` recibe `aria-label` con la oración completa del tooltip.
+
+### Rendimiento
+- **Swipe — mapas reactivos eliminan polling**: nuevo `paneMapInstances` (state) en `MapsContext` poblado por `<MapView>` cuando `useMapInitialization` retorna su instancia. `useViewSync` reescrito para reaccionar al state (antes hacía hasta 50 timeouts × 50 ms al entrar a swipe). `useScaleLineControl` detiene el `setInterval` (250 ms) en cuanto encuentra un map; el polling permanente cada 100 ms quedó eliminado.
+- **`MapView` — `useMemo` del `paneSnapshot` con dep refinada**: ahora depende solo del pane relevante (`paneIndex === 0 ? paneA : paneB`); cambios en B ya no re-evalúan el memo del pane A y viceversa.
+- **`SwipeView` — flag `externallySetRef`**: distingue cambios externos de `swipePosition` de cambios locales del drag para no re-emitir `setSwipePosition` en respuesta a un set externo.
+- **`MapsProvider` — `liveStateRef` en `useLayoutEffect`**: la asignación queda comprometida después del render committed, segura con StrictMode/Concurrent. Antes se reasignaba en cuerpo del render.
+- **`MapView` — cleanup de `paneMapRefs` valida identidad**: solo elimina la entrada si todavía es la propia, evitando que un mount nuevo durante StrictMode borre la entrada del segundo render.
+
+### Documentación
+- `docs/swipe.md` actualizado: nueva sección **Invariantes**, tabla de **Constantes**, sección **Accesibilidad**, descripción del par `paneMapRefs`/`paneMapInstances`, mención del `SNAPSHOT_MAX_BYTES`.
+- `context.md` refleja la nueva arquitectura del comparador (helpers puros, theme, paneMapInstances, persistencia de orientación, naming `enterCompareMode`).
+
+### Tests
+- Nuevo `useSwipeMode.test.js` con 13 casos: enter/exit, ciclo `A → AB → B → A`, herencia de filtros desde live, reorden, set/clear filter por slot, visibility por slot, clamps de `setSwipePosition` y persistencia de orientación.
+
 ## [1.20.0] - 2026-05-07
 
 ### Agregado
