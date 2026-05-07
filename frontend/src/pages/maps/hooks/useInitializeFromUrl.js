@@ -8,6 +8,8 @@ import { fetchShare } from '@services/shareService';
 import { trackShareMap } from '@services/analyticsService';
 import { SESSION_STORAGE_KEY } from '@pages/maps/hooks/useSessionPersistence';
 
+const MAX_SESSION_BYTES = 200_000;
+
 export const filtersInitializationComplete = { value: false };
 
 export const useInitializeFromUrl = () => {
@@ -127,18 +129,26 @@ export const useInitializeFromUrl = () => {
             // desde sessionStorage (sobrevive un refresh, se pierde al cerrar pestana)
             try {
                 const saved = sessionStorage.getItem(SESSION_STORAGE_KEY);
-                if (saved) {
+                if (saved && saved.length <= MAX_SESSION_BYTES) {
                     const envelope = JSON.parse(saved);
-                    const hasSingleLayers = Array.isArray(envelope?.payload?.layers) && envelope.payload.layers.length > 0;
-                    const hasSwipeLayers = envelope?.kind === 'swipe' && (
-                        (Array.isArray(envelope?.payload?.paneA?.layers) && envelope.payload.paneA.layers.length > 0)
-                        || (Array.isArray(envelope?.payload?.paneB?.layers) && envelope.payload.paneB.layers.length > 0)
+                    const isValidEnvelope = (
+                        envelope !== null && typeof envelope === 'object'
+                        && envelope.version === 1
+                        && (envelope.kind === 'single' || envelope.kind === 'swipe')
+                        && envelope.payload !== null && typeof envelope.payload === 'object'
+                    );
+                    const hasSingleLayers = isValidEnvelope && Array.isArray(envelope.payload.layers) && envelope.payload.layers.length > 0;
+                    const hasSwipeLayers = isValidEnvelope && envelope.kind === 'swipe' && (
+                        (Array.isArray(envelope.payload.paneA?.layers) && envelope.payload.paneA.layers.length > 0)
+                        || (Array.isArray(envelope.payload.paneB?.layers) && envelope.payload.paneB.layers.length > 0)
                     );
                     if ((hasSingleLayers || hasSwipeLayers) && deserialize(envelope)) {
                         filtersInitializationComplete.value = true;
                         initialized.current = true;
                         return;
                     }
+                    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+                } else if (saved) {
                     sessionStorage.removeItem(SESSION_STORAGE_KEY);
                 }
             } catch { /* sessionStorage no disponible o JSON invalido — fallback */ }

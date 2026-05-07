@@ -1,52 +1,55 @@
 import { useCallback, useState } from 'react';
 import {
     SWIPE_ORIGINAL_STORAGE_KEY,
+    SWIPE_POS_MIN,
+    SWIPE_POS_MAX,
+    SNAPSHOT_MAX_BYTES,
     emptyPane,
     initialCompareMode,
     serializeSnapshotForStorage,
     deserializeSnapshotFromStorage,
+    purgePane,
+    addIdsToPane,
+    computeGlobalOrder,
+    snapshotFromLive,
+    persistOrientation,
+    safeStructuredClone,
 } from '@pages/maps/helpers/swipeMode';
 
 export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs }) => {
     const [compareMode, setCompareMode] = useState(initialCompareMode);
     const [highlightedSlots, setHighlightedSlots] = useState(null);
 
-    const snapshotLive = useCallback((label) => ({
-        activeLayerIds: [...liveStateRef.current.activeLayerIds],
-        hiddenLayerIds: [...liveStateRef.current.hiddenLayerIds],
-        layerOpacities: new Map(liveStateRef.current.layerOpacities),
-        filters: structuredClone(liveStateRef.current.filters),
-        label,
-    }), [liveStateRef]);
+    const snapshotLive = useCallback((label) => snapshotFromLive(liveStateRef.current, label), [liveStateRef]);
 
     const applySnapshotToLive = useCallback((snapshot) => {
         const live = liveStateRef.current;
         live.setActiveLayerIds(snapshot.activeLayerIds);
         live.setHiddenLayerIds(snapshot.hiddenLayerIds);
         live.setLayerOpacities(new Map(snapshot.layerOpacities));
-        live.setFilters(structuredClone(snapshot.filters));
+        live.setFilters(safeStructuredClone(snapshot.filters));
     }, [liveStateRef]);
 
-    const enterSwipeMode = useCallback(() => {
+    const enterCompareMode = useCallback(() => {
         const current = snapshotLive('original');
+        try { localStorage.removeItem(SWIPE_ORIGINAL_STORAGE_KEY); } catch { /* storage no disponible */ }
         try {
-            localStorage.setItem(
-                SWIPE_ORIGINAL_STORAGE_KEY,
-                JSON.stringify(serializeSnapshotForStorage(current))
-            );
-        } catch { /* storage no disponible */ }
+            const payload = JSON.stringify(serializeSnapshotForStorage(current));
+            if (payload.length <= SNAPSHOT_MAX_BYTES) {
+                localStorage.setItem(SWIPE_ORIGINAL_STORAGE_KEY, payload);
+            }
+        } catch { /* storage no disponible / quota */ }
         liveStateRef.current.pauseAllLoops();
         applySnapshotToLive(emptyPane('A'));
-        setCompareMode({
+        setCompareMode(prev => ({
+            ...initialCompareMode(),
             active: true,
             activeSlot: 'A',
             paneA: emptyPane('A'),
             paneB: emptyPane('B'),
             originalSnapshot: current,
-            swipePosition: 0.5,
-            swipeOrientation: 'vertical',
-            globalOrder: [],
-        });
+            swipeOrientation: prev.swipeOrientation,
+        }));
     }, [snapshotLive, applySnapshotToLive, liveStateRef]);
 
     const setActiveSlot = useCallback((nextSlot) => {
@@ -65,14 +68,6 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs })
         return [layerId, ...childIds];
     }, [getAllChildLayerIds]);
 
-    const purgePaneOf = useCallback((pane, idsSet) => ({
-        ...pane,
-        activeLayerIds: pane.activeLayerIds.filter(id => !idsSet.has(id)),
-        hiddenLayerIds: pane.hiddenLayerIds.filter(id => !idsSet.has(id)),
-        layerOpacities: new Map(Array.from(pane.layerOpacities.entries()).filter(([id]) => !idsSet.has(id))),
-        filters: Object.fromEntries(Object.entries(pane.filters).filter(([id]) => !idsSet.has(id))),
-    }), []);
-
     const purgeLiveOf = useCallback((idsSet) => {
         const live = liveStateRef.current;
         live.setActiveLayerIds(live.activeLayerIds.filter(id => !idsSet.has(id)));
@@ -90,15 +85,17 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs })
         const idsSet = new Set(collectAllIds(layerId));
         setCompareMode(prev => {
             if (!prev.active) return prev;
-            const newPane = purgePaneOf(prev[`pane${slot}`], idsSet);
+            const newPane = purgePane(prev[`pane${slot}`], idsSet);
             if (slot === prev.activeSlot) purgeLiveOf(idsSet);
             const otherSlot = slot === 'A' ? 'B' : 'A';
-            const otherIds = new Set(prev[`pane${otherSlot}`].activeLayerIds);
-            const stillActiveIds = new Set([...newPane.activeLayerIds, ...otherIds]);
-            const newGlobalOrder = (prev.globalOrder || []).filter(id => stillActiveIds.has(id));
-            return { ...prev, [`pane${slot}`]: newPane, globalOrder: newGlobalOrder };
+            const newGlobalOrder = computeGlobalOrder(
+                prev.globalOrder,
+                slot === 'A' ? newPane : prev.paneA,
+                slot === 'B' ? newPane : prev.paneB,
+            );
+            return { ...prev, [`pane${slot}`]: newPane, globalOrder: newGlobalOrder, [`pane${otherSlot}`]: prev[`pane${otherSlot}`] };
         });
-    }, [collectAllIds, purgePaneOf, purgeLiveOf]);
+    }, [collectAllIds, purgeLiveOf]);
 
     const applyFilterToSlot = useCallback((layerId, slot, filterName, cqlExpression) => {
         if (slot !== 'A' && slot !== 'B') return;
@@ -165,41 +162,25 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs })
             const wantInA = target === 'A' || target === 'AB';
             const wantInB = target === 'B' || target === 'AB';
             const sourcePane = inA ? prev.paneA : (inB ? prev.paneB : null);
-
-            const addToPane = (pane) => {
-                const newIds = [...pane.activeLayerIds];
-                allIds.forEach(id => { if (!newIds.includes(id)) newIds.push(id); });
-                const newOpacities = new Map(pane.layerOpacities);
-                const newFilters = { ...pane.filters };
-                if (sourcePane) {
-                    allIds.forEach(id => {
-                        if (sourcePane.layerOpacities.has(id)) newOpacities.set(id, sourcePane.layerOpacities.get(id));
-                        if (sourcePane.filters[id]) newFilters[id] = { ...sourcePane.filters[id] };
-                    });
-                }
-                return { ...pane, activeLayerIds: newIds, layerOpacities: newOpacities, filters: newFilters };
-            };
+            const live = liveStateRef.current;
 
             let nextA = prev.paneA;
             let nextB = prev.paneB;
-            if (wantInA && !inA) nextA = addToPane(nextA);
-            if (!wantInA && inA) nextA = purgePaneOf(nextA, idsSet);
-            if (wantInB && !inB) nextB = addToPane(nextB);
-            if (!wantInB && inB) nextB = purgePaneOf(nextB, idsSet);
+            if (wantInA && !inA) nextA = addIdsToPane(nextA, allIds, sourcePane, live);
+            if (!wantInA && inA) nextA = purgePane(nextA, idsSet);
+            if (wantInB && !inB) nextB = addIdsToPane(nextB, allIds, sourcePane, live);
+            if (!wantInB && inB) nextB = purgePane(nextB, idsSet);
 
             const activePaneNew = prev.activeSlot === 'A' ? nextA : nextB;
             if (activePaneNew !== prev[`pane${prev.activeSlot}`]) {
                 applySnapshotToLive(activePaneNew);
             }
 
-            const stillActiveIds = new Set([...nextA.activeLayerIds, ...nextB.activeLayerIds]);
-            const existingOrder = (prev.globalOrder || []).filter(id => stillActiveIds.has(id));
-            const newIds = allIds.filter(id => stillActiveIds.has(id) && !existingOrder.includes(id));
-            const newGlobalOrder = [...existingOrder, ...newIds];
+            const newGlobalOrder = computeGlobalOrder(prev.globalOrder, nextA, nextB, allIds);
 
             return { ...prev, paneA: nextA, paneB: nextB, globalOrder: newGlobalOrder };
         });
-    }, [collectAllIds, purgePaneOf, applySnapshotToLive]);
+    }, [collectAllIds, applySnapshotToLive, liveStateRef]);
 
     const exitCompareMode = useCallback(() => {
         setCompareMode(prev => {
@@ -213,22 +194,23 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs })
             }
             if (snapshotToRestore) applySnapshotToLive(snapshotToRestore);
             try { localStorage.removeItem(SWIPE_ORIGINAL_STORAGE_KEY); } catch { /* ignore */ }
-            return initialCompareMode();
+            return { ...initialCompareMode(), swipeOrientation: prev.swipeOrientation };
         });
     }, [applySnapshotToLive]);
 
     const setSwipePosition = useCallback((pos) => {
         setCompareMode(prev => ({
             ...prev,
-            swipePosition: Math.max(0.05, Math.min(0.95, pos)),
+            swipePosition: Math.max(SWIPE_POS_MIN, Math.min(SWIPE_POS_MAX, pos)),
         }));
     }, []);
 
     const toggleSwipeOrientation = useCallback(() => {
-        setCompareMode(prev => ({
-            ...prev,
-            swipeOrientation: prev.swipeOrientation === 'horizontal' ? 'vertical' : 'horizontal',
-        }));
+        setCompareMode(prev => {
+            const next = prev.swipeOrientation === 'horizontal' ? 'vertical' : 'horizontal';
+            persistOrientation(next);
+            return { ...prev, swipeOrientation: next };
+        });
     }, []);
 
     const reorderInSlots = useCallback((newGlobalOrder) => {
@@ -238,14 +220,18 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs })
                 ...pane,
                 activeLayerIds: newGlobalOrder.filter(id => pane.activeLayerIds.includes(id)),
             });
-            return { ...prev, paneA: reorder(prev.paneA), paneB: reorder(prev.paneB), globalOrder: [...newGlobalOrder] };
+            const nextA = reorder(prev.paneA);
+            const nextB = reorder(prev.paneB);
+            const activePaneNew = prev.activeSlot === 'A' ? nextA : nextB;
+            applySnapshotToLive(activePaneNew);
+            return { ...prev, paneA: nextA, paneB: nextB, globalOrder: [...newGlobalOrder] };
         });
-    }, []);
+    }, [applySnapshotToLive]);
 
     return {
         compareMode,
         setCompareMode,
-        enterSwipeMode,
+        enterCompareMode,
         setActiveSlot,
         removeLayerFromSlot,
         toggleLayerVisibilityInSlot,

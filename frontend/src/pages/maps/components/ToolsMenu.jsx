@@ -37,12 +37,12 @@ const tools = [
 ];
 
 const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementToolsVisible }) => {
-    const { compareMode, exitCompareMode, enterSwipeMode } = useMapsContext();
+    const { compareMode, exitCompareMode, enterCompareMode } = useMapsContext();
     const { closeSider } = useSider();
     const [hoveredId, setHoveredId] = useState(null);
 
     const startSwipe = () => {
-        enterSwipeMode();
+        enterCompareMode();
         close?.();
         closeSider?.();
     };

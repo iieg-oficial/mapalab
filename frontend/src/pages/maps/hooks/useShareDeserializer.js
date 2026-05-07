@@ -3,6 +3,7 @@ import { fromLonLat } from 'ol/proj';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
+import { initialCompareMode } from '@pages/maps/helpers/swipeMode';
 
 const buildPaneFromEntries = (paneEntries, layerTree, getAllChildLayerIds) => {
     const activeLayerIds = [];
@@ -106,12 +107,22 @@ export const useShareDeserializer = () => {
 
             const swipePosition = typeof payload.position === 'number' ? payload.position : 0.5;
             if (typeof setCompareMode === 'function') {
+                const stillActiveIds = new Set([
+                    ...paneA.activeLayerIds,
+                    ...paneB.activeLayerIds,
+                ]);
+                const globalOrder = [
+                    ...paneA.activeLayerIds,
+                    ...paneB.activeLayerIds.filter(id => !paneA.activeLayerIds.includes(id)),
+                ].filter(id => stillActiveIds.has(id));
                 setCompareMode({
+                    ...initialCompareMode(),
                     active: true,
                     activeSlot,
                     paneA,
                     paneB,
                     swipePosition,
+                    globalOrder,
                 });
             }
             return true;
@@ -174,13 +185,7 @@ export const useShareDeserializer = () => {
         }
 
         if (typeof setCompareMode === 'function') {
-            setCompareMode({
-                active: false,
-                activeSlot: 'A',
-                paneA: { activeLayerIds: [], hiddenLayerIds: [], layerOpacities: new Map(), filters: {}, label: 'A' },
-                paneB: { activeLayerIds: [], hiddenLayerIds: [], layerOpacities: new Map(), filters: {}, label: 'B' },
-                swipePosition: 0.5,
-            });
+            setCompareMode(initialCompareMode());
         }
 
         return true;
