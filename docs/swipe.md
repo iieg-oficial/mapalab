@@ -98,6 +98,19 @@ Cicla membership por capa: `A → AB → B → A`. Implementado por `setLayerSlo
 
 **Botón Eliminar en swipe** quita la capa de **ambos** slots — para mover entre slots se usa la pildora.
 
+### Posición del `<SlotBadge>` en el item del panel de capas activas
+
+Depende de si la capa tiene fecha activa en algún slot:
+
+| Estado | `<LayerDateControls>` (fila 2) | `<SlotBadge>` |
+|---|---|---|
+| Capa con fecha (live, paneA o paneB) | Se renderiza con pildora de fecha + loop controls | En la fila 2, junto a las pildoras de fecha |
+| Capa sin fecha en ningún slot | Retorna `null` (la fila 2 desaparece) | A la derecha del `<LayerTitle>` (fila 1) |
+
+`<ActiveLayerItem>` deriva `hasAnyDateLabel` corriendo `computeLabel` sobre `dateFilter` live, `compareMode.paneA.filters[layer.id]?.date` y `compareMode.paneB.filters[layer.id]?.date`. Cuando `compareMode.active && slotMembership && !hasAnyDateLabel`, monta el `<SlotBadge>` en la fila 1 después del título.
+
+El `<Switch>` A/B de la fila 3 (`<LayerActionsBar>`) sigue mostrándose sólo cuando `slotMembership === 'AB'` y cambia el `activeSlot` global; es independiente del SlotBadge (que cicla *membership* de la capa, no *active slot*).
+
 ## Entrada y salida del swipe
 
 - **Entrada**: `enterCompareMode()` en `useSwipeMode` (alias histórico `enterSwipeMode` removido en favor de simetría con `exitCompareMode`). Snapshotea live → `originalSnapshot` y `localStorage` (con límite de tamaño `SNAPSHOT_MAX_BYTES`). Pausa todos los loops temporales. Vacía live state. `compareMode.active = true`, `activeSlot = 'A'`. Disparado desde el botón "Comparar" en `MapToolsPanel`.
