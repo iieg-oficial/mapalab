@@ -77,9 +77,35 @@ const MapsProvider = ({ children }) => {
         showMarker: mapMarker.showMarker,
         hideMarker: mapMarker.hideMarker
     });
-    const dateLoop = useDateLoop({
+    const swipeFilterRef = useRef({});
+    swipeFilterRef.current = {
+        active: swipeMode.compareMode.active,
+        activeSlot: swipeMode.compareMode.activeSlot,
+        applyFilterToSlot: swipeMode.applyFilterToSlot,
+        clearFilterFromSlot: swipeMode.clearFilterFromSlot,
         applyFilter: cqlFilter.applyFilter,
         clearFilter: cqlFilter.clearFilter,
+    };
+    const applyFilterSwipeAware = useCallback((layerId, filterName, cqlExpression) => {
+        const s = swipeFilterRef.current;
+        if (s.active) {
+            s.applyFilterToSlot(layerId, s.activeSlot, filterName, cqlExpression);
+            return;
+        }
+        s.applyFilter(layerId, filterName, cqlExpression);
+    }, []);
+    const clearFilterSwipeAware = useCallback((layerId, filterName) => {
+        const s = swipeFilterRef.current;
+        if (s.active) {
+            s.clearFilterFromSlot(layerId, s.activeSlot, filterName);
+            return;
+        }
+        s.clearFilter(layerId, filterName);
+    }, []);
+
+    const dateLoop = useDateLoop({
+        applyFilter: applyFilterSwipeAware,
+        clearFilter: clearFilterSwipeAware,
         activeLayerIds: layerManagement.activeLayerIds,
         hiddenLayerIds: symbology.hiddenLayerIds,
         getSpecificFilter: cqlFilter.getSpecificFilter,
