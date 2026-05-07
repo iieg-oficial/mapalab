@@ -59,3 +59,9 @@ export const trackInfoOpen = () =>
 
 export const trackReportSubmitted = (tipo, sourceRoute) =>
     trackEvent('report_submitted', { tipo, source_route: sourceRoute });
+
+export const trackEventoOpen = (eventoId, titulo) =>
+    withMapInteraction('evento_open', { evento_id: eventoId, titulo });
+
+export const trackEventoClose = (eventoId) =>
+    withMapInteraction('evento_close', { evento_id: eventoId });

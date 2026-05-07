@@ -5,6 +5,7 @@ import { useLayerPeriodicity } from '../../hooks/useLayerPeriodicity';
 import { useLayerDownload } from '../../hooks/useLayerDownload';
 import { useSider } from '@contexts/SiderContext';
 import MapsContext from '@contexts/MapsContext';
+import { useEventoContext } from '@hooks/useEvento';
 import { findLayerDef, findLayerTheme, findWMSConfig } from '../../helpers/wmsConfig';
 import { fetchGeometryType } from '../../../../utils/featureInfoUtils';
 import { formatDateString } from '../../helpers/dateFilterHelpers';
@@ -26,11 +27,10 @@ const LayerDetailModal = () => {
         selectedLayer, setSelectedLayer, applyFilter, clearFilter, getFilter, getSpecificFilter,
         getLayerOpacity, setLayerOpacity,
         getLoopState, startLoop, toggleLoop, stopLoop, inferLoopConfig,
-        getLoopPrefs, setLoopIntervalMs, setLoopDirection,
-        allLayers,
+        getLoopPrefs, setLoopIntervalMs, setLoopDirection, allLayers,
         compareMode, applyFilterToSlot, clearFilterFromSlot, setActiveSlot,
-        activeEvento,
     } = useContext(MapsContext);
+    const { activeEvento } = useEventoContext();
     const [expandedYear, setExpandedYear] = useState(null);
 
     const layerDef = useMemo(() => {

@@ -1,19 +1,41 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { transformExtent } from 'ol/proj';
 import { useMapsContext } from '@hooks/useMaps';
+import { useEventoContext } from '@hooks/useEvento';
 import ThemeMenu from '@mapsComponents/ThemeMenu';
-import { findLayerByWorkspaceLayer, getEventoLayerIds } from '@pages/maps/helpers/eventoHelpers';
+import { findLayerByWorkspaceLayer } from '@pages/maps/helpers/eventoHelpers';
+import { trackEventoClose, trackEventoOpen } from '@services/analyticsService';
+
+const ZOOM_KEY = (id) => `evento:zoomed:${id}`;
+const AUTO_KEY = (id) => `evento:auto-activated:${id}`;
+
+const sessionFlag = (key) => {
+    if (typeof sessionStorage === 'undefined') return { get: () => false, set: () => {} };
+    return {
+        get: () => sessionStorage.getItem(key) === '1',
+        set: () => { try { sessionStorage.setItem(key, '1'); } catch { /* noop */ } },
+    };
+};
 
 
 const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
-    const { mapRef, allLayers, setActiveEvento } = useMapsContext();
+    const { mapRef, allLayers } = useMapsContext();
+    const { setActiveEvento, getLayerIdsByEvento } = useEventoContext();
     const zoomedRef = useRef(false);
     const autoActivatedRef = useRef(false);
 
     useEffect(() => {
+        if (!evento?.id) return;
+        trackEventoOpen(evento.id, evento.titulo);
+        return () => trackEventoClose(evento.id);
+    }, [evento?.id, evento?.titulo]);
+
+    useEffect(() => {
         if (zoomedRef.current) return;
         const bbox = evento?.bbox;
-        if (!mapRef?.current || !bbox) return;
+        if (!mapRef?.current || !bbox || !evento?.id) return;
+        const flag = sessionFlag(ZOOM_KEY(evento.id));
+        if (flag.get()) { zoomedRef.current = true; return; }
 
         const view = mapRef.current.getView();
         const extent = transformExtent(
@@ -26,7 +48,13 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
         const pad = Math.round(shortSide * 0.08);
         view.fit(extent, { duration: 500, padding: [pad, pad, pad, pad] });
         zoomedRef.current = true;
+        flag.set();
     }, [evento, mapRef]);
+
+    const eventoLayerIds = useMemo(
+        () => getLayerIdsByEvento(evento?.id),
+        [getLayerIdsByEvento, evento?.id],
+    );
 
     const themeChildren = useMemo(() => {
         if (!evento?.capas?.length || !allLayers?.length) return [];
@@ -46,14 +74,15 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
             .filter(Boolean);
     }, [evento, allLayers]);
 
-    const eventoLayerIds = useMemo(() => getEventoLayerIds(evento, allLayers), [evento, allLayers]);
-
     const activeIdsRef = useRef(activeLayerIds);
     useEffect(() => { activeIdsRef.current = activeLayerIds; }, [activeLayerIds]);
 
     useEffect(() => {
         if (autoActivatedRef.current) return;
-        if (!evento?.capas?.length || !allLayers?.length || !onToggleLayer) return;
+        if (!evento?.id || !evento?.capas?.length || !allLayers?.length || !onToggleLayer) return;
+        const flag = sessionFlag(AUTO_KEY(evento.id));
+        if (flag.get()) { autoActivatedRef.current = true; return; }
+
         const toActivate = [];
         for (const c of evento.capas) {
             if (c.tipo === 'etiqueta') continue;
@@ -63,14 +92,19 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
                 toActivate.push(layer.id);
             }
         }
-        if (toActivate.length === 0) return;
         autoActivatedRef.current = true;
+        flag.set();
         toActivate.forEach((id) => onToggleLayer(id, true));
     }, [evento, allLayers, onToggleLayer]);
 
     const externalActiveIds = useMemo(() => (
         (activeLayerIds || []).filter((id) => !eventoLayerIds.has(id))
     ), [activeLayerIds, eventoLayerIds]);
+
+    const layerIdsKey = useMemo(
+        () => Array.from(eventoLayerIds).sort().join('|'),
+        [eventoLayerIds],
+    );
 
     useEffect(() => {
         if (!evento?.id || !setActiveEvento) return;
@@ -79,12 +113,12 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
             titulo: evento.titulo,
             iconoUrl: evento.iconoUrl,
             imagenUrl: evento.imagenUrl,
-            layerIds: Array.from(eventoLayerIds),
+            layerIds: layerIdsKey ? layerIdsKey.split('|') : [],
         });
         return () => {
             setActiveEvento((current) => (current?.id === evento.id ? null : current));
         };
-    }, [evento?.id, evento?.titulo, evento?.iconoUrl, evento?.imagenUrl, eventoLayerIds, setActiveEvento]);
+    }, [evento?.id, evento?.titulo, evento?.iconoUrl, evento?.imagenUrl, layerIdsKey, setActiveEvento]);
 
     const handleApagarExternas = () => {
         if (!onToggleLayer || externalActiveIds.length === 0) return;
@@ -98,7 +132,7 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
                     type="button"
                     onClick={handleApagarExternas}
                     title={`Eliminar ${externalActiveIds.length} capa${externalActiveIds.length === 1 ? '' : 's'} fuera del evento`}
-                    className="px-2 py-1 rounded-md text-[11px] font-bold text-[#5C2472] hover:bg-[#F0E6F6] transition-colors cursor-pointer"
+                    className="px-2 py-1 rounded-md text-[11px] font-bold text-purple hover:bg-purple-soft transition-colors cursor-pointer"
                 >
                     Eliminar ({externalActiveIds.length})
                 </button>

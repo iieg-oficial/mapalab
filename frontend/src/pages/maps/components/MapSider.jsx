@@ -10,7 +10,7 @@ import Logo from '@components/Logo';
 import { createMenuItems, BASE_ITEMS_COUNT } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
-import { useEventos } from '@hooks/useEventos';
+import { useEventoContext } from '@hooks/useEvento';
 import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
 
 import { trackSiderLock } from '@services/analyticsService';
@@ -127,7 +127,7 @@ const MapSider = ({ className = '' }) => {
         }
     }, [toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
 
-    const { eventos } = useEventos();
+    const { eventos } = useEventoContext();
 
     const menuItems = useMemo(() =>
         createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers, eventos }),
