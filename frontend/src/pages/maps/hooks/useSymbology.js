@@ -12,7 +12,7 @@ export const useSymbology = ({
     findLayerById,
     getAllChildLayerIds,
     allLayers,
-    compareModeRef
+    compareMode
 }) => {
     const [selectedLayerForSymbology, setSelectedLayerForSymbology] = useState(null);
     const [hiddenLayerIds, setHiddenLayerIds] = useState([]);
@@ -124,11 +124,11 @@ export const useSymbology = ({
     const isStartupRef = useRef(true);
 
     useEffect(() => {
-        const isSwipeActive = !!compareModeRef?.current?.active;
+        const isSwipeActive = !!compareMode?.active;
         const swipeAllIds = isSwipeActive
             ? [
-                ...(compareModeRef.current.paneA?.activeLayerIds || []),
-                ...(compareModeRef.current.paneB?.activeLayerIds || []),
+                ...(compareMode.paneA?.activeLayerIds || []),
+                ...(compareMode.paneB?.activeLayerIds || []),
             ]
             : null;
 
@@ -195,7 +195,7 @@ export const useSymbology = ({
             }
             return null;
         });
-    }, [activeLayerIds, findLayerById, hiddenLayerIds, getAllChildLayerIds, compareModeRef]);
+    }, [activeLayerIds, findLayerById, hiddenLayerIds, getAllChildLayerIds, compareMode]);
 
     return {
         selectedLayerForSymbology,

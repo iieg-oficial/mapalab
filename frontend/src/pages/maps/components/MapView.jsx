@@ -23,11 +23,12 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         || (paneIndex === 1 && ctx.compareMode?.activeSlot === 'B')
     );
     const useLiveState = !isCompare || isActiveSlotPane;
+    const relevantPane = paneIndex === 0 ? ctx.compareMode?.paneA : ctx.compareMode?.paneB;
 
     const paneSnapshot = useMemo(() => {
         if (useLiveState) return null;
-        return paneIndex === 0 ? ctx.compareMode.paneA : ctx.compareMode.paneB;
-    }, [useLiveState, paneIndex, ctx.compareMode?.paneA, ctx.compareMode?.paneB]);
+        return relevantPane;
+    }, [useLiveState, relevantPane]);
 
     const activeLayerIds = useLiveState ? ctx.activeLayerIds : paneSnapshot.activeLayerIds;
     const hiddenLayerIds = useLiveState ? ctx.hiddenLayerIds : paneSnapshot.hiddenLayerIds;
@@ -45,14 +46,14 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
     const getFilter = useLiveState ? ctx.getFilter : paneGetFilter;
     const getLayerOpacity = useLiveState ? ctx.getLayerOpacity : paneGetLayerOpacity;
 
-    const { isDrawing, queryFeaturesInPolygonRef, getAllChildLayerIds, markerClickedRef, editingClickedRef, paneMapRefs, setActiveSlot, openMarkerCard } = ctx;
+    const { isDrawing, queryFeaturesInPolygonRef, getAllChildLayerIds, markerClickedRef, editingClickedRef, paneMapRefs, setActiveSlot, openMarkerCard, setPaneMapInstance } = ctx;
 
     useEffect(() => {
         if (!isCompare || !paneMapRefs?.current) return;
         const registry = paneMapRefs.current;
         registry[paneIndex] = localMapRef;
         return () => {
-            delete registry[paneIndex];
+            if (registry[paneIndex] === localMapRef) delete registry[paneIndex];
         };
     }, [isCompare, paneIndex, paneMapRefs]);
 
@@ -75,8 +76,14 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         queryFeaturesInPolygonRef.current = queryFeaturesInPolygon;
     }, [queryFeaturesInPolygon, queryFeaturesInPolygonRef, isCompare]);
 
-    useMapInitialization({ targetRef, mapRef, baseMapRef, basemaps: ctx.basemaps, baseMapId: ctx.baseMapId });
+    const { mapInstance: localMapInstance } = useMapInitialization({ targetRef, mapRef, baseMapRef, basemaps: ctx.basemaps, baseMapId: ctx.baseMapId });
     useBaseMapManager(baseMapRef, ctx.basemaps, ctx.baseMapId, mapRef);
+
+    useEffect(() => {
+        if (!isCompare || !setPaneMapInstance) return undefined;
+        setPaneMapInstance(paneIndex, localMapInstance || null);
+        return () => setPaneMapInstance(paneIndex, null);
+    }, [isCompare, paneIndex, localMapInstance, setPaneMapInstance]);
 
     const { createWMSLayer, combineCQLFilters } = useWMSLayerFactory();
     const { wmsLayersRef } = useWMSLayerManager({

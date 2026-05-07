@@ -1,17 +1,31 @@
 import { useEffect, useState } from 'react';
 import ScaleLine from 'ol/control/ScaleLine';
 
+const POLL_MS = 250;
+
 export const useScaleLineControl = (getMapInstance, containerRef) => {
     const [mapInstance, setMapInstance] = useState(null);
 
     useEffect(() => {
+        let intervalId = null;
+
         const sync = () => {
             const next = getMapInstance?.() ?? null;
             setMapInstance(prev => (prev === next ? prev : next));
+            if (next && intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
         };
+
         sync();
-        const interval = setInterval(sync, 100);
-        return () => clearInterval(interval);
+        if ((getMapInstance?.() ?? null) === null) {
+            intervalId = setInterval(sync, POLL_MS);
+        }
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
     }, [getMapInstance]);
 
     useEffect(() => {

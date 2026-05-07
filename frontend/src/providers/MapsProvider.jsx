@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
 import { useClickPosition } from '@hooks/useClickPosition';
 import { useLayers } from '@hooks/useLayers';
 import MapsContext from '@contexts/MapsContext';
@@ -30,6 +30,20 @@ const MapsProvider = ({ children }) => {
     const mapRef = useRef(null);
     const compareModeRef = useRef(null);
     const paneMapRefs = useRef({});
+    const [paneMapInstances, setPaneMapInstances] = useState({});
+
+    const setPaneMapInstance = useCallback((paneIndex, instance) => {
+        setPaneMapInstances(prev => {
+            if (instance === null) {
+                if (!(paneIndex in prev)) return prev;
+                const next = { ...prev };
+                delete next[paneIndex];
+                return next;
+            }
+            if (prev[paneIndex] === instance) return prev;
+            return { ...prev, [paneIndex]: instance };
+        });
+    }, []);
     const layerManagement = useLayerManagement();
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
     const cqlFilter = useCQLFilter();
@@ -72,17 +86,19 @@ const MapsProvider = ({ children }) => {
         getPeriodicity: periodicityCache.getPeriodicity
     });
 
-    liveStateRef.current = {
-        activeLayerIds: layerManagement.activeLayerIds,
-        setActiveLayerIds: layerManagement.setActiveLayerIds,
-        hiddenLayerIds: symbology.hiddenLayerIds,
-        setHiddenLayerIds: symbology.setHiddenLayerIds,
-        layerOpacities: layerOpacity.layerOpacities,
-        setLayerOpacities: layerOpacity.setLayerOpacities,
-        filters: cqlFilter.filters,
-        setFilters: cqlFilter.setFilters,
-        pauseAllLoops: dateLoop.pauseAllLoops,
-    };
+    useLayoutEffect(() => {
+        liveStateRef.current = {
+            activeLayerIds: layerManagement.activeLayerIds,
+            setActiveLayerIds: layerManagement.setActiveLayerIds,
+            hiddenLayerIds: symbology.hiddenLayerIds,
+            setHiddenLayerIds: symbology.setHiddenLayerIds,
+            layerOpacities: layerOpacity.layerOpacities,
+            setLayerOpacities: layerOpacity.setLayerOpacities,
+            filters: cqlFilter.filters,
+            setFilters: cqlFilter.setFilters,
+            pauseAllLoops: dateLoop.pauseAllLoops,
+        };
+    });
 
     const onToggleLayer = useCallback((layerId, force, options) => {
         const cm = swipeMode.compareMode;
@@ -146,6 +162,8 @@ const MapsProvider = ({ children }) => {
         setSiderCollapsed,
         targetRef,
         mapRef,
+        paneMapInstances,
+        setPaneMapInstance,
         basemaps: BASEMAPS,
         selectedLayer,
         setSelectedLayer,
@@ -174,6 +192,8 @@ const MapsProvider = ({ children }) => {
         baseMapId,
         siderCollapsed,
         selectedLayer,
+        paneMapInstances,
+        setPaneMapInstance,
         mapsAnalyticsEvent,
         layerManagement,
         onToggleLayer,
