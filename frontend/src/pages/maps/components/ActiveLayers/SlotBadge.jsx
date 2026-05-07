@@ -29,6 +29,7 @@ const SlotBadge = ({ membership, onCycle }) => {
                 onClick={handleClick}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
+                aria-label={tooltip}
                 className="shrink-0 inline-flex h-6 rounded-full overflow-hidden border border-gray-200 text-[10px] font-garet font-bold leading-none cursor-pointer hover:opacity-80 transition-opacity"
             >
                 {(membership === 'A' || membership === 'AB') && (
