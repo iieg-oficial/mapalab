@@ -38,7 +38,7 @@ const LayerThemeAvatar = ({ icon, name, imageUrl, size = 'md' }) => {
     if (imageUrl) {
         return (
             <div className={`${sizeClasses[size]} flex items-center justify-center overflow-hidden rounded-md`} title={name}>
-                <img src={imageUrl} alt={name || ''} className="size-full object-cover" />
+                <img src={imageUrl} alt={name || ''} loading="lazy" decoding="async" className="size-full object-cover" />
             </div>
         );
     }

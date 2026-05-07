@@ -5,6 +5,44 @@ import EventoMenu from '@mapsComponents/EventoMenu';
 import MenuItem from '@mapsComponents/MenuItem';
 
 
+const ExternalEventoItem = ({ evento, activeLayerIds, onToggleLayer, externalHovered, isMobileView }) => {
+    const item = useMemo(() => ({
+        id: `ext-evento-${evento.id}`,
+        hasMenu: true,
+        tooltip: evento.titulo,
+        panelPlacement: 'bottom-start',
+        panelRounded: 'rounded-2xl',
+        menuContent: ({ closeButton } = {}) => (
+            <EventoMenu
+                evento={evento}
+                activeLayerIds={activeLayerIds}
+                onToggleLayer={onToggleLayer}
+                closeButton={closeButton}
+            />
+        ),
+        renderComponent: ({ isMenuOpen }) => (
+            <EventoIconButton
+                iconoUrl={evento.iconoUrl}
+                imagenUrl={evento.imagenUrl}
+                titulo={evento.titulo}
+                isMenuOpen={isMenuOpen}
+                isHovered={externalHovered}
+                compactClassName="w-14 h-17"
+            />
+        ),
+    }), [evento, activeLayerIds, onToggleLayer, externalHovered]);
+
+    return (
+        <MenuItem
+            item={item}
+            isMobileView={isMobileView}
+            autoOpenMenuId={null}
+            clearAutoOpenMenu={() => {}}
+        />
+    );
+};
+
+
 const ExternalEventoWidget = ({
     eventos,
     activeLayerIds,
@@ -16,35 +54,7 @@ const ExternalEventoWidget = ({
 }) => {
     const [externalHovered, setExternalHovered] = useState(false);
 
-    const items = useMemo(() =>
-        (eventos || []).map((evento) => ({
-            id: `ext-evento-${evento.id}`,
-            hasMenu: true,
-            tooltip: evento.titulo,
-            panelPlacement: 'bottom-start',
-            panelRounded: 'rounded-2xl',
-            menuContent: ({ closeButton } = {}) => (
-                <EventoMenu
-                    evento={evento}
-                    activeLayerIds={activeLayerIds}
-                    onToggleLayer={onToggleLayer}
-                    closeButton={closeButton}
-                />
-            ),
-            renderComponent: ({ isMenuOpen }) => (
-                <EventoIconButton
-                    iconUrl={evento.iconoUrl}
-                    imageUrl={evento.imagenUrl}
-                    title={evento.titulo}
-                    isMenuOpen={isMenuOpen}
-                    isHovered={externalHovered}
-                    compactClassName="w-14 h-17"
-                />
-            ),
-        })),
-    [eventos, activeLayerIds, onToggleLayer, externalHovered]);
-
-    if (items.length === 0) return null;
+    if (!eventos?.length) return null;
 
     if (treatAsMobile) {
         if (isOpen || areMeasurementToolsVisible) return null;
@@ -53,13 +63,14 @@ const ExternalEventoWidget = ({
                 className="absolute z-21 flex flex-col items-center gap-2"
                 style={{ top: 120, left: 16 }}
             >
-                {items.map((item) => (
-                    <div key={item.id} className="w-14 h-17">
-                        <MenuItem
-                            item={item}
+                {eventos.map((evento) => (
+                    <div key={`ext-evento-${evento.id}`} className="w-14 h-17">
+                        <ExternalEventoItem
+                            evento={evento}
+                            activeLayerIds={activeLayerIds}
+                            onToggleLayer={onToggleLayer}
+                            externalHovered={externalHovered}
                             isMobileView
-                            autoOpenMenuId={null}
-                            clearAutoOpenMenu={() => {}}
                         />
                     </div>
                 ))}
@@ -77,9 +88,9 @@ const ExternalEventoWidget = ({
             onMouseEnter={() => setExternalHovered(true)}
             onMouseLeave={() => setExternalHovered(false)}
         >
-            {items.map((item) => (
+            {eventos.map((evento) => (
                 <div
-                    key={item.id}
+                    key={`ext-evento-${evento.id}`}
                     className="overflow-hidden rounded-md transition-all duration-500"
                     style={{
                         width: externalHovered ? 280 : 56,
@@ -87,11 +98,12 @@ const ExternalEventoWidget = ({
                         transitionTimingFunction: SIDER_TRANSITION_TIMING,
                     }}
                 >
-                    <MenuItem
-                        item={item}
+                    <ExternalEventoItem
+                        evento={evento}
+                        activeLayerIds={activeLayerIds}
+                        onToggleLayer={onToggleLayer}
+                        externalHovered={externalHovered}
                         isMobileView={false}
-                        autoOpenMenuId={null}
-                        clearAutoOpenMenu={() => {}}
                     />
                 </div>
             ))}

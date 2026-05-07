@@ -1,7 +1,5 @@
-import { useContext, useMemo } from 'react';
-import { useEventos } from '@hooks/useEventos';
-import MapsContext from '@contexts/MapsContext';
-import { findEventoByLayerId } from '@pages/maps/helpers/eventoHelpers';
+import { useMemo } from 'react';
+import { useEventoContext } from '@hooks/useEvento';
 import LayerThemeAvatar from './LayerThemeAvatar';
 
 const matchActive = (activeEvento, layerId) => (
@@ -11,15 +9,14 @@ const matchActive = (activeEvento, layerId) => (
 );
 
 const LayerDetailHeader = ({ activeEvento, selectedLayerId, themeName }) => {
-    const { allLayers } = useContext(MapsContext);
-    const { eventos } = useEventos();
+    const { findEventoByLayerId } = useEventoContext();
 
     const eventoMatch = useMemo(() => {
         const fromActive = matchActive(activeEvento, selectedLayerId);
         if (fromActive) return fromActive;
-        const fromList = findEventoByLayerId(eventos, selectedLayerId, allLayers);
+        const fromList = findEventoByLayerId(selectedLayerId);
         return fromList && (fromList.iconoUrl || fromList.imagenUrl) ? fromList : null;
-    }, [activeEvento, selectedLayerId, eventos, allLayers]);
+    }, [activeEvento, selectedLayerId, findEventoByLayerId]);
 
     const label = eventoMatch?.titulo || themeName;
     const imageUrl = eventoMatch ? (eventoMatch.iconoUrl || eventoMatch.imagenUrl) : null;
@@ -27,7 +24,7 @@ const LayerDetailHeader = ({ activeEvento, selectedLayerId, themeName }) => {
     return (
         <div className="flex items-center gap-3">
             <LayerThemeAvatar name={label} imageUrl={imageUrl} size="md" />
-            <span className="text-[14px]/[47px] font-garet font-bold text-[#465055] tracking-normal">
+            <span className="text-[14px]/[47px] font-garet font-bold text-graphite tracking-normal">
                 {label}
             </span>
         </div>

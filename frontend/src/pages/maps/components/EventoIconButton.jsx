@@ -3,12 +3,12 @@ import Badge from '@components/Badge';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 
 
-const EventoIconButton = ({ iconUrl, imageUrl, title, isMenuOpen, isHovered = false, compactClassName = 'size-9' }) => {
+const EventoIconButton = ({ iconoUrl, imagenUrl, titulo, isMenuOpen, isHovered = false, compactClassName = 'size-9' }) => {
     const [hovering, setHovering] = useState(false);
     const accent = isMenuOpen || hovering;
 
     if (!isHovered) {
-        const collapsedSrc = iconUrl || imageUrl;
+        const collapsedSrc = iconoUrl || imagenUrl;
         return (
             <div
                 className="relative flex items-center justify-center w-full h-full"
@@ -21,9 +21,15 @@ const EventoIconButton = ({ iconUrl, imageUrl, title, isMenuOpen, isHovered = fa
                     ${accent ? 'opacity-100' : 'opacity-90 hover:opacity-100'}
                 `}>
                     {collapsedSrc ? (
-                        <img src={collapsedSrc} alt={title || 'evento'} className="size-full object-cover" />
+                        <img
+                            src={collapsedSrc}
+                            alt={titulo || 'evento'}
+                            loading="lazy"
+                            decoding="async"
+                            className="size-full object-cover"
+                        />
                     ) : (
-                        <span className="text-[#5C2472] font-bold text-[18px]">★</span>
+                        <span className="text-purple font-bold text-[18px]">★</span>
                     )}
                 </div>
                 <Badge
@@ -36,7 +42,7 @@ const EventoIconButton = ({ iconUrl, imageUrl, title, isMenuOpen, isHovered = fa
         );
     }
 
-    const expandedSrc = imageUrl || iconUrl;
+    const expandedSrc = imagenUrl || iconoUrl;
     return (
         <div
             className={`
@@ -50,7 +56,9 @@ const EventoIconButton = ({ iconUrl, imageUrl, title, isMenuOpen, isHovered = fa
             {expandedSrc && (
                 <img
                     src={expandedSrc}
-                    alt={title || 'evento'}
+                    alt={titulo || 'evento'}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-auto block"
                 />
             )}
