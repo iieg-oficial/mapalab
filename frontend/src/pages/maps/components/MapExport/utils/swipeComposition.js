@@ -1,6 +1,8 @@
-const SLOT_FILL = { A: '#5C2472', B: '#FF8300' };
-const SLOT_BG = { A: '#F0EAF3', B: '#FFF2E5' };
-const HANDLE_COLOR = '#FF8300';
+import { SLOT_COLORS, SWIPE_HANDLE_COLOR } from '@pages/maps/helpers/swipeTheme';
+
+const SLOT_FILL = { A: SLOT_COLORS.A.fg, B: SLOT_COLORS.B.fg };
+const SLOT_BG = { A: SLOT_COLORS.A.bg, B: SLOT_COLORS.B.bg };
+const HANDLE_COLOR = SWIPE_HANDLE_COLOR;
 
 const drawRoundedRect = (ctx, x, y, w, h, r) => {
     const radius = Math.min(r, h / 2, w / 2);
