@@ -7,6 +7,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.20.3] - 2026-05-07
+
+### Corregido
+- **Panel de capas activas: ya no se traslapa con la atribución del mapa**: cuando el panel crecía a la altura completa del viewport, su borde inferior chocaba con `<MapAttribution>` (badge "Contribuciones ©" + `ReportButton` flotante en la esquina inferior derecha). Se aumenta la reserva inferior del `Panel` que envuelve `<ActiveLayersList>` (en `MapLayersPanels.jsx`) de `7.5rem`/`8rem` a `9.5rem`/`10rem` para desktop/mobile. Pierde ~32 px de altura útil del panel a cambio de mantener la atribución visible (requisito legal de OSM/Carto).
+
 ## [1.20.2] - 2026-05-07
 
 ### Corregido

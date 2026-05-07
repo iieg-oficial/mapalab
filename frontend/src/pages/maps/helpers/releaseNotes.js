@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.20.3',
+        items: [
+            { text: 'Panel de capas activas: ya no se traslapa con la barra de "Contribuciones" cuando tienes muchas capas y el panel crece al alto completo de la pantalla.', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.20.2',
         items: [
             { text: 'Eventos: al abrir un evento, el visor vuelve a centrar el mapa en el área del evento y a prender automáticamente las capas marcadas como "auto-activar", aunque ya hayas abierto ese mismo evento antes en la sesión.', tag: 'fixed' },
