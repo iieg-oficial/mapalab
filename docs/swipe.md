@@ -81,9 +81,12 @@ OL renderiza ambos mapas con la misma vista. Una sola animación de zoom emite u
 
 Cleanup conservador: si el segundo mapa sigue montado al desactivar swipe, restaura su View original. En el caso normal (salir de swipe → panes se desmontan) no hace nada — los maps se destruyen y el View compartido se libera.
 
-## `paneMapRefs`
+## `paneMapRefs` y `paneMapInstances`
 
-Registry `{ 0: refPaneA, 1: refPaneB }` creado en `MapsProvider` y pasado tanto a `useSwipeMode` como a `useMapMarker`. Cada `<MapView paneIndex={i}>` lo puebla en su effect de mount con su `localMapRef`. Consumers en swipe (`MapControls`, `ScaleLineControl`, `useMapView.getActiveMapRef`, `useMapMarker`, etc.) leen `paneMapRefs.current[0]?.current` (paneA) como anchor cuando `compareMode.active`.
+- `paneMapRefs` — registry `{ 0: refPaneA, 1: refPaneB }` (ref). Cada `<MapView paneIndex={i}>` lo puebla en mount. Es **no reactivo** y se usa donde se necesita acceso síncrono al ref (e.g. `useMapCapture`, `useMapMarker`).
+- `paneMapInstances` — state `{ 0: mapInstance, 1: mapInstance }` en `MapsProvider`. `<MapView>` llama `setPaneMapInstance(paneIndex, instance)` cuando `useMapInitialization` retorna el map; null en cleanup. Es **reactivo**: consumers como `useViewSync` y `ScaleLineControl` reaccionan al cambio sin polling.
+
+Consumers en swipe (`MapControls`, `useMapView.getActiveMapRef`, `useMapMarker`) siguen usando `paneMapRefs[0]?.current` por compatibilidad. `<SwipeView>` y `<ScaleLineControl>` usan `paneMapInstances[0]` (state).
 
 Crítico: **`mapRef.current` (live) es `null` en swipe** porque el `<MapView />` live no se monta. Cualquier consumer que lea `mapRef.current` directo necesita un fallback. Ver tabla de consumers más abajo.
 
@@ -97,7 +100,7 @@ Cicla membership por capa: `A → AB → B → A`. Implementado por `setLayerSlo
 
 ## Entrada y salida del swipe
 
-- **Entrada**: `enterSwipeMode()` en `useSwipeMode`. Snapshotea live → `originalSnapshot` y `localStorage`. Pausa todos los loops temporales. Vacía live state. `compareMode.active = true`, `activeSlot = 'A'`. Disparado desde el botón "Comparar" en `MapToolsPanel`.
+- **Entrada**: `enterCompareMode()` en `useSwipeMode` (alias histórico `enterSwipeMode` removido en favor de simetría con `exitCompareMode`). Snapshotea live → `originalSnapshot` y `localStorage` (con límite de tamaño `SNAPSHOT_MAX_BYTES`). Pausa todos los loops temporales. Vacía live state. `compareMode.active = true`, `activeSlot = 'A'`. Disparado desde el botón "Comparar" en `MapToolsPanel`.
 - **Salida**: `exitCompareMode()`. Restaura `originalSnapshot` (o lo lee de `localStorage` si no estaba en memoria). Limpia el storage. `<CloseButton>` rosa centrado en `<SwipeSlotControls>`, con confirmación.
 
 ## Persistencia
@@ -154,7 +157,8 @@ Independiente del share. Solo vive durante la sesión de swipe (en `localStorage
 | Consumer | Comportamiento en swipe |
 |---|---|
 | `MapControls` | usa `getActiveMap()` → paneA |
-| `ScaleLineControl` | usa `paneMapRefs[0]` |
+| `ScaleLineControl` | usa `paneMapInstances[0]` (state reactivo) |
+| `useViewSync` | usa `paneMapInstances[0,1]` (state reactivo, sin polling) |
 | `useMapMarker` | `getActiveMap()` → paneA. `openMarkerCard` acepta un `mapInstance` opcional para usar el map exacto del click |
 | `useMapView.getActiveMapRef` | retorna paneA |
 | `useMapCapture.getMapSnapshot` | usa anchor (paneA), opera `view.setCenter/setResolution` que afecta a ambos panes vía View compartido |
@@ -169,6 +173,32 @@ Independiente del share. Solo vive durante la sesión de swipe (en `localStorage
 - Overlays "A"/"B" gigantes en `font-garet bold text-[120px]` cuando `highlightedSlots` está activo (al cambiar de slot por la pildora)
 - `<SwipeSlotControls>`: barra inferior centrada `[A · orientación · B]` con `<DatePill autoWidth>`. `<CloseButton>` rosa arriba si hay periodicidad seleccionada o dentro de la barra si no la hay
 - Tooltips dinámicos: anexan `del lado A`/`del lado B` y, para acciones destructivas en `AB`, `(seguirá en el lado X)`
+
+## Invariantes
+
+- `globalOrder ⊆ paneA.activeLayerIds ∪ paneB.activeLayerIds` (los IDs huérfanos se filtran al recomputar).
+- El live state (`activeLayerIds`, `hiddenLayerIds`, `layerOpacities`, `filters`) **siempre espeja** a `compareMode[pane${activeSlot}]`.
+- "Eliminar" desde el panel de capas activas en swipe quita la capa de **ambos** slots — para mover entre slots se usa la pildora `<SlotBadge>`.
+- `swipePosition` siempre cae en `[SWIPE_POS_MIN, SWIPE_POS_MAX]` = `[0.05, 0.95]`.
+- El `swipeOrientation` se persiste por usuario (`localStorage.mapalab.swipe.orientation`) y se restaura al entrar a swipe.
+
+## Constantes (`helpers/swipeMode.js`)
+
+| Constante | Valor | Uso |
+|---|---|---|
+| `SWIPE_POS_MIN` / `SWIPE_POS_MAX` | 0.05 / 0.95 | Clamp lógico en fracción |
+| `SWIPE_HANDLE_MIN` / `SWIPE_HANDLE_MAX` | 5 / 95 | Clamp visual en porcentaje |
+| `SWIPE_KEYBOARD_STEP` | 5 | Paso de teclado del handle |
+| `SWIPE_DEBOUNCE_MS` | 200 | Debounce del `setSwipePosition` |
+| `SWIPE_POS_THRESHOLD` | 0.005 | Threshold de cambio para persistir |
+| `SWIPE_POS_JITTER` | 0.1 | Threshold para sincronizar pos local con compareMode |
+| `SNAPSHOT_MAX_BYTES` | 100_000 | Límite del snapshot serializado en localStorage |
+
+## Accesibilidad
+
+- Handle del swipe: `role="slider"`, `aria-label`, `aria-orientation`, `aria-valuemin/max/now`. Acepta teclado (←/→/↑/↓ con paso de 5%, `Home`/`End` para extremos).
+- Overlays "A"/"B" gigantes son `aria-hidden="true"` (decorativos).
+- `<SlotBadge>` lleva `aria-label` con la oración completa de su tooltip.
 
 ## Performance
 
