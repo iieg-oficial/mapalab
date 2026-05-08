@@ -7,6 +7,41 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.21.0] - 2026-05-08
+
+### Reportes: migrar a widget Colibri
+
+Reemplaza el sistema propio de reportes (`ReportModal` + `feedbackService`) por el widget embebible de Colibri (`/colibri/widget/colibri-widget.v1.js`) para centralizar reportes del ecosistema IIEG en un solo backend con stats, dedupe, fan-out a Discord/Slack y form dinamico.
+
+#### Frontend
+
+**Componentes nuevos:**
+- `src/hooks/useColibriOpen.js`: hook que dispara el panel global de Colibri. Construye `auto`/`user`/`sourceContext` con snapshot del mapa (basemap, capas activas, view, compare mode), llama `window.colibri.identify()` con datos del usuario logueado y `setContext()` con el resto.
+
+**Refactorizados:**
+- `src/components/ReportButton.jsx`: pasa de envolver `ReportModal` propio a un `<button>` HTML con tailwind matching el lenguaje visual del mapa (bg blanco, text gris hover morado, w-7 h-7 md:w-6 md:h-6, rounded-full, shadow sutil). Variant `inline` mantiene estilo link-with-icon.
+- `src/pages/maps/components/MapAttribution.jsx`: el boton se monta como hermano del pill de Contribuciones en el mismo flex container (`gap-2`). Mismo alto, alineado a la izquierda.
+- `src/pages/maps/components/InfoBox/InfoBox.jsx`: el handler `action='report'` del marker IIEG ahora llama `useColibriOpen({ source: 'iieg_marker' })`.
+- `src/pages/home/components/Footer.jsx`: el boton se envuelve en `<div className="fixed bottom-4 right-4 z-50">` para que flote sobre el home.
+
+**Eliminados:**
+- `src/components/ReportModal.jsx`, `src/services/feedbackService.js`, `src/test/services/feedbackService.test.js`, `src/pages/maps/components/MapReportButton.jsx`.
+
+#### Infraestructura
+
+- `frontend/index.html`: `<script src="/colibri/widget/colibri-widget.v1.js" defer>` antes de `</head>`. CSP `script-src 'self'` lo permite (path relativo).
+- `frontend/vite.config.js`: nuevo proxy `/colibri` -> `MARIACHI_DEV_TARGET`.
+- `frontend/Dockerfile` + `docker-compose.yml`: ARGs y env vars `VITE_COLIBRI_SOURCE_APP=mapalab` y `VITE_COLIBRI_API_KEY` (en frontend dev y frontend-build args).
+- `.env.example`: documenta las dos vars.
+
+#### Compatibilidad
+
+El endpoint publico (`POST /api/public/reportes`) es el mismo. Los reportes anteriores se conservan en la BD. El widget agrega header `X-Colibri-Key` para autenticar como `source_app=mapalab` con CORS dinamico, rate limit por huesped, dedupe y fan-out.
+
+#### Pendiente
+
+Recuperar el `captureFn` del mapa (screenshot pre-renderizado) requiere un metodo nuevo `attachScreenshot(blob)` en el widget de mariachi.
+
 ## [1.20.3] - 2026-05-07
 
 ### Corregido
