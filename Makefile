@@ -73,6 +73,7 @@ deploy: ensure-networks reset-dist-perms
 	@echo "Desplegando en produccion..."
 	@$(COMPOSE_PROD) --profile build run --rm --build frontend-build
 	@$(COMPOSE_PROD) --profile staging up -d --build --force-recreate
+	@docker exec gateway-hub-nginx-1 sh -c "rm -rf /var/cache/nginx/mapalab_assets/* 2>/dev/null; nginx -s reload" 2>/dev/null || true
 	@echo "Deploy completado"
 
 reset-dist-perms:
