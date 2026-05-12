@@ -8,7 +8,7 @@ import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { LOOP_INTERVAL_PRESETS } from '@hooksMaps/useDateLoop';
 import { handleKeyActivate } from '@utils/a11y';
 
-import { DragHandle, LayerTitle } from './LayerItemHeader';
+import { DragHandle, LayerTitle, PinBadge } from './LayerItemHeader';
 import LayerDateControls from './LayerDateControls';
 import LayerActionsBar from './LayerActionsBar';
 import LayerInlineActions from './LayerInlineActions';
@@ -20,7 +20,7 @@ import { useLayerMetadata } from '@hooksMaps/useLayerMetadata';
 import { useLayerDownload } from '@hooksMaps/useLayerDownload';
 import DownloadMenu from '@mapsComponents/LayerDetailModal/components/DownloadMenu';
 
-const ActiveLayerItem = ({ layer, dragHandleProps }) => {
+const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const { loadingLayers } = useLayerLoading();
     const { isMobile } = useSider();
     const {
@@ -68,7 +68,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
     const [isHovered, setIsHovered] = useState(false);
     const isSelected = selectedLayerForSymbology?.id === layer.id;
     const isExpanded = isSelected;
-    const showHandle = isSelected || (!isMobile && isHovered);
+    const showHandle = !isPinned && (isSelected || (!isMobile && isHovered));
 
     const { metadata } = useLayerMetadata(isExpanded ? layer.id : null);
     const download = useLayerDownload(isExpanded ? layer.id : null, { getFilter, getSpecificFilter, metadata });
@@ -209,6 +209,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
             >
                 <div className="flex flex-col gap-1.5 px-2 py-2 w-full">
                     <div className="flex items-center gap-2 min-h-8 w-full">
+                        {isPinned && <PinBadge />}
                         {showHandle && <DragHandle dragHandleProps={dragHandleProps} />}
                         {!isSelected && !isMobile && isHovered && (
                             <LayerInlineActions

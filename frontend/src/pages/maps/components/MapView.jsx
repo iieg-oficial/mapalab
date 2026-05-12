@@ -3,12 +3,14 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useFeatureInfo } from '@hooksMaps/useFeatureInfo';
 import { useMapInitialization } from '@hooksMaps/useMapInitialization';
 import { useBaseMapManager } from '@hooksMaps/useBaseMapManager';
+import { useLayers } from '@hooks/useLayers';
 
 import { useWMSLayerFactory } from '@hooksMaps/useWMSLayerFactory';
 import { useWMSLayerManager } from '@hooksMaps/useWMSLayerManager';
 import { useMapInteractions } from '@hooksMaps/useMapInteractions';
 import { useWMSFilterUpdater } from '@hooksMaps/useWMSFilterUpdater';
 import { findFilterFromState } from '@hooksMaps/useCQLFilter';
+import { useAlwaysOnTopPinning } from '@hooksMaps/useAlwaysOnTopPinning';
 
 const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full' }) => {
     const ctx = useMapsContext();
@@ -86,9 +88,13 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
     }, [isCompare, paneIndex, localMapInstance, setPaneMapInstance]);
 
     const { createWMSLayer, combineCQLFilters } = useWMSLayerFactory();
+    const { initialOrder } = useLayers();
+    const compareModeActive = !!ctx.compareMode?.active;
+    const pinnedLayerIds = useAlwaysOnTopPinning({ activeLayerIds, hiddenLayerIds, compareModeActive });
     const { wmsLayersRef } = useWMSLayerManager({
         mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getAllChildLayerIds,
-        getLayerOpacity, layerOpacities, getFilter, combineCQLFilters
+        getLayerOpacity, layerOpacities, getFilter, combineCQLFilters,
+        pinnedLayerIds, initialOrder
     });
 
     useMapInteractions(mapRef, handlePaneClick, isDrawing, markerClickedRef, editingClickedRef);

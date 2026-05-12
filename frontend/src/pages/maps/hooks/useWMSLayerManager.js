@@ -5,10 +5,13 @@ import { findLayerById } from '../helpers/layers/utils/layerHelpers';
 import { filtersInitializationComplete } from './useInitializeFromUrl';
 import { useDebounce } from '@hooks/useDebounce';
 import { useLayerLoading } from '@hooks/useLayerLoading';
+import { PIN_Z_OFFSET } from './useAlwaysOnTopPinning';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
+const EMPTY_PINNED = new Set();
+const EMPTY_ORDER = [];
 
-export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getLayerOpacity, layerOpacities, getFilter, combineCQLFilters }) => {
+export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getLayerOpacity, layerOpacities, getFilter, combineCQLFilters, pinnedLayerIds = EMPTY_PINNED, initialOrder = EMPTY_ORDER }) => {
     const { layers } = useLayers();
     const wmsLayersRef = useRef(new Map());
     const isFirstRender = useRef(true);
@@ -19,6 +22,10 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
     getFilterRef.current = getFilter;
     const combineCQLFiltersRef = useRef(combineCQLFilters);
     combineCQLFiltersRef.current = combineCQLFilters;
+    const pinnedLayerIdsRef = useRef(pinnedLayerIds);
+    pinnedLayerIdsRef.current = pinnedLayerIds;
+    const initialOrderRef = useRef(initialOrder);
+    initialOrderRef.current = initialOrder;
 
     const handleLoadStart = useCallback((layerId) => {
         setLayerLoading(layerId, true);
@@ -118,7 +125,13 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
                 const representativeId = firstLayer.subLayers[0].id;
                 const minIndex = mergedLayers[0].index;
                 const totalLayers = debouncedActiveLayerIds.length;
-                const maxZIndex = (totalLayers - minIndex) + 100;
+                let maxZIndex = (totalLayers - minIndex) + 100;
+                if (pinnedLayerIdsRef.current.has(representativeId)) {
+                    const order = initialOrderRef.current;
+                    const orderIdx = order.indexOf(representativeId);
+                    const effectiveIdx = orderIdx === -1 ? order.length : orderIdx;
+                    maxZIndex = PIN_Z_OFFSET + (order.length - effectiveIdx);
+                }
                 const layersParam = wmsLayersOrdered.map(l => l.layerName).join(',');
                 const stylesParam = wmsLayersOrdered.map(l => l.styles).join(',');
 
@@ -263,6 +276,11 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
     }, [debouncedActiveLayerIds, debouncedHiddenLayerIds, wmsConfigCache, createWMSLayer]);
 
     useEffect(updateActiveLayers, [updateActiveLayers]);
+
+    useEffect(() => {
+        updateActiveLayers();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pinnedLayerIds, initialOrder]);
 
     useEffect(() => {
         if (!mapRef.current || !getLayerOpacity) return;

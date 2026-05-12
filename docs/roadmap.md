@@ -422,6 +422,12 @@ timeline
 - [ ] Modo edicion de Home integrado al administrador de portal
 - [ ] Compartir estado del mapa via URL (para el componente comparar, ademas de agregar orden de capas, opacidad, etc)
 
+### v1.21.1 — Mayo 2026
+- [x] Pin automatico de capas de limite (IIEG e INEGI) cuando hay otro poligono activo, para que sus etiquetas no queden tapadas
+- [x] Deteccion dinamica via WFS DescribeFeatureType + lista de fondos excluidos (cuerpos de agua, cultivos, anp_jalisco)
+- [x] Panel de capas activas WYSIWYG: pin-eadas al tope, drag handle reemplazado por icono pin
+- [x] Plan para mover lista de fondos a flag editable en mariachi (`docs/planes/PLAN_BACKGROUND_POLYGON_EDITABLE.md`)
+
 ### v1.22.0 — Septiembre / Octubre 2026
 - [ ] Sistema de login para ciudadanos
 - [ ] Guardar compartidos

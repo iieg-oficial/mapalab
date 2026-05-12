@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.21.1',
+        items: [
+            { text: 'Los límites estatales, regionales y municipales (IIEG e INEGI) ahora se muestran automáticamente arriba de cualquier capa de polígono activa, para que sus etiquetas no queden tapadas. En el panel de capas activas verás un ícono de pin en estas capas indicando que se mantienen siempre visibles.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.20.3',
         items: [
             { text: 'Panel de capas activas: ya no se traslapa con la barra de "Contribuciones" cuando tienes muchas capas y el panel crece al alto completo de la pantalla.', tag: 'fixed' },

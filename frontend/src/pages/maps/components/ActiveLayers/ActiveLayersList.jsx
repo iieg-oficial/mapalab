@@ -1,6 +1,7 @@
 import { useContext, useCallback, useMemo, useEffect, useState } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useActiveLayersLogic } from '../../hooks/useActiveLayersLogic';
+import { useAlwaysOnTopPinning, sortItemsWithPinnedFirst } from '../../hooks/useAlwaysOnTopPinning';
 import { useLayerCollapse } from './hooks/useLayerCollapse';
 import { useLayerSorting } from './hooks/useLayerSorting';
 import { LegendsVisibilityProvider } from './hooks/useLegendsVisibility';
@@ -13,6 +14,7 @@ import Switch from '@components/Switch';
 import ScrollContainer from '@components/ScrollContainer';
 import ConfirmDropdown from '@components/ConfirmDropdown';
 import { useMapsContext } from '@hooks/useMaps';
+import { useLayers } from '@hooks/useLayers';
 import { useSider } from '@contexts/SiderContext';
 import { getDefaultMapView } from '@pages/maps/helpers/defaultView';
 
@@ -80,7 +82,17 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         return result;
     }, [isSwipe, hiddenLayerIds, compareMode?.paneA, compareMode?.paneB, compareMode?.activeSlot, effectiveActiveLayerIds]);
 
-    const { unifiedLayers } = useActiveLayersLogic(effectiveActiveLayerIds, effectiveHiddenLayerIds);
+    const { unifiedLayers: rawUnifiedLayers } = useActiveLayersLogic(effectiveActiveLayerIds, effectiveHiddenLayerIds);
+    const pinnedLayerIds = useAlwaysOnTopPinning({
+        activeLayerIds: effectiveActiveLayerIds,
+        hiddenLayerIds: effectiveHiddenLayerIds,
+        compareModeActive: isSwipe
+    });
+    const { initialOrder } = useLayers();
+    const unifiedLayers = useMemo(
+        () => sortItemsWithPinnedFirst(rawUnifiedLayers, pinnedLayerIds, initialOrder),
+        [rawUnifiedLayers, pinnedLayerIds, initialOrder]
+    );
     const collapse = useLayerCollapse(unifiedLayers);
     useEffect(() => { onCollapseChange?.(collapse.isCollapsed); }, [collapse.isCollapsed, onCollapseChange]);
 
@@ -295,7 +307,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
                     <div className="space-y-1 py-1">
                         {unifiedLayers.map((layer) => (
                             <SortableItem key={layer.id} id={layer.id} isSticky={selectedLayerForSymbology?.id === layer.id}>
-                                <ActiveLayerItem layer={layer} />
+                                <ActiveLayerItem layer={layer} isPinned={pinnedLayerIds.has(layer.id)} />
                             </SortableItem>
                         ))}
                     </div>

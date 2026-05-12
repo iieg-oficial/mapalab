@@ -7,6 +7,34 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.21.1] - 2026-05-12
+
+### Pin de capas-borde sobre poligonos
+
+Las capas de limite (`limite_iieg`, `limite_municipal`, `regiones`, `limite_inegi`, `limite_municipal_inegi`) se fijan automaticamente arriba del mapa cuando hay otra capa de tipo poligono activa, para que sus etiquetas no queden tapadas por coropletas tematicas.
+
+#### Frontend
+
+**Nuevos:**
+- `src/pages/maps/hooks/useAlwaysOnTopPinning.js`: hook que detecta poligonos no-borde via `fetchGeometryType` (WFS `DescribeFeatureType`). Devuelve `Set<pinnedIds>` con las capas-borde activas a pinear. Excluye capas de fondo via `BACKGROUND_POLYGON_LAYER_NAMES` (`general:cuerpos_de_agua_50k`, `economia:cultivos`, `recursos:areas_naturales_protegidas`). Regla desactivada en swipe AB. Exporta `PIN_Z_OFFSET=9000` y `sortItemsWithPinnedFirst(items, pinnedSet, initialOrder)`.
+- `src/assets/icons/ico_pin_normal.svg` + `ico_pin_hover.svg`: thumbtack 24x24 siguiendo estilo `ico_*` (gris `#465055` / morado `#70308A`).
+
+**Refactorizados:**
+- `src/pages/maps/hooks/useWMSLayerManager.js`: acepta `pinnedLayerIds` + `initialOrder`. Override de `maxZIndex = PIN_Z_OFFSET + (order.length - effectiveIdx)` cuando el grupo esta pin-eado, respetando `initialOrder` entre multiples pin-eadas. Nuevo effect que dispara re-update cuando cambian estos.
+- `src/pages/maps/components/MapView.jsx`: instancia `useAlwaysOnTopPinning` con `compareModeActive` apropiado por pane (live vs swipe) y pasa `pinnedLayerIds`+`initialOrder` al manager.
+- `src/pages/maps/components/ActiveLayers/ActiveLayersList.jsx`: aplica `sortItemsWithPinnedFirst` para que el panel quede WYSIWYG con el mapa.
+- `src/pages/maps/components/ActiveLayers/ActiveLayerItem.jsx`: acepta prop `isPinned`. Cuando es true oculta `DragHandle` y renderiza `PinBadge`.
+- `src/pages/maps/components/ActiveLayers/LayerItemHeader.jsx`: nuevo export `PinBadge` con tooltip explicativo.
+
+**Tests:**
+- `src/test/pages/maps/hooks/useWMSLayerManager.test.js`: 4 casos nuevos (z-index normal sin pin, override con pin, no afecta no-pin-eadas, respeta `initialOrder` entre multiples).
+
+#### Documentacion
+- `docs/planes/PLAN_BACKGROUND_POLYGON_EDITABLE.md` (nuevo): plan para mover la lista de fondos a un flag `es_fondo_visual` editable desde mariachi (migracion, backend, UI, cleanup frontend).
+
+#### Operacional
+- `Makefile`: `make deploy` ahora purga `/var/cache/nginx/mapalab_assets/*` en el gateway-hub antes del reload, para evitar servir `index.html` viejo tras un deploy.
+
 ## [1.21.0] - 2026-05-08
 
 ### Reportes: migrar a widget Colibri

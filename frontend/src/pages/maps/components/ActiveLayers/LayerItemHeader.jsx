@@ -32,3 +32,18 @@ export const LayerTitle = ({ name }) => (
         {name}
     </span>
 );
+
+export const PinBadge = () => {
+    const [isHover, setIsHover] = useState(false);
+    return (
+        <Tooltip content="Esta capa siempre se muestra arriba para no tapar etiquetas">
+            <span
+                className="p-0.5 rounded-full shrink-0 border border-transparent bg-[#F9FBFF] inline-flex"
+                onMouseEnter={() => setIsHover(true)}
+                onMouseLeave={() => setIsHover(false)}
+            >
+                <Icon name="pin" state={isHover ? 'hover' : 'normal'} className="size-7" />
+            </span>
+        </Tooltip>
+    );
+};
