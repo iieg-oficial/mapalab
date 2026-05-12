@@ -7,6 +7,22 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.22.0] - 2026-05-12
+
+### Acople del panel de mediciones al sider restaurado
+
+El panel de herramientas de medicion volvio a deslizarse con el ancho del sider y alinearse verticalmente con el boton "Herramientas", en lugar de quedar fijo en la esquina superior izquierda detras del sider.
+
+#### Causa raiz
+
+Desde `1.13.0` (`682da9f`), el item `tools` del menu lateral pasa de `hasMenu: false` (con `onClick`) a `hasMenu: true` (con submenu `ToolsMenu`). El item declara `ref: toolsButtonRef` esperando que `MenuItem` lo asigne al DOM, pero `MenuItem` solo propagaba `item.ref` en la rama `!item.hasMenu`. En la rama de items con submenu, el `<button>` usaba unicamente un `buttonRef` local (anchor del `<Panel>` desplegable), por lo que `toolsButtonRef.current` quedaba en `null` permanentemente.
+
+`useSiderAdaptivePosition({ anchorRef: 'tools' })` en `ToolsPanel.jsx` lee ese ref para calcular `topPosition = anchorRect.top` y `leftPosition = width + siderOffset`. Con el ref vacio caia al `else` final que no setea `topPosition` y deja `leftPosition = leftOffset(16)`, colocando el div `fixed z-10` en la misma esquina que el sider (`z-20`) y por debajo en z-index.
+
+#### Fix
+
+`src/pages/maps/components/MenuItem.jsx`: el `<button>` de la rama `hasMenu: true` ahora usa un callback ref que asigna el nodo tanto al `buttonRef` local (que sigue siendo el anchor del `<Panel>`) como a `item.ref` cuando esta presente, soportando refs tipo objeto y funcion. Con esto `toolsButtonRef` apunta al DOM real y el `ResizeObserver` del sider re-dispara el calculo al expandir/colapsar.
+
 ## [1.21.1] - 2026-05-12
 
 ### Pin de capas-borde sobre poligonos
