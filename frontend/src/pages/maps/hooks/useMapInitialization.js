@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import OLMap from 'ol/Map';
 import View from 'ol/View';
@@ -8,6 +8,7 @@ import { getDefaultMapView, getMinZoom } from '@pages/maps/helpers/defaultView';
 
 export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, baseMapId }) => {
     const [searchParams] = useSearchParams();
+    const [mapInstance, setMapInstance] = useState(null);
 
     const initialViewParams = useMemo(() => {
         const zoom = searchParams.get('zoom');
@@ -65,6 +66,7 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, 
 
         mapRef.current = map;
         baseMapRef.current = map.getLayers().item(0);
+        setMapInstance(map);
 
         return () => {
             if (mapRef.current) {
@@ -72,10 +74,11 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, 
             }
             mapRef.current = null;
             baseMapRef.current = null;
+            setMapInstance(null);
             HTMLCanvasElement.prototype.getContext = originalGetContext;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    return initialViewParams;
+    return { initialViewParams, mapInstance };
 };

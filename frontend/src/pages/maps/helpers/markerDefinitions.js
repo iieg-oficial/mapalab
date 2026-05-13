@@ -1,11 +1,11 @@
 import mapalabSquareIcon from '@logos/mapalab_square.svg';
 import { APP_VERSION, APP_LOC } from '@constants/app';
-import { collectLayersWithWMS } from './layers/utils/layerHelpers';
+import { collectCatalogUnits } from './layers/utils/layerHelpers';
 
 export const computeIiegStats = ({ allLayers = [] } = {}) => {
-    const wmsLayers = collectLayersWithWMS({ children: allLayers });
+    const units = collectCatalogUnits({ children: allLayers });
     return {
-        totalLayers: wmsLayers.length,
+        totalLayers: units.length,
     };
 };
 

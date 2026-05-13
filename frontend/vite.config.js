@@ -154,6 +154,10 @@ export default defineConfig(({ mode }) => {
                     '/api/public': {
                         target: env.MARIACHI_DEV_TARGET,
                         changeOrigin: true,
+                    },
+                    '/colibri': {
+                        target: env.MARIACHI_DEV_TARGET,
+                        changeOrigin: true,
                     }
                 }),
                 ...(env.BACKEND_DEV_TARGET && {

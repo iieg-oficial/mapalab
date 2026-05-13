@@ -1,9 +1,15 @@
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
+import { trackInfoBoxAction } from '@services/analyticsService';
 
-const InfoBoxTools = ({ tools = [], className = '' }) => {
+const InfoBoxTools = ({ tools = [], className = '', layerId = null }) => {
     const visibleTools = tools.filter(Boolean);
     if (visibleTools.length === 0) return null;
+
+    const handleClick = (tool) => () => {
+        trackInfoBoxAction(tool.id || tool.label || 'unknown', layerId);
+        tool.onClick?.();
+    };
 
     return (
         <div className={`flex items-center gap-3 flex-wrap shrink-0 ${className}`}>
@@ -11,7 +17,7 @@ const InfoBoxTools = ({ tools = [], className = '' }) => {
                 const content = (
                     <button
                         type="button"
-                        onClick={tool.onClick}
+                        onClick={handleClick(tool)}
                         disabled={tool.disabled}
                         className={`group/tool flex items-center gap-1 ${tool.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                         aria-label={tool.label}

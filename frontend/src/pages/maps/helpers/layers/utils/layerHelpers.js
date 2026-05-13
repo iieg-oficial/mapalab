@@ -79,6 +79,33 @@ export const collectLayersWithWMS = (layer) => {
 export const collectLayerIdsWithWMS = (layer) =>
     collectLayersWithWMS(layer).map(node => node.id);
 
+export const collectCatalogUnits = (layer) => {
+    if (!layer) return [];
+
+    const result = [];
+
+    const traverse = (node) => {
+        if (!node) return;
+        if (node.isLabel || node.isCategory) return;
+
+        if (node.forceGroup) {
+            if (node.wmsConfig || collectLayersWithWMS(node).length > 0) {
+                result.push(node);
+            }
+            return;
+        }
+
+        if (node.wmsConfig) result.push(node);
+
+        if (node.children && node.children.length > 0) {
+            node.children.forEach(traverse);
+        }
+    };
+
+    traverse(layer);
+    return result;
+};
+
 export const getAllChildLayerIds = (layerId, layersArray) => {
     const result = [];
 

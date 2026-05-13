@@ -17,15 +17,15 @@ import EmptySuggestions from './components/EmptySuggestions';
 import ActionsToolbar from './components/ActionsToolbar';
 import InfoBoxTools from './components/InfoBoxTools';
 import InfoCard from './components/InfoCard';
-import SwipeToRemove from './components/SwipeToRemove';
+import DismissGesture from './components/DismissGesture';
 import WhatsNewModal from '../WhatsNewModal';
-import ReportModal from '@components/ReportModal';
+import { useColibriOpen } from '@hooks/useColibriOpen';
 
 const InfoBox = () => {
+    const openColibri = useColibriOpen();
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers } = useContext(MapsContext);
     const { isMobile } = useSider();
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
-    const [reportOpen, setReportOpen] = useState(false);
     const { selectAlternativeLayer, loadMoreFeatures } = useFeatureInfo();
     const panelRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -59,8 +59,8 @@ const InfoBox = () => {
 
     const handleAction = useCallback((action) => {
         if (action === 'whats_new') setWhatsNewOpen(true);
-        if (action === 'report') setReportOpen(true);
-    }, []);
+        if (action === 'report') openColibri({ source: 'iieg_marker' });
+    }, [openColibri]);
 
     useOutsideClick([panelRef], isMobile ? undefined : handleClose);
     useViewportContainment(panelRef, [selectedFeatureInfo, clickPosition, isMobile]);
@@ -188,12 +188,12 @@ const InfoBox = () => {
                         );
                         if (isMobile) {
                             return (
-                                <SwipeToRemove
+                                <DismissGesture
                                     key={stableKey}
                                     onRemove={() => handleRemoveFeature(result.layerId, featureIdx)}
                                 >
                                     {card}
-                                </SwipeToRemove>
+                                </DismissGesture>
                             );
                         }
                         return <div key={stableKey}>{card}</div>;
@@ -235,7 +235,7 @@ const InfoBox = () => {
                     </div>
 
                     <div className="flex items-center pl-[13px] pr-4 pb-2 gap-3">
-                        <InfoBoxTools tools={mobileTools} />
+                        <InfoBoxTools tools={mobileTools} layerId={results?.[0]?.layerId || null} />
                     </div>
 
                     <ScrollContainer
@@ -279,7 +279,6 @@ const InfoBox = () => {
                         </div>
                     </ScrollContainer>
                 </MobileSheet>
-                <ReportModal isOpen={reportOpen} onClose={() => setReportOpen(false)} extraContext={{ source: 'iieg_marker' }} />
                 <WhatsNewModal isOpen={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
             </>
         );

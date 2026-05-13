@@ -8,17 +8,19 @@ import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { LOOP_INTERVAL_PRESETS } from '@hooksMaps/useDateLoop';
 import { handleKeyActivate } from '@utils/a11y';
 
-import { DragHandle, LayerTitle } from './LayerItemHeader';
+import { DragHandle, LayerTitle, PinBadge } from './LayerItemHeader';
 import LayerDateControls from './LayerDateControls';
 import LayerActionsBar from './LayerActionsBar';
 import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
+import SlotBadge from './SlotBadge';
+import { computeLabel } from './datePillHelpers';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
 import { useLayerMetadata } from '@hooksMaps/useLayerMetadata';
 import { useLayerDownload } from '@hooksMaps/useLayerDownload';
 import DownloadMenu from '@mapsComponents/LayerDetailModal/components/DownloadMenu';
 
-const ActiveLayerItem = ({ layer, dragHandleProps }) => {
+const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const { loadingLayers } = useLayerLoading();
     const { isMobile } = useSider();
     const {
@@ -66,7 +68,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
     const [isHovered, setIsHovered] = useState(false);
     const isSelected = selectedLayerForSymbology?.id === layer.id;
     const isExpanded = isSelected;
-    const showHandle = isSelected || (!isMobile && isHovered);
+    const showHandle = !isPinned && (isSelected || (!isMobile && isHovered));
 
     const { metadata } = useLayerMetadata(isExpanded ? layer.id : null);
     const download = useLayerDownload(isExpanded ? layer.id : null, { getFilter, getSpecificFilter, metadata });
@@ -119,6 +121,16 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
     const dateFilter = getSpecificFilter?.(layer.id, 'date') || null;
 
+    const hasAnyDateLabel = useMemo(() => {
+        const liveOk = computeLabel(dateFilter, rasterPeriodicity).label;
+        const aOk = computeLabel(compareMode?.paneA?.filters?.[layer.id]?.date, rasterPeriodicity).label;
+        const bOk = computeLabel(compareMode?.paneB?.filters?.[layer.id]?.date, rasterPeriodicity).label;
+        return !!(liveOk || aOk || bOk);
+    }, [dateFilter, rasterPeriodicity, compareMode?.paneA?.filters, compareMode?.paneB?.filters, layer.id]);
+
+    const showSlotBadgeInTitle = !!compareMode?.active && !!slotMembership && !hasAnyDateLabel;
+    const handleCycleSlot = (next) => setLayerSlotMembership?.(layer.id, next);
+
     const effectiveOpacity = useMemo(() => {
         const own = getLayerOpacity?.(layer.id) ?? 1;
         if (own !== 1) return own;
@@ -157,8 +169,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
         e.stopPropagation();
         setLoopDirection?.(layer.id, loopDirection === 'rtl' ? 'ltr' : 'rtl');
     };
-
-    const handleCycleSlot = (next) => setLayerSlotMembership?.(layer.id, next);
 
     const isLoading = useMemo(() => {
         if (loadingLayers.has(layer.id)) return true;
@@ -199,6 +209,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
             >
                 <div className="flex flex-col gap-1.5 px-2 py-2 w-full">
                     <div className="flex items-center gap-2 min-h-8 w-full">
+                        {isPinned && <PinBadge />}
                         {showHandle && <DragHandle dragHandleProps={dragHandleProps} />}
                         {!isSelected && !isMobile && isHovered && (
                             <LayerInlineActions
@@ -216,6 +227,9 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
                         <LayerTitle name={layer.name} />
                         {isLoading && !isLooping && (
                             <Loading visible={true} size="size-5" border="border-2" />
+                        )}
+                        {showSlotBadgeInTitle && (
+                            <SlotBadge membership={slotMembership} onCycle={handleCycleSlot} layerId={layer.id} />
                         )}
                     </div>
 
@@ -240,6 +254,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps }) => {
                                 onCycleSlot={handleCycleSlot}
                             />
                             <LayerActionsBar
+                                layerId={layer.id}
                                 visible={layer.visible}
                                 isLoading={isLoading}
                                 isLooping={isLooping}

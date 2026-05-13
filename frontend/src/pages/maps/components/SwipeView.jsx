@@ -2,31 +2,50 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import MapView from './MapView';
 import { useMapsContext } from '@hooks/useMaps';
 import { useViewSync } from '@pages/maps/hooks/useViewSync';
+import { SLOT_COLORS, SWIPE_HANDLE_COLOR } from '@pages/maps/helpers/swipeTheme';
+import {
+    SWIPE_HANDLE_MIN,
+    SWIPE_HANDLE_MAX,
+    SWIPE_KEYBOARD_STEP,
+    SWIPE_DEBOUNCE_MS,
+    SWIPE_POS_THRESHOLD,
+    SWIPE_POS_JITTER,
+} from '@pages/maps/helpers/swipeMode';
 
 const SwipeView = () => {
-    const { compareMode, paneMapRefs, setSwipePosition, highlightedSlots } = useMapsContext();
+    const { compareMode, paneMapInstances, setSwipePosition, highlightedSlots } = useMapsContext();
     const containerRef = useRef(null);
     const [pos, setPos] = useState((compareMode?.swipePosition ?? 0.5) * 100);
     const lastPersistedRef = useRef(pos);
+    const externallySetRef = useRef(false);
     const isHorizontal = compareMode?.swipeOrientation === 'horizontal';
     const showA = highlightedSlots === 'A' || highlightedSlots === 'AB';
     const showB = highlightedSlots === 'B' || highlightedSlots === 'AB';
 
-    useViewSync(paneMapRefs, !!compareMode?.active);
+    useViewSync(paneMapInstances, !!compareMode?.active);
 
     useEffect(() => {
         const next = (compareMode?.swipePosition ?? 0.5) * 100;
-        setPos(prev => (Math.abs(next - prev) > 0.1 ? next : prev));
+        setPos(prev => {
+            if (Math.abs(next - prev) <= SWIPE_POS_JITTER) return prev;
+            externallySetRef.current = true;
+            lastPersistedRef.current = next;
+            return next;
+        });
     }, [compareMode?.swipePosition]);
 
     useEffect(() => {
+        if (externallySetRef.current) {
+            externallySetRef.current = false;
+            return undefined;
+        }
         const handle = setTimeout(() => {
             const fraction = pos / 100;
-            if (Math.abs(fraction - lastPersistedRef.current / 100) > 0.005) {
+            if (Math.abs(fraction - lastPersistedRef.current / 100) > SWIPE_POS_THRESHOLD) {
                 lastPersistedRef.current = pos;
                 setSwipePosition?.(fraction);
             }
-        }, 200);
+        }, SWIPE_DEBOUNCE_MS);
         return () => clearTimeout(handle);
     }, [pos, setSwipePosition]);
 
@@ -37,7 +56,7 @@ const SwipeView = () => {
         const value = isHorizontal
             ? ((clientY - rect.top) / rect.height) * 100
             : ((clientX - rect.left) / rect.width) * 100;
-        setPos(Math.max(5, Math.min(95, value)));
+        setPos(Math.max(SWIPE_HANDLE_MIN, Math.min(SWIPE_HANDLE_MAX, value)));
     }, [isHorizontal]);
 
     const onPointerDown = useCallback((e) => {
@@ -53,6 +72,19 @@ const SwipeView = () => {
         window.addEventListener('pointercancel', handleUp);
     }, [updatePosFromPointer]);
 
+    const onKeyDown = useCallback((e) => {
+        const decreaseKey = isHorizontal ? 'ArrowUp' : 'ArrowLeft';
+        const increaseKey = isHorizontal ? 'ArrowDown' : 'ArrowRight';
+        if (e.key !== decreaseKey && e.key !== increaseKey && e.key !== 'Home' && e.key !== 'End') return;
+        e.preventDefault();
+        if (e.key === 'Home') return setPos(SWIPE_HANDLE_MIN);
+        if (e.key === 'End') return setPos(SWIPE_HANDLE_MAX);
+        setPos(prev => {
+            const delta = e.key === decreaseKey ? -SWIPE_KEYBOARD_STEP : SWIPE_KEYBOARD_STEP;
+            return Math.max(SWIPE_HANDLE_MIN, Math.min(SWIPE_HANDLE_MAX, prev + delta));
+        });
+    }, [isHorizontal]);
+
     if (!compareMode?.active) return null;
 
     const clipPath = isHorizontal ? `inset(${pos}% 0 0 0)` : `inset(0 0 0 ${pos}%)`;
@@ -63,8 +95,8 @@ const SwipeView = () => {
         ? 'absolute z-[1] cursor-ns-resize touch-none'
         : 'absolute z-[1] cursor-ew-resize touch-none';
     const lineClass = isHorizontal
-        ? 'absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-[#FF8300] shadow'
-        : 'absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-[#FF8300] shadow';
+        ? 'absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] shadow'
+        : 'absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] shadow';
     const knobIcon = isHorizontal
         ? <><polyline points="6 9 12 3 18 9" /><polyline points="18 15 12 21 6 15" /></>
         : <><polyline points="9 18 3 12 9 6" /><polyline points="15 6 21 12 15 18" /></>;
@@ -83,27 +115,41 @@ const SwipeView = () => {
                 <MapView paneIndex={1} className="absolute inset-0 w-full h-full pointer-events-auto" />
             </div>
             {showA && (
-                <div className="absolute z-[1] flex items-center justify-center pointer-events-none transition-opacity duration-200 bg-[#5C2472]/10" style={overlayAStyle}>
+                <div
+                    aria-hidden="true"
+                    className="absolute z-[1] flex items-center justify-center pointer-events-none transition-opacity duration-200"
+                    style={{ ...overlayAStyle, backgroundColor: SLOT_COLORS.A.overlay }}
+                >
                     <span className="font-garet font-bold text-white text-[120px] drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">A</span>
                 </div>
             )}
             {showB && (
-                <div className="absolute z-[1] flex items-center justify-center pointer-events-none transition-opacity duration-200 bg-[#FF8300]/10" style={overlayBStyle}>
+                <div
+                    aria-hidden="true"
+                    className="absolute z-[1] flex items-center justify-center pointer-events-none transition-opacity duration-200"
+                    style={{ ...overlayBStyle, backgroundColor: SLOT_COLORS.B.overlay }}
+                >
                     <span className="font-garet font-bold text-white text-[120px] drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">B</span>
                 </div>
             )}
             <div
                 onPointerDown={onPointerDown}
-                role="separator"
+                onKeyDown={onKeyDown}
+                tabIndex={0}
+                role="slider"
                 aria-orientation={isHorizontal ? 'horizontal' : 'vertical'}
+                aria-label={`Posición del comparador: ${Math.round(pos)}%. Usa flechas para mover.`}
                 aria-valuenow={Math.round(pos)}
-                aria-valuemin={5}
-                aria-valuemax={95}
-                className={handleBaseClass}
+                aria-valuemin={SWIPE_HANDLE_MIN}
+                aria-valuemax={SWIPE_HANDLE_MAX}
+                className={`${handleBaseClass} focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF8300] focus-visible:ring-offset-2`}
                 style={handleStyle}
             >
-                <div className={lineClass} />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 bg-[#FF8300] rounded-full shadow-lg flex items-center justify-center">
+                <div className={lineClass} style={{ backgroundColor: SWIPE_HANDLE_COLOR }} />
+                <div
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full shadow-lg flex items-center justify-center"
+                    style={{ backgroundColor: SWIPE_HANDLE_COLOR }}
+                >
                     <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                         {knobIcon}
                     </svg>

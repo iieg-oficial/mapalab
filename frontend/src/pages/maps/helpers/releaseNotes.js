@@ -12,6 +12,48 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.27.0',
+        items: [
+            { text: 'Ahora MapaLab cuenta de forma anónima cuántas personas usan cada capa y herramienta, para priorizar mejoras donde más se necesitan. No se identifica a ningún usuario; si tu navegador tiene "No me rastrees" activado, se respeta automáticamente.', tag: 'added' },
+        ],
+    },
+    {
+        version: '1.21.1',
+        items: [
+            { text: 'Los límites estatales, regionales y municipales (IIEG e INEGI) ahora se muestran automáticamente arriba de cualquier capa de polígono activa, para que sus etiquetas no queden tapadas. En el panel de capas activas verás un ícono de pin en estas capas indicando que se mantienen siempre visibles.', tag: 'added' },
+        ],
+    },
+    {
+        version: '1.20.3',
+        items: [
+            { text: 'Panel de capas activas: ya no se traslapa con la barra de "Contribuciones" cuando tienes muchas capas y el panel crece al alto completo de la pantalla.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.20.2',
+        items: [
+            { text: 'Eventos: al abrir un evento, el visor vuelve a centrar el mapa en el área del evento y a prender automáticamente las capas marcadas como "auto-activar", aunque ya hayas abierto ese mismo evento antes en la sesión.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.20.1',
+        items: [
+            { text: 'Comparador: ahora puedes mover la barra divisoria con el teclado (flechas, Inicio/Fin) y leerla con un lector de pantalla.', tag: 'added' },
+            { text: 'Comparador: la orientación que elijas (vertical u horizontal) se recuerda para la próxima vez que abras el comparador.', tag: 'added' },
+            { text: 'Comparador: al activar una capa con fecha por defecto, ahora se aplica correctamente al iniciar la comparación.', tag: 'fixed' },
+            { text: 'Comparador: los mapas son más eficientes al entrar y salir, evitando cargas innecesarias.', tag: 'perf' },
+            { text: 'Comparador: si recargas la página, el orden de las capas y la orientación se respetan al restaurar el estado compartido.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.20.0',
+        items: [
+            { text: 'Los eventos ahora abren y muestran sus capas más rápido al recargar el visor.', tag: 'perf' },
+            { text: 'Si apagas una capa de un evento y luego cierras y vuelves a abrir el evento, esa capa ya no se vuelve a prender automáticamente durante la misma sesión.', tag: 'changed' },
+            { text: 'Al reabrir un evento ya no se vuelve a centrar el mapa al área del evento (respeta dónde te dejaste).', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.18.0',
         items: [
             { text: 'Al presionar el logotipo del IIEG, ahora se muestran estadísticas dinámicas de la base de datos (capas, registros y líneas de código).', tag: 'added' },

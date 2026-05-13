@@ -4,34 +4,51 @@ const layerWorkspace = (n) =>
 const layerName = (n) =>
     n.geoserverLayer || n.wmsConfig?.geoserverLayer || n.wmsConfig?.wmsGroup || null;
 
-export const findLayerByWorkspaceLayer = (workspace, layer, nodes) => {
-    for (const node of nodes || []) {
-        if (layerWorkspace(node) === workspace && layerName(node) === layer) {
-            return node;
+const indexKey = (workspace, layer) => `${workspace || ''}|${layer || ''}`;
+
+const buildLayerIndex = (nodes) => {
+    const index = new Map();
+    const walk = (list) => {
+        for (const node of list || []) {
+            const ws = layerWorkspace(node);
+            const ln = layerName(node);
+            if (ws && ln) {
+                const key = indexKey(ws, ln);
+                if (!index.has(key)) index.set(key, node);
+            }
+            if (node.children?.length) walk(node.children);
         }
-        if (node.children?.length) {
-            const found = findLayerByWorkspaceLayer(workspace, layer, node.children);
-            if (found) return found;
-        }
-    }
-    return null;
+    };
+    walk(nodes);
+    return index;
 };
 
-export const getEventoLayerIds = (evento, allLayers) => {
+export const findLayerByWorkspaceLayer = (workspace, layer, nodes) => {
+    if (!workspace || !layer) return null;
+    return buildLayerIndex(nodes).get(indexKey(workspace, layer)) || null;
+};
+
+const collectEventoLayerIds = (evento, layerIndex) => {
     const ids = new Set();
-    if (!evento?.capas?.length || !allLayers?.length) return ids;
+    if (!evento?.capas?.length) return ids;
     for (const c of evento.capas) {
         if (c.tipo === 'etiqueta') continue;
-        const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
+        const layer = layerIndex.get(indexKey(c.workspace, c.layer));
         if (layer) ids.add(layer.id);
     }
     return ids;
 };
 
-export const findEventoByLayerId = (eventos, layerId, allLayers) => {
-    if (!layerId || !Array.isArray(eventos) || !eventos.length) return null;
-    for (const evento of eventos) {
-        if (getEventoLayerIds(evento, allLayers).has(layerId)) return evento;
+export const buildEventoIndex = (eventos, allLayers) => {
+    const layerIndex = buildLayerIndex(allLayers);
+    const eventoByLayerId = new Map();
+    const layerIdsByEvento = new Map();
+    for (const evento of eventos || []) {
+        const ids = collectEventoLayerIds(evento, layerIndex);
+        layerIdsByEvento.set(evento.id, ids);
+        for (const id of ids) {
+            if (!eventoByLayerId.has(id)) eventoByLayerId.set(id, evento);
+        }
     }
-    return null;
+    return { layerIndex, eventoByLayerId, layerIdsByEvento };
 };

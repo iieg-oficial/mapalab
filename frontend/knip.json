@@ -1,5 +1,8 @@
 {
     "$schema": "https://unpkg.com/knip@6/schema.json",
+    "ignore": [
+        "public/widget/v1/*.js"
+    ],
     "ignoreDependencies": [
         "lint-staged"
     ]

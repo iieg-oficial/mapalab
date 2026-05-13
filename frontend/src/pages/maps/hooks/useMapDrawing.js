@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Draw } from 'ol/interaction';
 import { getLength, getArea } from 'ol/sphere';
-import { createDefaultStyle, createEmojiStyle, createFreehandStyle, createTextStyle, computeAndCacheStyle, computeStylesForFeature } from '../helpers/drawingStyles';
+import { createDefaultStyle, createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCacheStyle, computeStylesForFeature } from '../helpers/drawingStyles';
 import { formatNumber } from '../helpers/formatNumber';
 import { useEmojiTemplate } from './useEmojiTemplate';
 import { useTextTemplate } from './useTextTemplate';
@@ -124,7 +124,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         const featureSelected = feature.get('selected') === true;
 
         if (annotationType === 'Emoji') {
-            const style = createEmojiStyle(feature.get('textLabel'), featureRotation, featureScale, featureSelected);
+            const symbol = feature.get('symbolPayload')
+                || { kind: 'emoji', value: feature.get('textLabel') };
+            const style = createSymbolStyle(symbol, featureRotation, featureScale, featureSelected);
             if (!isSketch) {
                 feature.set('cachedStyle', style, true);
             }
@@ -254,7 +256,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             sketchFeatureRef.current = event.feature;
             event.feature.set('annotationType', type);
             if (type === 'Emoji') {
-                event.feature.set('textLabel', emojiTemplateRef.current);
+                const symbol = emojiTemplateRef.current;
+                event.feature.set('symbolPayload', symbol);
+                event.feature.set('textLabel', symbol?.kind === 'emoji' ? symbol.value : (symbol?.name || ''));
                 event.feature.set('rotation', rotationRef.current);
                 event.feature.set('scale', 1);
             }
@@ -379,11 +383,14 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 const style = createFreehandStyle();
                 feature.set('cachedStyle', style, true);
             } else if (type === 'Emoji') {
-                const emojiValue = feature.get('textLabel') || '';
-                measurementData.value = emojiValue;
-                measurementData.label = `Emoji: ${emojiValue}`;
+                const symbol = feature.get('symbolPayload') || { kind: 'emoji', value: feature.get('textLabel') || '' };
+                const labelText = symbol.kind === 'emoji'
+                    ? symbol.value
+                    : (symbol.name || symbol.kind);
+                measurementData.value = labelText || '';
+                measurementData.label = `Emoji: ${labelText || ''}`;
                 const rotation = feature.get('rotation') || 0;
-                const style = createEmojiStyle(emojiValue, rotation);
+                const style = createSymbolStyle(symbol, rotation);
                 feature.set('cachedStyle', style, true);
                 setLastPlacedAnnotation({ feature, placedAt: Date.now() });
             } else if (type === 'Text') {

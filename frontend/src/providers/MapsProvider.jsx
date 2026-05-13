@@ -1,7 +1,8 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
 import { useClickPosition } from '@hooks/useClickPosition';
 import { useLayers } from '@hooks/useLayers';
 import MapsContext from '@contexts/MapsContext';
+import EventoProvider from '@providers/EventoProvider';
 import { BASEMAPS } from '@pages/maps/helpers/basemaps';
 import { useLayerManagement } from '@hooksMaps/useLayerManagement';
 import { useSymbology } from '@hooksMaps/useSymbology';
@@ -23,25 +24,48 @@ const MapsProvider = ({ children }) => {
     const [selectedLayer, setSelectedLayer] = useState(null);
     const [selectedFeatureInfo, setSelectedFeatureInfo] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
-    const [activeEvento, setActiveEvento] = useState(null);
     const queryFeaturesInPolygonRef = useRef(null);
     const clickPosition = useClickPosition();
     const targetRef = useRef(null);
     const mapRef = useRef(null);
     const compareModeRef = useRef(null);
     const paneMapRefs = useRef({});
+    const [paneMapInstances, setPaneMapInstances] = useState({});
+
+    const setPaneMapInstance = useCallback((paneIndex, instance) => {
+        setPaneMapInstances(prev => {
+            if (instance === null) {
+                if (!(paneIndex in prev)) return prev;
+                const next = { ...prev };
+                delete next[paneIndex];
+                return next;
+            }
+            if (prev[paneIndex] === instance) return prev;
+            return { ...prev, [paneIndex]: instance };
+        });
+    }, []);
     const layerManagement = useLayerManagement();
+    const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
+    const cqlFilter = useCQLFilter();
+    const periodicityCache = usePeriodicityCache(layerManagement.activeLayerIds);
+    const mapMarker = useMapMarker(mapRef, paneMapRefs, compareModeRef, { setSelectedFeatureInfo, clickPosition });
+
+    const liveStateRef = useRef();
+    const swipeMode = useSwipeMode({
+        liveStateRef,
+        getAllChildLayerIds: layerManagement.getAllChildLayerIds,
+        paneMapRefs,
+    });
+    compareModeRef.current = swipeMode.compareMode;
+
     const symbology = useSymbology({
         activeLayerIds: layerManagement.activeLayerIds,
         findLayerById: layerManagement.findLayerById,
         getAllChildLayerIds: layerManagement.getAllChildLayerIds,
         allLayers,
-        compareModeRef
+        compareMode: swipeMode.compareMode,
     });
-    const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
-    const cqlFilter = useCQLFilter();
-    const periodicityCache = usePeriodicityCache(layerManagement.activeLayerIds);
-    const mapMarker = useMapMarker(mapRef, paneMapRefs, compareModeRef, { setSelectedFeatureInfo, clickPosition });
+
     const layerToggle = useLayerToggle({
         ...layerManagement,
         setSelectedLayer,
@@ -53,34 +77,54 @@ const MapsProvider = ({ children }) => {
         showMarker: mapMarker.showMarker,
         hideMarker: mapMarker.hideMarker
     });
-    const dateLoop = useDateLoop({
+    const swipeFilterRef = useRef({});
+    swipeFilterRef.current = {
+        active: swipeMode.compareMode.active,
+        activeSlot: swipeMode.compareMode.activeSlot,
+        applyFilterToSlot: swipeMode.applyFilterToSlot,
+        clearFilterFromSlot: swipeMode.clearFilterFromSlot,
         applyFilter: cqlFilter.applyFilter,
         clearFilter: cqlFilter.clearFilter,
+    };
+    const applyFilterSwipeAware = useCallback((layerId, filterName, cqlExpression) => {
+        const s = swipeFilterRef.current;
+        if (s.active) {
+            s.applyFilterToSlot(layerId, s.activeSlot, filterName, cqlExpression);
+            return;
+        }
+        s.applyFilter(layerId, filterName, cqlExpression);
+    }, []);
+    const clearFilterSwipeAware = useCallback((layerId, filterName) => {
+        const s = swipeFilterRef.current;
+        if (s.active) {
+            s.clearFilterFromSlot(layerId, s.activeSlot, filterName);
+            return;
+        }
+        s.clearFilter(layerId, filterName);
+    }, []);
+
+    const dateLoop = useDateLoop({
+        applyFilter: applyFilterSwipeAware,
+        clearFilter: clearFilterSwipeAware,
         activeLayerIds: layerManagement.activeLayerIds,
         hiddenLayerIds: symbology.hiddenLayerIds,
         getSpecificFilter: cqlFilter.getSpecificFilter,
         getPeriodicity: periodicityCache.getPeriodicity
     });
 
-    const liveStateRef = useRef();
-    liveStateRef.current = {
-        activeLayerIds: layerManagement.activeLayerIds,
-        setActiveLayerIds: layerManagement.setActiveLayerIds,
-        hiddenLayerIds: symbology.hiddenLayerIds,
-        setHiddenLayerIds: symbology.setHiddenLayerIds,
-        layerOpacities: layerOpacity.layerOpacities,
-        setLayerOpacities: layerOpacity.setLayerOpacities,
-        filters: cqlFilter.filters,
-        setFilters: cqlFilter.setFilters,
-        pauseAllLoops: dateLoop.pauseAllLoops,
-    };
-
-    const swipeMode = useSwipeMode({
-        liveStateRef,
-        getAllChildLayerIds: layerManagement.getAllChildLayerIds,
-        paneMapRefs,
+    useLayoutEffect(() => {
+        liveStateRef.current = {
+            activeLayerIds: layerManagement.activeLayerIds,
+            setActiveLayerIds: layerManagement.setActiveLayerIds,
+            hiddenLayerIds: symbology.hiddenLayerIds,
+            setHiddenLayerIds: symbology.setHiddenLayerIds,
+            layerOpacities: layerOpacity.layerOpacities,
+            setLayerOpacities: layerOpacity.setLayerOpacities,
+            filters: cqlFilter.filters,
+            setFilters: cqlFilter.setFilters,
+            pauseAllLoops: dateLoop.pauseAllLoops,
+        };
     });
-    compareModeRef.current = swipeMode.compareMode;
 
     const onToggleLayer = useCallback((layerId, force, options) => {
         const cm = swipeMode.compareMode;
@@ -144,6 +188,8 @@ const MapsProvider = ({ children }) => {
         setSiderCollapsed,
         targetRef,
         mapRef,
+        paneMapInstances,
+        setPaneMapInstance,
         basemaps: BASEMAPS,
         selectedLayer,
         setSelectedLayer,
@@ -167,13 +213,13 @@ const MapsProvider = ({ children }) => {
         periodicityCache,
         isLocating,
         setIsLocating,
-        activeEvento,
-        setActiveEvento,
         ...swipeMode,
     }), [
         baseMapId,
         siderCollapsed,
         selectedLayer,
+        paneMapInstances,
+        setPaneMapInstance,
         mapsAnalyticsEvent,
         layerManagement,
         onToggleLayer,
@@ -191,13 +237,14 @@ const MapsProvider = ({ children }) => {
         periodicityCache,
         isLocating,
         allLayers,
-        activeEvento,
         swipeMode,
     ]);
 
     return (
         <MapsContext.Provider value={value}>
-            {children}
+            <EventoProvider>
+                {children}
+            </EventoProvider>
         </MapsContext.Provider>
     );
 };

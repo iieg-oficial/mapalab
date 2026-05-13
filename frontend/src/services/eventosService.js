@@ -18,7 +18,7 @@ export const fetchEventos = async () => {
 
     cache.eventosInFlight = (async () => {
         try {
-            const res = await fetch(buildUrl('eventos'), { credentials: 'include' });
+            const res = await fetch(buildUrl('eventos'), { credentials: 'omit' });
             if (!res.ok) throw new Error(`GET /eventos fallo ${res.status}`);
             const data = await res.json();
             cache.eventos = Array.isArray(data) ? data : [];
@@ -37,7 +37,7 @@ export const fetchHomeContent = async () => {
 
     cache.homeInFlight = (async () => {
         try {
-            const res = await fetch(buildUrl('home'), { credentials: 'include' });
+            const res = await fetch(buildUrl('home'), { credentials: 'omit' });
             if (!res.ok) throw new Error(`GET /home fallo ${res.status}`);
             cache.home = await res.json();
             return cache.home;
@@ -53,10 +53,11 @@ const POLL_INTERVAL_MS = 30000;
 const VERSION_EVENT_EVENTOS = 'mapalab:eventos-changed';
 const VERSION_EVENT_HOME = 'mapalab:home-changed';
 let watcherTimer = null;
+let watcherStarted = false;
 let lastVersions = { eventos: null, home: null };
 
 const fetchVersions = async () => {
-    const res = await fetch(buildUrl('cache-version'), { credentials: 'include' });
+    const res = await fetch(buildUrl('cache-version'), { credentials: 'omit' });
     if (!res.ok) throw new Error(`GET /cache-version fallo ${res.status}`);
     return res.json();
 };
@@ -83,12 +84,32 @@ const checkVersions = async () => {
     } catch { /* silencioso */ }
 };
 
-export const startMapalabCacheVersionWatcher = () => {
-    if (watcherTimer || typeof window === 'undefined') return;
-    checkVersions();
+const stopTimer = () => {
+    if (watcherTimer) {
+        clearInterval(watcherTimer);
+        watcherTimer = null;
+    }
+};
+
+const startTimer = () => {
+    if (watcherTimer) return;
     watcherTimer = setInterval(checkVersions, POLL_INTERVAL_MS);
+};
+
+export const startMapalabCacheVersionWatcher = () => {
+    if (watcherStarted || typeof window === 'undefined') return;
+    watcherStarted = true;
+    if (document.visibilityState === 'visible') {
+        checkVersions();
+        startTimer();
+    }
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') checkVersions();
+        if (document.visibilityState === 'visible') {
+            checkVersions();
+            startTimer();
+        } else {
+            stopTimer();
+        }
     });
 };
 

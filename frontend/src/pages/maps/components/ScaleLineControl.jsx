@@ -4,15 +4,15 @@ import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useScaleLineControl } from '@hooksMaps/useScaleLineControl';
 
 const ScaleLineControl = () => {
-    const { mapRef, compareMode, paneMapRefs } = useMapsContext();
+    const { mapRef, compareMode, paneMapInstances } = useMapsContext();
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 40 });
     const containerRef = useRef(null);
     const isSwipe = !!compareMode?.active;
 
     const getMapInstance = useCallback(() => {
-        if (isSwipe) return paneMapRefs?.current?.[0]?.current ?? null;
+        if (isSwipe) return paneMapInstances?.[0] ?? null;
         return mapRef?.current ?? null;
-    }, [isSwipe, mapRef, paneMapRefs]);
+    }, [isSwipe, mapRef, paneMapInstances]);
 
     useScaleLineControl(getMapInstance, containerRef);
 

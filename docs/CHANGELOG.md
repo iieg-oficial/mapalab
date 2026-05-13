@@ -7,6 +7,275 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.27.0] - 2026-05-13
+
+### Telemetría anónima del visor → Mariachi
+
+Sistema de eventos de uso del visor para entender qué capas, herramientas y botones son los más usados, además de quién entra al swipe y cuánto dura una sesión típica. Anónimo, append-only y persistido en Mariachi para consumo desde el panel admin.
+
+#### Agregado
+
+- `services/telemetryService.js`: buffer en memoria con flush cada 30s o 50 eventos, `sendBeacon` en `pagehide` para no perder eventos al cerrar la pestaña. Session UUID en `sessionStorage` con expiración de 4h. Honra Do-Not-Track del navegador. Heartbeat cada 60s mientras la pestaña esté visible para calcular duración real de la sesión. Endpoint configurable vía `VITE_MARIACHI_PUBLIC_API_HOST`, toggle por `VITE_TELEMETRY_ENABLED`.
+- `services/analyticsService.js`: inyectado el collector en el `trackEvent` central. Todos los trackers que ya existían (`trackLayerToggle`, `trackFeatureClick`, `trackMapZoomLevel`, `trackBasemapChange`, `trackDrawingTool`, `trackShareMap`, `trackInfoOpen`, `trackReportSubmitted`, `trackEventoOpen/Close`, etc.) ahora también emiten a Mariachi sin tocar cada componente.
+- Trackers nuevos: `trackThemeChange`, `trackOpacityChange`, `trackLegendsToggle`, `trackSwipeEnter`, `trackSwipeExit`, `trackSwipeSlotChange`, `trackInfoBoxAction`, `trackHomeAction`, `trackContributeClick`, `trackLogoClick`, `trackLayerReorder`, `trackMeasurementTool`, `trackEmbedView`.
+
+#### Instrumentación
+
+- `hooks/useSwipeMode.js`: `swipe_enter` al activar el comparador con la orientación elegida, `swipe_exit` al salir con duración en segundos.
+- `components/ActiveLayers/SlotBadge.jsx` (vía `LayerDateControls.jsx` y `ActiveLayerItem.jsx`): `swipe_slot_change` con `from`/`to`/`layer_id` al ciclar A → AB → B.
+- `components/ActiveLayers/LayerOpacityPopover.jsx` (vía `LayerActionsBar.jsx`): `opacity_change` con debounce 500ms.
+- `components/ActiveLayers/hooks/useLegendsVisibility.jsx`: `legends_toggle` al cambiar el switch global.
+- `components/ActiveLayers/hooks/useLayerSorting.js`: `layer_reorder` con índice origen/destino al hacer drag & drop.
+- `components/ThemeMenu.jsx`: `theme_change` al abrir el menú de un tema.
+- `components/InfoBox/components/InfoBoxTools.jsx`: `infobox_action` con `action`/`layer_id` por cada botón del InfoBox.
+- `components/MapSider.jsx`: `logo_click` al clickear el logo IIEG (el que abre el modal de novedades).
+- `pages/home/components/Body.jsx` y `Card.jsx`: `home_action` para `section_open/close`, `faq_toggle`, `subtopic_click`.
+
+#### Sin cambios para el usuario final
+
+La telemetría es anónima. No se identifica a la persona — solo IP hasheada con salt diario y familia del User-Agent ("Chrome", "Mobile", etc.). El collector se silencia automáticamente si DNT está activo. GA4 sigue funcionando en paralelo, este sistema lo complementa con SQL libre desde el panel.
+
+## [1.26.0] - 2026-05-13
+
+### Resiliencia del WFS DescribeFeatureType y conteo coherente de capas en la tarjeta IIEG
+
+Se elimina la tormenta de peticiones `DescribeFeatureType` que producía 429 al activar varias capas seguidas, y se alinea el contador "Capas disponibles" del marcador IIEG con la representación visual del panel de capas activas (un `forceGroup` con sus hijos = 1 unidad).
+
+#### Rendimiento
+
+- `utils/featureInfoUtils.js`: el caché de columnas/tipos de geometría ahora tiene tres mecanismos extra encima del LRU de 500 entradas existente:
+  - **Cache negativo con TTL de 60 s** (`negativeCache`): si un `DescribeFeatureType` falla (red, 429, XML inválido) o si la respuesta no incluye el typename pedido, se anota la falla y `fetchGeometryColumns` no vuelve a reintentar hasta que expire. Resuelve los `429 Too Many Requests` repetidos contra `/geoserver/wfs` al activar varias capas seguidas.
+  - **Dedupe in-flight** (`inflightByKey`): si `useAlwaysOnTopPinning` y `LayerDetailModal` piden la misma capa simultáneamente, sale una sola petición y ambos consumers comparten la promesa.
+  - **Batch por microtask** (`pendingByUrl` + `resolversByKey`): las llamadas síncronas dentro del mismo tick (típico `Promise.all(idsToCheck.map(...))` en `useAlwaysOnTopPinning`) se agrupan en una sola petición WFS con `TYPENAME=a,b,c,...`. Activar 5 capas a la vez = 1 request, no 5.
+- La firma pública (`fetchGeometryColumns`, `fetchGeometryType`) no cambió: los call sites (`useAlwaysOnTopPinning`, `LayerDetailModal`, `featureInfoService`) siguen funcionando sin tocarlos.
+
+#### Cambiado
+
+- `pages/maps/helpers/layers/utils/layerHelpers.js`: nuevo helper `collectCatalogUnits(layer)` que recorre el árbol y cuenta como **una sola unidad** cada nodo `forceGroup` (absorbiendo sus hijos), respeta `isLabel`/`isCategory` igual que `unifiedLayers` en `useActiveLayersLogic`, y cuenta como uno cada leaf con `wmsConfig`. `collectLayersWithWMS` se mantiene intacto porque `useFeatureInfo` necesita enumerar todos los descendientes activos al consultar features por click.
+- `pages/maps/helpers/markerDefinitions.js`: `computeIiegStats` pasa de `collectLayersWithWMS` a `collectCatalogUnits` para `totalLayers`. La cifra "Capas disponibles" del marcador IIEG ahora coincide con cómo se ven los items en el panel de capas activas (un grupo + sus hijos = 1 entrada).
+
+#### Documentacion
+
+- `docs/cache.md`: actualizadas las entradas `geometryColumnCache`/`geometryTypeCache` con las nuevas constantes (`NEGATIVE_TTL_MS`, `inflightByKey`, `pendingByUrl`, `resolversByKey`) y se quita el comentario de deuda técnica al pie de la guía rápida.
+
+## [1.24.0] - 2026-05-13
+
+### Hardening del widget embebible: fallback, defense-in-depth, auditoría y Core Web Vitals
+
+Ciclo de auditoría sobre el widget `<iieg-mapalab>` (DevOps + gobernanza). Se cubren los cuatro puntos técnicos: fallback con UX clara, defensa en profundidad contra clickjacking, auditoría de accesos con retención y captura de Core Web Vitals + errores JS desde sitios huésped.
+
+#### Widget (`widget/`) — bump a `1.1.0`
+
+- `src/element.js`: timeout configurable (`ready-timeout-ms`, default 8s) que dispara un overlay con botones "Reintentar" y "Abrir mapa en MapaLab" cuando el iframe no emite `mapalab:ready`. Manejo explícito de `mapalab:error` con el mismo overlay y mensaje específico del visor. Footer "Fuente: IIEG" en la esquina inferior derecha cuando el mapa carga. Nuevo evento `mapalab:timeout` para que el host externo pueda reaccionar (`{ ms, reason: 'no_ready_received' }`).
+- Bundle pasa de ~19 KB a ~23 KB (8.4 KB gzip). Cero dependencias nuevas (sigue siendo solo Lit).
+
+#### Visor embebido (`frontend/src/pages/embed/`) — bump a `1.24.0`
+
+- `EmbedView.jsx`: validación cliente de `dominiosPermitidos` contra `document.referrer` (defense-in-depth contra clickjacking, complementa la validación server-side). Si el host externo no está en la allowlist, rinde `EmbedError` sin esperar a fallar el WMS proxy.
+- `EmbedError.jsx`: botones "Reintentar" / "Abrir el visor completo" + atribución IIEG.
+- `hooks/useEmbedTelemetry.js`: captura LCP, CLS, INP, FCP, TTFB con `web-vitals` + listeners de `error` y `unhandledrejection`. Envía via `navigator.sendBeacon` con fallback a `fetch keepalive`. Debounce 1.5s, máximo 8 vitales y 5 errores por flush. Marca `IFRAME_READY` cuando el visor monta para medir tiempo de arranque end-to-end.
+- `hooks/useEmbedViewSync.js`: además de emitir `mapalab:viewchange`, ahora escucha `mapalab:setview` para que el admin pueda controlar el view del iframe sin recargar (necesario para "cargar vista guardada").
+- `helpers/postMessage.js`: nuevo `postViewChange(payload)`.
+
+#### Backend (`backend/app/`)
+
+- `routers/embed.py`: nuevo endpoint `POST /embed/telemetry` (valida key, registra histograma + counters, sin contar para cuota). Validación de capas devuelve mensajes claros en español. `_validate_or_403` registra cada acceso (allowed/denied/quota_exceeded) en el access logger.
+- `services/access_logger.py`: buffer in-memory + flush periódico cada 30s a Mariachi (`POST /internal/mapalab/keys/accesos`). Hash de IP con SHA-256 usando `MAPALAB_INTERNAL_TOKEN` como salt.
+- `server.py`: `access_flush_loop` registrado en `lifespan` con flush final al apagar.
+- `services/api_key_validator.py`: `ValidationResult.dominios_permitidos` agregado para que el visor lo use en defense-in-depth.
+- `metrics.py`: API `observe()` para histogramas + serialización Prometheus completa con buckets. Nuevas métricas: `mapalab_embed_telemetry_total`, `mapalab_embed_vital_ms` (histograma con label `metric=LCP|CLS|INP|FCP|TTFB|IFRAME_READY`), `mapalab_embed_js_errors_total`.
+
+#### UX del visor full (`frontend/src/pages/maps/components/ShareModal.jsx`)
+
+- Lenguaje no técnico en español plano: "Estás viendo un mapa compartido" en vez de "Usando link compartido", "Hiciste cambios al mapa" en vez de "Estado modificado", botón "Generar enlace para compartir" en vez de "Crear enlace".
+- Pestañas renombradas: "Compartir enlace" / "Insertar en otro sitio" (antes "Enlace" / "Embeber").
+- Mensajes de error con caja roja y botón × para cerrar (antes era `<p>` sin descartar).
+
+#### Notas
+
+- Los pendientes de gobernanza (clasificación, T&C versionados, linaje, SLA visible, notificaciones de cambio) quedan documentados en `docs/planes/widget-pendientes.md` para retomar.
+- El malentendido del auditor sobre "SIEEJ" se aclara: el widget vive en MapaLab; SIEEJ es solo uno de los sitios huésped.
+
+---
+
+## [1.23.0] - 2026-05-13
+
+### Panel de mediciones consume catalogo remoto de simbolos
+
+El catalogo hardcoded de emojis (`pages/maps/helpers/emojiCatalog.js`, 8 categorias y ~1000 emojis) se reemplazo por un fetch al endpoint publico de mariachi `GET /api/mapalab/symbols/catalog`. El admin puede agregar/quitar emojis, SVGs o imagenes desde `/mariachi/mapalab/simbolos` y los cambios se reflejan sin redeploy.
+
+### Agregado
+
+- `services/symbolsService.js`: fetch + cache en memoria del catalogo, con `invalidateSymbolCatalog()` para forzar recarga.
+- `pages/maps/hooks/useSymbolCatalog.js`: hook React que carga el catalogo al montar el componente.
+- `pages/maps/helpers/drawingStyles.js::createSymbolStyle(symbol, rotation, scale, selected)`: ruta segun `kind`:
+  - `emoji` → reusa `createEmojiStyle` (TextStyle).
+  - `svg` → IconStyle con data URL (`image/svg+xml;base64,...`).
+  - `image` → IconStyle apuntando al URL del bucket Acervo.
+
+### Cambiado
+
+- `pages/maps/components/MeasurementTools/EmojiPanel.jsx`: consume el catalogo via hook. Renderiza el preview correcto segun el `kind` del item. Las clases CSS del panel quedan identicas (sin cambios visuales).
+- `pages/maps/hooks/useEmojiTemplate.js`: el state ahora guarda el objeto `{kind, value, imageUrl, id}` en lugar de solo un string. Acepta entrada tipo string (legacy) o tipo objeto.
+- `pages/maps/hooks/useMapDrawing.js`: al dibujar tipo `Emoji`, persiste `symbolPayload` en la feature y rutea por `createSymbolStyle` en lugar de `createEmojiStyle`.
+
+### Eliminado
+
+- `pages/maps/helpers/emojiCatalog.js`: el catalogo ya no vive hardcoded. La fuente de verdad es ahora `mapalab.symbols` en dataengine, administrado desde mariachi-admin.
+
+---
+
+## [1.22.0] - 2026-05-12
+
+### Acople del panel de mediciones al sider restaurado
+
+El panel de herramientas de medicion volvio a deslizarse con el ancho del sider y alinearse verticalmente con el boton "Herramientas", en lugar de quedar fijo en la esquina superior izquierda detras del sider.
+
+#### Causa raiz
+
+Desde `1.13.0` (`682da9f`), el item `tools` del menu lateral pasa de `hasMenu: false` (con `onClick`) a `hasMenu: true` (con submenu `ToolsMenu`). El item declara `ref: toolsButtonRef` esperando que `MenuItem` lo asigne al DOM, pero `MenuItem` solo propagaba `item.ref` en la rama `!item.hasMenu`. En la rama de items con submenu, el `<button>` usaba unicamente un `buttonRef` local (anchor del `<Panel>` desplegable), por lo que `toolsButtonRef.current` quedaba en `null` permanentemente.
+
+`useSiderAdaptivePosition({ anchorRef: 'tools' })` en `ToolsPanel.jsx` lee ese ref para calcular `topPosition = anchorRect.top` y `leftPosition = width + siderOffset`. Con el ref vacio caia al `else` final que no setea `topPosition` y deja `leftPosition = leftOffset(16)`, colocando el div `fixed z-10` en la misma esquina que el sider (`z-20`) y por debajo en z-index.
+
+#### Fix
+
+`src/pages/maps/components/MenuItem.jsx`: el `<button>` de la rama `hasMenu: true` ahora usa un callback ref que asigna el nodo tanto al `buttonRef` local (que sigue siendo el anchor del `<Panel>`) como a `item.ref` cuando esta presente, soportando refs tipo objeto y funcion. Con esto `toolsButtonRef` apunta al DOM real y el `ResizeObserver` del sider re-dispara el calculo al expandir/colapsar.
+
+## [1.21.1] - 2026-05-12
+
+### Pin de capas-borde sobre poligonos
+
+Las capas de limite (`limite_iieg`, `limite_municipal`, `regiones`, `limite_inegi`, `limite_municipal_inegi`) se fijan automaticamente arriba del mapa cuando hay otra capa de tipo poligono activa, para que sus etiquetas no queden tapadas por coropletas tematicas.
+
+#### Frontend
+
+**Nuevos:**
+- `src/pages/maps/hooks/useAlwaysOnTopPinning.js`: hook que detecta poligonos no-borde via `fetchGeometryType` (WFS `DescribeFeatureType`). Devuelve `Set<pinnedIds>` con las capas-borde activas a pinear. Excluye capas de fondo via `BACKGROUND_POLYGON_LAYER_NAMES` (`general:cuerpos_de_agua_50k`, `economia:cultivos`, `recursos:areas_naturales_protegidas`). Regla desactivada en swipe AB. Exporta `PIN_Z_OFFSET=9000` y `sortItemsWithPinnedFirst(items, pinnedSet, initialOrder)`.
+- `src/assets/icons/ico_pin_normal.svg` + `ico_pin_hover.svg`: thumbtack 24x24 siguiendo estilo `ico_*` (gris `#465055` / morado `#70308A`).
+
+**Refactorizados:**
+- `src/pages/maps/hooks/useWMSLayerManager.js`: acepta `pinnedLayerIds` + `initialOrder`. Override de `maxZIndex = PIN_Z_OFFSET + (order.length - effectiveIdx)` cuando el grupo esta pin-eado, respetando `initialOrder` entre multiples pin-eadas. Nuevo effect que dispara re-update cuando cambian estos.
+- `src/pages/maps/components/MapView.jsx`: instancia `useAlwaysOnTopPinning` con `compareModeActive` apropiado por pane (live vs swipe) y pasa `pinnedLayerIds`+`initialOrder` al manager.
+- `src/pages/maps/components/ActiveLayers/ActiveLayersList.jsx`: aplica `sortItemsWithPinnedFirst` para que el panel quede WYSIWYG con el mapa.
+- `src/pages/maps/components/ActiveLayers/ActiveLayerItem.jsx`: acepta prop `isPinned`. Cuando es true oculta `DragHandle` y renderiza `PinBadge`.
+- `src/pages/maps/components/ActiveLayers/LayerItemHeader.jsx`: nuevo export `PinBadge` con tooltip explicativo.
+
+**Tests:**
+- `src/test/pages/maps/hooks/useWMSLayerManager.test.js`: 4 casos nuevos (z-index normal sin pin, override con pin, no afecta no-pin-eadas, respeta `initialOrder` entre multiples).
+
+#### Documentacion
+- `docs/planes/PLAN_BACKGROUND_POLYGON_EDITABLE.md` (nuevo): plan para mover la lista de fondos a un flag `es_fondo_visual` editable desde mariachi (migracion, backend, UI, cleanup frontend).
+
+#### Operacional
+- `Makefile`: `make deploy` ahora purga `/var/cache/nginx/mapalab_assets/*` en el gateway-hub antes del reload, para evitar servir `index.html` viejo tras un deploy.
+
+## [1.21.0] - 2026-05-08
+
+### Reportes: migrar a widget Colibri
+
+Reemplaza el sistema propio de reportes (`ReportModal` + `feedbackService`) por el widget embebible de Colibri (`/colibri/widget/colibri-widget.v1.js`) para centralizar reportes del ecosistema IIEG en un solo backend con stats, dedupe, fan-out a Discord/Slack y form dinamico.
+
+#### Frontend
+
+**Componentes nuevos:**
+- `src/hooks/useColibriOpen.js`: hook que dispara el panel global de Colibri. Construye `auto`/`user`/`sourceContext` con snapshot del mapa (basemap, capas activas, view, compare mode), llama `window.colibri.identify()` con datos del usuario logueado y `setContext()` con el resto.
+
+**Refactorizados:**
+- `src/components/ReportButton.jsx`: pasa de envolver `ReportModal` propio a un `<button>` HTML con tailwind matching el lenguaje visual del mapa (bg blanco, text gris hover morado, w-7 h-7 md:w-6 md:h-6, rounded-full, shadow sutil). Variant `inline` mantiene estilo link-with-icon.
+- `src/pages/maps/components/MapAttribution.jsx`: el boton se monta como hermano del pill de Contribuciones en el mismo flex container (`gap-2`). Mismo alto, alineado a la izquierda.
+- `src/pages/maps/components/InfoBox/InfoBox.jsx`: el handler `action='report'` del marker IIEG ahora llama `useColibriOpen({ source: 'iieg_marker' })`.
+- `src/pages/home/components/Footer.jsx`: el boton se envuelve en `<div className="fixed bottom-4 right-4 z-50">` para que flote sobre el home.
+
+**Eliminados:**
+- `src/components/ReportModal.jsx`, `src/services/feedbackService.js`, `src/test/services/feedbackService.test.js`, `src/pages/maps/components/MapReportButton.jsx`.
+
+#### Infraestructura
+
+- `frontend/index.html`: `<script src="/colibri/widget/colibri-widget.v1.js" defer>` antes de `</head>`. CSP `script-src 'self'` lo permite (path relativo).
+- `frontend/vite.config.js`: nuevo proxy `/colibri` -> `MARIACHI_DEV_TARGET`.
+- `frontend/Dockerfile` + `docker-compose.yml`: ARGs y env vars `VITE_COLIBRI_SOURCE_APP=mapalab` y `VITE_COLIBRI_API_KEY` (en frontend dev y frontend-build args).
+- `.env.example`: documenta las dos vars.
+
+#### Compatibilidad
+
+El endpoint publico (`POST /api/public/reportes`) es el mismo. Los reportes anteriores se conservan en la BD. El widget agrega header `X-Colibri-Key` para autenticar como `source_app=mapalab` con CORS dinamico, rate limit por huesped, dedupe y fan-out.
+
+#### Pendiente
+
+Recuperar el `captureFn` del mapa (screenshot pre-renderizado) requiere un metodo nuevo `attachScreenshot(blob)` en el widget de mariachi.
+
+## [1.20.3] - 2026-05-07
+
+### Corregido
+- **Panel de capas activas: ya no se traslapa con la atribución del mapa**: cuando el panel crecía a la altura completa del viewport, su borde inferior chocaba con `<MapAttribution>` (badge "Contribuciones ©" + `ReportButton` flotante en la esquina inferior derecha). Se aumenta la reserva inferior del `Panel` que envuelve `<ActiveLayersList>` (en `MapLayersPanels.jsx`) de `7.5rem`/`8rem` a `9.5rem`/`10rem` para desktop/mobile. Pierde ~32 px de altura útil del panel a cambio de mantener la atribución visible (requisito legal de OSM/Carto).
+
+## [1.20.2] - 2026-05-07
+
+### Corregido
+- **Eventos: revertir persistencia por sesión de bbox-fit y auto-activación de capas**: en v1.20.0 se introdujo un flag en `sessionStorage` (`evento:zoomed:{id}` y `evento:auto-activated:{id}`) para que cerrar y reabrir el menú del evento no volviera a centrar el mapa ni a prender las capas con `autoActivar=true`. La interacción con el editor (cambios de capas, redeploys, ediciones) podía dejar el flag obsoleto y bloquear la auto-activación de capas legítimas. Se elimina el `sessionStorage` y se vuelve al comportamiento original: cada apertura del menú dispara bbox-fit y auto-activa las capas marcadas. Si en el futuro se quiere reintroducir la persistencia, debe versionarse con un hash de las capas del evento o moverse a un toggle de configuración del usuario.
+
+### Documentación
+- `docs/cache.md`: removidas las filas de `evento:zoomed:*` y `evento:auto-activated:*` (ya no aplican).
+- `docs/context.md`: actualizado el comportamiento de `<EventoMenu>` (sin persistencia).
+
+## [1.20.1] - 2026-05-07
+
+### Corregido
+- **Swipe — preservar `defaultDate` al activar capas durante swipe**: `setLayerSlotMembership` ahora hereda opacidades y filtros del live state cuando la capa no está en ningún slot previo (antes el snapshot recién creado sobreescribía el filtro de fecha aplicado por `applyDefaultDate`, dejando rasters mensuales sin TIME activo).
+- **Swipe — shape completo al deserializar**: `useShareSerializer`/`useShareDeserializer` arman `compareMode` partiendo de `initialCompareMode()` y reconstruyen `globalOrder` desde paneA+paneB. Así `exitCompareMode` siempre encuentra `originalSnapshot` y los reorden cross-slot conservan el orden del share.
+- **Swipe — `reorderInSlots` aplica el snapshot al live**: el orden visual y el live state ya no divergen tras un drag entre slots.
+- **Swipe — `useSymbology` reactivo a cambios de `compareMode`**: antes recibía un ref con identidad estable, así que el efecto que recalcula `selectedLayerForSymbology` no corría al cambiar membership de slots.
+
+### Cambiado
+- **Persistencia segura del comparador**: `helpers/swipeMode.js` agrega `safeStructuredClone` (con fallback `JSON.parse(JSON.stringify(...))`), `isValidStoredSnapshot` (validación de shape) y `SNAPSHOT_MAX_BYTES` (100 KB). `enterCompareMode` limpia el snapshot anterior antes de escribir uno nuevo, y solo escribe si el payload está bajo el límite. `useInitializeFromUrl` rechaza `sessionStorage` con tamaño mayor a 200 KB y valida `version`/`kind`/`payload` antes de invocar el deserializer.
+- **Comparador — orientación persistida**: la orientación del swipe (`vertical`/`horizontal`) se guarda en `localStorage.mapalab.swipe.orientation` y se restaura al entrar a swipe. Antes siempre arrancaba en vertical.
+- **Naming homologado**: `enterSwipeMode` → `enterCompareMode` (simétrico con `exitCompareMode`). El gesto táctil para descartar tarjetas del InfoBox `SwipeToRemove` se renombra a `DismissGesture` para evitar la colisión semántica con el modo comparador.
+- **Tema visual centralizado**: nuevo `helpers/swipeTheme.js` con `SLOT_COLORS = { A, B }` y `SWIPE_HANDLE_COLOR`. `<SwipeView>`, `<SlotBadge>` y `swipeComposition.js` consumen del tema en lugar de literales `#5C2472`/`#FF8300`/`#F0EAF3`/`#FFF2E5` repartidos.
+- **Helpers puros del comparador**: `purgePane`, `addIdsToPane`, `computeGlobalOrder`, `snapshotFromLive` extraídos a `helpers/swipeMode.js` (testables sin React). `useSwipeMode` queda como orquestador.
+- **Constantes nombradas**: `SWIPE_POS_MIN/MAX`, `SWIPE_HANDLE_MIN/MAX`, `SWIPE_KEYBOARD_STEP`, `SWIPE_DEBOUNCE_MS`, `SWIPE_POS_THRESHOLD`, `SWIPE_POS_JITTER` reemplazan magic numbers en `<SwipeView>` y `useSwipeMode`.
+- **Accesibilidad del comparador**: el handle del `<SwipeView>` pasa de `role="separator"` no-interactivo a `role="slider"` con `aria-label`, `tabIndex={0}` y soporte de teclado (←/→ vertical, ↑/↓ horizontal, paso 5%, `Home`/`End` para extremos). Overlays "A"/"B" gigantes marcados `aria-hidden="true"`. `<SlotBadge>` recibe `aria-label` con la oración completa del tooltip.
+
+### Rendimiento
+- **Swipe — mapas reactivos eliminan polling**: nuevo `paneMapInstances` (state) en `MapsContext` poblado por `<MapView>` cuando `useMapInitialization` retorna su instancia. `useViewSync` reescrito para reaccionar al state (antes hacía hasta 50 timeouts × 50 ms al entrar a swipe). `useScaleLineControl` detiene el `setInterval` (250 ms) en cuanto encuentra un map; el polling permanente cada 100 ms quedó eliminado.
+- **`MapView` — `useMemo` del `paneSnapshot` con dep refinada**: ahora depende solo del pane relevante (`paneIndex === 0 ? paneA : paneB`); cambios en B ya no re-evalúan el memo del pane A y viceversa.
+- **`SwipeView` — flag `externallySetRef`**: distingue cambios externos de `swipePosition` de cambios locales del drag para no re-emitir `setSwipePosition` en respuesta a un set externo.
+- **`MapsProvider` — `liveStateRef` en `useLayoutEffect`**: la asignación queda comprometida después del render committed, segura con StrictMode/Concurrent. Antes se reasignaba en cuerpo del render.
+- **`MapView` — cleanup de `paneMapRefs` valida identidad**: solo elimina la entrada si todavía es la propia, evitando que un mount nuevo durante StrictMode borre la entrada del segundo render.
+
+### Documentación
+- `docs/swipe.md` actualizado: nueva sección **Invariantes**, tabla de **Constantes**, sección **Accesibilidad**, descripción del par `paneMapRefs`/`paneMapInstances`, mención del `SNAPSHOT_MAX_BYTES`.
+- `context.md` refleja la nueva arquitectura del comparador (helpers puros, theme, paneMapInstances, persistencia de orientación, naming `enterCompareMode`).
+
+### Tests
+- Nuevo `useSwipeMode.test.js` con 13 casos: enter/exit, ciclo `A → AB → B → A`, herencia de filtros desde live, reorden, set/clear filter por slot, visibility por slot, clamps de `setSwipePosition` y persistencia de orientación.
+
+## [1.20.0] - 2026-05-07
+
+### Agregado
+- **`EventoContext` separado del `MapsContext`**: nuevo provider en `providers/EventoProvider.jsx` que envuelve los children dentro de `MapsProvider` y expone `{ eventos, loading, error, activeEvento, setActiveEvento, findEventoByLayerId, getLayerIdsByEvento }`. Hook de acceso `useEventoContext` en `hooks/useEvento.js`. Reduce el rerender del árbol del visor cuando cambia el evento activo o cuando llega refresh de eventos por el watcher de versiones. `MapsProvider` deja de exponer `activeEvento`/`setActiveEvento`; consumidores (`EventoMenu`, `LayerDetailModal`, `LayerDetailHeader`, `MapSider`) leen del nuevo contexto.
+- **Persistencia por sesión de la apertura de evento**: `EventoMenu` ahora marca en `sessionStorage` (`evento:zoomed:{id}`, `evento:auto-activated:{id}`) que ya disparó el bbox-fit y la auto-activación de capas. Cerrar y reabrir el mismo evento dentro de la sesión ya no hace re-zoom ni vuelve a prender capas que el usuario haya apagado manualmente. Se resetea automáticamente al cerrar la pestaña.
+- **Telemetría de eventos**: nuevos `evento_open` y `evento_close` (con `withMapInteraction`) en `analyticsService.js`; `EventoMenu` los dispara en mount/unmount con `evento_id` y `titulo` (sólo en open).
+
+### Cambiado
+- **`useEventos` ahora expone `{ eventos, loading, error }`**: contrato homologado con el resto de hooks de datos del proyecto. Inicial `loading=true` para que los consumidores puedan diferenciar "todavía no llegaron" de "no hay eventos".
+- **`eventoHelpers` con index plano O(1)**: nueva `buildLayerIndex` aplana el árbol a un `Map` de claves `workspace|layer → node` y `buildEventoIndex` produce `{ eventoByLayerId, layerIdsByEvento }` reutilizable. `findLayerByWorkspaceLayer`, `getEventoLayerIds` y `findEventoByLayerId` siguen exportados pero ahora delegan al index. `LayerDetailHeader` usa el lookup centralizado en lugar de recorrer el árbol cada apertura del modal.
+- **`ExternalEventoWidget` con item por evento aislado**: nuevo sub-componente interno `ExternalEventoItem` que tiene su propio `useMemo` por evento. Al togglear capas ya no se reconstruye el array completo de items: cada `MenuItem` recibe la misma referencia mientras su evento no cambie.
+- **Polling de `cache-version` se pausa con la pestaña oculta**: `eventosService.startMapalabCacheVersionWatcher` ahora `clearInterval` en `visibilitychange→hidden` y reinicia con `setInterval` + `checkVersions` inmediato en `→visible`. Antes el `setInterval` seguía vivo aunque la pestaña no fuera visible.
+- **Naming homologado en eventos**: `EventoIconButton` recibe `iconoUrl`, `imagenUrl`, `titulo` (alineado con la API). Se elimina el mapping inglés (`iconUrl`, `imageUrl`, `title`) en `ExternalEventoWidget` y `menuItems`. `LayerThemeAvatar` se mantiene genérico (`imageUrl`).
+- **Tokens Tailwind para colores recurrentes de eventos**: nuevos `--color-purple-soft` (#F0E6F6), `--color-purple-deep` (#703088) y `--color-graphite` (#465055) en `index.css`. `EventoMenu`, `EventoIconButton` y `LayerDetailHeader` usan los tokens en lugar de literales `bg-[#...]`.
+- **Imágenes de eventos con `loading="lazy" decoding="async"`** en `EventoIconButton` y `LayerThemeAvatar` para evitar bloqueo del render al abrir el sider.
+- **Deps estables en `EventoMenu` para `setActiveEvento`**: en lugar de depender de la referencia del `Set` de `eventoLayerIds` (que cambiaba aunque el contenido fuera idéntico), se deriva una clave string ordenada (`Array.from(...).sort().join('|')`) y se usa esa como dep.
+
+### Rendimiento
+- **`EventoMenu` ya no causa re-set redundante del contexto** cuando se rebuilda el `Set` con el mismo contenido (gracias a la dep estable).
+- **`LayerDetailHeader` con lookup O(1)** del evento por `selectedLayerId` (antes recorría todos los eventos × capas × árbol de capas en cada cambio).
+- **`useEventos` y `useEventoLayerIndex` centralizados en el provider**: `MapSider` y `LayerDetailHeader` ya no llaman `useEventos()` por separado, comparten una sola suscripción a través del contexto.
+
+### Documentación
+- `context.md` actualizado con la nueva jerarquía de providers (`EventoProvider`), la sección de Modal de detalle ahora referencia `EventoContext` en lugar de `MapsContext`, y la lista de eventos de Analytics incluye `evento_open` / `evento_close`.
+- `analytics.md` agrega filas para `evento_open` y `evento_close`.
+- `cache.md` documenta las claves `evento:zoomed:*` y `evento:auto-activated:*` de sessionStorage y la pausa del watcher de versiones.
+
 ## [1.19.0] - 2026-05-06
 
 ### Agregado

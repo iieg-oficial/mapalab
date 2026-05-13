@@ -1,3 +1,4 @@
+import asyncio
 import os
 import fcntl
 from contextlib import asynccontextmanager
@@ -8,8 +9,10 @@ from sqlalchemy import text
 from fastmcp import FastMCP
 from fastmcp.utilities.lifespan import combine_lifespans
 from app import metrics as metrics_module
-from app.routers import (metadata, periodicity, download, layers, shares)
+from app.routers import (metadata, periodicity, download, layers, shares, embed)
 from app.exceptions.common_exceptions import BaseAppException
+from app.services.access_logger import access_flush_loop, get_logger as get_access_logger, _flush_sync as _flush_accesos
+from app.services.api_key_quota import flush_to_mariachi
 from app.services.scheduler_service import SchedulerService
 from app.services.periodicity_service import PeriodicityService
 from app.consts.databases import DatabaseType
@@ -20,6 +23,8 @@ from app.handlers.handle_exceptions import (
     app_exception_handler,
     general_exception_handler
 )
+
+_QUOTA_FLUSH_INTERVAL_SECONDS = 60
 
 if settings.SENTRY_DSN:
     import sentry_sdk
@@ -45,6 +50,19 @@ def _try_acquire_leader() -> bool:
         return False
 
 
+async def _quota_flush_loop() -> None:
+    while True:
+        try:
+            await asyncio.sleep(_QUOTA_FLUSH_INTERVAL_SECONDS)
+            sent = await asyncio.to_thread(flush_to_mariachi)
+            if sent:
+                Logger.info(f"embed.quota.flushed rows={sent}")
+        except asyncio.CancelledError:
+            break
+        except Exception as exc:
+            Logger.error(f"embed.quota.flush_loop_error {exc}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
@@ -59,11 +77,31 @@ async def lifespan(app: FastAPI):
         SchedulerService.start_scheduler()
     else:
         Logger.info(f"Worker {os.getpid()} is follower, skipping scheduler")
-    yield
-    if is_leader:
-        SchedulerService.stop_scheduler()
-        if _lock_file:
-            _lock_file.close()
+
+    flush_task = asyncio.create_task(_quota_flush_loop())
+    access_task = asyncio.create_task(access_flush_loop())
+    try:
+        yield
+    finally:
+        flush_task.cancel()
+        access_task.cancel()
+        for task in (flush_task, access_task):
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+        try:
+            await asyncio.to_thread(flush_to_mariachi)
+        except Exception:
+            pass
+        try:
+            await asyncio.to_thread(_flush_accesos, get_access_logger().drain())
+        except Exception:
+            pass
+        if is_leader:
+            SchedulerService.stop_scheduler()
+            if _lock_file:
+                _lock_file.close()
 
 
 mcp_source_app = FastAPI(title="MapaLab MCP source")
@@ -98,6 +136,7 @@ app.include_router(periodicity.router)
 app.include_router(download.router)
 app.include_router(layers.router)
 app.include_router(shares.router)
+app.include_router(embed.router)
 app.include_router(metrics_module.router)
 app.mount("/mcp", mcp_app)
 @app.get('/')

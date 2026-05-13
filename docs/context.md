@@ -152,8 +152,14 @@ Router (React Router 7)
         ├── useDateLoop           — animacion temporal (raster y vectorial)
         ├── useMapDrawing         — herramientas de dibujo/medicion
         ├── useMapEditing         — edicion en-mapa de emojis y texto
-        └── usePeriodicityCache   — cache de fechas disponibles
+        ├── usePeriodicityCache   — cache de fechas disponibles
+        └── EventoProvider (envuelve children, requiere allLayers de MapsContext)
+            ├── useEventos              — fetch + watcher de versiones
+            ├── useEventoLayerIndex     — Map plano workspace|layer→node + eventoByLayerId
+            └── activeEvento + setter   — evento abierto en el menu
 ```
+
+`EventoContext` es un sub-contexto separado del `MapsContext` para aislar rerenders: cambios en `activeEvento` o en la lista de eventos no fuerzan a rerender todo el árbol del visor. Acceso vía `useEventoContext()` en `hooks/useEvento.js`.
 
 ### Ciclo de vida de capas WMS
 
@@ -336,7 +342,20 @@ Push a production → CD: test → deploy SSH (make deploy) → health check →
 
 ## Analytics
 
-Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gateway-hub). En desarrollo aparece un panel de debug flotante. Eventos principales: `layer_toggle`, `feature_click`, `map_zoom_level`, `layer_search`, `layer_download`, `map_export`, `raster_loop_start/stop`, `drawing_tool_use`, `basemap_change`, `share_map`, `report_submitted`.
+Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gateway-hub). En desarrollo aparece un panel de debug flotante. Eventos principales: `layer_toggle`, `feature_click`, `map_zoom_level`, `layer_search`, `layer_download`, `map_export`, `raster_loop_start/stop`, `drawing_tool_use`, `basemap_change`, `share_map`, `report_submitted`, `evento_open`, `evento_close`.
+
+## Telemetría propia → Mariachi (v1.27.0+)
+
+En paralelo a GA4, el visor emite los mismos eventos a un collector propio en Mariachi para tener SQL libre y dashboards internos sin depender de Google.
+
+- **`services/telemetryService.js`**: buffer en memoria con flush cada 30s o 50 eventos. `navigator.sendBeacon` en `pagehide` para no perder eventos al cerrar la pestaña. Session UUID en `sessionStorage` con expiración de 4h. Heartbeat cada 60s con `document.visibilityState === 'visible'` para calcular duración real. Honra Do-Not-Track del navegador.
+- **`services/analyticsService.js`**: inyecta `telemetry.enqueue` en el `trackEvent` central. Todos los trackers existentes emiten a ambos lados (dataLayer + collector propio) sin tocar componentes.
+- **Trackers nuevos**: `trackThemeChange`, `trackOpacityChange`, `trackLegendsToggle`, `trackSwipeEnter/Exit/SlotChange`, `trackInfoBoxAction`, `trackHomeAction`, `trackContributeClick`, `trackLogoClick`, `trackLayerReorder`, `trackMeasurementTool`, `trackEmbedView`.
+- **Persistencia**: `POST /api/public/mapalab/events/batch` en Mariachi (rate limit 120/min/IP). Acepta lotes de hasta 100 eventos. Scrubbing PII con el mismo `pii_scrubber` que usa Colibri. Hash de IP con salt diario, sin identidad.
+- **Variables de entorno**:
+  - `VITE_MARIACHI_PUBLIC_API_HOST` — base URL del endpoint público (default `/api/public/` cuando ambos viven detrás del mismo gateway)
+  - `VITE_TELEMETRY_ENABLED` — `'false'` para desactivar el collector (GA4 sigue funcionando)
+- **Dashboards**: panel admin en mariachi (`/mariachi/mapalab/stats`) consume vistas materializadas refrescadas cada 30 min.
 
 ## Reportes ciudadanos
 
@@ -347,6 +366,18 @@ Sistema transversal de reportes (problemas, solicitudes, sugerencias, dudas, dat
 - **Honeypot + screenshot**: campo `website` invisible (descarta bots) y captura opcional via `html2canvas-pro` con `scale: 0.7`. Email opcional → reporte anónimo.
 - **Storage del screenshot**: bucket privado `mariachi` con prefijo `reportes/AAAA/MM/<uuid>.png`. URL servida por proxy admin-only.
 
+## Visor embebido (`/embed`) y widget `<iieg-mapalab>`
+
+MapaLab puede insertarse en sitios de otras instituciones a través de un Web Component que monta un iframe del visor. Toda la administración (llaves, sitios autorizados, capas permitidas, mapas guardados, auditoría) vive en mariachi (`/administrador/mapalab/api-keys`).
+
+- **Widget (`widget/`)**: paquete Lit + Vite v1.1.0, bundle ~23 KB / 8.4 KB gzip servido en `/mapalab/widget/v1/mapalab.js`. Atributos `api-key`, `share`, `layers`, `center`, `zoom`, `basemap`, `controls`, `height`, `width`, `base-url`, `title`, `ready-timeout-ms`. Eventos `mapalab:ready`, `mapalab:error`, `mapalab:timeout`, `mapalab:feature-click`. Overlay con botones "Reintentar" + "Abrir mapa en MapaLab" cuando falla validación/timeout. Footer "Fuente: IIEG" como atribución obligatoria.
+- **Visor embebido (`frontend/src/pages/embed/`)**: SPA ligero que valida la key contra `/embed/config` antes de montar el mapa. Defense-in-depth contra clickjacking: además de validar Referer en el data path, el visor verifica en cliente que `document.referrer` matchee la allowlist (`dominiosPermitidos` devuelto por config). Si no, muestra `EmbedError` con botones de recuperación.
+- **Telemetría**: hook `useEmbedTelemetry` captura LCP, CLS, INP, FCP, TTFB con `web-vitals` + errores JS (`window.onerror` + `unhandledrejection`). Envío via `sendBeacon` con fallback `fetch keepalive`. Métrica adicional `IFRAME_READY` para tiempo de arranque end-to-end. Endpoint `POST /embed/telemetry` registra en histograma Prometheus `mapalab_embed_vital_ms{metric, prefix}` y counter `mapalab_embed_js_errors_total`.
+- **Auditoría de accesos**: cada llamada a `/embed/config`, `/embed/wms-proxy` o `/embed/layers/tree` se registra en mariachi (tabla `mapalab_api_keys_accesos`) vía buffer in-memory + flush periódico (30s). Hash de IP con SHA-256 usando `MAPALAB_INTERNAL_TOKEN` como salt. Retención 90 días configurable, purga vía cron de mariachi.
+- **Postmessage bidireccional**: el iframe emite `mapalab:viewchange` (admin captura center/zoom en vivo al mover el mapa del preview) y escucha `mapalab:setview` (admin envía vista guardada sin recargar). Throttle 200ms en ambos sentidos, con flag de supresión para evitar feedback loop.
+- **Documentación pública**: `docs/widget.md` (contrato del Web Component).
+- **Pendientes de gobernanza**: clasificación pública/reservada/confidencial por capa, T&C versionados, linaje hasta dependencia origen, SLA visible "Datos al corte de X" en el footer, notificaciones de cambios estructurales. Backlog formal en `docs/planes/widget-pendientes.md`.
+
 ## Proximos pasos (roadmap)
 
 - **v1.4.0 — v1.5.1** — Capas dinámicas desde backend (mariachi CMS + DataEngine schema `mapalab`), security hardening, tests smoke — Abril 2026 ✅
@@ -354,8 +385,11 @@ Sistema transversal de reportes (problemas, solicitudes, sugerencias, dudas, dat
 - **v1.7.0** — Drag & drop del árbol, preview InfoBox, editor JSON custom, forms dinámicos por preset, `/metrics` Prometheus, code-split admin, drop legacy `mapalab_card` — Abril 2026 ✅
 - **v1.14.0 — v1.17.0** — Item de capa activa rediseñado, Reportes ciudadanos, MCP Server — Abril/Mayo 2026 ✅
 - **v1.18.0** — Marker IIEG dinámico, swipe robusto, loop controls visibles, logo Mapalab responsive, optimizaciones SEO — Mayo 2026 ✅
-- **v1.19.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
-- **v1.20.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
+- **v1.19.0** — Modal de detalle con identidad del evento — Mayo 2026 ✅
+- **v1.20.0** — Auditoría de eventos: perf (cache server-side, index O(1), polling pausado), arquitectura (`EventoContext` separado), persistencia por sesión, telemetría — Mayo 2026 ✅
+- **v1.27.0** — Telemetría anónima del visor → Mariachi (sesiones, capas más usadas, herramientas, botones, swipe) — Mayo 2026 ✅
+- **v1.21.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
+- **v1.22.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
 - **v2.0.0** — Arquitectura de capas para dependencias, lazy loading, IGIBot, 3D, dashboards, API publica — Febrero 2027+
 
 Ver `docs/layers.md` para arquitectura de capas y `docs/roadmap.md` para timeline completo.
@@ -441,20 +475,27 @@ Sub-componentes en `frontend/src/pages/maps/components/ActiveLayers/`:
 
 ## Modal de detalle de capa
 
-`<LayerDetailModal>` (panel derecho del visor) abre desde el botón de detalles del panel de capas activas o de los menús. El header arriba (`<LayerDetailHeader>`) muestra avatar + título del **tema** de la capa por defecto. Si la capa pertenece a un **evento** (configurado en mariachi), el header sustituye avatar y título por los del evento: prioriza `activeEvento` en `MapsContext` (lo setea `<EventoMenu>` mientras está montado); si está vacío (ej. tras refresh con la capa restaurada desde la URL), recorre `eventos` y resuelve por la primera coincidencia. Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`). `<LayerThemeAvatar>` acepta `imageUrl` para renderizar la imagen del evento sobre el círculo del avatar.
+`<LayerDetailModal>` (panel derecho del visor) abre desde el botón de detalles del panel de capas activas o de los menús. El header arriba (`<LayerDetailHeader>`) muestra avatar + título del **tema** de la capa por defecto. Si la capa pertenece a un **evento** (configurado en mariachi), el header sustituye avatar y título por los del evento: prioriza `activeEvento` en `EventoContext` (lo setea `<EventoMenu>` mientras está montado); si está vacío (ej. tras refresh con la capa restaurada desde la URL), usa `findEventoByLayerId(selectedLayerId)` que resuelve en O(1) contra el index centralizado del provider. `<LayerThemeAvatar>` acepta `imageUrl` para renderizar la imagen del evento sobre el círculo del avatar.
+
+`<EventoMenu>`, además de exponer las capas del evento y el botón "Eliminar (X)" para limpiar capas externas, dispara bbox-fit del mapa al área del evento y auto-activa las capas con `autoActivar=true` cada vez que se monta (cada apertura del menú).
+
+Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`buildLayerIndex`, `buildEventoIndex`, plus los wrappers `findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`). El index plano `workspace|layer → node` se construye una vez por cambio de árbol y se reusa para todos los lookups.
 
 ## Comparador (swipe)
 
-Estado central en `useSwipeMode` (`compareMode = { active, activeSlot, paneA, paneB, originalSnapshot, swipePosition, swipeOrientation, globalOrder }`). Al entrar a swipe se snapshotea el live state a `originalSnapshot` (+ persiste en `localStorage` por si recarga), se vacían los panes y el live state queda en `paneA`. La capa activa "viva" sigue siendo el live state (`activeLayerIds`, `hiddenLayerIds`, `layerOpacities`, `filters`); `applySnapshotToLive(pane)` lo sincroniza con el slot activo cada vez que cambia.
+Estado central en `useSwipeMode` (`compareMode = { active, activeSlot, paneA, paneB, originalSnapshot, swipePosition, swipeOrientation, globalOrder }`). Al entrar a swipe (`enterCompareMode()`) se snapshotea el live state a `originalSnapshot` (+ persiste en `localStorage` con límite de tamaño `SNAPSHOT_MAX_BYTES`), se vacían los panes y el live state queda en `paneA`. La capa activa "viva" sigue siendo el live state (`activeLayerIds`, `hiddenLayerIds`, `layerOpacities`, `filters`); `applySnapshotToLive(pane)` lo sincroniza con el slot activo cada vez que cambia. La orientación (`vertical`/`horizontal`) se persiste por usuario en `localStorage.mapalab.swipe.orientation`.
 
-- **`paneA` / `paneB`**: snapshots independientes con `activeLayerIds`, `hiddenLayerIds`, `layerOpacities`, `filters`. Una capa puede vivir en uno o en ambos slots.
-- **`globalOrder`**: array de IDs que dicta el orden de la unión `paneA + paneB` en `effectiveActiveLayerIds`. `setLayerSlotMembership` lo extiende, `removeLayerFromSlot` lo limpia, `reorderInSlots` lo reescribe. Sin este array, la unión siempre concatenaba paneA primero y el reorden cross-slot se "regresaba".
-- **`paneMapRefs`**: registro `{ 0: refPaneA, 1: refPaneB }` que cada `<MapView paneIndex>` puebla con su `localMapRef`. `useViewSync` mantiene los dos `View` de OL alineados (pan/zoom/rotation) con flag anti-loop.
-- **Pildora A|B (`<SlotBadge>`)**: cicla membership `A → AB → B → A`. `useSymbology` valida `stillActive` contra `paneA + paneB` (no solo el live state) para que el item no se deseleccione al pasar AB → B.
+La lógica del modo vive en `helpers/swipeMode.js` como helpers puros (`purgePane`, `addIdsToPane`, `computeGlobalOrder`, `snapshotFromLive`, `safeStructuredClone`, validators de shape) más constantes nombradas (`SWIPE_POS_MIN/MAX`, `SWIPE_HANDLE_MIN/MAX`, `SWIPE_KEYBOARD_STEP`, `SWIPE_DEBOUNCE_MS`, `SWIPE_POS_THRESHOLD`, `SWIPE_POS_JITTER`, `SNAPSHOT_MAX_BYTES`). Tema visual centralizado en `helpers/swipeTheme.js` (`SLOT_COLORS`, `SWIPE_HANDLE_COLOR`).
+
+- **`paneA` / `paneB`**: snapshots independientes con `activeLayerIds`, `hiddenLayerIds`, `layerOpacities`, `filters`. Una capa puede vivir en uno o en ambos slots. Al sembrar una capa nueva, `addIdsToPane` hereda opacidad y filtros del live state, lo que preserva el `defaultDate` aplicado por `applyDefaultDate`.
+- **`globalOrder`**: array de IDs que dicta el orden de la unión `paneA + paneB` en `effectiveActiveLayerIds`. `setLayerSlotMembership` lo extiende, `removeLayerFromSlot` lo limpia, `reorderInSlots` lo reescribe y dispara `applySnapshotToLive` para que el live no diverja del orden global. Sin este array, la unión siempre concatenaba paneA primero y el reorden cross-slot se "regresaba".
+- **`paneMapRefs` y `paneMapInstances`**: el primero es un `useRef` con `{ 0: refPaneA, 1: refPaneB }` para acceso síncrono (consumido por `useMapCapture` y `useMapMarker`). El segundo es **state reactivo** `{ 0: mapInstance, 1: mapInstance }` poblado por `<MapView>` vía `setPaneMapInstance` cuando `useMapInitialization` retorna el map; consumido por `useViewSync` y `<ScaleLineControl>` para reaccionar sin polling.
+- **Pildora A|B (`<SlotBadge>`)**: cicla membership `A → AB → B → A`. `useSymbology` valida `stillActive` contra `paneA + paneB` (no solo el live state) para que el item no se deseleccione al pasar AB → B; reacciona a cambios de `compareMode` (no via ref) para que el efecto re-evalúe membership de slots.
 - **Botón Eliminar en swipe**: quita la capa de **ambos** slots — para mover entre slots se usa la pildora, no el eliminar.
 - **`<SwipeSlotControls>`** (barra centrada al fondo de la pantalla): `[A · orientación · B]` con bg blanco unificado; el `<CloseButton>` (rosa, mismo de `MeasurementTools`) sale arriba si hay periodicidad seleccionada o queda dentro de la barra si no la hay. `<DatePill autoWidth>` para que cada pill tome su ancho real.
-- **`<SwipeView>`**: dos `<MapView>` superpuestos, el de la derecha clipeado (`inset()` H o V). Handle naranja draggable con knob, posición persistida (debounce 200ms). Overlays "A"/"B" cuando `highlightedSlots` los activa.
-- **`<ScaleLineControl>` en swipe**: usa `paneMapRefs.current[0].current` (paneA) en lugar de `ctx.mapRef.current` (que se desmonta al entrar a swipe). `useScaleLineControl` polea cambios cada 100ms y reattacha el `ScaleLine` cuando el `mapInstance` cambia.
+- **`<SwipeView>`**: dos `<MapView>` superpuestos, el de la derecha clipeado (`inset()` H o V). Handle naranja draggable con knob, posición persistida (debounce 200ms). Overlays "A"/"B" cuando `highlightedSlots` los activa. Accesibilidad: handle es `role="slider"` con `aria-label`/`aria-valuenow/min/max`, `tabIndex={0}` y soporta teclado (←/→/↑/↓ con paso 5%, `Home`/`End` para extremos). Overlays gigantes son `aria-hidden="true"`.
+- **`<ScaleLineControl>` en swipe**: usa `paneMapInstances[0]` (state reactivo, paneA) en lugar de `ctx.mapRef.current` (que se desmonta al entrar a swipe). `useScaleLineControl` ya no polea permanentemente: detiene el `setInterval` (250 ms) en cuanto encuentra un map y lo reanuda solo si cambia `getMapInstance`.
+- **Persistencia del envelope `kind: 'swipe'`**: `useShareSerializer`/`useShareDeserializer` usan `initialCompareMode()` como base al deserializar para preservar `globalOrder`, `swipeOrientation` y `originalSnapshot`. `useInitializeFromUrl` valida tamaño y shape del JSON de `sessionStorage` antes de aplicar.
 
 ## Templates de InfoBox
 

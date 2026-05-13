@@ -40,6 +40,12 @@ vi.mock('@hooks/useLayerLoading', () => ({
     useLayerLoading: () => ({ setLayerLoading: mockSetLayerLoading })
 }));
 
+vi.mock('@hooksMaps/useAlwaysOnTopPinning', () => ({
+    ALWAYS_ON_TOP_LAYER_IDS: new Set(['limite_iieg', 'limite_municipal', 'regiones', 'limite_inegi', 'limite_municipal_inegi']),
+    PIN_Z_OFFSET: 9000,
+    useAlwaysOnTopPinning: () => new Set()
+}));
+
 import { useWMSLayerManager } from '@hooksMaps/useWMSLayerManager';
 
 const makeMockLayer = () => {
@@ -250,6 +256,58 @@ describe('useWMSLayerManager - ENV param', () => {
 
         const customParams = props.createWMSLayer.mock.calls[0][3];
         expect(customParams.ENV).toBe('geom:geom_inegi');
+    });
+});
+
+describe('useWMSLayerManager - pin layers', () => {
+    beforeEach(() => {
+        mockHasWMSConfig.mockReturnValue(true);
+        mockFindWMSConfig.mockImplementation((id) => ({
+            baseUrl: 'http://gs/wms',
+            layerName: `ws:${id}`,
+            styles: '',
+            wmsGroup: id
+        }));
+    });
+
+    it('usa z-index normal cuando pinnedLayerIds está vacío', () => {
+        const { props } = renderManager({ activeLayerIds: ['limite_municipal'] });
+        const zIndex = props.createWMSLayer.mock.calls[0][2];
+        expect(zIndex).toBeLessThan(9000);
+    });
+
+    it('aplica PIN_Z_OFFSET cuando la capa está en pinnedLayerIds', () => {
+        const { props } = renderManager({
+            activeLayerIds: ['limite_municipal'],
+            pinnedLayerIds: new Set(['limite_municipal']),
+            initialOrder: ['limite_municipal']
+        });
+        const zIndex = props.createWMSLayer.mock.calls[0][2];
+        expect(zIndex).toBeGreaterThanOrEqual(9000);
+    });
+
+    it('no aplica pin a capas NO presentes en pinnedLayerIds', () => {
+        const { props } = renderManager({
+            activeLayerIds: ['capa-a'],
+            pinnedLayerIds: new Set(['limite_municipal']),
+            initialOrder: ['limite_municipal']
+        });
+        const zIndex = props.createWMSLayer.mock.calls[0][2];
+        expect(zIndex).toBeLessThan(9000);
+    });
+
+    it('respeta initialOrder entre múltiples pin-eadas', () => {
+        const { props } = renderManager({
+            activeLayerIds: ['limite_iieg', 'limite_municipal'],
+            pinnedLayerIds: new Set(['limite_iieg', 'limite_municipal']),
+            initialOrder: ['limite_iieg', 'limite_municipal']
+        });
+        const callsByRepId = Object.fromEntries(
+            props.createWMSLayer.mock.calls.map(c => [c[0], c[2]])
+        );
+        expect(callsByRepId['limite_iieg']).toBeGreaterThan(callsByRepId['limite_municipal']);
+        expect(callsByRepId['limite_iieg']).toBeGreaterThanOrEqual(9000);
+        expect(callsByRepId['limite_municipal']).toBeGreaterThanOrEqual(9000);
     });
 });
 

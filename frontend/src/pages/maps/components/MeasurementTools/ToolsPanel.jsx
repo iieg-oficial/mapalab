@@ -90,9 +90,9 @@ const ToolsPanel = () => {
         setIsEmojiPickerOpen((prev) => !prev);
     };
 
-    const handleEmojiSelect = (emoji) => {
+    const handleEmojiSelect = (symbol) => {
         if (setEmojiTemplate) {
-            setEmojiTemplate(emoji);
+            setEmojiTemplate(symbol);
         }
         setIsEmojiPickerOpen(false);
         trackDrawingTool('Emoji');

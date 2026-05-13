@@ -7,6 +7,7 @@ import { handleKeyActivate } from '@utils/a11y';
 import suportConfig from '../config/suportConfig';
 import { useHomeContent } from '@hooks/useHomeContent';
 import { buildTopics, buildGuide, buildSelect, buildFaqContent, DEFAULT_VIDEO_ID } from '../helpers/homeAdapters';
+import { trackHomeAction } from '@services/analyticsService';
 
 const Body = ({ isModal = false }) => {
     const carouselRef = useRef(null);
@@ -37,6 +38,7 @@ const Body = ({ isModal = false }) => {
 
     const toggleSection = (id) => {
         const isOpening = expandedSection !== id;
+        trackHomeAction(isOpening ? 'section_open' : 'section_close', String(id));
         setExpandedSection(expandedSection === id ? null : id);
         setActiveBtn(!activeBtn);
         if (isOpening) {
@@ -48,6 +50,7 @@ const Body = ({ isModal = false }) => {
 
     const toggleFaq = (sectionId, index) => {
         const key = `${sectionId}-${index}`;
+        trackHomeAction('faq_toggle', `${sectionId}-${index}`);
         setExpandedFaq(prev => ({ ...prev, [key]: !prev[key] }));
     };
 

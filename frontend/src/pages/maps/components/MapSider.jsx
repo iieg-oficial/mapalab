@@ -10,10 +10,10 @@ import Logo from '@components/Logo';
 import { createMenuItems, BASE_ITEMS_COUNT } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
-import { useEventos } from '@hooks/useEventos';
+import { useEventoContext } from '@hooks/useEvento';
 import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
 
-import { trackSiderLock } from '@services/analyticsService';
+import { trackSiderLock, trackLogoClick } from '@services/analyticsService';
 import { buildIiegMarker, computeIiegStats } from '@pages/maps/helpers/markerDefinitions';
 import { getDatabaseStats } from '@services/layerMetadataService';
 import { useZenMode } from './ZenMode';
@@ -127,7 +127,7 @@ const MapSider = ({ className = '' }) => {
         }
     }, [toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
 
-    const { eventos } = useEventos();
+    const { eventos } = useEventoContext();
 
     const menuItems = useMemo(() =>
         createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers, eventos }),
@@ -170,6 +170,7 @@ const MapSider = ({ className = '' }) => {
     }, []);
 
     const handleIiegLogoClick = useCallback(async () => {
+        trackLogoClick('iieg');
         if (treatAsMobile) closeSider();
         const stats = computeIiegStats({ allLayers });
         const dbStats = await getDatabaseStats();

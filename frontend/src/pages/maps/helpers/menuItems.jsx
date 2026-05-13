@@ -174,9 +174,9 @@ const createEventoItems = ({ isHovered, activeLayerIds, onToggleLayer, eventos =
         ),
         renderComponent: ({ isMenuOpen }) => (
             <EventoIconButton
-                iconUrl={evento.iconoUrl}
-                imageUrl={evento.imagenUrl}
-                title={evento.titulo}
+                iconoUrl={evento.iconoUrl}
+                imagenUrl={evento.imagenUrl}
+                titulo={evento.titulo}
                 isMenuOpen={isMenuOpen}
                 isHovered={isHovered}
             />

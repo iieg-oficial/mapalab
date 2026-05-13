@@ -30,7 +30,7 @@ const Footer = () => {
 
     return (
         <footer className="bg-purple p-10 relative">
-            <div className="absolute bottom-4 right-4">
+            <div className="fixed bottom-4 right-4 z-50">
                 <ReportButton variant="floating" label="Reportar un problema o sugerencia" />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-10 mb-10 lg:gap-x-10 xl:my-[54px]">

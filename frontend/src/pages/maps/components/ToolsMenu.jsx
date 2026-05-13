@@ -4,7 +4,9 @@ import { useSider } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
 import Tooltip from '@components/Tooltip';
 
-const tools = [
+const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
+
+const allTools = [
     {
         id: 'mediciones',
         label: 'Mediciones',
@@ -26,6 +28,7 @@ const tools = [
         label: 'Barra divisora',
         description: 'Swipe vertical',
         beta: true,
+        nonProdOnly: true,
         icon: (
             <svg viewBox="0 0 60 60" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-12 h-12">
                 <rect x="6" y="12" width="48" height="36" rx="2" />
@@ -36,29 +39,29 @@ const tools = [
     },
 ];
 
+const tools = allTools.filter(tool => !tool.nonProdOnly || IS_NON_PROD);
+
 const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementToolsVisible }) => {
-    const { compareMode, exitCompareMode, enterSwipeMode } = useMapsContext();
+    const { compareMode, exitCompareMode, enterCompareMode } = useMapsContext();
     const { closeSider } = useSider();
     const [hoveredId, setHoveredId] = useState(null);
 
     const startSwipe = () => {
-        enterSwipeMode();
-        close?.();
+        enterCompareMode();
         closeSider?.();
     };
 
     const handleClick = (id) => {
         if (id === 'mediciones') {
             toggleMeasurementTools?.();
-            return;
-        }
-        if (id === 'compare-swipe') {
+        } else if (id === 'compare-swipe') {
             if (compareMode?.active) {
                 exitCompareMode();
-                return;
+            } else {
+                startSwipe();
             }
-            startSwipe();
         }
+        close?.();
     };
 
     const isActive = (id) => {

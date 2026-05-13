@@ -32,7 +32,11 @@ const MenuItem = ({ item, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => 
         <>
             <button
                 type="button"
-                ref={buttonRef}
+                ref={(node) => {
+                    buttonRef.current = node;
+                    if (typeof item.ref === 'function') item.ref(node);
+                    else if (item.ref) item.ref.current = node;
+                }}
                 id={`menu-button-${item.id}`}
                 aria-haspopup="menu"
                 aria-expanded={isMenuOpen}

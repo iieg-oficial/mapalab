@@ -25,6 +25,10 @@ export const useWMSLayerFactory = () => {
             'SRS': wmsConfig.srs
         };
 
+        if (wmsConfig._embedKey) {
+            wmsParams.key = wmsConfig._embedKey;
+        }
+
         if (wmsConfig.styles && wmsConfig.styles.trim() !== '') {
             wmsParams.STYLES = wmsConfig.styles;
         }

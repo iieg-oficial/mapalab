@@ -26,6 +26,8 @@ Los eventos se envian a `window.dataLayer` para ser consumidos por GTM. En desar
 | `share_map` | `status: exito\|error` | Uso del boton de compartir y tasa de error | Al copiar el enlace del mapa al portapapeles | Interaccion de clics en el mapa |
 | `info_open` | — | Acceso a la informacion general de Mapalab | Al abrir el modal de informacion | Profundidad de desplazamiento |
 | `report_submitted` | `tipo: problema\|solicitud\|sugerencia\|duda\|datos_incorrectos\|bug`, `source_route` | Reportes y sugerencias enviados al admin | Al confirmar el envio del reporte (POST exitoso) | Calidad / Soporte |
+| `evento_open` | `evento_id`, `titulo` | Aperturas de eventos temáticos (mariachi) | Al montar `<EventoMenu>` (apertura del menú del evento desde el sider o el widget externo) | Eventos más usados |
+| `evento_close` | `evento_id` | Cierre de evento (incluye unmount por navegación) | Al desmontar `<EventoMenu>` | Tiempo en evento (delta open/close) |
 
 ## Debug en desarrollo
 
