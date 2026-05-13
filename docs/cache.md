@@ -32,8 +32,11 @@ Inventario centralizado de todos los mecanismos de cache del proyecto: memoria f
 
 | Cache | Ubicacion | Datos | Lifecycle | Invalidacion |
 |---|---|---|---|---|
-| `geometryColumnCache` | `utils/featureInfoUtils.js:4` | Mapeo `URL:tipo → columna geometria` de WFS DescribeFeatureType | Vida del proceso, limitado a 500 entradas | LRU por insercion (al llegar a `MAX_GEOMETRY_CACHE_SIZE` evicta la mas antigua) |
-| `geometryTypeCache` | `utils/featureInfoUtils.js:5` | Mapeo `URL:tipo → tipo geometrico` | Vida del proceso, limitado a 500 entradas | LRU por insercion |
+| `geometryColumnCache` | `utils/featureInfoUtils.js:5` | Mapeo `URL:tipo → columna geometria` de WFS DescribeFeatureType | Vida del proceso, limitado a 500 entradas | LRU por insercion (al llegar a `MAX_GEOMETRY_CACHE_SIZE` evicta la mas antigua) |
+| `geometryTypeCache` | `utils/featureInfoUtils.js:6` | Mapeo `URL:tipo → tipo geometrico` | Vida del proceso, limitado a 500 entradas | LRU por insercion |
+| `negativeCache` | `utils/featureInfoUtils.js:7` | Mapeo `URL:tipo → expiresAt` para typenames con `DescribeFeatureType` fallido o ausente en la respuesta | TTL de 60s (`NEGATIVE_TTL_MS`) | Auto-evicta al consultarse despues de la expiracion. Evita reintentos en bucle contra GeoServer 429 |
+| `inflightByKey` | `utils/featureInfoUtils.js:8` | Mapeo `URL:tipo → Promise` de la peticion en curso, para dedupe entre consumers concurrentes (`useAlwaysOnTopPinning` + `LayerDetailModal` + `featureInfoService`) | Hasta que la peticion resuelve | Se elimina la entrada al terminar el batch |
+| `pendingByUrl` + `resolversByKey` | `utils/featureInfoUtils.js:9-10` | Buffer de typenames pendientes por `baseUrl` que `queueMicrotask(flushBatch)` agrupa en un solo `DescribeFeatureType` con `TYPENAME=a,b,c,...` | Un microtask (las llamadas sincronas del mismo tick se baten juntas) | Se vacian al disparar el batch |
 | `eventos`, `home` (eventosService) | `services/eventosService.js:8` | Respuesta de `/api/mapalab/eventos` y `/api/mapalab/home` (de mariachi) | Vida del proceso; dedupe de in-flight con `eventosInFlight`/`homeInFlight` | Watcher de `cache-version` cada 30s mientras la pestana es visible. Se vacia cuando cambia el token de version y dispara `mapalab:eventos-changed` o `mapalab:home-changed` |
 
 ---
@@ -132,7 +135,7 @@ Patron similar: `useMapDrawing` guarda `cachedResults` en la medicion. Re-consul
 | ¿Cross-sesion pero regenerable? | `sessionStorage`/`localStorage` | Sigue |
 | ¿Caro de calcular, usado por multiples usuarios? | Backend: tabla DB con refresh scheduled (como `layer_periodicity`) | Reevaluar |
 
-Evitar siempre: caches de modulo sin TTL ni limite (como los `geometryColumnCache`/`geometryTypeCache` actuales — son deuda tecnica).
+Evitar siempre: caches de modulo sin TTL ni limite. Si la fuente puede fallar (429, red, payload incompleto), agregar siempre `negativeCache` con TTL corto y `inflightByKey` para dedupe — patron en uso en `utils/featureInfoUtils.js`.
 
 ---
 

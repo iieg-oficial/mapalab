@@ -7,6 +7,57 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.27.0] - 2026-05-13
+
+### Resiliencia del WFS DescribeFeatureType y conteo coherente de capas en la tarjeta IIEG
+
+Se elimina la tormenta de peticiones `DescribeFeatureType` que producía 429 al activar varias capas seguidas, y se alinea el contador "Capas disponibles" del marcador IIEG con la representación visual del panel de capas activas (un `forceGroup` con sus hijos = 1 unidad).
+
+#### Rendimiento
+
+- `utils/featureInfoUtils.js`: el caché de columnas/tipos de geometría ahora tiene tres mecanismos extra encima del LRU de 500 entradas existente:
+  - **Cache negativo con TTL de 60 s** (`negativeCache`): si un `DescribeFeatureType` falla (red, 429, XML inválido) o si la respuesta no incluye el typename pedido, se anota la falla y `fetchGeometryColumns` no vuelve a reintentar hasta que expire. Resuelve los `429 Too Many Requests` repetidos contra `/geoserver/wfs` al activar varias capas seguidas.
+  - **Dedupe in-flight** (`inflightByKey`): si `useAlwaysOnTopPinning` y `LayerDetailModal` piden la misma capa simultáneamente, sale una sola petición y ambos consumers comparten la promesa.
+  - **Batch por microtask** (`pendingByUrl` + `resolversByKey`): las llamadas síncronas dentro del mismo tick (típico `Promise.all(idsToCheck.map(...))` en `useAlwaysOnTopPinning`) se agrupan en una sola petición WFS con `TYPENAME=a,b,c,...`. Activar 5 capas a la vez = 1 request, no 5.
+- La firma pública (`fetchGeometryColumns`, `fetchGeometryType`) no cambió: los call sites (`useAlwaysOnTopPinning`, `LayerDetailModal`, `featureInfoService`) siguen funcionando sin tocarlos.
+
+#### Cambiado
+
+- `pages/maps/helpers/layers/utils/layerHelpers.js`: nuevo helper `collectCatalogUnits(layer)` que recorre el árbol y cuenta como **una sola unidad** cada nodo `forceGroup` (absorbiendo sus hijos), respeta `isLabel`/`isCategory` igual que `unifiedLayers` en `useActiveLayersLogic`, y cuenta como uno cada leaf con `wmsConfig`. `collectLayersWithWMS` se mantiene intacto porque `useFeatureInfo` necesita enumerar todos los descendientes activos al consultar features por click.
+- `pages/maps/helpers/markerDefinitions.js`: `computeIiegStats` pasa de `collectLayersWithWMS` a `collectCatalogUnits` para `totalLayers`. La cifra "Capas disponibles" del marcador IIEG ahora coincide con cómo se ven los items en el panel de capas activas (un grupo + sus hijos = 1 entrada).
+
+#### Documentacion
+
+- `docs/cache.md`: actualizadas las entradas `geometryColumnCache`/`geometryTypeCache` con las nuevas constantes (`NEGATIVE_TTL_MS`, `inflightByKey`, `pendingByUrl`, `resolversByKey`) y se quita el comentario de deuda técnica al pie de la guía rápida.
+
+## [1.27.0] - 2026-05-13
+
+### Telemetría anónima del visor → Mariachi
+
+Sistema de eventos de uso del visor para entender qué capas, herramientas y botones son los más usados, además de quién entra al swipe y cuánto dura una sesión típica. Anónimo, append-only y persistido en Mariachi para consumo desde el panel admin.
+
+#### Agregado
+
+- `services/telemetryService.js`: buffer en memoria con flush cada 30s o 50 eventos, `sendBeacon` en `pagehide` para no perder eventos al cerrar la pestaña. Session UUID en `sessionStorage` con expiración de 4h. Honra Do-Not-Track del navegador. Heartbeat cada 60s mientras la pestaña esté visible para calcular duración real de la sesión. Endpoint configurable vía `VITE_MARIACHI_PUBLIC_API_HOST`, toggle por `VITE_TELEMETRY_ENABLED`.
+- `services/analyticsService.js`: inyectado el collector en el `trackEvent` central. Todos los trackers que ya existían (`trackLayerToggle`, `trackFeatureClick`, `trackMapZoomLevel`, `trackBasemapChange`, `trackDrawingTool`, `trackShareMap`, `trackInfoOpen`, `trackReportSubmitted`, `trackEventoOpen/Close`, etc.) ahora también emiten a Mariachi sin tocar cada componente.
+- Trackers nuevos: `trackThemeChange`, `trackOpacityChange`, `trackLegendsToggle`, `trackSwipeEnter`, `trackSwipeExit`, `trackSwipeSlotChange`, `trackInfoBoxAction`, `trackHomeAction`, `trackContributeClick`, `trackLogoClick`, `trackLayerReorder`, `trackMeasurementTool`, `trackEmbedView`.
+
+#### Instrumentación
+
+- `hooks/useSwipeMode.js`: `swipe_enter` al activar el comparador con la orientación elegida, `swipe_exit` al salir con duración en segundos.
+- `components/ActiveLayers/SlotBadge.jsx` (vía `LayerDateControls.jsx` y `ActiveLayerItem.jsx`): `swipe_slot_change` con `from`/`to`/`layer_id` al ciclar A → AB → B.
+- `components/ActiveLayers/LayerOpacityPopover.jsx` (vía `LayerActionsBar.jsx`): `opacity_change` con debounce 500ms.
+- `components/ActiveLayers/hooks/useLegendsVisibility.jsx`: `legends_toggle` al cambiar el switch global.
+- `components/ActiveLayers/hooks/useLayerSorting.js`: `layer_reorder` con índice origen/destino al hacer drag & drop.
+- `components/ThemeMenu.jsx`: `theme_change` al abrir el menú de un tema.
+- `components/InfoBox/components/InfoBoxTools.jsx`: `infobox_action` con `action`/`layer_id` por cada botón del InfoBox.
+- `components/MapSider.jsx`: `logo_click` al clickear el logo IIEG (el que abre el modal de novedades).
+- `pages/home/components/Body.jsx` y `Card.jsx`: `home_action` para `section_open/close`, `faq_toggle`, `subtopic_click`.
+
+#### Sin cambios para el usuario final
+
+La telemetría es anónima. No se identifica a la persona — solo IP hasheada con salt diario y familia del User-Agent ("Chrome", "Mobile", etc.). El collector se silencia automáticamente si DNT está activo. GA4 sigue funcionando en paralelo, este sistema lo complementa con SQL libre desde el panel.
+
 ## [1.24.0] - 2026-05-13
 
 ### Hardening del widget embebible: fallback, defense-in-depth, auditoría y Core Web Vitals

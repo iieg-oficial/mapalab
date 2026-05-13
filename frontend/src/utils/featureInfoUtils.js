@@ -1,8 +1,13 @@
 
 const MAX_GEOMETRY_CACHE_SIZE = 500;
+const NEGATIVE_TTL_MS = 60_000;
 
 const geometryColumnCache = new Map();
 const geometryTypeCache = new Map();
+const negativeCache = new Map();
+const inflightByKey = new Map();
+const pendingByUrl = new Map();
+const resolversByKey = new Map();
 
 const setBounded = (map, key, value) => {
     if (map.has(key)) map.delete(key);
@@ -13,6 +18,16 @@ const setBounded = (map, key, value) => {
     }
 };
 
+const isNegativeCached = (cacheKey) => {
+    const expiresAt = negativeCache.get(cacheKey);
+    if (expiresAt == null) return false;
+    if (Date.now() >= expiresAt) {
+        negativeCache.delete(cacheKey);
+        return false;
+    }
+    return true;
+};
+
 export const combineCQLFilters = (baseFilter, dynamicFilter) => {
     if (!baseFilter && !dynamicFilter) return null;
     if (!baseFilter) return dynamicFilter;
@@ -20,59 +35,111 @@ export const combineCQLFilters = (baseFilter, dynamicFilter) => {
     return `(${baseFilter}) AND (${dynamicFilter})`;
 };
 
-export const fetchGeometryColumns = async (baseUrl, typeNames) => {
-    const globalWfsUrl = baseUrl.replace(/\/(?:[^/]+\/)?wms$/, '/wfs');
-    const missingTypes = typeNames.filter(name => !geometryColumnCache.has(`${baseUrl}:${name}`));
+const parseDescribeFeatureType = (text, baseUrl, typeNames) => {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(text, 'text/xml');
+    const complexTypes = xmlDoc.getElementsByTagNameNS('http://www.w3.org/2001/XMLSchema', 'complexType');
 
-    if (missingTypes.length > 0) {
-        try {
-            const params = {
-                SERVICE: 'WFS',
-                VERSION: '1.1.0',
-                REQUEST: 'DescribeFeatureType',
-                TYPENAME: missingTypes.join(','),
-                OUTPUTFORMAT: 'text/xml; subtype=gml/3.1.1'
-            };
+    for (let i = 0; i < complexTypes.length; i++) {
+        const complexType = complexTypes[i];
+        const typeName = complexType.getAttribute('name').replace('Type', '');
 
-            const url = globalWfsUrl + '?' + new URLSearchParams(params).toString();
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(response.statusText);
+        const elements = complexType.getElementsByTagNameNS('http://www.w3.org/2001/XMLSchema', 'element');
+        let geomName = 'the_geom';
+        let geomType = 'unknown';
 
-            const text = await response.text();
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(text, 'text/xml');
-
-            const complexTypes = xmlDoc.getElementsByTagNameNS('http://www.w3.org/2001/XMLSchema', 'complexType');
-
-            for (let i = 0; i < complexTypes.length; i++) {
-                const complexType = complexTypes[i];
-                const typeName = complexType.getAttribute('name').replace('Type', '');
-
-                const elements = complexType.getElementsByTagNameNS('http://www.w3.org/2001/XMLSchema', 'element');
-                let geomName = 'the_geom';
-                let geomType = 'unknown';
-
-                for (let j = 0; j < elements.length; j++) {
-                    const el = elements[j];
-                    const type = el.getAttribute('type');
-                    if (type && (type.includes('Geometry') || type.includes('Polygon') || type.includes('Point') || type.includes('Line') || type.includes('Curve') || type.includes('Surface'))) {
-                        geomName = el.getAttribute('name');
-                        if (type.includes('Point')) geomType = 'point';
-                        else if (type.includes('Line') || type.includes('Curve')) geomType = 'line';
-                        else if (type.includes('Polygon') || type.includes('Surface')) geomType = 'polygon';
-                        break;
-                    }
-                }
-
-                const matchedTypeName = missingTypes.find(t => t.endsWith(':' + typeName) || t === typeName);
-                if (matchedTypeName) {
-                    const cacheKey = `${baseUrl}:${matchedTypeName}`;
-                    setBounded(geometryColumnCache, cacheKey, geomName);
-                    setBounded(geometryTypeCache, cacheKey, geomType);
-                }
+        for (let j = 0; j < elements.length; j++) {
+            const el = elements[j];
+            const type = el.getAttribute('type');
+            if (type && (type.includes('Geometry') || type.includes('Polygon') || type.includes('Point') || type.includes('Line') || type.includes('Curve') || type.includes('Surface'))) {
+                geomName = el.getAttribute('name');
+                if (type.includes('Point')) geomType = 'point';
+                else if (type.includes('Line') || type.includes('Curve')) geomType = 'line';
+                else if (type.includes('Polygon') || type.includes('Surface')) geomType = 'polygon';
+                break;
             }
+        }
 
-        } catch { /* DescribeFeatureType is best-effort */ }
+        const matchedTypeName = typeNames.find(t => t.endsWith(':' + typeName) || t === typeName);
+        if (matchedTypeName) {
+            const cacheKey = `${baseUrl}:${matchedTypeName}`;
+            setBounded(geometryColumnCache, cacheKey, geomName);
+            setBounded(geometryTypeCache, cacheKey, geomType);
+        }
+    }
+};
+
+const flushBatch = async (baseUrl) => {
+    const pending = pendingByUrl.get(baseUrl);
+    if (!pending || pending.size === 0) {
+        pendingByUrl.delete(baseUrl);
+        return;
+    }
+    const typeNames = Array.from(pending);
+    pendingByUrl.delete(baseUrl);
+
+    const globalWfsUrl = baseUrl.replace(/\/(?:[^/]+\/)?wms$/, '/wfs');
+    const params = {
+        SERVICE: 'WFS',
+        VERSION: '1.1.0',
+        REQUEST: 'DescribeFeatureType',
+        TYPENAME: typeNames.join(','),
+        OUTPUTFORMAT: 'text/xml; subtype=gml/3.1.1'
+    };
+
+    try {
+        const url = globalWfsUrl + '?' + new URLSearchParams(params).toString();
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(response.statusText);
+        const text = await response.text();
+        parseDescribeFeatureType(text, baseUrl, typeNames);
+    } catch { /* DescribeFeatureType is best-effort */ }
+
+    typeNames.forEach(name => {
+        const cacheKey = `${baseUrl}:${name}`;
+        if (!geometryColumnCache.has(cacheKey)) {
+            negativeCache.set(cacheKey, Date.now() + NEGATIVE_TTL_MS);
+        }
+        const resolvers = resolversByKey.get(cacheKey);
+        resolversByKey.delete(cacheKey);
+        inflightByKey.delete(cacheKey);
+        if (resolvers) resolvers.forEach(r => r());
+    });
+};
+
+const scheduleTypeName = (baseUrl, typeName) => {
+    const cacheKey = `${baseUrl}:${typeName}`;
+    const existing = inflightByKey.get(cacheKey);
+    if (existing) return existing;
+
+    const promise = new Promise(resolve => {
+        let list = resolversByKey.get(cacheKey);
+        if (!list) {
+            list = [];
+            resolversByKey.set(cacheKey, list);
+        }
+        list.push(resolve);
+
+        let typeNames = pendingByUrl.get(baseUrl);
+        if (!typeNames) {
+            typeNames = new Set();
+            pendingByUrl.set(baseUrl, typeNames);
+            queueMicrotask(() => flushBatch(baseUrl));
+        }
+        typeNames.add(typeName);
+    });
+    inflightByKey.set(cacheKey, promise);
+    return promise;
+};
+
+export const fetchGeometryColumns = async (baseUrl, typeNames) => {
+    const toRequest = typeNames.filter(name => {
+        const cacheKey = `${baseUrl}:${name}`;
+        return !geometryColumnCache.has(cacheKey) && !isNegativeCached(cacheKey);
+    });
+
+    if (toRequest.length > 0) {
+        await Promise.all(toRequest.map(name => scheduleTypeName(baseUrl, name)));
     }
 
     const result = {};
