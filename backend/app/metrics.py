@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import Optional
 
 from fastapi import APIRouter, Response
+from prometheus_client import REGISTRY, generate_latest
 
 _counters: dict[tuple[str, tuple[tuple[str, str], ...]], int] = defaultdict(int)
 _histograms: dict[tuple[str, tuple[tuple[str, str], ...]], dict] = defaultdict(
@@ -104,4 +105,5 @@ router = APIRouter(tags=['metrics'])
 
 @router.get('/metrics', include_in_schema=False)
 async def metrics() -> Response:
-    return Response(content=_render_prometheus(), media_type='text/plain; version=0.0.4')
+    body = _render_prometheus() + generate_latest(REGISTRY).decode('utf-8')
+    return Response(content=body, media_type='text/plain; version=0.0.4')
