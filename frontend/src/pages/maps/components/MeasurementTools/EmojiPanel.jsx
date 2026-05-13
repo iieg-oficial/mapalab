@@ -1,15 +1,27 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Badge from '@components/Badge';
 import ScrollContainer from '@components/ScrollContainer';
-import { emojiCatalog } from '@pages/maps/helpers/emojiCatalog';
+import { useSymbolCatalog } from '@pages/maps/hooks/useSymbolCatalog';
+
+const SymbolThumb = ({ symbol }) => {
+    if (symbol.kind === 'svg' && symbol.value) {
+        return <span dangerouslySetInnerHTML={{ __html: symbol.value }} />;
+    }
+    if (symbol.kind === 'image') {
+        const url = symbol.imageUrl || symbol.image_url;
+        return <img src={url} alt={symbol.name || 'símbolo'} className="w-5 h-5 object-contain" />;
+    }
+    return <>{symbol.value}</>;
+};
 
 const EmojiPanel = ({ open, anchorRef, onSelect, onClose, placedCount = 0 }) => {
     const [activeCategory, setActiveCategory] = useState(0);
     const panelRef = useRef(null);
     const { className: positionClass } = useSiderAdaptivePosition({ anchorRef: 'emojiPanel' });
+    const { categories, loading } = useSymbolCatalog();
 
     useOutsideClick(
         anchorRef ? [panelRef, anchorRef] : [panelRef],
@@ -24,6 +36,13 @@ const EmojiPanel = ({ open, anchorRef, onSelect, onClose, placedCount = 0 }) => 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [open, onClose]);
+
+    const currentCategory = useMemo(() => {
+        if (!categories.length) return null;
+        return categories[Math.min(activeCategory, categories.length - 1)];
+    }, [categories, activeCategory]);
+
+    const symbols = currentCategory?.symbols || [];
 
     return (
         <div
@@ -48,17 +67,17 @@ const EmojiPanel = ({ open, anchorRef, onSelect, onClose, placedCount = 0 }) => 
                     <Icon name="cerrarModal" className="size-7" />
                 </button>
             </div>
-            <div className="w-full rounded-[7px] bg-white">      
+            <div className="w-full rounded-[7px] bg-white">
                 <div className="flex border-b border-gray-100 gap-0.5 w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-                    {emojiCatalog.map((cat, idx) => (
+                    {categories.map((cat, idx) => (
                         <button
-                            key={cat.name}
+                            key={cat.id ?? cat.slug ?? cat.name}
                             type="button"
                             onClick={() => setActiveCategory(idx)}
                             className={`p-1.5 text-base rounded-t-lg shrink-0 transition-colors ${activeCategory === idx ? 'bg-[#F3EBFF]' : 'hover:bg-gray-50'}`}
                             title={cat.name}
                         >
-                            {cat.icon}
+                            {cat.icon || cat.name?.charAt(0) || '·'}
                         </button>
                     ))}
                 </div>
@@ -69,21 +88,25 @@ const EmojiPanel = ({ open, anchorRef, onSelect, onClose, placedCount = 0 }) => 
                     overlayColor="#F9FBFF"
                     clickableArrows
                     minItemsForClick={21}
-                    itemCount={emojiCatalog[activeCategory].emojis.length}
+                    itemCount={symbols.length}
                 >
-                    <div className="grid grid-cols-7 gap-0.5">
-                        {emojiCatalog[activeCategory].emojis.map((emoji, idx) => (
-                            <button
-                                key={`${activeCategory}-${idx}`}
-                                type="button"
-                                onClick={() => onSelect?.(emoji)}
-                                className="text-lg hover:bg-black/5 rounded-lg p-1 transition"
-                                aria-label={`Insertar ${emoji}`}
-                            >
-                                {emoji}
-                            </button>
-                        ))}
-                    </div>
+                    {loading && !symbols.length ? (
+                        <div className="text-center text-xs text-gray-400 p-4">Cargando…</div>
+                    ) : (
+                        <div className="grid grid-cols-7 gap-0.5">
+                            {symbols.map((sym, idx) => (
+                                <button
+                                    key={sym.id ?? `${activeCategory}-${idx}`}
+                                    type="button"
+                                    onClick={() => onSelect?.(sym)}
+                                    className="text-lg hover:bg-black/5 rounded-lg p-1 transition flex items-center justify-center"
+                                    aria-label={`Insertar ${sym.name || sym.value || 'símbolo'}`}
+                                >
+                                    <SymbolThumb symbol={sym} />
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </ScrollContainer>
             </div>
         </div>

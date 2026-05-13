@@ -1,4 +1,4 @@
-import { Style, Stroke, Fill, Circle as CircleStyle, Text as TextStyle } from 'ol/style';
+import { Style, Stroke, Fill, Circle as CircleStyle, Icon as IconStyle, Text as TextStyle } from 'ol/style';
 import { Point } from 'ol/geom';
 
 const DEFAULT_STYLES = {
@@ -250,6 +250,32 @@ export const createEmojiStyle = (emoji, rotation = 0, scale = 1, selected = fals
             rotation,
             scale
         })
+    });
+    return selected ? [createSelectionHalo({ radius: 22, scale }), main] : main;
+};
+
+const svgToDataUrl = (xml) => `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(xml)))}`;
+
+export const createSymbolStyle = (symbol, rotation = 0, scale = 1, selected = false) => {
+    if (!symbol) return createEmojiStyle('🙂', rotation, scale, selected);
+
+    if (symbol.kind === 'emoji') {
+        return createEmojiStyle(symbol.value, rotation, scale, selected);
+    }
+
+    const src = symbol.kind === 'svg'
+        ? svgToDataUrl(symbol.value || '')
+        : (symbol.imageUrl || symbol.image_url || symbol.value);
+
+    if (!src) return createEmojiStyle('🙂', rotation, scale, selected);
+
+    const main = new Style({
+        image: new IconStyle({
+            src,
+            rotation,
+            scale,
+            crossOrigin: 'anonymous',
+        }),
     });
     return selected ? [createSelectionHalo({ radius: 22, scale }), main] : main;
 };

@@ -7,6 +7,33 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.23.0] - 2026-05-13
+
+### Panel de mediciones consume catalogo remoto de simbolos
+
+El catalogo hardcoded de emojis (`pages/maps/helpers/emojiCatalog.js`, 8 categorias y ~1000 emojis) se reemplazo por un fetch al endpoint publico de mariachi `GET /api/mapalab/symbols/catalog`. El admin puede agregar/quitar emojis, SVGs o imagenes desde `/mariachi/mapalab/simbolos` y los cambios se reflejan sin redeploy.
+
+### Agregado
+
+- `services/symbolsService.js`: fetch + cache en memoria del catalogo, con `invalidateSymbolCatalog()` para forzar recarga.
+- `pages/maps/hooks/useSymbolCatalog.js`: hook React que carga el catalogo al montar el componente.
+- `pages/maps/helpers/drawingStyles.js::createSymbolStyle(symbol, rotation, scale, selected)`: ruta segun `kind`:
+  - `emoji` → reusa `createEmojiStyle` (TextStyle).
+  - `svg` → IconStyle con data URL (`image/svg+xml;base64,...`).
+  - `image` → IconStyle apuntando al URL del bucket Acervo.
+
+### Cambiado
+
+- `pages/maps/components/MeasurementTools/EmojiPanel.jsx`: consume el catalogo via hook. Renderiza el preview correcto segun el `kind` del item. Las clases CSS del panel quedan identicas (sin cambios visuales).
+- `pages/maps/hooks/useEmojiTemplate.js`: el state ahora guarda el objeto `{kind, value, imageUrl, id}` en lugar de solo un string. Acepta entrada tipo string (legacy) o tipo objeto.
+- `pages/maps/hooks/useMapDrawing.js`: al dibujar tipo `Emoji`, persiste `symbolPayload` en la feature y rutea por `createSymbolStyle` en lugar de `createEmojiStyle`.
+
+### Eliminado
+
+- `pages/maps/helpers/emojiCatalog.js`: el catalogo ya no vive hardcoded. La fuente de verdad es ahora `mapalab.symbols` en dataengine, administrado desde mariachi-admin.
+
+---
+
 ## [1.22.0] - 2026-05-12
 
 ### Acople del panel de mediciones al sider restaurado
