@@ -353,6 +353,18 @@ Sistema transversal de reportes (problemas, solicitudes, sugerencias, dudas, dat
 - **Honeypot + screenshot**: campo `website` invisible (descarta bots) y captura opcional via `html2canvas-pro` con `scale: 0.7`. Email opcional → reporte anónimo.
 - **Storage del screenshot**: bucket privado `mariachi` con prefijo `reportes/AAAA/MM/<uuid>.png`. URL servida por proxy admin-only.
 
+## Visor embebido (`/embed`) y widget `<iieg-mapalab>`
+
+MapaLab puede insertarse en sitios de otras instituciones a través de un Web Component que monta un iframe del visor. Toda la administración (llaves, sitios autorizados, capas permitidas, mapas guardados, auditoría) vive en mariachi (`/administrador/mapalab/api-keys`).
+
+- **Widget (`widget/`)**: paquete Lit + Vite v1.1.0, bundle ~23 KB / 8.4 KB gzip servido en `/mapalab/widget/v1/mapalab.js`. Atributos `api-key`, `share`, `layers`, `center`, `zoom`, `basemap`, `controls`, `height`, `width`, `base-url`, `title`, `ready-timeout-ms`. Eventos `mapalab:ready`, `mapalab:error`, `mapalab:timeout`, `mapalab:feature-click`. Overlay con botones "Reintentar" + "Abrir mapa en MapaLab" cuando falla validación/timeout. Footer "Fuente: IIEG" como atribución obligatoria.
+- **Visor embebido (`frontend/src/pages/embed/`)**: SPA ligero que valida la key contra `/embed/config` antes de montar el mapa. Defense-in-depth contra clickjacking: además de validar Referer en el data path, el visor verifica en cliente que `document.referrer` matchee la allowlist (`dominiosPermitidos` devuelto por config). Si no, muestra `EmbedError` con botones de recuperación.
+- **Telemetría**: hook `useEmbedTelemetry` captura LCP, CLS, INP, FCP, TTFB con `web-vitals` + errores JS (`window.onerror` + `unhandledrejection`). Envío via `sendBeacon` con fallback `fetch keepalive`. Métrica adicional `IFRAME_READY` para tiempo de arranque end-to-end. Endpoint `POST /embed/telemetry` registra en histograma Prometheus `mapalab_embed_vital_ms{metric, prefix}` y counter `mapalab_embed_js_errors_total`.
+- **Auditoría de accesos**: cada llamada a `/embed/config`, `/embed/wms-proxy` o `/embed/layers/tree` se registra en mariachi (tabla `mapalab_api_keys_accesos`) vía buffer in-memory + flush periódico (30s). Hash de IP con SHA-256 usando `MAPALAB_INTERNAL_TOKEN` como salt. Retención 90 días configurable, purga vía cron de mariachi.
+- **Postmessage bidireccional**: el iframe emite `mapalab:viewchange` (admin captura center/zoom en vivo al mover el mapa del preview) y escucha `mapalab:setview` (admin envía vista guardada sin recargar). Throttle 200ms en ambos sentidos, con flag de supresión para evitar feedback loop.
+- **Documentación pública**: `docs/widget.md` (contrato del Web Component).
+- **Pendientes de gobernanza**: clasificación pública/reservada/confidencial por capa, T&C versionados, linaje hasta dependencia origen, SLA visible "Datos al corte de X" en el footer, notificaciones de cambios estructurales. Backlog formal en `docs/planes/widget-pendientes.md`.
+
 ## Proximos pasos (roadmap)
 
 - **v1.4.0 — v1.5.1** — Capas dinámicas desde backend (mariachi CMS + DataEngine schema `mapalab`), security hardening, tests smoke — Abril 2026 ✅

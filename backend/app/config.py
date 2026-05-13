@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     SENTRY_DSN: Optional[str] = Field(default=None)
     SENTRY_TRACES_SAMPLE_RATE: float = Field(default=0.1)
     MAPALAB_INTERNAL_TOKEN: Optional[str] = Field(default=None)
+    MARIACHI_BACKEND_URL: Optional[str] = Field(default=None)
+    EMBED_KEY_CACHE_TTL_SECONDS: int = Field(default=300)
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod

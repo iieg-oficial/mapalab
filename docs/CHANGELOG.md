@@ -7,6 +7,46 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.24.0] - 2026-05-13
+
+### Hardening del widget embebible: fallback, defense-in-depth, auditoría y Core Web Vitals
+
+Ciclo de auditoría sobre el widget `<iieg-mapalab>` (DevOps + gobernanza). Se cubren los cuatro puntos técnicos: fallback con UX clara, defensa en profundidad contra clickjacking, auditoría de accesos con retención y captura de Core Web Vitals + errores JS desde sitios huésped.
+
+#### Widget (`widget/`) — bump a `1.1.0`
+
+- `src/element.js`: timeout configurable (`ready-timeout-ms`, default 8s) que dispara un overlay con botones "Reintentar" y "Abrir mapa en MapaLab" cuando el iframe no emite `mapalab:ready`. Manejo explícito de `mapalab:error` con el mismo overlay y mensaje específico del visor. Footer "Fuente: IIEG" en la esquina inferior derecha cuando el mapa carga. Nuevo evento `mapalab:timeout` para que el host externo pueda reaccionar (`{ ms, reason: 'no_ready_received' }`).
+- Bundle pasa de ~19 KB a ~23 KB (8.4 KB gzip). Cero dependencias nuevas (sigue siendo solo Lit).
+
+#### Visor embebido (`frontend/src/pages/embed/`) — bump a `1.24.0`
+
+- `EmbedView.jsx`: validación cliente de `dominiosPermitidos` contra `document.referrer` (defense-in-depth contra clickjacking, complementa la validación server-side). Si el host externo no está en la allowlist, rinde `EmbedError` sin esperar a fallar el WMS proxy.
+- `EmbedError.jsx`: botones "Reintentar" / "Abrir el visor completo" + atribución IIEG.
+- `hooks/useEmbedTelemetry.js`: captura LCP, CLS, INP, FCP, TTFB con `web-vitals` + listeners de `error` y `unhandledrejection`. Envía via `navigator.sendBeacon` con fallback a `fetch keepalive`. Debounce 1.5s, máximo 8 vitales y 5 errores por flush. Marca `IFRAME_READY` cuando el visor monta para medir tiempo de arranque end-to-end.
+- `hooks/useEmbedViewSync.js`: además de emitir `mapalab:viewchange`, ahora escucha `mapalab:setview` para que el admin pueda controlar el view del iframe sin recargar (necesario para "cargar vista guardada").
+- `helpers/postMessage.js`: nuevo `postViewChange(payload)`.
+
+#### Backend (`backend/app/`)
+
+- `routers/embed.py`: nuevo endpoint `POST /embed/telemetry` (valida key, registra histograma + counters, sin contar para cuota). Validación de capas devuelve mensajes claros en español. `_validate_or_403` registra cada acceso (allowed/denied/quota_exceeded) en el access logger.
+- `services/access_logger.py`: buffer in-memory + flush periódico cada 30s a Mariachi (`POST /internal/mapalab/keys/accesos`). Hash de IP con SHA-256 usando `MAPALAB_INTERNAL_TOKEN` como salt.
+- `server.py`: `access_flush_loop` registrado en `lifespan` con flush final al apagar.
+- `services/api_key_validator.py`: `ValidationResult.dominios_permitidos` agregado para que el visor lo use en defense-in-depth.
+- `metrics.py`: API `observe()` para histogramas + serialización Prometheus completa con buckets. Nuevas métricas: `mapalab_embed_telemetry_total`, `mapalab_embed_vital_ms` (histograma con label `metric=LCP|CLS|INP|FCP|TTFB|IFRAME_READY`), `mapalab_embed_js_errors_total`.
+
+#### UX del visor full (`frontend/src/pages/maps/components/ShareModal.jsx`)
+
+- Lenguaje no técnico en español plano: "Estás viendo un mapa compartido" en vez de "Usando link compartido", "Hiciste cambios al mapa" en vez de "Estado modificado", botón "Generar enlace para compartir" en vez de "Crear enlace".
+- Pestañas renombradas: "Compartir enlace" / "Insertar en otro sitio" (antes "Enlace" / "Embeber").
+- Mensajes de error con caja roja y botón × para cerrar (antes era `<p>` sin descartar).
+
+#### Notas
+
+- Los pendientes de gobernanza (clasificación, T&C versionados, linaje, SLA visible, notificaciones de cambio) quedan documentados en `docs/planes/widget-pendientes.md` para retomar.
+- El malentendido del auditor sobre "SIEEJ" se aclara: el widget vive en MapaLab; SIEEJ es solo uno de los sitios huésped.
+
+---
+
 ## [1.23.0] - 2026-05-13
 
 ### Panel de mediciones consume catalogo remoto de simbolos

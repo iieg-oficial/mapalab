@@ -84,8 +84,8 @@ const CategoryItem = ({ layer, activeLayerIds, onToggleLayer }) => {
 const ThemeMenu = ({ theme, activeLayerIds, onToggleLayer, closeButton }) => {
     return (
         <div className="w-full flex flex-col flex-1 min-h-0 py-3">
-            <div className="px-4 flex items-center justify-between shrink-0">
-                <h3 className="text-[#5C2472] font-garet font-bold text-[18px]/[47px]">
+            <div className="px-4 flex items-center justify-between shrink-0 min-h-[47px] gap-2">
+                <h3 className="text-[#5C2472] font-garet font-bold text-[18px] leading-tight">
                     {theme.label}
                 </h3>
                 {closeButton}

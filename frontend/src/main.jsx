@@ -15,10 +15,14 @@ import Loading from '@components/Loading';
 import { startMapalabCacheVersionWatcher } from '@services/eventosService';
 import.meta.env;
 
-startMapalabCacheVersionWatcher();
+const isEmbedRoute = typeof window !== 'undefined' && window.location.pathname.endsWith('/embed');
+if (!isEmbedRoute) {
+    startMapalabCacheVersionWatcher();
+}
 
 const Home = lazy(() => import('@pages/home/Home'));
 const Maps = lazy(() => import('@pages/maps/Maps'));
+const EmbedRoot = lazy(() => import('@pages/embed/EmbedRoot'));
 
 const isDev = import.meta.env.VITE_NODE_ENV === 'development';
 
@@ -42,6 +46,7 @@ const router = createBrowserRouter([
         children: [
             { index: true, element: <Home /> },
             { path: 'mapa', element: <LayersProvider><LayerLoadingProvider><MapsProvider><Maps /></MapsProvider></LayerLoadingProvider></LayersProvider> },
+            { path: 'embed', element: <EmbedRoot /> },
             { path: '*', element: <NotFound /> },
         ],
     },

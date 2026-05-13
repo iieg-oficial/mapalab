@@ -82,6 +82,8 @@ services:
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.1}
       MAPALAB_INTERNAL_TOKEN: ${MAPALAB_INTERNAL_TOKEN:-}
+      MARIACHI_BACKEND_URL: ${MARIACHI_BACKEND_URL:-}
+      EMBED_KEY_CACHE_TTL_SECONDS: ${EMBED_KEY_CACHE_TTL_SECONDS:-300}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -90,16 +92,27 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    networks:
+      - default
+      - iieg-network
     restart: unless-stopped
 
   nginx:
     build:
-      context: ./nginx
+      context: .
+      dockerfile: nginx/Dockerfile
+      args:
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/mapalab/}
+        VITE_BACKEND_API_HOST: ${VITE_BACKEND_API_HOST:-/mapalab/api/}
+        VITE_GEOSERVER_URL: ${VITE_GEOSERVER_URL:-/geoserver/}
+        VITE_SITE_URL: ${VITE_SITE_URL:-}
+        VITE_NODE_ENV: ${VITE_NODE_ENV:-production}
+        VITE_APP_ENV: ${VITE_APP_ENV:-beta}
+        VITE_COLIBRI_SOURCE_APP: ${VITE_COLIBRI_SOURCE_APP:-mapalab}
+        VITE_COLIBRI_API_KEY: ${VITE_COLIBRI_API_KEY:-}
     profiles: ["staging"]
     ports:
       - "${NGINX_PORT:-3006}:80"
-    volumes:
-      - ./frontend/dist:/usr/share/nginx/html:ro
     depends_on:
       backend:
         condition: service_healthy
