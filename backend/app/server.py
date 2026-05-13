@@ -4,6 +4,7 @@ import fcntl
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator, metrics as fastapi_metrics
 
 from sqlalchemy import text
 from fastmcp import FastMCP
@@ -127,6 +128,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+Instrumentator(
+    excluded_handlers=["^/metrics$", "^/health$", "^/ontoy$", "^/$"],
+    should_group_status_codes=True,
+    should_ignore_untemplated=True,
+).add(
+    fastapi_metrics.requests()
+).add(
+    fastapi_metrics.latency(buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10))
+).instrument(app)
 
 app.add_exception_handler(BaseAppException, app_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)

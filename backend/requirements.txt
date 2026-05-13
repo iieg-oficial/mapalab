@@ -13,3 +13,4 @@ rich
 pytz
 sentry-sdk[fastapi]
 fastmcp
+prometheus-fastapi-instrumentator

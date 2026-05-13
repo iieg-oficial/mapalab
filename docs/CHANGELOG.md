@@ -7,6 +7,27 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.28.0] - 2026-05-13
+
+### Instrumentación HTTP del backend para Prometheus
+
+El endpoint `/metrics` ya emitía counters de negocio (`mapalab_tree_requests_total`, `mapalab_download_requests_total`, etc.) pero no métricas HTTP estándar. Las reglas `HighLatency` y `HighErrorRate` de huachicol quedaban inactivas para mapalab porque dependen de `http_request_duration_seconds` y `http_requests_total{status}`. Se agrega `prometheus-fastapi-instrumentator` para emitirlas sin romper el render manual existente.
+
+#### Agregado
+
+- **`prometheus-fastapi-instrumentator`** en `backend/requirements.txt`. Sin pin de versión, resuelve a 7.x compatible con FastAPI 0.111+.
+- **Hook en `backend/app/server.py`** justo después del `CORSMiddleware`: `Instrumentator(...).add(metrics.requests()).add(metrics.latency(...)).instrument(app)`. Buckets de latencia ajustados a `(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10)` para granularidad fina hasta 5ms. `excluded_handlers=["^/metrics$", "^/health$", "^/ontoy$", "^/$"]` para no auto-instrumentar el scrape ni los endpoints de plataforma.
+- **`backend/app/metrics.py`** concatena `generate_latest(REGISTRY).decode('utf-8')` al final del render manual. El mismo endpoint `/metrics` expone counters de negocio + HTTP estándar en un solo scrape.
+
+#### Seguridad
+
+- **`nginx/nginx.conf`**: nuevo bloque `location = /mapalab/api/metrics { deny all; return 403; }` antes del proxy genérico `/mapalab/api/`. Defense-in-depth contra exposición pública vía `mapalab-nginx:3006` que bindea a `0.0.0.0`. El scrape interno desde Prometheus (a `mapalab-backend-1:8000` directo, sin pasar por nginx) sigue funcionando.
+
+#### Notas
+
+- **Cuidado con `excluded_handlers`**: usa `re.search`, no match exacto. Un patrón como `"/"` matchea cualquier path que contiene `/` (o sea, todos). Usar anclas `^...$`.
+- Mapalab corre con 8 workers gunicorn. El instrumentator usa `prometheus_client` sin `multiprocess_mode`, por lo que cada worker mantiene sus propios counters y `/metrics` solo refleja el worker que sirvió el request. Aceptable porque Prometheus scrapea cada 15s y `sum/rate` consolidan. Si se requiere consolidación cross-worker, configurar `PROMETHEUS_MULTIPROC_DIR`.
+
 ## [1.27.0] - 2026-05-13
 
 ### Telemetría anónima del visor → Mariachi
