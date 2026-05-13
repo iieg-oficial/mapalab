@@ -194,5 +194,3 @@ export const enqueue = (eventName, params = {}) => {
         flush(false);
     }
 };
-
-export const _internal = { state, flush, ensureStarted };

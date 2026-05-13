@@ -59,9 +59,6 @@ export const trackShareMap = (status) =>
 export const trackInfoOpen = () =>
     withMapInteraction('info_open', {});
 
-export const trackReportSubmitted = (tipo, sourceRoute) =>
-    trackEvent('report_submitted', { tipo, source_route: sourceRoute });
-
 export const trackEventoOpen = (eventoId, titulo) =>
     withMapInteraction('evento_open', { evento_id: eventoId, titulo });
 
@@ -92,17 +89,8 @@ export const trackInfoBoxAction = (action, layerId) =>
 export const trackHomeAction = (action, section) =>
     withMapInteraction('home_action', { action, section });
 
-export const trackContributeClick = () =>
-    trackEvent('contribute_click', {});
-
 export const trackLogoClick = (logo) =>
     trackEvent('logo_click', { logo });
 
 export const trackLayerReorder = (layerId, from, to) =>
     withMapInteraction('layer_reorder', { layer_id: layerId, from, to });
-
-export const trackMeasurementTool = (tool) =>
-    withMapInteraction('measurement_tool_use', { tool });
-
-export const trackEmbedView = (apiKeyId, layerId) =>
-    trackEvent('embed_view', { api_key_id: apiKeyId, layer_id: layerId });

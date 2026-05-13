@@ -6,7 +6,7 @@ const layerName = (n) =>
 
 const indexKey = (workspace, layer) => `${workspace || ''}|${layer || ''}`;
 
-export const buildLayerIndex = (nodes) => {
+const buildLayerIndex = (nodes) => {
     const index = new Map();
     const walk = (list) => {
         for (const node of list || []) {
@@ -39,11 +39,6 @@ const collectEventoLayerIds = (evento, layerIndex) => {
     return ids;
 };
 
-export const getEventoLayerIds = (evento, allLayers) => {
-    if (!evento?.capas?.length || !allLayers?.length) return new Set();
-    return collectEventoLayerIds(evento, buildLayerIndex(allLayers));
-};
-
 export const buildEventoIndex = (eventos, allLayers) => {
     const layerIndex = buildLayerIndex(allLayers);
     const eventoByLayerId = new Map();
@@ -56,9 +51,4 @@ export const buildEventoIndex = (eventos, allLayers) => {
         }
     }
     return { layerIndex, eventoByLayerId, layerIdsByEvento };
-};
-
-export const findEventoByLayerId = (eventos, layerId, allLayers) => {
-    if (!layerId || !Array.isArray(eventos) || !eventos.length) return null;
-    return buildEventoIndex(eventos, allLayers).eventoByLayerId.get(layerId) || null;
 };

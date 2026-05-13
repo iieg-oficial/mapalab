@@ -1,7 +1,7 @@
 const BACKEND_BASE = (import.meta.env.VITE_BACKEND_API_HOST || '/api/').replace(/\/+$/, '');
 
 
-export const buildEmbedWmsProxyUrl = () => `${BACKEND_BASE}/embed/wms-proxy`;
+const buildEmbedWmsProxyUrl = () => `${BACKEND_BASE}/embed/wms-proxy`;
 
 
 const proxifyNode = (node, proxyUrl, apiKey) => {

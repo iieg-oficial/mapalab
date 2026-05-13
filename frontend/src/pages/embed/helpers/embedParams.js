@@ -36,7 +36,7 @@ export const parseEmbedParams = (searchParams) => {
 };
 
 
-export const findLayersByWorkspaceLayer = (tree, workspace, layerName) => {
+const findLayersByWorkspaceLayer = (tree, workspace, layerName) => {
     const matches = [];
     const queue = [...tree];
     while (queue.length > 0) {
@@ -56,12 +56,6 @@ export const findLayersByWorkspaceLayer = (tree, workspace, layerName) => {
         }
     }
     return matches;
-};
-
-
-export const findLayerByWorkspaceLayer = (tree, workspace, layerName) => {
-    const matches = findLayersByWorkspaceLayer(tree, workspace, layerName);
-    return matches[0] || null;
 };
 
 

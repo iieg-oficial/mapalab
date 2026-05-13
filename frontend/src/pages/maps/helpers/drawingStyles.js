@@ -239,7 +239,7 @@ export const createTextStyle = (text, rotation = 0, scale = 1, selected = false)
     return selected ? [createRoundedTextBg(text || 'Texto', rotation, scale), main] : main;
 };
 
-export const createEmojiStyle = (emoji, rotation = 0, scale = 1, selected = false) => {
+const createEmojiStyle = (emoji, rotation = 0, scale = 1, selected = false) => {
     const main = new Style({
         text: new TextStyle({
             text: emoji || '🙂',

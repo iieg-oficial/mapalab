@@ -28,8 +28,3 @@ export const fetchSymbolCatalog = async () => {
 
     return cache.inFlight;
 };
-
-export const invalidateSymbolCatalog = () => {
-    cache.catalog = null;
-    cache.inFlight = null;
-};
