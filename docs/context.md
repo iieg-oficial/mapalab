@@ -344,6 +344,19 @@ Push a production → CD: test → deploy SSH (make deploy) → health check →
 
 Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gateway-hub). En desarrollo aparece un panel de debug flotante. Eventos principales: `layer_toggle`, `feature_click`, `map_zoom_level`, `layer_search`, `layer_download`, `map_export`, `raster_loop_start/stop`, `drawing_tool_use`, `basemap_change`, `share_map`, `report_submitted`, `evento_open`, `evento_close`.
 
+## Telemetría propia → Mariachi (v1.27.0+)
+
+En paralelo a GA4, el visor emite los mismos eventos a un collector propio en Mariachi para tener SQL libre y dashboards internos sin depender de Google.
+
+- **`services/telemetryService.js`**: buffer en memoria con flush cada 30s o 50 eventos. `navigator.sendBeacon` en `pagehide` para no perder eventos al cerrar la pestaña. Session UUID en `sessionStorage` con expiración de 4h. Heartbeat cada 60s con `document.visibilityState === 'visible'` para calcular duración real. Honra Do-Not-Track del navegador.
+- **`services/analyticsService.js`**: inyecta `telemetry.enqueue` en el `trackEvent` central. Todos los trackers existentes emiten a ambos lados (dataLayer + collector propio) sin tocar componentes.
+- **Trackers nuevos**: `trackThemeChange`, `trackOpacityChange`, `trackLegendsToggle`, `trackSwipeEnter/Exit/SlotChange`, `trackInfoBoxAction`, `trackHomeAction`, `trackContributeClick`, `trackLogoClick`, `trackLayerReorder`, `trackMeasurementTool`, `trackEmbedView`.
+- **Persistencia**: `POST /api/public/mapalab/events/batch` en Mariachi (rate limit 120/min/IP). Acepta lotes de hasta 100 eventos. Scrubbing PII con el mismo `pii_scrubber` que usa Colibri. Hash de IP con salt diario, sin identidad.
+- **Variables de entorno**:
+  - `VITE_MARIACHI_PUBLIC_API_HOST` — base URL del endpoint público (default `/api/public/` cuando ambos viven detrás del mismo gateway)
+  - `VITE_TELEMETRY_ENABLED` — `'false'` para desactivar el collector (GA4 sigue funcionando)
+- **Dashboards**: panel admin en mariachi (`/mariachi/mapalab/stats`) consume vistas materializadas refrescadas cada 30 min.
+
 ## Reportes ciudadanos
 
 Sistema transversal de reportes (problemas, solicitudes, sugerencias, dudas, datos incorrectos, bugs) que vive en mariachi (modelo `Reporte`, tabla `reportes`). Mapalab solo envia reportes al endpoint publico de mariachi.
@@ -374,6 +387,7 @@ MapaLab puede insertarse en sitios de otras instituciones a través de un Web Co
 - **v1.18.0** — Marker IIEG dinámico, swipe robusto, loop controls visibles, logo Mapalab responsive, optimizaciones SEO — Mayo 2026 ✅
 - **v1.19.0** — Modal de detalle con identidad del evento — Mayo 2026 ✅
 - **v1.20.0** — Auditoría de eventos: perf (cache server-side, index O(1), polling pausado), arquitectura (`EventoContext` separado), persistencia por sesión, telemetría — Mayo 2026 ✅
+- **v1.27.0** — Telemetría anónima del visor → Mariachi (sesiones, capas más usadas, herramientas, botones, swipe) — Mayo 2026 ✅
 - **v1.21.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
 - **v1.22.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
 - **v2.0.0** — Arquitectura de capas para dependencias, lazy loading, IGIBot, 3D, dashboards, API publica — Febrero 2027+

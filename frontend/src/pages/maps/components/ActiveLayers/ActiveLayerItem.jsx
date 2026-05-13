@@ -229,7 +229,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                             <Loading visible={true} size="size-5" border="border-2" />
                         )}
                         {showSlotBadgeInTitle && (
-                            <SlotBadge membership={slotMembership} onCycle={handleCycleSlot} />
+                            <SlotBadge membership={slotMembership} onCycle={handleCycleSlot} layerId={layer.id} />
                         )}
                     </div>
 
@@ -254,6 +254,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 onCycleSlot={handleCycleSlot}
                             />
                             <LayerActionsBar
+                                layerId={layer.id}
                                 visible={layer.visible}
                                 isLoading={isLoading}
                                 isLooping={isLooping}

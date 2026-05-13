@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import LayerItem from '@mapsComponents/LayerItem';
 import Icon from '@components/Icon';
 import ScrollContainer from '@components/ScrollContainer';
+import { trackThemeChange } from '@services/analyticsService';
 
 const LabelItem = ({ layer, activeLayerIds, onToggleLayer }) => {
     return (
@@ -82,6 +83,10 @@ const CategoryItem = ({ layer, activeLayerIds, onToggleLayer }) => {
 };
 
 const ThemeMenu = ({ theme, activeLayerIds, onToggleLayer, closeButton }) => {
+    useEffect(() => {
+        if (theme?.id) trackThemeChange(theme.id);
+    }, [theme?.id]);
+
     return (
         <div className="w-full flex flex-col flex-1 min-h-0 py-3">
             <div className="px-4 flex items-center justify-between shrink-0 min-h-[47px] gap-2">

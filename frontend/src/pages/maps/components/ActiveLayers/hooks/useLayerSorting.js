@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
+import { trackLayerReorder } from '@services/analyticsService';
 
 export const useLayerSorting = (activeLayerIds, unifiedLayers, onReorder) => {
     const handleDragEnd = useCallback((event) => {
@@ -24,6 +25,7 @@ export const useLayerSorting = (activeLayerIds, unifiedLayers, onReorder) => {
             const reorderedItems = arrayMove(itemsWithIds, oldIndex, newIndex);
             const newActiveLayerIds = reorderedItems.flatMap(item => item.actualIds);
 
+            trackLayerReorder(active.id, oldIndex, newIndex);
             onReorder(newActiveLayerIds);
         }
     }, [activeLayerIds, unifiedLayers, onReorder]);

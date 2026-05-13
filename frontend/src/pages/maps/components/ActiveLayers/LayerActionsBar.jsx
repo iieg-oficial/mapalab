@@ -27,7 +27,8 @@ const LayerActionsBar = ({
     canDownload = false,
     isDownloading = false,
     onDownloadClick,
-    downloadButtonRef
+    downloadButtonRef,
+    layerId = null,
 }) => {
     const [isCardHovered, setIsCardHovered] = useState(false);
     const [isDeleteHovered, setIsDeleteHovered] = useState(false);
@@ -95,6 +96,7 @@ const LayerActionsBar = ({
                     value={opacity}
                     onChange={onChangeOpacity}
                     onClose={() => setIsOpacityOpen(false)}
+                    layerId={layerId}
                 />
             )}
 

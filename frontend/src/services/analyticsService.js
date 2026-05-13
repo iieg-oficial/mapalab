@@ -1,10 +1,12 @@
 import { debugStore } from './analyticsDebugStore';
+import { enqueue as telemetryEnqueue } from './telemetryService';
 
 const isDev = import.meta.env.VITE_NODE_ENV === 'development';
 
 const trackEvent = (eventName, params = {}) => {
     window.dataLayer?.push({ event: eventName, ...params });
     if (isDev) debugStore.emit({ event: eventName, params, time: new Date() });
+    telemetryEnqueue(eventName, params);
 };
 
 const withMapInteraction = (eventName, params) => {
@@ -65,3 +67,42 @@ export const trackEventoOpen = (eventoId, titulo) =>
 
 export const trackEventoClose = (eventoId) =>
     withMapInteraction('evento_close', { evento_id: eventoId });
+
+export const trackThemeChange = (theme) =>
+    withMapInteraction('theme_change', { theme });
+
+export const trackOpacityChange = (layerId, value) =>
+    withMapInteraction('opacity_change', { layer_id: layerId, value: Math.round((value ?? 1) * 100) });
+
+export const trackLegendsToggle = (visible) =>
+    withMapInteraction('legends_toggle', { visible: !!visible });
+
+export const trackSwipeEnter = (orientation) =>
+    withMapInteraction('swipe_enter', { orientation });
+
+export const trackSwipeExit = (durationSec) =>
+    withMapInteraction('swipe_exit', { duration_sec: durationSec });
+
+export const trackSwipeSlotChange = (layerId, from, to) =>
+    withMapInteraction('swipe_slot_change', { layer_id: layerId, from, to });
+
+export const trackInfoBoxAction = (action, layerId) =>
+    withMapInteraction('infobox_action', { action, layer_id: layerId });
+
+export const trackHomeAction = (action, section) =>
+    withMapInteraction('home_action', { action, section });
+
+export const trackContributeClick = () =>
+    trackEvent('contribute_click', {});
+
+export const trackLogoClick = (logo) =>
+    trackEvent('logo_click', { logo });
+
+export const trackLayerReorder = (layerId, from, to) =>
+    withMapInteraction('layer_reorder', { layer_id: layerId, from, to });
+
+export const trackMeasurementTool = (tool) =>
+    withMapInteraction('measurement_tool_use', { tool });
+
+export const trackEmbedView = (apiKeyId, layerId) =>
+    trackEvent('embed_view', { api_key_id: apiKeyId, layer_id: layerId });

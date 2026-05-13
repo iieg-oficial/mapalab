@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import Icon from '@components/Icon';
+import { trackHomeAction } from '@services/analyticsService';
 
 const Card = ({ topics = [] }) => {
     const navigate = useNavigate();
@@ -8,6 +9,7 @@ const Card = ({ topics = [] }) => {
     const lastTouchRef = useRef(0);
 
     const handleSubtopicClick = (subtopic) => {
+        trackHomeAction('subtopic_click', subtopic?.label || subtopic?.id || 'unknown');
         if (subtopic?.link) {
             const link = subtopic.link;
             if (/^https?:\/\//i.test(link)) {

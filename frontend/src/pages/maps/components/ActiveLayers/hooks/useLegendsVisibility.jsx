@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
+import { trackLegendsToggle } from '@services/analyticsService';
 
 const STORAGE_KEY = 'mapalab.activeLayers.legendsVisible';
 
@@ -21,6 +22,7 @@ export const LegendsVisibilityProvider = ({ children }) => {
         const value = typeof next === 'function' ? next(visible) : next;
         setVisibleState(value);
         try { localStorage.setItem(STORAGE_KEY, String(value)); } catch { /* ignore */ }
+        trackLegendsToggle(value);
     }, [visible]);
 
     return (

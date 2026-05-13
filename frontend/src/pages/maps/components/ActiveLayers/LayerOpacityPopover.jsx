@@ -1,14 +1,29 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Bar from '@components/Bar';
+import { trackOpacityChange } from '@services/analyticsService';
 
 const POPOVER_WIDTH = 220;
 const VIEWPORT_MARGIN = 8;
+const TRACK_DEBOUNCE_MS = 500;
 
-const LayerOpacityPopover = ({ anchorRef, value, onChange, onClose }) => {
+const LayerOpacityPopover = ({ anchorRef, value, onChange, onClose, layerId }) => {
     const ref = useRef(null);
+    const trackTimerRef = useRef(null);
     const [position, setPosition] = useState({ top: 0, left: 0 });
     const percent = Math.round((value ?? 1) * 100);
+
+    const handleChange = (next) => {
+        onChange?.(next);
+        if (trackTimerRef.current) clearTimeout(trackTimerRef.current);
+        trackTimerRef.current = setTimeout(() => {
+            trackOpacityChange(layerId, next);
+        }, TRACK_DEBOUNCE_MS);
+    };
+
+    useEffect(() => () => {
+        if (trackTimerRef.current) clearTimeout(trackTimerRef.current);
+    }, []);
 
     useLayoutEffect(() => {
         const updatePosition = () => {
@@ -70,7 +85,7 @@ const LayerOpacityPopover = ({ anchorRef, value, onChange, onClose }) => {
                 min={0}
                 max={100}
                 value={percent}
-                onChange={(e) => onChange?.(parseInt(e.target.value, 10) / 100)}
+                onChange={(e) => handleChange(parseInt(e.target.value, 10) / 100)}
             />
         </div>,
         document.body

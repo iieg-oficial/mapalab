@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
     SWIPE_ORIGINAL_STORAGE_KEY,
     SWIPE_POS_MIN,
@@ -15,10 +15,12 @@ import {
     persistOrientation,
     safeStructuredClone,
 } from '@pages/maps/helpers/swipeMode';
+import { trackSwipeEnter, trackSwipeExit } from '@services/analyticsService';
 
 export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs }) => {
     const [compareMode, setCompareMode] = useState(initialCompareMode);
     const [highlightedSlots, setHighlightedSlots] = useState(null);
+    const enteredAtRef = useRef(null);
 
     const snapshotLive = useCallback((label) => snapshotFromLive(liveStateRef.current, label), [liveStateRef]);
 
@@ -41,15 +43,19 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs })
         } catch { /* storage no disponible / quota */ }
         liveStateRef.current.pauseAllLoops();
         applySnapshotToLive(emptyPane('A'));
-        setCompareMode(prev => ({
-            ...initialCompareMode(),
-            active: true,
-            activeSlot: 'A',
-            paneA: emptyPane('A'),
-            paneB: emptyPane('B'),
-            originalSnapshot: current,
-            swipeOrientation: prev.swipeOrientation,
-        }));
+        setCompareMode(prev => {
+            enteredAtRef.current = Date.now();
+            trackSwipeEnter(prev.swipeOrientation);
+            return {
+                ...initialCompareMode(),
+                active: true,
+                activeSlot: 'A',
+                paneA: emptyPane('A'),
+                paneB: emptyPane('B'),
+                originalSnapshot: current,
+                swipeOrientation: prev.swipeOrientation,
+            };
+        });
     }, [snapshotLive, applySnapshotToLive, liveStateRef]);
 
     const setActiveSlot = useCallback((nextSlot) => {
@@ -194,6 +200,9 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs })
             }
             if (snapshotToRestore) applySnapshotToLive(snapshotToRestore);
             try { localStorage.removeItem(SWIPE_ORIGINAL_STORAGE_KEY); } catch { /* ignore */ }
+            const duration = enteredAtRef.current ? Math.round((Date.now() - enteredAtRef.current) / 1000) : 0;
+            enteredAtRef.current = null;
+            trackSwipeExit(duration);
             return { ...initialCompareMode(), swipeOrientation: prev.swipeOrientation };
         });
     }, [applySnapshotToLive]);

@@ -13,7 +13,7 @@ import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useEventoContext } from '@hooks/useEvento';
 import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
 
-import { trackSiderLock } from '@services/analyticsService';
+import { trackSiderLock, trackLogoClick } from '@services/analyticsService';
 import { buildIiegMarker, computeIiegStats } from '@pages/maps/helpers/markerDefinitions';
 import { getDatabaseStats } from '@services/layerMetadataService';
 import { useZenMode } from './ZenMode';
@@ -170,6 +170,7 @@ const MapSider = ({ className = '' }) => {
     }, []);
 
     const handleIiegLogoClick = useCallback(async () => {
+        trackLogoClick('iieg');
         if (treatAsMobile) closeSider();
         const stats = computeIiegStats({ allLayers });
         const dbStats = await getDatabaseStats();

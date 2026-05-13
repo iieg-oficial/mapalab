@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.27.0',
+        items: [
+            { text: 'Ahora MapaLab cuenta de forma anónima cuántas personas usan cada capa y herramienta, para priorizar mejoras donde más se necesitan. No se identifica a ningún usuario; si tu navegador tiene "No me rastrees" activado, se respeta automáticamente.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.21.1',
         items: [
             { text: 'Los límites estatales, regionales y municipales (IIEG e INEGI) ahora se muestran automáticamente arriba de cualquier capa de polígono activa, para que sus etiquetas no queden tapadas. En el panel de capas activas verás un ícono de pin en estas capas indicando que se mantienen siempre visibles.', tag: 'added' },

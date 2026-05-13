@@ -235,7 +235,7 @@ const InfoBox = () => {
                     </div>
 
                     <div className="flex items-center pl-[13px] pr-4 pb-2 gap-3">
-                        <InfoBoxTools tools={mobileTools} />
+                        <InfoBoxTools tools={mobileTools} layerId={results?.[0]?.layerId || null} />
                     </div>
 
                     <ScrollContainer
