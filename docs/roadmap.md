@@ -264,7 +264,7 @@ timeline
 - [x] Tabla `mapalab.layer_tree_cache` (JSONB singleton)
 - [x] `dataengine-jobs` container (renombrado de `dataengine-mapalab-card`) con cron
 - [x] Jobs diarios: periodicity (03:00), layer_tree (04:00)
-- [x] `make refresh-layer-tree`, `refresh-all` en `mapalab-dataengine`
+- [x] `make refresh-layer-tree`, `refresh-all` en `dataengine`
 - [x] `POST /layers/refresh-cache` para trigger HTTP desde mariachi
 - [x] mapalab backend `scheduler_service` vaciado (no-op)
 

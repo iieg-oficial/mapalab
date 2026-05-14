@@ -237,7 +237,7 @@ sieej/frontend/...                    EDIT (insertar <iieg-mapalab> en una pági
 - **Tests**: nunca mockear DB, integration tests hit real Postgres.
 - **Roles mariachi**: admin = `tetlamamakani`, staff = `{tetlamamakani, editora}`.
 - **Auth admin**: `verify_csrf` + `require_role(['tetlamamakani'])`.
-- **Schema mariachi**: solo toca `public.*` y `mariachi.*`. NO `mapalab.*` (eso vive en mapalab-dataengine).
+- **Schema mariachi**: solo toca `public.*` y `mariachi.*`. NO `mapalab.*` (eso vive en dataengine).
 
 ## Permisos otorgados a esta sesión
 

@@ -113,7 +113,7 @@ status:
 	@$(COMPOSE_STAGING) ps 2>/dev/null || echo "  No hay servicios de staging corriendo"
 
 BACKEND_HOST ?= http://localhost:8000
-DATAENGINE_DIR ?= ../mapalab-dataengine
+DATAENGINE_DIR ?= ../dataengine
 
 refresh-layer-tree:
 	@if [ -d $(DATAENGINE_DIR) ] && docker ps --format '{{.Names}}' | grep -q '^dataengine-jobs$$'; then \

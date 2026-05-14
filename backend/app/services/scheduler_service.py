@@ -6,7 +6,7 @@ class SchedulerService:
     def start_scheduler(cls):
         Logger.info(
             'Scheduler deshabilitado — los jobs periodicos corren en dataengine-jobs '
-            '(ver /IIEG/mapalab-dataengine/jobs/crontab). '
+            '(ver /IIEG/dataengine/jobs/crontab). '
             'Refresh manual: POST /layers/refresh-cache o POST /periodicity/refresh.'
         )
 

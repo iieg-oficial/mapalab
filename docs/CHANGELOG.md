@@ -7,6 +7,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.28.1] - 2026-05-14
+
+### Renombrado del repositorio `mapalab-dataengine` → `dataengine`
+
+Se actualizaron las referencias al repo de infraestructura de datos, ahora llamado `dataengine`, en docs, `Makefile` y `backend/app/services/scheduler_service.py`.
+
 ## [1.28.0] - 2026-05-13
 
 ### Instrumentación HTTP del backend para Prometheus

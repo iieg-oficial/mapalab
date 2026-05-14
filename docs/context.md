@@ -82,7 +82,7 @@ Servidor OGC que provee capas geoespaciales. MapaLab consume WMS/WFS/WCS.
 - 10 workspaces: `general`, `economia`, `salud`, `educacion`, `seguridad`, `recursos`, `demografia`, `desarrollo`, `gobierno`, `raster`
 - 4 workspaces con alias: `seguridad` → `seguridad_y_proteccion_ciudadana`, `gobierno` → `gobierno_y_ciudadania`, `desarrollo` → `desarrollo_social`, `recursos` → `recursos_y_calidad_de_vida`
 
-### mapalab-dataengine
+### dataengine
 
 Cluster PostgreSQL 18 + PostGIS 3.6 con primary (5432) + replica (5433) + backups automaticos a Acervo.
 - GeoServer lee datos espaciales de aqui
@@ -232,7 +232,7 @@ Construido con `FastMCP.from_fastapi(...)` a partir de un sub-app FastAPI que re
 - `public.layer_periodicity` — tabla autogenerada por función SQL (refresh diario)
 
 **Legacy (eliminado en v1.7.0):**
-- `public.mapalab_card` — ya no se lee desde el backend. La tabla puede seguir viva en producción como respaldo histórico hasta que se confirme que todo está migrado a `mapalab.layer_metadata`. El ETL del Google Sheet fue eliminado del código de runtime; se restaura temporalmente desde git (commit `1f70a88~1`) en el flujo `make prod-migration` de `mapalab-dataengine`, que hace el pull final del Sheet + bootstrap + seed + migrate + stamp en una sola invocación.
+- `public.mapalab_card` — ya no se lee desde el backend. La tabla puede seguir viva en producción como respaldo histórico hasta que se confirme que todo está migrado a `mapalab.layer_metadata`. El ETL del Google Sheet fue eliminado del código de runtime; se restaura temporalmente desde git (commit `1f70a88~1`) en el flujo `make prod-migration` de `dataengine`, que hace el pull final del Sheet + bootstrap + seed + migrate + stamp en una sola invocación.
 
 ### Schedulers (viven en DataEngine, no en mapalab backend)
 
@@ -244,7 +244,7 @@ Container `dataengine-jobs` corre cron con tres tareas diarias:
 | 04:00 | `run_refresh_layer_tree.py` | Reconstruye `mapalab.layer_tree_cache` desde `layers` |
 | 04:30 | `run_refresh_layer_stats.py` | Ejecuta los SQL de `stats_config` y guarda en `values` |
 
-Trigger manual desde cualquier repo: `make refresh-layer-tree`, `make refresh-layer-stats`, `make refresh-all` (en mapalab-dataengine).
+Trigger manual desde cualquier repo: `make refresh-layer-tree`, `make refresh-layer-stats`, `make refresh-all` (en dataengine).
 
 Mariachi invoca `POST /mapalab/api/layers/refresh-cache` al aprobar borradores o editar capas para refresh inmediato.
 

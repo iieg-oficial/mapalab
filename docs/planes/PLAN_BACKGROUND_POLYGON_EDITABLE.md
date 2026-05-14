@@ -29,7 +29,7 @@ Mover el control de `BACKGROUND_POLYGON_LAYER_NAMES` a la BD, editable desde mar
 
 ### Backend / BD
 
-1. Agregar columna `es_fondo_visual BOOLEAN DEFAULT FALSE NOT NULL` en `mapalab.layers` (migración alembic en `mapalab-dataengine`).
+1. Agregar columna `es_fondo_visual BOOLEAN DEFAULT FALSE NOT NULL` en `mapalab.layers` (migración alembic en `dataengine`).
 2. Reflejar en el endpoint `/layers/tree` del backend mapalab — el nodo leaf incluye `esFondoVisual: true|false`.
 3. Reflejar en `wmsConfig` hidratado (`frontend/src/pages/maps/helpers/wmsConfig.js`) para que el frontend lo consuma sin lookups extra.
 
@@ -58,7 +58,7 @@ Hacerlo como parte de la migración (UPDATE inicial) para no perder el estado ac
 
 ## Archivos afectados (cuando se ejecute)
 
-### `mapalab-dataengine`
+### `dataengine`
 - `migrations/versions/XXX_add_es_fondo_visual.py` — migración alembic
 - `jobs/bootstrap/v14_schema.sql` — agregar columna al schema base
 - Seed/update inicial para las 3 capas actuales
