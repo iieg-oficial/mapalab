@@ -7,6 +7,27 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.28.5] - 2026-05-15
+
+### Auth interna en `/layers/refresh-cache` e `/layers/invalidate-cache`
+
+Hasta `1.28.4` ambos endpoints aceptaban requests anonimos. La unica defensa era el `return 403` que `gateway-hub` aplica en las rutas `/mapalab/api/layers/refresh-cache` e `/invalidate-cache`. Para servicios co-residentes en `iieg-network` (cualquier container que llegue directo a `mapalab-backend-1:8000`) eso no servia: podian invalidar el cache sin token y abusar del refresh para forzar carga sobre dataengine.
+
+#### Agregado
+
+- **`app/auth/internal_token.py::require_internal_token`**: dependency reusable que valida el header `X-Internal-Token` contra `settings.MAPALAB_INTERNAL_TOKEN`. Retorna `503` si el server no tiene el token configurado, `401` si el header esta ausente o es incorrecto. Mismo contrato que la funcion local `_require_internal_token` que existia en `shares.py` (no se refactoriza para mantener el cambio minimo).
+- **`app/routers/layers.py`**: `dependencies=[Depends(require_internal_token)]` en `refresh_cache_endpoint` (linea 69) e `invalidate_cache_endpoint` (linea 80).
+- **`test/test_smoke.py::TestLayersAdminAuth`**: 5 tests que cubren el contrato: rechazo sin token, con token incorrecto, 503 cuando el server no tiene token configurado, aceptacion con token correcto, e invalidate sin token.
+
+#### Coordinacion
+
+- Requiere `mariachi >= 1.0.3` (el notifier ya envia el header `X-Internal-Token`).
+- `MAPALAB_INTERNAL_TOKEN` debe coincidir exactamente entre `mapalab/.env*` y `mariachi/.env*`.
+
+#### Notas
+
+- Si en algun entorno `MAPALAB_INTERNAL_TOKEN` queda vacio en mapalab, los endpoints devuelven `503` y los reintentos del notifier los marcan como fallidos. El `etag-check` de mem cache en cada request sigue resincronizando contra DB, asi que el tree no queda permanentemente stale; solo se pierde la actualizacion inmediata.
+
 ## [1.28.4] - 2026-05-15
 
 ### Loop temporal: default subido de 0.5 s a 1 s

@@ -49,6 +49,61 @@ class TestLayersTree:
         assert r.json()[0]['alias'] == 'seg'
 
 
+class TestLayersAdminAuth:
+    def test_refresh_cache_rejects_without_token(self, client):
+        from app.config import settings
+        original = settings.MAPALAB_INTERNAL_TOKEN
+        settings.MAPALAB_INTERNAL_TOKEN = 'expected-token'
+        try:
+            r = client.post('/layers/refresh-cache')
+            assert r.status_code == 401
+        finally:
+            settings.MAPALAB_INTERNAL_TOKEN = original
+
+    def test_refresh_cache_rejects_with_wrong_token(self, client):
+        from app.config import settings
+        original = settings.MAPALAB_INTERNAL_TOKEN
+        settings.MAPALAB_INTERNAL_TOKEN = 'expected-token'
+        try:
+            r = client.post('/layers/refresh-cache', headers={'X-Internal-Token': 'wrong'})
+            assert r.status_code == 401
+        finally:
+            settings.MAPALAB_INTERNAL_TOKEN = original
+
+    def test_refresh_cache_503_when_token_not_configured(self, client):
+        from app.config import settings
+        original = settings.MAPALAB_INTERNAL_TOKEN
+        settings.MAPALAB_INTERNAL_TOKEN = None
+        try:
+            r = client.post('/layers/refresh-cache', headers={'X-Internal-Token': 'whatever'})
+            assert r.status_code == 503
+        finally:
+            settings.MAPALAB_INTERNAL_TOKEN = original
+
+    def test_refresh_cache_accepts_correct_token(self, client):
+        from app.config import settings
+        original = settings.MAPALAB_INTERNAL_TOKEN
+        settings.MAPALAB_INTERNAL_TOKEN = 'expected-token'
+        try:
+            mock_result = {'etag': 'W/"x"', 'layer_count': 0}
+            with patch('app.routers.layers.refresh_cache', return_value=mock_result):
+                r = client.post('/layers/refresh-cache', headers={'X-Internal-Token': 'expected-token'})
+            assert r.status_code == 200
+            assert r.json()['ok'] is True
+        finally:
+            settings.MAPALAB_INTERNAL_TOKEN = original
+
+    def test_invalidate_cache_rejects_without_token(self, client):
+        from app.config import settings
+        original = settings.MAPALAB_INTERNAL_TOKEN
+        settings.MAPALAB_INTERNAL_TOKEN = 'expected-token'
+        try:
+            r = client.post('/layers/invalidate-cache')
+            assert r.status_code == 401
+        finally:
+            settings.MAPALAB_INTERNAL_TOKEN = original
+
+
 class TestSearchValidation:
     def test_search_requires_q(self, client):
         r = client.get('/layers/search')

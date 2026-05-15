@@ -205,8 +205,8 @@ Definiciones viven en DataEngine (schema `mapalab`). Frontend las carga via `GET
 | GET | `/layers/initial-order` | Capas activas al cargar |
 | GET | `/layers/workspaces` | Lista de workspaces |
 | GET | `/layers/search?q=X` | Búsqueda flat con path |
-| POST | `/layers/refresh-cache` | Regenera cache materializada (invocable desde mariachi) |
-| POST | `/layers/invalidate-cache` | Invalida solo caché en memoria del proceso |
+| POST | `/layers/refresh-cache` | Regenera cache materializada. **Requiere `X-Internal-Token` desde 1.28.5** (`MAPALAB_INTERNAL_TOKEN`); el gateway tambien lo bloquea externo con 403. Lo invoca `mariachi-api` via `iieg-network` |
+| POST | `/layers/invalidate-cache` | Invalida solo cache en memoria del proceso. **Requiere `X-Internal-Token` desde 1.28.5** |
 | ANY  | `/mcp/` | Servidor MCP (FastMCP). Expone `metadata`, `periodicity`, `layers` y `shares` como tools. Excluye `download` y `metrics`. Transporte HTTP streamable; nginx lo proxea sin buffering ni cache |
 
 ### MCP server
@@ -246,7 +246,7 @@ Container `dataengine-jobs` corre cron con tres tareas diarias:
 
 Trigger manual desde cualquier repo: `make refresh-layer-tree`, `make refresh-layer-stats`, `make refresh-all` (en dataengine).
 
-Mariachi invoca `POST /mapalab/api/layers/refresh-cache` al aprobar borradores o editar capas para refresh inmediato.
+Mariachi invoca `POST /mapalab/api/layers/refresh-cache` directamente sobre `mapalab-backend-1:8000` via `iieg-network` (no via gateway) al aprobar borradores o editar capas. Desde mapalab `1.28.5` / mariachi `1.0.3` el request incluye el header `X-Internal-Token` con `MAPALAB_INTERNAL_TOKEN` (debe ser identico en `mariachi/.env*` y `mapalab/.env*`). Si la auth falla, el counter `mariachi_tree_notify_failed_total` se incrementa y la alerta `MariachiTreeNotifyFailures` dispara en Discord (huachicol `1.19.3+`).
 
 ### Leader-follower
 
