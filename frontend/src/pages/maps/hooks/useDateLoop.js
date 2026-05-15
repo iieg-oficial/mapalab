@@ -9,6 +9,8 @@ export const DEFAULT_LOOP_INTERVAL_MS = 500;
 export const LOOP_INTERVAL_PRESETS = [250, 500, 1000, 2000, 3000];
 export const DEFAULT_LOOP_DIRECTION = 'ltr';
 
+const MAX_LOADING_RETRIES = 100;
+
 const clampIntervalMs = (ms) => Math.max(100, Math.min(10000, Number(ms) || DEFAULT_LOOP_INTERVAL_MS));
 const normalizeDirection = (dir) => (dir === 'rtl' ? 'rtl' : 'ltr');
 
@@ -26,6 +28,7 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLa
     refs.current.loadingLayers = loadingLayers;
     refs.current.getSpecificFilter = getSpecificFilter;
     refs.current.getPeriodicity = getPeriodicity;
+    refs.current.allLayers = allLayers;
 
     const getLoopPrefs = useCallback((layerId) => {
         const prefs = prefsRef.current[layerId];
@@ -75,9 +78,22 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLa
             const direction = prefs.direction ?? DEFAULT_LOOP_DIRECTION;
 
             if (refs.current.loadingLayers.has(layerId)) {
+                data.loadingRetries = (data.loadingRetries || 0) + 1;
+                if (data.loadingRetries > MAX_LOADING_RETRIES) {
+                    data.isPlaying = false;
+                    clearTimer(layerId);
+                    setDateLoops(prev => (
+                        prev[layerId]
+                            ? { ...prev, [layerId]: { ...prev[layerId], isPlaying: false } }
+                            : prev
+                    ));
+                    trackRasterLoop(layerId, false);
+                    return;
+                }
                 timersRef.current.set(layerId, setTimeout(doTick, 100));
                 return;
             }
+            data.loadingRetries = 0;
 
             const { values } = data;
             const currentIdx = values.findIndex(v => v.key === data.currentKey);
@@ -133,7 +149,7 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLa
     }, [clearTimer]);
 
     const inferLoopConfig = useCallback((layerId) => {
-        const layerDef = findLayerDef(layerId, allLayers);
+        const layerDef = findLayerDef(layerId, refs.current.allLayers);
         const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
         const periodicity = refs.current.getPeriodicity?.(layerId) || null;
         const currentFilter = refs.current.getSpecificFilter?.(layerId, 'date');
@@ -160,7 +176,6 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLa
         }
 
         return null;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const toggleLoop = useCallback((layerId) => {
@@ -174,6 +189,7 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLa
 
         if (data && !data.isPlaying) {
             data.isPlaying = true;
+            data.loadingRetries = 0;
             setDateLoops(prev => ({
                 ...prev,
                 [layerId]: { ...prev[layerId], isPlaying: true }
@@ -230,8 +246,6 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLa
             const layerDef = findLayerDef(layerId, allLayers);
             if (!layerDef?.rasterPeriodicity) return;
 
-            // Si la capa ya tiene un filtro date (por share o navegacion previa),
-            // marcarla como ya inicializada y no sobreescribir
             const existingDate = refs.current.getSpecificFilter?.(layerId, 'date');
             if (existingDate) {
                 appliedDefaultsRef.current.add(layerId);
@@ -258,10 +272,10 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLa
         [...appliedDefaultsRef.current].forEach(id => {
             if (!activeLayerIds.includes(id)) {
                 appliedDefaultsRef.current.delete(id);
+                clearFilter(id, 'date');
             }
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeLayerIds, applyFilter]);
+    }, [activeLayerIds, applyFilter, clearFilter, allLayers]);
 
     useEffect(() => {
         Object.keys(dateLoops).forEach(layerId => {
@@ -280,6 +294,14 @@ export const useDateLoop = ({ applyFilter, clearFilter, activeLayerIds, hiddenLa
             }
         });
     }, [hiddenLayerIds, stopLoop]);
+
+    useEffect(() => {
+        const timers = timersRef.current;
+        return () => {
+            timers.forEach(id => clearTimeout(id));
+            timers.clear();
+        };
+    }, []);
 
     const hasActiveLoops = Object.values(dateLoops).some(l => l.isPlaying);
 
