@@ -295,12 +295,27 @@ api('PATCH', '/epics/<ID>', {'description': '# Nueva descripción', 'version': e
 
 ### Vincular historia de usuario a una épica
 
-No usar `POST /epics/{id}/related_userstories` (devuelve 400). Usar PATCH sobre la historia:
+Esto es lo que llena la pestaña **User stories** de la épica en la UI. Sin este paso, aunque la descripción de la épica mencione las historias y aunque las historias listen su épica en su descripción, **la épica aparecerá visualmente sin historias hijas**.
+
+Endpoint: `POST /epics/{epic_id}/related_userstories` con body `{epic, user_story}`. Ambos campos son requeridos (con solo `user_story` devuelve 400 "epic: This field is required.").
 
 ```python
-us = api('GET', '/userstories/<US_ID>')
-api('PATCH', '/userstories/<US_ID>', {'epic': <EPIC_ID>, 'version': us['version']})
+api('POST', f'/epics/{epic_id}/related_userstories',
+    {'epic': epic_id, 'user_story': us_id})
 ```
+
+Idempotencia: si la relación ya existe, devuelve `400` con `"__all__": ["Related user story with this User story and Epic already exists."]`. Capturar y continuar.
+
+**Pitfall del PATCH con `epic:`**: hacer `PATCH /userstories/{id}` con `{'epic': epic_id, ...}` **no falla con error pero tampoco crea el vínculo**. El campo silenciosamente se descarta. Idem `{'epics': [epic_id]}`. Usar siempre el endpoint `related_userstories`.
+
+### Verificar vínculos de una épica
+
+```python
+rel = api('GET', f'/epics/{epic_id}/related_userstories')
+print(f'{len(rel)} historias vinculadas')
+```
+
+Nota: el campo `user_story_extra_info` de la respuesta puede venir vacío (`ref=None, subject=None`); la relación sí está creada, es un detalle de hidratación del endpoint. Para ver los refs, hacer GET individual a cada `user_story` id en la respuesta.
 
 ---
 
@@ -333,7 +348,8 @@ us = api('POST', '/userstories', {
     'subject': 'Endpoints de búsqueda en datos de capas',
     'assigned_to': TAIGA_USER_ID
 })
-us = api('PATCH', f'/userstories/{us["id"]}', {'epic': epic_id, 'version': us['version']})
+api('POST', f'/epics/{epic_id}/related_userstories',
+    {'epic': epic_id, 'user_story': us['id']})
 
 # 3. Crear tarea vinculada a la historia
 api('POST', '/tasks', {
@@ -446,14 +462,33 @@ if target.get('assigned_to') is None:
 api('PATCH', f'/userstories/{us_id}', patch)
 ```
 
-### Títulos de tareas: sin prefijo de commit
+### Títulos: patrón homologado
 
-Las tareas se leen en Taiga por personas no técnicas (PMs, stakeholders). Los títulos deben usar la **descripción del commit** como subject, sin el prefijo `tipo(scope):`. El prefijo y el hash del commit van en la descripción de la tarea.
+Las tres jerarquías siguen un patrón fijo. Mantenerlo es lo que permite que el backlog se lea de un golpe y que cualquier ingest futuro sea visualmente coherente con los anteriores.
 
+**Épica** — contenedor del rango de versiones, sin descripción inline:
+
+- Patrón: `Mapalab X.Y.x`
+- Ejemplos: `Mapalab 1.28.x`, `Mapalab 1.20.x`
+- ❌ `Mapalab 1.20.0 — Auditoría de eventos: perf y telemetría` (sin descripción inline; eso va en la descripción de la épica, no en el subject)
+
+**User Story** — un cambio coherente dentro de una versión específica:
+
+- Patrón: `vX.Y.Z — <descripción funcional>`
+- `v` en minúscula, em-dash (`—`) con espacios alrededor, descripción que empieza con sustantivo o sustantivada (no con verbo).
+- Ejemplos: `v1.28.0 — Métricas HTTP estándar del backend para Prometheus`, `v1.28.2 — Lectura fresca del árbol de capas en el loop temporal`.
+- ❌ `Mapalab 1.20.0 — Auditoría de eventos: perf, EventoContext, persistencia y telemetría` (sin `Mapalab` prefijo, sin dos puntos enlistando, no se mezclan nombres internos en el subject).
+- ❌ `Implementar métricas HTTP` (un subject que empieza con verbo es de tarea, no de historia).
+
+**Tarea** — un paso técnico concreto, sin prefijo de versión:
+
+- Patrón: `<Verbo en infinitivo> <objeto técnico>`
+- Sin prefijo de commit (`tipo(scope):`); el prefijo y el hash del commit van en la descripción.
+- Ejemplos: `Integrar el instrumentador HTTP en el backend`, `Subir MAX_LOADING_RETRIES de 100 a 300`, `Cancelar los temporizadores del loop al desmontar el provider`.
 - ❌ `feat(maps): exponer evento activo en MapsContext`
-- ✅ `Exponer evento activo en MapsContext`
+- ❌ `v1.28.5 — Crear validador interno` (las tareas no llevan prefijo de versión)
 
-Aplica a tareas nuevas y a renombrado de tareas existentes que estén asignadas al usuario actual. **No renombrar tareas asignadas a otros**.
+Aplica a items nuevos y a renombrado de items existentes que estén asignados al usuario actual. **No renombrar items asignados a otros**.
 
 ### `description` viene truncado en endpoints de listado
 
@@ -482,6 +517,119 @@ Para un release `vX.Y.Z`:
 
 Cuando un release toca varios subsistemas (ej. comparador + eventos), una US por subsistema, no una US por release.
 
+### Granularidad: una historia por fix/feature concreto
+
+Las historias deben representar **un cambio coherente y verificable**, no agrupar cosas porque vivan en el mismo archivo. Si un release toca cinco bugs distintos del mismo hook, son cinco historias (cada una con su descripción de Objetivo / Contexto / Resultado), no una historia "Bugfixes del hook". Esto facilita revisión, estimación y trazabilidad a commits.
+
+Regla práctica: si tienes que usar la palabra "y" en el subject de la historia, probablemente es más de una historia. Excepciones: ajustes finos sumamente pequeños del mismo parámetro (ej. dos constantes relacionadas) pueden ir juntos.
+
+### Estructura de descripciones (Objetivo / Contexto / Resultado)
+
+Toda **épica** e **historia** se hidrata con tres o cuatro secciones, en este orden:
+
+```markdown
+## Objetivo
+
+Una a tres líneas que explican qué se busca lograr y a quién beneficia. Lenguaje
+accesible: si la lee una persona de área no técnica, debe entender el qué y el porqué.
+
+## Contexto
+
+Por qué se hace el cambio: incidente, deuda técnica, requerimiento externo, falla
+observada. Aquí sí se pueden mencionar archivos, funciones y nombres internos.
+
+## Resultado
+
+Estado final tras la entrega. Una a tres líneas.
+
+## Coordinación  (opcional)
+
+Dependencias con otros sistemas/repos, requisitos de versión mínima, variables de
+entorno compartidas. Se omite si no aplica.
+```
+
+Las **tareas** llevan estructura más simple:
+
+```markdown
+## Cambios
+
+- Bullet técnico 1 (archivo, función, número de línea cuando aporta).
+- Bullet técnico 2.
+
+Commit: `<hash-corto>`.
+```
+
+Lenguaje:
+
+- **Épicas** y la primera sección (Objetivo) de las historias se redactan para servidor público común: evitar `hook`, `provider`, `context`, `closure`, `tile`, etc. cuando se puedan sustituir por una descripción funcional. Términos genuinos del dominio (`GeoServer`, `Prometheus`, `nginx`, `cache`) sí pueden quedarse.
+- Sin emojis en subjects ni descripciones.
+
+### Etiquetas por área técnica
+
+Aplicar al campo `tags` (lista de strings) según el área principal del item. Las etiquetas son libres en este proyecto (no hay catálogo fijo); usar el set siguiente como convención:
+
+- `backend` — cambios en `backend/app/**`.
+- `frontend` — cambios en `frontend/src/**`.
+- `infra` — `nginx`, `docker-compose`, `Makefile`, `scheduler`, deploy.
+- `docs` — `docs/**`, `README.md`, comentarios estructurales.
+- `tests` — cambios en suites de prueba (`backend/test/**`, `frontend/src/**/*.test.*`).
+
+Las épicas pueden cargar varias etiquetas (`backend`, `frontend`, `infra`, `docs`). Las historias y tareas idealmente una o dos.
+
+### Puntos: escala Fibonacci del proyecto
+
+La escala configurada en el proyecto MapaLab (IDs reales en `GET /points?project=1`):
+
+| Nombre | Valor | ID |
+|--------|------:|---:|
+| `1/2`  | 0.5   | 3  |
+| `1`    | 1.0   | 4  |
+| `2`    | 2.0   | 5  |
+| `3`    | 3.0   | 6  |
+| `5`    | 5.0   | 7  |
+| `8`    | 8.0   | 8  |
+| `10`   | 10.0  | 9  |
+| `13`   | 13.0  | 10 |
+| `20`   | 20.0  | 11 |
+| `40`   | 40.0  | 12 |
+
+Roles del proyecto (IDs reales en `GET /roles?project=1`): `1 UX`, `2 Design`, `3 Front`, `4 Back`, `5 Product Owner`, `6 Stakeholder`, `7 Gobernanza`, `8 Datos Abiertos`.
+
+El campo `points` de una user story es un dict `{role_id_str: point_id}`. Asignar el punto al **rol principal** del trabajo. Ejemplo para una historia frontend de 5 puntos:
+
+```python
+api('PATCH', f'/userstories/{us_id}', {
+    'points': {'3': 7},  # Rol Front (3) → punto "5" (id 7)
+    'version': us_full['version'],
+})
+```
+
+Las **tareas no llevan puntos individuales** (no aplica el campo). La suma de tareas puede ser menor o igual a la estimación de la historia: la historia se estima de manera integral, las tareas son desglose técnico.
+
+Calibración mental (no es regla rígida):
+
+- `1/2` — cambio de una sola constante o flag.
+- `1` — refactor mecánico, rename, ajuste menor con tests intactos.
+- `2` — fix de un solo bug acotado, con análisis breve.
+- `3` — feature pequeña aislada, o fix con análisis profundo en un componente.
+- `5` — integración nueva (librería + config + docs), o fix con cambios coordinados en varios archivos.
+- `8` — feature mediana con efectos cross-cutting, o módulo nuevo con pruebas.
+- `13` — auditoría a fondo (múltiples bugs latentes), refactor de un sistema completo.
+- `20+` — un release entero o un cambio que cruza varios subsistemas; idealmente dividir.
+
+### Fecha límite (`due_date`)
+
+Aplica a **épicas y tareas**. Las user stories no llevan `due_date` en la convención del proyecto (su entrega se rastrea por el milestone y por el estado de sus tareas).
+
+Formato: `YYYY-MM-DD`. Para trabajo retroactivo (épica que se hidrata después de mergear), usar la fecha del día de hidratación: refleja cuándo se cerró el registro en Taiga, aunque el merge sea anterior.
+
+```python
+api('PATCH', f'/epics/{epic_id}', {
+    'due_date': '2026-05-15',
+    'version': epic_full['version'],
+})
+```
+
 ### Status cerrado para trabajo ya mergeado
 
 Cuando creas items en Taiga para trabajo que **ya está mergeado** en `develop`/`production`, marcarlos al status con `is_closed=true` para que no se cuelen al sprint planning:
@@ -495,33 +643,53 @@ TASK_DONE = next(s['id'] for s in task_statuses if s.get('is_closed'))
 
 Aplicar el `status` cerrado en un PATCH separado (post-creación) o en el mismo POST si la API lo permite.
 
+Valores observados en MapaLab (sujetos a cambio si se reconfigura el proyecto):
+
+- Epic status `Done` → id `5`.
+- User story status `Done` → id `5` (también existe `Archived` id `6`, también cerrado).
+- Task status `Finalizada` → id `4` (es el único `is_closed=true` del flujo).
+
+Aun cerrando el item, sí aplica la regla de §Fecha límite (`due_date`).
+
 ### Helpers idempotentes `ensure_us` / `ensure_task`
 
 Re-ejecutar un script de hidratación no debe duplicar items. Buscar por subject exacto y aplicar `PATCH` si existe, `POST` si no:
 
 ```python
+def link_us_to_epic(us_id, epic_id):
+    """Idempotente. Si la relación ya existe, la API devuelve 400 y se ignora."""
+    try:
+        api('POST', f'/epics/{epic_id}/related_userstories',
+            {'epic': epic_id, 'user_story': us_id})
+    except urllib.error.HTTPError as e:
+        if e.code == 400 and b'already exists' in e.read():
+            return
+        raise
+
 def ensure_us(subject, description, epic_id, status_id):
     existing = api('GET', f'/userstories?project={PROJECT_ID}')
     found = next((u for u in existing if u['subject'] == subject), None)
     if found:
         full = api('GET', f"/userstories/{found['id']}")
-        return api('PATCH', f"/userstories/{found['id']}", {
+        us = api('PATCH', f"/userstories/{found['id']}", {
             'description': description,
-            'epic': epic_id,
             'status': status_id,
             'version': full['version'],
         })
-    us = api('POST', '/userstories', {
-        'project': PROJECT_ID, 'subject': subject,
-        'description': description,
-    })
-    full = api('GET', f"/userstories/{us['id']}")
-    return api('PATCH', f"/userstories/{us['id']}", {
-        'epic': epic_id, 'status': status_id, 'version': full['version'],
-    })
+    else:
+        us = api('POST', '/userstories', {
+            'project': PROJECT_ID, 'subject': subject,
+            'description': description,
+        })
+        full = api('GET', f"/userstories/{us['id']}")
+        us = api('PATCH', f"/userstories/{us['id']}", {
+            'status': status_id, 'version': full['version'],
+        })
+    link_us_to_epic(us['id'], epic_id)
+    return us
 ```
 
-Misma estructura para `ensure_task(us_id, subject, description, status_id)`. La regla de §Asignación por default aplica dentro del helper.
+Misma estructura para `ensure_task(us_id, subject, description, status_id)` (las tareas sí aceptan el campo `user_story` en POST o PATCH; no necesitan endpoint aparte). La regla de §Asignación por default aplica dentro del helper.
 
 ### Hash de commit en descripción
 
