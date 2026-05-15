@@ -7,6 +7,14 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.28.4] - 2026-05-15
+
+### Loop temporal: default subido de 0.5 s a 1 s
+
+`DEFAULT_LOOP_INTERVAL_MS` en `frontend/src/pages/maps/hooks/useDateLoop.js` cambiado de `500` a `1000`. A 0.5 s con GCP saturado o cold cache, el ojo no alcanza a "leer" el cambio entre frames raster y la animacion se siente como flicker mas que como evolucion temporal. Un segundo da tiempo suficiente para que el usuario perciba la transicion mes-a-mes y, de paso, alivia presion sobre GeoServer en el primer ciclo. El preset de 0.25 s y 0.5 s siguen disponibles para quien quiera tempo mas rapido; solo cambia el valor inicial cuando se da Play por primera vez.
+
+Tests existentes (`useDateLoop.test.js`) pasan sin modificaciones porque referencian `DEFAULT_LOOP_INTERVAL_MS` por simbolo, no por valor literal.
+
 ## [1.28.3] - 2026-05-15
 
 ### Loop temporal: tope de reintentos alineado con `proxy_cache_lock_timeout`
