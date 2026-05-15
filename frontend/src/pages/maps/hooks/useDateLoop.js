@@ -5,7 +5,7 @@ import { trackRasterLoop } from '@services/analyticsService';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 import { buildLoopValues, describeDateFilter } from '../helpers/dateLoopHelpers';
 
-export const DEFAULT_LOOP_INTERVAL_MS = 500;
+export const DEFAULT_LOOP_INTERVAL_MS = 1000;
 export const LOOP_INTERVAL_PRESETS = [250, 500, 1000, 2000, 3000];
 export const DEFAULT_LOOP_DIRECTION = 'ltr';
 
