@@ -20,7 +20,7 @@ SELECT id, layer_count, etag, updated_at FROM mapalab.layer_tree_cache;
 "
 
 # 4. Cron jobs (logs recientes)
-cd /IIEG/mapalab-dataengine && make logs-jobs
+cd /IIEG/dataengine && make logs-jobs
 ```
 
 ---
@@ -39,7 +39,7 @@ docker logs --tail 50 mapalab-dev-backend-1 2>&1 | grep -i error
 ### Acción
 ```bash
 # Regenerar cache (ante cualquier duda)
-cd /IIEG/mapalab-dataengine && make refresh-layer-tree
+cd /IIEG/dataengine && make refresh-layer-tree
 
 # Si falla: cache corrupta → reset manual
 docker exec -i -e PGPASSWORD='Bq7K!Ho6&B' dataengine-primary psql -U gisuser -d iieg_gis <<SQL
@@ -61,8 +61,8 @@ make refresh-layer-tree    # reconstruye desde layers
 
 ```bash
 # Opción A: si tienes el JSON más reciente exportado
-cd /IIEG/mapalab-dataengine
-cd /IIEG/mapalab-dataengine
+cd /IIEG/dataengine
+cd /IIEG/dataengine
 make prod-migration PROD_MIGRATION_FLAGS="--skip-etl --layers-json /path/to/layers_export.json"
 
 # Opción B: restaurar desde backup diario de DataEngine
@@ -78,7 +78,7 @@ docker exec dataengine-backup /scripts/restore-from-latest.sh mapalab  # nombre 
 
 ### Acción
 ```bash
-cd /IIEG/mapalab-dataengine
+cd /IIEG/dataengine
 make refresh-layer-stats
 
 # Si sigue fallando, verificar stats_config
@@ -138,7 +138,7 @@ docker exec dataengine-jobs tail -50 /var/log/cron.log
 ### Acción
 ```bash
 # Restart
-cd /IIEG/mapalab-dataengine
+cd /IIEG/dataengine
 docker compose restart jobs
 
 # Ejecución manual inmediata
@@ -166,7 +166,7 @@ curl -D - -o /dev/null http://localhost:8000/layers/tree | grep -i etag
 curl -X POST http://localhost:8000/layers/invalidate-cache
 
 # 2. Regenerar cache materializada si es necesario
-cd /IIEG/mapalab-dataengine && make refresh-layer-tree
+cd /IIEG/dataengine && make refresh-layer-tree
 
 # 3. Forzar al cliente a ignorar su cache local
 # (navegador: Ctrl+Shift+R o DevTools → Network → Disable cache)
@@ -185,7 +185,7 @@ No hay rollback granular hoy (v1.5.x lo agrega con `layers_audit`). Opciones act
 docker exec -i -e PGPASSWORD='...' dataengine-primary psql -U gisuser -d iieg_gis < /backups/mapalab_schema_YYYY-MM-DD.sql
 
 # Opción B: re-seed completo desde JSON (sin tocar el Sheet ETL)
-cd /IIEG/mapalab-dataengine
+cd /IIEG/dataengine
 make prod-migration PROD_MIGRATION_FLAGS="--skip-etl --layers-json /path/to/known-good.json"
 ```
 

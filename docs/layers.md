@@ -6,7 +6,7 @@ Arquitectura de v1.4.0+. Las definiciones de capas se obtienen del backend en ti
 
 | Componente | Rol |
 |---|---|
-| **DataEngine** (`mapalab-dataengine`) | Fuente de verdad. Schema `mapalab` con `layers`, `workspaces`, `initial_layer_order`, `layer_tree_cache`, `layer_metadata`, `layer_stats` |
+| **DataEngine** (`dataengine`) | Fuente de verdad. Schema `mapalab` con `layers`, `workspaces`, `initial_layer_order`, `layer_tree_cache`, `layer_metadata`, `layer_stats` |
 | **mariachi** (`mariachi/api` + `mariachi/admin`) | CRUD + editor UI. Rol `mariachi_layers` es owner del schema. `/administrador/mapalab/layers` es la interfaz de edición |
 | **mapalab/backend** | Lectura pública via `GET /layers/*` + `GET /metadata/*`. Sin escritura |
 | **mapalab/frontend** | Consume endpoints y renderiza |
@@ -250,7 +250,7 @@ sequenceDiagram
 Primer deploy a prod de DataEngine requiere correr el script de bootstrap:
 
 ```bash
-cd /IIEG/mapalab-dataengine
+cd /IIEG/dataengine
 make prod-migration           # pull final del Sheet + bootstrap + seed + migrate + stamp
 # o sin ETL (si ya corriste el Sheet hoy o estas en dev sin credenciales):
 make prod-migration PROD_MIGRATION_FLAGS="--skip-etl"
@@ -275,11 +275,11 @@ curl http://localhost:8000/layers/initial-order > order.json
 
 | Comando | Ubicación |
 |---|---|
-| `make refresh-layer-tree` | mapalab o mapalab-dataengine |
-| `make refresh-layer-stats` | mapalab-dataengine |
-| `make refresh-periodicity` | mapalab-dataengine |
-| `make refresh-all` | mapalab-dataengine (los tres) |
-| `make logs-jobs` | mapalab-dataengine (tail del cron log) |
+| `make refresh-layer-tree` | mapalab o dataengine |
+| `make refresh-layer-stats` | dataengine |
+| `make refresh-periodicity` | dataengine |
+| `make refresh-all` | dataengine (los tres) |
+| `make logs-jobs` | dataengine (tail del cron log) |
 
 ## Deprecaciones
 

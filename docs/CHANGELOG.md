@@ -7,6 +7,23 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.28.2] - 2026-05-15
+
+### Robustez del loop temporal de capas raster
+
+Conjunto de correcciones en `frontend/src/pages/maps/hooks/useDateLoop.js` detectadas en una revisión a fondo del motor de animación del loop. Cinco bugs latentes, todos aislados a este hook; los 13 tests de `useDateLoop` siguen pasando sin modificaciones.
+
+#### Fixed
+
+- **Stale closures de `allLayers`**: `inferLoopConfig` (`useCallback([])`) y el effect de aplicación de filtros por defecto capturaban un `allLayers` posiblemente vacío al primer render. `LayersProvider` hidrata el árbol de forma asíncrona; para capas raster activadas antes de la hidratación esto rompía el inferido y dejaba sin aplicar el filtro `date` por defecto. Ahora `inferLoopConfig` lee `allLayers` vía `refs.current.allLayers` siempre fresco, y el effect lo incluye en sus deps para re-correr cuando el árbol se hidrata. Se eliminaron dos `// eslint-disable-next-line react-hooks/exhaustive-deps` que enmascaraban el problema.
+- **Timers huérfanos al desmontar**: la cadena recursiva de `setTimeout` del tick seguía viva tras un unmount del provider, ejecutando `applyFilter` sobre un árbol desmontado. Nuevo `useEffect` con cleanup que vacía `timersRef` al desmontar.
+- **Hang silencioso por loading perpetuo**: si una capa quedaba marcada como cargando indefinidamente (frame que erroniza al tile loader), el gate `loadingLayers.has(layerId)` reprogramaba un retry cada 100 ms sin tope, dejando el loop girando en vacío sin feedback. Se introdujo `MAX_LOADING_RETRIES = 100` (~10 s); al excederse, el loop se detiene y emite `trackRasterLoop(layerId, false)`. El contador se resetea en cada tick exitoso y al reanudar con `toggleLoop`.
+- **Filtro `date` huérfano tras desactivar una capa raster**: cuando una capa recibía el filtro por defecto vía el effect inicial pero el usuario nunca daba Play, al desactivarla `cleanupLoop` no se invocaba (porque no había entrada en `dateLoops`), por lo que el filtro persistía en el estado de `useCQLFilter`. Ahora el bloque de cleanup de `appliedDefaultsRef` también llama `clearFilter(id, 'date')` para layers raster recién desactivadas. Los filtros restaurados desde share/URL se re-aplican en carga, así que no se pierden.
+
+### Renombrado del repositorio `mapalab-dataengine` → `dataengine`
+
+Se actualizaron las referencias al repo de infraestructura de datos, ahora llamado `dataengine`, en docs, `Makefile` y `backend/app/services/scheduler_service.py`.
+
 ## [1.28.0] - 2026-05-13
 
 ### Instrumentación HTTP del backend para Prometheus
