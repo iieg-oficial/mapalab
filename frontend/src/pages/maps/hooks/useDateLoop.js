@@ -9,7 +9,7 @@ export const DEFAULT_LOOP_INTERVAL_MS = 500;
 export const LOOP_INTERVAL_PRESETS = [250, 500, 1000, 2000, 3000];
 export const DEFAULT_LOOP_DIRECTION = 'ltr';
 
-const MAX_LOADING_RETRIES = 100;
+const MAX_LOADING_RETRIES = 300;
 
 const clampIntervalMs = (ms) => Math.max(100, Math.min(10000, Number(ms) || DEFAULT_LOOP_INTERVAL_MS));
 const normalizeDirection = (dir) => (dir === 'rtl' ? 'rtl' : 'ltr');
