@@ -77,8 +77,8 @@ Descripción, fuentes (JSONB), metodología (JSONB), metadato (JSONB con links T
 | GET | `/layers/search?q=X&limit=N` | Búsqueda flat en label/tags/id con `path` |
 | GET | `/metadata/?workspace=X&layer=Y` | Descripción + numeralia. Lee solo de `layer_metadata` + `layer_stats` (sin fallback legacy desde v1.7.0) |
 | GET | `/metadata/sources?layers=w:l,w:l` | Fuentes por lotes |
-| POST | `/layers/refresh-cache` | Reconstruye `layer_tree_cache` (trigger interno, usado por mariachi) |
-| POST | `/layers/invalidate-cache` | Solo invalida caché en memoria del proceso (sin tocar DB) |
+| POST | `/layers/refresh-cache` | Reconstruye `layer_tree_cache`. Requiere `X-Internal-Token` (desde 1.28.5). Trigger interno desde mariachi |
+| POST | `/layers/invalidate-cache` | Solo invalida caché en memoria del proceso (sin tocar DB). Requiere `X-Internal-Token` (desde 1.28.5) |
 
 ### mariachi api (CRUD + auth)
 

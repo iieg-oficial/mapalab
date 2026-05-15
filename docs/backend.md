@@ -44,8 +44,8 @@ backend/
 - `GET /layers/initial-order` - Capas activas al cargar
 - `GET /layers/workspaces` - Lista de workspaces
 - `GET /layers/search?q=X` - Busqueda por tags/label/id
-- `POST /layers/refresh-cache` - Reconstruye materializacion (invocable externamente, usado por mariachi al editar)
-- `POST /layers/invalidate-cache` - Solo invalida cache de memoria del proceso
+- `POST /layers/refresh-cache` - Reconstruye materializacion. **Requiere `X-Internal-Token` desde 1.28.5** (`MAPALAB_INTERNAL_TOKEN`, ver `app/auth/internal_token.py`). Usado por mariachi al editar capas via `iieg-network`.
+- `POST /layers/invalidate-cache` - Solo invalida cache de memoria del proceso. **Requiere `X-Internal-Token` desde 1.28.5**.
 
 ### Metadata (v1.4.0+)
 

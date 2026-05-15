@@ -1,7 +1,8 @@
 from typing import Optional
 
-from fastapi import APIRouter, Header, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 
+from app.auth.internal_token import require_internal_token
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.metrics import (
@@ -66,7 +67,7 @@ def get_workspaces():
     return state['workspaces']
 
 
-@router.post('/refresh-cache', responses=api_responses(500))
+@router.post('/refresh-cache', responses=api_responses(401, 500), dependencies=[Depends(require_internal_token)])
 def refresh_cache_endpoint():
     incr(COUNTER_TREE_REFRESH)
     result = refresh_cache()
@@ -77,7 +78,7 @@ def refresh_cache_endpoint():
     }
 
 
-@router.post('/invalidate-cache', responses=api_responses(500))
+@router.post('/invalidate-cache', responses=api_responses(401, 500), dependencies=[Depends(require_internal_token)])
 def invalidate_cache_endpoint():
     invalidate_memory_cache()
     return {'ok': True}
