@@ -7,6 +7,14 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [1.28.3] - 2026-05-15
+
+### Loop temporal: tope de reintentos alineado con `proxy_cache_lock_timeout`
+
+`MAX_LOADING_RETRIES` en `frontend/src/pages/maps/hooks/useDateLoop.js` subido de `100` (~10 s) a `300` (~30 s). El valor anterior era mas estricto que el `proxy_cache_lock_timeout` que dejamos en gateway-hub (30 s), causando un caso degenerado en GCP saturado: el primer ciclo del loop muere en silencio antes de que GeoServer rinda y nginx cachee el primer frame. Tras alinear ambos topes, el primer ciclo puede tolerar frames lentos mientras se hidrata el cache, y los ciclos siguientes corren al tempo solicitado (0.5 s/2 s/etc.) sin problema. Si un frame realmente tarda mas de 30 s, el auto-stop sigue actuando.
+
+---
+
 ## [1.28.2] - 2026-05-15
 
 ### Robustez del loop temporal de capas raster
