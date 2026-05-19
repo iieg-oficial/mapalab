@@ -38,8 +38,11 @@ export const trackMapExport = (format, quality, view) =>
 export const trackRasterLoop = (layerId, isStarting) =>
     withMapInteraction(isStarting ? 'raster_loop_start' : 'raster_loop_stop', { layer_id: layerId });
 
-export const trackDrawingTool = (tool) =>
-    withMapInteraction('drawing_tool_use', { tool });
+export const trackMeasurementTool = (tool) =>
+    withMapInteraction('measurement_tool_use', { tool });
+
+export const trackMeasurementPanelOpen = () =>
+    trackEvent('tools_panel_open', {});
 
 export const trackBasemapChange = (basemapId) =>
     withMapInteraction('basemap_change', { basemap_id: basemapId });

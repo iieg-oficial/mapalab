@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useMapsContext } from '@hooks/useMaps';
-import { trackDrawingTool } from '@services/analyticsService';
+import { trackMeasurementTool } from '@services/analyticsService';
 import HistoryButton from './HistoryButton';
 import CloseButton from '@components/CloseButton';
 import ToolSelector from './ToolSelector';
@@ -78,7 +78,7 @@ const ToolsPanel = () => {
             return;
         }
 
-        trackDrawingTool(TOOL_LABELS[typeId] || typeId);
+        trackMeasurementTool(TOOL_LABELS[typeId] || typeId);
         startDrawing(typeId);
     };
 
@@ -95,7 +95,7 @@ const ToolsPanel = () => {
             setEmojiTemplate(symbol);
         }
         setIsEmojiPickerOpen(false);
-        trackDrawingTool('Emoji');
+        trackMeasurementTool('Emoji');
         startDrawing('Emoji');
     };
 
@@ -108,7 +108,7 @@ const ToolsPanel = () => {
         if (!value) return;
         setTextTemplate(value);
         setIsTextPanelOpen(false);
-        trackDrawingTool('Texto');
+        trackMeasurementTool('Texto');
         startDrawing('Text');
     };
 
