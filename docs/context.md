@@ -378,6 +378,31 @@ MapaLab puede insertarse en sitios de otras instituciones a través de un Web Co
 - **Documentación pública**: `docs/widget.md` (contrato del Web Component).
 - **Pendientes de gobernanza**: clasificación pública/reservada/confidencial por capa, T&C versionados, linaje hasta dependencia origen, SLA visible "Datos al corte de X" en el footer, notificaciones de cambios estructurales. Backlog formal en `docs/planes/widget-pendientes.md`.
 
+## Modal de entorno de pruebas
+
+Cuando el visor se sirve desde staging, un modal advierte al usuario y le ofrece redirigir al sitio de produccion. Es 100% frontend, no hay logica equivalente en backend.
+
+- **Trigger**: `import.meta.env.VITE_APP_ENV === 'beta'`. Cualquier otro valor (`dev`, `production`, ausente) no muestra el modal.
+- **URL de produccion hardcodeada**: `https://iieg.jalisco.gob.mx/mapalab` en `TestEnvModal.jsx` (constante `PROD_URL`).
+- **Cierre**: solo manual (botones "Ir a la pagina oficial" / "Entendido, continuar", tecla Escape o click en backdrop). No hay redireccion automatica.
+- **Persistencia**: `localStorage['test-env-modal-dismissed']` cuando se marca "No volver a mostrar". Se guarda al cerrar el modal o al ir a la pagina oficial. Persiste entre sesiones hasta que el usuario limpie el storage del navegador.
+- **Identidad visual**: header con icono `alert_triangle` en naranja (`text-orange-500`) para coincidir con el badge "test" del visor.
+- **Montaje**: `MainProvider` lo renderiza al nivel raiz, antes de la SPA.
+
+Piezas involucradas:
+
+| Archivo | Rol |
+|---|---|
+| `frontend/src/components/TestEnvModal.jsx` | Modal, countdown, redireccion, persistencia |
+| `frontend/src/providers/MainProvider.jsx` | Monta `<TestEnvModal/>` al nivel raiz |
+| `frontend/src/components/EnvBadge.jsx` | Badge visual ("test" naranja en `beta`, "dev" morado en `dev`) junto al logo del visor |
+| `frontend/src/pages/maps/components/MapSider.jsx` | Renderiza `EnvBadge` |
+| `frontend/src/pages/maps/components/ToolsMenu.jsx` | `IS_NON_PROD` oculta tools marcadas `nonProdOnly` cuando `VITE_APP_ENV` es `production` |
+
+Textos en espanol: titulo "Entorno de pruebas"; intro de bienvenida + lista con 4 puntos (datos no oficiales, posibles fallos, funcionalidades en cambio, nada vinculante para toma de decisiones) + cierre invitando al sitio oficial; checkbox "No volver a mostrar"; boton primario "Ir a la pagina oficial"; boton secundario "Entendido, continuar".
+
+No hay tests para `TestEnvModal` ni `EnvBadge`.
+
 ## Proximos pasos (roadmap)
 
 - **v1.4.0 — v1.5.1** — Capas dinámicas desde backend (mariachi CMS + DataEngine schema `mapalab`), security hardening, tests smoke — Abril 2026 ✅
