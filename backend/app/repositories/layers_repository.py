@@ -13,6 +13,7 @@ class LayersRepository:
     def get_all_layers(session: Session) -> list[Layer]:
         return (
             session.query(Layer)
+            .filter(Layer.deleted_at.is_(None))
             .order_by(Layer.parent_id.nulls_first(), Layer.sort_order, Layer.id)
             .all()
         )
@@ -57,11 +58,15 @@ class LayersRepository:
 
     @staticmethod
     def get_max_updated_at(session: Session) -> Optional[datetime]:
-        return session.query(func.max(Layer.updated_at)).scalar()
+        return (
+            session.query(func.max(Layer.updated_at))
+            .filter(Layer.deleted_at.is_(None))
+            .scalar()
+        )
 
     @staticmethod
     def count_layers(session: Session) -> int:
-        return session.query(Layer).count()
+        return session.query(Layer).filter(Layer.deleted_at.is_(None)).count()
 
     @staticmethod
     def search_layers(session: Session, query_text: str, limit: int = 50) -> list[Layer]:
@@ -72,7 +77,7 @@ class LayersRepository:
         like_pattern = f'%{q}%'
         return (
             session.query(Layer)
-            .filter(Layer.node_type == 'leaf')
+            .filter(Layer.node_type == 'leaf', Layer.deleted_at.is_(None))
             .filter(
                 or_(
                     func.lower(Layer.label).like(like_pattern),

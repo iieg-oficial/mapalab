@@ -12,6 +12,15 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.30.0',
+        items: [
+            { text: 'Eventos ya no es BETA: quitamos la etiqueta naranja del ícono porque la sección está lista para uso general.', tag: 'changed' },
+            { text: 'Eventos: los eventos ahora pueden organizar sus capas en sub-categorías (carpetas expandibles), para temas con muchas capas relacionadas.', tag: 'added' },
+            { text: 'Detalle de capa: el scrollbar del modal ya se ve igual que en el resto del visor, en lugar del estilo por defecto del navegador.', tag: 'fixed' },
+            { text: 'Eventos: corregimos un caso en que activar un evento dejaba 4 capas rotas en el bundle WMS y aparecía un error de imagen en consola. Ahora el visor sólo carga las capas válidas.', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.29.0',
         items: [
             { text: 'Algunas capas ahora pueden mostrar un mensaje informativo arriba del mapa (con título, descripción opcional, icono y un posible enlace). Aparece sólo cuando la capa está activa y dentro de su zoom recomendado; puedes cerrarlo si te estorba.', tag: 'added' },

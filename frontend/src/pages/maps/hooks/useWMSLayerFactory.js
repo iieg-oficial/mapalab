@@ -58,8 +58,15 @@ export const useWMSLayerFactory = () => {
 
         if (onLoadEnd) {
             wmsSource.on('imageloadend', () => onLoadEnd(layerId));
-            wmsSource.on('imageloaderror', () => onLoadEnd(layerId));
         }
+
+        wmsSource.on('imageloaderror', (event) => {
+            if (import.meta.env.DEV) {
+                const src = event?.image?.getImage?.()?.src || null;
+                console.warn('[WMS imageloaderror]', { layerId, src, baseUrl: wmsConfig.baseUrl, params: { ...wmsParams } });
+            }
+            onLoadEnd?.(layerId);
+        });
 
         const wmsLayer = new ImageLayer({
             source: wmsSource,

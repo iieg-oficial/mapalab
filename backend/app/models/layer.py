@@ -108,6 +108,9 @@ class Layer(LayerBase):
     )
     updated_by = Column(String(100), nullable=True)
 
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(String(100), nullable=True)
+
 
 class InitialLayerOrder(LayerBase):
     __tablename__ = 'initial_layer_order'

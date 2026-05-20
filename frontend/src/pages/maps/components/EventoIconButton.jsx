@@ -1,9 +1,6 @@
 import { useState } from 'react';
-import Badge from '@components/Badge';
 import Icon from '@components/Icon';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
-
-const SHOW_BETA_BADGE = import.meta.env.VITE_EVENTOS_BETA_BADGE !== 'false';
 
 const FallbackIcon = ({ sizeClass = 'w-5 h-5' }) => (
     <Icon name="pin_fallback" className={`${sizeClass} text-purple`} />
@@ -38,9 +35,6 @@ const EventoIconButton = ({ iconoUrl, imagenUrl, titulo, isMenuOpen, isHovered =
                         <FallbackIcon sizeClass="w-5 h-5" />
                     )}
                 </div>
-                {SHOW_BETA_BADGE && (
-                    <Badge variant="pill" color="orange" text="BETA" className="absolute -top-1 -right-1" />
-                )}
             </div>
         );
     }
@@ -68,9 +62,6 @@ const EventoIconButton = ({ iconoUrl, imagenUrl, titulo, isMenuOpen, isHovered =
                 <div className="flex items-center justify-center w-full py-6 bg-gray-50">
                     <FallbackIcon sizeClass="w-8 h-8" />
                 </div>
-            )}
-            {SHOW_BETA_BADGE && (
-                <Badge variant="pill" color="orange" text="BETA" className="absolute top-2 right-2" />
             )}
         </div>
     );
