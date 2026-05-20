@@ -47,19 +47,29 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
 
     const themeChildren = useMemo(() => {
         if (!evento?.capas?.length || !allLayers?.length) return [];
+        const buildNode = (c, idx, parentId, allowCategory) => {
+            if (c.tipo === 'etiqueta') {
+                return { id: `${parentId}-etiqueta-${idx}`, label: c.alias || '', isLabel: true };
+            }
+            if (c.tipo === 'categoria') {
+                if (!allowCategory) return null;
+                const catId = `${parentId}-categoria-${idx}`;
+                return {
+                    id: catId,
+                    label: c.alias || '',
+                    isCategory: true,
+                    children: (c.capas || [])
+                        .map((child, j) => buildNode(child, j, catId, false))
+                        .filter(Boolean),
+                };
+            }
+            const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
+            if (!layer) return null;
+            return c.alias ? { ...layer, label: c.alias } : layer;
+        };
+        const rootId = `evento-${evento.id}`;
         return evento.capas
-            .map((c, idx) => {
-                if (c.tipo === 'etiqueta') {
-                    return {
-                        id: `evento-etiqueta-${evento.id}-${idx}`,
-                        label: c.alias || '',
-                        isLabel: true,
-                    };
-                }
-                const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
-                if (!layer) return null;
-                return c.alias ? { ...layer, label: c.alias } : layer;
-            })
+            .map((c, idx) => buildNode(c, idx, rootId, true))
             .filter(Boolean);
     }, [evento, allLayers]);
 
@@ -71,14 +81,18 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
         if (!evento?.capas?.length || !allLayers?.length || !onToggleLayer) return;
 
         const toActivate = [];
-        for (const c of evento.capas) {
-            if (c.tipo === 'etiqueta') continue;
-            if (c.autoActivar === false) continue;
-            const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
-            if (layer && !activeIdsRef.current?.includes(layer.id)) {
-                toActivate.push(layer.id);
+        const walk = (capas) => {
+            for (const c of capas || []) {
+                if (c.tipo === 'etiqueta') continue;
+                if (c.tipo === 'categoria') { walk(c.capas); continue; }
+                if (c.autoActivar === false) continue;
+                const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
+                if (layer && !activeIdsRef.current?.includes(layer.id)) {
+                    toActivate.push(layer.id);
+                }
             }
-        }
+        };
+        walk(evento.capas);
         autoActivatedRef.current = true;
         toActivate.forEach((id) => onToggleLayer(id, true));
     }, [evento, allLayers, onToggleLayer]);

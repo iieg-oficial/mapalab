@@ -86,7 +86,6 @@ export const collectCatalogUnits = (layer) => {
 
     const traverse = (node) => {
         if (!node) return;
-        if (node.isLabel || node.isCategory) return;
 
         if (node.forceGroup) {
             if (node.wmsConfig || collectLayersWithWMS(node).length > 0) {
