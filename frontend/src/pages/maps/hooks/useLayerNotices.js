@@ -56,7 +56,7 @@ const useCurrentZoom = (mapRef, paneMapInstances, active) => {
 
 const asMobileNotice = (notice) => ({ ...notice, dismissPersistence: 'reopen', dismissible: true });
 
-export const useLayerNotices = ({ enabled = true, mobileMode = false } = {}) => {
+const useLayerNotices = ({ enabled = true, mobileMode = false } = {}) => {
     const {
         allLayers,
         activeLayerIds,

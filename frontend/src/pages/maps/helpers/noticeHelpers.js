@@ -1,8 +1,26 @@
 const NOTICE_POSITIONS = ['top-center', 'bottom-center'];
 
-export const DEFAULT_NOTICE_POSITION = 'top-center';
+const DEFAULT_NOTICE_POSITION = 'top-center';
 
-export const isValidNoticePosition = (pos) => NOTICE_POSITIONS.includes(pos);
+const isValidNoticePosition = (pos) => NOTICE_POSITIONS.includes(pos);
+
+const isNoticeInValidityWindow = (notice, now = new Date()) => {
+    if (!notice) return false;
+    const { validFrom, validUntil } = notice;
+    const today = now.toISOString().slice(0, 10);
+    if (validFrom && today < validFrom) return false;
+    if (validUntil && today > validUntil) return false;
+    return true;
+};
+
+const isZoomWithinRange = (zoom, range) => {
+    if (zoom == null || !range) return true;
+    const min = typeof range.min === 'number' ? range.min : null;
+    const max = typeof range.max === 'number' ? range.max : null;
+    if (min != null && zoom < min) return false;
+    if (max != null && zoom > max) return false;
+    return true;
+};
 
 export const buildLayerIndex = (nodes) => {
     const index = new Map();
@@ -15,24 +33,6 @@ export const buildLayerIndex = (nodes) => {
     };
     walk(nodes || []);
     return index;
-};
-
-export const isNoticeInValidityWindow = (notice, now = new Date()) => {
-    if (!notice) return false;
-    const { validFrom, validUntil } = notice;
-    const today = now.toISOString().slice(0, 10);
-    if (validFrom && today < validFrom) return false;
-    if (validUntil && today > validUntil) return false;
-    return true;
-};
-
-export const isZoomWithinRange = (zoom, range) => {
-    if (zoom == null || !range) return true;
-    const min = typeof range.min === 'number' ? range.min : null;
-    const max = typeof range.max === 'number' ? range.max : null;
-    if (min != null && zoom < min) return false;
-    if (max != null && zoom > max) return false;
-    return true;
 };
 
 const stringHash = (str) => {
