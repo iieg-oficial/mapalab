@@ -8,7 +8,7 @@ import {
     trackLayerDownload,
     trackMapExport,
     trackRasterLoop,
-    trackDrawingTool,
+    trackMeasurementTool,
     trackBasemapChange,
     trackGeolocate,
     trackPeriodicityAdvanced,
@@ -110,10 +110,10 @@ describe('analyticsService', () => {
         });
     });
 
-    describe('trackDrawingTool', () => {
-        it('pushea drawing_tool_use con tool', () => {
-            trackDrawingTool('polygon');
-            expect(getEvents()).toContainEqual({ event: 'drawing_tool_use', tool: 'polygon' });
+    describe('trackMeasurementTool', () => {
+        it('pushea measurement_tool_use con tool', () => {
+            trackMeasurementTool('polygon');
+            expect(getEvents()).toContainEqual({ event: 'measurement_tool_use', tool: 'polygon' });
         });
     });
 
