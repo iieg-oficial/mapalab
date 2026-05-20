@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import MapView from './MapView';
+import Icon from '@components/Icon';
 import { useMapsContext } from '@hooks/useMaps';
 import { useViewSync } from '@pages/maps/hooks/useViewSync';
 import { SLOT_COLORS, SWIPE_HANDLE_COLOR } from '@pages/maps/helpers/swipeTheme';
@@ -97,9 +98,7 @@ const SwipeView = () => {
     const lineClass = isHorizontal
         ? 'absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] shadow'
         : 'absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] shadow';
-    const knobIcon = isHorizontal
-        ? <><polyline points="6 9 12 3 18 9" /><polyline points="18 15 12 21 6 15" /></>
-        : <><polyline points="9 18 3 12 9 6" /><polyline points="15 6 21 12 15 18" /></>;
+    const knobIconName = isHorizontal ? 'swipe_handle_chevrons_h' : 'swipe_handle_chevrons_v';
 
     const overlayAStyle = isHorizontal
         ? { top: 0, left: 0, right: 0, height: `${pos}%` }
@@ -150,9 +149,7 @@ const SwipeView = () => {
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full shadow-lg flex items-center justify-center"
                     style={{ backgroundColor: SWIPE_HANDLE_COLOR }}
                 >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                        {knobIcon}
-                    </svg>
+                    <Icon name={knobIconName} className="w-5 h-5" />
                 </div>
             </div>
         </div>

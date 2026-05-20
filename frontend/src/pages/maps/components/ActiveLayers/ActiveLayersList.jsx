@@ -261,10 +261,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
                         >
                             <span className="relative p-0.5 rounded-full border border-transparent transition-colors group-hover/pauseall:border-[#FF8300]">
                                 <span className="size-5 flex items-center justify-center text-[#5C2472] group-hover/pauseall:text-[#FF8300] transition-colors">
-                                    <svg viewBox="0 0 12 14" fill="currentColor" className="size-3 shrink-0">
-                                        <rect x="1" y="1" width="3" height="12" rx="1" />
-                                        <rect x="8" y="1" width="3" height="12" rx="1" />
-                                    </svg>
+                                    <Icon name="pause_all" className="size-3 shrink-0" />
                                 </span>
                                 <Badge
                                     visible={activeLoopsCount > 0}
