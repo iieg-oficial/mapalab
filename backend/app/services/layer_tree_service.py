@@ -131,6 +131,10 @@ def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace], aliases_ma
     if layer.infobox_config is not None:
         result['littleCard'] = layer.infobox_config
 
+    notice = getattr(layer, 'notice', None)
+    if notice and isinstance(notice, dict) and notice.get('enabled'):
+        result['notice'] = notice
+
     return result
 
 

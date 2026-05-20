@@ -97,6 +97,8 @@ class Layer(LayerBase):
 
     icon_url = Column(Text, nullable=True)
 
+    notice = Column(JSONB, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=text('NOW()'), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
