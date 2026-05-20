@@ -1,4 +1,4 @@
-.PHONY: help dev staging prod deploy down down-dev down-staging build logs logs-dev logs-staging status clean setup-hooks ensure-networks refresh-layer-tree reset-dist-perms
+.PHONY: help dev staging prod deploy down down-dev down-staging down-prod build logs logs-dev logs-staging status clean setup-hooks ensure-networks refresh-layer-tree reset-dist-perms
 
 # UID/GID del host para que volumes escritos por contenedores (ej. frontend-build → dist/) tengan ownership correcto
 export UID := $(shell id -u)
@@ -23,6 +23,7 @@ help:
 	@echo "  make deploy       - Build + up en produccion (usado por CD)"
 	@echo "  make logs-staging - Ver logs de staging"
 	@echo "  make down-staging - Detener servicios de staging"
+	@echo "  make down-prod    - Detener servicios de produccion (deploy)"
 	@echo ""
 	@echo "GENERAL:"
 	@echo "  make down              - Detener todos los servicios"
@@ -79,7 +80,7 @@ deploy: ensure-networks reset-dist-perms
 reset-dist-perms:
 	@docker run --rm -v "$(PWD)/frontend":/w alpine sh -c "rm -rf /w/dist && mkdir -m 0755 /w/dist && chown $$(id -u):$$(id -g) /w/dist"
 
-down: down-dev down-staging
+down: down-dev down-staging down-prod
 
 down-dev:
 	@$(COMPOSE_DEV) --profile dev down 2>/dev/null || true
@@ -89,9 +90,14 @@ down-staging:
 	@$(COMPOSE_STAGING) --profile staging --profile build down 2>/dev/null || true
 	@echo "Servicios de staging detenidos"
 
+down-prod:
+	@$(COMPOSE_PROD) --profile staging --profile build down 2>/dev/null || true
+	@echo "Servicios de produccion detenidos"
+
 clean: down
 	@$(COMPOSE_DEV) --profile dev down -v --remove-orphans 2>/dev/null || true
 	@$(COMPOSE_STAGING) --profile staging --profile build down -v --remove-orphans 2>/dev/null || true
+	@$(COMPOSE_PROD) --profile staging --profile build down -v --remove-orphans 2>/dev/null || true
 	@docker run --rm -v $(CURDIR)/frontend/dist:/dist alpine sh -c "rm -rf /dist/*" 2>/dev/null || true
 	@rm -rf frontend/dist frontend/node_modules
 	@echo "Limpieza completada"

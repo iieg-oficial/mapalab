@@ -97,6 +97,8 @@ class Layer(LayerBase):
 
     icon_url = Column(Text, nullable=True)
 
+    notice = Column(JSONB, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=text('NOW()'), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
@@ -105,6 +107,9 @@ class Layer(LayerBase):
         nullable=False,
     )
     updated_by = Column(String(100), nullable=True)
+
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(String(100), nullable=True)
 
 
 class InitialLayerOrder(LayerBase):

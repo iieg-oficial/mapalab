@@ -14,6 +14,7 @@ export class IiegMapalab extends LitElement {
         zoom: { type: String },
         basemap: { type: String },
         controls: { type: String },
+        notices: { type: String },
         height: { type: String, reflect: true },
         width: { type: String, reflect: true },
         baseUrl: { type: String, attribute: 'base-url' },
@@ -122,6 +123,7 @@ export class IiegMapalab extends LitElement {
         this.zoom = '';
         this.basemap = '';
         this.controls = '';
+        this.notices = '';
         this.height = '';
         this.width = '';
         this.baseUrl = '';
@@ -220,6 +222,7 @@ export class IiegMapalab extends LitElement {
         }
         if (this.basemap) params.set('basemap', this.basemap);
         if (this.controls) params.set('controls', this.controls);
+        if (this.notices === 'false' || this.notices === false) params.set('notices', 'false');
         if (this._reloadKey) params.set('_r', String(this._reloadKey));
         return `${base}/embed?${params.toString()}`;
     }

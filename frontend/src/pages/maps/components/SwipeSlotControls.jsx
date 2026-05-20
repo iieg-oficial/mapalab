@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
+import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import CloseButton from '@components/CloseButton';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
@@ -104,11 +105,7 @@ const SwipeSlotControls = () => {
                         className="size-10 flex items-center justify-center rounded-full bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white transition-all cursor-pointer shrink-0"
                         aria-label={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'}
                     >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 transition-transform ${isHorizontal ? '' : 'rotate-90'}`}>
-                            <line x1="3" y1="12" x2="21" y2="12" />
-                            <polyline points="7 8 3 12 7 16" />
-                            <polyline points="17 8 21 12 17 16" />
-                        </svg>
+                        <Icon name="swipe_orientacion" className={`w-5 h-5 transition-transform ${isHorizontal ? '' : 'rotate-90'}`} />
                     </button>
                 </Tooltip>
 

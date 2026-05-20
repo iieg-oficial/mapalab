@@ -5,7 +5,53 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
-## [No publicado]
+## [1.30.0] - 2026-05-20
+
+### Eventos sale de beta + saneamiento del bundle WMS
+
+`Eventos` deja de mostrar el badge "BETA" en `EventoIconButton`. La feature flag `VITE_EVENTOS_BETA_BADGE` (introducida temporal en versiones anteriores) se elimina del código y de `.env.example`; el import de `Badge` también se quita del componente.
+
+En paralelo se diagnosticó y limpió un `EncodingError: The source image cannot be decoded` que aparecía en consola al abrir cualquier evento. Causa raíz: `useWMSLayerFactory` agrupa todas las capas de workspace `eventos` (`baseUrl|wmsGroup` compartidos) en un único `GetMap`; 4 capas del catálogo (`limite_de_velocidad`, `paradas_tp`, `rutas_complementarias_tp`, `rutas_troncales_tp`) apuntaban a tablas PostGIS inexistentes en `dataengine-primary.iieg_gis.eventos`. GeoServer respondía `ServiceException` XML con `HTTP 200`, el browser intentaba decodificarlo como PNG y el bundle entero se caía.
+
+#### Agregado
+
+- **`useWMSLayerFactory`: log `imageloaderror`**: el listener ahora captura `event.image.getImage().src` y emite `console.warn('[WMS imageloaderror]', { layerId, src, baseUrl, params })` cuando `import.meta.env.DEV` está activo. Permite identificar exactamente qué capa genera la respuesta no decodificable la próxima vez que aparezca el síntoma. En producción no se ejecuta el warn ni se construye el payload — el `onLoadEnd?.(layerId)` sigue corriendo igual.
+
+#### Corregido
+
+- **`EventoIconButton`**: badge "BETA" y `SHOW_BETA_BADGE` removidos. El componente ya no necesita el gate de env var y queda más simple. `.env.example` actualizado para reflejar el cambio.
+- **`LayerDetailModal`: scrollbar consistente con el resto del app**. El contenedor scrollable usaba `scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400`; ninguna de esas clases existe en `index.css` (Tailwind v4 sin plugin de scrollbar), así que caía al default del browser. Cambiado a `scrollbar-thin scrollbar-thumb-gray-400`, el mismo patrón que ya usa `Modal.jsx`.
+- **Catálogo: 4 capas fantasma soft-deleted en `mapalab.layers`**. `auto-eventos-limite-de-velocidad`, `auto-eventos-paradas-tp`, `auto-eventos-rutas-complementarias-tp`, `auto-eventos-rutas-troncales-tp` marcadas con `deleted_at` y `deleted_by='cleanup-ghost-eventos'`. El filtro `Layer.deleted_at.is_(None)` en `LayersRepository.get_all_layers/get_max_updated_at/count_layers/search_layers` (soft-delete del modelo `Layer` introducido en esta misma versión) las excluye del árbol publicado. Cache de árbol regenerado vía `POST /layers/refresh-cache`.
+
+#### Coordinación
+
+- Las 4 capas siguen publicadas en GeoServer (`GetCapabilities` aún las lista). Limpieza completa requiere unpublish manual en GeoServer admin o restaurar las tablas faltantes en `dataengine-primary.iieg_gis.eventos`. Ver nuevo `Escenario 9` en `docs/runbook-layers.md`.
+
+### Agregado
+
+- **Eventos: soporte de categorías**: `<EventoMenu>` ahora acepta `tipo: 'categoria'` (además de `etiqueta` y capas) en `evento.capas`. Una categoría es un nodo con `alias` y un sub-array `capas` que se renderiza como carpeta expandible/colapsable (reutilizando `CategoryItem` de `ThemeMenu`). Profundidad limitada a un nivel (consistente con la jerarquía del árbol principal: tema → categoría → etiqueta/capa); las sub-categorías anidadas se descartan silenciosamente. `eventoHelpers.collectEventoLayerIds` y la auto-activación recorren recursivamente las categorías, así que el contador de "capas externas activas" y el `findEventoByLayerId` siguen funcionando para capas que viven dentro de categorías.
+
+## [1.29.0] - 2026-05-19
+
+### Aviso configurable por capa (notice)
+
+Algunas capas necesitan comunicar al usuario un contexto que no cabe en su título ni en la tarjeta de detalle: datos preliminares, vigencia, cambios recientes, enlaces a la fuente. Hasta ahora la única vía era editar la descripción del feature type, que vive en otra sección y se ve solo al abrir el modal. La nueva característica permite mostrar un banner sobre el mapa, configurable desde mariachi, que aparece mientras la capa está activa y dentro de su rango de zoom.
+
+#### Agregado
+
+- **Columna `mapalab.layers.notice` (JSONB)**: nueva migración alembic `0009_layer_notice` en dataengine. Shape `{ enabled, title, description, icon, variant, position, dismissible, validFrom, validUntil, cta }`. Entra automáticamente vía `make prod-migration` (que ya corre `alembic upgrade head`).
+- **Editor en mariachi**: nuevo tab "Aviso" en `LayerEditPage` (visible para `group` y `leaf`). Form con habilitar/deshabilitar, contenido (título, descripción, icono via `BucketFilePicker` apuntando al bucket `iieg`), presentación (variante info/warning/neutral, posición top-center/bottom-center, descartable, permanencia del cierre `permanent`/`reopen`), visibilidad por zoom opcional (hereda de la capa si se deja vacío), vigencia opcional con fechas (vacío = permanente) y enlace opcional (CTA). Preview en vivo con badges de metadata.
+- **Iconos en Acervo**: set inicial subido a `iieg/iconos/` (alert, info, tiempo_alert, rendimiento "caracol", warning, aviso_privacidad, novedades). Convención global de iconos compartidos entre secciones. El admin puede agregar más vía media uploader.
+- **Component `<Message>` extendido**: detecta automáticamente si `icon` es URL (`http(s)://`, `/acervo/`, `/api/`) y la renderiza como `<img>`; si es un nombre simple sigue usando `externalIcons`. Usable por cualquier consumer (slow_loading_warning, layer notices, futuros).
+- **Backend mapalab**: el árbol publicado en `/layers/tree` incluye `notice` sólo cuando `enabled === true` (ahorra payload). Soportado tanto en el refresh job de dataengine (`run_refresh_layer_tree.py`) como en el constructor in-process del backend (`layer_tree_service.py`).
+- **Frontend mapalab**:
+  - `helpers/noticeHelpers.js` con utilidades puras: filtros por vigencia, rango de zoom, hash de contenido para dismiss persistente.
+  - `hooks/useLayerNotices.js` con `useSyncExternalStore` sobre el zoom del mapa; reacciona a `change:resolution` del view OL.
+  - `components/LayerNotices/` con contenedor por posición y tarjeta visual con CTA opcional.
+  - En swipe: el aviso aparece **una sola vez** aunque la capa esté en ambos slots (unión deduplicada).
+  - Dismiss persistente en `localStorage` con clave `mapalab.notice.dismissed.<layerId>.<hash>`. Si el editor cambia el contenido, el hash cambia y el aviso vuelve a mostrarse.
+- **Telemetría** (GA4 + collector Mariachi): `layer_notice_view` (impresión), `layer_notice_dismiss` (cierre), `layer_notice_cta_click` (click en enlace).
+- **Visor embebido**: atributo `notices="false"` en el web component `<iieg-mapalab>` para desactivar avisos en sitios anidados. Se propaga como query param `notices=false` al iframe.
 
 ## [1.28.5] - 2026-05-15
 

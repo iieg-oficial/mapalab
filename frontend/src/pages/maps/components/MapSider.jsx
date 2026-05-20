@@ -13,7 +13,7 @@ import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useEventoContext } from '@hooks/useEvento';
 import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
 
-import { trackSiderLock, trackLogoClick } from '@services/analyticsService';
+import { trackSiderLock, trackLogoClick, trackMeasurementPanelOpen } from '@services/analyticsService';
 import { buildIiegMarker, computeIiegStats } from '@pages/maps/helpers/markerDefinitions';
 import { getDatabaseStats } from '@services/layerMetadataService';
 import { useZenMode } from './ZenMode';
@@ -119,13 +119,14 @@ const MapSider = ({ className = '' }) => {
         : (lockMode === 'expanded' ? true : (lockMode === 'collapsed' ? false : isHovered));
 
     const handleToggleTools = useCallback(() => {
+        if (!areMeasurementToolsVisible) trackMeasurementPanelOpen();
         toggleMeasurementTools();
         if (treatAsMobile) {
             closeSider();
         } else if (lockMode === 'auto') {
             setIsHovered(false);
         }
-    }, [toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
+    }, [areMeasurementToolsVisible, toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
 
     const { eventos } = useEventoContext();
 

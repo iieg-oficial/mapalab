@@ -220,6 +220,83 @@ make prod-migration PROD_MIGRATION_FLAGS="--skip-etl --layers-json /path/to/late
 
 ---
 
+## Escenario 9: `EncodingError` en consola al activar capas (capas fantasma)
+
+### Síntoma
+
+En DevTools del navegador aparece, repetidamente, al activar capas o abrir un evento:
+
+```
+vendor-ol-*.js:1 EncodingError: The source image cannot be decoded.
+```
+
+En `import.meta.env.DEV` también verás:
+
+```
+[WMS imageloaderror] { layerId: 'auto-...', src: 'https://.../geoserver/.../wms?...', baseUrl: ..., params: { LAYERS: 'eventos:a,eventos:b,...', ... } }
+```
+
+### Causa típica
+
+`useWMSLayerFactory` agrupa capas que comparten `baseUrl|wmsGroup` en una sola `GetMap`. Si **cualquiera** de las capas del bundle apunta a una tabla/schema PostGIS que no existe (capa fantasma), GeoServer responde un `ServiceException` XML con `HTTP 200` y `Content-Type: application/vnd.ogc.se_xml`. El browser intenta decodificarlo como PNG y rechaza con `EncodingError` → **todo el bundle falla**, no sólo la capa rota.
+
+### Diagnóstico
+
+```bash
+# 1. Identificar la capa fallida en consola (log [WMS imageloaderror])
+# Copia el src y prueba la request directa contra GeoServer:
+curl -sk -o /tmp/wms.bin -w "HTTP_CODE:%{http_code}\nCONTENT_TYPE:%{content_type}\n" \
+  "<src copiado del log>"
+file /tmp/wms.bin
+head -c 1000 /tmp/wms.bin
+```
+
+Si `file` reporta `XML 1.0 document` y `head` muestra `<ServiceException>...Schema 'X' does not exist...</ServiceException>`, tienes una capa fantasma cuyo nombre es `X`.
+
+```bash
+# 2. Confirmar que la tabla no existe en DataEngine
+docker exec -e PGPASSWORD='Bq7K!Ho6&B' dataengine-primary psql -U gisuser -d iieg_gis -c "
+SELECT table_name FROM information_schema.tables WHERE table_schema = '<workspace>' ORDER BY 1;
+"
+
+# 3. Encontrar la fila en mapalab.layers
+docker exec -e PGPASSWORD='Bq7K!Ho6&B' dataengine-primary psql -U gisuser -d iieg_gis -c "
+SELECT id, label, geoserver_layer, deleted_at FROM mapalab.layers
+WHERE geoserver_layer = '<capa>';
+"
+```
+
+### Acción
+
+```bash
+# Opción A (recomendada): soft-delete desde mariachi admin
+# Login → árbol de capas → eliminar la(s) capa(s) fantasma → confirma
+# Mariachi se encarga de auditoría + bump de cache-version
+
+# Opción B (rápida, dev): soft-delete por SQL
+docker exec -e PGPASSWORD='Bq7K!Ho6&B' dataengine-primary psql -U gisuser -d iieg_gis -c "
+UPDATE mapalab.layers
+SET deleted_at = now(), deleted_by = 'cleanup-ghost-<reason>'
+WHERE id IN ('<id-1>', '<id-2>');
+"
+
+# Invalidar cache de árbol
+curl -X POST http://localhost:3006/mapalab/api/layers/refresh-cache \
+  -H "X-Internal-Token: $MAPALAB_INTERNAL_TOKEN"
+
+# Verificar que ya no aparecen
+curl -s http://localhost:3006/mapalab/api/layers/tree | jq '..|.id? // empty' | grep <patrón>
+```
+
+### Limpieza completa (opcional)
+
+Las capas fantasma siguen publicadas en GeoServer (aparecen en `GetCapabilities`). Para evitar que mariachi las re-importe con `find_or_create_auto_leaf`:
+
+1. **GeoServer admin**: unpublish la capa o quitarla del layer group correspondiente.
+2. **DataEngine**: si la tabla **debería** existir, restaurarla desde un dump en `/IIEG/dataengine/restore/` con `make restore`.
+
+---
+
 ## Contactos
 
 - Infra DataEngine: equipo de infraestructura IIEG (no tenemos acceso directo a la VM en prod)

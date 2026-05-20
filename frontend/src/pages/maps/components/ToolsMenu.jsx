@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
+import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 
 const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
@@ -11,17 +12,7 @@ const allTools = [
         id: 'mediciones',
         label: 'Mediciones',
         description: 'Punto, linea, poligono, texto',
-        icon: (
-            <svg viewBox="0 0 60 60" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-12 h-12">
-                <path d="M8 42L42 8" />
-                <path d="M14 42l-6 6" />
-                <path d="M22 36l-3 3" />
-                <path d="M28 30l-3 3" />
-                <path d="M34 24l-3 3" />
-                <path d="M40 18l-3 3" />
-                <circle cx="48" cy="48" r="3" fill="currentColor" />
-            </svg>
-        ),
+        icon: 'tool_mediciones',
     },
     {
         id: 'compare-swipe',
@@ -29,13 +20,7 @@ const allTools = [
         description: 'Swipe vertical',
         beta: true,
         nonProdOnly: true,
-        icon: (
-            <svg viewBox="0 0 60 60" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-12 h-12">
-                <rect x="6" y="12" width="48" height="36" rx="2" />
-                <line x1="30" y1="8" x2="30" y2="52" strokeWidth="3" stroke="#FF8300" />
-                <path d="M22 30l-4-4M22 30l-4 4M38 30l4-4M38 30l4 4" stroke="#FF8300" />
-            </svg>
-        ),
+        icon: 'tool_swipe',
     },
 ];
 
@@ -112,7 +97,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                                         />
                                     )}
                                     <div className={`flex items-center justify-center ${active || hovered ? 'text-[#5C2472]' : 'text-[#465055]'}`}>
-                                        {tool.icon}
+                                        <Icon name={tool.icon} className="w-12 h-12" />
                                     </div>
                                     <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-[#5C2472]' : 'font-medium text-[#465055]'}`}>
                                         {tool.label}

@@ -12,7 +12,7 @@ import {
     SIDER_MOBILE_WIDTH,
 } from '@constants/sider';
 
-const SiderContext = createContext(null);
+export const SiderContext = createContext(null);
 
 SiderContext.displayName = 'SiderContext';
 

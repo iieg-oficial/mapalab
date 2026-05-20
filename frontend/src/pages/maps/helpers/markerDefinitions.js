@@ -50,7 +50,7 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) =
                 { label: 'Descripción', field: 'descripcion', raw: true }
             ],
             cards: [
-                { label: 'Capas disponibles', field: 'capas_disponibles' },
+                { label: 'Alrededor de capas disponibles', field: 'capas_disponibles' },
                 { label: 'Registros geográficos', field: 'registros_geograficos' },
                 { label: 'Líneas de código', field: 'lineas_codigo' }
             ],

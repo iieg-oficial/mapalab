@@ -38,8 +38,11 @@ export const trackMapExport = (format, quality, view) =>
 export const trackRasterLoop = (layerId, isStarting) =>
     withMapInteraction(isStarting ? 'raster_loop_start' : 'raster_loop_stop', { layer_id: layerId });
 
-export const trackDrawingTool = (tool) =>
-    withMapInteraction('drawing_tool_use', { tool });
+export const trackMeasurementTool = (tool) =>
+    withMapInteraction('measurement_tool_use', { tool });
+
+export const trackMeasurementPanelOpen = () =>
+    trackEvent('tools_panel_open', {});
 
 export const trackBasemapChange = (basemapId) =>
     withMapInteraction('basemap_change', { basemap_id: basemapId });
@@ -94,3 +97,12 @@ export const trackLogoClick = (logo) =>
 
 export const trackLayerReorder = (layerId, from, to) =>
     withMapInteraction('layer_reorder', { layer_id: layerId, from, to });
+
+export const trackLayerNoticeView = ({ layerId, variant, position, hasCta }) =>
+    trackEvent('layer_notice_view', { layer_id: layerId, variant, position, has_cta: !!hasCta });
+
+export const trackLayerNoticeDismiss = ({ layerId, variant }) =>
+    withMapInteraction('layer_notice_dismiss', { layer_id: layerId, variant });
+
+export const trackLayerNoticeCtaClick = ({ layerId, variant, url }) =>
+    withMapInteraction('layer_notice_cta_click', { layer_id: layerId, variant, url });

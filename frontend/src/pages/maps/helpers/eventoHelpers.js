@@ -30,12 +30,15 @@ export const findLayerByWorkspaceLayer = (workspace, layer, nodes) => {
 
 const collectEventoLayerIds = (evento, layerIndex) => {
     const ids = new Set();
-    if (!evento?.capas?.length) return ids;
-    for (const c of evento.capas) {
-        if (c.tipo === 'etiqueta') continue;
-        const layer = layerIndex.get(indexKey(c.workspace, c.layer));
-        if (layer) ids.add(layer.id);
-    }
+    const walk = (capas) => {
+        for (const c of capas || []) {
+            if (c.tipo === 'etiqueta') continue;
+            if (c.tipo === 'categoria') { walk(c.capas); continue; }
+            const layer = layerIndex.get(indexKey(c.workspace, c.layer));
+            if (layer) ids.add(layer.id);
+        }
+    };
+    walk(evento?.capas);
     return ids;
 };
 

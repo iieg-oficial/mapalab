@@ -8,6 +8,8 @@ import { cardTemplates, CARACTERISTICA_STYLE } from './cardTemplates';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import { formatIsoAsMonthYear } from '@pages/maps/helpers/dateFilterHelpers';
 
+const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
+
 export const applyHeaderTransform = (transform, value, featureId) => {
     if (!transform) return value;
     let result = transform.valueMap?.[value] ?? value;
@@ -177,7 +179,9 @@ const renderList = ({ finalConfig, properties, suffix, variant, body }) => {
 const renderIconText = ({ finalConfig, properties, onAction, variant, body }) => {
     if (!finalConfig.iconText) return;
     const iconTextItems = Array.isArray(finalConfig.iconText) ? finalConfig.iconText : [finalConfig.iconText];
-    const validItems = iconTextItems.filter(item => item && (properties[item.field] || item.value));
+    const validItems = iconTextItems
+        .filter(item => item && (properties[item.field] || item.value))
+        .filter(item => IS_NON_PROD || item.action !== 'report');
     validItems.forEach((item, idx) => {
         const iconTextProps = {
             icon: item.icon,
