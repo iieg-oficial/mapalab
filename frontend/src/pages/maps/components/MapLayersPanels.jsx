@@ -35,6 +35,7 @@ const MapLayersPanels = () => {
                         description="El funcionamiento del mapa puede verse afectado de acuerdo al número de capas que tengas activas."
                         closable
                         storageKey="slow_loading_warning"
+                        size="compact"
                     />
                 </div>
             )}

@@ -12,6 +12,7 @@ import MapControls from './components/MapControls';
 import MeasurementTools from './components/MeasurementTools/ToolsPanel';
 import ScaleLineControl from './components/ScaleLineControl';
 import MapAttribution from './components/MapAttribution';
+import LayerNotices from './components/LayerNotices/LayerNotices';
 import { useInitializeFromUrl } from './hooks/useInitializeFromUrl';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { SiderProvider } from '@contexts/SiderContext';
@@ -51,6 +52,7 @@ const Maps = () => {
                     {!isComparing && <MeasurementTools />}
                     {isComparing ? <SwipeView /> : <MapView />}
                     {isComparing && <SwipeSlotControls />}
+                    <LayerNotices />
                 </div>
             </ZenModeProvider>
         </SiderProvider>

@@ -97,3 +97,12 @@ export const trackLogoClick = (logo) =>
 
 export const trackLayerReorder = (layerId, from, to) =>
     withMapInteraction('layer_reorder', { layer_id: layerId, from, to });
+
+export const trackLayerNoticeView = ({ layerId, variant, position, hasCta }) =>
+    trackEvent('layer_notice_view', { layer_id: layerId, variant, position, has_cta: !!hasCta });
+
+export const trackLayerNoticeDismiss = ({ layerId, variant }) =>
+    withMapInteraction('layer_notice_dismiss', { layer_id: layerId, variant });
+
+export const trackLayerNoticeCtaClick = ({ layerId, variant, url }) =>
+    withMapInteraction('layer_notice_cta_click', { layer_id: layerId, variant, url });

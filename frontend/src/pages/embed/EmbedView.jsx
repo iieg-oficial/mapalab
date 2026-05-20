@@ -1,6 +1,7 @@
 import 'ol/ol.css';
 import { useEffect, useState } from 'react';
 import MapView from '@mapsComponents/MapView';
+import LayerNotices from '@mapsComponents/LayerNotices/LayerNotices';
 import Loading from '@components/Loading';
 import EmbedError from '@pages/embed/EmbedError';
 import { fetchEmbedConfig } from '@services/embedService';
@@ -26,9 +27,11 @@ const EmbedInner = ({ params, config }) => {
         });
         markReady();
     }, [config, params.layers, params.share, markReady]);
+    const noticesEnabled = params.notices !== 'false';
     return (
         <div className="relative w-full h-dvh">
             <MapView />
+            <LayerNotices enabled={noticesEnabled} />
         </div>
     );
 };

@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.29.0',
+        items: [
+            { text: 'Algunas capas ahora pueden mostrar un mensaje informativo arriba del mapa (con título, descripción opcional, icono y un posible enlace). Aparece sólo cuando la capa está activa y dentro de su zoom recomendado; puedes cerrarlo si te estorba.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.27.0',
         items: [
             { text: 'Ahora MapaLab cuenta de forma anónima cuántas personas usan cada capa y herramienta, para priorizar mejoras donde más se necesitan. No se identifica a ningún usuario; si tu navegador tiene "No me rastrees" activado, se respeta automáticamente.', tag: 'added' },

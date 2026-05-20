@@ -403,6 +403,64 @@ Textos en espanol: titulo "Entorno de pruebas"; intro de bienvenida + lista con 
 
 No hay tests para `TestEnvModal` ni `EnvBadge`.
 
+## Aviso configurable por capa (v1.29.0)
+
+Algunas capas pueden mostrar un banner sobre el mapa mientras están activas y dentro de su rango de zoom recomendado. La configuración vive en `mapalab.layers.notice` (JSONB) y se edita desde el tab "Aviso" en mariachi (`/administrador/mapalab/layers`).
+
+**Shape del JSONB** (camelCase, persistido tal cual):
+
+```json
+{
+  "enabled": true,
+  "title": "Datos preliminares",
+  "description": "La capa muestra cifras provisionales.",
+  "icon": "alert",
+  "variant": "warning",
+  "position": "top-right",
+  "dismissible": true,
+  "dismissPersistence": "permanent",
+  "validFrom": null,
+  "validUntil": null,
+  "zoomRange": { "min": 9, "max": 14 },
+  "cta": { "label": "Ver fuente", "url": "https://..." }
+}
+```
+
+`dismissPersistence` controla qué pasa cuando el usuario cierra el aviso (sólo 2 modos a partir de v1.29.x):
+- `permanent` (default) — el dismiss se guarda en `localStorage`. El aviso no vuelve a aparecer en ese navegador hasta que el admin edite el contenido (cambia el hash de title/description/icon/variant/cta).
+- `reopen` — el dismiss vive sólo en memoria del runtime. El aviso vuelve a aparecer cuando: (a) el usuario recarga la página, o (b) desactiva la capa y la vuelve a activar.
+
+(El modo `session` que usaba `sessionStorage` fue eliminado por confuso — las capas que tenían `session` se migran a `reopen` automáticamente.)
+
+**Iconos**: viven en Acervo (SeaweedFS) bajo `iieg/iconos/` (bucket público, convención global para iconos compartidos entre secciones; antes vivían bajo `iieg/notice-icons/` antes de la reorganización). El editor en mariachi usa `BucketFilePicker` (igual que `TemaIconField`) para que el admin suba/elija el SVG. En DB se persiste la URL completa (`/acervo/iieg/iconos/foo.svg`) y `<Message>` la renderiza como `<img>` si detecta prefijo `http(s)://`, `/acervo/` o `/api/`; si recibe un string sin URL, sigue usando `externalIcons` del Icon component (compatibilidad con `slow_loading_warning` y otros usos previos).
+
+**Anclaje (`anchorMode`)**: `viewport` (default) usa `position` para fijar el aviso a una de seis anclas del viewport. `coord` (solo desktop) ancla el aviso a una coordenada geográfica (`anchorCoord: { lon, lat }`) usando `ol/Overlay` + `createPortal` (`AnchoredNotice.jsx`); el aviso se mueve con el pan/zoom y se oculta automáticamente cuando el pixel cae fuera del viewport (listener `postrender` ajusta `visibility: hidden`). En mobile siempre se usa modo viewport (en `top-center`), independientemente del modo configurado.
+
+**Editor del punto**: en mariachi, el modo `coord` muestra un mini-mapa OL (`NoticeAnchorField.jsx`) con el WMS de la capa actual como referencia visual; el admin hace click sobre el mapa para fijar la coord. No necesita escribir lon/lat manualmente.
+
+**Reglas de visibilidad** (todas se deben cumplir):
+- `enabled === true`
+- Capa en `effectiveActiveLayerIds` (en swipe, en `paneA ∪ paneB`, deduplicado)
+- `currentZoom` dentro de `notice.zoomRange` si está definido (override); si no, dentro de `layer.zoomRange`; si ninguno está definido, siempre pasa
+- Hoy entre `validFrom` y `validUntil` (si están definidos; vacío = permanente)
+- No fue dismisseado para este hash de contenido en `localStorage`
+
+**Piezas**:
+
+| Archivo | Rol |
+|---|---|
+| `dataengine/jobs/alembic/versions/20260519_0009_layer_notice.py` | Migración `ADD COLUMN notice JSONB` |
+| `mariachi/api/app/schemas/layer.py::LayerNotice` | Schema Pydantic con validación (camelCase aliases) |
+| `mariachi/admin/src/features/mapalab-layers/components/layersEditor/LayerNoticeSection.jsx` | Form + preview en vivo |
+| `mapalab/backend/app/services/layer_tree_service.py` | Expone `notice` en `/layers/tree` solo si `enabled` |
+| `frontend/src/pages/maps/helpers/noticeHelpers.js` | Filtros puros, hash dismiss, position classes |
+| `frontend/src/pages/maps/hooks/useLayerNotices.js` | Reacciona a zoom (`change:resolution`) vía `useSyncExternalStore` |
+| `frontend/src/pages/maps/components/LayerNotices/` | Contenedor + tarjeta visual |
+
+**Telemetría**: `layer_notice_view` (impresión, una vez por hash+layer), `layer_notice_dismiss`, `layer_notice_cta_click`. Persistencia del dismiss en `localStorage` con clave `mapalab.notice.dismissed.<layerId>.<hash>`; al cambiar el contenido (cambia el hash), el aviso vuelve a mostrarse.
+
+**Embed**: atributo `notices="false"` del web component `<iieg-mapalab>` lo desactiva (default activo). Se propaga al iframe como `?notices=false`.
+
 ## Proximos pasos (roadmap)
 
 - **v1.4.0 — v1.5.1** — Capas dinámicas desde backend (mariachi CMS + DataEngine schema `mapalab`), security hardening, tests smoke — Abril 2026 ✅
@@ -413,6 +471,7 @@ No hay tests para `TestEnvModal` ni `EnvBadge`.
 - **v1.19.0** — Modal de detalle con identidad del evento — Mayo 2026 ✅
 - **v1.20.0** — Auditoría de eventos: perf (cache server-side, index O(1), polling pausado), arquitectura (`EventoContext` separado), persistencia por sesión, telemetría — Mayo 2026 ✅
 - **v1.27.0** — Telemetría anónima del visor → Mariachi (sesiones, capas más usadas, herramientas, botones, swipe) — Mayo 2026 ✅
+- **v1.29.0** — Aviso configurable por capa (`notice`): banner sobre el mapa con título, descripción, icono, variante, posición, vigencia y CTA opcional — Mayo 2026 ✅
 - **v1.21.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
 - **v1.22.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
 - **v2.0.0** — Arquitectura de capas para dependencias, lazy loading, IGIBot, 3D, dashboards, API publica — Febrero 2027+

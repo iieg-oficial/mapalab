@@ -24,6 +24,7 @@ export const parseEmbedParams = (searchParams) => {
     }
 
     const zoom = zoomRaw ? Number(zoomRaw) : null;
+    const notices = searchParams.get('notices');
     return {
         key,
         share,
@@ -32,6 +33,7 @@ export const parseEmbedParams = (searchParams) => {
         zoom: Number.isFinite(zoom) ? zoom : null,
         basemap,
         controls,
+        notices,
     };
 };
 
