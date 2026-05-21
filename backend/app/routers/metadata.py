@@ -21,7 +21,18 @@ def _acervo_base() -> str:
     return settings.ACERVO_PUBLIC_URL.rstrip("/") if settings.ACERVO_PUBLIC_URL else ""
 
 
-@router.get("/sources", response_model=list[LayerSourceResponse], responses=api_responses(404, 500))
+@router.get(
+    "/sources",
+    response_model=list[LayerSourceResponse],
+    responses=api_responses(404, 500),
+    operation_id="get_sources_batch",
+    summary="Fuentes (origen y atribución) de varias capas en lote",
+    description=(
+        "Devuelve las fuentes (organismo, año, URL) de múltiples capas identificadas "
+        "como 'workspace:layer' separadas por coma. Útil para construir la atribución "
+        "de varias capas activas en una sola llamada en lugar de ir una por una a /metadata."
+    ),
+)
 def get_sources_batch(
     layers: str = Query(description="Capas separadas por coma en formato workspace:layer"),
 ):
@@ -34,7 +45,19 @@ def get_sources_batch(
         return []
 
 
-@router.get("/", response_model=list[MetadataResponse], responses=api_responses(404, 500))
+@router.get(
+    "/",
+    response_model=list[MetadataResponse],
+    responses=api_responses(404, 500),
+    operation_id="get_metadata",
+    summary="Metadata completa de una capa",
+    description=(
+        "Devuelve la metadata completa de una capa: descripción, metodología, fuentes, "
+        "periodicidad, flag de descargable y URLs de los archivos de metadatos en Acervo "
+        "(TXT/XLSX). Identifica la capa por workspace + layer; usa el alias corto del "
+        "workspace (p. ej. 'seguridad', no 'seguridad_y_proteccion_ciudadana')."
+    ),
+)
 def get_metadata(
     workspace: str = Query(description="Alias del workspace (p. ej. seguridad)"),
     layer: str = Query(description="Nombre de la capa dentro del workspace"),
@@ -45,7 +68,18 @@ def get_metadata(
     return []
 
 
-@router.get("/database-stats", responses=api_responses(500))
+@router.get(
+    "/database-stats",
+    responses=api_responses(500),
+    operation_id="get_database_stats",
+    summary="Conteo total de registros en la base del visor",
+    description=(
+        "Devuelve el conteo total de registros vivos en todas las tablas del schema "
+        "mapalab (suma de `n_live_tup` de pg_stat_user_tables). Cache de 1 hora. "
+        "Útil para mostrar 'X millones de datos' en la home y como verificación rápida "
+        "de salud de la base."
+    ),
+)
 def get_database_stats():
     now = monotonic()
     if _db_stats_cache["value"] is not None and now < _db_stats_cache["expires_at"]:
