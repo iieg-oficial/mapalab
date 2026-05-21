@@ -5,6 +5,91 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.35.0] - 2026-05-21
+
+### Cambiado: servidor MCP movido a un container dedicado `mapalab-mcp`
+
+Alineado con el patron de los servers MCP del ecosistema `agent` (IGIBot):
+FastMCP con tools manuales (`@mcp.tool()`) + docstrings como descripcion,
+`combined_app` con `health` y `/mcp/`, transporte `stateless_http=True`.
+
+#### Por que
+
+El MCP vivia embebido en el backend principal. Eso mezcla un servicio sin
+estado (lectura del catalogo) con el backend monolitico que tiene scheduler,
+embed proxy, downloads, etc. Sacarlo a un container propio permite:
+
+- Escalar el MCP independientemente del backend (mas workers para el agente
+  sin tocar el visor).
+- Coherencia con `iieg-oficial/agent/servers/*.py` — un agente que ya consume
+  `sql-agent`, `búsqueda-web`, etc. ve a mapalab como un servidor mas.
+- Telemetria y metricas aisladas (etiqueta `service=mcp` separada de
+  `service=backend` en Prometheus).
+
+#### Que cambio
+
+- **Nuevo: `servers/mapalab.py`** — FastMCP con 11 tools manuales decorados
+  con `@mcp.tool()`. Reutiliza los servicios y repositorios existentes del
+  backend (`app.services.*`, `app.repositories.*`) — cero duplicacion de
+  logica de DB.
+- **Nuevo: `servers/telemetry.py`** — middleware ASGI + flush loop +
+  `flush_pending_sync()` para shutdown. El middleware ahora se aplica a la
+  app combinada con filtro de path (`path_prefix='/mcp'`) en vez de a
+  `mcp_app` directamente (que no se preservaba al combinar routes).
+- **Nuevo: `servers/Dockerfile`** — base compartida con el backend
+  (`backend/requirements.txt`) + el codigo de `backend/app` + `servers/`.
+  Targets `development` (con `--reload`) y `production` (gunicorn 2 workers).
+- **Nuevo service `mapalab-mcp` en `docker-compose.yml`** — pool de DB
+  configurable via `MCP_DB_POOL_SIZE` / `MCP_DB_MAX_OVERFLOW` (default 2+2
+  para minimizar conexiones). Compartido en `iieg-network`. Healthcheck
+  contra `/health`.
+- **`nginx/nginx.conf`** — upstream nuevo `mapalab_mcp`. Las dos locations
+  `/mapalab/api/mcp/` y `/api/mcp/` apuntan ahora a `http://mapalab_mcp/mcp/`
+  en vez de al backend.
+- **`backend/app/server.py`** — limpiado: ya no importa `fastmcp`, no monta
+  `/mcp`, no corre el flush loop del MCP. Lifespan reducido. El backend
+  vuelve a ser solo REST + scheduler + embed.
+- **Eliminado**: `backend/app/middleware/mcp_telemetry.py`,
+  `backend/app/services/mcp_telemetry.py`. Su contenido vive ahora en
+  `servers/telemetry.py`.
+
+#### Tools expuestos (11)
+
+`search_layers`, `resolve_layer_ref`, `get_layer_tree`, `get_initial_order`,
+`get_workspaces`, `get_metadata`, `get_sources_batch`, `get_periodicity`,
+`get_periodicities_batch`, `refresh_layer_tree_cache`,
+`invalidate_layer_tree_memory_cache`.
+
+`shares` y sus 5 tools (write) ya no se exponen al MCP — quedan disponibles
+en REST si un cliente HTTP los necesita.
+
+#### Observabilidad
+
+- **Prometheus** — nuevo target en `huachicol/prometheus/targets/projects.json`
+  con label `service=mcp project=mapalab`. La variable `MAPALAB_MCP_TARGET`
+  se agrega a `huachicol/.env` y al script `generate-targets.sh`. Las
+  metricas `mapalab_mcp_calls_total` y `mapalab_mcp_latency_ms` siguen
+  iguales — solo cambia el job de origen.
+- **Mariachi** — el endpoint interno `/api/administrador/internal/mapalab/mcp/events`
+  y la tabla `mapalab_mcp_events` no cambian. El flush_loop ahora vive en
+  el lifespan del MCP server.
+
+#### Notas de migracion
+
+- **Path con slash final**: `mcp.http_app(path='/mcp/')` (con slash) para
+  evitar el 307 redirect que FastMCP emite cuando el cliente pide
+  `/mcp/` y el mount es `/mcp` (sin slash).
+- **Middleware location**: aplicar `MCPTelemetryMiddleware` al `mcp_app`
+  antes de combinar routes NO funciona — los middlewares de Starlette no
+  se preservan al hacer `routes=[*mcp_app.routes]`. Se aplica a la
+  `combined_app` con `path_prefix='/mcp'`.
+- **Pool de DB**: el MCP server abre su propio pool de SQLAlchemy. Default
+  `pool_size=2, max_overflow=2` (4 conexiones max por worker, 8 totales
+  con 2 workers de gunicorn). Se suma al pool del backend (8+8 = 16 por
+  worker, 128 con 8 workers).
+
+---
+
 ## [1.34.0] - 2026-05-21
 
 ### Agregado: descripciones, telemetría y dashboard del servidor MCP

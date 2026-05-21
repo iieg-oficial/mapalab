@@ -21,61 +21,90 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io/) embebido en 
 
 `/health` y `/ontoy` no se exponen tampoco porque viven en `app` directamente, no en un router.
 
-## Arquitectura
+## Arquitectura (v1.35.0+)
 
-`backend/app/server.py` construye **dos** apps FastAPI:
+Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp`, separado del backend principal. Sigue el patron estandar de los servers de [`iieg-oficial/agent`](https://github.com/iieg-oficial/agent/tree/main/servers).
 
 ```
-mcp_source_app  ── solo metadata + periodicity + layers + shares
-       │
-       └── FastMCP.from_fastapi(mcp_source_app)
-              │
-              └── mcp_app = mcp.http_app(path="/")
-                       │
-                       │ (mount)
-                       ▼
-app  ── todos los routers REST (incluye download y metrics)
-       └── /mcp/  ←── mcp_app
+mapalab-mcp container (servers/mapalab.py)
+├── FastMCP("mapalab")
+│   ├── @mcp.tool() search_layers, get_metadata, ...   (11 tools)
+│   └── mcp_app = mcp.http_app(path="/mcp/", stateless_http=True)
+│
+├── _admin_app: FastAPI
+│   ├── GET /          → service info
+│   ├── GET /health    → liveness para healthcheck
+│   └── GET /metrics   → Prometheus (delegado a app.metrics)
+│
+└── combined_app: FastAPI (routes=[*_admin_app.routes, *mcp_app.routes])
+    ├── lifespan: combine_lifespans(local_lifespan, mcp_app.lifespan)
+    │   ├── warmup del pool de SQLAlchemy
+    │   ├── flush_loop async de telemetria
+    │   └── flush_pending_sync en shutdown
+    └── middleware: MCPTelemetryMiddleware(path_prefix='/mcp')
+
+backend container (backend/app/server.py)
+└── REST puro: /metadata, /periodicity, /layers, /shares, /download,
+    /embed, /metrics, /health, /ontoy. Scheduler + leader election +
+    embed quota flush. Sin MCP.
 ```
 
-El sub-app **no comparte instancia** con el `app` principal. Eso permite incluir `download` en REST y excluirlo de MCP de manera limpia, sin filtros ni reglas inversas.
+El `mapalab-mcp` reutiliza los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) — el codigo de `backend/app` se copia al container del MCP en build time. Sin duplicacion de logica, ambos containers leen del mismo schema `mapalab` en DataEngine.
 
-### Lifespan compuesto
+### Tools expuestos (11)
 
-El `lifespan` original del backend hace tres cosas críticas:
+| Tool | Razon |
+|---|---|
+| `search_layers` | Lectura — punto de entrada para resolver IDs por nombre |
+| `resolve_layer_ref` | Lectura — slug/alias → capa |
+| `get_layer_tree` | Lectura — arbol completo |
+| `get_initial_order` | Lectura — capas activas al cargar |
+| `get_workspaces` | Lectura — alias ↔ workspace real |
+| `get_metadata` | Lectura — descripcion, fuentes, downloadable |
+| `get_sources_batch` | Lectura — fuentes de varias capas |
+| `get_periodicity` | Lectura — fechas de capa temporal |
+| `get_periodicities_batch` | Lectura — periodicidad de varias capas |
+| `refresh_layer_tree_cache` | Write barato — invalidacion de cache |
+| `invalidate_layer_tree_memory_cache` | Write barato — solo memoria |
 
-1. Warmup del pool de SQLAlchemy (`SELECT 1`)
-2. Leader election por flock para que solo un worker corra el scheduler
-3. Start/stop del `SchedulerService` y `PeriodicityService.ensure_schema`
+`shares` y sus 5 tools quedan **fuera del MCP** desde 1.35.0 — son writes con efectos y no encajan en el patron de lectura del MCP. Siguen disponibles en REST.
 
-FastMCP necesita su propio lifespan para inicializar el `StreamableHTTP session manager`. Se componen con `combine_lifespans` de `fastmcp.utilities.lifespan`:
+### Lifespan + middleware
+
+FastMCP necesita su propio lifespan para inicializar el `StreamableHTTP session manager`. Se compone con el lifespan local del MCP server (warmup + flush loop):
 
 ```python
 app = FastAPI(
+    routes=[*_admin_app.routes, *mcp_app.routes],
     lifespan=combine_lifespans(lifespan, mcp_app.lifespan),
-    ...
 )
+app.add_middleware(MCPTelemetryMiddleware, path_prefix='/mcp')
 ```
 
-Sin esto, el manager de sesiones de MCP no arranca (errores `Task group is not initialized`).
+**Importante**: el middleware se aplica a la `combined_app`, NO a `mcp_app`. Cuando se hace `routes=[*mcp_app.routes]`, los middlewares registrados en `mcp_app` NO se preservan. El middleware filtra por `path_prefix='/mcp'` para no procesar las rutas administrativas.
 
 ## Rutas
 
 | Origen | URL |
 |---|---|
-| Interna (entre containers) | `http://backend:8000/mcp/` |
+| Interna (entre containers) | `http://mapalab-mcp:8000/mcp/` |
 | Local desde host (puerto publicado) | `http://localhost:3006/api/mcp/` |
 | Vía gateway-hub (staging/prod) | `https://<dominio>/mapalab/api/mcp/` |
 
-Nota: el path final lleva slash. El cliente FastMCP lo agrega solo, pero `curl` necesita escribirlo (`/mcp/`, no `/mcp`).
+Nota: el path final lleva slash. `mcp.http_app(path='/mcp/')` se monta con slash; sin el, FastMCP redirige `/mcp/` → `/mcp` con 307 que `curl -X POST` no sigue.
 
 ## Configuración de nginx
 
-`nginx/nginx.conf` agrega un `location /api/mcp/` separado del `/api/` general porque MCP usa **HTTP streamable transport** (SSE persistente):
+`nginx/nginx.conf` define un upstream `mapalab_mcp` separado del `backend` y dos locations dedicadas (`/api/mcp/` y `/mapalab/api/mcp/`):
 
 ```nginx
+upstream mapalab_mcp {
+    server mapalab-mcp:8000;
+    keepalive 16;
+}
+
 location /api/mcp/ {
-    proxy_pass http://backend/mcp/;
+    proxy_pass http://mapalab_mcp/mcp/;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

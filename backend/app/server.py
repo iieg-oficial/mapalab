@@ -7,19 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator, metrics as fastapi_metrics
 
 from sqlalchemy import text
-from fastmcp import FastMCP
-from fastmcp.utilities.lifespan import combine_lifespans
 from app import metrics as metrics_module
 from app.routers import (metadata, periodicity, download, layers, shares, embed)
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.access_logger import access_flush_loop, get_logger as get_access_logger, _flush_sync as _flush_accesos
 from app.services.api_key_quota import flush_to_mariachi
-from app.services.mcp_telemetry import (
-    _flush_sync as _flush_mcp_events,
-    get_logger as get_mcp_logger,
-    mcp_telemetry_flush_loop,
-)
-from app.middleware.mcp_telemetry import MCPTelemetryMiddleware
 from app.services.scheduler_service import SchedulerService
 from app.services.periodicity_service import PeriodicityService
 from app.consts.databases import DatabaseType
@@ -87,14 +79,12 @@ async def lifespan(app: FastAPI):
 
     flush_task = asyncio.create_task(_quota_flush_loop())
     access_task = asyncio.create_task(access_flush_loop())
-    mcp_telemetry_task = asyncio.create_task(mcp_telemetry_flush_loop())
     try:
         yield
     finally:
         flush_task.cancel()
         access_task.cancel()
-        mcp_telemetry_task.cancel()
-        for task in (flush_task, access_task, mcp_telemetry_task):
+        for task in (flush_task, access_task):
             try:
                 await task
             except asyncio.CancelledError:
@@ -107,29 +97,15 @@ async def lifespan(app: FastAPI):
             await asyncio.to_thread(_flush_accesos, get_access_logger().drain())
         except Exception:
             pass
-        try:
-            await asyncio.to_thread(_flush_mcp_events, get_mcp_logger().drain())
-        except Exception:
-            pass
         if is_leader:
             SchedulerService.stop_scheduler()
             if _lock_file:
                 _lock_file.close()
 
 
-mcp_source_app = FastAPI(title="MapaLab MCP source")
-mcp_source_app.include_router(metadata.router)
-mcp_source_app.include_router(periodicity.router)
-mcp_source_app.include_router(layers.router)
-mcp_source_app.include_router(shares.router)
-
-mcp = FastMCP.from_fastapi(app=mcp_source_app, name="MapaLab MCP")
-mcp_app = mcp.http_app(path="/")
-mcp_app.add_middleware(MCPTelemetryMiddleware)
-
 app = FastAPI(
     title = "MAPALB",
-    lifespan=combine_lifespans(lifespan, mcp_app.lifespan),
+    lifespan=lifespan,
     docs_url=None if settings.ENVIRONMENT == "production" else "/docs",
     redoc_url=None if settings.ENVIRONMENT == "production" else "/redoc"
 )
@@ -162,7 +138,6 @@ app.include_router(layers.router)
 app.include_router(shares.router)
 app.include_router(embed.router)
 app.include_router(metrics_module.router)
-app.mount("/mcp", mcp_app)
 @app.get('/')
 def root():
     return {'message':'MapaLab Backend API'}

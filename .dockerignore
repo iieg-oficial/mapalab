@@ -8,6 +8,8 @@
 **/.mypy_cache
 **/.ruff_cache
 backend
+!backend/app
+!backend/requirements.txt
 docs
 .git
 .gitignore
