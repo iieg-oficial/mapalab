@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { transformExtent } from 'ol/proj';
 import { useMapsContext } from '@hooks/useMaps';
 import { useEventoContext } from '@hooks/useEvento';
 import ThemeMenu from '@mapsComponents/ThemeMenu';
-import Icon from '@components/Icon';
-import Tooltip from '@components/Tooltip';
+import EventoActionsBar from '@mapsComponents/EventoActionsBar';
 import { findLayerByWorkspaceLayer } from '@pages/maps/helpers/eventoHelpers';
 import { trackEventoClose, trackEventoOpen } from '@services/analyticsService';
 
@@ -14,7 +13,6 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
     const { setActiveEvento, getLayerIdsByEvento } = useEventoContext();
     const zoomedRef = useRef(false);
     const autoActivatedRef = useRef(false);
-    const [isDeleteHovered, setIsDeleteHovered] = useState(false);
 
     useEffect(() => {
         if (!evento?.id) return;
@@ -125,30 +123,6 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
         externalActiveIds.forEach((id) => onToggleLayer(id, false));
     };
 
-    const externalCount = externalActiveIds.length;
-    const isPlural = externalCount !== 1;
-    const headerExtras = (
-        <div className="flex items-center gap-1">
-            {externalCount > 0 && (
-                <Tooltip content={`Apagar ${externalCount} capa${isPlural ? 's' : ''} activa${isPlural ? 's' : ''} que no pertenece${isPlural ? 'n' : ''} a este evento`}>
-                    <button
-                        type="button"
-                        onClick={handleApagarExternas}
-                        onMouseEnter={() => setIsDeleteHovered(true)}
-                        onMouseLeave={() => setIsDeleteHovered(false)}
-                        className="relative p-1.5 rounded-full transition-colors cursor-pointer border border-transparent bg-[#F9FBFF] hover:border-[#FF577D]"
-                    >
-                        <Icon name="eliminar" state={isDeleteHovered ? 'hover' : 'normal'} className="size-5" />
-                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#FF577D] text-white text-[10px] font-bold leading-4 text-center">
-                            {externalCount}
-                        </span>
-                    </button>
-                </Tooltip>
-            )}
-            {closeButton}
-        </div>
-    );
-
     const theme = useMemo(() => ({
         id: `evento-${evento?.id}`,
         label: evento?.titulo || 'Evento',
@@ -160,7 +134,14 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
             theme={theme}
             activeLayerIds={activeLayerIds}
             onToggleLayer={onToggleLayer}
-            closeButton={headerExtras}
+            closeButton={closeButton}
+            actionsBar={(
+                <EventoActionsBar
+                    evento={evento}
+                    externalCount={externalActiveIds.length}
+                    onApagarExternas={handleApagarExternas}
+                />
+            )}
         />
     );
 };

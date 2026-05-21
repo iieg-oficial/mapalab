@@ -23,6 +23,22 @@ const buildLayerIndex = (nodes) => {
     return index;
 };
 
+const DIACRITICS_RE = /[̀-ͯ]/g;
+
+export const slugifyTitulo = (titulo) =>
+    (titulo || '')
+        .normalize('NFD')
+        .replace(DIACRITICS_RE, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60);
+
+export const buildEventoShareUrl = (evento) => {
+    const slug = slugifyTitulo(evento?.titulo) || evento?.id || '';
+    return `${window.location.origin}/mapa?evento=${slug}`;
+};
+
 export const findLayerByWorkspaceLayer = (workspace, layer, nodes) => {
     if (!workspace || !layer) return null;
     return buildLayerIndex(nodes).get(indexKey(workspace, layer)) || null;
