@@ -5,6 +5,33 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.34.0] - 2026-05-21
+
+### Agregado: descripciones, telemetría y dashboard del servidor MCP
+
+- **Descripciones legibles para los 17 tools del MCP**. Cada endpoint expuesto al MCP (`metadata`, `periodicity`, `layers`, `shares`) ahora declara `operation_id`, `summary` y `description` en su decorador FastAPI. Los tools pasan de nombres largos heredados del routing (`get_layer_tree_layers_tree_get`) a nombres cortos (`get_layer_tree`) y cada uno trae descripción larga en español que orienta al LLM. Énfasis especial en `search_layers`, que documenta explícitamente que devuelve label + path jerárquico para que un agente pueda resolver el ID de una capa a partir del nombre que conoce el usuario.
+
+- **Telemetría del MCP → mariachi**. Cada request HTTP al `/mcp/` pasa por un middleware ASGI puro (`backend/app/middleware/mcp_telemetry.py`) que parsea el JSON-RPC, mide duración + bytes de salida y bufferea el evento. Un loop async flushea cada 30 s a un endpoint interno nuevo en mariachi (`POST /api/administrador/internal/mapalab/mcp/events` con `X-Internal-Token`), mismo patrón que `access_logger` y `api_key_quota`.
+  - **Campos**: `timestamp`, `dia`, `method`, `tool`, `status`, `error_code`, `duration_ms`, `bytes_out`, `session_hash`, `ip_hash`, `client_name`, `client_version`.
+  - **Sin identidad**: `session_id` e IP del cliente se persisten como SHA-256 salteado por `MAPALAB_INTERNAL_TOKEN`. No hay ni IP en claro ni session id en claro.
+  - **Middleware ASGI puro** (no `BaseHTTPMiddleware`) para no consumir el stream SSE del transport HTTP streamable.
+
+- **Métricas Prometheus paralelas**:
+  - `mapalab_mcp_calls_total{method, tool, status}` — counter por llamada.
+  - `mapalab_mcp_latency_ms{tool}` — histograma de duración solo para `tools/call`.
+  - Dos alertas nuevas en huachicol: `MapalabMcpHighErrorRate` (>10 % de 4xx/5xx en 10 min con tráfico sostenido) y `MapalabMcpHighLatency` (p95 > 5 s).
+
+- **Panel de admin nuevo**: tab "MCP" dentro de `/administrador/mapalab/stats`. 4 vistas materializadas (`mapalab_mcp_stats_overview`, `mapalab_mcp_stats_tools`, `mapalab_mcp_stats_daily`, `mapalab_mcp_stats_clients`) alimentan tarjetas (llamadas 30d/7d/hoy, tasa de error, latencia media), gráfica de llamadas por día con stack de errores, tabla por tool (usos, errores, p95) y tabla de clientes MCP (Claude Desktop, IGIBot, otros). Se refrescan con el botón "Refrescar vistas" del tab Resumen — ya existían las del visor y se sumaron las del MCP a la misma lista.
+
+- **Página de Documentación en mariachi-admin** (`/administrador/documentacion`): hub para guías técnicas con tabs verticales por tema; el primer tema es "Servidor MCP" con qué es, cómo usarlo (Claude Desktop + Python), tabla de los 17 tools agrupados por router, ejemplo de respuesta de `search_layers`, descripción de los campos persistidos en `mapalab_mcp_events` y un playground interactivo que llama los endpoints REST equivalentes y muestra HTTP status + latencia + JSON con copy-to-clipboard de la URL. El item del sider queda anclado al footer con `position: absolute; bottom: 0` para que sea siempre visible.
+
+#### Migraciones de datos
+
+- `mariachi/api/alembic/versions/mariachi/b9c0d1e2f3a5_add_mapalab_mcp_events.py` — tabla `mapalab_mcp_events` con 4 índices.
+- `mariachi/api/alembic/versions/mariachi/c0d1e2f3a4b6_add_mapalab_mcp_stats_views.py` — 4 vistas materializadas con índices únicos para refresh CONCURRENTLY.
+
+---
+
 ## [1.33.1] - 2026-05-21
 
 ### Fix: basemap del evento se revertía al hacer click en el mapa
