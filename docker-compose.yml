@@ -97,6 +97,45 @@ services:
       - iieg-network
     restart: unless-stopped
 
+  mapalab-mcp:
+    build:
+      context: .
+      dockerfile: servers/Dockerfile
+      target: ${BACKEND_TARGET:-development}
+    init: true
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-True}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      GEOSERVER_URL: ${GEOSERVER_URL}
+      GEOSERVER_USER: ${GEOSERVER_USER}
+      GEOSERVER_PASSWORD: ${GEOSERVER_PASSWORD}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME}
+      DB_POOL_SIZE: ${MCP_DB_POOL_SIZE:-2}
+      DB_MAX_OVERFLOW: ${MCP_DB_MAX_OVERFLOW:-2}
+      MCP_WORKERS: ${MCP_WORKERS:-2}
+      ACERVO_PUBLIC_URL: ${ACERVO_PUBLIC_URL}
+      MAPALAB_INTERNAL_TOKEN: ${MAPALAB_INTERNAL_TOKEN:-}
+      MARIACHI_BACKEND_URL: ${MARIACHI_BACKEND_INTERNAL_URL:-http://mariachi-api:8000}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.1}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - default
+      - iieg-network
+    restart: unless-stopped
+
   nginx:
     build:
       context: .
@@ -115,6 +154,8 @@ services:
       - "${NGINX_PORT:-3006}:80"
     depends_on:
       backend:
+        condition: service_healthy
+      mapalab-mcp:
         condition: service_healthy
     networks:
       - default
