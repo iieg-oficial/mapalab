@@ -5,6 +5,28 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.33.1] - 2026-05-21
+
+### Fix: basemap del evento se revertía al hacer click en el mapa
+
+Cuando un evento tenía `basemapId` configurado (1.32.0), el visor aplicaba el basemap al abrir el menú lateral del evento — correcto — pero al hacer click en cualquier parte del mapa el basemap se revertía al default ("voyager"). El usuario tenía que volver a abrir el menú para verlo, y se revertía otra vez al siguiente click.
+
+#### Causa
+
+El effect que aplicaba el basemap vivía en `frontend/src/pages/maps/components/EventoMenu.jsx`. Ese componente se renderiza dentro de `<Panel open={isMenuOpen}>` y el Panel hace `if (!open) return null` cuando se cierra. El Panel se cierra automáticamente al click fuera (handler `mousedown` document-level, comportamiento esperado de un menú). Al desmontarse `EventoMenu`, el cleanup del effect llamaba `setBaseMapId(previous)` restaurando el basemap previo — el usuario percibía esto como "el basemap se revierte al click".
+
+La intención original del cleanup era restaurar el basemap "al cerrar el evento", pero el ciclo de vida del componente está atado a "abrir/cerrar el menú lateral", no a "evento activo". El click en el mapa cierra el menú pero el evento conceptualmente sigue activo (capas prendidas, banner visible).
+
+#### Fix
+
+- **`frontend/src/pages/maps/components/EventoMenu.jsx`**: se elimina el cleanup del effect del basemap. El effect ahora solo aplica `setBaseMapId(evento.basemapId)` al montar / cambiar de evento. El restore-al-cerrar se pierde — si el usuario quiere otro basemap, lo cambia desde el picker de basemaps. Eliminados `previousBasemapRef`, el effect de sincronización de `baseMapIdRef`, y `baseMapId` del destructure de `useMapsContext` (ya no se usaba).
+
+#### Nota
+
+El restore-al-cerrar "real" requiere mover el effect del basemap a `EventoProvider` (donde vive `activeEvento`) y limpiar `activeEvento` sólo cuando el evento deja de estar activo (capas apagadas o se abre otro evento). Queda como follow-up si lo piden.
+
+---
+
 ## [1.33.0] - 2026-05-21
 
 ### Avisos y dato curioso: italic visible, popover de fact sin símbolo, render inline centralizado
