@@ -2,18 +2,23 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Message from '@components/Message';
 import Tooltip from '@components/Tooltip';
+import { useSider } from '@contexts/SiderContext';
 import SymbolGlyph from '@mapsComponents/SymbolGlyph';
 import { pickNextFact } from '@pages/maps/helpers/funFactPicker';
 import { trackEventoFunFact } from '@services/analyticsService';
 
 const ANIM_DURATION_MS = 5200;
+const BALL_STOP_DELAY_MS = 3700;
+const MESSAGE_TTL_MS = 10000;
 const MAX_ACTIVE_BALLS = 10;
 const BALL_SIZE_PX = 28;
+const BOTTOM_PADDING_PX = 14;
 const POPOVER_MAX_WIDTH = 320;
 const POPOVER_GAP_PX = 14;
 const POPOVER_HEIGHT_HINT = 180;
+const POPOVER_DATA_ATTR = 'data-evento-fun-popover';
 
-const FactPopover = ({ popover, onClose }) => {
+const FactPopover = ({ popover }) => {
     const popoverRef = useRef(null);
     const [resolvedTop, setResolvedTop] = useState(null);
 
@@ -42,6 +47,7 @@ const FactPopover = ({ popover, onClose }) => {
                 opacity: resolvedTop !== null ? 1 : 0,
                 transition: 'opacity 120ms ease-out',
             }}
+            {...{ [POPOVER_DATA_ATTR]: '' }}
         >
             <div
                 className="absolute w-0 h-0"
@@ -72,8 +78,6 @@ const FactPopover = ({ popover, onClose }) => {
                 icon=""
                 title={null}
                 description={popover.text}
-                closable
-                onClose={onClose}
             >
                 {popover.symbol && (
                     <div className="flex justify-center mb-2">
@@ -85,17 +89,60 @@ const FactPopover = ({ popover, onClose }) => {
     );
 };
 
+const MobileFactBanner = ({ popover }) => (
+    <div
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-60 max-w-120 w-[calc(100%-32px)] pointer-events-auto"
+        {...{ [POPOVER_DATA_ATTR]: '' }}
+    >
+        <Message
+            variant="info"
+            size="medium"
+            icon=""
+            title={null}
+            description={popover.text}
+        >
+            {popover.symbol && (
+                <div className="flex justify-center mb-2">
+                    <SymbolGlyph symbol={popover.symbol} size={36} />
+                </div>
+            )}
+        </Message>
+    </div>
+);
+
 const EventoFunButton = ({ evento }) => {
     const buttonRef = useRef(null);
+    const popoverTimerRef = useRef(null);
+    const dismissTimerRef = useRef(null);
     const [balls, setBalls] = useState([]);
     const [popover, setPopover] = useState(null);
+    const { isMobile } = useSider();
 
     const facts = Array.isArray(evento?.facts) ? evento.facts : [];
     const eventoSymbol = evento?.funIcon || null;
 
     useEffect(() => {
         setPopover(null);
+        if (popoverTimerRef.current) clearTimeout(popoverTimerRef.current);
+        if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     }, [evento?.id]);
+
+    useEffect(() => () => {
+        if (popoverTimerRef.current) clearTimeout(popoverTimerRef.current);
+        if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    }, []);
+
+    useEffect(() => {
+        if (!popover) return undefined;
+        const handler = (e) => {
+            if (e.target.closest(`[${POPOVER_DATA_ATTR}]`)) return;
+            if (buttonRef.current?.contains(e.target)) return;
+            setPopover(null);
+            if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [popover]);
 
     if (facts.length === 0) return null;
 
@@ -106,10 +153,14 @@ const EventoFunButton = ({ evento }) => {
         const fact = pickNextFact(evento?.id ?? 'global', facts);
         if (!fact) return;
 
+        if (popoverTimerRef.current) clearTimeout(popoverTimerRef.current);
+        if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+        setPopover(null);
+
         const ballSymbol = fact.symbol || eventoSymbol;
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
         const dx = (Math.random() - 0.5) * 240;
-        const ty = Math.max(80, window.innerHeight - rect.top - BALL_SIZE_PX);
+        const ty = Math.max(80, window.innerHeight - rect.top - BALL_SIZE_PX - BOTTOM_PADDING_PX);
 
         setBalls((prev) => {
             const next = [...prev, { id, top: rect.top, left: rect.left, dx, ty, symbol: ballSymbol }];
@@ -125,16 +176,21 @@ const EventoFunButton = ({ evento }) => {
         const popoverLeft = Math.max(16, Math.min(buttonCenter - POPOVER_MAX_WIDTH / 2, window.innerWidth - POPOVER_MAX_WIDTH - 16));
         const arrowLeft = buttonCenter - popoverLeft;
         const placeAbove = rect.top >= POPOVER_HEIGHT_HINT + POPOVER_GAP_PX + 16;
-        setPopover({
+        const popoverData = {
             id,
             text: fact.text,
-            symbol: fact.symbol || eventoSymbol,
+            symbol: fact.symbol || null,
             placement: placeAbove ? 'top' : 'bottom',
             anchorTop: rect.top,
             anchorBottom: rect.top + rect.height,
             left: popoverLeft,
             arrowLeft,
-        });
+        };
+
+        popoverTimerRef.current = setTimeout(() => {
+            setPopover(popoverData);
+            dismissTimerRef.current = setTimeout(() => setPopover(null), MESSAGE_TTL_MS);
+        }, BALL_STOP_DELAY_MS);
     };
 
     return (
@@ -168,8 +224,9 @@ const EventoFunButton = ({ evento }) => {
                             <SymbolGlyph symbol={b.symbol} size={28} />
                         </span>
                     ))}
-                    {popover && (
-                        <FactPopover popover={popover} onClose={() => setPopover(null)} />
+                    {popover && (isMobile
+                        ? <MobileFactBanner popover={popover} />
+                        : <FactPopover popover={popover} />
                     )}
                 </>,
                 document.body,
