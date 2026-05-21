@@ -30,6 +30,8 @@ COUNTER_EMBED_WMS_PROXY = 'mapalab_embed_wms_proxy_total'
 COUNTER_EMBED_TELEMETRY = 'mapalab_embed_telemetry_total'
 COUNTER_EMBED_JS_ERRORS = 'mapalab_embed_js_errors_total'
 HISTOGRAM_EMBED_VITAL = 'mapalab_embed_vital_ms'
+COUNTER_MCP_CALLS = 'mapalab_mcp_calls_total'
+HISTOGRAM_MCP_LATENCY = 'mapalab_mcp_latency_ms'
 
 
 def incr(name: str, labels: Optional[dict] = None, amount: int = 1) -> None:

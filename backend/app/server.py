@@ -14,6 +14,12 @@ from app.routers import (metadata, periodicity, download, layers, shares, embed)
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.access_logger import access_flush_loop, get_logger as get_access_logger, _flush_sync as _flush_accesos
 from app.services.api_key_quota import flush_to_mariachi
+from app.services.mcp_telemetry import (
+    _flush_sync as _flush_mcp_events,
+    get_logger as get_mcp_logger,
+    mcp_telemetry_flush_loop,
+)
+from app.middleware.mcp_telemetry import MCPTelemetryMiddleware
 from app.services.scheduler_service import SchedulerService
 from app.services.periodicity_service import PeriodicityService
 from app.consts.databases import DatabaseType
@@ -81,12 +87,14 @@ async def lifespan(app: FastAPI):
 
     flush_task = asyncio.create_task(_quota_flush_loop())
     access_task = asyncio.create_task(access_flush_loop())
+    mcp_telemetry_task = asyncio.create_task(mcp_telemetry_flush_loop())
     try:
         yield
     finally:
         flush_task.cancel()
         access_task.cancel()
-        for task in (flush_task, access_task):
+        mcp_telemetry_task.cancel()
+        for task in (flush_task, access_task, mcp_telemetry_task):
             try:
                 await task
             except asyncio.CancelledError:
@@ -97,6 +105,10 @@ async def lifespan(app: FastAPI):
             pass
         try:
             await asyncio.to_thread(_flush_accesos, get_access_logger().drain())
+        except Exception:
+            pass
+        try:
+            await asyncio.to_thread(_flush_mcp_events, get_mcp_logger().drain())
         except Exception:
             pass
         if is_leader:
@@ -113,6 +125,7 @@ mcp_source_app.include_router(shares.router)
 
 mcp = FastMCP.from_fastapi(app=mcp_source_app, name="MapaLab MCP")
 mcp_app = mcp.http_app(path="/")
+mcp_app.add_middleware(MCPTelemetryMiddleware)
 
 app = FastAPI(
     title = "MAPALB",

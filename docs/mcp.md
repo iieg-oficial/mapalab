@@ -100,32 +100,29 @@ El gateway-hub no necesita un `location` específico para `/mapalab/api/mcp/`: c
 
 ## Tools generados
 
-`from_fastapi` genera un tool por cada operación. Los nombres siguen el patrón `<function_name>_<path>_<method>` (de `operation_id` autogenerado por FastAPI):
+`from_fastapi` genera un tool por cada operación. Cada endpoint expuesto define `operation_id`, `summary` y `description` en su decorador, así que el tool MCP resultante hereda nombre corto, título legible y descripción larga sin extra mapping:
 
-```
-get_metadata_metadata
-get_sources_batch_metadata_sources_get
-get_periodicity_periodicity
-get_periodicities_batch_periodicity_batch_get
-get_layer_tree_layers_tree_get
-get_initial_order_layers_initial_order_get
-get_workspaces_layers_workspaces_get
-search_layers_layers_search_get
-resolve_layer_ref_layers_resolve_get
-refresh_cache_endpoint_layers_refresh_cache_post
-invalidate_cache_endpoint_layers_invalidate_cache_post
-create_share_shares_post
-get_share_shares
-pin_share_shares
-unpin_share_shares
-pin_share_permanent_shares
-```
+| Tool | Origen | Qué hace |
+|---|---|---|
+| `get_metadata` | GET `/metadata/` | Metadata completa de una capa |
+| `get_sources_batch` | GET `/metadata/sources` | Fuentes de varias capas en lote |
+| `get_database_stats` | GET `/metadata/database-stats` | Conteo total de registros del schema mapalab |
+| `get_periodicity` | GET `/periodicity/` | Fechas disponibles de una capa temporal |
+| `get_periodicities_batch` | GET `/periodicity/batch` | Periodicidad de varias capas |
+| `get_layer_tree` | GET `/layers/tree` | Árbol jerárquico completo del visor |
+| `get_initial_order` | GET `/layers/initial-order` | IDs activos al cargar el visor |
+| `get_workspaces` | GET `/layers/workspaces` | Workspaces con alias + schema |
+| `search_layers` | GET `/layers/search` | Búsqueda por label/tags/id — devuelve **label + path jerárquico** |
+| `resolve_layer_ref` | GET `/layers/resolve` | Slug/alias → capa |
+| `refresh_layer_tree_cache` | POST `/layers/refresh-cache` | Regenera cache materializada (token interno) |
+| `invalidate_layer_tree_memory_cache` | POST `/layers/invalidate-cache` | Invalida cache en memoria (token interno) |
+| `create_share` | POST `/shares` | Crea share del estado del mapa |
+| `get_share` | GET `/shares/{share_id}` | Lee un share |
+| `pin_share` | POST `/shares/{share_id}/pin` | Pin por 365 días |
+| `unpin_share` | DELETE `/shares/{share_id}/pin` | Quita el pin |
+| `pin_share_permanent` | POST `/shares/{share_id}/pin-permanent` | Pin permanente (token interno) |
 
-Para nombres más cortos hay tres opciones:
-
-1. Definir `operation_id="..."` en cada decorador (`@router.get("/tree", operation_id="get_layer_tree")`).
-2. Pasar `mcp_names={"get_layer_tree_layers_tree_get": "layer_tree"}` a `FastMCP.from_fastapi`.
-3. Definir tools manualmente con `@mcp.tool` para los más usados.
+Para cambiar el nombre o el texto que ve un cliente MCP, basta editar `operation_id`, `summary` o `description` en el decorador del endpoint correspondiente.
 
 ## Cómo probar
 
@@ -150,7 +147,7 @@ async def main():
         for t in tools:
             print(' -', t.name)
 
-        result = await client.call_tool('get_workspaces_layers_workspaces_get', {})
+        result = await client.call_tool('get_workspaces', {})
         print(json.dumps(result.data, indent=2)[:500])
 
 asyncio.run(main())
@@ -212,6 +209,78 @@ curl -i -N -X POST http://localhost:3006/api/mcp/ \
 
 Respuesta esperada: `200 OK` con `Content-Type: text/event-stream` y un evento `data:` con `serverInfo: {"name": "MapaLab MCP", ...}`.
 
+## Telemetría → Mariachi (v1.30.0+)
+
+Cada request HTTP al `/mcp/` pasa por `MCPTelemetryMiddleware` (ASGI puro en `backend/app/middleware/mcp_telemetry.py`) que parsea el JSON-RPC, mide duración + bytes de salida y empuja al buffer del `_McpTelemetryLogger`. Un loop async flushea cada 30s a `POST /api/administrador/internal/mapalab/mcp/events` en mariachi (mismo patrón que `access_logger` / `api_key_quota`).
+
+**Campos persistidos** (tabla `mapalab_mcp_events` en mariachi):
+
+| Campo | Origen |
+|---|---|
+| `timestamp`, `dia` | reloj del backend al recibir |
+| `method` | `method` del JSON-RPC (`initialize`, `tools/list`, `tools/call`, `notifications/initialized`, …) |
+| `tool` | `params.name` cuando `method == "tools/call"` |
+| `status` | `ok` si HTTP < 400, `error` si ≥ 400 |
+| `error_code` | status HTTP cuando hay error |
+| `duration_ms` | `time.monotonic` antes/después del downstream |
+| `bytes_out` | suma de chunks del response (incluye SSE) |
+| `session_hash` | SHA-256(salt + `mcp-session-id`) |
+| `ip_hash` | SHA-256(salt + IP del cliente) |
+| `client_name`, `client_version` | `params.clientInfo` extraído en `initialize` |
+
+`salt = MAPALAB_INTERNAL_TOKEN`. Sin identidad: no se guarda IP plana ni session id en claro.
+
+**Lo que NO captura** (a propósito):
+- Errores JSON-RPC dentro de respuestas SSE 200 OK (parsearías el stream y rompería el transport). Si el error sube como HTTP ≥ 400, sí se ve.
+- Argumentos del tool. Si en el futuro se quiere registrar `q` de `search_layers` para analytics, agregar un campo opcional `args_summary` y popularlo en `_safe_parse_jsonrpc` con scrubbing PII.
+
+**Piezas**:
+
+| Repo | Archivo | Rol |
+|---|---|---|
+| mapalab | `backend/app/middleware/mcp_telemetry.py` | Middleware ASGI montado en `mcp_app` |
+| mapalab | `backend/app/services/mcp_telemetry.py` | Logger en memoria + flush loop async |
+| mapalab | `backend/app/server.py` | Aplica middleware, lanza flush loop, flushea on shutdown |
+| mariachi | `api/app/models/mapalab_mcp_event.py` | Modelo SQLAlchemy `MapalabMcpEvent` |
+| mariachi | `api/app/schemas/mapalab_mcp.py` | Pydantic batch schema |
+| mariachi | `api/app/api/routes/mapalab_mcp_internal.py` | `POST /internal/mapalab/mcp/events` (X-Internal-Token) |
+| mariachi | `api/alembic/versions/mariachi/b9c0d1e2f3a5_add_mapalab_mcp_events.py` | Migración + 4 índices |
+
+### Vistas materializadas + dashboard (v1.34.0)
+
+4 vistas materializadas alimentan el tab MCP de `/administrador/mapalab/stats`:
+
+| Vista | Contenido |
+|---|---|
+| `mapalab_mcp_stats_overview` | calls_30d/7d/1d, errors_30d, sessions_30d, clients_30d, avg_tool_duration_ms, tool_calls_30d |
+| `mapalab_mcp_stats_tools` | uses, errors, unique_sessions, avg/p95 duration_ms, last_seen — agrupado por tool (30 d) |
+| `mapalab_mcp_stats_daily` | calls, tool_calls, errors, unique_sessions, avg_duration_ms — agrupado por día (90 d) |
+| `mapalab_mcp_stats_clients` | calls, unique_sessions, last_seen — agrupado por client_name + client_version (30 d) |
+
+Las cuatro están en el array `REFRESH_VIEWS` de `mariachi/api/app/services/mapalab_telemetry.py` y se refrescan con el mismo botón "Refrescar vistas" del tab Resumen. `mapalab_mcp_stats_overview` no tiene índice único (lista a parte) y se refresca sin `CONCURRENTLY` igual que `mapalab_stats_overview`.
+
+**Endpoints** (admin-only, mismo prefix `/api/administrador/mapalab-stats`):
+- `GET /mapalab-stats/mcp/overview`
+- `GET /mapalab-stats/mcp/tools?limit=30`
+- `GET /mapalab-stats/mcp/daily?days=30`
+- `GET /mapalab-stats/mcp/clients`
+
+### Métricas Prometheus + alertas (v1.34.0)
+
+`MCPTelemetryMiddleware` también emite a Prometheus en paralelo:
+
+| Métrica | Tipo | Labels | Cuándo |
+|---|---|---|---|
+| `mapalab_mcp_calls_total` | counter | `method`, `tool`, `status` | cada request HTTP al `/mcp/` |
+| `mapalab_mcp_latency_ms` | histograma | `tool` | sólo `tools/call` con tool conocido |
+
+Scrapeado por Prometheus en huachicol vía el endpoint `/metrics` existente del backend. Dos alertas nuevas en `huachicol/prometheus/rules/alerts.yml`:
+
+| Alerta | Trigger |
+|---|---|
+| `MapalabMcpHighErrorRate` | >10 % de status=error en 10 min con tráfico sostenido (>0.05 rps) |
+| `MapalabMcpHighLatency` | p95 del tool > 5 s en 10 min con tráfico sostenido |
+
 ## Auth y seguridad
 
 - **Por ahora público.** Igual que el resto del backend de mapalab — el visor no requiere auth y los datos son catálogo público.
@@ -246,7 +315,6 @@ Respuesta esperada: `200 OK` con `Content-Type: text/event-stream` y un evento `
 
 ## Limitaciones conocidas
 
-- **Nombres largos**: heredados del `operation_id` autogenerado por FastAPI. Ver "Tools generados" para cómo acortarlos.
 - **`download` queda fuera**: no es trivial exponer un stream de CSV como tool MCP. Si se requiere, considerar un endpoint alternativo que devuelva una URL firmada (S3/Acervo) en lugar del stream directo.
 - **No hay rate limit específico para MCP**: el rate limit del gateway-hub aplica por path. Si un cliente abusivo abre muchas sesiones streamable, puede saturar workers de gunicorn antes que los límites del gateway.
 - **Sin observabilidad propia**: las llamadas a tools no aparecen en `/metrics` (excluido) ni se loggean separadas. Para monitorear, mirar logs de uvicorn/gunicorn filtrando por `/mcp/`.

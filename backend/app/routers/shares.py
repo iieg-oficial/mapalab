@@ -109,7 +109,19 @@ class ShareReadResponse(BaseModel):
     pinned_until: Optional[datetime] = None
 
 
-@router.post('', response_model=ShareCreateResponse, responses=api_responses(400, 429, 500))
+@router.post(
+    '',
+    response_model=ShareCreateResponse,
+    responses=api_responses(400, 429, 500),
+    operation_id='create_share',
+    summary='Crea un share del estado actual del mapa',
+    description=(
+        "Crea un share (snapshot del estado del visor) con un `payload` validado según "
+        "el `kind`. El `id` devuelto es determinístico (hash del payload + kind), así "
+        "que crear dos veces el mismo estado hace upsert y no genera duplicados. "
+        "Rate limit de 10 shares/minuto por IP."
+    ),
+)
 def create_share(envelope: ShareEnvelope, request: Request):
     ip = _get_client_ip(request)
     ip_hash = hash_ip(ip)
@@ -145,7 +157,18 @@ def create_share(envelope: ShareEnvelope, request: Request):
         )
 
 
-@router.get('/{share_id}', response_model=ShareReadResponse, responses=api_responses(404, 500))
+@router.get(
+    '/{share_id}',
+    response_model=ShareReadResponse,
+    responses=api_responses(404, 500),
+    operation_id='get_share',
+    summary='Lee un share por ID',
+    description=(
+        "Devuelve el envelope completo del share (`version`, `kind`, `payload`) junto "
+        "con metadatos de uso (`created_at`, `last_accessed_at`, `access_count`, "
+        "`pinned_until`). Incrementa el contador de accesos. 404 si no existe o expiró."
+    ),
+)
 def get_share(share_id: str):
     with _get_session() as session:
         share = ShareRepository.get(session, share_id)
@@ -168,7 +191,16 @@ def get_share(share_id: str):
         )
 
 
-@router.post('/{share_id}/pin', responses=api_responses(404, 500))
+@router.post(
+    '/{share_id}/pin',
+    responses=api_responses(404, 500),
+    operation_id='pin_share',
+    summary='Fija un share por 365 días',
+    description=(
+        "Extiende la vigencia del share por 365 días a partir de ahora. No requiere "
+        "autenticación. Devuelve `{ok, pinnedUntil}`."
+    ),
+)
 def pin_share(share_id: str):
     with _get_session() as session:
         share = ShareRepository.get(session, share_id)
@@ -183,7 +215,18 @@ def pin_share(share_id: str):
         return {'ok': True, 'pinnedUntil': until.isoformat() + 'Z'}
 
 
-@router.delete('/{share_id}/pin', status_code=204, responses=api_responses(401, 404, 500))
+@router.delete(
+    '/{share_id}/pin',
+    status_code=204,
+    responses=api_responses(401, 404, 500),
+    operation_id='unpin_share',
+    summary='Quita el pin de un share',
+    description=(
+        "Quita el pin de un share, devolviéndolo a su vigencia base. Si el share está "
+        "pineado de forma permanente requiere el header `X-Internal-Token` para "
+        "despinearlo; los pines de 365 días los puede quitar cualquiera."
+    ),
+)
 def unpin_share(share_id: str, x_internal_token: Optional[str] = Header(default=None, alias='X-Internal-Token')):
     with _get_session() as session:
         share = ShareRepository.get(session, share_id)
@@ -198,7 +241,17 @@ def unpin_share(share_id: str, x_internal_token: Optional[str] = Header(default=
         return None
 
 
-@router.post('/{share_id}/pin-permanent', responses=api_responses(401, 404, 500), dependencies=[Depends(_require_internal_token)])
+@router.post(
+    '/{share_id}/pin-permanent',
+    responses=api_responses(401, 404, 500),
+    dependencies=[Depends(_require_internal_token)],
+    operation_id='pin_share_permanent',
+    summary='Fija un share de forma permanente (token interno)',
+    description=(
+        "Marca el share como permanente (`pinned_until = 9999-12-31`). Requiere "
+        "`X-Internal-Token`. Solo se puede despinear con el mismo token."
+    ),
+)
 def pin_share_permanent(share_id: str):
     with _get_session() as session:
         share = ShareRepository.get(session, share_id)

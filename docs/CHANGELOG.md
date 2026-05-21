@@ -5,6 +5,55 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.34.0] - 2026-05-21
+
+### Agregado: descripciones, telemetría y dashboard del servidor MCP
+
+- **Descripciones legibles para los 17 tools del MCP**. Cada endpoint expuesto al MCP (`metadata`, `periodicity`, `layers`, `shares`) ahora declara `operation_id`, `summary` y `description` en su decorador FastAPI. Los tools pasan de nombres largos heredados del routing (`get_layer_tree_layers_tree_get`) a nombres cortos (`get_layer_tree`) y cada uno trae descripción larga en español que orienta al LLM. Énfasis especial en `search_layers`, que documenta explícitamente que devuelve label + path jerárquico para que un agente pueda resolver el ID de una capa a partir del nombre que conoce el usuario.
+
+- **Telemetría del MCP → mariachi**. Cada request HTTP al `/mcp/` pasa por un middleware ASGI puro (`backend/app/middleware/mcp_telemetry.py`) que parsea el JSON-RPC, mide duración + bytes de salida y bufferea el evento. Un loop async flushea cada 30 s a un endpoint interno nuevo en mariachi (`POST /api/administrador/internal/mapalab/mcp/events` con `X-Internal-Token`), mismo patrón que `access_logger` y `api_key_quota`.
+  - **Campos**: `timestamp`, `dia`, `method`, `tool`, `status`, `error_code`, `duration_ms`, `bytes_out`, `session_hash`, `ip_hash`, `client_name`, `client_version`.
+  - **Sin identidad**: `session_id` e IP del cliente se persisten como SHA-256 salteado por `MAPALAB_INTERNAL_TOKEN`. No hay ni IP en claro ni session id en claro.
+  - **Middleware ASGI puro** (no `BaseHTTPMiddleware`) para no consumir el stream SSE del transport HTTP streamable.
+
+- **Métricas Prometheus paralelas**:
+  - `mapalab_mcp_calls_total{method, tool, status}` — counter por llamada.
+  - `mapalab_mcp_latency_ms{tool}` — histograma de duración solo para `tools/call`.
+  - Dos alertas nuevas en huachicol: `MapalabMcpHighErrorRate` (>10 % de 4xx/5xx en 10 min con tráfico sostenido) y `MapalabMcpHighLatency` (p95 > 5 s).
+
+- **Panel de admin nuevo**: tab "MCP" dentro de `/administrador/mapalab/stats`. 4 vistas materializadas (`mapalab_mcp_stats_overview`, `mapalab_mcp_stats_tools`, `mapalab_mcp_stats_daily`, `mapalab_mcp_stats_clients`) alimentan tarjetas (llamadas 30d/7d/hoy, tasa de error, latencia media), gráfica de llamadas por día con stack de errores, tabla por tool (usos, errores, p95) y tabla de clientes MCP (Claude Desktop, IGIBot, otros). Se refrescan con el botón "Refrescar vistas" del tab Resumen — ya existían las del visor y se sumaron las del MCP a la misma lista.
+
+- **Página de Documentación en mariachi-admin** (`/administrador/documentacion`): hub para guías técnicas con tabs verticales por tema; el primer tema es "Servidor MCP" con qué es, cómo usarlo (Claude Desktop + Python), tabla de los 17 tools agrupados por router, ejemplo de respuesta de `search_layers`, descripción de los campos persistidos en `mapalab_mcp_events` y un playground interactivo que llama los endpoints REST equivalentes y muestra HTTP status + latencia + JSON con copy-to-clipboard de la URL. El item del sider queda anclado al footer con `position: absolute; bottom: 0` para que sea siempre visible.
+
+#### Migraciones de datos
+
+- `mariachi/api/alembic/versions/mariachi/b9c0d1e2f3a5_add_mapalab_mcp_events.py` — tabla `mapalab_mcp_events` con 4 índices.
+- `mariachi/api/alembic/versions/mariachi/c0d1e2f3a4b6_add_mapalab_mcp_stats_views.py` — 4 vistas materializadas con índices únicos para refresh CONCURRENTLY.
+
+---
+
+## [1.33.1] - 2026-05-21
+
+### Fix: basemap del evento se revertía al hacer click en el mapa
+
+Cuando un evento tenía `basemapId` configurado (1.32.0), el visor aplicaba el basemap al abrir el menú lateral del evento — correcto — pero al hacer click en cualquier parte del mapa el basemap se revertía al default ("voyager"). El usuario tenía que volver a abrir el menú para verlo, y se revertía otra vez al siguiente click.
+
+#### Causa
+
+El effect que aplicaba el basemap vivía en `frontend/src/pages/maps/components/EventoMenu.jsx`. Ese componente se renderiza dentro de `<Panel open={isMenuOpen}>` y el Panel hace `if (!open) return null` cuando se cierra. El Panel se cierra automáticamente al click fuera (handler `mousedown` document-level, comportamiento esperado de un menú). Al desmontarse `EventoMenu`, el cleanup del effect llamaba `setBaseMapId(previous)` restaurando el basemap previo — el usuario percibía esto como "el basemap se revierte al click".
+
+La intención original del cleanup era restaurar el basemap "al cerrar el evento", pero el ciclo de vida del componente está atado a "abrir/cerrar el menú lateral", no a "evento activo". El click en el mapa cierra el menú pero el evento conceptualmente sigue activo (capas prendidas, banner visible).
+
+#### Fix
+
+- **`frontend/src/pages/maps/components/EventoMenu.jsx`**: se elimina el cleanup del effect del basemap. El effect ahora solo aplica `setBaseMapId(evento.basemapId)` al montar / cambiar de evento. El restore-al-cerrar se pierde — si el usuario quiere otro basemap, lo cambia desde el picker de basemaps. Eliminados `previousBasemapRef`, el effect de sincronización de `baseMapIdRef`, y `baseMapId` del destructure de `useMapsContext` (ya no se usaba).
+
+#### Nota
+
+El restore-al-cerrar "real" requiere mover el effect del basemap a `EventoProvider` (donde vive `activeEvento`) y limpiar `activeEvento` sólo cuando el evento deja de estar activo (capas apagadas o se abre otro evento). Queda como follow-up si lo piden.
+
+---
+
 ## [1.33.0] - 2026-05-21
 
 ### Avisos y dato curioso: italic visible, popover de fact sin símbolo, render inline centralizado
