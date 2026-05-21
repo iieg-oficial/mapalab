@@ -11,6 +11,7 @@ import { trackEventoReport, trackEventoShare } from '@services/analyticsService'
 const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
 
 const BUTTON_BASE = 'px-2.5 py-1.5 rounded-full transition-colors cursor-pointer border border-transparent bg-[#F9FBFF] hover:border-[#70308A] flex items-center gap-1.5';
+const ICON_BUTTON = 'w-7 h-7 md:w-6 md:h-6 rounded-full bg-white flex items-center justify-center shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] hover:scale-110 active:scale-95 transition-transform cursor-pointer';
 const PILL_STATIC = 'px-2.5 py-1.5 rounded-full border border-transparent bg-[#F9FBFF] flex items-center gap-1.5';
 const LABEL_CLASS = 'font-garet text-[12px] text-graphite';
 const COPIED_RESET_MS = 1500;
@@ -54,7 +55,7 @@ const EventoActionsBar = ({ evento, externalCount = 0, onApagarExternas }) => {
     const shareTooltip = copied ? 'Enlace copiado' : 'Copiar enlace al evento';
 
     return (
-        <div className="px-4 pt-1 pb-2 flex items-center gap-2 flex-wrap shrink-0">
+        <div className="mx-4 mt-1 mb-2 px-2 py-1.5 rounded-full border border-orange flex items-center gap-2 shrink-0">
             <Badge variant="pill" text="beta" color="orange" size="sm" />
 
             <Tooltip content={soloTooltip}>
@@ -64,22 +65,21 @@ const EventoActionsBar = ({ evento, externalCount = 0, onApagarExternas }) => {
                 </div>
             </Tooltip>
 
-            <Tooltip content={shareTooltip}>
-                <button
-                    type="button"
-                    onClick={handleShare}
-                    className={BUTTON_BASE}
-                >
-                    {copied ? (
-                        <Icon name="done" className="size-4 text-[#16A34A]" />
-                    ) : (
-                        <Icon name="copie" className="size-4" />
-                    )}
-                    <span className={LABEL_CLASS}>{copied ? 'Copiado' : 'Compartir'}</span>
-                </button>
-            </Tooltip>
-
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-1.5">
+                <Tooltip content={shareTooltip} placement="top" delay={300}>
+                    <button
+                        type="button"
+                        onClick={handleShare}
+                        aria-label="Compartir evento"
+                        className={ICON_BUTTON}
+                    >
+                        {copied ? (
+                            <Icon name="done" className="size-3.5 text-[#16A34A]" />
+                        ) : (
+                            <Icon name="copie" className="size-3.5" />
+                        )}
+                    </button>
+                </Tooltip>
                 <EventoFunButton evento={evento} />
                 <ReportButton
                     variant="floating"
