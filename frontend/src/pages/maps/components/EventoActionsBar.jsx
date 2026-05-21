@@ -54,11 +54,12 @@ const EventoActionsBar = ({ evento, externalCount = 0, onApagarExternas }) => {
 
     return (
         <div className="px-4 pt-1 pb-2 flex items-center gap-2 flex-wrap shrink-0">
+            <Badge variant="pill" text="beta" color="orange" size="sm" />
+
             <Tooltip content={soloTooltip}>
                 <div className={PILL_STATIC}>
                     <Switch checked={soloEvento} onChange={setSoloEvento} />
                     <span className={LABEL_CLASS}>Solo este evento</span>
-                    <Badge variant="pill" text="beta" color="orange" size="sm" />
                 </div>
             </Tooltip>
 
@@ -74,12 +75,10 @@ const EventoActionsBar = ({ evento, externalCount = 0, onApagarExternas }) => {
                         <Icon name="copie" className="size-4" />
                     )}
                     <span className={LABEL_CLASS}>{copied ? 'Copiado' : 'Compartir'}</span>
-                    <Badge variant="pill" text="beta" color="orange" size="sm" />
                 </button>
             </Tooltip>
 
-            <div className="ml-auto flex items-center gap-1.5">
-                <Badge variant="pill" text="beta" color="orange" size="sm" />
+            <div className="ml-auto">
                 <ReportButton
                     variant="floating"
                     label="Reportar problema con este evento"
