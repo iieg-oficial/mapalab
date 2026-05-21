@@ -31,7 +31,3 @@ export const pickNextFact = (eventoId, facts) => {
     bagByEventoId.set(eventoId, bag);
     return next;
 };
-
-export const resetFactBag = (eventoId) => {
-    bagByEventoId.delete(eventoId);
-};
