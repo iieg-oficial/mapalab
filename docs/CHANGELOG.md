@@ -5,6 +5,39 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.32.0] - 2026-05-21
+
+### Eventos: barra de acciones del submenu (compartir, reportar, dato curioso) + apertura por URL + basemap por evento
+
+El submenu de cada evento gana una barra de acciones bajo el título (gated por `IS_NON_PROD`, border naranja para indicar beta a nivel de barra completa). Reemplaza el botón ambiguo de papelera (que confundía "apagar capas externas" con "eliminar capas") y suma compartir, reportar y un botón lúdico con datos curiosos animados. En paralelo el evento soporta apertura directa por URL y selección de mapa base que se aplica al abrir y se restaura al cerrar.
+
+#### Agregado
+
+- **`<EventoActionsBar>`** (`frontend/src/pages/maps/components/EventoActionsBar.jsx`, nuevo): contenedor único con border `border-orange` y un único badge "beta" a la izquierda etiquetando toda la barra.
+  - **Switch "Solo este evento"**: reutiliza `<Switch>` existente. Al activarse oculta las capas externas vía `setHiddenLayerIds` (no las apaga ni las elimina del panel de capas activas); `addedByUsRef` recuerda sólo las que el switch ocultó, así al desactivar el switch restaura únicamente esas — sin descongelar ocultamientos que el usuario hizo manualmente.
+  - **Botón Compartir**: icono-only (estilo `ICON_BUTTON` consistente con el balón y Colibri). Copia al portapapeles `${origin}${BASE_URL}mapa?evento=${slug}` usando `import.meta.env.BASE_URL` (respeta `VITE_BASE_PATH=/mapalab/` en prod). Prioriza `evento.slug` del backend sobre `slugifyTitulo(titulo)`. Feedback con ícono `done` verde + label "Copiado" durante 1.5s. Telemetría `evento_share` (status `ok|error`).
+  - **`<EventoFunButton>`** (`frontend/src/pages/maps/components/EventoFunButton.jsx`, nuevo): botón circular con el símbolo configurado del evento. Al click spawn de un balón animado que rebota (3 rebotes decrecientes 55%/80%/93% del recorrido, easing per-keyframe que simula gravedad, padding final 4px al ras del viewport, `BALL_SIZE_PX=28`) y, cuando se detiene (`BALL_STOP_DELAY_MS=3700ms`), aparece el popover con el dato curioso anclado a la posición final del balón (flecha hacia abajo apuntándole). Cap a 10 balones simultáneos. En mobile el popover pasa a banner top-center fijo (sin flecha, sin asociación al botón). Cierre por click afuera o autodismiss 10s. Honra `prefers-reduced-motion`. Telemetría `evento_fun_fact`.
+  - **Botón Reportar**: `<ReportButton variant="floating">` con `extraContext` `{source: 'evento_actions_bar', evento_id, evento_titulo}` + nueva prop `onTrack` que dispara `trackEventoReport(eventoId)` antes de abrir Colibri.
+
+- **Apertura por URL**: nuevo hook `frontend/src/pages/maps/hooks/useAutoOpenEventoFromUrl.js`. Lee `?evento=` del query string en `<MapSider>` y resuelve contra `evento.id`, `evento.slug` o `slugifyTitulo(evento.titulo)`; al match, `setIsHovered(true)` + `setAutoOpenMenuId('evento-{id}')` con 300ms de delay (mismo patrón que `shouldAutoOpenSearch`). Idempotente vía `processedRef`. Override `max-lines: 320` para `MapSider.jsx` siguiendo el patrón de otros archivos del repo.
+
+- **Basemap por evento**: `<EventoMenu>` lee `evento.basemapId`; al montar guarda el `baseMapId` actual en `baseMapIdRef.current` y aplica el del evento. Al desmontar restaura. El effect sólo reacciona a `evento.id`/`evento.basemapId` (no a `baseMapId`), así un cambio manual del usuario durante la sesión del evento no se "corrige".
+
+- **Datos curiosos por evento**: cada evento puede listar facts. Estructura `{text, symbol?}` donde `symbol` es un snapshot del catálogo MapaLab → Símbolos (`{symbolId, kind, value, imageUrl, name}`). `FactRef` Pydantic acepta strings legacy (`@model_validator(mode='before')`) para backwards-compat con facts capturados como strings sueltos. Shuffle bag por evento en `helpers/funFactPicker.js`: no repite hasta agotar el pool.
+
+- **Símbolos del catálogo**: nuevo `<SymbolGlyph>` en `frontend/src/pages/maps/components/SymbolGlyph.jsx`. Renderiza el snapshot inline: `kind='emoji'` como texto con font emoji, `svg|image` como `<img>`. Fallback a ⚽ si no hay símbolo. El botón del balón usa el `funIcon` del evento; el balón rebotado usa `fact.symbol || evento.funIcon || ⚽`; el popover muestra **solo** `fact.symbol` cuando está explícitamente en mariachi (sin fallback al funIcon ni al default).
+
+- **Telemetría**: `trackEventoShare(eventoId, status)`, `trackEventoReport(eventoId)`, `trackEventoFunFact(eventoId)` en `services/analyticsService.js`. Cada uno emite el evento específico + el `map_interaction` genérico vía `withMapInteraction` (mismo patrón que el resto del visor).
+
+- **`<ThemeMenu>` con slot `actionsBar`**: nueva prop opcional que renderiza un nodo entre el header y el `<ScrollContainer>`. Backwards-compatible: los menús de tema normales no la pasan y siguen igual.
+
+- **Keyframe CSS `evento-fun-bounce`** en `frontend/src/index.css`: animación de 5200ms con caída vertical pura, tres rebotes decrecientes y estancia ~1.5s antes del fade. `animation-timing-function` per keyframe (ease-in en caídas, ease-out en rebotes) para simular gravedad real. Media query `prefers-reduced-motion` colapsa a 200ms ease-out.
+
+#### Coordinación
+
+- **Backend mariachi**: nuevas columnas `eventos.facts JSONB DEFAULT '[]'`, `eventos.fun_icon JSONB`, `eventos.basemap_id VARCHAR(50)` (3 migraciones Alembic: `a8b9c0d1e2f4`, `a8b9c0d1e2f6`, `a8b9c0d1e2f7`). Schema `EventoBase`/`EventoUpdate` con `facts: list[FactRef]`, `funIcon: SymbolSnapshot | None`, `basemapId: str | None`. Cache server-side se invalida vía `notify_eventos_changed()` al publicar/editar el evento.
+- **Admin mariachi**: tab "Diversión" en el editor de eventos con `<FactsField>` (usa `<MarkdownTextArea>` reutilizado de avisos para soportar markdown inline en el texto, toolbar combinada con subir/bajar/eliminar gracias a nueva prop `extraActions` en `MarkdownTextArea`); `<SymbolSnapshotField>` con `<SymbolPicker>` del catálogo en Popover. Selector de basemap (Carto Voyager / Carto Light / Sin mapa base) en tab "Apariencia". Detalles en `mariachi/docs/CHANGELOG.md [1.8.0]`.
+
 ## [1.31.0] - 2026-05-21
 
 ### Avisos de capas: cursivas, tachado y enlaces en el inline markdown

@@ -561,9 +561,19 @@ Sub-componentes en `frontend/src/pages/maps/components/ActiveLayers/`:
 
 `<LayerDetailModal>` (panel derecho del visor) abre desde el botón de detalles del panel de capas activas o de los menús. El header arriba (`<LayerDetailHeader>`) muestra avatar + título del **tema** de la capa por defecto. Si la capa pertenece a un **evento** (configurado en mariachi), el header sustituye avatar y título por los del evento: prioriza `activeEvento` en `EventoContext` (lo setea `<EventoMenu>` mientras está montado); si está vacío (ej. tras refresh con la capa restaurada desde la URL), usa `findEventoByLayerId(selectedLayerId)` que resuelve en O(1) contra el index centralizado del provider. `<LayerThemeAvatar>` acepta `imageUrl` para renderizar la imagen del evento sobre el círculo del avatar.
 
-`<EventoMenu>`, además de exponer las capas del evento y el botón "Eliminar (X)" para limpiar capas externas, dispara bbox-fit del mapa al área del evento y auto-activa las capas con `autoActivar=true` cada vez que se monta (cada apertura del menú).
+`<EventoMenu>` dispara bbox-fit del mapa al área del evento, auto-activa las capas con `autoActivar=true` cada vez que se monta y aplica `setBaseMapId(evento.basemapId)` cuando el evento define uno (snapshot en `baseMapIdRef`, restauración al desmontar). Inyecta `<EventoActionsBar>` como `actionsBar` del `<ThemeMenu>` (nuevo slot opcional que renderiza un nodo entre el header y el scroll).
 
-Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`buildLayerIndex`, `buildEventoIndex`, plus los wrappers `findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`). El index plano `workspace|layer → node` se construye una vez por cambio de árbol y se reusa para todos los lookups.
+`<EventoActionsBar>` (gated por `IS_NON_PROD`, border `border-orange` con un único badge "beta" al inicio) contiene:
+- **Switch "Solo este evento"**: oculta las externas vía `setHiddenLayerIds` (no las apaga); `addedByUsRef` registra solo las que el switch ocultó para no descongelar ocultamientos manuales del usuario al desactivarlo.
+- **Compartir**: copia `${origin}${BASE_URL}mapa?evento=${slug}` (respeta `VITE_BASE_PATH`); prioriza `evento.slug` del backend sobre `slugifyTitulo(titulo)`. Telemetría `evento_share`.
+- **`<EventoFunButton>`**: botón circular con el `funIcon` del evento; al click spawnea un balón animado (`evento-fun-bounce` keyframe en `index.css`, 5200ms, 3 rebotes decrecientes con easing per-keyframe que simula gravedad, `BALL_SIZE_PX=28` + `BOTTOM_PADDING_PX=4` al ras del viewport). Después de `BALL_STOP_DELAY_MS=3700ms` aparece un popover anclado a la posición final del balón con el `fact.text`; el símbolo solo se muestra si está explícitamente en `fact.symbol`. Cap a 10 balones, autodismiss del popover 10s, cierre por click afuera. En mobile el popover pasa a banner top-center fijo. Cada `fact` es `{text, symbol?}` con `text` markdown inline. Shuffle bag por `evento.id` en `helpers/funFactPicker.js`. Telemetría `evento_fun_fact`.
+- **Reportar**: `<ReportButton variant="floating">` con `extraContext` del evento; nueva prop `onTrack` dispara `trackEventoReport(eventoId)` antes de abrir Colibri.
+
+Apertura por URL vía `useAutoOpenEventoFromUrl({setAutoOpenMenuId, setIsHovered})` en `<MapSider>`. Lee `?evento=` del query y matchea contra `evento.id`, `evento.slug` o `slugifyTitulo(titulo)`; al match expande el sider y abre el menú con el mismo patrón que `shouldAutoOpenSearch` (300ms delay, `processedRef` idempotente).
+
+Símbolos del catálogo MapaLab → Símbolos en `<SymbolGlyph>` (`pages/maps/components/SymbolGlyph.jsx`): renderiza el snapshot inline. Snapshot guardado en `eventos.fun_icon` y en cada `fact.symbol` como JSONB `{symbolId, kind, value, imageUrl, name}` para no necesitar cross-DB FK al schema `mapalab.symbols` de DataEngine.
+
+Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`buildLayerIndex`, `buildEventoIndex`, `findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`, `slugifyTitulo`, `buildEventoShareUrl`). El index plano `workspace|layer → node` se construye una vez por cambio de árbol y se reusa para todos los lookups.
 
 ## Comparador (swipe)
 
