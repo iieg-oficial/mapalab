@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.33.0] - 2026-05-21
+
+### Avisos y dato curioso: italic visible, popover de fact sin símbolo, render inline centralizado
+
+Tres fixes pequeños sobre la integración del texto enriquecido del visor con la salida del editor de mariachi 1.9.0.
+
+#### Corregido
+
+- **Italic invisible en avisos y datos curiosos**. La fuente custom `Garet` (`frontend/src/index.css`) carga todas sus variantes con `font-style: normal` (Book, Regular, Medium, Bold, ExtraBold), y la regla global tiene `font-synthesis: none`, lo que impedía al navegador sintetizar el oblicuo cuando se usa `font-style: italic`. **Fix**: en `frontend/src/utils/inlineMarkdown.jsx` el `<em>` se renderiza con `style={{ fontStyle: 'italic', fontSynthesis: 'style' }}` inline — autoriza la síntesis sólo donde la necesitamos, sin tocar la regla global. Mismo enfoque defensivo: `<strong>`, `<s>` y `<a>` también pasan a `style` inline (`fontWeight: 700`, `textDecoration: 'line-through' | 'underline'`) en lugar de `className` (`font-bold`, `line-through`, `underline`) para no depender de que Tailwind aplique la clase con la specificity suficiente en el contexto donde se renderice.
+- **Símbolo del fact aparecía dos veces**. `EventoFunButton.jsx` lo pintaba en la "pelota animada" que cae **y** dentro del `<Message>` del popover, arriba del texto. **Fix**: se elimina el `<SymbolGlyph>` del popover en `FactPopover` y `MobileFactBanner`; el símbolo queda únicamente en la pelota.
+
+#### Cambiado
+
+- **`frontend/src/utils/inlineMarkdown.jsx`**: regex `TOKEN_PATTERN` ahora se declara como pattern de sólo lectura; cada llamada a `renderInlineMarkdown(text)` instancia un `new RegExp(...)` propio para no acarrear `lastIndex` global entre invocaciones (bug latente: tras un primer render el `lastIndex` podía quedar en una posición intermedia y la segunda llamada del mismo string no encontraba matches al inicio).
+
+#### Coordinación
+
+- En paralelo, el admin (mariachi 1.9.0) sustituye su `Input.TextArea` por el `MarkdownTextArea` con toolbar de markdown inline (B/I/S/Link/Símbolo). Ver `mariachi/docs/CHANGELOG.md [1.9.0]`.
+
+---
+
 ## [1.32.0] - 2026-05-21
 
 ### Eventos: barra de acciones del submenu (compartir, reportar, dato curioso) + apertura por URL + basemap por evento

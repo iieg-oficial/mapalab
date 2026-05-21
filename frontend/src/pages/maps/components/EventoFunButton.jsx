@@ -77,13 +77,7 @@ const FactPopover = ({ popover }) => {
                 icon=""
                 title={null}
                 description={popover.text}
-            >
-                {popover.symbol && (
-                    <div className="flex justify-center mb-2">
-                        <SymbolGlyph symbol={popover.symbol} size={32} />
-                    </div>
-                )}
-            </Message>
+            />
         </div>
     );
 };
@@ -99,13 +93,7 @@ const MobileFactBanner = ({ popover }) => (
             icon=""
             title={null}
             description={popover.text}
-        >
-            {popover.symbol && (
-                <div className="flex justify-center mb-2">
-                    <SymbolGlyph symbol={popover.symbol} size={36} />
-                </div>
-            )}
-        </Message>
+        />
     </div>
 );
 
