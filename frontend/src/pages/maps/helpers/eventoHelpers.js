@@ -35,8 +35,10 @@ export const slugifyTitulo = (titulo) =>
         .slice(0, 60);
 
 export const buildEventoShareUrl = (evento) => {
-    const slug = slugifyTitulo(evento?.titulo) || evento?.id || '';
-    return `${window.location.origin}/mapa?evento=${slug}`;
+    const slug = evento?.slug || slugifyTitulo(evento?.titulo) || evento?.id || '';
+    const rawBase = import.meta.env.BASE_URL || '/';
+    const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
+    return `${window.location.origin}${base}mapa?evento=${slug}`;
 };
 
 export const findLayerByWorkspaceLayer = (workspace, layer, nodes) => {

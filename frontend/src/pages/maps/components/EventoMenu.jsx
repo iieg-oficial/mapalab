@@ -136,11 +136,6 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
         };
     }, [evento?.id, evento?.titulo, evento?.iconoUrl, evento?.imagenUrl, layerIdsKey, setActiveEvento]);
 
-    const handleApagarExternas = () => {
-        if (!onToggleLayer || externalActiveIds.length === 0) return;
-        externalActiveIds.forEach((id) => onToggleLayer(id, false));
-    };
-
     const theme = useMemo(() => ({
         id: `evento-${evento?.id}`,
         label: evento?.titulo || 'Evento',
@@ -156,8 +151,7 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
             actionsBar={(
                 <EventoActionsBar
                     evento={evento}
-                    externalCount={externalActiveIds.length}
-                    onApagarExternas={handleApagarExternas}
+                    externalActiveIds={externalActiveIds}
                 />
             )}
         />

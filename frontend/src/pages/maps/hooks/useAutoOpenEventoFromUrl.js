@@ -17,6 +17,7 @@ export const useAutoOpenEventoFromUrl = ({ setAutoOpenMenuId, setIsHovered }) =>
         const match = eventos.find((e) => {
             if (!e) return false;
             if (String(e.id) === target) return true;
+            if (e.slug && e.slug === target) return true;
             return slugifyTitulo(e.titulo) === target;
         });
         if (!match) return;
