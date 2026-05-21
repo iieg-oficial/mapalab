@@ -12,6 +12,15 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.32.0',
+        items: [
+            { text: 'Eventos: nueva barra de acciones dentro de cada evento (sólo visible en beta) con tres novedades: un switch "Solo este evento" que oculta automáticamente las capas que no pertenecen al evento mientras esté encendido; un botón para copiar el enlace del evento (que abre el visor directamente con ese evento desplegado); y un botón para reportar un problema con datos del evento.', tag: 'added' },
+            { text: 'Eventos: botón lúdico de "dato curioso" — al presionarlo cae un balón animado que rebota hasta el fondo y, cuando se detiene, aparece arriba un mensaje con un dato curioso del evento. Cada evento puede tener su propia lista de datos (configurables desde el admin) y su propio ícono (no tiene que ser un balón).', tag: 'added' },
+            { text: 'Eventos: ahora puedes abrir un evento directamente desde una URL como /mapa?evento=mundial. El visor reconoce el slug o el ID del evento y abre su menú al cargar.', tag: 'added' },
+            { text: 'Eventos: cada evento puede forzar un mapa base específico al abrirse (por ejemplo, mostrar siempre "Sin mapa base" si el evento se ve mejor sobre fondo blanco). Al cerrar el evento, el mapa base regresa al que tenías antes.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.30.0',
         items: [
             { text: 'Eventos ya no es BETA: quitamos la etiqueta naranja del ícono porque la sección está lista para uso general.', tag: 'changed' },

@@ -2,16 +2,7 @@ import { useContext, useEffect, useRef, useState, useSyncExternalStore } from 'r
 import Icon from '@components/Icon';
 import { SiderContext } from '@contexts/SiderContext';
 import { MOBILE_MEDIA_QUERY } from '@constants/sider';
-
-const renderInlineMarkdown = (text) => {
-    if (!text) return null;
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
-    return parts.map((part, i) => {
-        const match = part.match(/^\*\*([^*]+)\*\*$/);
-        if (match) return <strong key={i} className="font-bold">{match[1]}</strong>;
-        return part ? <span key={i}>{part}</span> : null;
-    });
-};
+import { renderInlineMarkdown } from '@utils/inlineMarkdown';
 
 const useSiderWidthSafe = () => {
     const ctx = useContext(SiderContext);

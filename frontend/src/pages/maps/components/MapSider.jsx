@@ -11,6 +11,7 @@ import { createMenuItems, BASE_ITEMS_COUNT } from '@pages/maps/helpers/menuItems
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useEventoContext } from '@hooks/useEvento';
+import { useAutoOpenEventoFromUrl } from '@pages/maps/hooks/useAutoOpenEventoFromUrl';
 import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
 
 import { trackSiderLock, trackLogoClick, trackMeasurementPanelOpen } from '@services/analyticsService';
@@ -80,6 +81,8 @@ const MapSider = ({ className = '' }) => {
             }, 300);
         }
     }, [shouldAutoOpenSearch, clearAutoOpen, setIsHovered]);
+
+    useAutoOpenEventoFromUrl({ setAutoOpenMenuId, setIsHovered });
 
     useEffect(() => {
         const handleKeyDown = (e) => {

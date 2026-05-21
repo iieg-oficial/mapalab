@@ -113,4 +113,14 @@ export default [
             }],
         },
     },
+    {
+        files: ['**/MapSider.jsx'],
+        rules: {
+            'max-lines': ['error', {
+                'max': 320,
+                'skipBlankLines': true,
+                'skipComments': true
+            }],
+        },
+    },
 ]

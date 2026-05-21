@@ -10,11 +10,13 @@ const ReportButton = ({
     extraContext,
     label = 'Reportar',
     className = '',
+    onTrack,
 }) => {
     const open = useColibriOpen();
     if (!IS_NON_PROD) return null;
     const handleClick = (e) => {
         e?.stopPropagation?.();
+        onTrack?.();
         open(extraContext);
     };
 

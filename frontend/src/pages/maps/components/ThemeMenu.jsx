@@ -82,7 +82,7 @@ const CategoryItem = ({ layer, activeLayerIds, onToggleLayer }) => {
     );
 };
 
-const ThemeMenu = ({ theme, activeLayerIds, onToggleLayer, closeButton }) => {
+const ThemeMenu = ({ theme, activeLayerIds, onToggleLayer, closeButton, actionsBar = null }) => {
     useEffect(() => {
         if (theme?.id) trackThemeChange(theme.id);
     }, [theme?.id]);
@@ -95,6 +95,7 @@ const ThemeMenu = ({ theme, activeLayerIds, onToggleLayer, closeButton }) => {
                 </h3>
                 {closeButton}
             </div>
+            {actionsBar}
             <ScrollContainer className="flex-1 overflow-y-auto">
                 <div className="ml-4 bg-white rounded-[7px] py-2">
                     {theme.children && theme.children
