@@ -9,16 +9,34 @@ import { trackEventoClose, trackEventoOpen } from '@services/analyticsService';
 
 
 const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
-    const { mapRef, allLayers } = useMapsContext();
+    const { mapRef, allLayers, baseMapId, setBaseMapId } = useMapsContext();
     const { setActiveEvento, getLayerIdsByEvento } = useEventoContext();
     const zoomedRef = useRef(false);
     const autoActivatedRef = useRef(false);
+    const previousBasemapRef = useRef(null);
 
     useEffect(() => {
         if (!evento?.id) return;
         trackEventoOpen(evento.id, evento.titulo);
         return () => trackEventoClose(evento.id);
     }, [evento?.id, evento?.titulo]);
+
+    const baseMapIdRef = useRef(baseMapId);
+    useEffect(() => { baseMapIdRef.current = baseMapId; }, [baseMapId]);
+
+    useEffect(() => {
+        const target = evento?.basemapId;
+        if (!target || typeof setBaseMapId !== 'function') return;
+        const snapshot = baseMapIdRef.current;
+        if (snapshot === target) return;
+        previousBasemapRef.current = snapshot;
+        setBaseMapId(target);
+        return () => {
+            const previous = previousBasemapRef.current;
+            if (previous && previous !== target) setBaseMapId(previous);
+            previousBasemapRef.current = null;
+        };
+    }, [evento?.id, evento?.basemapId, setBaseMapId]);
 
     useEffect(() => {
         if (zoomedRef.current) return;
