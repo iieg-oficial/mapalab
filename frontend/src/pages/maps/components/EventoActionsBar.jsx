@@ -4,6 +4,7 @@ import Badge from '@components/Badge';
 import Switch from '@components/Switch';
 import Tooltip from '@components/Tooltip';
 import ReportButton from '@components/ReportButton';
+import EventoFunButton from '@mapsComponents/EventoFunButton';
 import { buildEventoShareUrl } from '@pages/maps/helpers/eventoHelpers';
 import { trackEventoReport, trackEventoShare } from '@services/analyticsService';
 
@@ -78,7 +79,8 @@ const EventoActionsBar = ({ evento, externalCount = 0, onApagarExternas }) => {
                 </button>
             </Tooltip>
 
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+                <EventoFunButton evento={evento} />
                 <ReportButton
                     variant="floating"
                     label="Reportar problema con este evento"

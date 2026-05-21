@@ -114,4 +114,25 @@ html::-webkit-scrollbar-thumb:hover {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
 }
- 
+
+@keyframes evento-fun-bounce {
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+    20%  { transform: translate(calc(var(--dx) * 0.25), calc(var(--ty) * 0.32)) rotate(540deg); }
+    32%  { transform: translate(calc(var(--dx) * 0.4), calc(var(--ty) * 0.22)) rotate(800deg); }
+    52%  { transform: translate(calc(var(--dx) * 0.6), calc(var(--ty) * 0.6)) rotate(1300deg); }
+    64%  { transform: translate(calc(var(--dx) * 0.72), calc(var(--ty) * 0.5)) rotate(1500deg); }
+    82%  { transform: translate(calc(var(--dx) * 0.9), calc(var(--ty) * 0.9)) rotate(1980deg); }
+    100% { transform: translate(var(--dx), var(--ty)) rotate(2160deg); opacity: 0; }
+}
+
+.evento-fun-ball {
+    animation: evento-fun-bounce 2400ms cubic-bezier(0.55, 0.06, 0.32, 1) forwards;
+    will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .evento-fun-ball {
+        animation-duration: 200ms;
+        animation-timing-function: ease-out;
+    }
+}
