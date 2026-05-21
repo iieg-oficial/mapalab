@@ -6,8 +6,9 @@ import SymbolGlyph from '@mapsComponents/SymbolGlyph';
 import { pickNextFact } from '@pages/maps/helpers/funFactPicker';
 import { trackEventoFunFact } from '@services/analyticsService';
 
-const ANIM_DURATION_MS = 4800;
+const ANIM_DURATION_MS = 5200;
 const MAX_ACTIVE_BALLS = 10;
+const BALL_SIZE_PX = 28;
 const POPOVER_MAX_WIDTH = 320;
 const POPOVER_GAP_PX = 14;
 const POPOVER_HEIGHT_HINT = 180;
@@ -108,7 +109,7 @@ const EventoFunButton = ({ evento }) => {
         const ballSymbol = fact.symbol || eventoSymbol;
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
         const dx = (Math.random() - 0.5) * 240;
-        const ty = Math.max(80, window.innerHeight - rect.top - rect.height - 40);
+        const ty = Math.max(80, window.innerHeight - rect.top - BALL_SIZE_PX);
 
         setBalls((prev) => {
             const next = [...prev, { id, top: rect.top, left: rect.left, dx, ty, symbol: ballSymbol }];
@@ -138,7 +139,7 @@ const EventoFunButton = ({ evento }) => {
 
     return (
         <>
-            <Tooltip content="Dato curioso" placement="top" delay={300}>
+            <Tooltip content="Dato curioso" placement="bottom" delay={300}>
                 <button
                     ref={buttonRef}
                     type="button"
