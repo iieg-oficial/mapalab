@@ -5,6 +5,15 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.31.0] - 2026-05-21
+
+### Avisos de capas: cursivas, tachado y enlaces en el inline markdown
+
+El render inline de los avisos sólo soportaba `**negritas**`. Se amplía para reconocer también `*cursivas*`, `~~tachado~~` y `[texto](url)`. El admin (mariachi) gana en paralelo una toolbar para escribir estos formatos sin teclear el markdown a mano.
+
+- **`frontend/src/utils/inlineMarkdown.jsx`** (nuevo): helper `renderInlineMarkdown(text)` centralizado. Una sola expresión regular consume tokens (`[texto](url)`, `**bold**`, `~~strike~~`, `*italic*`) en orden de aparición para evitar el problema clásico de regex inestables al combinar varios formatos. Los enlaces requieren protocolo http(s), abren en pestaña nueva con `rel="noopener noreferrer"`. Los formatos no reconocidos quedan como texto plano.
+- **`frontend/src/components/Message.jsx`** y **`frontend/src/pages/maps/components/LayerNotices/BannerNotice.jsx`**: eliminadas las dos copias locales de `renderInlineMarkdown` (que sólo manejaban bold); ambos archivos importan el helper común de `@utils/inlineMarkdown`.
+
 ## [1.30.0] - 2026-05-20
 
 ### Eventos sale de beta + saneamiento del bundle WMS

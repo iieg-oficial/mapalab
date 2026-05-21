@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Icon from './Icon';
+import { renderInlineMarkdown } from '@utils/inlineMarkdown';
 
 const isUrlIcon = (value) =>
     typeof value === 'string'
@@ -42,17 +43,17 @@ const SIZE_PRESETS = {
     },
     medium: {
         padding: 'gap-3 md:gap-4 px-4 py-3 md:py-4',
-        icon: 'size-12 md:size-14',
+        icon: 'size-14 md:size-16',
         title: 'text-[15px] leading-[22px] md:text-[16px] md:leading-[24px]',
-        description: 'text-[12px] leading-[16px] md:text-[13px] md:leading-[18px]',
+        description: 'text-[13px] leading-[18px] md:text-[14px] md:leading-[20px]',
         closeBtn: '-m-1 p-2 min-w-10 min-h-10',
     },
     small: {
-        padding: 'gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3',
-        icon: 'size-10 md:size-12',
-        title: 'text-[14px] leading-[20px]',
-        description: 'text-[12px] leading-[16px]',
-        closeBtn: 'p-1.5 min-w-8 min-h-8',
+        padding: 'gap-3 px-4 py-3',
+        icon: 'size-12 md:size-14',
+        title: 'text-[14px] leading-[20px] md:text-[15px] md:leading-[22px]',
+        description: 'text-[12px] leading-[18px] md:text-[13px] md:leading-[18px]',
+        closeBtn: '-m-1 p-2 min-w-10 min-h-10',
     },
     compact: {
         padding: 'gap-3 px-4 py-3',
@@ -61,16 +62,6 @@ const SIZE_PRESETS = {
         description: 'text-[12px]',
         closeBtn: 'p-1',
     },
-};
-
-const renderInlineMarkdown = (text) => {
-    if (!text) return null;
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
-    return parts.map((part, i) => {
-        const match = part.match(/^\*\*([^*]+)\*\*$/);
-        if (match) return <strong key={i} className="font-bold">{match[1]}</strong>;
-        return part ? <span key={i}>{part}</span> : null;
-    });
 };
 
 const Message = ({
