@@ -12,10 +12,9 @@ const BALL_STOP_DELAY_MS = 3700;
 const MESSAGE_TTL_MS = 10000;
 const MAX_ACTIVE_BALLS = 10;
 const BALL_SIZE_PX = 28;
-const BOTTOM_PADDING_PX = 14;
+const BOTTOM_PADDING_PX = 4;
 const POPOVER_MAX_WIDTH = 320;
 const POPOVER_GAP_PX = 14;
-const POPOVER_HEIGHT_HINT = 180;
 const POPOVER_DATA_ATTR = 'data-evento-fun-popover';
 
 const FactPopover = ({ popover }) => {
@@ -172,17 +171,18 @@ const EventoFunButton = ({ evento }) => {
 
         if (evento?.id) trackEventoFunFact(evento.id);
 
-        const buttonCenter = rect.left + rect.width / 2;
-        const popoverLeft = Math.max(16, Math.min(buttonCenter - POPOVER_MAX_WIDTH / 2, window.innerWidth - POPOVER_MAX_WIDTH - 16));
-        const arrowLeft = buttonCenter - popoverLeft;
-        const placeAbove = rect.top >= POPOVER_HEIGHT_HINT + POPOVER_GAP_PX + 16;
+        const ballFinalTop = rect.top + ty;
+        const ballFinalLeft = rect.left + dx;
+        const ballCenter = ballFinalLeft + BALL_SIZE_PX / 2;
+        const popoverLeft = Math.max(16, Math.min(ballCenter - POPOVER_MAX_WIDTH / 2, window.innerWidth - POPOVER_MAX_WIDTH - 16));
+        const arrowLeft = ballCenter - popoverLeft;
         const popoverData = {
             id,
             text: fact.text,
             symbol: fact.symbol || null,
-            placement: placeAbove ? 'top' : 'bottom',
-            anchorTop: rect.top,
-            anchorBottom: rect.top + rect.height,
+            placement: 'top',
+            anchorTop: ballFinalTop,
+            anchorBottom: ballFinalTop + BALL_SIZE_PX,
             left: popoverLeft,
             arrowLeft,
         };
