@@ -28,6 +28,7 @@ Los eventos se envian a `window.dataLayer` para ser consumidos por GTM. En desar
 | `report_submitted` | `tipo: problema\|solicitud\|sugerencia\|duda\|datos_incorrectos\|bug`, `source_route` | Reportes y sugerencias enviados al admin | Al confirmar el envio del reporte (POST exitoso) | Calidad / Soporte |
 | `evento_open` | `evento_id`, `titulo` | Aperturas de eventos temáticos (mariachi) | Al montar `<EventoMenu>` (apertura del menú del evento desde el sider o el widget externo) | Eventos más usados |
 | `evento_close` | `evento_id` | Cierre de evento (incluye unmount por navegación) | Al desmontar `<EventoMenu>` | Tiempo en evento (delta open/close) |
+| `evento_center` | `evento_id` | Re-centrado manual del mapa sobre el evento | Al pulsar el botón "Centrar evento" de `<EventoActionsBar>` | Frecuencia con la que el usuario pierde el encuadre del evento |
 
 ## Debug en desarrollo
 

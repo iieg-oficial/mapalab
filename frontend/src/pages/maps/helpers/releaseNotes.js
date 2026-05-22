@@ -12,6 +12,16 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.36.0',
+        items: [
+            { text: 'Eventos: la barra de acciones del evento (switch "Solo este evento", dato curioso, etc.) ya está disponible para todos, no solo en la versión de pruebas.', tag: 'changed' },
+            { text: 'Eventos: nuevo botón "Centrar evento" que vuelve a encuadrar el mapa sobre el área del evento cuando lo necesites.', tag: 'added' },
+            { text: 'Eventos: si abres un evento y ya tienes alguna de sus capas activa, el visor ya no vuelve a mover el mapa ni a reactivar las capas que apagaste — respeta lo que tenías. Para volver a centrar, usa el botón "Centrar evento".', tag: 'changed' },
+            { text: 'Eventos: quitamos el botón de copiar enlace del evento dentro de la barra de acciones.', tag: 'removed' },
+            { text: 'Eventos: al abrir un evento, las capas se acomodan en el panel "Capas activas" en el mismo orden en que están en el submenú del evento (la primera del submenú queda al frente del mapa).', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.32.0',
         items: [
             { text: 'Eventos: nueva barra de acciones dentro de cada evento (sólo visible en beta) con tres novedades: un switch "Solo este evento" que oculta automáticamente las capas que no pertenecen al evento mientras esté encendido; un botón para copiar el enlace del evento (que abre el visor directamente con ese evento desplegado); y un botón para reportar un problema con datos del evento.', tag: 'added' },

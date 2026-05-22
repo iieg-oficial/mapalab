@@ -5,6 +5,54 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.36.0] - 2026-05-22
+
+### Cambiado: barra de acciones de eventos en producción + botón "Centrar evento"
+
+`<EventoActionsBar>` ya no está gated por `IS_NON_PROD` — se renderiza siempre. En `dev`/`beta` mantiene el border `border-orange` + badge "beta"; en producción usa fondo neutro (`bg-[#F9FBFF]`) sin badge. El único elemento que sigue gated es el botón Colibri (`<ReportButton>` de "Reportar problema con este evento"), envuelto con `IS_NON_PROD && (...)` para que no se renderice ni ocupe espacio en producción.
+
+Reemplazamos el botón de copiar enlace del evento por un botón "Centrar evento" (icono `fit_extent`). Llama al mismo `centerOnEvento` que dispara el primer mount del menú (bbox-fit con padding 8% del shortSide), por lo que el usuario puede recuperar el encuadre en cualquier momento aunque haya hecho pan/zoom. Solo se renderiza si `evento.bbox` está definido. Emite telemetría `evento_center` con `evento_id`. Eliminamos junto con esto el helper `buildEventoShareUrl`, sus 5 tests y el tracker `evento_share`.
+
+### Cambiado: `EventoMenu` respeta el estado previo al re-abrir
+
+Tanto el bbox-fit como el auto-activado de capas con `autoActivar !== false` ahora hacen skip al primer mount si ya existe al menos una capa del evento en `activeLayerIds`. Antes, cada cierre/apertura del menú desmontaba/montaba el componente, los `useRef` se reseteaban y volvía a re-encuadrar el mapa y a re-activar las capas que el usuario había apagado manualmente. Ahora:
+
+- Primera apertura del evento (o tras apagar todas sus capas) → centra el mapa y activa las capas con `autoActivar !== false`.
+- Reapertura con al menos una capa del evento ya activa → no se mueve el mapa ni se reactiva ninguna capa. El usuario puede recentrar manualmente con el botón "Centrar evento".
+
+#### Que cambio (ambas secciones)
+
+- **`frontend/src/pages/maps/components/EventoMenu.jsx`**: `centerOnEvento` extraído a `useCallback` y pasado a `<EventoActionsBar>` como `onCenterEvento`. Los dos efectos (bbox-fit y autoactivado) cortocircuitan cuando `eventoLayerIds` interseca `activeLayerIds`.
+- **`frontend/src/pages/maps/components/EventoActionsBar.jsx`**: eliminado el early return `IS_NON_PROD`; eliminado el botón Compartir con su estado `copied`/timers; agregado botón "Centrar evento" con `Icon name="fit_extent"`; `<ReportButton>` envuelto con `IS_NON_PROD && (...)`; container con clases distintas por entorno.
+- **`frontend/src/services/analyticsService.js`**: agregado `trackEventoCenter(eventoId)`; eliminado `trackEventoShare`.
+- **`frontend/src/pages/maps/helpers/eventoHelpers.js`**: eliminado `buildEventoShareUrl` (sin uso).
+- **`frontend/src/test/pages/maps/helpers/eventoHelpers.test.js`**: eliminados los 5 tests de `buildEventoShareUrl` y su import.
+- **`docs/context.md`**: actualizado el bloque de `<EventoMenu>` / `<EventoActionsBar>`; agregado `evento_center` a la lista de eventos analytics; eliminada referencia a `buildEventoShareUrl` en helpers compartidos.
+- **`docs/analytics.md`**: agregada fila para `evento_center`.
+
+---
+
+### Corregido: orden Z de capas auto-activadas del evento
+
+Al abrir un evento, la primera capa del submenú (definida en mariachi `CapasField`) terminaba al final de `activeLayerIds` por el comportamiento de unshift de `handleToggleLayer` combinado con `forEach` en orden directo. Resultado: el orden Z del mapa quedaba invertido respecto al orden visual del submenú y del editor en mariachi, obligando a cada usuario a reordenar manualmente desde el panel de Capas Activas.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/components/EventoMenu.jsx`**: iteración inversa de `toActivate` en la auto-activación (`for` de `length-1` a `0`). Cada `onToggleLayer` sigue haciendo unshift, pero al procesar las capas en orden inverso, la primera del submenú termina en el índice 0 de `activeLayerIds` — al frente del mapa.
+
+#### Convención resultante
+
+| Posición en submenú/editor mariachi | Panel Capas Activas | Z del mapa |
+|---|---|---|
+| Arriba | Arriba | Al frente |
+| Abajo | Abajo | Al fondo |
+
+Para mandar una capa al fondo: en mariachi se arrastra al final del CapasField. Sin cambios en el panel de Capas Activas (ya soporta drag & drop genérico para reordenar después).
+
+Solo afecta la auto-activación inicial. Activar manualmente una capa desde el submenú sigue trayendo la capa al frente (comportamiento estándar de `handleToggleLayer`).
+
+---
+
 ## [1.35.1] - 2026-05-22
 
 ### Cambiado: path del MCP sin slash final para alinear con iieg-oficial/agent

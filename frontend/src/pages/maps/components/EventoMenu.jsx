@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { transformExtent } from 'ol/proj';
 import { useMapsContext } from '@hooks/useMaps';
 import { useEventoContext } from '@hooks/useEvento';
@@ -26,11 +26,14 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
         setBaseMapId(target);
     }, [evento?.id, evento?.basemapId, setBaseMapId]);
 
-    useEffect(() => {
-        if (zoomedRef.current) return;
-        const bbox = evento?.bbox;
-        if (!mapRef?.current || !bbox) return;
+    const eventoLayerIds = useMemo(
+        () => getLayerIdsByEvento(evento?.id),
+        [getLayerIdsByEvento, evento?.id],
+    );
 
+    const centerOnEvento = useCallback(() => {
+        const bbox = evento?.bbox;
+        if (!mapRef?.current || !bbox) return false;
         const view = mapRef.current.getView();
         const extent = transformExtent(
             [bbox.minx, bbox.miny, bbox.maxx, bbox.maxy],
@@ -41,13 +44,19 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
         const shortSide = size ? Math.min(size[0], size[1]) : 800;
         const pad = Math.round(shortSide * 0.08);
         view.fit(extent, { duration: 500, padding: [pad, pad, pad, pad] });
-        zoomedRef.current = true;
-    }, [evento, mapRef]);
+        return true;
+    }, [evento?.bbox, mapRef]);
 
-    const eventoLayerIds = useMemo(
-        () => getLayerIdsByEvento(evento?.id),
-        [getLayerIdsByEvento, evento?.id],
-    );
+    useEffect(() => {
+        if (zoomedRef.current) return;
+        if (!evento?.bbox) return;
+        const activeIds = activeLayerIds || [];
+        if (eventoLayerIds.size > 0 && activeIds.some((id) => eventoLayerIds.has(id))) {
+            zoomedRef.current = true;
+            return;
+        }
+        if (centerOnEvento()) zoomedRef.current = true;
+    }, [evento?.bbox, eventoLayerIds, activeLayerIds, centerOnEvento]);
 
     const themeChildren = useMemo(() => {
         if (!evento?.capas?.length || !allLayers?.length) return [];
@@ -84,6 +93,12 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
         if (autoActivatedRef.current) return;
         if (!evento?.capas?.length || !allLayers?.length || !onToggleLayer) return;
 
+        const activeIds = activeIdsRef.current || [];
+        if (eventoLayerIds.size > 0 && activeIds.some((id) => eventoLayerIds.has(id))) {
+            autoActivatedRef.current = true;
+            return;
+        }
+
         const toActivate = [];
         const walk = (capas) => {
             for (const c of capas || []) {
@@ -91,15 +106,17 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
                 if (c.tipo === 'categoria') { walk(c.capas); continue; }
                 if (c.autoActivar === false) continue;
                 const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
-                if (layer && !activeIdsRef.current?.includes(layer.id)) {
+                if (layer && !activeIds.includes(layer.id)) {
                     toActivate.push(layer.id);
                 }
             }
         };
         walk(evento.capas);
         autoActivatedRef.current = true;
-        toActivate.forEach((id) => onToggleLayer(id, true));
-    }, [evento, allLayers, onToggleLayer]);
+        for (let i = toActivate.length - 1; i >= 0; i--) {
+            onToggleLayer(toActivate[i], true);
+        }
+    }, [evento, allLayers, onToggleLayer, eventoLayerIds]);
 
     const externalActiveIds = useMemo(() => (
         (activeLayerIds || []).filter((id) => !eventoLayerIds.has(id))
@@ -140,6 +157,7 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
                 <EventoActionsBar
                     evento={evento}
                     externalActiveIds={externalActiveIds}
+                    onCenterEvento={centerOnEvento}
                 />
             )}
         />

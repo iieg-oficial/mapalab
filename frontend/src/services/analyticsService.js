@@ -68,8 +68,8 @@ export const trackEventoOpen = (eventoId, titulo) =>
 export const trackEventoClose = (eventoId) =>
     withMapInteraction('evento_close', { evento_id: eventoId });
 
-export const trackEventoShare = (eventoId, status) =>
-    withMapInteraction('evento_share', { evento_id: eventoId, status });
+export const trackEventoCenter = (eventoId) =>
+    withMapInteraction('evento_center', { evento_id: eventoId });
 
 export const trackEventoReport = (eventoId) =>
     withMapInteraction('evento_report', { evento_id: eventoId });
