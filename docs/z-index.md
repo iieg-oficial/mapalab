@@ -4,8 +4,8 @@
 
 | z-index | Componente                    | Ubicacion           | Descripcion                                    |
 |---------|-------------------------------|---------------------|------------------------------------------------|
-| **50**  | FeatureInfoPanel              | Flotante            | Panel de informacion de features (mas arriba)  |
-| **30**  | LayerDetailModal              | Centro inferior     | Modal de detalle de capas                      |
+| **60**  | LayerDetailModal              | Lateral derecho     | Modal de detalle de capas (mas arriba)         |
+| **50**  | FeatureInfoPanel              | Flotante            | Panel de informacion de features               |
 | **20**  | MapSider                      | Lateral izquierdo   | Menu lateral de capas                          |
 | **11**  | Barra de busqueda             | Superior derecho    | Busqueda y descarga                            |
 | **10**  | ActiveLayersList              | Superior derecho    | Lista de capas activas                         |
@@ -61,9 +61,9 @@
 
 ```
 +-------------------------------------------------------------+
-|  UI: FeatureInfoPanel                         [50]           |  <- Mas arriba
+|  UI: LayerDetailModal                         [60]           |  <- Mas arriba
 +-------------------------------------------------------------+
-|  UI: LayerDetailModal                         [30]           |
+|  UI: FeatureInfoPanel                         [50]           |
 |  UI: MapSider                                 [20]           |
 |  UI: Barra de busqueda                        [11]           |
 |  UI: Paneles y Controles                      [10]           |

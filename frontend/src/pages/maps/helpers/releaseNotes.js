@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.37.3',
+        items: [
+            { text: 'Detalle de capa: al abrir el panel de detalles, ya queda por encima del recuadro de información del punto. Antes el recuadro lo tapaba cuando ambos estaban abiertos al mismo tiempo.', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.37.2',
         items: [
             { text: 'Capas activas: cuando una capa seleccionada se queda fija al borde del panel (con su periodicidad, acciones y leyenda visibles), las flechas para ir al inicio o al final del listado ya quedan visibles arriba o abajo del item, no escondidas detrás de él. El degradado de los bordes también se ajusta solo al tamaño real del item, incluso cuando la leyenda termina de cargar y crece.', tag: 'fixed' },

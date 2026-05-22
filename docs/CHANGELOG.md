@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.37.3] - 2026-05-22
+
+### Corregido: modal de detalle de capa queda debajo del InfoBox
+
+El `LayerDetailModal` se renderizaba con `z-30`, mientras que el `InfoBox` (panel flotante de información de features) usa `z-50`. Cuando ambos estaban abiertos, el InfoBox tapaba parte del modal. Subimos el modal a `z-60` para que quede por encima del InfoBox; el InfoBox sigue funcionando igual sobre el resto de paneles del visor.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/components/LayerDetailModal/LayerDetailModal.jsx`**: contenedor pasa de `z-30` a `z-60`.
+- **`docs/z-index.md`**: tabla y diagrama actualizados con el nuevo orden (LayerDetailModal `[60]` arriba de FeatureInfoPanel `[50]`).
+
+---
+
 ## [1.37.2] - 2026-05-22
 
 ### Corregido: flechas y degradado del `ScrollContainer` en el panel de Capas Activas

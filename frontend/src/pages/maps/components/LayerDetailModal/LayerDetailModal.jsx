@@ -146,7 +146,7 @@ const LayerDetailModal = () => {
     if (!selectedLayer) return null;
 
     return (
-        <div className="fixed top-4 sm:top-4 bottom-0 right-0 sm:right-4 z-30 w-full sm:w-[643px] pointer-events-none">
+        <div className="fixed top-4 sm:top-4 bottom-0 right-0 sm:right-4 z-60 w-full sm:w-[643px] pointer-events-none">
             <div className={`
                 h-full bg-white shadow-[0_5px_20px_#1A26641A] backdrop-blur-sm overflow-y-auto pointer-events-auto rounded-t-[20px] rounded-b-none
                 scrollbar-thin scrollbar-thumb-gray-400
