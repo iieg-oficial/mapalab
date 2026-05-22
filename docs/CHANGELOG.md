@@ -5,6 +5,30 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.40.2] - 2026-05-22
+
+### Corregido: menús flotantes con `bottom-start`/`bottom-end` no se adaptaban al viewport
+
+`useSiderMenuPosition` ya calculaba `maxHeight` cuando el menú no cabía hacia la derecha (`right-start`), pero las variantes `bottom-start` y `bottom-end` retornaban `maxHeight: null` sin importar cuánto contenido tuvieran. Como el `Panel` con `variant="menu"` aplica `overflow-hidden` al contenedor, el contenido del menú se clipeaba cuando rebasaba el alto del viewport.
+
+El único consumidor con `bottom-start` en modo `variant="menu"` era el botón flotante de eventos (`ExternalEventoWidget`), así que en eventos con muchas capas el panel se cortaba al final sin scroll.
+
+#### Qué cambió
+
+- **`frontend/src/hooks/useSiderMenuPosition.js`**: `bottom-start` y `bottom-end` calculan `availableHeight = window.innerHeight - top - 16` y pasan ese valor como `maxHeight` cuando `contentHeight` lo rebasa; si no, `null`. `ThemeMenu` ya envuelve el listado en `ScrollContainer` con `flex-1 overflow-y-auto`, así que el scroll interno se activa solo cuando el menú queda clampeado.
+
+### Cambiado: eventos pausados en el panel del sider
+
+Los eventos venían apareciendo en dos lugares: dentro del sider (entre capas base y temas) y en el widget flotante a la derecha del sider. Se elimina la entrada del sider — los eventos ahora solo se acceden desde el widget flotante.
+
+Para restaurar la versión anterior basta con poner `SIDER_EVENTS_ENABLED = true` en `MapSider.jsx`.
+
+#### Qué cambió
+
+- **`frontend/src/pages/maps/components/MapSider.jsx`**: nuevo flag `SIDER_EVENTS_ENABLED` (default `false`) y `EMPTY_EVENTOS` (frozen array a nivel módulo para conservar la referencia estable en `useMemo`). `eventosForSider` se usa tanto para `createMenuItems` como para `eventCount`; el widget flotante (`ExternalEventoWidget`) sigue recibiendo el array completo desde `EventoContext`.
+
+---
+
 ## [1.40.1] - 2026-05-22
 
 ### Corregido: tools MCP `get_metadata`, `resolve_layer_ref` y `get_periodicity` aceptan `Layer.id` del visor
