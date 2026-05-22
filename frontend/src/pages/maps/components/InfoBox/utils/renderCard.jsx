@@ -4,7 +4,7 @@ import List from '../components/List';
 import IconText from '../components/IconText';
 import Cards from '../components/Cards';
 import Text from '../components/Text';
-import { cardTemplates, CARACTERISTICA_STYLE } from './cardTemplates';
+import { cardTemplates } from './cardTemplates';
 import { isTextKey, mkTextKey, normalizeFinalConfig, resolveHref, textIdOf } from './infoBoxTextBlocks';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import { formatIsoAsMonthYear } from '@pages/maps/helpers/dateFilterHelpers';
@@ -58,31 +58,6 @@ const shouldIncludeField = (fieldName, suffix) => {
     const otherSuffixes = allSuffixes.filter(s => s !== suffix);
 
     return !otherSuffixes.some(otherSuffix => fieldLower.includes(otherSuffix));
-};
-
-const renderLabels = ({ finalConfig, properties, variant, body }) => {
-    if (!finalConfig.labels) return;
-    const labelElements = [];
-    finalConfig.labels.forEach((field, idx) => {
-        if (properties[field]) {
-            labelElements.push(
-                <Label
-                    key={`label-${idx}`}
-                    value={properties[field]}
-                    color={CARACTERISTICA_STYLE.color}
-                    bg={CARACTERISTICA_STYLE.bg}
-                    variant={variant}
-                />
-            );
-        }
-    });
-    if (labelElements.length > 0) {
-        body.push(
-            <div key="labels-group" className="flex flex-wrap gap-1 mb-3">
-                {labelElements}
-            </div>
-        );
-    }
 };
 
 const renderLabelGroups = ({ finalConfig, properties, variant, dateValue, body }) => {
@@ -251,14 +226,13 @@ const renderCards = ({ finalConfig, properties, suffix, variant, body }) => {
 };
 
 const BODY_RENDERERS = {
-    labels: renderLabels,
     labelGroups: renderLabelGroups,
     list: renderList,
     iconText: renderIconText,
     cards: renderCards,
 };
 
-const DEFAULT_BODY_ORDER = ['labels', 'labelGroups', 'list', 'iconText', 'text', 'cards'];
+const DEFAULT_BODY_ORDER = ['labelGroups', 'list', 'iconText', 'text', 'cards'];
 
 const expandPresentKeys = (cfg) => {
     const out = [];
