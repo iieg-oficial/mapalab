@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.38.2] - 2026-05-22
+
+### Corregido: InfoBox se anteponía a Capas Activas, MapSider y otros paneles
+
+El `InfoBox` (panel flotante anclado a un feature del mapa) usaba `z-50`, el carril que el resto del proyecto reserva para modales (`Modal`, `MobileSheet`, `ConfirmDropdown`, `DownloadMenu`). Como no es un modal sino un overlay anclado al mapa, se colaba sobre paneles legítimos: lista de capas activas (`z-10`), `MapSider` (`z-20`), e incluso sobre el `LayerDetailModal` (que originalmente estaba en `z-30`).
+
+En `1.37.3` lo habíamos resuelto subiendo el modal a `z-60`, pero el problema raíz era el InfoBox. Bajamos el InfoBox a `z-0` (sigue sobre el canvas del mapa, debajo de cualquier panel UI) y devolvemos el `LayerDetailModal` a su `z-30` original.
+
+#### Qué cambió
+
+- **`frontend/src/pages/maps/components/InfoBox/InfoBox.jsx`**: contenedor desktop pasa de `z-50` a `z-0`. El `MobileSheet` (variante mobile) mantiene su `z-50` propio porque ahí sí actúa como sheet modal.
+- **`frontend/src/pages/maps/components/LayerDetailModal/LayerDetailModal.jsx`**: contenedor vuelve de `z-60` a `z-30`.
+- **`docs/z-index.md`**: tabla y diagrama reflejan el nuevo orden (InfoBox al fondo del stack UI, modal en `z-30`).
+
+---
+
 ## [1.38.0] - 2026-05-22
 
 ### Agregado: respeto del campo `z` por capa del evento + revert de iteración inversa
