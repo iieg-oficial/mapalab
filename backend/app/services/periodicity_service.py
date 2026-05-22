@@ -1,10 +1,30 @@
 from typing import Optional, Dict, List
 
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.consts.databases import DatabaseType
+from app.consts.workspaces import resolve_schema
 from app.databases.factory import DatabaseFactory
+from app.models.layer import Layer, Workspace
 from app.utils.logger import Logger
+
+
+def _resolve_layer_key(session: Session, workspace: str, layer: str) -> str:
+    ws_name = workspace
+    ws = session.query(Workspace).filter(Workspace.alias == workspace).first()
+    if ws:
+        ws_name = ws.db_schema or ws.geoserver_workspace
+    else:
+        ws_name = resolve_schema(workspace) or workspace
+    row = (
+        session.query(Layer)
+        .filter(Layer.workspace_alias == workspace, Layer.id == layer)
+        .first()
+    )
+    if row and row.geoserver_layer:
+        return f"{ws_name}:{row.geoserver_layer}"
+    return f"{ws_name}:{layer}"
 
 _CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS public.layer_periodicity (
@@ -128,9 +148,9 @@ class PeriodicityService:
 
     @staticmethod
     def get_periodicity(workspace: str, layer: str) -> Optional[dict]:
-        layer_key = f"{workspace}:{layer}"
         conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
         with conn.get_session() as session:
+            layer_key = _resolve_layer_key(session, workspace, layer)
             result = session.execute(
                 text("SELECT periodicity FROM public.layer_periodicity WHERE layer_key = :key"),
                 {"key": layer_key}
@@ -143,9 +163,17 @@ class PeriodicityService:
             return {}
         conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
         with conn.get_session() as session:
+            resolved: Dict[str, str] = {}
+            for raw in layer_keys:
+                if ":" in raw:
+                    ws, _, ly = raw.partition(":")
+                    resolved[raw] = _resolve_layer_key(session, ws, ly)
+                else:
+                    resolved[raw] = raw
+            unique_keys = list({k for k in resolved.values()})
             rows = session.execute(
                 text("SELECT layer_key, periodicity FROM public.layer_periodicity WHERE layer_key = ANY(:keys)"),
-                {"keys": layer_keys}
+                {"keys": unique_keys}
             ).fetchall()
             found = {row[0]: row[1] for row in rows}
-            return {key: found.get(key) for key in layer_keys}
+            return {raw: found.get(resolved[raw]) for raw in layer_keys}

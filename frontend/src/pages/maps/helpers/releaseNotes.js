@@ -12,6 +12,13 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.40.2',
+        items: [
+            { text: 'Eventos: el menú que se abre desde el botón flotante (a la derecha del menú lateral) ya muestra scroll cuando su contenido es más alto que la pantalla. Antes podía cortarse al final sin aviso.', tag: 'fixed' },
+            { text: 'Eventos: ahora viven solo en el botón flotante a la derecha del menú lateral. Quitamos la sección de eventos que también aparecía dentro del menú lateral para evitar duplicidad.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.38.3',
         items: [
             { text: 'Recuadro de información del punto: ya no queda escondido detrás de los textos, emojis o marcadores que dibujas sobre el mapa. Subimos su nivel para que siempre se vea encima de esos elementos, pero sigue debajo de los paneles del visor.', tag: 'fixed' },

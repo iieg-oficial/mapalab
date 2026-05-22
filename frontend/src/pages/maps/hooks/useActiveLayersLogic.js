@@ -1,9 +1,12 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useContext, useMemo } from 'react';
 import { useLayers } from '@hooks/useLayers';
+import EventoContext from '@contexts/EventoContext';
 import { findLayerById as findLayerByIdHelper, getAllChildLayerIds as getAllChildLayerIdsHelper } from '@pages/maps/helpers/layers/utils/layerHelpers';
 
 export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
     const { layers } = useLayers();
+    const eventoCtx = useContext(EventoContext);
+    const getAliasByLayerId = eventoCtx?.getAliasByLayerId;
 
     const findLayerById = useCallback((id) => {
         return findLayerByIdHelper(id, layers);
@@ -61,9 +64,10 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
                     const ancestorVisible = !hiddenLayerIds.includes(forceGroupAncestor.id)
                         && (activeChildIds.length === 0 || !activeChildIds.every(id => hiddenLayerIds.includes(id)));
 
+                    const ancestorAlias = getAliasByLayerId?.(forceGroupAncestor.id);
                     result.push({
                         id: forceGroupAncestor.id,
-                        name: forceGroupAncestor.label,
+                        name: ancestorAlias || forceGroupAncestor.label,
                         hasChildren: true,
                         visible: ancestorVisible,
                         order: result.length,
@@ -83,9 +87,10 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
             const visible = !hiddenLayerIds.includes(layerId)
                 && (!hasChildren || activeChildIds.length === 0 || !activeChildIds.every(id => hiddenLayerIds.includes(id)));
 
+            const alias = getAliasByLayerId?.(layer.id);
             result.push({
                 id: layer.id,
-                name: layer.label,
+                name: alias || layer.label,
                 hasChildren,
                 visible,
                 order: result.length,
@@ -100,7 +105,7 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
         }
 
         return result;
-    }, [activeLayerIds, hiddenLayerIds, getAllChildLayerIds, findLayerById, findForceGroupAncestor]);
+    }, [activeLayerIds, hiddenLayerIds, getAllChildLayerIds, findLayerById, findForceGroupAncestor, getAliasByLayerId]);
 
     return {
         findLayerById,

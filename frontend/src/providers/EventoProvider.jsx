@@ -8,7 +8,7 @@ import { useEventoLayerIndex } from '@hooks/useEventoLayerIndex';
 const EventoProvider = ({ children }) => {
     const { allLayers } = useMapsContext();
     const { eventos, loading, error } = useEventos();
-    const { eventoByLayerId, layerIdsByEvento } = useEventoLayerIndex(eventos, allLayers);
+    const { eventoByLayerId, layerIdsByEvento, aliasByLayerId } = useEventoLayerIndex(eventos, allLayers);
 
     const [activeEvento, setActiveEvento] = useState(null);
 
@@ -20,6 +20,10 @@ const EventoProvider = ({ children }) => {
         (eventoId) => layerIdsByEvento.get(eventoId) || new Set(),
         [layerIdsByEvento],
     );
+    const getAliasByLayerId = useCallback(
+        (layerId) => aliasByLayerId.get(layerId) || null,
+        [aliasByLayerId],
+    );
 
     const value = useMemo(() => ({
         eventos,
@@ -29,7 +33,8 @@ const EventoProvider = ({ children }) => {
         setActiveEvento,
         findEventoByLayerId,
         getLayerIdsByEvento,
-    }), [eventos, loading, error, activeEvento, findEventoByLayerId, getLayerIdsByEvento]);
+        getAliasByLayerId,
+    }), [eventos, loading, error, activeEvento, findEventoByLayerId, getLayerIdsByEvento, getAliasByLayerId]);
 
     return (
         <EventoContext.Provider value={value}>

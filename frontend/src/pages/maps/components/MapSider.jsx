@@ -22,6 +22,9 @@ import MenuItem from './MenuItem';
 import SiderModeButton from './SiderModeButton';
 import EnvBadge from './EnvBadge';
 
+const SIDER_EVENTS_ENABLED = false;
+const EMPTY_EVENTOS = Object.freeze([]);
+
 const MapSider = ({ className = '' }) => {
     const {
         activeLayerIds: contextActiveLayerIds,
@@ -132,12 +135,13 @@ const MapSider = ({ className = '' }) => {
     }, [areMeasurementToolsVisible, toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
 
     const { eventos } = useEventoContext();
+    const eventosForSider = SIDER_EVENTS_ENABLED ? eventos : EMPTY_EVENTOS;
 
     const menuItems = useMemo(() =>
-        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers, eventos }),
-    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, allLayers, eventos]);
+        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers, eventos: eventosForSider }),
+    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, allLayers, eventosForSider]);
 
-    const eventCount = eventos?.length || 0;
+    const eventCount = eventosForSider.length;
     const baseItemsEnd = BASE_ITEMS_COUNT;
     const eventItemsEnd = baseItemsEnd + eventCount;
 

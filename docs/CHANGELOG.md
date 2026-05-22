@@ -5,6 +5,68 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.41.0] - 2026-05-22
+
+### Agregado: iconText soporta texto visible separado del campo URL + auto-href en icono `web`
+
+El bloque `iconText` del InfoBox aceptaba `field` (valor a mostrar) y opcionalmente `href` (link literal). Faltaban dos cosas: poder mostrar un texto distinto al valor del campo (ej. "Sitio oficial" en vez de la URL larga del feature), y que el icono `web` resolviera automáticamente el link cuando el `field` apunta a una columna con la URL.
+
+#### Qué cambió
+
+- **`frontend/src/pages/maps/components/InfoBox/components/IconText.jsx`**: nueva prop `hrefValue` (defaults a `value`). `buildHref` ahora maneja `web` además de `celular`/`ubicacion`: si el valor parece URL absoluta la usa tal cual; si no, le antepone `https://`.
+- **`frontend/src/pages/maps/components/InfoBox/utils/renderCard.jsx`**: `renderIconText` ahora computa `displayValue = item.label || item.value || properties[item.field]` (label gana sobre el valor del campo) y pasa `hrefValue = properties[item.field] || item.value || displayValue` para que `buildHref` use la fuente correcta. Cuando hay `item.href` explícito se resuelve con `resolveHref` (soporta tokens `{campo}`, mismo helper que `text`/`list`).
+
+#### Ejemplos
+
+- **Antes**: `{icon: 'web', field: 'sitio_web'}` mostraba la URL completa como texto, no clickeable.
+- **Ahora**: `{icon: 'web', field: 'sitio_web', label: 'Sitio oficial'}` muestra "Sitio oficial" subrayado, link abre `properties.sitio_web` en pestaña nueva.
+- **Token explícito**: `{icon: 'web', label: 'Catastro', href: 'https://catastro.gob.mx/{clave_catastral}'}` resuelve el token contra el feature.
+
+Backward compat: items existentes sin `label` o `href` siguen comportándose igual (el icono `web` ahora también genera link auto, antes no lo hacía sin `href` explícito — diferencia leve pero deseada).
+
+---
+
+## [1.40.2] - 2026-05-22
+
+### Corregido: menús flotantes con `bottom-start`/`bottom-end` no se adaptaban al viewport
+
+`useSiderMenuPosition` ya calculaba `maxHeight` cuando el menú no cabía hacia la derecha (`right-start`), pero las variantes `bottom-start` y `bottom-end` retornaban `maxHeight: null` sin importar cuánto contenido tuvieran. Como el `Panel` con `variant="menu"` aplica `overflow-hidden` al contenedor, el contenido del menú se clipeaba cuando rebasaba el alto del viewport.
+
+El único consumidor con `bottom-start` en modo `variant="menu"` era el botón flotante de eventos (`ExternalEventoWidget`), así que en eventos con muchas capas el panel se cortaba al final sin scroll.
+
+#### Qué cambió
+
+- **`frontend/src/hooks/useSiderMenuPosition.js`**: `bottom-start` y `bottom-end` calculan `availableHeight = window.innerHeight - top - 16` y pasan ese valor como `maxHeight` cuando `contentHeight` lo rebasa; si no, `null`. `ThemeMenu` ya envuelve el listado en `ScrollContainer` con `flex-1 overflow-y-auto`, así que el scroll interno se activa solo cuando el menú queda clampeado.
+
+### Cambiado: eventos pausados en el panel del sider
+
+Los eventos venían apareciendo en dos lugares: dentro del sider (entre capas base y temas) y en el widget flotante a la derecha del sider. Se elimina la entrada del sider — los eventos ahora solo se acceden desde el widget flotante.
+
+Para restaurar la versión anterior basta con poner `SIDER_EVENTS_ENABLED = true` en `MapSider.jsx`.
+
+#### Qué cambió
+
+- **`frontend/src/pages/maps/components/MapSider.jsx`**: nuevo flag `SIDER_EVENTS_ENABLED` (default `false`) y `EMPTY_EVENTOS` (frozen array a nivel módulo para conservar la referencia estable en `useMemo`). `eventosForSider` se usa tanto para `createMenuItems` como para `eventCount`; el widget flotante (`ExternalEventoWidget`) sigue recibiendo el array completo desde `EventoContext`.
+
+---
+
+## [1.40.1] - 2026-05-22
+
+### Corregido: tools MCP `get_metadata`, `resolve_layer_ref` y `get_periodicity` aceptan `Layer.id` del visor
+
+El contrato entre tools era inconsistente: `search_layers` devuelve `id` con el formato del visor (p. ej. `tasa_homicidio_doloso`), pero los otros tools esperaban distintos identificadores derivados (geoserver_layer, slug/alias, schema en PostGIS). Un agente que encadenaba `search_layers → get_metadata` con el `id` recibido recibía `[]`; `resolve_layer_ref` siempre devolvía 404 porque `Layer.slug` y `LayerAlias` no están poblados; `get_periodicity` con el alias del workspace devolvía `null` porque la `layer_key` real usa el `db_schema` completo (`seguridad_y_proteccion_ciudadana`, no `seguridad`).
+
+Los tres tools ahora resuelven el identificador antes de consultar, manteniendo compatibilidad si ya se pasaba el valor exacto.
+
+- **`backend/app/services/layer_metadata_service.py`**: `_resolve_layer_key` extraído a `_resolve_workspace_name` + lookup en `mapalab.layers` por `(workspace_alias, id)`. Si la fila existe usa `Layer.geoserver_layer`, si no deja el `layer` tal cual recibido.
+- **`backend/app/services/periodicity_service.py`**: nuevo `_resolve_layer_key` análogo (alias → `db_schema`, `Layer.id` → `geoserver_layer`). `get_periodicity` y `get_periodicities_batch` ahora lo invocan antes de consultar `public.layer_periodicity`; el batch deduplica las keys resueltas.
+- **`backend/app/repositories/layers_repository.py`**: `find_layer_by_slug_or_alias` agrega fallback final `Layer.id == ref` para el caso esperable donde slug/alias no están poblados.
+- **`docs/mcp.md`**: sección nueva "Identificadores aceptados" con la tabla del contrato.
+
+Sin cambios de schema. Reutilizable desde REST también: los tres endpoints REST (`/metadata/`, `/layers/resolve`, `/periodicity/`) heredan la robustez al pasar por los mismos servicios.
+
+---
+
 ## [1.38.3] - 2026-05-22
 
 ### Corregido: InfoBox quedaba debajo de los overlays del mapa con `z-0`

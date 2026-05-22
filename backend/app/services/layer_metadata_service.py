@@ -5,14 +5,26 @@ from sqlalchemy.orm import Session
 from app.consts.databases import DatabaseType
 from app.consts.workspaces import resolve_schema
 from app.databases.factory import DatabaseFactory
-from app.models.layer import LayerMetadata, LayerStats, Workspace
+from app.models.layer import Layer, LayerMetadata, LayerStats, Workspace
+
+
+def _resolve_workspace_name(session: Session, workspace_alias: str) -> str:
+    ws = session.query(Workspace).filter(Workspace.alias == workspace_alias).first()
+    if ws:
+        return ws.geoserver_workspace
+    return resolve_schema(workspace_alias)
 
 
 def _resolve_layer_key(session: Session, workspace_alias: str, layer: str) -> str:
-    ws = session.query(Workspace).filter(Workspace.alias == workspace_alias).first()
-    if ws:
-        return f'{ws.geoserver_workspace}:{layer}'
-    return f'{resolve_schema(workspace_alias)}:{layer}'
+    ws_name = _resolve_workspace_name(session, workspace_alias)
+    row = (
+        session.query(Layer)
+        .filter(Layer.workspace_alias == workspace_alias, Layer.id == layer)
+        .first()
+    )
+    if row and row.geoserver_layer:
+        return f'{ws_name}:{row.geoserver_layer}'
+    return f'{ws_name}:{layer}'
 
 
 def _metadato_with_acervo(metadato: Optional[list], acervo_base: str) -> Optional[list]:

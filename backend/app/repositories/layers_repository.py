@@ -39,9 +39,9 @@ class LayersRepository:
         if layer is not None:
             return layer
         alias = session.query(LayerAlias).filter(LayerAlias.alias == ref).first()
-        if alias is None:
-            return None
-        return session.query(Layer).filter(Layer.id == alias.layer_id).first()
+        if alias is not None:
+            return session.query(Layer).filter(Layer.id == alias.layer_id).first()
+        return session.query(Layer).filter(Layer.id == ref).first()
 
     @staticmethod
     def get_all_workspaces(session: Session) -> list[Workspace]:

@@ -85,9 +85,6 @@ import visibleGray from './ico_mostrar_gray.svg';
 import moveNormal from './ico_move_normal.svg';
 import moveHover from './ico_move_hover.svg';
 
-import pinNormal from './ico_pin_normal.svg';
-import pinHover from './ico_pin_hover.svg';
-
 import eliminarNormal from './ico_eliminar_normal.svg';
 import eliminarHover from './ico_eliminar_hover.svg';
 
@@ -141,6 +138,9 @@ import fitExtentHover from './ico_fit_extent_hover.svg';
 import webNormal from './ico_web.svg';
 import novedadesNormal from './ico_novedades.svg';
 
+import medicionNormal from './ico_medicion.svg';
+import hideNormal from './ico_hide_normal.svg';
+
 export const externalIcons = {
     base_layers_normal: baseNormal, base_layers_hover: baseHover, demografia_normal: demografiaNormal, demografia_hover: demografiaHover,
     salud_normal: saludNormal, salud_hover: saludHover, economia_normal: economiaNormal, economia_hover: economiaHover,
@@ -153,7 +153,7 @@ export const externalIcons = {
     linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover, lista_normal: listaNormal, lista_hover: listaHover,
     emoji_normal: emojiNormal, emoji_hover: emojiHover, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,
     info_normal: infoNormal, info_hover: infoHover, shared_normal: sharedNormal, shared_hover: sharedHover, capa_activa_normal: capaActivaNormal,
-    visible_normal: visibleNormal, visible_hover: visibleHover, visible_gray: visibleGray, move_normal: moveNormal, move_hover: moveHover, pin_normal: pinNormal, pin_hover: pinHover, simbologia_normal: simbologiaNormal, simbologia_gray: simbologiaGray,
+    visible_normal: visibleNormal, visible_hover: visibleHover, visible_gray: visibleGray, move_normal: moveNormal, move_hover: moveHover, simbologia_normal: simbologiaNormal, simbologia_gray: simbologiaGray,
     eliminar_normal: eliminarNormal, eliminar_hover: eliminarHover, big_card_normal: bigCardNormal, big_card_hover: bigCardHover, upArrow_normal: upArrowNormal,
     alert_normal: alertNormal, deshacer_normal: deshacerNormal, center_normal: centerNormal, center_hover: centerHover, aviso_privacidad_normal: avisoPrivacidadNormal,
     info_warning_normal: infoWarningNormal, coordenadas_normal: coordenadasNormal, n_normal: nNormal, sin_mapalab_normal: sinMapalabNormal, sin_mapalab_hover: sinMapalabHover,
@@ -166,4 +166,5 @@ export const externalIcons = {
     down_arrow_fill_normal: downArrowFillNormal, down_arrow_fill_hover: downArrowFillHover,
     fit_extent_normal: fitExtentNormal, fit_extent_hover: fitExtentHover,
     web_normal: webNormal, novedades_normal: novedadesNormal,
+    medicion_normal: medicionNormal, hide_normal: hideNormal,
 };
