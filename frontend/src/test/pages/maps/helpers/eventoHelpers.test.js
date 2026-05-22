@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
     slugifyTitulo,
-    buildEventoShareUrl,
     findLayerByWorkspaceLayer,
     buildEventoIndex,
 } from '@pages/maps/helpers/eventoHelpers';
@@ -34,48 +33,6 @@ describe('slugifyTitulo', () => {
     it('trunca a 60 caracteres', () => {
         const long = 'a'.repeat(80);
         expect(slugifyTitulo(long)).toHaveLength(60);
-    });
-});
-
-describe('buildEventoShareUrl', () => {
-    const originalLocation = window.location;
-
-    beforeEach(() => {
-        delete window.location;
-        window.location = { origin: 'https://example.com' };
-    });
-
-    afterEach(() => {
-        window.location = originalLocation;
-    });
-
-    it('prefiere evento.slug sobre el titulo derivado', () => {
-        const url = buildEventoShareUrl({ slug: 'mundial', titulo: 'Mundial al estilo Jalisco 2026' });
-        expect(url).toBe('https://example.com/mapa?evento=mundial');
-    });
-
-    it('cae a slugifyTitulo si no hay slug', () => {
-        const url = buildEventoShareUrl({ titulo: 'Mi Evento' });
-        expect(url).toBe('https://example.com/mapa?evento=mi-evento');
-    });
-
-    it('cae a id si no hay slug ni titulo', () => {
-        const url = buildEventoShareUrl({ id: 42 });
-        expect(url).toBe('https://example.com/mapa?evento=42');
-    });
-
-    it('respeta BASE_URL de Vite', () => {
-        vi.stubEnv('BASE_URL', '/mapalab/');
-        const url = buildEventoShareUrl({ slug: 'foo' });
-        expect(url).toBe('https://example.com/mapalab/mapa?evento=foo');
-        vi.unstubAllEnvs();
-    });
-
-    it('agrega slash final si BASE_URL no lo tiene', () => {
-        vi.stubEnv('BASE_URL', '/mapalab');
-        const url = buildEventoShareUrl({ slug: 'bar' });
-        expect(url).toBe('https://example.com/mapalab/mapa?evento=bar');
-        vi.unstubAllEnvs();
     });
 });
 

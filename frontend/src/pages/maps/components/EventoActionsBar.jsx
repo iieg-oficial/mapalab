@@ -6,30 +6,21 @@ import Tooltip from '@components/Tooltip';
 import ReportButton from '@components/ReportButton';
 import EventoFunButton from '@mapsComponents/EventoFunButton';
 import { useMapsContext } from '@hooks/useMaps';
-import { buildEventoShareUrl } from '@pages/maps/helpers/eventoHelpers';
-import { trackEventoReport, trackEventoShare } from '@services/analyticsService';
+import { trackEventoCenter, trackEventoReport } from '@services/analyticsService';
 
 const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
 
-const BUTTON_BASE = 'px-2.5 py-1.5 rounded-full transition-colors cursor-pointer border border-transparent bg-[#F9FBFF] hover:border-[#70308A] flex items-center gap-1.5';
 const ICON_BUTTON = 'w-7 h-7 md:w-6 md:h-6 rounded-full bg-white flex items-center justify-center shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] hover:scale-110 active:scale-95 transition-transform cursor-pointer';
 const PILL_STATIC = 'px-2.5 py-1.5 rounded-full border border-transparent bg-[#F9FBFF] flex items-center gap-1.5';
 const LABEL_CLASS = 'font-garet text-[12px] text-graphite';
-const COPIED_RESET_MS = 1500;
 
-const EventoActionsBar = ({ evento, externalActiveIds = [] }) => {
+const EventoActionsBar = ({ evento, externalActiveIds = [], onCenterEvento }) => {
     const { hiddenLayerIds, setHiddenLayerIds } = useMapsContext();
     const [soloEvento, setSoloEvento] = useState(false);
-    const [copied, setCopied] = useState(false);
-    const copiedTimerRef = useRef(null);
     const hiddenIdsRef = useRef(hiddenLayerIds);
     const addedByUsRef = useRef(new Set());
 
     useEffect(() => { hiddenIdsRef.current = hiddenLayerIds; }, [hiddenLayerIds]);
-
-    useEffect(() => () => {
-        if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
-    }, []);
 
     useEffect(() => {
         if (typeof setHiddenLayerIds !== 'function') return undefined;
@@ -48,8 +39,6 @@ const EventoActionsBar = ({ evento, externalActiveIds = [] }) => {
         return undefined;
     }, [soloEvento, externalActiveIds, setHiddenLayerIds]);
 
-    if (!IS_NON_PROD) return null;
-
     const externalCount = externalActiveIds?.length || 0;
     const isPlural = externalCount !== 1;
     const soloTooltip = soloEvento
@@ -58,25 +47,20 @@ const EventoActionsBar = ({ evento, externalActiveIds = [] }) => {
             ? `Activar para ocultar ${externalCount} capa${isPlural ? 's' : ''} externa${isPlural ? 's' : ''} (no se eliminan, solo se ocultan)`
             : 'Oculta automaticamente las capas que no pertenecen a este evento';
 
-    const handleShare = async () => {
-        if (!evento?.id) return;
-        const url = buildEventoShareUrl(evento);
-        try {
-            await navigator.clipboard.writeText(url);
-            setCopied(true);
-            trackEventoShare(evento.id, 'ok');
-            if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
-            copiedTimerRef.current = setTimeout(() => setCopied(false), COPIED_RESET_MS);
-        } catch {
-            trackEventoShare(evento.id, 'error');
-        }
+    const canCenter = typeof onCenterEvento === 'function' && Boolean(evento?.bbox);
+    const handleCenter = () => {
+        if (!canCenter) return;
+        onCenterEvento();
+        if (evento?.id) trackEventoCenter(evento.id);
     };
 
-    const shareTooltip = copied ? 'Enlace copiado' : 'Copiar enlace al evento';
+    const containerClass = IS_NON_PROD
+        ? 'mx-4 mt-1 mb-2 px-2 py-1.5 rounded-full border border-orange flex items-center gap-2 shrink-0'
+        : 'mx-4 mt-1 mb-2 px-2 py-1.5 rounded-full border border-transparent bg-[#F9FBFF] flex items-center gap-2 shrink-0';
 
     return (
-        <div className="mx-4 mt-1 mb-2 px-2 py-1.5 rounded-full border border-orange flex items-center gap-2 shrink-0">
-            <Badge variant="pill" text="beta" color="orange" size="sm" />
+        <div className={containerClass}>
+            {IS_NON_PROD && <Badge variant="pill" text="beta" color="orange" size="sm" />}
 
             <Tooltip content={soloTooltip}>
                 <div className={PILL_STATIC}>
@@ -86,31 +70,31 @@ const EventoActionsBar = ({ evento, externalActiveIds = [] }) => {
             </Tooltip>
 
             <div className="ml-auto flex items-center gap-1.5">
-                <Tooltip content={shareTooltip} placement="top" delay={300}>
-                    <button
-                        type="button"
-                        onClick={handleShare}
-                        aria-label="Compartir evento"
-                        className={ICON_BUTTON}
-                    >
-                        {copied ? (
-                            <Icon name="done" className="size-3.5 text-[#16A34A]" />
-                        ) : (
-                            <Icon name="copie" className="size-3.5" />
-                        )}
-                    </button>
-                </Tooltip>
+                {canCenter && (
+                    <Tooltip content="Centrar mapa en el evento" placement="top" delay={300}>
+                        <button
+                            type="button"
+                            onClick={handleCenter}
+                            aria-label="Centrar mapa en el evento"
+                            className={ICON_BUTTON}
+                        >
+                            <Icon name="fit_extent" className="size-3.5" />
+                        </button>
+                    </Tooltip>
+                )}
                 <EventoFunButton evento={evento} />
-                <ReportButton
-                    variant="floating"
-                    label="Reportar problema con este evento"
-                    extraContext={{
-                        source: 'evento_actions_bar',
-                        evento_id: evento?.id,
-                        evento_titulo: evento?.titulo,
-                    }}
-                    onTrack={() => evento?.id && trackEventoReport(evento.id)}
-                />
+                {IS_NON_PROD && (
+                    <ReportButton
+                        variant="floating"
+                        label="Reportar problema con este evento"
+                        extraContext={{
+                            source: 'evento_actions_bar',
+                            evento_id: evento?.id,
+                            evento_titulo: evento?.titulo,
+                        }}
+                        onTrack={() => evento?.id && trackEventoReport(evento.id)}
+                    />
+                )}
             </div>
         </div>
     );

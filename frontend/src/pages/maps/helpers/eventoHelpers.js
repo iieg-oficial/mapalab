@@ -34,13 +34,6 @@ export const slugifyTitulo = (titulo) =>
         .replace(/^-+|-+$/g, '')
         .slice(0, 60);
 
-export const buildEventoShareUrl = (evento) => {
-    const slug = evento?.slug || slugifyTitulo(evento?.titulo) || evento?.id || '';
-    const rawBase = import.meta.env.BASE_URL || '/';
-    const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
-    return `${window.location.origin}${base}mapa?evento=${slug}`;
-};
-
 export const findLayerByWorkspaceLayer = (workspace, layer, nodes) => {
     if (!workspace || !layer) return null;
     return buildLayerIndex(nodes).get(indexKey(workspace, layer)) || null;

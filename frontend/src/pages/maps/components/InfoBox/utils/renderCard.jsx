@@ -4,7 +4,8 @@ import List from '../components/List';
 import IconText from '../components/IconText';
 import Cards from '../components/Cards';
 import Text from '../components/Text';
-import { cardTemplates, CARACTERISTICA_STYLE } from './cardTemplates';
+import { cardTemplates } from './cardTemplates';
+import { isTextKey, mkTextKey, normalizeFinalConfig, resolveHref, textIdOf } from './infoBoxTextBlocks';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import { formatIsoAsMonthYear } from '@pages/maps/helpers/dateFilterHelpers';
 
@@ -57,31 +58,6 @@ const shouldIncludeField = (fieldName, suffix) => {
     const otherSuffixes = allSuffixes.filter(s => s !== suffix);
 
     return !otherSuffixes.some(otherSuffix => fieldLower.includes(otherSuffix));
-};
-
-const renderLabels = ({ finalConfig, properties, variant, body }) => {
-    if (!finalConfig.labels) return;
-    const labelElements = [];
-    finalConfig.labels.forEach((field, idx) => {
-        if (properties[field]) {
-            labelElements.push(
-                <Label
-                    key={`label-${idx}`}
-                    value={properties[field]}
-                    color={CARACTERISTICA_STYLE.color}
-                    bg={CARACTERISTICA_STYLE.bg}
-                    variant={variant}
-                />
-            );
-        }
-    });
-    if (labelElements.length > 0) {
-        body.push(
-            <div key="labels-group" className="flex flex-wrap gap-1 mb-3">
-                {labelElements}
-            </div>
-        );
-    }
 };
 
 const renderLabelGroups = ({ finalConfig, properties, variant, dateValue, body }) => {
@@ -154,7 +130,7 @@ const renderLabelGroups = ({ finalConfig, properties, variant, dateValue, body }
     });
 };
 
-const renderList = ({ finalConfig, properties, suffix, variant, body }) => {
+const renderList = ({ finalConfig, properties, suffix, variant, body, getValue }) => {
     if (!finalConfig.list) return;
     const rows = finalConfig.list
         .filter(row => shouldIncludeField(row.field, suffix))
@@ -162,6 +138,7 @@ const renderList = ({ finalConfig, properties, suffix, variant, body }) => {
             label: row.label,
             value: properties[row.field],
             raw: row.raw,
+            href: resolveHref(row.href, getValue),
         }))
         .filter(row => row.value !== null && row.value !== undefined && row.value !== '');
 
@@ -195,16 +172,17 @@ const renderIconText = ({ finalConfig, properties, onAction, variant, body }) =>
     });
 };
 
-const renderText = ({ finalConfig, getValue, variant, body }) => {
-    if (!finalConfig.text) return;
-    finalConfig.text.forEach((textItem, idx) => {
+const renderTextBlock = ({ block, getValue, variant, body }) => {
+    if (!block?.items?.length) return;
+    block.items.forEach((textItem, idx) => {
         const value = textItem.field ? getValue(textItem.field) : null;
         if (textItem.label || value) {
             body.push(
                 <Text
-                    key={`text-${idx}`}
+                    key={`text-${block.id}-${idx}`}
                     label={textItem.label}
                     value={value}
+                    href={resolveHref(textItem.href, getValue)}
                     variant={variant}
                 />
             );
@@ -248,22 +226,33 @@ const renderCards = ({ finalConfig, properties, suffix, variant, body }) => {
 };
 
 const BODY_RENDERERS = {
-    labels: renderLabels,
     labelGroups: renderLabelGroups,
     list: renderList,
     iconText: renderIconText,
-    text: renderText,
     cards: renderCards,
 };
 
-const DEFAULT_BODY_ORDER = ['labels', 'labelGroups', 'list', 'iconText', 'text', 'cards'];
+const DEFAULT_BODY_ORDER = ['labelGroups', 'list', 'iconText', 'text', 'cards'];
 
-const resolveBodyOrder = (configOrder) => {
-    const validKeys = Object.keys(BODY_RENDERERS);
-    const explicit = Array.isArray(configOrder)
-        ? configOrder.filter(k => validKeys.includes(k))
+const expandPresentKeys = (cfg) => {
+    const out = [];
+    for (const k of DEFAULT_BODY_ORDER) {
+        if (k === 'text') {
+            (cfg.text || []).forEach((b) => out.push(mkTextKey(b.id)));
+        } else {
+            out.push(k);
+        }
+    }
+    return out;
+};
+
+const resolveBodyOrder = (cfg) => {
+    const present = expandPresentKeys(cfg);
+    const validKeys = new Set(present);
+    const explicit = Array.isArray(cfg.blockOrder)
+        ? cfg.blockOrder.filter((k) => validKeys.has(k))
         : [];
-    const remaining = DEFAULT_BODY_ORDER.filter(k => !explicit.includes(k));
+    const remaining = present.filter((k) => !explicit.includes(k));
     return [...explicit, ...remaining];
 };
 
@@ -279,7 +268,7 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
 
     if (!properties) return null;
 
-    const finalConfig = config || cardTemplates.generateDefaultConfig(properties);
+    const finalConfig = normalizeFinalConfig(config || cardTemplates.generateDefaultConfig(properties));
     if (!finalConfig) return null;
 
     let titleValue = null;
@@ -292,7 +281,13 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
     }
 
     const ctx = { finalConfig, properties, suffix, variant, dateValue, onAction, getValue, body };
-    resolveBodyOrder(finalConfig.blockOrder).forEach(key => {
+    resolveBodyOrder(finalConfig).forEach((key) => {
+        if (isTextKey(key)) {
+            const id = textIdOf(key);
+            const block = (finalConfig.text || []).find((b) => b.id === id);
+            renderTextBlock({ ...ctx, block });
+            return;
+        }
         BODY_RENDERERS[key]?.(ctx);
     });
 

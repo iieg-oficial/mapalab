@@ -56,10 +56,11 @@ const ScrollContainer = ({
 }) => {
     const Component = as;
     const containerRef = useRef(null);
-    const { canScrollUp, canScrollDown, stickyAtTop, stickyAtBottom } = useScrollOverflow(containerRef);
+    const { canScrollUp, canScrollDown, stickyAtTop, stickyAtBottom, stickyHeight } = useScrollOverflow(containerRef);
 
-    const topOffset = stickyAtTop ? stickySize : 0;
-    const bottomOffset = stickyAtBottom ? stickySize : 0;
+    const effectiveStickySize = stickyHeight || stickySize;
+    const topOffset = stickyAtTop ? effectiveStickySize : 0;
+    const bottomOffset = stickyAtBottom ? effectiveStickySize : 0;
 
     const effectiveItemCount = itemCount != null ? itemCount : Children.count(children);
     const clickEnabled = clickableArrows && effectiveItemCount >= minItemsForClick;

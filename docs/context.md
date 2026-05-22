@@ -342,7 +342,7 @@ Push a production → CD: test → deploy SSH (make deploy) → health check →
 
 ## Analytics
 
-Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gateway-hub). En desarrollo aparece un panel de debug flotante. Eventos principales: `layer_toggle`, `feature_click`, `map_zoom_level`, `layer_search`, `layer_download`, `map_export`, `raster_loop_start/stop`, `drawing_tool_use`, `basemap_change`, `share_map`, `report_submitted`, `evento_open`, `evento_close`.
+Eventos se envian a `window.dataLayer` para consumo por GTM (inyectado por gateway-hub). En desarrollo aparece un panel de debug flotante. Eventos principales: `layer_toggle`, `feature_click`, `map_zoom_level`, `layer_search`, `layer_download`, `map_export`, `raster_loop_start/stop`, `drawing_tool_use`, `basemap_change`, `share_map`, `report_submitted`, `evento_open`, `evento_close`, `evento_center`.
 
 ## Telemetría propia → Mariachi (v1.27.0+)
 
@@ -561,19 +561,21 @@ Sub-componentes en `frontend/src/pages/maps/components/ActiveLayers/`:
 
 `<LayerDetailModal>` (panel derecho del visor) abre desde el botón de detalles del panel de capas activas o de los menús. El header arriba (`<LayerDetailHeader>`) muestra avatar + título del **tema** de la capa por defecto. Si la capa pertenece a un **evento** (configurado en mariachi), el header sustituye avatar y título por los del evento: prioriza `activeEvento` en `EventoContext` (lo setea `<EventoMenu>` mientras está montado); si está vacío (ej. tras refresh con la capa restaurada desde la URL), usa `findEventoByLayerId(selectedLayerId)` que resuelve en O(1) contra el index centralizado del provider. `<LayerThemeAvatar>` acepta `imageUrl` para renderizar la imagen del evento sobre el círculo del avatar.
 
-`<EventoMenu>` dispara bbox-fit del mapa al área del evento, auto-activa las capas con `autoActivar=true` cada vez que se monta y aplica `setBaseMapId(evento.basemapId)` cuando el evento define uno (snapshot en `baseMapIdRef`, restauración al desmontar). Inyecta `<EventoActionsBar>` como `actionsBar` del `<ThemeMenu>` (nuevo slot opcional que renderiza un nodo entre el header y el scroll).
+`<EventoMenu>` aplica `setBaseMapId(evento.basemapId)` cuando el evento define uno e inyecta `<EventoActionsBar>` como `actionsBar` del `<ThemeMenu>`. El bbox-fit (`centerOnEvento`) y la auto-activación de capas con `autoActivar !== false` solo se disparan **una vez por mount** y hacen skip si al primer mount ya existe al menos una capa del evento en `activeLayerIds` (se respeta la selección/encuadre previo del usuario al re-abrir el menú). `centerOnEvento` se expone como callback a `<EventoActionsBar>` para que el usuario pueda recentrar manualmente.
 
-`<EventoActionsBar>` (gated por `IS_NON_PROD`, border `border-orange` con un único badge "beta" al inicio) contiene:
+La auto-activación itera `toActivate` en orden **inverso** (`for` de `length-1` a `0`) porque `handleToggleLayer` mete cada nueva capa al inicio de `activeLayerIds` (unshift). Procesar al revés deja la primera capa del submenú/editor en el índice 0 — al frente del mapa. Convención resultante: el orden visual del editor en mariachi (`CapasField`) = orden del panel de Capas Activas = Z del mapa (arriba = al frente).
+
+`<EventoActionsBar>` se renderiza siempre (visible en producción). En non-prod (`dev`/`beta`) muestra border `border-orange` + badge "beta" al inicio; en producción usa fondo neutro sin badge. Contenido:
 - **Switch "Solo este evento"**: oculta las externas vía `setHiddenLayerIds` (no las apaga); `addedByUsRef` registra solo las que el switch ocultó para no descongelar ocultamientos manuales del usuario al desactivarlo.
-- **Compartir**: copia `${origin}${BASE_URL}mapa?evento=${slug}` (respeta `VITE_BASE_PATH`); prioriza `evento.slug` del backend sobre `slugifyTitulo(titulo)`. Telemetría `evento_share`.
+- **Centrar evento**: botón con icono `fit_extent` (oculto si `evento.bbox` no existe). Llama al `onCenterEvento` del `<EventoMenu>` (mismo bbox-fit del primer mount) y emite telemetría `evento_center`.
 - **`<EventoFunButton>`**: botón circular con el `funIcon` del evento; al click spawnea un balón animado (`evento-fun-bounce` keyframe en `index.css`, 5200ms, 3 rebotes decrecientes con easing per-keyframe que simula gravedad, `BALL_SIZE_PX=28` + `BOTTOM_PADDING_PX=4` al ras del viewport). Después de `BALL_STOP_DELAY_MS=3700ms` aparece un popover anclado a la posición final del balón con el `fact.text`; el símbolo solo se muestra si está explícitamente en `fact.symbol`. Cap a 10 balones, autodismiss del popover 10s, cierre por click afuera. En mobile el popover pasa a banner top-center fijo. Cada `fact` es `{text, symbol?}` con `text` markdown inline. Shuffle bag por `evento.id` en `helpers/funFactPicker.js`. Telemetría `evento_fun_fact`.
-- **Reportar**: `<ReportButton variant="floating">` con `extraContext` del evento; nueva prop `onTrack` dispara `trackEventoReport(eventoId)` antes de abrir Colibri.
+- **Reportar (solo non-prod)**: `<ReportButton variant="floating">` con `extraContext` del evento; gated con `IS_NON_PROD && (...)` para que en producción no se renderice ni ocupe espacio. `onTrack` dispara `trackEventoReport(eventoId)` antes de abrir Colibri.
 
 Apertura por URL vía `useAutoOpenEventoFromUrl({setAutoOpenMenuId, setIsHovered})` en `<MapSider>`. Lee `?evento=` del query y matchea contra `evento.id`, `evento.slug` o `slugifyTitulo(titulo)`; al match expande el sider y abre el menú con el mismo patrón que `shouldAutoOpenSearch` (300ms delay, `processedRef` idempotente).
 
 Símbolos del catálogo MapaLab → Símbolos en `<SymbolGlyph>` (`pages/maps/components/SymbolGlyph.jsx`): renderiza el snapshot inline. Snapshot guardado en `eventos.fun_icon` y en cada `fact.symbol` como JSONB `{symbolId, kind, value, imageUrl, name}` para no necesitar cross-DB FK al schema `mapalab.symbols` de DataEngine.
 
-Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`buildLayerIndex`, `buildEventoIndex`, `findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`, `slugifyTitulo`, `buildEventoShareUrl`). El index plano `workspace|layer → node` se construye una vez por cambio de árbol y se reusa para todos los lookups.
+Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`buildLayerIndex`, `buildEventoIndex`, `findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`, `slugifyTitulo`). El index plano `workspace|layer → node` se construye una vez por cambio de árbol y se reusa para todos los lookups.
 
 ## Comparador (swipe)
 
@@ -602,6 +604,12 @@ La lógica del modo vive en `helpers/swipeMode.js` como helpers puros (`purgePan
 | `TEEMLXEV` | Municipio con stats (empleo) | header + municipio + list + text + stats |
 | `createMunicipioConfig` | Tasas municipales (mayoria de capas) | header + municipio + fecha + text + cards |
 | Config manual | Casos especiales | Definicion libre |
+
+### Hrefs y bloques de texto (v1.37.0)
+
+- Cada fila de `list[]` y cada item de `text[]` acepta un campo `href` con tokens `{nombre_campo}` que se reemplazan por valores del feature (URL-encoded). Si algún token queda sin resolver, el href se descarta y el valor se renderiza como texto. `resolveHref` aplica una allowlist de schemes (`http:`, `https:`, `mailto:`, `tel:` o rutas absolutas `/...`); cualquier otro scheme se descarta para evitar `javascript:` y similares.
+- `finalConfig.text` evolucionó de una lista plana a un array de bloques `{ id, items: [...] }`. `blockOrder` referencia cada bloque con la clave compuesta `text:<id>`, lo que permite intercalar varios bloques de texto entre `labels`, `list`, `cards`, etc. `normalizeFinalConfig` migra automáticamente los configs legacy (`text: [{ field, label, value }, ...]` sin `items`) a la nueva forma, así que los templates existentes siguen funcionando sin cambios.
+- Helpers en `frontend/src/pages/maps/components/InfoBox/utils/infoBoxTextBlocks.js` (`isTextKey`, `textIdOf`, `mkTextKey`, `resolveHref`, `normalizeFinalConfig`).
 
 ## Proyeccion
 

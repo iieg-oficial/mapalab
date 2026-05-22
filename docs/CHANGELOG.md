@@ -5,6 +5,177 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.38.3] - 2026-05-22
+
+### Corregido: InfoBox quedaba debajo de los overlays del mapa con `z-0`
+
+En `1.38.2` bajamos el InfoBox a `z-0`. Eso lo dejaba al mismo nivel que los overlays DOM del mapa (texto/emojis del editor en mapa, markers, anotaciones — `ol/Overlay` arranca con z-index `0`), así que dependiendo del orden del DOM el InfoBox podía quedar detrás de ellos. Lo subimos a `z-5`: queda por encima de los overlays del mapa y de `SwipeView` (`z-1`), y sigue por debajo de cualquier panel UI (`z-10` en adelante).
+
+#### Qué cambió
+
+- **`frontend/src/pages/maps/components/InfoBox/InfoBox.jsx`**: contenedor desktop pasa de `z-0` a `z-5`.
+- **`docs/z-index.md`**: tabla y diagrama reflejan el nuevo nivel.
+
+---
+
+## [1.38.2] - 2026-05-22
+
+### Corregido: InfoBox se anteponía a Capas Activas, MapSider y otros paneles
+
+El `InfoBox` (panel flotante anclado a un feature del mapa) usaba `z-50`, el carril que el resto del proyecto reserva para modales (`Modal`, `MobileSheet`, `ConfirmDropdown`, `DownloadMenu`). Como no es un modal sino un overlay anclado al mapa, se colaba sobre paneles legítimos: lista de capas activas (`z-10`), `MapSider` (`z-20`), e incluso sobre el `LayerDetailModal` (que originalmente estaba en `z-30`).
+
+En `1.37.3` lo habíamos resuelto subiendo el modal a `z-60`, pero el problema raíz era el InfoBox. Bajamos el InfoBox a `z-0` (sigue sobre el canvas del mapa, debajo de cualquier panel UI) y devolvemos el `LayerDetailModal` a su `z-30` original.
+
+#### Qué cambió
+
+- **`frontend/src/pages/maps/components/InfoBox/InfoBox.jsx`**: contenedor desktop pasa de `z-50` a `z-0`. El `MobileSheet` (variante mobile) mantiene su `z-50` propio porque ahí sí actúa como sheet modal.
+- **`frontend/src/pages/maps/components/LayerDetailModal/LayerDetailModal.jsx`**: contenedor vuelve de `z-60` a `z-30`.
+- **`docs/z-index.md`**: tabla y diagrama reflejan el nuevo orden (InfoBox al fondo del stack UI, modal en `z-30`).
+
+---
+
+## [1.38.0] - 2026-05-22
+
+### Agregado: respeto del campo `z` por capa del evento + revert de iteración inversa
+
+El editor de eventos en mariachi (`1.14.0`) ahora expone un campo `z` opcional por capa que define el orden Z explícito del mapa, desacoplado del orden visual del submenú. El visor lo consume al auto-activar las capas del evento.
+
+#### Qué cambió
+
+- **`frontend/src/pages/maps/components/EventoMenu.jsx`**: revertida la iteración inversa de `toActivate` que metí en `1.36.0` (asumía "primera fila del editor = al frente del mapa"). Ahora cada item se enriquece con `z` (`typeof c.z === 'number' ? c.z : null`), se ordena `toActivate` por `z` **ascendente** (`null` primero, luego z asc), y se procesa con `forEach` normal. Como `handleToggleLayer` hace unshift, las que se procesan más tarde quedan al frente: las con mayor Z terminan al inicio de `activeLayerIds` (= al frente del mapa) y las sin Z quedan al final (= al fondo).
+
+#### Convención resultante (alineada con mariachi `1.14.0`)
+
+| Caso | Z del mapa |
+|---|---|
+| Todas las capas sin `z` | Última fila del editor al frente, primera al fondo (comportamiento original anterior al fix erróneo de 1.36.0) |
+| Una capa con `z=5`, el resto sin `z` | La de Z=5 al frente; las demás en su orden de tabla detrás |
+| `A z=1`, `B z=3`, `C z=2` | B (Z=3) al frente, C (Z=2), A (Z=1) al fondo |
+| Mezcla: `A` sin Z, `B z=2`, `C` sin Z | B al frente; A y C entre sí por posición de tabla |
+
+Sort estable (`Array.prototype.sort` en V8/Node 12+) garantiza que dos capas con mismo `z` (o ambas sin `z`) preservan el orden del `walk(evento.capas)`.
+
+Sin cambios en el cache, schema o endpoints. Eventos viejos sin `z` se comportan como antes del fix de 1.36.0.
+
+---
+
+## [1.37.3] - 2026-05-22
+
+### Corregido: modal de detalle de capa queda debajo del InfoBox
+
+El `LayerDetailModal` se renderizaba con `z-30`, mientras que el `InfoBox` (panel flotante de información de features) usa `z-50`. Cuando ambos estaban abiertos, el InfoBox tapaba parte del modal. Subimos el modal a `z-60` para que quede por encima del InfoBox; el InfoBox sigue funcionando igual sobre el resto de paneles del visor.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/components/LayerDetailModal/LayerDetailModal.jsx`**: contenedor pasa de `z-30` a `z-60`.
+- **`docs/z-index.md`**: tabla y diagrama actualizados con el nuevo orden (LayerDetailModal `[60]` arriba de FeatureInfoPanel `[50]`).
+
+---
+
+## [1.37.2] - 2026-05-22
+
+### Corregido: flechas y degradado del `ScrollContainer` en el panel de Capas Activas
+
+Cuando un item del panel "Capas Activas" se selecciona, se vuelve `position: sticky` (vía `[data-sticky]` en `SortableList`) y crece con periodicidad, barra de acciones y leyenda (`GetLegendGraphic`, que además carga asíncrona). Antes el `ScrollContainer` usaba una constante `STICKY_SIZE = 52` (100 en mobile) para posicionar las flechas "ir al inicio / al final" y el degradado superior/inferior. El item expandido medía mucho más que 52 px, así que las flechas y el degradado caían **dentro** del item sticky: ocultos detrás de la leyenda y sin poder clickearse.
+
+Ahora `useScrollOverflow` mide la altura real del elemento `[data-sticky]` con `getBoundingClientRect` y le monta un `ResizeObserver` dedicado para captar el crecimiento asíncrono cuando carga la imagen de la leyenda. El nuevo campo `stickyHeight` se propaga a `ScrollContainer`, que lo prefiere sobre la prop `stickySize` (que queda como fallback opcional).
+
+#### Que cambio
+
+- **`frontend/src/hooks/useScrollOverflow.js`**: nuevo `stickyHeight` en el estado, calculado desde `getBoundingClientRect` del `[data-sticky]`. `ResizeObserver` dedicado al sticky que se conecta/desconecta automáticamente cuando aparece o cambia.
+- **`frontend/src/components/ScrollContainer.jsx`**: `topOffset` / `bottomOffset` usan `stickyHeight || stickySize`. Sin cambios para consumidores sin `[data-sticky]` interno.
+- **`frontend/src/pages/maps/components/ActiveLayers/ActiveLayersList.jsx`**: removido el hardcode `STICKY_SIZE = 52` / `STICKY_SIZE_MOBILE = 100` y la prop `stickySize` que se pasaba al `ScrollContainer`. También se quitó el `useSider`/`isMobile` que ya no se usaba.
+
+---
+
+## [1.37.1] - 2026-05-22
+
+### Cambiado: ocultar contador `1/1` en el header del InfoBox
+
+Cuando una capa devuelve un único feature, el badge `1/1` ya no se renderiza en el header de la tarjeta (ni desktop ni mobile). La condición pasó de `total > 0` a `total > 1` en ambos headers. El layout no cambia: en desktop el badge está en `position: absolute` con el padding lateral (`px-12`) reservado, así que el título sigue centrado idéntico; en mobile el badge vive en un flex con el título en `flex-1`, así que al ocultarse el título solo absorbe el espacio liberado.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/components/InfoBox/components/Header.jsx`**: `showBadge` ahora exige `total > 1`.
+- **`frontend/src/pages/maps/components/InfoBox/components/MobileFeatureHeader.jsx`**: misma condición.
+
+---
+
+## [1.37.0] - 2026-05-22
+
+### Agregado: links clicables en InfoBox + múltiples bloques de texto por template
+
+Dos extensiones al sistema de templates de InfoBox:
+
+#### Hrefs en filas de lista y bloques de texto
+
+`<List>` y `<Text>` aceptan ahora una prop `href` que renderiza el valor como `<a target="_blank" rel="noopener noreferrer">` con underline morado (`text-[#5C2472]`). Si `href` no se pasa, el valor sigue siendo texto plano.
+
+En la configuración del template, cada `list[]` y cada item de `text[]` acepta un campo `href` con plantilla. La plantilla soporta tokens `{nombre_campo}` que `resolveHref` (en `infoBoxTextBlocks.js`) reemplaza por el valor del feature (URL-encoded). Si algún token queda sin resolver, el href se descarta y el valor se renderiza como texto. Solo se permiten hrefs con scheme `http:`, `https:`, `mailto:`, `tel:` o rutas absolutas (`/...`) — todo lo demás se descarta.
+
+#### Múltiples bloques de texto independientes
+
+Antes el template tenía un único `text: [...]` que se renderizaba como un bloque contiguo. Ahora `finalConfig.text` es un array de bloques con `{ id, items: [...] }`, lo que permite intercalar varios bloques de texto entre `labels`, `list`, `cards`, etc. via `blockOrder` usando claves `text:<id>`.
+
+Se preserva retrocompatibilidad: `normalizeFinalConfig` detecta la forma legacy (`text: [{ label, value, field, ... }]` sin `items`) y la convierte a `text: [{ id: 't0', items: [...] }]`. Si el `blockOrder` legacy menciona `'text'`, se reescribe como `'text:t0'`. Templates existentes funcionan sin cambios.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/components/InfoBox/components/List.jsx`**: cada fila resuelve `href`; si existe, el valor formateado se envuelve en `<a>` con underline.
+- **`frontend/src/pages/maps/components/InfoBox/components/Text.jsx`**: nueva prop `href`; mismo patrón de `<a>` cuando se pasa.
+- **`frontend/src/pages/maps/components/InfoBox/utils/renderCard.jsx`**: `renderList` recibe `getValue` y resuelve `row.href`. `renderText` reemplazado por `renderTextBlock` (itera `block.items`). `resolveBodyOrder` expande la clave genérica `'text'` en N claves `'text:<id>'`, una por bloque presente, conservando la posición relativa. `renderCard` invoca `normalizeFinalConfig` al recibir el config.
+- **`frontend/src/pages/maps/components/InfoBox/utils/infoBoxTextBlocks.js`** (nuevo): helpers `isTextKey` / `textIdOf` / `mkTextKey` para la clave compuesta; `resolveHref` con allowlist de schemes y reemplazo de tokens; `normalizeFinalConfig` para migrar configs legacy.
+
+---
+
+## [1.36.0] - 2026-05-22
+
+### Cambiado: barra de acciones de eventos en producción + botón "Centrar evento"
+
+`<EventoActionsBar>` ya no está gated por `IS_NON_PROD` — se renderiza siempre. En `dev`/`beta` mantiene el border `border-orange` + badge "beta"; en producción usa fondo neutro (`bg-[#F9FBFF]`) sin badge. El único elemento que sigue gated es el botón Colibri (`<ReportButton>` de "Reportar problema con este evento"), envuelto con `IS_NON_PROD && (...)` para que no se renderice ni ocupe espacio en producción.
+
+Reemplazamos el botón de copiar enlace del evento por un botón "Centrar evento" (icono `fit_extent`). Llama al mismo `centerOnEvento` que dispara el primer mount del menú (bbox-fit con padding 8% del shortSide), por lo que el usuario puede recuperar el encuadre en cualquier momento aunque haya hecho pan/zoom. Solo se renderiza si `evento.bbox` está definido. Emite telemetría `evento_center` con `evento_id`. Eliminamos junto con esto el helper `buildEventoShareUrl`, sus 5 tests y el tracker `evento_share`.
+
+### Cambiado: `EventoMenu` respeta el estado previo al re-abrir
+
+Tanto el bbox-fit como el auto-activado de capas con `autoActivar !== false` ahora hacen skip al primer mount si ya existe al menos una capa del evento en `activeLayerIds`. Antes, cada cierre/apertura del menú desmontaba/montaba el componente, los `useRef` se reseteaban y volvía a re-encuadrar el mapa y a re-activar las capas que el usuario había apagado manualmente. Ahora:
+
+- Primera apertura del evento (o tras apagar todas sus capas) → centra el mapa y activa las capas con `autoActivar !== false`.
+- Reapertura con al menos una capa del evento ya activa → no se mueve el mapa ni se reactiva ninguna capa. El usuario puede recentrar manualmente con el botón "Centrar evento".
+
+#### Que cambio (ambas secciones)
+
+- **`frontend/src/pages/maps/components/EventoMenu.jsx`**: `centerOnEvento` extraído a `useCallback` y pasado a `<EventoActionsBar>` como `onCenterEvento`. Los dos efectos (bbox-fit y autoactivado) cortocircuitan cuando `eventoLayerIds` interseca `activeLayerIds`.
+- **`frontend/src/pages/maps/components/EventoActionsBar.jsx`**: eliminado el early return `IS_NON_PROD`; eliminado el botón Compartir con su estado `copied`/timers; agregado botón "Centrar evento" con `Icon name="fit_extent"`; `<ReportButton>` envuelto con `IS_NON_PROD && (...)`; container con clases distintas por entorno.
+- **`frontend/src/services/analyticsService.js`**: agregado `trackEventoCenter(eventoId)`; eliminado `trackEventoShare`.
+- **`frontend/src/pages/maps/helpers/eventoHelpers.js`**: eliminado `buildEventoShareUrl` (sin uso).
+- **`frontend/src/test/pages/maps/helpers/eventoHelpers.test.js`**: eliminados los 5 tests de `buildEventoShareUrl` y su import.
+- **`docs/context.md`**: actualizado el bloque de `<EventoMenu>` / `<EventoActionsBar>`; agregado `evento_center` a la lista de eventos analytics; eliminada referencia a `buildEventoShareUrl` en helpers compartidos.
+- **`docs/analytics.md`**: agregada fila para `evento_center`.
+
+---
+
+### Corregido: orden Z de capas auto-activadas del evento
+
+Al abrir un evento, la primera capa del submenú (definida en mariachi `CapasField`) terminaba al final de `activeLayerIds` por el comportamiento de unshift de `handleToggleLayer` combinado con `forEach` en orden directo. Resultado: el orden Z del mapa quedaba invertido respecto al orden visual del submenú y del editor en mariachi, obligando a cada usuario a reordenar manualmente desde el panel de Capas Activas.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/components/EventoMenu.jsx`**: iteración inversa de `toActivate` en la auto-activación (`for` de `length-1` a `0`). Cada `onToggleLayer` sigue haciendo unshift, pero al procesar las capas en orden inverso, la primera del submenú termina en el índice 0 de `activeLayerIds` — al frente del mapa.
+
+#### Convención resultante
+
+| Posición en submenú/editor mariachi | Panel Capas Activas | Z del mapa |
+|---|---|---|
+| Arriba | Arriba | Al frente |
+| Abajo | Abajo | Al fondo |
+
+Para mandar una capa al fondo: en mariachi se arrastra al final del CapasField. Sin cambios en el panel de Capas Activas (ya soporta drag & drop genérico para reordenar después).
+
+Solo afecta la auto-activación inicial. Activar manualmente una capa desde el submenú sigue trayendo la capa al frente (comportamiento estándar de `handleToggleLayer`).
+
+---
+
 ## [1.35.1] - 2026-05-22
 
 ### Cambiado: path del MCP sin slash final para alinear con iieg-oficial/agent

@@ -4,7 +4,7 @@ import Badge from '@components/Badge';
 const MobileFeatureHeader = ({ value, index, total }) => {
     if (!value) return null;
 
-    const showBadge = index != null && total != null && total > 0;
+    const showBadge = index != null && total != null && total > 1;
 
     return (
         <>

@@ -5,47 +5,70 @@ export const useScrollOverflow = (containerRef, { enabled = true } = {}) => {
         canScrollUp: false,
         canScrollDown: false,
         stickyAtTop: false,
-        stickyAtBottom: false
+        stickyAtBottom: false,
+        stickyHeight: 0
     });
     const rafId = useRef(null);
+    const stickyElRef = useRef(null);
+    const stickyResizeObserverRef = useRef(null);
 
     const checkScroll = useCallback(() => {
         if (rafId.current) {
             cancelAnimationFrame(rafId.current);
         }
         rafId.current = requestAnimationFrame(() => {
-            if (containerRef.current) {
-                const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-                const newCanScrollUp = scrollTop > 1;
-                const newCanScrollDown = scrollTop + clientHeight < scrollHeight - 1;
+            if (!containerRef.current) return;
+            const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+            const newCanScrollUp = scrollTop > 1;
+            const newCanScrollDown = scrollTop + clientHeight < scrollHeight - 1;
 
-                let newStickyAtTop = false;
-                let newStickyAtBottom = false;
-                const stickyEl = containerRef.current.querySelector('[data-sticky]');
-                if (stickyEl) {
-                    const containerRect = containerRef.current.getBoundingClientRect();
-                    const elRect = stickyEl.getBoundingClientRect();
-                    newStickyAtTop = newCanScrollUp && Math.abs(elRect.top - containerRect.top) < 2;
-                    newStickyAtBottom = newCanScrollDown && Math.abs(elRect.bottom - containerRect.bottom) < 2;
-                }
+            let newStickyAtTop = false;
+            let newStickyAtBottom = false;
+            let newStickyHeight = 0;
+            const stickyEl = containerRef.current.querySelector('[data-sticky]');
+            if (stickyEl) {
+                const containerRect = containerRef.current.getBoundingClientRect();
+                const elRect = stickyEl.getBoundingClientRect();
+                newStickyAtTop = newCanScrollUp && Math.abs(elRect.top - containerRect.top) < 2;
+                newStickyAtBottom = newCanScrollDown && Math.abs(elRect.bottom - containerRect.bottom) < 2;
+                newStickyHeight = Math.round(elRect.height);
 
-                setScrollState(prev => {
-                    if (
-                        prev.canScrollUp !== newCanScrollUp ||
-                        prev.canScrollDown !== newCanScrollDown ||
-                        prev.stickyAtTop !== newStickyAtTop ||
-                        prev.stickyAtBottom !== newStickyAtBottom
-                    ) {
-                        return {
-                            canScrollUp: newCanScrollUp,
-                            canScrollDown: newCanScrollDown,
-                            stickyAtTop: newStickyAtTop,
-                            stickyAtBottom: newStickyAtBottom
-                        };
+                if (stickyElRef.current !== stickyEl) {
+                    if (stickyResizeObserverRef.current) {
+                        stickyResizeObserverRef.current.disconnect();
                     }
-                    return prev;
-                });
+                    stickyElRef.current = stickyEl;
+                    if (typeof ResizeObserver !== 'undefined') {
+                        stickyResizeObserverRef.current = new ResizeObserver(checkScroll);
+                        stickyResizeObserverRef.current.observe(stickyEl);
+                    }
+                }
+            } else if (stickyElRef.current) {
+                if (stickyResizeObserverRef.current) {
+                    stickyResizeObserverRef.current.disconnect();
+                    stickyResizeObserverRef.current = null;
+                }
+                stickyElRef.current = null;
             }
+
+            setScrollState(prev => {
+                if (
+                    prev.canScrollUp !== newCanScrollUp ||
+                    prev.canScrollDown !== newCanScrollDown ||
+                    prev.stickyAtTop !== newStickyAtTop ||
+                    prev.stickyAtBottom !== newStickyAtBottom ||
+                    prev.stickyHeight !== newStickyHeight
+                ) {
+                    return {
+                        canScrollUp: newCanScrollUp,
+                        canScrollDown: newCanScrollDown,
+                        stickyAtTop: newStickyAtTop,
+                        stickyAtBottom: newStickyAtBottom,
+                        stickyHeight: newStickyHeight
+                    };
+                }
+                return prev;
+            });
         });
     }, [containerRef]);
 
@@ -80,6 +103,11 @@ export const useScrollOverflow = (containerRef, { enabled = true } = {}) => {
             }
             resizeObserver.disconnect();
             mutationObserver.disconnect();
+            if (stickyResizeObserverRef.current) {
+                stickyResizeObserverRef.current.disconnect();
+                stickyResizeObserverRef.current = null;
+            }
+            stickyElRef.current = null;
             element?.removeEventListener('scroll', checkScroll);
             window.removeEventListener('resize', checkScroll, { passive: true });
         };

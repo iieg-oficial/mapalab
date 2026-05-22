@@ -4,8 +4,7 @@
 
 | z-index | Componente                    | Ubicacion           | Descripcion                                    |
 |---------|-------------------------------|---------------------|------------------------------------------------|
-| **50**  | FeatureInfoPanel              | Flotante            | Panel de informacion de features (mas arriba)  |
-| **30**  | LayerDetailModal              | Centro inferior     | Modal de detalle de capas                      |
+| **30**  | LayerDetailModal              | Lateral derecho     | Modal de detalle de capas (mas arriba)         |
 | **20**  | MapSider                      | Lateral izquierdo   | Menu lateral de capas                          |
 | **11**  | Barra de busqueda             | Superior derecho    | Busqueda y descarga                            |
 | **10**  | ActiveLayersList              | Superior derecho    | Lista de capas activas                         |
@@ -13,6 +12,7 @@
 | **10**  | ScaleLineControl              | Inferior centro     | Control de escala                              |
 | **10**  | MapControls                   | Inferior derecho    | Controles del mapa (zoom, ubicacion, etc.)     |
 | **10**  | MeasurementControls           | Inferior izquierdo  | Herramientas de medicion                       |
+| **5**   | FeatureInfoPanel (InfoBox)    | Anclado al feature  | Panel de info al click en el mapa; sobre los overlays del mapa (texto/emojis/markers) y debajo de los paneles UI |
 | **1**   | SwipeView (barra/etiquetas)   | Sobre el mapa       | Barra divisora, etiquetas A/B y overlays de hover. Debajo de los paneles para no taparlos |
 
 ## Capas del Mapa (OpenLayers)
@@ -61,13 +61,13 @@
 
 ```
 +-------------------------------------------------------------+
-|  UI: FeatureInfoPanel                         [50]           |  <- Mas arriba
-+-------------------------------------------------------------+
-|  UI: LayerDetailModal                         [30]           |
+|  UI: LayerDetailModal                         [30]           |  <- Mas arriba
 |  UI: MapSider                                 [20]           |
 |  UI: Barra de busqueda                        [11]           |
 |  UI: Paneles y Controles                      [10]           |
 |      (ActiveLayersList, SymbologyPanel, MapControls, etc.)   |
+|  UI: FeatureInfoPanel (InfoBox)               [5]            |  <- Sobre overlays del mapa, debajo de paneles
+|  UI: SwipeView (barra/etiquetas)              [1]            |
 +-------------------------------------------------------------+
 |  Capas vectoriales (dibujo)                   [1000+]        |  <- Herramientas de medicion
 +-------------------------------------------------------------+

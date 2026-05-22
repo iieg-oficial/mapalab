@@ -12,6 +12,58 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.38.3',
+        items: [
+            { text: 'Recuadro de información del punto: ya no queda escondido detrás de los textos, emojis o marcadores que dibujas sobre el mapa. Subimos su nivel para que siempre se vea encima de esos elementos, pero sigue debajo de los paneles del visor.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.38.2',
+        items: [
+            { text: 'Recuadro de información del punto: ya no se sobrepone a la lista de Capas Activas, al menú lateral ni al panel de Detalles. Antes podía taparlos cuando aparecía cerca del borde de esos paneles.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.38.0',
+        items: [
+            { text: 'Eventos: ahora desde el admin de mariachi se puede definir explícitamente qué capa va encima de otra en el mapa (campo "Z" en la tabla de capas del evento). Si no se define nada, las capas se acomodan en el orden natural (las últimas de la lista quedan arriba).', tag: 'changed' },
+        ],
+    },
+    {
+        version: '1.37.3',
+        items: [
+            { text: 'Detalle de capa: al abrir el panel de detalles, ya queda por encima del recuadro de información del punto. Antes el recuadro lo tapaba cuando ambos estaban abiertos al mismo tiempo.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.37.2',
+        items: [
+            { text: 'Capas activas: cuando una capa seleccionada se queda fija al borde del panel (con su periodicidad, acciones y leyenda visibles), las flechas para ir al inicio o al final del listado ya quedan visibles arriba o abajo del item, no escondidas detrás de él. El degradado de los bordes también se ajusta solo al tamaño real del item, incluso cuando la leyenda termina de cargar y crece.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.37.1',
+        items: [
+            { text: 'Detalle del punto (InfoBox): ya no se muestra el contador "1/1" cuando solo hay un resultado en la tarjeta. El número solo aparece cuando hay más de un punto en el mismo lugar.', tag: 'changed' },
+        ],
+    },
+    {
+        version: '1.37.0',
+        items: [
+            { text: 'Detalle del punto (InfoBox): algunos campos pueden mostrarse ahora como enlaces que abren en una pestaña nueva (por ejemplo, fichas en otros sitios). El visor solo permite enlaces hacia páginas web, correos o teléfonos; cualquier otra cosa se ignora por seguridad.', tag: 'added' },
+        ],
+    },
+    {
+        version: '1.36.0',
+        items: [
+            { text: 'Eventos: la barra de acciones del evento (switch "Solo este evento", dato curioso, etc.) ya está disponible para todos, no solo en la versión de pruebas.', tag: 'changed' },
+            { text: 'Eventos: nuevo botón "Centrar evento" que vuelve a encuadrar el mapa sobre el área del evento cuando lo necesites.', tag: 'added' },
+            { text: 'Eventos: si abres un evento y ya tienes alguna de sus capas activa, el visor ya no vuelve a mover el mapa ni a reactivar las capas que apagaste — respeta lo que tenías. Para volver a centrar, usa el botón "Centrar evento".', tag: 'changed' },
+            { text: 'Eventos: quitamos el botón de copiar enlace del evento dentro de la barra de acciones.', tag: 'removed' },
+            { text: 'Eventos: al abrir un evento, las capas se acomodan en el panel "Capas activas" en el mismo orden en que están en el submenú del evento (la primera del submenú queda al frente del mapa).', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.32.0',
         items: [
             { text: 'Eventos: nueva barra de acciones dentro de cada evento (sólo visible en beta) con tres novedades: un switch "Solo este evento" que oculta automáticamente las capas que no pertenecen al evento mientras esté encendido; un botón para copiar el enlace del evento (que abre el visor directamente con ese evento desplegado); y un botón para reportar un problema con datos del evento.', tag: 'added' },

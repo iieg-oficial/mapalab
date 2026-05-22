@@ -15,11 +15,7 @@ import ScrollContainer from '@components/ScrollContainer';
 import ConfirmDropdown from '@components/ConfirmDropdown';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
-import { useSider } from '@contexts/SiderContext';
 import { getDefaultMapView } from '@pages/maps/helpers/defaultView';
-
-const STICKY_SIZE = 52;
-const STICKY_SIZE_MOBILE = 100;
 
 const ActiveLayersListInner = ({ onCollapseChange }) => {
     const {
@@ -42,7 +38,6 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         dateLoops,
         reorderInSlots
     } = useMapsContext();
-    const { isMobile } = useSider();
 
     const isSwipe = !!compareMode?.active;
     const effectiveActiveLayerIds = useMemo(() => {
@@ -111,7 +106,6 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
     const { handleDragEnd } = useLayerSorting(effectiveActiveLayerIds, unifiedLayers, handleReorder);
     const sortableItems = useMemo(() => unifiedLayers.map(l => l.id), [unifiedLayers]);
     const isInegiMode = useMemo(() => effectiveActiveLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id)), [effectiveActiveLayerIds]);
-    const isMobileSticky = isMobile ? STICKY_SIZE_MOBILE : STICKY_SIZE;
 
     const noLayers = unifiedLayers.length === 0;
 
@@ -292,7 +286,6 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
             <ScrollContainer
                 className="flex-1 min-h-0 -mx-0 px-1"
                 overlayFade
-                stickySize={isMobileSticky}
                 clickableArrows
                 minItemsForClick={5}
                 itemCount={unifiedLayers.length}

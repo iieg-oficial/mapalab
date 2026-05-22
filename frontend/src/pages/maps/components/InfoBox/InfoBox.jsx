@@ -288,7 +288,7 @@ const InfoBox = () => {
         <div
             ref={panelRef}
             className={`
-                relative bg-transparent z-50 flex items-stretch gap-2
+                relative bg-transparent z-5 flex items-stretch gap-2
                 ${isSingleFeature ? '-translate-x-1/2 -translate-y-full' : ''}
             `}
             style={positionStyle}
