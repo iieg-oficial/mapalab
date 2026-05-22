@@ -107,15 +107,19 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
                 if (c.autoActivar === false) continue;
                 const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
                 if (layer && !activeIds.includes(layer.id)) {
-                    toActivate.push(layer.id);
+                    toActivate.push({ id: layer.id, z: typeof c.z === 'number' ? c.z : null });
                 }
             }
         };
         walk(evento.capas);
         autoActivatedRef.current = true;
-        for (let i = toActivate.length - 1; i >= 0; i--) {
-            onToggleLayer(toActivate[i], true);
-        }
+        toActivate.sort((a, b) => {
+            if (a.z == null && b.z == null) return 0;
+            if (a.z == null) return -1;
+            if (b.z == null) return 1;
+            return a.z - b.z;
+        });
+        toActivate.forEach(({ id }) => onToggleLayer(id, true));
     }, [evento, allLayers, onToggleLayer, eventoLayerIds]);
 
     const externalActiveIds = useMemo(() => (

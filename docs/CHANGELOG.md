@@ -5,6 +5,31 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.38.0] - 2026-05-22
+
+### Agregado: respeto del campo `z` por capa del evento + revert de iteración inversa
+
+El editor de eventos en mariachi (`1.14.0`) ahora expone un campo `z` opcional por capa que define el orden Z explícito del mapa, desacoplado del orden visual del submenú. El visor lo consume al auto-activar las capas del evento.
+
+#### Qué cambió
+
+- **`frontend/src/pages/maps/components/EventoMenu.jsx`**: revertida la iteración inversa de `toActivate` que metí en `1.36.0` (asumía "primera fila del editor = al frente del mapa"). Ahora cada item se enriquece con `z` (`typeof c.z === 'number' ? c.z : null`), se ordena `toActivate` por `z` **ascendente** (`null` primero, luego z asc), y se procesa con `forEach` normal. Como `handleToggleLayer` hace unshift, las que se procesan más tarde quedan al frente: las con mayor Z terminan al inicio de `activeLayerIds` (= al frente del mapa) y las sin Z quedan al final (= al fondo).
+
+#### Convención resultante (alineada con mariachi `1.14.0`)
+
+| Caso | Z del mapa |
+|---|---|
+| Todas las capas sin `z` | Última fila del editor al frente, primera al fondo (comportamiento original anterior al fix erróneo de 1.36.0) |
+| Una capa con `z=5`, el resto sin `z` | La de Z=5 al frente; las demás en su orden de tabla detrás |
+| `A z=1`, `B z=3`, `C z=2` | B (Z=3) al frente, C (Z=2), A (Z=1) al fondo |
+| Mezcla: `A` sin Z, `B z=2`, `C` sin Z | B al frente; A y C entre sí por posición de tabla |
+
+Sort estable (`Array.prototype.sort` en V8/Node 12+) garantiza que dos capas con mismo `z` (o ambas sin `z`) preservan el orden del `walk(evento.capas)`.
+
+Sin cambios en el cache, schema o endpoints. Eventos viejos sin `z` se comportan como antes del fix de 1.36.0.
+
+---
+
 ## [1.37.3] - 2026-05-22
 
 ### Corregido: modal de detalle de capa queda debajo del InfoBox

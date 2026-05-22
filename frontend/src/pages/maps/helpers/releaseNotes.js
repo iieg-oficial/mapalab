@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.38.0',
+        items: [
+            { text: 'Eventos: ahora desde el admin de mariachi se puede definir explícitamente qué capa va encima de otra en el mapa (campo "Z" en la tabla de capas del evento). Si no se define nada, las capas se acomodan en el orden natural (las últimas de la lista quedan arriba).', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.37.3',
         items: [
             { text: 'Detalle de capa: al abrir el panel de detalles, ya queda por encima del recuadro de información del punto. Antes el recuadro lo tapaba cuando ambos estaban abiertos al mismo tiempo.', tag: 'fixed' },
