@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.37.0',
+        items: [
+            { text: 'Detalle del punto (InfoBox): algunos campos pueden mostrarse ahora como enlaces que abren en una pestaña nueva (por ejemplo, fichas en otros sitios). El visor solo permite enlaces hacia páginas web, correos o teléfonos; cualquier otra cosa se ignora por seguridad.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.36.0',
         items: [
             { text: 'Eventos: la barra de acciones del evento (switch "Solo este evento", dato curioso, etc.) ya está disponible para todos, no solo en la versión de pruebas.', tag: 'changed' },

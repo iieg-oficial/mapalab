@@ -605,6 +605,12 @@ La lógica del modo vive en `helpers/swipeMode.js` como helpers puros (`purgePan
 | `createMunicipioConfig` | Tasas municipales (mayoria de capas) | header + municipio + fecha + text + cards |
 | Config manual | Casos especiales | Definicion libre |
 
+### Hrefs y bloques de texto (v1.37.0)
+
+- Cada fila de `list[]` y cada item de `text[]` acepta un campo `href` con tokens `{nombre_campo}` que se reemplazan por valores del feature (URL-encoded). Si algún token queda sin resolver, el href se descarta y el valor se renderiza como texto. `resolveHref` aplica una allowlist de schemes (`http:`, `https:`, `mailto:`, `tel:` o rutas absolutas `/...`); cualquier otro scheme se descarta para evitar `javascript:` y similares.
+- `finalConfig.text` evolucionó de una lista plana a un array de bloques `{ id, items: [...] }`. `blockOrder` referencia cada bloque con la clave compuesta `text:<id>`, lo que permite intercalar varios bloques de texto entre `labels`, `list`, `cards`, etc. `normalizeFinalConfig` migra automáticamente los configs legacy (`text: [{ field, label, value }, ...]` sin `items`) a la nueva forma, así que los templates existentes siguen funcionando sin cambios.
+- Helpers en `frontend/src/pages/maps/components/InfoBox/utils/infoBoxTextBlocks.js` (`isTextKey`, `textIdOf`, `mkTextKey`, `resolveHref`, `normalizeFinalConfig`).
+
 ## Proyeccion
 
 - Datos y WMS: `EPSG:6368` (Mexico ITRF2008 / LCC)

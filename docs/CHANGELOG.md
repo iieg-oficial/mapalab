@@ -5,6 +5,33 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.37.0] - 2026-05-22
+
+### Agregado: links clicables en InfoBox + múltiples bloques de texto por template
+
+Dos extensiones al sistema de templates de InfoBox:
+
+#### Hrefs en filas de lista y bloques de texto
+
+`<List>` y `<Text>` aceptan ahora una prop `href` que renderiza el valor como `<a target="_blank" rel="noopener noreferrer">` con underline morado (`text-[#5C2472]`). Si `href` no se pasa, el valor sigue siendo texto plano.
+
+En la configuración del template, cada `list[]` y cada item de `text[]` acepta un campo `href` con plantilla. La plantilla soporta tokens `{nombre_campo}` que `resolveHref` (en `infoBoxTextBlocks.js`) reemplaza por el valor del feature (URL-encoded). Si algún token queda sin resolver, el href se descarta y el valor se renderiza como texto. Solo se permiten hrefs con scheme `http:`, `https:`, `mailto:`, `tel:` o rutas absolutas (`/...`) — todo lo demás se descarta.
+
+#### Múltiples bloques de texto independientes
+
+Antes el template tenía un único `text: [...]` que se renderizaba como un bloque contiguo. Ahora `finalConfig.text` es un array de bloques con `{ id, items: [...] }`, lo que permite intercalar varios bloques de texto entre `labels`, `list`, `cards`, etc. via `blockOrder` usando claves `text:<id>`.
+
+Se preserva retrocompatibilidad: `normalizeFinalConfig` detecta la forma legacy (`text: [{ label, value, field, ... }]` sin `items`) y la convierte a `text: [{ id: 't0', items: [...] }]`. Si el `blockOrder` legacy menciona `'text'`, se reescribe como `'text:t0'`. Templates existentes funcionan sin cambios.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/components/InfoBox/components/List.jsx`**: cada fila resuelve `href`; si existe, el valor formateado se envuelve en `<a>` con underline.
+- **`frontend/src/pages/maps/components/InfoBox/components/Text.jsx`**: nueva prop `href`; mismo patrón de `<a>` cuando se pasa.
+- **`frontend/src/pages/maps/components/InfoBox/utils/renderCard.jsx`**: `renderList` recibe `getValue` y resuelve `row.href`. `renderText` reemplazado por `renderTextBlock` (itera `block.items`). `resolveBodyOrder` expande la clave genérica `'text'` en N claves `'text:<id>'`, una por bloque presente, conservando la posición relativa. `renderCard` invoca `normalizeFinalConfig` al recibir el config.
+- **`frontend/src/pages/maps/components/InfoBox/utils/infoBoxTextBlocks.js`** (nuevo): helpers `isTextKey` / `textIdOf` / `mkTextKey` para la clave compuesta; `resolveHref` con allowlist de schemes y reemplazo de tokens; `normalizeFinalConfig` para migrar configs legacy.
+
+---
+
 ## [1.36.0] - 2026-05-22
 
 ### Cambiado: barra de acciones de eventos en producción + botón "Centrar evento"
