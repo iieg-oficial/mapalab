@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.41.0] - 2026-05-22
+
+### Agregado: iconText soporta texto visible separado del campo URL + auto-href en icono `web`
+
+El bloque `iconText` del InfoBox aceptaba `field` (valor a mostrar) y opcionalmente `href` (link literal). Faltaban dos cosas: poder mostrar un texto distinto al valor del campo (ej. "Sitio oficial" en vez de la URL larga del feature), y que el icono `web` resolviera automáticamente el link cuando el `field` apunta a una columna con la URL.
+
+#### Qué cambió
+
+- **`frontend/src/pages/maps/components/InfoBox/components/IconText.jsx`**: nueva prop `hrefValue` (defaults a `value`). `buildHref` ahora maneja `web` además de `celular`/`ubicacion`: si el valor parece URL absoluta la usa tal cual; si no, le antepone `https://`.
+- **`frontend/src/pages/maps/components/InfoBox/utils/renderCard.jsx`**: `renderIconText` ahora computa `displayValue = item.label || item.value || properties[item.field]` (label gana sobre el valor del campo) y pasa `hrefValue = properties[item.field] || item.value || displayValue` para que `buildHref` use la fuente correcta. Cuando hay `item.href` explícito se resuelve con `resolveHref` (soporta tokens `{campo}`, mismo helper que `text`/`list`).
+
+#### Ejemplos
+
+- **Antes**: `{icon: 'web', field: 'sitio_web'}` mostraba la URL completa como texto, no clickeable.
+- **Ahora**: `{icon: 'web', field: 'sitio_web', label: 'Sitio oficial'}` muestra "Sitio oficial" subrayado, link abre `properties.sitio_web` en pestaña nueva.
+- **Token explícito**: `{icon: 'web', label: 'Catastro', href: 'https://catastro.gob.mx/{clave_catastral}'}` resuelve el token contra el feature.
+
+Backward compat: items existentes sin `label` o `href` siguen comportándose igual (el icono `web` ahora también genera link auto, antes no lo hacía sin `href` explícito — diferencia leve pero deseada).
+
+---
+
 ## [1.40.2] - 2026-05-22
 
 ### Corregido: menús flotantes con `bottom-start`/`bottom-end` no se adaptaban al viewport

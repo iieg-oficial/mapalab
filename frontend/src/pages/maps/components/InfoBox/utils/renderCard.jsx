@@ -153,20 +153,24 @@ const renderList = ({ finalConfig, properties, suffix, variant, body, getValue }
     }
 };
 
-const renderIconText = ({ finalConfig, properties, onAction, variant, body }) => {
+const renderIconText = ({ finalConfig, properties, onAction, variant, body, getValue }) => {
     if (!finalConfig.iconText) return;
     const iconTextItems = Array.isArray(finalConfig.iconText) ? finalConfig.iconText : [finalConfig.iconText];
     const validItems = iconTextItems
-        .filter(item => item && (properties[item.field] || item.value))
+        .filter(item => item && (item.label || properties[item.field] || item.value))
         .filter(item => IS_NON_PROD || item.action !== 'report');
     validItems.forEach((item, idx) => {
+        const fieldValue = properties[item.field];
+        const displayValue = item.label || item.value || fieldValue;
         const iconTextProps = {
             icon: item.icon,
-            value: item.value || properties[item.field],
+            value: displayValue,
+            hrefValue: fieldValue || item.value || displayValue,
             showDivider: idx === 0,
             isLast: idx === validItems.length - 1,
         };
-        if (item.href) iconTextProps.href = item.href;
+        const resolvedHref = item.href ? resolveHref(item.href, getValue) : null;
+        if (resolvedHref) iconTextProps.href = resolvedHref;
         if (item.action && onAction) iconTextProps.onClick = () => onAction(item.action);
         body.push(<IconText key={`icontext-${idx}`} {...iconTextProps} variant={variant} />);
     });
