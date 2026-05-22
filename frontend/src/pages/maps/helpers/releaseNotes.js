@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.38.3',
+        items: [
+            { text: 'Recuadro de información del punto: ya no queda escondido detrás de los textos, emojis o marcadores que dibujas sobre el mapa. Subimos su nivel para que siempre se vea encima de esos elementos, pero sigue debajo de los paneles del visor.', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.38.2',
         items: [
             { text: 'Recuadro de información del punto: ya no se sobrepone a la lista de Capas Activas, al menú lateral ni al panel de Detalles. Antes podía taparlos cuando aparecía cerca del borde de esos paneles.', tag: 'fixed' },

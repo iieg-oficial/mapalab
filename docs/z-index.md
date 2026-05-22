@@ -12,8 +12,8 @@
 | **10**  | ScaleLineControl              | Inferior centro     | Control de escala                              |
 | **10**  | MapControls                   | Inferior derecho    | Controles del mapa (zoom, ubicacion, etc.)     |
 | **10**  | MeasurementControls           | Inferior izquierdo  | Herramientas de medicion                       |
+| **5**   | FeatureInfoPanel (InfoBox)    | Anclado al feature  | Panel de info al click en el mapa; sobre los overlays del mapa (texto/emojis/markers) y debajo de los paneles UI |
 | **1**   | SwipeView (barra/etiquetas)   | Sobre el mapa       | Barra divisora, etiquetas A/B y overlays de hover. Debajo de los paneles para no taparlos |
-| **0**   | FeatureInfoPanel (InfoBox)    | Anclado al feature  | Panel de info al click en el mapa; queda sobre el canvas pero debajo de todo panel UI |
 
 ## Capas del Mapa (OpenLayers)
 
@@ -66,8 +66,8 @@
 |  UI: Barra de busqueda                        [11]           |
 |  UI: Paneles y Controles                      [10]           |
 |      (ActiveLayersList, SymbologyPanel, MapControls, etc.)   |
+|  UI: FeatureInfoPanel (InfoBox)               [5]            |  <- Sobre overlays del mapa, debajo de paneles
 |  UI: SwipeView (barra/etiquetas)              [1]            |
-|  UI: FeatureInfoPanel (InfoBox)               [0]            |  <- Debajo de los paneles
 +-------------------------------------------------------------+
 |  Capas vectoriales (dibujo)                   [1000+]        |  <- Herramientas de medicion
 +-------------------------------------------------------------+

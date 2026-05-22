@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.38.3] - 2026-05-22
+
+### Corregido: InfoBox quedaba debajo de los overlays del mapa con `z-0`
+
+En `1.38.2` bajamos el InfoBox a `z-0`. Eso lo dejaba al mismo nivel que los overlays DOM del mapa (texto/emojis del editor en mapa, markers, anotaciones — `ol/Overlay` arranca con z-index `0`), así que dependiendo del orden del DOM el InfoBox podía quedar detrás de ellos. Lo subimos a `z-5`: queda por encima de los overlays del mapa y de `SwipeView` (`z-1`), y sigue por debajo de cualquier panel UI (`z-10` en adelante).
+
+#### Qué cambió
+
+- **`frontend/src/pages/maps/components/InfoBox/InfoBox.jsx`**: contenedor desktop pasa de `z-0` a `z-5`.
+- **`docs/z-index.md`**: tabla y diagrama reflejan el nuevo nivel.
+
+---
+
 ## [1.38.2] - 2026-05-22
 
 ### Corregido: InfoBox se anteponía a Capas Activas, MapSider y otros paneles
