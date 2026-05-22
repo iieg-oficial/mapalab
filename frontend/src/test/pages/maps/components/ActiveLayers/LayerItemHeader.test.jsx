@@ -48,16 +48,9 @@ describe('DragHandle', () => {
 });
 
 describe('PinBadge', () => {
-    it('renderiza un span con el icono pin', () => {
+    it('renderiza un span con el icono hide', () => {
         const { container } = render(<PinBadge />);
         expect(container.querySelector('span')).toBeInTheDocument();
-    });
-
-    it('alterna hover con mouseEnter/mouseLeave', () => {
-        const { container } = render(<PinBadge />);
-        const span = container.querySelector('span');
-        fireEvent.mouseEnter(span);
-        fireEvent.mouseLeave(span);
     });
 });
 

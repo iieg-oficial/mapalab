@@ -62,17 +62,6 @@ const icons = {
         </svg>
     ),
     bug: colibriIcon,
-    tool_mediciones: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M8 42L42 8" />
-            <path d="M14 42l-6 6" />
-            <path d="M22 36l-3 3" />
-            <path d="M28 30l-3 3" />
-            <path d="M34 24l-3 3" />
-            <path d="M40 18l-3 3" />
-            <circle cx="48" cy="48" r="3" fill="currentColor" />
-        </svg>
-    ),
     tool_swipe: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="6" y="12" width="48" height="36" rx="2" />

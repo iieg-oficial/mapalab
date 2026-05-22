@@ -12,7 +12,7 @@ const allTools = [
         id: 'mediciones',
         label: 'Mediciones',
         description: 'Punto, linea, poligono, texto',
-        icon: 'tool_mediciones',
+        icon: 'medicion',
     },
     {
         id: 'compare-swipe',
