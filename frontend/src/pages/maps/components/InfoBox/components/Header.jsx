@@ -3,7 +3,7 @@ import Icon from '@components/Icon';
 const FeatureHeader = ({ value, onClose, index, total }) => {
     if (!value) return null;
 
-    const showBadge = index != null && total != null && total > 0;
+    const showBadge = index != null && total != null && total > 1;
 
     return (
         <div className="relative w-full min-h-[61px] bg-[#EFF3FC] rounded-t-[10px] px-12 py-2 mb-3 flex items-center">

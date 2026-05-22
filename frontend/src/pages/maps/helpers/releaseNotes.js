@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.37.1',
+        items: [
+            { text: 'Detalle del punto (InfoBox): ya no se muestra el contador "1/1" cuando solo hay un resultado en la tarjeta. El número solo aparece cuando hay más de un punto en el mismo lugar.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.37.0',
         items: [
             { text: 'Detalle del punto (InfoBox): algunos campos pueden mostrarse ahora como enlaces que abren en una pestaña nueva (por ejemplo, fichas en otros sitios). El visor solo permite enlaces hacia páginas web, correos o teléfonos; cualquier otra cosa se ignora por seguridad.', tag: 'added' },

@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.37.1] - 2026-05-22
+
+### Cambiado: ocultar contador `1/1` en el header del InfoBox
+
+Cuando una capa devuelve un único feature, el badge `1/1` ya no se renderiza en el header de la tarjeta (ni desktop ni mobile). La condición pasó de `total > 0` a `total > 1` en ambos headers. El layout no cambia: en desktop el badge está en `position: absolute` con el padding lateral (`px-12`) reservado, así que el título sigue centrado idéntico; en mobile el badge vive en un flex con el título en `flex-1`, así que al ocultarse el título solo absorbe el espacio liberado.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/components/InfoBox/components/Header.jsx`**: `showBadge` ahora exige `total > 1`.
+- **`frontend/src/pages/maps/components/InfoBox/components/MobileFeatureHeader.jsx`**: misma condición.
+
+---
+
 ## [1.37.0] - 2026-05-22
 
 ### Agregado: links clicables en InfoBox + múltiples bloques de texto por template
