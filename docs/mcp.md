@@ -155,6 +155,26 @@ El gateway-hub no necesita un `location` específico para `/mapalab/api/mcp/`: c
 
 Para cambiar el nombre o el texto que ve un cliente MCP, basta editar `operation_id`, `summary` o `description` en el decorador del endpoint correspondiente.
 
+## Identificadores aceptados (v1.40.1+)
+
+Tres tools comparten el mismo problema: el agente recibe un `id` de capa al llamar `search_layers` (p. ej. `tasa_homicidio_doloso`), pero originalmente `get_metadata`, `resolve_layer_ref` y `get_periodicity` esperaban valores distintos al `id` del visor. Esto rompía el flujo natural `search_layers → get_metadata` con respuestas vacías o 404.
+
+Desde **1.40.1** los tres tools aceptan tanto el identificador del visor (`Layer.id`) como el del backend (`geoserver_layer` / slug / alias). Sin breaking change: si ya pasabas el valor original, sigue funcionando.
+
+| Tool | Antes esperaba | Ahora también acepta |
+|---|---|---|
+| `get_metadata(workspace, layer)` | `workspace=<geoserver_workspace>`, `layer=<geoserver_layer>` (p. ej. `seguridad_y_proteccion_ciudadana`, `datos_delitos_homicidio_doloso_secretariado`) | `workspace=<alias>`, `layer=<Layer.id>` (p. ej. `seguridad`, `tasa_homicidio_doloso`) |
+| `resolve_layer_ref(ref)` | `Layer.slug` o `LayerAlias.alias` | `Layer.id` como fallback final |
+| `get_periodicity(workspace, layer)` | `{geoserver_workspace}:{geoserver_layer}` literal | resuelve alias → schema y `Layer.id` → `geoserver_layer` |
+
+La resolución vive en helpers compartidos:
+
+- `backend/app/services/layer_metadata_service.py::_resolve_layer_key` — workspace alias → `geoserver_workspace` y, si `(workspace_alias, id)` matchea una fila en `mapalab.layers`, usa su `geoserver_layer`.
+- `backend/app/services/periodicity_service.py::_resolve_layer_key` — análogo pero contra `db_schema` (PostGIS) en lugar de `geoserver_workspace`.
+- `backend/app/repositories/layers_repository.py::find_layer_by_slug_or_alias` — busca `Layer.slug`, luego `LayerAlias`, luego `Layer.id` como último intento.
+
+`get_periodicities_batch` resuelve cada par `ws:layer` antes de consultar `layer_periodicity`, así un agente puede pasar `seguridad:tasa_homicidio_doloso` y recibir la respuesta sin saber el schema real (`seguridad_y_proteccion_ciudadana:datos_delitos_homicidio_doloso_secretariado`).
+
 ## Cómo probar
 
 ### Inspector oficial (lo más rápido)

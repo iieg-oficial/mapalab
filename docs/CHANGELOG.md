@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.40.1] - 2026-05-22
+
+### Corregido: tools MCP `get_metadata`, `resolve_layer_ref` y `get_periodicity` aceptan `Layer.id` del visor
+
+El contrato entre tools era inconsistente: `search_layers` devuelve `id` con el formato del visor (p. ej. `tasa_homicidio_doloso`), pero los otros tools esperaban distintos identificadores derivados (geoserver_layer, slug/alias, schema en PostGIS). Un agente que encadenaba `search_layers → get_metadata` con el `id` recibido recibía `[]`; `resolve_layer_ref` siempre devolvía 404 porque `Layer.slug` y `LayerAlias` no están poblados; `get_periodicity` con el alias del workspace devolvía `null` porque la `layer_key` real usa el `db_schema` completo (`seguridad_y_proteccion_ciudadana`, no `seguridad`).
+
+Los tres tools ahora resuelven el identificador antes de consultar, manteniendo compatibilidad si ya se pasaba el valor exacto.
+
+- **`backend/app/services/layer_metadata_service.py`**: `_resolve_layer_key` extraído a `_resolve_workspace_name` + lookup en `mapalab.layers` por `(workspace_alias, id)`. Si la fila existe usa `Layer.geoserver_layer`, si no deja el `layer` tal cual recibido.
+- **`backend/app/services/periodicity_service.py`**: nuevo `_resolve_layer_key` análogo (alias → `db_schema`, `Layer.id` → `geoserver_layer`). `get_periodicity` y `get_periodicities_batch` ahora lo invocan antes de consultar `public.layer_periodicity`; el batch deduplica las keys resueltas.
+- **`backend/app/repositories/layers_repository.py`**: `find_layer_by_slug_or_alias` agrega fallback final `Layer.id == ref` para el caso esperable donde slug/alias no están poblados.
+- **`docs/mcp.md`**: sección nueva "Identificadores aceptados" con la tabla del contrato.
+
+Sin cambios de schema. Reutilizable desde REST también: los tres endpoints REST (`/metadata/`, `/layers/resolve`, `/periodicity/`) heredan la robustez al pasar por los mismos servicios.
+
+---
+
 ## [1.38.3] - 2026-05-22
 
 ### Corregido: InfoBox quedaba debajo de los overlays del mapa con `z-0`
