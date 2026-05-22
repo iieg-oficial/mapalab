@@ -1,5 +1,6 @@
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayerLoading } from '@hooks/useLayerLoading';
+import { useEventoContext } from '@hooks/useEvento';
 import { useSider } from '@contexts/SiderContext';
 import Loading from '@components/Loading';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -8,7 +9,7 @@ import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { LOOP_INTERVAL_PRESETS } from '@hooksMaps/useDateLoop';
 import { handleKeyActivate } from '@utils/a11y';
 
-import { DragHandle, LayerTitle, PinBadge } from './LayerItemHeader';
+import { DragHandle, LayerTitle, PinBadge, EventoLayerIcon } from './LayerItemHeader';
 import LayerDateControls from './LayerDateControls';
 import LayerActionsBar from './LayerActionsBar';
 import LayerInlineActions from './LayerInlineActions';
@@ -48,6 +49,12 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         setLayerOpacity,
         setActiveSlot
     } = useMapsContext();
+
+    const { findEventoByLayerId } = useEventoContext();
+    const layerEvento = useMemo(
+        () => findEventoByLayerId?.(layer.id) || null,
+        [findEventoByLayerId, layer.id]
+    );
 
     const slotMembership = useMemo(() => {
         if (!compareMode?.active) return null;
@@ -211,7 +218,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                     <div className="flex items-center gap-2 min-h-8 w-full">
                         {isPinned && <PinBadge />}
                         {showHandle && <DragHandle dragHandleProps={dragHandleProps} />}
-                        {!isSelected && !isMobile && isHovered && (
+                        {!isSelected && !isMobile && isHovered ? (
                             <LayerInlineActions
                                 visible={layer.visible}
                                 isLoading={isLoading}
@@ -223,6 +230,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 slotMembership={slotMembership}
                                 activeSlot={compareMode?.activeSlot}
                             />
+                        ) : (
+                            <EventoLayerIcon evento={layerEvento} />
                         )}
                         <LayerTitle name={layer.name} />
                         {isLoading && !isLooping && (

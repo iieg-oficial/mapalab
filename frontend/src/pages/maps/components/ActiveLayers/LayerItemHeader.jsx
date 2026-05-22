@@ -47,3 +47,26 @@ export const PinBadge = () => {
         </Tooltip>
     );
 };
+
+export const EventoLayerIcon = ({ evento }) => {
+    if (!evento?.iconoUrl) return null;
+    const tooltipContent = (
+        <div className="flex flex-col gap-0.5 leading-tight">
+            <span className="font-semibold">{evento.titulo}</span>
+            <span className="text-[11px] opacity-80">Capa que forma parte de este evento</span>
+        </div>
+    );
+    return (
+        <Tooltip content={tooltipContent}>
+            <span className="shrink-0 inline-flex items-center justify-center">
+                <img
+                    src={evento.iconoUrl}
+                    alt={evento.titulo || 'evento'}
+                    loading="lazy"
+                    decoding="async"
+                    className="size-6 object-cover rounded"
+                />
+            </span>
+        </Tooltip>
+    );
+};
