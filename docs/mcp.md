@@ -85,13 +85,15 @@ app.add_middleware(MCPTelemetryMiddleware, path_prefix='/mcp')
 
 ## Rutas
 
-| Origen | URL |
+| Origen | URL canonica |
 |---|---|
-| Interna (entre containers) | `http://mapalab-mcp:8000/mcp/` |
-| Local desde host (puerto publicado) | `http://localhost:3006/api/mcp/` |
-| Vía gateway-hub (staging/prod) | `https://<dominio>/mapalab/api/mcp/` |
+| Interna (entre containers) | `http://mapalab-mcp:8000/mcp` |
+| Local desde host (puerto publicado) | `http://localhost:3006/api/mcp` |
+| Via gateway-hub (staging/prod) | `https://<dominio>/mapalab/api/mcp` |
 
-Nota: el path final lleva slash. `mcp.http_app(path='/mcp/')` se monta con slash; sin el, FastMCP redirige `/mcp/` → `/mcp` con 307 que `curl -X POST` no sigue.
+**Sin slash final** — alineado con el patron de `iieg-oficial/agent/servers` (sql, analytics, charts, etc. todos montan en `path="/mcp"` sin slash). Asi un cliente que ya consume varios servers MCP del ecosistema usa la misma forma.
+
+Tanto `/api/mcp` como `/api/mcp/` funcionan: nginx tiene dos `location =` exactos (sin slash y con slash) que pegan al backend siempre sin slash. `mcp.http_app(path='/mcp', stateless_http=True)` se monta sin slash, evitando el 307 que apareceria si nginx pegara con slash a un mount sin slash.
 
 ## Configuración de nginx
 

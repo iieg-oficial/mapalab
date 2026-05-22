@@ -287,7 +287,7 @@ async def metrics():
     return await metrics_module.metrics()
 
 
-mcp_app = mcp.http_app(path='/mcp/', stateless_http=True)
+mcp_app = mcp.http_app(path='/mcp', stateless_http=True)
 
 
 app = FastAPI(

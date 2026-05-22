@@ -5,6 +5,28 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.35.1] - 2026-05-22
+
+### Cambiado: path del MCP sin slash final para alinear con iieg-oficial/agent
+
+Los 9 servers MCP de `iieg-oficial/agent` (sql, analytics, charts, rag, files, utils, summary, tavily, vision) montan todos con `http_app(path="/mcp", stateless_http=True)` — sin slash final. La 1.35.0 de mapalab uso slash (`path='/mcp/'`) porque era la forma mas directa de evitar el 307 redirect cuando nginx pegaba con slash al backend. Esto generaba ruido al integrar mapalab en IGIBot, donde todos los demas MCP servers usan sin slash.
+
+#### Que cambio
+
+- **`servers/mapalab.py`**: `mcp.http_app(path='/mcp', stateless_http=True)` (sin slash).
+- **`nginx/nginx.conf`**: dos `location =` exactos (sin slash y con slash) que pegan ambos al backend en `/mcp` sin slash:
+  ```nginx
+  location = /api/mcp       { proxy_pass http://mapalab_mcp/mcp; ... }
+  location = /api/mcp/      { proxy_pass http://mapalab_mcp/mcp; ... }
+  location = /mapalab/api/mcp  { proxy_pass http://mapalab_mcp/mcp; ... }
+  location = /mapalab/api/mcp/ { proxy_pass http://mapalab_mcp/mcp; ... }
+  ```
+- **`docs/mcp.md`** + **playground en mariachi-admin**: URL canonica `/api/mcp` (sin slash). La forma con slash sigue funcionando por compatibilidad con clientes que ya la usaban.
+
+Sin cambios en el contrato de tools, telemetria, dashboard ni alertas.
+
+---
+
 ## [1.35.0] - 2026-05-21
 
 ### Cambiado: servidor MCP movido a un container dedicado `mapalab-mcp`
