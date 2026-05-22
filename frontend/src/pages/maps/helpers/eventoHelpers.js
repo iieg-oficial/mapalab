@@ -41,28 +41,36 @@ export const findLayerByWorkspaceLayer = (workspace, layer, nodes) => {
 
 const collectEventoLayerIds = (evento, layerIndex) => {
     const ids = new Set();
+    const aliasById = new Map();
     const walk = (capas) => {
         for (const c of capas || []) {
             if (c.tipo === 'etiqueta') continue;
             if (c.tipo === 'categoria') { walk(c.capas); continue; }
             const layer = layerIndex.get(indexKey(c.workspace, c.layer));
-            if (layer) ids.add(layer.id);
+            if (!layer) continue;
+            ids.add(layer.id);
+            const alias = typeof c.alias === 'string' ? c.alias.trim() : '';
+            if (alias && !aliasById.has(layer.id)) aliasById.set(layer.id, alias);
         }
     };
     walk(evento?.capas);
-    return ids;
+    return { ids, aliasById };
 };
 
 export const buildEventoIndex = (eventos, allLayers) => {
     const layerIndex = buildLayerIndex(allLayers);
     const eventoByLayerId = new Map();
     const layerIdsByEvento = new Map();
+    const aliasByLayerId = new Map();
     for (const evento of eventos || []) {
-        const ids = collectEventoLayerIds(evento, layerIndex);
+        const { ids, aliasById } = collectEventoLayerIds(evento, layerIndex);
         layerIdsByEvento.set(evento.id, ids);
         for (const id of ids) {
             if (!eventoByLayerId.has(id)) eventoByLayerId.set(id, evento);
         }
+        for (const [id, alias] of aliasById) {
+            if (!aliasByLayerId.has(id)) aliasByLayerId.set(id, alias);
+        }
     }
-    return { layerIndex, eventoByLayerId, layerIdsByEvento };
+    return { layerIndex, eventoByLayerId, layerIdsByEvento, aliasByLayerId };
 };

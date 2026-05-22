@@ -30,7 +30,7 @@ const LayerDetailModal = () => {
         getLoopPrefs, setLoopIntervalMs, setLoopDirection, allLayers,
         compareMode, applyFilterToSlot, clearFilterFromSlot, setActiveSlot,
     } = useContext(MapsContext);
-    const { activeEvento } = useEventoContext();
+    const { activeEvento, getAliasByLayerId } = useEventoContext();
     const [expandedYear, setExpandedYear] = useState(null);
 
     const layerDef = useMemo(() => {
@@ -199,7 +199,7 @@ const LayerDetailModal = () => {
                                 themeName={themeName}
                             />
                             <h3 className="text-[18px]/[47px] font-garet font-extrabold text-[#5C2472] tracking-normal">
-                                {selectedLayer.name || selectedLayer.label || layerDef?.label || 'Capa sin nombre'}
+                                {getAliasByLayerId?.(selectedLayer.id) || selectedLayer.name || selectedLayer.label || layerDef?.label || 'Capa sin nombre'}
                             </h3>
 
                             {(metadata?.frecuencia_actualizacion || metadata?.fecha_ultima_actualizacion) && (

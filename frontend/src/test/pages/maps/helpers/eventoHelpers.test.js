@@ -117,4 +117,31 @@ describe('buildEventoIndex', () => {
         const { layerIdsByEvento } = buildEventoIndex(eventos, allLayers);
         expect(Array.from(layerIdsByEvento.get(5))).toEqual(['capa-2']);
     });
+
+    it('mapea aliasByLayerId con alias trimmeado cuando viene definido', () => {
+        const eventos = [
+            { id: 1, capas: [{ tipo: 'capa', workspace: 'a', layer: 'x', alias: '  Lluvia abril 2024  ' }] },
+        ];
+        const { aliasByLayerId } = buildEventoIndex(eventos, allLayers);
+        expect(aliasByLayerId.get('capa-1')).toBe('Lluvia abril 2024');
+    });
+
+    it('no agrega entrada en aliasByLayerId cuando alias esta vacio o ausente', () => {
+        const eventos = [
+            { id: 1, capas: [{ tipo: 'capa', workspace: 'a', layer: 'x' }] },
+            { id: 2, capas: [{ tipo: 'capa', workspace: 'b', layer: 'y', alias: '   ' }] },
+        ];
+        const { aliasByLayerId } = buildEventoIndex(eventos, allLayers);
+        expect(aliasByLayerId.has('capa-1')).toBe(false);
+        expect(aliasByLayerId.has('capa-2')).toBe(false);
+    });
+
+    it('aliasByLayerId conserva el primer alias en colisiones entre eventos', () => {
+        const eventos = [
+            { id: 1, capas: [{ tipo: 'capa', workspace: 'a', layer: 'x', alias: 'Primero' }] },
+            { id: 2, capas: [{ tipo: 'capa', workspace: 'a', layer: 'x', alias: 'Segundo' }] },
+        ];
+        const { aliasByLayerId } = buildEventoIndex(eventos, allLayers);
+        expect(aliasByLayerId.get('capa-1')).toBe('Primero');
+    });
 });

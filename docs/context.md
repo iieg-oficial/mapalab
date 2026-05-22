@@ -155,7 +155,7 @@ Router (React Router 7)
         ├── usePeriodicityCache   — cache de fechas disponibles
         └── EventoProvider (envuelve children, requiere allLayers de MapsContext)
             ├── useEventos              — fetch + watcher de versiones
-            ├── useEventoLayerIndex     — Map plano workspace|layer→node + eventoByLayerId
+            ├── useEventoLayerIndex     — Map plano workspace|layer→node + eventoByLayerId + aliasByLayerId
             └── activeEvento + setter   — evento abierto en el menu
 ```
 
@@ -576,6 +576,8 @@ Apertura por URL vía `useAutoOpenEventoFromUrl({setAutoOpenMenuId, setIsHovered
 Símbolos del catálogo MapaLab → Símbolos en `<SymbolGlyph>` (`pages/maps/components/SymbolGlyph.jsx`): renderiza el snapshot inline. Snapshot guardado en `eventos.fun_icon` y en cada `fact.symbol` como JSONB `{symbolId, kind, value, imageUrl, name}` para no necesitar cross-DB FK al schema `mapalab.symbols` de DataEngine.
 
 Helpers compartidos en `pages/maps/helpers/eventoHelpers.js` (`buildLayerIndex`, `buildEventoIndex`, `findLayerByWorkspaceLayer`, `getEventoLayerIds`, `findEventoByLayerId`, `slugifyTitulo`). El index plano `workspace|layer → node` se construye una vez por cambio de árbol y se reusa para todos los lookups.
+
+`buildEventoIndex` también construye `aliasByLayerId` (Map<layerId, alias>) recogiendo el campo `c.alias` definido en mariachi por cada capa del evento. En colisiones (una capa en varios eventos con aliases distintos) gana el primero, mismo patrón que `eventoByLayerId`. El provider expone `getAliasByLayerId(layerId)` y lo consumen `useActiveLayersLogic` (panel de capas activas) y `<LayerDetailModal>` para mostrar el alias del evento como `name` de la capa cuando existe; si no, cae al `layer.label` del árbol. Resuelve casos donde el `label` del catálogo es el slug GeoServer (capas auto-leaf creadas vía editor de evento) y el alias del evento es el "nombre humano" real. `useActiveLayersLogic` consume `EventoContext` con `useContext` directo (no `useEventoContext`) para no romper tests sin provider.
 
 ## Comparador (swipe)
 
