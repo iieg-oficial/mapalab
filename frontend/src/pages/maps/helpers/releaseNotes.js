@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.37.2',
+        items: [
+            { text: 'Capas activas: cuando una capa seleccionada se queda fija al borde del panel (con su periodicidad, acciones y leyenda visibles), las flechas para ir al inicio o al final del listado ya quedan visibles arriba o abajo del item, no escondidas detrás de él. El degradado de los bordes también se ajusta solo al tamaño real del item, incluso cuando la leyenda termina de cargar y crece.', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.37.1',
         items: [
             { text: 'Detalle del punto (InfoBox): ya no se muestra el contador "1/1" cuando solo hay un resultado en la tarjeta. El número solo aparece cuando hay más de un punto en el mismo lugar.', tag: 'changed' },

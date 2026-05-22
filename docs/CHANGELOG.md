@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.37.2] - 2026-05-22
+
+### Corregido: flechas y degradado del `ScrollContainer` en el panel de Capas Activas
+
+Cuando un item del panel "Capas Activas" se selecciona, se vuelve `position: sticky` (vía `[data-sticky]` en `SortableList`) y crece con periodicidad, barra de acciones y leyenda (`GetLegendGraphic`, que además carga asíncrona). Antes el `ScrollContainer` usaba una constante `STICKY_SIZE = 52` (100 en mobile) para posicionar las flechas "ir al inicio / al final" y el degradado superior/inferior. El item expandido medía mucho más que 52 px, así que las flechas y el degradado caían **dentro** del item sticky: ocultos detrás de la leyenda y sin poder clickearse.
+
+Ahora `useScrollOverflow` mide la altura real del elemento `[data-sticky]` con `getBoundingClientRect` y le monta un `ResizeObserver` dedicado para captar el crecimiento asíncrono cuando carga la imagen de la leyenda. El nuevo campo `stickyHeight` se propaga a `ScrollContainer`, que lo prefiere sobre la prop `stickySize` (que queda como fallback opcional).
+
+#### Que cambio
+
+- **`frontend/src/hooks/useScrollOverflow.js`**: nuevo `stickyHeight` en el estado, calculado desde `getBoundingClientRect` del `[data-sticky]`. `ResizeObserver` dedicado al sticky que se conecta/desconecta automáticamente cuando aparece o cambia.
+- **`frontend/src/components/ScrollContainer.jsx`**: `topOffset` / `bottomOffset` usan `stickyHeight || stickySize`. Sin cambios para consumidores sin `[data-sticky]` interno.
+- **`frontend/src/pages/maps/components/ActiveLayers/ActiveLayersList.jsx`**: removido el hardcode `STICKY_SIZE = 52` / `STICKY_SIZE_MOBILE = 100` y la prop `stickySize` que se pasaba al `ScrollContainer`. También se quitó el `useSider`/`isMobile` que ya no se usaba.
+
+---
+
 ## [1.37.1] - 2026-05-22
 
 ### Cambiado: ocultar contador `1/1` en el header del InfoBox
