@@ -12,6 +12,7 @@ import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useEventoContext } from '@hooks/useEvento';
 import { useAutoOpenEventoFromUrl } from '@pages/maps/hooks/useAutoOpenEventoFromUrl';
+import { aggregateFactsFromEventos } from '@pages/maps/helpers/funFactPicker';
 import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
 
 import { trackSiderLock, trackLogoClick, trackMeasurementPanelOpen } from '@services/analyticsService';
@@ -21,6 +22,7 @@ import { useZenMode } from './ZenMode';
 import MenuItem from './MenuItem';
 import SiderModeButton from './SiderModeButton';
 import EnvBadge from './EnvBadge';
+import EventoFunButton from './EventoFunButton';
 
 const SIDER_EVENTS_ENABLED = false;
 const EMPTY_EVENTOS = Object.freeze([]);
@@ -68,7 +70,6 @@ const MapSider = ({ className = '' }) => {
     const contentRef = useRef(null);
     const { canScrollUp, canScrollDown } = useScrollOverflow(contentRef);
     const [autoOpenMenuId, setAutoOpenMenuId] = useState(null);
-    const [showModeBtn, setShowModeBtn] = useState(false);
     const autoOpenProcessedRef = useRef(false);
     const navigate = useNavigate();
 
@@ -134,8 +135,15 @@ const MapSider = ({ className = '' }) => {
         }
     }, [areMeasurementToolsVisible, toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
 
-    const { eventos } = useEventoContext();
+    const { eventos, activeEvento } = useEventoContext();
     const eventosForSider = SIDER_EVENTS_ENABLED ? eventos : EMPTY_EVENTOS;
+
+    const globalFactsEvento = useMemo(() => {
+        const facts = aggregateFactsFromEventos(eventos);
+        const firstWithFacts = (eventos || []).find((e) => Array.isArray(e?.facts) && e.facts.length > 0);
+        return { id: 'sider-global-facts', facts, funIcon: firstWithFacts?.funIcon || null };
+    }, [eventos]);
+    const showGlobalFunButton = !activeEvento && globalFactsEvento.facts.length > 0;
 
     const menuItems = useMemo(() =>
         createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers, eventos: eventosForSider }),
@@ -214,8 +222,6 @@ const MapSider = ({ className = '' }) => {
                     onTouchEnd={handleLogoTouchEnd}
                     onTouchCancel={handleLogoTouchEnd}
                     onContextMenu={(e) => treatAsMobile && e.preventDefault()}
-                    onMouseEnter={() => setShowModeBtn(true)}
-                    onMouseLeave={() => setShowModeBtn(false)}
                 >
                     <Logo
                         name="mapalab"
@@ -229,12 +235,20 @@ const MapSider = ({ className = '' }) => {
                     />
                     <EnvBadge />
                     {!isMobile && (
-                        <div className={[
-                            'absolute right-0 bottom-0 translate-x-1/2 translate-y-1/2 z-10 transition-opacity duration-200',
-                            lockMode !== 'auto' || showModeBtn ? 'opacity-100' : 'opacity-0',
-                        ].join(' ')}>
-                            <SiderModeButton lockMode={lockMode} onToggle={handleToggleLock} />
-                        </div>
+                        <>
+                            <div className="absolute right-0 bottom-0 translate-x-1/2 translate-y-1/2 z-10">
+                                <SiderModeButton lockMode={lockMode} onToggle={handleToggleLock} />
+                            </div>
+                            {showGlobalFunButton && (
+                                <div className="absolute right-0 bottom-0 translate-x-1/2 translate-y-[calc(50%+20px)] z-10">
+                                    <EventoFunButton
+                                        evento={globalFactsEvento}
+                                        sizeClass="size-5"
+                                        iconSize={12}
+                                    />
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
                 {(!treatAsMobile || isOpen) && (
@@ -252,11 +266,7 @@ const MapSider = ({ className = '' }) => {
                                         : ''
                         ].join(' ')}
                     >
-                        <div
-                            className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3"
-                            onMouseEnter={() => setShowModeBtn(true)}
-                            onMouseLeave={() => setShowModeBtn(false)}
-                        >
+                        <div className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3">
                             {menuItems.slice(0, baseItemsEnd).map((item, index) => (
                                 <div
                                     key={item.id || index}
@@ -273,11 +283,7 @@ const MapSider = ({ className = '' }) => {
                             ))}
                         </div>
                         {!treatAsMobile && eventCount > 0 && (
-                            <div
-                                className="flex flex-col gap-2"
-                                onMouseEnter={() => setShowModeBtn(true)}
-                                onMouseLeave={() => setShowModeBtn(false)}
-                            >
+                            <div className="flex flex-col gap-2">
                                 {menuItems.slice(baseItemsEnd, eventItemsEnd).map((item, index) => (
                                     <div
                                         key={item.id || index}

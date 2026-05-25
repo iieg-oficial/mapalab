@@ -97,7 +97,10 @@ const MobileFactBanner = ({ popover }) => (
     </div>
 );
 
-const EventoFunButton = ({ evento }) => {
+const DEFAULT_SIZE_CLASS = 'w-7 h-7 md:w-6 md:h-6';
+const DEFAULT_ICON_SIZE = 16;
+
+const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DEFAULT_ICON_SIZE }) => {
     const buttonRef = useRef(null);
     const popoverTimerRef = useRef(null);
     const dismissTimerRef = useRef(null);
@@ -189,9 +192,9 @@ const EventoFunButton = ({ evento }) => {
                     type="button"
                     onClick={handleClick}
                     aria-label="Mostrar dato curioso del evento"
-                    className="w-7 h-7 md:w-6 md:h-6 rounded-full bg-white flex items-center justify-center shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+                    className={`${sizeClass} rounded-full bg-white flex items-center justify-center shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] hover:scale-110 active:scale-95 transition-transform cursor-pointer`}
                 >
-                    <SymbolGlyph symbol={eventoSymbol} size={16} />
+                    <SymbolGlyph symbol={eventoSymbol} size={iconSize} />
                 </button>
             </Tooltip>
 

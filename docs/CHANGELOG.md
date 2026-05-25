@@ -5,6 +5,35 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.46.0] - 2026-05-25
+
+### Botón global de dato curioso siempre visible en el sider
+
+El `<EventoFunButton>` solo aparecía dentro del panel del evento (vía `<EventoActionsBar>`). Eso significa que el usuario no descubría la mecánica de "datos curiosos" hasta abrir un evento, perdiendo afordancia. Ahora hay un **botón global** anclado debajo del `<SiderModeButton>` (botón de control de lockMode del sider), siempre visible en desktop. Comparte componente con el del panel — sin duplicar lógica de animación, popover, bolas, ni telemetría.
+
+#### Comportamiento
+
+- **Panel del evento cerrado** (`!activeEvento`) → el botón aparece en el sider, debajo del SiderModeButton, tamaño compacto `size-8` (32×32) pegado al SiderModeButton sin gap. Usa el `funIcon` del **primer evento con facts** para el ícono estático (dinámico, configurado desde mariachi por evento).
+- **Panel del evento abierto** (`activeEvento`) → el del sider se oculta automáticamente, y aparece el mismo componente dentro de `<EventoActionsBar>` con su tamaño original (`size-7`/`size-6` md) y el `funIcon` específico del evento abierto.
+
+Resultado: un solo botón visible a la vez, sin solapamiento, con afordancia continua independientemente del estado del panel.
+
+#### Cambios técnicos
+
+- **`EventoFunButton.jsx`**: ahora acepta props `sizeClass` e `iconSize` (defaults `'w-7 h-7 md:w-6 md:h-6'` y `16` para preservar comportamiento previo dentro de `EventoActionsBar`).
+- **`helpers/funFactPicker.js`**: nuevo export `aggregateFactsFromEventos(eventos)` que junta facts de todos los eventos preservando símbolos por fact (cada fact mantiene su `symbol`, con fallback al `funIcon` del evento padre). Las bolas animadas del botón global muestran el símbolo correcto por fact.
+- **`MapSider.jsx`**:
+  - Importa `useEventoContext` (ya estaba), extrae `activeEvento` del contexto.
+  - Construye `globalFactsEvento = { id: 'sider-global-facts', facts, funIcon }` memoizado por `eventos`. `funIcon` toma del primer evento con facts.
+  - Renderiza `<EventoFunButton evento={globalFactsEvento} sizeClass="size-8" iconSize={22} />` cuando `!activeEvento && facts.length > 0`, en un contenedor absoluto `right-0 bottom-0 translate-x-1/2 translate-y-[calc(50%+32px)]` (pegado directamente al SiderModeButton sin gap).
+  - El `SiderModeButton` ahora está **siempre visible** (antes se desvanecía con `opacity-0` cuando `lockMode === 'auto'` y no había hover). Removida la state `showModeBtn` y los handlers `onMouseEnter`/`onMouseLeave` que la alimentaban (3 lugares).
+
+#### Justificación de tamaño + posicionamiento
+
+El SiderModeButton es 40×40 (`img className="size-10"`). El FunButton del sider quedó en 32×32 para verse visualmente "del mismo tamaño" que el ícono del SiderModeButton (que ocupa ~28-32px efectivos dentro de su PNG, no los 40 nominales) — match perceptual, no nominal. El offset vertical `calc(50%+32px)` deja el FunButton tocando la base del SiderModeButton sin gap.
+
+---
+
 ## [1.45.1] - 2026-05-25
 
 ### Documentación: recetas end-to-end de los tools nuevos del MCP
