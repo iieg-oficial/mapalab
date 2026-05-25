@@ -13,6 +13,7 @@ import { useDateLoop } from '@hooksMaps/useDateLoop';
 import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { usePeriodicityCache } from '@hooksMaps/usePeriodicityCache';
 import { useMapMarker } from '@hooksMaps/useMapMarker';
+import { useFeatureHighlight } from '@hooksMaps/useFeatureHighlight';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { useSwipeMode } from '@hooksMaps/useSwipeMode';
 import { toLonLat } from 'ol/proj';
@@ -57,6 +58,14 @@ const MapsProvider = ({ children }) => {
         paneMapRefs,
     });
     compareModeRef.current = swipeMode.compareMode;
+
+    useFeatureHighlight({
+        mapRef,
+        paneMapRefs,
+        compareMode: swipeMode.compareMode,
+        selectedFeatureInfo,
+        allLayers,
+    });
 
     const symbology = useSymbology({
         activeLayerIds: layerManagement.activeLayerIds,

@@ -135,6 +135,14 @@ def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace], aliases_ma
     if notice and isinstance(notice, dict) and notice.get('enabled'):
         result['notice'] = notice
 
+    highlight_color = getattr(layer, 'highlight_color', None)
+    if highlight_color:
+        result['highlightColor'] = highlight_color
+
+    highlight_shape = getattr(layer, 'highlight_shape', None)
+    if highlight_shape:
+        result['highlightShape'] = highlight_shape
+
     return result
 
 

@@ -5,6 +5,74 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.47.0] - 2026-05-25
+
+### Agregado: InfoBox arrastrable con flecha dinámica + resaltado configurable por capa
+
+#### Panel del InfoBox arrastrable (desktop)
+
+Nuevo botón **Mover** en `ActionsToolbar` (ícono de 4 flechas en cruz) entre Cerrar y Descargar. Arrastrarlo reubica el panel a cualquier parte del viewport cuando estorba sobre un feature del mapa. El hook `useDraggablePanel` aplica `transform: translate(dx, dy)` directo al DOM durante el drag (sin re-renders por frame); al soltar hace un único `setState`. El `baseTransform` (`translate(-50%, -100%)` para single feature) llega como prop y se compone con el offset, evitando el bug del segundo drag explosivo.
+
+`useViewportContainment` acepta nueva prop `paused` que `InfoBox.jsx` setea a `isDragging`. Mientras el usuario arrastra, el containment no toca `el.style.left/top`. Solo mobile mantiene el bottom-sheet sin drag.
+
+#### Flecha dinámica que sigue al feature
+
+El triángulo CSS estático fue reemplazado por `<InfoBoxArrow />`, un SVG `position: fixed` con `<polygon>` que se actualiza via `requestAnimationFrame`. Reacciona a tres movimientos:
+
+1. Pan/zoom del mapa → el pixel del feature cambia, la flecha se reposiciona.
+2. Drag manual del panel → la flecha decide automáticamente el lado del card más cercano al feature.
+3. Reubicación por `useViewportContainment` → la flecha se reajusta desde el `getBoundingClientRect()`.
+
+Detalles del cálculo:
+- Lado por proporciones (`halfW/|dx|` vs `halfH/|dy|`).
+- Anchor con clamp `CORNER_PADDING = ARROW_HALF_WIDTH + 6 = 24px` para no caer en esquinas.
+- Ángulo siempre perpendicular al lado (0°/90°/180°/-90°) — más limpio que apuntar diagonal al feature exacto.
+- Si el feature cae dentro del card (margen 8px), la flecha se oculta.
+
+El polygon usa `cardRef` (el `<div w-[239px]>`), no el wrapper que incluye el `ActionsToolbar`. Así la flecha del lado derecho se pega al borde del card, no del toolbar.
+
+Sombra direccional con `filter: drop-shadow(dx, dy, blur)` calculada desde `angleDeg` (`cos/sin * 3px`). SVG en `zIndex: 4` (debajo del card `z-5`) para que la sombra que difumina hacia el card quede tapada por el `bg-white` — solo se ve la sombra fuera del card.
+
+Cuando el anchor cae sobre el área del header del card (`anchorY < top + 61px`), el polygon se rellena con `#EFF3FC` (gris del header) para verse continuo. En el cuerpo del card es blanco normal.
+
+Offset inicial del panel: ahora usa `-ARROW_TIP` (= -28) en Y para single feature y `+ARROW_TIP` en X para multi feature, así la punta de la flecha cae exactamente sobre el pixel del feature al abrir el InfoBox.
+
+#### Resaltado de feature seleccionado por capa (con propagación)
+
+Nuevo hook `useFeatureHighlight` montado en `MapsProvider` que pinta un `VectorLayer` (`zIndex: 998`) con las geometrías de los features del InfoBox abierto. Dos dimensiones configurables desde mariachi-admin tab "Apariencia":
+
+- **`highlightColor`**: `morado` (default), `naranja`, `sombreado`.
+- **`highlightShape`**: `area` (default, área + línea), `linea` (solo contorno, fill transparente), `off` (sin resaltado).
+
+**Propagación**: una leaf hereda los campos del primer ancestor (`group`/`category`/`label`/`tema`) que los defina. Nuevo helper `findAncestorChain(layerId, allLayers)` en `layers/utils/layerHelpers.js` retorna `[self, parent, ..., root]`. `resolveLayerHighlight` recorre la cadena buscando por cada dimensión independientemente — así puedes definir color en el `tema` y forma en el `group` y la leaf hereda ambos.
+
+#### Centrar selección desde el InfoBox
+
+Nuevo botón **Centrar grupo** en `ActionsToolbar` y como tool en mobile. Hace `view.fit` al bbox combinado de todos los features del InfoBox. En swipe usa el pane activo.
+
+Helpers nuevos en `helpers/featureGeometry.js`: `parseResultsFeatures`, `computeFeaturesExtent`, `getExtentCenter`, `centerOnResults` (incluye reposicionamiento del `clickPosition` al centro tras el fit, para que la flecha siga apuntando).
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/components/InfoBox/components/InfoBoxArrow.jsx`** (nuevo).
+- **`frontend/src/pages/maps/components/InfoBox/hooks/useDraggablePanel.js`** (nuevo).
+- **`frontend/src/pages/maps/hooks/useFeatureHighlight.js`** (nuevo).
+- **`frontend/src/pages/maps/helpers/featureGeometry.js`** (nuevo).
+- **`frontend/src/pages/maps/helpers/layers/utils/layerHelpers.js`**: `findAncestorChain`.
+- **`frontend/src/components/Icon.jsx`**: nuevos inline icons `center_group` y `move_arrows` (renombrados para no colisionar con los external SVGs `fit_extent` y `move` del panel de capas activas).
+- **`frontend/src/pages/maps/components/InfoBox/InfoBox.jsx`**: `cardRef` separado, drag, render `<InfoBoxArrow>`, `handleCenterGroup`.
+- **`frontend/src/pages/maps/components/InfoBox/components/ActionsToolbar.jsx`**: botones nuevos.
+- **`frontend/src/pages/maps/components/InfoBox/hooks/useViewportContainment.js`**: prop `paused`.
+- **`frontend/src/providers/MapsProvider.jsx`**: monta `useFeatureHighlight`.
+- **`backend/app/models/layer.py`**: columnas `highlight_color` y `highlight_shape`.
+- **`backend/app/services/layer_tree_service.py`**: expone los campos en `/layers/tree`.
+
+#### Compatibilidad
+
+Requiere migration **0014** de dataengine (columnas `highlight_color` y `highlight_shape` en `mapalab.layers`). Asegurar que `make migrate` se ejecutó antes del deploy.
+
+---
+
 ## [1.46.0] - 2026-05-25
 
 ### Botón global de dato curioso siempre visible en el sider

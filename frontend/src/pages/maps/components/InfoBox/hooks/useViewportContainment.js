@@ -1,9 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useLayoutEffect, useCallback } from 'react';
 
-export const useViewportContainment = (ref, dependencies = [], margin = 10) => {
+export const useViewportContainment = (ref, dependencies = [], margin = 10, paused = false) => {
     const adjustPosition = useCallback(() => {
-        if (!ref.current) return;
+        if (paused || !ref.current) return;
 
         const el = ref.current;
         const viewportWidth = window.innerWidth;
@@ -58,7 +58,7 @@ export const useViewportContainment = (ref, dependencies = [], margin = 10) => {
                 el.style.maxHeight = `${availableHeight}px`;
             }
         }
-    }, [ref, margin]);
+    }, [ref, margin, paused]);
 
     useLayoutEffect(() => {
         adjustPosition();

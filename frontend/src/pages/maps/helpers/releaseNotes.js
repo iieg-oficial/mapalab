@@ -12,6 +12,16 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.47.0',
+        items: [
+            { text: 'Recuadro de información del punto: ahora se puede mover arrastrando el nuevo botón con las 4 flechas en cruz. Útil cuando el recuadro tapa un punto del mapa que quieres ver.', tag: 'added' },
+            { text: 'Recuadro de información del punto: la flecha que apunta al feature ahora se reposiciona automáticamente cuando arrastras el recuadro o mueves el mapa, manteniendo siempre la conexión visual con el punto que seleccionaste.', tag: 'changed' },
+            { text: 'Recuadro de información del punto: nuevo botón "Centrar selección" que hace zoom al área de los features seleccionados.', tag: 'added' },
+            { text: 'Visor: al hacer clic en una feature, su geometría se resalta automáticamente sobre el mapa con un color suave (morado por defecto). Los administradores pueden cambiar el color y la forma del resaltado por capa desde el panel de administración.', tag: 'added' },
+            { text: 'Recuadro de información del punto: cuando la flecha conecta con el encabezado del recuadro, ahora se ve continua con el mismo color de fondo, sin línea visible.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.40.2',
         items: [
             { text: 'Eventos: el menú que se abre desde el botón flotante (a la derecha del menú lateral) ya muestra scroll cuando su contenido es más alto que la pantalla. Antes podía cortarse al final sin aviso.', tag: 'fixed' },

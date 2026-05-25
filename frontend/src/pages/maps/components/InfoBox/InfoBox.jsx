@@ -6,11 +6,15 @@ import { useSider } from '@contexts/SiderContext';
 import MobileSheet, { MobileSheetCloseButton } from '@components/MobileSheet';
 import ScrollContainer from '@components/ScrollContainer';
 import { useViewportContainment } from './hooks/useViewportContainment';
+import { useDraggablePanel } from './hooks/useDraggablePanel';
+import InfoBoxArrow, { ARROW_TIP } from './components/InfoBoxArrow';
 import { useFeatureInfo } from '../../hooks/useFeatureInfo';
 import { renderCard } from './utils/renderCard.jsx';
 import { downloadFeaturesAsCSV } from './utils/downloadFeatures';
 import { useInfoBoxLazyLoad } from '../../hooks/useInfoBoxLazyLoad';
 import { findLayerById } from '../../helpers/layers/utils/layerHelpers';
+import { centerOnResults } from '../../helpers/featureGeometry';
+import { trackInfoBoxAction } from '@services/analyticsService';
 import LicenseTooltipContent from '@components/LicenseTooltipContent';
 import SummaryCard from './components/SummaryCard';
 import EmptySuggestions from './components/EmptySuggestions';
@@ -23,11 +27,12 @@ import { useColibriOpen } from '@hooks/useColibriOpen';
 
 const InfoBox = () => {
     const openColibri = useColibriOpen();
-    const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers } = useContext(MapsContext);
+    const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers, mapRef, paneMapInstances, compareMode } = useContext(MapsContext);
     const { isMobile } = useSider();
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
     const { selectAlternativeLayer, loadMoreFeatures } = useFeatureInfo();
     const panelRef = useRef(null);
+    const cardRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLoadingExpand, setIsLoadingExpand] = useState(false);
 
@@ -62,8 +67,21 @@ const InfoBox = () => {
         if (action === 'report') openColibri({ source: 'iieg_marker' });
     }, [openColibri]);
 
+    const lazyLoad = useInfoBoxLazyLoad({
+        results: selectedFeatureInfo?.results,
+        isPolygonSelection: selectedFeatureInfo?.isPolygonSelection,
+        loadMoreFeatures,
+    });
+
+    const baseTransform = lazyLoad.totalFeatures === 1 ? 'translate(-50%, -100%)' : '';
+    const { isDragging, handleProps: moveHandleProps, reset: resetDrag } = useDraggablePanel({ panelRef, baseTransform });
+
     useOutsideClick([panelRef], isMobile ? undefined : handleClose);
-    useViewportContainment(panelRef, [selectedFeatureInfo, clickPosition, isMobile]);
+    useViewportContainment(panelRef, [selectedFeatureInfo, clickPosition, isMobile], 10, isDragging);
+
+    useEffect(() => {
+        resetDrag();
+    }, [selectedFeatureInfo?.lngLat?.lng, selectedFeatureInfo?.lngLat?.lat, resetDrag]);
 
     useEffect(() => {
         setSelectedFeatureInfo(current => {
@@ -90,12 +108,6 @@ const InfoBox = () => {
         return () => clearTimeout(timer);
     }, [selectedFeatureInfo]);
 
-    const lazyLoad = useInfoBoxLazyLoad({
-        results: selectedFeatureInfo?.results,
-        isPolygonSelection: selectedFeatureInfo?.isPolygonSelection,
-        loadMoreFeatures,
-    });
-
     if (!selectedFeatureInfo) return null;
 
     const { results, isPolygonSelection, queriedLayerName, alternativeLayers } = selectedFeatureInfo;
@@ -107,7 +119,7 @@ const InfoBox = () => {
     const showNoLayerSelected = hasNoResults && !isPolygonSelection && !queriedLayerName && !hasAlternatives;
 
     const positionStyle = clickPosition.getPositionStyle(
-        isSingleFeature ? { x: 0, y: -12 } : { x: 12, y: -24 }
+        isSingleFeature ? { x: 0, y: -ARROW_TIP } : { x: ARROW_TIP, y: -24 }
     );
 
     const handleRemoveFeature = (layerId, featureIndex) => {
@@ -167,7 +179,17 @@ const InfoBox = () => {
         downloadFeaturesAsCSV(enriched, allLayers);
     };
 
-    const showToolbar = !hasNoResults && totalFeatures > 1;
+    const handleCenterGroup = () => {
+        const activeMap = compareMode?.active ? paneMapInstances?.[0] : mapRef?.current;
+        if (centerOnResults({ activeMap, results, clickPosition })) {
+            trackInfoBoxAction('center_group', results[0]?.layerId || null);
+        }
+    };
+
+    const showCenterButton = !hasNoResults && !isPolygonSelection;
+    const showMultiActions = showCenterButton && totalFeatures > 1;
+    const showToolbar = showCenterButton;
+
 
     let globalCardIdx = 0;
     const cardTotal = totalAvailable > 0 ? totalAvailable : totalFeatures;
@@ -210,12 +232,19 @@ const InfoBox = () => {
 
 
     const mobileTools = [
-        showToolbar && {
+        showCenterButton && {
+            id: 'center_group',
+            icon: 'center_group',
+            label: 'Centrar selección',
+            tooltip: 'Centrar selección en el mapa',
+            onClick: handleCenterGroup
+        },
+        showMultiActions && {
             id: 'download',
             icon: 'download',
             label: (
                 <>
-                    Descargar <span className="text-[#FF8300] font-bold">{downloadDisplayCount}{downloadShowsPlus ? '+' : ''}</span> {downloadDisplayCount === 1 ? 'tarjeta' : 'tarjetas'}
+                    Descargar <span className="text-orange font-bold">{downloadDisplayCount}{downloadShowsPlus ? '+' : ''}</span> {downloadDisplayCount === 1 ? 'tarjeta' : 'tarjetas'}
                 </>
             ),
             tooltip: <LicenseTooltipContent />,
@@ -285,87 +314,91 @@ const InfoBox = () => {
     }
 
     return (
-        <div
-            ref={panelRef}
-            className={`
-                relative bg-transparent z-5 flex items-stretch gap-2
-                ${isSingleFeature ? '-translate-x-1/2 -translate-y-full' : ''}
-            `}
-            style={positionStyle}
-        >
-            <div className="relative w-[239px]">
-                <div
-                    className={`
-                        absolute size-0
-                        ${isSingleFeature
-            ? 'bottom-[-12px] left-1/2 -translate-x-1/2 border-t-[12px] border-t-white border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent'
-            : 'drop-shadow-md -left-3 top-6 border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent border-r-[12px] border-r-[#EFF3FC]'
-        }
-                    `}
-                />
+        <>
+            <div
+                ref={panelRef}
+                className={`relative bg-transparent z-5 ${isSingleFeature ? '' : 'flex items-stretch gap-2'}`}
+                style={positionStyle}
+            >
+                <div ref={cardRef} className="relative w-[239px]">
+                    <EmptySuggestions
+                        visible={showEmptySuggestions}
+                        queriedLayerName={queriedLayerName}
+                        alternativeLayers={alternativeLayers}
+                        onSelectLayer={handleSelectAlternative}
+                        onClose={handleClose}
+                    />
 
-                <EmptySuggestions
-                    visible={showEmptySuggestions}
-                    queriedLayerName={queriedLayerName}
-                    alternativeLayers={alternativeLayers}
-                    onSelectLayer={handleSelectAlternative}
-                    onClose={handleClose}
-                />
-
-                {showNoLayerSelected && (
-                    <InfoCard>
-                        <p className="text-[12px]/[16px] text-[#465055] font-medium text-center p-4">
+                    {showNoLayerSelected && (
+                        <InfoCard>
+                            <p className="text-[12px]/[16px] text-[#465055] font-medium text-center p-4">
                             Selecciona una capa en el panel de capas activas para mostrar información
-                        </p>
-                    </InfoCard>
+                            </p>
+                        </InfoCard>
+                    )}
+
+                    <SummaryCard
+                        visible={isPolygonSelection}
+                        results={results || []}
+                        isExpanded={isExpanded}
+                        isLoadingExpand={isLoadingExpand}
+                        onToggleExpand={handleToggleExpand}
+                        onClose={handleClose}
+                    />
+
+                    {featuresList && (
+                        totalFeatures <= 1 ? (
+                            <div
+                                className="h-fit rounded-lg transition-[pointer-events] duration-0"
+                                style={{ pointerEvents: interactive ? 'auto' : 'none' }}
+                            >
+                                {featuresList}
+                            </div>
+                        ) : (
+                            <ScrollContainer
+                                className="max-h-[60vh] rounded-lg transition-[pointer-events] duration-0"
+                                overlayFade
+                                overlayColor="#F9FBFF"
+                                clickableArrows
+                                minItemsForClick={3}
+                                itemCount={totalFeatures}
+                                style={{ pointerEvents: interactive ? 'auto' : 'none' }}
+                            >
+                                {featuresList}
+                            </ScrollContainer>
+                        )
+                    )}
+                </div>
+
+                {showToolbar && (
+                    <div className={
+                        isSingleFeature
+                            ? 'absolute left-full top-0 ml-2 flex flex-col items-center'
+                            : 'flex flex-col items-center justify-between pb-1'
+                    }>
+                        <ActionsToolbar
+                            onClear={showMultiActions ? handleClose : null}
+                            moveHandleProps={moveHandleProps}
+                            isMoving={isDragging}
+                            onDownload={showMultiActions ? handleDownload : null}
+                            onCenter={handleCenterGroup}
+                            downloadCount={downloadDisplayCount}
+                            downloadShowsPlus={downloadShowsPlus}
+                            downloadTooltip={downloadTooltipText}
+                        />
+                    </div>
                 )}
 
-                <SummaryCard
-                    visible={isPolygonSelection}
-                    results={results || []}
-                    isExpanded={isExpanded}
-                    isLoadingExpand={isLoadingExpand}
-                    onToggleExpand={handleToggleExpand}
-                    onClose={handleClose}
-                />
-
-                {featuresList && (
-                    totalFeatures <= 1 ? (
-                        <div
-                            className="h-fit rounded-lg transition-[pointer-events] duration-0"
-                            style={{ pointerEvents: interactive ? 'auto' : 'none' }}
-                        >
-                            {featuresList}
-                        </div>
-                    ) : (
-                        <ScrollContainer
-                            className="max-h-[60vh] rounded-lg transition-[pointer-events] duration-0"
-                            overlayFade
-                            overlayColor="#F9FBFF"
-                            clickableArrows
-                            minItemsForClick={3}
-                            itemCount={totalFeatures}
-                            style={{ pointerEvents: interactive ? 'auto' : 'none' }}
-                        >
-                            {featuresList}
-                        </ScrollContainer>
-                    )
-                )}
+                <WhatsNewModal isOpen={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
             </div>
-
-            <div className="flex flex-col items-center justify-between pb-1">
-                <ActionsToolbar
-                    visible={showToolbar}
-                    onClear={handleClose}
-                    onDownload={handleDownload}
-                    downloadCount={downloadDisplayCount}
-                    downloadShowsPlus={downloadShowsPlus}
-                    downloadTooltip={downloadTooltipText}
+            {!showEmptySuggestions && !showNoLayerSelected && !isPolygonSelection && !hasNoResults && (
+                <InfoBoxArrow
+                    panelRef={cardRef}
+                    mapInstance={compareMode?.active ? paneMapInstances?.[compareMode.activeSlot ?? 0] : mapRef?.current}
+                    lngLat={selectedFeatureInfo?.lngLat}
                 />
-            </div>
-
-            <WhatsNewModal isOpen={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
-        </div>
+            )}
+        </>
     );
 };
 
