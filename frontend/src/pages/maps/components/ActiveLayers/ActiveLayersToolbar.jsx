@@ -99,9 +99,9 @@ const ActiveLayersToolbar = ({
                             aria-label={searchTooltip}
                             aria-pressed={searchOpen}
                             onClick={onSearchClick}
-                            className={`size-7 flex items-center justify-center rounded-full transition-colors shrink-0 ${noLayers ? 'cursor-not-allowed opacity-50 bg-purple-deep' : `cursor-pointer ${searchOpen ? 'bg-purple' : 'bg-purple-deep hover:bg-purple'}`}`}
+                            className={`p-0.5 rounded-full border transition-colors shrink-0 ${noLayers ? 'cursor-not-allowed opacity-50 border-transparent' : `cursor-pointer ${searchOpen ? 'border-purple bg-[#F2EBFF]' : 'border-transparent hover:border-purple'}`}`}
                         >
-                            <Icon name="searchInput" className="size-4 shrink-0" />
+                            <Icon name="searchLayer" state={searchOpen ? 'hover' : 'normal'} className="size-5 shrink-0" />
                         </button>
                     </Tooltip>
 
