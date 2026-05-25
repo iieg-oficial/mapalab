@@ -64,12 +64,27 @@ def _persist_share(envelope: dict) -> dict:
         }
 
 
+def _normalize_municipios(municipios: dict | list | None) -> dict | None:
+    if not municipios:
+        return None
+    if isinstance(municipios, list):
+        return {"source": "iieg", "selected": [str(c) for c in municipios if c]}
+    if isinstance(municipios, dict) and municipios.get("selected"):
+        source = municipios.get("source") or "iieg"
+        selected = [str(c) for c in municipios["selected"] if c]
+        if not selected:
+            return None
+        return {"source": source, "selected": selected}
+    return None
+
+
 def create_single_share(
     layers: list,
     view: dict | None = None,
     basemap: str | None = None,
     selected: str | None = None,
     annotations: list | None = None,
+    municipios: dict | list | None = None,
 ) -> dict:
     payload: dict[str, Any] = {"layers": _normalize_layer_entries(layers)}
     if view is not None:
@@ -80,7 +95,10 @@ def create_single_share(
         payload["selected"] = selected
     if annotations:
         payload["annotations"] = annotations
-    return _persist_share({"version": 1, "kind": "single", "payload": payload})
+    norm_municipios = _normalize_municipios(municipios)
+    if norm_municipios:
+        payload["municipios"] = norm_municipios
+    return _persist_share({"version": 2, "kind": "single", "payload": payload})
 
 
 def create_swipe_share(
@@ -94,13 +112,18 @@ def create_swipe_share(
     label_a: str = "A",
     label_b: str = "B",
     annotations: list | None = None,
+    municipios: dict | list | None = None,
 ) -> dict:
+    shared: dict[str, Any] = {
+        "view": view or {},
+        "basemap": basemap,
+        "selected": selected,
+    }
+    norm_municipios = _normalize_municipios(municipios)
+    if norm_municipios:
+        shared["municipios"] = norm_municipios
     payload: dict[str, Any] = {
-        "shared": {
-            "view": view or {},
-            "basemap": basemap,
-            "selected": selected,
-        },
+        "shared": shared,
         "paneA": {"label": label_a, "layers": _normalize_layer_entries(pane_a_layers)},
         "paneB": {"label": label_b, "layers": _normalize_layer_entries(pane_b_layers)},
         "activeSlot": active_slot if active_slot in {"A", "B"} else "A",
@@ -108,7 +131,30 @@ def create_swipe_share(
     }
     if annotations:
         payload["annotations"] = annotations
-    return _persist_share({"version": 1, "kind": "swipe", "payload": payload})
+    return _persist_share({"version": 2, "kind": "swipe", "payload": payload})
+
+
+def list_municipios() -> dict:
+    from app.repositories.municipios_repository import MunicipiosRepository
+    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+    with conn.get_session() as session:
+        items = MunicipiosRepository.list_all(session)
+    return {"items": items, "count": len(items)}
+
+
+def resolve_municipios(query: str, limit: int = 10) -> list[dict]:
+    from app.repositories.municipios_repository import MunicipiosRepository
+    q = (query or "").strip().lower()
+    if not q:
+        return []
+    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+    with conn.get_session() as session:
+        items = MunicipiosRepository.list_all(session)
+    matches = [
+        it for it in items
+        if q in (it.get("nombre") or "").lower() or q in (it.get("clave") or "")
+    ]
+    return matches[: max(1, min(limit, 50))]
 
 
 def measure_geometry(geometry: dict) -> dict:

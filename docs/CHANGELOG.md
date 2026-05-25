@@ -9,38 +9,92 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado: modo Vista por municipio (beta, sólo dev/staging)
 
-Nuevo botón **"Jalisco"** en la barra superior derecha (al lado izquierdo de Descargar visualización) que permite filtrar el visor para mostrar uno o varios municipios del estado.
+Nuevo botón **"Jalisco"** en la barra superior derecha (al lado derecho de Descargar) que permite enfocar el visor en uno o varios municipios del estado. Layout final: `[Descargar | 📍 Jalisco | Share]` (sin `InfoModal`).
 
 - **UI**: panel con buscador + lista de los 125 municipios; pill compacta con default "Jalisco" o "N municipios"/"Guadalajara" según selección.
-- **Filtros CQL per-layer**: cada capa con `hasMunicipio: true` y `municipioField` definido en mariachi recibe `{field} IN ('clave1','clave2')`. Las capas no compatibles (raster, sin field) se ocultan temporalmente y se restauran al salir.
-- **Máscara visual**: VectorLayer sobre el mapa con polígono (outer = viewport, holes = municipios) en `rgba(0,0,0,0.4)`. Se replica en ambos paneles del modo swipe.
-- **Switch IIEG/INEGI**: la fuente de polígonos (`general:limite_municipal` vs `general:limite_municipal_inegi`) se elige automáticamente según las capas de límite activas en el visor.
+- **Máscara visual**: VectorLayer sobre el mapa con polígono (outer = viewport, holes = municipios) en `rgba(0,0,0,0.4)`. Se replica en ambos paneles del modo swipe. El usuario percibe que ve solo esos municipios sin que las capas necesiten configuración.
+- **Sin filtros CQL, sin metadata por capa**: el modo funciona uniforme para TODAS las capas (raster, vector, externas) sin requerir configuración en mariachi.
+- **Switch IIEG/INEGI**: la fuente de polígonos (`geom_iieg` vs `geom_inegi`) se elige automáticamente según las capas de límite activas.
+- **Backend propio**: vista materializada `mapalab.municipios` que une `mapa_base.limite_municipal` (IIEG) e `mapa_base.limite_municipal_inegi`. Refresh mensual desde dataengine-jobs (1° de cada mes a las 05:00) o manual con `make refresh-municipios`. Sin dependencia de GeoServer en runtime.
+- **Endpoints REST**: `GET /municipios/` (lista con ETag + cache 1h) y `GET /municipios/geometries?source=...&claves=...` (GeoJSON EPSG:3857).
 - **Persistencia completa**: URL (`?municipios=014,067`), share JSON (bump v1 → v2 con `payload.municipios`), sessionStorage.
-- **Sider y panel de capas activas**: las capas que no soportan el filtro se muestran atenuadas + tooltip explicativo + bloqueo de interacción mientras dure el modo.
-- **Telemetría**: nuevos eventos `municipio_mode_enter/exit/change` y `municipio_panel_open`. Documentados en mariachi-admin → Documentación → Telemetría.
-- **Editor en mariachi-admin**: nuevos campos `Filtrable por municipio` (toggle) y `Columna del municipio` (texto, condicional) en el tab Apariencia del editor de capas. Validación que exige el field cuando el toggle está activo.
+- **Telemetría**: eventos `municipio_mode_enter/exit/change` y `municipio_panel_open`. Documentados en mariachi-admin → Documentación → Telemetría.
 
-Gated por `VITE_APP_ENV in [dev, beta]` — el botón no aparece en producción. Al graduarse, se eliminará también el `InfoModal` para liberar espacio en la barra.
+Gated por `VITE_APP_ENV in [dev, beta]` — el botón no aparece en producción.
 
 Documentación completa en [`docs/municipio-mode.md`](municipio-mode.md).
 
 #### Que cambio
 
-- **`frontend/src/services/municipioService.js`** (nuevo): WFS GetFeature para lista y geometrías de municipios, con cache in-memory.
-- **`frontend/src/pages/maps/helpers/municipioMask.js`** (nuevo): helpers puros `buildMaskPolygon`, `unionGeometriesExtent`, `extractHoleRings`.
-- **`frontend/src/pages/maps/helpers/municipioFilterUtils.js`** (nuevo): `canBeFilteredByMunicipio(layer)` reutilizado por sider y panel de capas activas.
-- **`frontend/src/pages/maps/hooks/useMunicipioMode.js`** (nuevo): estado central + efectos de filtros CQL + snapshot de hiddenLayerIds + telemetría.
-- **`frontend/src/pages/maps/hooks/useMunicipioMask.js`** (nuevo): VectorLayer por map instance, recálculo en pan/zoom.
-- **`frontend/src/pages/maps/components/MapExport/MunicipioFilterButton.jsx`** y **`MunicipioFilterPanel.jsx`** (nuevos): UI del modo.
-- **`frontend/src/providers/MapsProvider.jsx`**: instanciación de los hooks + efecto de fit al bbox unión.
-- **`frontend/src/pages/maps/components/MapToolsPanel.jsx`**: integración del nuevo botón.
-- **`frontend/src/pages/maps/components/ActiveLayers/ActiveLayerItem.jsx`**: opacity + tooltip + bloqueo de click cuando la capa no es filtrable.
-- **`frontend/src/pages/maps/components/LayerItem.jsx`** y **`SearchMenu.jsx`**: disabled state cuando la capa no soporta el modo.
-- **`frontend/src/pages/maps/hooks/useShareSerializer.js`** y **`useShareDeserializer.js`**: bump a `version: 2` + payload `municipios`, con backwards-compat para v1.
-- **`frontend/src/pages/maps/hooks/useInitializeFromUrl.js`**: parseo de `?municipios=` con hidratación post-capas.
-- **`frontend/src/services/analyticsService.js`**: 4 trackers nuevos.
-- **`mariachi/admin/src/features/mapalab-layers/pages/LayerEditPage.jsx`** + **`constants/nodeTypes.js`**: inputs `hasMunicipio` y `municipioField` con validación.
-- **`mariachi/admin/src/features/documentacion/topics/TelemetryTopic.jsx`**: nueva Card con la documentación de los eventos.
+**Dataengine:**
+- **`jobs/alembic/versions/20260525_0015_municipios_materialized_view.py`** (nuevo): MV `mapalab.municipios` con `clave_geo`, `nombre`, `region`, `area_km2`, `area_ha`, `geom_iieg`, `geom_inegi` + indexes GIST.
+- **`jobs/run_refresh_municipios.py`** (nuevo): `REFRESH MATERIALIZED VIEW CONCURRENTLY`.
+- **`jobs/crontab`**: entrada `0 5 1 * *` para refresh mensual.
+- **`Makefile`**: target `refresh-municipios` + entrada en `refresh-all`.
+
+**Backend mapalab:**
+- **`backend/app/routers/municipios.py`** (nuevo): endpoints REST con ETag.
+- **`backend/app/repositories/municipios_repository.py`** (nuevo): SQL crudo con `ST_AsGeoJSON(ST_Transform(...))`.
+- **`backend/app/server.py`**: registro del router.
+
+**Frontend mapalab:**
+- **`services/municipioService.js`** (nuevo): fetch + cache contra `/api/municipios/`.
+- **`pages/maps/helpers/municipioMask.js`** (nuevo): helpers puros `buildMaskPolygon`, `unionGeometriesExtent`, `extractHoleRings`.
+- **`pages/maps/hooks/useMunicipioMode.js`** (nuevo): estado + selección + telemetría.
+- **`pages/maps/hooks/useMunicipioMask.js`** (nuevo): VectorLayer por map instance, recálculo en pan/zoom.
+- **`pages/maps/components/MapExport/MunicipioFilterButton.jsx`** y **`MunicipioFilterPanel.jsx`** (nuevos): UI del modo.
+- **`providers/MapsProvider.jsx`**: instanciación de los hooks + fit al bbox.
+- **`pages/maps/components/MapToolsPanel.jsx`**: layout reorganizado, `InfoModal` eliminado.
+- **`pages/maps/components/MapExport/Download.jsx`**: botón "Descargar" compacto (w-30) en lugar de "Descargar visualización" (w-235).
+- **`pages/maps/hooks/useShareSerializer.js`** y **`useShareDeserializer.js`**: bump a `version: 2` + payload `municipios`, con backwards-compat para v1.
+- **`pages/maps/hooks/useInitializeFromUrl.js`**: parseo de `?municipios=`.
+- **`services/analyticsService.js`**: 4 trackers nuevos.
+
+**Mariachi-admin:**
+- **`features/documentacion/topics/TelemetryTopic.jsx`**: nueva Card con la documentación de los eventos del modo.
+
+---
+
+## [1.49.0] - 2026-05-25
+
+### Agregado: 2 tools MCP de municipios + `municipios` en `create_*_share` (12 → 14 tools)
+
+El modo Vista por municipio del visor (beta) era una feature 100% frontend hasta ahora: el usuario tenía que abrir el panel manualmente y elegir los polígonos. Para que un agente conversacional (IGIBot) lo aproveche, el MCP necesita 1) consultar el catálogo de los 125 municipios y 2) poder activar el modo dentro de un share. Esta versión cierra ambos.
+
+#### Nuevos tools MCP
+
+- **`list_municipios()`** — devuelve los 125 municipios de Jalisco como `{items: [{clave, nombre, region, areaKm2, areaHa}], count}`. Wrapper de `MunicipiosRepository.list_all` (vista materializada `mapalab.municipios`).
+- **`resolve_municipios(query, limit?)`** — búsqueda substring case-insensitive sobre nombre y clave. Mapea "guadalajara" → `[{clave:"14039", nombre:"Guadalajara", region:"Centro", ...}]`. Pensado para que el agente convierta "Guadalajara y Zapopan" → `["14039","14120"]` antes de pasar a los `create_*_share`.
+
+#### Extensión de `create_*_share`
+
+`create_single_share` y `create_swipe_share` ahora aceptan parámetro `municipios={source: "iieg"|"inegi", selected: ["14039","14120",...]}`. Al abrir el share, el visor activa el modo Vista por municipio: máscara visual oscura fuera de los polígonos seleccionados + filtro CQL `{municipioField} IN (...)` automático en capas que soporten el filtro. Para `create_swipe_share`, `municipios` vive en `payload.shared` y se aplica a ambos paneles (estado compartido, no por slot).
+
+#### Bug latente arreglado: `version=2` del share
+
+El frontend del visor llevaba semanas serializando shares con `version: 2` (introducida cuando se agregó `municipios` al payload), pero el validator backend tenía `CURRENT_SCHEMA_VERSION = 1` y rechazaba con 400 cualquier intento de crear un share desde el visor en modo municipio. **El botón "Compartir" estaba roto silenciosamente cuando había municipios activos.**
+
+- **`backend/app/services/share_service.py`**: `CURRENT_SCHEMA_VERSION = 2`, `ALLOWED_VERSIONS = {1, 2}` (backward compat para shares ya creados sin `municipios`). Nuevo `_validate_municipios` con `ALLOWED_MUNICIPIO_SOURCES = {iieg, inegi}` y `MAX_MUNICIPIOS = 125`. `_validate_single_payload` lo invoca en root; `_validate_swipe_payload` lo invoca en `payload.shared`.
+- **`servers/share_tools.py`**: `_normalize_municipios` (acepta dict o lista, normaliza a `{source, selected}`). `create_single_share`/`create_swipe_share` propagan a payload. `list_municipios` y `resolve_municipios` nuevos.
+- **`servers/mapalab.py`**: 2 `@mcp.tool()` nuevos + parámetro `municipios: Optional[dict]` añadido a los dos `create_*_share` existentes.
+- **`backend/test/test_share_service.py`**: 9 tests nuevos (`TestMunicipios` con 7 + `TestVersion` con 3). Total 31 tests, todos pasan.
+- **`docs/mcp.md`**: tabla 12 → 14 con los 2 tools nuevos. Nueva sección "Modo Vista por municipio en shares" con el patrón típico de uso desde un agente.
+
+#### Verificación e2e
+
+```
+POST /mapalab/mcp/  tools/call resolve_municipios  query="guadalajara"
+  → [{"clave":"14039","nombre":"Guadalajara","region":"Centro","areaKm2":150.358,"areaHa":15035.796}]
+
+POST /mapalab/mcp/  tools/call create_single_share
+  layers=["tasa_homicidio_doloso"], municipios={"source":"iieg","selected":["14039","14120"]}
+  → {id:"igjejs4i7b", url:"...", embed_html:"..."}
+
+GET /api/shares/<id>
+  → payload.version=2, payload.municipios={"source":"iieg","selected":["14039","14120"]}  ✅
+```
+
+Total tools del MCP: **14** (12 lectura + 2 writes idempotentes).
 
 ---
 

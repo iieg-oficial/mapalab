@@ -70,6 +70,58 @@ class TestSwipe:
             validate_payload(_envelope('swipe', payload))
 
 
+class TestMunicipios:
+    def _payload_single(self, municipios):
+        return _envelope('single', {'layers': [], 'municipios': municipios}, version=2)
+
+    def test_acepta_municipios_basico(self):
+        kind, _ = validate_payload(self._payload_single({'source': 'iieg', 'selected': ['14039', '14120']}))
+        assert kind == 'single'
+
+    def test_acepta_source_inegi(self):
+        kind, _ = validate_payload(self._payload_single({'source': 'inegi', 'selected': ['14039']}))
+        assert kind == 'single'
+
+    def test_rechaza_source_invalido(self):
+        with pytest.raises(ValueError, match='source debe ser uno de'):
+            validate_payload(self._payload_single({'source': 'foo', 'selected': ['14039']}))
+
+    def test_rechaza_selected_vacio(self):
+        with pytest.raises(ValueError, match='selected debe ser lista no vacia'):
+            validate_payload(self._payload_single({'source': 'iieg', 'selected': []}))
+
+    def test_rechaza_clave_no_string(self):
+        with pytest.raises(ValueError, match='cada clave debe ser string'):
+            validate_payload(self._payload_single({'source': 'iieg', 'selected': [14039]}))
+
+    def test_acepta_municipios_en_swipe_shared(self):
+        env = _envelope('swipe', {
+            'shared': {'view': {'zoom': 8}, 'municipios': {'source': 'iieg', 'selected': ['14039']}},
+            'paneA': {'layers': []}, 'paneB': {'layers': []},
+            'activeSlot': 'A', 'position': 0.5,
+        }, version=2)
+        kind, _ = validate_payload(env)
+        assert kind == 'swipe'
+
+    def test_acepta_municipios_none(self):
+        kind, _ = validate_payload(_envelope('single', {'layers': [], 'municipios': None}, version=2))
+        assert kind == 'single'
+
+
+class TestVersion:
+    def test_acepta_version_1_backward_compat(self):
+        kind, _ = validate_payload(_envelope('single', {'layers': []}, version=1))
+        assert kind == 'single'
+
+    def test_acepta_version_2(self):
+        kind, _ = validate_payload(_envelope('single', {'layers': []}, version=2))
+        assert kind == 'single'
+
+    def test_rechaza_version_3(self):
+        with pytest.raises(ValueError, match='version desconocida'):
+            validate_payload(_envelope('single', {'layers': []}, version=3))
+
+
 class TestKindRechazado:
     def test_compare_legacy_rechazado(self):
         with pytest.raises(ValueError, match='kind invalido: compare'):

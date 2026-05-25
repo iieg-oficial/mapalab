@@ -6,12 +6,15 @@ import json
 from typing import Any
 
 
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
+ALLOWED_VERSIONS = {1, 2}
 ALLOWED_KINDS = {"single", "swipe"}
 MAX_PAYLOAD_BYTES = 256 * 1024
 ALLOWED_ANNOTATION_TYPES = {"LineString", "Polygon", "Freehand", "Text", "Emoji"}
 MAX_ANNOTATIONS = 200
 MAX_COORDINATES_PER_GEOMETRY = 2000
+ALLOWED_MUNICIPIO_SOURCES = {"iieg", "inegi"}
+MAX_MUNICIPIOS = 125
 
 
 def canonicalize(payload: Any) -> bytes:
@@ -39,7 +42,7 @@ def validate_payload(envelope: dict) -> tuple[str, dict]:
     if not isinstance(envelope, dict):
         raise ValueError("envelope debe ser objeto JSON")
     version = envelope.get("version")
-    if version != CURRENT_SCHEMA_VERSION:
+    if version not in ALLOWED_VERSIONS:
         raise ValueError(f"version desconocida: {version}")
     kind = envelope.get("kind")
     if kind not in ALLOWED_KINDS:
@@ -124,10 +127,29 @@ def _validate_annotations(annotations: Any, source: str) -> None:
             raise ValueError(f"{prefix}.rotation debe ser numero")
 
 
+def _validate_municipios(municipios: Any, source: str) -> None:
+    if municipios is None:
+        return
+    if not isinstance(municipios, dict):
+        raise ValueError(f"{source}.municipios debe ser objeto")
+    src = municipios.get("source")
+    if src is not None and src not in ALLOWED_MUNICIPIO_SOURCES:
+        raise ValueError(f"{source}.municipios.source debe ser uno de {sorted(ALLOWED_MUNICIPIO_SOURCES)}")
+    selected = municipios.get("selected")
+    if not isinstance(selected, list) or len(selected) == 0:
+        raise ValueError(f"{source}.municipios.selected debe ser lista no vacia")
+    if len(selected) > MAX_MUNICIPIOS:
+        raise ValueError(f"{source}.municipios.selected excede {MAX_MUNICIPIOS} claves")
+    for clave in selected:
+        if not isinstance(clave, str) or not clave.strip():
+            raise ValueError(f"{source}.municipios.selected: cada clave debe ser string no vacio")
+
+
 def _validate_single_payload(payload: dict) -> None:
     _validate_layer_entries(payload.get("layers"), "single.payload")
     _validate_view(payload.get("view"))
     _validate_annotations(payload.get("annotations"), "single.payload")
+    _validate_municipios(payload.get("municipios"), "single.payload")
 
 
 def _validate_swipe_payload(payload: dict) -> None:
@@ -135,6 +157,7 @@ def _validate_swipe_payload(payload: dict) -> None:
     if not isinstance(shared, dict):
         raise ValueError("swipe.payload.shared requerido")
     _validate_view(shared.get("view"))
+    _validate_municipios(shared.get("municipios"), "swipe.payload.shared")
     for pane_key in ("paneA", "paneB"):
         pane = payload.get(pane_key)
         if not isinstance(pane, dict):

@@ -32,7 +32,9 @@ from app.utils.logger import Logger
 from servers.share_tools import (
     create_single_share as _create_single_share,
     create_swipe_share as _create_swipe_share,
+    list_municipios as _list_municipios,
     measure_geometry as _measure_geometry,
+    resolve_municipios as _resolve_municipios,
 )
 from servers.telemetry import (
     MCPTelemetryMiddleware,
@@ -228,17 +230,19 @@ def create_single_share(
     basemap: Optional[str] = Field(default=None, description='Basemap inicial (p. ej. "osm").'),
     selected: Optional[str] = Field(default=None, description='Slug/ID de la capa seleccionada para la simbologia.'),
     annotations: Optional[list] = Field(default=None, description='Anotaciones (mediciones, textos, emojis) en GeoJSON EPSG:4326. Cada item: {id, type, geometry, label?, value?, textLabel?, rotation?}.'),
+    municipios: Optional[dict] = Field(default=None, description='Activa el modo Vista por municipio en el share. Formato: {source: "iieg"|"inegi", selected: ["14001", "14039", ...]}. Las claves se obtienen de list_municipios o resolve_municipios. Mascara visual + filtro CQL automatico en capas con municipioField.'),
 ):
-    """Crea un share del visor con capas y opcionalmente anotaciones pre-cargadas.
+    """Crea un share del visor con capas y opcionalmente anotaciones y filtro por municipio pre-cargados.
 
     Devuelve `{id, kind, url, embed_html}`. El `embed_html` es un snippet
     `<iieg-mapalab share="...">` listo para pegar en cualquier sitio web que
     cargue el widget de MapaLab. Es el camino recomendado para que un agente
     entregue un mapa interactivo al usuario en lugar de solo describirlo.
 
-    `annotations` permite pre-pintar lineas, poligonos, textos y emojis sobre el
-    mapa - util para resaltar zonas resultado de un analisis (p. ej. el bbox de
-    los municipios con mayor incidencia).
+    `annotations` permite pre-pintar lineas, poligonos, textos y emojis.
+    `municipios` activa el modo Vista por municipio (beta) que oculta el resto
+    del estado con una mascara y filtra automaticamente las capas activas que
+    soporten filtro por municipio.
     """
     return _create_single_share(
         layers=layers,
@@ -246,6 +250,7 @@ def create_single_share(
         basemap=basemap,
         selected=selected,
         annotations=annotations,
+        municipios=municipios,
     )
 
 
@@ -259,13 +264,15 @@ def create_swipe_share(
     label_a: str = Field(default='A', description='Etiqueta del lado A (mostrada en la pildora del visor).'),
     label_b: str = Field(default='B', description='Etiqueta del lado B.'),
     annotations: Optional[list] = Field(default=None, description='Anotaciones globales del mapa (no por slot). GeoJSON EPSG:4326.'),
+    municipios: Optional[dict] = Field(default=None, description='Modo Vista por municipio compartido entre A y B. {source: "iieg"|"inegi", selected: [claves]}.'),
 ):
     """Crea un share del visor en modo swipe (comparacion A|B).
 
     Devuelve `{id, kind, url, embed_html}`. El visor abre con la barra
     divisora arrastrable y cada lado renderiza su set de capas. Util para
     comparar fenomenos lado a lado (p. ej. delitos vs poblacion, antes vs
-    despues).
+    despues). `municipios` aplica la mascara visual y el filtro CQL a ambos
+    paneles (es estado compartido, no por slot).
     """
     return _create_swipe_share(
         pane_a_layers=pane_a_layers,
@@ -276,7 +283,33 @@ def create_swipe_share(
         label_a=label_a,
         label_b=label_b,
         annotations=annotations,
+        municipios=municipios,
     )
+
+
+@mcp.tool()
+def list_municipios():
+    """Lista los 125 municipios de Jalisco con su clave INEGI y nombre.
+
+    Devuelve `{items: [{clave, nombre, region, areaKm2, areaHa}], count}`. La
+    `clave` es el identificador INEGI de 5 digitos (los primeros 2 son '14'
+    para Jalisco). Usar como entrada para `create_single_share(municipios=...)`
+    o `create_swipe_share(municipios=...)`.
+    """
+    return _list_municipios()
+
+
+@mcp.tool()
+def resolve_municipios(
+    query: str = Field(description='Texto a buscar en el nombre o la clave del municipio (case-insensitive, substring).'),
+    limit: int = Field(default=10, ge=1, le=50, description='Maximo de resultados (1-50).'),
+):
+    """Busca municipios por nombre o clave parcial (case-insensitive substring).
+
+    Util para mapear "Guadalajara y Zapopan" -> [{clave: "14039", nombre: "Guadalajara"}, {clave: "14120", nombre: "Zapopan"}].
+    Devuelve hasta `limit` matches del listado completo.
+    """
+    return _resolve_municipios(query=query, limit=limit)
 
 
 @mcp.tool()

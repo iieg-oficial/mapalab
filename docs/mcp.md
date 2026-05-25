@@ -1,6 +1,6 @@
 # MCP server
 
-Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`mapalab-mcp`, separado del backend principal desde 1.35.0) que expone **12 tools** sobre el catálogo de capas, metadata, periodicidad, mediciones geodésicas y creación de shares del visor. Pensado para clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes como IGIBot) que necesitan consultar o entregar mapas como respuesta.
+Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`mapalab-mcp`, separado del backend principal desde 1.35.0) que expone **14 tools** sobre el catálogo de capas, metadata, periodicidad, municipios de Jalisco, mediciones geodésicas y creación de shares del visor. Pensado para clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes como IGIBot) que necesitan consultar o entregar mapas como respuesta.
 
 ## Por qué un container dedicado
 
@@ -11,12 +11,13 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`m
 
 ## Qué se expone y qué no
 
-12 tools (ver tabla completa más abajo en §Tools expuestos):
+14 tools (ver tabla completa más abajo en §Tools y su origen):
 
 | Origen | MCP | Razón |
 |---|---|---|
 | Endpoints REST de `metadata`, `periodicity`, `layers/{tree,initial-order,workspaces,search,resolve}` | **sí** (10 tools de lectura) | Lectura pura útil para agentes |
-| Lógica nueva (`create_single_share`, `create_swipe_share`, `measure_geometry`) | **sí** (2 writes + 1 lectura, desde 1.44.0) | Tools manuales que reutilizan `share_service` y PostGIS para que un agente entregue mapas interactivos |
+| Endpoint REST `municipios/` (`list_municipios`, `resolve_municipios`, desde 1.48.x) | **sí** (2 tools de lectura) | Para que el agente mapee "Guadalajara, Zapopan" → claves INEGI y las pase a `create_*_share(municipios=...)` |
+| Lógica nueva (`create_single_share`, `create_swipe_share`, `measure_geometry`) | **sí** (2 writes + 1 lectura, desde 1.44.0) | Tools manuales que reutilizan `share_service` y PostGIS para que un agente entregue mapas interactivos. `create_*_share` desde 1.48.x aceptan `municipios={source, selected}` para activar el modo Vista por municipio en el share. |
 | `download` (CSV streaming) | **no** | Streams de `COPY TO STDOUT`; el formato de respuesta MCP no encaja con streaming |
 | `layers/{refresh-cache,invalidate-cache}` | **no** (removido en 1.48.1) | Requerían `X-Internal-Token` que el MCP no inyecta; siempre devolvían 401, eran ruido en `tools/list` |
 | `shares/{pin,unpin,pin-permanent}` | **no** | Writes administrativos con efectos sobre la BD, no encajan en el patrón del MCP público |
@@ -29,7 +30,7 @@ Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp`, separado del ba
 ```
 mapalab-mcp container (servers/mapalab.py)
 ├── FastMCP("mapalab")
-│   ├── @mcp.tool() search_layers, get_metadata, ...   (12 tools)
+│   ├── @mcp.tool() search_layers, get_metadata, ...   (14 tools)
 │   └── mcp_app = mcp.http_app(path='/mcp', stateless_http=True)
 │
 ├── _admin_app: FastAPI
@@ -133,7 +134,7 @@ El gateway-hub no necesita un `location` específico para `/mapalab/mcp/`: cae b
 
 ## Tools y su origen
 
-Los 12 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). 10 son wrappers delgados sobre lógica del backend; 2 reutilizan helpers de `share_service`. Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función.
+Los 14 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). Wrappers delgados sobre lógica del backend; los de share/medición/municipios reutilizan helpers de `servers/share_tools.py`. Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función.
 
 | Tool | Origen del código | Qué hace |
 |---|---|---|
@@ -146,9 +147,27 @@ Los 12 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). 10 son wrappe
 | `get_sources_batch` | `layer_metadata_service.get_sources_batch` | Fuentes de varias capas en lote |
 | `get_periodicity` | `app.services.PeriodicityService.get_periodicity` | Fechas year/month/day de una capa temporal |
 | `get_periodicities_batch` | `PeriodicityService.get_periodicities_batch` | Periodicidad de varias capas |
+| `list_municipios` | `app.repositories.MunicipiosRepository.list_all` (vista materializada `mapalab.municipios`) | Lista los 125 municipios de Jalisco con `{clave, nombre, region, areaKm2, areaHa}` |
+| `resolve_municipios` | Substring case-insensitive sobre `MunicipiosRepository.list_all` | Mapea nombre o clave parcial → matches. Útil para "Guadalajara y Zapopan" → `["14039", "14120"]` |
 | `measure_geometry` | `servers/share_tools.py::measure_geometry` (PostGIS `ST_Length`/`ST_Area::geography`) | Longitud o área geodésica de GeoJSON |
-| `create_single_share` | `servers/share_tools.py::create_single_share` (reutiliza `share_service.validate_payload` + `ShareRepository.upsert`) | Crea share `kind=single` y devuelve `{id, url, embed_html}` |
-| `create_swipe_share` | `servers/share_tools.py::create_swipe_share` | Crea share `kind=swipe` para comparación A\|B |
+| `create_single_share` | `servers/share_tools.py::create_single_share` (reutiliza `share_service.validate_payload` + `ShareRepository.upsert`) | Crea share `kind=single` y devuelve `{id, url, embed_html}`. Acepta `annotations` y `municipios={source, selected}` |
+| `create_swipe_share` | `servers/share_tools.py::create_swipe_share` | Crea share `kind=swipe` para comparación A\|B. `municipios` aplica a ambos paneles (estado compartido) |
+
+### Modo Vista por municipio en shares
+
+`create_single_share` y `create_swipe_share` aceptan `municipios={source: "iieg"|"inegi", selected: ["14039", "14120", ...]}` desde 1.48.x. El validador del share (`share_service._validate_municipios`) limita a 125 claves (los municipios totales de Jalisco). Cuando se abre el share, el visor activa el modo: máscara visual oscura fuera de los polígonos seleccionados, filtro CQL `{municipioField} IN (...)` automático en capas activas que soporten el filtro. Ver `docs/municipio-mode.md` para el flujo completo.
+
+Patrón típico desde un agente:
+
+```
+1. resolve_municipios("guadalajara, zapopan") → [{clave:"14039",nombre:"Guadalajara"}, {clave:"14120",nombre:"Zapopan"}]
+2. create_single_share(
+       layers=["tasa_homicidio_doloso"],
+       view={zoom:11, lat:20.66, lon:-103.35},
+       municipios={"source":"iieg", "selected":["14039","14120"]},
+   )
+3. → embed_html con el visor filtrado a esos 2 municipios
+```
 
 ## Entrega de mapas a agentes conversacionales (v1.44.0+)
 
@@ -326,7 +345,7 @@ curl -s -X POST http://localhost:3006/mcp/ \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
 
-Devuelve los 12 tools registrados con su `name`, `description` y `inputSchema`.
+Devuelve los 14 tools registrados con su `name`, `description` y `inputSchema`.
 
 ### curl (`tools/call`) — pruebas rápidas de los tools nuevos
 
