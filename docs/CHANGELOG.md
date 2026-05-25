@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.42.1] - 2026-05-25
+
+### Corregido: backend de `shares` aceptaba `kind='compare'` (legacy) pero rechazaba `kind='swipe'` (actual)
+
+`docs/swipe.md` afirmaba desde hace meses que "Compartir ✅ Envelope `kind: 'swipe'` con ambos snapshots", pero el backend tenía el modelo viejo con `kind IN ('single','compare')` y `_validate_compare_payload` (con `axis ∈ {date,filter,geo}` y `panes` con `value`). El botón "Compartir" del visor en modo swipe enviaba `kind='swipe'` y recibía `HTTP 400 {"detail":"kind invalido: swipe"}` silenciosamente — feature roto en producción.
+
+El frontend (`useShareSerializer`, `useShareDeserializer`) ya manejaba `single | swipe` exclusivamente (sin fallback legacy). El backend se actualiza para alinearse con el contrato real documentado.
+
+- **`backend/app/services/share_service.py`**: `ALLOWED_KINDS = {'single', 'swipe'}`. Nuevo `_validate_swipe_payload` que valida el shape documentado en `docs/swipe.md §Persistencia` (`shared.view`, `paneA.layers`, `paneB.layers`, `activeSlot ∈ {A,B}`, `position ∈ [0,1]`). Extraído `_validate_view` y `_validate_layer_entries` para reusar entre single/swipe. `_validate_compare_payload` removido.
+- **`backend/app/models/share.py`**: `CheckConstraint("kind IN ('single','swipe')")`.
+- **Migración Alembic en dataengine** `0013_map_shares_kind_swipe`: drop CHECK viejo, `DELETE FROM mapalab.map_shares WHERE kind='compare'` (solo afecta filas no alcanzables desde la UI actual), nuevo CHECK con `('single','swipe')`. Downgrade reversible.
+- **`backend/test/test_share_service.py`**: 12 tests cubriendo single/swipe válidos, validaciones de cada campo, rechazo explícito de `compare` legacy.
+
+Verificación end-to-end: `POST /api/shares` con `kind='swipe'` y el payload exacto que arma el serializer del visor devuelve `200 OK` con el `id` del share. El widget `<iieg-mapalab share="...">` ahora puede cargar swipes guardados.
+
+---
+
 ## [1.41.0] - 2026-05-22
 
 ### Agregado: iconText soporta texto visible separado del campo URL + auto-href en icono `web`

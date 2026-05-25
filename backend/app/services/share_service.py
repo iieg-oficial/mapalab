@@ -7,7 +7,7 @@ from typing import Any
 
 
 CURRENT_SCHEMA_VERSION = 1
-ALLOWED_KINDS = {"single", "compare"}
+ALLOWED_KINDS = {"single", "swipe"}
 MAX_PAYLOAD_BYTES = 64 * 1024
 
 
@@ -52,38 +52,50 @@ def validate_payload(envelope: dict) -> tuple[str, dict]:
     if kind == "single":
         _validate_single_payload(payload)
     else:
-        _validate_compare_payload(payload)
+        _validate_swipe_payload(payload)
 
     return kind, payload
 
 
-def _validate_single_payload(payload: dict) -> None:
-    layers = payload.get("layers")
-    if not isinstance(layers, list):
-        raise ValueError("single.payload.layers debe ser lista")
-    for entry in layers:
-        if not isinstance(entry, dict) or "slug" not in entry:
-            raise ValueError("cada layer debe tener slug")
-        opacity = entry.get("opacity", 1.0)
-        if not (isinstance(opacity, (int, float)) and 0 <= opacity <= 1):
-            raise ValueError(f"opacity fuera de rango en {entry.get('slug')}")
-    view = payload.get("view") or {}
+def _validate_view(view: dict | None) -> None:
+    if view is None:
+        return
+    if not isinstance(view, dict):
+        raise ValueError("view debe ser objeto JSON")
     zoom = view.get("zoom")
     if zoom is not None and not (isinstance(zoom, (int, float)) and 1 <= zoom <= 24):
         raise ValueError("view.zoom fuera de rango")
 
 
-def _validate_compare_payload(payload: dict) -> None:
-    base = payload.get("base")
-    if not isinstance(base, dict):
-        raise ValueError("compare.payload.base requerido")
-    _validate_single_payload(base)
-    axis = payload.get("axis")
-    if axis not in {"date", "filter", "geo"}:
-        raise ValueError(f"axis invalido: {axis}")
-    panes = payload.get("panes")
-    if not isinstance(panes, list) or len(panes) < 2:
-        raise ValueError("compare.payload.panes requiere al menos 2 entradas")
-    for pane in panes:
-        if not isinstance(pane, dict) or "value" not in pane:
-            raise ValueError("cada pane requiere value")
+def _validate_layer_entries(entries: Any, source: str) -> None:
+    if not isinstance(entries, list):
+        raise ValueError(f"{source}.layers debe ser lista")
+    for entry in entries:
+        if not isinstance(entry, dict) or "slug" not in entry:
+            raise ValueError(f"{source}: cada layer debe tener slug")
+        opacity = entry.get("opacity", 1.0)
+        if not (isinstance(opacity, (int, float)) and 0 <= opacity <= 1):
+            raise ValueError(f"{source}: opacity fuera de rango en {entry.get('slug')}")
+
+
+def _validate_single_payload(payload: dict) -> None:
+    _validate_layer_entries(payload.get("layers"), "single.payload")
+    _validate_view(payload.get("view"))
+
+
+def _validate_swipe_payload(payload: dict) -> None:
+    shared = payload.get("shared")
+    if not isinstance(shared, dict):
+        raise ValueError("swipe.payload.shared requerido")
+    _validate_view(shared.get("view"))
+    for pane_key in ("paneA", "paneB"):
+        pane = payload.get(pane_key)
+        if not isinstance(pane, dict):
+            raise ValueError(f"swipe.payload.{pane_key} requerido")
+        _validate_layer_entries(pane.get("layers"), f"swipe.payload.{pane_key}")
+    active_slot = payload.get("activeSlot")
+    if active_slot not in {"A", "B"}:
+        raise ValueError("swipe.payload.activeSlot debe ser 'A' o 'B'")
+    position = payload.get("position")
+    if position is not None and not (isinstance(position, (int, float)) and 0 <= position <= 1):
+        raise ValueError("swipe.payload.position fuera de rango [0,1]")

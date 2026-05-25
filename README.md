@@ -3,7 +3,7 @@
 Interfaz web para la creacion, gestion y visualizacion de mapas interactivos
 con datos geoespaciales del IIEG Jalisco.
 
-**Version:** 1.42.0
+**Version:** 1.42.1
 
 ## Requisitos
 
@@ -225,3 +225,6 @@ Ver documentacion completa en [docs/ci-cd.md](docs/ci-cd.md).
 ## Licencia
 
 Desarrollado por el equipo del IIEG.
+
+## UX/UI
+[Maqueta](https://xd.adobe.com/view/1c2021ab-ac59-4986-9d45-b35a21656f42-4973/grid)
