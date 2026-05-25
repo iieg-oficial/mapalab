@@ -15,6 +15,8 @@ export const HIGHLIGHT_SHAPES = ['area', 'linea', 'off'];
 export const DEFAULT_HIGHLIGHT_COLOR = 'morado';
 export const DEFAULT_HIGHLIGHT_SHAPE = 'area';
 
+const HEX_PATTERN = /^#[0-9A-Fa-f]{6}$/;
+
 const COLOR_PRESETS = {
     morado: {
         stroke: { color: '#5C2472', width: 2.5 },
@@ -33,11 +35,19 @@ const COLOR_PRESETS = {
     },
 };
 
+const presetForHex = (hex) => ({
+    stroke: { color: hex, width: 2.5 },
+    areaFill: `${hex}26`,
+    point: { radius: 8, strokeWidth: 2 },
+});
+
 const TRANSPARENT = 'rgba(0,0,0,0)';
 const LAYER_ID_PROP = '_highlightLayerId';
 
 const buildStyle = (color, shape) => {
-    const preset = COLOR_PRESETS[color] || COLOR_PRESETS[DEFAULT_HIGHLIGHT_COLOR];
+    const preset = HEX_PATTERN.test(color)
+        ? presetForHex(color)
+        : (COLOR_PRESETS[color] || COLOR_PRESETS[DEFAULT_HIGHLIGHT_COLOR]);
     const fillColor = shape === 'linea' ? TRANSPARENT : preset.areaFill;
     return new Style({
         stroke: new Stroke({ color: preset.stroke.color, width: preset.stroke.width, lineCap: 'round', lineJoin: 'round' }),
@@ -57,12 +67,14 @@ const getCachedStyle = (color, shape) => {
     return stylesCache.get(key);
 };
 
+const isValidColorValue = (v) => COLOR_PRESETS[v] || HEX_PATTERN.test(v || '');
+
 export const resolveLayerHighlight = (layerId, allLayers) => {
     const chain = findAncestorChain(layerId, allLayers);
     let color = null;
     let shape = null;
     for (const node of chain) {
-        if (color === null && COLOR_PRESETS[node?.highlightColor]) {
+        if (color === null && isValidColorValue(node?.highlightColor)) {
             color = node.highlightColor;
         }
         if (shape === null && HIGHLIGHT_SHAPES.includes(node?.highlightShape)) {

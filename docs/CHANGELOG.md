@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.47.1] - 2026-05-25
+
+### Agregado: soporte de color hex personalizado en el resaltado de feature
+
+El hook `useFeatureHighlight` ahora acepta valores hex `#RRGGBB` en `node.highlightColor`. Si el valor matchea el patrón hex, genera el preset dinámicamente: stroke con ese color exacto y fill con alpha 15% (`${hex}26`). Los 3 presets nombrados (`morado`/`naranja`/`sombreado`) siguen funcionando.
+
+Sin breaking changes — un admin puede dejar los valores `morado`/`naranja`/`sombreado` como estaban o pasar a hex desde el modal global en mariachi-admin.
+
+`isValidColorValue` permite los 3 presets + hex válido en `resolveLayerHighlight`. Los valores inválidos caen al default `morado`.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/hooks/useFeatureHighlight.js`**: `HEX_PATTERN` regex, `presetForHex(hex)` función, `buildStyle` chequea hex antes de buscar en `COLOR_PRESETS`, `resolveLayerHighlight` valida hex también en la cadena de ancestros.
+
+---
+
 ## [1.47.0] - 2026-05-25
 
 ### Agregado: InfoBox arrastrable con flecha dinámica + resaltado configurable por capa
