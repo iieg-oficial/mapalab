@@ -29,7 +29,7 @@ Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp`, separado del ba
 mapalab-mcp container (servers/mapalab.py)
 ├── FastMCP("mapalab")
 │   ├── @mcp.tool() search_layers, get_metadata, ...   (11 tools)
-│   └── mcp_app = mcp.http_app(path="/mcp/", stateless_http=True)
+│   └── mcp_app = mcp.http_app(path='/mcp', stateless_http=True)
 │
 ├── _admin_app: FastAPI
 │   ├── GET /          → service info
@@ -91,16 +91,16 @@ app.add_middleware(MCPTelemetryMiddleware, path_prefix='/mcp')
 | Origen | URL canonica |
 |---|---|
 | Interna (entre containers) | `http://mapalab-mcp:8000/mcp` |
-| Local desde host (puerto publicado) | `http://localhost:3006/api/mcp` |
-| Via gateway-hub (staging/prod) | `https://<dominio>/mapalab/api/mcp` |
+| Local desde host (puerto publicado) | `http://localhost:3006/mcp` |
+| Via gateway-hub (staging/prod) | `https://<dominio>/mapalab/mcp` |
 
-**Sin slash final** — alineado con el patron de `iieg-oficial/agent/servers` (sql, analytics, charts, etc. todos montan en `path="/mcp"` sin slash). Asi un cliente que ya consume varios servers MCP del ecosistema usa la misma forma.
+**Sin prefijo `/api`** — el MCP no es REST, es JSON-RPC sobre HTTP streamable. Convive con el API REST del backend en lugar de "dentro" del API. Alineado con la convención dominante en la industria (FastMCP default `path='/mcp'`, Cloudflare remote MCP servers, etc.) y con el patron de `iieg-oficial/agent/servers`. Desde mapalab 1.45.0 las URLs viejas `/api/mcp` y `/mapalab/api/mcp` ya no existen — son 404.
 
-Tanto `/api/mcp` como `/api/mcp/` funcionan: nginx tiene dos `location =` exactos (sin slash y con slash) que pegan al backend siempre sin slash. `mcp.http_app(path='/mcp', stateless_http=True)` se monta sin slash, evitando el 307 que apareceria si nginx pegara con slash a un mount sin slash.
+**Sin slash final** — el visor monta `path='/mcp'` (sin slash). Tanto `/mcp` como `/mcp/` funcionan via nginx: hay dos `location =` exactos (sin y con slash) que ambos pegan al backend en `/mcp` sin slash, evitando el 307 que apareceria si el path con slash llegara al mount sin slash.
 
 ## Configuración de nginx
 
-`nginx/nginx.conf` define un upstream `mapalab_mcp` separado del `backend` y dos locations dedicadas (`/api/mcp/` y `/mapalab/api/mcp/`):
+`nginx/nginx.conf` define un upstream `mapalab_mcp` separado del `backend` y dos locations dedicadas (`/mcp` y `/mapalab/mcp`, cada una con su variante con/sin slash):
 
 ```nginx
 upstream mapalab_mcp {
@@ -108,8 +108,8 @@ upstream mapalab_mcp {
     keepalive 16;
 }
 
-location /api/mcp/ {
-    proxy_pass http://mapalab_mcp/mcp/;
+location = /mcp {
+    proxy_pass http://mapalab_mcp/mcp;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -130,7 +130,7 @@ Diferencias clave contra `/api/`:
 - `proxy_cache off` — defensivo (no debería haber cache en la zona pero por si se agrega).
 - Timeouts de 600s — sesiones MCP pueden mantenerse abiertas.
 
-El gateway-hub no necesita un `location` específico para `/mapalab/api/mcp/`: cae bajo el bloque general de `/mapalab/api/` que ya proxea al `mapalab-nginx`. Si en el futuro se observan problemas de buffering en el gateway, agregar un location análogo allá.
+El gateway-hub no necesita un `location` específico para `/mapalab/mcp/`: cae bajo el bloque general `location ^~ /mapalab/` que ya proxea al `mapalab-nginx`. Si en el futuro se observan problemas de buffering en el gateway, agregar un `location ^~ /mapalab/mcp/` análogo allá con `proxy_buffering off`.
 
 ## Tools generados
 
@@ -250,7 +250,7 @@ La resolución vive en helpers compartidos:
 npx @modelcontextprotocol/inspector
 ```
 
-Browser en `http://localhost:6274` → Transport `Streamable HTTP` → URL `http://localhost:3006/api/mcp/` → Connect → tab Tools → List/Run.
+Browser en `http://localhost:6274` → Transport `Streamable HTTP` → URL `http://localhost:3006/mcp/` → Connect → tab Tools → List/Run.
 
 ### Cliente Python con FastMCP
 
@@ -259,7 +259,7 @@ import asyncio, json
 from fastmcp import Client
 
 async def main():
-    async with Client('http://localhost:3006/api/mcp/') as client:
+    async with Client('http://localhost:3006/mcp/') as client:
         tools = await client.list_tools()
         print(f'{len(tools)} tools')
         for t in tools:
@@ -281,7 +281,7 @@ async def main():
     client = MultiServerMCPClient({
         'mapalab': {
             'transport': 'streamable_http',
-            'url': 'http://localhost:3006/api/mcp/',
+            'url': 'http://localhost:3006/mcp/',
         }
     })
     tools = await client.get_tools()
@@ -298,7 +298,7 @@ asyncio.run(main())
 {
   "mcpServers": {
     "mapalab": {
-      "url": "http://localhost:3006/api/mcp/",
+      "url": "http://localhost:3006/mcp/",
       "transport": "http"
     }
   }
@@ -310,7 +310,7 @@ Reiniciar Claude Desktop. Los tools aparecen en el panel de herramientas del cha
 ### curl (handshake)
 
 ```bash
-curl -i -N -X POST http://localhost:3006/api/mcp/ \
+curl -i -N -X POST http://localhost:3006/mcp/ \
   -H 'Accept: application/json, text/event-stream' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -328,7 +328,7 @@ curl -i -N -X POST http://localhost:3006/api/mcp/ \
 ### curl (tools/list)
 
 ```bash
-curl -s -X POST http://localhost:3006/api/mcp/ \
+curl -s -X POST http://localhost:3006/mcp/ \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
@@ -343,7 +343,7 @@ Las respuestas vienen en formato SSE (`event: message\ndata: {...}`). Para parse
 **`measure_geometry`** — distancia geodésica entre dos puntos:
 
 ```bash
-curl -s -X POST http://localhost:3006/api/mcp/ \
+curl -s -X POST http://localhost:3006/mcp/ \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -d '{
@@ -370,7 +370,7 @@ Respuesta esperada (~8.26 km entre Guadalajara y Zapopan):
 **`measure_geometry`** — área de un polígono:
 
 ```bash
-curl -s -X POST http://localhost:3006/api/mcp/ \
+curl -s -X POST http://localhost:3006/mcp/ \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -d '{
@@ -393,7 +393,7 @@ curl -s -X POST http://localhost:3006/api/mcp/ \
 **`create_single_share`** — crea un share con capa + anotación:
 
 ```bash
-curl -s -X POST http://localhost:3006/api/mcp/ \
+curl -s -X POST http://localhost:3006/mcp/ \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -d '{
@@ -423,7 +423,7 @@ Devuelve `{id, kind, url, embed_html}`. Pegar `url` en un navegador abre el viso
 **`create_swipe_share`** — comparación A|B:
 
 ```bash
-curl -s -X POST http://localhost:3006/api/mcp/ \
+curl -s -X POST http://localhost:3006/mcp/ \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -d '{
@@ -525,7 +525,7 @@ Scrapeado por Prometheus en huachicol vía el endpoint `/metrics` existente del 
 
 - **Por ahora público.** Igual que el resto del backend de mapalab — el visor no requiere auth y los datos son catálogo público.
 - Si se necesita restringir el MCP sin tocar REST, opciones:
-  1. Allowlist de IPs en gateway-hub para `/mapalab/api/mcp/`.
+  1. Allowlist de IPs en gateway-hub para `/mapalab/mcp/`.
   2. Header secret validado en gateway o en un middleware del backend.
   3. JWT con claims de `fastmcp` — la lib soporta autenticación nativa pero requiere reconfigurar el cliente.
 - Rate limiting en gateway-hub aplica al path completo; si se vuelve un problema, definir una zona específica `mcp` en `gateway-hub/nginx/`.
@@ -565,4 +565,4 @@ Scrapeado por Prometheus en huachicol vía el endpoint `/metrics` existente del 
 - [FastMCP docs — Lifespan](https://gofastmcp.com/servers/lifespan)
 - [Skill `fastapi-to-mcp`](../../docs/SKILL.md) — guía que se usó como base
 - `backend/app/server.py` — implementación
-- `nginx/nginx.conf` — bloque `location /api/mcp/`
+- `nginx/nginx.conf` — bloques `location = /mcp[/]` y `location = /mapalab/mcp[/]`

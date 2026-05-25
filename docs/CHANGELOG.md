@@ -5,6 +5,47 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.45.0] - 2026-05-25
+
+### Cambiado (BREAKING): URLs del MCP movidas de `/api/mcp` y `/mapalab/api/mcp` → `/mcp` y `/mapalab/mcp`
+
+El MCP de mapalab vivía bajo `/api/mcp/` y `/mapalab/api/mcp/`, heredado de cuando se pensó como "una API más" del backend. Pero el MCP no es REST — es JSON-RPC sobre HTTP streamable, conceptualmente un protocolo distinto que convive con el API en lugar de "dentro" de él. La convención dominante en la industria (FastMCP default `path='/mcp'`, Cloudflare remote MCP servers, modelcontextprotocol.io examples) lo monta al nivel raíz del servicio sin prefijo `/api`.
+
+Aprovechamos que los únicos clientes hoy son de prueba (admin playground en mariachi + curl manual) para hacer el corte limpio en lugar de mantener compat. Las URLs viejas devuelven 404 a partir de esta versión.
+
+#### URLs
+
+| Antes | Ahora |
+|---|---|
+| `https://<dominio>/api/mcp[/]` | `https://<dominio>/mcp[/]` |
+| `https://<dominio>/mapalab/api/mcp[/]` | `https://<dominio>/mapalab/mcp[/]` |
+| `http://mapalab-mcp:8000/mcp` (interna) | sin cambios |
+
+#### Cambios concretos
+
+- **`nginx/nginx.conf`**: removidas las cuatro locations `= /api/mcp[/]` y `= /mapalab/api/mcp[/]`. Agregadas `= /mcp[/]` y `= /mapalab/mcp[/]` con el mismo `proxy_buffering off` / `proxy_cache off` / timeouts de 600s. El upstream `mapalab_mcp` no cambia. La location general `= /mapalab/api/metrics { return 403 }` se mantiene.
+- **`docs/mcp.md`**: §Rutas y §Configuración de nginx actualizadas. Todas las URLs de los ejemplos curl, Claude Desktop config, FastMCP client, LangChain adapter usan ahora `/mcp` y `/mapalab/mcp`. Nota explícita: "Sin prefijo `/api` — alineado con la convención industrial".
+- **`docs/context.md`**: §MCP server refleja las URLs nuevas + nota histórica sobre el cambio.
+
+#### Verificación e2e (todas con `mapalab-nginx`)
+
+```
+POST /mapalab/mcp[/]   → 200 SSE  ✅
+POST /mcp[/]           → 200 SSE  ✅
+POST /mapalab/api/mcp[/] → 404 {"detail":"Not Found"}  (correcto, ya no existe)
+POST /api/mcp[/]         → 404
+```
+
+#### Para clientes existentes
+
+- **Claude Desktop, IDEs MCP, IGIBot, langchain-mcp-adapters, etc.**: actualizar la URL en su config de `/mapalab/api/mcp/` a `/mapalab/mcp/`.
+- **Playground del admin mariachi**: actualizado en `admin 1.15.3` (commit separado en `mariachi`).
+- **Tests automáticos del MCP**: hardcodean URLs en su config — ajustar.
+
+Sin cambios en `servers/mapalab.py` ni en los tools del MCP. El servidor sigue exponiendo el mismo conjunto de tools, solo cambia el path por donde nginx los expone al exterior.
+
+---
+
 ## [1.44.1] - 2026-05-25
 
 ### Documentación: `docs/mcp.md` con ejemplos `curl tools/call` para los 3 tools nuevos

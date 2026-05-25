@@ -213,9 +213,9 @@ Definiciones viven en DataEngine (schema `mapalab`). Frontend las carga via `GET
 
 Construido con `FastMCP.from_fastapi(...)` a partir de un sub-app FastAPI que registra sólo los routers que se quieren exponer como tools (`metadata`, `periodicity`, `layers`, `shares`). El sub-app **no** comparte instancia con `app` para que `download` y `metrics` queden fuera del MCP sin perderlos del REST.
 
-- Montaje: `app.mount("/mcp", mcp_app)` en `backend/app/server.py`. URL externa: `/api/mcp/` (vía nginx) o `/mapalab/api/mcp/` (vía gateway-hub).
+- Montaje: `mcp.http_app(path='/mcp', stateless_http=True)` en `servers/mapalab.py`. URL externa **desde mapalab 1.45.0**: `/mcp/` (vía nginx) o `/mapalab/mcp/` (vía gateway-hub). Antes era `/api/mcp/` y `/mapalab/api/mcp/`; se movió a nivel raíz para alinear con el patrón industrial (MCP no es REST y vive al lado del API, no dentro).
 - Lifespan: `combine_lifespans(lifespan, mcp_app.lifespan)` preserva el warmup del pool, el leader election y el scheduler existentes.
-- Nginx: `location /api/mcp/` con `proxy_buffering off`, `proxy_cache off` y timeouts de 600s para el transporte HTTP streamable.
+- Nginx: `location = /mcp` y `location = /mapalab/mcp` (más sus variantes con `/`) con `proxy_buffering off`, `proxy_cache off` y timeouts de 600s para el transporte HTTP streamable.
 - Auth: por ahora público (mismo perfil que el resto del backend). Si se requiere restringir, hacerlo en gateway-hub via allowlist o header secret.
 
 ### Modelos y tablas DataEngine (schema `mapalab` + legacy `public`)
