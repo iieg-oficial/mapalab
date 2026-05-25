@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.45.1] - 2026-05-25
+
+### Documentación: recetas end-to-end de los tools nuevos del MCP
+
+Los snippets curl de §Cómo probar muestran cada tool aislado. Faltaba documentar el **flujo combinado** que un agente conversacional realmente ejecuta: medir → resaltar la zona → entregar el share. Tres recetas nuevas en `docs/mcp.md §Recetas`:
+
+- **Receta 1 — Medir un polígono y crear un share con la zona resaltada:** `measure_geometry` para calcular el área, luego `create_single_share` con el **mismo** polígono dentro de `annotations[]` (preservando `value`/`unit` del paso 1) más un `Text` annotation con la etiqueta del análisis. El usuario ve la métrica en texto y el mapa interactivo en el chat.
+- **Receta 2 — Comparación A|B con swipe:** `create_swipe_share` con `pane_a_layers` y `pane_b_layers`, `label_a`/`label_b` para la píldora inferior del visor. Caso típico: "compara homicidios vs población".
+- **Receta 3 — Swipe con anotaciones compartidas:** `create_swipe_share` + `annotations[]` (Polygon + Emoji). Las anotaciones se pintan sobre **ambos** paneles porque son globales del mapa, no por slot — alineado con la decisión documentada en `docs/swipe.md §Pendientes`.
+
+Cada receta incluye el `curl` exacto, el resultado esperado, y una descripción de qué ve el usuario final. Cierra con el patrón general `medición → annotation`: cuando el análisis del agente produce una geometría, reusa la **misma** `geometry` en el share para que el contexto del análisis se preserve.
+
+Solo documentación.
+
+---
+
 ## [1.45.0] - 2026-05-25
 
 ### Cambiado (BREAKING): URLs del MCP movidas de `/api/mcp` y `/mapalab/api/mcp` → `/mcp` y `/mapalab/mcp`

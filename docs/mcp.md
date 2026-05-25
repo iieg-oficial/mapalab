@@ -449,6 +449,174 @@ curl -s -X POST http://localhost:3006/mcp/ \
 
 Respuesta esperada: `200 OK` con `Content-Type: text/event-stream` y un evento `data:` con `serverInfo: {"name": "MapaLab MCP", ...}`.
 
+## Recetas — combinaciones reales de tools
+
+Los tools individuales son útiles, pero el valor real para un agente está en encadenarlos. Tres recetas que cubren los casos típicos de un asistente conversacional pidiendo al MCP de mapalab que arme un mapa rico.
+
+### Receta 1 — Medir un polígono y crear un share con la zona resaltada
+
+**Escenario:** el usuario dice "muéstrame el área norte de Guadalajara con la tasa de homicidio". El agente arma un polígono que aproxima la zona, lo mide para reportar el área, y crea un share con la capa de homicidio + el polígono pre-pintado.
+
+**Paso 1 — calcular el área del polígono:**
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "measure_geometry",
+      "arguments": {
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[
+            [-103.39, 20.70], [-103.32, 20.70],
+            [-103.32, 20.75], [-103.39, 20.75],
+            [-103.39, 20.70]
+          ]]
+        }
+      }
+    }
+  }'
+```
+
+Devuelve `{"type":"Polygon","metric":"area","value":~30000000,"unit":"m²","value_km2":~30}`. El agente puede responder al usuario "El área norte que describes mide ~30 km²".
+
+**Paso 2 — crear el share reusando el mismo polígono como `annotation`:**
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "create_single_share",
+      "arguments": {
+        "layers": ["tasa_homicidio_doloso"],
+        "view": {"zoom": 12, "lat": 20.725, "lon": -103.355},
+        "basemap": "osm",
+        "annotations": [
+          {
+            "id": "area-norte",
+            "type": "Polygon",
+            "geometry": {
+              "type": "Polygon",
+              "coordinates": [[
+                [-103.39, 20.70], [-103.32, 20.70],
+                [-103.32, 20.75], [-103.39, 20.75],
+                [-103.39, 20.70]
+              ]]
+            },
+            "label": "Área norte (~30 km²)",
+            "value": 30000000,
+            "unit": "m²"
+          },
+          {
+            "id": "label-norte",
+            "type": "Text",
+            "geometry": {"type": "Point", "coordinates": [-103.355, 20.725]},
+            "textLabel": "Zona analizada",
+            "rotation": 0
+          }
+        ]
+      }
+    }
+  }'
+```
+
+Devuelve `{id, url, embed_html}`. El bot pega el `embed_html` en su respuesta markdown y el usuario ve el mapa con la capa de homicidio activa, el polígono resaltando el área norte, y la etiqueta "Zona analizada" en el centro.
+
+### Receta 2 — Comparación A|B con swipe
+
+**Escenario:** el usuario pregunta "compárame las zonas con más homicidios versus la densidad poblacional". El agente arma un swipe que muestra una capa de cada lado.
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "create_swipe_share",
+      "arguments": {
+        "pane_a_layers": ["tasa_homicidio_doloso"],
+        "pane_b_layers": ["poblacion"],
+        "position": 0.5,
+        "view": {"zoom": 9, "lat": 20.6, "lon": -103.4},
+        "basemap": "osm",
+        "label_a": "Tasa de homicidio doloso",
+        "label_b": "Población"
+      }
+    }
+  }'
+```
+
+El visor abre con la barra divisora arrastrable al centro: A muestra homicidio, B muestra población. El usuario puede arrastrar la barra para "frotar" visualmente las dos capas en la misma región. Los `label_a`/`label_b` aparecen en la píldora inferior del visor (`<SlotBadge>`).
+
+### Receta 3 — Swipe con polígono compartido entre ambos lados
+
+**Escenario:** el agente quiere comparar dos capas pero además resaltar el municipio sobre el que está la pregunta. Las anotaciones son globales del mapa (no por pane), así que el polígono se pinta sobre los dos lados del swipe.
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "create_swipe_share",
+      "arguments": {
+        "pane_a_layers": ["tasa_homicidio_doloso"],
+        "pane_b_layers": ["poblacion"],
+        "position": 0.5,
+        "view": {"zoom": 11, "lat": 20.66, "lon": -103.35},
+        "basemap": "osm",
+        "label_a": "Homicidio",
+        "label_b": "Población",
+        "annotations": [
+          {
+            "id": "guadalajara-bbox",
+            "type": "Polygon",
+            "geometry": {
+              "type": "Polygon",
+              "coordinates": [[
+                [-103.42, 20.62], [-103.28, 20.62],
+                [-103.28, 20.74], [-103.42, 20.74],
+                [-103.42, 20.62]
+              ]]
+            },
+            "label": "Guadalajara"
+          },
+          {
+            "id": "centro-gdl",
+            "type": "Emoji",
+            "geometry": {"type": "Point", "coordinates": [-103.349, 20.677]},
+            "textLabel": "📍",
+            "rotation": 0
+          }
+        ]
+      }
+    }
+  }'
+```
+
+El visor abre con swipe activo + el bbox de Guadalajara y un pin emoji en el centro pintados sobre **ambos** paneles. Al arrastrar la barra, el polígono y el emoji siempre son visibles — son del nivel del mapa, no de un pane. Esto está intencionalmente alineado con la decisión documentada en `docs/swipe.md §Pendientes`: las mediciones son geográficas, no del slot.
+
+### Patrón general: medición → annotation
+
+Cuando un análisis del agente produce una geometría (polígono de un municipio, línea entre dos puntos, área de cobertura), el patrón natural es:
+
+1. `measure_geometry(geometry)` → obtienes `{value, unit, value_km|value_km2}` para reportar al usuario en texto.
+2. `create_single_share` o `create_swipe_share` con la **misma** `geometry` dentro de `annotations[]` y `value`/`unit` del paso 1 en el objeto annotation para preservar el contexto del análisis.
+
+El usuario ve la métrica en texto y el mapa interactivo donde puede explorar la zona.
+
 ## Telemetría → Mariachi (v1.30.0+)
 
 Cada request HTTP al `/mcp/` pasa por `MCPTelemetryMiddleware` (ASGI puro en `backend/app/middleware/mcp_telemetry.py`) que parsea el JSON-RPC, mide duración + bytes de salida y empuja al buffer del `_McpTelemetryLogger`. Un loop async flushea cada 30s a `POST /api/administrador/internal/mapalab/mcp/events` en mariachi (mismo patrón que `access_logger` / `api_key_quota`).
