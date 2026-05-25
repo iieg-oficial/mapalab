@@ -49,6 +49,7 @@ export const useShareDeserializer = () => {
         setBaseMapId,
         mapRef,
         setCompareMode,
+        restoreAnnotations,
     } = useMapsContext();
     const { layers: layerTree } = useLayers();
 
@@ -125,6 +126,9 @@ export const useShareDeserializer = () => {
                     globalOrder,
                 });
             }
+            if (Array.isArray(payload.annotations) && typeof restoreAnnotations === 'function') {
+                restoreAnnotations(payload.annotations);
+            }
             return true;
         }
 
@@ -188,6 +192,10 @@ export const useShareDeserializer = () => {
             setCompareMode(initialCompareMode());
         }
 
+        if (Array.isArray(payload.annotations) && typeof restoreAnnotations === 'function') {
+            restoreAnnotations(payload.annotations);
+        }
+
         return true;
-    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, setSelectedLayerForSymbology, findLayerById, setLayerOpacity, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode]);
+    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, setSelectedLayerForSymbology, findLayerById, setLayerOpacity, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations]);
 };

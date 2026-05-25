@@ -1,8 +1,44 @@
 import { useCallback } from 'react';
 import { toLonLat } from 'ol/proj';
+import GeoJSON from 'ol/format/GeoJSON';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { findLayerDef, slugForLayer } from '@pages/maps/helpers/wmsConfig';
+
+const ANNOTATION_GEOJSON = new GeoJSON({
+    featureProjection: 'EPSG:3857',
+    dataProjection: 'EPSG:4326',
+});
+
+const ANNOTATION_TYPES = new Set(['LineString', 'Polygon', 'Freehand', 'Text', 'Emoji']);
+
+const serializeAnnotations = (measurements) => {
+    if (!Array.isArray(measurements) || measurements.length === 0) return null;
+    const out = [];
+    measurements.forEach((m) => {
+        if (!m?.feature || !ANNOTATION_TYPES.has(m.type)) return;
+        let geometry;
+        try {
+            geometry = ANNOTATION_GEOJSON.writeGeometryObject(m.feature.getGeometry());
+        } catch {
+            return;
+        }
+        const entry = {
+            id: m.id,
+            type: m.type,
+            geometry,
+            visible: m.visible !== false,
+        };
+        if (m.label) entry.label = m.label;
+        if (m.value !== undefined && m.value !== null) entry.value = m.value;
+        const textLabel = m.feature.get('textLabel');
+        if (textLabel) entry.textLabel = textLabel;
+        const rotation = m.feature.get('rotation');
+        if (typeof rotation === 'number') entry.rotation = rotation;
+        out.push(entry);
+    });
+    return out.length > 0 ? out : null;
+};
 
 const round = (value, decimals) => {
     if (value === null || value === undefined || Number.isNaN(value)) return value;
@@ -70,10 +106,12 @@ export const useShareSerializer = () => {
         loopPrefs,
         mapRef,
         compareMode,
+        measurements,
     } = useMapsContext();
     const { layers: layerTree } = useLayers();
 
     return useCallback((kind = 'single', extra = {}) => {
+        const annotations = extra.includeAnnotations ? serializeAnnotations(measurements) : null;
         const view = (() => {
             const map = mapRef?.current;
             if (!map) return null;
@@ -114,6 +152,7 @@ export const useShareSerializer = () => {
             layers,
             loop: serializeLoop(dateLoops, loopPrefs, layerTree),
         };
+        if (annotations) basePayload.annotations = annotations;
 
         if (kind === 'swipe') {
             const activeSlot = compareMode?.activeSlot || extra.activeSlot || 'A';
@@ -128,26 +167,28 @@ export const useShareSerializer = () => {
             const frozenPane = compareMode?.[`pane${otherSlot}`] || {};
             const paneA = activeSlot === 'A' ? livePane : frozenPane;
             const paneB = activeSlot === 'A' ? frozenPane : livePane;
+            const swipePayload = {
+                shared: {
+                    view,
+                    basemap: baseMapId || null,
+                    selected: selectedSlug,
+                },
+                paneA: {
+                    label: paneA.label || 'A',
+                    layers: serializePaneLayers(paneA, layerTree),
+                },
+                paneB: {
+                    label: paneB.label || 'B',
+                    layers: serializePaneLayers(paneB, layerTree),
+                },
+                activeSlot,
+                position: typeof extra.position === 'number' ? extra.position : (compareMode?.swipePosition ?? 0.5),
+            };
+            if (annotations) swipePayload.annotations = annotations;
             return {
                 version: 1,
                 kind: 'swipe',
-                payload: {
-                    shared: {
-                        view,
-                        basemap: baseMapId || null,
-                        selected: selectedSlug,
-                    },
-                    paneA: {
-                        label: paneA.label || 'A',
-                        layers: serializePaneLayers(paneA, layerTree),
-                    },
-                    paneB: {
-                        label: paneB.label || 'B',
-                        layers: serializePaneLayers(paneB, layerTree),
-                    },
-                    activeSlot,
-                    position: typeof extra.position === 'number' ? extra.position : (compareMode?.swipePosition ?? 0.5),
-                },
+                payload: swipePayload,
             };
         }
 
@@ -156,5 +197,5 @@ export const useShareSerializer = () => {
             kind: 'single',
             payload: basePayload,
         };
-    }, [activeLayerIds, hiddenLayerIds, layerOpacities, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode]);
+    }, [activeLayerIds, hiddenLayerIds, layerOpacities, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode, measurements]);
 };

@@ -82,3 +82,72 @@ class TestKindRechazado:
     def test_version_desconocida_rechazada(self):
         with pytest.raises(ValueError, match='version desconocida'):
             validate_payload(_envelope('single', {'layers': []}, version=99))
+
+
+class TestAnnotations:
+    def _annotation(self, **overrides):
+        base = {
+            'id': 'abc',
+            'type': 'Polygon',
+            'geometry': {
+                'type': 'Polygon',
+                'coordinates': [[[-103.4, 20.6], [-103.3, 20.6], [-103.3, 20.7], [-103.4, 20.7], [-103.4, 20.6]]],
+            },
+            'label': 'Zona X',
+            'value': 1234.5,
+        }
+        base.update(overrides)
+        return base
+
+    def test_acepta_single_con_annotation_polygon(self):
+        env = _envelope('single', {'layers': [], 'annotations': [self._annotation()]})
+        kind, _ = validate_payload(env)
+        assert kind == 'single'
+
+    def test_acepta_single_con_annotation_linestring(self):
+        env = _envelope('single', {'layers': [], 'annotations': [
+            self._annotation(type='LineString', geometry={
+                'type': 'LineString', 'coordinates': [[-103.4, 20.6], [-103.3, 20.7]],
+            }),
+        ]})
+        kind, _ = validate_payload(env)
+        assert kind == 'single'
+
+    def test_acepta_swipe_con_annotations(self):
+        env = _envelope('swipe', {
+            'shared': {}, 'paneA': {'layers': []}, 'paneB': {'layers': []},
+            'activeSlot': 'A', 'position': 0.5,
+            'annotations': [self._annotation(type='Text', geometry={'type': 'Point', 'coordinates': [-103.4, 20.6]}, textLabel='Aquí')],
+        })
+        kind, _ = validate_payload(env)
+        assert kind == 'swipe'
+
+    def test_rechaza_type_invalido(self):
+        env = _envelope('single', {'layers': [], 'annotations': [self._annotation(type='Foo')]})
+        with pytest.raises(ValueError, match='type debe ser uno de'):
+            validate_payload(env)
+
+    def test_rechaza_geometry_invalida(self):
+        env = _envelope('single', {'layers': [], 'annotations': [self._annotation(geometry={'type': 'Bar', 'coordinates': []})]})
+        with pytest.raises(ValueError, match='geometry'):
+            validate_payload(env)
+
+    def test_rechaza_sin_id(self):
+        a = self._annotation()
+        del a['id']
+        with pytest.raises(ValueError, match='id requerido'):
+            validate_payload(_envelope('single', {'layers': [], 'annotations': [a]}))
+
+    def test_rechaza_demasiadas_annotations(self):
+        env = _envelope('single', {'layers': [], 'annotations': [self._annotation(id=f'm{i}') for i in range(201)]})
+        with pytest.raises(ValueError, match='excede'):
+            validate_payload(env)
+
+    def test_acepta_annotations_none(self):
+        env = _envelope('single', {'layers': [], 'annotations': None})
+        kind, _ = validate_payload(env)
+        assert kind == 'single'
+
+    def test_annotations_no_requeridas(self):
+        kind, _ = validate_payload(_envelope('single', {'layers': []}))
+        assert kind == 'single'

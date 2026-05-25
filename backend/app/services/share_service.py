@@ -8,7 +8,10 @@ from typing import Any
 
 CURRENT_SCHEMA_VERSION = 1
 ALLOWED_KINDS = {"single", "swipe"}
-MAX_PAYLOAD_BYTES = 64 * 1024
+MAX_PAYLOAD_BYTES = 256 * 1024
+ALLOWED_ANNOTATION_TYPES = {"LineString", "Polygon", "Freehand", "Text", "Emoji"}
+MAX_ANNOTATIONS = 200
+MAX_COORDINATES_PER_GEOMETRY = 2000
 
 
 def canonicalize(payload: Any) -> bytes:
@@ -78,9 +81,53 @@ def _validate_layer_entries(entries: Any, source: str) -> None:
             raise ValueError(f"{source}: opacity fuera de rango en {entry.get('slug')}")
 
 
+def _count_coordinates(coords: Any) -> int:
+    if not isinstance(coords, list):
+        return 0
+    if coords and isinstance(coords[0], (int, float)):
+        return 1
+    return sum(_count_coordinates(c) for c in coords)
+
+
+def _validate_geometry(geometry: Any, source: str) -> None:
+    if not isinstance(geometry, dict):
+        raise ValueError(f"{source}: geometry debe ser objeto GeoJSON")
+    gtype = geometry.get("type")
+    if gtype not in {"Point", "LineString", "Polygon", "MultiPolygon"}:
+        raise ValueError(f"{source}: geometry.type invalido ({gtype})")
+    coords = geometry.get("coordinates")
+    if not isinstance(coords, list) or not coords:
+        raise ValueError(f"{source}: geometry.coordinates requerido")
+    if _count_coordinates(coords) > MAX_COORDINATES_PER_GEOMETRY:
+        raise ValueError(f"{source}: geometry excede {MAX_COORDINATES_PER_GEOMETRY} coordenadas")
+
+
+def _validate_annotations(annotations: Any, source: str) -> None:
+    if annotations is None:
+        return
+    if not isinstance(annotations, list):
+        raise ValueError(f"{source}.annotations debe ser lista")
+    if len(annotations) > MAX_ANNOTATIONS:
+        raise ValueError(f"{source}.annotations excede {MAX_ANNOTATIONS} items")
+    for idx, item in enumerate(annotations):
+        prefix = f"{source}.annotations[{idx}]"
+        if not isinstance(item, dict):
+            raise ValueError(f"{prefix} debe ser objeto")
+        if not item.get("id"):
+            raise ValueError(f"{prefix}.id requerido")
+        atype = item.get("type")
+        if atype not in ALLOWED_ANNOTATION_TYPES:
+            raise ValueError(f"{prefix}.type debe ser uno de {sorted(ALLOWED_ANNOTATION_TYPES)}")
+        _validate_geometry(item.get("geometry"), prefix)
+        rotation = item.get("rotation")
+        if rotation is not None and not isinstance(rotation, (int, float)):
+            raise ValueError(f"{prefix}.rotation debe ser numero")
+
+
 def _validate_single_payload(payload: dict) -> None:
     _validate_layer_entries(payload.get("layers"), "single.payload")
     _validate_view(payload.get("view"))
+    _validate_annotations(payload.get("annotations"), "single.payload")
 
 
 def _validate_swipe_payload(payload: dict) -> None:
@@ -99,3 +146,4 @@ def _validate_swipe_payload(payload: dict) -> None:
     position = payload.get("position")
     if position is not None and not (isinstance(position, (int, float)) and 0 <= position <= 1):
         raise ValueError("swipe.payload.position fuera de rango [0,1]")
+    _validate_annotations(payload.get("annotations"), "swipe.payload")

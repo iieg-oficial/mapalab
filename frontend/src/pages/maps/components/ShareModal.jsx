@@ -30,7 +30,7 @@ const buildEmbedSnippet = (id) => {
 
 export default function ShareModal({ open, onClose, isDirty = false, loadedShareId = null, onShareCreated }) {
     const serialize = useShareSerializer();
-    const { compareMode } = useMapsContext();
+    const { compareMode, measurements } = useMapsContext();
     const [creating, setCreating] = useState(false);
     const [share, setShare] = useState(null);
     const [pinned, setPinned] = useState(false);
@@ -39,6 +39,10 @@ export default function ShareModal({ open, onClose, isDirty = false, loadedShare
     const [copyHovered, setCopyHovered] = useState(false);
     const [tab, setTab] = useState('link');
     const [snippetCopied, setSnippetCopied] = useState(false);
+    const [includeAnnotations, setIncludeAnnotations] = useState(true);
+    const annotationsCount = Array.isArray(measurements)
+        ? measurements.filter(m => m?.feature && m.type !== 'Select').length
+        : 0;
     const copyTimerRef = useRef(null);
     const snippetTimerRef = useRef(null);
 
@@ -52,13 +56,15 @@ export default function ShareModal({ open, onClose, isDirty = false, loadedShare
         setError(null);
         setPinned(false);
         try {
+            const extra = { includeAnnotations: includeAnnotations && annotationsCount > 0 };
             let envelope;
             if (compareMode?.active) {
                 envelope = serialize('swipe', {
+                    ...extra,
                     position: compareMode.swipePosition ?? 0.5,
                 });
             } else {
-                envelope = serialize('single');
+                envelope = serialize('single', extra);
             }
             const result = await createShare(envelope);
             setShare(result);
@@ -140,6 +146,22 @@ export default function ShareModal({ open, onClose, isDirty = false, loadedShare
                     Genera un enlace para compartir el mapa tal como lo estás viendo. Los enlaces se conservan
                     durante 30 días desde el último uso. Si quieres asegurar que dure un año entero, fíjalo después de crearlo.
                 </p>
+                {!share && annotationsCount > 0 && (
+                    <label className="flex items-start gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={includeAnnotations}
+                            onChange={(e) => setIncludeAnnotations(e.target.checked)}
+                            className="mt-0.5 accent-[#703088]"
+                        />
+                        <span>
+                            Incluir mis mediciones y anotaciones ({annotationsCount}).
+                            <span className="block text-xs text-gray-500">
+                                Quien abra el enlace verá las líneas, polígonos, textos y emojis dibujados.
+                            </span>
+                        </span>
+                    </label>
+                )}
                 {!share && (
                     <button
                         type="button"

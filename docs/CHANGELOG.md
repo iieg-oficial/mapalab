@@ -5,6 +5,35 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.43.0] - 2026-05-25
+
+### Agregado: mediciones y anotaciones se incluyen en el share (single + swipe)
+
+Hasta 1.42.x los dibujos del visor (líneas/polígonos de medición, textos, emojis, freehand) eran efímeros — vivían en el `vectorSource` del `useMapDrawing` y se perdían al recargar o al copiar el link de "Compartir". Quien abría un share solo veía las capas, no las anotaciones.
+
+Ahora el envelope del share acepta opcionalmente `payload.annotations: [...]` con cada medición serializada como GeoJSON en EPSG:4326. Al cargar el share, las anotaciones se restauran al vectorSource del `useMapDrawing` y se ven igual que cuando se dibujaron. Funciona para `kind='single'` y `kind='swipe'` — las anotaciones son globales del mapa, no por pane (decisión alineada con `docs/swipe.md §Pendientes`).
+
+#### Backend
+
+- **`backend/app/services/share_service.py`**: `MAX_PAYLOAD_BYTES` sube a 256 KB (los polígonos reales no caben en 64 KB). Nuevo `_validate_annotations(payload.annotations)`: lista ≤ 200 items, cada uno con `id`, `type ∈ {LineString, Polygon, Freehand, Text, Emoji}`, `geometry` GeoJSON básico (`type ∈ {Point, LineString, Polygon, MultiPolygon}`, `coordinates ≤ 2000 puntos`), `rotation` numérico opcional. `_validate_single_payload` y `_validate_swipe_payload` lo invocan.
+- **`backend/test/test_share_service.py`**: 9 tests nuevos para annotations (single y swipe, geometría inválida, type inválido, sin id, límite de 200, None y campo ausente). Total: 21 tests.
+
+#### Frontend serializer / deserializer
+
+- **`useShareSerializer.js`**: nuevo helper `serializeAnnotations(measurements)` que itera `measurements`, ignora items sin `feature` o de tipo `Select`, y convierte cada `feature.getGeometry()` a GeoJSON con `featureProjection:'EPSG:3857' → dataProjection:'EPSG:4326'`. Preserva `id`, `type`, `label`, `value`, `textLabel`, `rotation`, `visible`. Se invoca cuando `extra.includeAnnotations === true` (default `false`).
+- **`useShareDeserializer.js`**: si `payload.annotations` existe, llama `restoreAnnotations(payload.annotations)` (expuesto por `useMapDrawing` vía `MapsProvider`). Lo hace tanto en la rama `single` como en la `swipe`.
+- **`useMapDrawing.js`**: nuevo `restoreAnnotations(annotations)`. Reconstruye `ol.Feature` desde GeoJSON, recalcula `formatLength`/`formatArea` desde la geometría (no confía en el `value` recibido, defensa contra geometrías editadas externamente), setea `textLabel`/`rotation`/`annotationType` para Text/Emoji/Freehand, agrega al `vectorSource` y empuja al state `measurements`. Retry-polling de 100 ms hasta 5 s mientras `ensureVectorLayer()` falle — necesario porque los shares se aplican antes de que el mapa termine de montar.
+
+#### UX
+
+- **`ShareModal.jsx`**: si `measurements` tiene al menos 1 item con `feature` y `type !== 'Select'`, aparece un checkbox **"Incluir mis mediciones y anotaciones (N)"** marcado por default. El conteo es en vivo. El texto explica que quien abra el enlace verá las líneas, polígonos, textos y emojis dibujados.
+
+#### Documentación
+
+- **`docs/swipe.md`**: nueva sección "Annotations (mediciones persistidas en el share)". `payload.annotations` documentado en §Persistencia. Tabla de pendientes ajustada: "dibujar mediciones nuevas en swipe" sigue pendiente, pero las pre-existentes vía share ya se ven.
+
+---
+
 ## [1.42.1] - 2026-05-25
 
 ### Corregido: backend de `shares` aceptaba `kind='compare'` (legacy) pero rechazaba `kind='swipe'` (actual)

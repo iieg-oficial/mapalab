@@ -129,12 +129,15 @@ El `<Switch>` A/B de la fila 3 (`<LayerActionsBar>`) sigue mostrándose sólo cu
         "paneA": { "label", "layers": [...] },
         "paneB": { "label", "layers": [...] },
         "activeSlot": "A" | "B",
-        "position": 0.5
+        "position": 0.5,
+        "annotations": [...]
     }
 }
 ```
 
 `useShareSerializer.js:118-149` y `useShareDeserializer.js:56,107` lo manejan. El slot activo se serializa con el live state; el slot opuesto, con su snapshot del `compareMode`. Solo `kind: 'single' | 'swipe'`, sin fallback legacy.
+
+**`annotations`** (opcional, desde mapalab 1.43.0): array de mediciones/anotaciones convertidas a GeoJSON `EPSG:4326`. Las anotaciones son globales del mapa (no por slot — la decisión documentada en §Pendientes), así que el campo vive a nivel de `payload`, no dentro de `paneA`/`paneB`. Ver §Annotations.
 
 ### sessionStorage
 
@@ -157,11 +160,23 @@ Independiente del share. Solo vive durante la sesión de swipe (en `localStorage
 | Filtros CQL y fechas | ✅ | Cada slot mantiene los suyos; aplican solo al slot activo |
 | Marker IIEG (logo en sider) | ✅ | `useMapMarker.getActiveMap()` resuelve a paneA. El View compartido anima a ambos paneles |
 
+## Annotations (mediciones persistidas en el share)
+
+Desde mapalab 1.43.0, el botón "Compartir" muestra un checkbox **"Incluir mis mediciones y anotaciones"** cuando el `vectorSource` del `useMapDrawing` tiene features. Marcado, el serializer convierte cada `measurement.feature.getGeometry()` a GeoJSON con `featureProjection:'EPSG:3857' → dataProjection:'EPSG:4326'` y agrega `payload.annotations: [{id, type, geometry, label?, value?, textLabel?, rotation?, visible}]`.
+
+Al cargar un share con `annotations`, `useShareDeserializer` invoca `restoreAnnotations(annotations)` (expuesto por `useMapDrawing` vía `MapsProvider`). El método:
+
+1. Llama `ensureVectorLayer()` con retry-polling (max 5 s) — los shares se aplican antes de que el mapa termine de montar en muchos casos.
+2. Por cada item: `RESTORE_GEOJSON.readFeature` reconstruye el `ol.Feature`. Para `LineString`/`Polygon` reconstruye `formatLength`/`formatArea` desde la geometría (no confía en `value` recibido). Para `Text`/`Emoji` set `textLabel` + `rotation` + `annotationType`. Para `Freehand`, set `annotationType='Freehand'`.
+3. `source.addFeature(feature)` lo mete al vectorSource y `setMeasurements(prev => [...prev, ...restored])`.
+
+**Las anotaciones se restauran tanto en single como en swipe** — son globales del mapa, no por pane, alineado con la decisión documentada abajo en §Pendientes.
+
 ## Pendientes (no habilitados en swipe)
 
 | Herramienta | Razón | Para retomar |
 |---|---|---|
-| Mediciones (`MeasurementTools`) | `useMapDrawing` opera sobre `mapRef` global. Decisión pendiente: una capa vector compartida entre paneles (recomendado), o una por slot. La medición es geográfica → globales tiene más sentido |
+| Dibujar mediciones nuevas en swipe | `useMapDrawing.startDrawing` opera sobre `mapRef` global (null en swipe). Decisión arquitectónica: una capa vector compartida entre paneles (recomendado, alinea con la persistencia global en shares), o una por slot. La medición es geográfica → globales tiene más sentido. *Pre-existentes vía share ya se ven*. |
 | ZenMode | No prioritario; mayoritariamente CSS para condicionar render de overlays del swipe |
 | Loop temporal | `useDateLoop` se cancela al entrar a swipe. Tres opciones: por slot activo (simple), sincronizado con offset fijo entre A y B (recomendado, da valor diferencial), o independiente por slot |
 

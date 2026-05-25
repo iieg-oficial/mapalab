@@ -3,6 +3,7 @@ import { Draw } from 'ol/interaction';
 import { getLength, getArea } from 'ol/sphere';
 import { createDefaultStyle, createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCacheStyle, computeStylesForFeature } from '../helpers/drawingStyles';
 import { formatNumber } from '../helpers/formatNumber';
+import { buildRestoredItems } from '../helpers/restoreAnnotations';
 import { useEmojiTemplate } from './useEmojiTemplate';
 import { useTextTemplate } from './useTextTemplate';
 import { useVectorLayerSetup } from './useVectorLayerSetup';
@@ -645,12 +646,28 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         });
     }, []);
 
+    const restoreAnnotations = useCallback((annotations) => {
+        if (!annotations?.length) return;
+        let attempts = 0;
+        const tryApply = () => {
+            if (mapRef.current && ensureVectorLayer() && vectorSourceRef.current) {
+                const restored = buildRestoredItems({ annotations, source: vectorSourceRef.current, measurementConfig, formatLength, formatArea });
+                if (restored.length) {
+                    setMeasurements(prev => [...prev, ...restored]);
+                    setMeasurementToolsVisible(true);
+                }
+            } else if (attempts++ < 50) setTimeout(tryApply, 100);
+        };
+        tryApply();
+    }, [mapRef, ensureVectorLayer, measurementConfig, formatLength, formatArea]);
+
     return {
         vectorSourceRef,
         vectorLayerRef,
         measureType,
         measurements,
         setMeasurements,
+        restoreAnnotations,
         lastPlacedAnnotation,
         startDrawing,
         stopDrawing,
