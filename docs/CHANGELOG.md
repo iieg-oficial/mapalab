@@ -5,6 +5,55 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.44.0] - 2026-05-25
+
+### Agregado: 3 tools MCP para que agentes conversacionales entreguen mapas interactivos
+
+Hasta 1.43.x el MCP de mapalab era exclusivamente de lectura — un agente LLM podía buscar capas y leer metadata pero no había forma de devolver un mapa interactivo al usuario, solo descripciones de texto.
+
+Tres tools nuevos cierran esa brecha:
+
+- **`create_single_share(layers, view?, basemap?, selected?, annotations?)`**: arma un envelope `kind='single'`, lo valida con `share_service.validate_payload`, lo persiste con `ShareRepository.upsert` y devuelve `{id, kind, url, embed_html}`. El `embed_html` es un snippet `<script>...</script><iieg-mapalab share="...">` listo para pegar en cualquier sitio. El agente lo embebe en su respuesta markdown (renderizable con `react-markdown`/equivalente) y el navegador del usuario monta el widget. Acepta `annotations` para pre-pintar geometrías resultado del análisis.
+- **`create_swipe_share(pane_a_layers, pane_b_layers, position?, ...)`**: análogo pero `kind='swipe'` para comparación A|B. Ideal cuando el bot detecta preguntas comparativas ("antes vs después", "salud vs seguridad").
+- **`measure_geometry(geometry)`**: recibe geometría GeoJSON EPSG:4326 y devuelve longitud (LineString) o área (Polygon/MultiPolygon) geodésica usando PostGIS `ST_Length`/`ST_Area` sobre `::geography`. Resultado en metros/m² reales sobre el elipsoide WGS84, no aproximaciones planas.
+
+#### Implementación
+
+- **`servers/share_tools.py`** (módulo nuevo): `create_single_share`, `create_swipe_share`, `measure_geometry` como funciones puras. Construyen `embed_html` con `MAPALAB_PUBLIC_BASE_URL` (env opcional, default `https://iieg.gob.mx`). Reusan `share_service.validate_payload` (mismo validador del endpoint REST) y `ShareRepository.upsert` (mismo hash determinístico — crear dos veces el mismo payload no duplica).
+- **`servers/mapalab.py`**: 3 `@mcp.tool()` que delegan al módulo. Descripciones largas en español para que clientes MCP (Claude Desktop, IGIBot, etc.) las muestren legibles.
+
+#### Pruebas e2e
+
+```
+POST /api/mcp/  tools/call create_single_share
+  layers=["tasa_homicidio_doloso"], annotations=[polygon]
+→ {id:"qd6fj67ex3", url:"https://iieg.gob.mx/mapalab/mapa?s=qd6fj67ex3",
+   embed_html:"<script>...<iieg-mapalab share='qd6fj67ex3'>..."}
+
+POST /api/mcp/  tools/call measure_geometry  Polygon ~10x10 km
+→ {value:115374443.16, unit:"m²", value_km2:115.374443}
+```
+
+#### Caso de uso
+
+IGIBot puede ahora:
+
+```
+1. usuario: "muéstrame los homicidios en Guadalajara"
+2. bot: search_layers(q="homicidio") → "tasa_homicidio_doloso"
+3. bot: create_single_share(layers=[...], view={zoom:11, lat:20.6, lon:-103.4})
+4. bot: responde con texto + embed_html
+5. usuario ve el mapa embebido, interactúa con él, activa medición (1.43.0+)
+```
+
+Sin breaking changes en tools existentes. Total: 14 tools (era 11).
+
+#### Documentación
+
+- **`docs/mcp.md`**: tabla de tools actualizada (11 → 14). Nueva sección "Entrega de mapas a agentes conversacionales" con firma de cada tool y patrón de uso end-to-end.
+
+---
+
 ## [1.43.0] - 2026-05-25
 
 ### Agregado: mediciones y anotaciones se incluyen en el share (single + swipe)

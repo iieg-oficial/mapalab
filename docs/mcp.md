@@ -51,12 +51,12 @@ backend container (backend/app/server.py)
 
 El `mapalab-mcp` reutiliza los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) — el codigo de `backend/app` se copia al container del MCP en build time. Sin duplicacion de logica, ambos containers leen del mismo schema `mapalab` en DataEngine.
 
-### Tools expuestos (11)
+### Tools expuestos (14)
 
 | Tool | Razon |
 |---|---|
 | `search_layers` | Lectura — punto de entrada para resolver IDs por nombre |
-| `resolve_layer_ref` | Lectura — slug/alias → capa |
+| `resolve_layer_ref` | Lectura — slug/alias/id → capa |
 | `get_layer_tree` | Lectura — arbol completo |
 | `get_initial_order` | Lectura — capas activas al cargar |
 | `get_workspaces` | Lectura — alias ↔ workspace real |
@@ -66,8 +66,11 @@ El `mapalab-mcp` reutiliza los servicios y repositorios del backend (`app.servic
 | `get_periodicities_batch` | Lectura — periodicidad de varias capas |
 | `refresh_layer_tree_cache` | Write barato — invalidacion de cache |
 | `invalidate_layer_tree_memory_cache` | Write barato — solo memoria |
+| `create_single_share` | Write — crea un share del visor (single) y devuelve `{id, url, embed_html}` |
+| `create_swipe_share` | Write — crea un share en modo swipe (comparacion A\|B) |
+| `measure_geometry` | Lectura — calcula longitud/area geodesica con PostGIS |
 
-`shares` y sus 5 tools quedan **fuera del MCP** desde 1.35.0 — son writes con efectos y no encajan en el patron de lectura del MCP. Siguen disponibles en REST.
+Los `shares` de fan-out de mapalab admin (`pin_share_permanent`, etc.) quedan **fuera del MCP** — son writes con efectos administrativos y no encajan en el patron del MCP publico. Los tres nuevos `create_*_share` y `measure_geometry` (v1.44.0) son distintos: estan disenados para que un agente conversacional como [IGIBot](https://igibot.jalisco.gob.mx) entregue mapas interactivos como resultado de su razonamiento (combinandolos con el widget `<iieg-mapalab>`), no para administracion.
 
 ### Lifespan + middleware
 
@@ -154,6 +157,70 @@ El gateway-hub no necesita un `location` específico para `/mapalab/api/mcp/`: c
 | `pin_share_permanent` | POST `/shares/{share_id}/pin-permanent` | Pin permanente (token interno) |
 
 Para cambiar el nombre o el texto que ve un cliente MCP, basta editar `operation_id`, `summary` o `description` en el decorador del endpoint correspondiente.
+
+## Entrega de mapas a agentes conversacionales (v1.44.0+)
+
+Tres tools disenados para que agentes LLM (p. ej. IGIBot) entreguen mapas interactivos en respuesta a preguntas del usuario, no solo descripciones de texto:
+
+### `create_single_share`
+
+```
+create_single_share(
+    layers: list,                    # IDs del visor o {slug, opacity?, ...}
+    view: dict | None = None,        # {zoom, lat, lon}
+    basemap: str | None = None,
+    selected: str | None = None,
+    annotations: list | None = None, # GeoJSON EPSG:4326
+) -> {id, kind, url, embed_html}
+```
+
+Crea un share `kind='single'` y devuelve:
+
+- `id`: hash corto de 10 chars (`qd6fj67ex3`)
+- `url`: enlace directo al visor (`https://iieg.gob.mx/mapalab/mapa?s=...`)
+- `embed_html`: snippet `<script>...</script><iieg-mapalab share="...">` listo para pegar en cualquier sitio web que cargue el widget
+
+El bot pega el `embed_html` en su respuesta markdown; el frontend del bot lo renderiza con `react-markdown` o equivalente y el navegador del usuario monta el widget. La key publica `mk_pub_...` la sustituye el bot con la que IIEG le haya asignado.
+
+`annotations` permite pre-pintar lineas/poligonos/textos/emojis sobre el mapa — util para resaltar el resultado de un analisis (bbox de municipios, area de interes, marcadores). Mismo schema que `payload.annotations` de los shares (ver `docs/swipe.md §Annotations`).
+
+### `create_swipe_share`
+
+```
+create_swipe_share(
+    pane_a_layers, pane_b_layers,
+    position: float = 0.5,           # 0.05 .. 0.95
+    view, basemap, label_a, label_b,
+    annotations: list | None = None,
+) -> {id, kind, url, embed_html}
+```
+
+Crea un share `kind='swipe'` con dos sets de capas para comparacion A\|B. Igual que `create_single_share` pero el visor abre con el separador arrastrable. Ideal para "compara homicidios vs poblacion" o "antes vs despues" cuando el bot detecta una pregunta comparativa.
+
+### `measure_geometry`
+
+```
+measure_geometry(geometry: dict) -> {type, metric, value, unit, value_km|value_km2}
+```
+
+Recibe geometria GeoJSON EPSG:4326 y devuelve longitud (LineString) o area (Polygon/MultiPolygon) geodesica. Bajo el cap usa PostGIS `ST_Length`/`ST_Area` sobre `::geography`, asi los metros/metros cuadrados son reales sobre el elipsoide WGS84 (no proyectados, no aproximados).
+
+Util para que el bot responda preguntas tipo "cuanta superficie tiene el municipio X" o "que distancia hay entre A y B" sin tener que hacer el calculo por sí mismo.
+
+### Patron de uso desde un agente
+
+```
+1. usuario: "muestrame los homicidios en Guadalajara"
+2. agente: search_layers(q="homicidio")        -> id "tasa_homicidio_doloso"
+3. agente: get_metadata(workspace="seguridad", layer="tasa_homicidio_doloso")
+4. agente: create_single_share(
+       layers=["tasa_homicidio_doloso"],
+       view={"zoom":11, "lat":20.677, "lon":-103.349},
+   )
+5. agente: responde con texto + embed_html del share
+```
+
+El usuario ve un mapa interactivo embebido donde puede activar la barra de mediciones del visor (mapalab 1.43.0+) y guardar su propia copia como share desde el boton "Compartir".
 
 ## Identificadores aceptados (v1.40.1+)
 

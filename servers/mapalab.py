@@ -33,6 +33,11 @@ from app.services.layer_tree_service import (
 from app.services.periodicity_service import PeriodicityService
 from app.utils.logger import Logger
 
+from servers.share_tools import (
+    create_single_share as _create_single_share,
+    create_swipe_share as _create_swipe_share,
+    measure_geometry as _measure_geometry,
+)
 from servers.telemetry import (
     MCPTelemetryMiddleware,
     flush_loop as telemetry_flush_loop,
@@ -240,6 +245,77 @@ def invalidate_layer_tree_memory_cache():
     """Invalida solo la cache en memoria del proceso (no toca BD)."""
     invalidate_memory_cache()
     return {'ok': True}
+
+
+@mcp.tool()
+def create_single_share(
+    layers: list = Field(description='Capas a mostrar. Lista de IDs de capa (string) o de objetos {slug, visible?, opacity?, filters?}.'),
+    view: Optional[dict] = Field(default=None, description="Vista inicial del mapa: {zoom, lat, lon, rotation?}."),
+    basemap: Optional[str] = Field(default=None, description='Basemap inicial (p. ej. "osm").'),
+    selected: Optional[str] = Field(default=None, description='Slug/ID de la capa seleccionada para la simbologia.'),
+    annotations: Optional[list] = Field(default=None, description='Anotaciones (mediciones, textos, emojis) en GeoJSON EPSG:4326. Cada item: {id, type, geometry, label?, value?, textLabel?, rotation?}.'),
+):
+    """Crea un share del visor con capas y opcionalmente anotaciones pre-cargadas.
+
+    Devuelve `{id, kind, url, embed_html}`. El `embed_html` es un snippet
+    `<iieg-mapalab share="...">` listo para pegar en cualquier sitio web que
+    cargue el widget de MapaLab. Es el camino recomendado para que un agente
+    entregue un mapa interactivo al usuario en lugar de solo describirlo.
+
+    `annotations` permite pre-pintar lineas, poligonos, textos y emojis sobre el
+    mapa - util para resaltar zonas resultado de un analisis (p. ej. el bbox de
+    los municipios con mayor incidencia).
+    """
+    return _create_single_share(
+        layers=layers,
+        view=view,
+        basemap=basemap,
+        selected=selected,
+        annotations=annotations,
+    )
+
+
+@mcp.tool()
+def create_swipe_share(
+    pane_a_layers: list = Field(description='Capas del lado A (lista de IDs o {slug, opacity?}).'),
+    pane_b_layers: list = Field(description='Capas del lado B (lista de IDs o {slug, opacity?}).'),
+    position: float = Field(default=0.5, ge=0.05, le=0.95, description='Posicion inicial del separador swipe (0=todo B, 1=todo A).'),
+    view: Optional[dict] = Field(default=None, description='Vista compartida entre los dos lados: {zoom, lat, lon}.'),
+    basemap: Optional[str] = Field(default=None, description='Basemap compartido entre A y B.'),
+    label_a: str = Field(default='A', description='Etiqueta del lado A (mostrada en la pildora del visor).'),
+    label_b: str = Field(default='B', description='Etiqueta del lado B.'),
+    annotations: Optional[list] = Field(default=None, description='Anotaciones globales del mapa (no por slot). GeoJSON EPSG:4326.'),
+):
+    """Crea un share del visor en modo swipe (comparacion A|B).
+
+    Devuelve `{id, kind, url, embed_html}`. El visor abre con la barra
+    divisora arrastrable y cada lado renderiza su set de capas. Util para
+    comparar fenomenos lado a lado (p. ej. delitos vs poblacion, antes vs
+    despues).
+    """
+    return _create_swipe_share(
+        pane_a_layers=pane_a_layers,
+        pane_b_layers=pane_b_layers,
+        position=position,
+        view=view,
+        basemap=basemap,
+        label_a=label_a,
+        label_b=label_b,
+        annotations=annotations,
+    )
+
+
+@mcp.tool()
+def measure_geometry(
+    geometry: dict = Field(description='Geometria GeoJSON EPSG:4326. type debe ser LineString, Polygon o MultiPolygon.'),
+):
+    """Calcula longitud (LineString) o area (Polygon/MultiPolygon) geodesica.
+
+    Usa PostGIS `ST_Length`/`ST_Area` sobre `::geography`, asi el resultado es
+    en metros / metros cuadrados reales sobre el elipsoide WGS84 (no
+    proyectados). Devuelve `{type, metric, value, unit, value_km|value_km2}`.
+    """
+    return _measure_geometry(geometry)
 
 
 @asynccontextmanager
