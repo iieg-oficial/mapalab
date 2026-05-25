@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.44.1] - 2026-05-25
+
+### Documentación: `docs/mcp.md` con ejemplos `curl tools/call` para los 3 tools nuevos
+
+Faltaba en `docs/mcp.md §Cómo probar` la forma exacta de probar los tools nuevos de 1.44.0 desde la terminal sin levantar un cliente MCP completo. Útil para smoke-test post-deploy en GCP y para que el equipo de IGIBot tenga snippets copy-paste listos.
+
+- **`docs/mcp.md`**: dos secciones nuevas en §Cómo probar:
+  - `curl (tools/list)` — listar los 14 tools registrados
+  - `curl (tools/call)` — 4 ejemplos completos (`measure_geometry` LineString, `measure_geometry` Polygon, `create_single_share` con annotation, `create_swipe_share`) con la respuesta esperada al lado
+- Nota sobre el formato SSE de las respuestas (`event: message\ndata: {...}`) y cómo extraer el JSON con `sed`.
+- Mención al playground de `/administrador/documentacion` en mariachi-admin como alternativa visual.
+
+Solo documentación. Cero cambios en código del MCP.
+
+---
+
 ## [1.44.0] - 2026-05-25
 
 ### Agregado: 3 tools MCP para que agentes conversacionales entreguen mapas interactivos

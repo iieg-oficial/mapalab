@@ -325,6 +325,128 @@ curl -i -N -X POST http://localhost:3006/api/mcp/ \
   }'
 ```
 
+### curl (tools/list)
+
+```bash
+curl -s -X POST http://localhost:3006/api/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+Devuelve los 14 tools registrados con su `name`, `description` y `inputSchema`.
+
+### curl (`tools/call`) — pruebas rápidas de los tools nuevos
+
+Las respuestas vienen en formato SSE (`event: message\ndata: {...}`). Para parsearlas con `jq`, pipea con `sed 's/^data: //' | tail -1 | jq` o similar.
+
+**`measure_geometry`** — distancia geodésica entre dos puntos:
+
+```bash
+curl -s -X POST http://localhost:3006/api/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "measure_geometry",
+      "arguments": {
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [[-103.349, 20.677], [-103.413, 20.721]]
+        }
+      }
+    }
+  }'
+```
+
+Respuesta esperada (~8.26 km entre Guadalajara y Zapopan):
+
+```json
+{"type":"LineString","metric":"length","value":8257.36,"unit":"m","value_km":8.2574}
+```
+
+**`measure_geometry`** — área de un polígono:
+
+```bash
+curl -s -X POST http://localhost:3006/api/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "measure_geometry",
+      "arguments": {
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[
+            [-103.4,20.6],[-103.3,20.6],[-103.3,20.7],[-103.4,20.7],[-103.4,20.6]
+          ]]
+        }
+      }
+    }
+  }'
+```
+
+**`create_single_share`** — crea un share con capa + anotación:
+
+```bash
+curl -s -X POST http://localhost:3006/api/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "create_single_share",
+      "arguments": {
+        "layers": ["tasa_homicidio_doloso"],
+        "view": {"zoom": 9, "lat": 20.6, "lon": -103.4},
+        "basemap": "osm",
+        "annotations": [{
+          "id": "zona1",
+          "type": "Polygon",
+          "geometry": {"type":"Polygon","coordinates":[[
+            [-103.4,20.6],[-103.3,20.6],[-103.3,20.7],[-103.4,20.7],[-103.4,20.6]
+          ]]},
+          "label": "Zona analizada"
+        }]
+      }
+    }
+  }'
+```
+
+Devuelve `{id, kind, url, embed_html}`. Pegar `url` en un navegador abre el visor con todo configurado; pegar `embed_html` en una página renderiza el mapa embebido.
+
+**`create_swipe_share`** — comparación A|B:
+
+```bash
+curl -s -X POST http://localhost:3006/api/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 4,
+    "method": "tools/call",
+    "params": {
+      "name": "create_swipe_share",
+      "arguments": {
+        "pane_a_layers": ["tasa_homicidio_doloso"],
+        "pane_b_layers": ["poblacion"],
+        "position": 0.5,
+        "view": {"zoom": 8, "lat": 20.6, "lon": -103.4},
+        "label_a": "Homicidio",
+        "label_b": "Población"
+      }
+    }
+  }'
+```
+
+### Playground del admin Mariachi
+
+`/administrador/documentacion` tab "Servidor MCP" expone un playground con botón "Probar" por tool — incluye los 3 nuevos (`create_single_share`, `create_swipe_share`, `measure_geometry`) llamados via `tools/call` JSON-RPC al endpoint `/mcp/`. Los demás tools del MCP (read-only) se prueban contra sus REST equivalentes.
+
 Respuesta esperada: `200 OK` con `Content-Type: text/event-stream` y un evento `data:` con `serverInfo: {"name": "MapaLab MCP", ...}`.
 
 ## Telemetría → Mariachi (v1.30.0+)
