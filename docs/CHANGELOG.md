@@ -5,6 +5,61 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [No publicado]
+
+### Agregado: modo Vista por municipio (beta, sólo dev/staging)
+
+Nuevo botón **"Jalisco"** en la barra superior derecha (al lado izquierdo de Descargar visualización) que permite filtrar el visor para mostrar uno o varios municipios del estado.
+
+- **UI**: panel con buscador + lista de los 125 municipios; pill compacta con default "Jalisco" o "N municipios"/"Guadalajara" según selección.
+- **Filtros CQL per-layer**: cada capa con `hasMunicipio: true` y `municipioField` definido en mariachi recibe `{field} IN ('clave1','clave2')`. Las capas no compatibles (raster, sin field) se ocultan temporalmente y se restauran al salir.
+- **Máscara visual**: VectorLayer sobre el mapa con polígono (outer = viewport, holes = municipios) en `rgba(0,0,0,0.4)`. Se replica en ambos paneles del modo swipe.
+- **Switch IIEG/INEGI**: la fuente de polígonos (`general:limite_municipal` vs `general:limite_municipal_inegi`) se elige automáticamente según las capas de límite activas en el visor.
+- **Persistencia completa**: URL (`?municipios=014,067`), share JSON (bump v1 → v2 con `payload.municipios`), sessionStorage.
+- **Sider y panel de capas activas**: las capas que no soportan el filtro se muestran atenuadas + tooltip explicativo + bloqueo de interacción mientras dure el modo.
+- **Telemetría**: nuevos eventos `municipio_mode_enter/exit/change` y `municipio_panel_open`. Documentados en mariachi-admin → Documentación → Telemetría.
+- **Editor en mariachi-admin**: nuevos campos `Filtrable por municipio` (toggle) y `Columna del municipio` (texto, condicional) en el tab Apariencia del editor de capas. Validación que exige el field cuando el toggle está activo.
+
+Gated por `VITE_APP_ENV in [dev, beta]` — el botón no aparece en producción. Al graduarse, se eliminará también el `InfoModal` para liberar espacio en la barra.
+
+Documentación completa en [`docs/municipio-mode.md`](municipio-mode.md).
+
+#### Que cambio
+
+- **`frontend/src/services/municipioService.js`** (nuevo): WFS GetFeature para lista y geometrías de municipios, con cache in-memory.
+- **`frontend/src/pages/maps/helpers/municipioMask.js`** (nuevo): helpers puros `buildMaskPolygon`, `unionGeometriesExtent`, `extractHoleRings`.
+- **`frontend/src/pages/maps/helpers/municipioFilterUtils.js`** (nuevo): `canBeFilteredByMunicipio(layer)` reutilizado por sider y panel de capas activas.
+- **`frontend/src/pages/maps/hooks/useMunicipioMode.js`** (nuevo): estado central + efectos de filtros CQL + snapshot de hiddenLayerIds + telemetría.
+- **`frontend/src/pages/maps/hooks/useMunicipioMask.js`** (nuevo): VectorLayer por map instance, recálculo en pan/zoom.
+- **`frontend/src/pages/maps/components/MapExport/MunicipioFilterButton.jsx`** y **`MunicipioFilterPanel.jsx`** (nuevos): UI del modo.
+- **`frontend/src/providers/MapsProvider.jsx`**: instanciación de los hooks + efecto de fit al bbox unión.
+- **`frontend/src/pages/maps/components/MapToolsPanel.jsx`**: integración del nuevo botón.
+- **`frontend/src/pages/maps/components/ActiveLayers/ActiveLayerItem.jsx`**: opacity + tooltip + bloqueo de click cuando la capa no es filtrable.
+- **`frontend/src/pages/maps/components/LayerItem.jsx`** y **`SearchMenu.jsx`**: disabled state cuando la capa no soporta el modo.
+- **`frontend/src/pages/maps/hooks/useShareSerializer.js`** y **`useShareDeserializer.js`**: bump a `version: 2` + payload `municipios`, con backwards-compat para v1.
+- **`frontend/src/pages/maps/hooks/useInitializeFromUrl.js`**: parseo de `?municipios=` con hidratación post-capas.
+- **`frontend/src/services/analyticsService.js`**: 4 trackers nuevos.
+- **`mariachi/admin/src/features/mapalab-layers/pages/LayerEditPage.jsx`** + **`constants/nodeTypes.js`**: inputs `hasMunicipio` y `municipioField` con validación.
+- **`mariachi/admin/src/features/documentacion/topics/TelemetryTopic.jsx`**: nueva Card con la documentación de los eventos.
+
+---
+
+## [1.48.1] - 2026-05-25
+
+### Cambiado: removidos del MCP los tools de invalidación de cache (14 → 12)
+
+`refresh_layer_tree_cache` e `invalidate_layer_tree_memory_cache` quedaron expuestos por el MCP heredados de cuando el server se construía con `FastMCP.from_fastapi(...)` y exponía automáticamente todos los routers REST. Los endpoints REST subyacentes (`POST /layers/refresh-cache` y `POST /layers/invalidate-cache`) requieren `X-Internal-Token` desde 1.28.5, que el MCP no inyecta — así que cualquier agente que los llamara vía `tools/call` recibía 401 y los tools eran **ruido en `tools/list`**.
+
+Mariachi sigue invocando los REST directamente desde `iieg-network` con el token interno (lo que ya hacía); ningún flujo operativo se ve afectado.
+
+- **`servers/mapalab.py`**: removidos los 2 `@mcp.tool()` y el import de `refresh_cache`/`invalidate_memory_cache` (queda solo `get_cached_state`).
+- **`docs/mcp.md`**: tabla de tools 14 → 12, columna `Tipo` que distingue Lectura / **Write** explícitamente. Nota explicativa de por qué los tools de cache quedaron fuera.
+- **`mariachi/admin/src/features/documentacion/topics/McpTopic.jsx`** (admin 1.17.1): las 2 entradas removidas del array `TOOLS`. El `<Tag>` de la columna Router refleja 12.
+
+Resultado: el MCP queda con **10 tools de lectura pura** + **2 writes intencionales y útiles** (`create_single_share`, `create_swipe_share`, ambos idempotentes vía hash determinista). Sin write con guarda inútil.
+
+---
+
 ## [1.47.1] - 2026-05-25
 
 ### Agregado: soporte de color hex personalizado en el resaltado de feature

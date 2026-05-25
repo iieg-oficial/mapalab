@@ -25,11 +25,7 @@ from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.repositories.layers_repository import LayersRepository
 from app.services import layer_metadata_service
-from app.services.layer_tree_service import (
-    get_cached_state,
-    invalidate_memory_cache,
-    refresh_cache,
-)
+from app.services.layer_tree_service import get_cached_state
 from app.services.periodicity_service import PeriodicityService
 from app.utils.logger import Logger
 
@@ -223,28 +219,6 @@ def get_periodicities_batch(
     """Periodicidad de varias capas en una sola llamada."""
     layer_keys = list(dict.fromkeys(item.strip() for item in layers.split(',') if item.strip()))
     return PeriodicityService.get_periodicities_batch(layer_keys)
-
-
-@mcp.tool()
-def refresh_layer_tree_cache():
-    """Regenera la cache materializada del arbol (interno).
-
-    Reconstruye `mapalab.layer_tree_cache` a partir de `mapalab.layers` e
-    invalida la cache en memoria. Devuelve `{ok, etag, layer_count}`.
-    """
-    result = refresh_cache()
-    return {
-        'ok': True,
-        'etag': result['etag'],
-        'layer_count': result['layer_count'],
-    }
-
-
-@mcp.tool()
-def invalidate_layer_tree_memory_cache():
-    """Invalida solo la cache en memoria del proceso (no toca BD)."""
-    invalidate_memory_cache()
-    return {'ok': True}
 
 
 @mcp.tool()

@@ -28,7 +28,7 @@ Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp`, separado del ba
 ```
 mapalab-mcp container (servers/mapalab.py)
 ├── FastMCP("mapalab")
-│   ├── @mcp.tool() search_layers, get_metadata, ...   (11 tools)
+│   ├── @mcp.tool() search_layers, get_metadata, ...   (12 tools)
 │   └── mcp_app = mcp.http_app(path='/mcp', stateless_http=True)
 │
 ├── _admin_app: FastAPI
@@ -51,26 +51,24 @@ backend container (backend/app/server.py)
 
 El `mapalab-mcp` reutiliza los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) — el codigo de `backend/app` se copia al container del MCP en build time. Sin duplicacion de logica, ambos containers leen del mismo schema `mapalab` en DataEngine.
 
-### Tools expuestos (14)
+### Tools expuestos (12)
 
-| Tool | Razon |
-|---|---|
-| `search_layers` | Lectura — punto de entrada para resolver IDs por nombre |
-| `resolve_layer_ref` | Lectura — slug/alias/id → capa |
-| `get_layer_tree` | Lectura — arbol completo |
-| `get_initial_order` | Lectura — capas activas al cargar |
-| `get_workspaces` | Lectura — alias ↔ workspace real |
-| `get_metadata` | Lectura — descripcion, fuentes, downloadable |
-| `get_sources_batch` | Lectura — fuentes de varias capas |
-| `get_periodicity` | Lectura — fechas de capa temporal |
-| `get_periodicities_batch` | Lectura — periodicidad de varias capas |
-| `refresh_layer_tree_cache` | Write barato — invalidacion de cache |
-| `invalidate_layer_tree_memory_cache` | Write barato — solo memoria |
-| `create_single_share` | Write — crea un share del visor (single) y devuelve `{id, url, embed_html}` |
-| `create_swipe_share` | Write — crea un share en modo swipe (comparacion A\|B) |
-| `measure_geometry` | Lectura — calcula longitud/area geodesica con PostGIS |
+| Tool | Tipo | Razon |
+|---|---|---|
+| `search_layers` | Lectura | punto de entrada para resolver IDs por nombre |
+| `resolve_layer_ref` | Lectura | slug/alias/id → capa |
+| `get_layer_tree` | Lectura | arbol completo |
+| `get_initial_order` | Lectura | capas activas al cargar |
+| `get_workspaces` | Lectura | alias ↔ workspace real |
+| `get_metadata` | Lectura | descripcion, fuentes, downloadable |
+| `get_sources_batch` | Lectura | fuentes de varias capas |
+| `get_periodicity` | Lectura | fechas de capa temporal |
+| `get_periodicities_batch` | Lectura | periodicidad de varias capas |
+| `measure_geometry` | Lectura | calcula longitud/area geodesica con PostGIS |
+| `create_single_share` | **Write** | crea un share del visor (single) y devuelve `{id, url, embed_html}`. Idempotente (hash determinista del payload). |
+| `create_swipe_share` | **Write** | crea un share en modo swipe (comparacion A\|B). Idempotente. |
 
-Los `shares` de fan-out de mapalab admin (`pin_share_permanent`, etc.) quedan **fuera del MCP** — son writes con efectos administrativos y no encajan en el patron del MCP publico. Los tres nuevos `create_*_share` y `measure_geometry` (v1.44.0) son distintos: estan disenados para que un agente conversacional como [IGIBot](https://igibot.jalisco.gob.mx) entregue mapas interactivos como resultado de su razonamiento (combinandolos con el widget `<iieg-mapalab>`), no para administracion.
+Los tools de invalidacion de cache (`refresh_layer_tree_cache`, `invalidate_layer_tree_memory_cache`) **quedan fuera del MCP desde 1.45.2**: los endpoints REST equivalentes requieren `X-Internal-Token` que el MCP no inyecta, asi que en la practica siempre devolvian 401 — eran ruido en `tools/list`. Mariachi sigue invocando los REST directos desde `iieg-network`. Los `shares` de fan-out admin (`pin_share_permanent`, etc.) tambien quedan fuera. Los `create_*_share` y `measure_geometry` (v1.44.0) son writes intencionales, disenados para que un agente conversacional como [IGIBot](https://igibot.jalisco.gob.mx) entregue mapas interactivos como resultado de su razonamiento.
 
 ### Lifespan + middleware
 
@@ -148,8 +146,6 @@ El gateway-hub no necesita un `location` específico para `/mapalab/mcp/`: cae b
 | `get_workspaces` | GET `/layers/workspaces` | Workspaces con alias + schema |
 | `search_layers` | GET `/layers/search` | Búsqueda por label/tags/id — devuelve **label + path jerárquico** |
 | `resolve_layer_ref` | GET `/layers/resolve` | Slug/alias → capa |
-| `refresh_layer_tree_cache` | POST `/layers/refresh-cache` | Regenera cache materializada (token interno) |
-| `invalidate_layer_tree_memory_cache` | POST `/layers/invalidate-cache` | Invalida cache en memoria (token interno) |
 | `create_share` | POST `/shares` | Crea share del estado del mapa |
 | `get_share` | GET `/shares/{share_id}` | Lee un share |
 | `pin_share` | POST `/shares/{share_id}/pin` | Pin por 365 días |
@@ -334,7 +330,7 @@ curl -s -X POST http://localhost:3006/mcp/ \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
 
-Devuelve los 14 tools registrados con su `name`, `description` y `inputSchema`.
+Devuelve los 12 tools registrados con su `name`, `description` y `inputSchema`.
 
 ### curl (`tools/call`) — pruebas rápidas de los tools nuevos
 
