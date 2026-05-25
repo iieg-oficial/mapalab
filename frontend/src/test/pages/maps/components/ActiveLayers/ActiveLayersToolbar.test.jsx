@@ -106,11 +106,16 @@ describe('ActiveLayersToolbar - modo buscador', () => {
         expect(screen.getByText('1/2')).toBeInTheDocument();
     });
 
-    it('cierra el buscador al click en botón cerrar', () => {
+    it('el mismo botón de buscar cierra el buscador cuando ya está abierto', () => {
         const onCloseSearch = vi.fn();
         render(<ActiveLayersToolbar {...baseProps} searchOpen onCloseSearch={onCloseSearch} />);
         fireEvent.click(screen.getByRole('button', { name: /cerrar buscador/i }));
         expect(onCloseSearch).toHaveBeenCalled();
+    });
+
+    it('aria-pressed=true en el botón buscar cuando searchOpen', () => {
+        render(<ActiveLayersToolbar {...baseProps} searchOpen />);
+        expect(screen.getByRole('button', { name: /cerrar buscador/i })).toHaveAttribute('aria-pressed', 'true');
     });
 
     it('propaga keyDown del input para escape u otros', () => {
