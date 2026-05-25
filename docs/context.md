@@ -207,11 +207,11 @@ Definiciones viven en DataEngine (schema `mapalab`). Frontend las carga via `GET
 | GET | `/layers/search?q=X` | Búsqueda flat con path |
 | POST | `/layers/refresh-cache` | Regenera cache materializada. **Requiere `X-Internal-Token` desde 1.28.5** (`MAPALAB_INTERNAL_TOKEN`); el gateway tambien lo bloquea externo con 403. Lo invoca `mariachi-api` via `iieg-network` |
 | POST | `/layers/invalidate-cache` | Invalida solo cache en memoria del proceso. **Requiere `X-Internal-Token` desde 1.28.5** |
-| ANY  | `/mcp/` | Servidor MCP (FastMCP). Expone `metadata`, `periodicity`, `layers` y `shares` como tools. Excluye `download` y `metrics`. Transporte HTTP streamable; nginx lo proxea sin buffering ni cache |
+| ANY  | `/mcp/` | Servidor MCP en container dedicado `mapalab-mcp`. 12 tools (10 lectura + 2 writes idempotentes). Transporte HTTP streamable; nginx lo proxea sin buffering ni cache |
 
 ### MCP server
 
-Construido con `FastMCP.from_fastapi(...)` a partir de un sub-app FastAPI que registra sólo los routers que se quieren exponer como tools (`metadata`, `periodicity`, `layers`, `shares`). El sub-app **no** comparte instancia con `app` para que `download` y `metrics` queden fuera del MCP sin perderlos del REST.
+Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp` (separado del backend principal). Los 12 tools (desde 1.48.1) son manuales con `@mcp.tool()` en `servers/mapalab.py` y reutilizan los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) que se copian al container del MCP en build time. 10 son lectura pura; 2 son writes idempotentes (`create_single_share`, `create_swipe_share`) que reutilizan `share_service.validate_payload` + `ShareRepository.upsert`. Detalles en `docs/mcp.md`.
 
 - Montaje: `mcp.http_app(path='/mcp', stateless_http=True)` en `servers/mapalab.py`. URL externa **desde mapalab 1.45.0**: `/mcp/` (vía nginx) o `/mapalab/mcp/` (vía gateway-hub). Antes era `/api/mcp/` y `/mapalab/api/mcp/`; se movió a nivel raíz para alinear con el patrón industrial (MCP no es REST y vive al lado del API, no dentro).
 - Lifespan: `combine_lifespans(lifespan, mcp_app.lifespan)` preserva el warmup del pool, el leader election y el scheduler existentes.

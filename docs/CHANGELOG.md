@@ -44,6 +44,24 @@ Documentación completa en [`docs/municipio-mode.md`](municipio-mode.md).
 
 ---
 
+## [1.48.4] - 2026-05-25
+
+### Documentación: `docs/mcp.md` y `docs/context.md` reflejan el modelo real del MCP
+
+Limpieza de referencias obsoletas a `FastMCP.from_fastapi(...)` y al "MCP embebido en el backend" — modelo pre-1.35.0 que llevaba meses fuera pero seguía documentado.
+
+- **`docs/mcp.md`** secciones reescritas:
+  - **Intro:** ahora dice "Servidor MCP dedicado (`mapalab-mcp`)" y menciona **12 tools** (10 lectura + 2 writes idempotentes).
+  - **§Por qué un container dedicado:** quita la referencia a `FastMCP.from_fastapi`, enfoca en las razones reales (tools manuales con control total de nombres/descripciones, aislamiento de pool, lifecycle propio).
+  - **§Qué se expone y qué no:** tabla actualizada — distingue lectura, writes intencionales (`create_*_share` de 1.44.0) y por qué quedan fuera download, cache invalidation (1.48.1), shares admin (`pin_share` etc.) y endpoints internos.
+  - **§Tools y su origen:** tabla nueva con 12 entries que mapea cada tool a su servicio/repositorio del backend (`LayersRepository`, `layer_metadata_service`, `PeriodicityService`, `share_tools`). Reemplaza la vieja tabla de 14 entries que mezclaba tools ficticios (`get_database_stats`, `pin_share`, etc.) que nunca estuvieron en el MCP actual o vivían en otra parte.
+  - **§Cómo agregar / quitar un tool:** receta reescrita basada en `@mcp.tool()` en lugar de `mcp_source_app.include_router(...)`.
+- **`docs/context.md` §MCP server:** una línea actualizada que refleja container dedicado + 12 tools + reuso de servicios del backend; quita el "Construido con FastMCP.from_fastapi…". También la tabla de rutas del backend ahora dice "Servidor MCP en container dedicado mapalab-mcp. 12 tools (10 lectura + 2 writes idempotentes)" en lugar del texto viejo.
+
+Solo documentación. Cero cambios en código del MCP o del backend.
+
+---
+
 ## [1.48.1] - 2026-05-25
 
 ### Cambiado: removidos del MCP los tools de invalidación de cache (14 → 12)

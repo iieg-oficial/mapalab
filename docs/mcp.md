@@ -1,25 +1,26 @@
 # MCP server
 
-Servidor [Model Context Protocol](https://modelcontextprotocol.io/) embebido en el backend de mapalab. Expone un subconjunto de los endpoints REST como tools para que clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes) puedan consultar el catálogo de capas, su metadata, periodicidad y compartibles del visor.
+Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`mapalab-mcp`, separado del backend principal desde 1.35.0) que expone **12 tools** sobre el catálogo de capas, metadata, periodicidad, mediciones geodésicas y creación de shares del visor. Pensado para clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes como IGIBot) que necesitan consultar o entregar mapas como respuesta.
 
-## Por qué
+## Por qué un container dedicado
 
-- Los endpoints REST ya tienen contratos estables (Pydantic schemas, OpenAPI).
-- `FastMCP.from_fastapi(...)` los re-expone como tools sin reescribir lógica.
-- El backend ya corre 24/7 detrás de gateway-hub, no necesita una segunda pieza de infra.
+- Los tools son manuales (`@mcp.tool()` en `servers/mapalab.py`), no auto-generados desde routers. Eso da control total sobre nombres, descripciones y qué se expone.
+- Reutiliza los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) — el código de `backend/app` se copia al container del MCP en build time. Sin duplicación de lógica.
+- Aislamiento: si un agente abusivo satura el MCP, no impacta al backend del visor que sirve al usuario final.
+- Lifecycle propio: `mapalab-mcp` tiene su pool de SQLAlchemy chico (2 workers, 2 conexiones cada uno), separado del pool grande del backend.
 
 ## Qué se expone y qué no
 
-| Router | MCP | Razón |
-|---|---|---|
-| `metadata` | sí | Lectura pura |
-| `periodicity` | sí | Lectura pura |
-| `layers` | sí | Lectura + cache invalidation |
-| `shares` | sí | Lectura/escritura pequeña |
-| `download` | **no** | Streams de CSV grandes (`COPY TO STDOUT`); inadecuado como tool MCP |
-| `metrics` | **no** | Endpoint interno de Prometheus, no útil para un agente |
+12 tools (ver tabla completa más abajo en §Tools expuestos):
 
-`/health` y `/ontoy` no se exponen tampoco porque viven en `app` directamente, no en un router.
+| Origen | MCP | Razón |
+|---|---|---|
+| Endpoints REST de `metadata`, `periodicity`, `layers/{tree,initial-order,workspaces,search,resolve}` | **sí** (10 tools de lectura) | Lectura pura útil para agentes |
+| Lógica nueva (`create_single_share`, `create_swipe_share`, `measure_geometry`) | **sí** (2 writes + 1 lectura, desde 1.44.0) | Tools manuales que reutilizan `share_service` y PostGIS para que un agente entregue mapas interactivos |
+| `download` (CSV streaming) | **no** | Streams de `COPY TO STDOUT`; el formato de respuesta MCP no encaja con streaming |
+| `layers/{refresh-cache,invalidate-cache}` | **no** (removido en 1.48.1) | Requerían `X-Internal-Token` que el MCP no inyecta; siempre devolvían 401, eran ruido en `tools/list` |
+| `shares/{pin,unpin,pin-permanent}` | **no** | Writes administrativos con efectos sobre la BD, no encajan en el patrón del MCP público |
+| `metrics`, `health`, `ontoy` | **no** | Endpoints internos de operaciones, no útiles para un agente |
 
 ## Arquitectura (v1.35.0+)
 
@@ -130,29 +131,24 @@ Diferencias clave contra `/api/`:
 
 El gateway-hub no necesita un `location` específico para `/mapalab/mcp/`: cae bajo el bloque general `location ^~ /mapalab/` que ya proxea al `mapalab-nginx`. Si en el futuro se observan problemas de buffering en el gateway, agregar un `location ^~ /mapalab/mcp/` análogo allá con `proxy_buffering off`.
 
-## Tools generados
+## Tools y su origen
 
-`from_fastapi` genera un tool por cada operación. Cada endpoint expuesto define `operation_id`, `summary` y `description` en su decorador, así que el tool MCP resultante hereda nombre corto, título legible y descripción larga sin extra mapping:
+Los 12 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). 10 son wrappers delgados sobre lógica del backend; 2 reutilizan helpers de `share_service`. Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función.
 
-| Tool | Origen | Qué hace |
+| Tool | Origen del código | Qué hace |
 |---|---|---|
-| `get_metadata` | GET `/metadata/` | Metadata completa de una capa |
-| `get_sources_batch` | GET `/metadata/sources` | Fuentes de varias capas en lote |
-| `get_database_stats` | GET `/metadata/database-stats` | Conteo total de registros del schema mapalab |
-| `get_periodicity` | GET `/periodicity/` | Fechas disponibles de una capa temporal |
-| `get_periodicities_batch` | GET `/periodicity/batch` | Periodicidad de varias capas |
-| `get_layer_tree` | GET `/layers/tree` | Árbol jerárquico completo del visor |
-| `get_initial_order` | GET `/layers/initial-order` | IDs activos al cargar el visor |
-| `get_workspaces` | GET `/layers/workspaces` | Workspaces con alias + schema |
-| `search_layers` | GET `/layers/search` | Búsqueda por label/tags/id — devuelve **label + path jerárquico** |
-| `resolve_layer_ref` | GET `/layers/resolve` | Slug/alias → capa |
-| `create_share` | POST `/shares` | Crea share del estado del mapa |
-| `get_share` | GET `/shares/{share_id}` | Lee un share |
-| `pin_share` | POST `/shares/{share_id}/pin` | Pin por 365 días |
-| `unpin_share` | DELETE `/shares/{share_id}/pin` | Quita el pin |
-| `pin_share_permanent` | POST `/shares/{share_id}/pin-permanent` | Pin permanente (token interno) |
-
-Para cambiar el nombre o el texto que ve un cliente MCP, basta editar `operation_id`, `summary` o `description` en el decorador del endpoint correspondiente.
+| `search_layers` | `app.repositories.LayersRepository.search_layers` + cache del árbol | Búsqueda por label/tags/id — devuelve **label + path jerárquico** |
+| `resolve_layer_ref` | `LayersRepository.find_layer_by_slug_or_alias` | Slug/alias/id → capa |
+| `get_layer_tree` | `app.services.layer_tree_service.get_cached_state` | Árbol jerárquico completo del visor |
+| `get_initial_order` | `get_cached_state['initial_order']` | IDs activos al cargar el visor |
+| `get_workspaces` | `get_cached_state['workspaces']` | Workspaces con alias + schema |
+| `get_metadata` | `app.services.layer_metadata_service.get_metadata_response` | Metadata completa de una capa |
+| `get_sources_batch` | `layer_metadata_service.get_sources_batch` | Fuentes de varias capas en lote |
+| `get_periodicity` | `app.services.PeriodicityService.get_periodicity` | Fechas year/month/day de una capa temporal |
+| `get_periodicities_batch` | `PeriodicityService.get_periodicities_batch` | Periodicidad de varias capas |
+| `measure_geometry` | `servers/share_tools.py::measure_geometry` (PostGIS `ST_Length`/`ST_Area::geography`) | Longitud o área geodésica de GeoJSON |
+| `create_single_share` | `servers/share_tools.py::create_single_share` (reutiliza `share_service.validate_payload` + `ShareRepository.upsert`) | Crea share `kind=single` y devuelve `{id, url, embed_html}` |
+| `create_swipe_share` | `servers/share_tools.py::create_swipe_share` | Crea share `kind=swipe` para comparación A\|B |
 
 ## Entrega de mapas a agentes conversacionales (v1.44.0+)
 
@@ -703,19 +699,20 @@ Scrapeado por Prometheus en huachicol vía el endpoint `/metrics` existente del 
 
 `combine_lifespans` vive en `fastmcp.utilities.lifespan` desde fastmcp 2.x. Si en el futuro se actualiza fastmcp y desaparece el path, hay que migrar al patrón de `mcp_app.router.lifespan_context`.
 
-## Cómo agregar un router al MCP
+## Cómo agregar un tool al MCP
 
-1. Importarlo en `backend/app/server.py`.
-2. Agregarlo a `mcp_source_app.include_router(...)` antes de la línea `mcp = FastMCP.from_fastapi(...)`.
-3. Si el router tiene endpoints que no quieres exponer, separarlos en un sub-router o filtrarlos con `tags` y excluir esos tags al instanciar el MCP.
-4. Rebuild del backend (`docker compose build backend && docker compose up -d backend`).
-5. Validar listando tools: `len(tools)` debería incrementarse.
+1. Definir la función en `servers/mapalab.py` decorada con `@mcp.tool()`. Argumentos tipados con `Field(description=...)` para que la descripción aparezca en `tools/list`. Docstring en español (es el "summary" que ven los clientes MCP).
+2. Si la lógica es trivial (lectura directa), implementarla inline. Si reutiliza servicios del backend (medición, share, etc.), importar desde `app.services.*` o `app.repositories.*`.
+3. Para tools de share, ya existe `servers/share_tools.py` con helpers compartidos (`_persist_share`, `_normalize_layer_entries`, etc.) — extender ahí si aplica.
+4. Rebuild del container MCP: `docker compose build mapalab-mcp && docker compose up -d mapalab-mcp`.
+5. Validar: `curl -s -X POST $URL -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq '.result.tools | length'` debería incrementarse.
 
-## Cómo quitar un router del MCP
+## Cómo quitar un tool
 
-1. Removerlo del bloque `mcp_source_app.include_router(...)`.
-2. **Mantenerlo** en `app.include_router(...)` para que siga vivo en REST.
-3. Rebuild.
+1. Removerlo de `servers/mapalab.py` (el `@mcp.tool()` completo).
+2. Si la función auxiliar no se usa en otro lado, limpiarla también.
+3. Si era un wrapper de un endpoint REST, **mantener** el endpoint REST original — el visor o mariachi lo siguen usando. Solo cambia la exposición al MCP.
+4. Rebuild + verificar count en `tools/list`.
 
 ## Limitaciones conocidas
 
