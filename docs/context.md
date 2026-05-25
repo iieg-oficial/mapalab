@@ -547,8 +547,11 @@ Cada item de `<ActiveLayerItem>` tiene un layout vertical de hasta 4 filas, expa
 
 El botón eliminar del item, en swipe, quita la capa de **ambos** slots (`paneA` + `paneB`); para mover entre slots se usa la pildora A|B. Los badges del header del panel cuentan items unificados (`unifiedLayers.length`) en lugar de IDs internos.
 
+El header del panel incluye un **buscador inline** (`<ActiveLayersToolbar>`) entre "Eliminar mis capas" y "Pausar animaciones": icono `searchInput` (mismo del input del `<SearchMenu>`). Al activarse, el subheader colapsa y aparece un input que reemplaza la fila completa (botones + switch IIEG/INEGI) hasta cerrarse con la X o `Escape`. Filtra `displayedLayers = unifiedLayers.filter(matches)` por `name` con normalización NFD + lowercase (acentos-insensible); muestra contador `N/Total` dentro del input y deshabilita el `SortableList` (`disabled` pass-through a `SortableContext`) mientras hay query para no reordenar parcialmente. Si no hay matches, renderiza "Sin coincidencias para X" en lugar de la lista. Botón disabled cuando `noLayers`.
+
 Sub-componentes en `frontend/src/pages/maps/components/ActiveLayers/`:
 - `ActiveLayerItem.jsx` — container que orquesta las filas.
+- `ActiveLayersToolbar.jsx` — subheader con botones globales (visibilidad / eliminar / buscar / pausar) + modo búsqueda.
 - `LayerItemHeader.jsx` — exporta `DragHandle` y `LayerTitle` por separado para permitir reorden.
 - `LayerDateControls.jsx` — Fila 2 (pill + loop + badge en grid).
 - `LayerActionsBar.jsx` — Fila 3 (acciones del item expandido).

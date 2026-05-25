@@ -1,4 +1,4 @@
-import { useContext, useCallback, useMemo, useEffect, useState } from 'react';
+import { useContext, useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useActiveLayersLogic } from '../../hooks/useActiveLayersLogic';
 import { useAlwaysOnTopPinning, sortItemsWithPinnedFirst } from '../../hooks/useAlwaysOnTopPinning';
@@ -7,12 +7,11 @@ import { useLayerSorting } from './hooks/useLayerSorting';
 import { LegendsVisibilityProvider } from './hooks/useLegendsVisibility';
 import { SortableList, SortableItem } from './SortableList';
 import ActiveLayerItem from './ActiveLayerItem';
+import ActiveLayersToolbar from './ActiveLayersToolbar';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
-import Switch from '@components/Switch';
 import ScrollContainer from '@components/ScrollContainer';
-import ConfirmDropdown from '@components/ConfirmDropdown';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { getDefaultMapView } from '@pages/maps/helpers/defaultView';
@@ -91,6 +90,34 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
     const collapse = useLayerCollapse(unifiedLayers);
     useEffect(() => { onCollapseChange?.(collapse.isCollapsed); }, [collapse.isCollapsed, onCollapseChange]);
 
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const searchInputRef = useRef(null);
+
+    const normalizeForSearch = (value) =>
+        (value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+    const displayedLayers = useMemo(() => {
+        const q = normalizeForSearch(searchQuery);
+        if (!q) return unifiedLayers;
+        return unifiedLayers.filter((l) => normalizeForSearch(l.name).includes(q));
+    }, [unifiedLayers, searchQuery]);
+
+    const isFiltering = searchQuery.trim().length > 0;
+
+    useEffect(() => {
+        if (searchOpen) searchInputRef.current?.focus();
+    }, [searchOpen]);
+
+    const handleCloseSearch = useCallback(() => {
+        setSearchOpen(false);
+        setSearchQuery('');
+    }, []);
+
+    const handleSearchKeyDown = (e) => {
+        if (e.key === 'Escape') handleCloseSearch();
+    };
+
     const handleReorder = useCallback((newOrder) => {
         if (isSwipe) {
             reorderInSlots?.(newOrder);
@@ -104,7 +131,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
     }, [isSwipe, compareMode, reorderInSlots, reorderActiveLayerIds]);
 
     const { handleDragEnd } = useLayerSorting(effectiveActiveLayerIds, unifiedLayers, handleReorder);
-    const sortableItems = useMemo(() => unifiedLayers.map(l => l.id), [unifiedLayers]);
+    const sortableItems = useMemo(() => displayedLayers.map(l => l.id), [displayedLayers]);
     const isInegiMode = useMemo(() => effectiveActiveLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id)), [effectiveActiveLayerIds]);
 
     const noLayers = unifiedLayers.length === 0;
@@ -157,12 +184,6 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         }
     }, [allHidden, showAllLayers, hideAllLayers]);
 
-    const [isDeleteHovered, setIsDeleteHovered] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-    const visibleHeaderButtons = 2 + (hasActiveLoops ? 1 : 0);
-    const hideHeaderLabels = visibleHeaderButtons > 2;
-
     if (collapse.isCollapsed) {
         return (
             <div className={`w-auto flex items-center justify-end pt-1 pl-1`}>
@@ -194,114 +215,56 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
                 </Tooltip>
             </div>
 
-            <div className="flex items-center justify-between shrink-0 mb-2 gap-1.5">
-                <div className="flex items-center gap-2 md:gap-3 shrink md:shrink-0 min-w-0">
-                    <button
-                        type="button"
-                        disabled={noLayers}
-                        className={`group/vis flex items-center gap-1 shrink-0 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                        onClick={handleToggleVisibilityAll}
-                    >
-                        <span className={`relative p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/vis:border-[#70308A]'}`}>
-                            <Icon name="visible" state={allHidden ? 'hover' : 'gray'} className="size-5 shrink-0" />
-                            <Badge
-                                visible={visibilityCount > 0}
-                                count={visibilityCount}
-                                color="purple"
-                                size="sm"
-                                className="absolute -top-1 -right-1 pointer-events-none"
-                            />
-                        </span>
-                        <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium text-[#465055] whitespace-nowrap truncate leading-none pt-[1.5px]`}>{allHidden ? 'Mostrar mis capas' : 'Ocultar mis capas'}</span>
-                    </button>
+            <ActiveLayersToolbar
+                noLayers={noLayers}
+                unifiedLayers={unifiedLayers}
+                displayedLayers={displayedLayers}
+                isFiltering={isFiltering}
+                allHidden={allHidden}
+                visibilityCount={visibilityCount}
+                hasActiveLoops={hasActiveLoops}
+                activeLoopsCount={activeLoopsCount}
+                isInegiMode={isInegiMode}
+                onToggleVisibilityAll={handleToggleVisibilityAll}
+                onRemoveAll={handleRemoveAll}
+                onPauseAll={pauseAllLoops}
+                onToggleBaseMode={handleToggleBaseMode}
+                searchOpen={searchOpen}
+                searchQuery={searchQuery}
+                onChangeSearchQuery={setSearchQuery}
+                onOpenSearch={() => setSearchOpen(true)}
+                onCloseSearch={handleCloseSearch}
+                onSearchKeyDown={handleSearchKeyDown}
+                searchInputRef={searchInputRef}
+            />
 
-                    <div className="relative shrink-0">
-                        <button
-                            type="button"
-                            disabled={noLayers}
-                            onClick={() => setShowDeleteConfirm(p => !p)}
-                            onMouseEnter={() => !noLayers && setIsDeleteHovered(true)}
-                            onMouseLeave={() => !noLayers && setIsDeleteHovered(false)}
-                            className={`group/del flex items-center gap-1 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                        >
-                            <span className={`relative p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/del:border-[#FF577D]'}`}>
-                                <Icon name="eliminar" state={isDeleteHovered ? 'hover' : 'normal'} className="size-5 shrink-0" />
-                                <Badge
-                                    visible={unifiedLayers.length > 0}
-                                    count={unifiedLayers.length}
-                                    color="pink"
-                                    size="sm"
-                                    className="absolute -top-1 -right-1 pointer-events-none"
-                                />
-                            </span>
-                            <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium whitespace-nowrap truncate leading-none pt-[1.5px] transition-colors ${noLayers ? 'text-[#465055]' : isDeleteHovered ? 'text-[#FF577D]' : 'text-[#465055]'}`}>Eliminar mis capas</span>
-                        </button>
-                        <ConfirmDropdown
-                            open={showDeleteConfirm}
-                            onClose={() => setShowDeleteConfirm(false)}
-                            onConfirm={handleRemoveAll}
-                            title="¿Estás seguro de borrar todas las capas que tienes activas?"
-                            description="Si las borras deberás activar una por una nuevamente"
-                            confirmText="Sí. Quiero borrar todas las capas"
-                            className="right-0 md:right-0 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0"
-                        />
-                    </div>
-
-                    {hasActiveLoops && (
-                        <button
-                            type="button"
-                            className="group/pauseall flex items-center gap-1 shrink-0 cursor-pointer"
-                            onClick={pauseAllLoops}
-                        >
-                            <span className="relative p-0.5 rounded-full border border-transparent transition-colors group-hover/pauseall:border-[#FF8300]">
-                                <span className="size-5 flex items-center justify-center text-[#5C2472] group-hover/pauseall:text-[#FF8300] transition-colors">
-                                    <Icon name="pause_all" className="size-3 shrink-0" />
-                                </span>
-                                <Badge
-                                    visible={activeLoopsCount > 0}
-                                    count={activeLoopsCount}
-                                    color="orange"
-                                    size="sm"
-                                    className="absolute -top-1 -right-1 pointer-events-none"
-                                />
-                            </span>
-                            <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium whitespace-nowrap truncate leading-none pt-[1.5px] text-[#FF8300]`}>Pausar animaciones</span>
-                        </button>
-                    )}
-                </div>
-
-                <div className="flex items-center gap-1 shrink-0">
-                    <Switch
-                        checked={!isInegiMode}
-                        onChange={handleToggleBaseMode}
-                        onLabel="IIEG"
-                        offLabel="INEGI"
-                        onColor={noLayers ? '#d1d5db' : '#70308A'}
-                        offColor="#FF8300"
-                        tooltip={noLayers ? 'Activar capas IIEG' : (isInegiMode ? 'Cambiar a IIEG' : 'Cambiar a INEGI')}
-                    />
-                </div>
-            </div>
 
             <ScrollContainer
-                className="flex-1 min-h-0 -mx-0 px-1"
+                className="flex-1 min-h-0 mx-0 px-1"
                 overlayFade
                 clickableArrows
                 minItemsForClick={5}
-                itemCount={unifiedLayers.length}
+                itemCount={displayedLayers.length}
             >
-                <SortableList
-                    items={sortableItems}
-                    onSortEnd={handleDragEnd}
-                >
-                    <div className="space-y-1 py-1">
-                        {unifiedLayers.map((layer) => (
-                            <SortableItem key={layer.id} id={layer.id} isSticky={selectedLayerForSymbology?.id === layer.id}>
-                                <ActiveLayerItem layer={layer} isPinned={pinnedLayerIds.has(layer.id)} />
-                            </SortableItem>
-                        ))}
+                {isFiltering && displayedLayers.length === 0 ? (
+                    <div className="py-6 text-center text-[12px] font-garet text-graphite">
+                        Sin coincidencias para “{searchQuery}”
                     </div>
-                </SortableList>
+                ) : (
+                    <SortableList
+                        items={sortableItems}
+                        onSortEnd={handleDragEnd}
+                        disabled={isFiltering}
+                    >
+                        <div className="space-y-1 py-1">
+                            {displayedLayers.map((layer) => (
+                                <SortableItem key={layer.id} id={layer.id} isSticky={selectedLayerForSymbology?.id === layer.id}>
+                                    <ActiveLayerItem layer={layer} isPinned={pinnedLayerIds.has(layer.id)} />
+                                </SortableItem>
+                            ))}
+                        </div>
+                    </SortableList>
+                )}
             </ScrollContainer>
         </div>
     );

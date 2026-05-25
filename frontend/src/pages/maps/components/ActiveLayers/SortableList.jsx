@@ -21,7 +21,7 @@ const KEYBOARD_SENSOR_OPTIONS = {
     coordinateGetter: sortableKeyboardCoordinates,
 };
 
-export const SortableList = ({ items, onSortEnd, children, strategy = verticalListSortingStrategy }) => {
+export const SortableList = ({ items, onSortEnd, children, strategy = verticalListSortingStrategy, disabled = false }) => {
     const sensors = useSensors(
         useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
         useSensor(TouchSensor, TOUCH_SENSOR_OPTIONS),
@@ -38,6 +38,7 @@ export const SortableList = ({ items, onSortEnd, children, strategy = verticalLi
             <SortableContext
                 items={items}
                 strategy={strategy}
+                disabled={disabled}
             >
                 {children}
             </SortableContext>
