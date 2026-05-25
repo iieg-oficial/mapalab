@@ -144,7 +144,7 @@ const ActiveLayersToolbar = ({
             </div>
 
             {searchOpen && (
-                <div className="relative mb-2 shrink-0">
+                <div className="relative mx-3 mb-2 shrink-0">
                     <input
                         ref={searchInputRef}
                         type="text"
@@ -153,14 +153,14 @@ const ActiveLayersToolbar = ({
                         onKeyDown={onSearchKeyDown}
                         placeholder="Buscar capas activas"
                         className="
-                        w-full py-3 pl-4 pr-20 border-none bg-[#EAEFFA] rounded-lg
+                        w-full min-h-8 py-1 pl-3 pr-16 border-none bg-[#EAEFFA] rounded-[7px]
                         text-[13px]/[19px] text-purple font-garet font-normal tracking-normal
                         placeholder:text-[#191919] placeholder:font-garet placeholder:font-normal placeholder:text-[13px]/[19px]
                         focus:outline-purple transition-colors
                     "
                     />
                     {isFiltering && (
-                        <span className="absolute right-15 top-1/2 -translate-y-1/2 text-[11px] font-garet text-graphite pointer-events-none">
+                        <span className="absolute right-11 top-1/2 -translate-y-1/2 text-[11px] font-garet text-graphite pointer-events-none">
                             {displayedLayers.length}/{unifiedLayers.length}
                         </span>
                     )}
@@ -170,12 +170,12 @@ const ActiveLayersToolbar = ({
                             aria-label="Cerrar y limpiar búsqueda"
                             onClick={onCloseSearch}
                             className="
-                            absolute right-0 top-1/2 -translate-y-1/2 h-full w-12.75
-                            bg-purple-deep hover:bg-purple rounded-r-lg
+                            absolute right-0 top-1/2 -translate-y-1/2 h-full w-10
+                            bg-purple-deep hover:bg-purple rounded-r-[7px]
                             flex items-center justify-center transition-colors cursor-pointer
                         "
                         >
-                            <Icon name="searchInput" className="size-5" />
+                            <Icon name="searchInput" className="size-4" />
                         </button>
                     </Tooltip>
                 </div>
