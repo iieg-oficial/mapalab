@@ -5,7 +5,62 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.49.1] - 2026-05-26
+
+### UX: tooltip de hover sobre eventos externos + delays de hover más perdonadores
+
+Dos mejoras de descubribilidad y tolerancia al uso accidental del mouse en el widget de eventos externos (los íconos a la derecha del sider).
+
+#### Tooltip de hover sobre `EventoIconButton`
+
+Antes el usuario no tenía señal explícita de qué iba a pasar al hacer clic en el ícono de un evento — solo veía la imagen expandida al hacer hover. Ahora `ExternalEventoItem` envuelve el `EventoIconButton` (dentro del `renderComponent` de `MenuItem`) con un `<Tooltip>` que muestra: `Da clic para descubrir todas las capas y detalles de "{titulo}"`. Configuración:
+
+- **Variante**: `warning` (mismo look amarillo/naranja que el tooltip del item seleccionado en capas activas — consistencia visual)
+- **Placement**: `bottom` en desktop, `right` en mobile (no estorba el panel que abre el menú)
+- **Delay**: `600ms` — la expansión del ícono dura 500ms (`transition-all duration-500` en el wrapper); esperar 600ms garantiza que el Tooltip calcule su `boundingClientRect` sobre el ícono **ya expandido**, no el contraído (la flecha del tooltip apunta correcto)
+- **Disabled cuando**: `isMenuOpen` (panel abierto, evita solapamiento) **o** `!externalHovered` (cinturón + tirantes: el `mouseLeave` propio del Tooltip lo oculta al salir del ícono, pero si por algún motivo no se dispara, `externalHovered=false` después del delay del widget fuerza el early return del Tooltip)
+
+Componente del Tooltip sin modificar — toda la lógica vive en la composición de `ExternalEventoWidget`.
+
+#### Delay de salida en hover (anti-accidente)
+
+El widget se contraía instantáneamente al salir del cursor, y el sider tenía un delay corto de 200ms en su `useSiderHover`. Resultado: salidas accidentales (pasar por arriba sin querer mientras se mueve el mouse a otra cosa) cerraban el widget/sider y forzaban al usuario a repetir el hover.
+
+**Cambios:**
+- **`SIDER_HOVER_DELAY_LEAVE_DEFAULT`**: 200ms → **500ms**. Aplica al sider principal vía `useSiderHover` (`handleMouseLeave` en `SiderContext.jsx`). Los otros delays se mantienen (`LEAVE_WITH_MENU=500ms` ya estaba ahí, `LEAVE_WITH_TOOLS=300ms` para no estorbar herramientas activas).
+- **`ExternalEventoWidget`**: nuevo `leaveTimerRef` + timeout de `SIDER_HOVER_DELAY_LEAVE_DEFAULT` (reusa la misma constante) en `onMouseLeave`/`onBlur`. Si el cursor vuelve a entrar antes de los 500ms, `clearLeaveTimer()` cancela el cierre. Cleanup en unmount.
+
+Reusar la misma constante mantiene consistencia entre sider y widget — si en el futuro afinas el valor, ambos se mueven juntos.
+
+---
+
 ## [No publicado]
+
+### perf(download): cache de CSVs en Acervo (redirect 307) + endpoint async con asyncpg + buckets de latencia extendidos
+
+Conjunto de cambios para descargar la presión del backend de MapaLab en producción al servir CSVs de capas. La métrica `http_request_duration_seconds` del instrumentator de FastAPI mide hasta el cierre del response, así que en `/download/{workspace}/{layer}` el "request duration" incluye el tiempo de transferencia al cliente — un CSV grande con cliente en conexión normal saturaba el bucket superior (10s) del histograma y disparaba `HighLatency` en Huachicol sin que hubiera problema real (100% 2xx). En producción los servidores son 4 separados (Gateway+Acervo en S1, MapaLab en S2, DataEngine en S4); en GCP staging todos comparten 1 VM y el almacenamiento es limitado, por eso el redirect a Acervo es opcional y la ruta on-the-fly sigue disponible.
+
+#### Cambiado
+
+- **`backend/app/routers/download.py`** (`download_layer`): convertido a `async def`. Si la request no trae filtros `date_from`/`date_to` y la tabla `mapalab.layer_downloads` tiene un registro con `generated_at` dentro del TTL (`DOWNLOAD_CACHE_TTL_HOURS=36` por default), devuelve `307` a `${ACERVO_MAPALAB_BUCKET_PATH}/{object_key}` (default `/acervo/mapalab/downloads/{schema}/{table}.csv.gz`). Sin filtros y sin dump fresco, o con filtros, cae a streaming on-the-fly.
+- **`backend/app/repositories/download_repository.py`**:
+  - Nuevo método `find_fresh_cache(session, layer_key, ttl_hours)` que devuelve `object_key` del dump si está dentro del TTL.
+  - `stream_csv()` reescrito a `async def` + `asyncpg.Pool.copy_from_query(..., output=async_callable)` con una `asyncio.Queue` como puente entre el productor y el `StreamingResponse`. Reemplaza el workaround anterior de `os.pipe()` + thread bloqueante con `psycopg2.copy_expert`, que ocupaba un thread del threadpool de Starlette durante toda la descarga.
+- **`backend/app/databases/async_pool.py`** (nuevo): pool `asyncpg` lazy, compartido entre workers de gunicorn, con `command_timeout=600s` y `max_size=max(DB_POOL_SIZE, 4)`. Reutiliza la resolución de `DB_NAME` del factory síncrono existente.
+- **`backend/app/services/acervo_client.py`** (nuevo): wrapper boto3 lazy con `signature_version='s3v4'` para generar URLs presigned con TTL. Usa `ACERVO_PUBLIC_ENDPOINT` (default cae a `ACERVO_ENDPOINT` si no se setea) — la URL firmada debe apuntar al endpoint que el cliente final puede resolver, no al hostname interno de Docker.
+- **`backend/app/server.py`**: el instrumentator extiende los buckets del histograma de latencia con `15, 30, 60, 120, 300` s para que las descargas largas no saturen el bucket superior y dejen ver el p95/p99 reales. `lifespan` ahora cierra el pool de asyncpg en shutdown.
+- **`backend/app/config.py`**: nuevas variables `ACERVO_ENDPOINT`, `ACERVO_PUBLIC_ENDPOINT`, `ACERVO_ACCESS_KEY`, `ACERVO_SECRET_KEY` (credenciales del usuario `mapalab-user` del bucket `mapalab` de Acervo, no globales), `ACERVO_BUCKET` (default `mapalab`), `ACERVO_PRESIGN_TTL_SECONDS` (default 3600), `DOWNLOAD_CACHE_TTL_HOURS` (default 36).
+- **`backend/requirements.txt`**: nuevas dependencias `asyncpg`, `boto3`.
+- **`docker-compose.yml`**: el servicio `backend` ahora recibe `ACERVO_ENDPOINT`, `ACERVO_PUBLIC_ENDPOINT`, `ACERVO_ACCESS_KEY`, `ACERVO_SECRET_KEY`, `ACERVO_BUCKET`, `ACERVO_PRESIGN_TTL_SECONDS`, `DOWNLOAD_CACHE_TTL_HOURS`.
+
+#### Notas de implementación
+
+- **asyncpg + bytearray**: `asyncpg.Connection.copy_from_query(..., output=callable)` invoca el callable con `bytearray` (no `bytes`). Starlette's `StreamingResponse` espera `bytes | str` y falla con `AttributeError: 'bytearray' object has no attribute 'encode'`. El writer convierte explícitamente con `bytes(buf)` antes de poner en la queue.
+- **asyncpg + fechas**: los parámetros de query con tipo `DATE` en Postgres no aceptan string en asyncpg (a diferencia de psycopg2). `_build_select` ahora hace `date.fromisoformat(date_from)` y `date.fromisoformat(date_to)` antes de pasarlos como params; el regex existente en el endpoint (`^\d{4}-\d{2}-\d{2}$`) garantiza que el string es parseable.
+
+#### Por qué minor
+
+Sin cambios visibles para el usuario del visor; sin breaking changes para integradores que usen `/download/`. En GCP staging todo sigue funcionando idéntico mientras `mapalab.layer_downloads` esté vacía (cae a streaming). En producción, requiere la migración Alembic `0016_layer_downloads` y el cron de dataengine para tomar efecto.
 
 ### Agregado: modo Vista por municipio (beta, sólo dev/staging)
 
