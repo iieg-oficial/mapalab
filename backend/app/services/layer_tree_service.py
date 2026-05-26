@@ -66,6 +66,8 @@ def _layer_to_search_meta(layer: Layer) -> Optional[dict]:
         meta['hasMunicipio'] = True
         if layer.municipio_field:
             meta['municipioField'] = layer.municipio_field
+        if layer.municipio_field_type:
+            meta['municipioFieldType'] = layer.municipio_field_type
     if layer.has_direccion:
         meta['hasDireccion'] = True
         if layer.direccion_field:
@@ -146,6 +148,24 @@ def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace], aliases_ma
     return result
 
 
+_MUNICIPIO_KEYS = ('hasMunicipio', 'municipioField', 'municipioFieldType')
+
+
+def _inherit_municipio_meta(node: dict, inherited: Optional[dict] = None) -> None:
+    own_meta = node.get('searchMeta') or {}
+    own_has = own_meta.get('hasMunicipio') is True
+    if own_has:
+        next_inherited = {k: own_meta[k] for k in _MUNICIPIO_KEYS if k in own_meta}
+    elif inherited is not None:
+        merged = {**own_meta, **inherited}
+        node['searchMeta'] = merged
+        next_inherited = inherited
+    else:
+        next_inherited = None
+    for child in node.get('children', []) or []:
+        _inherit_municipio_meta(child, next_inherited)
+
+
 def _build_tree_from_rows(
     layers: list[Layer],
     workspace_map: dict[str, Workspace],
@@ -165,6 +185,9 @@ def _build_tree_from_rows(
             parent = nodes_by_id.get(layer.parent_id)
             if parent is not None:
                 parent['children'].append(node)
+
+    for root in roots:
+        _inherit_municipio_meta(root)
 
     return roots
 

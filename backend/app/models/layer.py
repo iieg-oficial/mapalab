@@ -89,6 +89,7 @@ class Layer(LayerBase):
     has_municipio = Column(Boolean, server_default=text('FALSE'), nullable=False)
     has_direccion = Column(Boolean, server_default=text('FALSE'), nullable=False)
     municipio_field = Column(String(100), nullable=True)
+    municipio_field_type = Column(String(20), nullable=True)
     direccion_field = Column(String(100), nullable=True)
 
     infobox_template = Column(String(50), nullable=True)

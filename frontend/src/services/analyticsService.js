@@ -115,3 +115,15 @@ export const trackLayerNoticeDismiss = ({ layerId, variant }) =>
 
 export const trackLayerNoticeCtaClick = ({ layerId, variant, url }) =>
     withMapInteraction('layer_notice_cta_click', { layer_id: layerId, variant, url });
+
+export const trackMunicipioModeEnter = ({ source, count, fromUrl = false }) =>
+    withMapInteraction('municipio_mode_enter', { source, count, from_url: !!fromUrl });
+
+export const trackMunicipioModeExit = ({ durationSec, source }) =>
+    withMapInteraction('municipio_mode_exit', { duration_sec: durationSec, source });
+
+export const trackMunicipioSelectionChange = ({ source, count, action }) =>
+    withMapInteraction('municipio_mode_change', { source, count, action });
+
+export const trackMunicipioPanelOpen = ({ source, active }) =>
+    trackEvent('municipio_panel_open', { source, active: !!active });

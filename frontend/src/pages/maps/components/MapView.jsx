@@ -91,14 +91,15 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
     const { initialOrder } = useLayers();
     const compareModeActive = !!ctx.compareMode?.active;
     const pinnedLayerIds = useAlwaysOnTopPinning({ activeLayerIds, hiddenLayerIds, compareModeActive });
+    const municipioContext = ctx.municipioMode?.municipioContext || null;
     const { wmsLayersRef } = useWMSLayerManager({
         mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getAllChildLayerIds,
         getLayerOpacity, layerOpacities, getFilter, combineCQLFilters,
-        pinnedLayerIds, initialOrder
+        pinnedLayerIds, initialOrder, municipioContext
     });
 
     useMapInteractions(mapRef, handlePaneClick, isDrawing, markerClickedRef, editingClickedRef);
-    useWMSFilterUpdater({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds });
+    useWMSFilterUpdater({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds, municipioContext });
 
     useEffect(() => {
         const map = mapRef.current;

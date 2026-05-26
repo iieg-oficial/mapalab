@@ -107,6 +107,7 @@ export const useShareSerializer = () => {
         mapRef,
         compareMode,
         measurements,
+        municipioMode,
     } = useMapsContext();
     const { layers: layerTree } = useLayers();
 
@@ -145,6 +146,10 @@ export const useShareSerializer = () => {
 
         const selectedSlug = selectedLayerForSymbology?.id ? slugForLayer(selectedLayerForSymbology.id, layerTree) : null;
 
+        const municipioPayload = (municipioMode?.active && Array.isArray(municipioMode.selected) && municipioMode.selected.length > 0)
+            ? { source: municipioMode.sourceId || 'iieg', selected: [...municipioMode.selected] }
+            : null;
+
         const basePayload = {
             view,
             basemap: baseMapId || null,
@@ -153,6 +158,7 @@ export const useShareSerializer = () => {
             loop: serializeLoop(dateLoops, loopPrefs, layerTree),
         };
         if (annotations) basePayload.annotations = annotations;
+        if (municipioPayload) basePayload.municipios = municipioPayload;
 
         if (kind === 'swipe') {
             const activeSlot = compareMode?.activeSlot || extra.activeSlot || 'A';
@@ -167,12 +173,14 @@ export const useShareSerializer = () => {
             const frozenPane = compareMode?.[`pane${otherSlot}`] || {};
             const paneA = activeSlot === 'A' ? livePane : frozenPane;
             const paneB = activeSlot === 'A' ? frozenPane : livePane;
+            const sharedPayload = {
+                view,
+                basemap: baseMapId || null,
+                selected: selectedSlug,
+            };
+            if (municipioPayload) sharedPayload.municipios = municipioPayload;
             const swipePayload = {
-                shared: {
-                    view,
-                    basemap: baseMapId || null,
-                    selected: selectedSlug,
-                },
+                shared: sharedPayload,
                 paneA: {
                     label: paneA.label || 'A',
                     layers: serializePaneLayers(paneA, layerTree),
@@ -186,16 +194,16 @@ export const useShareSerializer = () => {
             };
             if (annotations) swipePayload.annotations = annotations;
             return {
-                version: 1,
+                version: 2,
                 kind: 'swipe',
                 payload: swipePayload,
             };
         }
 
         return {
-            version: 1,
+            version: 2,
             kind: 'single',
             payload: basePayload,
         };
-    }, [activeLayerIds, hiddenLayerIds, layerOpacities, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode, measurements]);
+    }, [activeLayerIds, hiddenLayerIds, layerOpacities, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode, measurements, municipioMode]);
 };
