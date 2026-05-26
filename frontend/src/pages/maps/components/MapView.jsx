@@ -98,7 +98,7 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         pinnedLayerIds, initialOrder, municipioContext
     });
 
-    useMapInteractions(mapRef, handlePaneClick, isDrawing, markerClickedRef, editingClickedRef);
+    useMapInteractions(mapRef, handlePaneClick, isDrawing, markerClickedRef, editingClickedRef, ctx.municipioMode?.isInsideMunicipios);
     useWMSFilterUpdater({ mapRef, wmsLayersRef, filters, getFilter, combineCQLFilters, activeLayerIds, municipioContext });
 
     useEffect(() => {

@@ -126,6 +126,36 @@ export const useMunicipioMode = ({ activeLayerIds }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const isInsideMunicipios = useCallback((coord) => {
+        if (!active) return true;
+        if (!Array.isArray(geometries) || geometries.length === 0) return true;
+        if (!Array.isArray(coord) || coord.length < 2) return false;
+        for (const item of geometries) {
+            if (item?.geometry?.intersectsCoordinate?.(coord)) return true;
+        }
+        return false;
+    }, [active, geometries]);
+
+    const polygonIntersectsMunicipios = useCallback((olGeometry) => {
+        if (!active) return true;
+        if (!Array.isArray(geometries) || geometries.length === 0) return true;
+        if (!olGeometry?.getCoordinates) return false;
+        try {
+            const rings = olGeometry.getCoordinates();
+            const outer = Array.isArray(rings?.[0]) && Array.isArray(rings[0][0]) ? rings[0] : rings;
+            if (!Array.isArray(outer)) return false;
+            for (const coord of outer) {
+                if (!Array.isArray(coord)) continue;
+                for (const item of geometries) {
+                    if (item?.geometry?.intersectsCoordinate?.(coord)) return true;
+                }
+            }
+        } catch {
+            return true;
+        }
+        return false;
+    }, [active, geometries]);
+
     const municipioContext = useMemo(() => {
         if (!active || !Array.isArray(selected) || selected.length === 0) {
             return { active: false, claves: [], nombres: [], bbox: null, listLoading: false, allMunicipiosCount: allMunicipios.length };
@@ -229,6 +259,8 @@ export const useMunicipioMode = ({ activeLayerIds }) => {
         geomLoading,
         error,
         municipioContext,
+        isInsideMunicipios,
+        polygonIntersectsMunicipios,
         enter,
         exit,
         setScope,
@@ -236,7 +268,7 @@ export const useMunicipioMode = ({ activeLayerIds }) => {
     }), [
         active, scope, scopeLabel, selected, sourceId,
         allMunicipios, regiones, geometries, listLoading, geomLoading, error,
-        municipioContext,
+        municipioContext, isInsideMunicipios, polygonIntersectsMunicipios,
         enter, exit, setScope, loadList,
     ]);
 };

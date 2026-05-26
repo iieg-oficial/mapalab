@@ -5,6 +5,44 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.51.0] - 2026-05-26
+
+### Vista por municipio: restringir interacciones fuera del polígono + botón "Centrar selección"
+
+Dos mejoras de UX al modo Vista por municipio (mapalab 1.50.0):
+
+#### Agregado: bloqueo silencioso de interacciones fuera del municipio
+
+Cuando hay un municipio/región/ZMG seleccionado, las acciones del mapa que caigan fuera del polígono se ignoran sin feedback visual:
+
+- **Click para InfoBox**: si el click cae fuera del polígono unión de los seleccionados, `useMapInteractions` aborta antes de llamar `queryFeatures`. El InfoBox no se abre.
+- **Selección por polígono dibujado**: si ningún vértice del polígono dibujado cae dentro de algún municipio, `handlePolygonComplete` en `MapsProvider` retorna sin ejecutar `queryFeaturesInPolygonRef`.
+
+Implementación:
+- **`useMunicipioMode.js`**: dos nuevos helpers expuestos en el return:
+  - `isInsideMunicipios(coord)`: itera `geometries` y devuelve `true` si la coordenada cae dentro de algún polígono de municipio. Si el modo no está activo, devuelve `true` (sin restricción).
+  - `polygonIntersectsMunicipios(olGeometry)`: verifica si algún vértice del outer ring del polígono dibujado cae dentro de algún municipio. Heurística rápida (no usa intersección exacta polígono-polígono); suficiente para 99% de los casos reales.
+- **`useMapInteractions.js`**: nuevo parámetro opcional `isClickAllowed` (callback). Guarda en ref y consulta antes de `queryFeatures`. Si retorna `false`, aborta silenciosamente.
+- **`MapView.jsx`**: pasa `ctx.municipioMode?.isInsideMunicipios` como `isClickAllowed` a `useMapInteractions`.
+- **`MapsProvider.jsx`**: `handlePolygonComplete` consulta `polygonIntersectsMunicipios` vía `municipioModeRef` (necesario porque `handlePolygonComplete` se declara antes que `municipioMode`).
+
+#### Agregado: botón "Centrar selección" (chip flotante + panel del filtro)
+
+Para volver a la vista del municipio después de hacer pan/zoom sin perder la selección:
+
+- **`useMunicipioFit.js`** (nuevo): hook que encapsula la lógica del fit automático (`useEffect` cuando cambia `selected`) + la función `centerOnSelection()` callable manualmente. Extraído de `MapsProvider` que excedía el límite de 300 líneas.
+- **`MapsProvider.jsx`**: usa `useMunicipioFit(...)` y extiende `municipioMode` con `centerOnSelection: centerOnMunicipioSelection` en el value del context, exponiendo la función a cualquier consumer.
+- **`MunicipioActiveChip.jsx`** (chip flotante top-center, solo desktop): nuevo botón entre la label y la X. Mismo tamaño que el botón X (`size-10`, `rounded-full`) pero color azul claro (`bg-white`, `hover:border-purple`) para diferenciarlo del rojo de cerrar. Usa los íconos `fit_extent_normal/hover` ya existentes en `externalIcons`.
+- **`MunicipioFilterPanel.jsx`** (panel del filtro, disponible en mobile): botón "Centrar selección" a la izquierda del "Salir del modo". Texto morado para diferenciarlo. Margen reducido (`mt-3` → `mt-1`) para que la sección no se sienta tan separada del input de búsqueda.
+
+Esta dualidad chip+panel cubre desktop (chip flotante) y mobile (panel del filtro), ya que el chip está oculto con `hidden md:flex`.
+
+#### Cambios complementarios
+
+- **`MapToolsPanel.jsx`**: ancho del panel cambió de `md:w-[373px]` fijo a `md:w-full max-w-[373px]` para mejor adaptación en breakpoints intermedios.
+
+---
+
 ## [1.50.1] - 2026-05-26
 
 ### Corregido: el mapa base ya no se ve en blanco al usar "Centrar selección" sobre un feature tipo punto

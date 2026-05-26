@@ -88,7 +88,7 @@ const MapToolsPanel = () => {
                 <Panel
                     variant="floating"
                     position="static"
-                    width={'w-auto md:w-[373px]'}
+                    width={isCollapsed ? 'w-auto' : 'w-auto md:w-[373px]'}
                     flexDirection="flex-row items-center"
                     className="rounded-[10px] shadow-[0_5px_20px_#1A26641A]"
                     contentClassName="gap-2 px-4 py-3"

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useLayoutEffect, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
 import { useClickPosition } from '@hooks/useClickPosition';
 import { useLayers } from '@hooks/useLayers';
 import MapsContext from '@contexts/MapsContext';
@@ -18,7 +18,7 @@ import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { useSwipeMode } from '@hooksMaps/useSwipeMode';
 import { useMunicipioMode } from '@hooksMaps/useMunicipioMode';
 import { useMunicipioMask } from '@hooksMaps/useMunicipioMask';
-import { unionGeometriesExtent } from '@pages/maps/helpers/municipioMask';
+import { useMunicipioFit } from '@hooksMaps/useMunicipioFit';
 import { toLonLat } from 'ol/proj';
 
 const MapsProvider = ({ children }) => {
@@ -159,7 +159,12 @@ const MapsProvider = ({ children }) => {
         return undefined;
     }, [swipeMode, layerToggle]);
 
+    const municipioModeRef = useRef(null);
     const handlePolygonComplete = useCallback((geometry, centerCoordinate, onFeatureCountUpdate) => {
+        const guard = municipioModeRef.current?.polygonIntersectsMunicipios;
+        if (typeof guard === 'function' && !guard(geometry)) {
+            return;
+        }
         if (queryFeaturesInPolygonRef.current && mapRef.current) {
             queryFeaturesInPolygonRef.current(mapRef.current, geometry, centerCoordinate, onFeatureCountUpdate);
         }
@@ -183,6 +188,7 @@ const MapsProvider = ({ children }) => {
     const municipioMode = useMunicipioMode({
         activeLayerIds: layerManagement.activeLayerIds,
     });
+    municipioModeRef.current = municipioMode;
 
     useMunicipioMask({
         active: municipioMode.active,
@@ -191,41 +197,10 @@ const MapsProvider = ({ children }) => {
         paneMapInstances,
     });
 
-    const lastFittedSelectionRef = useRef(null);
-    useEffect(() => {
-        if (!municipioMode.active) {
-            lastFittedSelectionRef.current = null;
-            return;
-        }
-        const geomItems = (municipioMode.geometries || []).filter(g => g?.geometry);
-        if (geomItems.length === 0) return;
-        const selectedSorted = (municipioMode.selected || []).map(String).slice().sort();
-        const geomClavesSorted = geomItems.map(g => String(g.clave)).slice().sort();
-        if (selectedSorted.join(',') !== geomClavesSorted.join(',')) return;
-        const key = geomClavesSorted.join(',');
-        if (lastFittedSelectionRef.current === key) return;
-        const geoms = geomItems.map(g => g.geometry);
-        const extent = unionGeometriesExtent(geoms);
-        if (!extent) return;
-        const fit = (map) => {
-            if (!map) return;
-            try {
-                map.getView().fit(extent, {
-                    duration: 500,
-                    padding: [80, 80, 80, 80],
-                    maxZoom: 13,
-                });
-            } catch (err) {
-                console.debug('No se pudo hacer fit a la selección de municipios', err);
-            }
-        };
-        if (swipeMode.compareMode?.active) {
-            Object.values(paneMapInstances || {}).forEach(fit);
-        } else {
-            fit(mapRef.current);
-        }
-        lastFittedSelectionRef.current = key;
-    }, [municipioMode.active, municipioMode.geometries, municipioMode.selected, paneMapInstances, swipeMode.compareMode]);
+    const centerOnMunicipioSelection = useMunicipioFit({
+        municipioMode, mapRef, paneMapInstances,
+        swipeCompareModeActive: swipeMode.compareMode?.active,
+    });
 
     const mapEditing = useMapEditing({
         mapRef,
@@ -273,7 +248,7 @@ const MapsProvider = ({ children }) => {
         isLocating,
         setIsLocating,
         ...swipeMode,
-        municipioMode,
+        municipioMode: { ...municipioMode, centerOnSelection: centerOnMunicipioSelection },
     }), [
         baseMapId,
         siderCollapsed,
@@ -299,6 +274,7 @@ const MapsProvider = ({ children }) => {
         allLayers,
         swipeMode,
         municipioMode,
+        centerOnMunicipioSelection,
     ]);
 
     return (

@@ -1,12 +1,17 @@
 import { useEffect, useRef } from 'react';
 
-export const useMapInteractions = (mapRef, queryFeatures, disableFeatureSelection = false, markerClickedRef = null, editingClickedRef = null) => {
+export const useMapInteractions = (mapRef, queryFeatures, disableFeatureSelection = false, markerClickedRef = null, editingClickedRef = null, isClickAllowed = null) => {
     const lastPointerCheckRef = useRef(0);
     const disableSelectionRef = useRef(disableFeatureSelection);
+    const isClickAllowedRef = useRef(isClickAllowed);
 
     useEffect(() => {
         disableSelectionRef.current = disableFeatureSelection;
     }, [disableFeatureSelection]);
+
+    useEffect(() => {
+        isClickAllowedRef.current = isClickAllowed;
+    }, [isClickAllowed]);
 
     useEffect(() => {
         if (!mapRef.current) return;
@@ -35,6 +40,10 @@ export const useMapInteractions = (mapRef, queryFeatures, disableFeatureSelectio
             }
 
             const coordinate = evt.coordinate;
+
+            if (typeof isClickAllowedRef.current === 'function' && !isClickAllowedRef.current(coordinate)) {
+                return;
+            }
 
             const target = map.getTargetElement();
             if (target) {
