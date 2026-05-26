@@ -5,6 +5,79 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.50.1] - 2026-05-26
+
+### Corregido: el mapa base ya no se ve en blanco al usar "Centrar selección" sobre un feature tipo punto
+
+Bug introducido en `1.47.0` con el botón "Centrar grupo" del `ActionsToolbar`. El handler `centerOnResults` hacía `view.fit(extent, { maxZoom: 18 })`. Cuando el feature es un único punto (`extent = [x, y, x, y]` con `width = height = 0`), `fit` llevaba al zoom máximo permitido (18). En ese nivel algunos basemaps no tienen tiles disponibles y el visor se veía completamente blanco como si el basemap se hubiera borrado.
+
+Solución en `helpers/featureGeometry.js → centerOnResults`:
+- Detecta si el extent es "tipo punto" (`width < 1 && height < 1` en metros de Web Mercator).
+- **Punto**: usa `view.animate({ center, zoom: Math.max(currentZoom, 15) })` — preserva el zoom actual si ya estaba acercado, o sube a 15 (límite seguro con tiles en todos los basemaps).
+- **Polígono/línea**: sigue usando `view.fit` pero con `maxZoom: 16` (antes 18). Más conservador.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/helpers/featureGeometry.js`**: `centerOnResults` detecta extent degenerado y conmuta entre `animate` y `fit` con `maxZoom` reducido.
+
+---
+
+## [1.50.0] - 2026-05-26
+
+### Vista por municipio: filtrado CQL por capa con metadata configurable + UI inteligente
+
+Evolución mayor del modo "Vista por municipio". Antes era puramente visual (máscara + zoom); ahora también inyecta filtros CQL por capa, reduciendo el dataset que GeoServer renderiza y permitiendo cache HTTP compartido entre usuarios viendo el mismo municipio.
+
+#### Backend (`1.30.0`)
+
+- **Migration alembic `0017_layer_municipio_field_type`** en dataengine: agrega `mapalab.layers.municipio_field_type varchar(20)` (`clave` | `nombre`). Aplicada vía `ALTER TABLE` directo.
+- **`backend/app/services/layer_tree_service.py`**:
+  - Nueva función `_inherit_municipio_meta` propaga `searchMeta.hasMunicipio + municipioField + municipioFieldType` desde ancestros hacia descendientes que no tengan su propia configuración. Permite configurar una sola vez en un `group` (ej. `establecimientos_salud`) y se aplica a todas las propiedades hijas (`cruz_roja_1`, etc.).
+  - `_layer_to_search_meta` ahora incluye `municipioFieldType`.
+- **`backend/app/repositories/municipios_repository.py`**: nueva función `get_union_bbox(claves, source)` que devuelve `[xmin, ymin, xmax, ymax]` en EPSG:6368 para el BBOX fallback.
+- **`backend/app/routers/municipios.py`**: endpoint `/municipios/geometries` agrega `unionBbox` a la respuesta.
+- **`backend/app/models/layer.py`**: nueva columna `municipio_field_type`.
+
+#### Frontend (`1.50.0`)
+
+- **`useMunicipioMode.js`**:
+  - Expone `municipioContext: {active, claves, nombres, bbox, listLoading, allMunicipiosCount}` con datos crudos en vez de un CQL pre-construido.
+  - Pre-carga `allMunicipios` al montar (sin esperar a activación) para que los nombres estén listos cuando el usuario active el modo.
+  - Fix label `null` al recargar: `scopeLabel` ahora devuelve `'Municipios'` / `'Región'` cuando `scope.value` viene null en lugar de `String(null)='null'`.
+  - Eliminado código muerto: `globalIntersectsCql`, `buildSpatialCql`, `DEFAULT_GEOM_FIELD`.
+- **`useWMSLayerManager.js` + `useWMSFilterUpdater.js`**: ya no reciben `globalCqlFilter` (string); reciben `municipioContext` (objeto). Por cada wmsLayer, llaman `buildLayerMunicipioCql(searchMeta, ctx, layerId)` que decide:
+  - Si capa tiene `hasMunicipio + municipioField`: genera `<field> IN ('14039',…)` o `<field> IN ('Guadalajara',…)` según `municipioFieldType`
+  - Si no: fallback a `BBOX(geom, …)`
+  - Si workspace es raster (`raster`, `lluvia`, `temperatura`): sin filtro espacial
+- **`helpers/municipioCqlBuilder.js`** (nuevo): helper compartido con `warnOnce()` que avisa en consola cuando una capa no resuelve nombres (con sample de claves + count de allMunicipios para diagnóstico).
+- **`useMunicipioMask.js`**: máscara cambió de `rgba(0,0,0,0.4)` (oscurece) a `rgba(0,0,0,0.85)` (tapa features fuera del polígono real para reforzar el foco visual).
+- **`MapToolsPanel.jsx`**:
+  - Ancho fijo del panel = `SIDER_EXPANDED_WIDTH` (340px) para coincidir visualmente con el sider izquierdo.
+  - Botones internos `Download` y `MunicipioFilterButton` con `flex-1` reparten el espacio sobrante equitativamente.
+  - Botón colapsar movido a flotante (`-mr-5`) fuera del panel, centrado vertical con `items-center` del flex parent; usa el nuevo `FloatingIconButton`.
+  - Eliminado código muerto: `EXPANDED_WIDTH`, `COLLAPSED_WIDTH`, `shareLoadedOffset`.
+- **`components/FloatingIconButton.jsx`** (nuevo): componente shared reutilizado por `SiderModeButton` y `MapToolsPanel` para botones con ícono + tooltip flotante.
+- **`SiderModeButton.jsx`**: refactor para usar `FloatingIconButton`.
+- **`Panel.jsx`**: soporta `position="static"` (no antepone `absolute`/`fixed`); usado por `MapToolsPanel` para que el panel viva dentro de un flex en lugar de fixed independiente.
+- **`MunicipioFilterButton.jsx`**: label `null` al recargar fixed (`scope.value || 'Región'`).
+- **`MapsProvider.jsx`**: fix del fit automático del zoom — ahora compara `selected` vs `geometries[].clave` antes de hacer fit. Antes hacía fit con geometrías antiguas y nunca alcanzaba las nuevas porque el `key` (basado en `selected`) ya estaba marcado como fitted.
+
+#### Configuración inicial (vía SQL)
+
+Tres capas configuradas como caso real:
+- `salud:unidades_salud` → `municipio_field='municipio'`, type `nombre` (33 sub-capas)
+- `educacion:centros_educativos` → `municipio_field='municipio'`, type `nombre` (8 sub-capas)
+- `recursos:uso_de_suelo_serie_7` → `municipio_field='cvegeo'`, type `clave` (8 sub-capas)
+
+Resto sigue con BBOX fallback. Las nuevas se configuran en mariachi UI.
+
+#### Docs
+
+- **`docs/municipio-mode.md`**: reescrito completo (estaba desactualizado, decía "sin filtros CQL"). Documenta los 3 mecanismos combinados (CQL por capa + BBOX fallback + máscara), arquitectura, configuración por capa, herencia, inventario actual, hotfix de controlflow.
+- **`docs/planes/PLAN_CLAVE_MUNICIPIO_EN_TABLAS.md`** (nuevo): plan a futuro para estandarizar todas las tablas relevantes con columna `clave_municipio` indexada.
+
+---
+
 ## [1.49.2] - 2026-05-26
 
 ### UX: panel de compartir homologado al patrón de los demás paneles del visor

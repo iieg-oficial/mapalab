@@ -51,8 +51,17 @@ export const centerOnResults = ({ activeMap, results, clickPosition }) => {
     const parsed = parseResultsFeatures(results);
     const extent = computeFeaturesExtent(parsed);
     if (!extent) return false;
-    activeMap.getView().fit(extent, { padding: [60, 60, 60, 60], duration: 400, maxZoom: 18 });
+    const view = activeMap.getView();
+    const width = extent[2] - extent[0];
+    const height = extent[3] - extent[1];
     const center = getExtentCenter(extent);
+    const isPointLike = width < 1 && height < 1;
+    if (isPointLike && center) {
+        const currentZoom = view.getZoom() ?? 12;
+        view.animate({ center, zoom: Math.max(currentZoom, 15), duration: 400 });
+    } else {
+        view.fit(extent, { padding: [60, 60, 60, 60], duration: 400, maxZoom: 16 });
+    }
     if (center) {
         setTimeout(() => {
             const pixel = activeMap.getPixelFromCoordinate(center);
