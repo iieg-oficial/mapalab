@@ -12,6 +12,14 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.49.2',
+        items: [
+            { text: 'Compartir mapa: el panel ahora se abre justo debajo del botón, sin tapar el mapa, y se ajusta a su contenido.', tag: 'changed' },
+            { text: 'Compartir mapa: las opciones de "enlace" e "insertar en otro sitio" aparecen desde el inicio como pestañas; ya no es necesario dar un click previo para verlas.', tag: 'changed' },
+            { text: 'Compartir mapa: la opción de insertar el mapa en otro sitio queda marcada como beta para que sepas que sigue en pruebas.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.47.0',
         items: [
             { text: 'Recuadro de información del punto: ahora se puede mover arrastrando el nuevo botón con las 4 flechas en cruz. Útil cuando el recuadro tapa un punto del mapa que quieres ver.', tag: 'added' },

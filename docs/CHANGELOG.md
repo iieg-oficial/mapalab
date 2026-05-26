@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.49.2] - 2026-05-26
+
+### UX: panel de compartir homologado al patrón de los demás paneles del visor
+
+Reemplazo del `ShareModal` (modal centrado) por un `SharePanel` anclado al botón Compartir, alineado con `MunicipioFilterButton` y `Download`. Refactor exclusivamente de UI; la lógica de serialización (`useShareSerializer`/`useShareDeserializer`/`useShareDirtiness`) y el `shareService` quedan intactos.
+
+#### Cambios visuales
+
+- **De Modal a Panel anclado**: el share ahora se despliega `bottom-end` del botón con `placement="bottom-end"` y `width="w-80"`, igual que el panel de municipios/descarga. `maxHeight` solo limita en mobile (`max-md:max-h-[calc(100dvh-6rem)]`); en desktop el panel se auto-ajusta al contenido.
+- **Tokens homologados**: contenedor `bg-[#F9FBFF] rounded-[14px]`, tipografía `font-garet`, header `text-purple`, cards internas `bg-white rounded-[7px]`, input morado con botón de copiar acoplado (`rounded-r-lg`), botones primarios `h-10 rounded-[30px] bg-purple-deep`. Sustitución de `<input type="checkbox">` por el `<Checkbox>` compartido.
+- **Tabs visibles desde el inicio**: eliminado el paso intermedio "Generar enlace" → tabs aparecen en la primera vista; cada tab muestra su descripción + checkbox de anotaciones (cuando aplica) + botón de generar. La tab `Insertar` lleva badge `BETA` (componente `Badge variant="pill" color="orange"`).
+- **Indicadores de estado dirty/in-sync**: los pills "Usando link compartido" / "Regresar a" del `MapToolsPanel` se mantienen sin cambio. La alerta verde "Estás viendo un mapa compartido" y la naranja "Cambios sin guardar" se mueven al interior del panel.
+
+#### Archivos
+
+- **`frontend/src/pages/maps/components/SharePanel.jsx`** (nuevo): contenido del panel, basado en el patrón visual de `MunicipioFilterPanel`. Función interna `renderGenerateActions(label)` para no duplicar checkbox + botón entre tabs.
+- **`frontend/src/pages/maps/components/ShareButton.jsx`**: ahora usa `Panel` anclado vía `anchorRef` en vez de `Modal`. Expone `onOpenChange` para que `MapToolsPanel` suba el z-index en mobile cuando el panel está abierto.
+- **`frontend/src/pages/maps/components/ShareModal.jsx`**: eliminado.
+
+---
+
 ## [1.49.1] - 2026-05-26
 
 ### UX: tooltip de hover sobre eventos externos + delays de hover más perdonadores
