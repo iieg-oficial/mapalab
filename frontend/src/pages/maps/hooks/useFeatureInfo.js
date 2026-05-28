@@ -5,7 +5,8 @@ import { getFeatureInfoForActiveLayers, getFeaturesInPolygonForActiveLayers, FEA
 import { useLoadMoreFeatures } from './useLoadMoreFeatures';
 import { toLonLat } from 'ol/proj';
 import { useLayers } from '@hooks/useLayers';
-import { findLayerById, collectLayersWithWMS, findParentGroup } from '../helpers/layers/utils/layerHelpers';
+import { useEventoContext } from '@hooks/useEvento';
+import { findLayerById, collectLayersWithWMS, findParentGroup, resolveLayerDisplayName } from '../helpers/layers/utils/layerHelpers';
 
 const FEATURE_INFO_LOADING_ID = 'feature_info_query';
 
@@ -18,6 +19,7 @@ export const useFeatureInfo = (overrides = null) => {
     const hiddenLayerIds = overrides?.hiddenLayerIds ?? ctx.hiddenLayerIds;
     const getFilter = overrides?.getFilter ?? ctx.getFilter;
     const { layers: allLayers } = useLayers();
+    const { getAliasByLayerId } = useEventoContext();
     const { setLayerLoading } = useLayerLoading();
     const [loading, setLoading] = useState(false);
 
@@ -72,9 +74,11 @@ export const useFeatureInfo = (overrides = null) => {
                 return null;
             }
 
-            queriedLayerName = selectedLayerForSymbology.name;
-
             const layerNode = findLayerById(selectedLayerForSymbology.id, allLayers);
+            const fallback = selectedLayerForSymbology.name || selectedLayerForSymbology.label || layerNode?.label;
+            const ancestor = findParentGroup(selectedLayerForSymbology.id, allLayers);
+            queriedLayerName = resolveLayerDisplayName(selectedLayerForSymbology.id, fallback, ancestor, getAliasByLayerId);
+
             if (layerNode) {
                 const activeIdSet = new Set(activeLayerIds || []);
                 const wmsLayers = collectLayersWithWMS(layerNode).filter(node => activeIdSet.has(node.id));
@@ -152,7 +156,7 @@ export const useFeatureInfo = (overrides = null) => {
                         altResults.forEach(r => {
                             const parentGroup = findParentGroup(r.layerId, allLayers);
                             const groupKey = parentGroup ? parentGroup.id : r.layerId;
-                            const groupName = parentGroup ? parentGroup.label : r.layerName;
+                            const groupName = resolveLayerDisplayName(r.layerId, r.layerName, parentGroup, getAliasByLayerId);
 
                             if (groupedAlternatives.has(groupKey)) {
                                 const existing = groupedAlternatives.get(groupKey);
@@ -190,14 +194,14 @@ export const useFeatureInfo = (overrides = null) => {
             setLayerLoading(FEATURE_INFO_LOADING_ID, false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, selectedLayerForSymbology, setLayerLoading, getAllActiveLayers]);
+    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, selectedLayerForSymbology, setLayerLoading, getAllActiveLayers, getAliasByLayerId]);
 
     const selectAlternativeLayer = useCallback((layer) => {
         const layerNode = findLayerById(layer.id, allLayers);
         if (layerNode) {
             setSelectedLayerForSymbology({
                 id: layerNode.id,
-                name: layerNode.label || layer.name
+                name: layer.name || layerNode.label
             });
         }
 

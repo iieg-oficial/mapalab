@@ -5,6 +5,24 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.54.0] - 2026-05-28
+
+### InfoBox y leyenda de descarga: nombres heredan alias del grupo padre vía EventoContext
+
+Capas que viven dentro de un evento (`EventoContext.getAliasByLayerId`) ya tenían alias propio en el árbol; sin embargo el InfoBox y la sección de leyendas del PDF/PNG seguían mostrando el `layer.label` literal. Ahora ambos consumen `resolveLayerDisplayName(layerId, fallback, ancestor, getAliasByLayerId)` con la misma cascada (alias del evento > label del grupo padre > label propio).
+
+#### Cambiado
+
+- **`useFeatureInfo.js`**:
+  - Consume `useEventoContext().getAliasByLayerId` y lo pasa a `resolveLayerDisplayName` para resolver `queriedLayerName` del feature seleccionado y también el `groupName` de cada alternativa cuando se agrupan resultados por `parentGroup`.
+  - Fallback ordenado al armar `queriedLayerName`: `selectedLayerForSymbology.name || .label || layerNode?.label` antes de pasar por `resolveLayerDisplayName`.
+  - `selectAlternativeLayer` ahora prioriza `layer.name` sobre `layerNode.label` para que el alias del backend gane cuando viene presente.
+- **`useMapDownload.js → layersWithLegends`**:
+  - Para cada leyenda candidata busca `ancestor = findParentGroup(layer.id, allLayers)`. Si dos leyendas comparten ancestro las deduplica (`Set seenAncestors`), evitando duplicar la entrada de un grupo entero en el PDF cuando hay varios hijos activos.
+  - El `label` final pasa por `resolveLayerDisplayName(layer.id, layer.label, ancestor, getAliasByLayerId)` antes de incluirlo en `result`.
+
+---
+
 ## [1.53.0] - 2026-05-28
 
 ### Home: carrusel de banners destacados con autoplay y paginación
