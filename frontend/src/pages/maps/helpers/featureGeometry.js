@@ -29,7 +29,7 @@ export const parseResultsFeatures = (results, { source = 'cache' } = {}) => {
     return parsed;
 };
 
-export const computeFeaturesExtent = (parsedFeatures) => {
+const computeFeaturesExtent = (parsedFeatures) => {
     if (!parsedFeatures?.length) return null;
     const extent = createEmpty();
     for (const { olFeature } of parsedFeatures) {
@@ -39,7 +39,7 @@ export const computeFeaturesExtent = (parsedFeatures) => {
     return isEmpty(extent) ? null : extent;
 };
 
-export const getExtentCenter = (extent) => {
+const getExtentCenter = (extent) => {
     if (!extent || extent.length !== 4) return null;
     const [minX, minY, maxX, maxY] = extent;
     if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) return null;

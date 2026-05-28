@@ -17,7 +17,7 @@ export const SCOPE_TYPES = {
     ZMG: 'zmg',
 };
 
-export const ZMG_CLAVES = ['14039', '14120', '14098', '14101', '14097', '14070', '14051', '14044', '14124'];
+const ZMG_CLAVES = ['14039', '14120', '14098', '14101', '14097', '14070', '14051', '14044', '14124'];
 export const ZMG_LABEL = 'ZMG (Zona Metropolitana de Guadalajara)';
 
 export const useMunicipioMode = ({ activeLayerIds }) => {

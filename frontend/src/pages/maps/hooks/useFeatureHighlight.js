@@ -10,10 +10,9 @@ import { findAncestorChain } from '../helpers/layers/utils/layerHelpers';
 
 const HIGHLIGHT_Z_INDEX = 998;
 
-export const HIGHLIGHT_COLORS = ['morado', 'naranja', 'sombreado'];
-export const HIGHLIGHT_SHAPES = ['area', 'linea', 'off'];
-export const DEFAULT_HIGHLIGHT_COLOR = 'morado';
-export const DEFAULT_HIGHLIGHT_SHAPE = 'area';
+const HIGHLIGHT_SHAPES = ['area', 'linea', 'off'];
+const DEFAULT_HIGHLIGHT_COLOR = 'morado';
+const DEFAULT_HIGHLIGHT_SHAPE = 'area';
 
 const HEX_PATTERN = /^#[0-9A-Fa-f]{6}$/;
 
@@ -69,7 +68,7 @@ const getCachedStyle = (color, shape) => {
 
 const isValidColorValue = (v) => COLOR_PRESETS[v] || HEX_PATTERN.test(v || '');
 
-export const resolveLayerHighlight = (layerId, allLayers) => {
+const resolveLayerHighlight = (layerId, allLayers) => {
     const chain = findAncestorChain(layerId, allLayers);
     let color = null;
     let shape = null;
