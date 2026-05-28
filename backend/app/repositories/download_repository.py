@@ -1,12 +1,33 @@
-import os
-import threading
-from typing import Iterator, Optional
+import asyncio
+from datetime import date, datetime, timedelta, timezone
+from typing import AsyncIterator, Optional
 
-from psycopg2 import sql
+import asyncpg
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 CHUNK_SIZE = 65536
+QUEUE_MAX_CHUNKS = 16
+
+
+def _quote_ident(name: str) -> str:
+    return '"' + name.replace('"', '""') + '"'
+
+
+def _build_select(schema: str, table: str, date_from: Optional[str], date_to: Optional[str]) -> tuple[str, list]:
+    query = f'SELECT * FROM {_quote_ident(schema)}.{_quote_ident(table)}'
+    conditions: list[str] = []
+    params: list = []
+    if date_from:
+        params.append(date.fromisoformat(date_from))
+        conditions.append(f'fecha >= ${len(params)}')
+    if date_to:
+        params.append(date.fromisoformat(date_to))
+        conditions.append(f'fecha <= ${len(params)}')
+    if conditions:
+        query += ' WHERE ' + ' AND '.join(conditions)
+    return query, params
 
 
 class DownloadRepository:
@@ -28,6 +49,21 @@ class DownloadRepository:
         return (schema, table)
 
     @staticmethod
+    def find_fresh_cache(
+        session: Session, layer_key: str, ttl_hours: int
+    ) -> Optional[str]:
+        cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=ttl_hours)
+        result = session.execute(
+            text(
+                'SELECT object_key FROM mapalab.layer_downloads '
+                'WHERE layer_key = :key AND generated_at >= :cutoff '
+                'LIMIT 1'
+            ),
+            {'key': layer_key, 'cutoff': cutoff},
+        )
+        return result.scalar()
+
+    @staticmethod
     def validate_table_exists(session: Session, schema: str, table: str) -> bool:
         result = session.execute(
             text(
@@ -41,60 +77,48 @@ class DownloadRepository:
         return result.scalar() is not None
 
     @staticmethod
-    def stream_csv(
-        session: Session,
+    async def stream_csv(
+        pool: asyncpg.Pool,
         schema: str,
         table: str,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
-    ) -> Iterator[bytes]:
-        sa_conn = session.connection()
-        raw_conn = sa_conn.connection.dbapi_connection
-        cursor = raw_conn.cursor()
+    ) -> AsyncIterator[bytes]:
+        query, params = _build_select(schema, table, date_from, date_to)
+        queue: asyncio.Queue = asyncio.Queue(maxsize=QUEUE_MAX_CHUNKS)
+        sentinel: object = object()
 
-        query = sql.SQL('SELECT * FROM {}.{}').format(
-            sql.Identifier(schema),
-            sql.Identifier(table),
-        )
+        async def writer(buf) -> None:
+            await queue.put(bytes(buf))
 
-        conditions = []
-        if date_from:
-            conditions.append(sql.SQL('fecha >= {}').format(sql.Literal(date_from)))
-        if date_to:
-            conditions.append(sql.SQL('fecha <= {}').format(sql.Literal(date_to)))
-
-        if conditions:
-            query = sql.SQL('{} WHERE {}').format(query, sql.SQL(' AND ').join(conditions))
-
-        copy_sql = sql.SQL('COPY ({}) TO STDOUT WITH CSV HEADER').format(query)
-        copy_str = copy_sql.as_string(cursor)
-
-        read_fd, write_fd = os.pipe()
-        read_file = os.fdopen(read_fd, 'rb')
-        write_file = os.fdopen(write_fd, 'wb')
-        error_holder = [None]
-
-        def copy_worker():
+        async def producer() -> None:
             try:
-                cursor.copy_expert(copy_str, write_file, size=CHUNK_SIZE)
-            except Exception as e:
-                error_holder[0] = e
+                async with pool.acquire() as conn:
+                    await conn.copy_from_query(
+                        query,
+                        *params,
+                        output=writer,
+                        format='csv',
+                        header=True,
+                    )
+            except Exception as exc:
+                await queue.put(exc)
             finally:
-                write_file.close()
-                cursor.close()
+                await queue.put(sentinel)
 
-        thread = threading.Thread(target=copy_worker, daemon=True)
-        thread.start()
-
+        task = asyncio.create_task(producer())
         try:
             while True:
-                chunk = read_file.read(CHUNK_SIZE)
-                if not chunk:
+                item = await queue.get()
+                if item is sentinel:
                     break
-                yield chunk
+                if isinstance(item, BaseException):
+                    raise item
+                yield item
         finally:
-            read_file.close()
-            thread.join(timeout=10)
-
-        if error_holder[0]:
-            raise error_holder[0]
+            if not task.done():
+                task.cancel()
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):
+                pass

@@ -2,18 +2,22 @@ import re
 from typing import Optional
 
 from fastapi import APIRouter, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 
+from app.config import settings
 from app.consts.databases import DatabaseType
 from app.consts.workspaces import resolve_schema
+from app.databases.async_pool import get_pool
 from app.databases.factory import DatabaseFactory
 from app.exceptions.common_exceptions import NotFoundException, BadRequestException
 from app.metrics import COUNTER_DOWNLOAD_REQUESTS, incr
 from app.repositories.download_repository import DownloadRepository
+from app.services.acervo_client import presign_get
 from app.utils.api_responses import api_responses
-from app.utils.logger import Logger
 
 router = APIRouter(prefix='/download', tags=['Download'])
+
+_DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
 
 def _resolve_layer(session, workspace: str, layer: str) -> tuple[Optional[str], Optional[str]]:
@@ -31,41 +35,41 @@ def _resolve_layer(session, workspace: str, layer: str) -> tuple[Optional[str], 
     return None, None
 
 
-def _csv_generator(schema: str, table: str, date_from: Optional[str], date_to: Optional[str]):
-    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
-    session = conn.SessionLocal()
-    try:
-        yield from DownloadRepository.stream_csv(session, schema, table, date_from, date_to)
-    except Exception as e:
-        Logger.error(f'Error streaming CSV for {schema}.{table}: {str(e)}')
-        raise
-    finally:
-        session.close()
-
-
 @router.get(
     '/{workspace}/{layer}',
     responses=api_responses(400, 404, 500),
 )
-def download_layer(
+async def download_layer(
     workspace: str,
     layer: str,
     date_from: Optional[str] = Query(default=None, description='Fecha inicio (YYYY-MM-DD)'),
     date_to: Optional[str] = Query(default=None, description='Fecha fin (YYYY-MM-DD)'),
 ):
     incr(COUNTER_DOWNLOAD_REQUESTS)
-    date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
-    if date_from and not date_pattern.match(date_from):
+    if date_from and not _DATE_PATTERN.match(date_from):
         raise BadRequestException('date_from debe tener formato YYYY-MM-DD')
-    if date_to and not date_pattern.match(date_to):
+    if date_to and not _DATE_PATTERN.match(date_to):
         raise BadRequestException('date_to debe tener formato YYYY-MM-DD')
+
+    geoserver_key = f'{resolve_schema(workspace)}:{layer}'
+    has_date_filter = bool(date_from or date_to)
 
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
     with conn.get_session() as session:
+        if not has_date_filter:
+            object_key = DownloadRepository.find_fresh_cache(
+                session, geoserver_key, settings.DOWNLOAD_CACHE_TTL_HOURS
+            )
+            if object_key:
+                signed = presign_get(object_key)
+                if signed:
+                    return RedirectResponse(signed, status_code=307)
+
         schema, table = _resolve_layer(session, workspace, layer)
         if not schema:
             raise NotFoundException(f'Capa {workspace}:{layer} no encontrada')
 
+    pool = await get_pool()
     filename = f'{table}.csv'
     headers = {
         'Content-Disposition': f'attachment; filename="{filename}"',
@@ -73,7 +77,7 @@ def download_layer(
     }
 
     return StreamingResponse(
-        _csv_generator(schema, table, date_from, date_to),
+        DownloadRepository.stream_csv(pool, schema, table, date_from, date_to),
         media_type='text/csv; charset=utf-8',
         headers=headers,
     )

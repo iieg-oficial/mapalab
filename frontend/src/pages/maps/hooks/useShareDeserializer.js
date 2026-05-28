@@ -49,11 +49,13 @@ export const useShareDeserializer = () => {
         setBaseMapId,
         mapRef,
         setCompareMode,
+        restoreAnnotations,
+        municipioMode,
     } = useMapsContext();
     const { layers: layerTree } = useLayers();
 
     return useCallback((envelope) => {
-        if (!envelope || envelope.version !== 1) return false;
+        if (!envelope || (envelope.version !== 1 && envelope.version !== 2)) return false;
         if (envelope.kind !== 'single' && envelope.kind !== 'swipe') return false;
         const isSwipe = envelope.kind === 'swipe';
 
@@ -125,6 +127,13 @@ export const useShareDeserializer = () => {
                     globalOrder,
                 });
             }
+            if (Array.isArray(payload.annotations) && typeof restoreAnnotations === 'function') {
+                restoreAnnotations(payload.annotations);
+            }
+            const sharedMunicipios = shared?.municipios;
+            if (sharedMunicipios?.selected?.length > 0 && municipioMode?.enter) {
+                municipioMode.enter(sharedMunicipios.selected, { fromUrl: true });
+            }
             return true;
         }
 
@@ -188,6 +197,15 @@ export const useShareDeserializer = () => {
             setCompareMode(initialCompareMode());
         }
 
+        if (Array.isArray(payload.annotations) && typeof restoreAnnotations === 'function') {
+            restoreAnnotations(payload.annotations);
+        }
+
+        const singleMunicipios = payload.municipios;
+        if (singleMunicipios?.selected?.length > 0 && municipioMode?.enter) {
+            municipioMode.enter(singleMunicipios.selected, { fromUrl: true });
+        }
+
         return true;
-    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, setSelectedLayerForSymbology, findLayerById, setLayerOpacity, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode]);
+    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, setSelectedLayerForSymbology, findLayerById, setLayerOpacity, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode]);
 };

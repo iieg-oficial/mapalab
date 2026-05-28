@@ -23,31 +23,71 @@ const ExternalLink = ({ href, label }) => {
     );
 };
 
+const normalizeFuentes = (metadata) => {
+    if (Array.isArray(metadata.fuentes) && metadata.fuentes.length > 0) return metadata.fuentes;
+    if (!metadata.fuentes_texto_largo && !metadata.fuentes_enlace && !metadata.fuentes_texto_corto) return [];
+    const links = (metadata.fuentes_enlace || '').split(',').map(l => l.trim()).filter(Boolean);
+    if (links.length <= 1) {
+        return [{
+            corto: metadata.fuentes_texto_corto,
+            largo: metadata.fuentes_texto_largo,
+            enlace: metadata.fuentes_enlace,
+        }];
+    }
+    return links.map((enlace, i) => ({
+        largo: i === 0 ? metadata.fuentes_texto_largo : null,
+        enlace,
+    }));
+};
+
+const normalizeMetodologia = (metadata) => {
+    if (Array.isArray(metadata.metodologia) && metadata.metodologia.length > 0) return metadata.metodologia;
+    if (!metadata.metodologia_texto && !metadata.metodologia_archivo_enlace) return [];
+    return [{
+        texto: metadata.metodologia_texto,
+        archivo_enlace: metadata.metodologia_archivo_enlace,
+    }];
+};
+
 const LayerInfoSections = ({ metadata, layerName }) => {
     if (!metadata) return null;
 
+    const fuentes = normalizeFuentes(metadata);
+    const metodologia = normalizeMetodologia(metadata);
+
     return (
         <div className="flex flex-col gap-4">
-            {(metadata.fuentes_texto_largo || metadata.fuentes_enlace) && (
-                <InfoSection title="Fuente">
-                    {metadata.fuentes_texto_largo && <TextBlock text={metadata.fuentes_texto_largo} />}
-                    {metadata.fuentes_enlace && (() => {
-                        const links = metadata.fuentes_enlace.split(',').map(l => l.trim()).filter(Boolean);
-                        if (links.length <= 1) return <ExternalLink href={metadata.fuentes_enlace} label="Ver fuente" />;
-                        return (
-                            <div className="flex flex-row gap-2">
-                                {links.map((link, i) => (
-                                    <ExternalLink key={i} href={link} label={`Fuente ${i + 1}`} />
-                                ))}
-                            </div>
-                        );
-                    })()}
+            {fuentes.length > 0 && (
+                <InfoSection title={fuentes.length > 1 ? 'Fuentes' : 'Fuente'}>
+                    <div className="flex flex-col gap-3">
+                        {fuentes.map((f, i) => {
+                            const fallbackLabel = fuentes.length <= 1 ? 'Ver fuente' : `Fuente ${i + 1}`;
+                            const label = f.enlace_label || f.corto || fallbackLabel;
+                            return (
+                                <div key={i} className="flex flex-col gap-1">
+                                    {f.largo && <TextBlock text={f.largo} />}
+                                    {f.enlace && <ExternalLink href={f.enlace} label={label} />}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </InfoSection>
             )}
-            {(metadata.metodologia_texto || metadata.metodologia_archivo_enlace) && (
-                <InfoSection title="Metodología">
-                    {metadata.metodologia_texto && <TextBlock text={metadata.metodologia_texto} />}
-                    <ExternalLink href={metadata.metodologia_archivo_enlace} label="Ver documento" />
+            {metodologia.length > 0 && (
+                <InfoSection title={metodologia.length > 1 ? 'Metodologías' : 'Metodología'}>
+                    <div className="flex flex-col gap-3">
+                        {metodologia.map((m, i) => (
+                            <div key={i} className="flex flex-col gap-1">
+                                {m.texto && <TextBlock text={m.texto} />}
+                                {m.archivo_enlace && (
+                                    <ExternalLink
+                                        href={m.archivo_enlace}
+                                        label={metodologia.length > 1 ? `Ver documento ${i + 1}` : 'Ver documento'}
+                                    />
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </InfoSection>
             )}
             {(metadata.texto_leyenda_juridico || metadata.tipo_mapa) && (

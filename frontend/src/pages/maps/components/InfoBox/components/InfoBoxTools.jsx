@@ -22,8 +22,8 @@ const InfoBoxTools = ({ tools = [], className = '', layerId = null }) => {
                         className={`group/tool flex items-center gap-1 ${tool.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                         aria-label={tool.label}
                     >
-                        <span className="p-0.5 rounded-full border border-transparent group-hover/tool:border-[#5C2472] transition-colors">
-                            <Icon name={tool.icon} className="size-4 text-[#5C2472]" />
+                        <span className="p-0.5 rounded-full border border-transparent group-hover/tool:border-purple transition-colors text-purple">
+                            {tool.iconNode || <Icon name={tool.icon} className="size-4 text-purple" />}
                         </span>
                         <span className="text-[10px] font-garet font-medium text-[#465055] group-hover/tool:text-[#5C2472] whitespace-nowrap leading-none pt-[1.5px] transition-colors">
                             {tool.label}

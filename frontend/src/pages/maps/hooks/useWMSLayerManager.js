@@ -2,6 +2,7 @@ import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { hasWMSConfig, findWMSConfig } from '../helpers/wmsConfig';
 import { useLayers } from '@hooks/useLayers';
 import { findLayerById } from '../helpers/layers/utils/layerHelpers';
+import { buildLayerMunicipioCql } from '../helpers/municipioCqlBuilder';
 import { filtersInitializationComplete } from './useInitializeFromUrl';
 import { useDebounce } from '@hooks/useDebounce';
 import { useLayerLoading } from '@hooks/useLayerLoading';
@@ -10,8 +11,10 @@ import { PIN_Z_OFFSET } from './useAlwaysOnTopPinning';
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 const EMPTY_PINNED = new Set();
 const EMPTY_ORDER = [];
+const RASTER_WORKSPACES = new Set(['raster', 'lluvia', 'temperatura']);
+const EMPTY_MUNICIPIO_CTX = { active: false, claves: [], nombres: [], bbox: null };
 
-export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getLayerOpacity, layerOpacities, getFilter, combineCQLFilters, pinnedLayerIds = EMPTY_PINNED, initialOrder = EMPTY_ORDER }) => {
+export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getLayerOpacity, layerOpacities, getFilter, combineCQLFilters, pinnedLayerIds = EMPTY_PINNED, initialOrder = EMPTY_ORDER, municipioContext = EMPTY_MUNICIPIO_CTX }) => {
     const { layers } = useLayers();
     const wmsLayersRef = useRef(new Map());
     const isFirstRender = useRef(true);
@@ -26,6 +29,8 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
     pinnedLayerIdsRef.current = pinnedLayerIds;
     const initialOrderRef = useRef(initialOrder);
     initialOrderRef.current = initialOrder;
+    const municipioContextRef = useRef(municipioContext);
+    municipioContextRef.current = municipioContext;
 
     const handleLoadStart = useCallback((layerId) => {
         setLayerLoading(layerId, true);
@@ -135,6 +140,8 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
                 const layersParam = wmsLayersOrdered.map(l => l.layerName).join(',');
                 const stylesParam = wmsLayersOrdered.map(l => l.styles).join(',');
 
+                const ctx = municipioContextRef.current;
+
                 const cqlFilterSegments = wmsLayersOrdered.map(merged => {
                     const subFilters = merged.subLayers.map(sub => {
                         const baseCqlFilter = sub.wmsConfig.cqlFilter?.trim() || null;
@@ -142,11 +149,27 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
                         return combineCQLFiltersRef.current?.(baseCqlFilter, dynamicFilter) ?? null;
                     }).filter(f => f);
 
+                    let segment;
                     if (subFilters.length === 0) {
                         const hasDD = merged.subLayers.some(sub => findLayerById(sub.id, layers)?.defaultDate);
-                        return hasDD ? '1=0' : 'INCLUDE';
+                        segment = hasDD ? '1=0' : 'INCLUDE';
+                    } else {
+                        segment = subFilters.map(f => `(${f})`).join(' OR ');
                     }
-                    return subFilters.map(f => `(${f})`).join(' OR ');
+
+                    if (ctx?.active && segment !== '1=0') {
+                        const isRaster = merged.subLayers.some(sub => RASTER_WORKSPACES.has(sub.wmsConfig?.workspace));
+                        if (!isRaster) {
+                            const firstSub = merged.subLayers[0];
+                            const layerDef = findLayerById(firstSub.id, layers);
+                            const muniCql = buildLayerMunicipioCql(layerDef?.searchMeta, ctx, firstSub.id);
+                            if (muniCql) {
+                                segment = segment === 'INCLUDE' ? muniCql : `(${muniCql}) AND (${segment})`;
+                            }
+                        }
+                    }
+
+                    return segment;
                 });
 
                 const allInclude = cqlFilterSegments.every(f => f === 'INCLUDE');

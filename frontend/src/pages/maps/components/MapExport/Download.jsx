@@ -23,7 +23,7 @@ const licenciaContent = (
 );
 import QualitySelector from './QualitySelector';
 
-const Download = ({ onOpenPreview, onOpenChange }) => {
+const Download = ({ onOpenPreview, onOpenChange, collapsed = false }) => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [selectedLegendLayers, setSelectedLegendLayers] = useState([]);
     const [title, setTitle] = useState('Capas mapalab');
@@ -154,12 +154,13 @@ const Download = ({ onOpenPreview, onOpenChange }) => {
                     disabled={!canDownload || isDownloading}
                     className={[
                         'flex items-center justify-center',
-                        'text-center w-12.5 md:w-[235px] h-12.5 rounded-[30px] transition ',
+                        'text-center h-12.5 rounded-[30px] transition',
+                        collapsed || isMobile ? 'w-12.5' : 'w-12.5 md:w-30',
                         'font-garet font-bold text-[14px] hover:shadow-[0_6px_6px_#5C247234]',
                         canDownload ? 'bg-[#703089] text-white hover:bg-[#5C2472]' : 'bg-black/5 text-black/40 cursor-not-allowed',
                     ].join(' ')}
                 >
-                    {isMobile ? <Icon name="download" /> : (isDownloading ? 'Generando…' : 'Descargar visualización')}
+                    {(isMobile || collapsed) ? <Icon name="download" /> : (isDownloading ? 'Generando…' : 'Descargar')}
                 </button>
             </Tooltip>
 

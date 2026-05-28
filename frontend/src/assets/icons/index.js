@@ -35,6 +35,8 @@ import mapasNormal from './ico_mapas_normal.svg';
 import mapasHover from './ico_mapa_hover.svg';
 
 import search from './ico_search.svg';
+import searchLayerNormal from './ico_search_layer_normal.svg';
+import searchLayerHover from './ico_search_layer_hover.svg';
 import checkNormal from './ico_check_normal.svg';
 
 import checkActive from './ico_check_activo.svg';
@@ -148,7 +150,7 @@ export const externalIcons = {
     desarrollo_normal: desarrolloNormal, desarrollo_hover: desarrolloHover, seguridad_normal: seguridadNormal, seguridad_hover: seguridadHover,
     gobierno_normal: gobiernoNormal, gobierno_hover: gobiernoHover, search_normal: buscadorNormal, search_hover: buscadorHover,
     tools_normal: herramientasNormal, tools_hover: herramientasHover, basemaps_normal: mapasNormal, basemaps_hover: mapasHover,
-    searchInput_normal: search, check_normal: checkNormal, check_active: checkActive, downArrow_normal: downArrow, cerrarModal_normal: cerrarModal,
+    searchInput_normal: search, searchLayer_normal: searchLayerNormal, searchLayer_hover: searchLayerHover, check_normal: checkNormal, check_active: checkActive, downArrow_normal: downArrow, cerrarModal_normal: cerrarModal,
     zoomin_normal: zoominNormal, zoomin_hover: zoominHover, zoomout_normal: zoomoutNormal, zoomout_hover: zoomoutHover, copie_normal: copieNormal, copie_hover: copieHover, shared_click_normal: sharedClick, shared_click_hover: sharedClick,
     linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover, lista_normal: listaNormal, lista_hover: listaHover,
     emoji_normal: emojiNormal, emoji_hover: emojiHover, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,

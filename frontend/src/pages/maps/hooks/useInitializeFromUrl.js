@@ -14,10 +14,25 @@ export const filtersInitializationComplete = { value: false };
 
 export const useInitializeFromUrl = () => {
     const [searchParams] = useSearchParams();
-    const { setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById } = useMapsContext();
+    const { setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById, municipioMode } = useMapsContext();
     const { initialOrder: BASE_INITIAL_ORDER, layers: layerTree } = useLayers();
     const deserialize = useShareDeserializer();
     const initialized = useRef(false);
+
+    const parseMunicipiosParam = (raw) => {
+        if (!raw) return [];
+        return raw.split(',')
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+    };
+
+    const enterMunicipioModeIfRequested = () => {
+        const param = searchParams.get('municipios');
+        const claves = parseMunicipiosParam(param);
+        if (claves.length > 0 && municipioMode?.enter) {
+            municipioMode.enter(claves, { fromUrl: true });
+        }
+    };
 
     useEffect(() => {
         if (initialized.current || !setActiveLayerIds || !applyFilter) return;
@@ -73,6 +88,7 @@ export const useInitializeFromUrl = () => {
                 const selectedLayer = findLayerById(resolved);
                 if (selectedLayer) setSelectedLayerForSymbology(selectedLayer);
                 allIds.forEach(id => applyDefaultDate(id));
+                enterMunicipioModeIfRequested();
                 filtersInitializationComplete.value = true;
                 initialized.current = true;
                 return;
@@ -122,6 +138,8 @@ export const useInitializeFromUrl = () => {
                 applyFilter(layerId, 'date', cqlFilter);
             });
 
+            enterMunicipioModeIfRequested();
+
             filtersInitializationComplete.value = true;
             initialized.current = true;
         } else {
@@ -133,7 +151,7 @@ export const useInitializeFromUrl = () => {
                     const envelope = JSON.parse(saved);
                     const isValidEnvelope = (
                         envelope !== null && typeof envelope === 'object'
-                        && envelope.version === 1
+                        && (envelope.version === 1 || envelope.version === 2)
                         && (envelope.kind === 'single' || envelope.kind === 'swipe')
                         && envelope.payload !== null && typeof envelope.payload === 'object'
                     );
@@ -175,8 +193,11 @@ export const useInitializeFromUrl = () => {
                 applyFilter(layerId, 'date', cqlFilter);
             });
 
+            enterMunicipioModeIfRequested();
+
             filtersInitializationComplete.value = true;
             initialized.current = true;
         }
-    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById, layerTree, BASE_INITIAL_ORDER, deserialize]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById, layerTree, BASE_INITIAL_ORDER, deserialize, municipioMode]);
 };

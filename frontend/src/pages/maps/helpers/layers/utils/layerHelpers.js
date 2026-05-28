@@ -11,6 +11,22 @@ export const findLayerById = (layerId, layersArray) => {
     return null;
 };
 
+export const findAncestorChain = (layerId, layersArray) => {
+    if (!layerId || !Array.isArray(layersArray)) return [];
+    const walk = (layers, trail) => {
+        for (const layer of layers) {
+            const nextTrail = [layer, ...trail];
+            if (layer.id === layerId) return nextTrail;
+            if (layer.children) {
+                const found = walk(layer.children, nextTrail);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+    return walk(layersArray, []) || [];
+};
+
 export const validateLayer = (layer) => {
     const requiredFields = ['id', 'label'];
     return requiredFields.every(field => field in layer);
@@ -124,6 +140,9 @@ export const getAllChildLayerIds = (layerId, layersArray) => {
 
     return result;
 };
+
+export const resolveLayerDisplayName = (layerId, fallbackLabel, ancestor, getAlias) =>
+    (ancestor && getAlias?.(ancestor.id)) || ancestor?.label || getAlias?.(layerId) || fallbackLabel || null;
 
 export const findParentGroup = (layerId, layersArray) => {
     const findParent = (layers, parent = null) => {

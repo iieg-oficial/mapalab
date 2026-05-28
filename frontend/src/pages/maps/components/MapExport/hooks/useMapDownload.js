@@ -7,10 +7,11 @@ import { useMapView } from './useMapView';
 import { useMapCapture } from './useMapCapture';
 import { useImageComposition } from './useImageComposition';
 import { usePdfExport } from './usePdfExport';
-import { findLayerById } from '../../../helpers/layers/utils/layerHelpers';
+import { findLayerById, findParentGroup, resolveLayerDisplayName } from '../../../helpers/layers/utils/layerHelpers';
 import { transformExtent } from 'ol/proj';
 import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from '../utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
+import { useEventoContext } from '@hooks/useEvento';
 
 export const useMapDownload = () => {
     const { targetRef } = useMapsContext();
@@ -21,6 +22,7 @@ export const useMapDownload = () => {
     const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
     const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode } = useContext(MapsContext);
+    const { getAliasByLayerId } = useEventoContext();
     const [isDownloading, setIsDownloading] = useState(false);
 
     const activeLayers = useMemo(() => activeLayerIds
@@ -28,8 +30,20 @@ export const useMapDownload = () => {
         .filter(Boolean), [activeLayerIds, allLayers]);
 
     const layersWithLegends = useMemo(() => {
-        return groupedActiveLayers.filter(layer => hasLegend(layer));
-    }, [groupedActiveLayers, hasLegend]);
+        const candidates = groupedActiveLayers.filter(layer => hasLegend(layer));
+        const seenAncestors = new Set();
+        const result = [];
+        for (const layer of candidates) {
+            const ancestor = findParentGroup(layer.id, allLayers);
+            if (ancestor) {
+                if (seenAncestors.has(ancestor.id)) continue;
+                seenAncestors.add(ancestor.id);
+            }
+            const label = resolveLayerDisplayName(layer.id, layer.label, ancestor, getAliasByLayerId);
+            result.push({ ...layer, label });
+        }
+        return result;
+    }, [groupedActiveLayers, hasLegend, allLayers, getAliasByLayerId]);
 
     const currentSelectedLegend = useMemo(() => {
         if (selectedLayer) {

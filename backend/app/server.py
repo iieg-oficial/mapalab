@@ -8,13 +8,14 @@ from prometheus_fastapi_instrumentator import Instrumentator, metrics as fastapi
 
 from sqlalchemy import text
 from app import metrics as metrics_module
-from app.routers import (metadata, periodicity, download, layers, shares, embed)
+from app.routers import (metadata, periodicity, download, layers, shares, embed, municipios)
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.access_logger import access_flush_loop, get_logger as get_access_logger, _flush_sync as _flush_accesos
 from app.services.api_key_quota import flush_to_mariachi
 from app.services.scheduler_service import SchedulerService
 from app.services.periodicity_service import PeriodicityService
 from app.consts.databases import DatabaseType
+from app.databases.async_pool import close_pool as close_async_pool
 from app.databases.factory import DatabaseFactory
 from app.config import settings
 from app.utils.logger import Logger
@@ -97,6 +98,10 @@ async def lifespan(app: FastAPI):
             await asyncio.to_thread(_flush_accesos, get_access_logger().drain())
         except Exception:
             pass
+        try:
+            await close_async_pool()
+        except Exception:
+            pass
         if is_leader:
             SchedulerService.stop_scheduler()
             if _lock_file:
@@ -125,7 +130,7 @@ Instrumentator(
 ).add(
     fastapi_metrics.requests()
 ).add(
-    fastapi_metrics.latency(buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10))
+    fastapi_metrics.latency(buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 15, 30, 60, 120, 300))
 ).instrument(app)
 
 app.add_exception_handler(BaseAppException, app_exception_handler)
@@ -137,6 +142,7 @@ app.include_router(download.router)
 app.include_router(layers.router)
 app.include_router(shares.router)
 app.include_router(embed.router)
+app.include_router(municipios.router)
 app.include_router(metrics_module.router)
 @app.get('/')
 def root():

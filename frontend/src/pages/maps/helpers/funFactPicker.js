@@ -20,6 +20,21 @@ const normalizeFact = (f) => {
     return { text, symbol: f.symbol || null };
 };
 
+export const aggregateFactsFromEventos = (eventos) => {
+    const list = Array.isArray(eventos) ? eventos : [];
+    return list.flatMap((e) => {
+        if (!Array.isArray(e?.facts)) return [];
+        const fallback = e.funIcon || null;
+        return e.facts
+            .map((f) => {
+                const norm = normalizeFact(f);
+                if (!norm) return null;
+                return { ...norm, symbol: norm.symbol || fallback };
+            })
+            .filter(Boolean);
+    });
+};
+
 export const pickNextFact = (eventoId, facts) => {
     if (!Array.isArray(facts) || facts.length === 0) return null;
     const normalized = facts.map(normalizeFact).filter(Boolean);

@@ -13,8 +13,12 @@ import { useDateLoop } from '@hooksMaps/useDateLoop';
 import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { usePeriodicityCache } from '@hooksMaps/usePeriodicityCache';
 import { useMapMarker } from '@hooksMaps/useMapMarker';
+import { useFeatureHighlight } from '@hooksMaps/useFeatureHighlight';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { useSwipeMode } from '@hooksMaps/useSwipeMode';
+import { useMunicipioMode } from '@hooksMaps/useMunicipioMode';
+import { useMunicipioMask } from '@hooksMaps/useMunicipioMask';
+import { useMunicipioFit } from '@hooksMaps/useMunicipioFit';
 import { toLonLat } from 'ol/proj';
 
 const MapsProvider = ({ children }) => {
@@ -57,6 +61,14 @@ const MapsProvider = ({ children }) => {
         paneMapRefs,
     });
     compareModeRef.current = swipeMode.compareMode;
+
+    useFeatureHighlight({
+        mapRef,
+        paneMapRefs,
+        compareMode: swipeMode.compareMode,
+        selectedFeatureInfo,
+        allLayers,
+    });
 
     const symbology = useSymbology({
         activeLayerIds: layerManagement.activeLayerIds,
@@ -147,7 +159,12 @@ const MapsProvider = ({ children }) => {
         return undefined;
     }, [swipeMode, layerToggle]);
 
+    const municipioModeRef = useRef(null);
     const handlePolygonComplete = useCallback((geometry, centerCoordinate, onFeatureCountUpdate) => {
+        const guard = municipioModeRef.current?.polygonIntersectsMunicipios;
+        if (typeof guard === 'function' && !guard(geometry)) {
+            return;
+        }
         if (queryFeaturesInPolygonRef.current && mapRef.current) {
             queryFeaturesInPolygonRef.current(mapRef.current, geometry, centerCoordinate, onFeatureCountUpdate);
         }
@@ -167,6 +184,23 @@ const MapsProvider = ({ children }) => {
     }, [clickPosition, setSelectedFeatureInfo]);
 
     const mapDrawing = useMapDrawing(mapRef, handlePolygonComplete, handleShowCachedSelection);
+
+    const municipioMode = useMunicipioMode({
+        activeLayerIds: layerManagement.activeLayerIds,
+    });
+    municipioModeRef.current = municipioMode;
+
+    useMunicipioMask({
+        active: municipioMode.active,
+        geometries: municipioMode.geometries,
+        mapRef,
+        paneMapInstances,
+    });
+
+    const centerOnMunicipioSelection = useMunicipioFit({
+        municipioMode, mapRef, paneMapInstances,
+        swipeCompareModeActive: swipeMode.compareMode?.active,
+    });
 
     const mapEditing = useMapEditing({
         mapRef,
@@ -214,6 +248,7 @@ const MapsProvider = ({ children }) => {
         isLocating,
         setIsLocating,
         ...swipeMode,
+        municipioMode: { ...municipioMode, centerOnSelection: centerOnMunicipioSelection },
     }), [
         baseMapId,
         siderCollapsed,
@@ -238,6 +273,8 @@ const MapsProvider = ({ children }) => {
         isLocating,
         allLayers,
         swipeMode,
+        municipioMode,
+        centerOnMunicipioSelection,
     ]);
 
     return (

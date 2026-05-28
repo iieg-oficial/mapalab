@@ -4,34 +4,52 @@ import bannerConfig from '../config/bannerConfig';
 import Logo from '../../../components/Logo';
 import { useHomeContent } from '@hooks/useHomeContent';
 
+const BANNER_ROTATION_MS = 5000;
+
 const Header = () => {
     const { home } = useHomeContent();
 
-    const activeBanner = useMemo(() => {
+    const banners = useMemo(() => {
         const fallback = bannerConfig.banners.find((b) => b.active) || bannerConfig.banners[0];
-        const apiBanners = home?.banner?.items || [];
-        const apiActive = apiBanners.find((b) => b.activo && b.titulo);
-        if (!apiActive) {
-            return fallback;
+        const apiBanners = (home?.banner?.items || []).filter((b) => b.activo && b.titulo);
+        if (apiBanners.length === 0) {
+            return [fallback];
         }
-        return {
+        return apiBanners.map((api) => ({
             ...fallback,
-            logoUrl: apiActive.logoUrl || '',
+            logoUrl: api.logoUrl || '',
             image: {
-                src: apiActive.imagenUrl || fallback.image.src,
-                alt: apiActive.titulo,
+                src: api.imagenUrl || fallback.image.src,
+                alt: api.titulo,
             },
             content: {
                 titleHighlight: '',
-                titleRest: apiActive.titulo,
-                description: apiActive.descripcion || fallback.content.description,
+                titleRest: api.titulo,
+                description: api.descripcion || fallback.content.description,
                 button: {
-                    label: apiActive.ctaLabel || fallback.content.button.label,
-                    link: apiActive.ctaHref || fallback.content.button.link,
+                    label: api.ctaLabel || fallback.content.button.label,
+                    link: api.ctaHref || fallback.content.button.link,
                 },
             },
-        };
+        }));
     }, [home]);
+
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
+
+    useEffect(() => {
+        if (currentIndex >= banners.length) setCurrentIndex(0);
+    }, [banners.length, currentIndex]);
+
+    useEffect(() => {
+        if (banners.length <= 1 || isPaused) return undefined;
+        const timer = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % banners.length);
+        }, BANNER_ROTATION_MS);
+        return () => clearInterval(timer);
+    }, [banners.length, isPaused]);
+
+    const activeBanner = banners[currentIndex] || banners[0];
     const headerRef = useRef(null);
     const [showSticky, setShowSticky] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -73,7 +91,12 @@ const Header = () => {
 
     return (
         <>
-            <header ref={headerRef} className="relative px-4 h-dvh md:h-[90dvh] 2xl:h-[80dvh] min-h-[600px] w-full overflow-visible">
+            <header
+                ref={headerRef}
+                className="relative px-4 h-dvh md:h-[90dvh] 2xl:h-[80dvh] min-h-[600px] w-full overflow-visible"
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+            >
                 <div
                     className="absolute inset-0 md:hidden"
                     style={mobileStyle}
@@ -145,6 +168,33 @@ const Header = () => {
                         </div>
                     </div>
                 </div>
+
+                {banners.length > 1 && (
+                    <div
+                        className="absolute bottom-[calc(5vh)] 2xl:bottom-[calc(15vh)] left-1/2 -translate-x-1/2 z-20 flex items-center gap-2"
+                        role="tablist"
+                        aria-label="Banners destacados"
+                    >
+                        {banners.map((_, idx) => {
+                            const isActive = idx === currentIndex;
+                            return (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={isActive}
+                                    aria-label={`Mostrar banner ${idx + 1}`}
+                                    onClick={() => setCurrentIndex(idx)}
+                                    className={`rounded-full transition-all duration-300 ${
+                                        isActive
+                                            ? 'bg-orange w-6 h-2.5'
+                                            : 'bg-[#FFE4C4] hover:bg-[#FFC98A] w-2.5 h-2.5'
+                                    }`}
+                                />
+                            );
+                        })}
+                    </div>
+                )}
 
             </header>
             <div className={`sticky top-0 px-2.5 pt-2.5 bg-white z-50 w-full transition-all duration-300 ${showSticky ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}>

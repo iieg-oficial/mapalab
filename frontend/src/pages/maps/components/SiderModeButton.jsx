@@ -1,5 +1,4 @@
-import Tooltip from '@components/Tooltip';
-import { externalIcons } from '@assets/icons';
+import FloatingIconButton from '@components/FloatingIconButton';
 
 const MODES = [
     { key: 'auto', tooltip: 'Automático', icon: 'right_arrow_fill_normal' },
@@ -10,16 +9,13 @@ const MODES = [
 
 const SiderModeButton = ({ lockMode, onToggle }) => {
     const current = MODES.find(m => m.key === lockMode) || MODES[0];
-
     return (
-        <Tooltip content={current.tooltip} placement="right">
-            <button
-                onClick={onToggle}
-                className="cursor-pointer size-auto transition-all duration-200 "
-            >
-                <img src={externalIcons[current.icon]} alt={current.tooltip} className="size-10" />
-            </button>
-        </Tooltip>
+        <FloatingIconButton
+            iconKey={current.icon}
+            tooltip={current.tooltip}
+            placement="right"
+            onClick={onToggle}
+        />
     );
 };
 

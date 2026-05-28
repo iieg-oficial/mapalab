@@ -25,14 +25,17 @@ from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.repositories.layers_repository import LayersRepository
 from app.services import layer_metadata_service
-from app.services.layer_tree_service import (
-    get_cached_state,
-    invalidate_memory_cache,
-    refresh_cache,
-)
+from app.services.layer_tree_service import get_cached_state
 from app.services.periodicity_service import PeriodicityService
 from app.utils.logger import Logger
 
+from servers.share_tools import (
+    create_single_share as _create_single_share,
+    create_swipe_share as _create_swipe_share,
+    list_municipios as _list_municipios,
+    measure_geometry as _measure_geometry,
+    resolve_municipios as _resolve_municipios,
+)
 from servers.telemetry import (
     MCPTelemetryMiddleware,
     flush_loop as telemetry_flush_loop,
@@ -221,25 +224,105 @@ def get_periodicities_batch(
 
 
 @mcp.tool()
-def refresh_layer_tree_cache():
-    """Regenera la cache materializada del arbol (interno).
+def create_single_share(
+    layers: list = Field(description='Capas a mostrar. Lista de IDs de capa (string) o de objetos {slug, visible?, opacity?, filters?}.'),
+    view: Optional[dict] = Field(default=None, description="Vista inicial del mapa: {zoom, lat, lon, rotation?}."),
+    basemap: Optional[str] = Field(default=None, description='Basemap inicial (p. ej. "osm").'),
+    selected: Optional[str] = Field(default=None, description='Slug/ID de la capa seleccionada para la simbologia.'),
+    annotations: Optional[list] = Field(default=None, description='Anotaciones (mediciones, textos, emojis) en GeoJSON EPSG:4326. Cada item: {id, type, geometry, label?, value?, textLabel?, rotation?}.'),
+    municipios: Optional[dict] = Field(default=None, description='Activa el modo Vista por municipio en el share. Formato: {source: "iieg"|"inegi", selected: ["14001", "14039", ...]}. Las claves se obtienen de list_municipios o resolve_municipios. Mascara visual + filtro CQL automatico en capas con municipioField.'),
+):
+    """Crea un share del visor con capas y opcionalmente anotaciones y filtro por municipio pre-cargados.
 
-    Reconstruye `mapalab.layer_tree_cache` a partir de `mapalab.layers` e
-    invalida la cache en memoria. Devuelve `{ok, etag, layer_count}`.
+    Devuelve `{id, kind, url, embed_html}`. El `embed_html` es un snippet
+    `<iieg-mapalab share="...">` listo para pegar en cualquier sitio web que
+    cargue el widget de MapaLab. Es el camino recomendado para que un agente
+    entregue un mapa interactivo al usuario en lugar de solo describirlo.
+
+    `annotations` permite pre-pintar lineas, poligonos, textos y emojis.
+    `municipios` activa el modo Vista por municipio (beta) que oculta el resto
+    del estado con una mascara y filtra automaticamente las capas activas que
+    soporten filtro por municipio.
     """
-    result = refresh_cache()
-    return {
-        'ok': True,
-        'etag': result['etag'],
-        'layer_count': result['layer_count'],
-    }
+    return _create_single_share(
+        layers=layers,
+        view=view,
+        basemap=basemap,
+        selected=selected,
+        annotations=annotations,
+        municipios=municipios,
+    )
 
 
 @mcp.tool()
-def invalidate_layer_tree_memory_cache():
-    """Invalida solo la cache en memoria del proceso (no toca BD)."""
-    invalidate_memory_cache()
-    return {'ok': True}
+def create_swipe_share(
+    pane_a_layers: list = Field(description='Capas del lado A (lista de IDs o {slug, opacity?}).'),
+    pane_b_layers: list = Field(description='Capas del lado B (lista de IDs o {slug, opacity?}).'),
+    position: float = Field(default=0.5, ge=0.05, le=0.95, description='Posicion inicial del separador swipe (0=todo B, 1=todo A).'),
+    view: Optional[dict] = Field(default=None, description='Vista compartida entre los dos lados: {zoom, lat, lon}.'),
+    basemap: Optional[str] = Field(default=None, description='Basemap compartido entre A y B.'),
+    label_a: str = Field(default='A', description='Etiqueta del lado A (mostrada en la pildora del visor).'),
+    label_b: str = Field(default='B', description='Etiqueta del lado B.'),
+    annotations: Optional[list] = Field(default=None, description='Anotaciones globales del mapa (no por slot). GeoJSON EPSG:4326.'),
+    municipios: Optional[dict] = Field(default=None, description='Modo Vista por municipio compartido entre A y B. {source: "iieg"|"inegi", selected: [claves]}.'),
+):
+    """Crea un share del visor en modo swipe (comparacion A|B).
+
+    Devuelve `{id, kind, url, embed_html}`. El visor abre con la barra
+    divisora arrastrable y cada lado renderiza su set de capas. Util para
+    comparar fenomenos lado a lado (p. ej. delitos vs poblacion, antes vs
+    despues). `municipios` aplica la mascara visual y el filtro CQL a ambos
+    paneles (es estado compartido, no por slot).
+    """
+    return _create_swipe_share(
+        pane_a_layers=pane_a_layers,
+        pane_b_layers=pane_b_layers,
+        position=position,
+        view=view,
+        basemap=basemap,
+        label_a=label_a,
+        label_b=label_b,
+        annotations=annotations,
+        municipios=municipios,
+    )
+
+
+@mcp.tool()
+def list_municipios():
+    """Lista los 125 municipios de Jalisco con su clave INEGI y nombre.
+
+    Devuelve `{items: [{clave, nombre, region, areaKm2, areaHa}], count}`. La
+    `clave` es el identificador INEGI de 5 digitos (los primeros 2 son '14'
+    para Jalisco). Usar como entrada para `create_single_share(municipios=...)`
+    o `create_swipe_share(municipios=...)`.
+    """
+    return _list_municipios()
+
+
+@mcp.tool()
+def resolve_municipios(
+    query: str = Field(description='Texto a buscar en el nombre o la clave del municipio (case-insensitive, substring).'),
+    limit: int = Field(default=10, ge=1, le=50, description='Maximo de resultados (1-50).'),
+):
+    """Busca municipios por nombre o clave parcial (case-insensitive substring).
+
+    Util para mapear "Guadalajara y Zapopan" -> [{clave: "14039", nombre: "Guadalajara"}, {clave: "14120", nombre: "Zapopan"}].
+    Devuelve hasta `limit` matches del listado completo.
+    """
+    return _resolve_municipios(query=query, limit=limit)
+
+
+@mcp.tool()
+def measure_geometry(
+    geometry: dict = Field(description='Geometria GeoJSON EPSG:4326. type debe ser LineString, Polygon o MultiPolygon.'),
+):
+    """Calcula longitud (LineString) o area (Polygon/MultiPolygon) geodesica.
+
+    Usa PostGIS `ST_Length`/`ST_Area` sobre `::geography`, asi el resultado es
+    en metros / metros cuadrados reales sobre el elipsoide WGS84 (no
+    proyectados). Devuelve `{type, metric, value, unit, value_km|value_km2}`.
+    """
+    return _measure_geometry(geometry)
 
 
 @asynccontextmanager

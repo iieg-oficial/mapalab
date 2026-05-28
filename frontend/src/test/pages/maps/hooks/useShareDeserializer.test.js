@@ -46,10 +46,17 @@ describe('useShareDeserializer', () => {
         mockUseLayers.mockReturnValue({ layers: TREE });
     });
 
-    it('rechaza envelopes con version distinta a 1', () => {
+    it('rechaza envelopes con version desconocida (acepta v1 y v2)', () => {
         mockUseMapsContext.mockReturnValue(makeCtx());
         const { result } = renderHook(() => useShareDeserializer());
-        expect(result.current({ version: 2, kind: 'single', payload: {} })).toBe(false);
+        expect(result.current({ version: 3, kind: 'single', payload: {} })).toBe(false);
+        expect(result.current({ version: 'foo', kind: 'single', payload: {} })).toBe(false);
+    });
+
+    it('acepta envelopes v2', () => {
+        mockUseMapsContext.mockReturnValue(makeCtx());
+        const { result } = renderHook(() => useShareDeserializer());
+        expect(result.current({ version: 2, kind: 'single', payload: { layers: [] } })).toBe(true);
     });
 
     it('rechaza envelopes con kind desconocido', () => {

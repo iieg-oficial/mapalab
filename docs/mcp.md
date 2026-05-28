@@ -1,25 +1,27 @@
 # MCP server
 
-Servidor [Model Context Protocol](https://modelcontextprotocol.io/) embebido en el backend de mapalab. Expone un subconjunto de los endpoints REST como tools para que clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes) puedan consultar el catálogo de capas, su metadata, periodicidad y compartibles del visor.
+Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`mapalab-mcp`, separado del backend principal desde 1.35.0) que expone **14 tools** sobre el catálogo de capas, metadata, periodicidad, municipios de Jalisco, mediciones geodésicas y creación de shares del visor. Pensado para clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes como IGIBot) que necesitan consultar o entregar mapas como respuesta.
 
-## Por qué
+## Por qué un container dedicado
 
-- Los endpoints REST ya tienen contratos estables (Pydantic schemas, OpenAPI).
-- `FastMCP.from_fastapi(...)` los re-expone como tools sin reescribir lógica.
-- El backend ya corre 24/7 detrás de gateway-hub, no necesita una segunda pieza de infra.
+- Los tools son manuales (`@mcp.tool()` en `servers/mapalab.py`), no auto-generados desde routers. Eso da control total sobre nombres, descripciones y qué se expone.
+- Reutiliza los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) — el código de `backend/app` se copia al container del MCP en build time. Sin duplicación de lógica.
+- Aislamiento: si un agente abusivo satura el MCP, no impacta al backend del visor que sirve al usuario final.
+- Lifecycle propio: `mapalab-mcp` tiene su pool de SQLAlchemy chico (2 workers, 2 conexiones cada uno), separado del pool grande del backend.
 
 ## Qué se expone y qué no
 
-| Router | MCP | Razón |
-|---|---|---|
-| `metadata` | sí | Lectura pura |
-| `periodicity` | sí | Lectura pura |
-| `layers` | sí | Lectura + cache invalidation |
-| `shares` | sí | Lectura/escritura pequeña |
-| `download` | **no** | Streams de CSV grandes (`COPY TO STDOUT`); inadecuado como tool MCP |
-| `metrics` | **no** | Endpoint interno de Prometheus, no útil para un agente |
+14 tools (ver tabla completa más abajo en §Tools y su origen):
 
-`/health` y `/ontoy` no se exponen tampoco porque viven en `app` directamente, no en un router.
+| Origen | MCP | Razón |
+|---|---|---|
+| Endpoints REST de `metadata`, `periodicity`, `layers/{tree,initial-order,workspaces,search,resolve}` | **sí** (10 tools de lectura) | Lectura pura útil para agentes |
+| Endpoint REST `municipios/` (`list_municipios`, `resolve_municipios`, desde 1.48.x) | **sí** (2 tools de lectura) | Para que el agente mapee "Guadalajara, Zapopan" → claves INEGI y las pase a `create_*_share(municipios=...)` |
+| Lógica nueva (`create_single_share`, `create_swipe_share`, `measure_geometry`) | **sí** (2 writes + 1 lectura, desde 1.44.0) | Tools manuales que reutilizan `share_service` y PostGIS para que un agente entregue mapas interactivos. `create_*_share` desde 1.48.x aceptan `municipios={source, selected}` para activar el modo Vista por municipio en el share. |
+| `download` (CSV streaming) | **no** | Streams de `COPY TO STDOUT`; el formato de respuesta MCP no encaja con streaming |
+| `layers/{refresh-cache,invalidate-cache}` | **no** (removido en 1.48.1) | Requerían `X-Internal-Token` que el MCP no inyecta; siempre devolvían 401, eran ruido en `tools/list` |
+| `shares/{pin,unpin,pin-permanent}` | **no** | Writes administrativos con efectos sobre la BD, no encajan en el patrón del MCP público |
+| `metrics`, `health`, `ontoy` | **no** | Endpoints internos de operaciones, no útiles para un agente |
 
 ## Arquitectura (v1.35.0+)
 
@@ -28,8 +30,8 @@ Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp`, separado del ba
 ```
 mapalab-mcp container (servers/mapalab.py)
 ├── FastMCP("mapalab")
-│   ├── @mcp.tool() search_layers, get_metadata, ...   (11 tools)
-│   └── mcp_app = mcp.http_app(path="/mcp/", stateless_http=True)
+│   ├── @mcp.tool() search_layers, get_metadata, ...   (14 tools)
+│   └── mcp_app = mcp.http_app(path='/mcp', stateless_http=True)
 │
 ├── _admin_app: FastAPI
 │   ├── GET /          → service info
@@ -51,23 +53,24 @@ backend container (backend/app/server.py)
 
 El `mapalab-mcp` reutiliza los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) — el codigo de `backend/app` se copia al container del MCP en build time. Sin duplicacion de logica, ambos containers leen del mismo schema `mapalab` en DataEngine.
 
-### Tools expuestos (11)
+### Tools expuestos (12)
 
-| Tool | Razon |
-|---|---|
-| `search_layers` | Lectura — punto de entrada para resolver IDs por nombre |
-| `resolve_layer_ref` | Lectura — slug/alias → capa |
-| `get_layer_tree` | Lectura — arbol completo |
-| `get_initial_order` | Lectura — capas activas al cargar |
-| `get_workspaces` | Lectura — alias ↔ workspace real |
-| `get_metadata` | Lectura — descripcion, fuentes, downloadable |
-| `get_sources_batch` | Lectura — fuentes de varias capas |
-| `get_periodicity` | Lectura — fechas de capa temporal |
-| `get_periodicities_batch` | Lectura — periodicidad de varias capas |
-| `refresh_layer_tree_cache` | Write barato — invalidacion de cache |
-| `invalidate_layer_tree_memory_cache` | Write barato — solo memoria |
+| Tool | Tipo | Razon |
+|---|---|---|
+| `search_layers` | Lectura | punto de entrada para resolver IDs por nombre |
+| `resolve_layer_ref` | Lectura | slug/alias/id → capa |
+| `get_layer_tree` | Lectura | arbol completo |
+| `get_initial_order` | Lectura | capas activas al cargar |
+| `get_workspaces` | Lectura | alias ↔ workspace real |
+| `get_metadata` | Lectura | descripcion, fuentes, downloadable |
+| `get_sources_batch` | Lectura | fuentes de varias capas |
+| `get_periodicity` | Lectura | fechas de capa temporal |
+| `get_periodicities_batch` | Lectura | periodicidad de varias capas |
+| `measure_geometry` | Lectura | calcula longitud/area geodesica con PostGIS |
+| `create_single_share` | **Write** | crea un share del visor (single) y devuelve `{id, url, embed_html}`. Idempotente (hash determinista del payload). |
+| `create_swipe_share` | **Write** | crea un share en modo swipe (comparacion A\|B). Idempotente. |
 
-`shares` y sus 5 tools quedan **fuera del MCP** desde 1.35.0 — son writes con efectos y no encajan en el patron de lectura del MCP. Siguen disponibles en REST.
+Los tools de invalidacion de cache (`refresh_layer_tree_cache`, `invalidate_layer_tree_memory_cache`) **quedan fuera del MCP desde 1.45.2**: los endpoints REST equivalentes requieren `X-Internal-Token` que el MCP no inyecta, asi que en la practica siempre devolvian 401 — eran ruido en `tools/list`. Mariachi sigue invocando los REST directos desde `iieg-network`. Los `shares` de fan-out admin (`pin_share_permanent`, etc.) tambien quedan fuera. Los `create_*_share` y `measure_geometry` (v1.44.0) son writes intencionales, disenados para que un agente conversacional como [IGIBot](https://igibot.jalisco.gob.mx) entregue mapas interactivos como resultado de su razonamiento.
 
 ### Lifespan + middleware
 
@@ -88,16 +91,16 @@ app.add_middleware(MCPTelemetryMiddleware, path_prefix='/mcp')
 | Origen | URL canonica |
 |---|---|
 | Interna (entre containers) | `http://mapalab-mcp:8000/mcp` |
-| Local desde host (puerto publicado) | `http://localhost:3006/api/mcp` |
-| Via gateway-hub (staging/prod) | `https://<dominio>/mapalab/api/mcp` |
+| Local desde host (puerto publicado) | `http://localhost:3006/mcp` |
+| Via gateway-hub (staging/prod) | `https://<dominio>/mapalab/mcp` |
 
-**Sin slash final** — alineado con el patron de `iieg-oficial/agent/servers` (sql, analytics, charts, etc. todos montan en `path="/mcp"` sin slash). Asi un cliente que ya consume varios servers MCP del ecosistema usa la misma forma.
+**Sin prefijo `/api`** — el MCP no es REST, es JSON-RPC sobre HTTP streamable. Convive con el API REST del backend en lugar de "dentro" del API. Alineado con la convención dominante en la industria (FastMCP default `path='/mcp'`, Cloudflare remote MCP servers, etc.) y con el patron de `iieg-oficial/agent/servers`. Desde mapalab 1.45.0 las URLs viejas `/api/mcp` y `/mapalab/api/mcp` ya no existen — son 404.
 
-Tanto `/api/mcp` como `/api/mcp/` funcionan: nginx tiene dos `location =` exactos (sin slash y con slash) que pegan al backend siempre sin slash. `mcp.http_app(path='/mcp', stateless_http=True)` se monta sin slash, evitando el 307 que apareceria si nginx pegara con slash a un mount sin slash.
+**Sin slash final** — el visor monta `path='/mcp'` (sin slash). Tanto `/mcp` como `/mcp/` funcionan via nginx: hay dos `location =` exactos (sin y con slash) que ambos pegan al backend en `/mcp` sin slash, evitando el 307 que apareceria si el path con slash llegara al mount sin slash.
 
 ## Configuración de nginx
 
-`nginx/nginx.conf` define un upstream `mapalab_mcp` separado del `backend` y dos locations dedicadas (`/api/mcp/` y `/mapalab/api/mcp/`):
+`nginx/nginx.conf` define un upstream `mapalab_mcp` separado del `backend` y dos locations dedicadas (`/mcp` y `/mapalab/mcp`, cada una con su variante con/sin slash):
 
 ```nginx
 upstream mapalab_mcp {
@@ -105,8 +108,8 @@ upstream mapalab_mcp {
     keepalive 16;
 }
 
-location /api/mcp/ {
-    proxy_pass http://mapalab_mcp/mcp/;
+location = /mcp {
+    proxy_pass http://mapalab_mcp/mcp;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -127,33 +130,108 @@ Diferencias clave contra `/api/`:
 - `proxy_cache off` — defensivo (no debería haber cache en la zona pero por si se agrega).
 - Timeouts de 600s — sesiones MCP pueden mantenerse abiertas.
 
-El gateway-hub no necesita un `location` específico para `/mapalab/api/mcp/`: cae bajo el bloque general de `/mapalab/api/` que ya proxea al `mapalab-nginx`. Si en el futuro se observan problemas de buffering en el gateway, agregar un location análogo allá.
+El gateway-hub no necesita un `location` específico para `/mapalab/mcp/`: cae bajo el bloque general `location ^~ /mapalab/` que ya proxea al `mapalab-nginx`. Si en el futuro se observan problemas de buffering en el gateway, agregar un `location ^~ /mapalab/mcp/` análogo allá con `proxy_buffering off`.
 
-## Tools generados
+## Tools y su origen
 
-`from_fastapi` genera un tool por cada operación. Cada endpoint expuesto define `operation_id`, `summary` y `description` en su decorador, así que el tool MCP resultante hereda nombre corto, título legible y descripción larga sin extra mapping:
+Los 14 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). Wrappers delgados sobre lógica del backend; los de share/medición/municipios reutilizan helpers de `servers/share_tools.py`. Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función.
 
-| Tool | Origen | Qué hace |
+| Tool | Origen del código | Qué hace |
 |---|---|---|
-| `get_metadata` | GET `/metadata/` | Metadata completa de una capa |
-| `get_sources_batch` | GET `/metadata/sources` | Fuentes de varias capas en lote |
-| `get_database_stats` | GET `/metadata/database-stats` | Conteo total de registros del schema mapalab |
-| `get_periodicity` | GET `/periodicity/` | Fechas disponibles de una capa temporal |
-| `get_periodicities_batch` | GET `/periodicity/batch` | Periodicidad de varias capas |
-| `get_layer_tree` | GET `/layers/tree` | Árbol jerárquico completo del visor |
-| `get_initial_order` | GET `/layers/initial-order` | IDs activos al cargar el visor |
-| `get_workspaces` | GET `/layers/workspaces` | Workspaces con alias + schema |
-| `search_layers` | GET `/layers/search` | Búsqueda por label/tags/id — devuelve **label + path jerárquico** |
-| `resolve_layer_ref` | GET `/layers/resolve` | Slug/alias → capa |
-| `refresh_layer_tree_cache` | POST `/layers/refresh-cache` | Regenera cache materializada (token interno) |
-| `invalidate_layer_tree_memory_cache` | POST `/layers/invalidate-cache` | Invalida cache en memoria (token interno) |
-| `create_share` | POST `/shares` | Crea share del estado del mapa |
-| `get_share` | GET `/shares/{share_id}` | Lee un share |
-| `pin_share` | POST `/shares/{share_id}/pin` | Pin por 365 días |
-| `unpin_share` | DELETE `/shares/{share_id}/pin` | Quita el pin |
-| `pin_share_permanent` | POST `/shares/{share_id}/pin-permanent` | Pin permanente (token interno) |
+| `search_layers` | `app.repositories.LayersRepository.search_layers` + cache del árbol | Búsqueda por label/tags/id — devuelve **label + path jerárquico** |
+| `resolve_layer_ref` | `LayersRepository.find_layer_by_slug_or_alias` | Slug/alias/id → capa |
+| `get_layer_tree` | `app.services.layer_tree_service.get_cached_state` | Árbol jerárquico completo del visor |
+| `get_initial_order` | `get_cached_state['initial_order']` | IDs activos al cargar el visor |
+| `get_workspaces` | `get_cached_state['workspaces']` | Workspaces con alias + schema |
+| `get_metadata` | `app.services.layer_metadata_service.get_metadata_response` | Metadata completa de una capa |
+| `get_sources_batch` | `layer_metadata_service.get_sources_batch` | Fuentes de varias capas en lote |
+| `get_periodicity` | `app.services.PeriodicityService.get_periodicity` | Fechas year/month/day de una capa temporal |
+| `get_periodicities_batch` | `PeriodicityService.get_periodicities_batch` | Periodicidad de varias capas |
+| `list_municipios` | `app.repositories.MunicipiosRepository.list_all` (vista materializada `mapalab.municipios`) | Lista los 125 municipios de Jalisco con `{clave, nombre, region, areaKm2, areaHa}` |
+| `resolve_municipios` | Substring case-insensitive sobre `MunicipiosRepository.list_all` | Mapea nombre o clave parcial → matches. Útil para "Guadalajara y Zapopan" → `["14039", "14120"]` |
+| `measure_geometry` | `servers/share_tools.py::measure_geometry` (PostGIS `ST_Length`/`ST_Area::geography`) | Longitud o área geodésica de GeoJSON |
+| `create_single_share` | `servers/share_tools.py::create_single_share` (reutiliza `share_service.validate_payload` + `ShareRepository.upsert`) | Crea share `kind=single` y devuelve `{id, url, embed_html}`. Acepta `annotations` y `municipios={source, selected}` |
+| `create_swipe_share` | `servers/share_tools.py::create_swipe_share` | Crea share `kind=swipe` para comparación A\|B. `municipios` aplica a ambos paneles (estado compartido) |
 
-Para cambiar el nombre o el texto que ve un cliente MCP, basta editar `operation_id`, `summary` o `description` en el decorador del endpoint correspondiente.
+### Modo Vista por municipio en shares
+
+`create_single_share` y `create_swipe_share` aceptan `municipios={source: "iieg"|"inegi", selected: ["14039", "14120", ...]}` desde 1.48.x. El validador del share (`share_service._validate_municipios`) limita a 125 claves (los municipios totales de Jalisco). Cuando se abre el share, el visor activa el modo: máscara visual oscura fuera de los polígonos seleccionados, filtro CQL `{municipioField} IN (...)` automático en capas activas que soporten el filtro. Ver `docs/municipio-mode.md` para el flujo completo.
+
+Patrón típico desde un agente:
+
+```
+1. resolve_municipios("guadalajara, zapopan") → [{clave:"14039",nombre:"Guadalajara"}, {clave:"14120",nombre:"Zapopan"}]
+2. create_single_share(
+       layers=["tasa_homicidio_doloso"],
+       view={zoom:11, lat:20.66, lon:-103.35},
+       municipios={"source":"iieg", "selected":["14039","14120"]},
+   )
+3. → embed_html con el visor filtrado a esos 2 municipios
+```
+
+## Entrega de mapas a agentes conversacionales (v1.44.0+)
+
+Tres tools disenados para que agentes LLM (p. ej. IGIBot) entreguen mapas interactivos en respuesta a preguntas del usuario, no solo descripciones de texto:
+
+### `create_single_share`
+
+```
+create_single_share(
+    layers: list,                    # IDs del visor o {slug, opacity?, ...}
+    view: dict | None = None,        # {zoom, lat, lon}
+    basemap: str | None = None,
+    selected: str | None = None,
+    annotations: list | None = None, # GeoJSON EPSG:4326
+) -> {id, kind, url, embed_html}
+```
+
+Crea un share `kind='single'` y devuelve:
+
+- `id`: hash corto de 10 chars (`qd6fj67ex3`)
+- `url`: enlace directo al visor (`https://iieg.gob.mx/mapalab/mapa?s=...`)
+- `embed_html`: snippet `<script>...</script><iieg-mapalab share="...">` listo para pegar en cualquier sitio web que cargue el widget
+
+El bot pega el `embed_html` en su respuesta markdown; el frontend del bot lo renderiza con `react-markdown` o equivalente y el navegador del usuario monta el widget. La key publica `mk_pub_...` la sustituye el bot con la que IIEG le haya asignado.
+
+`annotations` permite pre-pintar lineas/poligonos/textos/emojis sobre el mapa — util para resaltar el resultado de un analisis (bbox de municipios, area de interes, marcadores). Mismo schema que `payload.annotations` de los shares (ver `docs/swipe.md §Annotations`).
+
+### `create_swipe_share`
+
+```
+create_swipe_share(
+    pane_a_layers, pane_b_layers,
+    position: float = 0.5,           # 0.05 .. 0.95
+    view, basemap, label_a, label_b,
+    annotations: list | None = None,
+) -> {id, kind, url, embed_html}
+```
+
+Crea un share `kind='swipe'` con dos sets de capas para comparacion A\|B. Igual que `create_single_share` pero el visor abre con el separador arrastrable. Ideal para "compara homicidios vs poblacion" o "antes vs despues" cuando el bot detecta una pregunta comparativa.
+
+### `measure_geometry`
+
+```
+measure_geometry(geometry: dict) -> {type, metric, value, unit, value_km|value_km2}
+```
+
+Recibe geometria GeoJSON EPSG:4326 y devuelve longitud (LineString) o area (Polygon/MultiPolygon) geodesica. Bajo el cap usa PostGIS `ST_Length`/`ST_Area` sobre `::geography`, asi los metros/metros cuadrados son reales sobre el elipsoide WGS84 (no proyectados, no aproximados).
+
+Util para que el bot responda preguntas tipo "cuanta superficie tiene el municipio X" o "que distancia hay entre A y B" sin tener que hacer el calculo por sí mismo.
+
+### Patron de uso desde un agente
+
+```
+1. usuario: "muestrame los homicidios en Guadalajara"
+2. agente: search_layers(q="homicidio")        -> id "tasa_homicidio_doloso"
+3. agente: get_metadata(workspace="seguridad", layer="tasa_homicidio_doloso")
+4. agente: create_single_share(
+       layers=["tasa_homicidio_doloso"],
+       view={"zoom":11, "lat":20.677, "lon":-103.349},
+   )
+5. agente: responde con texto + embed_html del share
+```
+
+El usuario ve un mapa interactivo embebido donde puede activar la barra de mediciones del visor (mapalab 1.43.0+) y guardar su propia copia como share desde el boton "Compartir".
 
 ## Identificadores aceptados (v1.40.1+)
 
@@ -183,7 +261,7 @@ La resolución vive en helpers compartidos:
 npx @modelcontextprotocol/inspector
 ```
 
-Browser en `http://localhost:6274` → Transport `Streamable HTTP` → URL `http://localhost:3006/api/mcp/` → Connect → tab Tools → List/Run.
+Browser en `http://localhost:6274` → Transport `Streamable HTTP` → URL `http://localhost:3006/mcp/` → Connect → tab Tools → List/Run.
 
 ### Cliente Python con FastMCP
 
@@ -192,7 +270,7 @@ import asyncio, json
 from fastmcp import Client
 
 async def main():
-    async with Client('http://localhost:3006/api/mcp/') as client:
+    async with Client('http://localhost:3006/mcp/') as client:
         tools = await client.list_tools()
         print(f'{len(tools)} tools')
         for t in tools:
@@ -214,7 +292,7 @@ async def main():
     client = MultiServerMCPClient({
         'mapalab': {
             'transport': 'streamable_http',
-            'url': 'http://localhost:3006/api/mcp/',
+            'url': 'http://localhost:3006/mcp/',
         }
     })
     tools = await client.get_tools()
@@ -231,7 +309,7 @@ asyncio.run(main())
 {
   "mcpServers": {
     "mapalab": {
-      "url": "http://localhost:3006/api/mcp/",
+      "url": "http://localhost:3006/mcp/",
       "transport": "http"
     }
   }
@@ -243,7 +321,7 @@ Reiniciar Claude Desktop. Los tools aparecen en el panel de herramientas del cha
 ### curl (handshake)
 
 ```bash
-curl -i -N -X POST http://localhost:3006/api/mcp/ \
+curl -i -N -X POST http://localhost:3006/mcp/ \
   -H 'Accept: application/json, text/event-stream' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -258,7 +336,297 @@ curl -i -N -X POST http://localhost:3006/api/mcp/ \
   }'
 ```
 
+### curl (tools/list)
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+Devuelve los 14 tools registrados con su `name`, `description` y `inputSchema`.
+
+### curl (`tools/call`) — pruebas rápidas de los tools nuevos
+
+Las respuestas vienen en formato SSE (`event: message\ndata: {...}`). Para parsearlas con `jq`, pipea con `sed 's/^data: //' | tail -1 | jq` o similar.
+
+**`measure_geometry`** — distancia geodésica entre dos puntos:
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "measure_geometry",
+      "arguments": {
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [[-103.349, 20.677], [-103.413, 20.721]]
+        }
+      }
+    }
+  }'
+```
+
+Respuesta esperada (~8.26 km entre Guadalajara y Zapopan):
+
+```json
+{"type":"LineString","metric":"length","value":8257.36,"unit":"m","value_km":8.2574}
+```
+
+**`measure_geometry`** — área de un polígono:
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "measure_geometry",
+      "arguments": {
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[
+            [-103.4,20.6],[-103.3,20.6],[-103.3,20.7],[-103.4,20.7],[-103.4,20.6]
+          ]]
+        }
+      }
+    }
+  }'
+```
+
+**`create_single_share`** — crea un share con capa + anotación:
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "create_single_share",
+      "arguments": {
+        "layers": ["tasa_homicidio_doloso"],
+        "view": {"zoom": 9, "lat": 20.6, "lon": -103.4},
+        "basemap": "osm",
+        "annotations": [{
+          "id": "zona1",
+          "type": "Polygon",
+          "geometry": {"type":"Polygon","coordinates":[[
+            [-103.4,20.6],[-103.3,20.6],[-103.3,20.7],[-103.4,20.7],[-103.4,20.6]
+          ]]},
+          "label": "Zona analizada"
+        }]
+      }
+    }
+  }'
+```
+
+Devuelve `{id, kind, url, embed_html}`. Pegar `url` en un navegador abre el visor con todo configurado; pegar `embed_html` en una página renderiza el mapa embebido.
+
+**`create_swipe_share`** — comparación A|B:
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 4,
+    "method": "tools/call",
+    "params": {
+      "name": "create_swipe_share",
+      "arguments": {
+        "pane_a_layers": ["tasa_homicidio_doloso"],
+        "pane_b_layers": ["poblacion"],
+        "position": 0.5,
+        "view": {"zoom": 8, "lat": 20.6, "lon": -103.4},
+        "label_a": "Homicidio",
+        "label_b": "Población"
+      }
+    }
+  }'
+```
+
+### Playground del admin Mariachi
+
+`/administrador/documentacion` tab "Servidor MCP" expone un playground con botón "Probar" por tool — incluye los 3 nuevos (`create_single_share`, `create_swipe_share`, `measure_geometry`) llamados via `tools/call` JSON-RPC al endpoint `/mcp/`. Los demás tools del MCP (read-only) se prueban contra sus REST equivalentes.
+
 Respuesta esperada: `200 OK` con `Content-Type: text/event-stream` y un evento `data:` con `serverInfo: {"name": "MapaLab MCP", ...}`.
+
+## Recetas — combinaciones reales de tools
+
+Los tools individuales son útiles, pero el valor real para un agente está en encadenarlos. Tres recetas que cubren los casos típicos de un asistente conversacional pidiendo al MCP de mapalab que arme un mapa rico.
+
+### Receta 1 — Medir un polígono y crear un share con la zona resaltada
+
+**Escenario:** el usuario dice "muéstrame el área norte de Guadalajara con la tasa de homicidio". El agente arma un polígono que aproxima la zona, lo mide para reportar el área, y crea un share con la capa de homicidio + el polígono pre-pintado.
+
+**Paso 1 — calcular el área del polígono:**
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "measure_geometry",
+      "arguments": {
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[
+            [-103.39, 20.70], [-103.32, 20.70],
+            [-103.32, 20.75], [-103.39, 20.75],
+            [-103.39, 20.70]
+          ]]
+        }
+      }
+    }
+  }'
+```
+
+Devuelve `{"type":"Polygon","metric":"area","value":~30000000,"unit":"m²","value_km2":~30}`. El agente puede responder al usuario "El área norte que describes mide ~30 km²".
+
+**Paso 2 — crear el share reusando el mismo polígono como `annotation`:**
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "create_single_share",
+      "arguments": {
+        "layers": ["tasa_homicidio_doloso"],
+        "view": {"zoom": 12, "lat": 20.725, "lon": -103.355},
+        "basemap": "osm",
+        "annotations": [
+          {
+            "id": "area-norte",
+            "type": "Polygon",
+            "geometry": {
+              "type": "Polygon",
+              "coordinates": [[
+                [-103.39, 20.70], [-103.32, 20.70],
+                [-103.32, 20.75], [-103.39, 20.75],
+                [-103.39, 20.70]
+              ]]
+            },
+            "label": "Área norte (~30 km²)",
+            "value": 30000000,
+            "unit": "m²"
+          },
+          {
+            "id": "label-norte",
+            "type": "Text",
+            "geometry": {"type": "Point", "coordinates": [-103.355, 20.725]},
+            "textLabel": "Zona analizada",
+            "rotation": 0
+          }
+        ]
+      }
+    }
+  }'
+```
+
+Devuelve `{id, url, embed_html}`. El bot pega el `embed_html` en su respuesta markdown y el usuario ve el mapa con la capa de homicidio activa, el polígono resaltando el área norte, y la etiqueta "Zona analizada" en el centro.
+
+### Receta 2 — Comparación A|B con swipe
+
+**Escenario:** el usuario pregunta "compárame las zonas con más homicidios versus la densidad poblacional". El agente arma un swipe que muestra una capa de cada lado.
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "create_swipe_share",
+      "arguments": {
+        "pane_a_layers": ["tasa_homicidio_doloso"],
+        "pane_b_layers": ["poblacion"],
+        "position": 0.5,
+        "view": {"zoom": 9, "lat": 20.6, "lon": -103.4},
+        "basemap": "osm",
+        "label_a": "Tasa de homicidio doloso",
+        "label_b": "Población"
+      }
+    }
+  }'
+```
+
+El visor abre con la barra divisora arrastrable al centro: A muestra homicidio, B muestra población. El usuario puede arrastrar la barra para "frotar" visualmente las dos capas en la misma región. Los `label_a`/`label_b` aparecen en la píldora inferior del visor (`<SlotBadge>`).
+
+### Receta 3 — Swipe con polígono compartido entre ambos lados
+
+**Escenario:** el agente quiere comparar dos capas pero además resaltar el municipio sobre el que está la pregunta. Las anotaciones son globales del mapa (no por pane), así que el polígono se pinta sobre los dos lados del swipe.
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "create_swipe_share",
+      "arguments": {
+        "pane_a_layers": ["tasa_homicidio_doloso"],
+        "pane_b_layers": ["poblacion"],
+        "position": 0.5,
+        "view": {"zoom": 11, "lat": 20.66, "lon": -103.35},
+        "basemap": "osm",
+        "label_a": "Homicidio",
+        "label_b": "Población",
+        "annotations": [
+          {
+            "id": "guadalajara-bbox",
+            "type": "Polygon",
+            "geometry": {
+              "type": "Polygon",
+              "coordinates": [[
+                [-103.42, 20.62], [-103.28, 20.62],
+                [-103.28, 20.74], [-103.42, 20.74],
+                [-103.42, 20.62]
+              ]]
+            },
+            "label": "Guadalajara"
+          },
+          {
+            "id": "centro-gdl",
+            "type": "Emoji",
+            "geometry": {"type": "Point", "coordinates": [-103.349, 20.677]},
+            "textLabel": "📍",
+            "rotation": 0
+          }
+        ]
+      }
+    }
+  }'
+```
+
+El visor abre con swipe activo + el bbox de Guadalajara y un pin emoji en el centro pintados sobre **ambos** paneles. Al arrastrar la barra, el polígono y el emoji siempre son visibles — son del nivel del mapa, no de un pane. Esto está intencionalmente alineado con la decisión documentada en `docs/swipe.md §Pendientes`: las mediciones son geográficas, no del slot.
+
+### Patrón general: medición → annotation
+
+Cuando un análisis del agente produce una geometría (polígono de un municipio, línea entre dos puntos, área de cobertura), el patrón natural es:
+
+1. `measure_geometry(geometry)` → obtienes `{value, unit, value_km|value_km2}` para reportar al usuario en texto.
+2. `create_single_share` o `create_swipe_share` con la **misma** `geometry` dentro de `annotations[]` y `value`/`unit` del paso 1 en el objeto annotation para preservar el contexto del análisis.
+
+El usuario ve la métrica en texto y el mapa interactivo donde puede explorar la zona.
 
 ## Telemetría → Mariachi (v1.30.0+)
 
@@ -336,7 +704,7 @@ Scrapeado por Prometheus en huachicol vía el endpoint `/metrics` existente del 
 
 - **Por ahora público.** Igual que el resto del backend de mapalab — el visor no requiere auth y los datos son catálogo público.
 - Si se necesita restringir el MCP sin tocar REST, opciones:
-  1. Allowlist de IPs en gateway-hub para `/mapalab/api/mcp/`.
+  1. Allowlist de IPs en gateway-hub para `/mapalab/mcp/`.
   2. Header secret validado en gateway o en un middleware del backend.
   3. JWT con claims de `fastmcp` — la lib soporta autenticación nativa pero requiere reconfigurar el cliente.
 - Rate limiting en gateway-hub aplica al path completo; si se vuelve un problema, definir una zona específica `mcp` en `gateway-hub/nginx/`.
@@ -350,19 +718,20 @@ Scrapeado por Prometheus en huachicol vía el endpoint `/metrics` existente del 
 
 `combine_lifespans` vive en `fastmcp.utilities.lifespan` desde fastmcp 2.x. Si en el futuro se actualiza fastmcp y desaparece el path, hay que migrar al patrón de `mcp_app.router.lifespan_context`.
 
-## Cómo agregar un router al MCP
+## Cómo agregar un tool al MCP
 
-1. Importarlo en `backend/app/server.py`.
-2. Agregarlo a `mcp_source_app.include_router(...)` antes de la línea `mcp = FastMCP.from_fastapi(...)`.
-3. Si el router tiene endpoints que no quieres exponer, separarlos en un sub-router o filtrarlos con `tags` y excluir esos tags al instanciar el MCP.
-4. Rebuild del backend (`docker compose build backend && docker compose up -d backend`).
-5. Validar listando tools: `len(tools)` debería incrementarse.
+1. Definir la función en `servers/mapalab.py` decorada con `@mcp.tool()`. Argumentos tipados con `Field(description=...)` para que la descripción aparezca en `tools/list`. Docstring en español (es el "summary" que ven los clientes MCP).
+2. Si la lógica es trivial (lectura directa), implementarla inline. Si reutiliza servicios del backend (medición, share, etc.), importar desde `app.services.*` o `app.repositories.*`.
+3. Para tools de share, ya existe `servers/share_tools.py` con helpers compartidos (`_persist_share`, `_normalize_layer_entries`, etc.) — extender ahí si aplica.
+4. Rebuild del container MCP: `docker compose build mapalab-mcp && docker compose up -d mapalab-mcp`.
+5. Validar: `curl -s -X POST $URL -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq '.result.tools | length'` debería incrementarse.
 
-## Cómo quitar un router del MCP
+## Cómo quitar un tool
 
-1. Removerlo del bloque `mcp_source_app.include_router(...)`.
-2. **Mantenerlo** en `app.include_router(...)` para que siga vivo en REST.
-3. Rebuild.
+1. Removerlo de `servers/mapalab.py` (el `@mcp.tool()` completo).
+2. Si la función auxiliar no se usa en otro lado, limpiarla también.
+3. Si era un wrapper de un endpoint REST, **mantener** el endpoint REST original — el visor o mariachi lo siguen usando. Solo cambia la exposición al MCP.
+4. Rebuild + verificar count en `tools/list`.
 
 ## Limitaciones conocidas
 
@@ -376,4 +745,4 @@ Scrapeado por Prometheus en huachicol vía el endpoint `/metrics` existente del 
 - [FastMCP docs — Lifespan](https://gofastmcp.com/servers/lifespan)
 - [Skill `fastapi-to-mcp`](../../docs/SKILL.md) — guía que se usó como base
 - `backend/app/server.py` — implementación
-- `nginx/nginx.conf` — bloque `location /api/mcp/`
+- `nginx/nginx.conf` — bloques `location = /mcp[/]` y `location = /mapalab/mcp[/]`

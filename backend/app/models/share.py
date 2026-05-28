@@ -14,7 +14,7 @@ from app.models.layer import LayerBase
 class MapShare(LayerBase):
     __tablename__ = 'map_shares'
     __table_args__ = (
-        CheckConstraint("kind IN ('single','compare')", name='ck_map_shares_kind'),
+        CheckConstraint("kind IN ('single','swipe')", name='ck_map_shares_kind'),
         {'schema': 'mapalab'},
     )
 

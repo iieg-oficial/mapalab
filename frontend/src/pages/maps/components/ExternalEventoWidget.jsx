@@ -1,9 +1,13 @@
-import { useMemo, useState } from 'react';
-import { SIDER_TRANSITION_TIMING } from '@constants/sider';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { SIDER_TRANSITION_TIMING, SIDER_HOVER_DELAY_LEAVE_DEFAULT } from '@constants/sider';
+import Tooltip from '@components/Tooltip';
 import EventoIconButton from '@mapsComponents/EventoIconButton';
 import EventoMenu from '@mapsComponents/EventoMenu';
 import MenuItem from '@mapsComponents/MenuItem';
 
+
+const buildHoverHint = (titulo) =>
+    `Da clic para descubrir todas las capas y detalles de "${titulo}".`;
 
 const ExternalEventoItem = ({ evento, activeLayerIds, onToggleLayer, externalHovered, isMobileView }) => {
     const item = useMemo(() => ({
@@ -21,16 +25,26 @@ const ExternalEventoItem = ({ evento, activeLayerIds, onToggleLayer, externalHov
             />
         ),
         renderComponent: ({ isMenuOpen }) => (
-            <EventoIconButton
-                iconoUrl={evento.iconoUrl}
-                imagenUrl={evento.imagenUrl}
-                titulo={evento.titulo}
-                isMenuOpen={isMenuOpen}
-                isHovered={externalHovered}
-                compactClassName="w-14 h-17"
-            />
+            <Tooltip
+                content={buildHoverHint(evento.titulo)}
+                variant="warning"
+                placement={isMobileView ? 'right' : 'bottom'}
+                delay={600}
+                disabled={isMenuOpen || !externalHovered}
+                triggerBlock
+                triggerClassName="w-full"
+            >
+                <EventoIconButton
+                    iconoUrl={evento.iconoUrl}
+                    imagenUrl={evento.imagenUrl}
+                    titulo={evento.titulo}
+                    isMenuOpen={isMenuOpen}
+                    isHovered={externalHovered}
+                    compactClassName="w-14 h-17"
+                />
+            </Tooltip>
         ),
-    }), [evento, activeLayerIds, onToggleLayer, externalHovered]);
+    }), [evento, activeLayerIds, onToggleLayer, externalHovered, isMobileView]);
 
     return (
         <MenuItem
@@ -53,6 +67,28 @@ const ExternalEventoWidget = ({
     siderWidth,
 }) => {
     const [externalHovered, setExternalHovered] = useState(false);
+    const leaveTimerRef = useRef(null);
+
+    const clearLeaveTimer = () => {
+        if (leaveTimerRef.current) {
+            clearTimeout(leaveTimerRef.current);
+            leaveTimerRef.current = null;
+        }
+    };
+
+    const handleEnter = useCallback(() => {
+        clearLeaveTimer();
+        setExternalHovered(true);
+    }, []);
+
+    const handleLeave = useCallback(() => {
+        clearLeaveTimer();
+        leaveTimerRef.current = setTimeout(() => {
+            setExternalHovered(false);
+        }, SIDER_HOVER_DELAY_LEAVE_DEFAULT);
+    }, []);
+
+    useEffect(() => () => clearLeaveTimer(), []);
 
     if (!eventos?.length) return null;
 
@@ -85,11 +121,11 @@ const ExternalEventoWidget = ({
                 left: 16 + siderWidth + 28,
                 transitionTimingFunction: SIDER_TRANSITION_TIMING,
             }}
-            onMouseEnter={() => setExternalHovered(true)}
-            onMouseLeave={() => setExternalHovered(false)}
-            onFocus={() => setExternalHovered(true)}
+            onMouseEnter={handleEnter}
+            onMouseLeave={handleLeave}
+            onFocus={handleEnter}
             onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget)) setExternalHovered(false);
+                if (!e.currentTarget.contains(e.relatedTarget)) handleLeave();
             }}
             role="region"
             aria-label="Eventos especiales"

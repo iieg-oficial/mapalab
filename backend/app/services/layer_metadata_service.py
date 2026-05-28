@@ -27,6 +27,16 @@ def _resolve_layer_key(session: Session, workspace_alias: str, layer: str) -> st
     return f'{ws_name}:{layer}'
 
 
+def _to_list_of_dicts(value) -> list[dict]:
+    if not value:
+        return []
+    if isinstance(value, dict):
+        return [value]
+    if isinstance(value, list):
+        return [it for it in value if isinstance(it, dict) and any(v not in (None, '') for v in it.values())]
+    return []
+
+
 def _metadato_with_acervo(metadato: Optional[list], acervo_base: str) -> Optional[list]:
     if not metadato:
         return None
@@ -77,8 +87,10 @@ def get_metadata_response(
 
         stats = session.query(LayerStats).filter(LayerStats.layer_key == layer_key).first()
 
-        fuentes = meta.fuentes or {}
-        metodologia = meta.metodologia or {}
+        fuentes_list = _to_list_of_dicts(meta.fuentes)
+        metodologia_list = _to_list_of_dicts(meta.metodologia)
+        fuente_primaria = fuentes_list[0] if fuentes_list else {}
+        metodologia_primaria = metodologia_list[0] if metodologia_list else {}
 
         return {
             'tema': (meta.layer_name_usuario or '').split(':')[0] if meta.layer_name_usuario else '',
@@ -92,11 +104,11 @@ def get_metadata_response(
             'descripcion': meta.descripcion,
             'frecuencia_actualizacion': meta.frecuencia,
             'fecha_ultima_actualizacion': meta.fecha_ultima,
-            'metodologia_texto': metodologia.get('texto'),
-            'metodologia_archivo_enlace': metodologia.get('archivo_enlace'),
-            'fuentes_texto_largo': fuentes.get('largo'),
-            'fuentes_texto_corto': fuentes.get('corto'),
-            'fuentes_enlace': fuentes.get('enlace'),
+            'metodologia_texto': metodologia_primaria.get('texto'),
+            'metodologia_archivo_enlace': metodologia_primaria.get('archivo_enlace'),
+            'fuentes_texto_largo': fuente_primaria.get('largo'),
+            'fuentes_texto_corto': fuente_primaria.get('corto'),
+            'fuentes_enlace': fuente_primaria.get('enlace'),
             'tipo_mapa': meta.tipo_mapa,
             'texto_leyenda_juridico': meta.texto_leyenda,
             'tipo_mapa_enlace': meta.tipo_mapa_enlace,
@@ -107,6 +119,8 @@ def get_metadata_response(
             'numeralia': _numeralia_from_stats(stats),
             'nombre_pie_numeralia': stats.pie_numeralia if stats else None,
             'metadato': _metadato_with_acervo(meta.metadato, acervo_base),
+            'fuentes': fuentes_list or None,
+            'metodologia': metodologia_list or None,
         }
 
 
@@ -120,9 +134,10 @@ def get_sources_batch(layer_keys: list[str]) -> list[dict]:
         )
     result = []
     for row in rows:
-        fuentes = row.fuentes or {}
+        fuentes_list = _to_list_of_dicts(row.fuentes)
+        fuente_primaria = fuentes_list[0] if fuentes_list else {}
         result.append({
             'nombre_capa_geoserver': row.layer_key,
-            'fuentes_texto_corto': fuentes.get('corto') or fuentes.get('largo'),
+            'fuentes_texto_corto': fuente_primaria.get('corto') or fuente_primaria.get('largo'),
         })
     return result

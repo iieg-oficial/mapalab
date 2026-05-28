@@ -5,6 +5,708 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.54.2] - 2026-05-28
+
+### Estilo: botón Descargar respeta el estado colapsado del MapToolsPanel + MunicipioFilter flexible
+
+Pulir el layout del row de herramientas cuando el panel está colapsado (icon-only) vs expandido.
+
+#### Cambiado
+
+- **`Download.jsx`**: acepta nuevo prop `collapsed` (default `false`) propagado desde `MapToolsPanel` (`isCollapsed` del localStorage `mapalab.tools.collapsed`). Cuando `collapsed || isMobile` el botón rinde solo el ícono `download` con ancho `w-12.5`; en estado expandido pasa de `md:w-[235px]` a `md:w-30` y el label se acorta de "Descargar visualización" a "Descargar" para encajar.
+- **`MunicipioFilterButton.jsx`**: el wrapper externo dejaba de ocupar todo el ancho en estado expandido, lo que hacía que los hijos `showLabel` se truncaran de forma inconsistente. Ahora alterna entre `flex-1 min-w-0` (modo label) y sin clases extras (modo icon) para que el botón crezca hasta el ancho disponible sin desbordar.
+- **`LayerItem.jsx`**: limpieza de trailing space en el className concatenado (no afecta render).
+
+---
+
+## [1.54.1] - 2026-05-28
+
+### Corregido: el tab "Insertar" del panel Compartir ya no aparece en producción
+
+`SharePanel.jsx` exponía dos tabs ("Enlace" e "Insertar") en todos los ambientes. La pestaña Insertar todavía está marcada como BETA (Web Component embebible) y el endpoint del backend para servir el bundle aún no está habilitado en producción, así que pulsarla en prod no funcionaba.
+
+Cambio: `IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV)`. El `<div role="tablist">` con los dos botones de tab y el contenido de `tab === 'embed'` se renderizan solo si `IS_NON_PROD`. En producción se ve directamente el contenido del tab Enlace sin la franja de tabs encima.
+
+---
+
+## [1.54.0] - 2026-05-28
+
+### InfoBox y leyenda de descarga: nombres heredan alias del grupo padre vía EventoContext
+
+Capas que viven dentro de un evento (`EventoContext.getAliasByLayerId`) ya tenían alias propio en el árbol; sin embargo el InfoBox y la sección de leyendas del PDF/PNG seguían mostrando el `layer.label` literal. Ahora ambos consumen `resolveLayerDisplayName(layerId, fallback, ancestor, getAliasByLayerId)` con la misma cascada (alias del evento > label del grupo padre > label propio).
+
+#### Cambiado
+
+- **`useFeatureInfo.js`**:
+  - Consume `useEventoContext().getAliasByLayerId` y lo pasa a `resolveLayerDisplayName` para resolver `queriedLayerName` del feature seleccionado y también el `groupName` de cada alternativa cuando se agrupan resultados por `parentGroup`.
+  - Fallback ordenado al armar `queriedLayerName`: `selectedLayerForSymbology.name || .label || layerNode?.label` antes de pasar por `resolveLayerDisplayName`.
+  - `selectAlternativeLayer` ahora prioriza `layer.name` sobre `layerNode.label` para que el alias del backend gane cuando viene presente.
+- **`useMapDownload.js → layersWithLegends`**:
+  - Para cada leyenda candidata busca `ancestor = findParentGroup(layer.id, allLayers)`. Si dos leyendas comparten ancestro las deduplica (`Set seenAncestors`), evitando duplicar la entrada de un grupo entero en el PDF cuando hay varios hijos activos.
+  - El `label` final pasa por `resolveLayerDisplayName(layer.id, layer.label, ancestor, getAliasByLayerId)` antes de incluirlo en `result`.
+
+---
+
+## [1.53.0] - 2026-05-28
+
+### Home: carrusel de banners destacados con autoplay y paginación
+
+`Header.jsx` rotaba un único banner activo. Cuando mariachi marca varios `home.banner.items` con `activo=true`, ahora se rotan automáticamente cada 5s con pausa al hover y un row de dots como navegación manual.
+
+#### Agregado
+
+- **`Header.jsx`**:
+  - `banners` (useMemo) ahora devuelve la lista completa de banners activos con título (en vez de solo el primero). Si no hay ninguno desde la API, retorna `[fallback]` con `bannerConfig` local. Cada item incluye el shape esperado por el render (imagen, contenido, CTA).
+  - `currentIndex` con `useState` + `setInterval` de `BANNER_ROTATION_MS = 5000` que cicla `(prev + 1) % banners.length`. Se desmonta el timer en cleanup y no se arma si solo hay 1 banner o el hover está activo.
+  - `isPaused` se setea con `onMouseEnter`/`onMouseLeave` del `<header>` para no rotar mientras el usuario lee el contenido.
+  - `useEffect` extra resetea `currentIndex` a 0 cuando la lista de banners cambia y el índice queda fuera de rango (caso: pasar de 3 a 2 banners activos en runtime).
+- **Dots de paginación** (solo cuando hay 2+ banners): row con `role="tablist"`/`role="tab"` y `aria-selected`. El dot activo es naranja (`bg-orange`) y se expande a `w-6 h-2.5`; los inactivos son crema (`bg-[#FFE4C4]`) `w-2.5 h-2.5` con hover `bg-[#FFC98A]`. Posicionado `bottom-[calc(5vh)] 2xl:bottom-[calc(15vh)]` centrado.
+
+---
+
+## [1.52.0] - 2026-05-28
+
+### Metadata: soporte para múltiples fuentes y metodologías por capa
+
+Algunas capas declaran más de una fuente original (varios institutos) o más de una metodología (calculo + recolección). Hasta `1.51.0` el backend exponía solo la primera; el modal de detalle solo renderizaba un bloque. Ahora ambas dimensiones se modelan como arrays con render apilado.
+
+#### Backend (`1.32.0`)
+
+- **`backend/app/schemas/metadata.py`**: nuevos `FuenteItem` (`corto`, `largo`, `enlace`, `enlace_label`) y `MetodologiaItem` (`texto`, `archivo_enlace`). `MetadataResponse` agrega `fuentes: list[FuenteItem] | None` y `metodologia: list[MetodologiaItem] | None`.
+- **`backend/app/services/layer_metadata_service.py`**:
+  - Helper `_to_list_of_dicts(value)` normaliza el JSON guardado en DB (acepta dict legacy, lista de dicts o `None`) descartando entries cuyo único contenido sean strings vacíos.
+  - `get_metadata_response` mantiene los campos flat legacy (`fuentes_texto_corto/largo/enlace`, `metodologia_texto/archivo_enlace`) apuntando al **primer** item de cada lista para no romper consumers viejos, y agrega los nuevos arrays `fuentes`/`metodologia`.
+  - `get_sources_batch` también consume `_to_list_of_dicts` para evitar AttributeError si el row trae lista en vez de dict.
+
+#### Frontend (`1.52.0`)
+
+- **`LayerInfoSections.jsx`**:
+  - Nuevos normalizers `normalizeFuentes(metadata)` y `normalizeMetodologia(metadata)` que prefieren los arrays nuevos del backend pero hacen fallback a los flat fields (split de `fuentes_enlace` por comas se conserva como caso especial). Mantiene compatibilidad con respuestas mientras DataEngine migra todos los registros al formato lista.
+  - Render apilado con `flex flex-col gap-3` entre items. Título se pluraliza automáticamente: "Fuente"/"Metodología" cuando hay 1, "Fuentes"/"Metodologías" cuando hay 2+.
+  - Cada fuente puede traer su propio `enlace_label` (configurable desde mariachi); fallback a `corto`, luego a `"Ver fuente"` / `"Fuente N"`. Metodologías múltiples usan `"Ver documento N"`.
+
+---
+
+## [backend 1.31.0] - 2026-05-28
+
+### Descarga de CSV: cache en Acervo con redirect a presigned URL + streaming asíncrono
+
+El endpoint `/download/{workspace}/{layer}` migra de `psycopg2.copy_expert` (síncrono con pipe entre hilos) a `asyncpg.copy_from_query` sobre un pool dedicado, y añade una capa de cache servida directamente desde Acervo (S3-compatible).
+
+#### Agregado
+
+- **`backend/app/databases/async_pool.py`** (nuevo): pool global `asyncpg` con `ssl='require'`, `min_size=1`, `max_size=max(DB_POOL_SIZE, 4)` y `command_timeout=600`. La función `get_pool()` es lazy y la cierra `close_pool()` durante shutdown.
+- **`backend/app/services/acervo_client.py`** (nuevo): cliente `boto3` S3 lazy contra `ACERVO_PUBLIC_ENDPOINT or ACERVO_ENDPOINT` con `signature_version='s3v4'`. Expone `presign_get(object_key, ttl_seconds=None)` que retorna `None` si faltan credenciales (degrada a generar el CSV en vivo).
+- **`backend/app/repositories/download_repository.py → find_fresh_cache`**: busca en `mapalab.layer_downloads` un `object_key` para `layer_key` cuyo `generated_at >= now() - ttl_hours`. Retorna `None` si no hay registro fresco.
+- **`backend/app/routers/download.py`**: cuando la request no trae `date_from`/`date_to` (full dump) consulta `find_fresh_cache` con `DOWNLOAD_CACHE_TTL_HOURS`. Si hay hit y se puede firmar, responde `307 Redirect` a la presigned URL — el cliente baja el archivo directamente de Acervo. Cuando hay date filter siempre genera en vivo.
+
+#### Cambiado
+
+- **`stream_csv`** ahora es `async` y consume `asyncpg.Pool` en vez de `Session`. Internamente usa `Queue` con `maxsize=16` chunks para backpressure: un task productor llama `copy_from_query(query, *params, output=writer, format='csv', header=True)` y el generador async consume. Pasa `asyncpg.CancelledError` y excepciones por la cola con sentinel para terminar limpio en client disconnect.
+- **`_build_select`**: construye el SELECT con identificadores quoteados y filtros `WHERE fecha >= $1 AND fecha <= $2` parametrizados (`date.fromisoformat`). Antes se usaba `psycopg2.sql.Literal`.
+- **Variables nuevas en `config.py` y `docker-compose.yml`**: `ACERVO_ENDPOINT`, `ACERVO_PUBLIC_ENDPOINT`, `ACERVO_ACCESS_KEY`, `ACERVO_SECRET_KEY`, `ACERVO_BUCKET` (default `mapalab`), `ACERVO_PRESIGN_TTL_SECONDS` (default 3600), `DOWNLOAD_CACHE_TTL_HOURS` (default 36).
+
+#### Por qué
+
+El streaming sync con `os.pipe()` + thread bloqueaba un worker Gunicorn entero por toda la duración del COPY (capas grandes ~minutos). Con `asyncpg` el worker queda libre para atender otras requests mientras Postgres bombea. Adicionalmente, el cache en Acervo evita regenerar el CSV en cada hit: una vez que el job nocturno (no incluido aquí) deja el objeto en S3 con su `layer_downloads.generated_at`, el endpoint responde `307` inmediato y el byte stream lo sirve Acervo (no FastAPI).
+
+---
+
+## [1.51.0] - 2026-05-26
+
+### Vista por municipio: restringir interacciones fuera del polígono + botón "Centrar selección"
+
+Dos mejoras de UX al modo Vista por municipio (mapalab 1.50.0):
+
+#### Agregado: bloqueo silencioso de interacciones fuera del municipio
+
+Cuando hay un municipio/región/ZMG seleccionado, las acciones del mapa que caigan fuera del polígono se ignoran sin feedback visual:
+
+- **Click para InfoBox**: si el click cae fuera del polígono unión de los seleccionados, `useMapInteractions` aborta antes de llamar `queryFeatures`. El InfoBox no se abre.
+- **Selección por polígono dibujado**: si ningún vértice del polígono dibujado cae dentro de algún municipio, `handlePolygonComplete` en `MapsProvider` retorna sin ejecutar `queryFeaturesInPolygonRef`.
+
+Implementación:
+- **`useMunicipioMode.js`**: dos nuevos helpers expuestos en el return:
+  - `isInsideMunicipios(coord)`: itera `geometries` y devuelve `true` si la coordenada cae dentro de algún polígono de municipio. Si el modo no está activo, devuelve `true` (sin restricción).
+  - `polygonIntersectsMunicipios(olGeometry)`: verifica si algún vértice del outer ring del polígono dibujado cae dentro de algún municipio. Heurística rápida (no usa intersección exacta polígono-polígono); suficiente para 99% de los casos reales.
+- **`useMapInteractions.js`**: nuevo parámetro opcional `isClickAllowed` (callback). Guarda en ref y consulta antes de `queryFeatures`. Si retorna `false`, aborta silenciosamente.
+- **`MapView.jsx`**: pasa `ctx.municipioMode?.isInsideMunicipios` como `isClickAllowed` a `useMapInteractions`.
+- **`MapsProvider.jsx`**: `handlePolygonComplete` consulta `polygonIntersectsMunicipios` vía `municipioModeRef` (necesario porque `handlePolygonComplete` se declara antes que `municipioMode`).
+
+#### Agregado: botón "Centrar selección" (chip flotante + panel del filtro)
+
+Para volver a la vista del municipio después de hacer pan/zoom sin perder la selección:
+
+- **`useMunicipioFit.js`** (nuevo): hook que encapsula la lógica del fit automático (`useEffect` cuando cambia `selected`) + la función `centerOnSelection()` callable manualmente. Extraído de `MapsProvider` que excedía el límite de 300 líneas.
+- **`MapsProvider.jsx`**: usa `useMunicipioFit(...)` y extiende `municipioMode` con `centerOnSelection: centerOnMunicipioSelection` en el value del context, exponiendo la función a cualquier consumer.
+- **`MunicipioActiveChip.jsx`** (chip flotante top-center, solo desktop): nuevo botón entre la label y la X. Mismo tamaño que el botón X (`size-10`, `rounded-full`) pero color azul claro (`bg-white`, `hover:border-purple`) para diferenciarlo del rojo de cerrar. Usa los íconos `fit_extent_normal/hover` ya existentes en `externalIcons`.
+- **`MunicipioFilterPanel.jsx`** (panel del filtro, disponible en mobile): botón "Centrar selección" a la izquierda del "Salir del modo". Texto morado para diferenciarlo. Margen reducido (`mt-3` → `mt-1`) para que la sección no se sienta tan separada del input de búsqueda.
+
+Esta dualidad chip+panel cubre desktop (chip flotante) y mobile (panel del filtro), ya que el chip está oculto con `hidden md:flex`.
+
+#### Cambios complementarios
+
+- **`MapToolsPanel.jsx`**: ancho del panel cambió de `md:w-[373px]` fijo a `md:w-full max-w-[373px]` para mejor adaptación en breakpoints intermedios.
+
+---
+
+## [1.50.1] - 2026-05-26
+
+### Corregido: el mapa base ya no se ve en blanco al usar "Centrar selección" sobre un feature tipo punto
+
+Bug introducido en `1.47.0` con el botón "Centrar grupo" del `ActionsToolbar`. El handler `centerOnResults` hacía `view.fit(extent, { maxZoom: 18 })`. Cuando el feature es un único punto (`extent = [x, y, x, y]` con `width = height = 0`), `fit` llevaba al zoom máximo permitido (18). En ese nivel algunos basemaps no tienen tiles disponibles y el visor se veía completamente blanco como si el basemap se hubiera borrado.
+
+Solución en `helpers/featureGeometry.js → centerOnResults`:
+- Detecta si el extent es "tipo punto" (`width < 1 && height < 1` en metros de Web Mercator).
+- **Punto**: usa `view.animate({ center, zoom: Math.max(currentZoom, 15) })` — preserva el zoom actual si ya estaba acercado, o sube a 15 (límite seguro con tiles en todos los basemaps).
+- **Polígono/línea**: sigue usando `view.fit` pero con `maxZoom: 16` (antes 18). Más conservador.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/helpers/featureGeometry.js`**: `centerOnResults` detecta extent degenerado y conmuta entre `animate` y `fit` con `maxZoom` reducido.
+
+---
+
+## [1.50.0] - 2026-05-26
+
+### Vista por municipio: filtrado CQL por capa con metadata configurable + UI inteligente
+
+Evolución mayor del modo "Vista por municipio". Antes era puramente visual (máscara + zoom); ahora también inyecta filtros CQL por capa, reduciendo el dataset que GeoServer renderiza y permitiendo cache HTTP compartido entre usuarios viendo el mismo municipio.
+
+#### Backend (`1.30.0`)
+
+- **Migration alembic `0017_layer_municipio_field_type`** en dataengine: agrega `mapalab.layers.municipio_field_type varchar(20)` (`clave` | `nombre`). Aplicada vía `ALTER TABLE` directo.
+- **`backend/app/services/layer_tree_service.py`**:
+  - Nueva función `_inherit_municipio_meta` propaga `searchMeta.hasMunicipio + municipioField + municipioFieldType` desde ancestros hacia descendientes que no tengan su propia configuración. Permite configurar una sola vez en un `group` (ej. `establecimientos_salud`) y se aplica a todas las propiedades hijas (`cruz_roja_1`, etc.).
+  - `_layer_to_search_meta` ahora incluye `municipioFieldType`.
+- **`backend/app/repositories/municipios_repository.py`**: nueva función `get_union_bbox(claves, source)` que devuelve `[xmin, ymin, xmax, ymax]` en EPSG:6368 para el BBOX fallback.
+- **`backend/app/routers/municipios.py`**: endpoint `/municipios/geometries` agrega `unionBbox` a la respuesta.
+- **`backend/app/models/layer.py`**: nueva columna `municipio_field_type`.
+
+#### Frontend (`1.50.0`)
+
+- **`useMunicipioMode.js`**:
+  - Expone `municipioContext: {active, claves, nombres, bbox, listLoading, allMunicipiosCount}` con datos crudos en vez de un CQL pre-construido.
+  - Pre-carga `allMunicipios` al montar (sin esperar a activación) para que los nombres estén listos cuando el usuario active el modo.
+  - Fix label `null` al recargar: `scopeLabel` ahora devuelve `'Municipios'` / `'Región'` cuando `scope.value` viene null en lugar de `String(null)='null'`.
+  - Eliminado código muerto: `globalIntersectsCql`, `buildSpatialCql`, `DEFAULT_GEOM_FIELD`.
+- **`useWMSLayerManager.js` + `useWMSFilterUpdater.js`**: ya no reciben `globalCqlFilter` (string); reciben `municipioContext` (objeto). Por cada wmsLayer, llaman `buildLayerMunicipioCql(searchMeta, ctx, layerId)` que decide:
+  - Si capa tiene `hasMunicipio + municipioField`: genera `<field> IN ('14039',…)` o `<field> IN ('Guadalajara',…)` según `municipioFieldType`
+  - Si no: fallback a `BBOX(geom, …)`
+  - Si workspace es raster (`raster`, `lluvia`, `temperatura`): sin filtro espacial
+- **`helpers/municipioCqlBuilder.js`** (nuevo): helper compartido con `warnOnce()` que avisa en consola cuando una capa no resuelve nombres (con sample de claves + count de allMunicipios para diagnóstico).
+- **`useMunicipioMask.js`**: máscara cambió de `rgba(0,0,0,0.4)` (oscurece) a `rgba(0,0,0,0.85)` (tapa features fuera del polígono real para reforzar el foco visual).
+- **`MapToolsPanel.jsx`**:
+  - Ancho fijo del panel = `SIDER_EXPANDED_WIDTH` (340px) para coincidir visualmente con el sider izquierdo.
+  - Botones internos `Download` y `MunicipioFilterButton` con `flex-1` reparten el espacio sobrante equitativamente.
+  - Botón colapsar movido a flotante (`-mr-5`) fuera del panel, centrado vertical con `items-center` del flex parent; usa el nuevo `FloatingIconButton`.
+  - Eliminado código muerto: `EXPANDED_WIDTH`, `COLLAPSED_WIDTH`, `shareLoadedOffset`.
+- **`components/FloatingIconButton.jsx`** (nuevo): componente shared reutilizado por `SiderModeButton` y `MapToolsPanel` para botones con ícono + tooltip flotante.
+- **`SiderModeButton.jsx`**: refactor para usar `FloatingIconButton`.
+- **`Panel.jsx`**: soporta `position="static"` (no antepone `absolute`/`fixed`); usado por `MapToolsPanel` para que el panel viva dentro de un flex en lugar de fixed independiente.
+- **`MunicipioFilterButton.jsx`**: label `null` al recargar fixed (`scope.value || 'Región'`).
+- **`MapsProvider.jsx`**: fix del fit automático del zoom — ahora compara `selected` vs `geometries[].clave` antes de hacer fit. Antes hacía fit con geometrías antiguas y nunca alcanzaba las nuevas porque el `key` (basado en `selected`) ya estaba marcado como fitted.
+
+#### Configuración inicial (vía SQL)
+
+Tres capas configuradas como caso real:
+- `salud:unidades_salud` → `municipio_field='municipio'`, type `nombre` (33 sub-capas)
+- `educacion:centros_educativos` → `municipio_field='municipio'`, type `nombre` (8 sub-capas)
+- `recursos:uso_de_suelo_serie_7` → `municipio_field='cvegeo'`, type `clave` (8 sub-capas)
+
+Resto sigue con BBOX fallback. Las nuevas se configuran en mariachi UI.
+
+#### Docs
+
+- **`docs/municipio-mode.md`**: reescrito completo (estaba desactualizado, decía "sin filtros CQL"). Documenta los 3 mecanismos combinados (CQL por capa + BBOX fallback + máscara), arquitectura, configuración por capa, herencia, inventario actual, hotfix de controlflow.
+- **`docs/planes/PLAN_CLAVE_MUNICIPIO_EN_TABLAS.md`** (nuevo): plan a futuro para estandarizar todas las tablas relevantes con columna `clave_municipio` indexada.
+
+---
+
+## [1.49.2] - 2026-05-26
+
+### UX: panel de compartir homologado al patrón de los demás paneles del visor
+
+Reemplazo del `ShareModal` (modal centrado) por un `SharePanel` anclado al botón Compartir, alineado con `MunicipioFilterButton` y `Download`. Refactor exclusivamente de UI; la lógica de serialización (`useShareSerializer`/`useShareDeserializer`/`useShareDirtiness`) y el `shareService` quedan intactos.
+
+#### Cambios visuales
+
+- **De Modal a Panel anclado**: el share ahora se despliega `bottom-end` del botón con `placement="bottom-end"` y `width="w-80"`, igual que el panel de municipios/descarga. `maxHeight` solo limita en mobile (`max-md:max-h-[calc(100dvh-6rem)]`); en desktop el panel se auto-ajusta al contenido.
+- **Tokens homologados**: contenedor `bg-[#F9FBFF] rounded-[14px]`, tipografía `font-garet`, header `text-purple`, cards internas `bg-white rounded-[7px]`, input morado con botón de copiar acoplado (`rounded-r-lg`), botones primarios `h-10 rounded-[30px] bg-purple-deep`. Sustitución de `<input type="checkbox">` por el `<Checkbox>` compartido.
+- **Tabs visibles desde el inicio**: eliminado el paso intermedio "Generar enlace" → tabs aparecen en la primera vista; cada tab muestra su descripción + checkbox de anotaciones (cuando aplica) + botón de generar. La tab `Insertar` lleva badge `BETA` (componente `Badge variant="pill" color="orange"`).
+- **Indicadores de estado dirty/in-sync**: los pills "Usando link compartido" / "Regresar a" del `MapToolsPanel` se mantienen sin cambio. La alerta verde "Estás viendo un mapa compartido" y la naranja "Cambios sin guardar" se mueven al interior del panel.
+
+#### Archivos
+
+- **`frontend/src/pages/maps/components/SharePanel.jsx`** (nuevo): contenido del panel, basado en el patrón visual de `MunicipioFilterPanel`. Función interna `renderGenerateActions(label)` para no duplicar checkbox + botón entre tabs.
+- **`frontend/src/pages/maps/components/ShareButton.jsx`**: ahora usa `Panel` anclado vía `anchorRef` en vez de `Modal`. Expone `onOpenChange` para que `MapToolsPanel` suba el z-index en mobile cuando el panel está abierto.
+- **`frontend/src/pages/maps/components/ShareModal.jsx`**: eliminado.
+
+---
+
+## [1.49.1] - 2026-05-26
+
+### UX: tooltip de hover sobre eventos externos + delays de hover más perdonadores
+
+Dos mejoras de descubribilidad y tolerancia al uso accidental del mouse en el widget de eventos externos (los íconos a la derecha del sider).
+
+#### Tooltip de hover sobre `EventoIconButton`
+
+Antes el usuario no tenía señal explícita de qué iba a pasar al hacer clic en el ícono de un evento — solo veía la imagen expandida al hacer hover. Ahora `ExternalEventoItem` envuelve el `EventoIconButton` (dentro del `renderComponent` de `MenuItem`) con un `<Tooltip>` que muestra: `Da clic para descubrir todas las capas y detalles de "{titulo}"`. Configuración:
+
+- **Variante**: `warning` (mismo look amarillo/naranja que el tooltip del item seleccionado en capas activas — consistencia visual)
+- **Placement**: `bottom` en desktop, `right` en mobile (no estorba el panel que abre el menú)
+- **Delay**: `600ms` — la expansión del ícono dura 500ms (`transition-all duration-500` en el wrapper); esperar 600ms garantiza que el Tooltip calcule su `boundingClientRect` sobre el ícono **ya expandido**, no el contraído (la flecha del tooltip apunta correcto)
+- **Disabled cuando**: `isMenuOpen` (panel abierto, evita solapamiento) **o** `!externalHovered` (cinturón + tirantes: el `mouseLeave` propio del Tooltip lo oculta al salir del ícono, pero si por algún motivo no se dispara, `externalHovered=false` después del delay del widget fuerza el early return del Tooltip)
+
+Componente del Tooltip sin modificar — toda la lógica vive en la composición de `ExternalEventoWidget`.
+
+#### Delay de salida en hover (anti-accidente)
+
+El widget se contraía instantáneamente al salir del cursor, y el sider tenía un delay corto de 200ms en su `useSiderHover`. Resultado: salidas accidentales (pasar por arriba sin querer mientras se mueve el mouse a otra cosa) cerraban el widget/sider y forzaban al usuario a repetir el hover.
+
+**Cambios:**
+- **`SIDER_HOVER_DELAY_LEAVE_DEFAULT`**: 200ms → **500ms**. Aplica al sider principal vía `useSiderHover` (`handleMouseLeave` en `SiderContext.jsx`). Los otros delays se mantienen (`LEAVE_WITH_MENU=500ms` ya estaba ahí, `LEAVE_WITH_TOOLS=300ms` para no estorbar herramientas activas).
+- **`ExternalEventoWidget`**: nuevo `leaveTimerRef` + timeout de `SIDER_HOVER_DELAY_LEAVE_DEFAULT` (reusa la misma constante) en `onMouseLeave`/`onBlur`. Si el cursor vuelve a entrar antes de los 500ms, `clearLeaveTimer()` cancela el cierre. Cleanup en unmount.
+
+Reusar la misma constante mantiene consistencia entre sider y widget — si en el futuro afinas el valor, ambos se mueven juntos.
+
+---
+
+## [No publicado]
+
+### perf(download): cache de CSVs en Acervo (redirect 307) + endpoint async con asyncpg + buckets de latencia extendidos
+
+Conjunto de cambios para descargar la presión del backend de MapaLab en producción al servir CSVs de capas. La métrica `http_request_duration_seconds` del instrumentator de FastAPI mide hasta el cierre del response, así que en `/download/{workspace}/{layer}` el "request duration" incluye el tiempo de transferencia al cliente — un CSV grande con cliente en conexión normal saturaba el bucket superior (10s) del histograma y disparaba `HighLatency` en Huachicol sin que hubiera problema real (100% 2xx). En producción los servidores son 4 separados (Gateway+Acervo en S1, MapaLab en S2, DataEngine en S4); en GCP staging todos comparten 1 VM y el almacenamiento es limitado, por eso el redirect a Acervo es opcional y la ruta on-the-fly sigue disponible.
+
+#### Cambiado
+
+- **`backend/app/routers/download.py`** (`download_layer`): convertido a `async def`. Si la request no trae filtros `date_from`/`date_to` y la tabla `mapalab.layer_downloads` tiene un registro con `generated_at` dentro del TTL (`DOWNLOAD_CACHE_TTL_HOURS=36` por default), devuelve `307` a `${ACERVO_MAPALAB_BUCKET_PATH}/{object_key}` (default `/acervo/mapalab/downloads/{schema}/{table}.csv.gz`). Sin filtros y sin dump fresco, o con filtros, cae a streaming on-the-fly.
+- **`backend/app/repositories/download_repository.py`**:
+  - Nuevo método `find_fresh_cache(session, layer_key, ttl_hours)` que devuelve `object_key` del dump si está dentro del TTL.
+  - `stream_csv()` reescrito a `async def` + `asyncpg.Pool.copy_from_query(..., output=async_callable)` con una `asyncio.Queue` como puente entre el productor y el `StreamingResponse`. Reemplaza el workaround anterior de `os.pipe()` + thread bloqueante con `psycopg2.copy_expert`, que ocupaba un thread del threadpool de Starlette durante toda la descarga.
+- **`backend/app/databases/async_pool.py`** (nuevo): pool `asyncpg` lazy, compartido entre workers de gunicorn, con `command_timeout=600s` y `max_size=max(DB_POOL_SIZE, 4)`. Reutiliza la resolución de `DB_NAME` del factory síncrono existente.
+- **`backend/app/services/acervo_client.py`** (nuevo): wrapper boto3 lazy con `signature_version='s3v4'` para generar URLs presigned con TTL. Usa `ACERVO_PUBLIC_ENDPOINT` (default cae a `ACERVO_ENDPOINT` si no se setea) — la URL firmada debe apuntar al endpoint que el cliente final puede resolver, no al hostname interno de Docker.
+- **`backend/app/server.py`**: el instrumentator extiende los buckets del histograma de latencia con `15, 30, 60, 120, 300` s para que las descargas largas no saturen el bucket superior y dejen ver el p95/p99 reales. `lifespan` ahora cierra el pool de asyncpg en shutdown.
+- **`backend/app/config.py`**: nuevas variables `ACERVO_ENDPOINT`, `ACERVO_PUBLIC_ENDPOINT`, `ACERVO_ACCESS_KEY`, `ACERVO_SECRET_KEY` (credenciales del usuario `mapalab-user` del bucket `mapalab` de Acervo, no globales), `ACERVO_BUCKET` (default `mapalab`), `ACERVO_PRESIGN_TTL_SECONDS` (default 3600), `DOWNLOAD_CACHE_TTL_HOURS` (default 36).
+- **`backend/requirements.txt`**: nuevas dependencias `asyncpg`, `boto3`.
+- **`docker-compose.yml`**: el servicio `backend` ahora recibe `ACERVO_ENDPOINT`, `ACERVO_PUBLIC_ENDPOINT`, `ACERVO_ACCESS_KEY`, `ACERVO_SECRET_KEY`, `ACERVO_BUCKET`, `ACERVO_PRESIGN_TTL_SECONDS`, `DOWNLOAD_CACHE_TTL_HOURS`.
+
+#### Notas de implementación
+
+- **asyncpg + bytearray**: `asyncpg.Connection.copy_from_query(..., output=callable)` invoca el callable con `bytearray` (no `bytes`). Starlette's `StreamingResponse` espera `bytes | str` y falla con `AttributeError: 'bytearray' object has no attribute 'encode'`. El writer convierte explícitamente con `bytes(buf)` antes de poner en la queue.
+- **asyncpg + fechas**: los parámetros de query con tipo `DATE` en Postgres no aceptan string en asyncpg (a diferencia de psycopg2). `_build_select` ahora hace `date.fromisoformat(date_from)` y `date.fromisoformat(date_to)` antes de pasarlos como params; el regex existente en el endpoint (`^\d{4}-\d{2}-\d{2}$`) garantiza que el string es parseable.
+
+#### Por qué minor
+
+Sin cambios visibles para el usuario del visor; sin breaking changes para integradores que usen `/download/`. En GCP staging todo sigue funcionando idéntico mientras `mapalab.layer_downloads` esté vacía (cae a streaming). En producción, requiere la migración Alembic `0016_layer_downloads` y el cron de dataengine para tomar efecto.
+
+### Agregado: modo Vista por municipio (beta, sólo dev/staging)
+
+Nuevo botón **"Jalisco"** en la barra superior derecha (al lado derecho de Descargar) que permite enfocar el visor en uno o varios municipios del estado. Layout final: `[Descargar | 📍 Jalisco | Share]` (sin `InfoModal`).
+
+- **UI**: panel con buscador + lista de los 125 municipios; pill compacta con default "Jalisco" o "N municipios"/"Guadalajara" según selección.
+- **Máscara visual**: VectorLayer sobre el mapa con polígono (outer = viewport, holes = municipios) en `rgba(0,0,0,0.4)`. Se replica en ambos paneles del modo swipe. El usuario percibe que ve solo esos municipios sin que las capas necesiten configuración.
+- **Sin filtros CQL, sin metadata por capa**: el modo funciona uniforme para TODAS las capas (raster, vector, externas) sin requerir configuración en mariachi.
+- **Switch IIEG/INEGI**: la fuente de polígonos (`geom_iieg` vs `geom_inegi`) se elige automáticamente según las capas de límite activas.
+- **Backend propio**: vista materializada `mapalab.municipios` que une `mapa_base.limite_municipal` (IIEG) e `mapa_base.limite_municipal_inegi`. Refresh mensual desde dataengine-jobs (1° de cada mes a las 05:00) o manual con `make refresh-municipios`. Sin dependencia de GeoServer en runtime.
+- **Endpoints REST**: `GET /municipios/` (lista con ETag + cache 1h) y `GET /municipios/geometries?source=...&claves=...` (GeoJSON EPSG:3857).
+- **Persistencia completa**: URL (`?municipios=014,067`), share JSON (bump v1 → v2 con `payload.municipios`), sessionStorage.
+- **Telemetría**: eventos `municipio_mode_enter/exit/change` y `municipio_panel_open`. Documentados en mariachi-admin → Documentación → Telemetría.
+
+Gated por `VITE_APP_ENV in [dev, beta]` — el botón no aparece en producción.
+
+Documentación completa en [`docs/municipio-mode.md`](municipio-mode.md).
+
+#### Que cambio
+
+**Dataengine:**
+- **`jobs/alembic/versions/20260525_0015_municipios_materialized_view.py`** (nuevo): MV `mapalab.municipios` con `clave_geo`, `nombre`, `region`, `area_km2`, `area_ha`, `geom_iieg`, `geom_inegi` + indexes GIST.
+- **`jobs/run_refresh_municipios.py`** (nuevo): `REFRESH MATERIALIZED VIEW CONCURRENTLY`.
+- **`jobs/crontab`**: entrada `0 5 1 * *` para refresh mensual.
+- **`Makefile`**: target `refresh-municipios` + entrada en `refresh-all`.
+
+**Backend mapalab:**
+- **`backend/app/routers/municipios.py`** (nuevo): endpoints REST con ETag.
+- **`backend/app/repositories/municipios_repository.py`** (nuevo): SQL crudo con `ST_AsGeoJSON(ST_Transform(...))`.
+- **`backend/app/server.py`**: registro del router.
+
+**Frontend mapalab:**
+- **`services/municipioService.js`** (nuevo): fetch + cache contra `/api/municipios/`.
+- **`pages/maps/helpers/municipioMask.js`** (nuevo): helpers puros `buildMaskPolygon`, `unionGeometriesExtent`, `extractHoleRings`.
+- **`pages/maps/hooks/useMunicipioMode.js`** (nuevo): estado + selección + telemetría.
+- **`pages/maps/hooks/useMunicipioMask.js`** (nuevo): VectorLayer por map instance, recálculo en pan/zoom.
+- **`pages/maps/components/MapExport/MunicipioFilterButton.jsx`** y **`MunicipioFilterPanel.jsx`** (nuevos): UI del modo.
+- **`providers/MapsProvider.jsx`**: instanciación de los hooks + fit al bbox.
+- **`pages/maps/components/MapToolsPanel.jsx`**: layout reorganizado, `InfoModal` eliminado.
+- **`pages/maps/components/MapExport/Download.jsx`**: botón "Descargar" compacto (w-30) en lugar de "Descargar visualización" (w-235).
+- **`pages/maps/hooks/useShareSerializer.js`** y **`useShareDeserializer.js`**: bump a `version: 2` + payload `municipios`, con backwards-compat para v1.
+- **`pages/maps/hooks/useInitializeFromUrl.js`**: parseo de `?municipios=`.
+- **`services/analyticsService.js`**: 4 trackers nuevos.
+
+**Mariachi-admin:**
+- **`features/documentacion/topics/TelemetryTopic.jsx`**: nueva Card con la documentación de los eventos del modo.
+
+---
+
+## [1.49.0] - 2026-05-25
+
+### Agregado: 2 tools MCP de municipios + `municipios` en `create_*_share` (12 → 14 tools)
+
+El modo Vista por municipio del visor (beta) era una feature 100% frontend hasta ahora: el usuario tenía que abrir el panel manualmente y elegir los polígonos. Para que un agente conversacional (IGIBot) lo aproveche, el MCP necesita 1) consultar el catálogo de los 125 municipios y 2) poder activar el modo dentro de un share. Esta versión cierra ambos.
+
+#### Nuevos tools MCP
+
+- **`list_municipios()`** — devuelve los 125 municipios de Jalisco como `{items: [{clave, nombre, region, areaKm2, areaHa}], count}`. Wrapper de `MunicipiosRepository.list_all` (vista materializada `mapalab.municipios`).
+- **`resolve_municipios(query, limit?)`** — búsqueda substring case-insensitive sobre nombre y clave. Mapea "guadalajara" → `[{clave:"14039", nombre:"Guadalajara", region:"Centro", ...}]`. Pensado para que el agente convierta "Guadalajara y Zapopan" → `["14039","14120"]` antes de pasar a los `create_*_share`.
+
+#### Extensión de `create_*_share`
+
+`create_single_share` y `create_swipe_share` ahora aceptan parámetro `municipios={source: "iieg"|"inegi", selected: ["14039","14120",...]}`. Al abrir el share, el visor activa el modo Vista por municipio: máscara visual oscura fuera de los polígonos seleccionados + filtro CQL `{municipioField} IN (...)` automático en capas que soporten el filtro. Para `create_swipe_share`, `municipios` vive en `payload.shared` y se aplica a ambos paneles (estado compartido, no por slot).
+
+#### Bug latente arreglado: `version=2` del share
+
+El frontend del visor llevaba semanas serializando shares con `version: 2` (introducida cuando se agregó `municipios` al payload), pero el validator backend tenía `CURRENT_SCHEMA_VERSION = 1` y rechazaba con 400 cualquier intento de crear un share desde el visor en modo municipio. **El botón "Compartir" estaba roto silenciosamente cuando había municipios activos.**
+
+- **`backend/app/services/share_service.py`**: `CURRENT_SCHEMA_VERSION = 2`, `ALLOWED_VERSIONS = {1, 2}` (backward compat para shares ya creados sin `municipios`). Nuevo `_validate_municipios` con `ALLOWED_MUNICIPIO_SOURCES = {iieg, inegi}` y `MAX_MUNICIPIOS = 125`. `_validate_single_payload` lo invoca en root; `_validate_swipe_payload` lo invoca en `payload.shared`.
+- **`servers/share_tools.py`**: `_normalize_municipios` (acepta dict o lista, normaliza a `{source, selected}`). `create_single_share`/`create_swipe_share` propagan a payload. `list_municipios` y `resolve_municipios` nuevos.
+- **`servers/mapalab.py`**: 2 `@mcp.tool()` nuevos + parámetro `municipios: Optional[dict]` añadido a los dos `create_*_share` existentes.
+- **`backend/test/test_share_service.py`**: 9 tests nuevos (`TestMunicipios` con 7 + `TestVersion` con 3). Total 31 tests, todos pasan.
+- **`docs/mcp.md`**: tabla 12 → 14 con los 2 tools nuevos. Nueva sección "Modo Vista por municipio en shares" con el patrón típico de uso desde un agente.
+
+#### Verificación e2e
+
+```
+POST /mapalab/mcp/  tools/call resolve_municipios  query="guadalajara"
+  → [{"clave":"14039","nombre":"Guadalajara","region":"Centro","areaKm2":150.358,"areaHa":15035.796}]
+
+POST /mapalab/mcp/  tools/call create_single_share
+  layers=["tasa_homicidio_doloso"], municipios={"source":"iieg","selected":["14039","14120"]}
+  → {id:"igjejs4i7b", url:"...", embed_html:"..."}
+
+GET /api/shares/<id>
+  → payload.version=2, payload.municipios={"source":"iieg","selected":["14039","14120"]}  ✅
+```
+
+Total tools del MCP: **14** (12 lectura + 2 writes idempotentes).
+
+---
+
+## [1.48.4] - 2026-05-25
+
+### Documentación: `docs/mcp.md` y `docs/context.md` reflejan el modelo real del MCP
+
+Limpieza de referencias obsoletas a `FastMCP.from_fastapi(...)` y al "MCP embebido en el backend" — modelo pre-1.35.0 que llevaba meses fuera pero seguía documentado.
+
+- **`docs/mcp.md`** secciones reescritas:
+  - **Intro:** ahora dice "Servidor MCP dedicado (`mapalab-mcp`)" y menciona **12 tools** (10 lectura + 2 writes idempotentes).
+  - **§Por qué un container dedicado:** quita la referencia a `FastMCP.from_fastapi`, enfoca en las razones reales (tools manuales con control total de nombres/descripciones, aislamiento de pool, lifecycle propio).
+  - **§Qué se expone y qué no:** tabla actualizada — distingue lectura, writes intencionales (`create_*_share` de 1.44.0) y por qué quedan fuera download, cache invalidation (1.48.1), shares admin (`pin_share` etc.) y endpoints internos.
+  - **§Tools y su origen:** tabla nueva con 12 entries que mapea cada tool a su servicio/repositorio del backend (`LayersRepository`, `layer_metadata_service`, `PeriodicityService`, `share_tools`). Reemplaza la vieja tabla de 14 entries que mezclaba tools ficticios (`get_database_stats`, `pin_share`, etc.) que nunca estuvieron en el MCP actual o vivían en otra parte.
+  - **§Cómo agregar / quitar un tool:** receta reescrita basada en `@mcp.tool()` en lugar de `mcp_source_app.include_router(...)`.
+- **`docs/context.md` §MCP server:** una línea actualizada que refleja container dedicado + 12 tools + reuso de servicios del backend; quita el "Construido con FastMCP.from_fastapi…". También la tabla de rutas del backend ahora dice "Servidor MCP en container dedicado mapalab-mcp. 12 tools (10 lectura + 2 writes idempotentes)" en lugar del texto viejo.
+
+Solo documentación. Cero cambios en código del MCP o del backend.
+
+---
+
+## [1.48.1] - 2026-05-25
+
+### Cambiado: removidos del MCP los tools de invalidación de cache (14 → 12)
+
+`refresh_layer_tree_cache` e `invalidate_layer_tree_memory_cache` quedaron expuestos por el MCP heredados de cuando el server se construía con `FastMCP.from_fastapi(...)` y exponía automáticamente todos los routers REST. Los endpoints REST subyacentes (`POST /layers/refresh-cache` y `POST /layers/invalidate-cache`) requieren `X-Internal-Token` desde 1.28.5, que el MCP no inyecta — así que cualquier agente que los llamara vía `tools/call` recibía 401 y los tools eran **ruido en `tools/list`**.
+
+Mariachi sigue invocando los REST directamente desde `iieg-network` con el token interno (lo que ya hacía); ningún flujo operativo se ve afectado.
+
+- **`servers/mapalab.py`**: removidos los 2 `@mcp.tool()` y el import de `refresh_cache`/`invalidate_memory_cache` (queda solo `get_cached_state`).
+- **`docs/mcp.md`**: tabla de tools 14 → 12, columna `Tipo` que distingue Lectura / **Write** explícitamente. Nota explicativa de por qué los tools de cache quedaron fuera.
+- **`mariachi/admin/src/features/documentacion/topics/McpTopic.jsx`** (admin 1.17.1): las 2 entradas removidas del array `TOOLS`. El `<Tag>` de la columna Router refleja 12.
+
+Resultado: el MCP queda con **10 tools de lectura pura** + **2 writes intencionales y útiles** (`create_single_share`, `create_swipe_share`, ambos idempotentes vía hash determinista). Sin write con guarda inútil.
+
+---
+
+## [1.47.1] - 2026-05-25
+
+### Agregado: soporte de color hex personalizado en el resaltado de feature
+
+El hook `useFeatureHighlight` ahora acepta valores hex `#RRGGBB` en `node.highlightColor`. Si el valor matchea el patrón hex, genera el preset dinámicamente: stroke con ese color exacto y fill con alpha 15% (`${hex}26`). Los 3 presets nombrados (`morado`/`naranja`/`sombreado`) siguen funcionando.
+
+Sin breaking changes — un admin puede dejar los valores `morado`/`naranja`/`sombreado` como estaban o pasar a hex desde el modal global en mariachi-admin.
+
+`isValidColorValue` permite los 3 presets + hex válido en `resolveLayerHighlight`. Los valores inválidos caen al default `morado`.
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/hooks/useFeatureHighlight.js`**: `HEX_PATTERN` regex, `presetForHex(hex)` función, `buildStyle` chequea hex antes de buscar en `COLOR_PRESETS`, `resolveLayerHighlight` valida hex también en la cadena de ancestros.
+
+---
+
+## [1.47.0] - 2026-05-25
+
+### Agregado: InfoBox arrastrable con flecha dinámica + resaltado configurable por capa
+
+#### Panel del InfoBox arrastrable (desktop)
+
+Nuevo botón **Mover** en `ActionsToolbar` (ícono de 4 flechas en cruz) entre Cerrar y Descargar. Arrastrarlo reubica el panel a cualquier parte del viewport cuando estorba sobre un feature del mapa. El hook `useDraggablePanel` aplica `transform: translate(dx, dy)` directo al DOM durante el drag (sin re-renders por frame); al soltar hace un único `setState`. El `baseTransform` (`translate(-50%, -100%)` para single feature) llega como prop y se compone con el offset, evitando el bug del segundo drag explosivo.
+
+`useViewportContainment` acepta nueva prop `paused` que `InfoBox.jsx` setea a `isDragging`. Mientras el usuario arrastra, el containment no toca `el.style.left/top`. Solo mobile mantiene el bottom-sheet sin drag.
+
+#### Flecha dinámica que sigue al feature
+
+El triángulo CSS estático fue reemplazado por `<InfoBoxArrow />`, un SVG `position: fixed` con `<polygon>` que se actualiza via `requestAnimationFrame`. Reacciona a tres movimientos:
+
+1. Pan/zoom del mapa → el pixel del feature cambia, la flecha se reposiciona.
+2. Drag manual del panel → la flecha decide automáticamente el lado del card más cercano al feature.
+3. Reubicación por `useViewportContainment` → la flecha se reajusta desde el `getBoundingClientRect()`.
+
+Detalles del cálculo:
+- Lado por proporciones (`halfW/|dx|` vs `halfH/|dy|`).
+- Anchor con clamp `CORNER_PADDING = ARROW_HALF_WIDTH + 6 = 24px` para no caer en esquinas.
+- Ángulo siempre perpendicular al lado (0°/90°/180°/-90°) — más limpio que apuntar diagonal al feature exacto.
+- Si el feature cae dentro del card (margen 8px), la flecha se oculta.
+
+El polygon usa `cardRef` (el `<div w-[239px]>`), no el wrapper que incluye el `ActionsToolbar`. Así la flecha del lado derecho se pega al borde del card, no del toolbar.
+
+Sombra direccional con `filter: drop-shadow(dx, dy, blur)` calculada desde `angleDeg` (`cos/sin * 3px`). SVG en `zIndex: 4` (debajo del card `z-5`) para que la sombra que difumina hacia el card quede tapada por el `bg-white` — solo se ve la sombra fuera del card.
+
+Cuando el anchor cae sobre el área del header del card (`anchorY < top + 61px`), el polygon se rellena con `#EFF3FC` (gris del header) para verse continuo. En el cuerpo del card es blanco normal.
+
+Offset inicial del panel: ahora usa `-ARROW_TIP` (= -28) en Y para single feature y `+ARROW_TIP` en X para multi feature, así la punta de la flecha cae exactamente sobre el pixel del feature al abrir el InfoBox.
+
+#### Resaltado de feature seleccionado por capa (con propagación)
+
+Nuevo hook `useFeatureHighlight` montado en `MapsProvider` que pinta un `VectorLayer` (`zIndex: 998`) con las geometrías de los features del InfoBox abierto. Dos dimensiones configurables desde mariachi-admin tab "Apariencia":
+
+- **`highlightColor`**: `morado` (default), `naranja`, `sombreado`.
+- **`highlightShape`**: `area` (default, área + línea), `linea` (solo contorno, fill transparente), `off` (sin resaltado).
+
+**Propagación**: una leaf hereda los campos del primer ancestor (`group`/`category`/`label`/`tema`) que los defina. Nuevo helper `findAncestorChain(layerId, allLayers)` en `layers/utils/layerHelpers.js` retorna `[self, parent, ..., root]`. `resolveLayerHighlight` recorre la cadena buscando por cada dimensión independientemente — así puedes definir color en el `tema` y forma en el `group` y la leaf hereda ambos.
+
+#### Centrar selección desde el InfoBox
+
+Nuevo botón **Centrar grupo** en `ActionsToolbar` y como tool en mobile. Hace `view.fit` al bbox combinado de todos los features del InfoBox. En swipe usa el pane activo.
+
+Helpers nuevos en `helpers/featureGeometry.js`: `parseResultsFeatures`, `computeFeaturesExtent`, `getExtentCenter`, `centerOnResults` (incluye reposicionamiento del `clickPosition` al centro tras el fit, para que la flecha siga apuntando).
+
+#### Que cambio
+
+- **`frontend/src/pages/maps/components/InfoBox/components/InfoBoxArrow.jsx`** (nuevo).
+- **`frontend/src/pages/maps/components/InfoBox/hooks/useDraggablePanel.js`** (nuevo).
+- **`frontend/src/pages/maps/hooks/useFeatureHighlight.js`** (nuevo).
+- **`frontend/src/pages/maps/helpers/featureGeometry.js`** (nuevo).
+- **`frontend/src/pages/maps/helpers/layers/utils/layerHelpers.js`**: `findAncestorChain`.
+- **`frontend/src/components/Icon.jsx`**: nuevos inline icons `center_group` y `move_arrows` (renombrados para no colisionar con los external SVGs `fit_extent` y `move` del panel de capas activas).
+- **`frontend/src/pages/maps/components/InfoBox/InfoBox.jsx`**: `cardRef` separado, drag, render `<InfoBoxArrow>`, `handleCenterGroup`.
+- **`frontend/src/pages/maps/components/InfoBox/components/ActionsToolbar.jsx`**: botones nuevos.
+- **`frontend/src/pages/maps/components/InfoBox/hooks/useViewportContainment.js`**: prop `paused`.
+- **`frontend/src/providers/MapsProvider.jsx`**: monta `useFeatureHighlight`.
+- **`backend/app/models/layer.py`**: columnas `highlight_color` y `highlight_shape`.
+- **`backend/app/services/layer_tree_service.py`**: expone los campos en `/layers/tree`.
+
+#### Compatibilidad
+
+Requiere migration **0014** de dataengine (columnas `highlight_color` y `highlight_shape` en `mapalab.layers`). Asegurar que `make migrate` se ejecutó antes del deploy.
+
+---
+
+## [1.46.0] - 2026-05-25
+
+### Botón global de dato curioso siempre visible en el sider
+
+El `<EventoFunButton>` solo aparecía dentro del panel del evento (vía `<EventoActionsBar>`). Eso significa que el usuario no descubría la mecánica de "datos curiosos" hasta abrir un evento, perdiendo afordancia. Ahora hay un **botón global** anclado debajo del `<SiderModeButton>` (botón de control de lockMode del sider), siempre visible en desktop. Comparte componente con el del panel — sin duplicar lógica de animación, popover, bolas, ni telemetría.
+
+#### Comportamiento
+
+- **Panel del evento cerrado** (`!activeEvento`) → el botón aparece en el sider, debajo del SiderModeButton, tamaño compacto `size-8` (32×32) pegado al SiderModeButton sin gap. Usa el `funIcon` del **primer evento con facts** para el ícono estático (dinámico, configurado desde mariachi por evento).
+- **Panel del evento abierto** (`activeEvento`) → el del sider se oculta automáticamente, y aparece el mismo componente dentro de `<EventoActionsBar>` con su tamaño original (`size-7`/`size-6` md) y el `funIcon` específico del evento abierto.
+
+Resultado: un solo botón visible a la vez, sin solapamiento, con afordancia continua independientemente del estado del panel.
+
+#### Cambios técnicos
+
+- **`EventoFunButton.jsx`**: ahora acepta props `sizeClass` e `iconSize` (defaults `'w-7 h-7 md:w-6 md:h-6'` y `16` para preservar comportamiento previo dentro de `EventoActionsBar`).
+- **`helpers/funFactPicker.js`**: nuevo export `aggregateFactsFromEventos(eventos)` que junta facts de todos los eventos preservando símbolos por fact (cada fact mantiene su `symbol`, con fallback al `funIcon` del evento padre). Las bolas animadas del botón global muestran el símbolo correcto por fact.
+- **`MapSider.jsx`**:
+  - Importa `useEventoContext` (ya estaba), extrae `activeEvento` del contexto.
+  - Construye `globalFactsEvento = { id: 'sider-global-facts', facts, funIcon }` memoizado por `eventos`. `funIcon` toma del primer evento con facts.
+  - Renderiza `<EventoFunButton evento={globalFactsEvento} sizeClass="size-8" iconSize={22} />` cuando `!activeEvento && facts.length > 0`, en un contenedor absoluto `right-0 bottom-0 translate-x-1/2 translate-y-[calc(50%+32px)]` (pegado directamente al SiderModeButton sin gap).
+  - El `SiderModeButton` ahora está **siempre visible** (antes se desvanecía con `opacity-0` cuando `lockMode === 'auto'` y no había hover). Removida la state `showModeBtn` y los handlers `onMouseEnter`/`onMouseLeave` que la alimentaban (3 lugares).
+
+#### Justificación de tamaño + posicionamiento
+
+El SiderModeButton es 40×40 (`img className="size-10"`). El FunButton del sider quedó en 32×32 para verse visualmente "del mismo tamaño" que el ícono del SiderModeButton (que ocupa ~28-32px efectivos dentro de su PNG, no los 40 nominales) — match perceptual, no nominal. El offset vertical `calc(50%+32px)` deja el FunButton tocando la base del SiderModeButton sin gap.
+
+---
+
+## [1.45.1] - 2026-05-25
+
+### Documentación: recetas end-to-end de los tools nuevos del MCP
+
+Los snippets curl de §Cómo probar muestran cada tool aislado. Faltaba documentar el **flujo combinado** que un agente conversacional realmente ejecuta: medir → resaltar la zona → entregar el share. Tres recetas nuevas en `docs/mcp.md §Recetas`:
+
+- **Receta 1 — Medir un polígono y crear un share con la zona resaltada:** `measure_geometry` para calcular el área, luego `create_single_share` con el **mismo** polígono dentro de `annotations[]` (preservando `value`/`unit` del paso 1) más un `Text` annotation con la etiqueta del análisis. El usuario ve la métrica en texto y el mapa interactivo en el chat.
+- **Receta 2 — Comparación A|B con swipe:** `create_swipe_share` con `pane_a_layers` y `pane_b_layers`, `label_a`/`label_b` para la píldora inferior del visor. Caso típico: "compara homicidios vs población".
+- **Receta 3 — Swipe con anotaciones compartidas:** `create_swipe_share` + `annotations[]` (Polygon + Emoji). Las anotaciones se pintan sobre **ambos** paneles porque son globales del mapa, no por slot — alineado con la decisión documentada en `docs/swipe.md §Pendientes`.
+
+Cada receta incluye el `curl` exacto, el resultado esperado, y una descripción de qué ve el usuario final. Cierra con el patrón general `medición → annotation`: cuando el análisis del agente produce una geometría, reusa la **misma** `geometry` en el share para que el contexto del análisis se preserve.
+
+Solo documentación.
+
+---
+
+## [1.45.0] - 2026-05-25
+
+### Cambiado (BREAKING): URLs del MCP movidas de `/api/mcp` y `/mapalab/api/mcp` → `/mcp` y `/mapalab/mcp`
+
+El MCP de mapalab vivía bajo `/api/mcp/` y `/mapalab/api/mcp/`, heredado de cuando se pensó como "una API más" del backend. Pero el MCP no es REST — es JSON-RPC sobre HTTP streamable, conceptualmente un protocolo distinto que convive con el API en lugar de "dentro" de él. La convención dominante en la industria (FastMCP default `path='/mcp'`, Cloudflare remote MCP servers, modelcontextprotocol.io examples) lo monta al nivel raíz del servicio sin prefijo `/api`.
+
+Aprovechamos que los únicos clientes hoy son de prueba (admin playground en mariachi + curl manual) para hacer el corte limpio en lugar de mantener compat. Las URLs viejas devuelven 404 a partir de esta versión.
+
+#### URLs
+
+| Antes | Ahora |
+|---|---|
+| `https://<dominio>/api/mcp[/]` | `https://<dominio>/mcp[/]` |
+| `https://<dominio>/mapalab/api/mcp[/]` | `https://<dominio>/mapalab/mcp[/]` |
+| `http://mapalab-mcp:8000/mcp` (interna) | sin cambios |
+
+#### Cambios concretos
+
+- **`nginx/nginx.conf`**: removidas las cuatro locations `= /api/mcp[/]` y `= /mapalab/api/mcp[/]`. Agregadas `= /mcp[/]` y `= /mapalab/mcp[/]` con el mismo `proxy_buffering off` / `proxy_cache off` / timeouts de 600s. El upstream `mapalab_mcp` no cambia. La location general `= /mapalab/api/metrics { return 403 }` se mantiene.
+- **`docs/mcp.md`**: §Rutas y §Configuración de nginx actualizadas. Todas las URLs de los ejemplos curl, Claude Desktop config, FastMCP client, LangChain adapter usan ahora `/mcp` y `/mapalab/mcp`. Nota explícita: "Sin prefijo `/api` — alineado con la convención industrial".
+- **`docs/context.md`**: §MCP server refleja las URLs nuevas + nota histórica sobre el cambio.
+
+#### Verificación e2e (todas con `mapalab-nginx`)
+
+```
+POST /mapalab/mcp[/]   → 200 SSE  ✅
+POST /mcp[/]           → 200 SSE  ✅
+POST /mapalab/api/mcp[/] → 404 {"detail":"Not Found"}  (correcto, ya no existe)
+POST /api/mcp[/]         → 404
+```
+
+#### Para clientes existentes
+
+- **Claude Desktop, IDEs MCP, IGIBot, langchain-mcp-adapters, etc.**: actualizar la URL en su config de `/mapalab/api/mcp/` a `/mapalab/mcp/`.
+- **Playground del admin mariachi**: actualizado en `admin 1.15.3` (commit separado en `mariachi`).
+- **Tests automáticos del MCP**: hardcodean URLs en su config — ajustar.
+
+Sin cambios en `servers/mapalab.py` ni en los tools del MCP. El servidor sigue exponiendo el mismo conjunto de tools, solo cambia el path por donde nginx los expone al exterior.
+
+---
+
+## [1.44.1] - 2026-05-25
+
+### Documentación: `docs/mcp.md` con ejemplos `curl tools/call` para los 3 tools nuevos
+
+Faltaba en `docs/mcp.md §Cómo probar` la forma exacta de probar los tools nuevos de 1.44.0 desde la terminal sin levantar un cliente MCP completo. Útil para smoke-test post-deploy en GCP y para que el equipo de IGIBot tenga snippets copy-paste listos.
+
+- **`docs/mcp.md`**: dos secciones nuevas en §Cómo probar:
+  - `curl (tools/list)` — listar los 14 tools registrados
+  - `curl (tools/call)` — 4 ejemplos completos (`measure_geometry` LineString, `measure_geometry` Polygon, `create_single_share` con annotation, `create_swipe_share`) con la respuesta esperada al lado
+- Nota sobre el formato SSE de las respuestas (`event: message\ndata: {...}`) y cómo extraer el JSON con `sed`.
+- Mención al playground de `/administrador/documentacion` en mariachi-admin como alternativa visual.
+
+Solo documentación. Cero cambios en código del MCP.
+
+---
+
+## [1.44.0] - 2026-05-25
+
+### Agregado: 3 tools MCP para que agentes conversacionales entreguen mapas interactivos
+
+Hasta 1.43.x el MCP de mapalab era exclusivamente de lectura — un agente LLM podía buscar capas y leer metadata pero no había forma de devolver un mapa interactivo al usuario, solo descripciones de texto.
+
+Tres tools nuevos cierran esa brecha:
+
+- **`create_single_share(layers, view?, basemap?, selected?, annotations?)`**: arma un envelope `kind='single'`, lo valida con `share_service.validate_payload`, lo persiste con `ShareRepository.upsert` y devuelve `{id, kind, url, embed_html}`. El `embed_html` es un snippet `<script>...</script><iieg-mapalab share="...">` listo para pegar en cualquier sitio. El agente lo embebe en su respuesta markdown (renderizable con `react-markdown`/equivalente) y el navegador del usuario monta el widget. Acepta `annotations` para pre-pintar geometrías resultado del análisis.
+- **`create_swipe_share(pane_a_layers, pane_b_layers, position?, ...)`**: análogo pero `kind='swipe'` para comparación A|B. Ideal cuando el bot detecta preguntas comparativas ("antes vs después", "salud vs seguridad").
+- **`measure_geometry(geometry)`**: recibe geometría GeoJSON EPSG:4326 y devuelve longitud (LineString) o área (Polygon/MultiPolygon) geodésica usando PostGIS `ST_Length`/`ST_Area` sobre `::geography`. Resultado en metros/m² reales sobre el elipsoide WGS84, no aproximaciones planas.
+
+#### Implementación
+
+- **`servers/share_tools.py`** (módulo nuevo): `create_single_share`, `create_swipe_share`, `measure_geometry` como funciones puras. Construyen `embed_html` con `MAPALAB_PUBLIC_BASE_URL` (env opcional, default `https://iieg.gob.mx`). Reusan `share_service.validate_payload` (mismo validador del endpoint REST) y `ShareRepository.upsert` (mismo hash determinístico — crear dos veces el mismo payload no duplica).
+- **`servers/mapalab.py`**: 3 `@mcp.tool()` que delegan al módulo. Descripciones largas en español para que clientes MCP (Claude Desktop, IGIBot, etc.) las muestren legibles.
+
+#### Pruebas e2e
+
+```
+POST /api/mcp/  tools/call create_single_share
+  layers=["tasa_homicidio_doloso"], annotations=[polygon]
+→ {id:"qd6fj67ex3", url:"https://iieg.gob.mx/mapalab/mapa?s=qd6fj67ex3",
+   embed_html:"<script>...<iieg-mapalab share='qd6fj67ex3'>..."}
+
+POST /api/mcp/  tools/call measure_geometry  Polygon ~10x10 km
+→ {value:115374443.16, unit:"m²", value_km2:115.374443}
+```
+
+#### Caso de uso
+
+IGIBot puede ahora:
+
+```
+1. usuario: "muéstrame los homicidios en Guadalajara"
+2. bot: search_layers(q="homicidio") → "tasa_homicidio_doloso"
+3. bot: create_single_share(layers=[...], view={zoom:11, lat:20.6, lon:-103.4})
+4. bot: responde con texto + embed_html
+5. usuario ve el mapa embebido, interactúa con él, activa medición (1.43.0+)
+```
+
+Sin breaking changes en tools existentes. Total: 14 tools (era 11).
+
+#### Documentación
+
+- **`docs/mcp.md`**: tabla de tools actualizada (11 → 14). Nueva sección "Entrega de mapas a agentes conversacionales" con firma de cada tool y patrón de uso end-to-end.
+
+---
+
+## [1.43.0] - 2026-05-25
+
+### Agregado: mediciones y anotaciones se incluyen en el share (single + swipe)
+
+Hasta 1.42.x los dibujos del visor (líneas/polígonos de medición, textos, emojis, freehand) eran efímeros — vivían en el `vectorSource` del `useMapDrawing` y se perdían al recargar o al copiar el link de "Compartir". Quien abría un share solo veía las capas, no las anotaciones.
+
+Ahora el envelope del share acepta opcionalmente `payload.annotations: [...]` con cada medición serializada como GeoJSON en EPSG:4326. Al cargar el share, las anotaciones se restauran al vectorSource del `useMapDrawing` y se ven igual que cuando se dibujaron. Funciona para `kind='single'` y `kind='swipe'` — las anotaciones son globales del mapa, no por pane (decisión alineada con `docs/swipe.md §Pendientes`).
+
+#### Backend
+
+- **`backend/app/services/share_service.py`**: `MAX_PAYLOAD_BYTES` sube a 256 KB (los polígonos reales no caben en 64 KB). Nuevo `_validate_annotations(payload.annotations)`: lista ≤ 200 items, cada uno con `id`, `type ∈ {LineString, Polygon, Freehand, Text, Emoji}`, `geometry` GeoJSON básico (`type ∈ {Point, LineString, Polygon, MultiPolygon}`, `coordinates ≤ 2000 puntos`), `rotation` numérico opcional. `_validate_single_payload` y `_validate_swipe_payload` lo invocan.
+- **`backend/test/test_share_service.py`**: 9 tests nuevos para annotations (single y swipe, geometría inválida, type inválido, sin id, límite de 200, None y campo ausente). Total: 21 tests.
+
+#### Frontend serializer / deserializer
+
+- **`useShareSerializer.js`**: nuevo helper `serializeAnnotations(measurements)` que itera `measurements`, ignora items sin `feature` o de tipo `Select`, y convierte cada `feature.getGeometry()` a GeoJSON con `featureProjection:'EPSG:3857' → dataProjection:'EPSG:4326'`. Preserva `id`, `type`, `label`, `value`, `textLabel`, `rotation`, `visible`. Se invoca cuando `extra.includeAnnotations === true` (default `false`).
+- **`useShareDeserializer.js`**: si `payload.annotations` existe, llama `restoreAnnotations(payload.annotations)` (expuesto por `useMapDrawing` vía `MapsProvider`). Lo hace tanto en la rama `single` como en la `swipe`.
+- **`useMapDrawing.js`**: nuevo `restoreAnnotations(annotations)`. Reconstruye `ol.Feature` desde GeoJSON, recalcula `formatLength`/`formatArea` desde la geometría (no confía en el `value` recibido, defensa contra geometrías editadas externamente), setea `textLabel`/`rotation`/`annotationType` para Text/Emoji/Freehand, agrega al `vectorSource` y empuja al state `measurements`. Retry-polling de 100 ms hasta 5 s mientras `ensureVectorLayer()` falle — necesario porque los shares se aplican antes de que el mapa termine de montar.
+
+#### UX
+
+- **`ShareModal.jsx`**: si `measurements` tiene al menos 1 item con `feature` y `type !== 'Select'`, aparece un checkbox **"Incluir mis mediciones y anotaciones (N)"** marcado por default. El conteo es en vivo. El texto explica que quien abra el enlace verá las líneas, polígonos, textos y emojis dibujados.
+
+#### Documentación
+
+- **`docs/swipe.md`**: nueva sección "Annotations (mediciones persistidas en el share)". `payload.annotations` documentado en §Persistencia. Tabla de pendientes ajustada: "dibujar mediciones nuevas en swipe" sigue pendiente, pero las pre-existentes vía share ya se ven.
+
+---
+
+## [1.42.1] - 2026-05-25
+
+### Corregido: backend de `shares` aceptaba `kind='compare'` (legacy) pero rechazaba `kind='swipe'` (actual)
+
+`docs/swipe.md` afirmaba desde hace meses que "Compartir ✅ Envelope `kind: 'swipe'` con ambos snapshots", pero el backend tenía el modelo viejo con `kind IN ('single','compare')` y `_validate_compare_payload` (con `axis ∈ {date,filter,geo}` y `panes` con `value`). El botón "Compartir" del visor en modo swipe enviaba `kind='swipe'` y recibía `HTTP 400 {"detail":"kind invalido: swipe"}` silenciosamente — feature roto en producción.
+
+El frontend (`useShareSerializer`, `useShareDeserializer`) ya manejaba `single | swipe` exclusivamente (sin fallback legacy). El backend se actualiza para alinearse con el contrato real documentado.
+
+- **`backend/app/services/share_service.py`**: `ALLOWED_KINDS = {'single', 'swipe'}`. Nuevo `_validate_swipe_payload` que valida el shape documentado en `docs/swipe.md §Persistencia` (`shared.view`, `paneA.layers`, `paneB.layers`, `activeSlot ∈ {A,B}`, `position ∈ [0,1]`). Extraído `_validate_view` y `_validate_layer_entries` para reusar entre single/swipe. `_validate_compare_payload` removido.
+- **`backend/app/models/share.py`**: `CheckConstraint("kind IN ('single','swipe')")`.
+- **Migración Alembic en dataengine** `0013_map_shares_kind_swipe`: drop CHECK viejo, `DELETE FROM mapalab.map_shares WHERE kind='compare'` (solo afecta filas no alcanzables desde la UI actual), nuevo CHECK con `('single','swipe')`. Downgrade reversible.
+- **`backend/test/test_share_service.py`**: 12 tests cubriendo single/swipe válidos, validaciones de cada campo, rechazo explícito de `compare` legacy.
+
+Verificación end-to-end: `POST /api/shares` con `kind='swipe'` y el payload exacto que arma el serializer del visor devuelve `200 OK` con el `id` del share. El widget `<iieg-mapalab share="...">` ahora puede cargar swipes guardados.
+
+---
+
 ## [1.41.0] - 2026-05-22
 
 ### Agregado: iconText soporta texto visible separado del campo URL + auto-href en icono `web`
