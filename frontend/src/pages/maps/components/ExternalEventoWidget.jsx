@@ -9,7 +9,7 @@ import MenuItem from '@mapsComponents/MenuItem';
 const buildHoverHint = (titulo) =>
     `Da clic para descubrir todas las capas y detalles de "${titulo}".`;
 
-const ExternalEventoItem = ({ evento, activeLayerIds, onToggleLayer, externalHovered, isMobileView }) => {
+const ExternalEventoItem = ({ evento, activeLayerIds, onToggleLayer, externalHovered, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => {
     const item = useMemo(() => ({
         id: `ext-evento-${evento.id}`,
         hasMenu: true,
@@ -50,8 +50,8 @@ const ExternalEventoItem = ({ evento, activeLayerIds, onToggleLayer, externalHov
         <MenuItem
             item={item}
             isMobileView={isMobileView}
-            autoOpenMenuId={null}
-            clearAutoOpenMenu={() => {}}
+            autoOpenMenuId={autoOpenMenuId}
+            clearAutoOpenMenu={clearAutoOpenMenu}
         />
     );
 };
@@ -65,6 +65,8 @@ const ExternalEventoWidget = ({
     isOpen,
     areMeasurementToolsVisible,
     siderWidth,
+    autoOpenMenuId,
+    clearAutoOpenMenu,
 }) => {
     const [externalHovered, setExternalHovered] = useState(false);
     const leaveTimerRef = useRef(null);
@@ -107,6 +109,8 @@ const ExternalEventoWidget = ({
                             onToggleLayer={onToggleLayer}
                             externalHovered={externalHovered}
                             isMobileView
+                            autoOpenMenuId={autoOpenMenuId}
+                            clearAutoOpenMenu={clearAutoOpenMenu}
                         />
                     </div>
                 ))}
@@ -146,6 +150,8 @@ const ExternalEventoWidget = ({
                         onToggleLayer={onToggleLayer}
                         externalHovered={externalHovered}
                         isMobileView={false}
+                        autoOpenMenuId={autoOpenMenuId}
+                        clearAutoOpenMenu={clearAutoOpenMenu}
                     />
                 </div>
             ))}

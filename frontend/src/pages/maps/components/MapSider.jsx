@@ -329,7 +329,7 @@ const MapSider = ({ className = '' }) => {
                 />
             </aside>
             {!isSwipe && (
-                <ExternalEventoWidget eventos={eventos} activeLayerIds={contextActiveLayerIds} onToggleLayer={onToggleLayer} treatAsMobile={treatAsMobile} isOpen={isOpen} areMeasurementToolsVisible={areMeasurementToolsVisible} siderWidth={width} />
+                <ExternalEventoWidget eventos={eventos} activeLayerIds={contextActiveLayerIds} onToggleLayer={onToggleLayer} treatAsMobile={treatAsMobile} isOpen={isOpen} areMeasurementToolsVisible={areMeasurementToolsVisible} siderWidth={width} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
             )}
         </>
     );

@@ -24,6 +24,6 @@ export const useAutoOpenEventoFromUrl = ({ setAutoOpenMenuId, setIsHovered }) =>
 
         processedRef.current = true;
         setIsHovered?.(true);
-        setTimeout(() => setAutoOpenMenuId?.(`evento-${match.id}`), 300);
+        setTimeout(() => setAutoOpenMenuId?.(`ext-evento-${match.id}`), 300);
     }, [searchParams, eventos, loading, setAutoOpenMenuId, setIsHovered]);
 };

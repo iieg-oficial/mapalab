@@ -1,26 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import Icon from '@components/Icon';
-import Badge from '@components/Badge';
 import Switch from '@components/Switch';
 import Tooltip from '@components/Tooltip';
-import ReportButton from '@components/ReportButton';
 import EventoFunButton from '@mapsComponents/EventoFunButton';
 import { useMapsContext } from '@hooks/useMaps';
-import { trackEventoCenter, trackEventoReport } from '@services/analyticsService';
-
-const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
+import { slugifyTitulo } from '@pages/maps/helpers/eventoHelpers';
+import { trackEventoCenter, trackEventoShare } from '@services/analyticsService';
 
 const ICON_BUTTON = 'w-7 h-7 md:w-6 md:h-6 rounded-full bg-white flex items-center justify-center shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] hover:scale-110 active:scale-95 transition-transform cursor-pointer';
+const ICON_BUTTON_COPIED = 'w-7 h-7 md:w-6 md:h-6 rounded-full bg-[#DCFCE7] border border-[#22C55E] flex items-center justify-center shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] transition-transform cursor-default';
 const PILL_STATIC = 'px-2.5 py-1.5 rounded-full border border-transparent bg-[#F9FBFF] flex items-center gap-1.5';
 const LABEL_CLASS = 'font-garet text-[12px] text-graphite';
+
+const buildEventoShareUrl = (evento) => {
+    const base = window.location.origin;
+    const path = (import.meta.env.VITE_BASE_PATH || '/').replace(/\/?$/, '/');
+    const slug = evento?.slug || slugifyTitulo(evento?.titulo) || evento?.id;
+    return `${base}${path}mapa?evento=${encodeURIComponent(slug)}`;
+};
 
 const EventoActionsBar = ({ evento, externalActiveIds = [], onCenterEvento }) => {
     const { hiddenLayerIds, setHiddenLayerIds } = useMapsContext();
     const [soloEvento, setSoloEvento] = useState(false);
+    const [copied, setCopied] = useState(false);
     const hiddenIdsRef = useRef(hiddenLayerIds);
     const addedByUsRef = useRef(new Set());
+    const copyTimerRef = useRef(null);
 
     useEffect(() => { hiddenIdsRef.current = hiddenLayerIds; }, [hiddenLayerIds]);
+
+    useEffect(() => () => clearTimeout(copyTimerRef.current), []);
 
     useEffect(() => {
         if (typeof setHiddenLayerIds !== 'function') return undefined;
@@ -54,14 +63,27 @@ const EventoActionsBar = ({ evento, externalActiveIds = [], onCenterEvento }) =>
         if (evento?.id) trackEventoCenter(evento.id);
     };
 
-    const containerClass = IS_NON_PROD
-        ? 'mx-4 mt-1 mb-2 px-2 py-1.5 rounded-full border border-orange flex items-center gap-2 shrink-0'
-        : 'mx-4 mt-1 mb-2 px-2 py-1.5 rounded-full border border-transparent bg-[#F9FBFF] flex items-center gap-2 shrink-0';
+    const handleShareEvento = async () => {
+        if (!evento) return;
+        const url = buildEventoShareUrl(evento);
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopied(true);
+            clearTimeout(copyTimerRef.current);
+            copyTimerRef.current = setTimeout(() => setCopied(false), 2500);
+            trackEventoShare(evento.id, 'copied');
+        } catch {
+            window.prompt('Selecciona y copia este enlace:', url);
+            trackEventoShare(evento.id, 'prompt');
+        }
+    };
+
+    const shareTooltip = copied
+        ? '¡Enlace copiado!'
+        : 'Copiar enlace permanente del evento';
 
     return (
-        <div className={containerClass}>
-            {IS_NON_PROD && <Badge variant="pill" text="beta" color="orange" size="sm" />}
-
+        <div className="mx-4 mt-1 mb-2 px-2 py-1.5 rounded-full border border-transparent bg-[#F9FBFF] flex items-center gap-2 shrink-0">
             <Tooltip content={soloTooltip}>
                 <div className={PILL_STATIC}>
                     <Switch checked={soloEvento} onChange={setSoloEvento} />
@@ -82,19 +104,20 @@ const EventoActionsBar = ({ evento, externalActiveIds = [], onCenterEvento }) =>
                         </button>
                     </Tooltip>
                 )}
+                <Tooltip content={shareTooltip} placement="top" delay={300}>
+                    <button
+                        type="button"
+                        onClick={handleShareEvento}
+                        aria-label={shareTooltip}
+                        className={copied ? ICON_BUTTON_COPIED : ICON_BUTTON}
+                    >
+                        <Icon
+                            name={copied ? 'shared_click' : 'copie'}
+                            className="size-3.5"
+                        />
+                    </button>
+                </Tooltip>
                 <EventoFunButton evento={evento} />
-                {IS_NON_PROD && (
-                    <ReportButton
-                        variant="floating"
-                        label="Reportar problema con este evento"
-                        extraContext={{
-                            source: 'evento_actions_bar',
-                            evento_id: evento?.id,
-                            evento_titulo: evento?.titulo,
-                        }}
-                        onTrack={() => evento?.id && trackEventoReport(evento.id)}
-                    />
-                )}
             </div>
         </div>
     );

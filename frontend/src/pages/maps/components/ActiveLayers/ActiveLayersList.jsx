@@ -1,4 +1,5 @@
 import { useContext, useCallback, useMemo, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import MapsContext from '@contexts/MapsContext';
 import { useActiveLayersLogic } from '../../hooks/useActiveLayersLogic';
 import { useAlwaysOnTopPinning, sortItemsWithPinnedFirst } from '../../hooks/useAlwaysOnTopPinning';
@@ -163,6 +164,8 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         }
     }, [activeLayerIds.length, isInegiMode, onToggleLayer]);
 
+    const [, setSearchParams] = useSearchParams();
+
     const handleRemoveAll = useCallback(() => {
         activeLayerIds.forEach(id => {
             const childIds = getAllChildLayerIds(id);
@@ -170,11 +173,12 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
             onToggleLayer(id, false);
         });
         setSelectedLayerForSymbology(null);
+        setSearchParams({}, { replace: true });
         if (mapRef?.current) {
             const { center, zoom } = getDefaultMapView();
             mapRef.current.getView().animate({ center, zoom, duration: 500 });
         }
-    }, [activeLayerIds, getAllChildLayerIds, clearLayerFilters, onToggleLayer, setSelectedLayerForSymbology, mapRef]);
+    }, [activeLayerIds, getAllChildLayerIds, clearLayerFilters, onToggleLayer, setSelectedLayerForSymbology, setSearchParams, mapRef]);
 
     const handleToggleVisibilityAll = useCallback(() => {
         if (allHidden) {
