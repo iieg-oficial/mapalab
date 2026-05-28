@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.53.0] - 2026-05-28
+
+### Home: carrusel de banners destacados con autoplay y paginación
+
+`Header.jsx` rotaba un único banner activo. Cuando mariachi marca varios `home.banner.items` con `activo=true`, ahora se rotan automáticamente cada 5s con pausa al hover y un row de dots como navegación manual.
+
+#### Agregado
+
+- **`Header.jsx`**:
+  - `banners` (useMemo) ahora devuelve la lista completa de banners activos con título (en vez de solo el primero). Si no hay ninguno desde la API, retorna `[fallback]` con `bannerConfig` local. Cada item incluye el shape esperado por el render (imagen, contenido, CTA).
+  - `currentIndex` con `useState` + `setInterval` de `BANNER_ROTATION_MS = 5000` que cicla `(prev + 1) % banners.length`. Se desmonta el timer en cleanup y no se arma si solo hay 1 banner o el hover está activo.
+  - `isPaused` se setea con `onMouseEnter`/`onMouseLeave` del `<header>` para no rotar mientras el usuario lee el contenido.
+  - `useEffect` extra resetea `currentIndex` a 0 cuando la lista de banners cambia y el índice queda fuera de rango (caso: pasar de 3 a 2 banners activos en runtime).
+- **Dots de paginación** (solo cuando hay 2+ banners): row con `role="tablist"`/`role="tab"` y `aria-selected`. El dot activo es naranja (`bg-orange`) y se expande a `w-6 h-2.5`; los inactivos son crema (`bg-[#FFE4C4]`) `w-2.5 h-2.5` con hover `bg-[#FFC98A]`. Posicionado `bottom-[calc(5vh)] 2xl:bottom-[calc(15vh)]` centrado.
+
+---
+
 ## [1.52.0] - 2026-05-28
 
 ### Metadata: soporte para múltiples fuentes y metodologías por capa
