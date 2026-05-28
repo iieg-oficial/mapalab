@@ -5,6 +5,31 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [backend 1.31.0] - 2026-05-28
+
+### Descarga de CSV: cache en Acervo con redirect a presigned URL + streaming asíncrono
+
+El endpoint `/download/{workspace}/{layer}` migra de `psycopg2.copy_expert` (síncrono con pipe entre hilos) a `asyncpg.copy_from_query` sobre un pool dedicado, y añade una capa de cache servida directamente desde Acervo (S3-compatible).
+
+#### Agregado
+
+- **`backend/app/databases/async_pool.py`** (nuevo): pool global `asyncpg` con `ssl='require'`, `min_size=1`, `max_size=max(DB_POOL_SIZE, 4)` y `command_timeout=600`. La función `get_pool()` es lazy y la cierra `close_pool()` durante shutdown.
+- **`backend/app/services/acervo_client.py`** (nuevo): cliente `boto3` S3 lazy contra `ACERVO_PUBLIC_ENDPOINT or ACERVO_ENDPOINT` con `signature_version='s3v4'`. Expone `presign_get(object_key, ttl_seconds=None)` que retorna `None` si faltan credenciales (degrada a generar el CSV en vivo).
+- **`backend/app/repositories/download_repository.py → find_fresh_cache`**: busca en `mapalab.layer_downloads` un `object_key` para `layer_key` cuyo `generated_at >= now() - ttl_hours`. Retorna `None` si no hay registro fresco.
+- **`backend/app/routers/download.py`**: cuando la request no trae `date_from`/`date_to` (full dump) consulta `find_fresh_cache` con `DOWNLOAD_CACHE_TTL_HOURS`. Si hay hit y se puede firmar, responde `307 Redirect` a la presigned URL — el cliente baja el archivo directamente de Acervo. Cuando hay date filter siempre genera en vivo.
+
+#### Cambiado
+
+- **`stream_csv`** ahora es `async` y consume `asyncpg.Pool` en vez de `Session`. Internamente usa `Queue` con `maxsize=16` chunks para backpressure: un task productor llama `copy_from_query(query, *params, output=writer, format='csv', header=True)` y el generador async consume. Pasa `asyncpg.CancelledError` y excepciones por la cola con sentinel para terminar limpio en client disconnect.
+- **`_build_select`**: construye el SELECT con identificadores quoteados y filtros `WHERE fecha >= $1 AND fecha <= $2` parametrizados (`date.fromisoformat`). Antes se usaba `psycopg2.sql.Literal`.
+- **Variables nuevas en `config.py` y `docker-compose.yml`**: `ACERVO_ENDPOINT`, `ACERVO_PUBLIC_ENDPOINT`, `ACERVO_ACCESS_KEY`, `ACERVO_SECRET_KEY`, `ACERVO_BUCKET` (default `mapalab`), `ACERVO_PRESIGN_TTL_SECONDS` (default 3600), `DOWNLOAD_CACHE_TTL_HOURS` (default 36).
+
+#### Por qué
+
+El streaming sync con `os.pipe()` + thread bloqueaba un worker Gunicorn entero por toda la duración del COPY (capas grandes ~minutos). Con `asyncpg` el worker queda libre para atender otras requests mientras Postgres bombea. Adicionalmente, el cache en Acervo evita regenerar el CSV en cada hit: una vez que el job nocturno (no incluido aquí) deja el objeto en S3 con su `layer_downloads.generated_at`, el endpoint responde `307` inmediato y el byte stream lo sirve Acervo (no FastAPI).
+
+---
+
 ## [1.51.0] - 2026-05-26
 
 ### Vista por municipio: restringir interacciones fuera del polígono + botón "Centrar selección"

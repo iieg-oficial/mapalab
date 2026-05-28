@@ -2,6 +2,7 @@ fastapi
 uvicorn[standard]
 sqlalchemy
 psycopg2-binary
+asyncpg
 alembic
 python-dotenv
 coloredlogs
@@ -14,3 +15,4 @@ pytz
 sentry-sdk[fastapi]
 fastmcp
 prometheus-fastapi-instrumentator
+boto3
