@@ -1,8 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
-export const useBaseMapManager = (baseMapRef, basemaps, baseMapId, mapRef) => {
-    const hasLabelsRef = useRef(false);
-
+export const useBaseMapManager = (baseMapRef, basemaps, baseMapId, mapRef, labelsOverlayRef = null) => {
     useEffect(() => {
         if (baseMapRef.current) {
             const config = basemaps[baseMapId];
@@ -10,35 +8,40 @@ export const useBaseMapManager = (baseMapRef, basemaps, baseMapId, mapRef) => {
 
             if (source === null) {
                 baseMapRef.current.setVisible(false);
+                if (labelsOverlayRef?.current) labelsOverlayRef.current.setVisible(false);
             } else {
-                hasLabelsRef.current = false;
                 baseMapRef.current.setVisible(true);
                 baseMapRef.current.setSource(source);
                 baseMapRef.current.setZIndex(-1);
+                if (labelsOverlayRef?.current) {
+                    const overlaySource = config.createLabelsOverlay ? config.createLabelsOverlay() : null;
+                    labelsOverlayRef.current.setSource(overlaySource);
+                }
             }
         }
-    }, [baseMapRef, baseMapId, basemaps]);
+    }, [baseMapRef, baseMapId, basemaps, labelsOverlayRef]);
 
     useEffect(() => {
         const map = mapRef?.current;
-        if (!map) return;
+        if (!map || !labelsOverlayRef) return;
 
         const config = basemaps[baseMapId];
-        if (!config.labelZoomThreshold) return;
+        if (!config.labelZoomThreshold || !config.createLabelsOverlay) {
+            if (labelsOverlayRef.current) labelsOverlayRef.current.setVisible(false);
+            return;
+        }
 
-        const onMoveEnd = () => {
-            if (!baseMapRef.current || !baseMapRef.current.getVisible()) return;
-
+        const evaluate = () => {
+            if (!labelsOverlayRef.current || !baseMapRef.current?.getVisible()) return;
             const zoom = map.getView().getZoom();
-            const shouldHaveLabels = zoom >= config.labelZoomThreshold;
-
-            if (shouldHaveLabels !== hasLabelsRef.current) {
-                hasLabelsRef.current = shouldHaveLabels;
-                baseMapRef.current.setSource(config.create(shouldHaveLabels));
+            const shouldShow = zoom >= config.labelZoomThreshold;
+            if (labelsOverlayRef.current.getVisible() !== shouldShow) {
+                labelsOverlayRef.current.setVisible(shouldShow);
             }
         };
 
-        map.on('moveend', onMoveEnd);
-        return () => map.un('moveend', onMoveEnd);
-    }, [mapRef, baseMapRef, baseMapId, basemaps]);
+        evaluate();
+        map.on('moveend', evaluate);
+        return () => map.un('moveend', evaluate);
+    }, [mapRef, baseMapRef, baseMapId, basemaps, labelsOverlayRef]);
 };

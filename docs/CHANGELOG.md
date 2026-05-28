@@ -5,6 +5,71 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.56.0] - 2026-05-28
+
+### Compartir evento con URL permanente + limpieza del action bar + URL clean-up al borrar capas
+
+Cuatro cambios relacionados que cierran el flujo "abrir un evento desde un enlace y volver al estado base limpiamente".
+
+#### Botón nuevo "compartir evento" en `EventoActionsBar`
+
+Antes el usuario solo podía compartir con el `ShareButton` general, que crea un share nuevo en DB cada vez (hash nuevo, TTL 30 días). Para eventos curados desde mariachi tiene más sentido un enlace **permanente y estable**: el mismo URL siempre apunta al mismo evento, sin tocar DB.
+
+- Botón con ícono `copie` junto a centrar + fun fact. Copia `/mapa?evento=<slug>` al clipboard usando `slugifyTitulo(evento.titulo) || evento.id`.
+- Feedback visual: fondo verde `#DCFCE7` + ícono `shared_click` durante 2.5s.
+- Fallback `window.prompt` si `clipboard.writeText` falla (sin permiso).
+- Telemetría nueva `trackEventoShare(eventoId, status)` → push `evento_share` con `status` (`copied` / `prompt`).
+
+El share normal (`?s=<hash>`) sigue siendo correcto cuando el usuario customiza el mapa. El share de evento es solo para el "estado base" del evento configurado en mariachi.
+
+#### Limpieza del `EventoActionsBar` (quitar todo lo de beta)
+
+Removido del bar:
+- `<Badge text="beta">` al inicio.
+- Border naranja del container.
+- `<ReportButton>` final + telemetría `trackEventoReport` ya no se usa.
+- Constante `IS_NON_PROD` y los gates asociados.
+
+Container queda con `border border-transparent bg-[#F9FBFF]` (el estilo que antes era solo de producción). Layout final: `[Switch "Solo este evento"]   [Centrar] [Compartir] [FunButton]`.
+
+#### Fix: el URL `?evento=` no abría el panel ni autoactivaba capas
+
+Dos bugs encadenados:
+
+1. **`useAutoOpenEventoFromUrl`** seteaba `autoOpenMenuId = 'evento-${match.id}'`, pero los eventos hoy se renderizan vía `ExternalEventoWidget` con item.id `'ext-evento-${evento.id}'` (el prefijo `ext-` los disambigua del path alternativo `createEventoItems`, gated por `SIDER_EVENTS_ENABLED=false`). `MenuItem` compara con `===` → nunca matcheaba. **Fix**: el hook ahora setea `'ext-evento-${match.id}'`.
+
+2. **`ExternalEventoItem`** pasaba `autoOpenMenuId={null}` y `clearAutoOpenMenu={() => {}}` hardcodeados a su `<MenuItem>`. Aunque el hook escribía en el estado del `MapSider`, nunca llegaba a este árbol. **Fix**: nueva cadena `MapSider` → `ExternalEventoWidget` → `ExternalEventoItem` → `MenuItem` propagando ambos props.
+
+Con ambos fixes, `/mapa?evento=<slug>` ahora: (1) matchea por slug/id/título, (2) abre el panel del evento, (3) `EventoMenu` monta y dispara su efecto de auto-activación que prende todas las capas con `autoActivar !== false`, (4) centra el mapa en el `bbox` si no había ya capas del evento activas.
+
+#### Limpieza de URL al borrar todas las capas activas
+
+En `handleRemoveAll` del panel de capas activas, tras desactivar capas y resetear simbología ahora llama `setSearchParams({}, { replace: true })` — limpia toda la query string. Antes, si el usuario llegaba por `/mapa?evento=X` y borraba todas, el URL seguía con `?evento=X` y un refresh reactivaba todo. Aplica también a `?s=`, `?filter_*`, etc. — borrar todas las capas es conceptualmente "reset total". `replace: true` evita meter una entrada nueva al history.
+
+---
+
+## [1.55.0] - 2026-05-28
+
+### Corregido: el basemap ya no parpadea (flash blanco) al cruzar zoom 15
+
+Los basemaps Carto (Voyager y Light) tenían `labelZoomThreshold: 15` y al cruzar ese zoom, `useBaseMapManager` hacía `setSource(otraURL)` reemplazando el source completo del basemap. Eso invalidaba TODAS las tiles cacheadas mientras descargaba el nuevo source (la versión con labels), causando un flash blanco visible cada vez que el usuario cruzaba zoom 15 en cualquier dirección.
+
+#### Solución: overlay de labels en capa separada
+
+Se separó el basemap en dos `TileLayer` independientes:
+
+- **Basemap principal** (`zIndex: -1`): siempre usa la URL `_nolabels`. Su source se carga UNA vez al inicializar y solo cambia cuando el usuario elige otro basemap desde el panel (Voyager ↔ Light ↔ Sin Mapa). En navegación normal nunca se invalida → cero flash.
+- **Labels overlay** (`zIndex: 9000`): segundo `TileLayer` con la URL `_only_labels` correspondiente al basemap activo. En vez de `setSource()` en cada cambio de zoom, ahora se hace `setVisible(true/false)` según se cruce el threshold. Las tiles del overlay también permanecen cacheadas entre cambios.
+
+#### Que cambió
+
+- **`frontend/src/pages/maps/helpers/basemaps.js`**: helper interno `cartoSource(path)` para deduplicar configuración común. `create()` siempre devuelve la versión `_nolabels` (sin parámetro `withLabels`). Nueva función `createLabelsOverlay()` por basemap que devuelve el source `_only_labels` (Voyager: `rastertiles/voyager_only_labels`, Light: `light_only_labels`). El basemap "Sin Mapa Base" no expone `createLabelsOverlay` — el overlay queda oculto.
+- **`frontend/src/pages/maps/hooks/useMapInitialization.js`**: el `OLMap` se inicializa con DOS layers en vez de uno. Nuevo parámetro `labelsOverlayRef` que se popula con `map.getLayers().item(1)`. El overlay arranca con `visible: false`.
+- **`frontend/src/pages/maps/hooks/useBaseMapManager.js`**: refactor. El effect que escucha `moveend` ya no reemplaza el source del basemap; solo hace `setVisible()` sobre el overlay. El effect que reacciona a cambio de `baseMapId` ahora actualiza también el source del overlay si el nuevo basemap soporta labels.
+- **`frontend/src/pages/maps/components/MapView.jsx`**: crea `labelsOverlayRef` y lo pasa a `useMapInitialization` y `useBaseMapManager`.
+
+---
+
 ## [1.54.2] - 2026-05-28
 
 ### Estilo: botón Descargar respeta el estado colapsado del MapToolsPanel + MunicipioFilter flexible

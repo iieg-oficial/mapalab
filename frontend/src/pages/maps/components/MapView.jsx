@@ -65,6 +65,7 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
 
     const { queryFeatures, queryFeaturesInPolygon } = useFeatureInfo(featureInfoOverrides);
     const baseMapRef = useRef(null);
+    const labelsOverlayRef = useRef(null);
 
     const handlePaneClick = useCallback(async (map, coordinate, evt) => {
         if (isCompare && !isActiveSlotPane && setActiveSlot) {
@@ -78,8 +79,8 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         queryFeaturesInPolygonRef.current = queryFeaturesInPolygon;
     }, [queryFeaturesInPolygon, queryFeaturesInPolygonRef, isCompare]);
 
-    const { mapInstance: localMapInstance } = useMapInitialization({ targetRef, mapRef, baseMapRef, basemaps: ctx.basemaps, baseMapId: ctx.baseMapId });
-    useBaseMapManager(baseMapRef, ctx.basemaps, ctx.baseMapId, mapRef);
+    const { mapInstance: localMapInstance } = useMapInitialization({ targetRef, mapRef, baseMapRef, labelsOverlayRef, basemaps: ctx.basemaps, baseMapId: ctx.baseMapId });
+    useBaseMapManager(baseMapRef, ctx.basemaps, ctx.baseMapId, mapRef, labelsOverlayRef);
 
     useEffect(() => {
         if (!isCompare || !setPaneMapInstance) return undefined;
