@@ -33,10 +33,22 @@ class MetadatoItem(BaseModel):
     nombre: str
     enlace: str
 
+class FuenteItem(BaseModel):
+    corto: Optional[str] = Field(default=None)
+    largo: Optional[str] = Field(default=None)
+    enlace: Optional[str] = Field(default=None)
+    enlace_label: Optional[str] = Field(default=None)
+
+class MetodologiaItem(BaseModel):
+    texto: Optional[str] = Field(default=None)
+    archivo_enlace: Optional[str] = Field(default=None)
+
 class MetadataResponse(LayerResponse):
     numeralia: Optional[list] = Field(default = None)
     nombre_pie_numeralia : Optional[str] = Field(default = None)
     metadato: Optional[list[MetadatoItem]] = Field(default = None)
+    fuentes: Optional[list[FuenteItem]] = Field(default = None)
+    metodologia: Optional[list[MetodologiaItem]] = Field(default = None)
 
 class LayerSourceResponse(BaseModel):
     nombre_capa_geoserver: str

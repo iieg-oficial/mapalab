@@ -5,6 +5,29 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.52.0] - 2026-05-28
+
+### Metadata: soporte para múltiples fuentes y metodologías por capa
+
+Algunas capas declaran más de una fuente original (varios institutos) o más de una metodología (calculo + recolección). Hasta `1.51.0` el backend exponía solo la primera; el modal de detalle solo renderizaba un bloque. Ahora ambas dimensiones se modelan como arrays con render apilado.
+
+#### Backend (`1.32.0`)
+
+- **`backend/app/schemas/metadata.py`**: nuevos `FuenteItem` (`corto`, `largo`, `enlace`, `enlace_label`) y `MetodologiaItem` (`texto`, `archivo_enlace`). `MetadataResponse` agrega `fuentes: list[FuenteItem] | None` y `metodologia: list[MetodologiaItem] | None`.
+- **`backend/app/services/layer_metadata_service.py`**:
+  - Helper `_to_list_of_dicts(value)` normaliza el JSON guardado en DB (acepta dict legacy, lista de dicts o `None`) descartando entries cuyo único contenido sean strings vacíos.
+  - `get_metadata_response` mantiene los campos flat legacy (`fuentes_texto_corto/largo/enlace`, `metodologia_texto/archivo_enlace`) apuntando al **primer** item de cada lista para no romper consumers viejos, y agrega los nuevos arrays `fuentes`/`metodologia`.
+  - `get_sources_batch` también consume `_to_list_of_dicts` para evitar AttributeError si el row trae lista en vez de dict.
+
+#### Frontend (`1.52.0`)
+
+- **`LayerInfoSections.jsx`**:
+  - Nuevos normalizers `normalizeFuentes(metadata)` y `normalizeMetodologia(metadata)` que prefieren los arrays nuevos del backend pero hacen fallback a los flat fields (split de `fuentes_enlace` por comas se conserva como caso especial). Mantiene compatibilidad con respuestas mientras DataEngine migra todos los registros al formato lista.
+  - Render apilado con `flex flex-col gap-3` entre items. Título se pluraliza automáticamente: "Fuente"/"Metodología" cuando hay 1, "Fuentes"/"Metodologías" cuando hay 2+.
+  - Cada fuente puede traer su propio `enlace_label` (configurable desde mariachi); fallback a `corto`, luego a `"Ver fuente"` / `"Fuente N"`. Metodologías múltiples usan `"Ver documento N"`.
+
+---
+
 ## [backend 1.31.0] - 2026-05-28
 
 ### Descarga de CSV: cache en Acervo con redirect a presigned URL + streaming asíncrono
