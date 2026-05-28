@@ -5,6 +5,54 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.57.0] - 2026-05-28
+
+### Banner del home: fondo configurable desde mariachi (imagen mobile/desktop + gradient editable)
+
+El banner del home (`pages/home/components/Header.jsx`) solo permitía cambiar el mockup ilustrativo y el texto desde mariachi; el fondo estaba fijo al gradiente morado IIEG (`#5C2472` → `#963CBA` 359°) hardcodeado en el componente, con una variante extra de alpha `0.9` para mobile. Ahora cada item del banner consume del API de mariachi (v1.20.0) 5 campos opcionales nuevos para personalizar el fondo y el gradiente, con comportamiento condicional por breakpoint para no recortar feo en pantallas chicas.
+
+#### Campos consumidos del API mariachi `/api/mapalab/home`
+
+- `imagenUrlMobile` — imagen de fondo en mobile (`<768px`).
+- `imagenUrlDesktop` — imagen de fondo full-width en tablet/desktop.
+- `gradientFrom`, `gradientTo`, `gradientAngle` — colores hex y dirección del gradiente cuando no hay imagen.
+- `imagenUrl` (legacy) — sigue siendo el mockup flotante a la derecha en desktop y el fondo en tablet cuando no hay `imagenUrlDesktop`.
+
+#### Lógica de los 3 estilos
+
+- `banners.map` ahora propaga `mobileBgUrl`, `desktopBgUrl` y un objeto `gradient` con merge contra el fallback de `bannerConfig.js` (`api.gradientFrom || fallback.gradient.from`, etc.). El `image.src` deja de hacer fallback al bundled — queda vacío si la API no manda `imagenUrl`.
+- `mobileStyle`/`tableStyle`/`desktopStyle` con la misma forma: **si hay imagen → `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(bg)` con `cover, cover`** (scrim oscuro fijo para legibilidad del texto blanco encima, independiente del gradient editable). Si no hay imagen → `linear-gradient(angle, from, to)` con el `activeBanner.gradient` editable.
+- `tableStyle` mantiene un nivel intermedio: si no hay `desktopBgUrl`, cae al comportamiento legacy donde `imagenUrl` (mockup) se usaba como fondo con el gradient como overlay (`E6` alpha). Preserva el seed actual del banner sin cambios.
+- El `mobileStyle` que tenía colores hardcoded `rgba(92,36,114,0.9)` / `rgba(150,60,186,0.9)` con ángulo `359deg` fijo ahora usa `activeBanner.gradient` igual que desktop. Los 3 breakpoints respetan el override del editor.
+
+#### Mockup flotante de desktop ahora es opcional
+
+El `<img>` flotante a la derecha en desktop (`hidden xl:block w-[35vw] ...`) ahora se renderiza solo si `mockupSrc` (que viene de `api.imagenUrl`) no está vacío:
+
+```jsx
+{mockupSrc && (
+    <div className="hidden xl:block w-[35vw] absolute right-0 ...">
+        <img src={mockupSrc} alt={activeBanner.image.alt} ... />
+    </div>
+)}
+```
+
+Antes siempre se renderizaba haciendo fallback a `bannerHeader.webp` bundled. Ahora si el editor del CMS deja vacío "Mockup/ilustración", el banner desktop queda sin el ilustrativo y la sección de texto/CTA respira más.
+
+#### Matriz de comportamiento resultante
+
+| Caso | Mobile | Tablet | Desktop |
+|---|---|---|---|
+| Sin nada configurado | Gradient editado o morado IIEG | Mockup `imagenUrl` como bg + gradient overlay (legacy) | Gradient + mockup flotante |
+| Solo `gradientFrom`/`To`/`Angle` editados | Gradient custom | Igual (legacy) | Gradient custom |
+| Solo `imagenUrlMobile` | Imagen + scrim oscuro | Legacy o gradient | Gradient |
+| Solo `imagenUrlDesktop` | Gradient | Imagen + scrim | Imagen + scrim |
+| Todo | Imagen mobile + scrim | Imagen desktop + scrim | Imagen desktop + scrim + mockup flotante encima |
+
+Sin cambios en otras secciones del home ni en el polling de cache-version. Lado mariachi: v1.20.0 (schema + editor). Detalle completo en `mariachi/docs/CHANGELOG.md` §[1.20.0].
+
+---
+
 ## [1.56.0] - 2026-05-28
 
 ### Compartir evento con URL permanente + limpieza del action bar + URL clean-up al borrar capas

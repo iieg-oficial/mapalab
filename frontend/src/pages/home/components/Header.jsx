@@ -19,8 +19,15 @@ const Header = () => {
             ...fallback,
             logoUrl: api.logoUrl || '',
             image: {
-                src: api.imagenUrl || fallback.image.src,
+                src: api.imagenUrl || '',
                 alt: api.titulo,
+            },
+            mobileBgUrl: api.imagenUrlMobile || '',
+            desktopBgUrl: api.imagenUrlDesktop || '',
+            gradient: {
+                from: api.gradientFrom || fallback.gradient.from,
+                to: api.gradientTo || fallback.gradient.to,
+                angle: api.gradientAngle || fallback.gradient.angle,
             },
             content: {
                 titleHighlight: '',
@@ -71,23 +78,50 @@ const Header = () => {
         return () => observer.disconnect();
     }, []);
 
-    const mobileStyle = {
-        backgroundImage: `linear-gradient(359deg, rgba(92, 36, 114, 0.9) 0%, rgba(150, 60, 186, 0.9) 100%)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-    };
+    const SCRIM = 'rgba(0, 0, 0, 0.35)';
+    const mobileBgUrl = activeBanner.mobileBgUrl;
+    const desktopBgUrl = activeBanner.desktopBgUrl;
+    const mockupSrc = activeBanner.image?.src || '';
 
-    const tableStyle = {
-        backgroundImage: `linear-gradient(${activeBanner.gradient.angle}, ${activeBanner.gradient.from}E6 0%, ${activeBanner.gradient.to}E6 100%), url(${activeBanner.image.src})`,
-        backgroundSize: 'cover, cover',
-        backgroundPosition: 'center, center',
-        backgroundRepeat: 'no-repeat, no-repeat',
-    };
+    const mobileStyle = mobileBgUrl
+        ? {
+            backgroundImage: `linear-gradient(${SCRIM}, ${SCRIM}), url(${mobileBgUrl})`,
+            backgroundSize: 'cover, cover',
+            backgroundPosition: 'center, center',
+            backgroundRepeat: 'no-repeat, no-repeat',
+        }
+        : {
+            backgroundImage: `linear-gradient(${activeBanner.gradient.angle}, ${activeBanner.gradient.from} 0%, ${activeBanner.gradient.to} 100%)`,
+        };
 
-    const desktopStyle = {
-        backgroundImage: `linear-gradient(${activeBanner.gradient.angle}, ${activeBanner.gradient.from} 0%, ${activeBanner.gradient.to} 100%)`,
-    };
+    const tableStyle = desktopBgUrl
+        ? {
+            backgroundImage: `linear-gradient(${SCRIM}, ${SCRIM}), url(${desktopBgUrl})`,
+            backgroundSize: 'cover, cover',
+            backgroundPosition: 'center, center',
+            backgroundRepeat: 'no-repeat, no-repeat',
+        }
+        : mockupSrc
+            ? {
+                backgroundImage: `linear-gradient(${activeBanner.gradient.angle}, ${activeBanner.gradient.from}E6 0%, ${activeBanner.gradient.to}E6 100%), url(${mockupSrc})`,
+                backgroundSize: 'cover, cover',
+                backgroundPosition: 'center, center',
+                backgroundRepeat: 'no-repeat, no-repeat',
+            }
+            : {
+                backgroundImage: `linear-gradient(${activeBanner.gradient.angle}, ${activeBanner.gradient.from} 0%, ${activeBanner.gradient.to} 100%)`,
+            };
+
+    const desktopStyle = desktopBgUrl
+        ? {
+            backgroundImage: `linear-gradient(${SCRIM}, ${SCRIM}), url(${desktopBgUrl})`,
+            backgroundSize: 'cover, cover',
+            backgroundPosition: 'center, center',
+            backgroundRepeat: 'no-repeat, no-repeat',
+        }
+        : {
+            backgroundImage: `linear-gradient(${activeBanner.gradient.angle}, ${activeBanner.gradient.from} 0%, ${activeBanner.gradient.to} 100%)`,
+        };
 
     return (
         <>
@@ -119,13 +153,15 @@ const Header = () => {
                     />
                 </div>
 
-                <div className="hidden xl:block w-[35vw] absolute right-0 top-[20%] 2xl:top-[12%] 3xl:top-[10%] overflow-visible">
-                    <img
-                        src={activeBanner.image.src}
-                        alt={activeBanner.image.alt}
-                        className="w-full h-auto 2xl:w-full 2xl:h-auto 3xl:max-w-[723px] 3xl:max-h-[583px] object-cover float-right"
-                    />
-                </div>
+                {mockupSrc && (
+                    <div className="hidden xl:block w-[35vw] absolute right-0 top-[20%] 2xl:top-[12%] 3xl:top-[10%] overflow-visible">
+                        <img
+                            src={mockupSrc}
+                            alt={activeBanner.image.alt}
+                            className="w-full h-auto 2xl:w-full 2xl:h-auto 3xl:max-w-[723px] 3xl:max-h-[583px] object-cover float-right"
+                        />
+                    </div>
+                )}
 
                 <div className="relative z-10 h-full 2xl:h-[70%] flex flex-col xl:flex-row items-center justify-center xl:justify-start 2xl:gap-36 xl:container xl:mx-auto">
                     <div className="hidden 2xl:flex 2xl:w-[20vw] 3xl:w-[25vw] justify-end 2xl:mb-18">
