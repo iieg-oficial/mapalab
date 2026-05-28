@@ -5,6 +5,28 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.55.0] - 2026-05-28
+
+### Corregido: el basemap ya no parpadea (flash blanco) al cruzar zoom 15
+
+Los basemaps Carto (Voyager y Light) tenían `labelZoomThreshold: 15` y al cruzar ese zoom, `useBaseMapManager` hacía `setSource(otraURL)` reemplazando el source completo del basemap. Eso invalidaba TODAS las tiles cacheadas mientras descargaba el nuevo source (la versión con labels), causando un flash blanco visible cada vez que el usuario cruzaba zoom 15 en cualquier dirección.
+
+#### Solución: overlay de labels en capa separada
+
+Se separó el basemap en dos `TileLayer` independientes:
+
+- **Basemap principal** (`zIndex: -1`): siempre usa la URL `_nolabels`. Su source se carga UNA vez al inicializar y solo cambia cuando el usuario elige otro basemap desde el panel (Voyager ↔ Light ↔ Sin Mapa). En navegación normal nunca se invalida → cero flash.
+- **Labels overlay** (`zIndex: 9000`): segundo `TileLayer` con la URL `_only_labels` correspondiente al basemap activo. En vez de `setSource()` en cada cambio de zoom, ahora se hace `setVisible(true/false)` según se cruce el threshold. Las tiles del overlay también permanecen cacheadas entre cambios.
+
+#### Que cambió
+
+- **`frontend/src/pages/maps/helpers/basemaps.js`**: helper interno `cartoSource(path)` para deduplicar configuración común. `create()` siempre devuelve la versión `_nolabels` (sin parámetro `withLabels`). Nueva función `createLabelsOverlay()` por basemap que devuelve el source `_only_labels` (Voyager: `rastertiles/voyager_only_labels`, Light: `light_only_labels`). El basemap "Sin Mapa Base" no expone `createLabelsOverlay` — el overlay queda oculto.
+- **`frontend/src/pages/maps/hooks/useMapInitialization.js`**: el `OLMap` se inicializa con DOS layers en vez de uno. Nuevo parámetro `labelsOverlayRef` que se popula con `map.getLayers().item(1)`. El overlay arranca con `visible: false`.
+- **`frontend/src/pages/maps/hooks/useBaseMapManager.js`**: refactor. El effect que escucha `moveend` ya no reemplaza el source del basemap; solo hace `setVisible()` sobre el overlay. El effect que reacciona a cambio de `baseMapId` ahora actualiza también el source del overlay si el nuevo basemap soporta labels.
+- **`frontend/src/pages/maps/components/MapView.jsx`**: crea `labelsOverlayRef` y lo pasa a `useMapInitialization` y `useBaseMapManager`.
+
+---
+
 ## [1.54.2] - 2026-05-28
 
 ### Estilo: botón Descargar respeta el estado colapsado del MapToolsPanel + MunicipioFilter flexible

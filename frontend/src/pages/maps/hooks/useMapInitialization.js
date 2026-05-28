@@ -6,7 +6,7 @@ import TileLayer from 'ol/layer/Tile';
 import { fromLonLat } from 'ol/proj';
 import { getDefaultMapView, getMinZoom } from '@pages/maps/helpers/defaultView';
 
-export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, baseMapId }) => {
+export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOverlayRef, basemaps, baseMapId }) => {
     const [searchParams] = useSearchParams();
     const [mapInstance, setMapInstance] = useState(null);
 
@@ -40,8 +40,13 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, 
             return originalGetContext.call(this, contextType, contextAttributes);
         };
 
+        const initialConfig = basemaps[baseMapId];
+        const labelsOverlaySource = initialConfig.createLabelsOverlay
+            ? initialConfig.createLabelsOverlay()
+            : null;
         const initialLayers = [
-            new TileLayer({ source: basemaps[baseMapId].create(), zIndex: -1 })
+            new TileLayer({ source: initialConfig.create(), zIndex: -1 }),
+            new TileLayer({ source: labelsOverlaySource, zIndex: 9000, visible: false }),
         ];
 
         const map = new OLMap({
@@ -66,6 +71,7 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, 
 
         mapRef.current = map;
         baseMapRef.current = map.getLayers().item(0);
+        if (labelsOverlayRef) labelsOverlayRef.current = map.getLayers().item(1);
         setMapInstance(map);
 
         return () => {
@@ -74,6 +80,7 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, basemaps, 
             }
             mapRef.current = null;
             baseMapRef.current = null;
+            if (labelsOverlayRef) labelsOverlayRef.current = null;
             setMapInstance(null);
             HTMLCanvasElement.prototype.getContext = originalGetContext;
         };
