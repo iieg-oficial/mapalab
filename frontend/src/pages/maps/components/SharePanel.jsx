@@ -10,6 +10,8 @@ import { createShare, pinShare } from '@services/shareService';
 import { trackShareMap } from '@services/analyticsService';
 import { useMapsContext } from '@hooks/useMaps';
 
+const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
+
 const buildShareUrl = (id) => {
     const base = window.location.origin;
     const path = (import.meta.env.VITE_BASE_PATH || '/').replace(/\/?$/, '/');
@@ -173,27 +175,29 @@ const SharePanel = ({ isDirty = false, loadedShareId = null, onShareCreated }) =
                 </div>
             )}
 
-            <div role="tablist" aria-label="Modo de compartir" className="flex gap-1 border-b border-[#EAEFFA] mb-4">
-                <button
-                    type="button"
-                    role="tab"
-                    aria-selected={tab === 'link'}
-                    onClick={() => setTab('link')}
-                    className={tabButtonClass('link')}
-                >
-                    Enlace
-                </button>
-                <button
-                    type="button"
-                    role="tab"
-                    aria-selected={tab === 'embed'}
-                    onClick={() => setTab('embed')}
-                    className={tabButtonClass('embed')}
-                >
-                    Insertar
-                    <Badge variant="pill" color="orange" text="BETA" className="absolute -top-1 -right-2 text-[8px] px-1.5" />
-                </button>
-            </div>
+            {IS_NON_PROD && (
+                <div role="tablist" aria-label="Modo de compartir" className="flex gap-1 border-b border-[#EAEFFA] mb-4">
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={tab === 'link'}
+                        onClick={() => setTab('link')}
+                        className={tabButtonClass('link')}
+                    >
+                        Enlace
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={tab === 'embed'}
+                        onClick={() => setTab('embed')}
+                        className={tabButtonClass('embed')}
+                    >
+                        Insertar
+                        <Badge variant="pill" color="orange" text="BETA" className="absolute -top-1 -right-2 text-[8px] px-1.5" />
+                    </button>
+                </div>
+            )}
 
             {tab === 'link' && (
                 <div className="flex flex-col gap-3">
@@ -250,7 +254,7 @@ const SharePanel = ({ isDirty = false, loadedShareId = null, onShareCreated }) =
                 </div>
             )}
 
-            {tab === 'embed' && (
+            {IS_NON_PROD && tab === 'embed' && (
                 <div className="flex flex-col gap-3">
                     <p className="text-[11px]/[16px] font-garet text-graphite">
                         Inserta el mapa en otro sitio con un Web Component. Pega el código en tu HTML y reemplaza{' '}

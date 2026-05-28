@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.54.1] - 2026-05-28
+
+### Corregido: el tab "Insertar" del panel Compartir ya no aparece en producción
+
+`SharePanel.jsx` exponía dos tabs ("Enlace" e "Insertar") en todos los ambientes. La pestaña Insertar todavía está marcada como BETA (Web Component embebible) y el endpoint del backend para servir el bundle aún no está habilitado en producción, así que pulsarla en prod no funcionaba.
+
+Cambio: `IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV)`. El `<div role="tablist">` con los dos botones de tab y el contenido de `tab === 'embed'` se renderizan solo si `IS_NON_PROD`. En producción se ve directamente el contenido del tab Enlace sin la franja de tabs encima.
+
+---
+
 ## [1.54.0] - 2026-05-28
 
 ### InfoBox y leyenda de descarga: nombres heredan alias del grupo padre vía EventoContext
