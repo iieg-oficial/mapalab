@@ -36,7 +36,7 @@ const MunicipioFilterButton = ({ municipioMode, onOpenChange, collapsed = false 
     const showLabel = !isMobile && !collapsed;
 
     return (
-        <div className="flex flex-col relative w-full">
+        <div className={`flex flex-col relative ${showLabel ? 'flex-1 min-w-0' : ''}`}>
             <Tooltip content="Vista por municipio" placement="top" delay={300}>
                 <button
                     ref={anchorRef}

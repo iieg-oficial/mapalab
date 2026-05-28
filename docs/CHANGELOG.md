@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.54.2] - 2026-05-28
+
+### Estilo: botón Descargar respeta el estado colapsado del MapToolsPanel + MunicipioFilter flexible
+
+Pulir el layout del row de herramientas cuando el panel está colapsado (icon-only) vs expandido.
+
+#### Cambiado
+
+- **`Download.jsx`**: acepta nuevo prop `collapsed` (default `false`) propagado desde `MapToolsPanel` (`isCollapsed` del localStorage `mapalab.tools.collapsed`). Cuando `collapsed || isMobile` el botón rinde solo el ícono `download` con ancho `w-12.5`; en estado expandido pasa de `md:w-[235px]` a `md:w-30` y el label se acorta de "Descargar visualización" a "Descargar" para encajar.
+- **`MunicipioFilterButton.jsx`**: el wrapper externo dejaba de ocupar todo el ancho en estado expandido, lo que hacía que los hijos `showLabel` se truncaran de forma inconsistente. Ahora alterna entre `flex-1 min-w-0` (modo label) y sin clases extras (modo icon) para que el botón crezca hasta el ancho disponible sin desbordar.
+- **`LayerItem.jsx`**: limpieza de trailing space en el className concatenado (no afecta render).
+
+---
+
 ## [1.54.1] - 2026-05-28
 
 ### Corregido: el tab "Insertar" del panel Compartir ya no aparece en producción
