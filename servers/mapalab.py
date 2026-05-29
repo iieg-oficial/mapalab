@@ -379,3 +379,7 @@ app = FastAPI(
     lifespan=combine_lifespans(lifespan, mcp_app.lifespan),
 )
 app.add_middleware(MCPTelemetryMiddleware, path_prefix='/mcp')
+
+if __name__ == "__main__":
+    mcp.run()
+
