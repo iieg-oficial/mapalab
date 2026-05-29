@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLayerSelection } from '@pages/maps/hooks/useLayerSelectionPulse';
 import * as capabilitiesService from '@services/wmsCapabilitiesService';
-import * as featuresService from '@services/layerFeaturesService';
 
 const buildMockLayer = (mergedSubIds = null, opacity = 1) => {
     const ol = {
@@ -162,18 +161,7 @@ describe('useLayerSelection - pulseLayer', () => {
         expect(ok).toBe(false);
     });
 
-    it('retorna false si no hay otras capas WMS para atenuar ni features', async () => {
-        vi.spyOn(featuresService, 'fetchLayerFeaturesInBbox').mockResolvedValue(null);
-        const map = buildMockMap([0, 0, 100, 100], []);
-        const { result } = renderHook(() => useLayerSelection({
-            mapRef: { current: map }, paneMapInstances: {}, compareMode: { active: false }, allLayers: buildLayers(),
-        }));
-        const ok = await result.current.pulseLayer('cap-1');
-        expect(ok).toBe(false);
-    });
-
     it('atenúa las capas WMS que NO contienen el layerId seleccionado', async () => {
-        vi.spyOn(featuresService, 'fetchLayerFeaturesInBbox').mockResolvedValue(null);
         vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
         const otra = buildMockLayer(['cap-2'], 1);
         const selectedLayer = buildMockLayer(['cap-1'], 1);
@@ -183,33 +171,12 @@ describe('useLayerSelection - pulseLayer', () => {
         }));
         const ok = await result.current.pulseLayer('cap-1');
         expect(ok).toBe(true);
-        // Otra capa va a setOpacity; la seleccionada no
-        expect(otra.setOpacity).not.toHaveBeenCalled(); // antes del primer frame de RAF
+        expect(otra.setOpacity).toHaveBeenCalledWith(0);
         expect(selectedLayer.setOpacity).not.toHaveBeenCalled();
     });
 
-    it('agrega highlight layer al mapa cuando llegan features de WFS', async () => {
-        const fc = {
-            type: 'FeatureCollection',
-            features: [{
-                type: 'Feature',
-                geometry: { type: 'Point', coordinates: [0, 0] },
-                properties: {},
-            }],
-        };
-        vi.spyOn(featuresService, 'fetchLayerFeaturesInBbox').mockResolvedValue(fc);
-        vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
-        const map = buildMockMap([0, 0, 100, 100], []);
-        const { result } = renderHook(() => useLayerSelection({
-            mapRef: { current: map }, paneMapInstances: {}, compareMode: { active: false }, allLayers: buildLayers(),
-        }));
-        const ok = await result.current.pulseLayer('cap-1');
-        expect(ok).toBe(true);
-        expect(map.addLayer).toHaveBeenCalled();
-    });
 
     it('al desmontar limpia animación y restaura opacidades originales', async () => {
-        vi.spyOn(featuresService, 'fetchLayerFeaturesInBbox').mockResolvedValue(null);
         vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(42);
         const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame');
         const otra = buildMockLayer(['cap-2'], 0.8);
@@ -220,7 +187,6 @@ describe('useLayerSelection - pulseLayer', () => {
         await act(async () => { await result.current.pulseLayer('cap-1'); });
         unmount();
         expect(cancelSpy).toHaveBeenCalled();
-        // Tras cleanup, otra capa vuelve a su opacidad original
         expect(otra.setOpacity).toHaveBeenLastCalledWith(0.8);
     });
 });
