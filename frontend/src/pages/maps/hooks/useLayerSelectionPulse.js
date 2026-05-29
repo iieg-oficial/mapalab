@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import Feature from 'ol/Feature';
-import Polygon from 'ol/geom/Polygon';
 import Style from 'ol/style/Style';
 import Stroke from 'ol/style/Stroke';
 import Fill from 'ol/style/Fill';
@@ -13,28 +11,11 @@ import { findLayerById, collectLayersWithWMS } from '@pages/maps/helpers/layers/
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { fetchLayerFeaturesInBbox } from '@services/layerFeaturesService';
 
-const PULSE_Z_INDEX = 999;
+const PULSE_Z_INDEX = 1000;
 const PULSE_DURATION_MS = 3000;
-const PULSE_MAX_OPACITY = 0.5;
-const MASK_FEATURE_ID = '__pulse_mask';
-const HIGHLIGHT_FEATURE_PROP = '__pulse_highlight';
+const DIM_FACTOR = 0.5;
 
 const geoJSONFormat = new GeoJSON();
-
-const VIEWPORT_PADDING_FACTOR = 4;
-
-const extentToCoords = ([minx, miny, maxx, maxy]) => [
-    [minx, miny], [maxx, miny], [maxx, maxy], [minx, maxy], [minx, miny],
-];
-
-const reverseCoords = (coords) => coords.slice().reverse();
-
-const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-
-const maskStyle = new Style({
-    fill: new Fill({ color: 'rgba(15, 23, 42, 1)' }),
-    stroke: null,
-});
 
 const highlightStyle = new Style({
     stroke: new Stroke({ color: '#5C2472', width: 2.5, lineCap: 'round', lineJoin: 'round' }),
@@ -46,44 +27,13 @@ const highlightStyle = new Style({
     }),
 });
 
-const buildPulseLayers = () => {
-    const maskSource = new VectorSource();
-    const maskLayer = new VectorLayer({
-        source: maskSource,
-        zIndex: PULSE_Z_INDEX,
-        style: maskStyle,
-    });
-    maskLayer.setOpacity(0);
+const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
-    const highlightSource = new VectorSource();
-    const highlightLayer = new VectorLayer({
-        source: highlightSource,
-        zIndex: PULSE_Z_INDEX + 1,
-        style: highlightStyle,
-    });
-    highlightLayer.setOpacity(0);
-
-    return { maskSource, maskLayer, highlightSource, highlightLayer };
-};
-
-const buildFeatures = (extent, viewExtent) => {
-    const layerCoords = extentToCoords(extent);
-    const [vminx, vminy, vmaxx, vmaxy] = viewExtent;
-    const w = vmaxx - vminx;
-    const h = vmaxy - vminy;
-    const outer = [
-        [vminx - w * VIEWPORT_PADDING_FACTOR, vminy - h * VIEWPORT_PADDING_FACTOR],
-        [vmaxx + w * VIEWPORT_PADDING_FACTOR, vminy - h * VIEWPORT_PADDING_FACTOR],
-        [vmaxx + w * VIEWPORT_PADDING_FACTOR, vmaxy + h * VIEWPORT_PADDING_FACTOR],
-        [vminx - w * VIEWPORT_PADDING_FACTOR, vmaxy + h * VIEWPORT_PADDING_FACTOR],
-        [vminx - w * VIEWPORT_PADDING_FACTOR, vminy - h * VIEWPORT_PADDING_FACTOR],
-    ];
-    const inner = reverseCoords(layerCoords);
-
-    const mask = new Feature({ geometry: new Polygon([outer, inner]) });
-    mask.setId(MASK_FEATURE_ID);
-
-    return [mask];
+const buildHighlightLayer = () => {
+    const source = new VectorSource();
+    const layer = new VectorLayer({ source, zIndex: PULSE_Z_INDEX, style: highlightStyle });
+    layer.setOpacity(0);
+    return { source, layer };
 };
 
 const collectWMSNodes = (layerId, allLayers) => {
@@ -104,7 +54,7 @@ export const resolveLayerExtent3857 = async (layerId, allLayers) => {
     return isEmpty(union) ? null : union;
 };
 
-const fetchLayerHighlightFeatures = async (layerId, allLayers, viewExtent) => {
+const fetchHighlightFeatures = async (layerId, allLayers, viewExtent) => {
     const nodesWithWMS = collectWMSNodes(layerId, allLayers);
     if (!nodesWithWMS.length) return null;
     const collections = await Promise.all(
@@ -119,10 +69,7 @@ const fetchLayerHighlightFeatures = async (layerId, allLayers, viewExtent) => {
                 featureProjection: 'EPSG:3857',
             });
             for (const f of parsed) {
-                if (f.getGeometry()) {
-                    f.set(HIGHLIGHT_FEATURE_PROP, true);
-                    olFeatures.push(f);
-                }
+                if (f.getGeometry()) olFeatures.push(f);
             }
         } catch {
             // skip malformed collection
@@ -131,13 +78,24 @@ const fetchLayerHighlightFeatures = async (layerId, allLayers, viewExtent) => {
     return olFeatures.length ? olFeatures : null;
 };
 
-const computeFeaturesExtent = (features) => {
-    const union = createEmpty();
-    for (const f of features) {
-        const g = f.getGeometry();
-        if (g) extend(union, g.getExtent());
-    }
-    return isEmpty(union) ? null : union;
+const findDimmableLayers = (map, targetIdSet) => {
+    const dimmable = [];
+    map.getLayers().forEach(layer => {
+        const merged = layer.get('mergedLayers');
+        if (!merged) return;
+        const containsTarget = merged.some(m =>
+            (m.subLayers || []).some(sub => targetIdSet.has(sub.id))
+        );
+        if (!containsTarget) {
+            dimmable.push({ layer, originalOpacity: layer.getOpacity() });
+        }
+    });
+    return dimmable;
+};
+
+const resolveTargetIds = (layerId, allLayers) => {
+    const nodes = collectWMSNodes(layerId, allLayers);
+    return new Set(nodes.map(n => n.id));
 };
 
 export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLayers }) => {
@@ -169,9 +127,10 @@ export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLa
 };
 
 const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLayers }) => {
-    const layersRef = useRef(null);
+    const highlightRef = useRef(null);
     const animationRef = useRef(null);
     const attachedMapsRef = useRef([]);
+    const dimmedRef = useRef([]);
     const startTimestampRef = useRef(null);
     const nowFn = useRef(() => (typeof performance !== 'undefined' ? performance.now() : Date.now()));
 
@@ -180,19 +139,19 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
             cancelAnimationFrame(animationRef.current);
             animationRef.current = null;
         }
-        const refs = layersRef.current;
+        const refs = highlightRef.current;
         if (refs) {
-            refs.maskSource.clear();
-            refs.highlightSource.clear();
-            refs.maskLayer.setOpacity(0);
-            refs.highlightLayer.setOpacity(0);
+            refs.source.clear();
+            refs.layer.setOpacity(0);
         }
         attachedMapsRef.current.forEach(map => {
-            if (!map || !refs) return;
-            map.removeLayer(refs.maskLayer);
-            map.removeLayer(refs.highlightLayer);
+            if (map && refs) map.removeLayer(refs.layer);
         });
         attachedMapsRef.current = [];
+        dimmedRef.current.forEach(({ layer, originalOpacity }) => {
+            try { layer.setOpacity(originalOpacity); } catch { /* layer puede haber sido removida */ }
+        });
+        dimmedRef.current = [];
         startTimestampRef.current = null;
     }, []);
 
@@ -208,33 +167,28 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
 
         const viewExtent = targetMaps[0].getView().calculateExtent(targetMaps[0].getSize() || [800, 600]);
 
-        const highlightFeatures = await fetchLayerHighlightFeatures(layerId, allLayers, viewExtent);
+        const targetIdSet = resolveTargetIds(layerId, allLayers);
+        if (targetIdSet.size === 0) return false;
 
-        let maskHoleExtent = highlightFeatures ? computeFeaturesExtent(highlightFeatures) : null;
-        if (!maskHoleExtent) {
-            maskHoleExtent = await resolveLayerExtent3857(layerId, allLayers);
-        }
-        if (!maskHoleExtent || maskHoleExtent.length !== 4) return false;
+        const dimmable = [];
+        targetMaps.forEach(map => dimmable.push(...findDimmableLayers(map, targetIdSet)));
+        dimmedRef.current = dimmable;
 
-        if (!layersRef.current) {
-            layersRef.current = buildPulseLayers();
-        }
-        const { maskSource, maskLayer, highlightSource, highlightLayer } = layersRef.current;
+        const highlightFeatures = await fetchHighlightFeatures(layerId, allLayers, viewExtent);
 
-        const maskFeatures = buildFeatures(maskHoleExtent, viewExtent);
-        maskSource.clear();
-        maskSource.addFeatures(maskFeatures);
-
-        highlightSource.clear();
+        if (!highlightRef.current) highlightRef.current = buildHighlightLayer();
+        const { source, layer } = highlightRef.current;
+        source.clear();
         if (highlightFeatures?.length) {
-            highlightSource.addFeatures(highlightFeatures);
+            source.addFeatures(highlightFeatures);
+            targetMaps.forEach(map => map.addLayer(layer));
+            attachedMapsRef.current = targetMaps;
         }
 
-        targetMaps.forEach(map => {
-            map.addLayer(maskLayer);
-            map.addLayer(highlightLayer);
-        });
-        attachedMapsRef.current = targetMaps;
+        if (dimmable.length === 0 && !highlightFeatures?.length) {
+            // nada que mostrar: no atenuamos solos (la capa cubre todo o falla todo)
+            return false;
+        }
 
         startTimestampRef.current = nowFn.current();
 
@@ -242,8 +196,12 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
             const elapsed = nowFn.current() - startTimestampRef.current;
             const progress = Math.min(elapsed / PULSE_DURATION_MS, 1);
             const wave = Math.sin(easeInOut(progress) * Math.PI);
-            maskLayer.setOpacity(wave * PULSE_MAX_OPACITY);
-            highlightLayer.setOpacity(wave);
+
+            const dimRatio = 1 - wave * DIM_FACTOR;
+            dimmable.forEach(({ layer: olLayer, originalOpacity }) => {
+                olLayer.setOpacity(originalOpacity * dimRatio);
+            });
+            if (highlightFeatures?.length) layer.setOpacity(wave);
 
             if (progress < 1) {
                 animationRef.current = requestAnimationFrame(step);
