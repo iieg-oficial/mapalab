@@ -15,7 +15,7 @@ const collectWMSNodes = (layerId, allLayers) => {
     return node.wmsConfig ? [node] : collectLayersWithWMS(node);
 };
 
-export const resolveLayerExtent3857 = async (layerId, allLayers) => {
+const resolveLayerExtent3857 = async (layerId, allLayers) => {
     if (!layerId) return null;
     const nodesWithWMS = collectWMSNodes(layerId, allLayers);
     if (!nodesWithWMS.length) return null;
