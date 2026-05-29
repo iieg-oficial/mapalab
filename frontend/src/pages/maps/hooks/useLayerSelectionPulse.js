@@ -4,16 +4,15 @@ import VectorSource from 'ol/source/Vector';
 import Feature from 'ol/Feature';
 import Polygon from 'ol/geom/Polygon';
 import Style from 'ol/style/Style';
-import Stroke from 'ol/style/Stroke';
 import Fill from 'ol/style/Fill';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
 import { findLayerById, collectLayersWithWMS } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 
 const PULSE_Z_INDEX = 999;
-const PULSE_DURATION_MS = 1600;
+const PULSE_DURATION_MS = 3000;
+const PULSE_MAX_OPACITY = 0.5;
 const MASK_FEATURE_ID = '__pulse_mask';
-const RING_FEATURE_ID = '__pulse_ring';
 
 const VIEWPORT_PADDING_FACTOR = 4;
 
@@ -30,18 +29,10 @@ const buildPulseLayer = () => {
     const layer = new VectorLayer({
         source,
         zIndex: PULSE_Z_INDEX,
-        style: (feature) => {
-            if (feature.getId() === MASK_FEATURE_ID) {
-                return new Style({
-                    fill: new Fill({ color: 'rgba(15, 23, 42, 0.45)' }),
-                    stroke: null,
-                });
-            }
-            return new Style({
-                stroke: new Stroke({ color: '#5C2472', width: 3, lineCap: 'round' }),
-                fill: new Fill({ color: 'rgba(92, 36, 114, 0.18)' }),
-            });
-        },
+        style: new Style({
+            fill: new Fill({ color: 'rgba(15, 23, 42, 1)' }),
+            stroke: null,
+        }),
     });
     layer.setOpacity(0);
     return { source, layer };
@@ -64,10 +55,7 @@ const buildFeatures = (extent, viewExtent) => {
     const mask = new Feature({ geometry: new Polygon([outer, inner]) });
     mask.setId(MASK_FEATURE_ID);
 
-    const ring = new Feature({ geometry: new Polygon([layerCoords]) });
-    ring.setId(RING_FEATURE_ID);
-
-    return [mask, ring];
+    return [mask];
 };
 
 export const resolveLayerExtent3857 = async (layerId, allLayers) => {
@@ -167,7 +155,7 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
             const elapsed = nowFn.current() - startTimestampRef.current;
             const progress = Math.min(elapsed / PULSE_DURATION_MS, 1);
             const wave = Math.sin(easeInOut(progress) * Math.PI);
-            layerRef.current.setOpacity(wave);
+            layerRef.current.setOpacity(wave * PULSE_MAX_OPACITY);
 
             if (progress < 1) {
                 animationRef.current = requestAnimationFrame(step);
