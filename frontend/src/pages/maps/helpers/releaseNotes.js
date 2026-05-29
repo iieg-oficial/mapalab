@@ -12,6 +12,13 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.58.1',
+        items: [
+            { text: 'Compartir mapa: para recargar la configuración del compartido ahora se hace click directamente sobre la etiqueta verde, sin botón aparte.', tag: 'changed' },
+            { text: 'Vista por municipio: para centrar el mapa en el municipio activo ahora se hace click directamente sobre la etiqueta con el nombre del municipio, sin botón aparte.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.58.0',
         items: [
             { text: 'Compartir mapa: un click rápido al botón Compartir ahora genera el enlace y lo copia al portapapeles automáticamente. Para abrir el panel con todas las opciones, mantén presionado el botón.', tag: 'changed' },

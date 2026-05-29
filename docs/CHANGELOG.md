@@ -5,6 +5,33 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.58.1] - 2026-05-29
+
+### UX: la pill principal del chip de compartido y del chip de municipio ahora es la acción de centrar
+
+Simplificación de los dos chips flotantes (`<ShareActiveChip>` y `<MunicipioActiveChip>`). En vez de un botón circular separado para "Centrar selección" / "Recargar configuración", la pill blanca/verde con la etiqueta del estado es ahora directamente clickeable y ejecuta esa acción. Tooltip describe la intención al hover. Reduce 1 elemento visual en cada chip y convierte la pill en su affordance principal.
+
+#### `<ShareActiveChip>`
+
+- Removido botón circular "Recargar configuración" (`fit_extent`, `bg-white`, ícono morado).
+- El label verde "Compartido: `<id>`" pasa a ser `<button>` con `onClick={handleReapplyShare}`, mismo color base (`bg-[#DCFCE7]`), hover `bg-[#BBF7D0]`.
+- Tooltip: "Click para recargar la configuración original del compartido".
+- Quitado el responsive `md:flex-col lg:flex-row` porque ya no hay 2 botones que apilen — el chip queda en una sola línea en todos los breakpoints `md+`.
+
+#### `<MunicipioActiveChip>`
+
+- Removido botón circular "Centrar selección" (`fit_extent_normal`/`_hover` desde `externalIcons`).
+- El chip blanco con el nombre del municipio pasa a ser `<button>` con `onClick={() => centerOnSelection?.()}`, mismo `bg-white border-[#EAEFFA]`, hover `border-purple`.
+- Tooltip: `Click para centrar en <nombre>`.
+- Removido el import `externalIcons` y el state `centerHovered` que ya no son necesarios.
+
+#### `<MunicipioFilterPanel>`
+
+- Removido el link "Centrar selección" del row de acciones del panel — la acción ya vive en el chip flotante (`<MunicipioActiveChip>`) y duplicarla aquí confundía cuál es la canónica. Solo queda "Salir del modo".
+- Removido el destructuring de `centerOnSelection` del prop `municipioMode`.
+
+---
+
 ## [1.58.0] - 2026-05-29
 
 ### Compartir mapa: chip flotante con acciones, quick-share + clipboard, fix race conditions

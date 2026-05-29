@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
-import { externalIcons } from '@assets/icons';
 import { useMapsContext } from '@hooks/useMaps';
 import { SCOPE_TYPES } from '@pages/maps/hooks/useMunicipioMode';
 
@@ -11,7 +10,6 @@ const MunicipioActiveChip = () => {
     const { municipioMode } = useMapsContext();
     const { active, scope, scopeLabel, exit, centerOnSelection } = municipioMode || {};
     const [closeHovered, setCloseHovered] = useState(false);
-    const [centerHovered, setCenterHovered] = useState(false);
 
     if (!IS_NON_PROD || !active || !scope?.type) return null;
 
@@ -19,25 +17,16 @@ const MunicipioActiveChip = () => {
 
     return (
         <div className="hidden md:flex fixed top-4 left-1/2 -translate-x-1/2 z-11 max-w-[60vw] items-center gap-2">
-            <div className="h-10 flex items-center px-4 rounded-full bg-white shadow-[0_5px_20px_#1A26641A] border border-[#EAEFFA]">
-                <span className="text-[13px]/[16px] font-garet font-bold text-purple tracking-normal whitespace-nowrap truncate max-w-70">
-                    {displayLabel}
-                </span>
-            </div>
-            <Tooltip content="Centrar selección" placement="bottom" delay={300}>
+            <Tooltip content={`Click para centrar en ${displayLabel}`} placement="bottom" delay={300}>
                 <button
                     type="button"
                     onClick={() => centerOnSelection?.()}
-                    onMouseEnter={() => setCenterHovered(true)}
-                    onMouseLeave={() => setCenterHovered(false)}
-                    className="size-10 flex items-center justify-center rounded-full border border-transparent bg-white hover:border-purple transition-all cursor-pointer shrink-0"
-                    aria-label="Centrar selección en el mapa"
+                    className="h-10 flex items-center px-4 rounded-full bg-white shadow-[0_5px_20px_#1A26641A] border border-[#EAEFFA] hover:border-purple transition-all cursor-pointer"
+                    aria-label={`Centrar el mapa en ${displayLabel}`}
                 >
-                    <img
-                        src={externalIcons[centerHovered ? 'fit_extent_hover' : 'fit_extent_normal']}
-                        alt="Centrar selección"
-                        className="size-6"
-                    />
+                    <span className="text-[13px]/[16px] font-garet font-bold text-purple tracking-normal whitespace-nowrap truncate max-w-70">
+                        {displayLabel}
+                    </span>
                 </button>
             </Tooltip>
             <Tooltip content="Salir del modo" placement="bottom" delay={300}>

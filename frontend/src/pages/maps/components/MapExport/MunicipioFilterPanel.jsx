@@ -33,7 +33,6 @@ const MunicipioFilterPanel = ({ municipioMode }) => {
         loadList,
         exit,
         setScope,
-        centerOnSelection,
     } = municipioMode;
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -97,13 +96,6 @@ const MunicipioFilterPanel = ({ municipioMode }) => {
 
             {active && (
                 <div className="mt-1 flex items-center justify-end gap-1">
-                    <button
-                        type="button"
-                        onClick={() => centerOnSelection?.()}
-                        className="px-2 py-1 text-[11px] font-garet font-semibold text-purple hover:bg-[#EAEFFA] rounded-md cursor-pointer"
-                    >
-                        Centrar selección
-                    </button>
                     <button
                         type="button"
                         onClick={exit}
