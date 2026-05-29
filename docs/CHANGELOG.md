@@ -5,6 +5,104 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.58.0] - 2026-05-29
+
+### Compartir mapa: chip flotante con acciones, quick-share + clipboard, fix race conditions
+
+Iteración mayor del flujo de compartir. Combina UX (quick-share desde el botón principal, chip rediseñado con acciones inline) con dos fixes críticos del flujo de carga del visor desde un link `?s=`.
+
+#### `<ShareActiveChip>` (nuevo componente)
+
+Reemplaza el `<span>` verde estático que solo mostraba el ID del share. Vive en el flex row del `<MapToolsPanel>` (junto al botón compartir) y trae 3 piezas:
+
+1. **Label verde** "Compartido: `<id>`" — mantiene el patrón visual del estado in-sync (`bg-[#DCFCE7]` / `border #22C55E` / `text #16A34A`).
+2. **Botón recargar (`fit_extent`)** — `bg-white` con `hover:border-purple`, ícono morado institucional. Hace `fetchShare(loadedShareId)` + `useShareDirtiness.markPending()` + `deserialize(envelope)`. Re-aplica todo el envelope (view + capas + filtros + basemap + anotaciones) sin recargar la página.
+3. **Botón X (`cerrar`)** — mismo patrón rosa del `<MunicipioActiveChip>`. Quita el `?s=` del URL con `setSearchParams.delete('s')` preservando el resto del state.
+
+**Responsive (solución temporal):** `md:flex-col lg:flex-row` para que en pantallas medianas (768-1023px) el label quede arriba y los botones abajo (alineados a la derecha vía `md:items-end`), y en pantallas grandes vuelvan a una sola línea junto al panel de herramientas.
+
+#### `<ShareButton>` — quick share + long press
+
+El botón principal "Compartir" ahora actúa con dos gestos:
+
+- **Click corto** (`< 450ms`): genera el envelope (single o swipe según `compareMode`), POST a `/shares`, copia el URL al portapapeles con `navigator.clipboard.writeText`, fallback a `window.prompt`. Feedback visual de 2.5s con bg verde + ícono `shared_click` + tooltip "¡Enlace copiado!".
+- **Long press** (`≥ 450ms`): abre el `<SharePanel>` anclado (panel completo con tabs Link/Insertar).
+- **Mobile + in-sync con un share**: tap corto desliga el `?s=` (en lugar de generar uno nuevo) — sustituye la X del chip que en mobile no se muestra. Tooltip dinámico: "Toca para desligarte · mantén para opciones".
+
+Implementado con Pointer Events (`onPointerDown/Up/Cancel/Leave`) para unificar mouse y touch sin el doble disparo que ocasionaba en mobile cuando `touchend` se traducía a `mousedown` sintético. Sin `disabled` durante `generating` (los buttons disabled no emiten pointer events, lo que mataría el long press) — en su lugar `cursor-wait` + `opacity-80` + `aria-busy`.
+
+#### `useShareDirtiness.markPending()`
+
+Nuevo método para el `<ShareActiveChip>`: setea `settledRef = false` + `setIsDirty(false)`. Necesario antes del re-apply porque cuando el deserialize dispara state changes (`setActiveLayerIds`, `setFilters`, etc.), el effect del dirtiness tracker compara las nuevas refs contra las anteriores y marca `isDirty = true`. Con `markPending`, el primer effect después del re-apply ve `settledRef = false`, hace `settle` y `return` sin marcar dirty.
+
+#### Fix: race condition del share fetch en `useInitializeFromUrl`
+
+Bug que se manifestaba como "el link compartido a veces no aplica las capas":
+
+1. Mount → `useEffect` ve `?s=`, marca `initialized.current = true`, lanza fetch async.
+2. En paralelo, `useMunicipioMode.loadList()` (precarga 125 municipios desde `/municipios/list`) cambia la referencia del `municipioContext`.
+3. Re-render → `useInitializeFromUrl` se re-ejecuta (porque `municipioMode` es dep).
+4. **Cleanup function corre primero**: `abortRef.cancelled = true`.
+5. El fetch a `/shares/<id>` termina, el async hace `if (abortRef.cancelled) return;` — **sale sin llamar `deserialize`**. Las capas se pierden.
+
+Fix con dos refs:
+
+```js
+const initialized = useRef(false);       // ya terminó el flujo
+const shareFetchStarted = useRef(false); // ya hay fetch en vuelo (persistente entre re-renders)
+
+if (shareFetchStarted.current) return;
+shareFetchStarted.current = true;
+(async () => {
+    const envelope = await fetchShare(shareId);
+    if (envelope) {
+        const applied = deserialize(envelope);
+        if (applied) {
+            initialized.current = true;  // marcar AL FINAL, no al inicio
+            ...
+        }
+    }
+    initialized.current = true;
+})();
+return; // sin cleanup que cancele el fetch en vuelo
+```
+
+#### Fix: `mapRef.current` null en mobile cuando deserialize aplica el view
+
+Bug que se manifestaba como "en mobile el link abre las capas correctas pero el mapa NO está centrado". En mobile `<MapView>` tarda más en montar que en desktop, así que cuando `deserialize` llega a `payload.view`, `mapRef.current` aún es `null`. Las capas se aplican (son state del context), pero `setCenter/setZoom/setRotation` no se ejecutan.
+
+Fix: nuevo helper `scheduleViewApply(mapRef, view)` en `useShareDeserializer.js`:
+
+```js
+const applyOnce = () => {
+    const map = mapRef?.current;
+    if (!map) return false;
+    // setCenter, setZoom, setRotation
+    return true;
+};
+if (applyOnce()) return;
+let attempts = 0;
+const intervalId = setInterval(() => {
+    attempts++;
+    if (applyOnce() || attempts >= 60) clearInterval(intervalId);
+}, 100);
+```
+
+Intenta aplicar el view inmediatamente; si `mapRef.current` aún es `null`, hace polling cada 100ms hasta 60 intentos (6s timeout) — apenas el ref se asigna, aplica el view y limpia el interval. Aplicado en ambos paths: `payload.view` (single) y `shared.view` (swipe).
+
+#### Piezas
+
+| Archivo | Rol |
+|---|---|
+| `frontend/src/pages/maps/components/ShareActiveChip.jsx` | Nuevo — chip flotante con label + recargar + X |
+| `frontend/src/pages/maps/components/ShareButton.jsx` | Quick share + clipboard + long press + mobile clear |
+| `frontend/src/pages/maps/components/MapToolsPanel.jsx` | Integración del chip en el flex row del panel |
+| `frontend/src/pages/maps/hooks/useShareDirtiness.js` | Nuevo `markPending` |
+| `frontend/src/pages/maps/hooks/useInitializeFromUrl.js` | Fix race condition con `shareFetchStarted` |
+| `frontend/src/pages/maps/hooks/useShareDeserializer.js` | `scheduleViewApply` con retry |
+
+---
+
 ## [1.57.2] - 2026-05-29
 
 ### Documentación: `context.md` actualizado para reflejar el botón compartir evento, fix de autoOpen y alt-query resistente

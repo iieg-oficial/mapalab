@@ -12,6 +12,16 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.58.0',
+        items: [
+            { text: 'Compartir mapa: un click rápido al botón Compartir ahora genera el enlace y lo copia al portapapeles automáticamente. Para abrir el panel con todas las opciones, mantén presionado el botón.', tag: 'changed' },
+            { text: 'Compartir mapa: cuando estás viendo un mapa compartido, aparece una etiqueta verde con dos acciones: recargar la configuración original del compartido y desligarte del compartido sin recargar.', tag: 'added' },
+            { text: 'Compartir mapa: en celular, tocar el botón mientras ves un compartido te desliga del mismo (igual que la X en escritorio).', tag: 'added' },
+            { text: 'Compartir mapa: corregido un error en celular donde el mapa no se centraba en la zona del compartido al abrir el enlace.', tag: 'fixed' },
+            { text: 'Compartir mapa: corregido un error donde a veces el enlace compartido no aplicaba las capas al abrir.', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.49.2',
         items: [
             { text: 'Compartir mapa: el panel ahora se abre justo debajo del botón, sin tapar el mapa, y se ajusta a su contenido.', tag: 'changed' },

@@ -18,6 +18,7 @@ export const useInitializeFromUrl = () => {
     const { initialOrder: BASE_INITIAL_ORDER, layers: layerTree } = useLayers();
     const deserialize = useShareDeserializer();
     const initialized = useRef(false);
+    const shareFetchStarted = useRef(false);
 
     const parseMunicipiosParam = (raw) => {
         if (!raw) return [];
@@ -42,27 +43,28 @@ export const useInitializeFromUrl = () => {
 
         const shareId = searchParams.get('s');
         if (shareId) {
-            initialized.current = true;
-            const abortRef = { cancelled: false };
+            if (shareFetchStarted.current) return;
+            shareFetchStarted.current = true;
             (async () => {
                 try {
                     const envelope = await fetchShare(shareId);
-                    if (abortRef.cancelled) return;
                     if (envelope) {
                         const applied = deserialize(envelope);
                         if (applied) {
                             trackShareMap('opened');
+                            initialized.current = true;
                             filtersInitializationComplete.value = true;
                             return;
                         }
                     }
-                    if (!abortRef.cancelled) trackShareMap('not_found');
+                    trackShareMap('not_found');
                 } catch {
-                    if (!abortRef.cancelled) trackShareMap('error');
+                    trackShareMap('error');
                 }
-                if (!abortRef.cancelled) filtersInitializationComplete.value = true;
+                initialized.current = true;
+                filtersInitializationComplete.value = true;
             })();
-            return () => { abortRef.cancelled = true; };
+            return;
         }
 
         const layersParam = searchParams.get('layers');
