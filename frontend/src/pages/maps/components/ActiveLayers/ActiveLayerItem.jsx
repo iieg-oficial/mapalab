@@ -48,7 +48,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         getLayerOpacity,
         setLayerOpacity,
         setActiveSlot,
-        centerOnLayer
+        centerOnLayer,
+        pulseLayer
     } = useMapsContext();
 
     const { findEventoByLayerId } = useEventoContext();
@@ -97,7 +98,10 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const handleClickOnLayer = () => {
         const wasSelected = selectedLayerForSymbology?.id === layer.id;
         setSelectedLayerForSymbology(layer);
-        if (!wasSelected) centerOnLayer?.(layer.id);
+        if (!wasSelected) {
+            centerOnLayer?.(layer.id);
+            pulseLayer?.(layer.id);
+        }
     };
 
     const targetSlot = slotMembership === 'AB' ? compareMode?.activeSlot : slotMembership;
