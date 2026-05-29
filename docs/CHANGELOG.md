@@ -5,6 +5,181 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.58.1] - 2026-05-29
+
+### UX: la pill principal del chip de compartido y del chip de municipio ahora es la acción de centrar
+
+Simplificación de los dos chips flotantes (`<ShareActiveChip>` y `<MunicipioActiveChip>`). En vez de un botón circular separado para "Centrar selección" / "Recargar configuración", la pill blanca/verde con la etiqueta del estado es ahora directamente clickeable y ejecuta esa acción. Tooltip describe la intención al hover. Reduce 1 elemento visual en cada chip y convierte la pill en su affordance principal.
+
+#### `<ShareActiveChip>`
+
+- Removido botón circular "Recargar configuración" (`fit_extent`, `bg-white`, ícono morado).
+- El label verde "Compartido: `<id>`" pasa a ser `<button>` con `onClick={handleReapplyShare}`, mismo color base (`bg-[#DCFCE7]`), hover `bg-[#BBF7D0]`.
+- Tooltip: "Click para recargar la configuración original del compartido".
+- Quitado el responsive `md:flex-col lg:flex-row` porque ya no hay 2 botones que apilen — el chip queda en una sola línea en todos los breakpoints `md+`.
+
+#### `<MunicipioActiveChip>`
+
+- Removido botón circular "Centrar selección" (`fit_extent_normal`/`_hover` desde `externalIcons`).
+- El chip blanco con el nombre del municipio pasa a ser `<button>` con `onClick={() => centerOnSelection?.()}`, mismo `bg-white border-[#EAEFFA]`, hover `border-purple`.
+- Tooltip: `Click para centrar en <nombre>`.
+- Removido el import `externalIcons` y el state `centerHovered` que ya no son necesarios.
+
+#### `<MunicipioFilterPanel>`
+
+- Removido el link "Centrar selección" del row de acciones del panel — la acción ya vive en el chip flotante (`<MunicipioActiveChip>`) y duplicarla aquí confundía cuál es la canónica. Solo queda "Salir del modo".
+- Removido el destructuring de `centerOnSelection` del prop `municipioMode`.
+
+---
+
+## [1.58.0] - 2026-05-29
+
+### Compartir mapa: chip flotante con acciones, quick-share + clipboard, fix race conditions
+
+Iteración mayor del flujo de compartir. Combina UX (quick-share desde el botón principal, chip rediseñado con acciones inline) con dos fixes críticos del flujo de carga del visor desde un link `?s=`.
+
+#### `<ShareActiveChip>` (nuevo componente)
+
+Reemplaza el `<span>` verde estático que solo mostraba el ID del share. Vive en el flex row del `<MapToolsPanel>` (junto al botón compartir) y trae 3 piezas:
+
+1. **Label verde** "Compartido: `<id>`" — mantiene el patrón visual del estado in-sync (`bg-[#DCFCE7]` / `border #22C55E` / `text #16A34A`).
+2. **Botón recargar (`fit_extent`)** — `bg-white` con `hover:border-purple`, ícono morado institucional. Hace `fetchShare(loadedShareId)` + `useShareDirtiness.markPending()` + `deserialize(envelope)`. Re-aplica todo el envelope (view + capas + filtros + basemap + anotaciones) sin recargar la página.
+3. **Botón X (`cerrar`)** — mismo patrón rosa del `<MunicipioActiveChip>`. Quita el `?s=` del URL con `setSearchParams.delete('s')` preservando el resto del state.
+
+**Responsive (solución temporal):** `md:flex-col lg:flex-row` para que en pantallas medianas (768-1023px) el label quede arriba y los botones abajo (alineados a la derecha vía `md:items-end`), y en pantallas grandes vuelvan a una sola línea junto al panel de herramientas.
+
+#### `<ShareButton>` — quick share + long press
+
+El botón principal "Compartir" ahora actúa con dos gestos:
+
+- **Click corto** (`< 450ms`): genera el envelope (single o swipe según `compareMode`), POST a `/shares`, copia el URL al portapapeles con `navigator.clipboard.writeText`, fallback a `window.prompt`. Feedback visual de 2.5s con bg verde + ícono `shared_click` + tooltip "¡Enlace copiado!".
+- **Long press** (`≥ 450ms`): abre el `<SharePanel>` anclado (panel completo con tabs Link/Insertar).
+- **Mobile + in-sync con un share**: tap corto desliga el `?s=` (en lugar de generar uno nuevo) — sustituye la X del chip que en mobile no se muestra. Tooltip dinámico: "Toca para desligarte · mantén para opciones".
+
+Implementado con Pointer Events (`onPointerDown/Up/Cancel/Leave`) para unificar mouse y touch sin el doble disparo que ocasionaba en mobile cuando `touchend` se traducía a `mousedown` sintético. Sin `disabled` durante `generating` (los buttons disabled no emiten pointer events, lo que mataría el long press) — en su lugar `cursor-wait` + `opacity-80` + `aria-busy`.
+
+#### `useShareDirtiness.markPending()`
+
+Nuevo método para el `<ShareActiveChip>`: setea `settledRef = false` + `setIsDirty(false)`. Necesario antes del re-apply porque cuando el deserialize dispara state changes (`setActiveLayerIds`, `setFilters`, etc.), el effect del dirtiness tracker compara las nuevas refs contra las anteriores y marca `isDirty = true`. Con `markPending`, el primer effect después del re-apply ve `settledRef = false`, hace `settle` y `return` sin marcar dirty.
+
+#### Fix: race condition del share fetch en `useInitializeFromUrl`
+
+Bug que se manifestaba como "el link compartido a veces no aplica las capas":
+
+1. Mount → `useEffect` ve `?s=`, marca `initialized.current = true`, lanza fetch async.
+2. En paralelo, `useMunicipioMode.loadList()` (precarga 125 municipios desde `/municipios/list`) cambia la referencia del `municipioContext`.
+3. Re-render → `useInitializeFromUrl` se re-ejecuta (porque `municipioMode` es dep).
+4. **Cleanup function corre primero**: `abortRef.cancelled = true`.
+5. El fetch a `/shares/<id>` termina, el async hace `if (abortRef.cancelled) return;` — **sale sin llamar `deserialize`**. Las capas se pierden.
+
+Fix con dos refs:
+
+```js
+const initialized = useRef(false);       // ya terminó el flujo
+const shareFetchStarted = useRef(false); // ya hay fetch en vuelo (persistente entre re-renders)
+
+if (shareFetchStarted.current) return;
+shareFetchStarted.current = true;
+(async () => {
+    const envelope = await fetchShare(shareId);
+    if (envelope) {
+        const applied = deserialize(envelope);
+        if (applied) {
+            initialized.current = true;  // marcar AL FINAL, no al inicio
+            ...
+        }
+    }
+    initialized.current = true;
+})();
+return; // sin cleanup que cancele el fetch en vuelo
+```
+
+#### Fix: `mapRef.current` null en mobile cuando deserialize aplica el view
+
+Bug que se manifestaba como "en mobile el link abre las capas correctas pero el mapa NO está centrado". En mobile `<MapView>` tarda más en montar que en desktop, así que cuando `deserialize` llega a `payload.view`, `mapRef.current` aún es `null`. Las capas se aplican (son state del context), pero `setCenter/setZoom/setRotation` no se ejecutan.
+
+Fix: nuevo helper `scheduleViewApply(mapRef, view)` en `useShareDeserializer.js`:
+
+```js
+const applyOnce = () => {
+    const map = mapRef?.current;
+    if (!map) return false;
+    // setCenter, setZoom, setRotation
+    return true;
+};
+if (applyOnce()) return;
+let attempts = 0;
+const intervalId = setInterval(() => {
+    attempts++;
+    if (applyOnce() || attempts >= 60) clearInterval(intervalId);
+}, 100);
+```
+
+Intenta aplicar el view inmediatamente; si `mapRef.current` aún es `null`, hace polling cada 100ms hasta 60 intentos (6s timeout) — apenas el ref se asigna, aplica el view y limpia el interval. Aplicado en ambos paths: `payload.view` (single) y `shared.view` (swipe).
+
+#### Piezas
+
+| Archivo | Rol |
+|---|---|
+| `frontend/src/pages/maps/components/ShareActiveChip.jsx` | Nuevo — chip flotante con label + recargar + X |
+| `frontend/src/pages/maps/components/ShareButton.jsx` | Quick share + clipboard + long press + mobile clear |
+| `frontend/src/pages/maps/components/MapToolsPanel.jsx` | Integración del chip en el flex row del panel |
+| `frontend/src/pages/maps/hooks/useShareDirtiness.js` | Nuevo `markPending` |
+| `frontend/src/pages/maps/hooks/useInitializeFromUrl.js` | Fix race condition con `shareFetchStarted` |
+| `frontend/src/pages/maps/hooks/useShareDeserializer.js` | `scheduleViewApply` con retry |
+
+---
+
+## [1.57.2] - 2026-05-29
+
+### Documentación: `context.md` actualizado para reflejar el botón compartir evento, fix de autoOpen y alt-query resistente
+
+Solo documentación. Tres bloques actualizados en `docs/context.md` para reflejar el estado real del código tras los commits `6bc7c14` (v1.56.0) y `77692af` (v1.57.1):
+
+- **`<EventoActionsBar>`**: removido el texto sobre el badge "beta" y `border-orange` de non-prod, ya no aplica. Layout final documentado: `[Switch] | ml-auto | [Centrar] [Compartir] [FunButton]`. Añadido párrafo sobre el botón **Compartir evento** con URL permanente `?evento=<slug>`, fallback a `window.prompt`, telemetría `evento_share`, y explicación de cuándo usar este botón vs el `<ShareButton>` general.
+- **`useAutoOpenEventoFromUrl`**: clarificado que el hook setea `'ext-evento-${match.id}'` (no `'evento-${id}'` como antes), y describe la cadena de propagación `MapSider → ExternalEventoWidget → ExternalEventoItem → MenuItem` para que el `===` del MenuItem matchee. Mención del path alternativo `createEventoItems` gated por `SIDER_EVENTS_ENABLED=false`.
+- **Sección nueva "Alt-query del InfoBox"**: documenta la separación entre `queryWMSGetFeatureInfo` (request individual) y `getFeatureInfoForActiveLayers` (orquestador con fallback per-capa), incluyendo el caso real del workspace FIFA que disparó el fix.
+
+---
+
+## [1.57.1] - 2026-05-29
+
+### Fix: alt-query de InfoBox resistente a CQL filters rotos en el batch
+
+El "InfoBox de no-info" del mapa muestra **alternativas** cuando la capa seleccionada no tiene features en el punto clickeado — consulta las demás capas activas y propone las que sí tienen datos ahí. En el escenario del evento FIFA esto fallaba: el InfoBox solo decía "No hay datos de ninguna capa activa en este punto" aunque visualmente hubiera features de otras capas del evento justo en el punto del click.
+
+#### Diagnóstico
+
+La alt-query de `getFeatureInfoForActiveLayers` agrupa todas las capas que comparten `baseUrl` en una **sola petición WMS GetFeatureInfo** con `LAYERS=a,b,c,...&CQL_FILTER=f1;f2;f3;...` (semi-separados, una entrada por capa). Una de las capas del workspace del evento (~18 capas batched) tiene en GeoServer una SQL view que referencia una columna `latitud` que no existe en la tabla subyacente. Cuando GeoServer renderiza el batch:
+
+```xml
+<ServiceException code="internalError">
+  Rendering process failed. Layers: elementos, puntos_fan_fest, eventos, ...
+  org.postgresql.util.PSQLException: ERROR: column "latitud" does not exist
+  Position: 114
+</ServiceException>
+```
+
+Una capa rota tumba **toda** la respuesta del batch. `parseResponse` ve content-type XML (no JSON) → retorna `null` → `getFeatureInfoForActiveLayers` filtra ese `null` del array de promises → resultado neto: 0 features para el batch entero → `alternativeLayers = []` → InfoBox sin alternativas.
+
+#### Fix
+
+Extraje la lógica del request a `queryWMSGetFeatureInfo(baseUrl, layerGroups, ...)` y modifiqué `getFeatureInfoForActiveLayers`:
+
+1. **Intenta el batch primero** (misma optimización: una sola petición por baseUrl).
+2. **Si el batch retorna `null` Y hay >1 capa**, reintenta **cada capa individualmente** (`Promise.all` de queries de 1 capa cada una).
+3. Las capas que sí funcionan retornan sus features normalmente; la(s) rota(s) retornan `null` y se filtran.
+
+Resultado: una capa con CQL roto (o SQL view rota en GeoServer, o cualquier otro error server-side) ya no envenena las alternativas para las demás. El usuario ve las alternativas válidas correctamente.
+
+Costo: en el caso del fallo se ejecutan N peticiones extras (una por capa), pero solo cuando el batch falla. Caso happy-path (batch OK) no cambia.
+
+#### Acción pendiente fuera de mapalab
+
+El filtro `latitud` no está ni en `mapalab.layers` (DB) ni en el frontend ni en las definiciones de capas — vive en GeoServer directamente (probablemente una SQL view del workspace del evento mal configurada). Con este fix aplicado, en DevTools ahora se ven N peticiones GetFeatureInfo individuales al hacer click — la(s) que devuelvan `ServiceException` con `column "latitud" does not exist` identifican la capa rota a corregir en GeoServer.
+
+---
+
 ## [1.57.0] - 2026-05-28
 
 ### Banner del home: fondo configurable desde mariachi (imagen mobile/desktop + gradient editable)

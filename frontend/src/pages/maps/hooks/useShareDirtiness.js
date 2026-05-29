@@ -32,9 +32,15 @@ export const useShareDirtiness = () => {
         settledRef.current = true;
     }, []);
 
+    const markPending = useCallback(() => {
+        settledRef.current = false;
+        setIsDirty(false);
+    }, []);
+
     return {
         loadedShareId,
         isDirty: isDirty && !!loadedShareId,
         reset,
+        markPending,
     };
 };

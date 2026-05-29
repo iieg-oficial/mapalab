@@ -5,6 +5,32 @@ import { useLayers } from '@hooks/useLayers';
 import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
 import { initialCompareMode } from '@pages/maps/helpers/swipeMode';
 
+const VIEW_RETRY_INTERVAL_MS = 100;
+const VIEW_RETRY_MAX_ATTEMPTS = 60;
+
+const scheduleViewApply = (mapRef, view) => {
+    if (!view) return;
+    const applyOnce = () => {
+        const map = mapRef?.current;
+        if (!map) return false;
+        const olView = map.getView();
+        if (typeof view.lon === 'number' && typeof view.lat === 'number') {
+            olView.setCenter(fromLonLat([view.lon, view.lat]));
+        }
+        if (typeof view.zoom === 'number') olView.setZoom(view.zoom);
+        if (typeof view.rotation === 'number') olView.setRotation(view.rotation);
+        return true;
+    };
+    if (applyOnce()) return;
+    let attempts = 0;
+    const intervalId = setInterval(() => {
+        attempts++;
+        if (applyOnce() || attempts >= VIEW_RETRY_MAX_ATTEMPTS) {
+            clearInterval(intervalId);
+        }
+    }, VIEW_RETRY_INTERVAL_MS);
+};
+
 const buildPaneFromEntries = (paneEntries, layerTree, getAllChildLayerIds) => {
     const activeLayerIds = [];
     const hiddenLayerIds = [];
@@ -91,14 +117,7 @@ export const useShareDeserializer = () => {
             }
 
             if (shared.basemap && typeof setBaseMapId === 'function') setBaseMapId(shared.basemap);
-            if (shared.view && mapRef?.current) {
-                const olView = mapRef.current.getView();
-                if (typeof shared.view.lon === 'number' && typeof shared.view.lat === 'number') {
-                    olView.setCenter(fromLonLat([shared.view.lon, shared.view.lat]));
-                }
-                if (typeof shared.view.zoom === 'number') olView.setZoom(shared.view.zoom);
-                if (typeof shared.view.rotation === 'number') olView.setRotation(shared.view.rotation);
-            }
+            scheduleViewApply(mapRef, shared.view);
             if (shared.selected) {
                 const selectedId = resolveRefToId(shared.selected, layerTree);
                 if (selectedId) {
@@ -171,19 +190,7 @@ export const useShareDeserializer = () => {
             setBaseMapId(payload.basemap);
         }
 
-        if (payload.view && mapRef?.current) {
-            const map = mapRef.current;
-            const olView = map.getView();
-            if (typeof payload.view.lon === 'number' && typeof payload.view.lat === 'number') {
-                olView.setCenter(fromLonLat([payload.view.lon, payload.view.lat]));
-            }
-            if (typeof payload.view.zoom === 'number') {
-                olView.setZoom(payload.view.zoom);
-            }
-            if (typeof payload.view.rotation === 'number') {
-                olView.setRotation(payload.view.rotation);
-            }
-        }
+        scheduleViewApply(mapRef, payload.view);
 
         if (payload.selected) {
             const selectedId = resolveRefToId(payload.selected, layerTree);

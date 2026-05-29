@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import Download from './MapExport/Download';
 import MunicipioFilterButton from './MapExport/MunicipioFilterButton';
 import ShareButton from './ShareButton';
+import ShareActiveChip from './ShareActiveChip';
 import Panel from '@components/Panel';
 import FloatingIconButton from '@components/FloatingIconButton';
 import ExportPreview from './MapExport/ExportPreview';
@@ -22,7 +23,7 @@ const MapToolsPanel = () => {
     const [previewTitle, setPreviewTitle] = useState('');
     const [previewQuality, setPreviewQuality] = useState(null);
     const [previewSwipeOptions, setPreviewSwipeOptions] = useState(null);
-    const { isDirty, loadedShareId } = useShareDirtiness();
+    const { isDirty, loadedShareId, markPending } = useShareDirtiness();
     const inSyncWithShare = !!loadedShareId && !isDirty;
     const isModifiedFromShare = !!loadedShareId && isDirty;
     const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -59,12 +60,7 @@ const MapToolsPanel = () => {
         <>
             <div className={`fixed top-4 right-4 z-11 ${isAnyPanelOpen ? 'max-md:z-60' : 'max-md:z-21'} flex flex-row items-center`}>
                 {inSyncWithShare && (
-                    <span
-                        className="hidden md:inline-flex items-center text-[11px]/[16px] font-garet bg-[#DCFCE7] text-[#16A34A] border border-[#22C55E] px-3 py-2 rounded-full whitespace-nowrap shadow-[0_5px_20px_#1A26641A] pointer-events-none mr-2"
-                        title={`Mapa cargado del enlace ${loadedShareId}`}
-                    >
-                        Usando link compartido: <span className="font-bold tabular-nums ml-1">{loadedShareId}</span>
-                    </span>
+                    <ShareActiveChip loadedShareId={loadedShareId} onMarkPending={markPending} />
                 )}
                 {isModifiedFromShare && (
                     <button
