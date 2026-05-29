@@ -91,6 +91,49 @@ describe('useLayerSelection - centerOnLayer', () => {
     });
 });
 
+describe('useLayerSelection - capa grupo (sin wmsConfig directo)', () => {
+    beforeEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('une los extents de todos los descendientes con wmsConfig', async () => {
+        const layers = [{
+            id: 'grupo',
+            label: 'Grupo',
+            children: [
+                {
+                    id: 'hijo-1',
+                    wmsConfig: { workspace: 'a', geoserverLayer: 'x', baseUrl: 'http://gs/a/wms', layerName: 'a:x' },
+                },
+                {
+                    id: 'hijo-2',
+                    wmsConfig: { workspace: 'a', geoserverLayer: 'y', baseUrl: 'http://gs/a/wms', layerName: 'a:y' },
+                },
+            ],
+        }];
+        vi.spyOn(capabilitiesService, 'getLayerExtent3857')
+            .mockImplementation(async (cfg) => cfg.layerName === 'a:x' ? [0, 0, 10, 10] : [20, 20, 30, 30]);
+        const view = { fit: vi.fn(), calculateExtent: () => [0, 0, 100, 100] };
+        const map = { getSize: () => [800, 600], getView: () => view, addLayer: vi.fn(), removeLayer: vi.fn() };
+        const { result } = renderHook(() => useLayerSelection({
+            mapRef: { current: map }, paneMapInstances: {}, compareMode: { active: false }, allLayers: layers,
+        }));
+        const ok = await result.current.centerOnLayer('grupo');
+        expect(ok).toBe(true);
+        expect(view.fit).toHaveBeenCalledWith([0, 0, 30, 30], expect.any(Object));
+    });
+
+    it('retorna false si ningún descendiente tiene wmsConfig', async () => {
+        const layers = [{ id: 'grupo', children: [{ id: 'hijo' }] }];
+        const mapRef = { current: buildMockMap() };
+        const { result } = renderHook(() => useLayerSelection({
+            mapRef, paneMapInstances: {}, compareMode: { active: false }, allLayers: layers,
+        }));
+        const ok = await result.current.centerOnLayer('grupo');
+        expect(ok).toBe(false);
+    });
+});
+
 describe('useLayerSelection - pulseLayer', () => {
     beforeEach(() => {
         vi.restoreAllMocks();

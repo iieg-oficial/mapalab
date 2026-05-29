@@ -6,11 +6,12 @@ import Polygon from 'ol/geom/Polygon';
 import Style from 'ol/style/Style';
 import Stroke from 'ol/style/Stroke';
 import Fill from 'ol/style/Fill';
-import { findWMSConfig } from '@pages/maps/helpers/wmsConfig';
+import { createEmpty, extend, isEmpty } from 'ol/extent';
+import { findLayerById, collectLayersWithWMS } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 
 const PULSE_Z_INDEX = 999;
-const PULSE_DURATION_MS = 800;
+const PULSE_DURATION_MS = 1600;
 const MASK_FEATURE_ID = '__pulse_mask';
 const RING_FEATURE_ID = '__pulse_ring';
 
@@ -69,12 +70,23 @@ const buildFeatures = (extent, viewExtent) => {
     return [mask, ring];
 };
 
+export const resolveLayerExtent3857 = async (layerId, allLayers) => {
+    if (!layerId) return null;
+    const node = findLayerById(layerId, allLayers);
+    if (!node) return null;
+    const nodesWithWMS = node.wmsConfig ? [node] : collectLayersWithWMS(node);
+    if (!nodesWithWMS.length) return null;
+    const extents = await Promise.all(nodesWithWMS.map(n => getLayerExtent3857(n.wmsConfig)));
+    const valid = extents.filter(Boolean);
+    if (!valid.length) return null;
+    const union = createEmpty();
+    for (const ext of valid) extend(union, ext);
+    return isEmpty(union) ? null : union;
+};
+
 export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLayers }) => {
     const centerOnLayer = useCallback(async (layerId) => {
-        if (!layerId) return false;
-        const wmsConfig = findWMSConfig(layerId, allLayers);
-        if (!wmsConfig) return false;
-        const extent = await getLayerExtent3857(wmsConfig);
+        const extent = await resolveLayerExtent3857(layerId, allLayers);
         if (!extent) return false;
         const fit = (map) => {
             if (!map) return;
@@ -125,10 +137,7 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
     useEffect(() => () => cleanup(), [cleanup]);
 
     const pulseLayer = useCallback(async (layerId) => {
-        if (!layerId) return false;
-        const wmsConfig = findWMSConfig(layerId, allLayers);
-        if (!wmsConfig) return false;
-        const extent = await getLayerExtent3857(wmsConfig);
+        const extent = await resolveLayerExtent3857(layerId, allLayers);
         if (!extent || extent.length !== 4) return false;
 
         cleanup();
