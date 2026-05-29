@@ -128,3 +128,7 @@ refresh-layer-tree:
 		echo "Fallback: trigger vía endpoint del backend"; \
 		curl -fsS -X POST $(BACKEND_HOST)/layers/refresh-cache | python3 -m json.tool; \
 	fi
+
+mcp:
+	@docker exec -i -e PYTHONPATH=/app mapalab-mapalab-mcp-1 python servers/mapalab.py
+

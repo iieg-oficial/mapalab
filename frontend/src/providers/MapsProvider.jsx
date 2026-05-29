@@ -14,6 +14,7 @@ import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { usePeriodicityCache } from '@hooksMaps/usePeriodicityCache';
 import { useMapMarker } from '@hooksMaps/useMapMarker';
 import { useFeatureHighlight } from '@hooksMaps/useFeatureHighlight';
+import { useLayerSelection } from '@hooksMaps/useLayerSelectionPulse';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { useSwipeMode } from '@hooksMaps/useSwipeMode';
 import { useMunicipioMode } from '@hooksMaps/useMunicipioMode';
@@ -215,6 +216,13 @@ const MapsProvider = ({ children }) => {
 
     const mapsAnalyticsEvent = useCallback(() => { }, []);
 
+    const { centerOnLayer, pulseLayer } = useLayerSelection({
+        mapRef,
+        paneMapInstances,
+        compareMode: swipeMode.compareMode,
+        allLayers,
+    });
+
     const value = useMemo(() => ({
         baseMapId,
         setBaseMapId,
@@ -249,6 +257,8 @@ const MapsProvider = ({ children }) => {
         setIsLocating,
         ...swipeMode,
         municipioMode: { ...municipioMode, centerOnSelection: centerOnMunicipioSelection },
+        centerOnLayer,
+        pulseLayer,
     }), [
         baseMapId,
         siderCollapsed,
@@ -275,6 +285,8 @@ const MapsProvider = ({ children }) => {
         swipeMode,
         municipioMode,
         centerOnMunicipioSelection,
+        centerOnLayer,
+        pulseLayer,
     ]);
 
     return (

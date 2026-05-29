@@ -17,7 +17,7 @@ from app.services.share_service import (
 
 
 def _public_base_url() -> str:
-    return (os.getenv('MAPALAB_PUBLIC_BASE_URL') or 'https://iieg.gob.mx').rstrip('/')
+    return (os.getenv('MAPALAB_PUBLIC_BASE_URL') or 'https://iieg.jalisco.gob.mx').rstrip('/')
 
 
 def _build_share_url(share_id: str) -> str:

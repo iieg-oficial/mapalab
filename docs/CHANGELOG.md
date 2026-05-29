@@ -5,6 +5,26 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.59.0] - 2026-05-29
+
+### Banner del home: logo respeta el `logoUrl` por item en mobile + descripción y CTA opcionales
+
+Iteración sobre el banner del home (introducido en `[1.57.0]`). El sub-header mobile/tablet del banner mostraba siempre el `<Logo name="mapalab" variant="dark">` bundled aunque el banner del API trajera su propio `logoUrl` (caso típico: un banner de evento curado desde mariachi con su propia identidad visual). Y la descripción + CTA estaban siempre presentes, cayendo al texto bundled si el API venía vacío.
+
+#### Logo mobile/tablet condicional
+
+`pages/home/components/Header.jsx`, bloque `<div className="absolute top-4 left-1/2 -translate-x-1/2 2xl:hidden z-10">`: aplica el mismo patrón condicional que ya existía en el bloque desktop XXL (`2xl:flex`). Si `activeBanner.logoUrl` está set renderiza `<img src={activeBanner.logoUrl} className="w-80 h-25 object-contain" />`; si no, cae al `<Logo name="mapalab" variant="dark" size="w-80 h-25" expanded />` bundled como antes. Sin cambios en el bloque XXL — ya funcionaba.
+
+#### Descripción y CTA opcionales
+
+- `banners.map` deja de hacer fallback al banner bundled cuando los campos están vacíos: antes `description: api.descripcion || fallback.content.description`, ahora `description: api.descripcion || ''`. Idem `label`/`link` del CTA. Si el editor en mariachi deja descripción vacía, el visor ya no inyecta el texto bundled del banner default ("MapaLab es una herramienta interactiva…").
+- El `<p>` de descripción se monta condicionalmente: `{activeBanner.content.description && <p>…</p>}`.
+- El `<Link>` del CTA se monta condicionalmente requiriendo ambos campos: `{activeBanner.content.button.label && activeBanner.content.button.link && <Link>…</Link>}`. Esto evita el escenario en que el editor llene solo uno de los dos (botón sin destino o destino sin texto) y rompa el render con un `<Link to="">`.
+
+Permite banners minimalistas con solo título e imagen de fondo, útil para anuncios cortos de evento. Sin cambios en otras secciones del home.
+
+---
+
 ## [1.58.1] - 2026-05-29
 
 ### UX: la pill principal del chip de compartido y del chip de municipio ahora es la acción de centrar

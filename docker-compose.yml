@@ -130,6 +130,7 @@ services:
       MARIACHI_BACKEND_URL: ${MARIACHI_BACKEND_INTERNAL_URL:-http://mariachi-api:8000}
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.1}
+      MAPALAB_PUBLIC_BASE_URL: ${MAPALAB_PUBLIC_BASE_URL:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
