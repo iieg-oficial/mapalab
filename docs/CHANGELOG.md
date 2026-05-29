@@ -5,6 +5,44 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.57.1] - 2026-05-29
+
+### Fix: alt-query de InfoBox resistente a CQL filters rotos en el batch
+
+El "InfoBox de no-info" del mapa muestra **alternativas** cuando la capa seleccionada no tiene features en el punto clickeado — consulta las demás capas activas y propone las que sí tienen datos ahí. En el escenario del evento FIFA esto fallaba: el InfoBox solo decía "No hay datos de ninguna capa activa en este punto" aunque visualmente hubiera features de otras capas del evento justo en el punto del click.
+
+#### Diagnóstico
+
+La alt-query de `getFeatureInfoForActiveLayers` agrupa todas las capas que comparten `baseUrl` en una **sola petición WMS GetFeatureInfo** con `LAYERS=a,b,c,...&CQL_FILTER=f1;f2;f3;...` (semi-separados, una entrada por capa). Una de las capas del workspace del evento (~18 capas batched) tiene en GeoServer una SQL view que referencia una columna `latitud` que no existe en la tabla subyacente. Cuando GeoServer renderiza el batch:
+
+```xml
+<ServiceException code="internalError">
+  Rendering process failed. Layers: elementos, puntos_fan_fest, eventos, ...
+  org.postgresql.util.PSQLException: ERROR: column "latitud" does not exist
+  Position: 114
+</ServiceException>
+```
+
+Una capa rota tumba **toda** la respuesta del batch. `parseResponse` ve content-type XML (no JSON) → retorna `null` → `getFeatureInfoForActiveLayers` filtra ese `null` del array de promises → resultado neto: 0 features para el batch entero → `alternativeLayers = []` → InfoBox sin alternativas.
+
+#### Fix
+
+Extraje la lógica del request a `queryWMSGetFeatureInfo(baseUrl, layerGroups, ...)` y modifiqué `getFeatureInfoForActiveLayers`:
+
+1. **Intenta el batch primero** (misma optimización: una sola petición por baseUrl).
+2. **Si el batch retorna `null` Y hay >1 capa**, reintenta **cada capa individualmente** (`Promise.all` de queries de 1 capa cada una).
+3. Las capas que sí funcionan retornan sus features normalmente; la(s) rota(s) retornan `null` y se filtran.
+
+Resultado: una capa con CQL roto (o SQL view rota en GeoServer, o cualquier otro error server-side) ya no envenena las alternativas para las demás. El usuario ve las alternativas válidas correctamente.
+
+Costo: en el caso del fallo se ejecutan N peticiones extras (una por capa), pero solo cuando el batch falla. Caso happy-path (batch OK) no cambia.
+
+#### Acción pendiente fuera de mapalab
+
+El filtro `latitud` no está ni en `mapalab.layers` (DB) ni en el frontend ni en las definiciones de capas — vive en GeoServer directamente (probablemente una SQL view del workspace del evento mal configurada). Con este fix aplicado, en DevTools ahora se ven N peticiones GetFeatureInfo individuales al hacer click — la(s) que devuelvan `ServiceException` con `column "latitud" does not exist` identifican la capa rota a corregir en GeoServer.
+
+---
+
 ## [1.57.0] - 2026-05-28
 
 ### Banner del home: fondo configurable desde mariachi (imagen mobile/desktop + gradient editable)

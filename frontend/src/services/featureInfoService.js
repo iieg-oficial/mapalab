@@ -26,6 +26,118 @@ const matchesFilter = (properties, cqlFilter) => {
     return true;
 };
 
+const queryWMSGetFeatureInfo = async (baseUrl, layerGroups, map, coordinate, getFilterFn, isInegiMode, featureCount) => {
+    try {
+        const uniqueLayerNames = [];
+        const styles = [];
+        const cqlFilters = [];
+        const layerMap = {};
+        let timeValue = null;
+
+        Object.entries(layerGroups).forEach(([layerName, group]) => {
+            uniqueLayerNames.push(layerName);
+            styles.push(group[0].wmsConfig.styles || '');
+            layerMap[layerName] = group[0].layer;
+
+            const groupFilters = group.map(({ layer, wmsConfig }) => {
+                const dynamicFilter = getFilterFn ? getFilterFn(layer.id) : null;
+
+                if (dynamicFilter && /^\d{4}-\d{2}-\d{2}$/.test(dynamicFilter)) {
+                    timeValue = dynamicFilter;
+                    return wmsConfig.cqlFilter || null;
+                }
+
+                const baseCqlFilter = wmsConfig.cqlFilter || null;
+                return combineCQLFilters(baseCqlFilter, dynamicFilter);
+            }).filter(f => f);
+
+            if (groupFilters.length > 0) {
+                cqlFilters.push(`(${groupFilters.join(') OR (')})`);
+            } else {
+                cqlFilters.push('INCLUDE');
+            }
+        });
+
+        const view = map.getView();
+        const projection = view.getProjection?.();
+        const projectionCode = projection?.getCode?.() || 'EPSG:3857';
+        const size = map.getSize();
+        const extent = view.calculateExtent(size);
+        const pixel = map.getPixelFromCoordinate(coordinate);
+
+        if (!pixel || pixel[0] < 0 || pixel[1] < 0 || pixel[0] > size[0] || pixel[1] > size[1]) {
+            return null;
+        }
+
+        const params = {
+            SERVICE: 'WMS',
+            VERSION: '1.1.0',
+            REQUEST: 'GetFeatureInfo',
+            LAYERS: uniqueLayerNames.join(','),
+            QUERY_LAYERS: uniqueLayerNames.join(','),
+            STYLES: styles.join(','),
+            BBOX: extent.join(','),
+            WIDTH: size[0].toString(),
+            HEIGHT: size[1].toString(),
+            SRS: projectionCode,
+            FORMAT: 'image/png',
+            INFO_FORMAT: 'application/json',
+            FEATURE_COUNT: String(featureCount),
+            X: Math.floor(pixel[0]).toString(),
+            Y: Math.floor(pixel[1]).toString(),
+            CQL_FILTER: cqlFilters.join(';'),
+            ENV: isInegiMode ? 'geom:geom_inegi' : 'geom:geom_iieg',
+            ...(timeValue ? { TIME: timeValue } : {})
+        };
+
+        const url = baseUrl + '?' + new URLSearchParams(params).toString();
+        const response = await fetch(url);
+
+        const data = await parseResponse(response);
+        if (!data || !data.features) return null;
+
+        const resultsByLayer = {};
+
+        data.features.forEach(feature => {
+            const featureId = feature.id;
+
+            let matchedLayerName = null;
+
+            if (featureId) {
+                matchedLayerName = uniqueLayerNames.find(name => {
+                    const simpleName = name.split(':')[1] || name;
+                    return featureId.startsWith(simpleName + '.') || featureId.includes(':' + simpleName + '.');
+                });
+            }
+
+            if (!matchedLayerName && uniqueLayerNames.length === 1) {
+                matchedLayerName = uniqueLayerNames[0];
+            }
+
+            if (matchedLayerName) {
+                if (!resultsByLayer[matchedLayerName]) {
+                    resultsByLayer[matchedLayerName] = [];
+                }
+                resultsByLayer[matchedLayerName].push(feature);
+            }
+        });
+
+        return Object.entries(resultsByLayer).map(([layerName, features]) => {
+            const layer = layerMap[layerName];
+            return {
+                layerName: layer.name,
+                layerId: layer.id,
+                features: features,
+                totalFeatures: features.length,
+                raw: data
+            };
+        });
+
+    } catch {
+        return null;
+    }
+};
+
 export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinate, getFilterFn = null, isInegiMode = false, allLayers = [], featureCount = FEATURE_COUNT_CAP) => {
     const validLayers = filterValidLayers(activeLayers, allLayers, findWMSConfig);
 
@@ -34,118 +146,18 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
     const layersByBaseUrl = groupLayersByUrl(validLayers, getWmsUrl);
 
     const promises = Object.entries(layersByBaseUrl).map(async ([baseUrl, layerGroups]) => {
-        try {
-            const uniqueLayerNames = [];
-            const styles = [];
-            const cqlFilters = [];
-            const layerMap = {};
-            let timeValue = null;
+        const batchResult = await queryWMSGetFeatureInfo(baseUrl, layerGroups, map, coordinate, getFilterFn, isInegiMode, featureCount);
+        if (batchResult !== null) return batchResult;
 
+        const entries = Object.entries(layerGroups);
+        if (entries.length <= 1) return null;
 
-            Object.entries(layerGroups).forEach(([layerName, group]) => {
-                uniqueLayerNames.push(layerName);
-                styles.push(group[0].wmsConfig.styles || '');
-                layerMap[layerName] = group[0].layer;
-
-                const groupFilters = group.map(({ layer, wmsConfig }) => {
-                    const dynamicFilter = getFilterFn ? getFilterFn(layer.id) : null;
-
-                    if (dynamicFilter && /^\d{4}-\d{2}-\d{2}$/.test(dynamicFilter)) {
-                        timeValue = dynamicFilter;
-                        return wmsConfig.cqlFilter || null;
-                    }
-
-                    const baseCqlFilter = wmsConfig.cqlFilter || null;
-                    return combineCQLFilters(baseCqlFilter, dynamicFilter);
-                }).filter(f => f);
-
-                if (groupFilters.length > 0) {
-                    cqlFilters.push(`(${groupFilters.join(') OR (')})`);
-                } else {
-                    cqlFilters.push('INCLUDE');
-                }
-            });
-
-            const view = map.getView();
-            const projection = view.getProjection?.();
-            const projectionCode = projection?.getCode?.() || 'EPSG:3857';
-            const size = map.getSize();
-            const extent = view.calculateExtent(size);
-            const pixel = map.getPixelFromCoordinate(coordinate);
-
-            if (!pixel || pixel[0] < 0 || pixel[1] < 0 || pixel[0] > size[0] || pixel[1] > size[1]) {
-                return null;
-            }
-
-            const params = {
-                SERVICE: 'WMS',
-                VERSION: '1.1.0',
-                REQUEST: 'GetFeatureInfo',
-                LAYERS: uniqueLayerNames.join(','),
-                QUERY_LAYERS: uniqueLayerNames.join(','),
-                STYLES: styles.join(','),
-                BBOX: extent.join(','),
-                WIDTH: size[0].toString(),
-                HEIGHT: size[1].toString(),
-                SRS: projectionCode,
-                FORMAT: 'image/png',
-                INFO_FORMAT: 'application/json',
-                FEATURE_COUNT: String(featureCount),
-                X: Math.floor(pixel[0]).toString(),
-                Y: Math.floor(pixel[1]).toString(),
-                CQL_FILTER: cqlFilters.join(';'),
-                ENV: isInegiMode ? 'geom:geom_inegi' : 'geom:geom_iieg',
-                ...(timeValue ? { TIME: timeValue } : {})
-            };
-
-            const url = baseUrl + '?' + new URLSearchParams(params).toString();
-            const response = await fetch(url);
-
-            const data = await parseResponse(response);
-            if (!data) return null;
-
-            if (!data || !data.features) return null;
-
-            const resultsByLayer = {};
-
-            data.features.forEach(feature => {
-                const featureId = feature.id;
-
-                let matchedLayerName = null;
-
-                if (featureId) {
-                    matchedLayerName = uniqueLayerNames.find(name => {
-                        const simpleName = name.split(':')[1] || name;
-                        return featureId.startsWith(simpleName + '.') || featureId.includes(':' + simpleName + '.');
-                    });
-                }
-
-                if (!matchedLayerName && uniqueLayerNames.length === 1) {
-                    matchedLayerName = uniqueLayerNames[0];
-                }
-
-                if (matchedLayerName) {
-                    if (!resultsByLayer[matchedLayerName]) {
-                        resultsByLayer[matchedLayerName] = [];
-                    }
-                    resultsByLayer[matchedLayerName].push(feature);
-                }
-            });
-
-            return Object.entries(resultsByLayer).map(([layerName, features]) => {
-                const layer = layerMap[layerName];
-                return {
-                    layerName: layer.name,
-                    layerId: layer.id,
-                    features: features,
-                    totalFeatures: features.length,
-                    raw: data
-                };
-            });
-
-        } catch {
-            return null;
-        }
+        const perLayerResults = await Promise.all(
+            entries.map(([layerName, group]) =>
+                queryWMSGetFeatureInfo(baseUrl, { [layerName]: group }, map, coordinate, getFilterFn, isInegiMode, featureCount),
+            ),
+        );
+        return perLayerResults.filter(r => r !== null).flat();
     });
 
     const results = await Promise.all(promises);
