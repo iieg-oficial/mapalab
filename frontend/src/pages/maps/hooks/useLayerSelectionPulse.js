@@ -1,40 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
-import VectorLayer from 'ol/layer/Vector';
-import VectorSource from 'ol/source/Vector';
-import Style from 'ol/style/Style';
-import Stroke from 'ol/style/Stroke';
-import Fill from 'ol/style/Fill';
-import CircleStyle from 'ol/style/Circle';
-import GeoJSON from 'ol/format/GeoJSON';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
 import { findLayerById, collectLayersWithWMS } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
-import { fetchLayerFeaturesInBbox } from '@services/layerFeaturesService';
 
 const PULSE_Z_INDEX = 1000;
-const PULSE_DURATION_MS = 3000;
-const DIM_FACTOR = 0.5;
-
-const geoJSONFormat = new GeoJSON();
-
-const highlightStyle = new Style({
-    stroke: new Stroke({ color: '#5C2472', width: 2.5, lineCap: 'round', lineJoin: 'round' }),
-    fill: new Fill({ color: 'rgba(92, 36, 114, 0.45)' }),
-    image: new CircleStyle({
-        radius: 7,
-        stroke: new Stroke({ color: '#5C2472', width: 2 }),
-        fill: new Fill({ color: 'rgba(92, 36, 114, 0.6)' }),
-    }),
-});
+const PULSE_DURATION_MS = 6000;
+const DIM_FACTOR = 1;
 
 const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-
-const buildHighlightLayer = () => {
-    const source = new VectorSource();
-    const layer = new VectorLayer({ source, zIndex: PULSE_Z_INDEX, style: highlightStyle });
-    layer.setOpacity(0);
-    return { source, layer };
-};
 
 const collectWMSNodes = (layerId, allLayers) => {
     const node = findLayerById(layerId, allLayers);
@@ -52,30 +25,6 @@ export const resolveLayerExtent3857 = async (layerId, allLayers) => {
     const union = createEmpty();
     for (const ext of valid) extend(union, ext);
     return isEmpty(union) ? null : union;
-};
-
-const fetchHighlightFeatures = async (layerId, allLayers, viewExtent) => {
-    const nodesWithWMS = collectWMSNodes(layerId, allLayers);
-    if (!nodesWithWMS.length) return null;
-    const collections = await Promise.all(
-        nodesWithWMS.map(n => fetchLayerFeaturesInBbox(n.wmsConfig, viewExtent))
-    );
-    const olFeatures = [];
-    for (const fc of collections) {
-        if (!fc?.features?.length) continue;
-        try {
-            const parsed = geoJSONFormat.readFeatures(fc, {
-                dataProjection: 'EPSG:3857',
-                featureProjection: 'EPSG:3857',
-            });
-            for (const f of parsed) {
-                if (f.getGeometry()) olFeatures.push(f);
-            }
-        } catch {
-            // skip malformed collection
-        }
-    }
-    return olFeatures.length ? olFeatures : null;
 };
 
 const findDimmableLayers = (map, targetIdSet) => {
@@ -127,9 +76,7 @@ export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLa
 };
 
 const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLayers }) => {
-    const highlightRef = useRef(null);
     const animationRef = useRef(null);
-    const attachedMapsRef = useRef([]);
     const dimmedRef = useRef([]);
     const startTimestampRef = useRef(null);
     const nowFn = useRef(() => (typeof performance !== 'undefined' ? performance.now() : Date.now()));
@@ -139,18 +86,13 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
             cancelAnimationFrame(animationRef.current);
             animationRef.current = null;
         }
-        const refs = highlightRef.current;
-        if (refs) {
-            refs.source.clear();
-            refs.layer.setOpacity(0);
-        }
-        attachedMapsRef.current.forEach(map => {
-            if (map && refs) map.removeLayer(refs.layer);
-        });
-        attachedMapsRef.current = [];
+
         dimmedRef.current.forEach(({ layer, originalOpacity }) => {
-            try { layer.setOpacity(originalOpacity); } catch { /* layer puede haber sido removida */ }
+            try {
+                layer.setOpacity(originalOpacity);
+            } catch {/**/}
         });
+
         dimmedRef.current = [];
         startTimestampRef.current = null;
     }, []);
@@ -163,45 +105,32 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
         const targetMaps = compareMode?.active
             ? Object.values(paneMapInstances || {}).filter(Boolean)
             : (mapRef?.current ? [mapRef.current] : []);
-        if (targetMaps.length === 0) return false;
 
-        const viewExtent = targetMaps[0].getView().calculateExtent(targetMaps[0].getSize() || [800, 600]);
+        if (targetMaps.length === 0) return false;
 
         const targetIdSet = resolveTargetIds(layerId, allLayers);
         if (targetIdSet.size === 0) return false;
 
         const dimmable = [];
         targetMaps.forEach(map => dimmable.push(...findDimmableLayers(map, targetIdSet)));
+
         dimmedRef.current = dimmable;
 
-        const highlightFeatures = await fetchHighlightFeatures(layerId, allLayers, viewExtent);
-
-        if (!highlightRef.current) highlightRef.current = buildHighlightLayer();
-        const { source, layer } = highlightRef.current;
-        source.clear();
-        if (highlightFeatures?.length) {
-            source.addFeatures(highlightFeatures);
-            targetMaps.forEach(map => map.addLayer(layer));
-            attachedMapsRef.current = targetMaps;
-        }
-
-        if (dimmable.length === 0 && !highlightFeatures?.length) {
-            // nada que mostrar: no atenuamos solos (la capa cubre todo o falla todo)
-            return false;
-        }
+        dimmable.forEach(({ layer: olLayer }) => {
+            olLayer.setOpacity(0);
+        });
 
         startTimestampRef.current = nowFn.current();
 
         const step = () => {
             const elapsed = nowFn.current() - startTimestampRef.current;
             const progress = Math.min(elapsed / PULSE_DURATION_MS, 1);
-            const wave = Math.sin(easeInOut(progress) * Math.PI);
 
-            const dimRatio = 1 - wave * DIM_FACTOR;
+            const fade = easeInOut(progress);
+
             dimmable.forEach(({ layer: olLayer, originalOpacity }) => {
-                olLayer.setOpacity(originalOpacity * dimRatio);
+                olLayer.setOpacity(originalOpacity * fade);
             });
-            if (highlightFeatures?.length) layer.setOpacity(wave);
 
             if (progress < 1) {
                 animationRef.current = requestAnimationFrame(step);
@@ -211,6 +140,7 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
         };
 
         animationRef.current = requestAnimationFrame(step);
+
         return true;
     }, [allLayers, mapRef, paneMapInstances, compareMode, cleanup]);
 
