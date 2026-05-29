@@ -14,6 +14,8 @@ import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { usePeriodicityCache } from '@hooksMaps/usePeriodicityCache';
 import { useMapMarker } from '@hooksMaps/useMapMarker';
 import { useFeatureHighlight } from '@hooksMaps/useFeatureHighlight';
+import { findWMSConfig } from '@pages/maps/helpers/wmsConfig';
+import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { useSwipeMode } from '@hooksMaps/useSwipeMode';
 import { useMunicipioMode } from '@hooksMaps/useMunicipioMode';
@@ -215,6 +217,35 @@ const MapsProvider = ({ children }) => {
 
     const mapsAnalyticsEvent = useCallback(() => { }, []);
 
+    const centerOnLayer = useCallback(async (layerId) => {
+        if (!layerId) return false;
+        const wmsConfig = findWMSConfig(layerId, allLayers);
+        if (!wmsConfig) return false;
+        const extent = await getLayerExtent3857(wmsConfig);
+        if (!extent) return false;
+        const fit = (map) => {
+            if (!map) return;
+            try {
+                const size = map.getSize();
+                const shortSide = size ? Math.min(size[0], size[1]) : 800;
+                const pad = Math.round(shortSide * 0.08);
+                map.getView().fit(extent, {
+                    duration: 500,
+                    padding: [pad, pad, pad, pad],
+                    maxZoom: 16,
+                });
+            } catch (err) {
+                console.debug('No se pudo hacer fit a la capa', err);
+            }
+        };
+        if (swipeMode.compareMode?.active) {
+            Object.values(paneMapInstances || {}).forEach(fit);
+        } else {
+            fit(mapRef.current);
+        }
+        return true;
+    }, [allLayers, paneMapInstances, swipeMode.compareMode]);
+
     const value = useMemo(() => ({
         baseMapId,
         setBaseMapId,
@@ -249,6 +280,7 @@ const MapsProvider = ({ children }) => {
         setIsLocating,
         ...swipeMode,
         municipioMode: { ...municipioMode, centerOnSelection: centerOnMunicipioSelection },
+        centerOnLayer,
     }), [
         baseMapId,
         siderCollapsed,
@@ -275,6 +307,7 @@ const MapsProvider = ({ children }) => {
         swipeMode,
         municipioMode,
         centerOnMunicipioSelection,
+        centerOnLayer,
     ]);
 
     return (

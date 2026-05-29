@@ -47,7 +47,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         setLayerSlotMembership,
         getLayerOpacity,
         setLayerOpacity,
-        setActiveSlot
+        setActiveSlot,
+        centerOnLayer
     } = useMapsContext();
 
     const { findEventoByLayerId } = useEventoContext();
@@ -94,7 +95,9 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const canOpenModal = layer.id !== 'curvas_de_nivel';
 
     const handleClickOnLayer = () => {
+        const wasSelected = selectedLayerForSymbology?.id === layer.id;
         setSelectedLayerForSymbology(layer);
+        if (!wasSelected) centerOnLayer?.(layer.id);
     };
 
     const targetSlot = slotMembership === 'AB' ? compareMode?.activeSlot : slotMembership;
