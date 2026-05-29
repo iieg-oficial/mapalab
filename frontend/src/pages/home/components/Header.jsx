@@ -32,10 +32,10 @@ const Header = () => {
             content: {
                 titleHighlight: '',
                 titleRest: api.titulo,
-                description: api.descripcion || fallback.content.description,
+                description: api.descripcion || '',
                 button: {
-                    label: api.ctaLabel || fallback.content.button.label,
-                    link: api.ctaHref || fallback.content.button.link,
+                    label: api.ctaLabel || '',
+                    link: api.ctaHref || '',
                 },
             },
         }));
@@ -144,13 +144,21 @@ const Header = () => {
                     style={desktopStyle}
                 />
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 2xl:hidden z-10">
-                    <Logo
-                        name="mapalab"
-                        variant="dark"
-                        size="w-80 h-25"
-                        alt="Logo MapaLab banner mobile"
-                        expanded
-                    />
+                    {activeBanner.logoUrl ? (
+                        <img
+                            src={activeBanner.logoUrl}
+                            alt="Logo banner mobile"
+                            className="w-80 h-25 object-contain"
+                        />
+                    ) : (
+                        <Logo
+                            name="mapalab"
+                            variant="dark"
+                            size="w-80 h-25"
+                            alt="Logo MapaLab banner mobile"
+                            expanded
+                        />
+                    )}
                 </div>
 
                 {mockupSrc && (
@@ -187,20 +195,24 @@ const Header = () => {
                                 <span className="block font-medium tracking-normal">{activeBanner.content.titleHighlight}</span>
                                 <span className="block font-extrabold tracking-normal">{activeBanner.content.titleRest}</span>
                             </h1>
-                            <p className="font-garet font-medium text-white text-[21px]/[34px] tracking-normal text-left">
-                                {activeBanner.content.description}
-                            </p>
-                            <Link
-                                to={activeBanner.content.button.link}
-                                className={`
-                                    flex items-center justify-center h-[54px] w-full max-w-[410px]
-                                    mt-2 bg-orange rounded-[30px] transition-colors
-                                    hover:bg-[#E57600] hover:shadow-[0px_6px_6px_#5C247234]
-                                    font-garet font-medium text-white text-[18px] tracking-normal
-                                `}
-                            >
-                                {activeBanner.content.button.label}
-                            </Link>
+                            {activeBanner.content.description && (
+                                <p className="font-garet font-medium text-white text-[21px]/[34px] tracking-normal text-left">
+                                    {activeBanner.content.description}
+                                </p>
+                            )}
+                            {activeBanner.content.button.label && activeBanner.content.button.link && (
+                                <Link
+                                    to={activeBanner.content.button.link}
+                                    className={`
+                                        flex items-center justify-center h-[54px] w-full max-w-[410px]
+                                        mt-2 bg-orange rounded-[30px] transition-colors
+                                        hover:bg-[#E57600] hover:shadow-[0px_6px_6px_#5C247234]
+                                        font-garet font-medium text-white text-[18px] tracking-normal
+                                    `}
+                                >
+                                    {activeBanner.content.button.label}
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </div>
