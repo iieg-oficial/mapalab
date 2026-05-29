@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.57.2] - 2026-05-29
+
+### Documentación: `context.md` actualizado para reflejar el botón compartir evento, fix de autoOpen y alt-query resistente
+
+Solo documentación. Tres bloques actualizados en `docs/context.md` para reflejar el estado real del código tras los commits `6bc7c14` (v1.56.0) y `77692af` (v1.57.1):
+
+- **`<EventoActionsBar>`**: removido el texto sobre el badge "beta" y `border-orange` de non-prod, ya no aplica. Layout final documentado: `[Switch] | ml-auto | [Centrar] [Compartir] [FunButton]`. Añadido párrafo sobre el botón **Compartir evento** con URL permanente `?evento=<slug>`, fallback a `window.prompt`, telemetría `evento_share`, y explicación de cuándo usar este botón vs el `<ShareButton>` general.
+- **`useAutoOpenEventoFromUrl`**: clarificado que el hook setea `'ext-evento-${match.id}'` (no `'evento-${id}'` como antes), y describe la cadena de propagación `MapSider → ExternalEventoWidget → ExternalEventoItem → MenuItem` para que el `===` del MenuItem matchee. Mención del path alternativo `createEventoItems` gated por `SIDER_EVENTS_ENABLED=false`.
+- **Sección nueva "Alt-query del InfoBox"**: documenta la separación entre `queryWMSGetFeatureInfo` (request individual) y `getFeatureInfoForActiveLayers` (orquestador con fallback per-capa), incluyendo el caso real del workspace FIFA que disparó el fix.
+
+---
+
 ## [1.57.1] - 2026-05-29
 
 ### Fix: alt-query de InfoBox resistente a CQL filters rotos en el batch
