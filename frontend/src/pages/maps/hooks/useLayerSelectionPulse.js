@@ -3,9 +3,7 @@ import { createEmpty, extend, isEmpty } from 'ol/extent';
 import { findLayerById, collectLayersWithWMS } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 
-const PULSE_Z_INDEX = 1000;
 const PULSE_DURATION_MS = 6000;
-const DIM_FACTOR = 1;
 
 const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
@@ -29,16 +27,38 @@ const resolveLayerExtent3857 = async (layerId, allLayers) => {
 
 const findDimmableLayers = (map, targetIdSet) => {
     const dimmable = [];
+
     map.getLayers().forEach(layer => {
-        const merged = layer.get('mergedLayers');
-        if (!merged) return;
-        const containsTarget = merged.some(m =>
-            (m.subLayers || []).some(sub => targetIdSet.has(sub.id))
-        );
-        if (!containsTarget) {
-            dimmable.push({ layer, originalOpacity: layer.getOpacity() });
+        const currentLayerId = layer.get('layerId');
+        const mergedLayers = layer.get('mergedLayers');
+
+        let isTarget = false;
+
+        if (currentLayerId && targetIdSet.has(currentLayerId)) {
+            isTarget = true;
+        }
+
+        if (!isTarget && Array.isArray(mergedLayers)) {
+            isTarget = mergedLayers.some(group =>
+                (group.subLayers || []).some(sub =>
+                    targetIdSet.has(sub.id)
+                )
+            );
+        }
+
+        if (isTarget) return;
+
+        if (
+            currentLayerId ||
+            Array.isArray(mergedLayers)
+        ) {
+            dimmable.push({
+                layer,
+                originalOpacity: layer.getOpacity(),
+            });
         }
     });
+
     return dimmable;
 };
 
@@ -109,6 +129,7 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
         if (targetMaps.length === 0) return false;
 
         const targetIdSet = resolveTargetIds(layerId, allLayers);
+
         if (targetIdSet.size === 0) return false;
 
         const dimmable = [];
