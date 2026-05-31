@@ -88,6 +88,27 @@ describe('useLayerSelection - centerOnLayer', () => {
         }));
     });
 
+    it('F2 fallback: si la capa no resuelve extent, cae al ancestro/grupo que sí', async () => {
+        const layers = [{
+            id: 'grupo',
+            label: 'Grupo',
+            children: [
+                { id: 'hijo-1', wmsConfig: { workspace: 'a', geoserverLayer: 'x', baseUrl: 'http://gs/a/wms', layerName: 'a:x' } },
+                { id: 'hijo-2', wmsConfig: { workspace: 'a', geoserverLayer: 'y', baseUrl: 'http://gs/a/wms', layerName: 'a:y' } },
+            ],
+        }];
+        vi.spyOn(capabilitiesService, 'getLayerExtent3857')
+            .mockImplementation(async (cfg) => cfg.layerName === 'a:y' ? [20, 20, 30, 30] : null);
+        const view = { fit: vi.fn(), calculateExtent: () => [0, 0, 100, 100] };
+        const map = { getSize: () => [800, 600], getView: () => view, addLayer: vi.fn(), removeLayer: vi.fn() };
+        const { result } = renderHook(() => useLayerSelection({
+            mapRef: { current: map }, paneMapInstances: {}, compareMode: { active: false }, allLayers: layers,
+        }));
+        const ok = await result.current.centerOnLayer('hijo-1');
+        expect(ok).toBe(true);
+        expect(view.fit).toHaveBeenCalledWith([20, 20, 30, 30], expect.objectContaining({ maxZoom: 16 }));
+    });
+
     it('en compareMode aplica fit a cada paneMapInstance', async () => {
         vi.spyOn(capabilitiesService, 'getLayerExtent3857').mockResolvedValue([10, 20, 30, 40]);
         const paneA = buildMockMap();
@@ -175,6 +196,30 @@ describe('useLayerSelection - pulseLayer', () => {
         expect(selectedLayer.setOpacity).not.toHaveBeenCalled();
     });
 
+
+    it('capa de evento (grupo con hermana): monta overlay y NO atenúa el grupo hasta que el overlay carga (sin parpadeo)', async () => {
+        vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+        const grupo = {
+            _opacity: 1,
+            getOpacity: () => grupo._opacity,
+            setOpacity: vi.fn((o) => { grupo._opacity = o; }),
+            get: vi.fn((key) => (key === 'mergedLayers'
+                ? [{ subLayers: [{ id: 'cap-1' }] }, { subLayers: [{ id: 'cap-2' }] }]
+                : null)),
+            getSource: () => ({
+                getParams: () => ({ LAYERS: 'ws:a,ws:b' }),
+                getUrl: () => 'http://gs/ws/wms',
+            }),
+        };
+        const map = buildMockMap([0, 0, 100, 100], [grupo]);
+        const { result } = renderHook(() => useLayerSelection({
+            mapRef: { current: map }, paneMapInstances: {}, compareMode: { active: false }, allLayers: buildLayers(),
+        }));
+        const ok = await result.current.pulseLayer('cap-1');
+        expect(ok).toBe(true);
+        expect(map.addLayer).toHaveBeenCalledTimes(1);
+        expect(grupo.setOpacity).not.toHaveBeenCalled();
+    });
 
     it('al desmontar limpia animación y restaura opacidades originales', async () => {
         vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(42);

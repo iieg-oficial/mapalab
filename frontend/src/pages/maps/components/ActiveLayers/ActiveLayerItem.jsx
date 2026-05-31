@@ -16,6 +16,7 @@ import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
 import SlotBadge from './SlotBadge';
 import { computeLabel } from './datePillHelpers';
+import { ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
 import { useLayerMetadata } from '@hooksMaps/useLayerMetadata';
 import { useLayerDownload } from '@hooksMaps/useLayerDownload';
@@ -23,7 +24,7 @@ import DownloadMenu from '@mapsComponents/LayerDetailModal/components/DownloadMe
 
 const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const { loadingLayers } = useLayerLoading();
-    const { isMobile } = useSider();
+    const { isMobile, width: siderWidth } = useSider();
     const {
         selectedLayerForSymbology,
         setSelectedLayerForSymbology,
@@ -99,7 +100,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         const wasSelected = selectedLayerForSymbology?.id === layer.id;
         setSelectedLayerForSymbology(layer);
         if (!wasSelected) {
-            centerOnLayer?.(layer.id);
+            centerOnLayer?.(layer.id, { siderWidth, isMobile, rightPanelWidth: ACTIVE_LAYERS_PANEL_WIDTH });
             pulseLayer?.(layer.id);
         }
     };
