@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { fetchWorkspaceCapabilities, getLayerExtent4326, clearCapabilitiesCache } from '@services/wmsCapabilitiesService';
+import { fetchWorkspaceCapabilities, getLayerExtent4326, clearCapabilitiesCache, sanitizeExtent4326 } from '@services/wmsCapabilitiesService';
+import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 
 const buildCapabilitiesXml = (layers) => {
     const layersXml = layers.map(l => `
@@ -108,5 +109,29 @@ describe('wmsCapabilitiesService', () => {
     it('retorna null si wmsConfig es falsy o no tiene baseUrl', async () => {
         expect(await getLayerExtent4326(null)).toBeNull();
         expect(await getLayerExtent4326({})).toBeNull();
+    });
+});
+
+describe('sanitizeExtent4326', () => {
+    it('deja intacto un extent plausible de Jalisco', () => {
+        const ext = [-104, 19, -102, 21];
+        expect(sanitizeExtent4326(ext)).toBe(ext);
+    });
+
+    it('recorta a Jalisco un bbox global corrupto (lat 90 -> sin Infinito al transformar)', () => {
+        expect(sanitizeExtent4326([-180, 4.897, 180, 90])).toEqual(JALISCO_BOUNDS.coords);
+    });
+
+    it('recorta el error de signo en longitud este (+101.5 -> borde de Jalisco)', () => {
+        const out = sanitizeExtent4326([-105.7, 18.94, 101.53, 22.56]);
+        const [, , jmaxx] = JALISCO_BOUNDS.coords;
+        expect(out[2]).toBeCloseTo(jmaxx, 5);
+        expect(out[0]).toBeCloseTo(-105.7, 5);
+    });
+
+    it('rechaza extents no finitos o malformados', () => {
+        expect(sanitizeExtent4326([0, 0, Infinity, 10])).toBeNull();
+        expect(sanitizeExtent4326([1, 2, 3])).toBeNull();
+        expect(sanitizeExtent4326(null)).toBeNull();
     });
 });
