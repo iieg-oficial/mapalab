@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
-import { findLayerById, collectLayersWithWMS } from '@pages/maps/helpers/layers/utils/layerHelpers';
+import ImageLayer from 'ol/layer/Image';
+import ImageWMS from 'ol/source/ImageWMS';
+import { findLayerById, collectLayersWithWMS, findAncestorChain } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
+import { getFitPadding } from '@pages/maps/helpers/mapFit';
 
 const PULSE_DURATION_MS = 6000;
+const OVERLAY_Z_INDEX = 1_000_000;
 
 const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
@@ -25,41 +29,67 @@ const resolveLayerExtent3857 = async (layerId, allLayers) => {
     return isEmpty(union) ? null : union;
 };
 
-const findDimmableLayers = (map, targetIdSet) => {
-    const dimmable = [];
+const resolveCenterExtent = async (layerId, allLayers) => {
+    const direct = await resolveLayerExtent3857(layerId, allLayers);
+    if (direct) return direct;
+    const chain = findAncestorChain(layerId, allLayers);
+    for (const ancestor of chain) {
+        if (ancestor.id === layerId) continue;
+        const ext = await resolveLayerExtent3857(ancestor.id, allLayers);
+        if (ext) return ext;
+    }
+    return null;
+};
 
-    map.getLayers().forEach(layer => {
-        const currentLayerId = layer.get('layerId');
-        const mergedLayers = layer.get('mergedLayers');
+const classifyLayer = (olLayer, targetIdSet) => {
+    const mergedLayers = olLayer.get('mergedLayers');
 
-        let isTarget = false;
+    if (Array.isArray(mergedLayers)) {
+        const targetIdxs = [];
+        mergedLayers.forEach((entry, i) => {
+            if ((entry.subLayers || []).some(sub => targetIdSet.has(sub.id))) targetIdxs.push(i);
+        });
+        if (targetIdxs.length === 0) return { role: 'other' };
+        if (targetIdxs.length === mergedLayers.length) return { role: 'target' };
+        return { role: 'mixed', targetIdxs };
+    }
 
-        if (currentLayerId && targetIdSet.has(currentLayerId)) {
-            isTarget = true;
-        }
+    const layerId = olLayer.get('layerId');
+    if (layerId) return targetIdSet.has(layerId) ? { role: 'target' } : { role: 'other' };
 
-        if (!isTarget && Array.isArray(mergedLayers)) {
-            isTarget = mergedLayers.some(group =>
-                (group.subLayers || []).some(sub =>
-                    targetIdSet.has(sub.id)
-                )
-            );
-        }
+    return { role: 'skip' };
+};
 
-        if (isTarget) return;
+const buildTargetOverlay = (hostLayer, targetIdxs) => {
+    const source = hostLayer.getSource?.();
+    const mergedLayers = hostLayer.get('mergedLayers');
+    if (!source || !Array.isArray(mergedLayers)) return null;
 
-        if (
-            currentLayerId ||
-            Array.isArray(mergedLayers)
-        ) {
-            dimmable.push({
-                layer,
-                originalOpacity: layer.getOpacity(),
-            });
-        }
+    const params = source.getParams ? source.getParams() : null;
+    const url = source.getUrl ? source.getUrl() : null;
+    if (!params || !url) return null;
+
+    const split = (value, sep) => (value == null ? null : String(value).split(sep));
+    const layersArr = split(params.LAYERS, ',');
+    if (!layersArr || layersArr.length !== mergedLayers.length) return null;
+
+    const pick = (arr) => (arr && arr.length === mergedLayers.length ? targetIdxs.map(i => arr[i]) : null);
+
+    const overlayParams = { ...params, LAYERS: pick(layersArr).join(',') };
+    const styles = pick(split(params.STYLES, ','));
+    if (styles) overlayParams.STYLES = styles.join(',');
+    const cql = pick(split(params.CQL_FILTER, ';'));
+    if (cql) overlayParams.CQL_FILTER = cql.join(';');
+
+    const overlaySource = new ImageWMS({
+        url,
+        params: overlayParams,
+        ratio: 1.5,
+        serverType: 'geoserver',
+        crossOrigin: 'anonymous',
     });
 
-    return dimmable;
+    return new ImageLayer({ source: overlaySource, opacity: 1, zIndex: OVERLAY_Z_INDEX });
 };
 
 const resolveTargetIds = (layerId, allLayers) => {
@@ -68,16 +98,17 @@ const resolveTargetIds = (layerId, allLayers) => {
 };
 
 export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLayers }) => {
-    const centerOnLayer = useCallback(async (layerId) => {
-        const extent = await resolveLayerExtent3857(layerId, allLayers);
-        if (!extent) return false;
+    const centerOnLayer = useCallback(async (layerId, fitOptions = {}) => {
+        const extent = await resolveCenterExtent(layerId, allLayers);
+        if (!extent) {
+            console.debug('centerOnLayer: sin extent resoluble para', layerId);
+            return false;
+        }
         const fit = (map) => {
             if (!map) return;
             try {
-                const size = map.getSize();
-                const shortSide = size ? Math.min(size[0], size[1]) : 800;
-                const pad = Math.round(shortSide * 0.08);
-                map.getView().fit(extent, { duration: 500, padding: [pad, pad, pad, pad], maxZoom: 16 });
+                const padding = getFitPadding({ mapSize: map.getSize(), ...fitOptions });
+                map.getView().fit(extent, { duration: 500, padding, maxZoom: 16 });
             } catch (err) {
                 console.debug('No se pudo hacer fit a la capa', err);
             }
@@ -98,6 +129,7 @@ export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLa
 const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLayers }) => {
     const animationRef = useRef(null);
     const dimmedRef = useRef([]);
+    const overlaysRef = useRef([]);
     const startTimestampRef = useRef(null);
     const nowFn = useRef(() => (typeof performance !== 'undefined' ? performance.now() : Date.now()));
 
@@ -113,7 +145,14 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
             } catch {/**/}
         });
 
+        overlaysRef.current.forEach(({ map, layer }) => {
+            try {
+                map.removeLayer(layer);
+            } catch {/**/}
+        });
+
         dimmedRef.current = [];
+        overlaysRef.current = [];
         startTimestampRef.current = null;
     }, []);
 
@@ -133,13 +172,34 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
         if (targetIdSet.size === 0) return false;
 
         const dimmable = [];
-        targetMaps.forEach(map => dimmable.push(...findDimmableLayers(map, targetIdSet)));
+        const overlays = [];
+
+        targetMaps.forEach(map => {
+            map.getLayers().forEach(olLayer => {
+                const info = classifyLayer(olLayer, targetIdSet);
+
+                if (info.role === 'skip' || info.role === 'target') return;
+
+                const originalOpacity = olLayer.getOpacity();
+
+                if (info.role === 'mixed') {
+                    const overlay = buildTargetOverlay(olLayer, info.targetIdxs);
+                    if (!overlay) return;
+                    map.addLayer(overlay);
+                    overlays.push({ map, layer: overlay });
+                    overlay.getSource().once('imageloadend', () => {
+                        dimmable.push({ layer: olLayer, originalOpacity });
+                    });
+                    return;
+                }
+
+                olLayer.setOpacity(0);
+                dimmable.push({ layer: olLayer, originalOpacity });
+            });
+        });
 
         dimmedRef.current = dimmable;
-
-        dimmable.forEach(({ layer: olLayer }) => {
-            olLayer.setOpacity(0);
-        });
+        overlaysRef.current = overlays;
 
         startTimestampRef.current = nowFn.current();
 

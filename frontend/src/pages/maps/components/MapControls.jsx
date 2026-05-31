@@ -1,5 +1,6 @@
 import { useMapsContext } from '@hooks/useMaps';
-import { useSiderAdaptivePosition } from '@contexts/SiderContext';
+import { useSiderAdaptivePosition, useSider } from '@contexts/SiderContext';
+import { getFitPadding, ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { transformExtent, fromLonLat } from 'ol/proj';
 import VectorLayer from 'ol/layer/Vector';
@@ -21,6 +22,7 @@ const MapControls = () => {
     const [showFitExtent, setShowFitExtent] = useState(false);
     const fitExtentTimeoutRef = useRef(null);
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 180 });
+    const { width: siderWidth, isMobile } = useSider();
     const locationLayerRef = useRef(null);
     const isSwipe = !!compareMode?.active;
 
@@ -68,12 +70,10 @@ const MapControls = () => {
         if (!map) return;
         const view = map.getView();
         const extent = transformExtent(JALISCO_BOUNDS.coords, 'EPSG:4326', 'EPSG:3857');
-        const size = map.getSize();
-        const shortSide = Math.min(size[0], size[1]);
-        const pad = Math.round(shortSide * 0.08);
-        view.fit(extent, { duration: 500, padding: [pad, pad, pad, pad] });
+        const padding = getFitPadding({ mapSize: map.getSize(), siderWidth, isMobile, rightPanelWidth: ACTIVE_LAYERS_PANEL_WIDTH });
+        view.fit(extent, { duration: 500, padding });
         setShowFitExtent(false);
-    }, [getActiveMap]);
+    }, [getActiveMap, siderWidth, isMobile]);
 
     const handleZoomOutEnter = useCallback(() => {
         if (isTouchDevice()) return;
