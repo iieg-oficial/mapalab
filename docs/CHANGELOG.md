@@ -5,6 +5,37 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [backend 1.33.0] - 2026-05-31
+
+### Seguridad MCP: auth por API key + cuota por key + rate limit en nginx
+
+Cierre de tres hallazgos de una auditoría de seguridad al servidor MCP (`mapalab-mcp`), que hasta 1.32.x era público sin auth: cualquiera que alcanzara `/mcp` podía llamar las 14 tools, incluidas las dos writes (`create_*_share`) que persisten filas en la BD, sin rate limit ni atribución.
+
+#### H1 — Autenticación por API key (todas las tools)
+
+- Nuevo `servers/auth.py::MCPAuthMiddleware`, montado como middleware **más externo** sobre `combined_app` (antes que `MCPTelemetryMiddleware`). Exige `Authorization: Bearer mk_...` (o `X-API-Key`) en toda request a `/mcp`.
+- Valida con `app.services.api_key_validator.validate_api_key(key, origin=None, ip=...)` — el mismo validador cacheado del widget embebible, en threadpool para no bloquear el event loop. Sin key/ inválida → **401** + `WWW-Authenticate`.
+- Cubre lectura y escritura (cierra también la fuga de nombres internos vía `get_workspaces`). `/health`, `/`, `/metrics` quedan fuera del prefijo `/mcp`.
+- Toggle `MCP_AUTH_ENABLED` (default `true`) para dev local sin mariachi.
+
+#### H2 — Cuota por key (abuso de escritura)
+
+- `servers/telemetry.py` consume el `mapalab_key` del `scope` y, por cada `tools/call`, aplica `QuotaTracker` (`app.services.api_key_quota`): `can_consume` antes (→ **429** + `Retry-After` si agotada) y `record` después.
+- `servers/mapalab.py` arranca `quota_flush_loop` (`MCP_QUOTA_FLUSH_INTERVAL_SECONDS`, 60 s) que flushea uso a mariachi, con flush síncrono final en shutdown.
+
+#### H3 — Rate limit + connection limit en nginx
+
+- `nginx/nginx-main.conf`: zonas `mcp_req` (10 r/s) y `mcp_conn`, status 429.
+- `nginx/nginx.conf`: `limit_req zone=mcp_req burst=20 nodelay` + `limit_conn mcp_conn 10` en los 4 bloques `location` de `/mcp`.
+
+#### Cómo conecta un cliente LLM
+
+El humano configura su cliente MCP con el header (`claude mcp add --header "Authorization: Bearer mk_pub_..."`); el agente lo reenvía en cada request. Caveat: las keys para MCP deben emitirse sin restricción de dominio en mariachi (el MCP llama con `origin=None`). Detalle completo en `docs/mcp.md §Auth y seguridad`.
+
+Verificado: `nginx -t` OK, smoke test del container (401 sin token / con token inválido, 200 en `/health`, `tools/list` OK con `MCP_AUTH_ENABLED=false`), middleware de auth confirmado como outermost. Pendientes de la auditoría no incluidos aquí: M1 (cap de vértices en `measure_geometry`) y M2 (validar `filters.date` CQL server-side).
+
+---
+
 ## [1.59.0] - 2026-05-29
 
 ### Banner del home: logo respeta el `logoUrl` por item en mobile + descripción y CTA opcionales
