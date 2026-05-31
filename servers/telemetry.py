@@ -15,7 +15,9 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.config import settings
 from app.metrics import COUNTER_MCP_CALLS, HISTOGRAM_MCP_LATENCY, incr, observe
+from app.services.api_key_quota import get_tracker
 from app.utils.logger import Logger
+from servers.auth import send_json
 
 
 _FLUSH_INTERVAL_SECONDS = 30.0
@@ -190,6 +192,21 @@ class MCPTelemetryMiddleware:
         client = scope.get('client') or (None, None)
         ip = client[0] if client else None
 
+        key = scope.get('mapalab_key')
+        key_id = getattr(key, 'key_id', None) if key is not None else None
+
+        if method == 'tools/call' and key_id is not None:
+            allowed = get_tracker().can_consume(key_id, key.cuota_diaria, key.cuota_mensual)
+            if not allowed:
+                await send_json(
+                    send,
+                    429,
+                    {'error': 'quota_exceeded', 'message': 'Cuota de la API key agotada. Intenta más tarde.'},
+                    [(b'retry-after', b'60')],
+                )
+                incr(COUNTER_MCP_CALLS, {'method': method, 'tool': tool or '', 'status': 'quota'})
+                return
+
         state = {'status': 0, 'bytes_out': 0}
 
         async def wrapped_send(message: Message) -> None:
@@ -225,6 +242,8 @@ class MCPTelemetryMiddleware:
             incr(COUNTER_MCP_CALLS, metric_labels)
             if method == 'tools/call' and tool:
                 observe(HISTOGRAM_MCP_LATENCY, duration_ms, {'tool': tool})
+            if method == 'tools/call' and key_id is not None:
+                get_tracker().record(key_id, error=(outcome == 'error'), bytes_out=state['bytes_out'] or 0)
 
 
 def flush_pending_sync() -> None:
