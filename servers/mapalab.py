@@ -36,6 +36,11 @@ from servers.share_tools import (
     measure_geometry as _measure_geometry,
     resolve_municipios as _resolve_municipios,
 )
+from servers.auth import (
+    MCPAuthMiddleware,
+    quota_flush_loop,
+    quota_flush_pending_sync,
+)
 from servers.telemetry import (
     MCPTelemetryMiddleware,
     flush_loop as telemetry_flush_loop,
@@ -338,16 +343,23 @@ async def lifespan(server_app: FastAPI):
         Logger.warning(f'mapalab-mcp warmup_error {exc}')
 
     flush_task = asyncio.create_task(telemetry_flush_loop())
+    quota_task = asyncio.create_task(quota_flush_loop())
     try:
         yield
     finally:
-        flush_task.cancel()
-        try:
-            await flush_task
-        except asyncio.CancelledError:
-            pass
+        for task in (flush_task, quota_task):
+            task.cancel()
+        for task in (flush_task, quota_task):
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
         try:
             await asyncio.to_thread(telemetry_flush_pending_sync)
+        except Exception:
+            pass
+        try:
+            await asyncio.to_thread(quota_flush_pending_sync)
         except Exception:
             pass
 
@@ -379,6 +391,7 @@ app = FastAPI(
     lifespan=combine_lifespans(lifespan, mcp_app.lifespan),
 )
 app.add_middleware(MCPTelemetryMiddleware, path_prefix='/mcp')
+app.add_middleware(MCPAuthMiddleware, path_prefix='/mcp')
 
 if __name__ == "__main__":
     mcp.run()

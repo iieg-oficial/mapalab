@@ -700,15 +700,87 @@ Scrapeado por Prometheus en huachicol vía el endpoint `/metrics` existente del 
 | `MapalabMcpHighErrorRate` | >10 % de status=error en 10 min con tráfico sostenido (>0.05 rps) |
 | `MapalabMcpHighLatency` | p95 del tool > 5 s en 10 min con tráfico sostenido |
 
-## Auth y seguridad
+## Auth y seguridad (v1.33.0+)
 
-- **Por ahora público.** Igual que el resto del backend de mapalab — el visor no requiere auth y los datos son catálogo público.
-- Si se necesita restringir el MCP sin tocar REST, opciones:
-  1. Allowlist de IPs en gateway-hub para `/mapalab/mcp/`.
-  2. Header secret validado en gateway o en un middleware del backend.
-  3. JWT con claims de `fastmcp` — la lib soporta autenticación nativa pero requiere reconfigurar el cliente.
-- Rate limiting en gateway-hub aplica al path completo; si se vuelve un problema, definir una zona específica `mcp` en `gateway-hub/nginx/`.
-- Los tools `refresh_cache_endpoint_*` e `invalidate_cache_endpoint_*` son writes baratos pero invocables por cualquiera. Mariachi los llama tras edits del árbol; si MCP los usa también, está OK porque solo regenera cache.
+Hasta 1.32.x el MCP era **público sin auth**: cualquiera que alcanzara el endpoint podía llamar las 14 tools, incluidas las dos writes (`create_*_share`) que persisten filas en la BD, sin rate limit ni atribución. Una auditoría de seguridad cerró tres frentes (H1 auth, H2 abuso de escritura, H3 flood). Desde **1.33.0** todo `/mcp` exige API key.
+
+### H1 — Autenticación por API key
+
+`MCPAuthMiddleware` (`servers/auth.py`, montado como middleware más externo sobre `combined_app`, antes que `MCPTelemetryMiddleware`) exige en **todas** las requests a `/mcp` un header:
+
+```
+Authorization: Bearer mk_pub_...        # (o mk_priv_..., o X-API-Key: mk_...)
+```
+
+La key se valida con `app.services.api_key_validator.validate_api_key(key, origin=None, ip=...)` — el mismo validador que ya usa el widget embebible, que consulta a mariachi (`/internal/mapalab/keys/validate`) y cachea el resultado (`EMBED_KEY_CACHE_TTL_SECONDS`, 300 s por defecto). La validación corre en un threadpool (`asyncio.to_thread`) para no bloquear el event loop.
+
+- Sin key o key inválida → **401** con `WWW-Authenticate: Bearer realm="mapalab-mcp"` y un mensaje que explica cómo obtener una.
+- El gate cubre lectura **y** escritura (decisión: cerrar también la fuga de nombres internos de workspaces/schemas vía `get_workspaces`).
+- `/health`, `/` y `/metrics` quedan fuera del prefijo `/mcp`, así que el healthcheck del container sigue abierto.
+- Toggle `MCP_AUTH_ENABLED` (default `true`). En `false` el middleware deja pasar todo — útil para dev local sin mariachi.
+
+**Cómo conecta un cliente LLM** (la IA no hace login; el humano que opera el cliente pone la key en la config y el agente la reenvía en cada request):
+
+```bash
+claude mcp add --transport http \
+  --header "Authorization: Bearer mk_pub_xxxxx" \
+  mapalab https://iieg.jalisco.gob.mx/mapalab/mcp
+```
+
+Claude Desktop (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "mapalab": {
+      "url": "https://iieg.jalisco.gob.mx/mapalab/mcp",
+      "transport": "http",
+      "headers": { "Authorization": "Bearer mk_pub_xxxxx" }
+    }
+  }
+}
+```
+
+> **Caveat de integración con mariachi.** El widget manda `origin` (dominio) y mariachi puede exigir que la key tenga ese dominio en `dominios_permitidos`. El MCP **no tiene origin** (llama `validate_api_key(..., origin=None)`), así que las keys destinadas a MCP deben emitirse **sin restricción de dominio**, o mariachi debe tratar `origin=None` como válido para el scope MCP. Si hoy mariachi rechaza el origin nulo, hay que ajustarlo del lado de mariachi.
+
+### H2 — Cuota por key (abuso de escritura)
+
+`MCPTelemetryMiddleware` (`servers/telemetry.py`) consume el `mapalab_key` que `MCPAuthMiddleware` dejó en el `scope` y, para cada `tools/call`, aplica `QuotaTracker` (`app.services.api_key_quota`):
+
+- Antes de procesar: `can_consume(key_id, cuota_diaria, cuota_mensual)` — si la key agotó su cuota → **429** con `Retry-After: 60` (sin tocar la BD).
+- Después: `record(key_id, error, bytes_out)` acumula uso en memoria.
+- Un loop async (`quota_flush_loop`, `MCP_QUOTA_FLUSH_INTERVAL_SECONDS`, 60 s) flushea el buffer a mariachi (`/internal/mapalab/keys/usage`), mismo patrón que el widget. En shutdown se hace un flush síncrono final.
+
+Las cuotas (`cuotaDiaria`/`cuotaMensual`) las define mariachi por key; `None` = sin límite.
+
+### H3 — Rate limit + connection limit en nginx
+
+`nginx/nginx-main.conf` define las zonas y `nginx/nginx.conf` las aplica a los 4 bloques `location` de `/mcp` (`/mcp`, `/mcp/`, `/mapalab/mcp`, `/mapalab/mcp/`):
+
+```nginx
+# nginx-main.conf (http {})
+limit_req_zone  $binary_remote_addr zone=mcp_req:10m rate=10r/s;
+limit_conn_zone $binary_remote_addr zone=mcp_conn:10m;
+limit_req_status 429;
+limit_conn_status 429;
+
+# nginx.conf (cada location /mcp)
+limit_req  zone=mcp_req burst=20 nodelay;
+limit_conn mcp_conn 10;
+```
+
+Corta floods por IP antes de que lleguen al pool chico del MCP (2 workers × 2 conexiones). El burst de 20 absorbe el arranque normal de una sesión MCP (initialize + tools/list + varias tools/call).
+
+### Piezas
+
+| Archivo | Rol |
+|---|---|
+| `servers/auth.py` | `MCPAuthMiddleware` + `quota_flush_loop` + helper `send_json` |
+| `servers/telemetry.py` | Enforcement + registro de cuota por key en `tools/call` |
+| `servers/mapalab.py` | Wiring: auth como middleware externo, arranque/cierre del flush de cuota |
+| `backend/app/config.py` | `MCP_AUTH_ENABLED`, `MCP_QUOTA_FLUSH_INTERVAL_SECONDS` |
+| `nginx/nginx-main.conf`, `nginx/nginx.conf` | Zonas y directivas `limit_req`/`limit_conn` |
+| `app.services.api_key_validator`, `app.services.api_key_quota` | Reutilizados del path del widget (sin duplicar lógica) |
 
 ## Versiones
 
@@ -736,7 +808,8 @@ Scrapeado por Prometheus en huachicol vía el endpoint `/metrics` existente del 
 ## Limitaciones conocidas
 
 - **`download` queda fuera**: no es trivial exponer un stream de CSV como tool MCP. Si se requiere, considerar un endpoint alternativo que devuelva una URL firmada (S3/Acervo) en lugar del stream directo.
-- **No hay rate limit específico para MCP**: el rate limit del gateway-hub aplica por path. Si un cliente abusivo abre muchas sesiones streamable, puede saturar workers de gunicorn antes que los límites del gateway.
+- **`measure_geometry` sin cap de vértices** (pendiente, M1 de la auditoría): la query a PostGIS es parametrizada (sin SQLi) pero no limita el número de coordenadas ni fija `statement_timeout`; un polígono enorme puede retener una conexión del pool. Mitigado parcialmente por el `limit_req`/cuota, pero conviene topar vértices server-side como en `share_service._count_coordinates`.
+- **`filters.date` (CQL) sin validar server-side** (pendiente, M2): el share persiste el CQL verbatim y el visor lo reenvía a GeoServer en `CQL_FILTER`. Validar contra la forma esperada (`parseCQLToSelections`/`generateCQLFilter`) en `servers/share_tools.py`.
 - **Sin observabilidad propia**: las llamadas a tools no aparecen en `/metrics` (excluido) ni se loggean separadas. Para monitorear, mirar logs de uvicorn/gunicorn filtrando por `/mcp/`.
 
 ## Referencias

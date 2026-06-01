@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     MAPALAB_INTERNAL_TOKEN: Optional[str] = Field(default=None)
     MARIACHI_BACKEND_URL: Optional[str] = Field(default=None)
     EMBED_KEY_CACHE_TTL_SECONDS: int = Field(default=300)
+    MCP_AUTH_ENABLED: bool = Field(default=True)
+    MCP_QUOTA_FLUSH_INTERVAL_SECONDS: int = Field(default=60)
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod
