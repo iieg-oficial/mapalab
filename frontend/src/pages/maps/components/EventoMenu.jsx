@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { transformExtent } from 'ol/proj';
 import { useMapsContext } from '@hooks/useMaps';
 import { useEventoContext } from '@hooks/useEvento';
+import { useSider } from '@contexts/SiderContext';
+import { getFitPadding, ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
 import ThemeMenu from '@mapsComponents/ThemeMenu';
 import EventoActionsBar from '@mapsComponents/EventoActionsBar';
 import { findLayerByWorkspaceLayer } from '@pages/maps/helpers/eventoHelpers';
@@ -11,6 +13,7 @@ import { trackEventoClose, trackEventoOpen } from '@services/analyticsService';
 const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
     const { mapRef, allLayers, setBaseMapId } = useMapsContext();
     const { setActiveEvento, getLayerIdsByEvento } = useEventoContext();
+    const { width: siderWidth, isMobile } = useSider();
     const zoomedRef = useRef(false);
     const autoActivatedRef = useRef(false);
 
@@ -40,12 +43,10 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
             'EPSG:4326',
             'EPSG:3857',
         );
-        const size = mapRef.current.getSize();
-        const shortSide = size ? Math.min(size[0], size[1]) : 800;
-        const pad = Math.round(shortSide * 0.08);
-        view.fit(extent, { duration: 500, padding: [pad, pad, pad, pad] });
+        const padding = getFitPadding({ mapSize: mapRef.current.getSize(), siderWidth, isMobile, rightPanelWidth: ACTIVE_LAYERS_PANEL_WIDTH });
+        view.fit(extent, { duration: 500, padding });
         return true;
-    }, [evento?.bbox, mapRef]);
+    }, [evento?.bbox, mapRef, siderWidth, isMobile]);
 
     useEffect(() => {
         if (zoomedRef.current) return;

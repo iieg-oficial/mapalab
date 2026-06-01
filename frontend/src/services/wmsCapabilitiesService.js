@@ -1,10 +1,31 @@
 import WMSCapabilities from 'ol/format/WMSCapabilities';
 import { transformExtent } from 'ol/proj';
+import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 
 const parser = new WMSCapabilities();
 
 const workspaceCache = new Map();
 const inFlightByWorkspace = new Map();
+
+const MERCATOR_MAX_LAT = 85.06;
+const SANE_SPAN_DEG = 15;
+
+export const sanitizeExtent4326 = (ext) => {
+    if (!Array.isArray(ext) || ext.length !== 4 || ext.some(v => !Number.isFinite(v))) return null;
+    let [minx, miny, maxx, maxy] = ext;
+    const garbage =
+        maxy > MERCATOR_MAX_LAT || miny < -MERCATOR_MAX_LAT ||
+        (maxx - minx) > SANE_SPAN_DEG || (maxy - miny) > SANE_SPAN_DEG;
+    if (!garbage) return ext;
+    const [jx0, jy0, jx1, jy1] = JALISCO_BOUNDS.coords;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    minx = clamp(minx, jx0, jx1);
+    maxx = clamp(maxx, jx0, jx1);
+    miny = clamp(miny, jy0, jy1);
+    maxy = clamp(maxy, jy0, jy1);
+    if (maxx - minx < 0.05 || maxy - miny < 0.05) return [...JALISCO_BOUNDS.coords];
+    return [Math.min(minx, maxx), Math.min(miny, maxy), Math.max(minx, maxx), Math.max(miny, maxy)];
+};
 
 const buildLayerExtentIndex = (capabilities) => {
     const index = new Map();
@@ -19,13 +40,16 @@ const buildLayerExtentIndex = (capabilities) => {
                     extent: node.EX_GeographicBoundingBox,
                 };
             if (name && bbox?.extent?.length === 4) {
-                const ext4326 = bbox.crs === 'CRS:84'
+                const rawExt4326 = bbox.crs === 'CRS:84'
                     ? [bbox.extent[0], bbox.extent[1], bbox.extent[2], bbox.extent[3]]
                     : [bbox.extent[1], bbox.extent[0], bbox.extent[3], bbox.extent[2]];
-                index.set(name, ext4326);
-                const localName = name.includes(':') ? name.split(':').pop() : name;
-                if (localName !== name && !index.has(localName)) {
-                    index.set(localName, ext4326);
+                const ext4326 = sanitizeExtent4326(rawExt4326);
+                if (ext4326) {
+                    index.set(name, ext4326);
+                    const localName = name.includes(':') ? name.split(':').pop() : name;
+                    if (localName !== name && !index.has(localName)) {
+                        index.set(localName, ext4326);
+                    }
                 }
             }
             if (Array.isArray(node?.Layer)) walk(node.Layer);
