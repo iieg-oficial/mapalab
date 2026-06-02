@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.65.0] - 2026-06-02
+
+### Home: respetar el flag `activo` por item en Guía, Opciones, Preguntas y Subtemas
+
+El editor del Inicio (mariachi admin 1.25.0 / api 1.24.0) ahora permite desactivar items de estas secciones sin eliminarlos. El visor ya filtraba los Temas inactivos (`activo !== false`); se extiende el mismo criterio al resto de secciones del home para que un item apagado en el admin no se pinte en el home público.
+
+- `frontend/src/pages/home/helpers/homeAdapters.js`: `buildGuide` y `buildSelect` filtran `activo !== false` antes de mapear; los `subtopics` en `buildTopics` se filtran con el mismo criterio. `buildFaqContent` filtra las preguntas inactivas y, si no queda ninguna activa, devuelve `null` para caer al FAQ bundled en lugar de pintar la sección vacía.
+
+Sin cambios de contrato: el flag llega dentro de cada item del payload JSON de la sección. Items sin el campo se interpretan como activos (compatibilidad hacia atrás).
+
+---
+
 ## [1.64.1] - 2026-06-02
 
 ### Panel de herramientas: botón de descarga con nombre completo y ancho auto mientras "Vista por municipio" no está en producción

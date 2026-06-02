@@ -16,38 +16,46 @@ export const buildTopics = (apiTopics) => {
             description: t.descripcion,
             icon: t.icon || t.id,
             imageUrl: t.imagenUrl,
-            subtopics: (t.subtopics || []).map((s) => ({
-                label: s.label,
-                layerIds: s.layerIds || s.layer_ids || [],
-                link: s.link || '',
-            })),
+            subtopics: (t.subtopics || [])
+                .filter((s) => s.activo !== false)
+                .map((s) => ({
+                    label: s.label,
+                    layerIds: s.layerIds || s.layer_ids || [],
+                    link: s.link || '',
+                })),
         }));
 };
 
 export const buildGuide = (apiGuide) => {
     if (!apiGuide?.length) return guideConfig.steps;
-    return apiGuide.map((s) => ({
-        id: s.id,
-        image: s.imagenUrl,
-        header: s.titulo,
-        label: s.descripcion,
-    }));
+    return apiGuide
+        .filter((s) => s.activo !== false)
+        .map((s) => ({
+            id: s.id,
+            image: s.imagenUrl,
+            header: s.titulo,
+            label: s.descripcion,
+        }));
 };
 
 export const buildSelect = (apiSelect) => {
     if (!apiSelect?.length) return selectConfig.options;
-    return apiSelect.map((o) => ({
-        id: o.id,
-        image: o.imagenUrl,
-        header: o.titulo,
-        label: o.descripcion,
-        color: o.color || DEFAULT_SELECT_COLOR,
-    }));
+    return apiSelect
+        .filter((o) => o.activo !== false)
+        .map((o) => ({
+            id: o.id,
+            image: o.imagenUrl,
+            header: o.titulo,
+            label: o.descripcion,
+            color: o.color || DEFAULT_SELECT_COLOR,
+        }));
 };
 
 export const buildFaqContent = (apiFaq) => {
     if (!apiFaq?.length) return null;
-    return apiFaq.map((q, idx) => ({
+    const activos = apiFaq.filter((q) => q.activo !== false);
+    if (!activos.length) return null;
+    return activos.map((q, idx) => ({
         question: q.pregunta,
         answer: q.respuesta,
         _key: q.id || `faq-${idx}`,
