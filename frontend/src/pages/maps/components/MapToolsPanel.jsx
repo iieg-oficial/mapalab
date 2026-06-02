@@ -11,6 +11,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { SIDER_EXPANDED_WIDTH } from '@constants/sider';
 
 const COLLAPSE_KEY = 'mapalab.tools.collapsed';
+const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
 
 const MapToolsPanel = () => {
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -52,6 +53,7 @@ const MapToolsPanel = () => {
     };
 
     const isAnyPanelOpen = isDownloadOpen || isPreviewOpen || isMunicipioOpen || isShareOpen;
+    const isDownloadExpanded = !IS_NON_PROD && !isCollapsed;
     // const panelInlineStyle = isCollapsed ? undefined : { width: SIDER_EXPANDED_WIDTH };
     const collapseIconKey = isCollapsed ? 'left_arrow_fill_normal' : 'right_arrow_fill_normal';
     const collapseTooltip = isCollapsed ? 'Mostrar etiquetas' : 'Compactar barra';
@@ -84,16 +86,17 @@ const MapToolsPanel = () => {
                 <Panel
                     variant="floating"
                     position="static"
-                    width={isCollapsed ? 'w-auto' : 'w-auto md:w-[373px]'}
+                    width={isCollapsed || !IS_NON_PROD ? 'w-auto' : 'w-auto md:w-[373px]'}
                     flexDirection="flex-row items-center"
                     className="rounded-[10px] shadow-[0_5px_20px_#1A26641A]"
                     contentClassName="gap-2 px-4 py-3"
                     bg="bg-white"
                 >
-                    <Download 
-                        onOpenPreview={handleOpenPreview} 
-                        onOpenChange={setIsDownloadOpen} 
-                        collapsed={isCollapsed} 
+                    <Download
+                        onOpenPreview={handleOpenPreview}
+                        onOpenChange={setIsDownloadOpen}
+                        collapsed={isCollapsed}
+                        expanded={isDownloadExpanded}
                     />
                     <MunicipioFilterButton 
                         municipioMode={municipioMode} 

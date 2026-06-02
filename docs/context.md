@@ -207,16 +207,19 @@ Definiciones viven en DataEngine (schema `mapalab`). Frontend las carga via `GET
 | GET | `/layers/search?q=X` | Búsqueda flat con path |
 | POST | `/layers/refresh-cache` | Regenera cache materializada. **Requiere `X-Internal-Token` desde 1.28.5** (`MAPALAB_INTERNAL_TOKEN`); el gateway tambien lo bloquea externo con 403. Lo invoca `mariachi-api` via `iieg-network` |
 | POST | `/layers/invalidate-cache` | Invalida solo cache en memoria del proceso. **Requiere `X-Internal-Token` desde 1.28.5** |
-| ANY  | `/mcp/` | Servidor MCP en container dedicado `mapalab-mcp`. 12 tools (10 lectura + 2 writes idempotentes). Transporte HTTP streamable; nginx lo proxea sin buffering ni cache |
+| ANY  | `/mcp/` | Servidor MCP en container dedicado `mapalab-mcp`. 14 tools (12 lectura + 2 writes idempotentes). Auth por API key obligatoria (Bearer `mk_*`) desde backend 1.33.0. Transporte HTTP streamable; nginx lo proxea sin buffering ni cache |
 
 ### MCP server
 
-Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp` (separado del backend principal). Los 12 tools (desde 1.48.1) son manuales con `@mcp.tool()` en `servers/mapalab.py` y reutilizan los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) que se copian al container del MCP en build time. 10 son lectura pura; 2 son writes idempotentes (`create_single_share`, `create_swipe_share`) que reutilizan `share_service.validate_payload` + `ShareRepository.upsert`. Detalles en `docs/mcp.md`.
+Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp` (separado del backend principal). Los 14 tools son manuales con `@mcp.tool()` en `servers/mapalab.py` y reutilizan los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) que se copian al container del MCP en build time. 12 son lectura pura (incluye `list_municipios`/`resolve_municipios` desde 1.48.x y `measure_geometry`); 2 son writes idempotentes (`create_single_share`, `create_swipe_share`) que reutilizan `share_service.validate_payload` + `ShareRepository.upsert`. Detalles en `docs/mcp.md`.
 
 - Montaje: `mcp.http_app(path='/mcp', stateless_http=True)` en `servers/mapalab.py`. URL externa **desde mapalab 1.45.0**: `/mcp/` (vía nginx) o `/mapalab/mcp/` (vía gateway-hub). Antes era `/api/mcp/` y `/mapalab/api/mcp/`; se movió a nivel raíz para alinear con el patrón industrial (MCP no es REST y vive al lado del API, no dentro).
 - Lifespan: `combine_lifespans(lifespan, mcp_app.lifespan)` preserva el warmup del pool, el leader election y el scheduler existentes.
 - Nginx: `location = /mcp` y `location = /mapalab/mcp` (más sus variantes con `/`) con `proxy_buffering off`, `proxy_cache off` y timeouts de 600s para el transporte HTTP streamable.
-- Auth: por ahora público (mismo perfil que el resto del backend). Si se requiere restringir, hacerlo en gateway-hub via allowlist o header secret.
+- Auth (backend 1.33.0+): todo `/mcp` exige API key. `MCPAuthMiddleware` (`servers/auth.py`, middleware más externo) valida `Authorization: Bearer mk_pub_...`/`mk_priv_...` (o `X-API-Key: mk_...`) con `app.services.api_key_validator.validate_api_key(key, origin=None, ip=...)` — el mismo validador del widget embebible, que consulta a mariachi (`/internal/mapalab/keys/validate`) y cachea 300s. Sin key o inválida → 401. Toggle `MCP_AUTH_ENABLED` (default `true`; en `false` deja pasar todo para dev local). `/health`, `/` y `/metrics` quedan fuera del gate.
+- Cuota por key: `tools/call` aplica `QuotaTracker` (`app.services.api_key_quota`) → 429 + `Retry-After` al exceder `cuotaDiaria`/`cuotaMensual` (definidas por mariachi; `None` = sin límite). Flush a mariachi (`/internal/mapalab/keys/usage`) cada `MCP_QUOTA_FLUSH_INTERVAL_SECONDS` (60s).
+- Rate limit nginx: `limit_req` (10r/s, burst 20) + `limit_conn` (10) por IP en los 4 `location` de `/mcp` (zonas en `nginx-main.conf`).
+- Emisión de la key: desde el admin de mariachi (`/mapalab/api-keys`, rol `tetlamamakani`). El MCP llama con `origin=None`, así que la key debe ser **privada** (`mk_priv_` sin IPs → no se valida origin) o **pública con `dominios_permitidos=["*"]`**. Una key pública con dominios concretos será rechazada con `origin_blocked` desde el MCP.
 
 ### Modelos y tablas DataEngine (schema `mapalab` + legacy `public`)
 
@@ -441,7 +444,7 @@ Algunas capas pueden mostrar un banner sobre el mapa mientras están activas y d
 **Reglas de visibilidad** (todas se deben cumplir):
 - `enabled === true`
 - Capa en `effectiveActiveLayerIds` (en swipe, en `paneA ∪ paneB`, deduplicado)
-- `currentZoom` dentro de `notice.zoomRange` si está definido (override); si no, dentro de `layer.zoomRange`; si ninguno está definido, siempre pasa
+- `currentZoom` dentro de `notice.zoomRange` si está definido (override); si no, dentro de `layer.zoomRange`; si ninguno está definido, siempre pasa. `isZoomWithinRange` normaliza el rango si viene invertido (`min > max`) — tolera datos legacy guardados al revés. El visor opera entre `minZoom 8` y `maxZoom 18`, rango al que está calibrado el slider del editor (mariachi)
 - Hoy entre `validFrom` y `validUntil` (si están definidos; vacío = permanente)
 - No fue dismisseado para este hash de contenido en `localStorage`
 
@@ -472,6 +475,7 @@ Algunas capas pueden mostrar un banner sobre el mapa mientras están activas y d
 - **v1.20.0** — Auditoría de eventos: perf (cache server-side, index O(1), polling pausado), arquitectura (`EventoContext` separado), persistencia por sesión, telemetría — Mayo 2026 ✅
 - **v1.27.0** — Telemetría anónima del visor → Mariachi (sesiones, capas más usadas, herramientas, botones, swipe) — Mayo 2026 ✅
 - **v1.29.0** — Aviso configurable por capa (`notice`): banner sobre el mapa con título, descripción, icono, variante, posición, vigencia y CTA opcional — Mayo 2026 ✅
+- **v1.66.0** — Avisos por capa: tolerancia a `zoomRange` invertido, tamaño `compact`, slider de zoom calibrado (8–18) en el editor — Junio 2026 ✅
 - **v1.21.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
 - **v1.22.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
 - **v2.0.0** — Arquitectura de capas para dependencias, lazy loading, IGIBot, 3D, dashboards, API publica — Febrero 2027+

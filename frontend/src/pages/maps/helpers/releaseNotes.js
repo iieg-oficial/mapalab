@@ -12,6 +12,20 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.64.1',
+        items: [
+            { text: 'Barra de herramientas: el botón de descarga ahora muestra su nombre completo "Descargar visualización" y la barra se ajusta a su contenido cuando hay espacio disponible.', tag: 'changed' },
+        ],
+    },
+    {
+        version: '1.64.0',
+        items: [
+            { text: 'Capas activas: al seleccionar una capa, el mapa se acomoda solo para mostrarla sin que los paneles laterales la tapen.', tag: 'added' },
+            { text: 'Capas activas: la capa seleccionada se resalta un momento mientras las demás se atenúan, para que la ubiques más rápido en el mapa.', tag: 'added' },
+            { text: 'Capas activas: ahora puedes tocar la leyenda de una capa para llevar el mapa directamente a ella.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.58.1',
         items: [
             { text: 'Compartir mapa: para recargar la configuración del compartido ahora se hace click directamente sobre la etiqueta verde, sin botón aparte.', tag: 'changed' },
@@ -26,6 +40,37 @@ const FALLBACK_NOTES = [
             { text: 'Compartir mapa: en celular, tocar el botón mientras ves un compartido te desliga del mismo (igual que la X en escritorio).', tag: 'added' },
             { text: 'Compartir mapa: corregido un error en celular donde el mapa no se centraba en la zona del compartido al abrir el enlace.', tag: 'fixed' },
             { text: 'Compartir mapa: corregido un error donde a veces el enlace compartido no aplicaba las capas al abrir.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.57.1',
+        items: [
+            { text: 'Información del punto: cuando la capa seleccionada no tiene datos en el punto, ahora se muestran correctamente las demás capas activas que sí los tienen como alternativas.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.56.0',
+        items: [
+            { text: 'Eventos: nuevo botón para compartir un evento con un enlace permanente que siempre lo abre tal como está configurado.', tag: 'added' },
+            { text: 'Capas activas: al eliminar todas las capas, el enlace se limpia para volver al estado inicial del visor.', tag: 'changed' },
+        ],
+    },
+    {
+        version: '1.55.0',
+        items: [
+            { text: 'Mapa base: corregido un destello blanco que aparecía al acercar o alejar el mapa a cierto nivel de zoom.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.52.0',
+        items: [
+            { text: 'Detalle de capa: una capa ahora puede mostrar varias fuentes y varias metodologías cuando aplica.', tag: 'added' },
+        ],
+    },
+    {
+        version: '1.50.1',
+        items: [
+            { text: 'Corregido un caso donde el mapa base se veía en blanco al centrar la vista sobre un punto individual.', tag: 'fixed' },
         ],
     },
     {

@@ -5,6 +5,44 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.66.0] - 2026-06-02
+
+### Avisos por capa: zoom robusto y tamaño compacto
+
+Mejoras al render de los avisos por capa (`notice`), enfocadas en los anclados a punto con rango de zoom.
+
+- **Tolerancia a `zoomRange` invertido**: `isZoomWithinRange` (`helpers/noticeHelpers.js`) normaliza el rango cuando `min > max`. Antes, un rango invertido (p. ej. `{min: 15.8, max: 11.3}`, generable desde el editor) hacía que el filtro nunca se cumpliera y el aviso **no apareciera jamás**. Beneficia a los registros ya guardados sin tocar la base.
+- **Nuevo tamaño `compact`**: se expone el preset `compact` que ya existía en `Message` (más chico que `small`, sin sombra). `NOTICE_SIZE_WIDTH_CLASS` (300px) y `SIZE_ARROW` (14) lo soportan. Aplica a avisos anclados a punto. Sin migración: las capas existentes conservan su tamaño.
+
+Las escalas de zoom del editor (mariachi admin 1.26.0) se calibraron al rango real del visor (`minZoom 8` / `maxZoom 18`).
+
+---
+
+## [1.65.0] - 2026-06-02
+
+### Home: respetar el flag `activo` por item en Guía, Opciones, Preguntas y Subtemas
+
+El editor del Inicio (mariachi admin 1.25.0 / api 1.24.0) ahora permite desactivar items de estas secciones sin eliminarlos. El visor ya filtraba los Temas inactivos (`activo !== false`); se extiende el mismo criterio al resto de secciones del home para que un item apagado en el admin no se pinte en el home público.
+
+- `frontend/src/pages/home/helpers/homeAdapters.js`: `buildGuide` y `buildSelect` filtran `activo !== false` antes de mapear; los `subtopics` en `buildTopics` se filtran con el mismo criterio. `buildFaqContent` filtra las preguntas inactivas y, si no queda ninguna activa, devuelve `null` para caer al FAQ bundled en lugar de pintar la sección vacía.
+
+Sin cambios de contrato: el flag llega dentro de cada item del payload JSON de la sección. Items sin el campo se interpretan como activos (compatibilidad hacia atrás).
+
+---
+
+## [1.64.1] - 2026-06-02
+
+### Panel de herramientas: botón de descarga con nombre completo y ancho auto mientras "Vista por municipio" no está en producción
+
+Mientras "Vista por municipio" siga limitada a entornos no productivos (`MunicipioFilterButton` retorna `null` en producción), el panel de herramientas (`MapToolsPanel`) deja de forzar el ancho fijo `md:w-[373px]`: pasa a `w-auto` y se ajusta a su contenido. En ese caso el botón de descarga (`Download`) muestra el nombre completo **"Descargar visualización"** (ancho `md:w-auto`) en lugar del corto "Descargar".
+
+Cuando "Vista por municipio" llegue a producción, ambos vuelven solos al comportamiento actual (panel a 373px, botón "Descargar" con `md:w-30`) — todo gobernado por el mismo flag `IS_NON_PROD`. Mobile y modo colapsado no cambian (siguen mostrando solo el ícono).
+
+- `frontend/src/pages/maps/components/MapToolsPanel.jsx`: `IS_NON_PROD`, ancho `w-auto` cuando no hay municipio, prop `expanded` hacia `Download`.
+- `frontend/src/pages/maps/components/MapExport/Download.jsx`: prop `expanded` → texto "Descargar visualización" + `md:w-auto md:px-6` + `whitespace-nowrap`.
+
+---
+
 ## [backend 1.33.0] - 2026-05-31
 
 ### Seguridad MCP: auth por API key + cuota por key + rate limit en nginx
@@ -33,6 +71,84 @@ Cierre de tres hallazgos de una auditoría de seguridad al servidor MCP (`mapala
 El humano configura su cliente MCP con el header (`claude mcp add --header "Authorization: Bearer mk_pub_..."`); el agente lo reenvía en cada request. Caveat: las keys para MCP deben emitirse sin restricción de dominio en mariachi (el MCP llama con `origin=None`). Detalle completo en `docs/mcp.md §Auth y seguridad`.
 
 Verificado: `nginx -t` OK, smoke test del container (401 sin token / con token inválido, 200 en `/health`, `tools/list` OK con `MCP_AUTH_ENABLED=false`), middleware de auth confirmado como outermost. Pendientes de la auditoría no incluidos aquí: M1 (cap de vértices en `measure_geometry`) y M2 (validar `filters.date` CQL server-side).
+
+---
+
+## [1.64.0] - 2026-05-31
+
+### Selección de capa: pulso por capa con overlay + encuadre consciente de paneles + centrar desde la leyenda
+
+Forma final del resaltado al seleccionar una capa no-activa en el panel de Capas Activas (`useLayerSelectionPulse`), tras la serie de iteraciones 1.60.0–1.63.0. Reemplaza el resaltado por features (WFS) de 1.62.0 por una atenuación de la opacidad real de las capas WMS.
+
+#### Pulso por capa con overlay para grupos
+
+- `classifyLayer` clasifica cada `ImageLayer` del mapa frente a la seleccionada: `target` (solo la seleccionada → se deja full), `other` (no la contiene → se atenúa a 0 y reaparece en 6 s con `easeInOut`), `mixed` (seleccionada + hermanas del mismo workspace en una sola request WMS).
+- Para `mixed` monta un **overlay temporal** (`ImageWMS` clonando los params reales del grupo, recortados por índice) con solo la seleccionada a opacidad full, y **espera `imageloadend` antes de atenuar el grupo** para que la seleccionada nunca parpadee. `cleanup` restaura opacidades y remueve overlays.
+- Duración del pulso 6000 ms (`8db9669`).
+
+#### Encuadre consciente de paneles
+
+- Nuevo `helpers/mapFit.js::getFitPadding`: `view.fit` usa padding asimétrico `[top, right, bottom, left]` que reserva el ancho real del sider (`useSider().width`) y del panel de capas activas (`ACTIVE_LAYERS_PANEL_WIDTH = 373`) más márgenes, con clamp si los paneles superan el 80 % del mapa; en mobile usa márgenes simétricos. Aplicado a `centerOnLayer`, `centerOnEvento` y "centrar en Jalisco" de `<MapControls>`. Antes el fit centraba sobre la pantalla completa y la capa quedaba tapada por los paneles.
+- `centerOnLayer` acepta `fitOptions` y cae a la cadena de ancestros vía `resolveCenterExtent` si la capa no resuelve extent, en vez de no mover el mapa.
+
+#### Centrar desde la leyenda
+
+- Toda la tarjeta de `<LayerLegendInline>` es clickeable (`role="button"` + teclado) y dispara `centerOnLayer`; en hover muestra el ícono `fit_extent` arriba a la derecha como indicador.
+
+#### Corregido: bbox corrupto de GeoServer (`84e8e65`)
+
+- Algunas capas (ej. `salud:unidades_salud`) anuncian en el GetCapabilities un BoundingBox inválido (longitud con error de signo, bbox global con latitud 90). Transformar lat 90 a EPSG:3857 da Infinito, rompiendo `view.fit` y dejando el mapa en zoom máximo al centrar.
+- `sanitizeExtent4326` (`services/wmsCapabilitiesService.js`) detecta extents fuera del rango válido de Mercator o con span imposible para Jalisco y los recorta a `JALISCO_BOUNDS`; los extents plausibles quedan intactos.
+
+Archivos: `useLayerSelectionPulse.js`, `helpers/mapFit.js` (nuevo), `LayerLegendInline.jsx`, `EventoMenu.jsx`, `MapControls.jsx`, `ActiveLayerItem.jsx`, `services/wmsCapabilitiesService.js`. Estado final documentado en `docs/context.md §Selección de capa: pulso + encuadre`.
+
+---
+
+## [1.63.0] - 2026-05-29
+
+### Selección de capa: el pulso atenúa la opacidad real de las capas WMS no seleccionadas
+
+Cambio de enfoque sobre 1.62.0: en lugar de resaltar las features de la seleccionada vía WFS (costoso) o pintar máscaras bbox, el pulso ahora baja la opacidad real de las demás capas WMS del mapa y deja la seleccionada intacta, restaurándola al terminar. Sin requests WFS ni máscaras. `useLayerSelectionPulse.js` simplificado. Es la base de la versión final 1.64.0.
+
+---
+
+## [1.62.0] - 2026-05-29
+
+### (Experimental) Resaltado de features de la capa seleccionada vía WFS — reemplazado en 1.63.0
+
+Intento de resaltar las features de la capa seleccionada consultándolas por WFS (`layerFeaturesService.js`, `bbox=viewport`, cap 500), con fallback a máscara bbox cuando la capa no resolvía features. Resultó costoso y se reemplazó en 1.63.0/1.64.0 por la atenuación de opacidad WMS; `layerFeaturesService.js` quedó sin uso tras 1.63.0.
+
+---
+
+## [1.61.2] - 2026-05-29
+
+### Estilo: pulso de 3 s, sin ring morado, atenuación máxima 50 %
+
+Ajuste visual del pulso de 1.61.0: se quita el ring morado sobre el bbox y se suaviza la atenuación (opacidad máxima 50 %), con duración 3 s. `useLayerSelectionPulse.js`.
+
+---
+
+## [1.61.1] - 2026-05-29
+
+### Corregido: centerOnLayer/pulseLayer resuelven el extent unión para capas grupo
+
+`centerOnLayer`/`pulseLayer` no movían el mapa cuando la capa seleccionada era un grupo (sin bbox propio en el GetCapabilities). Ahora resuelven el extent unión de los hijos. Duración del pulso ajustada a 1.6 s. `useLayerSelectionPulse.js`.
+
+---
+
+## [1.61.0] - 2026-05-29
+
+### Selección de capa: pulso de 800 ms con atenuación alrededor + ring sobre el bbox
+
+Primer pulso al seleccionar una capa: nuevo hook `useLayerSelectionPulse.js` que atenúa el entorno y dibuja un ring sobre el bbox de la capa durante 800 ms. Lógica extraída de `MapsProvider.jsx`. El ring y estos tiempos se ajustaron en 1.61.2 y el enfoque cambió en 1.63.0–1.64.0.
+
+---
+
+## [1.60.0] - 2026-05-29
+
+### Capas activas: centrar el mapa en el bbox de la capa al seleccionarla
+
+Al seleccionar una capa en el panel de Capas Activas, el mapa se centra automáticamente en su extent. Nuevo `services/wmsCapabilitiesService.js` que parsea el GetCapabilities WMS para resolver el BoundingBox por capa (con tests). `MapsProvider.jsx` expone `centerOnLayer`; `ActiveLayerItem.jsx` lo dispara al seleccionar.
 
 ---
 
