@@ -15,8 +15,9 @@ const isNoticeInValidityWindow = (notice, now = new Date()) => {
 
 const isZoomWithinRange = (zoom, range) => {
     if (zoom == null || !range) return true;
-    const min = typeof range.min === 'number' ? range.min : null;
-    const max = typeof range.max === 'number' ? range.max : null;
+    let min = typeof range.min === 'number' ? range.min : null;
+    let max = typeof range.max === 'number' ? range.max : null;
+    if (min != null && max != null && min > max) [min, max] = [max, min];
     if (min != null && zoom < min) return false;
     if (max != null && zoom > max) return false;
     return true;
@@ -144,6 +145,7 @@ export const positionToContainerClasses = (position) =>
 export const collapsePositionForMobile = () => 'top-center';
 
 export const SIZE_ARROW = {
+    compact: 14,
     small: 16,
     medium: 22,
     large: 26,
@@ -167,6 +169,7 @@ export const NOTICE_VARIANT_BORDER = {
 };
 
 export const NOTICE_SIZE_WIDTH_CLASS = {
+    compact: 'w-[min(300px,calc(100vw-2rem))]',
     small: 'w-[min(360px,calc(100vw-2rem))]',
     medium: 'w-[min(440px,calc(100vw-2rem))]',
     large: 'w-[min(507px,calc(100vw-2rem))]',

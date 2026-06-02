@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.66.0] - 2026-06-02
+
+### Avisos por capa: zoom robusto y tamaño compacto
+
+Mejoras al render de los avisos por capa (`notice`), enfocadas en los anclados a punto con rango de zoom.
+
+- **Tolerancia a `zoomRange` invertido**: `isZoomWithinRange` (`helpers/noticeHelpers.js`) normaliza el rango cuando `min > max`. Antes, un rango invertido (p. ej. `{min: 15.8, max: 11.3}`, generable desde el editor) hacía que el filtro nunca se cumpliera y el aviso **no apareciera jamás**. Beneficia a los registros ya guardados sin tocar la base.
+- **Nuevo tamaño `compact`**: se expone el preset `compact` que ya existía en `Message` (más chico que `small`, sin sombra). `NOTICE_SIZE_WIDTH_CLASS` (300px) y `SIZE_ARROW` (14) lo soportan. Aplica a avisos anclados a punto. Sin migración: las capas existentes conservan su tamaño.
+
+Las escalas de zoom del editor (mariachi admin 1.26.0) se calibraron al rango real del visor (`minZoom 8` / `maxZoom 18`).
+
+---
+
 ## [1.65.0] - 2026-06-02
 
 ### Home: respetar el flag `activo` por item en Guía, Opciones, Preguntas y Subtemas

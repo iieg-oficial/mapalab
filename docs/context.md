@@ -444,7 +444,7 @@ Algunas capas pueden mostrar un banner sobre el mapa mientras están activas y d
 **Reglas de visibilidad** (todas se deben cumplir):
 - `enabled === true`
 - Capa en `effectiveActiveLayerIds` (en swipe, en `paneA ∪ paneB`, deduplicado)
-- `currentZoom` dentro de `notice.zoomRange` si está definido (override); si no, dentro de `layer.zoomRange`; si ninguno está definido, siempre pasa
+- `currentZoom` dentro de `notice.zoomRange` si está definido (override); si no, dentro de `layer.zoomRange`; si ninguno está definido, siempre pasa. `isZoomWithinRange` normaliza el rango si viene invertido (`min > max`) — tolera datos legacy guardados al revés. El visor opera entre `minZoom 8` y `maxZoom 18`, rango al que está calibrado el slider del editor (mariachi)
 - Hoy entre `validFrom` y `validUntil` (si están definidos; vacío = permanente)
 - No fue dismisseado para este hash de contenido en `localStorage`
 
@@ -475,6 +475,7 @@ Algunas capas pueden mostrar un banner sobre el mapa mientras están activas y d
 - **v1.20.0** — Auditoría de eventos: perf (cache server-side, index O(1), polling pausado), arquitectura (`EventoContext` separado), persistencia por sesión, telemetría — Mayo 2026 ✅
 - **v1.27.0** — Telemetría anónima del visor → Mariachi (sesiones, capas más usadas, herramientas, botones, swipe) — Mayo 2026 ✅
 - **v1.29.0** — Aviso configurable por capa (`notice`): banner sobre el mapa con título, descripción, icono, variante, posición, vigencia y CTA opcional — Mayo 2026 ✅
+- **v1.66.0** — Avisos por capa: tolerancia a `zoomRange` invertido, tamaño `compact`, slider de zoom calibrado (8–18) en el editor — Junio 2026 ✅
 - **v1.21.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
 - **v1.22.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
 - **v2.0.0** — Arquitectura de capas para dependencias, lazy loading, IGIBot, 3D, dashboards, API publica — Febrero 2027+
