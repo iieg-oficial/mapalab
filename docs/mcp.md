@@ -741,7 +741,12 @@ Claude Desktop (`claude_desktop_config.json`):
 }
 ```
 
-> **Caveat de integración con mariachi.** El widget manda `origin` (dominio) y mariachi puede exigir que la key tenga ese dominio en `dominios_permitidos`. El MCP **no tiene origin** (llama `validate_api_key(..., origin=None)`), así que las keys destinadas a MCP deben emitirse **sin restricción de dominio**, o mariachi debe tratar `origin=None` como válido para el scope MCP. Si hoy mariachi rechaza el origin nulo, hay que ajustarlo del lado de mariachi.
+> **Integración con mariachi (verificado).** El widget manda `origin` (dominio) y mariachi exige que la key pública tenga ese dominio en `dominios_permitidos`. El MCP **no tiene origin** (llama `validate_api_key(..., origin=None)`). En `mariachi/api/app/services/mapalab_keys.py::match_origin` el origin solo se valida para keys **públicas**: `match_origin(None, patterns)` devuelve `False` salvo que `patterns == ["*"]`. Las keys **privadas** (`mk_priv_`) no validan origin (solo `ips_permitidas`, y si está vacía no hay restricción). Por lo tanto, para el MCP emite desde el admin de mariachi (`/mapalab/api-keys`, rol `tetlamamakani`):
+>
+> - una key **privada** sin IPs (recomendado: el MCP no expone catálogo restringido por dominio), **o**
+> - una key **pública con `dominios_permitidos=["*"]`** (nota: el alta de key pública rechaza con 400 si no se captura al menos un dominio, así que hay que poner explícitamente `*`).
+>
+> Una key pública con dominios concretos será rechazada con `origin_blocked` (401) al usarse desde el MCP.
 
 ### H2 — Cuota por key (abuso de escritura)
 
