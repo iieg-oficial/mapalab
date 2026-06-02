@@ -23,7 +23,7 @@ const licenciaContent = (
 );
 import QualitySelector from './QualitySelector';
 
-const Download = ({ onOpenPreview, onOpenChange, collapsed = false }) => {
+const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = false }) => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [selectedLegendLayers, setSelectedLegendLayers] = useState([]);
     const [title, setTitle] = useState('Capas mapalab');
@@ -153,14 +153,14 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false }) => {
                     onClick={handleDownloadClick}
                     disabled={!canDownload || isDownloading}
                     className={[
-                        'flex items-center justify-center',
+                        'flex items-center justify-center whitespace-nowrap',
                         'text-center h-12.5 rounded-[30px] transition',
-                        collapsed || isMobile ? 'w-12.5' : 'w-12.5 md:w-30',
+                        collapsed || isMobile ? 'w-12.5' : (expanded ? 'w-12.5 md:w-auto md:px-6' : 'w-12.5 md:w-30'),
                         'font-garet font-bold text-[14px] hover:shadow-[0_6px_6px_#5C247234]',
                         canDownload ? 'bg-[#703089] text-white hover:bg-[#5C2472]' : 'bg-black/5 text-black/40 cursor-not-allowed',
                     ].join(' ')}
                 >
-                    {(isMobile || collapsed) ? <Icon name="download" /> : (isDownloading ? 'Generando…' : 'Descargar')}
+                    {(isMobile || collapsed) ? <Icon name="download" /> : (isDownloading ? 'Generando…' : (expanded ? 'Descargar visualización' : 'Descargar'))}
                 </button>
             </Tooltip>
 
