@@ -148,7 +148,7 @@ const MapsProvider = ({ children }) => {
         const inB = cm.paneB.activeLayerIds.includes(layerId);
         const wantsActivate = force === true || (force === undefined && !inA && !inB);
         if (wantsActivate && !inA && !inB) {
-            layerToggle.handleToggleLayer(layerId, true);
+            layerToggle.handleToggleLayer(layerId, true, options);
             swipeMode.setLayerSlotMembership(layerId, 'AB');
             return undefined;
         }

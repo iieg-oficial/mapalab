@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.67.0] - 2026-06-03
+
+### Telemetría: abrir un evento no infla las activaciones de sus capas
+
+Al abrir un evento se auto-activan sus capas; cada activación emitía un `layer_toggle` que se contaba como activación de capa en Estadísticas de MapaLab, inflando todas las capas del evento. Ahora esas auto-activaciones se **etiquetan** (no se suprimen) para que el backend (mariachi `api 1.27.0`) las cuente como contexto del evento, no de la capa. La función de auto-activación no cambia: las capas se siguen prendiendo igual; el switch manual de una capa sí cuenta para esa capa.
+
+- `services/analyticsService.js`: `trackLayerToggle(layerId, isActivating, context)` mete el `context` en `props` del evento `layer_toggle`.
+- `pages/maps/hooks/useLayerToggle.js`: el 3er parámetro de `handleToggleLayer` acepta booleano (legacy `skipAnalytics`) o un objeto `{ skipAnalytics, analytics }`, retrocompatible.
+- `providers/MapsProvider.jsx`: encadena el contexto también en la rama de swipe/compare.
+- `pages/maps/components/EventoMenu.jsx`: la auto-activación pasa `{ analytics: { source: 'evento_open', evento_id } }`, así el `layer_toggle` resultante queda etiquetado.
+
+---
+
 ## [1.66.1] - 2026-06-03
 
 ### Cache de eventos/home: TTL de 24h y logging de errores

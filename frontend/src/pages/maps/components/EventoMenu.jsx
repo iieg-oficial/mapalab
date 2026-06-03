@@ -120,7 +120,8 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
             if (b.z == null) return 1;
             return a.z - b.z;
         });
-        toActivate.forEach(({ id }) => onToggleLayer(id, true));
+        const analytics = { source: 'evento_open', evento_id: evento.id };
+        toActivate.forEach(({ id }) => onToggleLayer(id, true, { analytics }));
     }, [evento, allLayers, onToggleLayer, eventoLayerIds]);
 
     const externalActiveIds = useMemo(() => (
