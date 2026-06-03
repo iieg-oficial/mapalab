@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.66.1] - 2026-06-03
+
+### Cache de eventos/home: TTL de 24h y logging de errores
+
+Mejoras al sistema de cache del frontend para datos de eventos y home (provenientes de mariachi).
+
+- **TTL de 24 horas**: la cache local de `eventos` y `home` ahora expira despues de 24 horas desde su ultima carga, como safety net adicional al polling de `cache-version` (30s). Antes, los datos podian quedar stale indefinidamente si el polling fallaba por problemas de red o el usuario tenia la pestana abierta por periodos largos. Al recargar la pagina, la cache de memoria se limpia automaticamente.
+- **Logging de errores en desarrollo**: el catch silencioso en `checkVersions` ahora logea un warning en consola cuando el entorno es `DEV`, facilitando el debugging sin afectar produccion.
+- **Variable de entorno `VITE_MAPALAB_PUBLIC_API_HOST`**: agregada a `.env.production` para consistencia con los demas entornos. Define el prefijo base para las peticiones a mariachi (`/api/mapalab/`).
+
+`frontend/src/services/eventosService.js`: timestamps `eventosTimestamp`/`homeTimestamp` en el objeto cache, helper `isCacheValid()`, y verificacion de TTL antes de retornar datos cacheados.
+
+---
+
 ## [1.66.0] - 2026-06-02
 
 ### Avisos por capa: zoom robusto y tamaño compacto
