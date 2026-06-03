@@ -83,7 +83,7 @@ describe('useLayerToggle - analytics', () => {
         const { result } = renderHook(() => useLayerToggle(setup));
 
         act(() => result.current.handleToggleLayer('capa-a', true));
-        expect(trackLayerToggle).toHaveBeenCalledWith('capa-a', true);
+        expect(trackLayerToggle).toHaveBeenCalledWith('capa-a', true, undefined);
     });
 
     it('llama a trackLayerToggle al desactivar', () => {
@@ -91,7 +91,7 @@ describe('useLayerToggle - analytics', () => {
         const { result } = renderHook(() => useLayerToggle(setup));
 
         act(() => result.current.handleToggleLayer('capa-a', false));
-        expect(trackLayerToggle).toHaveBeenCalledWith('capa-a', false);
+        expect(trackLayerToggle).toHaveBeenCalledWith('capa-a', false, undefined);
     });
 
     it('no llama a trackLayerToggle cuando skipAnalytics es true', () => {
@@ -99,6 +99,23 @@ describe('useLayerToggle - analytics', () => {
         const { result } = renderHook(() => useLayerToggle(setup));
 
         act(() => result.current.handleToggleLayer('capa-a', true, true));
+        expect(trackLayerToggle).not.toHaveBeenCalled();
+    });
+
+    it('propaga el contexto de analytics al activar desde un evento', () => {
+        const setup = makeSetup();
+        const { result } = renderHook(() => useLayerToggle(setup));
+
+        const analytics = { source: 'evento_open', evento_id: 42 };
+        act(() => result.current.handleToggleLayer('capa-a', true, { analytics }));
+        expect(trackLayerToggle).toHaveBeenCalledWith('capa-a', true, analytics);
+    });
+
+    it('soporta skipAnalytics como objeto', () => {
+        const setup = makeSetup();
+        const { result } = renderHook(() => useLayerToggle(setup));
+
+        act(() => result.current.handleToggleLayer('capa-a', true, { skipAnalytics: true }));
         expect(trackLayerToggle).not.toHaveBeenCalled();
     });
 });

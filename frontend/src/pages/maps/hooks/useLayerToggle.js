@@ -114,8 +114,10 @@ export const useLayerToggle = ({
         }
     }, [findLayerById, mapRef]);
 
-    const handleToggleLayer = useCallback((layerId, isActive, skipAnalytics = false) => {
-        if (!skipAnalytics) trackLayerToggle(layerId, isActive);
+    const handleToggleLayer = useCallback((layerId, isActive, options = false) => {
+        const opts = options && typeof options === 'object' ? options : { skipAnalytics: !!options };
+        const skipAnalytics = !!opts.skipAnalytics;
+        if (!skipAnalytics) trackLayerToggle(layerId, isActive, opts.analytics);
         setActiveLayerIds(prevActiveIds => {
             const childLayerIds = getAllChildLayerIds(layerId);
             const allRelatedIds = [layerId, ...childLayerIds];

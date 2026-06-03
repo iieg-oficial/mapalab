@@ -5,15 +5,23 @@ const buildUrl = (path) => {
     return `${base}${path.startsWith('/') ? path.slice(1) : path}`;
 };
 
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 horas
+
 const cache = {
     eventos: null,
     home: null,
     eventosInFlight: null,
     homeInFlight: null,
+    eventosTimestamp: null,
+    homeTimestamp: null,
+};
+
+const isCacheValid = (timestamp) => {
+    return timestamp && (Date.now() - timestamp) < CACHE_TTL_MS;
 };
 
 export const fetchEventos = async () => {
-    if (cache.eventos) return cache.eventos;
+    if (cache.eventos && isCacheValid(cache.eventosTimestamp)) return cache.eventos;
     if (cache.eventosInFlight) return cache.eventosInFlight;
 
     cache.eventosInFlight = (async () => {
@@ -22,6 +30,7 @@ export const fetchEventos = async () => {
             if (!res.ok) throw new Error(`GET /eventos fallo ${res.status}`);
             const data = await res.json();
             cache.eventos = Array.isArray(data) ? data : [];
+            cache.eventosTimestamp = Date.now();
             return cache.eventos;
         } finally {
             cache.eventosInFlight = null;
@@ -32,7 +41,7 @@ export const fetchEventos = async () => {
 };
 
 export const fetchHomeContent = async () => {
-    if (cache.home) return cache.home;
+    if (cache.home && isCacheValid(cache.homeTimestamp)) return cache.home;
     if (cache.homeInFlight) return cache.homeInFlight;
 
     cache.homeInFlight = (async () => {
@@ -40,6 +49,7 @@ export const fetchHomeContent = async () => {
             const res = await fetch(buildUrl('home'), { credentials: 'omit' });
             if (!res.ok) throw new Error(`GET /home fallo ${res.status}`);
             cache.home = await res.json();
+            cache.homeTimestamp = Date.now();
             return cache.home;
         } finally {
             cache.homeInFlight = null;
@@ -81,7 +91,9 @@ const checkVersions = async () => {
             window.dispatchEvent(new CustomEvent(VERSION_EVENT_HOME));
         }
         lastVersions = versions;
-    } catch { /* silencioso */ }
+    } catch (err) {
+        if (import.meta.env.DEV) console.warn('[cache-version] check failed:', err);
+    }
 };
 
 const stopTimer = () => {

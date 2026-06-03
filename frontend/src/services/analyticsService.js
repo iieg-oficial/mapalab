@@ -14,8 +14,8 @@ const withMapInteraction = (eventName, params) => {
     trackEvent('map_interaction', { action: eventName });
 };
 
-export const trackLayerToggle = (layerId, isActivating) =>
-    withMapInteraction('layer_toggle', { layer_id: layerId, action: isActivating ? 'activar' : 'desactivar' });
+export const trackLayerToggle = (layerId, isActivating, context) =>
+    withMapInteraction('layer_toggle', { layer_id: layerId, action: isActivating ? 'activar' : 'desactivar', ...(context || {}) });
 
 export const trackFeatureClick = (layerId) =>
     withMapInteraction('feature_click', { layer_id: layerId });
