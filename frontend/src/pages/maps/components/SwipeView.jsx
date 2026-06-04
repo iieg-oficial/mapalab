@@ -14,7 +14,7 @@ import {
 } from '@pages/maps/helpers/swipeMode';
 
 const SwipeView = () => {
-    const { compareMode, paneMapInstances, setSwipePosition, highlightedSlots, mapRef } = useMapsContext();
+    const { compareMode, paneMapInstances, setSwipePosition, highlightedSlots } = useMapsContext();
     const containerRef = useRef(null);
     const [pos, setPos] = useState((compareMode?.swipePosition ?? 0.5) * 100);
     const lastPersistedRef = useRef(pos);
@@ -26,16 +26,12 @@ const SwipeView = () => {
     useViewSync(paneMapInstances, !!compareMode?.active);
 
     useEffect(() => {
-        const mainMap = mapRef?.current;
-        if (!mainMap) return;
-        const view = mainMap.getView();
-        const center = view.getCenter();
-        const zoom = view.getZoom();
-        if (!center || zoom == null) return;
+        const captured = compareMode?.capturedView;
+        if (!captured?.center || captured.zoom == null) return;
         paneMapInstances.forEach((m) => {
             if (m) {
-                m.getView().setCenter(center);
-                m.getView().setZoom(zoom);
+                m.getView().setCenter(captured.center);
+                m.getView().setZoom(captured.zoom);
             }
         });
     // eslint-disable-next-line react-hooks/exhaustive-deps

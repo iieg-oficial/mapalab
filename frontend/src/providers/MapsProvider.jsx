@@ -60,6 +60,7 @@ const MapsProvider = ({ children }) => {
         liveStateRef,
         getAllChildLayerIds: layerManagement.getAllChildLayerIds,
         paneMapRefs,
+        mapRef,
     });
     compareModeRef.current = swipeMode.compareMode;
 
