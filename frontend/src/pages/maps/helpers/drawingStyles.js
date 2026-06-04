@@ -259,6 +259,10 @@ const svgToDataUrl = (xml) => `data:image/svg+xml;base64,${btoa(unescape(encodeU
 export const createSymbolStyle = (symbol, rotation = 0, scale = 1, selected = false) => {
     if (!symbol) return createEmojiStyle('🙂', rotation, scale, selected);
 
+    if (typeof symbol === 'string') {
+        return createEmojiStyle(symbol, rotation, scale, selected);
+    }
+
     if (symbol.kind === 'emoji') {
         return createEmojiStyle(symbol.value, rotation, scale, selected);
     }
