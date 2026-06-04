@@ -5,6 +5,17 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.68.0] - 2026-06-04
+
+### Eventos: abrir el detalle de una capa elegida + telemetría solo en click explícito
+
+Al abrir un evento se auto-activan varias capas y el `LayerDetailModal` quedaba mostrando el de la última activada (orden arbitrario). Ahora, si en mariachi se marca una capa del evento (campo `abrirDetalle`, admin 1.28.0 / api 1.28.0), al abrir el evento se abre **su** detalle.
+
+- `pages/maps/components/EventoMenu.jsx`: tras auto-activar, abre el `LayerDetailModal` de la capa con `abrirDetalle` (`setSelectedLayer`), que gana sobre el default porque se llama después de activar todas. Si ninguna está marcada, comportamiento anterior intacto.
+- **Telemetría**: la apertura **automática** del `LayerDetailModal` deja de contar para `trackLayerDetailOpen`. Solo cuenta el click explícito del usuario en el botón de detalles del panel de capas activas.
+    - `pages/maps/components/LayerDetailModal/LayerDetailModal.jsx`: el effect de tracking respeta una bandera `silent` en `selectedLayer`.
+    - `pages/maps/hooks/useLayerToggle.js`: la apertura del modal al activar una capa marca `silent` (es efecto secundario, no intención de ver detalle). `EventoMenu` también marca `silent`. `ActiveLayerItem` (click explícito) pasa el objeto sin `silent`, así que sigue contando.
+
 ## [1.67.0] - 2026-06-03
 
 ### Telemetría: abrir un evento no infla las activaciones de sus capas

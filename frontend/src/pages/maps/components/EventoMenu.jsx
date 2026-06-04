@@ -11,7 +11,7 @@ import { trackEventoClose, trackEventoOpen } from '@services/analyticsService';
 
 
 const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
-    const { mapRef, allLayers, setBaseMapId } = useMapsContext();
+    const { mapRef, allLayers, setBaseMapId, setSelectedLayer } = useMapsContext();
     const { setActiveEvento, getLayerIdsByEvento } = useEventoContext();
     const { width: siderWidth, isMobile } = useSider();
     const zoomedRef = useRef(false);
@@ -101,12 +101,14 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
         }
 
         const toActivate = [];
+        let detalleLayer = null;
         const walk = (capas) => {
             for (const c of capas || []) {
                 if (c.tipo === 'etiqueta') continue;
                 if (c.tipo === 'categoria') { walk(c.capas); continue; }
-                if (c.autoActivar === false) continue;
                 const layer = findLayerByWorkspaceLayer(c.workspace, c.layer, allLayers);
+                if (c.abrirDetalle && layer) detalleLayer = layer;
+                if (c.autoActivar === false) continue;
                 if (layer && !activeIds.includes(layer.id)) {
                     toActivate.push({ id: layer.id, z: typeof c.z === 'number' ? c.z : null });
                 }
@@ -122,7 +124,10 @@ const EventoMenu = ({ evento, activeLayerIds, onToggleLayer, closeButton }) => {
         });
         const analytics = { source: 'evento_open', evento_id: evento.id };
         toActivate.forEach(({ id }) => onToggleLayer(id, true, { analytics }));
-    }, [evento, allLayers, onToggleLayer, eventoLayerIds]);
+        if (detalleLayer && setSelectedLayer) {
+            setSelectedLayer({ id: detalleLayer.id, name: detalleLayer.label, silent: true });
+        }
+    }, [evento, allLayers, onToggleLayer, eventoLayerIds, setSelectedLayer]);
 
     const externalActiveIds = useMemo(() => (
         (activeLayerIds || []).filter((id) => !eventoLayerIds.has(id))

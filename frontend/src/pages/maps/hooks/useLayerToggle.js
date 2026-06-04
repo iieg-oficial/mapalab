@@ -149,7 +149,7 @@ export const useLayerToggle = ({
                 const displayLayer = groupAncestor || layer;
                 setSelectedLayerForSymbology(displayLayer);
                 if (!skipAnalytics) {
-                    setSelectedLayer({ id: displayLayer.id, name: displayLayer.label });
+                    setSelectedLayer({ id: displayLayer.id, name: displayLayer.label, silent: true });
                 }
             }
         } else {
