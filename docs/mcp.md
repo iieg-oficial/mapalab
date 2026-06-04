@@ -817,6 +817,53 @@ Corta floods por IP antes de que lleguen al pool chico del MCP (2 workers × 2 c
 - **`filters.date` (CQL) sin validar server-side** (pendiente, M2): el share persiste el CQL verbatim y el visor lo reenvía a GeoServer en `CQL_FILTER`. Validar contra la forma esperada (`parseCQLToSelections`/`generateCQLFilter`) en `servers/share_tools.py`.
 - **Sin observabilidad propia**: las llamadas a tools no aparecen en `/metrics` (excluido) ni se loggean separadas. Para monitorear, mirar logs de uvicorn/gunicorn filtrando por `/mcp/`.
 
+## Pendiente — Publicar en el Claude Connectors Directory ("store")
+
+> **Estado: no iniciado.** Hoy el MCP funciona como *conector personalizado* solo vía Claude Code/Desktop inyectando el header `Authorization: Bearer mk_...`. Para entrar al **Connectors Directory** de claude.ai (el listado oficial, "store") faltan los puntos de abajo. El bloqueo de fondo es la auth: el directorio exige **OAuth 2.1**, no API key estática.
+
+### Por qué no entra hoy
+
+| Camino | Auth aceptada | Estado mapalab |
+|---|---|---|
+| Conector personalizado (URL pegada por el usuario) | OAuth, o sin auth. La UI web de claude.ai **no** tiene campo para API key estática | Solo sirve vía Claude Code/Desktop con `--header` |
+| **Connectors Directory** (listado oficial) | **OAuth 2.1 + PKCE obligatorio** | Falta todo lo de OAuth |
+
+### Fase 1 — OAuth 2.1 (el 90 % del esfuerzo)
+
+Reemplazar/duplicar el gate de API key (`servers/auth.py`) por un flujo OAuth 2.1. **No** implementar OAuth a mano: delegar en **Minerva** (proyecto SSO con Authentik + OIDC; ver `gateway-hub/docs/minerva.md`), que puede actuar como Authorization Server con DCR.
+
+Requisitos del MCP como *Resource Server*:
+
+- [ ] `GET /.well-known/oauth-protected-resource` en el `combined_app` — apunta al issuer de Minerva/Authentik.
+- [ ] El Authorization Server (Minerva/Authentik) expone `/.well-known/oauth-authorization-server` y soporta **PKCE (S256)** y **Dynamic Client Registration** (o CIMD).
+- [ ] Registrar el redirect URI de Claude: `https://claude.ai/api/mcp/auth_callback`.
+- [ ] `MCPAuthMiddleware` valida el **access token OAuth** (JWT firmado por Authentik) en lugar de `mk_...`; mantener `MCP_AUTH_ENABLED` y un modo de compatibilidad para Claude Code (header) durante la transición.
+- [ ] Mapear identidad OAuth → cuota. Decidir si la cuota sigue por "key" (ahora por `sub`/cliente OAuth) reutilizando `QuotaTracker`.
+- [ ] Validación del header `Origin` en las requests a `/mcp`.
+
+### Fase 2 — Anotaciones de los 14 tools
+
+El directorio exige que cada tool declare metadata (hoy `servers/mapalab.py` solo tiene docstrings):
+
+- [ ] `title` legible por tool.
+- [ ] `readOnlyHint=True` en los 12 de lectura.
+- [ ] `readOnlyHint=False` (o `destructiveHint`) en los 2 writes (`create_single_share`, `create_swipe_share`).
+- [ ] En FastMCP: `@mcp.tool(annotations=ToolAnnotations(title=..., readOnlyHint=True))`.
+
+### Fase 3 — Assets y submission
+
+- [ ] **HTTPS** — ✅ ya cubierto vía gateway (`iieg.jalisco.gob.mx/mapalab/mcp`).
+- [ ] **Privacy policy** con URL pública estable: qué datos se recopilan (la telemetría guarda `session_hash`/`ip_hash`, sin IP en claro), uso, retención, contacto.
+- [ ] Branding: logo del servidor, favicon verificable, 3–5 screenshots (≥1000px).
+- [ ] Documentación pública del conector + cuenta de prueba con datos de ejemplo y guía paso a paso para los revisores de Anthropic.
+- [ ] Checklist de políticas y términos del Software Directory de Anthropic.
+
+### Referencias de submission
+
+- [Submitting to the Connectors Directory](https://claude.com/docs/connectors/building/submission)
+- [Remote MCP Server Submission Guide](https://support.claude.com/en/articles/12922490-remote-mcp-server-submission-guide)
+- Decisión de alcance: si el uso es solo interno/IGIBot, **no** vale la pena la Fase 1 — basta el conector personalizado con header. El directorio solo aplica si se quiere distribución pública en claude.ai.
+
 ## Referencias
 
 - [FastMCP docs — Integración con FastAPI](https://gofastmcp.com/integrations/fastapi)
