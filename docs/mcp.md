@@ -462,7 +462,39 @@ Respuesta esperada: `200 OK` con `Content-Type: text/event-stream` y un evento `
 
 ## Recetas — combinaciones reales de tools
 
-Los tools individuales son útiles, pero el valor real para un agente está en encadenarlos. Tres recetas que cubren los casos típicos de un asistente conversacional pidiendo al MCP de mapalab que arme un mapa rico.
+Los tools individuales son útiles, pero el valor real para un agente está en encadenarlos. Estas recetas cubren los casos típicos de un asistente conversacional pidiendo al MCP de mapalab que arme un mapa rico.
+
+### Guía rápida
+
+- **Basemaps válidos**: `"voyager"` (recomendado) o `"position"`. No uses `"osm"` — no existe en el catálogo.
+- **Filtros de fecha**: usa `get_periodicity` para saber qué años hay. El CQL para año `AAAA` es: `"(fecha >= 'AAAA-01-01' AND fecha < 'AAAA+1-01-01')"`. Se pasa como `filters: {"date": "..."}` en el objeto de capa.
+- **Anotaciones**: tipos `LineString`, `Polygon`, `Emoji`, `Text`. Para emoji usa `type: "Emoji"` con `textLabel: "📍"`. Las anotaciones en swipe son globales (ambos lados).
+- **Municipios**: `resolve_municipios("Guadalajara")` → clave INEGI. Pasa `municipios: {source: "iieg", selected: ["14039"]}`.
+- **Estructura de capa en share**: acepta string (ID) o objeto `{slug, visible?, opacity?, filters?}`.
+- **Medición previa**: usa `measure_geometry` antes de crear el share para reportar área/longitud en texto.
+
+### Receta 0 — Capa con fecha, centrada en un municipio, con anotaciones
+
+**Escenario:** el usuario pide "homicidios 2025 en Guadalajara marcando el perímetro".
+
+```
+1. search_layers(q="homicidio") → id "homicidio_doloso"
+2. get_periodicity(workspace="seguridad", layer="homicidio_doloso") → años 2017-2026
+3. resolve_municipios("Guadalajara") → clave "14039"
+4. measure_geometry(poligono aproximado de GDL) → "239 km²"
+5. create_single_share(
+     layers=[{slug:"homicidio_doloso", filters:{date:"(fecha >= '2025-01-01' AND fecha < '2026-01-01')"}}],
+     view={zoom:12, lat:20.677, lon:-103.35},
+     basemap="voyager",
+     municipios={source:"iieg", selected:["14039"]},
+     annotations=[
+       {id:"gdl", type:"Polygon", geometry:{...}, label:"Guadalajara", value:239.92, unit:"km²"},
+       {id:"lmateos", type:"LineString", geometry:{...}, label:"Av. Lopez Mateos"},
+       {id:"pin", type:"Emoji", geometry:{type:"Point",coordinates:[-103.347,20.677]}, textLabel:"📍"}
+     ]
+   )
+6. → {url, embed_html}
+```
 
 ### Receta 1 — Medir un polígono y crear un share con la zona resaltada
 
