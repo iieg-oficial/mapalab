@@ -14,7 +14,7 @@ import {
 } from '@pages/maps/helpers/swipeMode';
 
 const SwipeView = () => {
-    const { compareMode, paneMapInstances, setSwipePosition, highlightedSlots } = useMapsContext();
+    const { compareMode, paneMapInstances, setSwipePosition, highlightedSlots, mapRef } = useMapsContext();
     const containerRef = useRef(null);
     const [pos, setPos] = useState((compareMode?.swipePosition ?? 0.5) * 100);
     const lastPersistedRef = useRef(pos);
@@ -24,6 +24,22 @@ const SwipeView = () => {
     const showB = highlightedSlots === 'B' || highlightedSlots === 'AB';
 
     useViewSync(paneMapInstances, !!compareMode?.active);
+
+    useEffect(() => {
+        const mainMap = mapRef?.current;
+        if (!mainMap) return;
+        const view = mainMap.getView();
+        const center = view.getCenter();
+        const zoom = view.getZoom();
+        if (!center || zoom == null) return;
+        paneMapInstances.forEach((m) => {
+            if (m) {
+                m.getView().setCenter(center);
+                m.getView().setZoom(zoom);
+            }
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [paneMapInstances[0], paneMapInstances[1]]);
 
     useEffect(() => {
         const next = (compareMode?.swipePosition ?? 0.5) * 100;
