@@ -42,7 +42,7 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs })
             }
         } catch { /* storage no disponible / quota */ }
         liveStateRef.current.pauseAllLoops();
-        applySnapshotToLive(emptyPane('A'));
+        applySnapshotToLive(current);
         setCompareMode(prev => {
             enteredAtRef.current = Date.now();
             trackSwipeEnter(prev.swipeOrientation);
@@ -50,7 +50,7 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs })
                 ...initialCompareMode(),
                 active: true,
                 activeSlot: 'A',
-                paneA: emptyPane('A'),
+                paneA: current,
                 paneB: emptyPane('B'),
                 originalSnapshot: current,
                 swipeOrientation: prev.swipeOrientation,
