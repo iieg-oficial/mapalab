@@ -36,7 +36,7 @@ export const buildRestoredItems = ({ annotations, source, measurementConfig, for
         }
         feature.set('measurementValue', value ?? null);
         if (type === 'Text' || type === 'Emoji') {
-            feature.setStyle(createSymbolStyle(feature.get('textLabel') || '', feature.get('rotation') || 0, type));
+            feature.setStyle(createSymbolStyle(feature.get('textLabel') || '', feature.get('rotation') || 0, 1, false));
         } else if (type === 'Freehand') {
             feature.setStyle(createFreehandStyle());
         } else {
