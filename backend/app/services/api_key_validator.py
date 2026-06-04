@@ -130,6 +130,9 @@ def _validate_remote(
             )
             return ValidationResult(valid=False, reason=f"mariachi_status_{response.status_code}")
         body = response.json()
+        valid = bool(body.get('valid', False))
+        if not valid:
+            Logger.warning(f"embed.validate.rejected reason={body.get('reason')} key_id={body.get('keyId')}")
         return ValidationResult(
             valid=bool(body.get('valid', False)),
             key_id=body.get('keyId'),
