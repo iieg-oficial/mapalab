@@ -5,6 +5,36 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.70.0] - 2026-06-04
+
+### MCP: guía de uso, mejoras en shares y fixes de visor
+
+Sesión intensiva de prueba y pulido del MCP con un agente externo. Se crearon shares con capas, filtros de fecha, anotaciones (polígonos, líneas, emojis), modo municipio y swipe. Cada fallo se diagnosticó y corrigió en el momento.
+
+#### MCP y documentación
+
+- **`servers/mapalab.py`**: descripciones mejoradas de `create_single_share`, `create_swipe_share` y `get_periodicity` con ejemplos concretos de CQL para filtros de fecha, basemaps válidos (`voyager`/`position`), formato de anotaciones (`LineString`, `Polygon`, `Emoji` con `textLabel`) y municipios.
+- **`docs/mcp.md`**: nueva sección "Guía rápida" y "Receta 0" con flujo completo `search_layers → get_periodicity → resolve_municipios → measure_geometry → create_single_share`.
+- **`docs/context.md`**: documentadas `MARIACHI_VERIFY_SSL`, `MCP_AUTH_ENABLED`, `MCP_QUOTA_FLUSH_INTERVAL_SECONDS` en variables de entorno del backend.
+- **`mariachi/admin/.../McpTopic.jsx`**: guía rápida en la página de documentación del admin con tips de basemaps, filtros fecha, anotaciones, municipios y flujo típico.
+
+#### Fixes de frontend
+
+- **`useBaseMapManager.js`** y **`useMapInitialization.js`**: protegidos contra crash con basemap desconocido (`basemaps[baseMapId]` undefined).
+- **`drawingStyles.js`**: `createSymbolStyle` ahora acepta strings planos como emoji (antes esperaba objeto `{kind, value}`).
+- **`restoreAnnotations.js`**: corregido `scale` NaN al restaurar emojis (se pasaba `type` string en vez de `1`).
+- **`SwipeView.jsx`**: hereda vista del mapa principal al entrar a swipe desde un share. Soporta `paneMapInstances` como objeto (no solo array).
+- **`useSwipeMode.js`**: `enterCompareMode` captura `capturedView` del mapa principal y conserva capas en pane A (ya no las vacía). Acepta `mapRef`.
+- **`useShareDeserializer.js`**: comparte `capturedView` desde el payload del share al `compareMode` para que el swipe abra centrado.
+- **`useShareDirtiness.js`**: gracia de 500 ms (vía timestamp) para absorber cambios de setup del share antes de marcar como sucio. Botón X para quitar el share desde el chip gris.
+- **`MapToolsPanel.jsx`**: botón X en chip gris para quitar el share sin recargar.
+- **`ToolsMenu.jsx`**: tooltip actualizado (capas van al lado A, no se vacían).
+
+#### Docker
+
+- **`docker-compose.yml`**: `MARIACHI_VERIFY_SSL` en containers backend y MCP.
+- **`.env.production`** (local): `MAPALAB_PUBLIC_BASE_URL` a `https://10.25.7.17` para shares locales.
+
 ## [1.69.0] - 2026-06-04
 
 ### MCP y backend: `MARIACHI_VERIFY_SSL` para comunicación interna con mariachi vía HTTPS

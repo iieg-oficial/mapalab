@@ -332,6 +332,8 @@ Timeouts de descarga (600s) configurados en:
 - `MARIACHI_BACKEND_URL` / `MARIACHI_BACKEND_INTERNAL_URL` — URL de mariachi para validacion de API keys y telemetria interna
 - `MARIACHI_VERIFY_SSL` — verificacion SSL para llamadas internas a mariachi (default `true`; `false` en redes con certificados auto-firmados)
 - `MAPALAB_INTERNAL_TOKEN` — token compartido para autenticar requests internos entre mapalab y mariachi
+- `MCP_AUTH_ENABLED` — toggle de autenticacion del MCP (default `true`)
+- `MCP_QUOTA_FLUSH_INTERVAL_SECONDS` — intervalo de flush de cuotas del MCP a mariachi
 - `ACERVO_PUBLIC_URL` — URL publica para metadatos
 
 ## CI/CD

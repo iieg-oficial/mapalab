@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import Download from './MapExport/Download';
 import MunicipioFilterButton from './MapExport/MunicipioFilterButton';
 import ShareButton from './ShareButton';
@@ -39,6 +40,13 @@ const MapToolsPanel = () => {
         window.location.reload();
     }, []);
 
+    const [searchParams, setSearchParams] = useSearchParams();
+    const handleClearShare = useCallback(() => {
+        const next = new URLSearchParams(searchParams);
+        next.delete('s');
+        setSearchParams(next, { replace: true });
+    }, [searchParams, setSearchParams]);
+
     const handleOpenPreview = (format, selectedLegends, title, quality, swipeOptions) => {
         setPreviewFormat(format || 'png');
         setPreviewLegends(Array.isArray(selectedLegends) ? selectedLegends : (selectedLegends ? [selectedLegends] : []));
@@ -65,14 +73,24 @@ const MapToolsPanel = () => {
                     <ShareActiveChip loadedShareId={loadedShareId} onMarkPending={markPending} />
                 )}
                 {isModifiedFromShare && (
-                    <button
-                        type="button"
-                        onClick={handleRevert}
-                        className="hidden md:inline-flex items-center text-[11px]/[16px] font-garet bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-400 px-3 py-2 rounded-full whitespace-nowrap shadow-[0_5px_20px_#1A26641A] cursor-pointer transition-colors mr-2"
-                        title={`Volver al estado del enlace ${loadedShareId}`}
-                    >
-                        Regresar a: <span className="font-bold tabular-nums ml-1">{loadedShareId}</span>
-                    </button>
+                    <div className="hidden md:flex items-center gap-1.5 mr-2">
+                        <button
+                            type="button"
+                            onClick={handleRevert}
+                            className="h-9 flex items-center px-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-400 shadow-[0_5px_20px_#1A26641A] text-[11px]/[16px] font-garet whitespace-nowrap cursor-pointer transition-colors"
+                            title={`Volver al estado del enlace ${loadedShareId}`}
+                        >
+                            Regresar a: <span className="font-bold tabular-nums ml-1">{loadedShareId}</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleClearShare}
+                            className="size-9 flex items-center justify-center rounded-full bg-[#FFE6EC] hover:bg-[#FF577D] hover:text-white border border-transparent hover:border-[#FF577D] transition-all cursor-pointer shrink-0 shadow-[0_5px_20px_#1A26641A]"
+                            aria-label="Quitar enlace compartido"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
+                    </div>
                 )}
                 <div className="hidden md:flex shrink-0 -mr-5 mt-2.5 z-12 relative">
                     <FloatingIconButton
