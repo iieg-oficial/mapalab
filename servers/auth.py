@@ -77,7 +77,9 @@ class MCPAuthMiddleware:
             return
 
         ip = _client_ip(scope, headers)
+        visible = token[:12] if token else 'none'
         result = await asyncio.to_thread(validate_api_key, token, None, ip)
+        Logger.info(f"mcp_auth result valid={result.valid} reason={result.reason} prefix={visible} ip={ip}")
         if not result.valid:
             await send_json(
                 send,
