@@ -136,8 +136,8 @@ const LayerDetailModal = () => {
     };
 
     useEffect(() => {
-        if (selectedLayer?.id) trackLayerDetailOpen(selectedLayer.id);
-    }, [selectedLayer?.id]);
+        if (selectedLayer?.id && !selectedLayer?.silent) trackLayerDetailOpen(selectedLayer.id);
+    }, [selectedLayer?.id, selectedLayer?.silent]);
 
     useEffect(() => {
         if (isAdvancedMode && selectedLayer?.id) trackPeriodicityAdvanced(selectedLayer.id);
