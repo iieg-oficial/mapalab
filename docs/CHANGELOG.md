@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.69.0] - 2026-06-04
+
+### MCP y backend: `MARIACHI_VERIFY_SSL` para comunicación interna con mariachi vía HTTPS
+
+El MCP no podía validar API keys porque `MARIACHI_BACKEND_URL` apuntaba a `http://mariachi-api:8000` (nombre DNS de Docker), inalcanzable desde el servidor de producción de mapalab. Además, la comunicación HTTP a mariachi vía nginx (puerto 80) recibía un 301 redirect a HTTPS que el cliente `httpx` no seguía.
+
+- **`backend/app/config.py`**: nuevo campo `MARIACHI_VERIFY_SSL` (default `true`) para controlar la verificación del certificado en llamadas internas a mariachi.
+- **`backend/app/services/api_key_validator.py`**: el cliente `httpx` ahora usa `verify=settings.MARIACHI_VERIFY_SSL`.
+- **`backend/app/services/api_key_quota.py`**: ídem.
+- **`backend/app/services/access_logger.py`**: ídem.
+- **`servers/telemetry.py`**: ídem.
+- **`.env.production`**: nuevo `MARIACHI_BACKEND_INTERNAL_URL` (para el MCP) + `MARIACHI_VERIFY_SSL=false` para certificados auto-firmados en red interna.
+- **`docs/mcp.md`**: documentada la variable `MARIACHI_VERIFY_SSL` en la sección de configuración.
+
 ## [1.68.0] - 2026-06-04
 
 ### Eventos: abrir el detalle de una capa elegida + telemetría solo en click explícito

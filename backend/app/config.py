@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     EMBED_KEY_CACHE_TTL_SECONDS: int = Field(default=300)
     MCP_AUTH_ENABLED: bool = Field(default=True)
     MCP_QUOTA_FLUSH_INTERVAL_SECONDS: int = Field(default=60)
+    MARIACHI_VERIFY_SSL: bool = Field(default=True)
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod

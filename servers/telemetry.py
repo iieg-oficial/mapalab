@@ -98,7 +98,7 @@ def _flush_sync(records: list[McpEventRecord]) -> None:
     headers = {'X-Internal-Token': settings.MAPALAB_INTERNAL_TOKEN}
     body = {'items': [r.to_payload() for r in records]}
     try:
-        with httpx.Client(timeout=_HTTP_TIMEOUT) as client:
+        with httpx.Client(timeout=_HTTP_TIMEOUT, verify=settings.MARIACHI_VERIFY_SSL) as client:
             response = client.post(url, json=body, headers=headers)
         if response.status_code >= 400:
             Logger.warning(
