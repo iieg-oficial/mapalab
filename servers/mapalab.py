@@ -214,6 +214,11 @@ def get_periodicity(
 
     Devuelve la estructura jerarquica `{year: {month: [day, ...]}}`. Si la
     capa no tiene dimension temporal devuelve `{}`.
+
+    Para usar los anios devueltos en un share, arma el filtro CQL asi:
+      filters: {"date": "(fecha >= 'AAAA-01-01' AND fecha < 'AAAA+1-01-01')"}
+    Pasa ese objeto en el campo `filters` del layer al llamar create_single_share
+    o create_swipe_share.
     """
     result = PeriodicityService.get_periodicity(workspace, layer)
     return {'periodicity': result}
@@ -232,9 +237,9 @@ def get_periodicities_batch(
 def create_single_share(
     layers: list = Field(description='Capas a mostrar. Lista de IDs de capa (string) o de objetos {slug, visible?, opacity?, filters?}.'),
     view: Optional[dict] = Field(default=None, description="Vista inicial del mapa: {zoom, lat, lon, rotation?}."),
-    basemap: Optional[str] = Field(default=None, description='Basemap inicial (p. ej. "osm").'),
+    basemap: Optional[str] = Field(default=None, description='Basemap inicial. Usa "voyager" (recomendado) o "position". No uses "osm" porque no existe en el catalogo.'),
     selected: Optional[str] = Field(default=None, description='Slug/ID de la capa seleccionada para la simbologia.'),
-    annotations: Optional[list] = Field(default=None, description='Anotaciones (mediciones, textos, emojis) en GeoJSON EPSG:4326. Cada item: {id, type, geometry, label?, value?, textLabel?, rotation?}.'),
+    annotations: Optional[list] = Field(default=None, description='Anotaciones (mediciones, textos, emojis) en GeoJSON EPSG:4326. Cada item: {id, type ("LineString"|"Polygon"|"Text"|"Emoji"), geometry, label?, value?, unit?, textLabel?, rotation?}. Para emojis usa type="Emoji" con textLabel="📍".'),
     municipios: Optional[dict] = Field(default=None, description='Activa el modo Vista por municipio en el share. Formato: {source: "iieg"|"inegi", selected: ["14001", "14039", ...]}. Las claves se obtienen de list_municipios o resolve_municipios. Mascara visual + filtro CQL automatico en capas con municipioField.'),
 ):
     """Crea un share del visor con capas y opcionalmente anotaciones y filtro por municipio pre-cargados.
@@ -248,6 +253,11 @@ def create_single_share(
     `municipios` activa el modo Vista por municipio (beta) que oculta el resto
     del estado con una mascara y filtra automaticamente las capas activas que
     soporten filtro por municipio.
+
+    FILTROS DE FECHA (filters): para capas temporales, pasa el filtro `date`
+    con CQL en el objeto de capa. El formato es:
+      {"slug": "homicidio_doloso", "filters": {"date": "(fecha >= '2025-01-01' AND fecha < '2026-01-01')"}}
+    Usa get_periodicity(layer_id) primero para saber que anios estan disponibles.
     """
     return _create_single_share(
         layers=layers,
@@ -261,14 +271,14 @@ def create_single_share(
 
 @mcp.tool()
 def create_swipe_share(
-    pane_a_layers: list = Field(description='Capas del lado A (lista de IDs o {slug, opacity?}).'),
-    pane_b_layers: list = Field(description='Capas del lado B (lista de IDs o {slug, opacity?}).'),
+    pane_a_layers: list = Field(description='Capas del lado A (lista de IDs o {slug, opacity?, filters?}).'),
+    pane_b_layers: list = Field(description='Capas del lado B (lista de IDs o {slug, opacity?, filters?}).'),
     position: float = Field(default=0.5, ge=0.05, le=0.95, description='Posicion inicial del separador swipe (0=todo B, 1=todo A).'),
     view: Optional[dict] = Field(default=None, description='Vista compartida entre los dos lados: {zoom, lat, lon}.'),
-    basemap: Optional[str] = Field(default=None, description='Basemap compartido entre A y B.'),
+    basemap: Optional[str] = Field(default=None, description='Basemap compartido entre A y B. Usa "voyager" (recomendado) o "position".'),
     label_a: str = Field(default='A', description='Etiqueta del lado A (mostrada en la pildora del visor).'),
     label_b: str = Field(default='B', description='Etiqueta del lado B.'),
-    annotations: Optional[list] = Field(default=None, description='Anotaciones globales del mapa (no por slot). GeoJSON EPSG:4326.'),
+    annotations: Optional[list] = Field(default=None, description='Anotaciones globales del mapa (no por slot, visibles en ambos lados). GeoJSON EPSG:4326. Tipos: LineString, Polygon, Text, Emoji. Para emoji usa type="Emoji" con textLabel="📍".'),
     municipios: Optional[dict] = Field(default=None, description='Modo Vista por municipio compartido entre A y B. {source: "iieg"|"inegi", selected: [claves]}.'),
 ):
     """Crea un share del visor en modo swipe (comparacion A|B).
@@ -278,6 +288,10 @@ def create_swipe_share(
     comparar fenomenos lado a lado (p. ej. delitos vs poblacion, antes vs
     despues). `municipios` aplica la mascara visual y el filtro CQL a ambos
     paneles (es estado compartido, no por slot).
+
+    Para filtrar por fecha en cada lado, usa el mismo formato que
+    create_single_share: {slug, filters: {date: "(fecha >= '2025-01-01' AND fecha < '2026-01-01')"}}.
+    Las anotaciones son globales: se pintan sobre AMBOS lados del swipe.
     """
     return _create_swipe_share(
         pane_a_layers=pane_a_layers,
