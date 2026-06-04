@@ -41,6 +41,7 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOver
         };
 
         const initialConfig = basemaps[baseMapId];
+        if (!initialConfig) return;
         const labelsOverlaySource = initialConfig.createLabelsOverlay
             ? initialConfig.createLabelsOverlay()
             : null;
