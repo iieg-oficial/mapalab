@@ -118,7 +118,7 @@ def _validate_remote(
         'requestedLayers': requested_layers,
     }
     try:
-        with httpx.Client(timeout=_TIMEOUT_SECONDS) as client:
+        with httpx.Client(timeout=_TIMEOUT_SECONDS, verify=settings.MARIACHI_VERIFY_SSL) as client:
             response = client.post(
                 url,
                 json=payload,

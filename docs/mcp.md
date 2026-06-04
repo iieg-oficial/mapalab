@@ -783,7 +783,7 @@ Corta floods por IP antes de que lleguen al pool chico del MCP (2 workers × 2 c
 | `servers/auth.py` | `MCPAuthMiddleware` + `quota_flush_loop` + helper `send_json` |
 | `servers/telemetry.py` | Enforcement + registro de cuota por key en `tools/call` |
 | `servers/mapalab.py` | Wiring: auth como middleware externo, arranque/cierre del flush de cuota |
-| `backend/app/config.py` | `MCP_AUTH_ENABLED`, `MCP_QUOTA_FLUSH_INTERVAL_SECONDS` |
+| `backend/app/config.py` | `MCP_AUTH_ENABLED`, `MCP_QUOTA_FLUSH_INTERVAL_SECONDS`, `MARIACHI_VERIFY_SSL` |
 | `nginx/nginx-main.conf`, `nginx/nginx.conf` | Zonas y directivas `limit_req`/`limit_conn` |
 | `app.services.api_key_validator`, `app.services.api_key_quota` | Reutilizados del path del widget (sin duplicar lógica) |
 
