@@ -117,7 +117,6 @@ def _validate_remote(
         'ip': ip,
         'requestedLayers': requested_layers,
     }
-    Logger.info(f"embed.validate.sending key_prefix={_visible_prefix(plain_key)} ip={ip}")
     try:
         with httpx.Client(timeout=_TIMEOUT_SECONDS, verify=settings.MARIACHI_VERIFY_SSL) as client:
             response = client.post(
