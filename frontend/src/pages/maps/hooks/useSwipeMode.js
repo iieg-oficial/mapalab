@@ -17,7 +17,7 @@ import {
 } from '@pages/maps/helpers/swipeMode';
 import { trackSwipeEnter, trackSwipeExit } from '@services/analyticsService';
 
-export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs }) => {
+export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs, mapRef }) => {
     const [compareMode, setCompareMode] = useState(initialCompareMode);
     const [highlightedSlots, setHighlightedSlots] = useState(null);
     const enteredAtRef = useRef(null);
@@ -42,7 +42,13 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs })
             }
         } catch { /* storage no disponible / quota */ }
         liveStateRef.current.pauseAllLoops();
-        applySnapshotToLive(emptyPane('A'));
+        applySnapshotToLive(current);
+        const mainMap = mapRef?.current;
+        let capturedView = null;
+        if (mainMap) {
+            const view = mainMap.getView();
+            capturedView = { center: view.getCenter(), zoom: view.getZoom() };
+        }
         setCompareMode(prev => {
             enteredAtRef.current = Date.now();
             trackSwipeEnter(prev.swipeOrientation);
@@ -50,13 +56,14 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs })
                 ...initialCompareMode(),
                 active: true,
                 activeSlot: 'A',
-                paneA: emptyPane('A'),
+                paneA: current,
                 paneB: emptyPane('B'),
                 originalSnapshot: current,
                 swipeOrientation: prev.swipeOrientation,
+                capturedView,
             };
         });
-    }, [snapshotLive, applySnapshotToLive, liveStateRef]);
+    }, [snapshotLive, applySnapshotToLive, liveStateRef, mapRef]);
 
     const setActiveSlot = useCallback((nextSlot) => {
         if (nextSlot !== 'A' && nextSlot !== 'B') return;

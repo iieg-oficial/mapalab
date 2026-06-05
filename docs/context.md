@@ -207,11 +207,11 @@ Definiciones viven en DataEngine (schema `mapalab`). Frontend las carga via `GET
 | GET | `/layers/search?q=X` | Búsqueda flat con path |
 | POST | `/layers/refresh-cache` | Regenera cache materializada. **Requiere `X-Internal-Token` desde 1.28.5** (`MAPALAB_INTERNAL_TOKEN`); el gateway tambien lo bloquea externo con 403. Lo invoca `mariachi-api` via `iieg-network` |
 | POST | `/layers/invalidate-cache` | Invalida solo cache en memoria del proceso. **Requiere `X-Internal-Token` desde 1.28.5** |
-| ANY  | `/mcp/` | Servidor MCP en container dedicado `mapalab-mcp`. 14 tools (12 lectura + 2 writes idempotentes). Auth por API key obligatoria (Bearer `mk_*`) desde backend 1.33.0. Transporte HTTP streamable; nginx lo proxea sin buffering ni cache |
+| ANY  | `/mcp/` | Servidor MCP en container dedicado `mapalab-mcp`. 18 tools (15 lectura + 3 writes idempotentes). Auth por API key obligatoria (Bearer `mk_*`) desde backend 1.33.0. Transporte HTTP streamable; nginx lo proxea sin buffering ni cache |
 
 ### MCP server
 
-Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp` (separado del backend principal). Los 14 tools son manuales con `@mcp.tool()` en `servers/mapalab.py` y reutilizan los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) que se copian al container del MCP en build time. 12 son lectura pura (incluye `list_municipios`/`resolve_municipios` desde 1.48.x y `measure_geometry`); 2 son writes idempotentes (`create_single_share`, `create_swipe_share`) que reutilizan `share_service.validate_payload` + `ShareRepository.upsert`. Detalles en `docs/mcp.md`.
+Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp` (separado del backend principal). Los 18 tools son manuales con `@mcp.tool()` en `servers/mapalab.py` y reutilizan los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) que se copian al container del MCP en build time. 15 son lectura pura (incluye `list_municipios`/`resolve_municipios`, `measure_geometry`, `query_wfs`, `search_by_theme`, `get_layer_stats`); 3 son writes idempotentes (`create_single_share`, `create_swipe_share`, `compare_years`) que reutilizan `share_service.validate_payload` + `ShareRepository.upsert`. Detalles en `docs/mcp.md`.
 
 - Montaje: `mcp.http_app(path='/mcp', stateless_http=True)` en `servers/mapalab.py`. URL externa **desde mapalab 1.45.0**: `/mcp/` (vía nginx) o `/mapalab/mcp/` (vía gateway-hub). Antes era `/api/mcp/` y `/mapalab/api/mcp/`; se movió a nivel raíz para alinear con el patrón industrial (MCP no es REST y vive al lado del API, no dentro).
 - Lifespan: `combine_lifespans(lifespan, mcp_app.lifespan)` preserva el warmup del pool, el leader election y el scheduler existentes.
@@ -332,6 +332,8 @@ Timeouts de descarga (600s) configurados en:
 - `MARIACHI_BACKEND_URL` / `MARIACHI_BACKEND_INTERNAL_URL` — URL de mariachi para validacion de API keys y telemetria interna
 - `MARIACHI_VERIFY_SSL` — verificacion SSL para llamadas internas a mariachi (default `true`; `false` en redes con certificados auto-firmados)
 - `MAPALAB_INTERNAL_TOKEN` — token compartido para autenticar requests internos entre mapalab y mariachi
+- `MCP_AUTH_ENABLED` — toggle de autenticacion del MCP (default `true`)
+- `MCP_QUOTA_FLUSH_INTERVAL_SECONDS` — intervalo de flush de cuotas del MCP a mariachi
 - `ACERVO_PUBLIC_URL` — URL publica para metadatos
 
 ## CI/CD

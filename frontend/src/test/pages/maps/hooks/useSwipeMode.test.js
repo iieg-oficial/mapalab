@@ -37,7 +37,7 @@ describe('useSwipeMode', () => {
         expect(result.current.compareMode.globalOrder).toEqual([]);
     });
 
-    it('enterCompareMode snapshotea el live, vacía live, persiste en localStorage', () => {
+    it('enterCompareMode snapshotea el live, lo pone en pane A, persiste en localStorage', () => {
         const live = makeLive({
             activeLayerIds: ['a', 'b'],
             filters: { a: { date: "fecha = '2020'" } },
@@ -49,7 +49,7 @@ describe('useSwipeMode', () => {
         expect(result.current.compareMode.active).toBe(true);
         expect(result.current.compareMode.activeSlot).toBe('A');
         expect(result.current.compareMode.originalSnapshot.activeLayerIds).toEqual(['a', 'b']);
-        expect(live.setActiveLayerIds).toHaveBeenCalledWith([]);
+        expect(live.setActiveLayerIds).toHaveBeenCalledWith(['a', 'b']);
         expect(live.pauseAllLoops).toHaveBeenCalled();
         expect(localStorage.getItem(SWIPE_ORIGINAL_STORAGE_KEY)).toBeTruthy();
     });

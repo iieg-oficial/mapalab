@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Draw } from 'ol/interaction';
 import { getLength, getArea } from 'ol/sphere';
-import { createDefaultStyle, createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCacheStyle, computeStylesForFeature } from '../helpers/drawingStyles';
+import { createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCacheStyle, computeStylesForFeature } from '../helpers/drawingStyles';
+import { useDrawingStyle } from './useDrawingStyle';
 import { formatNumber } from '../helpers/formatNumber';
 import { buildRestoredItems } from '../helpers/restoreAnnotations';
 import { useEmojiTemplate } from './useEmojiTemplate';
@@ -13,8 +14,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     const [measurements, setMeasurements] = useState([]);
     const [isSketching, setIsSketching] = useState(false);
     const [areMeasurementToolsVisible, setMeasurementToolsVisible] = useState(false);
+    const [areAnnotationToolsVisible, setAnnotationToolsVisible] = useState(false);
     const [lastPlacedAnnotation, setLastPlacedAnnotation] = useState(null);
-    const { textTemplate, setTextTemplate, textTemplateRef } = useTextTemplate('');
+    const { textTemplate, setTextTemplate, textTemplateRef, textFillColorRef, textBgColorRef, textSizeRef, setTextFillColor, setTextBgColor, setTextSize } = useTextTemplate('');
     const [rotation, setRotation] = useState(0);
     const rotationRef = useRef(0);
     const { emojiTemplate, setEmojiTemplate, emojiTemplateRef } = useEmojiTemplate('');
@@ -40,6 +42,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
 
     const showMeasurementTools = useCallback(() => setMeasurementToolsVisible(true), []);
     const hideMeasurementTools = useCallback(() => setMeasurementToolsVisible(false), []);
+    const hideAnnotationTools = useCallback(() => setAnnotationToolsVisible(false), []);
     const toggleMeasurementTools = useCallback(() => {
         setMeasurementToolsVisible(prev => !prev);
     }, []);
@@ -104,81 +107,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [measurementConfig.showLiveAngles]);
 
-    const getStyleForType = useCallback((feature) => {
-        const isSketch = feature === sketchFeatureRef.current;
-
-        if (!isSketch && feature.get('visible') === false) {
-            return null;
-        }
-
-        const cachedStyle = feature.get('cachedStyle');
-
-        if (cachedStyle && !isSketch) {
-            return cachedStyle;
-        }
-
-        const annotationType = feature.get('annotationType');
-        const geometry = feature.getGeometry();
-        const geometryType = geometry?.getType();
-        const featureRotation = feature.get('rotation') || 0;
-        const featureScale = feature.get('scale') || 1;
-        const featureSelected = feature.get('selected') === true;
-
-        if (annotationType === 'Emoji') {
-            const symbol = feature.get('symbolPayload')
-                || { kind: 'emoji', value: feature.get('textLabel') };
-            const style = createSymbolStyle(symbol, featureRotation, featureScale, featureSelected);
-            if (!isSketch) {
-                feature.set('cachedStyle', style, true);
-            }
-            return style;
-        }
-
-        if (annotationType === 'Text') {
-            const style = createTextStyle(feature.get('textLabel'), featureRotation, featureScale, featureSelected);
-            if (!isSketch) {
-                feature.set('cachedStyle', style, true);
-            }
-            return style;
-        }
-
-        if (annotationType === 'Freehand') {
-            const style = createFreehandStyle();
-            if (!isSketch) {
-                feature.set('cachedStyle', style, true);
-            }
-            return style;
-        }
-
-        if (annotationType === 'Select') {
-            const selectStyle = computeStylesForFeature('Select', null, geometry, {
-                showMeasurementLabels: false,
-                showFinalAngles: false
-            });
-            if (!isSketch) {
-                feature.set('cachedStyle', selectStyle, true);
-            }
-            return selectStyle;
-        }
-
-        if (isSketch && measurementConfig.showLiveAngles && (geometryType === 'LineString' || geometryType === 'Polygon')) {
-            const coords = geometryType === 'Polygon' ? geometry.getCoordinates()[0] : geometry.getCoordinates();
-            if (coords && coords.length >= 3) {
-                const liveConfig = {
-                    showMeasurementLabels: false,
-                    showFinalAngles: true
-                };
-                return computeStylesForFeature(geometryType, null, geometry, liveConfig);
-            }
-        }
-
-        const measurementValue = feature.get('measurementValue');
-        if (!isSketch) {
-            return computeAndCacheStyle(feature, measurementValue, measurementConfig);
-        }
-
-        return createDefaultStyle(geometryType);
-    }, [measurementConfig]);
+    const getStyleForType = useDrawingStyle(sketchFeatureRef, measurementConfig);
 
     const { ensureVectorLayer } = useVectorLayerSetup(mapRef, getStyleForType, vectorSourceRef, vectorLayerRef);
 
@@ -266,7 +195,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             if (type === 'Text') {
                 event.feature.set('textLabel', textTemplateRef.current);
                 event.feature.set('rotation', rotationRef.current);
-                event.feature.set('scale', 1);
+                event.feature.set('scale', textSizeRef.current || 1);
+                if (textFillColorRef.current) event.feature.set('fillColor', textFillColorRef.current);
+                if (textBgColorRef.current) event.feature.set('bgColor', textBgColorRef.current);
             }
             updateSketchingState(true);
 
@@ -682,11 +613,17 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         areMeasurementToolsVisible,
         showMeasurementTools,
         hideMeasurementTools,
+        hideAnnotationTools,
         toggleMeasurementTools,
+        areAnnotationToolsVisible,
+        toggleAnnotationTools: () => setAnnotationToolsVisible(prev => !prev),
         textTemplate,
         setTextTemplate,
         emojiTemplate,
         setEmojiTemplate,
+        setTextFillColor,
+        setTextBgColor,
+        setTextSize,
         rotation,
         setRotation,
         measurementConfig,

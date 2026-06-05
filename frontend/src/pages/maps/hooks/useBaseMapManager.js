@@ -4,6 +4,7 @@ export const useBaseMapManager = (baseMapRef, basemaps, baseMapId, mapRef, label
     useEffect(() => {
         if (baseMapRef.current) {
             const config = basemaps[baseMapId];
+            if (!config) return;
             const source = config.create();
 
             if (source === null) {
@@ -26,6 +27,7 @@ export const useBaseMapManager = (baseMapRef, basemaps, baseMapId, mapRef, label
         if (!map || !labelsOverlayRef) return;
 
         const config = basemaps[baseMapId];
+        if (!config) return;
         if (!config.labelZoomThreshold || !config.createLabelsOverlay) {
             if (labelsOverlayRef.current) labelsOverlayRef.current.setVisible(false);
             return;

@@ -136,6 +136,9 @@ export const useShareDeserializer = () => {
                     ...paneA.activeLayerIds,
                     ...paneB.activeLayerIds.filter(id => !paneA.activeLayerIds.includes(id)),
                 ].filter(id => stillActiveIds.has(id));
+                const capturedView = shared.view?.lat != null && shared.view?.lon != null && shared.view?.zoom != null
+                    ? { center: fromLonLat([shared.view.lon, shared.view.lat]), zoom: shared.view.zoom }
+                    : null;
                 setCompareMode({
                     ...initialCompareMode(),
                     active: true,
@@ -144,6 +147,7 @@ export const useShareDeserializer = () => {
                     paneB,
                     swipePosition,
                     globalOrder,
+                    capturedView,
                 });
             }
             if (Array.isArray(payload.annotations) && typeof restoreAnnotations === 'function') {

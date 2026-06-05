@@ -5,6 +5,74 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.71.0] - 2026-06-05
+
+### Panel de herramientas: Mediciones y Anotaciones separados
+
+Refactorización del panel de herramientas flotante para separar herramientas de medición (Punto, Línea, Polígono) de anotaciones (Texto, Emoji, Trazo libre) en dos grupos independientes con toggles desde el menú lateral.
+
+- **`ToolsMenu.jsx`**: tercer botón "Anotaciones" (ícono emoji) junto a Mediciones y Swipe. Grid 2 columnas.
+- **`ToolSelector.jsx`**: grupos `measurementGroup` y `annotationGroup` con renderizado independiente. Desktop 1 columna, mobile 2 columnas con ambos grupos abiertos. Colapso manual con botón de flecha que preserva la herramienta activa visible.
+- **`ToolsPanel.jsx`**: `FloatingIconButton` reutilizado para colapsar. Pill de acciones (↶✓✕) solo mobile y solo al dibujar. `CloseButton` unificado cierra ambos grupos. Botón "Mostrar/Ocultar" con transición. `areAnnotationToolsVisible` y `hideAnnotationTools` añadidos al estado.
+- **`useMapDrawing.js`**: `areAnnotationToolsVisible`, `hideAnnotationTools`, `toggleAnnotationTools` expuestos.
+- **`MapSider.jsx`**: `handleToggleAnnotations` con mismo comportamiento que mediciones (cierra sider en mobile, telemetría).
+- **`menuItems.jsx`**: `toggleAnnotationTools`, `areAnnotationToolsVisible` propagados.
+- **`ExternalEventoWidget.jsx`**: oculta eventos en mobile si hay herramientas activas (mediciones o anotaciones).
+
+### Anotaciones: color, fondo y tamaño
+
+- **`TextPanel.jsx`**: controles de color (fillColor), fondo (bgColor) y tamaño (0.1–3.0) en el panel de texto. Se guardan en el feature vía `useMapDrawing`.
+- **`useTextTemplate.js`**: refs `textFillColorRef`, `textBgColorRef`, `textSizeRef` y setters expuestos.
+- **`drawingStyles.js`**: `createTextStyle` y `createEmojiStyle` aceptan `fillColor`, `bgColor`, `fontFamily`, `backgroundFill`, `backgroundStroke`. `createSymbolStyle` propaga los nuevos parámetros.
+- **`restoreAnnotations.js`**: lee `size`, `fillColor`, `strokeColor`, `backgroundFill`, `backgroundStroke`, `fontFamily` del payload de anotaciones. Texto usa Garet por defecto.
+- **`MapToolsPanel.jsx`**: chip gris con botón X para quitar share. `useSearchParams` para `handleClearShare`.
+
+### Fixes
+
+- **`useShareDirtiness.js`**: gracia de 500ms vía timestamp (sin Date.now en render). `setIsDirty` con flag `pendingResetRef`.
+- **`SwipeView.jsx`**: hereda vista del mapa principal al entrar a swipe. Soporta `paneMapInstances` como objeto.
+- **`useSwipeMode.js`**: `capturedView` desde `mapRef.current` al entrar. Conserva capas en pane A.
+- **`useShareDeserializer.js`**: `capturedView` desde el payload del share al `compareMode`.
+- **`useBaseMapManager.js` / `useMapInitialization.js`**: protegidos contra crash con basemap desconocido.
+- **`finishCurrentSketch`**: llama `updateSketchingState(false)` directamente (drawend no confiable en mobile).
+
+### Documentación
+
+- **`docs/tools-panel.md`**: nuevo. Layout, botones, flujo de acciones, personalización de anotaciones.
+- **`docs/mcp.md`**: actualizado con 18 tools y recetas.
+- **`docs/context.md`**: `MARIACHI_VERIFY_SSL`, `MCP_AUTH_ENABLED`, `MCP_QUOTA_FLUSH_INTERVAL_SECONDS`.
+- **`mariachi/.../McpTopic.jsx`**: guía rápida para agentes.
+
+## [1.70.0] - 2026-06-04
+
+### MCP: guía de uso, mejoras en shares y fixes de visor
+
+Sesión intensiva de prueba y pulido del MCP con un agente externo. Se crearon shares con capas, filtros de fecha, anotaciones (polígonos, líneas, emojis), modo municipio y swipe. Cada fallo se diagnosticó y corrigió en el momento.
+
+#### MCP y documentación
+
+- **`servers/mapalab.py`**: descripciones mejoradas de `create_single_share`, `create_swipe_share` y `get_periodicity` con ejemplos concretos de CQL para filtros de fecha, basemaps válidos (`voyager`/`position`), formato de anotaciones (`LineString`, `Polygon`, `Emoji` con `textLabel`) y municipios.
+- **`docs/mcp.md`**: nueva sección "Guía rápida" y "Receta 0" con flujo completo `search_layers → get_periodicity → resolve_municipios → measure_geometry → create_single_share`.
+- **`docs/context.md`**: documentadas `MARIACHI_VERIFY_SSL`, `MCP_AUTH_ENABLED`, `MCP_QUOTA_FLUSH_INTERVAL_SECONDS` en variables de entorno del backend.
+- **`mariachi/admin/.../McpTopic.jsx`**: guía rápida en la página de documentación del admin con tips de basemaps, filtros fecha, anotaciones, municipios y flujo típico.
+
+#### Fixes de frontend
+
+- **`useBaseMapManager.js`** y **`useMapInitialization.js`**: protegidos contra crash con basemap desconocido (`basemaps[baseMapId]` undefined).
+- **`drawingStyles.js`**: `createSymbolStyle` ahora acepta strings planos como emoji (antes esperaba objeto `{kind, value}`).
+- **`restoreAnnotations.js`**: corregido `scale` NaN al restaurar emojis (se pasaba `type` string en vez de `1`).
+- **`SwipeView.jsx`**: hereda vista del mapa principal al entrar a swipe desde un share. Soporta `paneMapInstances` como objeto (no solo array).
+- **`useSwipeMode.js`**: `enterCompareMode` captura `capturedView` del mapa principal y conserva capas en pane A (ya no las vacía). Acepta `mapRef`.
+- **`useShareDeserializer.js`**: comparte `capturedView` desde el payload del share al `compareMode` para que el swipe abra centrado.
+- **`useShareDirtiness.js`**: gracia de 500 ms (vía timestamp) para absorber cambios de setup del share antes de marcar como sucio. Botón X para quitar el share desde el chip gris.
+- **`MapToolsPanel.jsx`**: botón X en chip gris para quitar el share sin recargar.
+- **`ToolsMenu.jsx`**: tooltip actualizado (capas van al lado A, no se vacían).
+
+#### Docker
+
+- **`docker-compose.yml`**: `MARIACHI_VERIFY_SSL` en containers backend y MCP.
+- **`.env.production`** (local): `MAPALAB_PUBLIC_BASE_URL` a `https://10.25.7.17` para shares locales.
+
 ## [1.69.0] - 2026-06-04
 
 ### MCP y backend: `MARIACHI_VERIFY_SSL` para comunicación interna con mariachi vía HTTPS

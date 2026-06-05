@@ -30,11 +30,15 @@ from app.services.periodicity_service import PeriodicityService
 from app.utils.logger import Logger
 
 from servers.share_tools import (
+    compare_years as _compare_years,
     create_single_share as _create_single_share,
     create_swipe_share as _create_swipe_share,
+    get_layer_stats as _get_layer_stats,
     list_municipios as _list_municipios,
     measure_geometry as _measure_geometry,
+    query_wfs as _query_wfs,
     resolve_municipios as _resolve_municipios,
+    search_by_theme as _search_by_theme,
 )
 from servers.auth import (
     MCPAuthMiddleware,
@@ -207,13 +211,18 @@ def get_sources_batch(
 
 @mcp.tool()
 def get_periodicity(
-    workspace: str = Field(description='Nombre del workspace de GeoServer'),
+    workspace: str = Field(description='Alias del workspace (p. ej. seguridad)'),
     layer: str = Field(description='Nombre de la capa dentro del workspace'),
 ):
     """Fechas disponibles year/month/day de una capa temporal.
 
     Devuelve la estructura jerarquica `{year: {month: [day, ...]}}`. Si la
     capa no tiene dimension temporal devuelve `{}`.
+
+    Para usar los anios devueltos en un share, arma el filtro CQL asi:
+      filters: {"date": "(fecha >= 'AAAA-01-01' AND fecha < 'AAAA+1-01-01')"}
+    Pasa ese objeto en el campo `filters` del layer al llamar create_single_share
+    o create_swipe_share.
     """
     result = PeriodicityService.get_periodicity(workspace, layer)
     return {'periodicity': result}
@@ -232,9 +241,9 @@ def get_periodicities_batch(
 def create_single_share(
     layers: list = Field(description='Capas a mostrar. Lista de IDs de capa (string) o de objetos {slug, visible?, opacity?, filters?}.'),
     view: Optional[dict] = Field(default=None, description="Vista inicial del mapa: {zoom, lat, lon, rotation?}."),
-    basemap: Optional[str] = Field(default=None, description='Basemap inicial (p. ej. "osm").'),
+    basemap: Optional[str] = Field(default=None, description='Basemap inicial. Usa "voyager" (recomendado) o "position". No uses "osm" porque no existe en el catalogo.'),
     selected: Optional[str] = Field(default=None, description='Slug/ID de la capa seleccionada para la simbologia.'),
-    annotations: Optional[list] = Field(default=None, description='Anotaciones (mediciones, textos, emojis) en GeoJSON EPSG:4326. Cada item: {id, type, geometry, label?, value?, textLabel?, rotation?}.'),
+    annotations: Optional[list] = Field(default=None, description='Anotaciones (mediciones, textos, emojis) en GeoJSON EPSG:4326. Cada item: {id, type ("LineString"|"Polygon"|"Text"|"Emoji"), geometry, label?, value?, unit?, textLabel?, rotation?, size?, fillColor?, strokeColor?}. size=0.3 para texto pequeno, fillColor="#FF0000" para rojo, strokeColor="#000" para borde negro.'),
     municipios: Optional[dict] = Field(default=None, description='Activa el modo Vista por municipio en el share. Formato: {source: "iieg"|"inegi", selected: ["14001", "14039", ...]}. Las claves se obtienen de list_municipios o resolve_municipios. Mascara visual + filtro CQL automatico en capas con municipioField.'),
 ):
     """Crea un share del visor con capas y opcionalmente anotaciones y filtro por municipio pre-cargados.
@@ -248,6 +257,11 @@ def create_single_share(
     `municipios` activa el modo Vista por municipio (beta) que oculta el resto
     del estado con una mascara y filtra automaticamente las capas activas que
     soporten filtro por municipio.
+
+    FILTROS DE FECHA (filters): para capas temporales, pasa el filtro `date`
+    con CQL en el objeto de capa. El formato es:
+      {"slug": "homicidio_doloso", "filters": {"date": "(fecha >= '2025-01-01' AND fecha < '2026-01-01')"}}
+    Usa get_periodicity(layer_id) primero para saber que anios estan disponibles.
     """
     return _create_single_share(
         layers=layers,
@@ -261,14 +275,14 @@ def create_single_share(
 
 @mcp.tool()
 def create_swipe_share(
-    pane_a_layers: list = Field(description='Capas del lado A (lista de IDs o {slug, opacity?}).'),
-    pane_b_layers: list = Field(description='Capas del lado B (lista de IDs o {slug, opacity?}).'),
+    pane_a_layers: list = Field(description='Capas del lado A (lista de IDs o {slug, opacity?, filters?}).'),
+    pane_b_layers: list = Field(description='Capas del lado B (lista de IDs o {slug, opacity?, filters?}).'),
     position: float = Field(default=0.5, ge=0.05, le=0.95, description='Posicion inicial del separador swipe (0=todo B, 1=todo A).'),
     view: Optional[dict] = Field(default=None, description='Vista compartida entre los dos lados: {zoom, lat, lon}.'),
-    basemap: Optional[str] = Field(default=None, description='Basemap compartido entre A y B.'),
+    basemap: Optional[str] = Field(default=None, description='Basemap compartido entre A y B. Usa "voyager" (recomendado) o "position".'),
     label_a: str = Field(default='A', description='Etiqueta del lado A (mostrada en la pildora del visor).'),
     label_b: str = Field(default='B', description='Etiqueta del lado B.'),
-    annotations: Optional[list] = Field(default=None, description='Anotaciones globales del mapa (no por slot). GeoJSON EPSG:4326.'),
+    annotations: Optional[list] = Field(default=None, description='Anotaciones globales del mapa (no por slot, visibles en ambos lados). GeoJSON EPSG:4326. Tipos: LineString, Polygon, Text, Emoji. Para emoji usa type="Emoji" con textLabel="📍".'),
     municipios: Optional[dict] = Field(default=None, description='Modo Vista por municipio compartido entre A y B. {source: "iieg"|"inegi", selected: [claves]}.'),
 ):
     """Crea un share del visor en modo swipe (comparacion A|B).
@@ -278,6 +292,10 @@ def create_swipe_share(
     comparar fenomenos lado a lado (p. ej. delitos vs poblacion, antes vs
     despues). `municipios` aplica la mascara visual y el filtro CQL a ambos
     paneles (es estado compartido, no por slot).
+
+    Para filtrar por fecha en cada lado, usa el mismo formato que
+    create_single_share: {slug, filters: {date: "(fecha >= '2025-01-01' AND fecha < '2026-01-01')"}}.
+    Las anotaciones son globales: se pintan sobre AMBOS lados del swipe.
     """
     return _create_swipe_share(
         pane_a_layers=pane_a_layers,
@@ -327,7 +345,99 @@ def measure_geometry(
     en metros / metros cuadrados reales sobre el elipsoide WGS84 (no
     proyectados). Devuelve `{type, metric, value, unit, value_km|value_km2}`.
     """
-    return _measure_geometry(geometry)
+    try:
+        return _measure_geometry(geometry)
+    except ValueError as exc:
+        return {'error': str(exc)}
+
+
+@mcp.tool()
+def query_wfs(
+    workspace: str = Field(description='Alias del workspace (p. ej. seguridad)'),
+    layer: str = Field(description='ID de la capa en el visor (p. ej. homicidio_doloso)'),
+    cql_filter: Optional[str] = Field(default=None, description='Filtro CQL opcional. Ej: "municipio = 14039 AND fecha >= '"'"'2025-08-01'"'"'".'),
+    limit: int = Field(default=1000, ge=1, le=10000, description='Maximo de features a devolver (1-10000).'),
+    srs_name: Optional[str] = Field(default=None, description='SRS de salida (opcional). Usa "EPSG:4326" para lat/lon compatible con anotaciones de shares. Por defecto devuelve el CRS nativo de la capa (EPSG:6368).'),
+):
+    """Consulta features WFS de una capa del visor.
+
+    Devuelve el GeoJSON completo con todas las propiedades de cada feature.
+    Solo funciona con capas publicadas en el visor de MapaLab.
+
+    Usa srs_name="EPSG:4326" si necesitas las coordenadas en lat/lon para
+    usarlas como anotaciones en create_single_share o create_swipe_share.
+    Sin srs_name, las coordenadas vienen en el CRS nativo (EPSG:6368, metros).
+
+    El CQL se sanitiza: se bloquean patrones SQL peligrosos (UNION, SELECT,
+    DROP, etc.). Solo se permiten comparadores estandar (=, >, <, LIKE,
+    BETWEEN, AND, OR, NOT) y valores literales.
+    """
+    try:
+        return _query_wfs(
+            workspace=workspace,
+            layer=layer,
+            cql_filter=cql_filter,
+            limit=limit,
+            srs_name=srs_name,
+        )
+    except ValueError as exc:
+        return {'error': str(exc)}
+
+
+@mcp.tool()
+def compare_years(
+    layer: str = Field(description='ID de la capa en el visor (p. ej. homicidio_doloso)'),
+    year_a: str = Field(description='Primer año a comparar (p. ej. "2025")'),
+    year_b: str = Field(description='Segundo año a comparar (p. ej. "2024")'),
+    municipio: Optional[str] = Field(default=None, description='Nombre del municipio para filtrar (opcional). Ej: "Guadalajara".'),
+    view: Optional[dict] = Field(default=None, description='Vista inicial: {zoom, lat, lon}. Si se omite, usa el extent del municipio.'),
+    basemap: str = Field(default='voyager', description='Basemap: "voyager" o "position".'),
+):
+    """Crea una comparativa swipe A|B de una capa entre dos años.
+
+    Atajo que encapsula resolve_municipios + create_swipe_share. Si se pasa
+    `municipio`, filtra ambos lados al municipio indicado.
+    """
+    try:
+        return _compare_years(
+            layer=layer,
+            year_a=year_a,
+            year_b=year_b,
+            municipio=municipio,
+            view=view,
+            basemap=basemap,
+        )
+    except ValueError as exc:
+        return {'error': str(exc)}
+
+
+@mcp.tool()
+def search_by_theme(
+    theme: str = Field(description='Nombre o alias del tema (p. ej. "seguridad", "economia", "salud").'),
+    limit: int = Field(default=50, ge=1, le=200, description='Maximo de resultados.'),
+):
+    """Lista las capas de un tema del visor.
+
+    Devuelve id, label, slug y workspace de cada capa hoja del tema.
+    Util para que el agente explore un area tematica completa.
+    """
+    return _search_by_theme(theme=theme, limit=limit)
+
+
+@mcp.tool()
+def get_layer_stats(
+    layer: str = Field(description='ID de la capa en el visor (p. ej. homicidio_doloso)'),
+):
+    """Numeralia precalculada de una capa: totales, promedios, ranking.
+
+    Los datos vienen de `mapalab.layer_stats` en DataEngine y se refrescan
+    diariamente. Devuelve `{layer_id, label, stats: [{label, value, unit?}]}`.
+    Si no hay datos para la capa, stats sera lista vacia.
+    """
+    try:
+        return _get_layer_stats(layer=layer)
+    except ValueError as exc:
+        return {'error': str(exc)}
 
 
 @asynccontextmanager

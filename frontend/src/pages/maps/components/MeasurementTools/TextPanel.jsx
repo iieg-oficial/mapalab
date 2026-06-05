@@ -4,11 +4,20 @@ import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Badge from '@components/Badge';
 
+const DEFAULT_FILL_COLOR = '#111827';
+const DEFAULT_BG_COLOR = '';
+
 const TextPanel = ({
     open,
     anchorRef,
     value,
     onChange,
+    fillColor = DEFAULT_FILL_COLOR,
+    onFillColorChange,
+    bgColor = DEFAULT_BG_COLOR,
+    onBgColorChange,
+    size = 1,
+    onSizeChange,
     onSave,
     onClose,
     placedCount = 0
@@ -52,12 +61,7 @@ const TextPanel = ({
                     Texto
                     <Badge visible={placedCount > 0} count={placedCount} />
                 </div>
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="cursor-pointer"
-                    aria-label="Cerrar panel de texto"
-                >
+                <button type="button" onClick={onClose} className="cursor-pointer" aria-label="Cerrar panel de texto">
                     <Icon name="cerrarModal" className="size-7" />
                 </button>
             </div>
@@ -70,6 +74,39 @@ const TextPanel = ({
                     placeholder="Escribe el texto a colocar"
                     className="w-full rounded-lg border border-[#E6E9F0] bg-transparent px-3 py-2 font-garet font-medium text-[13px] text-[#465055] placeholder:text-[#8A9199] focus:outline-none focus:border-[#70308A] transition-colors"
                 />
+            </div>
+
+            <div className="flex items-center gap-2 w-full">
+                <span className="text-[11px] font-garet text-[#465055] shrink-0">Color</span>
+                <input
+                    type="color"
+                    value={fillColor}
+                    onChange={(e) => onFillColorChange?.(e.target.value)}
+                    className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent"
+                    aria-label="Color del texto"
+                />
+                <span className="text-[11px] font-garet text-[#465055] shrink-0">Fondo</span>
+                <input
+                    type="color"
+                    value={bgColor || '#ffffff'}
+                    onChange={(e) => onBgColorChange?.(e.target.value === '#ffffff' ? '' : e.target.value)}
+                    className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent"
+                    aria-label="Color de fondo del texto"
+                />
+                <div className="flex items-center gap-1 flex-1 ml-2">
+                    <span className="text-[11px] font-garet text-[#465055] shrink-0">Tam</span>
+                    <input
+                        type="range"
+                        min="0.1"
+                        max="3"
+                        step="0.05"
+                        value={size}
+                        onChange={(e) => onSizeChange?.(parseFloat(e.target.value))}
+                        className="flex-1 h-1 accent-[#70308A]"
+                        aria-label="Tamaño del texto"
+                    />
+                    <span className="text-[10px] font-garet text-[#465055] w-8">{size.toFixed(1)}</span>
+                </div>
             </div>
 
             <button

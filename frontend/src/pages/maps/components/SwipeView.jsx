@@ -26,6 +26,24 @@ const SwipeView = () => {
     useViewSync(paneMapInstances, !!compareMode?.active);
 
     useEffect(() => {
+        const captured = compareMode?.capturedView;
+        if (!captured?.center || captured.zoom == null) return;
+        const apply = () => {
+            const maps = Array.isArray(paneMapInstances) ? paneMapInstances : Object.values(paneMapInstances);
+            maps.forEach((m) => {
+                if (m) {
+                    m.getView().setCenter(captured.center);
+                    m.getView().setZoom(captured.zoom);
+                }
+            });
+        };
+        apply();
+        const id = setTimeout(apply, 50);
+        return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [paneMapInstances[0], paneMapInstances[1]]);
+
+    useEffect(() => {
         const next = (compareMode?.swipePosition ?? 0.5) * 100;
         setPos(prev => {
             if (Math.abs(next - prev) <= SWIPE_POS_JITTER) return prev;

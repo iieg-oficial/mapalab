@@ -11,7 +11,7 @@ const allTools = [
     {
         id: 'mediciones',
         label: 'Mediciones',
-        description: 'Punto, linea, poligono, texto',
+        description: 'Punto, linea, poligono',
         icon: 'medicion',
     },
     {
@@ -22,11 +22,17 @@ const allTools = [
         nonProdOnly: true,
         icon: 'tool_swipe',
     },
+    {
+        id: 'anotaciones',
+        label: 'Anotaciones',
+        description: 'Texto, emojis, trazo libre',
+        icon: 'emoji',
+    },
 ];
 
 const tools = allTools.filter(tool => !tool.nonProdOnly || IS_NON_PROD);
 
-const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementToolsVisible }) => {
+const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementToolsVisible, areAnnotationToolsVisible, toggleAnnotationTools }) => {
     const { compareMode, exitCompareMode, enterCompareMode } = useMapsContext();
     const { closeSider } = useSider();
     const [hoveredId, setHoveredId] = useState(null);
@@ -39,6 +45,8 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     const handleClick = (id) => {
         if (id === 'mediciones') {
             toggleMeasurementTools?.();
+        } else if (id === 'anotaciones') {
+            toggleAnnotationTools?.();
         } else if (id === 'compare-swipe') {
             if (compareMode?.active) {
                 exitCompareMode();
@@ -51,6 +59,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
 
     const isActive = (id) => {
         if (id === 'mediciones') return !!areMeasurementToolsVisible;
+        if (id === 'anotaciones') return !!areAnnotationToolsVisible;
         if (id === 'compare-swipe') return !!compareMode?.active;
         return false;
     };
@@ -71,7 +80,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                         const tooltipContent = tool.id === 'compare-swipe' ? (
                             <div className="flex flex-col gap-1.5 max-w-[240px]">
                                 <span className="font-bold">{tool.label}</span>
-                                <span className="text-[11px] opacity-90">Compara dos mapas con barra divisora. Empieza con los dos slots <span className="font-bold">vacíos</span>; tus capas actuales se guardan y vuelven al cerrar.</span>
+                                <span className="text-[11px] opacity-90">Compara dos mapas con barra divisora. Tus capas actuales van al lado A; el lado B empieza <span className="font-bold">vacío</span> para que agregues otra capa.</span>
                                 <span className="text-[11px] opacity-90">Agrega capas en cada slot (A o B) <span className="font-bold">una por una</span> para mejor rendimiento.</span>
                             </div>
                         ) : tool.label;

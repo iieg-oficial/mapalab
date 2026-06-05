@@ -27,12 +27,20 @@ import EventoFunButton from './EventoFunButton';
 const SIDER_EVENTS_ENABLED = false;
 const EMPTY_EVENTOS = Object.freeze([]);
 
+const MenuGroup = ({ items, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => items.map((item, index) => (
+    <div key={item.id || index} className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden" title={item.tooltip}>
+        <MenuItem item={item} isMobileView={isMobileView} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
+    </div>
+));
+
 const MapSider = ({ className = '' }) => {
     const {
         activeLayerIds: contextActiveLayerIds,
         onToggleLayer,
         toggleMeasurementTools,
         areMeasurementToolsVisible,
+        toggleAnnotationTools,
+        areAnnotationToolsVisible,
         isLocating,
         dateLoops,
         showMarker,
@@ -113,14 +121,7 @@ const MapSider = ({ className = '' }) => {
         if (treatAsMobile && isOpen && openMenusCount === 0) closeSider();
     });
 
-    const computeWidth = () => {
-        if (treatAsMobile) {
-            return isOpen ? expandedWidth : mobileWidth;
-        }
-        return isHovered ? expandedWidth : collapsedWidth;
-    };
-
-    const width = computeWidth();
+    const width = treatAsMobile ? (isOpen ? expandedWidth : mobileWidth) : (isHovered ? expandedWidth : collapsedWidth);
     const isExpanded = treatAsMobile
         ? isOpen
         : (lockMode === 'expanded' ? true : (lockMode === 'collapsed' ? false : isHovered));
@@ -128,12 +129,22 @@ const MapSider = ({ className = '' }) => {
     const handleToggleTools = useCallback(() => {
         if (!areMeasurementToolsVisible) trackMeasurementPanelOpen();
         toggleMeasurementTools();
-        if (treatAsMobile) {
+        if (treatAsMobile && !areMeasurementToolsVisible) {
             closeSider();
-        } else if (lockMode === 'auto') {
-            setIsHovered(false);
+            if (lockMode?.release) lockMode.release();
         }
+        setIsHovered(false);
     }, [areMeasurementToolsVisible, toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
+
+    const handleToggleAnnotations = useCallback(() => {
+        if (!areAnnotationToolsVisible) trackMeasurementPanelOpen();
+        toggleAnnotationTools?.();
+        if (treatAsMobile && !areAnnotationToolsVisible) {
+            closeSider();
+            if (lockMode?.release) lockMode.release();
+        }
+        setIsHovered(false);
+    }, [areAnnotationToolsVisible, toggleAnnotationTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
 
     const { eventos, activeEvento } = useEventoContext();
     const eventosForSider = SIDER_EVENTS_ENABLED ? eventos : EMPTY_EVENTOS;
@@ -146,8 +157,8 @@ const MapSider = ({ className = '' }) => {
     const showGlobalFunButton = !activeEvento && globalFactsEvento.facts.length > 0;
 
     const menuItems = useMemo(() =>
-        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers, eventos: eventosForSider }),
-    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, allLayers, eventosForSider]);
+        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toggleAnnotationTools: handleToggleAnnotations, toolsButtonRef, areMeasurementToolsVisible, areAnnotationToolsVisible, layers: allLayers, eventos: eventosForSider }),
+    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, handleToggleAnnotations, toolsButtonRef, areMeasurementToolsVisible, areAnnotationToolsVisible, allLayers, eventosForSider]);
 
     const eventCount = eventosForSider.length;
     const baseItemsEnd = BASE_ITEMS_COUNT;
@@ -267,53 +278,14 @@ const MapSider = ({ className = '' }) => {
                         ].join(' ')}
                     >
                         <div className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3">
-                            {menuItems.slice(0, baseItemsEnd).map((item, index) => (
-                                <div
-                                    key={item.id || index}
-                                    className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
-                                    title={item.tooltip}
-                                >
-                                    <MenuItem
-                                        item={item}
-                                        isMobileView={treatAsMobile}
-                                        autoOpenMenuId={autoOpenMenuId}
-                                        clearAutoOpenMenu={clearAutoOpenMenu}
-                                    />
-                                </div>
-                            ))}
+                            <MenuGroup items={menuItems.slice(0, baseItemsEnd)} isMobileView={treatAsMobile} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
                         </div>
                         {!treatAsMobile && eventCount > 0 && (
                             <div className="flex flex-col gap-2">
-                                {menuItems.slice(baseItemsEnd, eventItemsEnd).map((item, index) => (
-                                    <div
-                                        key={item.id || index}
-                                        className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
-                                        title={item.tooltip}
-                                    >
-                                        <MenuItem
-                                            item={item}
-                                            isMobileView={treatAsMobile}
-                                            autoOpenMenuId={autoOpenMenuId}
-                                            clearAutoOpenMenu={clearAutoOpenMenu}
-                                        />
-                                    </div>
-                                ))}
+                                <MenuGroup items={menuItems.slice(baseItemsEnd, eventItemsEnd)} isMobileView={treatAsMobile} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
                             </div>
                         )}
-                        {menuItems.slice(eventItemsEnd).map((item, index) => (
-                            <div
-                                key={item.id || index}
-                                className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
-                                title={item.tooltip}
-                            >
-                                <MenuItem
-                                    item={item}
-                                    isMobileView={treatAsMobile}
-                                    autoOpenMenuId={autoOpenMenuId}
-                                    clearAutoOpenMenu={clearAutoOpenMenu}
-                                />
-                            </div>
-                        ))}
+                        <MenuGroup items={menuItems.slice(eventItemsEnd)} isMobileView={treatAsMobile} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
                     </div>
                 )}
 
