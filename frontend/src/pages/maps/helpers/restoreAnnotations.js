@@ -38,7 +38,16 @@ export const buildRestoredItems = ({ annotations, source, measurementConfig, for
         }
         feature.set('measurementValue', value ?? null);
         if (type === 'Text' || type === 'Emoji') {
-            feature.setStyle(createSymbolStyle(feature.get('textLabel') || '', feature.get('rotation') || 0, scale, false));
+            const fontFamily = type === 'Text' ? (item.fontFamily || '"Garet", sans-serif') : null;
+            feature.setStyle(createSymbolStyle(
+                feature.get('textLabel') || '',
+                feature.get('rotation') || 0,
+                scale,
+                false,
+                item.fillColor || '#111827',
+                item.strokeColor || '#ffffff',
+                fontFamily
+            ));
         } else if (type === 'Freehand') {
             feature.setStyle(createFreehandStyle());
         } else {

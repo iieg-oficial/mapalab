@@ -240,7 +240,7 @@ def create_single_share(
     view: Optional[dict] = Field(default=None, description="Vista inicial del mapa: {zoom, lat, lon, rotation?}."),
     basemap: Optional[str] = Field(default=None, description='Basemap inicial. Usa "voyager" (recomendado) o "position". No uses "osm" porque no existe en el catalogo.'),
     selected: Optional[str] = Field(default=None, description='Slug/ID de la capa seleccionada para la simbologia.'),
-    annotations: Optional[list] = Field(default=None, description='Anotaciones (mediciones, textos, emojis) en GeoJSON EPSG:4326. Cada item: {id, type ("LineString"|"Polygon"|"Text"|"Emoji"), geometry, label?, value?, unit?, textLabel?, rotation?}. Para emojis usa type="Emoji" con textLabel="📍".'),
+    annotations: Optional[list] = Field(default=None, description='Anotaciones (mediciones, textos, emojis) en GeoJSON EPSG:4326. Cada item: {id, type ("LineString"|"Polygon"|"Text"|"Emoji"), geometry, label?, value?, unit?, textLabel?, rotation?, size?, fillColor?, strokeColor?}. size=0.3 para texto pequeno, fillColor="#FF0000" para rojo, strokeColor="#000" para borde negro.'),
     municipios: Optional[dict] = Field(default=None, description='Activa el modo Vista por municipio en el share. Formato: {source: "iieg"|"inegi", selected: ["14001", "14039", ...]}. Las claves se obtienen de list_municipios o resolve_municipios. Mascara visual + filtro CQL automatico en capas con municipioField.'),
 ):
     """Crea un share del visor con capas y opcionalmente anotaciones y filtro por municipio pre-cargados.
