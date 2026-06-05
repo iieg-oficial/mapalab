@@ -252,7 +252,7 @@ def query_wfs(
         raise ValueError(f"Workspace '{workspace}' no encontrado")
 
     wms = node['wmsConfig']
-    gs_layer = wms.get('layers') or layer
+    gs_layer = wms.get('layers') or wms.get('geoserverLayer') or layer
     if ':' not in gs_layer:
         gs_layer = f"{gs_workspace}:{gs_layer}"
 
@@ -263,6 +263,7 @@ def query_wfs(
         'request': 'GetFeature',
         'typeNames': gs_layer,
         'outputFormat': 'application/json',
+        'srsName': 'EPSG:4326',
         'count': str(max(1, min(limit, 10000))),
     }
     if safe_cql:
