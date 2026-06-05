@@ -20,6 +20,7 @@ export const buildRestoredItems = ({ annotations, source, measurementConfig, for
         const geom = feature.getGeometry();
         let value = item.value;
         let label = item.label;
+        let scale = 1;
         if (type === 'LineString') {
             value = formatLength(geom);
             if (!label) label = `Distancia: ${value}`;
@@ -31,12 +32,13 @@ export const buildRestoredItems = ({ annotations, source, measurementConfig, for
             feature.set('annotationType', type);
             if (typeof item.rotation === 'number') feature.set('rotation', item.rotation);
             if (!label) label = item.textLabel || '';
+            scale = typeof item.size === 'number' && item.size > 0 ? item.size : 1;
         } else if (type === 'Freehand') {
             feature.set('annotationType', 'Freehand');
         }
         feature.set('measurementValue', value ?? null);
         if (type === 'Text' || type === 'Emoji') {
-            feature.setStyle(createSymbolStyle(feature.get('textLabel') || '', feature.get('rotation') || 0, 1, false));
+            feature.setStyle(createSymbolStyle(feature.get('textLabel') || '', feature.get('rotation') || 0, scale, false));
         } else if (type === 'Freehand') {
             feature.setStyle(createFreehandStyle());
         } else {
