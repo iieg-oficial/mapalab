@@ -1,5 +1,5 @@
 const COMMON_TITLE_FIELDS = ['nombre', 'name', 'titulo', 'title', 'descripcion', 'delito', 'tipo'];
-const COMMON_MUNICIPIO_FIELDS = ['municipio', 'municipality', 'mpio', 'nom_mun'];
+const COMMON_MUNICIPIO_FIELDS = ['municipio', 'municipality', 'mpio', 'nom_mun', 'clave_geo'];
 const COMMON_LOCATION_FIELDS = ['domicilio', 'direccion', 'address', 'ubicacion', 'calle'];
 const EXCLUDED_FIELDS = ['gid', 'id', 'fid', 'ogc_fid', 'geom', 'geometry', 'the_geom', 'shape'];
 
