@@ -263,7 +263,6 @@ def query_wfs(
         'request': 'GetFeature',
         'typeNames': gs_layer,
         'outputFormat': 'application/json',
-        'srsName': 'EPSG:4326',
         'count': str(max(1, min(limit, 10000))),
     }
     if safe_cql:
