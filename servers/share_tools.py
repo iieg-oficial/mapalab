@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 import os
+import re
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from sqlalchemy import text
 
@@ -194,9 +196,6 @@ def measure_geometry(geometry: dict) -> dict:
         }
 
 
-import re
-from urllib.parse import urlencode
-
 import httpx
 
 from app.config import settings
@@ -268,8 +267,6 @@ def query_wfs(
     }
     if safe_cql:
         params['CQL_FILTER'] = safe_cql
-    if srs_name:
-        params['srsName'] = srs_name
 
     base = settings.GEOSERVER_URL.rstrip('/')
     url = f"{base}/{gs_workspace}/ows?{urlencode(params)}"
@@ -281,8 +278,202 @@ def query_wfs(
         with httpx.Client(timeout=_WFS_TIMEOUT, verify=False) as client:
             response = client.get(url, auth=auth)
         response.raise_for_status()
-        return response.json()
+        geojson = response.json()
     except httpx.HTTPStatusError as exc:
-        raise ValueError(f"GeoServer error {exc.response.status_code}: {exc.response.text[:300]}")
+        raise ValueError(f"GeoServer error {exc.response.status_code}: {exc.response.text[:500]}")
     except httpx.RequestError as exc:
         raise ValueError(f"No se pudo conectar a GeoServer: {exc}")
+
+    if srs_name and srs_name.upper() != 'EPSG:6368':
+        geojson = _reproject_geojson(geojson, srs_name)
+
+    return geojson
+
+
+def _reproject_geojson(geojson: dict, target_srs: str) -> dict:
+    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+    with conn.get_session() as session:
+        target_epsg = target_srs.upper().replace('EPSG:', '')
+        for feature in geojson.get('features', []):
+            geom = feature.get('geometry')
+            if not geom:
+                continue
+            geojson_str = json.dumps(geom)
+            row = session.execute(
+                text(
+                    "SELECT ST_AsGeoJSON("
+                    "ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(:g), 6368), :tgt)"
+                    ")"
+                ),
+                {'g': geojson_str, 'tgt': int(target_epsg)},
+            ).first()
+            if row and row[0]:
+                feature['geometry'] = json.loads(row[0])
+    geojson['crs'] = {'type': 'name', 'properties': {'name': target_srs}}
+    return geojson
+
+
+def compare_years(
+    layer: str,
+    year_a: str,
+    year_b: str,
+    municipio: str | None = None,
+    view: dict | None = None,
+    basemap: str = 'voyager',
+) -> dict:
+    """Crea un share swipe comparando dos anios de una capa, opcionalmente filtrado por municipio.
+
+    Atajo que encapsula resolve_municipios + create_swipe_share con filtros de fecha.
+    """
+    state = get_cached_state()
+    tree = state['tree']
+
+    def find_node(nodes, target):
+        for n in nodes:
+            if n['id'] == target:
+                return n
+            if n.get('children'):
+                found = find_node(n['children'], target)
+                if found:
+                    return found
+        return None
+
+    node = find_node(tree, layer)
+    if not node or not node.get('wmsConfig'):
+        raise ValueError(f"Capa '{layer}' no encontrada en el arbol del visor")
+
+    layer_entry_a = {
+        'slug': layer,
+        'filters': {
+            'date': f"(fecha >= '{year_a}-01-01' AND fecha < '{int(year_a) + 1}-01-01')",
+        },
+    }
+    layer_entry_b = {
+        'slug': layer,
+        'filters': {
+            'date': f"(fecha >= '{year_b}-01-01' AND fecha < '{int(year_b) + 1}-01-01')",
+        },
+    }
+
+    kwargs = {
+        'pane_a_layers': [layer_entry_a],
+        'pane_b_layers': [layer_entry_b],
+        'label_a': f'{node["label"]} {year_a}',
+        'label_b': f'{node["label"]} {year_b}',
+        'basemap': basemap,
+        'position': 0.5,
+    }
+
+    if view:
+        kwargs['view'] = view
+
+    if municipio:
+        muni = resolve_municipios(query=municipio, limit=1)
+        if isinstance(muni, dict) and 'items' in muni:
+            items = muni['items']
+        elif isinstance(muni, list):
+            items = muni
+        else:
+            raise ValueError(f"No se encontró el municipio '{municipio}'")
+        if not items:
+            raise ValueError(f"No se encontró el municipio '{municipio}'")
+        kwargs['municipios'] = {'source': 'iieg', 'selected': [items[0]['clave']]}
+
+    return create_swipe_share(**kwargs)
+
+
+def search_by_theme(
+    theme: str,
+    limit: int = 50,
+) -> list[dict]:
+    """Lista capas de un tema del visor (p. ej. 'seguridad', 'economia').
+
+    Busca en el arbol de capas por alias del workspace. Devuelve id, label,
+    slug y workspace de cada capa hoja del tema.
+    """
+    state = get_cached_state()
+    tree = state['tree']
+    theme_lower = theme.lower()
+    results = []
+
+    def walk(nodes, depth=0):
+        for n in nodes:
+            ws = (n.get('wmsConfig') or {}).get('workspace', '')
+            if ws.lower() == theme_lower or n.get('id', '').lower() == theme_lower:
+                if n.get('nodeType') == 'leaf' and n.get('wmsConfig'):
+                    results.append({
+                        'id': n['id'],
+                        'label': n.get('label', ''),
+                        'slug': n.get('slug', ''),
+                        'workspace': ws,
+                    })
+            if n.get('children'):
+                walk(n['children'], depth + 1)
+        return
+
+    walk(tree)
+    return results[:limit]
+
+
+def get_layer_stats(
+    layer: str,
+) -> dict:
+    """Numeralia precalculada de una capa (totales, promedios, ranking).
+
+    Lee de la tabla `mapalab.layer_stats` en DataEngine. Los valores se
+    refrescan diariamente a las 04:30 via cron de dataengine-jobs.
+    Devuelve `{layer_id, stats: [{label, value, unit?}]}` o vacio si no hay datos.
+    """
+    from app.consts.databases import DatabaseType
+    from app.databases.factory import DatabaseFactory
+    from sqlalchemy import text
+
+    state = get_cached_state()
+    tree = state['tree']
+
+    def find_node(nodes, target):
+        for n in nodes:
+            if n['id'] == target:
+                return n
+            if n.get('children'):
+                found = find_node(n['children'], target)
+                if found:
+                    return found
+        return None
+
+    node = find_node(tree, layer)
+    if not node or not node.get('wmsConfig'):
+        raise ValueError(f"Capa '{layer}' no encontrada en el arbol del visor")
+
+    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+    with conn.get_session() as session:
+        gs_layer = node['wmsConfig'].get('geoserverLayer') or layer
+        ws = node['wmsConfig'].get('geoserverWorkspace') or node['wmsConfig'].get('workspace', '')
+        try:
+            rows = session.execute(
+                text(
+                    "SELECT stats->>'label' AS label, stats->>'value' AS value, "
+                    "stats->>'unit' AS unit "
+                    "FROM mapalab.layer_stats, "
+                    "jsonb_array_elements(values->'stats') AS stats "
+                    "WHERE geoserver_workspace = :ws AND geoserver_layer = :l"
+                ),
+                {'ws': ws, 'l': gs_layer},
+            ).fetchall()
+        except Exception:
+            rows = []
+
+        stats = []
+        for row in rows:
+            stat = {'label': row.label}
+            if row.value is not None:
+                stat['value'] = row.value
+            if row.unit is not None:
+                stat['unit'] = row.unit
+            stats.append(stat)
+
+        return {
+            'layer_id': layer,
+            'label': node.get('label', ''),
+            'stats': stats,
+        }

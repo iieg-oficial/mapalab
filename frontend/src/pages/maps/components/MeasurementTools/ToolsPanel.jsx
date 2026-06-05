@@ -44,7 +44,7 @@ const ToolsPanel = () => {
     const [isTextPanelOpen, setIsTextPanelOpen] = useState(false);
     const [textDraft, setTextDraft] = useState(textTemplate || '');
     const [isMeasurementListOpen, setIsMeasurementListOpen] = useState(false);
-    const [showAdvancedTools, setShowAdvancedTools] = useState(false);
+    const [showAdvancedTools, setShowAdvancedTools] = useState(true);
     const emojiPickerButtonRef = useRef(null);
     const textPanelButtonRef = useRef(null);
 

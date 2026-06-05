@@ -30,12 +30,15 @@ from app.services.periodicity_service import PeriodicityService
 from app.utils.logger import Logger
 
 from servers.share_tools import (
+    compare_years as _compare_years,
     create_single_share as _create_single_share,
     create_swipe_share as _create_swipe_share,
+    get_layer_stats as _get_layer_stats,
     list_municipios as _list_municipios,
     measure_geometry as _measure_geometry,
     query_wfs as _query_wfs,
     resolve_municipios as _resolve_municipios,
+    search_by_theme as _search_by_theme,
 )
 from servers.auth import (
     MCPAuthMiddleware,
@@ -374,6 +377,62 @@ def query_wfs(
             limit=limit,
             srs_name=srs_name,
         )
+    except ValueError as exc:
+        return {'error': str(exc)}
+
+
+@mcp.tool()
+def compare_years(
+    layer: str = Field(description='ID de la capa en el visor (p. ej. homicidio_doloso)'),
+    year_a: str = Field(description='Primer año a comparar (p. ej. "2025")'),
+    year_b: str = Field(description='Segundo año a comparar (p. ej. "2024")'),
+    municipio: Optional[str] = Field(default=None, description='Nombre del municipio para filtrar (opcional). Ej: "Guadalajara".'),
+    view: Optional[dict] = Field(default=None, description='Vista inicial: {zoom, lat, lon}. Si se omite, usa el extent del municipio.'),
+    basemap: str = Field(default='voyager', description='Basemap: "voyager" o "position".'),
+):
+    """Crea una comparativa swipe A|B de una capa entre dos años.
+
+    Atajo que encapsula resolve_municipios + create_swipe_share. Si se pasa
+    `municipio`, filtra ambos lados al municipio indicado.
+    """
+    try:
+        return _compare_years(
+            layer=layer,
+            year_a=year_a,
+            year_b=year_b,
+            municipio=municipio,
+            view=view,
+            basemap=basemap,
+        )
+    except ValueError as exc:
+        return {'error': str(exc)}
+
+
+@mcp.tool()
+def search_by_theme(
+    theme: str = Field(description='Nombre o alias del tema (p. ej. "seguridad", "economia", "salud").'),
+    limit: int = Field(default=50, ge=1, le=200, description='Maximo de resultados.'),
+):
+    """Lista las capas de un tema del visor.
+
+    Devuelve id, label, slug y workspace de cada capa hoja del tema.
+    Util para que el agente explore un area tematica completa.
+    """
+    return _search_by_theme(theme=theme, limit=limit)
+
+
+@mcp.tool()
+def get_layer_stats(
+    layer: str = Field(description='ID de la capa en el visor (p. ej. homicidio_doloso)'),
+):
+    """Numeralia precalculada de una capa: totales, promedios, ranking.
+
+    Los datos vienen de `mapalab.layer_stats` en DataEngine y se refrescan
+    diariamente. Devuelve `{layer_id, label, stats: [{label, value, unit?}]}`.
+    Si no hay datos para la capa, stats sera lista vacia.
+    """
+    try:
+        return _get_layer_stats(layer=layer)
     except ValueError as exc:
         return {'error': str(exc)}
 

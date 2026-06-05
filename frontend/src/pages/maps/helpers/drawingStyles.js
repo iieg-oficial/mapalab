@@ -239,40 +239,46 @@ export const createTextStyle = (text, rotation = 0, scale = 1, selected = false)
     return selected ? [createRoundedTextBg(text || 'Texto', rotation, scale), main] : main;
 };
 
-const createEmojiStyle = (emoji, rotation = 0, scale = 1, selected = false, fillColor = '#111827', strokeColor = '#ffffff', fontFamily = null) => {
+const createEmojiStyle = (emoji, rotation = 0, scale = 1, selected = false, fillColor = '#111827', strokeColor = '#ffffff', fontFamily = null, backgroundFill = null, backgroundStroke = null) => {
     const font = fontFamily || '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji", sans-serif';
+    const textOpts = {
+        text: emoji || '🙂',
+        font: `32px ${font}`,
+        fill: new Fill({ color: fillColor }),
+        stroke: new Stroke({ color: strokeColor, width: 2 }),
+        textBaseline: 'middle',
+        rotation,
+        scale,
+    };
+    if (backgroundFill) {
+        textOpts.backgroundFill = new Fill({ color: backgroundFill });
+        textOpts.backgroundStroke = new Stroke({ color: backgroundStroke || backgroundFill, width: 1 });
+        textOpts.padding = [2, 4, 2, 4];
+    }
     const main = new Style({
-        text: new TextStyle({
-            text: emoji || '🙂',
-            font: `32px ${font}`,
-            fill: new Fill({ color: fillColor }),
-            stroke: new Stroke({ color: strokeColor, width: 2 }),
-            textBaseline: 'middle',
-            rotation,
-            scale
-        })
+        text: new TextStyle(textOpts)
     });
     return selected ? [createSelectionHalo({ radius: 22, scale }), main] : main;
 };
 
 const svgToDataUrl = (xml) => `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(xml)))}`;
 
-export const createSymbolStyle = (symbol, rotation = 0, scale = 1, selected = false, fillColor = '#111827', strokeColor = '#ffffff', fontFamily = null) => {
-    if (!symbol) return createEmojiStyle('🙂', rotation, scale, selected, fillColor, strokeColor, fontFamily);
+export const createSymbolStyle = (symbol, rotation = 0, scale = 1, selected = false, fillColor = '#111827', strokeColor = '#ffffff', fontFamily = null, backgroundFill = null, backgroundStroke = null) => {
+    if (!symbol) return createEmojiStyle('🙂', rotation, scale, selected, fillColor, strokeColor, fontFamily, backgroundFill, backgroundStroke);
 
     if (typeof symbol === 'string') {
-        return createEmojiStyle(symbol, rotation, scale, selected, fillColor, strokeColor, fontFamily);
+        return createEmojiStyle(symbol, rotation, scale, selected, fillColor, strokeColor, fontFamily, backgroundFill, backgroundStroke);
     }
 
     if (symbol.kind === 'emoji') {
-        return createEmojiStyle(symbol.value, rotation, scale, selected, fillColor, strokeColor, fontFamily);
+        return createEmojiStyle(symbol.value, rotation, scale, selected, fillColor, strokeColor, fontFamily, backgroundFill, backgroundStroke);
     }
 
     const src = symbol.kind === 'svg'
         ? svgToDataUrl(symbol.value || '')
         : (symbol.imageUrl || symbol.image_url || symbol.value);
 
-    if (!src) return createEmojiStyle('🙂', rotation, scale, selected, fillColor, strokeColor, fontFamily);
+    if (!src) return createEmojiStyle('🙂', rotation, scale, selected, fillColor, strokeColor, fontFamily, backgroundFill, backgroundStroke);
 
     const main = new Style({
         image: new IconStyle({

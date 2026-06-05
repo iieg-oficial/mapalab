@@ -46,7 +46,9 @@ export const buildRestoredItems = ({ annotations, source, measurementConfig, for
                 false,
                 item.fillColor || '#111827',
                 item.strokeColor || '#ffffff',
-                fontFamily
+                fontFamily,
+                item.backgroundFill || null,
+                item.backgroundStroke || null
             ));
         } else if (type === 'Freehand') {
             feature.setStyle(createFreehandStyle());
