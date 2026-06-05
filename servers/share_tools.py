@@ -228,6 +228,7 @@ def query_wfs(
     layer: str,
     cql_filter: str | None = None,
     limit: int = 1000,
+    srs_name: str | None = None,
 ) -> dict:
     state = get_cached_state()
     tree = state['tree']
@@ -267,6 +268,8 @@ def query_wfs(
     }
     if safe_cql:
         params['CQL_FILTER'] = safe_cql
+    if srs_name:
+        params['srsName'] = srs_name
 
     base = settings.GEOSERVER_URL.rstrip('/')
     url = f"{base}/{gs_workspace}/ows?{urlencode(params)}"

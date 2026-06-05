@@ -349,14 +349,18 @@ def measure_geometry(
 def query_wfs(
     workspace: str = Field(description='Alias del workspace (p. ej. seguridad)'),
     layer: str = Field(description='ID de la capa en el visor (p. ej. homicidio_doloso)'),
-    cql_filter: Optional[str] = Field(default=None, description='Filtro CQL opcional. Ej: "anio = 2025 AND municipio = 14039". Solo opera sobre capas del visor.'),
+    cql_filter: Optional[str] = Field(default=None, description='Filtro CQL opcional. Ej: "municipio = 14039 AND fecha >= '"'"'2025-08-01'"'"'".'),
     limit: int = Field(default=1000, ge=1, le=10000, description='Maximo de features a devolver (1-10000).'),
+    srs_name: Optional[str] = Field(default=None, description='SRS de salida (opcional). Usa "EPSG:4326" para lat/lon compatible con anotaciones de shares. Por defecto devuelve el CRS nativo de la capa (EPSG:6368).'),
 ):
     """Consulta features WFS de una capa del visor.
 
     Devuelve el GeoJSON completo con todas las propiedades de cada feature.
-    Solo funciona con capas publicadas en el visor de MapaLab. Usa el alias
-    corto del workspace (p. ej. 'seguridad') y el ID de capa del arbol.
+    Solo funciona con capas publicadas en el visor de MapaLab.
+
+    Usa srs_name="EPSG:4326" si necesitas las coordenadas en lat/lon para
+    usarlas como anotaciones en create_single_share o create_swipe_share.
+    Sin srs_name, las coordenadas vienen en el CRS nativo (EPSG:6368, metros).
 
     El CQL se sanitiza: se bloquean patrones SQL peligrosos (UNION, SELECT,
     DROP, etc.). Solo se permiten comparadores estandar (=, >, <, LIKE,
@@ -368,6 +372,7 @@ def query_wfs(
             layer=layer,
             cql_filter=cql_filter,
             limit=limit,
+            srs_name=srs_name,
         )
     except ValueError as exc:
         return {'error': str(exc)}
