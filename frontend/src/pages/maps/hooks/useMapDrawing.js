@@ -13,6 +13,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     const [measurements, setMeasurements] = useState([]);
     const [isSketching, setIsSketching] = useState(false);
     const [areMeasurementToolsVisible, setMeasurementToolsVisible] = useState(false);
+    const [areAnnotationToolsVisible, setAnnotationToolsVisible] = useState(false);
     const [lastPlacedAnnotation, setLastPlacedAnnotation] = useState(null);
     const { textTemplate, setTextTemplate, textTemplateRef, textFillColorRef, textBgColorRef, textSizeRef, setTextFillColor, setTextBgColor, setTextSize } = useTextTemplate('');
     const [rotation, setRotation] = useState(0);
@@ -40,6 +41,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
 
     const showMeasurementTools = useCallback(() => setMeasurementToolsVisible(true), []);
     const hideMeasurementTools = useCallback(() => setMeasurementToolsVisible(false), []);
+    const hideAnnotationTools = useCallback(() => setAnnotationToolsVisible(false), []);
     const toggleMeasurementTools = useCallback(() => {
         setMeasurementToolsVisible(prev => !prev);
     }, []);
@@ -686,7 +688,10 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         areMeasurementToolsVisible,
         showMeasurementTools,
         hideMeasurementTools,
+        hideAnnotationTools,
         toggleMeasurementTools,
+        areAnnotationToolsVisible,
+        toggleAnnotationTools: () => setAnnotationToolsVisible(prev => !prev),
         textTemplate,
         setTextTemplate,
         emojiTemplate,

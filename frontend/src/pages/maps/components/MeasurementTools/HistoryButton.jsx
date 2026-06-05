@@ -7,6 +7,7 @@ const HistoryButton = ({
     onClick,
     buttonRef,
     isOpen,
+    tooltip = 'Mis mediciones y anotaciones',
     className = ''
 }) => {
     if (count <= 0) return null;
@@ -14,7 +15,7 @@ const HistoryButton = ({
     const iconState = isOpen ? 'hover' : 'normal';
 
     return (
-        <Tooltip content='Ver lista de mediciones' placement='right' delay={500}>
+        <Tooltip content={tooltip} placement='right' delay={500}>
             <button
                 ref={buttonRef}
                 type='button'

@@ -33,6 +33,8 @@ const MapSider = ({ className = '' }) => {
         onToggleLayer,
         toggleMeasurementTools,
         areMeasurementToolsVisible,
+        toggleAnnotationTools,
+        areAnnotationToolsVisible,
         isLocating,
         dateLoops,
         showMarker,
@@ -128,12 +130,22 @@ const MapSider = ({ className = '' }) => {
     const handleToggleTools = useCallback(() => {
         if (!areMeasurementToolsVisible) trackMeasurementPanelOpen();
         toggleMeasurementTools();
-        if (treatAsMobile) {
+        if (treatAsMobile && !areMeasurementToolsVisible) {
             closeSider();
-        } else if (lockMode === 'auto') {
-            setIsHovered(false);
+            if (lockMode?.release) lockMode.release();
         }
+        setIsHovered(false);
     }, [areMeasurementToolsVisible, toggleMeasurementTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
+
+    const handleToggleAnnotations = useCallback(() => {
+        if (!areAnnotationToolsVisible) trackMeasurementPanelOpen();
+        toggleAnnotationTools?.();
+        if (treatAsMobile && !areAnnotationToolsVisible) {
+            closeSider();
+            if (lockMode?.release) lockMode.release();
+        }
+        setIsHovered(false);
+    }, [areAnnotationToolsVisible, toggleAnnotationTools, treatAsMobile, closeSider, lockMode, setIsHovered]);
 
     const { eventos, activeEvento } = useEventoContext();
     const eventosForSider = SIDER_EVENTS_ENABLED ? eventos : EMPTY_EVENTOS;
@@ -146,8 +158,8 @@ const MapSider = ({ className = '' }) => {
     const showGlobalFunButton = !activeEvento && globalFactsEvento.facts.length > 0;
 
     const menuItems = useMemo(() =>
-        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, layers: allLayers, eventos: eventosForSider }),
-    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, toolsButtonRef, areMeasurementToolsVisible, allLayers, eventosForSider]);
+        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toggleAnnotationTools: handleToggleAnnotations, toolsButtonRef, areMeasurementToolsVisible, areAnnotationToolsVisible, layers: allLayers, eventos: eventosForSider }),
+    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, handleToggleAnnotations, toolsButtonRef, areMeasurementToolsVisible, areAnnotationToolsVisible, allLayers, eventosForSider]);
 
     const eventCount = eventosForSider.length;
     const baseItemsEnd = BASE_ITEMS_COUNT;

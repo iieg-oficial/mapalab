@@ -4,6 +4,9 @@ import { useMapsContext } from '@hooks/useMaps';
 import { trackMeasurementTool } from '@services/analyticsService';
 import HistoryButton from './HistoryButton';
 import CloseButton from '@components/CloseButton';
+import FloatingIconButton from '@components/FloatingIconButton';
+import Icon from '@components/Icon';
+import UndoButton from './UndoButton';
 import ToolSelector from './ToolSelector';
 import EmojiPanel from './EmojiPanel';
 import TextPanel from './TextPanel';
@@ -25,6 +28,7 @@ const ToolsPanel = () => {
         undoLastPoint,
         finishCurrentSketch,
         areMeasurementToolsVisible,
+        areAnnotationToolsVisible,
         textTemplate,
         setEmojiTemplate,
         setTextTemplate,
@@ -32,6 +36,7 @@ const ToolsPanel = () => {
         setTextBgColor,
         setTextSize,
         hideMeasurementTools,
+        hideAnnotationTools,
         restoreLastSelection,
         showSelectionByIndex,
         mapRef,
@@ -50,23 +55,12 @@ const ToolsPanel = () => {
     const [textBg, setTextBg] = useState('');
     const [textSz, setTextSz] = useState(1);
     const [isMeasurementListOpen, setIsMeasurementListOpen] = useState(false);
-    const [showAdvancedTools, setShowAdvancedTools] = useState(true);
+    const [toolsCollapsed, setToolsCollapsed] = useState(false);
     const emojiPickerButtonRef = useRef(null);
     const textPanelButtonRef = useRef(null);
 
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.altKey && e.key.toLowerCase() === 'a') {
-                e.preventDefault();
-                setShowAdvancedTools(prev => !prev);
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
-
-    const shouldRender = areMeasurementToolsVisible || isDrawing || measurements.length > 0;
-    const showTypeSwitcher = areMeasurementToolsVisible || isDrawing;
+    const shouldRender = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0;
+    const showTypeSwitcher = !toolsCollapsed && (areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing);
 
     const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo' };
 
@@ -121,6 +115,7 @@ const ToolsPanel = () => {
     const handleCloseToolsConfirm = () => {
         cancel?.();
         hideMeasurementTools?.();
+        hideAnnotationTools?.();
         setIsEmojiPickerOpen(false);
         setIsTextPanelOpen(false);
         setIsMeasurementListOpen(false);
@@ -132,17 +127,43 @@ const ToolsPanel = () => {
 
     return (
         <div
-            className={`fixed z-10 flex flex-col gap-2 items-start min-w-[44px] ${className}`}
+            className={`fixed z-10 flex flex-col gap-2 items-start min-w-11 ${className}`}
             style={style}
         >
-            <HistoryButton
-                count={measurements.length}
-                onClick={() => setIsMeasurementListOpen(!isMeasurementListOpen)}
-                isOpen={isMeasurementListOpen}
-            />
+            <div className="flex items-center gap-2">
+                <HistoryButton
+                    count={measurements.length}
+                    onClick={() => setIsMeasurementListOpen(!isMeasurementListOpen)}
+                    isOpen={isMeasurementListOpen}
+                    tooltip="Mediciones y anotaciones"
+                />
+
+                {(showTypeSwitcher || toolsCollapsed) && (areMeasurementToolsVisible || areAnnotationToolsVisible) && (
+                    <FloatingIconButton
+                        iconKey={toolsCollapsed ? 'left_arrow_fill_normal' : 'right_arrow_fill_normal'}
+                        tooltip={toolsCollapsed ? 'Mostrar herramientas' : 'Ocultar herramientas'}
+                        placement="left"
+                        delay={300}
+                        onClick={() => setToolsCollapsed(prev => !prev)}
+                    />
+                )}
+
+                {isDrawing && (
+                    <div className="md:hidden flex items-center gap-0.5 bg-white rounded-full px-1.5 py-0.5 shadow-[0_2px_8px_#1A26641A]">
+                        <UndoButton onClick={undoLastPoint} disabled={!isSketching} showLabel={false} />
+                        <button type="button" onClick={finishCurrentSketch} className="flex items-center justify-center size-7 rounded-full hover:bg-[#DCFCE7] transition-colors" aria-label="Terminar trazo">
+                            <Icon name="done" state="normal" className="size-4 text-[#16A34A]" />
+                        </button>
+                        <button type="button" onClick={cancelCurrentSketch} className="flex items-center justify-center size-7 rounded-full hover:bg-[#FFE6EC] transition-colors" aria-label="Cancelar trazo">
+                            <Icon name="close" state="normal" className="size-4 text-[#FF577D]" />
+                        </button>
+                    </div>
+                )}
+            </div>
 
             <ToolSelector
-                visible={showTypeSwitcher}
+                visible={showTypeSwitcher || toolsCollapsed}
+                compact={toolsCollapsed}
                 isDrawing={isDrawing}
                 measureType={measureType}
                 isTextPanelOpen={isTextPanelOpen}
@@ -156,8 +177,8 @@ const ToolsPanel = () => {
                 onFinish={finishCurrentSketch}
                 onCancel={cancelCurrentSketch}
                 canUndo={isSketching}
-                showAdvancedTools={showAdvancedTools}
-                onToggleAdvanced={() => setShowAdvancedTools(prev => !prev)}
+                showMeasurements={areMeasurementToolsVisible}
+                showAnnotations={areAnnotationToolsVisible}
             />
 
             <EmojiPanel
@@ -206,10 +227,10 @@ const ToolsPanel = () => {
             )}
 
             <CloseButton
-                visible={isDrawing || areMeasurementToolsVisible}
+                visible={true}
                 onConfirm={handleCloseToolsConfirm}
-                tooltip="Cerrar herramienta de mediciones"
-                confirmTitle="¿Cerrar herramientas de medición?"
+                tooltip="Cerrar herramientas de medición y anotaciones"
+                confirmTitle="¿Cerrar herramientas?"
                 confirmDescription="Se eliminarán todos los trazos y anotaciones actuales. Esta acción no se puede deshacer."
                 confirmText="Sí, cerrar herramientas"
             />

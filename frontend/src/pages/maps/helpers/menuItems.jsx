@@ -58,7 +58,7 @@ const MenuButton = ({ icon, imageUrl, label, isHovered, hasActiveLayers = false,
     );
 };
 
-const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, toggleMeasurementTools, toolsButtonRef, areMeasurementToolsVisible }) => [
+const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, toggleMeasurementTools, toggleAnnotationTools, toolsButtonRef, areMeasurementToolsVisible, areAnnotationToolsVisible }) => [
     {
         id: 'search',
         hasMenu: true,
@@ -82,7 +82,9 @@ const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, toggleMeasu
                 close={close}
                 closeButton={closeButton}
                 toggleMeasurementTools={toggleMeasurementTools}
+                toggleAnnotationTools={toggleAnnotationTools}
                 areMeasurementToolsVisible={areMeasurementToolsVisible}
+                areAnnotationToolsVisible={areAnnotationToolsVisible}
             />
         ),
         renderComponent: ({ isMenuOpen }) => (
