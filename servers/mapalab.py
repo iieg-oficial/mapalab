@@ -211,7 +211,7 @@ def get_sources_batch(
 
 @mcp.tool()
 def get_periodicity(
-    workspace: str = Field(description='Nombre del workspace de GeoServer'),
+    workspace: str = Field(description='Alias del workspace (p. ej. seguridad)'),
     layer: str = Field(description='Nombre de la capa dentro del workspace'),
 ):
     """Fechas disponibles year/month/day de una capa temporal.
@@ -345,7 +345,10 @@ def measure_geometry(
     en metros / metros cuadrados reales sobre el elipsoide WGS84 (no
     proyectados). Devuelve `{type, metric, value, unit, value_km|value_km2}`.
     """
-    return _measure_geometry(geometry)
+    try:
+        return _measure_geometry(geometry)
+    except ValueError as exc:
+        return {'error': str(exc)}
 
 
 @mcp.tool()

@@ -11,11 +11,16 @@ from sqlalchemy import text
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.repositories.share_repository import ShareRepository
+from app.utils.logger import Logger
 from app.services.share_service import (
     CURRENT_SCHEMA_VERSION,
+    MAX_COORDINATES_PER_GEOMETRY,
+    _count_coordinates,
     hash_id,
     validate_payload,
 )
+
+_POSTGIS_STATEMENT_TIMEOUT_MS = 5000
 
 
 def _public_base_url() -> str:
@@ -165,10 +170,12 @@ def measure_geometry(geometry: dict) -> dict:
     gtype = geometry.get("type")
     if gtype not in {"LineString", "Polygon", "MultiPolygon"}:
         raise ValueError(f"geometry.type debe ser LineString o Polygon, recibido {gtype}")
-    import json
+    if _count_coordinates(geometry.get("coordinates")) > MAX_COORDINATES_PER_GEOMETRY:
+        raise ValueError(f"geometry excede {MAX_COORDINATES_PER_GEOMETRY} coordenadas")
     geojson_str = json.dumps(geometry)
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
     with conn.get_session() as session:
+        session.execute(text(f"SET LOCAL statement_timeout = {_POSTGIS_STATEMENT_TIMEOUT_MS}"))
         if gtype == "LineString":
             row = session.execute(
                 text("SELECT ST_Length(ST_GeomFromGeoJSON(:g)::geography) AS v"),
@@ -275,14 +282,16 @@ def query_wfs(
         auth = (settings.GEOSERVER_USER, settings.GEOSERVER_PASSWORD)
 
     try:
-        with httpx.Client(timeout=_WFS_TIMEOUT, verify=False) as client:
+        with httpx.Client(timeout=_WFS_TIMEOUT, verify=settings.GEOSERVER_VERIFY_SSL) as client:
             response = client.get(url, auth=auth)
         response.raise_for_status()
         geojson = response.json()
     except httpx.HTTPStatusError as exc:
-        raise ValueError(f"GeoServer error {exc.response.status_code}: {exc.response.text[:500]}")
+        Logger.warning(f"query_wfs.geoserver_status status={exc.response.status_code} body={exc.response.text[:500]}")
+        raise ValueError(f"GeoServer respondió {exc.response.status_code}")
     except httpx.RequestError as exc:
-        raise ValueError(f"No se pudo conectar a GeoServer: {exc}")
+        Logger.warning(f"query_wfs.geoserver_unreachable {exc}")
+        raise ValueError("No se pudo conectar a GeoServer")
 
     if srs_name and srs_name.upper() != 'EPSG:6368':
         geojson = _reproject_geojson(geojson, srs_name)
@@ -291,24 +300,33 @@ def query_wfs(
 
 
 def _reproject_geojson(geojson: dict, target_srs: str) -> dict:
+    features = geojson.get('features', [])
+    indexed = [(i, f.get('geometry')) for i, f in enumerate(features) if f.get('geometry')]
+    if not indexed:
+        geojson['crs'] = {'type': 'name', 'properties': {'name': target_srs}}
+        return geojson
+
+    target_epsg = int(target_srs.upper().replace('EPSG:', ''))
+    geoms_json = json.dumps([geom for _, geom in indexed])
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
     with conn.get_session() as session:
-        target_epsg = target_srs.upper().replace('EPSG:', '')
-        for feature in geojson.get('features', []):
-            geom = feature.get('geometry')
-            if not geom:
-                continue
-            geojson_str = json.dumps(geom)
-            row = session.execute(
-                text(
-                    "SELECT ST_AsGeoJSON("
-                    "ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(:g), 6368), :tgt)"
-                    ")"
-                ),
-                {'g': geojson_str, 'tgt': int(target_epsg)},
-            ).first()
-            if row and row[0]:
-                feature['geometry'] = json.loads(row[0])
+        session.execute(text(f"SET LOCAL statement_timeout = {_POSTGIS_STATEMENT_TIMEOUT_MS}"))
+        rows = session.execute(
+            text(
+                "SELECT ord - 1 AS pos, ST_AsGeoJSON("
+                "ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(g.value), 6368), :tgt)"
+                ") AS geom "
+                "FROM jsonb_array_elements(CAST(:geoms AS jsonb)) "
+                "WITH ORDINALITY AS g(value, ord)"
+            ),
+            {'geoms': geoms_json, 'tgt': target_epsg},
+        ).fetchall()
+
+    transformed = {int(r.pos): r.geom for r in rows if r.geom}
+    for pos, (feat_idx, _) in enumerate(indexed):
+        geom = transformed.get(pos)
+        if geom:
+            features[feat_idx]['geometry'] = json.loads(geom)
     geojson['crs'] = {'type': 'name', 'properties': {'name': target_srs}}
     return geojson
 
@@ -342,6 +360,9 @@ def compare_years(
     if not node or not node.get('wmsConfig'):
         raise ValueError(f"Capa '{layer}' no encontrada en el arbol del visor")
 
+    if not re.fullmatch(r'\d{4}', str(year_a)) or not re.fullmatch(r'\d{4}', str(year_b)):
+        raise ValueError("year_a y year_b deben ser un anio de 4 digitos (p. ej. '2025')")
+
     layer_entry_a = {
         'slug': layer,
         'filters': {
@@ -368,13 +389,7 @@ def compare_years(
         kwargs['view'] = view
 
     if municipio:
-        muni = resolve_municipios(query=municipio, limit=1)
-        if isinstance(muni, dict) and 'items' in muni:
-            items = muni['items']
-        elif isinstance(muni, list):
-            items = muni
-        else:
-            raise ValueError(f"No se encontró el municipio '{municipio}'")
+        items = resolve_municipios(query=municipio, limit=1)
         if not items:
             raise ValueError(f"No se encontró el municipio '{municipio}'")
         kwargs['municipios'] = {'source': 'iieg', 'selected': [items[0]['clave']]}
@@ -393,26 +408,40 @@ def search_by_theme(
     """
     state = get_cached_state()
     tree = state['tree']
-    theme_lower = theme.lower()
+    theme_lower = theme.strip().lower()
     results = []
 
-    def walk(nodes, depth=0):
+    def collect_leaves(node):
+        if node.get('nodeType') == 'leaf' and node.get('wmsConfig'):
+            results.append({
+                'id': node['id'],
+                'label': node.get('label', ''),
+                'slug': node.get('slug', ''),
+                'workspace': (node.get('wmsConfig') or {}).get('workspace', ''),
+            })
+        for child in node.get('children') or []:
+            collect_leaves(child)
+
+    def walk(nodes):
         for n in nodes:
-            ws = (n.get('wmsConfig') or {}).get('workspace', '')
-            if ws.lower() == theme_lower or n.get('id', '').lower() == theme_lower:
-                if n.get('nodeType') == 'leaf' and n.get('wmsConfig'):
-                    results.append({
-                        'id': n['id'],
-                        'label': n.get('label', ''),
-                        'slug': n.get('slug', ''),
-                        'workspace': ws,
-                    })
-            if n.get('children'):
-                walk(n['children'], depth + 1)
-        return
+            label = (n.get('label') or '').lower()
+            nid = (n.get('id') or '').lower()
+            ws = ((n.get('wmsConfig') or {}).get('workspace') or '').lower()
+            if theme_lower in (label, nid, ws):
+                collect_leaves(n)
+            else:
+                walk(n.get('children') or [])
 
     walk(tree)
-    return results[:limit]
+
+    seen = set()
+    deduped = []
+    for r in results:
+        if r['id'] in seen:
+            continue
+        seen.add(r['id'])
+        deduped.append(r)
+    return deduped[:limit]
 
 
 def get_layer_stats(
@@ -450,6 +479,7 @@ def get_layer_stats(
         gs_layer = node['wmsConfig'].get('geoserverLayer') or layer
         ws = node['wmsConfig'].get('geoserverWorkspace') or node['wmsConfig'].get('workspace', '')
         try:
+            session.execute(text(f"SET LOCAL statement_timeout = {_POSTGIS_STATEMENT_TIMEOUT_MS}"))
             rows = session.execute(
                 text(
                     "SELECT stats->>'label' AS label, stats->>'value' AS value, "
@@ -460,7 +490,8 @@ def get_layer_stats(
                 ),
                 {'ws': ws, 'l': gs_layer},
             ).fetchall()
-        except Exception:
+        except Exception as exc:
+            Logger.warning(f"get_layer_stats.query_error layer={layer} ws={ws} {exc}")
             rows = []
 
         stats = []

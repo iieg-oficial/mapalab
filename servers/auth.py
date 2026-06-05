@@ -43,9 +43,9 @@ def _extract_token(headers: dict[str, str]) -> Optional[str]:
 
 
 def _client_ip(scope: Scope, headers: dict[str, str]) -> Optional[str]:
-    fwd = headers.get('x-forwarded-for')
-    if fwd:
-        return fwd.split(',')[0].strip()
+    real = headers.get('x-real-ip')
+    if real and real.strip():
+        return real.strip()
     client = scope.get('client') or (None,)
     return client[0]
 
