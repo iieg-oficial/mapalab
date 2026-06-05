@@ -15,13 +15,15 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`m
 
 | Origen | MCP | Razón |
 |---|---|---|
-| Endpoints REST de `metadata`, `periodicity`, `layers/{tree,initial-order,workspaces,search,resolve}` | **sí** (16 tools de lectura) | Lectura pura útil para agentes |
+| Endpoints REST de `metadata`, `periodicity`, `layers/{tree,initial-order,workspaces,search,resolve}` | **sí** (9 tools de lectura) | Lectura pura útil para agentes |
 | Endpoint REST `municipios/` (`list_municipios`, `resolve_municipios`, desde 1.48.x) | **sí** (2 tools de lectura) | Para que el agente mapee "Guadalajara, Zapopan" → claves INEGI y las pase a `create_*_share(municipios=...)` |
-| Lógica nueva (`query_wfs`, `create_single_share`, `create_swipe_share`, `measure_geometry`) | **sí** (1 lectura + 2 writes + 1 lectura, desde 1.70.0) | Tools manuales que reutilizan `share_service`, PostGIS y GeoServer WFS para que un agente entregue mapas interactivos. `create_*_share` desde 1.48.x aceptan `municipios={source, selected}` para activar el modo Vista por municipio en el share. |
+| Lógica nueva (`query_wfs`, `search_by_theme`, `get_layer_stats`, `measure_geometry`, `create_single_share`, `create_swipe_share`, `compare_years`) | **sí** (4 lecturas + 3 writes, desde 1.44.0/1.70.0) | Tools manuales que reutilizan `share_service`, PostGIS y GeoServer WFS para que un agente entregue mapas interactivos. `create_*_share` desde 1.48.x aceptan `municipios={source, selected}` para activar el modo Vista por municipio en el share. |
 | `download` (CSV streaming) | **no** | Streams de `COPY TO STDOUT`; el formato de respuesta MCP no encaja con streaming |
 | `layers/{refresh-cache,invalidate-cache}` | **no** (removido en 1.48.1) | Requerían `X-Internal-Token` que el MCP no inyecta; siempre devolvían 401, eran ruido en `tools/list` |
 | `shares/{pin,unpin,pin-permanent}` | **no** | Writes administrativos con efectos sobre la BD, no encajan en el patrón del MCP público |
 | `metrics`, `health`, `ontoy` | **no** | Endpoints internos de operaciones, no útiles para un agente |
+
+> **Superficie de lectura de `query_wfs` (decisión de exposición).** A diferencia del resto de tools (metadata/árbol curados), `query_wfs` deja que el agente corra CQL arbitrario y baje hasta 10 000 features completos de **cualquier capa publicada en el árbol del visor**. Esto es intencional: el visor de MapaLab es público y esos features ya se sirven vía WMS/WFS al frontend. **Pre-requisito de seguridad:** ninguna capa con datos sensibles/internos debe estar publicada en el árbol del visor (`mapalab.layer_tree_cache`), porque sería alcanzable por aquí. El tool solo resuelve capas presentes en el árbol (`find_node` sobre el tree cache), así que la frontera de exposición es exactamente "lo que el visor ya muestra al público".
 
 ## Arquitectura (v1.35.0+)
 
@@ -53,7 +55,7 @@ backend container (backend/app/server.py)
 
 El `mapalab-mcp` reutiliza los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) — el codigo de `backend/app` se copia al container del MCP en build time. Sin duplicacion de logica, ambos containers leen del mismo schema `mapalab` en DataEngine.
 
-### Tools expuestos (12)
+### Tools expuestos (18)
 
 | Tool | Tipo | Razon |
 |---|---|---|
@@ -66,6 +68,8 @@ El `mapalab-mcp` reutiliza los servicios y repositorios del backend (`app.servic
 | `get_sources_batch` | Lectura | fuentes de varias capas |
 | `get_periodicity` | Lectura | fechas de capa temporal |
 | `get_periodicities_batch` | Lectura | periodicidad de varias capas |
+| `list_municipios` | Lectura | 125 municipios de Jalisco con clave INEGI |
+| `resolve_municipios` | Lectura | nombre/clave parcial → matches de municipio |
 | `measure_geometry` | Lectura | calcula longitud/area geodesica con PostGIS |
 | `query_wfs` | Lectura (desde 1.70.0) | consulta features WFS de una capa del visor con CQL opcional |
 | `compare_years` | Write (desde 1.70.0) | atajo swipe A|B con filtros de año y municipio |
@@ -353,7 +357,7 @@ curl -s -X POST http://localhost:3006/mcp/ \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
 
-Devuelve los 14 tools registrados con su `name`, `description` y `inputSchema`.
+Devuelve los 18 tools registrados con su `name`, `description` y `inputSchema`.
 
 ### curl (`tools/call`) — pruebas rápidas de los tools nuevos
 
@@ -423,7 +427,7 @@ curl -s -X POST http://localhost:3006/mcp/ \
       "arguments": {
         "layers": ["tasa_homicidio_doloso"],
         "view": {"zoom": 9, "lat": 20.6, "lon": -103.4},
-        "basemap": "osm",
+        "basemap": "voyager",
         "annotations": [{
           "id": "zona1",
           "type": "Polygon",
@@ -549,7 +553,7 @@ curl -s -X POST http://localhost:3006/mcp/ \
       "arguments": {
         "layers": ["tasa_homicidio_doloso"],
         "view": {"zoom": 12, "lat": 20.725, "lon": -103.355},
-        "basemap": "osm",
+        "basemap": "voyager",
         "annotations": [
           {
             "id": "area-norte",
@@ -599,7 +603,7 @@ curl -s -X POST http://localhost:3006/mcp/ \
         "pane_b_layers": ["poblacion"],
         "position": 0.5,
         "view": {"zoom": 9, "lat": 20.6, "lon": -103.4},
-        "basemap": "osm",
+        "basemap": "voyager",
         "label_a": "Tasa de homicidio doloso",
         "label_b": "Población"
       }
@@ -627,7 +631,7 @@ curl -s -X POST http://localhost:3006/mcp/ \
         "pane_b_layers": ["poblacion"],
         "position": 0.5,
         "view": {"zoom": 11, "lat": 20.66, "lon": -103.35},
-        "basemap": "osm",
+        "basemap": "voyager",
         "label_a": "Homicidio",
         "label_b": "Población",
         "annotations": [
@@ -742,7 +746,7 @@ Scrapeado por Prometheus en huachicol vía el endpoint `/metrics` existente del 
 
 ## Auth y seguridad (v1.33.0+)
 
-Hasta 1.32.x el MCP era **público sin auth**: cualquiera que alcanzara el endpoint podía llamar las 14 tools, incluidas las dos writes (`create_*_share`) que persisten filas en la BD, sin rate limit ni atribución. Una auditoría de seguridad cerró tres frentes (H1 auth, H2 abuso de escritura, H3 flood). Desde **1.33.0** todo `/mcp` exige API key.
+Hasta 1.32.x el MCP era **público sin auth**: cualquiera que alcanzara el endpoint podía llamar todas las tools, incluidas las writes (`create_*_share`) que persisten filas en la BD, sin rate limit ni atribución. Una auditoría de seguridad cerró tres frentes (H1 auth, H2 abuso de escritura, H3 flood). Desde **1.33.0** todo `/mcp` exige API key.
 
 ### H1 — Autenticación por API key
 
@@ -853,8 +857,10 @@ Corta floods por IP antes de que lleguen al pool chico del MCP (2 workers × 2 c
 ## Limitaciones conocidas
 
 - **`download` queda fuera**: no es trivial exponer un stream de CSV como tool MCP. Si se requiere, considerar un endpoint alternativo que devuelva una URL firmada (S3/Acervo) en lugar del stream directo.
-- **`measure_geometry` sin cap de vértices** (pendiente, M1 de la auditoría): la query a PostGIS es parametrizada (sin SQLi) pero no limita el número de coordenadas ni fija `statement_timeout`; un polígono enorme puede retener una conexión del pool. Mitigado parcialmente por el `limit_req`/cuota, pero conviene topar vértices server-side como en `share_service._count_coordinates`.
+- **M1 resuelto (cap de vértices + timeout)**: `measure_geometry` topa la geometría a `MAX_COORDINATES_PER_GEOMETRY` (reutiliza `share_service._count_coordinates`) y todas las queries PostGIS del MCP (`measure_geometry`, reproyección WFS, `get_layer_stats`) fijan `SET LOCAL statement_timeout = 5000`. La reproyección de `query_wfs` se hace en una sola query (no N+1).
 - **`filters.date` (CQL) sin validar server-side** (pendiente, M2): el share persiste el CQL verbatim y el visor lo reenvía a GeoServer en `CQL_FILTER`. Validar contra la forma esperada (`parseCQLToSelections`/`generateCQLFilter`) en `servers/share_tools.py`.
+- **Cuota aproximada por multiproceso**: en producción el MCP corre con `gunicorn --workers ${MCP_WORKERS}` (default **2**). El `QuotaTracker` es en memoria **por proceso**, así que la cuota efectiva por key es ≈ `MCP_WORKERS × cuota` configurada. Para abuso, basta el `limit_req` de nginx + la cuota como tope blando; si se necesita un tope exacto hay que mover el contador a un store compartido (Redis) o que mariachi haga el pre-check autoritativo.
+- **IP de `ips_permitidas` solo confiable en deploy directo**: el MCP toma el IP de `X-Real-IP` (lo fija el nginx inmediato, sobrescribiendo lo que mande el cliente; ya no se usa el primer `X-Forwarded-For` que era spoofeable). Detrás del gateway, `X-Real-IP` es la IP del gateway, no la del cliente final, así que el allowlist por IP de una key privada no discrimina por cliente en ese trayecto. Para keys de MCP, apóyate en el secreto de la key + cuota, no en `ips_permitidas`. Para habilitar allowlist por cliente detrás del gateway, mapalab-nginx debería propagar el `X-Real-IP` que ya calcula el gateway en vez de sobrescribirlo.
 - **Sin observabilidad propia**: las llamadas a tools no aparecen en `/metrics` (excluido) ni se loggean separadas. Para monitorear, mirar logs de uvicorn/gunicorn filtrando por `/mcp/`.
 
 ## Pendiente — Publicar en el Claude Connectors Directory ("store")
@@ -881,13 +887,13 @@ Requisitos del MCP como *Resource Server*:
 - [ ] Mapear identidad OAuth → cuota. Decidir si la cuota sigue por "key" (ahora por `sub`/cliente OAuth) reutilizando `QuotaTracker`.
 - [ ] Validación del header `Origin` en las requests a `/mcp`.
 
-### Fase 2 — Anotaciones de los 14 tools
+### Fase 2 — Anotaciones de los 18 tools
 
 El directorio exige que cada tool declare metadata (hoy `servers/mapalab.py` solo tiene docstrings):
 
 - [ ] `title` legible por tool.
-- [ ] `readOnlyHint=True` en los 12 de lectura.
-- [ ] `readOnlyHint=False` (o `destructiveHint`) en los 2 writes (`create_single_share`, `create_swipe_share`).
+- [ ] `readOnlyHint=True` en los 15 de lectura.
+- [ ] `readOnlyHint=False` (o `destructiveHint`) en los 3 writes (`create_single_share`, `create_swipe_share`, `compare_years`).
 - [ ] En FastMCP: `@mcp.tool(annotations=ToolAnnotations(title=..., readOnlyHint=True))`.
 
 ### Fase 3 — Assets y submission
