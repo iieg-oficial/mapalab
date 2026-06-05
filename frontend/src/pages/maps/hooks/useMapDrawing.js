@@ -14,7 +14,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     const [isSketching, setIsSketching] = useState(false);
     const [areMeasurementToolsVisible, setMeasurementToolsVisible] = useState(false);
     const [lastPlacedAnnotation, setLastPlacedAnnotation] = useState(null);
-    const { textTemplate, setTextTemplate, textTemplateRef } = useTextTemplate('');
+    const { textTemplate, setTextTemplate, textTemplateRef, textFillColorRef, textBgColorRef, textSizeRef, setTextFillColor, setTextBgColor, setTextSize } = useTextTemplate('');
     const [rotation, setRotation] = useState(0);
     const rotationRef = useRef(0);
     const { emojiTemplate, setEmojiTemplate, emojiTemplateRef } = useEmojiTemplate('');
@@ -135,7 +135,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         }
 
         if (annotationType === 'Text') {
-            const style = createTextStyle(feature.get('textLabel'), featureRotation, featureScale, featureSelected);
+            const fill = feature.get('fillColor') || '#111827';
+            const bg = feature.get('bgColor') || '';
+            const style = createTextStyle(feature.get('textLabel'), featureRotation, featureScale, featureSelected, fill, bg);
             if (!isSketch) {
                 feature.set('cachedStyle', style, true);
             }
@@ -266,7 +268,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             if (type === 'Text') {
                 event.feature.set('textLabel', textTemplateRef.current);
                 event.feature.set('rotation', rotationRef.current);
-                event.feature.set('scale', 1);
+                event.feature.set('scale', textSizeRef.current || 1);
+                if (textFillColorRef.current) event.feature.set('fillColor', textFillColorRef.current);
+                if (textBgColorRef.current) event.feature.set('bgColor', textBgColorRef.current);
             }
             updateSketchingState(true);
 
@@ -687,6 +691,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         setTextTemplate,
         emojiTemplate,
         setEmojiTemplate,
+        setTextFillColor,
+        setTextBgColor,
+        setTextSize,
         rotation,
         setRotation,
         measurementConfig,

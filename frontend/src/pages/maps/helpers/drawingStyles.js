@@ -223,19 +223,22 @@ const createRoundedTextBg = (text, rotation, scale) => new Style({
     }
 });
 
-export const createTextStyle = (text, rotation = 0, scale = 1, selected = false) => {
-    const main = new Style({
-        text: new TextStyle({
-            text: text || 'Texto',
-            font: TEXT_FONT,
-            fill: new Fill({ color: '#111827' }),
-            stroke: new Stroke({ color: '#ffffff', width: 3 }),
-            textBaseline: 'middle',
-            rotation,
-            scale
-        })
-    });
-
+export const createTextStyle = (text, rotation = 0, scale = 1, selected = false, fillColor = '#111827', bgColor = '') => {
+    const textOpts = {
+        text: text || 'Texto',
+        font: TEXT_FONT,
+        fill: new Fill({ color: fillColor }),
+        stroke: new Stroke({ color: '#ffffff', width: 3 }),
+        textBaseline: 'middle',
+        rotation,
+        scale,
+    };
+    if (bgColor) {
+        textOpts.backgroundFill = new Fill({ color: bgColor });
+        textOpts.backgroundStroke = new Stroke({ color: bgColor, width: 1 });
+        textOpts.padding = [2, 4, 2, 4];
+    }
+    const main = new Style({ text: new TextStyle(textOpts) });
     return selected ? [createRoundedTextBg(text || 'Texto', rotation, scale), main] : main;
 };
 

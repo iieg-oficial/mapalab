@@ -28,6 +28,9 @@ const ToolsPanel = () => {
         textTemplate,
         setEmojiTemplate,
         setTextTemplate,
+        setTextFillColor,
+        setTextBgColor,
+        setTextSize,
         hideMeasurementTools,
         restoreLastSelection,
         showSelectionByIndex,
@@ -43,6 +46,9 @@ const ToolsPanel = () => {
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [isTextPanelOpen, setIsTextPanelOpen] = useState(false);
     const [textDraft, setTextDraft] = useState(textTemplate || '');
+    const [textColor, setTextColor] = useState('#111827');
+    const [textBg, setTextBg] = useState('');
+    const [textSz, setTextSz] = useState(1);
     const [isMeasurementListOpen, setIsMeasurementListOpen] = useState(false);
     const [showAdvancedTools, setShowAdvancedTools] = useState(true);
     const emojiPickerButtonRef = useRef(null);
@@ -167,6 +173,12 @@ const ToolsPanel = () => {
                 anchorRef={textPanelButtonRef}
                 value={textDraft}
                 onChange={setTextDraft}
+                fillColor={textColor}
+                onFillColorChange={(c) => { setTextColor(c); setTextFillColor?.(c); }}
+                bgColor={textBg}
+                onBgColorChange={(c) => { setTextBg(c); setTextBgColor?.(c); }}
+                size={textSz}
+                onSizeChange={(s) => { setTextSz(s); setTextSize?.(s); }}
                 onSave={handleSaveText}
                 onClose={() => setIsTextPanelOpen(false)}
                 placedCount={measurements.filter(m => m.type === 'Text').length}
