@@ -192,3 +192,94 @@ def measure_geometry(geometry: dict) -> dict:
             "unit": "m²",
             "value_km2": round(sqm / 1_000_000.0, 6),
         }
+
+
+import re
+from urllib.parse import urlencode
+
+import httpx
+
+from app.config import settings
+from app.services.layer_tree_service import get_cached_state
+
+_WFS_TIMEOUT = 120.0
+
+_CQL_BLOCKED = re.compile(
+    r"(?:;|--|/\*|\*/|\\x|UNION\b|SELECT\b|INSERT\b|UPDATE\b|DELETE\b|DROP\b"
+    r"|ALTER\b|CREATE\b|EXEC\b|EXECUTE\b|TRUNCATE\b|MERGE\b|REPLACE\b"
+    r"|GRANT\b|REVOKE\b|SCRIPT\b)",
+    re.IGNORECASE,
+)
+
+
+def _sanitize_cql(cql: str | None) -> str | None:
+    if not cql:
+        return None
+    stripped = cql.strip()
+    if not stripped:
+        return None
+    if _CQL_BLOCKED.search(stripped):
+        raise ValueError("CQL contiene patrones no permitidos")
+    return stripped
+
+
+def query_wfs(
+    workspace: str,
+    layer: str,
+    cql_filter: str | None = None,
+    limit: int = 1000,
+) -> dict:
+    state = get_cached_state()
+    tree = state['tree']
+
+    def find_node(nodes, target):
+        for n in nodes:
+            if n['id'] == target:
+                return n
+            if n.get('children'):
+                found = find_node(n['children'], target)
+                if found:
+                    return found
+        return None
+
+    node = find_node(tree, layer)
+    if not node or not node.get('wmsConfig'):
+        raise ValueError(f"Capa '{layer}' no encontrada en el arbol del visor")
+
+    ws_map = {w['alias']: w['geoserver_workspace'] for w in state.get('workspaces', [])}
+    gs_workspace = ws_map.get(workspace)
+    if not gs_workspace:
+        raise ValueError(f"Workspace '{workspace}' no encontrado")
+
+    wms = node['wmsConfig']
+    gs_layer = wms.get('layers') or layer
+    if ':' not in gs_layer:
+        gs_layer = f"{gs_workspace}:{gs_layer}"
+
+    safe_cql = _sanitize_cql(cql_filter)
+    params = {
+        'service': 'WFS',
+        'version': '2.0.0',
+        'request': 'GetFeature',
+        'typeNames': gs_layer,
+        'outputFormat': 'application/json',
+        'count': str(max(1, min(limit, 10000))),
+    }
+    if safe_cql:
+        params['CQL_FILTER'] = safe_cql
+
+    base = settings.GEOSERVER_URL.rstrip('/')
+    url = f"{base}/{gs_workspace}/ows?{urlencode(params)}"
+    auth = None
+    if settings.GEOSERVER_USER and settings.GEOSERVER_PASSWORD:
+        auth = (settings.GEOSERVER_USER, settings.GEOSERVER_PASSWORD)
+
+    try:
+        with httpx.Client(timeout=_WFS_TIMEOUT, verify=False) as client:
+            response = client.get(url, auth=auth)
+        response.raise_for_status()
+        return response.json()
+    except httpx.HTTPStatusError as exc:
+        raise ValueError(f"GeoServer error {exc.response.status_code}: {exc.response.text[:300]}")
+    except httpx.RequestError as exc:
+        raise ValueError(f"No se pudo conectar a GeoServer: {exc}")
