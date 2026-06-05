@@ -27,6 +27,12 @@ import EventoFunButton from './EventoFunButton';
 const SIDER_EVENTS_ENABLED = false;
 const EMPTY_EVENTOS = Object.freeze([]);
 
+const MenuGroup = ({ items, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => items.map((item, index) => (
+    <div key={item.id || index} className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden" title={item.tooltip}>
+        <MenuItem item={item} isMobileView={isMobileView} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
+    </div>
+));
+
 const MapSider = ({ className = '' }) => {
     const {
         activeLayerIds: contextActiveLayerIds,
@@ -115,14 +121,7 @@ const MapSider = ({ className = '' }) => {
         if (treatAsMobile && isOpen && openMenusCount === 0) closeSider();
     });
 
-    const computeWidth = () => {
-        if (treatAsMobile) {
-            return isOpen ? expandedWidth : mobileWidth;
-        }
-        return isHovered ? expandedWidth : collapsedWidth;
-    };
-
-    const width = computeWidth();
+    const width = treatAsMobile ? (isOpen ? expandedWidth : mobileWidth) : (isHovered ? expandedWidth : collapsedWidth);
     const isExpanded = treatAsMobile
         ? isOpen
         : (lockMode === 'expanded' ? true : (lockMode === 'collapsed' ? false : isHovered));
@@ -279,53 +278,14 @@ const MapSider = ({ className = '' }) => {
                         ].join(' ')}
                     >
                         <div className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3">
-                            {menuItems.slice(0, baseItemsEnd).map((item, index) => (
-                                <div
-                                    key={item.id || index}
-                                    className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
-                                    title={item.tooltip}
-                                >
-                                    <MenuItem
-                                        item={item}
-                                        isMobileView={treatAsMobile}
-                                        autoOpenMenuId={autoOpenMenuId}
-                                        clearAutoOpenMenu={clearAutoOpenMenu}
-                                    />
-                                </div>
-                            ))}
+                            <MenuGroup items={menuItems.slice(0, baseItemsEnd)} isMobileView={treatAsMobile} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
                         </div>
                         {!treatAsMobile && eventCount > 0 && (
                             <div className="flex flex-col gap-2">
-                                {menuItems.slice(baseItemsEnd, eventItemsEnd).map((item, index) => (
-                                    <div
-                                        key={item.id || index}
-                                        className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
-                                        title={item.tooltip}
-                                    >
-                                        <MenuItem
-                                            item={item}
-                                            isMobileView={treatAsMobile}
-                                            autoOpenMenuId={autoOpenMenuId}
-                                            clearAutoOpenMenu={clearAutoOpenMenu}
-                                        />
-                                    </div>
-                                ))}
+                                <MenuGroup items={menuItems.slice(baseItemsEnd, eventItemsEnd)} isMobileView={treatAsMobile} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
                             </div>
                         )}
-                        {menuItems.slice(eventItemsEnd).map((item, index) => (
-                            <div
-                                key={item.id || index}
-                                className="transition-opacity duration-500 w-full shrink-0 overflow-x-hidden"
-                                title={item.tooltip}
-                            >
-                                <MenuItem
-                                    item={item}
-                                    isMobileView={treatAsMobile}
-                                    autoOpenMenuId={autoOpenMenuId}
-                                    clearAutoOpenMenu={clearAutoOpenMenu}
-                                />
-                            </div>
-                        ))}
+                        <MenuGroup items={menuItems.slice(eventItemsEnd)} isMobileView={treatAsMobile} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
                     </div>
                 )}
 

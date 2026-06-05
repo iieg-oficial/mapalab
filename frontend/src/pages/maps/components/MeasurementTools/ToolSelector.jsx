@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import UndoButton from './UndoButton';
@@ -58,18 +57,15 @@ const ToolSelector = ({
     compact = false,
     visible = true
 }) => {
-    const [hoveredId, setHoveredId] = useState(null);
-
     if (!visible) return null;
 
-    const getIconState = (typeId, isActive, isHovered) => {
+    const getIconState = (typeId, isActive) => {
         if (isActive) return 'hover';
         return 'normal';
     };
 
-    const renderButton = (type, props, isActive, isEmoji = false) => {
-        const isHovered = hoveredId === type.id;
-        const iconState = getIconState(type.id, isActive, isHovered);
+    const renderButton = (type, props, isActive) => {
+        const iconState = getIconState(type.id, isActive);
 
         return (
             <button
@@ -78,8 +74,6 @@ const ToolSelector = ({
                     isActive ? 'bg-[#703089] text-white' : 'bg-[#EAEFFA] text-[#703089] hover:border-[#5C2472]'
                 ].join(' ')}
                 aria-pressed={isActive}
-                onMouseEnter={() => setHoveredId(type.id)}
-                onMouseLeave={() => setHoveredId(null)}
                 {...props}
             >
                 <Icon name={type.icon} state={iconState} className="size-10" />
@@ -117,7 +111,7 @@ const ToolSelector = ({
         return (
             <div key={type.id} className="relative">
                 <Tooltip content={type.description} placement="top" delay={400}>
-                    {renderButton(type, buttonProps, isActive, isEmoji)}
+                    {renderButton(type, buttonProps, isActive)}
                 </Tooltip>
                 {showUndoButton && canUndo && (
                     <div className="hidden md:flex absolute left-full top-1/2 -translate-y-1/2 -ml-5 animate-[slideIn_0.2s_ease-out] -z-10 gap-1 bg-white rounded-r-[10px] rounded-l-none pl-6 pr-1.5 py-1 shadow-[0_5px_20px_#1A26641A]">
