@@ -7,7 +7,9 @@ export const useTextEditing = ({
     vectorLayerRef,
     setMeasurements,
     measureTypeRef,
-    startDrawingRef
+    startDrawingRef,
+    stopDrawingRef,
+    oneShotRef
 }) => {
     const [editingText, setEditingTextState] = useState(null);
     const editingTextRef = useRef(null);
@@ -48,10 +50,12 @@ export const useTextEditing = ({
         editingTextRef.current = null;
         editOriginalRef.current = null;
         setEditingTextState(null);
-        if (measureTypeRef.current === 'Text' && mapRef.current) {
+        if (oneShotRef?.current) {
+            stopDrawingRef.current?.();
+        } else if (measureTypeRef.current === 'Text' && mapRef.current) {
             startDrawingRef.current?.('Text');
         }
-    }, [mapRef, vectorSourceRef, vectorLayerRef, setMeasurements, measureTypeRef, startDrawingRef]);
+    }, [mapRef, vectorSourceRef, vectorLayerRef, setMeasurements, measureTypeRef, startDrawingRef, stopDrawingRef, oneShotRef]);
 
     const commitTextEdit = useCallback((rawValue) => {
         const feature = editingTextRef.current;

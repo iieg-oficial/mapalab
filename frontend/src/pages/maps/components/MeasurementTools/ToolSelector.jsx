@@ -121,7 +121,7 @@ const ToolSelector = ({
                     {renderButton(type, buttonProps, isActive)}
                 </Tooltip>
                 {showFreehandBar && (
-                    <div className="hidden md:flex items-center absolute left-full top-1/2 -translate-y-1/2 -ml-5 animate-[slideIn_0.2s_ease-out] -z-10 gap-1 bg-white rounded-r-[10px] rounded-l-none pl-6 pr-1.5 py-1 shadow-[0_5px_20px_#1A26641A]">
+                    <div className="flex items-center absolute left-full top-1/2 -translate-y-1/2 -ml-5 animate-[slideIn_0.2s_ease-out] -z-10 gap-1 bg-white rounded-r-[10px] rounded-l-none pl-6 pr-1.5 py-1 shadow-[0_5px_20px_#1A26641A]">
                         <ColorSwatch
                             value={freehandColor}
                             onChange={onFreehandColor}
@@ -139,7 +139,7 @@ const ToolSelector = ({
                     </div>
                 )}
                 {showUndoButton && canUndo && (
-                    <div className="hidden md:flex absolute left-full top-1/2 -translate-y-1/2 -ml-5 animate-[slideIn_0.2s_ease-out] -z-10 gap-1 bg-white rounded-r-[10px] rounded-l-none pl-6 pr-1.5 py-1 shadow-[0_5px_20px_#1A26641A]">
+                    <div className="flex absolute left-full top-1/2 -translate-y-1/2 -ml-5 animate-[slideIn_0.2s_ease-out] -z-10 gap-1 bg-white rounded-r-[10px] rounded-l-none pl-6 pr-1.5 py-1 shadow-[0_5px_20px_#1A26641A]">
                         <UndoButton onClick={onUndo} disabled={!canUndo} showLabel={false} />
                         <Tooltip content="Terminar trazo" placement="top" delay={300}>
                             <button type="button" onClick={onFinish} className="flex items-center justify-center rounded-full border border-transparent size-8 text-purple-deep hover:border-purple active:bg-purple-deep active:text-white transition-all" aria-label="Terminar trazo">
@@ -157,23 +157,29 @@ const ToolSelector = ({
         );
     };
 
-    const bothOpen = showMeasurements && showAnnotations;
     const isActiveTool = (t) => {
         if (t.id === 'Text') return measureType === 'Text';
         if (t.id === 'Emoji') return isEmojiPickerOpen || measureType === 'Emoji';
         return measureType === t.id;
     };
 
+    const visibleMeasurements = measurementGroup.filter(t => !compact || isActiveTool(t));
+    const visibleAnnotations = annotationGroup.filter(t => !compact || isActiveTool(t));
+    const bothOpen = (showMeasurements && visibleMeasurements.length > 0) && (showAnnotations && visibleAnnotations.length > 0);
+    const groupClass = compact
+        ? 'flex flex-col gap-1'
+        : 'max-md:flex max-md:flex-wrap max-md:gap-1 max-md:[&>*]:w-[calc(50%-2px)] flex flex-col gap-1';
+
     return (
         <div className={`flex overflow-visible gap-2 ${bothOpen && !compact ? 'max-md:flex-row flex-col' : 'flex-col'}`}>
-            {showMeasurements && (
-                <div className="max-md:flex max-md:flex-wrap max-md:gap-1 max-md:[&>*]:w-[calc(50%-2px)] flex flex-col gap-1">
-                    {measurementGroup.filter(t => !compact || isActiveTool(t)).map(renderTool)}
+            {showMeasurements && visibleMeasurements.length > 0 && (
+                <div className={groupClass}>
+                    {visibleMeasurements.map(renderTool)}
                 </div>
             )}
-            {showAnnotations && (
-                <div className="max-md:flex max-md:flex-wrap max-md:gap-1 max-md:[&>*]:w-[calc(50%-2px)] flex flex-col gap-1">
-                    {annotationGroup.filter(t => !compact || isActiveTool(t)).map(renderTool)}
+            {showAnnotations && visibleAnnotations.length > 0 && (
+                <div className={groupClass}>
+                    {visibleAnnotations.map(renderTool)}
                 </div>
             )}
         </div>

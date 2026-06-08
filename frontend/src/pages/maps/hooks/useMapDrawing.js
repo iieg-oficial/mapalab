@@ -11,6 +11,7 @@ import { useTextTemplate } from './useTextTemplate';
 import { useFreehandStyle } from './useFreehandStyle';
 import { useTextEditing } from './useTextEditing';
 import { useVectorLayerSetup } from './useVectorLayerSetup';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { formatLength, formatArea, formatLengthValue } from '../helpers/formatMeasure';
 import { useMeasurementRecalc } from './useMeasurementRecalc';
 
@@ -115,7 +116,11 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         measureTypeRef.current = measureType;
     }, [measureType]);
 
+    const isMobile = useIsMobile();
+    const oneShotRef = useRef(isMobile);
+    oneShotRef.current = isMobile;
     const startDrawingRef = useRef(null);
+    const stopDrawingRef = useRef(null);
     const textEditing = useTextEditing({
         mapRef,
         drawInteractionRef,
@@ -123,7 +128,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         vectorLayerRef,
         setMeasurements,
         measureTypeRef,
-        startDrawingRef
+        startDrawingRef,
+        stopDrawingRef,
+        oneShotRef
     });
 
     const startDrawing = useCallback((type) => {
@@ -263,6 +270,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
 
                 updateSketchingState(false);
                 sketchFeatureRef.current = null;
+                if (oneShotRef.current) setTimeout(() => stopDrawingRef.current?.(), 0);
                 return;
             }
 
@@ -348,6 +356,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             });
             updateSketchingState(false);
             sketchFeatureRef.current = null;
+            if (oneShotRef.current && type !== 'Text') setTimeout(() => stopDrawingRef.current?.(), 0);
         });
 
         mapRef.current.addInteraction(draw);
@@ -370,6 +379,8 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         updateSketchingState(false);
         setMeasureType('Point');
     }, [mapRef, updateSketchingState]);
+
+    stopDrawingRef.current = stopDrawing;
 
     useEffect(() => {
         const map = mapRef.current;
@@ -406,6 +417,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 drawInteractionRef.current.abortDrawing();
                 updateSketchingState(false);
                 sketchFeatureRef.current = null;
+                if (oneShotRef.current) stopDrawing();
                 return;
             }
 
@@ -426,6 +438,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 drawInteractionRef.current.abortDrawing();
                 updateSketchingState(false);
                 sketchFeatureRef.current = null;
+                if (oneShotRef.current) stopDrawing();
             }
         };
 
@@ -487,7 +500,8 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         }
         updateSketchingState(false);
         sketchFeatureRef.current = null;
-    }, [updateSketchingState]);
+        if (oneShotRef.current) stopDrawing();
+    }, [updateSketchingState, stopDrawing]);
 
     const undoLastPoint = useCallback(() => {
         if (
