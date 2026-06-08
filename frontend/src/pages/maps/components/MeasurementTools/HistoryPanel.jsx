@@ -4,6 +4,7 @@ import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
+import MeasurementSettingsButton from './MeasurementSettings';
 
 const TYPE_ICONS = {
     LineString: 'linea',
@@ -36,14 +37,17 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                     Mis mediciones
                     <Badge count={measurements.length} />
                 </div>
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="cursor-pointer"
-                    aria-label="Cerrar lista de mediciones y anotaciones"
-                >
-                    <Icon name="cerrarModal" className="size-7" />
-                </button>
+                <div className="flex items-center gap-0.5">
+                    <MeasurementSettingsButton />
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="cursor-pointer"
+                        aria-label="Cerrar lista de mediciones y anotaciones"
+                    >
+                        <Icon name="cerrarModal" className="size-7" />
+                    </button>
+                </div>
             </div>
             
             <div className="px-1.5 py-3 rounded-[7px] bg-white space-y-3 w-full">
