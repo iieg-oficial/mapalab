@@ -1,7 +1,9 @@
 import GeoJSON from 'ol/format/GeoJSON';
+import { getLength } from 'ol/sphere';
 import { createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCacheStyle } from './drawingStyles';
 import { DEFAULT_TEXT_FILL, DEFAULT_TEXT_BG, DRAW_COLORS } from './drawingConstants';
 import { genId } from './genId';
+import { formatLength, formatArea, formatLengthValue } from './formatMeasure';
 
 const RESTORE_GEOJSON = new GeoJSON({
     featureProjection: 'EPSG:3857',
@@ -13,7 +15,7 @@ const centerOf = (geometry) => {
     return [(extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2];
 };
 
-export const buildRestoredItems = ({ annotations, source, measurementConfig, formatLength, formatArea }) => {
+export const buildRestoredItems = ({ annotations, source, measurementConfig }) => {
     if (!Array.isArray(annotations) || annotations.length === 0 || !source) return [];
     const items = [];
     annotations.forEach((item) => {
@@ -37,12 +39,15 @@ export const buildRestoredItems = ({ annotations, source, measurementConfig, for
         feature.set('scale', scale);
 
         if (type === 'LineString') {
-            value = formatLength(geom);
+            value = formatLength(geom, measurementConfig.lengthUnit);
             if (!label) label = `Distancia: ${value}`;
             computeAndCacheStyle(feature, value, measurementConfig);
         } else if (type === 'Polygon') {
-            value = formatArea(geom);
-            if (!label) label = `Área: ${value}`;
+            const area = formatArea(geom, measurementConfig.areaUnit);
+            const perimeter = getLength(geom);
+            const perimeterText = formatLengthValue(perimeter, measurementConfig.lengthUnit);
+            value = area;
+            if (!label) label = `Área: ${area}\nPerímetro: ${perimeterText}`;
             const center = centerOf(geom);
             feature.set('selectionGeometry', geom);
             feature.set('selectionCenter', center);

@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Draw } from 'ol/interaction';
-import { getLength, getArea } from 'ol/sphere';
+import { getLength } from 'ol/sphere';
 import { createFreehandStyle, createSymbolStyle, computeAndCacheStyle, computeStylesForFeature } from '../helpers/drawingStyles';
 import { useDrawingStyle } from './useDrawingStyle';
-import { formatNumber } from '../helpers/formatNumber';
 import { buildRestoredItems } from '../helpers/restoreAnnotations';
 import { genId } from '../helpers/genId';
 import { useAnnotationsPersistence } from './useAnnotationsPersistence';
@@ -12,6 +11,8 @@ import { useTextTemplate } from './useTextTemplate';
 import { useFreehandStyle } from './useFreehandStyle';
 import { useTextEditing } from './useTextEditing';
 import { useVectorLayerSetup } from './useVectorLayerSetup';
+import { formatLength, formatArea, formatLengthValue } from '../helpers/formatMeasure';
+import { useMeasurementRecalc } from './useMeasurementRecalc';
 
 export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSelection = null) => {
     const [measureType, setMeasureType] = useState('Point');
@@ -25,11 +26,18 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     const rotationRef = useRef(0);
     const { freehandColor, freehandWidth, freehandColorRef, freehandWidthRef, setFreehandColor, setFreehandWidth } = useFreehandStyle();
     const { emojiTemplate, setEmojiTemplate, emojiTemplateRef } = useEmojiTemplate('');
-    const [measurementConfig, setMeasurementConfig] = useState({
-        showLiveAngles: false,
-        showFinalAngles: true,
-        showMeasurementLabels: true,
-        enableAnnotationTools: false
+    const [measurementConfig, setMeasurementConfig] = useState(() => {
+        let stored = null;
+        try { stored = JSON.parse(localStorage.getItem('mapalab.measure.units')); } catch { /* noop */ }
+        return {
+            showLiveAngles: false,
+            showFinalAngles: true,
+            showMeasurementLabels: true,
+            enableAnnotationTools: false,
+            showSegmentLengths: false,
+            lengthUnit: stored?.lengthUnit || 'auto',
+            areaUnit: stored?.areaUnit || 'auto'
+        };
     });
     const drawInteractionRef = useRef(null);
     const vectorSourceRef = useRef(null);
@@ -57,31 +65,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         rotationRef.current = rotation;
     }, [rotation]);
 
-    useEffect(() => {
-        if (!vectorSourceRef.current) return;
-
-        const features = vectorSourceRef.current.getFeatures();
-        features.forEach(feature => {
-            if (feature === sketchFeatureRef.current) {
-                return;
-            }
-
-            const annotationType = feature.get('annotationType');
-            if (annotationType === 'Text' || annotationType === 'Emoji' || annotationType === 'Freehand') {
-                return;
-            }
-
-            feature.unset('cachedStyle', true);
-            const measurementValue = feature.get('measurementValue');
-            if (measurementValue) {
-                computeAndCacheStyle(feature, measurementValue, measurementConfig);
-            }
-        });
-
-        if (vectorLayerRef.current) {
-            vectorLayerRef.current.changed();
-        }
-    }, [measurementConfig]);
+    useMeasurementRecalc({ vectorSourceRef, vectorLayerRef, sketchFeatureRef, measurementConfig, setMeasurements });
 
     useEffect(() => {
         if (!drawInteractionRef.current) return;
@@ -117,27 +101,14 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
 
     const { ensureVectorLayer } = useVectorLayerSetup(mapRef, getStyleForType, vectorSourceRef, vectorLayerRef);
 
-    const formatLength = useCallback((line) => {
-        const length = getLength(line);
-        let output;
-        if (length > 1000) {
-            output = `${formatNumber(Math.round((length / 1000) * 100) / 100)} km`;
-        } else {
-            output = `${formatNumber(Math.round(length * 100) / 100)} m`;
-        }
-        return output;
-    }, []);
-
-    const formatArea = useCallback((polygon) => {
-        const area = getArea(polygon);
-        let output;
-        if (area > 10000) {
-            output = `${formatNumber(Math.round((area / 1000000) * 100) / 100)} km²`;
-        } else {
-            output = `${formatNumber(Math.round(area * 100) / 100)} m²`;
-        }
-        return output;
-    }, []);
+    useEffect(() => {
+        try {
+            localStorage.setItem('mapalab.measure.units', JSON.stringify({
+                lengthUnit: measurementConfig.lengthUnit,
+                areaUnit: measurementConfig.areaUnit
+            }));
+        } catch { /* noop */ }
+    }, [measurementConfig.lengthUnit, measurementConfig.areaUnit]);
 
     const measureTypeRef = useRef('Point');
     useEffect(() => {
@@ -303,15 +274,17 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             };
 
             if (type === 'LineString') {
-                const length = formatLength(geometry);
+                const length = formatLength(geometry, measurementConfig.lengthUnit);
                 measurementData.value = length;
                 measurementData.label = `Distancia: ${length}`;
                 feature.set('measurementValue', length);
                 computeAndCacheStyle(feature, length, measurementConfig);
             } else if (type === 'Polygon') {
-                const area = formatArea(geometry);
+                const area = formatArea(geometry, measurementConfig.areaUnit);
+                const perimeter = getLength(geometry);
+                const perimeterText = formatLengthValue(perimeter, measurementConfig.lengthUnit);
                 measurementData.value = area;
-                measurementData.label = `Área: ${area}`;
+                measurementData.label = `Área: ${area}\nPerímetro: ${perimeterText}`;
                 feature.set('measurementValue', area);
                 computeAndCacheStyle(feature, area, measurementConfig);
 
@@ -381,7 +354,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         drawInteractionRef.current = draw;
         setMeasureType(type);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mapRef, formatLength, formatArea, getStyleForType, updateSketchingState, showMeasurementTools, ensureVectorLayer]);
+    }, [mapRef, getStyleForType, updateSketchingState, showMeasurementTools, ensureVectorLayer]);
 
     startDrawingRef.current = startDrawing;
 
@@ -621,7 +594,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         let attempts = 0;
         const tryApply = () => {
             if (mapRef.current && ensureVectorLayer() && vectorSourceRef.current) {
-                const restored = buildRestoredItems({ annotations, source: vectorSourceRef.current, measurementConfig, formatLength, formatArea });
+                const restored = buildRestoredItems({ annotations, source: vectorSourceRef.current, measurementConfig });
                 if (restored.length) {
                     setMeasurements(prev => [...prev, ...restored]);
                     if (showTools) setMeasurementToolsVisible(true);
@@ -629,7 +602,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             } else if (attempts++ < 50) setTimeout(tryApply, 100);
         };
         tryApply();
-    }, [mapRef, ensureVectorLayer, measurementConfig, formatLength, formatArea]);
+    }, [mapRef, ensureVectorLayer, measurementConfig]);
 
     useAnnotationsPersistence({ measurements, restoreAnnotations });
 
