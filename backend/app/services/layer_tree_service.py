@@ -14,6 +14,14 @@ from app.repositories.layers_repository import LayersRepository
 from app.utils.logger import Logger
 
 
+def _resolve_acervo_icon(raw: str | None) -> str | None:
+    if not raw:
+        return None
+    if raw.startswith('/acervo/') or raw.startswith('/api/') or '://' in raw:
+        return raw
+    return f'/acervo/{raw.lstrip("/")}'
+
+
 _MEM_LOCK = threading.Lock()
 _MEM_CACHE: dict[str, Any] = {
     'etag': None,
@@ -103,7 +111,14 @@ def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace], aliases_ma
         result['forceGroup'] = True
 
     if layer.node_type == 'tema' and getattr(layer, 'icon_url', None):
-        result['iconUrl'] = layer.icon_url
+        result['iconUrl'] = _resolve_acervo_icon(layer.icon_url)
+
+    if layer.node_type == 'tema' and getattr(layer, 'icon_overrides', None):
+        icon_overrides = layer.icon_overrides
+        if isinstance(icon_overrides, dict):
+            result['iconOverrides'] = {
+                k: _resolve_acervo_icon(v) for k, v in icon_overrides.items()
+            }
 
     if layer.hidden_in_menu:
         result['hiddenInMenu'] = True

@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.74.0] - 2026-06-08
+
+### Agregado
+
+- **Iconos por estado en temas del sider**: los temas del menú lateral ahora soportan iconos distintos para estado normal y hover/activo. La propiedad `iconOverrides` del árbol permite definir `{ normal: "/acervo/...", hover: "/acervo/..." }`. Si existe, reemplaza al `iconUrl` estático; si no, mantiene el comportamiento actual (SVG hardcodeado por categoría).
+
+### Cambiado
+
+- **`helpers/menuItems.jsx`**: `MenuButton` acepta `iconOverrides` y resuelve `iconOverrides?.[iconState]` con fallback a `imageUrl` y finalmente al `Icon` hardcodeado. `createCategoryItems` pasa `category.iconOverrides`.
+
+## [backend 1.72.0] - 2026-06-08
+
+### Agregado
+
+- **Columna `icon_overrides` en modelo Layer**: `models/layer.py` mapea la nueva columna JSONB.
+- **Resolución de URLs de acervo en `layer_tree_service.py`**: nuevo helper `_resolve_acervo_icon()` convierte paths relativos (`mapalab/...`) a root-relative (`/acervo/...`). Se aplica a `iconUrl` y `iconOverrides` para temas. Corrige URLs rotas en el visor (antes el navegador resolvía rutas relativas contra `/mapalab/` duplicando el prefijo).
+
 ## [1.73.0] - 2026-06-08
 
 ### Agregado

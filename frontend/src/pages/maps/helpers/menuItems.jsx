@@ -9,11 +9,12 @@ import EventoIconButton from '@mapsComponents/EventoIconButton';
 import ToolsMenu from '@mapsComponents/ToolsMenu';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
 
-const MenuButton = ({ icon, imageUrl, label, isHovered, hasActiveLayers = false, isMenuOpen = false, categoryId = null }) => {
+const MenuButton = ({ icon, imageUrl, label, isHovered, hasActiveLayers = false, isMenuOpen = false, categoryId = null, iconOverrides = null }) => {
     const [isHovering, setIsHovering] = useState(false);
 
     const iconName = categoryId || icon;
     const iconState = (hasActiveLayers || isHovering || isMenuOpen) ? 'hover' : 'normal';
+    const stateImageUrl = iconOverrides?.[iconState] || imageUrl;
 
     return (
         <div
@@ -31,9 +32,9 @@ const MenuButton = ({ icon, imageUrl, label, isHovered, hasActiveLayers = false,
                     ${isMenuOpen ? 'bg-[#FF8300] opacity-100' : 'opacity-0'}
                 `}
             />
-            {imageUrl ? (
+            {stateImageUrl ? (
                 <img
-                    src={imageUrl}
+                    src={stateImageUrl}
                     alt={label || ''}
                     className={`size-8 object-contain transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
                 />
@@ -152,6 +153,7 @@ const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer, layers 
                     icon="layers"
                     categoryId={category.id}
                     imageUrl={category.iconUrl}
+                    iconOverrides={category.iconOverrides || null}
                     label={category.label}
                     isHovered={isHovered}
                     hasActiveLayers={hasActiveLayers}
