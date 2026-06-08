@@ -1,5 +1,6 @@
 import { Style, Stroke, Fill, Circle as CircleStyle, Icon as IconStyle, Text as TextStyle } from 'ol/style';
 import { Point } from 'ol/geom';
+import { DRAW_COLORS, DRAW_FILLS, DEFAULT_TEXT_FILL } from './drawingConstants';
 
 const DEFAULT_STYLES = {
     LineString: {
@@ -264,7 +265,7 @@ const createEmojiStyle = (emoji, rotation = 0, scale = 1, selected = false, fill
     return selected ? [createSelectionHalo({ radius: 22, scale }), main] : main;
 };
 
-const svgToDataUrl = (xml) => `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(xml)))}`;
+export const svgToDataUrl = (xml) => `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(xml)))}`;
 
 export const createSymbolStyle = (symbol, rotation = 0, scale = 1, selected = false, fillColor = '#111827', strokeColor = '#ffffff', fontFamily = null, backgroundFill = null, backgroundStroke = null) => {
     if (!symbol) return createEmojiStyle('🙂', rotation, scale, selected, fillColor, strokeColor, fontFamily, backgroundFill, backgroundStroke);

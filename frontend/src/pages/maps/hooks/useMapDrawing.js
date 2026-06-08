@@ -5,6 +5,8 @@ import { createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCach
 import { useDrawingStyle } from './useDrawingStyle';
 import { formatNumber } from '../helpers/formatNumber';
 import { buildRestoredItems } from '../helpers/restoreAnnotations';
+import { genId } from '../helpers/genId';
+import { useAnnotationsPersistence } from './useAnnotationsPersistence';
 import { useEmojiTemplate } from './useEmojiTemplate';
 import { useTextTemplate } from './useTextTemplate';
 import { useVectorLayerSetup } from './useVectorLayerSetup';
@@ -240,7 +242,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 lastSelectCenterRef.current = center;
 
                 const measurementData = {
-                    id: crypto.randomUUID(),
+                    id: genId(),
                     type: type,
                     feature: feature,
                     visible: true,
@@ -273,7 +275,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             }
 
             let measurementData = {
-                id: crypto.randomUUID(),
+                id: genId(),
                 type: type,
                 feature: feature,
                 visible: true
@@ -577,7 +579,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         });
     }, []);
 
-    const restoreAnnotations = useCallback((annotations) => {
+    const restoreAnnotations = useCallback((annotations, { showTools = true } = {}) => {
         if (!annotations?.length) return;
         let attempts = 0;
         const tryApply = () => {
@@ -585,12 +587,14 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 const restored = buildRestoredItems({ annotations, source: vectorSourceRef.current, measurementConfig, formatLength, formatArea });
                 if (restored.length) {
                     setMeasurements(prev => [...prev, ...restored]);
-                    setMeasurementToolsVisible(true);
+                    if (showTools) setMeasurementToolsVisible(true);
                 }
             } else if (attempts++ < 50) setTimeout(tryApply, 100);
         };
         tryApply();
     }, [mapRef, ensureVectorLayer, measurementConfig, formatLength, formatArea]);
+
+    useAnnotationsPersistence({ measurements, restoreAnnotations });
 
     return {
         vectorSourceRef,
