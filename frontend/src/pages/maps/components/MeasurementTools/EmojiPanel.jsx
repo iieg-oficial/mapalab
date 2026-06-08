@@ -55,7 +55,7 @@ const EmojiPanel = ({ open, anchorRef, onSelect, onClose, placedCount = 0 }) => 
             `}
         >
             <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-5 font-garet font-bold text-[14px]/[47px] text-[#465055]">
+                <div className="flex items-center gap-5 font-garet font-bold text-[14px]/[47px] text-graphite">
                     Emojis
                     <Badge visible={placedCount > 0} count={placedCount} />
                 </div>

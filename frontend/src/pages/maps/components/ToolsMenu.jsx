@@ -68,7 +68,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
         <>
             <div className="py-6 px-4">
                 <div className="flex items-center justify-between">
-                    <h3 className="block text-[18px]/[47px] font-garet font-bold mb-2 text-[#5C2472] tracking-normal">
+                    <h3 className="block text-[18px]/[47px] font-garet font-bold mb-2 text-purple tracking-normal">
                     Herramientas
                     </h3>
                     {closeButton}
@@ -94,7 +94,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                                     className={`
                                     relative flex flex-col items-center justify-center gap-2 cursor-pointer
                                     w-[138px] h-[142px] p-3 rounded-[9px] bg-transparent border
-                                    ${active ? 'border-[#70308A]' : 'border-transparent hover:border-[#70308A]'}
+                                    ${active ? 'border-purple-deep' : 'border-transparent hover:border-purple-deep'}
                                 `}
                                 >
                                     {tool.beta && (
@@ -105,10 +105,10 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                                             className="absolute top-2 right-2"
                                         />
                                     )}
-                                    <div className={`flex items-center justify-center ${active || hovered ? 'text-[#5C2472]' : 'text-[#465055]'}`}>
+                                    <div className={`flex items-center justify-center ${active || hovered ? 'text-purple' : 'text-graphite'}`}>
                                         <Icon name={tool.icon} className="w-12 h-12" />
                                     </div>
-                                    <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-[#5C2472]' : 'font-medium text-[#465055]'}`}>
+                                    <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-purple' : 'font-medium text-graphite'}`}>
                                         {tool.label}
                                     </span>
                                 </button>

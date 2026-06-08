@@ -22,7 +22,7 @@ const HistoryButton = ({
                 onClick={onClick}
                 className={[
                     'relative size-12.5 flex items-center justify-center rounded-full border border-transparent transition-all',
-                    isOpen ? 'bg-[#703089]' : 'bg-[#EAEFFA] hover:border-[#703089] active:bg-[#5C2472]',
+                    isOpen ? 'bg-purple-deep' : 'bg-[#EAEFFA] hover:border-purple-deep active:bg-purple',
                     className
                 ].join(' ')}
                 aria-label={`Ver lista de mediciones (${count})`}

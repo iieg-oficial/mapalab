@@ -186,7 +186,7 @@ const InfoBox = () => {
         }
     };
 
-    const showCenterButton = !hasNoResults && !isPolygonSelection;
+    const showCenterButton = !hasNoResults;
     const showMultiActions = showCenterButton && totalFeatures > 1;
     const showToolbar = showCenterButton;
 

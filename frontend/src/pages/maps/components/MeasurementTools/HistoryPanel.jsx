@@ -32,7 +32,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
             `}
         >
             <div className="flex items-center justify-between w-full">
-                <div className="flex items-center font-garet font-bold text-[14px]/[47px] text-[#465055] gap-5">
+                <div className="flex items-center font-garet font-bold text-[14px]/[47px] text-graphite gap-5">
                     Mis mediciones
                     <Badge count={measurements.length} />
                 </div>
@@ -40,6 +40,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                     type="button"
                     onClick={onClose}
                     className="cursor-pointer"
+                    aria-label="Cerrar lista de mediciones y anotaciones"
                 >
                     <Icon name="cerrarModal" className="size-7" />
                 </button>
@@ -54,7 +55,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                         <div className="flex items-center justify-between w-full">
                             <div className="flex items-center gap-3 flex-1">
                                 <Icon name={TYPE_ICONS[measurement.type]} className="size-6" />
-                                <div className="text-[14px]/[16px] font-garet font-medium text-[#465055] truncate">
+                                <div className="text-[14px]/[16px] font-garet font-medium text-graphite truncate">
                                     {measurement.label}
                                 </div>
                             </div>
@@ -66,7 +67,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                                             type="button"
                                             onClick={() => onShowSelection?.(index)}
                                             className={`
-                                                flex items-center justify-center size-6 border border-transparent rounded-full hover:border-[#70308A] hover:bg-[#F9FBFF]
+                                                flex items-center justify-center size-6 border border-transparent rounded-full hover:border-purple-deep hover:bg-[#F9FBFF]
                                             `}
                                             aria-label={`Mostrar tarjetas seleccionadas de ${measurement.label} `}
                                         >
@@ -79,7 +80,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                                         type="button"
                                         onClick={() => onToggleVisibility?.(index)}
                                         className={`
-                                            flex items-center justify-center size-6 border border-transparent rounded-full hover:border-[#70308A] hover:bg-[#F9FBFF]
+                                            flex items-center justify-center size-6 border border-transparent rounded-full hover:border-purple-deep hover:bg-[#F9FBFF]
                                         `}
                                         aria-label={`${measurement.visible === false ? 'Mostrar' : 'Ocultar'} ${measurement.label} `}
                                     >
