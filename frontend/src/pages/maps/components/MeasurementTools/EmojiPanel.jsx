@@ -5,10 +5,11 @@ import Icon from '@components/Icon';
 import Badge from '@components/Badge';
 import ScrollContainer from '@components/ScrollContainer';
 import { useSymbolCatalog } from '@pages/maps/hooks/useSymbolCatalog';
+import { svgToDataUrl } from '@pages/maps/helpers/drawingStyles';
 
 const SymbolThumb = ({ symbol }) => {
     if (symbol.kind === 'svg' && symbol.value) {
-        return <span dangerouslySetInnerHTML={{ __html: symbol.value }} />;
+        return <img src={svgToDataUrl(symbol.value)} alt={symbol.name || 'símbolo'} className="w-5 h-5 object-contain" />;
     }
     if (symbol.kind === 'image') {
         const url = symbol.imageUrl || symbol.image_url;
