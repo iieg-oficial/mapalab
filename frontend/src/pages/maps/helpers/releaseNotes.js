@@ -12,6 +12,14 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.73.0',
+        items: [
+            { text: 'Longitud por segmento: activa esta opción en el engrane de "Mis mediciones" para ver la distancia de cada tramo entre vértices.', tag: 'added' },
+            { text: 'Los polígonos ahora muestran área + perímetro en su etiqueta.', tag: 'added' },
+            { text: 'Selector de unidades: elige m, km, m², ha o km² para tus mediciones desde el nuevo panel de configuración.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.72.0',
         items: [
             { text: 'Mediciones y anotaciones: ahora se conservan al recargar la página. Tus trazos, textos y emojis ya no desaparecen con un refresh; para borrarlos usa la X de cerrar herramientas.', tag: 'added' },

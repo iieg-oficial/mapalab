@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.73.0] - 2026-06-08
+
+### Agregado
+
+- **Longitud por segmento**: líneas y polígonos ahora pueden mostrar la longitud de cada tramo entre vértices consecutivos como etiquetas en el punto medio. Se activa/desactiva desde el panel de configuración de mediciones (ícono de engrane en "Mis mediciones").
+- **Perímetro en polígonos**: la etiqueta de los polígonos ahora muestra tanto el área como el perímetro (antes solo mostraba área).
+- **Selector de unidades**: nuevo panel de configuración accesible desde el historial de mediciones con controles para forzar unidades de distancia (Auto / m / km) y área (Auto / m² / ha / km²). La preferencia se persiste en `localStorage` (`mapalab.measure.units`). Cambiar la unidad recalcula instantáneamente todas las etiquetas existentes.
+
+### Cambiado
+
+- **Refactor de formateo**: las funciones `formatLength` y `formatArea` se extrajeron de `useMapDrawing` al helper compartido `helpers/formatMeasure.js`, con soporte de unidades parametrizable. Se reutilizan en `useMapDrawing`, `restoreAnnotations` y `drawingStyles`.
+- **Estilos de medición**: las funciones `createAngleStyles` y `createSegmentLengthStyles` se movieron a `helpers/measurementStyles.js` para mantener `drawingStyles.js` bajo el límite de líneas.
+
 ## [1.72.0] - 2026-06-08
 
 ### Agregado

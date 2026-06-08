@@ -67,11 +67,24 @@ Mediciones y anotaciones se guardan en `localStorage` bajo la clave `mapalab.ann
 - Si la URL trae un share activo (`?s=`), el enlace tiene prioridad y se omite la hidratación local para no duplicar.
 - Las geometrías se guardan en EPSG:4326; el texto se restaura con `createTextStyle` y los emojis con `createSymbolStyle`, cacheados en `cachedStyle` para que sigan siendo editables (rotar/escalar).
 
+## Configuración de mediciones
+
+El botón ⚙ (engrane) en el header de "Mis mediciones" abre un popover con:
+
+| Control | Opciones | Default | Descripción |
+|---|---|---|---|
+| Longitud por segmento | toggle | off | Muestra la distancia de cada tramo entre vértices consecutivos |
+| Distancia | Auto / m / km | Auto | Unidad para etiquetas de longitud |
+| Área | Auto / m² / ha / km² | Auto | Unidad para etiquetas de área |
+
+La preferencia de unidades se persiste en `localStorage` (`mapalab.measure.units`). Al cambiar cualquier opción se recalcula el estilo de todas las features existentes y las etiquetas en el panel de historial.
+
 ## Eventos
 
 El botón flotante de eventos en modo zen se oculta cuando hay herramientas activas (mobile) y se reposiciona dinámicamente con el sider (desktop).
 
 ## Historial de cambios
 
+- **1.73.0**: Longitud por segmento (toggle en configuración); perímetro + área en etiquetas de polígonos; selector de unidades (m/km, m²/ha/km²) con persistencia en localStorage; refactor de `formatLength`/`formatArea` al helper `formatMeasure.js`.
 - **1.72.0**: Persistencia local (`localStorage`) de mediciones/anotaciones que sobrevive al refresh; estilo completo (color/fondo/tamaño/símbolo) serializado en shares y persistencia; texto restaurado se renderiza como texto y vuelve a ser editable; colores de dibujo y fuente alineados a la marca (Garet); SVG del catálogo saneado vía data-URL; helper `genId` con fallback.
 - **1.70.0**: Separación de Mediciones/Anotaciones, colapso manual, pill de acciones mobile, color/fondo/tamaño en texto.
