@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Collection } from 'ol';
 import Translate from 'ol/interaction/Translate';
 
-const EDITABLE_TYPES = new Set(['Emoji', 'Text']);
+const EDITABLE_TYPES = new Set(['Emoji', 'Text', 'Freehand']);
 
 const getFeatureId = (feature) => feature.getId?.() ?? feature.ol_uid;
 
@@ -97,7 +97,12 @@ export const useMapEditing = ({
     useEffect(() => {
         if (!selectedFeatureId) return;
         const handleKey = (e) => {
-            if (e.key === 'Escape') deselectFeature();
+            if (e.key !== 'Escape') return;
+            const target = e.target;
+            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+                return;
+            }
+            deselectFeature();
         };
         document.addEventListener('keydown', handleKey);
         return () => document.removeEventListener('keydown', handleKey);
@@ -157,6 +162,19 @@ export const useMapEditing = ({
         setSelectionTick(t => t + 1);
     }, [vectorLayerRef]);
 
+    const updateProp = useCallback((prop, value) => {
+        const feature = selectedFeatureRef.current;
+        if (!feature) return;
+        feature.set(prop, value);
+        invalidateStyle(feature, vectorLayerRef);
+        setSelectionTick(t => t + 1);
+    }, [vectorLayerRef]);
+
+    const updateFillColor = useCallback((color) => updateProp('fillColor', color), [updateProp]);
+    const updateBgColor = useCallback((color) => updateProp('bgColor', color), [updateProp]);
+    const updateStrokeColor = useCallback((color) => updateProp('strokeColor', color), [updateProp]);
+    const updateStrokeWidth = useCallback((width) => updateProp('strokeWidth', width), [updateProp]);
+
     const deleteSelected = useCallback(() => {
         const feature = selectedFeatureRef.current;
         if (!feature) return;
@@ -184,6 +202,10 @@ export const useMapEditing = ({
         deselectFeature,
         updateRotation,
         updateScale,
+        updateFillColor,
+        updateBgColor,
+        updateStrokeColor,
+        updateStrokeWidth,
         deleteSelected
     };
 };

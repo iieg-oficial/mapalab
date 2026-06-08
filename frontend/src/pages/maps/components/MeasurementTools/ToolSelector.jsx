@@ -1,6 +1,10 @@
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import UndoButton from './UndoButton';
+import { ColorSwatch, Stepper } from './StyleControls';
+
+const WIDTH_MIN = 1;
+const WIDTH_MAX = 12;
 
 const measurementGroup = [
     {
@@ -41,17 +45,19 @@ const annotationGroup = [
 const ToolSelector = ({
     isDrawing,
     measureType,
-    isTextPanelOpen,
     isEmojiPickerOpen,
     onSelect,
     onTextToggle,
     onEmojiToggle,
-    textButtonRef,
     emojiButtonRef,
     onUndo,
     onFinish,
     onCancel,
     canUndo,
+    freehandColor,
+    freehandWidth,
+    onFreehandColor,
+    onFreehandWidth,
     showAnnotations = true,
     showMeasurements = true,
     compact = false,
@@ -71,7 +77,7 @@ const ToolSelector = ({
             <button
                 className={[
                     'size-12.5 flex items-center justify-center transition-all rounded-full border border-transparent',
-                    isActive ? 'bg-[#703089] text-white' : 'bg-[#EAEFFA] text-[#703089] hover:border-[#5C2472]'
+                    isActive ? 'bg-purple-deep text-white' : 'bg-[#EAEFFA] text-purple-deep hover:border-purple'
                 ].join(' ')}
                 aria-pressed={isActive}
                 {...props}
@@ -89,7 +95,7 @@ const ToolSelector = ({
         const isPoint = type.id === 'Point';
 
         const isActive = isText
-            ? isTextPanelOpen || (measureType === 'Text' && isDrawing)
+            ? (measureType === 'Text' && isDrawing)
             : isEmoji
                 ? isEmojiPickerOpen || (measureType === 'Emoji' && isDrawing)
                 : isPoint
@@ -103,21 +109,40 @@ const ToolSelector = ({
                 else if (isEmoji) onEmojiToggle?.();
                 else onSelect?.(type.id);
             },
-            ref: isText ? textButtonRef : isEmoji ? emojiButtonRef : undefined,
+            ref: isEmoji ? emojiButtonRef : undefined,
         };
 
         const showUndoButton = undoEnabledTypes.has(type.id) && isActive;
+        const showFreehandBar = type.id === 'Freehand' && isActive;
 
         return (
             <div key={type.id} className="relative">
                 <Tooltip content={type.description} placement="top" delay={400}>
                     {renderButton(type, buttonProps, isActive)}
                 </Tooltip>
+                {showFreehandBar && (
+                    <div className="hidden md:flex items-center absolute left-full top-1/2 -translate-y-1/2 -ml-5 animate-[slideIn_0.2s_ease-out] -z-10 gap-1 bg-white rounded-r-[10px] rounded-l-none pl-6 pr-1.5 py-1 shadow-[0_5px_20px_#1A26641A]">
+                        <ColorSwatch
+                            value={freehandColor}
+                            onChange={onFreehandColor}
+                            tooltip="Color del trazo"
+                            ariaLabel="Color del trazo"
+                        />
+                        <Stepper
+                            onDown={() => onFreehandWidth?.(Math.max(WIDTH_MIN, (freehandWidth || 3) - 1))}
+                            onUp={() => onFreehandWidth?.(Math.min(WIDTH_MAX, (freehandWidth || 3) + 1))}
+                            downLabel="Menos grosor"
+                            upLabel="Más grosor"
+                            tooltipDown="Menos grosor"
+                            tooltipUp="Más grosor"
+                        />
+                    </div>
+                )}
                 {showUndoButton && canUndo && (
                     <div className="hidden md:flex absolute left-full top-1/2 -translate-y-1/2 -ml-5 animate-[slideIn_0.2s_ease-out] -z-10 gap-1 bg-white rounded-r-[10px] rounded-l-none pl-6 pr-1.5 py-1 shadow-[0_5px_20px_#1A26641A]">
                         <UndoButton onClick={onUndo} disabled={!canUndo} showLabel={false} />
                         <Tooltip content="Terminar trazo" placement="top" delay={300}>
-                            <button type="button" onClick={onFinish} className="flex items-center justify-center rounded-full border border-transparent size-8 text-[#703089] hover:border-[#5C2472] active:bg-[#703089] active:text-white transition-all" aria-label="Terminar trazo">
+                            <button type="button" onClick={onFinish} className="flex items-center justify-center rounded-full border border-transparent size-8 text-purple-deep hover:border-purple active:bg-purple-deep active:text-white transition-all" aria-label="Terminar trazo">
                                 <Icon name="shared_click" state="normal" className="size-5 shrink-0" />
                             </button>
                         </Tooltip>
@@ -134,13 +159,13 @@ const ToolSelector = ({
 
     const bothOpen = showMeasurements && showAnnotations;
     const isActiveTool = (t) => {
-        if (t.id === 'Text') return isTextPanelOpen || measureType === 'Text';
+        if (t.id === 'Text') return measureType === 'Text';
         if (t.id === 'Emoji') return isEmojiPickerOpen || measureType === 'Emoji';
         return measureType === t.id;
     };
 
     return (
-        <div className={`flex overflow-visible ${bothOpen && !compact ? 'max-md:flex-row flex-col' : 'flex-col'}`}>
+        <div className={`flex overflow-visible gap-2 ${bothOpen && !compact ? 'max-md:flex-row flex-col' : 'flex-col'}`}>
             {showMeasurements && (
                 <div className="max-md:flex max-md:flex-wrap max-md:gap-1 max-md:[&>*]:w-[calc(50%-2px)] flex flex-col gap-1">
                     {measurementGroup.filter(t => !compact || isActiveTool(t)).map(renderTool)}
