@@ -12,6 +12,15 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.72.0',
+        items: [
+            { text: 'Mediciones y anotaciones: ahora se conservan al recargar la página. Tus trazos, textos y emojis ya no desaparecen con un refresh; para borrarlos usa la X de cerrar herramientas.', tag: 'added' },
+            { text: 'Texto y emojis: el color, el fondo y el tamaño que eliges ahora se conservan al compartir el mapa y al recargar.', tag: 'fixed' },
+            { text: 'Anotaciones: el texto compartido vuelve a verse como texto (antes podía mostrarse con estilo de emoji) y se puede volver a rotar y redimensionar después de cargarlo.', tag: 'fixed' },
+            { text: 'Herramientas: los colores de líneas, polígonos, selección y trazo libre se ajustaron a los colores oficiales del instituto.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.64.1',
         items: [
             { text: 'Barra de herramientas: el botón de descarga ahora muestra su nombre completo "Descargar visualización" y la barra se ajusta a su contenido cuando hay espacio disponible.', tag: 'changed' },

@@ -48,7 +48,13 @@ Inventario centralizado de todos los mecanismos de cache del proyecto: memoria f
 | `message_closed_*` | `components/Message.jsx:30` | Flag boolean: mensaje ya cerrado en esta sesion | Hasta cerrar pestana | Manual via click en cerrar |
 | `test-env-modal-dismissed` | `components/TestEnvModal.jsx:5` | Flag: modal beta rechazado | Hasta cerrar pestana | Checkbox "no mostrar de nuevo" |
 
-No hay uso de `localStorage` hoy. Si un dato debe persistir entre sesiones, `localStorage` o IndexedDB serian los siguientes candidatos.
+## Frontend — persistencia (localStorage)
+
+| Cache | Ubicacion | Datos | Lifecycle | Invalidacion |
+|---|---|---|---|---|
+| `mapalab.annotations` | `hooks/useMapDrawing.js` + `helpers/annotationsSerialization.js` | Mediciones y anotaciones serializadas (geometria EPSG:4326, tipo, estilo: `fillColor`/`bgColor`/`size`/`symbol`). Cap `ANNOTATIONS_MAX_BYTES` (200 KB) | Entre sesiones, hasta limpiar | Se escribe en cada cambio de `measurements`; se borra al quedar vacio o al cerrar con la X. Si la URL trae `?s=` se omite la hidratacion local (el share manda) |
+
+Otras claves de preferencias de UI tambien usan `localStorage` (p. ej. colapso de la barra de herramientas `mapalab.tools.collapsed`, orientacion del swipe `mapalab.swipe.orientation`, visibilidad de leyendas `mapalab.activeLayers.legendsVisible`).
 
 ---
 

@@ -56,7 +56,16 @@ El panel de **Texto** incluye controles para personalizar la apariencia:
 | Fondo | `backgroundFill` | ninguno |
 | Tamaño | `size` (escala) | `1` |
 
-Estos valores se guardan en el feature y se serializan en shares. También disponibles vía MCP en el campo `annotations[]`.
+Estos valores se guardan en el feature y se serializan tanto en shares como en la persistencia local (`fillColor`, `bgColor`, `size`). También disponibles vía MCP en el campo `annotations[]`.
+
+## Persistencia
+
+Mediciones y anotaciones se guardan en `localStorage` bajo la clave `mapalab.annotations` y se restauran al cargar el visor, por lo que sobreviven a un refresh de la página. El serializador es compartido (`helpers/annotationsSerialization.js`) entre los shares y la persistencia local.
+
+- Se escribe en cada cambio de `measurements`; al quedar vacío (o al cerrar con la X) se limpia el almacenamiento.
+- La hidratación inicial no muestra el palette de herramientas, solo el botón de lista + X (`restoreAnnotations(..., { showTools: false })`).
+- Si la URL trae un share activo (`?s=`), el enlace tiene prioridad y se omite la hidratación local para no duplicar.
+- Las geometrías se guardan en EPSG:4326; el texto se restaura con `createTextStyle` y los emojis con `createSymbolStyle`, cacheados en `cachedStyle` para que sigan siendo editables (rotar/escalar).
 
 ## Eventos
 
@@ -64,4 +73,5 @@ El botón flotante de eventos en modo zen se oculta cuando hay herramientas acti
 
 ## Historial de cambios
 
+- **1.72.0**: Persistencia local (`localStorage`) de mediciones/anotaciones que sobrevive al refresh; estilo completo (color/fondo/tamaño/símbolo) serializado en shares y persistencia; texto restaurado se renderiza como texto y vuelve a ser editable; colores de dibujo y fuente alineados a la marca (Garet); SVG del catálogo saneado vía data-URL; helper `genId` con fallback.
 - **1.70.0**: Separación de Mediciones/Anotaciones, colapso manual, pill de acciones mobile, color/fondo/tamaño en texto.

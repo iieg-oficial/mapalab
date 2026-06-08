@@ -5,6 +5,30 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.72.0] - 2026-06-08
+
+### Agregado
+
+- **Persistencia local de mediciones y anotaciones**: ahora sobreviven al refresh de la página. Se guardan en `localStorage` (`mapalab.annotations`) en cada cambio y se restauran al cargar el visor; mientras existan se mantienen el botón de lista y la X. La X de "Cerrar herramientas" limpia el almacenamiento. Si hay un share activo (`?s=`), el enlace tiene prioridad y no se hidrata desde local.
+  - `helpers/annotationsSerialization.js`: serializador compartido reutilizado por el share y la persistencia local.
+  - `useMapDrawing.js`: efectos de hidratación (una vez) y persistencia (por cambio de `measurements`); `restoreAnnotations` acepta `{ showTools }`.
+
+### Cambiado
+
+- **Estilo completo en shares y persistencia**: el payload de anotaciones ahora incluye `fillColor`, `bgColor`, `size` (escala) y `symbol` (emoji), antes se perdían al compartir/restaurar.
+- **Homologación de marca en herramientas**: colores de dibujo alineados a tokens institucionales — línea/medición y halo en morado `purple-deep` (#703088, antes convivían #703089/#70308A), polígono en naranja de marca (#FF8300), selección en azul numeralia (#2e4372), trazo libre en rosa de marca (#FF577D). Etiquetas y ángulos del mapa en fuente **Garet** (antes Inter). JSX del subsistema migrado a clases token (`text-graphite`, `bg-purple`, etc.).
+- **Default de color de texto centralizado** en `helpers/drawingConstants.js` (`DEFAULT_TEXT_FILL`), antes repetido en 4 archivos.
+
+### Corregido
+
+- **Texto restaurado se veía como emoji**: `restoreAnnotations` lo renderizaba con `createSymbolStyle` (fuente emoji 32px); ahora usa `createTextStyle` con su color/fondo/escala.
+- **Anotaciones restauradas no eran editables**: se aplicaba `feature.setStyle()` directo, anulando la función de estilo de la capa; ahora se cachea en `cachedStyle`, por lo que rotar/escalar vuelve a re-renderizar.
+- **XSS potencial**: el catálogo de símbolos se inyectaba como SVG crudo (`dangerouslySetInnerHTML`); ahora se renderiza vía data-URL en `<img>`, igual que en el mapa.
+- **`crypto.randomUUID()` fuera de contexto seguro**: nuevo helper `genId()` con fallback (no truena al terminar un trazo en HTTP plano).
+- **Escape mientras se escribe**: deseleccionaba/abortaba el trazo al teclear Escape en el input del panel de texto; los hooks de dibujo/edición ignoran Escape cuando el foco está en un campo de texto.
+- **`HistoryPanel`**: botón de cerrar sin `aria-label`.
+- **Reset al cerrar herramientas**: color/fondo/tamaño/borrador de texto se reinician a su valor por defecto.
+
 ## [1.71.0] - 2026-06-05
 
 ### Panel de herramientas: Mediciones y Anotaciones separados
