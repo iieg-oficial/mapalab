@@ -5,6 +5,73 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.75.0] - 2026-06-08
+
+### Cambiado
+
+- **Barra de acciones de herramientas en mobile**: ahora se usa **la misma barra que en desktop** (↶ ✓ ✕ en línea/polígono, color/grosor en trazo libre) en lugar del pill provisional. Para darle espacio, al seleccionar una herramienta en mobile el panel **colapsa automáticamente** a solo la herramienta activa y al terminar se expande mostrando todas. Flujo **one-shot** en mobile: tras finalizar (Escape / doble click / Terminar / Cancelar) o colocar (emoji/texto/trazo), la herramienta se deselecciona. En desktop el comportamiento multi-trazo se mantiene.
+- **Eliminado el botón manual de colapso ◀/▶** (mobile y desktop): el colapso es automático por selección; desktop muestra todas las herramientas siempre.
+- Nuevo hook `hooks/useIsMobile.js` (matchMedia con el breakpoint 768 de `SiderContext`), usado por `useMapDrawing` ya que `SiderProvider` vive por debajo de `MapsProvider`.
+
+### Corregido
+
+- **Ícono de eventos en mobile**: se ocultaba solo con `areMeasurementToolsVisible`; ahora se oculta siempre que el panel de herramientas esté presente — `toolsPanelVisible = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0` — cubriendo el caso de **trazos persistidos tras un refresh** (cuando solo se ven lista + X) y el de anotaciones/dibujo.
+- **Ancho de columna en compact (mobile)**: el grupo aplicaba el layout de 2 columnas (`[&>*]:w-[calc(50%-2px)]`) también con una sola herramienta activa, desfasando la barra `left-full`; en compact ahora usa ancho natural para que la barra quede pegada al botón.
+
+## [1.74.0] - 2026-06-08
+
+### Agregado
+
+- **Iconos por estado en temas del sider**: los temas del menú lateral ahora soportan iconos distintos para estado normal y hover/activo. La propiedad `iconOverrides` del árbol permite definir `{ normal: "/acervo/...", hover: "/acervo/..." }`. Si existe, reemplaza al `iconUrl` estático; si no, mantiene el comportamiento actual (SVG hardcodeado por categoría).
+
+### Cambiado
+
+- **`helpers/menuItems.jsx`**: `MenuButton` acepta `iconOverrides` y resuelve `iconOverrides?.[iconState]` con fallback a `imageUrl` y finalmente al `Icon` hardcodeado. `createCategoryItems` pasa `category.iconOverrides`.
+
+## [backend 1.72.0] - 2026-06-08
+
+### Agregado
+
+- **Columna `icon_overrides` en modelo Layer**: `models/layer.py` mapea la nueva columna JSONB.
+- **Resolución de URLs de acervo en `layer_tree_service.py`**: nuevo helper `_resolve_acervo_icon()` convierte paths relativos (`mapalab/...`) a root-relative (`/acervo/...`). Se aplica a `iconUrl` y `iconOverrides` para temas. Corrige URLs rotas en el visor (antes el navegador resolvía rutas relativas contra `/mapalab/` duplicando el prefijo).
+
+## [1.73.0] - 2026-06-08
+
+### Agregado
+
+- **Longitud por segmento**: líneas y polígonos ahora pueden mostrar la longitud de cada tramo entre vértices consecutivos como etiquetas en el punto medio. Se activa/desactiva desde el panel de configuración de mediciones (ícono de engrane en "Mis mediciones").
+- **Perímetro en polígonos**: la etiqueta de los polígonos ahora muestra tanto el área como el perímetro (antes solo mostraba área).
+- **Selector de unidades**: nuevo panel de configuración accesible desde el historial de mediciones con controles para forzar unidades de distancia (Auto / m / km) y área (Auto / m² / ha / km²). La preferencia se persiste en `localStorage` (`mapalab.measure.units`). Cambiar la unidad recalcula instantáneamente todas las etiquetas existentes.
+
+### Cambiado
+
+- **Refactor de formateo**: las funciones `formatLength` y `formatArea` se extrajeron de `useMapDrawing` al helper compartido `helpers/formatMeasure.js`, con soporte de unidades parametrizable. Se reutilizan en `useMapDrawing`, `restoreAnnotations` y `drawingStyles`.
+- **Estilos de medición**: las funciones `createAngleStyles` y `createSegmentLengthStyles` se movieron a `helpers/measurementStyles.js` para mantener `drawingStyles.js` bajo el límite de líneas.
+
+## [1.72.0] - 2026-06-08
+
+### Agregado
+
+- **Persistencia local de mediciones y anotaciones**: ahora sobreviven al refresh de la página. Se guardan en `localStorage` (`mapalab.annotations`) en cada cambio y se restauran al cargar el visor; mientras existan se mantienen el botón de lista y la X. La X de "Cerrar herramientas" limpia el almacenamiento. Si hay un share activo (`?s=`), el enlace tiene prioridad y no se hidrata desde local.
+  - `helpers/annotationsSerialization.js`: serializador compartido reutilizado por el share y la persistencia local.
+  - `useMapDrawing.js`: efectos de hidratación (una vez) y persistencia (por cambio de `measurements`); `restoreAnnotations` acepta `{ showTools }`.
+
+### Cambiado
+
+- **Estilo completo en shares y persistencia**: el payload de anotaciones ahora incluye `fillColor`, `bgColor`, `size` (escala) y `symbol` (emoji), antes se perdían al compartir/restaurar.
+- **Homologación de marca en herramientas**: colores de dibujo alineados a tokens institucionales — línea/medición y halo en morado `purple-deep` (#703088, antes convivían #703089/#70308A), polígono en naranja de marca (#FF8300), selección en azul numeralia (#2e4372), trazo libre en rosa de marca (#FF577D). Etiquetas y ángulos del mapa en fuente **Garet** (antes Inter). JSX del subsistema migrado a clases token (`text-graphite`, `bg-purple`, etc.).
+- **Default de color de texto centralizado** en `helpers/drawingConstants.js` (`DEFAULT_TEXT_FILL`), antes repetido en 4 archivos.
+
+### Corregido
+
+- **Texto restaurado se veía como emoji**: `restoreAnnotations` lo renderizaba con `createSymbolStyle` (fuente emoji 32px); ahora usa `createTextStyle` con su color/fondo/escala.
+- **Anotaciones restauradas no eran editables**: se aplicaba `feature.setStyle()` directo, anulando la función de estilo de la capa; ahora se cachea en `cachedStyle`, por lo que rotar/escalar vuelve a re-renderizar.
+- **XSS potencial**: el catálogo de símbolos se inyectaba como SVG crudo (`dangerouslySetInnerHTML`); ahora se renderiza vía data-URL en `<img>`, igual que en el mapa.
+- **`crypto.randomUUID()` fuera de contexto seguro**: nuevo helper `genId()` con fallback (no truena al terminar un trazo en HTTP plano).
+- **Escape mientras se escribe**: deseleccionaba/abortaba el trazo al teclear Escape en el input del panel de texto; los hooks de dibujo/edición ignoran Escape cuando el foco está en un campo de texto.
+- **`HistoryPanel`**: botón de cerrar sin `aria-label`.
+- **Reset al cerrar herramientas**: color/fondo/tamaño/borrador de texto se reinician a su valor por defecto.
+
 ## [1.71.0] - 2026-06-05
 
 ### Panel de herramientas: Mediciones y Anotaciones separados

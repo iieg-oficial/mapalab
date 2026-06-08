@@ -63,7 +63,7 @@ const ExternalEventoWidget = ({
     onToggleLayer,
     treatAsMobile,
     isOpen,
-    areMeasurementToolsVisible,
+    toolsPanelVisible,
     siderWidth,
     autoOpenMenuId,
     clearAutoOpenMenu,
@@ -95,7 +95,7 @@ const ExternalEventoWidget = ({
     if (!eventos?.length) return null;
 
     if (treatAsMobile) {
-        if (isOpen || areMeasurementToolsVisible) return null;
+        if (isOpen || toolsPanelVisible) return null;
         return (
             <div
                 className="absolute z-21 flex flex-col items-center gap-2"

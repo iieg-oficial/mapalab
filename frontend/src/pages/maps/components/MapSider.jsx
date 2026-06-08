@@ -41,12 +41,16 @@ const MapSider = ({ className = '' }) => {
         areMeasurementToolsVisible,
         toggleAnnotationTools,
         areAnnotationToolsVisible,
+        isDrawing,
+        measurements,
         isLocating,
         dateLoops,
         showMarker,
         allLayers,
         compareMode
     } = useMapsContext();
+
+    const toolsPanelVisible = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0;
     const isSwipe = !!compareMode?.active;
     const { loadingLayers } = useLayerLoading();
     const hasNonLoopLoading = [...loadingLayers].some(id => !dateLoops[id] && contextActiveLayerIds.includes(id));
@@ -301,7 +305,7 @@ const MapSider = ({ className = '' }) => {
                 />
             </aside>
             {!isSwipe && (
-                <ExternalEventoWidget eventos={eventos} activeLayerIds={contextActiveLayerIds} onToggleLayer={onToggleLayer} treatAsMobile={treatAsMobile} isOpen={isOpen} areMeasurementToolsVisible={areMeasurementToolsVisible} siderWidth={width} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
+                <ExternalEventoWidget eventos={eventos} activeLayerIds={contextActiveLayerIds} onToggleLayer={onToggleLayer} treatAsMobile={treatAsMobile} isOpen={isOpen} toolsPanelVisible={toolsPanelVisible} siderWidth={width} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
             )}
         </>
     );

@@ -16,8 +16,8 @@ const UndoButton = ({
             ? 'h-12.5 gap-2 px-3 rounded-[8px] bg-white'
             : 'size-8 rounded-full',
         disabled
-            ? (showLabel ? 'bg-[#EAEFFA] text-[#703089]/40 cursor-not-allowed' : 'text-[#703089]/40 cursor-not-allowed')
-            : 'text-[#703089] hover:border-[#5C2472] active:bg-[#703089] active:text-white'
+            ? (showLabel ? 'bg-[#EAEFFA] text-purple-deep/40 cursor-not-allowed' : 'text-purple-deep/40 cursor-not-allowed')
+            : 'text-purple-deep hover:border-purple active:bg-purple-deep active:text-white'
     ].concat(className).join(' ').trim();
 
     return (

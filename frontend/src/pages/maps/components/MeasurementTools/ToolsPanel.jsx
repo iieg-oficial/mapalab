@@ -1,15 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { useSiderAdaptivePosition } from '@contexts/SiderContext';
+import { useRef, useState } from 'react';
+import { useSiderAdaptivePosition, useSider } from '@contexts/SiderContext';
 import { useMapsContext } from '@hooks/useMaps';
 import { trackMeasurementTool } from '@services/analyticsService';
 import HistoryButton from './HistoryButton';
 import CloseButton from '@components/CloseButton';
-import FloatingIconButton from '@components/FloatingIconButton';
-import Icon from '@components/Icon';
-import UndoButton from './UndoButton';
 import ToolSelector from './ToolSelector';
 import EmojiPanel from './EmojiPanel';
-import TextPanel from './TextPanel';
+import TextInlineEditor from './TextInlineEditor';
 import HistoryPanel from './HistoryPanel';
 import FeatureEditToolbar from './FeatureEditToolbar';
 
@@ -29,12 +26,7 @@ const ToolsPanel = () => {
         finishCurrentSketch,
         areMeasurementToolsVisible,
         areAnnotationToolsVisible,
-        textTemplate,
         setEmojiTemplate,
-        setTextTemplate,
-        setTextFillColor,
-        setTextBgColor,
-        setTextSize,
         hideMeasurementTools,
         hideAnnotationTools,
         restoreLastSelection,
@@ -44,23 +36,31 @@ const ToolsPanel = () => {
         selectionTick,
         updateRotation: updateFeatureRotation,
         updateScale: updateFeatureScale,
+        updateFillColor: updateFeatureFillColor,
+        updateBgColor: updateFeatureBgColor,
+        updateStrokeColor: updateFeatureStrokeColor,
+        updateStrokeWidth: updateFeatureStrokeWidth,
         deleteSelected: deleteSelectedFeature,
-        deselectFeature
+        deselectFeature,
+        freehandColor,
+        freehandWidth,
+        setFreehandColor,
+        setFreehandWidth,
+        editingText,
+        startTextEdit,
+        updateEditingTextLabel,
+        commitTextEdit,
+        cancelTextEdit
     } = useMapsContext();
     const { style, className } = useSiderAdaptivePosition({ anchorRef: 'tools' });
+    const { isMobile } = useSider();
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-    const [isTextPanelOpen, setIsTextPanelOpen] = useState(false);
-    const [textDraft, setTextDraft] = useState(textTemplate || '');
-    const [textColor, setTextColor] = useState('#111827');
-    const [textBg, setTextBg] = useState('');
-    const [textSz, setTextSz] = useState(1);
     const [isMeasurementListOpen, setIsMeasurementListOpen] = useState(false);
-    const [toolsCollapsed, setToolsCollapsed] = useState(false);
     const emojiPickerButtonRef = useRef(null);
-    const textPanelButtonRef = useRef(null);
 
     const shouldRender = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0;
-    const showTypeSwitcher = !toolsCollapsed && (areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing);
+    const showTypeSwitcher = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing;
+    const compact = isMobile && (isDrawing || isEmojiPickerOpen || !!editingText);
 
     const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo' };
 
@@ -82,10 +82,6 @@ const ToolsPanel = () => {
         startDrawing(typeId);
     };
 
-    useEffect(() => {
-        setTextDraft(textTemplate || '');
-    }, [textTemplate]);
-
     const handleEmojiButton = () => {
         setIsEmojiPickerOpen((prev) => !prev);
     };
@@ -100,14 +96,10 @@ const ToolsPanel = () => {
     };
 
     const handleTextButton = () => {
-        setIsTextPanelOpen((prev) => !prev);
-    };
-
-    const handleSaveText = () => {
-        const value = textDraft.trim();
-        if (!value) return;
-        setTextTemplate(value);
-        setIsTextPanelOpen(false);
+        if (measureType === 'Text' && isDrawing) {
+            stopDrawing();
+            return;
+        }
         trackMeasurementTool('Texto');
         startDrawing('Text');
     };
@@ -117,7 +109,6 @@ const ToolsPanel = () => {
         hideMeasurementTools?.();
         hideAnnotationTools?.();
         setIsEmojiPickerOpen(false);
-        setIsTextPanelOpen(false);
         setIsMeasurementListOpen(false);
     };
 
@@ -137,46 +128,26 @@ const ToolsPanel = () => {
                     isOpen={isMeasurementListOpen}
                     tooltip="Mediciones y anotaciones"
                 />
-
-                {(showTypeSwitcher || toolsCollapsed) && (areMeasurementToolsVisible || areAnnotationToolsVisible) && (
-                    <FloatingIconButton
-                        iconKey={toolsCollapsed ? 'left_arrow_fill_normal' : 'right_arrow_fill_normal'}
-                        tooltip={toolsCollapsed ? 'Mostrar herramientas' : 'Ocultar herramientas'}
-                        placement="left"
-                        delay={300}
-                        onClick={() => setToolsCollapsed(prev => !prev)}
-                    />
-                )}
-
-                {isDrawing && (
-                    <div className="md:hidden flex items-center gap-0.5 bg-white rounded-full px-1.5 py-0.5 shadow-[0_2px_8px_#1A26641A]">
-                        <UndoButton onClick={undoLastPoint} disabled={!isSketching} showLabel={false} />
-                        <button type="button" onClick={finishCurrentSketch} className="flex items-center justify-center size-7 rounded-full hover:bg-[#DCFCE7] transition-colors" aria-label="Terminar trazo">
-                            <Icon name="done" state="normal" className="size-4 text-[#16A34A]" />
-                        </button>
-                        <button type="button" onClick={cancelCurrentSketch} className="flex items-center justify-center size-7 rounded-full hover:bg-[#FFE6EC] transition-colors" aria-label="Cancelar trazo">
-                            <Icon name="close" state="normal" className="size-4 text-[#FF577D]" />
-                        </button>
-                    </div>
-                )}
             </div>
 
             <ToolSelector
-                visible={showTypeSwitcher || toolsCollapsed}
-                compact={toolsCollapsed}
+                visible={showTypeSwitcher}
+                compact={compact}
                 isDrawing={isDrawing}
                 measureType={measureType}
-                isTextPanelOpen={isTextPanelOpen}
                 isEmojiPickerOpen={isEmojiPickerOpen}
                 onSelect={handleMeasureTypeClick}
                 onTextToggle={handleTextButton}
                 onEmojiToggle={handleEmojiButton}
-                textButtonRef={textPanelButtonRef}
                 emojiButtonRef={emojiPickerButtonRef}
                 onUndo={undoLastPoint}
                 onFinish={finishCurrentSketch}
                 onCancel={cancelCurrentSketch}
                 canUndo={isSketching}
+                freehandColor={freehandColor}
+                freehandWidth={freehandWidth}
+                onFreehandColor={setFreehandColor}
+                onFreehandWidth={setFreehandWidth}
                 showMeasurements={areMeasurementToolsVisible}
                 showAnnotations={areAnnotationToolsVisible}
             />
@@ -189,20 +160,12 @@ const ToolsPanel = () => {
                 placedCount={measurements.filter(m => m.type === 'Emoji').length}
             />
 
-            <TextPanel
-                open={isTextPanelOpen}
-                anchorRef={textPanelButtonRef}
-                value={textDraft}
-                onChange={setTextDraft}
-                fillColor={textColor}
-                onFillColorChange={(c) => { setTextColor(c); setTextFillColor?.(c); }}
-                bgColor={textBg}
-                onBgColorChange={(c) => { setTextBg(c); setTextBgColor?.(c); }}
-                size={textSz}
-                onSizeChange={(s) => { setTextSz(s); setTextSize?.(s); }}
-                onSave={handleSaveText}
-                onClose={() => setIsTextPanelOpen(false)}
-                placedCount={measurements.filter(m => m.type === 'Text').length}
+            <TextInlineEditor
+                mapRef={mapRef}
+                feature={editingText}
+                onChange={updateEditingTextLabel}
+                onCommit={commitTextEdit}
+                onCancel={cancelTextEdit}
             />
 
             <HistoryPanel
@@ -221,6 +184,11 @@ const ToolsPanel = () => {
                     selectionTick={selectionTick}
                     onRotate={updateFeatureRotation}
                     onScale={updateFeatureScale}
+                    onFillColor={updateFeatureFillColor}
+                    onBgColor={updateFeatureBgColor}
+                    onStrokeColor={updateFeatureStrokeColor}
+                    onStrokeWidth={updateFeatureStrokeWidth}
+                    onEdit={startTextEdit}
                     onDelete={deleteSelectedFeature}
                     onClose={deselectFeature}
                 />

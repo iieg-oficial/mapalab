@@ -1,44 +1,9 @@
 import { useCallback } from 'react';
 import { toLonLat } from 'ol/proj';
-import GeoJSON from 'ol/format/GeoJSON';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { findLayerDef, slugForLayer } from '@pages/maps/helpers/wmsConfig';
-
-const ANNOTATION_GEOJSON = new GeoJSON({
-    featureProjection: 'EPSG:3857',
-    dataProjection: 'EPSG:4326',
-});
-
-const ANNOTATION_TYPES = new Set(['LineString', 'Polygon', 'Freehand', 'Text', 'Emoji']);
-
-const serializeAnnotations = (measurements) => {
-    if (!Array.isArray(measurements) || measurements.length === 0) return null;
-    const out = [];
-    measurements.forEach((m) => {
-        if (!m?.feature || !ANNOTATION_TYPES.has(m.type)) return;
-        let geometry;
-        try {
-            geometry = ANNOTATION_GEOJSON.writeGeometryObject(m.feature.getGeometry());
-        } catch {
-            return;
-        }
-        const entry = {
-            id: m.id,
-            type: m.type,
-            geometry,
-            visible: m.visible !== false,
-        };
-        if (m.label) entry.label = m.label;
-        if (m.value !== undefined && m.value !== null) entry.value = m.value;
-        const textLabel = m.feature.get('textLabel');
-        if (textLabel) entry.textLabel = textLabel;
-        const rotation = m.feature.get('rotation');
-        if (typeof rotation === 'number') entry.rotation = rotation;
-        out.push(entry);
-    });
-    return out.length > 0 ? out : null;
-};
+import { serializeAnnotations } from '@pages/maps/helpers/annotationsSerialization';
 
 const round = (value, decimals) => {
     if (value === null || value === undefined || Number.isNaN(value)) return value;

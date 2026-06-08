@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Draw } from 'ol/interaction';
-import { getLength, getArea } from 'ol/sphere';
-import { createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCacheStyle, computeStylesForFeature } from '../helpers/drawingStyles';
+import { getLength } from 'ol/sphere';
+import { createFreehandStyle, createSymbolStyle, computeAndCacheStyle, computeStylesForFeature } from '../helpers/drawingStyles';
 import { useDrawingStyle } from './useDrawingStyle';
-import { formatNumber } from '../helpers/formatNumber';
 import { buildRestoredItems } from '../helpers/restoreAnnotations';
+import { genId } from '../helpers/genId';
+import { useAnnotationsPersistence } from './useAnnotationsPersistence';
 import { useEmojiTemplate } from './useEmojiTemplate';
 import { useTextTemplate } from './useTextTemplate';
+import { useFreehandStyle } from './useFreehandStyle';
+import { useTextEditing } from './useTextEditing';
 import { useVectorLayerSetup } from './useVectorLayerSetup';
+import { useIsMobile } from '@hooks/useIsMobile';
+import { formatLength, formatArea, formatLengthValue } from '../helpers/formatMeasure';
+import { useMeasurementRecalc } from './useMeasurementRecalc';
 
 export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSelection = null) => {
     const [measureType, setMeasureType] = useState('Point');
@@ -19,12 +25,20 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     const { textTemplate, setTextTemplate, textTemplateRef, textFillColorRef, textBgColorRef, textSizeRef, setTextFillColor, setTextBgColor, setTextSize } = useTextTemplate('');
     const [rotation, setRotation] = useState(0);
     const rotationRef = useRef(0);
+    const { freehandColor, freehandWidth, freehandColorRef, freehandWidthRef, setFreehandColor, setFreehandWidth } = useFreehandStyle();
     const { emojiTemplate, setEmojiTemplate, emojiTemplateRef } = useEmojiTemplate('');
-    const [measurementConfig, setMeasurementConfig] = useState({
-        showLiveAngles: false,
-        showFinalAngles: true,
-        showMeasurementLabels: true,
-        enableAnnotationTools: false
+    const [measurementConfig, setMeasurementConfig] = useState(() => {
+        let stored = null;
+        try { stored = JSON.parse(localStorage.getItem('mapalab.measure.units')); } catch { /* noop */ }
+        return {
+            showLiveAngles: false,
+            showFinalAngles: true,
+            showMeasurementLabels: true,
+            enableAnnotationTools: false,
+            showSegmentLengths: false,
+            lengthUnit: stored?.lengthUnit || 'auto',
+            areaUnit: stored?.areaUnit || 'auto'
+        };
     });
     const drawInteractionRef = useRef(null);
     const vectorSourceRef = useRef(null);
@@ -41,6 +55,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     }, []);
 
     const showMeasurementTools = useCallback(() => setMeasurementToolsVisible(true), []);
+    const showAnnotationTools = useCallback(() => setAnnotationToolsVisible(true), []);
     const hideMeasurementTools = useCallback(() => setMeasurementToolsVisible(false), []);
     const hideAnnotationTools = useCallback(() => setAnnotationToolsVisible(false), []);
     const toggleMeasurementTools = useCallback(() => {
@@ -51,31 +66,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         rotationRef.current = rotation;
     }, [rotation]);
 
-    useEffect(() => {
-        if (!vectorSourceRef.current) return;
-
-        const features = vectorSourceRef.current.getFeatures();
-        features.forEach(feature => {
-            if (feature === sketchFeatureRef.current) {
-                return;
-            }
-
-            const annotationType = feature.get('annotationType');
-            if (annotationType === 'Text' || annotationType === 'Emoji' || annotationType === 'Freehand') {
-                return;
-            }
-
-            feature.unset('cachedStyle', true);
-            const measurementValue = feature.get('measurementValue');
-            if (measurementValue) {
-                computeAndCacheStyle(feature, measurementValue, measurementConfig);
-            }
-        });
-
-        if (vectorLayerRef.current) {
-            vectorLayerRef.current.changed();
-        }
-    }, [measurementConfig]);
+    useMeasurementRecalc({ vectorSourceRef, vectorLayerRef, sketchFeatureRef, measurementConfig, setMeasurements });
 
     useEffect(() => {
         if (!drawInteractionRef.current) return;
@@ -111,36 +102,40 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
 
     const { ensureVectorLayer } = useVectorLayerSetup(mapRef, getStyleForType, vectorSourceRef, vectorLayerRef);
 
-    const formatLength = useCallback((line) => {
-        const length = getLength(line);
-        let output;
-        if (length > 1000) {
-            output = `${formatNumber(Math.round((length / 1000) * 100) / 100)} km`;
-        } else {
-            output = `${formatNumber(Math.round(length * 100) / 100)} m`;
-        }
-        return output;
-    }, []);
+    useEffect(() => {
+        try {
+            localStorage.setItem('mapalab.measure.units', JSON.stringify({
+                lengthUnit: measurementConfig.lengthUnit,
+                areaUnit: measurementConfig.areaUnit
+            }));
+        } catch { /* noop */ }
+    }, [measurementConfig.lengthUnit, measurementConfig.areaUnit]);
 
-    const formatArea = useCallback((polygon) => {
-        const area = getArea(polygon);
-        let output;
-        if (area > 10000) {
-            output = `${formatNumber(Math.round((area / 1000000) * 100) / 100)} km²`;
-        } else {
-            output = `${formatNumber(Math.round(area * 100) / 100)} m²`;
-        }
-        return output;
-    }, []);
+    const measureTypeRef = useRef('Point');
+    useEffect(() => {
+        measureTypeRef.current = measureType;
+    }, [measureType]);
+
+    const isMobile = useIsMobile();
+    const oneShotRef = useRef(isMobile);
+    oneShotRef.current = isMobile;
+    const startDrawingRef = useRef(null);
+    const stopDrawingRef = useRef(null);
+    const textEditing = useTextEditing({
+        mapRef,
+        drawInteractionRef,
+        vectorSourceRef,
+        vectorLayerRef,
+        setMeasurements,
+        measureTypeRef,
+        startDrawingRef,
+        stopDrawingRef,
+        oneShotRef
+    });
 
     const startDrawing = useCallback((type) => {
         if (!mapRef.current) return;
         if (!vectorSourceRef.current && !ensureVectorLayer()) return;
-
-        if (type === 'Text' && !textTemplateRef.current) {
-            console.warn('Debes proporcionar un texto antes de colocarlo en el mapa');
-            return;
-        }
 
         if (type === 'Emoji' && !emojiTemplateRef.current) {
             console.warn('Debes seleccionar un emoji antes de colocarlo en el mapa');
@@ -158,7 +153,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             return;
         }
 
-        if (type !== 'Select') {
+        if (type === 'Text' || type === 'Emoji' || type === 'Freehand') {
+            showAnnotationTools();
+        } else if (type !== 'Select') {
             showMeasurementTools();
         }
 
@@ -185,6 +182,10 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         draw.on('drawstart', (event) => {
             sketchFeatureRef.current = event.feature;
             event.feature.set('annotationType', type);
+            if (type === 'Freehand') {
+                event.feature.set('strokeColor', freehandColorRef.current);
+                event.feature.set('strokeWidth', freehandWidthRef.current);
+            }
             if (type === 'Emoji') {
                 const symbol = emojiTemplateRef.current;
                 event.feature.set('symbolPayload', symbol);
@@ -240,7 +241,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 lastSelectCenterRef.current = center;
 
                 const measurementData = {
-                    id: crypto.randomUUID(),
+                    id: genId(),
                     type: type,
                     feature: feature,
                     visible: true,
@@ -269,26 +270,29 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
 
                 updateSketchingState(false);
                 sketchFeatureRef.current = null;
+                if (oneShotRef.current) setTimeout(() => stopDrawingRef.current?.(), 0);
                 return;
             }
 
             let measurementData = {
-                id: crypto.randomUUID(),
+                id: genId(),
                 type: type,
                 feature: feature,
                 visible: true
             };
 
             if (type === 'LineString') {
-                const length = formatLength(geometry);
+                const length = formatLength(geometry, measurementConfig.lengthUnit);
                 measurementData.value = length;
                 measurementData.label = `Distancia: ${length}`;
                 feature.set('measurementValue', length);
                 computeAndCacheStyle(feature, length, measurementConfig);
             } else if (type === 'Polygon') {
-                const area = formatArea(geometry);
+                const area = formatArea(geometry, measurementConfig.areaUnit);
+                const perimeter = getLength(geometry);
+                const perimeterText = formatLengthValue(perimeter, measurementConfig.lengthUnit);
                 measurementData.value = area;
-                measurementData.label = `Área: ${area}`;
+                measurementData.label = `Área: ${area}\nPerímetro: ${perimeterText}`;
                 feature.set('measurementValue', area);
                 computeAndCacheStyle(feature, area, measurementConfig);
 
@@ -312,7 +316,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 }
             } else if (type === 'Freehand') {
                 measurementData.label = 'Trazo libre';
-                const style = createFreehandStyle();
+                const style = createFreehandStyle(feature.get('strokeColor'), feature.get('strokeWidth'));
                 feature.set('cachedStyle', style, true);
             } else if (type === 'Emoji') {
                 const symbol = feature.get('symbolPayload') || { kind: 'emoji', value: feature.get('textLabel') || '' };
@@ -326,12 +330,11 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 feature.set('cachedStyle', style, true);
                 setLastPlacedAnnotation({ feature, placedAt: Date.now() });
             } else if (type === 'Text') {
-                const textValue = feature.get('textLabel') || '';
-                measurementData.value = textValue;
-                measurementData.label = `Texto: ${textValue || 'Sin contenido'}`;
-                const rotation = feature.get('rotation') || 0;
-                const style = createTextStyle(textValue, rotation);
-                feature.set('cachedStyle', style, true);
+                measurementData.value = '';
+                measurementData.label = 'Texto';
+                feature.set('editing', true, true);
+                feature.unset('cachedStyle', true);
+                textEditing.beginTextEdit(feature, null);
                 setLastPlacedAnnotation({ feature, placedAt: Date.now() });
             }
 
@@ -353,13 +356,16 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             });
             updateSketchingState(false);
             sketchFeatureRef.current = null;
+            if (oneShotRef.current && type !== 'Text') setTimeout(() => stopDrawingRef.current?.(), 0);
         });
 
         mapRef.current.addInteraction(draw);
         drawInteractionRef.current = draw;
         setMeasureType(type);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mapRef, formatLength, formatArea, getStyleForType, updateSketchingState, showMeasurementTools, ensureVectorLayer]);
+    }, [mapRef, getStyleForType, updateSketchingState, showMeasurementTools, ensureVectorLayer]);
+
+    startDrawingRef.current = startDrawing;
 
     const stopDrawing = useCallback(() => {
         if (!mapRef.current) return;
@@ -374,12 +380,28 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         setMeasureType('Point');
     }, [mapRef, updateSketchingState]);
 
+    stopDrawingRef.current = stopDrawing;
+
+    useEffect(() => {
+        const map = mapRef.current;
+        const el = map?.getTargetElement?.();
+        if (!el) return;
+        const drawing = measureType !== 'Point' && measureType !== null;
+        el.style.cursor = drawing ? (measureType === 'Text' ? 'text' : 'crosshair') : '';
+        return () => { el.style.cursor = ''; };
+    }, [mapRef, measureType]);
+
     useEffect(() => {
         const isDrawing = measureType !== 'Point' && measureType !== null;
         if (!isDrawing || !drawInteractionRef.current) return;
 
         const handleKeyDown = (e) => {
             if (e.key !== 'Escape' || !drawInteractionRef.current) {
+                return;
+            }
+
+            const target = e.target;
+            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
                 return;
             }
 
@@ -395,6 +417,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 drawInteractionRef.current.abortDrawing();
                 updateSketchingState(false);
                 sketchFeatureRef.current = null;
+                if (oneShotRef.current) stopDrawing();
                 return;
             }
 
@@ -415,6 +438,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 drawInteractionRef.current.abortDrawing();
                 updateSketchingState(false);
                 sketchFeatureRef.current = null;
+                if (oneShotRef.current) stopDrawing();
             }
         };
 
@@ -434,7 +458,8 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             vectorSourceRef.current.clear();
         }
         setMeasurements([]);
-    }, []);
+        textEditing.clearTextEditing();
+    }, [textEditing]);
 
     const deleteMeasurement = useCallback((index) => {
         setMeasurements(prev => {
@@ -475,7 +500,8 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         }
         updateSketchingState(false);
         sketchFeatureRef.current = null;
-    }, [updateSketchingState]);
+        if (oneShotRef.current) stopDrawing();
+    }, [updateSketchingState, stopDrawing]);
 
     const undoLastPoint = useCallback(() => {
         if (
@@ -577,20 +603,22 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         });
     }, []);
 
-    const restoreAnnotations = useCallback((annotations) => {
+    const restoreAnnotations = useCallback((annotations, { showTools = true } = {}) => {
         if (!annotations?.length) return;
         let attempts = 0;
         const tryApply = () => {
             if (mapRef.current && ensureVectorLayer() && vectorSourceRef.current) {
-                const restored = buildRestoredItems({ annotations, source: vectorSourceRef.current, measurementConfig, formatLength, formatArea });
+                const restored = buildRestoredItems({ annotations, source: vectorSourceRef.current, measurementConfig });
                 if (restored.length) {
                     setMeasurements(prev => [...prev, ...restored]);
-                    setMeasurementToolsVisible(true);
+                    if (showTools) setMeasurementToolsVisible(true);
                 }
             } else if (attempts++ < 50) setTimeout(tryApply, 100);
         };
         tryApply();
-    }, [mapRef, ensureVectorLayer, measurementConfig, formatLength, formatArea]);
+    }, [mapRef, ensureVectorLayer, measurementConfig]);
+
+    useAnnotationsPersistence({ measurements, restoreAnnotations });
 
     return {
         vectorSourceRef,
@@ -624,6 +652,10 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         setTextFillColor,
         setTextBgColor,
         setTextSize,
+        freehandColor,
+        freehandWidth,
+        setFreehandColor,
+        setFreehandWidth,
         rotation,
         setRotation,
         measurementConfig,
@@ -631,6 +663,11 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         finishCurrentSketch,
         restoreLastSelection,
         showSelectionByIndex,
-        updateSelectionCount
+        updateSelectionCount,
+        editingText: textEditing.editingText,
+        startTextEdit: textEditing.startTextEdit,
+        updateEditingTextLabel: textEditing.updateEditingTextLabel,
+        commitTextEdit: textEditing.commitTextEdit,
+        cancelTextEdit: textEditing.cancelTextEdit
     };
 };

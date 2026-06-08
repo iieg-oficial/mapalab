@@ -12,6 +12,31 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.75.0',
+        items: [
+            { text: 'En celular, al elegir una herramienta de medición o anotación las demás se ocultan para mostrar sus controles, y al terminar el trazo vuelven a aparecer todas.', tag: 'changed' },
+            { text: 'En celular, los controles de cada herramienta (deshacer/terminar/cancelar, color y grosor) ahora son los mismos que en computadora.', tag: 'changed' },
+            { text: 'El botón de eventos ya no se encima con tus herramientas, ni siquiera al recargar la página teniendo trazos guardados.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.73.0',
+        items: [
+            { text: 'Longitud por segmento: activa esta opción en el engrane de "Mis mediciones" para ver la distancia de cada tramo entre vértices.', tag: 'added' },
+            { text: 'Los polígonos ahora muestran área + perímetro en su etiqueta.', tag: 'added' },
+            { text: 'Selector de unidades: elige m, km, m², ha o km² para tus mediciones desde el nuevo panel de configuración.', tag: 'added' },
+        ],
+    },
+    {
+        version: '1.72.0',
+        items: [
+            { text: 'Mediciones y anotaciones: ahora se conservan al recargar la página. Tus trazos, textos y emojis ya no desaparecen con un refresh; para borrarlos usa la X de cerrar herramientas.', tag: 'added' },
+            { text: 'Texto y emojis: el color, el fondo y el tamaño que eliges ahora se conservan al compartir el mapa y al recargar.', tag: 'fixed' },
+            { text: 'Anotaciones: el texto compartido vuelve a verse como texto (antes podía mostrarse con estilo de emoji) y se puede volver a rotar y redimensionar después de cargarlo.', tag: 'fixed' },
+            { text: 'Herramientas: los colores de líneas, polígonos, selección y trazo libre se ajustaron a los colores oficiales del instituto.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.64.1',
         items: [
             { text: 'Barra de herramientas: el botón de descarga ahora muestra su nombre completo "Descargar visualización" y la barra se ajusta a su contenido cuando hay espacio disponible.', tag: 'changed' },

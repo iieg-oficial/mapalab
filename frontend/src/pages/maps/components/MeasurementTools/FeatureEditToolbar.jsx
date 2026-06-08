@@ -3,15 +3,28 @@ import { createPortal } from 'react-dom';
 import Overlay from 'ol/Overlay';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
+import { ACTION_BTN, PURPLE_HOVER, PINK_HOVER, BAR_SHELL, BAR_DIVIDER, ColorSwatch, Stepper } from './StyleControls';
+import { DEFAULT_TEXT_FILL, DRAW_COLORS } from '@pages/maps/helpers/drawingConstants';
 
 const ROTATE_STEP = Math.PI / 4;
 const SCALE_STEP = 0.25;
 const SCALE_MIN = 0.5;
 const SCALE_MAX = 3;
+const WIDTH_STEP = 1;
+const WIDTH_MIN = 1;
+const WIDTH_MAX = 12;
 
-const baseBtn = 'size-7 flex items-center justify-center rounded-full border border-transparent transition-colors cursor-pointer';
-const purpleHover = 'hover:border-[#70308A] hover:bg-[#F9FBFF]';
-const pinkHover = 'hover:border-[#FF577D] hover:bg-[#F9FBFF]';
+const positionFor = (geometry) => {
+    if (!geometry) return null;
+    const type = geometry.getType();
+    if (type === 'Point') return geometry.getCoordinates();
+    if (type === 'LineString') {
+        const coords = geometry.getCoordinates();
+        return coords[Math.floor(coords.length / 2)] || coords[0];
+    }
+    const extent = geometry.getExtent();
+    return [(extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2];
+};
 
 const FeatureEditToolbar = ({
     mapRef,
@@ -19,6 +32,11 @@ const FeatureEditToolbar = ({
     selectionTick,
     onRotate,
     onScale,
+    onFillColor,
+    onBgColor,
+    onStrokeColor,
+    onStrokeWidth,
+    onEdit,
     onDelete,
     onClose
 }) => {
@@ -49,14 +67,14 @@ const FeatureEditToolbar = ({
         });
 
         const geom = feature.getGeometry();
-        if (geom) overlay.setPosition(geom.getCoordinates());
+        if (geom) overlay.setPosition(positionFor(geom));
 
         map.addOverlay(overlay);
         overlayRef.current = overlay;
 
         const syncPosition = () => {
             const g = feature.getGeometry();
-            if (g) overlay.setPosition(g.getCoordinates());
+            if (g) overlay.setPosition(positionFor(g));
         };
         feature.on('change', syncPosition);
 
@@ -67,63 +85,115 @@ const FeatureEditToolbar = ({
         };
     }, [mapRef, feature]);
 
+    const annotationType = feature?.get('annotationType');
+    const isText = annotationType === 'Text';
+    const isEmoji = annotationType === 'Emoji';
+    const isFreehand = annotationType === 'Freehand';
+
     const currentRotation = feature?.get('rotation') ?? 0;
     const currentScale = feature?.get('scale') ?? 1;
+    const currentFill = feature?.get('fillColor') || DEFAULT_TEXT_FILL;
+    const currentBg = feature?.get('bgColor') || '';
+    const currentStroke = feature?.get('strokeColor') || DRAW_COLORS.pink;
+    const currentWidth = feature?.get('strokeWidth') || 3;
 
     const content = useMemo(() => {
         const rotateLeft = () => onRotate?.(currentRotation - ROTATE_STEP);
         const rotateRight = () => onRotate?.(currentRotation + ROTATE_STEP);
         const scaleDown = () => onScale?.(Math.max(SCALE_MIN, +(currentScale - SCALE_STEP).toFixed(2)));
         const scaleUp = () => onScale?.(Math.min(SCALE_MAX, +(currentScale + SCALE_STEP).toFixed(2)));
+        const widthDown = () => onStrokeWidth?.(Math.max(WIDTH_MIN, currentWidth - WIDTH_STEP));
+        const widthUp = () => onStrokeWidth?.(Math.min(WIDTH_MAX, currentWidth + WIDTH_STEP));
 
         return (
             // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- toolbar contenedor; stopPropagation previene que el mapa reciba drag/touch
             <div
-                className="flex items-center gap-1 px-2 py-2 bg-[#F9FBFF] rounded-[12px] shadow-[0_5px_20px_#1A26641A] border border-[#E6E9F0]"
+                className={BAR_SHELL}
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
             >
-                <Tooltip content="Rotar −45°" delay={500}>
-                    <button type="button" onClick={rotateLeft} className={`${baseBtn} ${purpleHover}`} aria-label="Rotar a la izquierda">
-                        <Icon name="undo" className="size-4 text-[#465055]" />
-                    </button>
-                </Tooltip>
-                <Tooltip content="Rotar +45°" delay={500}>
-                    <button type="button" onClick={rotateRight} className={`${baseBtn} ${purpleHover}`} aria-label="Rotar a la derecha">
-                        <span className="inline-flex scale-x-[-1]">
-                            <Icon name="undo" className="size-4 text-[#465055]" />
-                        </span>
-                    </button>
-                </Tooltip>
+                {(isText || isFreehand) && (
+                    <ColorSwatch
+                        value={isText ? currentFill : currentStroke}
+                        onChange={isText ? onFillColor : onStrokeColor}
+                        tooltip="Color"
+                        ariaLabel="Color"
+                    />
+                )}
+                {isText && (
+                    <ColorSwatch
+                        value={currentBg}
+                        onChange={onBgColor}
+                        tooltip="Fondo"
+                        ariaLabel="Color de fondo"
+                        allowNone
+                    />
+                )}
 
-                <div className="w-px h-5 bg-[#E6E9F0] mx-1" />
+                {(isText || isEmoji) && (
+                    <Stepper
+                        onDown={scaleDown}
+                        onUp={scaleUp}
+                        downLabel="Reducir tamaño"
+                        upLabel="Aumentar tamaño"
+                        tooltipDown="Reducir tamaño"
+                        tooltipUp="Aumentar tamaño"
+                    />
+                )}
+                {isFreehand && (
+                    <Stepper
+                        onDown={widthDown}
+                        onUp={widthUp}
+                        downLabel="Menos grosor"
+                        upLabel="Más grosor"
+                        tooltipDown="Menos grosor"
+                        tooltipUp="Más grosor"
+                    />
+                )}
 
-                <Tooltip content="Reducir tamaño" delay={500}>
-                    <button type="button" onClick={scaleDown} className={`${baseBtn} ${purpleHover}`} aria-label="Reducir tamaño">
-                        <span className="font-garet font-bold text-[16px] text-[#465055] leading-none pb-0.5">−</span>
-                    </button>
-                </Tooltip>
-                <Tooltip content="Aumentar tamaño" delay={500}>
-                    <button type="button" onClick={scaleUp} className={`${baseBtn} ${purpleHover}`} aria-label="Aumentar tamaño">
-                        <span className="font-garet font-bold text-[16px] text-[#465055] leading-none">+</span>
-                    </button>
-                </Tooltip>
+                {isText && onEdit && (
+                    <>
+                        <div className={BAR_DIVIDER} />
+                        <Tooltip content="Editar texto" delay={500}>
+                            <button type="button" onClick={() => onEdit(feature)} className={`${ACTION_BTN} ${PURPLE_HOVER}`} aria-label="Editar texto">
+                                <Icon name="text" className="size-4 text-graphite" />
+                            </button>
+                        </Tooltip>
+                    </>
+                )}
 
-                <div className="w-px h-5 bg-[#E6E9F0] mx-1" />
+                {(isText || isEmoji) && (
+                    <>
+                        <div className={BAR_DIVIDER} />
+                        <Tooltip content="Rotar −45°" delay={500}>
+                            <button type="button" onClick={rotateLeft} className={`${ACTION_BTN} ${PURPLE_HOVER}`} aria-label="Rotar a la izquierda">
+                                <Icon name="undo" className="size-4 text-graphite" />
+                            </button>
+                        </Tooltip>
+                        <Tooltip content="Rotar +45°" delay={500}>
+                            <button type="button" onClick={rotateRight} className={`${ACTION_BTN} ${PURPLE_HOVER}`} aria-label="Rotar a la derecha">
+                                <span className="inline-flex scale-x-[-1]">
+                                    <Icon name="undo" className="size-4 text-graphite" />
+                                </span>
+                            </button>
+                        </Tooltip>
+                    </>
+                )}
 
+                <div className={BAR_DIVIDER} />
                 <Tooltip content="Eliminar" delay={500}>
-                    <button type="button" onClick={onDelete} className={`${baseBtn} ${pinkHover}`} aria-label="Eliminar">
+                    <button type="button" onClick={onDelete} className={`${ACTION_BTN} ${PINK_HOVER}`} aria-label="Eliminar">
                         <Icon name="eliminar" state="hover" className="size-4" />
                     </button>
                 </Tooltip>
                 <Tooltip content="Listo" delay={500}>
-                    <button type="button" onClick={onClose} className={`${baseBtn} ${purpleHover}`} aria-label="Terminar edicion">
-                        <Icon name="done" className="size-4 text-[#465055]" />
+                    <button type="button" onClick={onClose} className={`${ACTION_BTN} ${PURPLE_HOVER}`} aria-label="Terminar edicion">
+                        <Icon name="done" className="size-4 text-graphite" />
                     </button>
                 </Tooltip>
             </div>
         );
-    }, [currentRotation, currentScale, onRotate, onScale, onDelete, onClose]);
+    }, [feature, isText, isEmoji, isFreehand, currentRotation, currentScale, currentFill, currentBg, currentStroke, currentWidth, onRotate, onScale, onFillColor, onBgColor, onStrokeColor, onStrokeWidth, onEdit, onDelete, onClose]);
 
     if (!feature || !elementRef.current) return null;
     return createPortal(content, elementRef.current);

@@ -33,6 +33,7 @@ export const useDrawingStyle = (sketchFeatureRef, measurementConfig) => {
         }
 
         if (annotationType === 'Text') {
+            if (feature.get('editing')) return null;
             const fill = feature.get('fillColor') || '#111827';
             const bg = feature.get('bgColor') || '';
             const style = createTextStyle(feature.get('textLabel'), featureRotation, featureScale, featureSelected, fill, bg);
@@ -43,7 +44,9 @@ export const useDrawingStyle = (sketchFeatureRef, measurementConfig) => {
         }
 
         if (annotationType === 'Freehand') {
-            const style = createFreehandStyle();
+            const strokeColor = feature.get('strokeColor');
+            const strokeWidth = feature.get('strokeWidth');
+            const style = createFreehandStyle(strokeColor, strokeWidth, featureSelected);
             if (!isSketch) {
                 feature.set('cachedStyle', style, true);
             }
