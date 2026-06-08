@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.75.0] - 2026-06-08
+
+### Cambiado
+
+- **Barra de acciones de herramientas en mobile**: ahora se usa **la misma barra que en desktop** (↶ ✓ ✕ en línea/polígono, color/grosor en trazo libre) en lugar del pill provisional. Para darle espacio, al seleccionar una herramienta en mobile el panel **colapsa automáticamente** a solo la herramienta activa y al terminar se expande mostrando todas. Flujo **one-shot** en mobile: tras finalizar (Escape / doble click / Terminar / Cancelar) o colocar (emoji/texto/trazo), la herramienta se deselecciona. En desktop el comportamiento multi-trazo se mantiene.
+- **Eliminado el botón manual de colapso ◀/▶** (mobile y desktop): el colapso es automático por selección; desktop muestra todas las herramientas siempre.
+- Nuevo hook `hooks/useIsMobile.js` (matchMedia con el breakpoint 768 de `SiderContext`), usado por `useMapDrawing` ya que `SiderProvider` vive por debajo de `MapsProvider`.
+
+### Corregido
+
+- **Ícono de eventos en mobile**: se ocultaba solo con `areMeasurementToolsVisible`; ahora se oculta siempre que el panel de herramientas esté presente — `toolsPanelVisible = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0` — cubriendo el caso de **trazos persistidos tras un refresh** (cuando solo se ven lista + X) y el de anotaciones/dibujo.
+- **Ancho de columna en compact (mobile)**: el grupo aplicaba el layout de 2 columnas (`[&>*]:w-[calc(50%-2px)]`) también con una sola herramienta activa, desfasando la barra `left-full`; en compact ahora usa ancho natural para que la barra quede pegada al botón.
+
 ## [1.74.0] - 2026-06-08
 
 ### Agregado

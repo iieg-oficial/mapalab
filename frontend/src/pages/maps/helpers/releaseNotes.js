@@ -12,6 +12,14 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.75.0',
+        items: [
+            { text: 'En celular, al elegir una herramienta de medición o anotación las demás se ocultan para mostrar sus controles, y al terminar el trazo vuelven a aparecer todas.', tag: 'changed' },
+            { text: 'En celular, los controles de cada herramienta (deshacer/terminar/cancelar, color y grosor) ahora son los mismos que en computadora.', tag: 'changed' },
+            { text: 'El botón de eventos ya no se encima con tus herramientas, ni siquiera al recargar la página teniendo trazos guardados.', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.73.0',
         items: [
             { text: 'Longitud por segmento: activa esta opción en el engrane de "Mis mediciones" para ver la distancia de cada tramo entre vértices.', tag: 'added' },
