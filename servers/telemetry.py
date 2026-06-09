@@ -15,6 +15,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.config import settings
 from app.metrics import COUNTER_MCP_CALLS, HISTOGRAM_MCP_LATENCY, incr, observe
+from app.services.access_logger import get_logger as get_access_logger
 from app.services.api_key_quota import get_tracker
 from app.utils.logger import Logger
 from servers.auth import send_json
@@ -198,6 +199,13 @@ class MCPTelemetryMiddleware:
         if method == 'tools/call' and key_id is not None:
             allowed = get_tracker().can_consume(key_id, key.cuota_diaria, key.cuota_mensual)
             if not allowed:
+                get_access_logger().record(
+                    api_key_id=key_id,
+                    endpoint='mcp',
+                    resultado='quota_exceeded',
+                    motivo=tool,
+                    ip=ip,
+                )
                 await send_json(
                     send,
                     429,
@@ -244,6 +252,13 @@ class MCPTelemetryMiddleware:
                 observe(HISTOGRAM_MCP_LATENCY, duration_ms, {'tool': tool})
             if method == 'tools/call' and key_id is not None:
                 get_tracker().record(key_id, error=(outcome == 'error'), bytes_out=state['bytes_out'] or 0)
+                get_access_logger().record(
+                    api_key_id=key_id,
+                    endpoint='mcp',
+                    resultado='allowed' if outcome == 'ok' else 'denied',
+                    motivo=tool,
+                    ip=ip,
+                )
 
 
 def flush_pending_sync() -> None:

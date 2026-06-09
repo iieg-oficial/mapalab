@@ -27,6 +27,11 @@ from app import metrics as metrics_module
 from app.config import settings
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
+from app.services.access_logger import (
+    access_flush_loop,
+    get_logger as get_access_logger,
+    _flush_sync as _flush_accesos,
+)
 from app.repositories.layers_repository import LayersRepository
 from app.services import layer_metadata_service
 from app.services.layer_tree_service import get_cached_state
@@ -491,12 +496,13 @@ async def lifespan(server_app: FastAPI):
 
     flush_task = asyncio.create_task(telemetry_flush_loop())
     quota_task = asyncio.create_task(quota_flush_loop())
+    access_task = asyncio.create_task(access_flush_loop())
     try:
         yield
     finally:
-        for task in (flush_task, quota_task):
+        for task in (flush_task, quota_task, access_task):
             task.cancel()
-        for task in (flush_task, quota_task):
+        for task in (flush_task, quota_task, access_task):
             try:
                 await task
             except asyncio.CancelledError:
@@ -507,6 +513,10 @@ async def lifespan(server_app: FastAPI):
             pass
         try:
             await asyncio.to_thread(quota_flush_pending_sync)
+        except Exception:
+            pass
+        try:
+            await asyncio.to_thread(_flush_accesos, get_access_logger().drain())
         except Exception:
             pass
 
