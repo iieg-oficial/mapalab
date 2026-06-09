@@ -107,7 +107,7 @@ def _flush_sync(records: list[AccessRecord]) -> None:
     if not settings.MARIACHI_BACKEND_URL or not settings.MAPALAB_INTERNAL_TOKEN:
         Logger.warning('access_logger.skip reason=no_config records=%d', len(records))
         return
-    url = f"{settings.MARIACHI_BACKEND_URL.rstrip('/')}/internal/mapalab/keys/accesos"
+    url = f"{settings.MARIACHI_BACKEND_URL.rstrip('/')}/api/administrador/internal/mapalab/keys/accesos"
     headers = {'X-Internal-Token': settings.MAPALAB_INTERNAL_TOKEN}
     body = {'items': [r.to_payload() for r in records]}
     try:

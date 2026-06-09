@@ -1,6 +1,6 @@
 # MCP server
 
-Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`mapalab-mcp`, separado del backend principal desde 1.35.0) que expone **18 tools** sobre el catálogo de capas, metadata, periodicidad, municipios de Jalisco, mediciones geodésicas y creación de shares del visor. Pensado para clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes como IGIBot) que necesitan consultar o entregar mapas como respuesta.
+Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`mapalab-mcp`, separado del backend principal desde 1.35.0) que expone **13 tools** sobre el catálogo de capas, metadata, periodicidad, municipios de Jalisco, mediciones geodésicas y creación de shares del visor. Pensado para clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes como IGIBot) que necesitan consultar o entregar mapas como respuesta.
 
 ## Por qué un container dedicado
 
@@ -11,13 +11,13 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`m
 
 ## Qué se expone y qué no
 
-18 tools (ver tabla completa más abajo en §Tools y su origen):
+13 tools (ver tabla completa más abajo en §Tools y su origen):
 
 | Origen | MCP | Razón |
 |---|---|---|
-| Endpoints REST de `metadata`, `periodicity`, `layers/{tree,initial-order,workspaces,search,resolve}` | **sí** (9 tools de lectura) | Lectura pura útil para agentes |
-| Endpoint REST `municipios/` (`list_municipios`, `resolve_municipios`, desde 1.48.x) | **sí** (2 tools de lectura) | Para que el agente mapee "Guadalajara, Zapopan" → claves INEGI y las pase a `create_*_share(municipios=...)` |
-| Lógica nueva (`query_wfs`, `search_by_theme`, `get_layer_stats`, `measure_geometry`, `create_single_share`, `create_swipe_share`, `compare_years`) | **sí** (4 lecturas + 3 writes, desde 1.44.0/1.70.0) | Tools manuales que reutilizan `share_service`, PostGIS y GeoServer WFS para que un agente entregue mapas interactivos. `create_*_share` desde 1.48.x aceptan `municipios={source, selected}` para activar el modo Vista por municipio en el share. |
+| Catálogo y metadata (`search_layers`, `get_layer_tree`, `get_initial_order`, `get_metadata`, `get_sources_batch`, `get_periodicity`) | **sí** (6 tools de lectura) | Lectura pura útil para agentes. `search_layers` también lista por tema; `get_layer_tree` incluye workspaces |
+| Municipios (`municipios`) | **sí** (1 tool de lectura) | Lista los 125 o filtra por nombre/clave → claves INEGI para `create_*_share(municipios=...)` |
+| Lógica nueva (`query_wfs`, `get_layer_stats`, `measure_geometry`, `create_single_share`, `create_swipe_share`, `compare_years`) | **sí** (3 lecturas + 3 writes) | Tools manuales que reutilizan `share_service`, PostGIS y GeoServer WFS para que un agente entregue mapas interactivos. `create_*_share` aceptan `municipios={source, selected}` para el modo Vista por municipio. |
 | `download` (CSV streaming) | **no** | Streams de `COPY TO STDOUT`; el formato de respuesta MCP no encaja con streaming |
 | `layers/{refresh-cache,invalidate-cache}` | **no** (removido en 1.48.1) | Requerían `X-Internal-Token` que el MCP no inyecta; siempre devolvían 401, eran ruido en `tools/list` |
 | `shares/{pin,unpin,pin-permanent}` | **no** | Writes administrativos con efectos sobre la BD, no encajan en el patrón del MCP público |
@@ -32,7 +32,7 @@ Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp`, separado del ba
 ```
 mapalab-mcp container (servers/mapalab.py)
 ├── FastMCP("mapalab")
-│   ├── @mcp.tool() search_layers, get_metadata, ...   (18 tools)
+│   ├── @mcp.tool() search_layers, get_metadata, ...   (13 tools)
 │   └── mcp_app = mcp.http_app(path='/mcp', stateless_http=True)
 │
 ├── _admin_app: FastAPI
@@ -55,28 +55,27 @@ backend container (backend/app/server.py)
 
 El `mapalab-mcp` reutiliza los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) — el codigo de `backend/app` se copia al container del MCP en build time. Sin duplicacion de logica, ambos containers leen del mismo schema `mapalab` en DataEngine.
 
-### Tools expuestos (18)
+### Tools expuestos (13)
+
+Convencion: **todos los tools que reciben una capa usan el `id` del visor** (el que devuelve `search_layers`). El workspace se resuelve solo desde el arbol; no hay que pasarlo.
 
 | Tool | Tipo | Razon |
 |---|---|---|
-| `search_layers` | Lectura | punto de entrada para resolver IDs por nombre |
-| `resolve_layer_ref` | Lectura | slug/alias/id → capa |
-| `get_layer_tree` | Lectura | arbol completo |
+| `search_layers` | Lectura | punto de entrada: busca por texto/id/slug y/o por `theme`. Absorbe los antiguos `search_by_theme` y `resolve_layer_ref` |
+| `get_layer_tree` | Lectura | arbol completo + `workspaces` en la misma respuesta |
 | `get_initial_order` | Lectura | capas activas al cargar |
-| `get_workspaces` | Lectura | alias ↔ workspace real |
-| `get_metadata` | Lectura | descripcion, fuentes, downloadable |
-| `get_sources_batch` | Lectura | fuentes de varias capas |
-| `get_periodicity` | Lectura | fechas de capa temporal |
-| `get_periodicities_batch` | Lectura | periodicidad de varias capas |
-| `list_municipios` | Lectura | 125 municipios de Jalisco con clave INEGI |
-| `resolve_municipios` | Lectura | nombre/clave parcial → matches de municipio |
-| `measure_geometry` | Lectura | calcula longitud/area geodesica con PostGIS |
-| `query_wfs` | Lectura (desde 1.70.0) | consulta features WFS de una capa del visor con CQL opcional |
-| `compare_years` | Write (desde 1.70.0) | atajo swipe A|B con filtros de año y municipio |
-| `search_by_theme` | Lectura (desde 1.70.0) | lista capas de un tema del visor |
-| `get_layer_stats` | Lectura (desde 1.70.0) | numeralia precalculada de una capa |
-| `create_single_share` | **Write** | crea un share del visor (single) y devuelve `{id, url, embed_html}`. Idempotente (hash determinista del payload). |
-| `create_swipe_share` | **Write** | crea un share en modo swipe (comparacion A\|B). Idempotente. |
+| `get_metadata` | Lectura | descripcion, fuentes, downloadable (solo `id`) |
+| `get_sources_batch` | Lectura | fuentes de varias capas (ids separados por coma) |
+| `get_periodicity` | Lectura | fechas de 1 o N capas temporales. Absorbe el antiguo `get_periodicities_batch` |
+| `measure_geometry` | Lectura | longitud/area geodesica con PostGIS (cap 2000 coords) |
+| `query_wfs` | Lectura | features WFS de una capa con CQL opcional |
+| `municipios` | Lectura | lista los 125 o busca por nombre/clave. Absorbe `list_municipios` + `resolve_municipios` |
+| `create_single_share` | **Write** | crea un share single y devuelve `{id, url, embed_html}`. Idempotente |
+| `create_swipe_share` | **Write** | crea un share swipe (comparacion A\|B). Idempotente |
+| `compare_years` | **Write** | atajo swipe A\|B de una capa entre dos años + municipio opcional. Idempotente |
+| `get_layer_stats` | Lectura | numeralia precalculada de una capa |
+
+**Consolidacion de tools:** de 18 → 13 tools. `search_by_theme` y `resolve_layer_ref` se fusionaron en `search_layers` (params `theme`/`query`); `get_periodicities_batch` en `get_periodicity` (acepta 1 o N); `list_municipios` + `resolve_municipios` en `municipios(query?)`; `get_workspaces` se eliminó y ahora va dentro de `get_layer_tree`. Identificadores homologados al `id` del visor.
 
 Los tools de invalidacion de cache (`refresh_layer_tree_cache`, `invalidate_layer_tree_memory_cache`) **quedan fuera del MCP desde 1.45.2**: los endpoints REST equivalentes requieren `X-Internal-Token` que el MCP no inyecta, asi que en la practica siempre devolvian 401 — eran ruido en `tools/list`. Mariachi sigue invocando los REST directos desde `iieg-network`. Los `shares` de fan-out admin (`pin_share_permanent`, etc.) tambien quedan fuera. Los `create_*_share` y `measure_geometry` (v1.44.0) son writes intencionales, disenados para que un agente conversacional como [IGIBot](https://igibot.jalisco.gob.mx) entregue mapas interactivos como resultado de su razonamiento.
 
@@ -142,28 +141,23 @@ El gateway-hub no necesita un `location` específico para `/mapalab/mcp/`: cae b
 
 ## Tools y su origen
 
-Los 18 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). Wrappers delgados sobre lógica del backend; los de share/medición/municipios reutilizan helpers de `servers/share_tools.py`. Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función.
+Los 13 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). Wrappers delgados sobre lógica del backend; los de share/medición/municipios reutilizan helpers de `servers/share_tools.py`. Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función.
 
 | Tool | Origen del código | Qué hace |
 |---|---|---|
-| `search_layers` | `app.repositories.LayersRepository.search_layers` + cache del árbol | Búsqueda por label/tags/id — devuelve **label + path jerárquico** |
-| `resolve_layer_ref` | `LayersRepository.find_layer_by_slug_or_alias` | Slug/alias/id → capa |
-| `get_layer_tree` | `app.services.layer_tree_service.get_cached_state` | Árbol jerárquico completo del visor |
+| `search_layers` | `LayersRepository.search_layers` + `find_layer_by_slug_or_alias` + `search_by_theme` sobre el árbol | Busca por texto/id/slug (`query`) y/o lista un tema (`theme`). Devuelve `{id, label, slug, workspace, path}` |
+| `get_layer_tree` | `app.services.layer_tree_service.get_cached_state` | Árbol jerárquico completo **+ `workspaces`** en la misma respuesta |
 | `get_initial_order` | `get_cached_state['initial_order']` | IDs activos al cargar el visor |
-| `get_workspaces` | `get_cached_state['workspaces']` | Workspaces con alias + schema |
-| `get_metadata` | `app.services.layer_metadata_service.get_metadata_response` | Metadata completa de una capa |
-| `get_sources_batch` | `layer_metadata_service.get_sources_batch` | Fuentes de varias capas en lote |
-| `get_periodicity` | `app.services.PeriodicityService.get_periodicity` | Fechas year/month/day de una capa temporal |
-| `get_periodicities_batch` | `PeriodicityService.get_periodicities_batch` | Periodicidad de varias capas |
-| `list_municipios` | `app.repositories.MunicipiosRepository.list_all` (vista materializada `mapalab.municipios`) | Lista los 125 municipios de Jalisco con `{clave, nombre, region, areaKm2, areaHa}` |
-| `resolve_municipios` | Substring case-insensitive sobre `MunicipiosRepository.list_all` | Mapea nombre o clave parcial → matches. Útil para "Guadalajara y Zapopan" → `["14039", "14120"]` |
-| `measure_geometry` | `servers/share_tools.py::measure_geometry` (PostGIS `ST_Length`/`ST_Area::geography`) | Longitud o área geodésica de GeoJSON |
-| `query_wfs` | `servers/share_tools.py::query_wfs` (GeoServer WFS GetFeature) | Features de una capa del visor con CQL opcional. Sanitiza SQLi, timeout 120s, solo capas publicadas en el árbol |
-| `compare_years` | `servers/share_tools.py::compare_years` | Atajo swipe comparativo de dos años con filtro de municipio opcional |
-| `search_by_theme` | `servers/share_tools.py::search_by_theme` | Lista capas hoja de un tema del visor (p. ej. "seguridad") |
-| `get_layer_stats` | `servers/share_tools.py::get_layer_stats` | Numeralia de `mapalab.layer_stats` (totales, ranking); vacía si no hay datos |
+| `get_metadata` | `layer_metadata_service.get_metadata_response` (workspace resuelto desde el árbol por `id`) | Metadata completa de una capa |
+| `get_sources_batch` | `layer_metadata_service.get_sources_batch` (ids → `alias:id` vía `_to_layer_keys`) | Fuentes de varias capas en lote |
+| `get_periodicity` | `PeriodicityService.get_periodicities_batch` (1 o N ids, re-keyed al `id`) | Fechas year/month/day de capas temporales |
+| `measure_geometry` | `servers/share_tools.py::measure_geometry` (PostGIS `ST_Length`/`ST_Area::geography`) | Longitud o área geodésica de GeoJSON (cap 2000 coords + `statement_timeout`) |
+| `query_wfs` | `servers/share_tools.py::query_wfs` (GeoServer WFS GetFeature) | Features de una capa con CQL opcional. Workspace resuelto por `id`. Sanitiza SQLi, solo capas del árbol |
+| `municipios` | `MunicipiosRepository.list_all` (todos) o substring (con `query`) | Lista los 125 municipios o filtra por nombre/clave. Devuelve `{items, count}` |
 | `create_single_share` | `servers/share_tools.py::create_single_share` (reutiliza `share_service.validate_payload` + `ShareRepository.upsert`) | Crea share `kind=single` y devuelve `{id, url, embed_html}`. Acepta `annotations` y `municipios={source, selected}` |
-| `create_swipe_share` | `servers/share_tools.py::create_swipe_share` | Crea share `kind=swipe` para comparación A\|B. `municipios` aplica a ambos paneles (estado compartido) |
+| `create_swipe_share` | `servers/share_tools.py::create_swipe_share` | Crea share `kind=swipe` para comparación A\|B. `municipios` aplica a ambos paneles |
+| `compare_years` | `servers/share_tools.py::compare_years` | Atajo swipe comparativo de dos años con filtro de municipio opcional |
+| `get_layer_stats` | `servers/share_tools.py::get_layer_stats` | Numeralia de `mapalab.layer_stats` (totales, ranking); vacía si no hay datos |
 
 ### Modo Vista por municipio en shares
 
@@ -172,7 +166,7 @@ Los 18 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). Wrappers delg
 Patrón típico desde un agente:
 
 ```
-1. resolve_municipios("guadalajara, zapopan") → [{clave:"14039",nombre:"Guadalajara"}, {clave:"14120",nombre:"Zapopan"}]
+1. municipios(query="guadalajara") → [{clave:"14039",nombre:"Guadalajara"}, {clave:"14120",nombre:"Zapopan"}]
 2. create_single_share(
        layers=["tasa_homicidio_doloso"],
        view={zoom:11, lat:20.66, lon:-103.35},
@@ -245,25 +239,18 @@ Util para que el bot responda preguntas tipo "cuanta superficie tiene el municip
 
 El usuario ve un mapa interactivo embebido donde puede activar la barra de mediciones del visor (mapalab 1.43.0+) y guardar su propia copia como share desde el boton "Compartir".
 
-## Identificadores aceptados (v1.40.1+)
+## Identificadores: solo el `id` del visor
 
-Tres tools comparten el mismo problema: el agente recibe un `id` de capa al llamar `search_layers` (p. ej. `tasa_homicidio_doloso`), pero originalmente `get_metadata`, `resolve_layer_ref` y `get_periodicity` esperaban valores distintos al `id` del visor. Esto rompía el flujo natural `search_layers → get_metadata` con respuestas vacías o 404.
+**Regla única:** todo tool que recibe una capa usa el `id` que devuelve `search_layers` (p. ej. `homicidio_doloso`). El agente nunca necesita el `geoserver_workspace`/`geoserver_layer` ni armar `ws:layer` — el MCP lo resuelve solo desde el árbol. Esto simplifica el flujo `search_layers → get_metadata/get_periodicity/query_wfs/get_layer_stats` y es clave para agentes pequeños (p. ej. un Qwen 3B self-host).
 
-Desde **1.40.1** los tres tools aceptan tanto el identificador del visor (`Layer.id`) como el del backend (`geoserver_layer` / slug / alias). Sin breaking change: si ya pasabas el valor original, sigue funcionando.
+Cómo se resuelve internamente:
 
-| Tool | Antes esperaba | Ahora también acepta |
-|---|---|---|
-| `get_metadata(workspace, layer)` | `workspace=<geoserver_workspace>`, `layer=<geoserver_layer>` (p. ej. `seguridad_y_proteccion_ciudadana`, `datos_delitos_homicidio_doloso_secretariado`) | `workspace=<alias>`, `layer=<Layer.id>` (p. ej. `seguridad`, `tasa_homicidio_doloso`) |
-| `resolve_layer_ref(ref)` | `Layer.slug` o `LayerAlias.alias` | `Layer.id` como fallback final |
-| `get_periodicity(workspace, layer)` | `{geoserver_workspace}:{geoserver_layer}` literal | resuelve alias → schema y `Layer.id` → `geoserver_layer` |
+- `servers/mapalab.py::_resolve_layer(id)` — del árbol (`get_cached_state`) obtiene `workspace` (alias), `geoserver_workspace` y `geoserver_layer` de una capa por su `id`.
+- `servers/mapalab.py::_to_layer_keys(ids)` — convierte `"id1,id2"` a `["alias:id1", "alias:id2"]` para los servicios batch (`get_sources_batch`, `get_periodicity`). Un token que ya trae `:` se respeta.
+- `get_metadata` y `query_wfs` reciben solo `layer=<id>` (con `workspace` opcional como override); el workspace se deriva del árbol.
+- `get_periodicity` acepta uno o varios ids separados por coma y re-keya la respuesta al `id` (no a `alias:id`).
 
-La resolución vive en helpers compartidos:
-
-- `backend/app/services/layer_metadata_service.py::_resolve_layer_key` — workspace alias → `geoserver_workspace` y, si `(workspace_alias, id)` matchea una fila en `mapalab.layers`, usa su `geoserver_layer`.
-- `backend/app/services/periodicity_service.py::_resolve_layer_key` — análogo pero contra `db_schema` (PostGIS) en lugar de `geoserver_workspace`.
-- `backend/app/repositories/layers_repository.py::find_layer_by_slug_or_alias` — busca `Layer.slug`, luego `LayerAlias`, luego `Layer.id` como último intento.
-
-`get_periodicities_batch` resuelve cada par `ws:layer` antes de consultar `layer_periodicity`, así un agente puede pasar `seguridad:tasa_homicidio_doloso` y recibir la respuesta sin saber el schema real (`seguridad_y_proteccion_ciudadana:datos_delitos_homicidio_doloso_secretariado`).
+**Compatibilidad:** los tools que antes pedían `workspace` mantienen el parámetro como override opcional, pero pasar solo el `id` es el camino recomendado y documentado.
 
 ## Cómo probar
 
@@ -288,7 +275,7 @@ async def main():
         for t in tools:
             print(' -', t.name)
 
-        result = await client.call_tool('get_workspaces', {})
+        result = await client.call_tool('get_layer_tree', {})
         print(json.dumps(result.data, indent=2)[:500])
 
 asyncio.run(main())
@@ -357,7 +344,7 @@ curl -s -X POST http://localhost:3006/mcp/ \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
 
-Devuelve los 18 tools registrados con su `name`, `description` y `inputSchema`.
+Devuelve los 13 tools registrados con su `name`, `description` y `inputSchema`.
 
 ### curl (`tools/call`) — pruebas rápidas de los tools nuevos
 
@@ -481,7 +468,7 @@ Los tools individuales son útiles, pero el valor real para un agente está en e
 - **Basemaps válidos**: `"voyager"` (recomendado) o `"position"`. No uses `"osm"` — no existe en el catálogo.
 - **Filtros de fecha**: usa `get_periodicity` para saber qué años hay. El CQL para año `AAAA` es: `"(fecha >= 'AAAA-01-01' AND fecha < 'AAAA+1-01-01')"`. Se pasa como `filters: {"date": "..."}` en el objeto de capa.
 - **Anotaciones**: tipos `LineString`, `Polygon`, `Emoji`, `Text`. Para emoji usa `type: "Emoji"` con `textLabel: "📍"`. Las anotaciones en swipe son globales (ambos lados).
-- **Municipios**: `resolve_municipios("Guadalajara")` → clave INEGI. Pasa `municipios: {source: "iieg", selected: ["14039"]}`.
+- **Municipios**: `municipios(query="Guadalajara")` → clave INEGI. Pasa `municipios: {source: "iieg", selected: ["14039"]}`.
 - **Estructura de capa en share**: acepta string (ID) o objeto `{slug, visible?, opacity?, filters?}`.
 - **Medición previa**: usa `measure_geometry` antes de crear el share para reportar área/longitud en texto.
 
@@ -492,7 +479,7 @@ Los tools individuales son útiles, pero el valor real para un agente está en e
 ```
 1. search_layers(q="homicidio") → id "homicidio_doloso"
 2. get_periodicity(workspace="seguridad", layer="homicidio_doloso") → años 2017-2026
-3. resolve_municipios("Guadalajara") → clave "14039"
+3. municipios(query="Guadalajara") → clave "14039"
 4. measure_geometry(poligono aproximado de GDL) → "239 km²"
 5. create_single_share(
      layers=[{slug:"homicidio_doloso", filters:{date:"(fecha >= '2025-01-01' AND fecha < '2026-01-01')"}}],
@@ -759,7 +746,7 @@ Authorization: Bearer mk_pub_...        # (o mk_priv_..., o X-API-Key: mk_...)
 La key se valida con `app.services.api_key_validator.validate_api_key(key, origin=None, ip=...)` — el mismo validador que ya usa el widget embebible, que consulta a mariachi (`/internal/mapalab/keys/validate`) y cachea el resultado (`EMBED_KEY_CACHE_TTL_SECONDS`, 300 s por defecto). La validación corre en un threadpool (`asyncio.to_thread`) para no bloquear el event loop.
 
 - Sin key o key inválida → **401** con `WWW-Authenticate: Bearer realm="mapalab-mcp"` y un mensaje que explica cómo obtener una.
-- El gate cubre lectura **y** escritura (decisión: cerrar también la fuga de nombres internos de workspaces/schemas vía `get_workspaces`).
+- El gate cubre lectura **y** escritura (decisión: cerrar también la fuga de nombres internos de workspaces/schemas vía `get_layer_tree`).
 - `/health`, `/` y `/metrics` quedan fuera del prefijo `/mcp`, así que el healthcheck del container sigue abierto.
 - Toggle `MCP_AUTH_ENABLED` (default `true`). En `false` el middleware deja pasar todo — útil para dev local sin mariachi.
 
@@ -887,12 +874,12 @@ Requisitos del MCP como *Resource Server*:
 - [ ] Mapear identidad OAuth → cuota. Decidir si la cuota sigue por "key" (ahora por `sub`/cliente OAuth) reutilizando `QuotaTracker`.
 - [ ] Validación del header `Origin` en las requests a `/mcp`.
 
-### Fase 2 — Anotaciones de los 18 tools
+### Fase 2 — Anotaciones de los 13 tools
 
 El directorio exige que cada tool declare metadata (hoy `servers/mapalab.py` solo tiene docstrings):
 
 - [ ] `title` legible por tool.
-- [ ] `readOnlyHint=True` en los 15 de lectura.
+- [ ] `readOnlyHint=True` en los 10 de lectura.
 - [ ] `readOnlyHint=False` (o `destructiveHint`) en los 3 writes (`create_single_share`, `create_swipe_share`, `compare_years`).
 - [ ] En FastMCP: `@mcp.tool(annotations=ToolAnnotations(title=..., readOnlyHint=True))`.
 
