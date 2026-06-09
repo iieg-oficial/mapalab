@@ -7,6 +7,10 @@ stateless_http=True.
 
 Reutiliza los servicios y repositorios del backend principal de MapaLab
 (montados en /app/app/) en lugar de duplicar logica.
+
+Convencion de identificadores: todos los tools que reciben una capa usan el
+`id` del visor (el que devuelve search_layers). El workspace se resuelve solo
+desde el arbol; nunca hace falta pasarlo.
 """
 from __future__ import annotations
 
@@ -74,136 +78,179 @@ def _flatten_tree(tree: list[dict]) -> dict[str, dict]:
     return index
 
 
+def _resolve_layer(layer_id: str) -> Optional[dict]:
+    entry = _flatten_tree(get_cached_state()['tree']).get(layer_id)
+    if not entry:
+        return None
+    node = entry['node']
+    wms = node.get('wmsConfig') or {}
+    return {
+        'id': layer_id,
+        'label': node.get('label'),
+        'workspace': wms.get('workspace'),
+        'geoserver_workspace': wms.get('geoserverWorkspace'),
+        'geoserver_layer': wms.get('geoserverLayer'),
+        'path': ' > '.join(entry['path'][:-1]) if entry['path'][:-1] else None,
+        'node': node,
+    }
+
+
+def _to_layer_keys(layers: str) -> list[str]:
+    keys: list[str] = []
+    for token in (layers or '').split(','):
+        token = token.strip()
+        if not token:
+            continue
+        if ':' in token:
+            keys.append(token)
+            continue
+        info = _resolve_layer(token)
+        keys.append(f"{info['workspace']}:{token}" if info and info.get('workspace') else token)
+    return list(dict.fromkeys(keys))
+
+
 @mcp.tool()
 def search_layers(
-    q: str = Field(description='Texto a buscar en label, tags o id de la capa'),
-    limit: int = Field(default=50, ge=1, le=200, description='Maximo de resultados (1-200)'),
+    query: str = Field(default='', description="Texto, id o slug a buscar. Ej: 'homicidio', 'poblacion', 'tasa_homicidio_doloso'. Dejar vacio si solo se filtra por theme."),
+    theme: str = Field(default='', description="Area tematica del visor para listar todas sus capas. Ej: 'seguridad', 'salud', 'economia', 'demografia'. Dejar vacio para buscar en todos los temas."),
+    limit: int = Field(default=20, ge=1, le=200, description='Maximo de resultados a devolver.'),
 ):
-    """Busca capas por texto en label, tags o id.
+    """Encuentra capas del visor. SIEMPRE empieza por aqui: casi todos los demas tools necesitan el `id` que este devuelve.
 
-    Devuelve hasta `limit` resultados ordenados por relevancia. Cada resultado
-    incluye el `label` (nombre que ve el usuario en el menu), el `path`
-    jerarquico ('Tema > Categoria > Subcategoria') para ubicar la capa en el
-    arbol, `id`, `slug`, `workspace`, `wmsConfig` y `searchMeta`.
+    Acepta tres modos (combinables):
+    - por texto/id/slug en `query`
+    - por area tematica completa en `theme`
+    - ambos: filtra las capas del tema por el texto
 
-    Es el punto de entrada recomendado para resolver el ID de una capa a partir
-    del nombre que conoce el usuario antes de llamar a get_metadata o
-    get_periodicity.
+    Devuelve una lista de objetos {id, label, slug, workspace, path}. Usa el
+    campo `id` en get_metadata, get_periodicity, query_wfs, get_layer_stats,
+    create_single_share, create_swipe_share y compare_years.
+
+    Ejemplos:
+    1) Por nombre:        search_layers(query="homicidio")
+    2) Tema completo:     search_layers(theme="seguridad")
+    3) Tema + filtro:     search_layers(theme="salud", query="mortalidad")
     """
-    state = get_cached_state()
-    index = _flatten_tree(state['tree'])
+    q = (query or '').strip()
+    th = (theme or '').strip()
+    if not q and not th:
+        return {'error': "Pasa 'query' (texto o id) o 'theme' (area). Ej: search_layers(query=\"homicidio\") o search_layers(theme=\"seguridad\")."}
 
-    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
-    with conn.get_session() as session:
-        rows = LayersRepository.search_layers(session, q, limit=limit)
+    index = _flatten_tree(get_cached_state()['tree'])
+    results: list[dict] = []
+    seen: set[str] = set()
 
-    results = []
-    for row in rows:
-        entry = index.get(row.id)
-        if entry is None:
-            continue
+    def add(layer_id: str) -> None:
+        if layer_id in seen:
+            return
+        entry = index.get(layer_id)
+        if not entry:
+            return
         node = entry['node']
+        wms = node.get('wmsConfig') or {}
         path = entry['path'][:-1]
+        seen.add(layer_id)
         results.append({
-            'id': row.id,
-            'slug': row.slug,
-            'label': row.label,
-            'workspace': row.workspace_alias,
+            'id': layer_id,
+            'label': node.get('label'),
+            'slug': node.get('slug'),
+            'workspace': wms.get('workspace'),
             'path': ' > '.join(path) if path else None,
-            'wmsConfig': node.get('wmsConfig'),
-            'searchMeta': node.get('searchMeta'),
         })
-    return results
 
+    if th:
+        needle = q.lower()
+        for item in _search_by_theme(theme=th, limit=200):
+            haystack = f"{item.get('label', '')} {item.get('id', '')}".lower()
+            if not needle or needle in haystack:
+                add(item['id'])
+    else:
+        conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+        with conn.get_session() as session:
+            for row in LayersRepository.search_layers(session, q, limit=limit):
+                add(row.id)
+            ref = LayersRepository.find_layer_by_slug_or_alias(session, q)
+            if ref is not None:
+                add(ref.id)
 
-@mcp.tool()
-def resolve_layer_ref(
-    ref: str = Field(description='Slug o alias publico estable de la capa'),
-):
-    """Resuelve un slug o alias publico a una capa concreta.
-
-    Devuelve `id`, `slug`, `label` y `workspace`. Pensado para resolver URLs
-    cortas y referencias externas sin tener que cargar el arbol completo.
-    Devuelve None si no existe.
-    """
-    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
-    with conn.get_session() as session:
-        layer = LayersRepository.find_layer_by_slug_or_alias(session, ref)
-        if layer is None:
-            return None
-        return {
-            'id': layer.id,
-            'slug': layer.slug,
-            'label': layer.label,
-            'workspace': layer.workspace_alias,
-        }
+    return results[:limit]
 
 
 @mcp.tool()
 def get_layer_tree():
-    """Arbol jerarquico completo de capas del visor.
+    """Devuelve el catalogo completo del visor: el arbol jerarquico y la lista de workspaces.
 
-    Devuelve la estructura completa: temas raiz → categorias expandibles →
-    labels de seccion → capas hoja con `wmsConfig`. Es el catalogo de
-    referencia para resolver IDs, construir UI y entender la estructura del
-    visor.
+    Usalo cuando necesites la estructura entera (temas → categorias → capas
+    hoja con `wmsConfig`) o el mapeo alias↔workspace, no para buscar una capa
+    suelta (para eso usa search_layers).
 
-    La cache materializada se refresca diariamente a las 04:00; la respuesta
-    incluye el `etag` para deteccion de cambios.
+    Devuelve {tree, workspaces, etag}. La cache se refresca a diario (04:00);
+    el `etag` sirve para detectar cambios.
+
+    Ejemplos:
+    1) Arbol completo:      get_layer_tree()
+    2) Ver workspaces:      get_layer_tree() -> campo "workspaces"
+    3) Cache-busting:       comparar el "etag" entre dos llamadas
     """
     state = get_cached_state()
-    return {'tree': state['tree'], 'etag': state['etag']}
+    return {'tree': state['tree'], 'workspaces': state['workspaces'], 'etag': state['etag']}
 
 
 @mcp.tool()
 def get_initial_order():
-    """IDs de las capas activas al cargar el visor sin parametros en la URL."""
-    state = get_cached_state()
-    return state['initial_order']
+    """Devuelve los `id` de las capas que el visor activa al cargar sin parametros.
 
+    Sirve para reproducir la vista por defecto del visor.
 
-@mcp.tool()
-def get_workspaces():
-    """Workspaces de GeoServer con sus alias.
-
-    Devuelve la lista con `alias` publico, `geoserver_workspace` real y
-    `db_schema` correspondiente en DataEngine. Util para traducir entre el
-    alias corto (p. ej. 'seguridad') y el nombre completo de GeoServer
-    ('seguridad_y_proteccion_ciudadana').
+    Ejemplos:
+    1) Capas iniciales:     get_initial_order()
+    2) Cuantas hay:         len(get_initial_order())
+    3) Primera capa activa: get_initial_order()[0]
     """
-    state = get_cached_state()
-    return state['workspaces']
+    return get_cached_state()['initial_order']
 
 
 @mcp.tool()
 def get_metadata(
-    workspace: str = Field(description='Alias del workspace (p. ej. seguridad)'),
-    layer: str = Field(description='Nombre de la capa dentro del workspace'),
+    layer: str = Field(description="Id de la capa (el que devuelve search_layers). Ej: 'homicidio_doloso'."),
+    workspace: str = Field(default='', description='Opcional. Solo si quieres forzar un workspace distinto al del arbol; normalmente se deja vacio.'),
 ):
-    """Metadata completa de una capa.
+    """Devuelve la metadata completa de una capa: descripcion, metodologia, fuentes, periodicidad, si es descargable y URLs de archivos en Acervo.
 
-    Devuelve descripcion, metodologia, fuentes, periodicidad, flag de
-    descargable y URLs de los archivos de metadatos en Acervo (TXT/XLSX).
-    Usa el alias corto del workspace (p. ej. 'seguridad').
+    Pasa solo el `id` de search_layers; el workspace se resuelve solo.
+
+    Ejemplos:
+    1) Metadata de una capa:   get_metadata(layer="homicidio_doloso")
+    2) Tras buscar:            search_layers(query="poblacion") -> get_metadata(layer="poblacion")
+    3) Forzar workspace:       get_metadata(layer="homicidio_doloso", workspace="seguridad")
     """
-    modern = layer_metadata_service.get_metadata_response(workspace, layer, _acervo_base())
-    if modern:
-        return [modern]
-    return []
+    ws = (workspace or '').strip()
+    if not ws:
+        info = _resolve_layer(layer)
+        ws = info['workspace'] if info and info.get('workspace') else ''
+    if not ws:
+        return {'error': f"No encontre la capa '{layer}'. Usa search_layers para obtener un id valido."}
+    modern = layer_metadata_service.get_metadata_response(ws, layer, _acervo_base())
+    return [modern] if modern else []
 
 
 @mcp.tool()
 def get_sources_batch(
-    layers: str = Field(description="Capas separadas por coma en formato 'workspace:layer'"),
+    layers: str = Field(description="Uno o varios id de capa separados por coma. Ej: 'homicidio_doloso,poblacion'."),
 ):
-    """Fuentes (organismo, año, URL) de varias capas en lote.
+    """Devuelve las fuentes (organismo, anio, URL) de varias capas en una sola llamada.
 
-    Util para construir la atribucion de varias capas activas en una sola
-    llamada en lugar de ir una por una a get_metadata.
+    Mas eficiente que llamar get_metadata por cada capa cuando solo necesitas
+    la atribucion.
+
+    Ejemplos:
+    1) Una capa:     get_sources_batch(layers="homicidio_doloso")
+    2) Varias:       get_sources_batch(layers="homicidio_doloso,poblacion,tasa_violacion")
+    3) Atribucion de las capas activas: get_sources_batch(layers=",".join(get_initial_order()))
     """
-    layer_keys = list(dict.fromkeys(item.strip() for item in layers.split(',') if item.strip()))
+    keys = _to_layer_keys(layers)
     try:
-        return layer_metadata_service.get_sources_batch(layer_keys)
+        return layer_metadata_service.get_sources_batch(keys)
     except Exception as exc:
         Logger.error(f'get_sources_batch.error {exc}')
         return []
@@ -211,57 +258,122 @@ def get_sources_batch(
 
 @mcp.tool()
 def get_periodicity(
-    workspace: str = Field(description='Alias del workspace (p. ej. seguridad)'),
-    layer: str = Field(description='Nombre de la capa dentro del workspace'),
+    layers: str = Field(description="Uno o varios id de capa separados por coma. Ej: 'homicidio_doloso' o 'homicidio_doloso,tasa_feminicidio'."),
 ):
-    """Fechas disponibles year/month/day de una capa temporal.
+    """Devuelve las fechas disponibles de capas temporales, agrupadas year/month/day.
 
-    Devuelve la estructura jerarquica `{year: {month: [day, ...]}}`. Si la
-    capa no tiene dimension temporal devuelve `{}`.
+    Devuelve {periodicity: {id_capa: {year: {month: [day, ...]}}}}. Si una capa
+    no tiene dimension temporal, su entrada va vacia ({}).
 
-    Para usar los anios devueltos en un share, arma el filtro CQL asi:
-      filters: {"date": "(fecha >= 'AAAA-01-01' AND fecha < 'AAAA+1-01-01')"}
-    Pasa ese objeto en el campo `filters` del layer al llamar create_single_share
-    o create_swipe_share.
+    Para usar un anio en un share, arma el filtro CQL asi y pasalo en `filters`:
+      {"date": "(fecha >= 'AAAA-01-01' AND fecha < 'AAAA+1-01-01')"}
+
+    Ejemplos:
+    1) Una capa:    get_periodicity(layers="homicidio_doloso")
+    2) Varias:      get_periodicity(layers="homicidio_doloso,tasa_feminicidio")
+    3) Antes de un share temporal: get_periodicity(layers="precipitacion") para saber que meses existen
     """
-    result = PeriodicityService.get_periodicity(workspace, layer)
-    return {'periodicity': result}
+    keys = _to_layer_keys(layers)
+    if not keys:
+        return {'error': "Pasa al menos un id de capa. Ej: get_periodicity(layers=\"homicidio_doloso\")."}
+    raw = PeriodicityService.get_periodicities_batch(keys)
+    out = {key.split(':')[-1]: value for key, value in (raw or {}).items()}
+    return {'periodicity': out}
 
 
 @mcp.tool()
-def get_periodicities_batch(
-    layers: str = Field(description="Capas separadas por coma en formato 'workspace:layer'"),
+def measure_geometry(
+    geometry: dict = Field(description="Geometria GeoJSON en EPSG:4326 (lon,lat). type: LineString, Polygon o MultiPolygon. Maximo 2000 coordenadas."),
 ):
-    """Periodicidad de varias capas en una sola llamada."""
-    layer_keys = list(dict.fromkeys(item.strip() for item in layers.split(',') if item.strip()))
-    return PeriodicityService.get_periodicities_batch(layer_keys)
+    """Calcula la longitud (LineString) o el area (Polygon/MultiPolygon) geodesica real sobre el elipsoide WGS84.
+
+    Usa PostGIS ::geography, asi los metros / metros cuadrados son reales (no
+    proyectados). Devuelve {type, metric, value, unit, value_km|value_km2}.
+
+    Ejemplos:
+    1) Distancia entre 2 puntos: measure_geometry(geometry={"type":"LineString","coordinates":[[-103.35,20.67],[-103.41,20.72]]})
+    2) Area de un poligono:      measure_geometry(geometry={"type":"Polygon","coordinates":[[[-103.4,20.6],[-103.3,20.6],[-103.3,20.7],[-103.4,20.7],[-103.4,20.6]]]})
+    3) Area multi:               measure_geometry(geometry={"type":"MultiPolygon","coordinates":[...]})
+    """
+    try:
+        return _measure_geometry(geometry)
+    except ValueError as exc:
+        return {'error': str(exc)}
+
+
+@mcp.tool()
+def query_wfs(
+    layer: str = Field(description="Id de la capa (el que devuelve search_layers). Ej: 'homicidio_doloso'."),
+    cql_filter: Optional[str] = Field(default=None, description="Filtro CQL opcional. Ej: \"municipio = 14039\" o \"fecha >= '2025-08-01'\"."),
+    limit: int = Field(default=1000, ge=1, le=10000, description='Maximo de features a devolver (1-10000).'),
+    srs_name: Optional[str] = Field(default=None, description="SRS de salida. Usa 'EPSG:4326' para lat/lon (compatible con anotaciones de shares). Vacio = CRS nativo (EPSG:6368, metros)."),
+    workspace: str = Field(default='', description='Opcional. Normalmente se deja vacio; se resuelve desde el arbol.'),
+):
+    """Consulta los features (registros geograficos) reales de una capa del visor via WFS.
+
+    Devuelve GeoJSON con todas las propiedades de cada feature. Solo funciona
+    con capas publicadas en el visor. El CQL se sanitiza (se bloquean patrones
+    peligrosos). Usa srs_name="EPSG:4326" si vas a reusar las coordenadas como
+    anotaciones en un share.
+
+    Ejemplos:
+    1) Pocos features:        query_wfs(layer="homicidio_doloso", limit=5)
+    2) Filtrado por municipio: query_wfs(layer="homicidio_doloso", cql_filter="municipio = 14039")
+    3) En lat/lon:            query_wfs(layer="homicidio_doloso", limit=10, srs_name="EPSG:4326")
+    """
+    try:
+        return _query_wfs(layer=layer, cql_filter=cql_filter, limit=limit, srs_name=srs_name, workspace=(workspace or None))
+    except ValueError as exc:
+        return {'error': str(exc)}
+
+
+@mcp.tool()
+def municipios(
+    query: str = Field(default='', description="Texto o clave parcial a buscar. Ej: 'guadalajara', 'zapopan', '14'. Vacio = devuelve los 125 municipios."),
+    limit: int = Field(default=50, ge=1, le=200, description='Maximo de resultados cuando hay query.'),
+):
+    """Lista o busca municipios de Jalisco con su clave INEGI de 5 digitos.
+
+    Vacio devuelve los 125 municipios; con texto filtra por nombre o clave
+    (case-insensitive, substring). Las claves se usan en
+    create_single_share(municipios=...) y create_swipe_share(municipios=...).
+
+    Devuelve {items: [{clave, nombre, region, areaKm2, areaHa}], count}.
+
+    Ejemplos:
+    1) Todos:           municipios()
+    2) Por nombre:      municipios(query="guadalajara")
+    3) Por prefijo INEGI: municipios(query="140")
+    """
+    q = (query or '').strip()
+    if not q:
+        return _list_municipios()
+    matches = _resolve_municipios(query=q, limit=limit)
+    return {'items': matches, 'count': len(matches)}
 
 
 @mcp.tool()
 def create_single_share(
-    layers: list = Field(description='Capas a mostrar. Lista de IDs de capa (string) o de objetos {slug, visible?, opacity?, filters?}.'),
-    view: Optional[dict] = Field(default=None, description="Vista inicial del mapa: {zoom, lat, lon, rotation?}."),
-    basemap: Optional[str] = Field(default=None, description='Basemap inicial. Usa "voyager" (recomendado) o "position". No uses "osm" porque no existe en el catalogo.'),
-    selected: Optional[str] = Field(default=None, description='Slug/ID de la capa seleccionada para la simbologia.'),
-    annotations: Optional[list] = Field(default=None, description='Anotaciones (mediciones, textos, emojis) en GeoJSON EPSG:4326. Cada item: {id, type ("LineString"|"Polygon"|"Text"|"Emoji"), geometry, label?, value?, unit?, textLabel?, rotation?, size?, fillColor?, strokeColor?}. size=0.3 para texto pequeno, fillColor="#FF0000" para rojo, strokeColor="#000" para borde negro.'),
-    municipios: Optional[dict] = Field(default=None, description='Activa el modo Vista por municipio en el share. Formato: {source: "iieg"|"inegi", selected: ["14001", "14039", ...]}. Las claves se obtienen de list_municipios o resolve_municipios. Mascara visual + filtro CQL automatico en capas con municipioField.'),
+    layers: list = Field(description="Capas a mostrar. Lista de id (string) u objetos {slug, opacity?, visible?, filters?}. El 'slug' es el id de search_layers."),
+    view: Optional[dict] = Field(default=None, description="Vista inicial: {zoom, lat, lon, rotation?}."),
+    basemap: Optional[str] = Field(default=None, description="Basemap inicial: 'voyager' (recomendado) o 'position'. NO existe 'osm'."),
+    selected: Optional[str] = Field(default=None, description='Id de la capa seleccionada para mostrar su simbologia.'),
+    annotations: Optional[list] = Field(default=None, description="Anotaciones GeoJSON EPSG:4326. Cada item: {id, type ('LineString'|'Polygon'|'Text'|'Emoji'), geometry, label?, value?, unit?, textLabel?, size?, fillColor?, strokeColor?}."),
+    municipios: Optional[dict] = Field(default=None, description="Modo Vista por municipio: {source: 'iieg'|'inegi', selected: ['14039', ...]}. Las claves vienen del tool municipios."),
 ):
-    """Crea un share del visor con capas y opcionalmente anotaciones y filtro por municipio pre-cargados.
+    """Crea un mapa compartible (share) del visor y devuelve {id, kind, url, embed_html}.
 
-    Devuelve `{id, kind, url, embed_html}`. El `embed_html` es un snippet
-    `<iieg-mapalab share="...">` listo para pegar en cualquier sitio web que
-    cargue el widget de MapaLab. Es el camino recomendado para que un agente
-    entregue un mapa interactivo al usuario en lugar de solo describirlo.
+    Es el camino recomendado para ENTREGAR un mapa interactivo al usuario en
+    vez de solo describirlo. El `embed_html` es un snippet listo para pegar.
 
-    `annotations` permite pre-pintar lineas, poligonos, textos y emojis.
-    `municipios` activa el modo Vista por municipio (beta) que oculta el resto
-    del estado con una mascara y filtra automaticamente las capas activas que
-    soporten filtro por municipio.
-
-    FILTROS DE FECHA (filters): para capas temporales, pasa el filtro `date`
-    con CQL en el objeto de capa. El formato es:
+    Para filtrar por fecha, agrega `filters` al objeto de la capa:
       {"slug": "homicidio_doloso", "filters": {"date": "(fecha >= '2025-01-01' AND fecha < '2026-01-01')"}}
-    Usa get_periodicity(layer_id) primero para saber que anios estan disponibles.
+    (usa get_periodicity primero para saber que anios hay).
+
+    Ejemplos:
+    1) Una capa:        create_single_share(layers=["homicidio_doloso"], view={"zoom":9,"lat":20.6,"lon":-103.4})
+    2) Por municipio:   create_single_share(layers=["homicidio_doloso"], municipios={"source":"iieg","selected":["14039","14120"]})
+    3) Con anotacion:   create_single_share(layers=["homicidio_doloso"], annotations=[{"id":"a1","type":"Polygon","geometry":{...},"label":"Zona"}])
     """
     return _create_single_share(
         layers=layers,
@@ -275,27 +387,28 @@ def create_single_share(
 
 @mcp.tool()
 def create_swipe_share(
-    pane_a_layers: list = Field(description='Capas del lado A (lista de IDs o {slug, opacity?, filters?}).'),
-    pane_b_layers: list = Field(description='Capas del lado B (lista de IDs o {slug, opacity?, filters?}).'),
-    position: float = Field(default=0.5, ge=0.05, le=0.95, description='Posicion inicial del separador swipe (0=todo B, 1=todo A).'),
-    view: Optional[dict] = Field(default=None, description='Vista compartida entre los dos lados: {zoom, lat, lon}.'),
-    basemap: Optional[str] = Field(default=None, description='Basemap compartido entre A y B. Usa "voyager" (recomendado) o "position".'),
-    label_a: str = Field(default='A', description='Etiqueta del lado A (mostrada en la pildora del visor).'),
+    pane_a_layers: list = Field(description='Capas del lado A (lista de id u objetos {slug, opacity?, filters?}).'),
+    pane_b_layers: list = Field(description='Capas del lado B (lista de id u objetos {slug, opacity?, filters?}).'),
+    position: float = Field(default=0.5, ge=0.05, le=0.95, description='Posicion inicial del separador (0=todo B, 1=todo A).'),
+    view: Optional[dict] = Field(default=None, description='Vista compartida: {zoom, lat, lon}.'),
+    basemap: Optional[str] = Field(default=None, description="Basemap compartido: 'voyager' (recomendado) o 'position'."),
+    label_a: str = Field(default='A', description='Etiqueta del lado A.'),
     label_b: str = Field(default='B', description='Etiqueta del lado B.'),
-    annotations: Optional[list] = Field(default=None, description='Anotaciones globales del mapa (no por slot, visibles en ambos lados). GeoJSON EPSG:4326. Tipos: LineString, Polygon, Text, Emoji. Para emoji usa type="Emoji" con textLabel="📍".'),
-    municipios: Optional[dict] = Field(default=None, description='Modo Vista por municipio compartido entre A y B. {source: "iieg"|"inegi", selected: [claves]}.'),
+    annotations: Optional[list] = Field(default=None, description='Anotaciones globales (visibles en ambos lados). GeoJSON EPSG:4326.'),
+    municipios: Optional[dict] = Field(default=None, description="Modo Vista por municipio compartido: {source, selected}."),
 ):
-    """Crea un share del visor en modo swipe (comparacion A|B).
+    """Crea un mapa comparativo A|B (swipe) y devuelve {id, kind, url, embed_html}.
 
-    Devuelve `{id, kind, url, embed_html}`. El visor abre con la barra
-    divisora arrastrable y cada lado renderiza su set de capas. Util para
-    comparar fenomenos lado a lado (p. ej. delitos vs poblacion, antes vs
-    despues). `municipios` aplica la mascara visual y el filtro CQL a ambos
-    paneles (es estado compartido, no por slot).
+    El visor abre con una barra arrastrable: cada lado renderiza su set de
+    capas. Util para comparar dos fenomenos o dos estados. Las anotaciones y el
+    modo municipio son globales (se aplican a ambos lados).
 
-    Para filtrar por fecha en cada lado, usa el mismo formato que
-    create_single_share: {slug, filters: {date: "(fecha >= '2025-01-01' AND fecha < '2026-01-01')"}}.
-    Las anotaciones son globales: se pintan sobre AMBOS lados del swipe.
+    Para comparar la MISMA capa en dos anios, usa mejor compare_years.
+
+    Ejemplos:
+    1) Dos capas:       create_swipe_share(pane_a_layers=["homicidio_doloso"], pane_b_layers=["poblacion"], label_a="Homicidio", label_b="Poblacion")
+    2) Separador a 30%: create_swipe_share(pane_a_layers=["a"], pane_b_layers=["b"], position=0.3)
+    3) Por municipio:   create_swipe_share(pane_a_layers=["a"], pane_b_layers=["b"], municipios={"source":"iieg","selected":["14039"]})
     """
     return _create_swipe_share(
         pane_a_layers=pane_a_layers,
@@ -311,92 +424,24 @@ def create_swipe_share(
 
 
 @mcp.tool()
-def list_municipios():
-    """Lista los 125 municipios de Jalisco con su clave INEGI y nombre.
-
-    Devuelve `{items: [{clave, nombre, region, areaKm2, areaHa}], count}`. La
-    `clave` es el identificador INEGI de 5 digitos (los primeros 2 son '14'
-    para Jalisco). Usar como entrada para `create_single_share(municipios=...)`
-    o `create_swipe_share(municipios=...)`.
-    """
-    return _list_municipios()
-
-
-@mcp.tool()
-def resolve_municipios(
-    query: str = Field(description='Texto a buscar en el nombre o la clave del municipio (case-insensitive, substring).'),
-    limit: int = Field(default=10, ge=1, le=50, description='Maximo de resultados (1-50).'),
-):
-    """Busca municipios por nombre o clave parcial (case-insensitive substring).
-
-    Util para mapear "Guadalajara y Zapopan" -> [{clave: "14039", nombre: "Guadalajara"}, {clave: "14120", nombre: "Zapopan"}].
-    Devuelve hasta `limit` matches del listado completo.
-    """
-    return _resolve_municipios(query=query, limit=limit)
-
-
-@mcp.tool()
-def measure_geometry(
-    geometry: dict = Field(description='Geometria GeoJSON EPSG:4326. type debe ser LineString, Polygon o MultiPolygon.'),
-):
-    """Calcula longitud (LineString) o area (Polygon/MultiPolygon) geodesica.
-
-    Usa PostGIS `ST_Length`/`ST_Area` sobre `::geography`, asi el resultado es
-    en metros / metros cuadrados reales sobre el elipsoide WGS84 (no
-    proyectados). Devuelve `{type, metric, value, unit, value_km|value_km2}`.
-    """
-    try:
-        return _measure_geometry(geometry)
-    except ValueError as exc:
-        return {'error': str(exc)}
-
-
-@mcp.tool()
-def query_wfs(
-    workspace: str = Field(description='Alias del workspace (p. ej. seguridad)'),
-    layer: str = Field(description='ID de la capa en el visor (p. ej. homicidio_doloso)'),
-    cql_filter: Optional[str] = Field(default=None, description='Filtro CQL opcional. Ej: "municipio = 14039 AND fecha >= '"'"'2025-08-01'"'"'".'),
-    limit: int = Field(default=1000, ge=1, le=10000, description='Maximo de features a devolver (1-10000).'),
-    srs_name: Optional[str] = Field(default=None, description='SRS de salida (opcional). Usa "EPSG:4326" para lat/lon compatible con anotaciones de shares. Por defecto devuelve el CRS nativo de la capa (EPSG:6368).'),
-):
-    """Consulta features WFS de una capa del visor.
-
-    Devuelve el GeoJSON completo con todas las propiedades de cada feature.
-    Solo funciona con capas publicadas en el visor de MapaLab.
-
-    Usa srs_name="EPSG:4326" si necesitas las coordenadas en lat/lon para
-    usarlas como anotaciones en create_single_share o create_swipe_share.
-    Sin srs_name, las coordenadas vienen en el CRS nativo (EPSG:6368, metros).
-
-    El CQL se sanitiza: se bloquean patrones SQL peligrosos (UNION, SELECT,
-    DROP, etc.). Solo se permiten comparadores estandar (=, >, <, LIKE,
-    BETWEEN, AND, OR, NOT) y valores literales.
-    """
-    try:
-        return _query_wfs(
-            workspace=workspace,
-            layer=layer,
-            cql_filter=cql_filter,
-            limit=limit,
-            srs_name=srs_name,
-        )
-    except ValueError as exc:
-        return {'error': str(exc)}
-
-
-@mcp.tool()
 def compare_years(
-    layer: str = Field(description='ID de la capa en el visor (p. ej. homicidio_doloso)'),
-    year_a: str = Field(description='Primer año a comparar (p. ej. "2025")'),
-    year_b: str = Field(description='Segundo año a comparar (p. ej. "2024")'),
-    municipio: Optional[str] = Field(default=None, description='Nombre del municipio para filtrar (opcional). Ej: "Guadalajara".'),
-    view: Optional[dict] = Field(default=None, description='Vista inicial: {zoom, lat, lon}. Si se omite, usa el extent del municipio.'),
-    basemap: str = Field(default='voyager', description='Basemap: "voyager" o "position".'),
+    layer: str = Field(description="Id de la capa (el que devuelve search_layers). Ej: 'homicidio_doloso'."),
+    year_a: str = Field(description="Primer anio, 4 digitos. Ej: '2025'."),
+    year_b: str = Field(description="Segundo anio, 4 digitos. Ej: '2024'."),
+    municipio: Optional[str] = Field(default=None, description="Nombre del municipio para filtrar ambos lados (opcional). Ej: 'Guadalajara'."),
+    view: Optional[dict] = Field(default=None, description="Vista inicial: {zoom, lat, lon}."),
+    basemap: str = Field(default='voyager', description="Basemap: 'voyager' o 'position'."),
 ):
-    """Crea una comparativa swipe A|B de una capa entre dos años.
+    """Atajo: crea un swipe A|B de UNA capa comparando dos anios y devuelve {id, kind, url, embed_html}.
 
-    Atajo que encapsula resolve_municipios + create_swipe_share. Si se pasa
-    `municipio`, filtra ambos lados al municipio indicado.
+    Arma solo los filtros de fecha (que el agente suele equivocar) y, si das
+    `municipio`, lo resuelve y filtra ambos lados. Equivale a get_periodicity +
+    create_swipe_share pero en un paso.
+
+    Ejemplos:
+    1) Dos anios:        compare_years(layer="homicidio_doloso", year_a="2024", year_b="2023")
+    2) En un municipio:  compare_years(layer="homicidio_doloso", year_a="2024", year_b="2023", municipio="Guadalajara")
+    3) Vista fijada:     compare_years(layer="homicidio_doloso", year_a="2025", year_b="2024", view={"zoom":8,"lat":20.6,"lon":-103.4})
     """
     try:
         return _compare_years(
@@ -412,27 +457,19 @@ def compare_years(
 
 
 @mcp.tool()
-def search_by_theme(
-    theme: str = Field(description='Nombre o alias del tema (p. ej. "seguridad", "economia", "salud").'),
-    limit: int = Field(default=50, ge=1, le=200, description='Maximo de resultados.'),
-):
-    """Lista las capas de un tema del visor.
-
-    Devuelve id, label, slug y workspace de cada capa hoja del tema.
-    Util para que el agente explore un area tematica completa.
-    """
-    return _search_by_theme(theme=theme, limit=limit)
-
-
-@mcp.tool()
 def get_layer_stats(
-    layer: str = Field(description='ID de la capa en el visor (p. ej. homicidio_doloso)'),
+    layer: str = Field(description="Id de la capa (el que devuelve search_layers). Ej: 'homicidio_doloso'."),
 ):
-    """Numeralia precalculada de una capa: totales, promedios, ranking.
+    """Devuelve la numeralia precalculada de una capa: totales, promedios, ranking.
 
-    Los datos vienen de `mapalab.layer_stats` en DataEngine y se refrescan
-    diariamente. Devuelve `{layer_id, label, stats: [{label, value, unit?}]}`.
-    Si no hay datos para la capa, stats sera lista vacia.
+    Los datos vienen de mapalab.layer_stats (refresco diario). Devuelve
+    {layer_id, label, stats: [{label, value, unit?}]}. Si no hay datos, stats
+    es lista vacia.
+
+    Ejemplos:
+    1) Numeralia:       get_layer_stats(layer="homicidio_doloso")
+    2) Tras buscar:     search_layers(query="poblacion") -> get_layer_stats(layer="poblacion")
+    3) Solo totales:    get_layer_stats(layer="homicidio_doloso")["stats"]
     """
     try:
         return _get_layer_stats(layer=layer)
@@ -505,4 +542,3 @@ app.add_middleware(MCPAuthMiddleware, path_prefix='/mcp')
 
 if __name__ == "__main__":
     mcp.run()
-

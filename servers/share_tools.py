@@ -230,11 +230,11 @@ def _sanitize_cql(cql: str | None) -> str | None:
 
 
 def query_wfs(
-    workspace: str,
     layer: str,
     cql_filter: str | None = None,
     limit: int = 1000,
     srs_name: str | None = None,
+    workspace: str | None = None,
 ) -> dict:
     state = get_cached_state()
     tree = state['tree']
@@ -253,12 +253,15 @@ def query_wfs(
     if not node or not node.get('wmsConfig'):
         raise ValueError(f"Capa '{layer}' no encontrada en el arbol del visor")
 
-    ws_map = {w['alias']: w['geoserver_workspace'] for w in state.get('workspaces', [])}
-    gs_workspace = ws_map.get(workspace)
-    if not gs_workspace:
-        raise ValueError(f"Workspace '{workspace}' no encontrado")
-
     wms = node['wmsConfig']
+    ws_map = {w.get('alias'): w.get('geoserver_workspace') for w in state.get('workspaces', []) if w.get('alias')}
+    gs_workspace = (
+        ws_map.get(workspace) if workspace
+        else wms.get('geoserverWorkspace') or ws_map.get(wms.get('workspace'))
+    )
+    if not gs_workspace:
+        raise ValueError(f"No se pudo resolver el workspace de la capa '{layer}'")
+
     gs_layer = wms.get('layers') or wms.get('geoserverLayer') or layer
     if ':' not in gs_layer:
         gs_layer = f"{gs_workspace}:{gs_layer}"
