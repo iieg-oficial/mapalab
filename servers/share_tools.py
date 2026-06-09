@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import Any
+from typing import Any, Optional
 from urllib.parse import quote, urlencode
 
 from sqlalchemy import text
 
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
+from app.repositories.layers_repository import LayersRepository
 from app.repositories.share_repository import ShareRepository
 from app.utils.logger import Logger
 from app.services.share_service import (
@@ -19,6 +20,8 @@ from app.services.share_service import (
     hash_id,
     validate_payload,
 )
+from app.services.layer_tree_service import get_cached_state
+from app.config import settings
 
 _POSTGIS_STATEMENT_TIMEOUT_MS = 5000
 
@@ -78,11 +81,123 @@ def _normalize_municipios(municipios: dict | list | None) -> dict | None:
         return {"source": "iieg", "selected": [str(c) for c in municipios if c]}
     if isinstance(municipios, dict) and municipios.get("selected"):
         source = municipios.get("source") or "iieg"
+        if source not in ("iieg", "inegi"):
+            source = "iieg"
         selected = [str(c) for c in municipios["selected"] if c]
         if not selected:
             return None
         return {"source": source, "selected": selected}
     return None
+
+
+def _find_node_in_tree(nodes: list[dict], target_id: str) -> Optional[dict]:
+    for n in nodes:
+        if n['id'] == target_id:
+            return n
+        if n.get('children'):
+            found = _find_node_in_tree(n['children'], target_id)
+            if found:
+                return found
+    return None
+
+
+def _resolve_layer_fuzzy(ref: str) -> Optional[dict]:
+    state = get_cached_state()
+    tree = state['tree']
+
+    node = _find_node_in_tree(tree, ref)
+    if node:
+        wms = node.get('wmsConfig') or {}
+        return {
+            'id': ref,
+            'label': node.get('label'),
+            'workspace': wms.get('workspace'),
+            'geoserver_workspace': wms.get('geoserverWorkspace'),
+            'geoserver_layer': wms.get('geoserverLayer'),
+            'node': node,
+        }
+
+    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+    with conn.get_session() as session:
+        layer = LayersRepository.find_layer_by_slug_or_alias(session, ref)
+        if layer is not None:
+            node = _find_node_in_tree(tree, layer.id)
+            if node:
+                wms = node.get('wmsConfig') or {}
+                return {
+                    'id': layer.id,
+                    'label': node.get('label'),
+                    'workspace': wms.get('workspace'),
+                    'geoserver_workspace': wms.get('geoserverWorkspace'),
+                    'geoserver_layer': wms.get('geoserverLayer'),
+                    'node': node,
+                }
+
+        rows = LayersRepository.search_layers(session, ref, limit=1)
+        for row in rows:
+            node = _find_node_in_tree(tree, row.id)
+            if node:
+                wms = node.get('wmsConfig') or {}
+                return {
+                    'id': row.id,
+                    'label': node.get('label'),
+                    'workspace': wms.get('workspace'),
+                    'geoserver_workspace': wms.get('geoserverWorkspace'),
+                    'geoserver_layer': wms.get('geoserverLayer'),
+                    'node': node,
+                }
+
+    return None
+
+
+def _default_view(municipios: dict | None = None) -> dict:
+    if municipios and municipios.get('selected'):
+        try:
+            from app.repositories.municipios_repository import (
+                MunicipiosRepository,
+            )
+            conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+            with conn.get_session() as session:
+                bbox = MunicipiosRepository.get_union_bbox(
+                    session=session,
+                    claves=municipios['selected'],
+                    source=municipios.get('source', 'iieg'),
+                    target_srid=4326,
+                )
+            if bbox:
+                lon = (bbox[0] + bbox[2]) / 2
+                lat = (bbox[1] + bbox[3]) / 2
+                dx = bbox[2] - bbox[0]
+                dy = bbox[3] - bbox[1]
+                if dx > 0 and dy > 0:
+                    span = max(dx, dy)
+                    if span > 4:
+                        zoom = 7
+                    elif span > 2:
+                        zoom = 8
+                    elif span > 1:
+                        zoom = 9
+                    elif span > 0.5:
+                        zoom = 10
+                    elif span > 0.2:
+                        zoom = 11
+                    else:
+                        zoom = 12
+                    return {'zoom': zoom, 'lat': lat, 'lon': lon}
+        except Exception as exc:
+            Logger.warning(f"_default_view.bbox_error {exc}")
+    return {'zoom': 7.5, 'lat': 20.6, 'lon': -103.4}
+
+
+def _make_date_filter(year: str, month: Optional[int] = None) -> str:
+    if month is not None:
+        next_month = month + 1
+        next_year = int(year)
+        if next_month > 12:
+            next_month = 1
+            next_year += 1
+        return f"(fecha >= '{year}-{month:02d}-01' AND fecha < '{next_year}-{next_month:02d}-01')"
+    return f"(fecha >= '{year}-01-01' AND fecha < '{int(year) + 1}-01-01')"
 
 
 def create_single_share(
@@ -93,16 +208,15 @@ def create_single_share(
     annotations: list | None = None,
     municipios: dict | list | None = None,
 ) -> dict:
-    payload: dict[str, Any] = {"layers": _normalize_layer_entries(layers)}
-    if view is not None:
-        payload["view"] = view
+    norm_municipios = _normalize_municipios(municipios)
+    resolved_view = view or _default_view(norm_municipios)
+    payload: dict[str, Any] = {"layers": _normalize_layer_entries(layers), "view": resolved_view}
     if basemap:
         payload["basemap"] = basemap
     if selected:
         payload["selected"] = selected
     if annotations:
         payload["annotations"] = annotations
-    norm_municipios = _normalize_municipios(municipios)
     if norm_municipios:
         payload["municipios"] = norm_municipios
     return _persist_share({"version": 2, "kind": "single", "payload": payload})
@@ -121,12 +235,13 @@ def create_swipe_share(
     annotations: list | None = None,
     municipios: dict | list | None = None,
 ) -> dict:
+    norm_municipios = _normalize_municipios(municipios)
+    resolved_view = view or _default_view(norm_municipios)
     shared: dict[str, Any] = {
-        "view": view or {},
+        "view": resolved_view,
         "basemap": basemap,
         "selected": selected,
     }
-    norm_municipios = _normalize_municipios(municipios)
     if norm_municipios:
         shared["municipios"] = norm_municipios
     payload: dict[str, Any] = {
@@ -205,9 +320,6 @@ def measure_geometry(geometry: dict) -> dict:
 
 import httpx
 
-from app.config import settings
-from app.services.layer_tree_service import get_cached_state
-
 _WFS_TIMEOUT = 120.0
 
 _CQL_BLOCKED = re.compile(
@@ -216,6 +328,9 @@ _CQL_BLOCKED = re.compile(
     r"|GRANT\b|REVOKE\b|SCRIPT\b)",
     re.IGNORECASE,
 )
+
+_YEAR_RE = re.compile(r'\d{4}')
+_MONTH_RANGE = range(1, 13)
 
 
 def _sanitize_cql(cql: str | None) -> str | None:
@@ -235,23 +350,23 @@ def query_wfs(
     limit: int = 1000,
     srs_name: str | None = None,
     workspace: str | None = None,
+    municipio: str | None = None,
+    year: str | None = None,
+    month: int | None = None,
 ) -> dict:
+    if cql_filter and (municipio or year or month):
+        raise ValueError("No combines 'cql_filter' con 'municipio'/'year'/'month'. Usa uno u otro.")
+
     state = get_cached_state()
     tree = state['tree']
 
-    def find_node(nodes, target):
-        for n in nodes:
-            if n['id'] == target:
-                return n
-            if n.get('children'):
-                found = find_node(n['children'], target)
-                if found:
-                    return found
-        return None
-
-    node = find_node(tree, layer)
+    node = _find_node_in_tree(tree, layer)
     if not node or not node.get('wmsConfig'):
-        raise ValueError(f"Capa '{layer}' no encontrada en el arbol del visor")
+        fuzzy = _resolve_layer_fuzzy(layer)
+        if fuzzy:
+            node = fuzzy['node']
+        else:
+            raise ValueError(f"No encontré la capa '{layer}'. Usa search_layers para ver ids válidos.")
 
     wms = node['wmsConfig']
     ws_map = {w.get('alias'): w.get('geoserver_workspace') for w in state.get('workspaces', []) if w.get('alias')}
@@ -266,7 +381,32 @@ def query_wfs(
     if ':' not in gs_layer:
         gs_layer = f"{gs_workspace}:{gs_layer}"
 
+    parts: list[str] = []
+    if year:
+        if not _YEAR_RE.fullmatch(str(year)):
+            raise ValueError("'year' debe ser 4 digitos (ej. '2025')")
+        parts.append(_make_date_filter(str(year), month))
+    if municipio:
+        items = resolve_municipios(query=municipio, limit=1)
+        if not items:
+            raise ValueError(f"No se encontró el municipio '{municipio}'. Usa el tool municipios para buscar.")
+        search_meta = node.get('searchMeta') or {}
+        muni_field = search_meta.get('municipioField') or 'municipio'
+        muni_type = search_meta.get('municipioFieldType') or 'clave'
+        if not search_meta.get('hasMunicipio'):
+            raise ValueError(f"La capa '{layer}' no soporta filtro por municipio. Usa search_layers para encontrar capas que sí lo soporten.")
+        if muni_type == 'nombre':
+            value = items[0]['nombre']
+        else:
+            value = items[0]['clave']
+        parts.append(f"{muni_field} = '{value}'")
+
     safe_cql = _sanitize_cql(cql_filter)
+    if safe_cql:
+        parts.insert(0, safe_cql)
+
+    combined_cql = ' AND '.join(parts) if parts else None
+
     params = {
         'service': 'WFS',
         'version': '2.0.0',
@@ -275,8 +415,8 @@ def query_wfs(
         'outputFormat': 'application/json',
         'count': str(max(1, min(limit, 10000))),
     }
-    if safe_cql:
-        params['CQL_FILTER'] = safe_cql
+    if combined_cql:
+        params['CQL_FILTER'] = combined_cql
 
     base = settings.GEOSERVER_URL.rstrip('/')
     url = f"{base}/{gs_workspace}/ows?{urlencode(params)}"
@@ -342,26 +482,17 @@ def compare_years(
     view: dict | None = None,
     basemap: str = 'voyager',
 ) -> dict:
-    """Crea un share swipe comparando dos anios de una capa, opcionalmente filtrado por municipio.
-
-    Atajo que encapsula resolve_municipios + create_swipe_share con filtros de fecha.
-    """
     state = get_cached_state()
     tree = state['tree']
 
-    def find_node(nodes, target):
-        for n in nodes:
-            if n['id'] == target:
-                return n
-            if n.get('children'):
-                found = find_node(n['children'], target)
-                if found:
-                    return found
-        return None
-
-    node = find_node(tree, layer)
+    node = _find_node_in_tree(tree, layer)
     if not node or not node.get('wmsConfig'):
-        raise ValueError(f"Capa '{layer}' no encontrada en el arbol del visor")
+        fuzzy = _resolve_layer_fuzzy(layer)
+        if fuzzy:
+            node = fuzzy['node']
+            layer = fuzzy['id']
+        else:
+            raise ValueError(f"No encontré la capa '{layer}'. Usa search_layers para ver ids válidos.")
 
     if not re.fullmatch(r'\d{4}', str(year_a)) or not re.fullmatch(r'\d{4}', str(year_b)):
         raise ValueError("year_a y year_b deben ser un anio de 4 digitos (p. ej. '2025')")
@@ -369,15 +500,24 @@ def compare_years(
     layer_entry_a = {
         'slug': layer,
         'filters': {
-            'date': f"(fecha >= '{year_a}-01-01' AND fecha < '{int(year_a) + 1}-01-01')",
+            'date': _make_date_filter(str(year_a)),
         },
     }
     layer_entry_b = {
         'slug': layer,
         'filters': {
-            'date': f"(fecha >= '{year_b}-01-01' AND fecha < '{int(year_b) + 1}-01-01')",
+            'date': _make_date_filter(str(year_b)),
         },
     }
+
+    norm_municipios = None
+    if municipio:
+        items = resolve_municipios(query=municipio, limit=1)
+        if not items:
+            raise ValueError(f"No se encontró el municipio '{municipio}'. Usa el tool municipios para buscar.")
+        norm_municipios = {'source': 'iieg', 'selected': [items[0]['clave']]}
+
+    resolved_view = view or _default_view(norm_municipios)
 
     kwargs = {
         'pane_a_layers': [layer_entry_a],
@@ -386,16 +526,11 @@ def compare_years(
         'label_b': f'{node["label"]} {year_b}',
         'basemap': basemap,
         'position': 0.5,
+        'view': resolved_view,
     }
 
-    if view:
-        kwargs['view'] = view
-
-    if municipio:
-        items = resolve_municipios(query=municipio, limit=1)
-        if not items:
-            raise ValueError(f"No se encontró el municipio '{municipio}'")
-        kwargs['municipios'] = {'source': 'iieg', 'selected': [items[0]['clave']]}
+    if norm_municipios:
+        kwargs['municipios'] = norm_municipios
 
     return create_swipe_share(**kwargs)
 
@@ -404,11 +539,6 @@ def search_by_theme(
     theme: str,
     limit: int = 50,
 ) -> list[dict]:
-    """Lista capas de un tema del visor (p. ej. 'seguridad', 'economia').
-
-    Busca en el arbol de capas por alias del workspace. Devuelve id, label,
-    slug y workspace de cada capa hoja del tema.
-    """
     state = get_cached_state()
     tree = state['tree']
     theme_lower = theme.strip().lower()
@@ -450,32 +580,17 @@ def search_by_theme(
 def get_layer_stats(
     layer: str,
 ) -> dict:
-    """Numeralia precalculada de una capa (totales, promedios, ranking).
-
-    Lee de la tabla `mapalab.layer_stats` en DataEngine. Los valores se
-    refrescan diariamente a las 04:30 via cron de dataengine-jobs.
-    Devuelve `{layer_id, stats: [{label, value, unit?}]}` o vacio si no hay datos.
-    """
-    from app.consts.databases import DatabaseType
-    from app.databases.factory import DatabaseFactory
-    from sqlalchemy import text
-
     state = get_cached_state()
     tree = state['tree']
 
-    def find_node(nodes, target):
-        for n in nodes:
-            if n['id'] == target:
-                return n
-            if n.get('children'):
-                found = find_node(n['children'], target)
-                if found:
-                    return found
-        return None
-
-    node = find_node(tree, layer)
+    node = _find_node_in_tree(tree, layer)
     if not node or not node.get('wmsConfig'):
-        raise ValueError(f"Capa '{layer}' no encontrada en el arbol del visor")
+        fuzzy = _resolve_layer_fuzzy(layer)
+        if fuzzy:
+            node = fuzzy['node']
+            layer = fuzzy['id']
+        else:
+            raise ValueError(f"No encontré la capa '{layer}'. Usa search_layers para ver ids válidos.")
 
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
     with conn.get_session() as session:
@@ -511,3 +626,128 @@ def get_layer_stats(
             'label': node.get('label', ''),
             'stats': stats,
         }
+
+
+def describe_layer(layer: str) -> dict:
+    from app.services import layer_metadata_service
+
+    fuzzy = _resolve_layer_fuzzy(layer)
+    if not fuzzy:
+        return {'error': f"No encontré la capa '{layer}'. Usa search_layers para ver ids válidos."}
+
+    resolved_id = fuzzy['id']
+    ws = fuzzy['workspace'] or ''
+    label = fuzzy['label'] or resolved_id
+
+    metadata = layer_metadata_service.get_metadata_response(ws, resolved_id, _acervo_base())
+    metadata_result = [metadata] if metadata else []
+
+    try:
+        stats_result = get_layer_stats(layer=resolved_id)
+    except ValueError as exc:
+        stats_result = {'error': str(exc)}
+
+    from app.services.periodicity_service import PeriodicityService
+    ws_alias = fuzzy.get('workspace') or ''
+    layer_key = f"{ws_alias}:{resolved_id}" if ws_alias else resolved_id
+    raw_period = PeriodicityService.get_periodicities_batch([layer_key])
+    periodicity = {k.split(':')[-1]: v for k, v in (raw_period or {}).items()}
+
+    return {
+        'id': resolved_id,
+        'label': label,
+        'metadata': metadata_result,
+        'stats': stats_result,
+        'periodicity': periodicity,
+    }
+
+
+def _acervo_base() -> str:
+    return settings.ACERVO_PUBLIC_URL.rstrip('/') if settings.ACERVO_PUBLIC_URL else ''
+
+
+def make_map(
+    query: str,
+    municipio: str | None = None,
+    year: str | None = None,
+    theme: str = '',
+) -> dict:
+    q = (query or '').strip()
+    th = (theme or '').strip()
+    if not q and not th:
+        return {'error': "Pasa 'query' (texto) o 'theme' (area). Usa search_layers primero si necesitas explorar."}
+
+    state = get_cached_state()
+    tree = state['tree']
+
+    best_layer_id = None
+    best_label = None
+    priority = 999
+
+    if th:
+        for item in search_by_theme(theme=th, limit=50):
+            score = 1
+            if q:
+                haystack = f"{item.get('label', '')} {item.get('id', '')}".lower()
+                if q.lower() not in haystack:
+                    continue
+                score = 0
+            if score < priority:
+                priority = score
+                best_layer_id = item['id']
+                best_label = item['label']
+    else:
+        conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+        with conn.get_session() as session:
+            search_terms = [q]
+            words = [w for w in q.split() if len(w) > 2]
+            if len(words) > 1:
+                search_terms.extend(words)
+
+            seen_ids: set[str] = set()
+            for term_rank, term in enumerate(search_terms):
+                fuzzy_layer = LayersRepository.find_layer_by_slug_or_alias(session, term)
+                if fuzzy_layer is not None and fuzzy_layer.id not in seen_ids:
+                    seen_ids.add(fuzzy_layer.id)
+                    score = -1 if term_rank == 0 else term_rank
+                    if score < priority:
+                        priority = score
+                        best_layer_id = fuzzy_layer.id
+                        best_label = fuzzy_layer.label
+
+                for row in LayersRepository.search_layers(session, term, limit=3):
+                    if row.id in seen_ids:
+                        continue
+                    seen_ids.add(row.id)
+                    score = term_rank
+                    if score < priority:
+                        priority = score
+                        best_layer_id = row.id
+                        best_label = row.label
+
+    if not best_layer_id:
+        return {'error': f"No encontré capas para '{query}'. Usa search_layers para explorar el catalogo."}
+
+    layers_payload = [{'slug': best_layer_id}]
+
+    if year:
+        if not _YEAR_RE.fullmatch(str(year)):
+            return {'error': "'year' debe ser 4 digitos (ej. '2025')."}
+        layers_payload[0]['filters'] = {'date': _make_date_filter(str(year))}
+
+    norm_municipios = None
+    if municipio:
+        items = resolve_municipios(query=municipio, limit=1)
+        if not items:
+            return {'error': f"No se encontró el municipio '{municipio}'. Usa el tool municipios para buscar."}
+        norm_municipios = {'source': 'iieg', 'selected': [items[0]['clave']]}
+
+    view = _default_view(norm_municipios)
+
+    payload: dict[str, Any] = {'layers': layers_payload, 'view': view}
+    if norm_municipios:
+        payload['municipios'] = norm_municipios
+
+    result = _persist_share({'version': 2, 'kind': 'single', 'payload': payload})
+    result['layer'] = {'id': best_layer_id, 'label': best_label}
+    return result
