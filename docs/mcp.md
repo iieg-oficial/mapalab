@@ -1,6 +1,6 @@
 # MCP server
 
-Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`mapalab-mcp`, separado del backend principal desde 1.35.0) que expone **13 tools** sobre el catálogo de capas, metadata, periodicidad, municipios de Jalisco, mediciones geodésicas y creación de shares del visor. Pensado para clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes como IGIBot) que necesitan consultar o entregar mapas como respuesta.
+Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`mapalab-mcp`, separado del backend principal desde 1.35.0) que expone **15 tools** sobre el catálogo de capas, metadata, periodicidad, municipios de Jalisco, mediciones geodésicas y creación de shares del visor. Pensado para clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes como IGIBot) que necesitan consultar o entregar mapas como respuesta.
 
 ## Por qué un container dedicado
 
@@ -11,7 +11,7 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`m
 
 ## Qué se expone y qué no
 
-13 tools (ver tabla completa más abajo en §Tools y su origen):
+15 tools (ver tabla completa más abajo en §Tools y su origen):
 
 | Origen | MCP | Razón |
 |---|---|---|
@@ -74,8 +74,12 @@ Convencion: **todos los tools que reciben una capa usan el `id` del visor** (el 
 | `create_swipe_share` | **Write** | crea un share swipe (comparacion A\|B). Idempotente |
 | `compare_years` | **Write** | atajo swipe A\|B de una capa entre dos años + municipio opcional. Idempotente |
 | `get_layer_stats` | Lectura | numeralia precalculada de una capa |
+| `describe_layer` | Lectura | macro: metadata + stats + periodicity en una sola llamada. Ideal para modelos chicos. Soporta ids difusos |
+| `make_map` | **Write** | macro: search_layers → mejor capa → create_single_share con auto-encuadre. Idempotente |
 
-**Consolidacion de tools:** de 18 → 13 tools. `search_by_theme` y `resolve_layer_ref` se fusionaron en `search_layers` (params `theme`/`query`); `get_periodicities_batch` en `get_periodicity` (acepta 1 o N); `list_municipios` + `resolve_municipios` en `municipios(query?)`; `get_workspaces` se eliminó y ahora va dentro de `get_layer_tree`. Identificadores homologados al `id` del visor.
+**Macros para modelos chicos (v1.76+):** `describe_layer` combina get_metadata + get_layer_stats + get_periodicity en una sola llamada. `make_map` hace search_layers → mejor capa → create_single_share con auto-encuadre. Ambos soportan resolución difusa de ids (slug, alias, nombre parcial). Para capas que no soportan filtro por municipio, usá `cql_filter` como escape avanzado.
+
+**Consolidacion de tools:** de 18 → 15 tools. `search_by_theme` y `resolve_layer_ref` se fusionaron en `search_layers` (params `theme`/`query`); `get_periodicities_batch` en `get_periodicity` (acepta 1 o N); `list_municipios` + `resolve_municipios` en `municipios(query?)`; `get_workspaces` se eliminó y ahora va dentro de `get_layer_tree`. Identificadores homologados al `id` del visor.
 
 Los tools de invalidacion de cache (`refresh_layer_tree_cache`, `invalidate_layer_tree_memory_cache`) **quedan fuera del MCP desde 1.45.2**: los endpoints REST equivalentes requieren `X-Internal-Token` que el MCP no inyecta, asi que en la practica siempre devolvian 401 — eran ruido en `tools/list`. Mariachi sigue invocando los REST directos desde `iieg-network`. Los `shares` de fan-out admin (`pin_share_permanent`, etc.) tambien quedan fuera. Los `create_*_share` y `measure_geometry` (v1.44.0) son writes intencionales, disenados para que un agente conversacional como [IGIBot](https://igibot.jalisco.gob.mx) entregue mapas interactivos como resultado de su razonamiento.
 
@@ -141,7 +145,7 @@ El gateway-hub no necesita un `location` específico para `/mapalab/mcp/`: cae b
 
 ## Tools y su origen
 
-Los 13 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). Wrappers delgados sobre lógica del backend; los de share/medición/municipios reutilizan helpers de `servers/share_tools.py`. Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función.
+Los 15 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). Wrappers delgados sobre lógica del backend; los de share/medición/municipios reutilizan helpers de `servers/share_tools.py`. Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función.
 
 | Tool | Origen del código | Qué hace |
 |---|---|---|
@@ -158,8 +162,46 @@ Los 13 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). Wrappers delg
 | `create_swipe_share` | `servers/share_tools.py::create_swipe_share` | Crea share `kind=swipe` para comparación A\|B. `municipios` aplica a ambos paneles |
 | `compare_years` | `servers/share_tools.py::compare_years` | Atajo swipe comparativo de dos años con filtro de municipio opcional |
 | `get_layer_stats` | `servers/share_tools.py::get_layer_stats` | Numeralia de `mapalab.layer_stats` (totales, ranking); vacía si no hay datos |
+| `describe_layer` | `servers/share_tools.py::describe_layer` | Macro: combina get_metadata + get_layer_stats + get_periodicity. Soporta ids difusos |
+| `make_map` | `servers/share_tools.py::make_map` | Macro: search_layers → create_single_share con municipio/año opcional + auto-encuadre |
 
-### Modo Vista por municipio en shares
+## Identificadores de capa (resolución exacta + difusa)
+
+Todos los tools que reciben una capa usan el `id` del visor (el que devuelve `search_layers`). El workspace se resuelve solo desde el árbol; nunca hace falta pasarlo.
+
+Desde la optimización para modelos chicos, los tools `get_metadata`, `get_periodicity`, `query_wfs`, `get_layer_stats`, `compare_years`, `describe_layer` y `make_map` aceptan **ids difusos**: slug, alias o nombre parcial (p. ej. `"homicidio"` resuelve a `homicidio_doloso`). La resolución intenta primero el id exacto; si no lo encuentra busca por slug/alias en la BD y por texto en `search_layers`.
+
+## Parámetros acotados (Literal types)
+
+Los parámetros con valores fijos usan `typing.Literal` para que Pydantic rechace valores inválidos de inmediato:
+
+- **Basemaps**: `'voyager'`, `'position'`, `'sin_mapalab'` (NO existe `'osm'`). Aplica en `create_single_share`, `create_swipe_share`, `compare_years`.
+- **SRS de salida en `query_wfs`**: `'EPSG:4326'` (lat/lon) o `'EPSG:6368'` (CRS nativo, metros).
+- **Source en `municipios`**: `'iieg'` o `'inegi'` (validado en `_normalize_municipios`).
+
+Si el modelo manda un valor inválido (p. ej. `basemap="osm"`), Pydantic responde con un error claro: `Input should be 'voyager', 'position' or 'sin_mapalab'`.
+
+## Auto-encuadre de la vista
+
+`create_single_share`, `create_swipe_share` y `compare_years` ya no requieren el parámetro `view`. Si se omite:
+
+- Con `municipios` → calcula el bbox de los municipios seleccionados y encuadra automáticamente (zoom proporcional al tamaño).
+- Sin `municipios` → vista por defecto de Jalisco: `{zoom: 7.5, lat: 20.6, lon: -103.4}`.
+
+## Filtros estructurados en `query_wfs` (sin escribir CQL)
+
+`query_wfs` ahora acepta parámetros opcionales que construyen el CQL del lado servidor:
+
+- **`municipio`**: nombre o clave (ej. `"Guadalajara"`, `"14039"`). Resuelve con `municipios()`. Requiere que la capa tenga `searchMeta.hasMunicipio=true` configurado en el árbol; si no, devuelve error accionable. Usa `searchMeta.municipioField` y `searchMeta.municipioFieldType` (`clave` o `nombre`) para armar el filtro.
+- **`year`**: 4 dígitos (ej. `"2024"`). Filtra `(fecha >= 'YYYY-01-01' AND fecha < 'YYYY+1-01-01')`.
+- **`month`**: 1-12. Afina el filtro de fecha a un mes: `(fecha >= 'YYYY-MM-01' AND fecha < 'YYYY-MM+1-01')`.
+
+Si pasás `cql_filter`, no combines con `municipio`/`year`/`month` (error explícito). El CQL sanitiza SQLi igual que antes.
+
+## Nota para modelos LLM chicos (Qwen 3B self-host)
+
+El servidor incluye `instructions` a nivel FastMCP con un playbook corto que el modelo ve al inicializar. Los tools "pesados" (`get_layer_tree`, `query_wfs`, `get_sources_batch`) incluyen advertencias en sus descripciones recomendando alternativas más ligeras. Las macros `describe_layer` y `make_map` reducen el número de round-trips necesarios para tareas comunes.
+
 
 `create_single_share` y `create_swipe_share` aceptan `municipios={source: "iieg"|"inegi", selected: ["14039", "14120", ...]}` desde 1.48.x. El validador del share (`share_service._validate_municipios`) limita a 125 claves (los municipios totales de Jalisco). Cuando se abre el share, el visor activa el modo: máscara visual oscura fuera de los polígonos seleccionados, filtro CQL `{municipioField} IN (...)` automático en capas activas que soporten el filtro. Ver `docs/municipio-mode.md` para el flujo completo.
 
