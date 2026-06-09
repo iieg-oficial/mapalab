@@ -696,6 +696,26 @@ Cada request HTTP al `/mcp/` pasa por `MCPTelemetryMiddleware` (ASGI puro en `ba
 | mariachi | `api/app/api/routes/mapalab_mcp_internal.py` | `POST /internal/mapalab/mcp/events` (X-Internal-Token) |
 | mariachi | `api/alembic/versions/mariachi/b9c0d1e2f3a5_add_mapalab_mcp_events.py` | Migración + 4 índices |
 
+### Auditoría por key (uso del MCP en el historial de la llave)
+
+Además de la telemetría agregada (anónima) de arriba, cada `tools/call` se registra **atribuido a la API key** en la misma tabla `mapalab_api_keys_accesos` que usa el widget embebido, para que el admin vea el uso del MCP en la pestaña **Auditoría** de cada llave (`/administrador/mapalab/api-keys`).
+
+- `servers/telemetry.py` llama a `app.services.access_logger.get_logger().record(...)` en cada `tools/call` con `key_id is not None`:
+
+  | Campo | Valor para MCP |
+  |---|---|
+  | `endpoint` | `mcp` (en la UI aparece como "Agente / MCP") |
+  | `resultado` | `allowed` (HTTP<400), `denied` (error) o `quota_exceeded` (429 por cuota) |
+  | `motivo` | nombre de la herramienta (`get_metadata`, `query_wfs`, …) |
+  | `origin` | `null` (el MCP no tiene dominio) |
+  | `ip_hash` | `X-Real-IP` hasheado, igual que el embed |
+
+- El `access_flush_loop` arranca en el lifespan de `servers/mapalab.py` y flushea cada 30s a `POST /api/administrador/internal/mapalab/keys/accesos` (el **mismo** endpoint que el embed; el prefijo `/api/administrador` es obligatorio — un bug previo lo omitía y devolvía 404).
+- Solo se registran los `tools/call`; `initialize`/`tools/list`/notificaciones quedan fuera (ruido de handshake). No se guardan los argumentos del tool.
+- Frontend: `ApiKeyAuditoriaTab.jsx` mapea `endpoint=mcp` en la etiqueta y el filtro "Tipo de acción"; el botón de Auditoría está en la barra de acciones de cada llave (`ApiKeysTable.jsx`).
+
+Así, para una key **privada de MCP** la pestaña Auditoría muestra qué herramientas se llamaron, cuándo y con qué resultado; para una key **pública de embed**, los accesos al mapa. Ambos canales conviven en el mismo historial, distinguidos por la columna "Acción".
+
 ### Vistas materializadas + dashboard (v1.34.0)
 
 4 vistas materializadas alimentan el tab MCP de `/administrador/mapalab/stats`:
