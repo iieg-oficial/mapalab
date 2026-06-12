@@ -6,7 +6,7 @@ import { useLoadMoreFeatures } from './useLoadMoreFeatures';
 import { toLonLat } from 'ol/proj';
 import { useLayers } from '@hooks/useLayers';
 import { useEventoContext } from '@hooks/useEvento';
-import { findLayerById, collectLayersWithWMS, findParentGroup, resolveLayerDisplayName } from '../helpers/layers/utils/layerHelpers';
+import { findLayerById, collectLayersWithWMS, findParentGroup, resolveLayerDisplayName, groupAlternativeResults } from '../helpers/layers/utils/layerHelpers';
 
 const FEATURE_INFO_LOADING_ID = 'feature_info_query';
 
@@ -64,6 +64,7 @@ export const useFeatureInfo = (overrides = null) => {
 
         let layersToQuery = [];
         let queriedLayerName = null;
+        let queriedLayerId = null;
 
         if (!activeLayerIds || activeLayerIds.length === 0) {
             return null;
@@ -78,6 +79,7 @@ export const useFeatureInfo = (overrides = null) => {
             const fallback = selectedLayerForSymbology.name || selectedLayerForSymbology.label || layerNode?.label;
             const ancestor = findParentGroup(selectedLayerForSymbology.id, allLayers);
             queriedLayerName = resolveLayerDisplayName(selectedLayerForSymbology.id, fallback, ancestor, getAliasByLayerId);
+            queriedLayerId = selectedLayerForSymbology.id;
 
             if (layerNode) {
                 const activeIdSet = new Set(activeLayerIds || []);
@@ -136,7 +138,8 @@ export const useFeatureInfo = (overrides = null) => {
                 setSelectedFeatureInfo({
                     lngLat: { lng, lat },
                     results: enriched,
-                    queriedLayerName
+                    queriedLayerName,
+                    queriedLayerId
                 });
                 return enriched;
             } else {
@@ -151,27 +154,7 @@ export const useFeatureInfo = (overrides = null) => {
                     const altResults = await getFeatureInfoForActiveLayers(otherActiveLayers, map, coordinate, getFilter, isInegiMode, allLayers);
                     if (altResults && altResults.length > 0) {
                         altResultsCache = altResults;
-                        const groupedAlternatives = new Map();
-
-                        altResults.forEach(r => {
-                            const parentGroup = findParentGroup(r.layerId, allLayers);
-                            const groupKey = parentGroup ? parentGroup.id : r.layerId;
-                            const groupName = resolveLayerDisplayName(r.layerId, r.layerName, parentGroup, getAliasByLayerId);
-
-                            if (groupedAlternatives.has(groupKey)) {
-                                const existing = groupedAlternatives.get(groupKey);
-                                existing.count += r.features?.length || 0;
-                            } else {
-                                groupedAlternatives.set(groupKey, {
-                                    id: groupKey,
-                                    name: groupName,
-                                    count: r.features?.length || 0,
-                                    isGroup: !!parentGroup
-                                });
-                            }
-                        });
-
-                        alternativeLayers = Array.from(groupedAlternatives.values());
+                        alternativeLayers = groupAlternativeResults(altResults, allLayers, getAliasByLayerId);
                     }
                 }
 
@@ -179,6 +162,7 @@ export const useFeatureInfo = (overrides = null) => {
                     lngLat: { lng, lat },
                     results: [],
                     queriedLayerName,
+                    queriedLayerId,
                     alternativeLayers,
                     alternativeResults: altResultsCache
                 });
@@ -222,6 +206,7 @@ export const useFeatureInfo = (overrides = null) => {
                 ...current,
                 results: matchingResults,
                 queriedLayerName: layer.name,
+                queriedLayerId: layer.id,
                 alternativeLayers: null,
                 alternativeResults: current.alternativeResults
             };

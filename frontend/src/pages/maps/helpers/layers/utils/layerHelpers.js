@@ -144,6 +144,29 @@ export const getAllChildLayerIds = (layerId, layersArray) => {
 export const resolveLayerDisplayName = (layerId, fallbackLabel, ancestor, getAlias) =>
     (ancestor && getAlias?.(ancestor.id)) || ancestor?.label || getAlias?.(layerId) || fallbackLabel || null;
 
+export const groupAlternativeResults = (altResults, layersArray, getAlias) => {
+    const grouped = new Map();
+
+    altResults.forEach(r => {
+        const parentGroup = findParentGroup(r.layerId, layersArray);
+        const groupKey = parentGroup ? parentGroup.id : r.layerId;
+        const groupName = resolveLayerDisplayName(r.layerId, r.layerName, parentGroup, getAlias);
+
+        if (grouped.has(groupKey)) {
+            grouped.get(groupKey).count += r.features?.length || 0;
+        } else {
+            grouped.set(groupKey, {
+                id: groupKey,
+                name: groupName,
+                count: r.features?.length || 0,
+                isGroup: !!parentGroup
+            });
+        }
+    });
+
+    return Array.from(grouped.values());
+};
+
 export const findParentGroup = (layerId, layersArray) => {
     const findParent = (layers, parent = null) => {
         for (const layer of layers) {

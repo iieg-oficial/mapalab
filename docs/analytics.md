@@ -29,6 +29,7 @@ Los eventos se envian a `window.dataLayer` para ser consumidos por GTM. En desar
 | `evento_open` | `evento_id`, `titulo` | Aperturas de eventos temáticos (mariachi) | Al montar `<EventoMenu>` (apertura del menú del evento desde el sider o el widget externo) | Eventos más usados |
 | `evento_close` | `evento_id` | Cierre de evento (incluye unmount por navegación) | Al desmontar `<EventoMenu>` | Tiempo en evento (delta open/close) |
 | `evento_center` | `evento_id` | Re-centrado manual del mapa sobre el evento | Al pulsar el botón "Centrar evento" de `<EventoActionsBar>` | Frecuencia con la que el usuario pierde el encuadre del evento |
+| `infobox_action` | `action: center_group\|select_alternative\|empty_suggestions_view\|<tool_id>`, `layer_id` | Acciones dentro del InfoBox | `center_group` al centrar la selección, `empty_suggestions_view` al aparecer el estado vacío con sugerencias, `select_alternative` al elegir una capa sugerida, `<tool_id>` por cada herramienta del header mobile | Uso de herramientas / Fricción del estado vacío |
 
 ## Debug en desarrollo
 

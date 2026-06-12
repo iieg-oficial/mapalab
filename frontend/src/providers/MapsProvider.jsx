@@ -217,7 +217,7 @@ const MapsProvider = ({ children }) => {
 
     const mapsAnalyticsEvent = useCallback(() => { }, []);
 
-    const { centerOnLayer, pulseLayer } = useLayerSelection({
+    const { centerOnLayer, pulseLayer, cancelPulse } = useLayerSelection({
         mapRef,
         paneMapInstances,
         compareMode: swipeMode.compareMode,
@@ -260,6 +260,7 @@ const MapsProvider = ({ children }) => {
         municipioMode: { ...municipioMode, centerOnSelection: centerOnMunicipioSelection },
         centerOnLayer,
         pulseLayer,
+        cancelPulse,
     }), [
         baseMapId,
         siderCollapsed,
@@ -288,6 +289,7 @@ const MapsProvider = ({ children }) => {
         centerOnMunicipioSelection,
         centerOnLayer,
         pulseLayer,
+        cancelPulse,
     ]);
 
     return (

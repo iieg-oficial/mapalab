@@ -18,7 +18,7 @@ frontend/src/pages/maps/components/InfoBox/
     ├── Header.jsx                 # Header desktop (bloque #EFF3FC) — usado por InfoCard
     ├── MobileFeatureHeader.jsx    # Header mobile (titulo + badge N/total) — usado por InfoCard
     ├── SummaryCard.jsx            # Resumen de seleccion por poligono (usa InfoCard)
-    ├── EmptySuggestions.jsx       # "No hay resultados aqui" + capas alternativas (usa InfoCard)
+    ├── EmptySuggestions.jsx       # Estado vacio + capas alternativas con icono de simbologia (usa InfoCard)
     ├── InfoBoxTools.jsx           # Fila de herramientas (descargar, etc.) para header mobile
     ├── SwipeToRemove.jsx          # Wrapper de swipe horizontal para eliminar card (mobile)
     ├── ActionsToolbar.jsx         # Botones flotantes (cerrar / descargar) desktop multi-feature
@@ -45,6 +45,7 @@ frontend/src/pages/maps/components/InfoBox/
     ],
     isPolygonSelection?: boolean,
     queriedLayerName?: string,
+    queriedLayerId?: string,
     alternativeLayers?: [{ id, name, count, isGroup }]
 }
 ```
@@ -228,6 +229,14 @@ Desktop queda idéntico al diseño previo (todos los consumidores por default us
 ## Tests
 
 No hay tests automatizados para el InfoBox. Cualquier rediseno deberia acompanarse de cobertura basica en `test/`.
+
+## Estado vacío con sugerencias (`EmptySuggestions`)
+
+Cuando el click no encuentra features en la capa seleccionada (y no es selección por polígono), el InfoBox muestra `EmptySuggestions` con el mensaje "La capa seleccionada no tiene información en este punto." y la lista de capas alternativas con datos en ese pixel (ver "Cache de alternativas" abajo y la alt-query batcheada en `context.md`).
+
+- **Icono de simbología**: el hook `hooks/useLayerSymbolIcon.js` resuelve un swatch icon-only de la capa via `getLegendJson` (GetLegendGraphic `format=application/json`) + `getLegendUrl` con `forceLabels:off` y `transparent`. Con varias reglas usa `&rule=<primera>` si la regla tiene `name`; si no, pide la pila completa y el CSS (`object-cover object-top`) recorta al primer swatch. El icono aparece junto al mensaje (capa consultada, requiere `queriedLayerId`) y junto al nombre de cada alternativa. Cache en memoria por `layerId` a nivel de módulo; los errores de fetch no se cachean (reintenta al siguiente render).
+- **Pulso en hover (solo desktop)**: pasar el mouse sobre una alternativa dispara `pulseLayer(layer.id)` (mismo pulso del panel de capas activas) y al salir `cancelPulse()` restaura opacidades de inmediato. `cancelPulse` se expone desde `useLayerSelectionPulse` via `MapsContext`; también se invoca al hacer click en la alternativa y al desmontar el panel.
+- **Telemetría**: `infobox_action` con `action: empty_suggestions_view` al aparecer el estado vacío y `action: select_alternative` al elegir una capa sugerida (ver `docs/analytics.md`).
 
 ## Cache de alternativas
 

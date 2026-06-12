@@ -12,6 +12,14 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.76.0',
+        items: [
+            { text: 'Cuando haces clic y la capa seleccionada no tiene datos en ese punto, el mensaje ahora es más claro y muestra el símbolo de la capa para que sepas cuál estás consultando.', tag: 'changed' },
+            { text: 'Las capas sugeridas con datos en el punto ahora muestran su símbolo junto al nombre.', tag: 'added' },
+            { text: 'En computadora, al pasar el mouse sobre una capa sugerida se resalta en el mapa para que veas cuál es antes de elegirla.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.75.0',
         items: [
             { text: 'En celular, al elegir una herramienta de medición o anotación las demás se ocultan para mostrar sus controles, y al terminar el trazo vuelven a aparecer todas.', tag: 'changed' },
