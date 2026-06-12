@@ -59,6 +59,7 @@ const InfoBox = () => {
     };
 
     const handleSelectAlternative = (layer) => {
+        trackInfoBoxAction('select_alternative', layer.id);
         selectAlternativeLayer(layer);
     };
 
@@ -110,7 +111,7 @@ const InfoBox = () => {
 
     if (!selectedFeatureInfo) return null;
 
-    const { results, isPolygonSelection, queriedLayerName, alternativeLayers } = selectedFeatureInfo;
+    const { results, isPolygonSelection, queriedLayerName, queriedLayerId, alternativeLayers } = selectedFeatureInfo;
     const { sentinelRef: loadMoreSentinelRef, loadingMore, totalAvailable, totalFeatures, hasMore, downloadDisplayCount, downloadShowsPlus, downloadTooltipText, enrichResultsForDownload } = lazyLoad;
     const isSingleFeature = totalFeatures === 1;
     const hasNoResults = !results || results.length === 0 || totalFeatures === 0;
@@ -280,6 +281,7 @@ const InfoBox = () => {
                             <EmptySuggestions
                                 visible={showEmptySuggestions}
                                 queriedLayerName={queriedLayerName}
+                                queriedLayerId={queriedLayerId}
                                 alternativeLayers={alternativeLayers}
                                 onSelectLayer={handleSelectAlternative}
                                 onClose={handleClose}
@@ -324,6 +326,7 @@ const InfoBox = () => {
                     <EmptySuggestions
                         visible={showEmptySuggestions}
                         queriedLayerName={queriedLayerName}
+                        queriedLayerId={queriedLayerId}
                         alternativeLayers={alternativeLayers}
                         onSelectLayer={handleSelectAlternative}
                         onClose={handleClose}

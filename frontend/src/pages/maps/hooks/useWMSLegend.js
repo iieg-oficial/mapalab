@@ -27,6 +27,7 @@ export const useWMSLegend = () => {
         fontColor = '0x454545',
         labelMargin = 12,
         forceLabels = 'on',
+        rule,
         dateValue
     } = {}) => {
         const effectiveId = resolveWMSId(layer);
@@ -53,7 +54,7 @@ export const useWMSLegend = () => {
                 }
             }
 
-            const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=image/png&width=${iconWidth}&height=${iconHeight}${transparent ? '&transparent=true' : ''}&LEGEND_OPTIONS=${legendOptions}${style ? `&STYLE=${style}` : ''}`;
+            const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=image/png&width=${iconWidth}&height=${iconHeight}${transparent ? '&transparent=true' : ''}${rule ? `&rule=${encodeURIComponent(rule)}` : ''}&LEGEND_OPTIONS=${legendOptions}${style ? `&STYLE=${style}` : ''}`;
             return url;
         }
         return null;

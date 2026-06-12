@@ -121,9 +121,9 @@ export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLa
         return true;
     }, [allLayers, mapRef, paneMapInstances, compareMode]);
 
-    const pulseLayer = useLayerSelectionPulse({ mapRef, paneMapInstances, compareMode, allLayers });
+    const { pulseLayer, cancelPulse } = useLayerSelectionPulse({ mapRef, paneMapInstances, compareMode, allLayers });
 
-    return { centerOnLayer, pulseLayer };
+    return { centerOnLayer, pulseLayer, cancelPulse };
 };
 
 const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLayers }) => {
@@ -225,5 +225,5 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
         return true;
     }, [allLayers, mapRef, paneMapInstances, compareMode, cleanup]);
 
-    return pulseLayer;
+    return { pulseLayer, cancelPulse: cleanup };
 };
