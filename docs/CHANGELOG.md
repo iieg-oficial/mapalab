@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.76.0] - 2026-06-12
+
+### Agregado
+
+- **Icono de simbología en el estado vacío del InfoBox**: cuando la capa seleccionada no tiene información en el punto clickeado, el panel muestra el swatch de la capa consultada junto al mensaje y el de cada capa alternativa sugerida. Nuevo hook `useLayerSymbolIcon` que resuelve el icono via `GetLegendGraphic` JSON (lee las reglas del estilo) + PNG icon-only (`forceLabels:off`, `&rule=<primera>` cuando hay varias reglas con nombre; sin nombre cae a la pila completa recortada con CSS). Cache en memoria por capa; los errores de red no se cachean para permitir reintento.
+- **Pulso de capa al hover sobre una alternativa (desktop)**: pasar el mouse sobre una capa sugerida la destaca en el mapa reutilizando el pulso del panel de capas activas; al salir se restaura de inmediato. `useLayerSelectionPulse` ahora expone `cancelPulse` en el contexto.
+- **Telemetría del estado vacío**: eventos `infobox_action` con `empty_suggestions_view` (aparición del estado vacío, con `layer_id` consultado) y `select_alternative` (capa sugerida elegida).
+- **Parámetro `rule` en `getLegendUrl`** (`useWMSLegend`) para pedir leyendas de una sola regla.
+- Tests del hook `useLayerSymbolIcon` (5 casos: multi-regla, regla única, grupos, reglas sin nombre, error de red).
+
+### Cambiado
+
+- **Mensaje del estado vacío del InfoBox**: "No hay información en este punto" → "La capa seleccionada no tiene información en este punto." para aclarar que la consulta fue sobre la capa seleccionada.
+- `selectedFeatureInfo` incluye `queriedLayerId` junto a `queriedLayerName`; `selectAlternativeLayer` lo actualiza al cambiar de capa.
+- La agrupación de capas alternativas se extrajo a `groupAlternativeResults` en `layerHelpers.js` (sin cambio de comportamiento).
+
 ## [1.75.0] - 2026-06-08
 
 ### Cambiado
