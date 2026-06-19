@@ -67,7 +67,7 @@ export const RELIEF_OVERLAY = {
     inegi: () => createReliefSource(RELIEF_LAYERS.inegi),
 };
 
-export const INEGI_LIMIT_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
+const INEGI_LIMIT_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
 export const isInegiBaseMode = (activeLayerIds = []) =>
     activeLayerIds.some(id => INEGI_LIMIT_LAYER_IDS.includes(id));
