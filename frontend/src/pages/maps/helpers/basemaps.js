@@ -1,4 +1,5 @@
 import XYZ from 'ol/source/XYZ';
+import TileWMS from 'ol/source/TileWMS';
 
 const CARTO_ATTRIBUTIONS = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
@@ -36,3 +37,37 @@ export const BASEMAP_ORDER = [
     'position',
     'sin_mapalab'
 ];
+
+const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
+
+const RELIEF_WORKSPACE = 'raster';
+
+const RELIEF_LAYERS = {
+    iieg: 'sombreado_relieve_iieg',
+    inegi: 'sombreado_relieve_inegi',
+};
+
+export const RELIEF_OVERLAY_Z_INDEX = 10000;
+
+const createReliefSource = (geoserverLayer) => new TileWMS({
+    url: `${GEOSERVER_BASE}/${RELIEF_WORKSPACE}/wms`,
+    params: {
+        LAYERS: `${RELIEF_WORKSPACE}:${geoserverLayer}`,
+        TILED: true,
+        FORMAT: 'image/png',
+        TRANSPARENT: true,
+        VERSION: '1.1.0',
+    },
+    serverType: 'geoserver',
+    crossOrigin: 'anonymous',
+});
+
+export const RELIEF_OVERLAY = {
+    iieg: () => createReliefSource(RELIEF_LAYERS.iieg),
+    inegi: () => createReliefSource(RELIEF_LAYERS.inegi),
+};
+
+const INEGI_LIMIT_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
+
+export const isInegiBaseMode = (activeLayerIds = []) =>
+    activeLayerIds.some(id => INEGI_LIMIT_LAYER_IDS.includes(id));

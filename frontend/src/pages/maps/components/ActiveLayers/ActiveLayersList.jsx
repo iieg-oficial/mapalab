@@ -16,6 +16,7 @@ import ScrollContainer from '@components/ScrollContainer';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { getDefaultMapView } from '@pages/maps/helpers/defaultView';
+import { isInegiBaseMode } from '@pages/maps/helpers/basemaps';
 
 const ActiveLayersListInner = ({ onCollapseChange }) => {
     const {
@@ -133,7 +134,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
 
     const { handleDragEnd } = useLayerSorting(effectiveActiveLayerIds, unifiedLayers, handleReorder);
     const sortableItems = useMemo(() => displayedLayers.map(l => l.id), [displayedLayers]);
-    const isInegiMode = useMemo(() => effectiveActiveLayerIds.some(id => ['limite_inegi', 'limite_municipal_inegi'].includes(id)), [effectiveActiveLayerIds]);
+    const isInegiMode = useMemo(() => isInegiBaseMode(effectiveActiveLayerIds), [effectiveActiveLayerIds]);
 
     const noLayers = unifiedLayers.length === 0;
 

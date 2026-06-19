@@ -469,6 +469,30 @@ Algunas capas pueden mostrar un banner sobre el mapa mientras están activas y d
 
 **Embed**: atributo `notices="false"` del web component `<iieg-mapalab>` lo desactiva (default activo). Se propaga al iframe como `?notices=false`.
 
+## Badge "Nueva/Actualizada" por capa (v1.78.0)
+
+El admin puede marcar una capa con un badge ("Nueva", "Actualizada", "Próximamente" o uno personalizado) desde el tab "Badge" del editor de capas en mariachi. Config en `mapalab.layers.badge` (JSONB), expuesta en `/layers/tree` solo si `enabled`.
+
+**Shape del JSONB** (camelCase): `{ enabled, variant: 'new'|'updated'|'soon'|'custom', label?, color?, validFrom?, validUntil? }`. Los presets traen label y color por defecto; `custom` requiere `label` + `color` hex. `validFrom`/`validUntil` dan **temporalidad** (vacío = permanente).
+
+**Dos indicadores distintos**:
+- **Pildora** (`<LayerBadge>`): se muestra junto a la capa en el menú de temas (`LayerItem`), resultados de búsqueda (`SearchMenu`) y panel de capas activas (`ActiveLayerItem`). Visible mientras el badge esté dentro de su ventana de vigencia, **independiente de si el usuario ya la vio**.
+- **Puntito** en el tema raíz del sider (`MenuButton`): aparece si algún descendiente tiene un badge vigente que el usuario **aún no ha activado**. Se apaga (persistente) cuando el usuario activa esa capa.
+
+**"Visto"**: al activar una capa con badge vigente, un `useEffect` en `MapsProvider` llama `markBadgeSeen(id, badge)` que persiste en `localStorage` (clave `mapalab.badge.seen.<layerId>.<hash>`). El hash es de contenido: si el admin re-badgea la capa, el puntito reaparece. Estado reactivo vía `badgeSeenStore` (`useSyncExternalStore`), consumido por `MapSider` para recalcular los puntitos.
+
+**Piezas**:
+
+| Archivo | Rol |
+|---|---|
+| `dataengine/jobs/alembic/versions/20260619_0019_layer_badge.py` | Migración `ADD COLUMN badge JSONB` |
+| `mariachi/api/app/schemas/layer.py::LayerBadge` | Schema Pydantic (camelCase aliases, validación de fechas/color) |
+| `mariachi/admin/.../layersEditor/LayerBadgeSection.jsx` | Tab "Badge" del editor (presets + custom + vigencia + preview) |
+| `backend/app/services/layer_tree_service.py` | Expone `badge` en `/layers/tree` solo si `enabled` |
+| `frontend/src/pages/maps/helpers/badgeHelpers.js` | Presets, vigencia, hash, `themeHasUnseenBadge` (reusa `stringHash`/`buildLayerIndex` de `noticeHelpers`) |
+| `frontend/src/pages/maps/helpers/badgeSeenStore.js` | Store reactivo del estado "visto" |
+| `frontend/src/pages/maps/components/LayerBadge.jsx` | Pildora |
+
 ## Proximos pasos (roadmap)
 
 - **v1.4.0 — v1.5.1** — Capas dinámicas desde backend (mariachi CMS + DataEngine schema `mapalab`), security hardening, tests smoke — Abril 2026 ✅
@@ -481,6 +505,7 @@ Algunas capas pueden mostrar un banner sobre el mapa mientras están activas y d
 - **v1.27.0** — Telemetría anónima del visor → Mariachi (sesiones, capas más usadas, herramientas, botones, swipe) — Mayo 2026 ✅
 - **v1.29.0** — Aviso configurable por capa (`notice`): banner sobre el mapa con título, descripción, icono, variante, posición, vigencia y CTA opcional — Mayo 2026 ✅
 - **v1.66.0** — Avisos por capa: tolerancia a `zoomRange` invertido, tamaño `compact`, slider de zoom calibrado (8–18) en el editor — Junio 2026 ✅
+- **v1.78.0** — Badge "Nueva/Actualizada" por capa (`badge`): pildora con temporalidad en menú/búsqueda/capas activas + puntito de novedad en el tema que se apaga al activar la capa — Junio 2026 ✅
 - **v1.21.0** — Editor de Home desde admin, compartir estado completo del mapa via URL — Julio/Agosto 2026
 - **v1.22.0** — Login ciudadano, capas favoritas — Septiembre/Octubre 2026
 - **v2.0.0** — Arquitectura de capas para dependencias, lazy loading, IGIBot, 3D, dashboards, API publica — Febrero 2027+
@@ -712,6 +737,7 @@ Tipos: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `style`
 | `docs/analytics.md` | Eventos GTM/GA4, parametros, debug |
 | `docs/periodicidad.md` | Sistema de filtrado temporal (vectorial y raster) |
 | `docs/z-index.md` | Jerarquia de z-index (UI y capas del mapa) |
+| `docs/mapbase.md` | Mapas base seleccionables, overlays permanentes (etiquetas, relieve) y pendiente de admin en mariachi |
 | `docs/url-sync.md` | Sincronizacion bidireccional de estado con query params |
 | `docs/search.md` | Sistema de busqueda: scoring, searchMeta, backend planeado |
 | `docs/sider.md` | Sidebar: estados, lockMode, hover y menus flotantes |

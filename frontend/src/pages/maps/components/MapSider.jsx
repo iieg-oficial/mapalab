@@ -18,6 +18,7 @@ import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
 import { trackSiderLock, trackLogoClick, trackMeasurementPanelOpen } from '@services/analyticsService';
 import { buildIiegMarker, computeIiegStats } from '@pages/maps/helpers/markerDefinitions';
 import { getDatabaseStats } from '@services/layerMetadataService';
+import { useBadgeSeen, isBadgeSeen } from '@pages/maps/helpers/badgeSeenStore';
 import { useZenMode } from './ZenMode';
 import MenuItem from './MenuItem';
 import SiderModeButton from './SiderModeButton';
@@ -160,9 +161,12 @@ const MapSider = ({ className = '' }) => {
     }, [eventos]);
     const showGlobalFunButton = !activeEvento && globalFactsEvento.facts.length > 0;
 
+    const badgeSeenVersion = useBadgeSeen();
+
     const menuItems = useMemo(() =>
-        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toggleAnnotationTools: handleToggleAnnotations, toolsButtonRef, areMeasurementToolsVisible, areAnnotationToolsVisible, layers: allLayers, eventos: eventosForSider }),
-    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, handleToggleAnnotations, toolsButtonRef, areMeasurementToolsVisible, areAnnotationToolsVisible, allLayers, eventosForSider]);
+        createMenuItems({ isHovered: isExpanded, activeLayerIds: contextActiveLayerIds, onToggleLayer, toggleMeasurementTools: handleToggleTools, toggleAnnotationTools: handleToggleAnnotations, toolsButtonRef, areMeasurementToolsVisible, areAnnotationToolsVisible, layers: allLayers, eventos: eventosForSider, isBadgeSeen }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isExpanded, contextActiveLayerIds, onToggleLayer, handleToggleTools, handleToggleAnnotations, toolsButtonRef, areMeasurementToolsVisible, areAnnotationToolsVisible, allLayers, eventosForSider, badgeSeenVersion]);
 
     const eventCount = eventosForSider.length;
     const baseItemsEnd = BASE_ITEMS_COUNT;

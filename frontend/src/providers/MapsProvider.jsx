@@ -1,6 +1,8 @@
-import { useState, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
+import { useState, useCallback, useMemo, useRef, useLayoutEffect, useEffect } from 'react';
 import { useClickPosition } from '@hooks/useClickPosition';
 import { useLayers } from '@hooks/useLayers';
+import { markBadgeSeen } from '@pages/maps/helpers/badgeSeenStore';
+import { isBadgeInValidityWindow } from '@pages/maps/helpers/badgeHelpers';
 import MapsContext from '@contexts/MapsContext';
 import EventoProvider from '@providers/EventoProvider';
 import { BASEMAPS } from '@pages/maps/helpers/basemaps';
@@ -50,6 +52,18 @@ const MapsProvider = ({ children }) => {
         });
     }, []);
     const layerManagement = useLayerManagement();
+
+    const { activeLayerIds: lmActiveLayerIds, findLayerById: lmFindLayerById } = layerManagement;
+    useEffect(() => {
+        lmActiveLayerIds.forEach((id) => {
+            const node = lmFindLayerById(id);
+            const badge = node?.badge;
+            if (badge?.enabled && isBadgeInValidityWindow(badge)) {
+                markBadgeSeen(id, badge);
+            }
+        });
+    }, [lmActiveLayerIds, lmFindLayerById]);
+
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
     const cqlFilter = useCQLFilter();
     const periodicityCache = usePeriodicityCache(layerManagement.activeLayerIds);

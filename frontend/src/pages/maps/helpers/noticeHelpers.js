@@ -36,7 +36,7 @@ export const buildLayerIndex = (nodes) => {
     return index;
 };
 
-const stringHash = (str) => {
+export const stringHash = (str) => {
     let h = 5381;
     for (let i = 0; i < str.length; i += 1) {
         h = ((h << 5) + h) ^ str.charCodeAt(i);

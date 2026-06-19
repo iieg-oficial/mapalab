@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useState } from 'react';
 import Switch from '@components/Switch';
 import Checkbox from '@components/Checkbox';
+import LayerBadge from '@mapsComponents/LayerBadge';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
@@ -99,11 +100,13 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
                     disabled={isDisabled}
                     className={`
                         flex-grow text-left font-garet font-normal text-[12px] my-1.5 text-[#454545] tracking-normal
+                        inline-flex items-center gap-1.5 flex-wrap
                         ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
                     `}
                     onClick={handleLabelClick}
                 >
                     {layer.label}
+                    <LayerBadge badge={layer.badge} />
                 </button>
             </div>
 

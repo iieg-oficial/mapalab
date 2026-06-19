@@ -5,8 +5,9 @@ import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import { fromLonLat } from 'ol/proj';
 import { getDefaultMapView, getMinZoom } from '@pages/maps/helpers/defaultView';
+import { RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 
-export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOverlayRef, basemaps, baseMapId }) => {
+export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOverlayRef, reliefOverlayRef, basemaps, baseMapId }) => {
     const [searchParams] = useSearchParams();
     const [mapInstance, setMapInstance] = useState(null);
 
@@ -45,9 +46,17 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOver
         const labelsOverlaySource = initialConfig.createLabelsOverlay
             ? initialConfig.createLabelsOverlay()
             : null;
+        const reliefLayer = new TileLayer({
+            source: RELIEF_OVERLAY.iieg(),
+            zIndex: RELIEF_OVERLAY_Z_INDEX,
+            visible: baseMapId !== 'sin_mapalab',
+        });
+        reliefLayer.set('reliefVariant', 'iieg');
+
         const initialLayers = [
             new TileLayer({ source: initialConfig.create(), zIndex: -1 }),
             new TileLayer({ source: labelsOverlaySource, zIndex: 9000, visible: false }),
+            reliefLayer,
         ];
 
         const map = new OLMap({
@@ -73,6 +82,7 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOver
         mapRef.current = map;
         baseMapRef.current = map.getLayers().item(0);
         if (labelsOverlayRef) labelsOverlayRef.current = map.getLayers().item(1);
+        if (reliefOverlayRef) reliefOverlayRef.current = map.getLayers().item(2);
         setMapInstance(map);
 
         return () => {
@@ -82,6 +92,7 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOver
             mapRef.current = null;
             baseMapRef.current = null;
             if (labelsOverlayRef) labelsOverlayRef.current = null;
+            if (reliefOverlayRef) reliefOverlayRef.current = null;
             setMapInstance(null);
             HTMLCanvasElement.prototype.getContext = originalGetContext;
         };
