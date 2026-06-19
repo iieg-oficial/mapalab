@@ -71,7 +71,8 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
                         hasChildren: true,
                         visible: ancestorVisible,
                         order: result.length,
-                        childIds
+                        childIds,
+                        badge: forceGroupAncestor.badge
                     });
 
                     processedIds.add(forceGroupAncestor.id);
@@ -94,7 +95,8 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
                 hasChildren,
                 visible,
                 order: result.length,
-                childIds
+                childIds,
+                badge: layer.badge
             });
 
             processedIds.add(layerId);

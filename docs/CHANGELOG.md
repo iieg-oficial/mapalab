@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.78.0] - 2026-06-19
+
+### Agregado
+
+- **Badge "Nueva/Actualizada" por capa**: nueva configuración por capa (`badge` JSONB en `mapalab.layers`, tab "Badge" en el editor de mariachi) que muestra una pildora junto a la capa en el menú de temas, los resultados de búsqueda y el panel de capas activas. Presets `Nueva`/`Actualizada`/`Próximamente` (label y color por defecto) más variante `custom` con texto y color libres. Soporta **temporalidad** (`validFrom`/`validUntil`): la pildora solo aparece mientras el badge esté vigente.
+- **Puntito de novedad en el tema**: el tema raíz del sider muestra un indicador cuando alguna de sus capas tiene un badge vigente que el usuario aún no ha activado. Al activar la capa se marca como vista en `localStorage` (clave `mapalab.badge.seen.<layerId>.<hash>`) y el puntito no reaparece; si el admin re-badgea la capa (cambia el hash de contenido), vuelve a mostrarse. La pildora persiste por temporalidad aunque el puntito ya se haya apagado.
+- Helpers `badgeHelpers.js` (presets, ventana de vigencia, hash de contenido, `themeHasUnseenBadge`), store reactivo `badgeSeenStore.js` (`useSyncExternalStore`) y componente `LayerBadge`. Tests de `badgeHelpers`.
+
 ## [1.77.0] - 2026-06-19
 
 ### Agregado

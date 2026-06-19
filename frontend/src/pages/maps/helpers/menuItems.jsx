@@ -8,8 +8,9 @@ import EventoMenu from '@mapsComponents/EventoMenu';
 import EventoIconButton from '@mapsComponents/EventoIconButton';
 import ToolsMenu from '@mapsComponents/ToolsMenu';
 import { SIDER_TRANSITION_TIMING } from '@constants/sider';
+import { themeHasUnseenBadge } from '@pages/maps/helpers/badgeHelpers';
 
-const MenuButton = ({ icon, imageUrl, label, isHovered, hasActiveLayers = false, isMenuOpen = false, categoryId = null, iconOverrides = null }) => {
+const MenuButton = ({ icon, imageUrl, label, isHovered, hasActiveLayers = false, isMenuOpen = false, categoryId = null, iconOverrides = null, hasUnseenBadge = false }) => {
     const [isHovering, setIsHovering] = useState(false);
 
     const iconName = categoryId || icon;
@@ -32,20 +33,25 @@ const MenuButton = ({ icon, imageUrl, label, isHovered, hasActiveLayers = false,
                     ${isMenuOpen ? 'bg-[#FF8300] opacity-100' : 'opacity-0'}
                 `}
             />
-            {stateImageUrl ? (
-                <img
-                    src={stateImageUrl}
-                    alt={label || ''}
-                    className={`size-8 object-contain transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
-                />
-            ) : (
-                <Icon
-                    name={iconName}
-                    state={iconState}
-                    size="size-8"
-                    className={`transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
-                />
-            )}
+            <span className="relative inline-flex shrink-0">
+                {stateImageUrl ? (
+                    <img
+                        src={stateImageUrl}
+                        alt={label || ''}
+                        className={`size-8 object-contain transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
+                    />
+                ) : (
+                    <Icon
+                        name={iconName}
+                        state={iconState}
+                        size="size-8"
+                        className={`transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
+                    />
+                )}
+                {hasUnseenBadge && (
+                    <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-[#FF8300] ring-2 ring-white" />
+                )}
+            </span>
             <span
                 className={`
                     transition-all duration-500 truncate whitespace-nowrap font-garet ml-5
@@ -131,9 +137,11 @@ const hasActiveChildLayers = (category, activeLayerIds) => {
     return descendantIds.some(id => activeLayerIds.includes(id));
 };
 
-const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer, layers = [] }) =>
+const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer, layers = [], isBadgeSeen }) =>
     layers.filter(category => !category.hiddenInMenu).map(category => {
         const hasActiveLayers = hasActiveChildLayers(category, activeLayerIds);
+        const hasUnseenBadge = typeof isBadgeSeen === 'function'
+            && themeHasUnseenBadge(category, isBadgeSeen);
 
         return {
             id: category.id,
@@ -158,6 +166,7 @@ const createCategoryItems = ({ isHovered, activeLayerIds, onToggleLayer, layers 
                     isHovered={isHovered}
                     hasActiveLayers={hasActiveLayers}
                     isMenuOpen={isMenuOpen}
+                    hasUnseenBadge={hasUnseenBadge}
                 />
             )
         };

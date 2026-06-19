@@ -12,6 +12,13 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.78.0',
+        items: [
+            { text: 'Las capas nuevas o actualizadas ahora muestran una etiqueta ("Nueva", "Actualizada") junto a su nombre en el menú, el buscador y tus capas activas.', tag: 'added' },
+            { text: 'El tema que tiene una capa nueva muestra un puntito de aviso; al abrir y activar esa capa, el puntito desaparece y no te vuelve a aparecer.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.76.0',
         items: [
             { text: 'Cuando haces clic y la capa seleccionada no tiene datos en ese punto, el mensaje ahora es más claro y muestra el símbolo de la capa para que sepas cuál estás consultando.', tag: 'changed' },

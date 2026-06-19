@@ -1,16 +1,21 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { getSearchConfig } from '@services/searchConfig';
 import { searchGlobal } from '@services/searchService';
 import { trackLayerSearch } from '@services/analyticsService';
 import { useDebounce } from '@hooks/useDebounce';
 import { useSearch } from '@contexts/SearchContext';
+import { useLayers } from '@hooks/useLayers';
+import { buildLayerIndex } from '@pages/maps/helpers/badgeHelpers';
 import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import ScrollContainer from '@components/ScrollContainer';
+import LayerBadge from '@mapsComponents/LayerBadge';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const SearchMenu = ({ onToggleLayer, activeLayerIds = [], closeButton }) => {
     const { initialSearchQuery, consumeInitialQuery } = useSearch();
+    const { layers } = useLayers();
+    const layerIndex = useMemo(() => buildLayerIndex(layers), [layers]);
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedQuery = useDebounce(searchQuery, 500);
     const [selectedLayers, setSelectedLayers] = useState([]);
@@ -158,11 +163,12 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [], closeButton }) => {
                                                     />
                                                     <span
                                                         className={`
-                                                            text-[13px]/[19px] font-garet font-normal text-left tracking-normal
+                                                            text-[13px]/[19px] font-garet font-normal text-left tracking-normal inline-flex items-center gap-1.5 flex-wrap
                                                             ${isActive ? 'text-[#5C2472] font-bold' : 'text-[#454545] group-hover:text-[#5C2472]'
                                                 }`}
                                                     >
                                                         {layer.label}
+                                                        <LayerBadge badge={layerIndex.get(layer.id)?.badge} />
                                                     </span>
                                                 </button>
                                             );
