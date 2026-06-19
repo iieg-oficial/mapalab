@@ -17,6 +17,12 @@
 
 ## Capas del Mapa (OpenLayers)
 
+### Overlay permanente de relieve
+
+| z-index   | Tipo de Capa                  | Descripcion                                                                 |
+|-----------|-------------------------------|----------------------------------------------------------------------------|
+| **10000** | Sombreado de relieve          | Overlay permanente sobre cualquier capa o mapa base. Visible salvo "Sin Mapa Base". Variante IIEG/INEGI segun el switch de capas de limites. No aparece en el panel de capas activas |
+
 ### Capas vectoriales y de dibujo
 
 | z-index  | Tipo de Capa                    | Descripcion                                          |
@@ -68,6 +74,8 @@
 |      (ActiveLayersList, SymbologyPanel, MapControls, etc.)   |
 |  UI: FeatureInfoPanel (InfoBox)               [5]            |  <- Sobre overlays del mapa, debajo de paneles
 |  UI: SwipeView (barra/etiquetas)              [1]            |
++-------------------------------------------------------------+
+|  Overlay relieve (sombreado)                  [10000]       |  <- Siempre arriba de las capas del mapa
 +-------------------------------------------------------------+
 |  Capas vectoriales (dibujo)                   [1000+]        |  <- Herramientas de medicion
 +-------------------------------------------------------------+

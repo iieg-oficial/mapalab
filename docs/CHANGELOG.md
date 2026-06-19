@@ -5,6 +5,17 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.77.0] - 2026-06-19
+
+### Agregado
+
+- **Overlay permanente de sombreado de relieve**: capa de relieve montada sobre el stack de OpenLayers (`zIndex 10000`) que se pinta siempre por encima de cualquier capa o mapa base, fuera del WMS layer manager y sin aparecer en el panel de capas activas. Visible salvo en "Sin Mapa Base". Alterna entre variante IIEG e INEGI según el switch de capas de límites. Estilo/blend resuelto en GeoServer; el visor solo la posiciona y elige la variante. Nuevo hook `useReliefOverlay` y definiciones (`RELIEF_OVERLAY`, `RELIEF_OVERLAY_Z_INDEX`) en `helpers/basemaps.js`. Los nombres de las capas de GeoServer (`raster:sombreado_relieve_iieg` / `_inegi`) son placeholder hasta su publicación.
+- **`docs/mapbase.md`**: documentación de mapas base seleccionables, overlays permanentes (etiquetas, relieve) y el pendiente de administración desde mariachi.
+
+### Cambiado
+
+- La derivación del modo IIEG/INEGI se centralizó en `isInegiBaseMode` (`helpers/basemaps.js`), reutilizada por `ActiveLayersList` y `MapView` (la variante del relieve respeta el pane activo en modo swipe).
+
 ## [1.76.0] - 2026-06-12
 
 ### Agregado

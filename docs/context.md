@@ -712,6 +712,7 @@ Tipos: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `style`
 | `docs/analytics.md` | Eventos GTM/GA4, parametros, debug |
 | `docs/periodicidad.md` | Sistema de filtrado temporal (vectorial y raster) |
 | `docs/z-index.md` | Jerarquia de z-index (UI y capas del mapa) |
+| `docs/mapbase.md` | Mapas base seleccionables, overlays permanentes (etiquetas, relieve) y pendiente de admin en mariachi |
 | `docs/url-sync.md` | Sincronizacion bidireccional de estado con query params |
 | `docs/search.md` | Sistema de busqueda: scoring, searchMeta, backend planeado |
 | `docs/sider.md` | Sidebar: estados, lockMode, hover y menus flotantes |

@@ -3,6 +3,8 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useFeatureInfo } from '@hooksMaps/useFeatureInfo';
 import { useMapInitialization } from '@hooksMaps/useMapInitialization';
 import { useBaseMapManager } from '@hooksMaps/useBaseMapManager';
+import { useReliefOverlay } from '@hooksMaps/useReliefOverlay';
+import { isInegiBaseMode } from '@pages/maps/helpers/basemaps';
 import { useLayers } from '@hooks/useLayers';
 
 import { useWMSLayerFactory } from '@hooksMaps/useWMSLayerFactory';
@@ -66,6 +68,8 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
     const { queryFeatures, queryFeaturesInPolygon } = useFeatureInfo(featureInfoOverrides);
     const baseMapRef = useRef(null);
     const labelsOverlayRef = useRef(null);
+    const reliefOverlayRef = useRef(null);
+    const isInegiMode = useMemo(() => isInegiBaseMode(activeLayerIds), [activeLayerIds]);
 
     const handlePaneClick = useCallback(async (map, coordinate, evt) => {
         if (isCompare && !isActiveSlotPane && setActiveSlot) {
@@ -79,8 +83,9 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         queryFeaturesInPolygonRef.current = queryFeaturesInPolygon;
     }, [queryFeaturesInPolygon, queryFeaturesInPolygonRef, isCompare]);
 
-    const { mapInstance: localMapInstance } = useMapInitialization({ targetRef, mapRef, baseMapRef, labelsOverlayRef, basemaps: ctx.basemaps, baseMapId: ctx.baseMapId });
+    const { mapInstance: localMapInstance } = useMapInitialization({ targetRef, mapRef, baseMapRef, labelsOverlayRef, reliefOverlayRef, basemaps: ctx.basemaps, baseMapId: ctx.baseMapId });
     useBaseMapManager(baseMapRef, ctx.basemaps, ctx.baseMapId, mapRef, labelsOverlayRef);
+    useReliefOverlay(reliefOverlayRef, ctx.baseMapId, isInegiMode);
 
     useEffect(() => {
         if (!isCompare || !setPaneMapInstance) return undefined;
