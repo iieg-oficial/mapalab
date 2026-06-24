@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.78.1',
+        items: [
+            { text: 'Corregimos los íconos del menú lateral, que se veían comprimidos al colapsar el panel; ahora mantienen su tamaño en todo momento.', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.78.0',
         items: [
             { text: 'Las capas nuevas o actualizadas ahora muestran una etiqueta ("Nueva", "Actualizada") junto a su nombre en el menú, el buscador y tus capas activas.', tag: 'added' },

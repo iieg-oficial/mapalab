@@ -33,19 +33,19 @@ const MenuButton = ({ icon, imageUrl, label, isHovered, hasActiveLayers = false,
                     ${isMenuOpen ? 'bg-[#FF8300] opacity-100' : 'opacity-0'}
                 `}
             />
-            <span className="relative inline-flex shrink-0">
+            <span className={`relative inline-flex shrink-0 transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}>
                 {stateImageUrl ? (
                     <img
                         src={stateImageUrl}
                         alt={label || ''}
-                        className={`size-8 object-contain transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
+                        className="size-8 shrink-0 object-contain"
                     />
                 ) : (
                     <Icon
                         name={iconName}
                         state={iconState}
                         size="size-8"
-                        className={`transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
+                        className="shrink-0"
                     />
                 )}
                 {hasUnseenBadge && (

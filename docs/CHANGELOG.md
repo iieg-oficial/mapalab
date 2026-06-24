@@ -5,6 +5,12 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.78.1] - 2026-06-24
+
+### Corregido
+
+- **Íconos del sider comprimidos**: el puntito de novedad del tema envolvía el ícono en un contenedor flex, por lo que el margen negativo de la animación de colapso encogía horizontalmente el ícono. La animación de colapso se movió al contenedor y el ícono queda fijo (`shrink-0`), restaurando su proporción cuadrada en ambos estados del sider.
+
 ## [1.78.0] - 2026-06-19
 
 ### Agregado
