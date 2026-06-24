@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.79.0',
+        items: [
+            { text: 'Agregamos un sombreado de relieve que resalta la topografía del estado por encima del mapa; permanece visible mientras haya un mapa base y se adapta automáticamente a la vista IIEG o INEGI.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.78.1',
         items: [
             { text: 'Corregimos los íconos del menú lateral, que se veían comprimidos al colapsar el panel; ahora mantienen su tamaño en todo momento.', tag: 'fixed' },

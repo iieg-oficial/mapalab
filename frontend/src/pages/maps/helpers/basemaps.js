@@ -43,8 +43,8 @@ const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/
 const RELIEF_WORKSPACE = 'raster';
 
 const RELIEF_LAYERS = {
-    iieg: 'sombreado_relieve_iieg',
-    inegi: 'sombreado_relieve_inegi',
+    iieg: 'hillshade_iieg_cog',
+    inegi: 'hillshade_inegi_cog',
 };
 
 export const RELIEF_OVERLAY_Z_INDEX = 10000;

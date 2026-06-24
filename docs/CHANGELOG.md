@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.79.0] - 2026-06-24
+
+### Agregado
+
+- **Sombreado de relieve en producción**: el overlay permanente de relieve (introducido en 1.77.0 con capas placeholder) ahora apunta a las capas reales publicadas en GeoServer `raster:hillshade_iieg_cog` / `raster:hillshade_inegi_cog`. Conserva todo el comportamiento del overlay: siempre activo, fuera del panel de capas activas, oculto en "Sin Mapa Base", `zIndex 10000` y alternancia IIEG/INEGI según el switch de capas de límites.
+
+### Cambiado
+
+- **Blend `multiply` del relieve en el cliente**: el sombreado se compone con `globalCompositeOperation = 'multiply'` en el `prerender`/`postrender` del `reliefLayer` (`useMapInitialization`), de modo que oscurece según el relieve sin tapar los colores de las capas temáticas. El blend del SLD (`composite: multiply`) no aplicaba en este montaje porque el relieve es una petición WMS independiente, no una capa compuesta por GeoServer junto a las demás.
+
 ## [1.78.1] - 2026-06-24
 
 ### Corregido
