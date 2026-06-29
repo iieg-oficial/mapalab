@@ -317,6 +317,20 @@ print(f'{len(rel)} historias vinculadas')
 
 Nota: el campo `user_story_extra_info` de la respuesta puede venir vacío (`ref=None, subject=None`); la relación sí está creada, es un detalle de hidratación del endpoint. Para ver los refs, hacer GET individual a cada `user_story` id en la respuesta.
 
+**Forma de la respuesta de `related_userstories`**: cada item es `{'epic': <epic_id>, 'user_story': <us_id>, 'order': <int>}`. **No trae un `id` de relación propio** — para borrar el vínculo se usa el `user_story` id directamente (ver abajo).
+
+### Desvincular / mover una historia entre épicas
+
+Desvincular: `DELETE /epics/{epic_id}/related_userstories/{user_story_id}` (el path usa el **id de la historia**, no un id de relación).
+
+```python
+api('DELETE', f'/epics/{epic_id}/related_userstories/{us_id}')
+```
+
+Para **mover** una historia de una épica a otra: primero `POST related_userstories` en la épica destino (idempotente), luego `DELETE` en la origen. El orden importa para no dejar la historia huérfana si algo falla a medias.
+
+Borrar una épica con `DELETE /epics/{id}` **no borra sus historias**: solo se pierde el vínculo. Útil al consolidar épicas (mover sus US a otra y luego borrar la vacía).
+
 ---
 
 ## Flujo recomendado: Épica → Historia → Tarea
@@ -619,14 +633,16 @@ Calibración mental (no es regla rígida):
 
 ### Fecha límite (`due_date`)
 
-Aplica a **épicas y tareas**. Las user stories no llevan `due_date` en la convención del proyecto (su entrega se rastrea por el milestone y por el estado de sus tareas).
+Aplica a **tareas, historias e issues**. **Las épicas NO soportan `due_date`** en esta instancia: el `PATCH` con `due_date` se acepta sin error pero el campo **no se persiste** (queda `null` al releer). No insistir; la entrega de una épica se rastrea por el estado de sus historias.
 
-Formato: `YYYY-MM-DD`. Para trabajo retroactivo (épica que se hidrata después de mergear), usar la fecha del día de hidratación: refleja cuándo se cerró el registro en Taiga, aunque el merge sea anterior.
+Las user stories tampoco llevan `due_date` en la convención del proyecto (su entrega se rastrea por el milestone y por el estado de sus tareas).
+
+Formato: `YYYY-MM-DD`. Para trabajo retroactivo (tarea que se hidrata después de mergear), usar la fecha del día de hidratación: refleja cuándo se cerró el registro en Taiga, aunque el merge sea anterior.
 
 ```python
-api('PATCH', f'/epics/{epic_id}', {
+api('PATCH', f'/tasks/{task_id}', {
     'due_date': '2026-05-15',
-    'version': epic_full['version'],
+    'version': task_full['version'],
 })
 ```
 
@@ -701,6 +717,18 @@ Misma estructura para `ensure_task(us_id, subject, description, status_id)` (las
 
 Commit `a776c28`.
 ```
+
+## Higiene del backlog
+
+- **El "Backlog" de Taiga = user stories sin milestone.** Cerrar una historia (`is_closed`) **no la saca del backlog**; lo que la saca es asignarle un `milestone`. Para limpiar releases ya entregados que cuelgan del backlog, moverlos a un milestone (cerrado), no basta con cerrarlos.
+- **Convención de milestones por periodo**: para trabajo retroactivo se usan milestones por trimestre (`2026-Q1`, `2026-Q2`, …) creados con `POST /milestones` (`project`, `name`, `estimated_start`, `estimated_finish` en `YYYY-MM-DD`). El `total_points`/`closed_points` del milestone se calcula solo de las historias que tiene asignadas.
+- **Épicas de release por decena**: el histórico de versiones se agrupa en épicas `Mapalab 1.Nx` (una por decena: `1.0x`=v1.0–v1.9, `1.1x`=v1.10–v1.20, `1.2x`=v1.21–v1.29, … `1.7x`=v1.70–v1.79). Una historia por versión menor (`vX.Y.x — <desc>`), agrupando sus patches en bullets. La épica paraguas `#542` quedó solo con historias de otros involucrados (no versionadas).
+
+## Puntos: cómo se ven y se suman
+
+- **Las épicas NO muestran suma de puntos** en su tarjeta — su progreso se mide por número de historias. Los puntos solo se ven en el **milestone/sprint** y en el backlog. Si esperas un total de puntos en la épica, no aparece ahí.
+- **`total_points` de una historia** = suma de los puntos de los roles **computables** (en MapaLab los 8 roles son `computable=True`). Si el `points` dict tiene todos los roles en `?` (point id `1`), `total_points` queda en `null`. Para que una historia "sume", asignar un punto real a su rol principal (p. ej. `{'3': 6}` = Front → "3").
+- Al asignar puntos retroactivos a releases ya entregados, usar calibración baja (la mayoría 1–3); reservar 5 para los bloques genuinamente grandes.
 
 ## Notas generales
 
