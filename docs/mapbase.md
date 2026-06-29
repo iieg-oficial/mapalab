@@ -79,7 +79,7 @@ Píldora "Contribuciones ©" abajo a la derecha. Se **oculta** cuando `baseMapId
 
 ## Overlay de relieve (sombreado)
 
-Capa permanente de sombreado de relieve que se pinta **siempre por encima de cualquier capa o mapa base**, sin aparecer en el panel de capas activas. El estilo/blend lo resuelve GeoServer; el visor solo la posiciona arriba y elige la variante.
+Capa permanente de sombreado de relieve que se pinta **siempre por encima de cualquier capa o mapa base**, sin aparecer en el panel de capas activas. El estilo lo resuelve GeoServer (`raster:hillshade`); el visor la posiciona arriba, elige la variante y aplica el blend `multiply` en el cliente.
 
 ### Comportamiento
 
@@ -108,8 +108,8 @@ Este helper es la fuente única de verdad: lo consume tanto `ActiveLayersList` (
 ```js
 const RELIEF_WORKSPACE = 'raster';
 const RELIEF_LAYERS = {
-  iieg:  'sombreado_relieve_iieg',
-  inegi: 'sombreado_relieve_inegi',
+  iieg:  'hillshade_iieg_cog',
+  inegi: 'hillshade_inegi_cog',
 };
 export const RELIEF_OVERLAY_Z_INDEX = 10000;
 export const RELIEF_OVERLAY = {
@@ -120,9 +120,11 @@ export const RELIEF_OVERLAY = {
 
 `createReliefSource` arma un `ol/source/TileWMS` contra `${VITE_GEOSERVER_URL}/raster/wms` con `serverType: 'geoserver'`, `FORMAT image/png`, `TRANSPARENT true`, `VERSION 1.1.0` y `TILED true`. La reproyección a `EPSG:3857` la resuelve GeoServer.
 
+El blend `multiply` se aplica **en el cliente**: `useMapInitialization` engancha `prerender`/`postrender` en el `reliefLayer` para fijar `globalCompositeOperation = 'multiply'` mientras se dibuja la capa y restaurarlo a `'source-over'` después. Así el sombreado oscurece según el relieve sin tapar los colores de las capas temáticas. El `composite: multiply` del SLD `raster:hillshade` no basta en este montaje porque el relieve es una petición WMS independiente (OpenLayers la compone, no GeoServer junto a las demás capas). El contraste se ajusta desde el `GammaValue` del SLD en GeoServer.
+
 ### Montaje y control
 
-- `useMapInitialization` monta el `TileLayer` del relieve como tercer elemento del stack (`zIndex: 10000`), con `visible = baseMapId !== 'sin_mapalab'` y marca `reliefVariant = 'iieg'`.
+- `useMapInitialization` monta el `TileLayer` del relieve como tercer elemento del stack (`zIndex: 10000`), con `visible = baseMapId !== 'sin_mapalab'`, marca `reliefVariant = 'iieg'` y engancha el blend `multiply` (`prerender`/`postrender`).
 - `frontend/src/pages/maps/hooks/useReliefOverlay.js` reconcilia en cada cambio de `baseMapId` / `isInegiMode`:
   - `setVisible(baseMapId !== 'sin_mapalab')`.
   - Cambia el `source` solo cuando la variante deseada difiere de `reliefVariant` (evita re-fetch al alternar entre dos mapas base reales).
@@ -134,15 +136,11 @@ El relieve es un fondo permanente, no una capa de datos togglable. Montarlo en `
 
 ## Pendientes
 
-### 1. Nombres reales de las capas de GeoServer
-
-Las capas `raster:sombreado_relieve_iieg` / `raster:sombreado_relieve_inegi` son **placeholder**. Cuando los analistas espaciales publiquen las capas definitivas, basta ajustar `RELIEF_WORKSPACE` y `RELIEF_LAYERS` en `helpers/basemaps.js` (un solo punto). Si la separación IIEG/INEGI no resulta en dos capas sino en dos `STYLES` sobre la misma capa, se resuelve en el factory `createReliefSource` sin tocar el resto.
-
-### 2. Fase 2 — Administración de mapas base y overlays desde mariachi
+### 1. Administración de mapas base y overlays desde mariachi
 
 Hoy todo lo de este documento está **hardcodeado** en el frontend. Es lo último que sigue así después de la migración de capas a CMS (v1.4.0, capas editadas desde mariachi y leídas vía `/layers/tree`). La evolución natural es una sección de administración análoga.
 
-Alcance estimado (épica propia, no parte de la prueba del relieve):
+Alcance estimado (épica propia):
 
 - **Modelo de datos** (DataEngine, schema `mapalab`): tabla de mapas base / overlays con tipo de fuente (`xyz` / `wms` / `wmts`), URL/params, atribuciones, orden, ícono, `labelZoomThreshold`, flags de overlay permanente, `zIndex` y reglas de visibilidad (ej. el binding al switch IIEG/INEGI).
 - **Backend mapalab**: endpoint `/basemaps` con cache materializada (mismo patrón que `/layers/tree`) y validación de URLs venidas del admin.
@@ -155,7 +153,7 @@ Fricciones a considerar (lo que no se serializa trivialmente):
 - Las funciones `create()` son código OpenLayers (XYZ con subdominios, TileWMS con params, overlay de etiquetas). Hay que definir un **catálogo cerrado de tipos de fuente** + factory, no URL libre.
 - El binding condicional del relieve al switch IIEG/INEGI es lógica, no datos: modelar "overlay permanente cuya fuente cambia según el estado del switch" de forma genérica es la parte más compleja.
 
-Recomendación: dejar el relieve hardcodeado para esta prueba (desbloquea a los analistas, cero dependencia de mariachi) y planear la fase 2 como versión propia.
+El relieve está en producción hardcodeado (cero dependencia de mariachi); la administración desde el CMS queda planeada como versión propia.
 
 ## Referencias
 

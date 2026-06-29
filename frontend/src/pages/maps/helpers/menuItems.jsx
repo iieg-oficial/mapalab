@@ -20,8 +20,8 @@ const MenuButton = ({ icon, imageUrl, label, isHovered, hasActiveLayers = false,
     return (
         <div
             className={`
-                flex items-center gap-3 py-2 px-2 w-full hover:bg-black/5 transition-all duration-500 rounded-[6px]
-                ${isMenuOpen ? 'bg-[#703088]/10' : ''}
+                flex items-center gap-3 py-2 px-2 w-full hover:bg-black/5 transition-all duration-500 rounded-md
+                ${isMenuOpen ? 'bg-purple-deep/10' : ''}
             `}
             style={{ transitionTimingFunction: SIDER_TRANSITION_TIMING }}
             onMouseEnter={() => setIsHovering(true)}
@@ -29,34 +29,34 @@ const MenuButton = ({ icon, imageUrl, label, isHovered, hasActiveLayers = false,
         >
             <div
                 className={`
-                    shrink-0 w-[6px] h-8 rounded-[5px] transition-all duration-500
-                    ${isMenuOpen ? 'bg-[#FF8300] opacity-100' : 'opacity-0'}
+                    shrink-0 w-1.5 h-8 rounded-[5px] transition-all duration-500
+                    ${isMenuOpen ? 'bg-orange opacity-100' : 'opacity-0'}
                 `}
             />
-            <span className="relative inline-flex shrink-0">
+            <span className={`relative inline-flex shrink-0 transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}>
                 {stateImageUrl ? (
                     <img
                         src={stateImageUrl}
                         alt={label || ''}
-                        className={`size-8 object-contain transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
+                        className="size-8 shrink-0 object-contain"
                     />
                 ) : (
                     <Icon
                         name={iconName}
                         state={iconState}
                         size="size-8"
-                        className={`transition-all duration-500 ${isMenuOpen ? '' : '-ml-3'}`}
+                        className="shrink-0"
                     />
                 )}
                 {hasUnseenBadge && (
-                    <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-[#FF8300] ring-2 ring-white" />
+                    <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-orange ring-2 ring-white" />
                 )}
             </span>
             <span
                 className={`
                     transition-all duration-500 truncate whitespace-nowrap font-garet ml-5
                     ${!isHovered ? 'opacity-0 w-0' : 'opacity-100 w-auto'}
-                    ${(hasActiveLayers || isHovering || isMenuOpen) ? 'font-bold text-[#5C2472]' : 'font-medium ml-8'}
+                    ${(hasActiveLayers || isHovering || isMenuOpen) ? 'font-bold text-purple' : 'font-medium ml-8'}
                 `}
             >
                 {label}

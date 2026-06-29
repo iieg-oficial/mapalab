@@ -52,6 +52,12 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOver
             visible: baseMapId !== 'sin_mapalab',
         });
         reliefLayer.set('reliefVariant', 'iieg');
+        reliefLayer.on('prerender', (evt) => {
+            evt.context.globalCompositeOperation = 'multiply';
+        });
+        reliefLayer.on('postrender', (evt) => {
+            evt.context.globalCompositeOperation = 'source-over';
+        });
 
         const initialLayers = [
             new TileLayer({ source: initialConfig.create(), zIndex: -1 }),
