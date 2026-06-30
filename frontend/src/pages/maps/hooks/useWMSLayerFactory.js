@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import ImageLayer from 'ol/layer/Image';
 import ImageWMS from 'ol/source/ImageWMS';
+import TileLayer from 'ol/layer/Tile';
+import TileWMS from 'ol/source/TileWMS';
 import { findWMSConfig } from '../helpers/wmsConfig';
 import { useLayers } from '@hooks/useLayers';
 
@@ -42,6 +44,40 @@ export const useWMSLayerFactory = () => {
             if (baseCqlFilter) {
                 wmsParams.CQL_FILTER = baseCqlFilter;
             }
+        }
+
+        if (wmsConfig.tiled) {
+            const tileSource = new TileWMS({
+                url: wmsConfig.baseUrl,
+                params: { ...wmsParams, TILED: true },
+                serverType: 'geoserver',
+                crossOrigin: 'anonymous'
+            });
+
+            if (onLoadStart) {
+                tileSource.on('tileloadstart', () => onLoadStart(layerId));
+            }
+
+            if (onLoadEnd) {
+                tileSource.on('tileloadend', () => onLoadEnd(layerId));
+            }
+
+            tileSource.on('tileloaderror', (event) => {
+                if (import.meta.env.DEV) {
+                    const src = event?.tile?.getImage?.()?.src || null;
+                    console.warn('[WMS tileloaderror]', { layerId, src, baseUrl: wmsConfig.baseUrl, params: { ...wmsParams } });
+                }
+                onLoadEnd?.(layerId);
+            });
+
+            return new TileLayer({
+                source: tileSource,
+                visible,
+                zIndex,
+                opacity,
+                layerId,
+                wmsConfig
+            });
         }
 
         const wmsSource = new ImageWMS({

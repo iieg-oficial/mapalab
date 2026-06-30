@@ -18,11 +18,13 @@ export const hydrateWmsConfig = (wmsConfig) => {
     const gsWorkspace = wmsConfig.geoserverWorkspace || wmsConfig.workspace;
     const gsLayer = wmsConfig.geoserverLayer;
     if (!gsWorkspace || !gsLayer) return null;
+    const layerName = `${gsWorkspace}:${gsLayer}`;
     return {
         ...WMS_BASE_CONFIG,
         ...wmsConfig,
         baseUrl: `${GEOSERVER_BASE}/${gsWorkspace}/wms`,
-        layerName: `${gsWorkspace}:${gsLayer}`,
+        layerName,
+        tiled: wmsConfig.tiled === true,
     };
 };
 

@@ -54,6 +54,7 @@ def _layer_to_wms_config(layer: Layer, workspace_map: dict[str, Workspace]) -> O
         'styles': layer.styles or '',
         'cqlFilter': layer.cql_filter or '',
         'wmsGroup': layer.wms_group,
+        'tiled': bool(layer.tiled),
         'wfsAvailable': layer.wfs_available,
         'wfsLayerName': layer.wfs_layer_name,
         'timeEnabled': layer.time_enabled,
