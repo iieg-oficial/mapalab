@@ -13,16 +13,20 @@ export const JALISCO_BOUNDS = {
 
 const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
 
+const TILED_LAYERS = ['economia:cultivos'];
+
 export const hydrateWmsConfig = (wmsConfig) => {
     if (!wmsConfig) return null;
     const gsWorkspace = wmsConfig.geoserverWorkspace || wmsConfig.workspace;
     const gsLayer = wmsConfig.geoserverLayer;
     if (!gsWorkspace || !gsLayer) return null;
+    const layerName = `${gsWorkspace}:${gsLayer}`;
     return {
         ...WMS_BASE_CONFIG,
         ...wmsConfig,
         baseUrl: `${GEOSERVER_BASE}/${gsWorkspace}/wms`,
-        layerName: `${gsWorkspace}:${gsLayer}`,
+        layerName,
+        tiled: wmsConfig.tiled ?? TILED_LAYERS.includes(layerName),
     };
 };
 

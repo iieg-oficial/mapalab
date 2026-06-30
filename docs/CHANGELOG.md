@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.80.0] - 2026-06-30
+
+### Agregado
+
+- **Capas servidas por tiles (`TileWMS`), configurable por capa**: `useWMSLayerFactory` crea `TileLayer` + `TileWMS` cuando la capa trae `tiled: true` (en vez de `ImageWMS`). Esto permite que GeoWebCache cachee los tiles —incluso con `CQL_FILTER`, vía un parameter filter en GWC— haciendo la navegación (pan/zoom) mucho más fluida en capas grandes y estáticas. `hydrateWmsConfig` resuelve `tiled` desde la config del backend con fallback a una lista local (`TILED_LAYERS`), por ahora solo `economia:cultivos`.
+
+### Notas
+
+- Pendiente: exponer `tiled` como columna en `mapalab.layers` (editable desde mariachi) para retirar la lista local `TILED_LAYERS`.
+
 ## [1.79.0] - 2026-06-24
 
 ### Agregado
