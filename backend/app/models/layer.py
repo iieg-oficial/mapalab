@@ -68,6 +68,7 @@ class Layer(LayerBase):
     styles = Column(String(200), server_default='', nullable=False)
     cql_filter = Column(Text, server_default='', nullable=False)
     wms_group = Column(String(100), nullable=True)
+    tiled = Column(Boolean, server_default='false', nullable=False)
 
     wfs_available = Column(Boolean, server_default=text('TRUE'), nullable=False)
     wfs_layer_name = Column(String(200), nullable=True)

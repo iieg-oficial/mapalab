@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.81.0] - 2026-06-30
+
+### Backend expone `tiled`; frontend usa el flag del backend
+
+El backend serializa la columna `mapalab.layers.tiled` en `wmsConfig.tiled` y el frontend la consume directamente, eliminando la lista local `TILED_LAYERS`.
+
+#### Agregado
+
+- **Backend** (`models/layer.py`, `services/layer_tree_service.py`): columna `tiled` en el modelo ORM y serialización en `_layer_to_wms_config`.
+- **Frontend** (`helpers/wmsConfig.js`): `hydrateWmsConfig` resuelve `tiled` exclusivamente desde `wmsConfig.tiled` (`=== true`). Se elimina la constante `TILED_LAYERS` hardcodeada en el frontend.
+
+---
+
 ## [1.80.0] - 2026-06-30
 
 ### Agregado

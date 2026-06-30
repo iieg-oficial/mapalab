@@ -13,8 +13,6 @@ export const JALISCO_BOUNDS = {
 
 const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
 
-const TILED_LAYERS = ['economia:cultivos'];
-
 export const hydrateWmsConfig = (wmsConfig) => {
     if (!wmsConfig) return null;
     const gsWorkspace = wmsConfig.geoserverWorkspace || wmsConfig.workspace;
@@ -26,7 +24,7 @@ export const hydrateWmsConfig = (wmsConfig) => {
         ...wmsConfig,
         baseUrl: `${GEOSERVER_BASE}/${gsWorkspace}/wms`,
         layerName,
-        tiled: wmsConfig.tiled ?? TILED_LAYERS.includes(layerName),
+        tiled: wmsConfig.tiled === true,
     };
 };
 
