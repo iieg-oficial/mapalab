@@ -78,7 +78,7 @@ deploy: ensure-networks reset-dist-perms
 	@echo "Deploy completado"
 
 reset-dist-perms:
-	@docker run --rm -v "$(PWD)/frontend":/w alpine sh -c "rm -rf /w/dist && mkdir -m 0755 /w/dist && chown $$(id -u):$$(id -g) /w/dist"
+	@docker run --rm -v "$(CURDIR)/frontend":/w alpine sh -c "rm -rf /w/dist && mkdir -m 0755 -p /w/dist && chown $$(id -u):$$(id -g) /w/dist"
 
 down: down-dev down-staging down-prod
 
