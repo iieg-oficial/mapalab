@@ -207,7 +207,7 @@ sequenceDiagram
     participant Adm as Admin
     participant MAd as mariachi admin UI
     participant MApi as mariachi API
-    participant CmsDB as iieg_portal (borradores)
+    participant CmsDB as mariachi (borradores)
     participant DE as DataEngine (mapalab schema)
     participant MLbe as mapalab backend
     participant Vis as Visor público
