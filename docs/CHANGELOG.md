@@ -5,6 +5,32 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.82.0] - 2026-07-08
+
+### MCP enfocado en crear mapas: 15 → 6 tools
+
+El MCP se recortó y reorganizó alrededor de su único objetivo (crear mapas de MapaLab con un modelo chico). Catálogo final de **6 tools**: `search_layers`, `describe_layer`, `municipios`, `query_wfs`, `create_map`, `create_swipe`.
+
+#### Corregido
+
+- **Numeralia de capa siempre vacía en el MCP** (`get_layer_stats`): consultaba `values->'stats'` con columnas `geoserver_workspace`/`geoserver_layer` que no existen en `mapalab.layer_stats`, así que devolvía `[]` siempre. Ahora lee `mapalab.layer_stats.values` como el **array plano** `[{posicion, nombre, valor, simbolo}]` que escribe `dataengine/jobs/run_refresh_layer_stats.py`, resolviendo por `layer_key = geoserver_workspace:geoserver_layer`.
+
+#### Agregado
+
+- **`describe_layer` = retrato único de una capa**: absorbe `get_metadata`, `get_layer_stats` y `get_periodicity` en una sola llamada. Nuevo bloque `capabilities` (`temporal`, `hasMunicipio`, `municipioField`, `descargable`, `consultableWfs`, `zoomRange`) que le dice al agente qué puede hacer con la capa, y `periodicidad` resumida a `{años, meses}`. `capabilities.temporal` es `true` si la capa tiene años de periodicidad aunque no use dimensión TIME de WMS.
+- **`create_map`**: crea un mapa de un panel. Dos modos: `query`/`theme` (busca la mejor capa) o `layers` (capas ya resueltas), + modificadores `municipio`, `year` (validado contra la periodicidad), `annotations`, `view`, `basemap`, `selected`. Absorbe `make_map` + `create_single_share`.
+- **`create_swipe`**: crea un mapa comparativo A|B. Dos modos: `layer`+`year_a`+`year_b` (una capa en dos años) o `pane_a_layers`+`pane_b_layers` (dos capas). En modo dos-capas, `year_a`/`year_b` filtran cada lado y el server arma+valida el CQL de fecha (el agente no escribe CQL). + `municipio`. Absorbe `create_swipe_share` + `compare_years`.
+
+#### Eliminado
+
+- **Tools MCP `get_metadata`, `get_layer_stats`, `get_periodicity`** (absorbidas por `describe_layer`), **`get_layer_tree`, `get_initial_order`, `get_sources_batch`** (sin rol en crear mapas; `search_layers`/`describe_layer` cubren lo necesario) y **`measure_geometry`** (utilidad de análisis, 0 uso en telemetría). Las funciones internas y los endpoints REST del backend se conservan; solo cambia la exposición como `@mcp.tool()`.
+
+#### Refactor
+
+- **`servers/share_tools.py` dividido por dominio** en `servers/resolve.py` (resolución de capas, periodicidad, fechas, búsqueda, municipios), `servers/layers.py` (`describe_layer`, `get_layer_stats`, `query_wfs`) y `servers/shares.py` (`create_map`, `create_swipe` + internos). `servers/mapalab.py` queda como capa delgada de registro de `@mcp.tool()`.
+
+---
+
 ## [1.81.0] - 2026-06-30
 
 ### Backend expone `tiled`; frontend usa el flag del backend
