@@ -1,6 +1,6 @@
 # MCP server
 
-Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`mapalab-mcp`, separado del backend principal desde 1.35.0) que expone **15 tools** sobre el catálogo de capas, metadata, periodicidad, municipios de Jalisco, mediciones geodésicas y creación de shares del visor. Pensado para clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes como IGIBot) que necesitan consultar o entregar mapas como respuesta.
+Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`mapalab-mcp`, separado del backend principal desde 1.35.0) que expone **6 tools** enfocadas en un solo objetivo: **crear mapas de MapaLab** (con un modelo chico). Cubre búsqueda de capas, retrato de una capa, municipios de Jalisco, features WFS y creación de mapas (panel simple y comparativo swipe). Pensado para clientes LLM (Claude Desktop, IDEs con soporte MCP, agentes como IGIBot) que necesitan entregar mapas como respuesta.
 
 ## Por qué un container dedicado
 
@@ -11,15 +11,18 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`m
 
 ## Qué se expone y qué no
 
-15 tools (ver tabla completa más abajo en §Tools y su origen):
+6 tools (ver tabla completa más abajo en §Tools y su origen):
 
 | Origen | MCP | Razón |
 |---|---|---|
-| Catálogo y metadata (`search_layers`, `get_layer_tree`, `get_initial_order`, `get_metadata`, `get_sources_batch`, `get_periodicity`) | **sí** (6 tools de lectura) | Lectura pura útil para agentes. `search_layers` también lista por tema; `get_layer_tree` incluye workspaces |
-| Municipios (`municipios`) | **sí** (1 tool de lectura) | Lista los 125 o filtra por nombre/clave → claves INEGI para `create_*_share(municipios=...)` |
-| Lógica nueva (`query_wfs`, `get_layer_stats`, `measure_geometry`, `create_single_share`, `create_swipe_share`, `compare_years`) | **sí** (3 lecturas + 3 writes) | Tools manuales que reutilizan `share_service`, PostGIS y GeoServer WFS para que un agente entregue mapas interactivos. `create_*_share` aceptan `municipios={source, selected}` para el modo Vista por municipio. |
+| Búsqueda (`search_layers`) | **sí** (lectura) | Punto de entrada: encuentra el `id` de la capa por texto/slug o lista por `theme` |
+| Retrato de capa (`describe_layer`) | **sí** (lectura) | Cualidades + metadata + numeralia + periodicidad de una capa en una sola llamada. Absorbió `get_metadata`, `get_layer_stats` y `get_periodicity` |
+| Municipios (`municipios`) | **sí** (lectura) | Lista los 125 o filtra por nombre/clave → claves INEGI para `create_map`/`create_swipe(municipio=...)` |
+| Features (`query_wfs`) | **sí** (lectura) | Features WFS reales de una capa (geometrías/valores) con filtros por municipio/año o CQL |
+| Creación (`create_map`, `create_swipe`) | **sí** (2 writes) | Entregan el mapa: panel simple (`create_map`) o comparativo swipe (`create_swipe`). Idempotentes |
+| `get_layer_tree`, `get_initial_order`, `get_sources_batch` | **no** (removido en 1.82.0) | Sin rol en crear mapas; `search_layers`/`describe_layer` cubren lo necesario y el árbol completo es demasiado grande para un modelo chico |
+| `measure_geometry` | **no** (removido en 1.82.0) | Utilidad de análisis, no de creación de mapas; 0 uso en telemetría |
 | `download` (CSV streaming) | **no** | Streams de `COPY TO STDOUT`; el formato de respuesta MCP no encaja con streaming |
-| `layers/{refresh-cache,invalidate-cache}` | **no** (removido en 1.48.1) | Requerían `X-Internal-Token` que el MCP no inyecta; siempre devolvían 401, eran ruido en `tools/list` |
 | `shares/{pin,unpin,pin-permanent}` | **no** | Writes administrativos con efectos sobre la BD, no encajan en el patrón del MCP público |
 | `metrics`, `health`, `ontoy` | **no** | Endpoints internos de operaciones, no útiles para un agente |
 
@@ -32,7 +35,7 @@ Desde 1.35.0 el MCP vive en un container dedicado `mapalab-mcp`, separado del ba
 ```
 mapalab-mcp container (servers/mapalab.py)
 ├── FastMCP("mapalab")
-│   ├── @mcp.tool() search_layers, get_metadata, ...   (13 tools)
+│   ├── @mcp.tool() search_layers, describe_layer, ...   (6 tools)
 │   └── mcp_app = mcp.http_app(path='/mcp', stateless_http=True)
 │
 ├── _admin_app: FastAPI
@@ -55,33 +58,22 @@ backend container (backend/app/server.py)
 
 El `mapalab-mcp` reutiliza los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) — el codigo de `backend/app` se copia al container del MCP en build time. Sin duplicacion de logica, ambos containers leen del mismo schema `mapalab` en DataEngine.
 
-### Tools expuestos (13)
+### Tools expuestos (6)
 
 Convencion: **todos los tools que reciben una capa usan el `id` del visor** (el que devuelve `search_layers`). El workspace se resuelve solo desde el arbol; no hay que pasarlo.
 
 | Tool | Tipo | Razon |
 |---|---|---|
 | `search_layers` | Lectura | punto de entrada: busca por texto/id/slug y/o por `theme`. Absorbe los antiguos `search_by_theme` y `resolve_layer_ref` |
-| `get_layer_tree` | Lectura | arbol completo + `workspaces` en la misma respuesta |
-| `get_initial_order` | Lectura | capas activas al cargar |
-| `get_metadata` | Lectura | descripcion, fuentes, downloadable (solo `id`) |
-| `get_sources_batch` | Lectura | fuentes de varias capas (ids separados por coma) |
-| `get_periodicity` | Lectura | fechas de 1 o N capas temporales. Absorbe el antiguo `get_periodicities_batch` |
-| `measure_geometry` | Lectura | longitud/area geodesica con PostGIS (cap 2000 coords) |
-| `query_wfs` | Lectura | features WFS de una capa con CQL opcional |
+| `describe_layer` | Lectura | **retrato completo de una capa**: cualidades (`capabilities`) + metadata + numeralia + periodicidad (años/meses) en una sola llamada. Absorbe `get_metadata`, `get_layer_stats` y `get_periodicity`. Soporta ids difusos |
 | `municipios` | Lectura | lista los 125 o busca por nombre/clave. Absorbe `list_municipios` + `resolve_municipios` |
-| `create_single_share` | **Write** | crea un share single y devuelve `{id, url, embed_html}`. Idempotente |
-| `create_swipe_share` | **Write** | crea un share swipe (comparacion A\|B). Idempotente |
-| `compare_years` | **Write** | atajo swipe A\|B de una capa entre dos años + municipio opcional. Idempotente |
-| `get_layer_stats` | Lectura | numeralia precalculada de una capa |
-| `describe_layer` | Lectura | macro: metadata + stats + periodicity en una sola llamada. Ideal para modelos chicos. Soporta ids difusos |
-| `make_map` | **Write** | macro: search_layers → mejor capa → create_single_share con auto-encuadre. Idempotente |
+| `query_wfs` | Lectura | features WFS de una capa con filtros por `municipio`/`year`/`month` o CQL |
+| `create_map` | **Write** | crea un mapa de un panel y devuelve `{id, kind, url, embed_html, layer?}`. Modo `query`/`theme` (busca) o `layers` (explícito) + `municipio`/`year`/`annotations`. Absorbe `make_map` + `create_single_share`. Idempotente |
+| `create_swipe` | **Write** | crea un comparativo A\|B (swipe). Modo `layer`+`year_a`+`year_b` (una capa, dos años) o `pane_a_layers`+`pane_b_layers` (dos capas, con `year_a`/`year_b` por lado opcional, validados). Absorbe `create_swipe_share` + `compare_years`. Idempotente |
 
-**Macros para modelos chicos (v1.76+):** `describe_layer` combina get_metadata + get_layer_stats + get_periodicity en una sola llamada. `make_map` hace search_layers → mejor capa → create_single_share con auto-encuadre. Ambos soportan resolución difusa de ids (slug, alias, nombre parcial). Para capas que no soportan filtro por municipio, usá `cql_filter` como escape avanzado.
+**Diseño para modelos chicos:** el catálogo se recortó a lo esencial para crear mapas. `describe_layer` evita 3 llamadas (metadata + stats + periodicidad). `create_map`/`create_swipe` separan las dos formas de mapa (un panel vs comparación) con nombres claros, en vez de un god-tool con modos ambiguos. Todos soportan resolución difusa de ids (slug, alias, nombre parcial). Para capas que no soportan filtro por municipio, usá `cql_filter` en `query_wfs` o `filters.date` en `create_map(layers=...)` como escape avanzado.
 
-**Consolidacion de tools:** de 18 → 15 tools. `search_by_theme` y `resolve_layer_ref` se fusionaron en `search_layers` (params `theme`/`query`); `get_periodicities_batch` en `get_periodicity` (acepta 1 o N); `list_municipios` + `resolve_municipios` en `municipios(query?)`; `get_workspaces` se eliminó y ahora va dentro de `get_layer_tree`. Identificadores homologados al `id` del visor.
-
-Los tools de invalidacion de cache (`refresh_layer_tree_cache`, `invalidate_layer_tree_memory_cache`) **quedan fuera del MCP desde 1.45.2**: los endpoints REST equivalentes requieren `X-Internal-Token` que el MCP no inyecta, asi que en la practica siempre devolvian 401 — eran ruido en `tools/list`. Mariachi sigue invocando los REST directos desde `iieg-network`. Los `shares` de fan-out admin (`pin_share_permanent`, etc.) tambien quedan fuera. Los `create_*_share` y `measure_geometry` (v1.44.0) son writes intencionales, disenados para que un agente conversacional como [IGIBot](https://igibot.jalisco.gob.mx) entregue mapas interactivos como resultado de su razonamiento.
+**Consolidacion de tools:** de 18 → 15 → 6 tools. Histórico: `search_by_theme`/`resolve_layer_ref` → `search_layers`; `list_municipios`+`resolve_municipios` → `municipios`; `get_workspaces` → dentro de `get_layer_tree` (ya removido). En 1.82.0: `get_metadata`+`get_layer_stats`+`get_periodicity` → `describe_layer`; `make_map`+`create_single_share` → `create_map`; `create_swipe_share`+`compare_years` → `create_swipe`; y se eliminaron `get_layer_tree`, `get_initial_order`, `get_sources_batch` y `measure_geometry` por no aportar al objetivo de crear mapas. Identificadores homologados al `id` del visor.
 
 ### Lifespan + middleware
 
@@ -145,37 +137,30 @@ El gateway-hub no necesita un `location` específico para `/mapalab/mcp/`: cae b
 
 ## Tools y su origen
 
-Los 15 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`). Wrappers delgados sobre lógica del backend; los de share/medición/municipios reutilizan helpers de `servers/share_tools.py`. Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función.
+Los 6 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`, capa delgada de registro). La lógica vive dividida por dominio: `servers/resolve.py` (resolución de capas, periodicidad, fechas, búsqueda por tema, municipios), `servers/layers.py` (`describe_layer`, `get_layer_stats`, `query_wfs`) y `servers/shares.py` (`create_map`, `create_swipe` + internos). Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función en `mapalab.py`.
 
 | Tool | Origen del código | Qué hace |
 |---|---|---|
-| `search_layers` | `LayersRepository.search_layers` + `find_layer_by_slug_or_alias` + `search_by_theme` sobre el árbol | Busca por texto/id/slug (`query`) y/o lista un tema (`theme`). Devuelve `{id, label, slug, workspace, path}` |
-| `get_layer_tree` | `app.services.layer_tree_service.get_cached_state` | Árbol jerárquico completo **+ `workspaces`** en la misma respuesta |
-| `get_initial_order` | `get_cached_state['initial_order']` | IDs activos al cargar el visor |
-| `get_metadata` | `layer_metadata_service.get_metadata_response` (workspace resuelto desde el árbol por `id`) | Metadata completa de una capa |
-| `get_sources_batch` | `layer_metadata_service.get_sources_batch` (ids → `alias:id` vía `_to_layer_keys`) | Fuentes de varias capas en lote |
-| `get_periodicity` | `PeriodicityService.get_periodicities_batch` (1 o N ids, re-keyed al `id`) | Fechas year/month/day de capas temporales |
-| `measure_geometry` | `servers/share_tools.py::measure_geometry` (PostGIS `ST_Length`/`ST_Area::geography`) | Longitud o área geodésica de GeoJSON (cap 2000 coords + `statement_timeout`) |
-| `query_wfs` | `servers/share_tools.py::query_wfs` (GeoServer WFS GetFeature) | Features de una capa con CQL opcional. Workspace resuelto por `id`. Sanitiza SQLi, solo capas del árbol |
-| `municipios` | `MunicipiosRepository.list_all` (todos) o substring (con `query`) | Lista los 125 municipios o filtra por nombre/clave. Devuelve `{items, count}` |
-| `create_single_share` | `servers/share_tools.py::create_single_share` (reutiliza `share_service.validate_payload` + `ShareRepository.upsert`) | Crea share `kind=single` y devuelve `{id, url, embed_html}`. Acepta `annotations` y `municipios={source, selected}` |
-| `create_swipe_share` | `servers/share_tools.py::create_swipe_share` | Crea share `kind=swipe` para comparación A\|B. `municipios` aplica a ambos paneles |
-| `compare_years` | `servers/share_tools.py::compare_years` | Atajo swipe comparativo de dos años con filtro de municipio opcional |
-| `get_layer_stats` | `servers/share_tools.py::get_layer_stats` | Numeralia de `mapalab.layer_stats` (totales, ranking); vacía si no hay datos |
-| `describe_layer` | `servers/share_tools.py::describe_layer` | Macro: combina get_metadata + get_layer_stats + get_periodicity. Soporta ids difusos |
-| `make_map` | `servers/share_tools.py::make_map` | Macro: search_layers → create_single_share con municipio/año opcional + auto-encuadre |
+| `search_layers` | `LayersRepository.search_layers` + `find_layer_by_slug_or_alias` + `resolve.search_by_theme` sobre el árbol | Busca por texto/id/slug (`query`) y/o lista un tema (`theme`). Devuelve `{id, label, slug, workspace, path}` |
+| `describe_layer` | `servers/layers.py::describe_layer` (metadata + `get_layer_stats` + `resolve._periodicity_summary` + `_capabilities_from_node`) | Retrato completo: `{id, label, path, capabilities, descripcion, fuentes, metodologia, frecuencia, fecha_ultima, metadato_archivos, numeralia, pie_numeralia, periodicidad:{años, meses}}`. Soporta ids difusos |
+| `municipios` | `resolve.list_municipios` (todos) o `resolve.resolve_municipios` (substring) | Lista los 125 municipios o filtra por nombre/clave. Devuelve `{items, count}` |
+| `query_wfs` | `servers/layers.py::query_wfs` (GeoServer WFS GetFeature) | Features de una capa con filtros por `municipio`/`year`/`month` o CQL. Workspace resuelto por `id`. Sanitiza SQLi, solo capas del árbol |
+| `create_map` | `servers/shares.py::create_map` (modo `query`→`_pick_best_layer`, o `layers`; luego `create_single_share`) | Mapa de un panel. Valida `year` contra la periodicidad. Devuelve `{id, kind, url, embed_html, layer?}` |
+| `create_swipe` | `servers/shares.py::create_swipe` (una capa→`compare_years`, o dos capas→`_apply_year_filter` por panel + `create_swipe_share`) | Comparativo A\|B. Devuelve `{id, kind, url, embed_html}` |
+
+**Nota sobre la numeralia (`describe_layer.numeralia`):** `mapalab.layer_stats.values` se persiste como **array plano** `[{posicion, nombre, valor, simbolo}]` (lo escribe `dataengine/jobs/run_refresh_layer_stats.py`). `describe_layer` lo lee por `layer_key = geoserver_workspace:geoserver_layer` vía `get_layer_stats` (`servers/layers.py`). La versión previa consultaba `values->'stats'` con columnas `geoserver_workspace`/`geoserver_layer` inexistentes en la tabla — devolvía vacío siempre (bug corregido en 1.82.0).
 
 ## Identificadores de capa (resolución exacta + difusa)
 
 Todos los tools que reciben una capa usan el `id` del visor (el que devuelve `search_layers`). El workspace se resuelve solo desde el árbol; nunca hace falta pasarlo.
 
-Desde la optimización para modelos chicos, los tools `get_metadata`, `get_periodicity`, `query_wfs`, `get_layer_stats`, `compare_years`, `describe_layer` y `make_map` aceptan **ids difusos**: slug, alias o nombre parcial (p. ej. `"homicidio"` resuelve a `homicidio_doloso`). La resolución intenta primero el id exacto; si no lo encuentra busca por slug/alias en la BD y por texto en `search_layers`.
+Los tools `describe_layer`, `query_wfs`, `create_map` (modo layers), `create_swipe` (ambos modos) aceptan **ids difusos**: slug, alias o nombre parcial (p. ej. `"homicidio"` resuelve a `homicidio_doloso`). La resolución (`resolve._resolve_layer_fuzzy`) intenta primero el id exacto; si no lo encuentra busca por slug/alias en la BD y por texto en `search_layers`.
 
 ## Parámetros acotados (Literal types)
 
 Los parámetros con valores fijos usan `typing.Literal` para que Pydantic rechace valores inválidos de inmediato:
 
-- **Basemaps**: `'voyager'`, `'position'`, `'sin_mapalab'` (NO existe `'osm'`). Aplica en `create_single_share`, `create_swipe_share`, `compare_years`.
+- **Basemaps**: `'voyager'`, `'position'`, `'sin_mapalab'` (NO existe `'osm'`). Aplica en `create_map` y `create_swipe`.
 - **SRS de salida en `query_wfs`**: `'EPSG:4326'` (lat/lon) o `'EPSG:6368'` (CRS nativo, metros).
 - **Source en `municipios`**: `'iieg'` o `'inegi'` (validado en `_normalize_municipios`).
 
@@ -183,10 +168,10 @@ Si el modelo manda un valor inválido (p. ej. `basemap="osm"`), Pydantic respond
 
 ## Auto-encuadre de la vista
 
-`create_single_share`, `create_swipe_share` y `compare_years` ya no requieren el parámetro `view`. Si se omite:
+`create_map` y `create_swipe` no requieren el parámetro `view`. Si se omite:
 
-- Con `municipios` → calcula el bbox de los municipios seleccionados y encuadra automáticamente (zoom proporcional al tamaño).
-- Sin `municipios` → vista por defecto de Jalisco: `{zoom: 7.5, lat: 20.6, lon: -103.4}`.
+- Con `municipio` → calcula el bbox del municipio y encuadra automáticamente (zoom proporcional al tamaño).
+- Sin `municipio` → vista por defecto de Jalisco: `{zoom: 7.5, lat: 20.6, lon: -103.4}`.
 
 ## Filtros estructurados en `query_wfs` (sin escribir CQL)
 
@@ -200,99 +185,79 @@ Si pasás `cql_filter`, no combines con `municipio`/`year`/`month` (error explí
 
 ## Nota para modelos LLM chicos (Qwen 3B self-host)
 
-El servidor incluye `instructions` a nivel FastMCP con un playbook corto que el modelo ve al inicializar. Los tools "pesados" (`get_layer_tree`, `query_wfs`, `get_sources_batch`) incluyen advertencias en sus descripciones recomendando alternativas más ligeras. Las macros `describe_layer` y `make_map` reducen el número de round-trips necesarios para tareas comunes.
+El servidor incluye `instructions` a nivel FastMCP con un playbook corto que el modelo ve al inicializar. `describe_layer` reduce round-trips (metadata + numeralia + periodicidad en una llamada) y `create_map` entrega el mapa en un paso desde una búsqueda por texto.
 
-
-`create_single_share` y `create_swipe_share` aceptan `municipios={source: "iieg"|"inegi", selected: ["14039", "14120", ...]}` desde 1.48.x. El validador del share (`share_service._validate_municipios`) limita a 125 claves (los municipios totales de Jalisco). Cuando se abre el share, el visor activa el modo: máscara visual oscura fuera de los polígonos seleccionados, filtro CQL `{municipioField} IN (...)` automático en capas activas que soporten el filtro. Ver `docs/municipio-mode.md` para el flujo completo.
+**Modo Vista por municipio.** `create_map` y `create_swipe` aceptan `municipio` (nombre o clave); internamente se normaliza a `{source:"iieg", selected:[clave]}`. El validador del share (`share_service._validate_municipios`) limita a 125 claves. Cuando se abre el share, el visor activa el modo: máscara visual oscura fuera del polígono, filtro CQL `{municipioField} IN (...)` automático en capas que lo soporten. Ver `docs/municipio-mode.md` para el flujo completo.
 
 Patrón típico desde un agente:
 
 ```
-1. municipios(query="guadalajara") → [{clave:"14039",nombre:"Guadalajara"}, {clave:"14120",nombre:"Zapopan"}]
-2. create_single_share(
-       layers=["tasa_homicidio_doloso"],
-       view={zoom:11, lat:20.66, lon:-103.35},
-       municipios={"source":"iieg", "selected":["14039","14120"]},
-   )
-3. → embed_html con el visor filtrado a esos 2 municipios
+1. municipios(query="guadalajara") → [{clave:"14039",nombre:"Guadalajara"}]
+2. create_map(query="tasa_homicidio_doloso", municipio="Guadalajara")
+3. → embed_html con el visor filtrado a ese municipio
 ```
 
-## Entrega de mapas a agentes conversacionales (v1.44.0+)
+## Entrega de mapas a agentes conversacionales
 
-Tres tools disenados para que agentes LLM (p. ej. IGIBot) entreguen mapas interactivos en respuesta a preguntas del usuario, no solo descripciones de texto:
+Dos tools de escritura para que agentes LLM (p. ej. IGIBot) entreguen mapas interactivos en respuesta a preguntas del usuario, no solo descripciones de texto:
 
-### `create_single_share`
+### `create_map`
 
 ```
-create_single_share(
-    layers: list,                    # IDs del visor o {slug, opacity?, ...}
-    view: dict | None = None,        # {zoom, lat, lon}
+create_map(
+    query: str = '',                 # modo busqueda: elige la mejor capa
+    layers: list | None = None,      # modo directo: IDs del visor o {slug, opacity?, filters?}
+    municipio: str | None = None,    # nombre o clave; filtra + auto-encuadra
+    year: str | None = None,         # validado contra la periodicidad de la capa
+    theme: str = '',                 # busqueda por area tematica
+    view: dict | None = None,        # {zoom, lat, lon}; auto-encuadre si se omite
     basemap: str | None = None,
     selected: str | None = None,
     annotations: list | None = None, # GeoJSON EPSG:4326
-) -> {id, kind, url, embed_html}
+) -> {id, kind, url, embed_html, layer?}
 ```
 
 Crea un share `kind='single'` y devuelve:
 
 - `id`: hash corto de 10 chars (`qd6fj67ex3`)
 - `url`: enlace directo al visor (`https://iieg.gob.mx/mapalab/mapa?s=...`)
-- `embed_html`: snippet `<script>...</script><iieg-mapalab share="...">` listo para pegar en cualquier sitio web que cargue el widget
+- `embed_html`: snippet `<script>...</script><iieg-mapalab share="...">` listo para pegar en cualquier sitio que cargue el widget
+- `layer`: `{id, label}` de la capa elegida (solo en modo `query`/`theme`)
 
-El bot pega el `embed_html` en su respuesta markdown; el frontend del bot lo renderiza con `react-markdown` o equivalente y el navegador del usuario monta el widget. La key publica `mk_pub_...` la sustituye el bot con la que IIEG le haya asignado.
+El bot pega el `embed_html` en su respuesta markdown; el navegador del usuario monta el widget. La key publica `mk_pub_...` la sustituye el bot con la que IIEG le haya asignado. `annotations` permite pre-pintar lineas/poligonos/textos/emojis (mismo schema que `payload.annotations`, ver `docs/swipe.md §Annotations`).
 
-`annotations` permite pre-pintar lineas/poligonos/textos/emojis sobre el mapa — util para resaltar el resultado de un analisis (bbox de municipios, area de interes, marcadores). Mismo schema que `payload.annotations` de los shares (ver `docs/swipe.md §Annotations`).
-
-### `create_swipe_share`
+### `create_swipe`
 
 ```
-create_swipe_share(
-    pane_a_layers, pane_b_layers,
+create_swipe(
+    layer, year_a, year_b,           # modo una-capa: misma capa, dos años
+    pane_a_layers, pane_b_layers,    # modo dos-capas: dos sets de capas
+    municipio: str | None = None,    # year_a/year_b también filtran cada lado
     position: float = 0.5,           # 0.05 .. 0.95
     view, basemap, label_a, label_b,
     annotations: list | None = None,
 ) -> {id, kind, url, embed_html}
 ```
 
-Crea un share `kind='swipe'` con dos sets de capas para comparacion A\|B. Igual que `create_single_share` pero el visor abre con el separador arrastrable. Ideal para "compara homicidios vs poblacion" o "antes vs despues" cuando el bot detecta una pregunta comparativa.
-
-### `measure_geometry`
-
-```
-measure_geometry(geometry: dict) -> {type, metric, value, unit, value_km|value_km2}
-```
-
-Recibe geometria GeoJSON EPSG:4326 y devuelve longitud (LineString) o area (Polygon/MultiPolygon) geodesica. Bajo el cap usa PostGIS `ST_Length`/`ST_Area` sobre `::geography`, asi los metros/metros cuadrados son reales sobre el elipsoide WGS84 (no proyectados, no aproximados).
-
-Util para que el bot responda preguntas tipo "cuanta superficie tiene el municipio X" o "que distancia hay entre A y B" sin tener que hacer el calculo por sí mismo.
+Crea un share `kind='swipe'` con separador arrastrable A\|B. Modo **una capa** (`layer`+`year_a`+`year_b`) para "antes vs después" de una misma capa; modo **dos capas** (`pane_a_layers`+`pane_b_layers`) para "compara robo vs homicidio", donde `year_a`/`year_b` opcionalmente filtran cada lado. En ambos modos el server arma y valida los filtros de fecha contra la periodicidad — el agente nunca escribe CQL.
 
 ### Patron de uso desde un agente
 
 ```
 1. usuario: "muestrame los homicidios en Guadalajara"
-2. agente: search_layers(q="homicidio")        -> id "tasa_homicidio_doloso"
-3. agente: get_metadata(workspace="seguridad", layer="tasa_homicidio_doloso")
-4. agente: create_single_share(
-       layers=["tasa_homicidio_doloso"],
-       view={"zoom":11, "lat":20.677, "lon":-103.349},
-   )
+2. agente: search_layers(query="homicidio")     -> id "tasa_homicidio_doloso"
+3. agente: describe_layer("tasa_homicidio_doloso")   # cualidades + años + numeralia
+4. agente: create_map(query="tasa_homicidio_doloso", municipio="Guadalajara")
 5. agente: responde con texto + embed_html del share
 ```
 
-El usuario ve un mapa interactivo embebido donde puede activar la barra de mediciones del visor (mapalab 1.43.0+) y guardar su propia copia como share desde el boton "Compartir".
+El usuario ve un mapa interactivo embebido y puede guardar su propia copia desde el boton "Compartir".
 
 ## Identificadores: solo el `id` del visor
 
-**Regla única:** todo tool que recibe una capa usa el `id` que devuelve `search_layers` (p. ej. `homicidio_doloso`). El agente nunca necesita el `geoserver_workspace`/`geoserver_layer` ni armar `ws:layer` — el MCP lo resuelve solo desde el árbol. Esto simplifica el flujo `search_layers → get_metadata/get_periodicity/query_wfs/get_layer_stats` y es clave para agentes pequeños (p. ej. un Qwen 3B self-host).
+**Regla única:** todo tool que recibe una capa usa el `id` que devuelve `search_layers` (p. ej. `homicidio_doloso`). El agente nunca necesita el `geoserver_workspace`/`geoserver_layer` ni armar `ws:layer` — el MCP lo resuelve solo desde el árbol (`resolve._resolve_layer_fuzzy`). Esto simplifica el flujo `search_layers → describe_layer/query_wfs → create_map/create_swipe` y es clave para agentes pequeños (p. ej. un Qwen 3B self-host).
 
-Cómo se resuelve internamente:
-
-- `servers/mapalab.py::_resolve_layer(id)` — del árbol (`get_cached_state`) obtiene `workspace` (alias), `geoserver_workspace` y `geoserver_layer` de una capa por su `id`.
-- `servers/mapalab.py::_to_layer_keys(ids)` — convierte `"id1,id2"` a `["alias:id1", "alias:id2"]` para los servicios batch (`get_sources_batch`, `get_periodicity`). Un token que ya trae `:` se respeta.
-- `get_metadata` y `query_wfs` reciben solo `layer=<id>` (con `workspace` opcional como override); el workspace se deriva del árbol.
-- `get_periodicity` acepta uno o varios ids separados por coma y re-keya la respuesta al `id` (no a `alias:id`).
-
-**Compatibilidad:** los tools que antes pedían `workspace` mantienen el parámetro como override opcional, pero pasar solo el `id` es el camino recomendado y documentado.
+`describe_layer` y `query_wfs` reciben solo `layer=<id>`; el workspace se deriva del árbol (con `workspace` opcional como override en `query_wfs`). `describe_layer.periodicidad` resume las fechas disponibles a `{años, meses}`.
 
 ## Cómo probar
 
@@ -317,7 +282,7 @@ async def main():
         for t in tools:
             print(' -', t.name)
 
-        result = await client.call_tool('get_layer_tree', {})
+        result = await client.call_tool('search_layers', {'query': 'homicidio'})
         print(json.dumps(result.data, indent=2)[:500])
 
 asyncio.run(main())
@@ -386,13 +351,13 @@ curl -s -X POST http://localhost:3006/mcp/ \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
 
-Devuelve los 13 tools registrados con su `name`, `description` y `inputSchema`.
+Devuelve los 6 tools registrados con su `name`, `description` y `inputSchema`.
 
-### curl (`tools/call`) — pruebas rápidas de los tools nuevos
+### curl (`tools/call`) — pruebas rápidas
 
-Las respuestas vienen en formato SSE (`event: message\ndata: {...}`). Para parsearlas con `jq`, pipea con `sed 's/^data: //' | tail -1 | jq` o similar.
+Las respuestas vienen en formato SSE (`event: message\ndata: {...}`). Para parsearlas con `jq`, pipea con `sed 's/^data: //' | tail -1 | jq` o similar. Con auth activa agrega `-H 'Authorization: Bearer mk_...'`.
 
-**`measure_geometry`** — distancia geodésica entre dos puntos:
+**`create_map`** — modo búsqueda, con municipio y anotación:
 
 ```bash
 curl -s -X POST http://localhost:3006/mcp/ \
@@ -402,60 +367,10 @@ curl -s -X POST http://localhost:3006/mcp/ \
     "jsonrpc": "2.0", "id": 1,
     "method": "tools/call",
     "params": {
-      "name": "measure_geometry",
+      "name": "create_map",
       "arguments": {
-        "geometry": {
-          "type": "LineString",
-          "coordinates": [[-103.349, 20.677], [-103.413, 20.721]]
-        }
-      }
-    }
-  }'
-```
-
-Respuesta esperada (~8.26 km entre Guadalajara y Zapopan):
-
-```json
-{"type":"LineString","metric":"length","value":8257.36,"unit":"m","value_km":8.2574}
-```
-
-**`measure_geometry`** — área de un polígono:
-
-```bash
-curl -s -X POST http://localhost:3006/mcp/ \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -d '{
-    "jsonrpc": "2.0", "id": 2,
-    "method": "tools/call",
-    "params": {
-      "name": "measure_geometry",
-      "arguments": {
-        "geometry": {
-          "type": "Polygon",
-          "coordinates": [[
-            [-103.4,20.6],[-103.3,20.6],[-103.3,20.7],[-103.4,20.7],[-103.4,20.6]
-          ]]
-        }
-      }
-    }
-  }'
-```
-
-**`create_single_share`** — crea un share con capa + anotación:
-
-```bash
-curl -s -X POST http://localhost:3006/mcp/ \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -d '{
-    "jsonrpc": "2.0", "id": 3,
-    "method": "tools/call",
-    "params": {
-      "name": "create_single_share",
-      "arguments": {
-        "layers": ["tasa_homicidio_doloso"],
-        "view": {"zoom": 9, "lat": 20.6, "lon": -103.4},
+        "query": "tasa_homicidio_doloso",
+        "municipio": "Guadalajara",
         "basemap": "voyager",
         "annotations": [{
           "id": "zona1",
@@ -470,105 +385,9 @@ curl -s -X POST http://localhost:3006/mcp/ \
   }'
 ```
 
-Devuelve `{id, kind, url, embed_html}`. Pegar `url` en un navegador abre el visor con todo configurado; pegar `embed_html` en una página renderiza el mapa embebido.
+Devuelve `{id, kind, url, embed_html, layer?}`. Pegar `url` en un navegador abre el visor configurado; pegar `embed_html` en una página renderiza el mapa embebido.
 
-**`create_swipe_share`** — comparación A|B:
-
-```bash
-curl -s -X POST http://localhost:3006/mcp/ \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -d '{
-    "jsonrpc": "2.0", "id": 4,
-    "method": "tools/call",
-    "params": {
-      "name": "create_swipe_share",
-      "arguments": {
-        "pane_a_layers": ["tasa_homicidio_doloso"],
-        "pane_b_layers": ["poblacion"],
-        "position": 0.5,
-        "view": {"zoom": 8, "lat": 20.6, "lon": -103.4},
-        "label_a": "Homicidio",
-        "label_b": "Población"
-      }
-    }
-  }'
-```
-
-### Playground del admin Mariachi
-
-`/administrador/documentacion` tab "Servidor MCP" expone un playground con botón "Probar" por tool — incluye los 3 nuevos (`create_single_share`, `create_swipe_share`, `measure_geometry`) llamados via `tools/call` JSON-RPC al endpoint `/mcp/`. Los demás tools del MCP (read-only) se prueban contra sus REST equivalentes.
-
-Respuesta esperada: `200 OK` con `Content-Type: text/event-stream` y un evento `data:` con `serverInfo: {"name": "MapaLab MCP", ...}`.
-
-## Recetas — combinaciones reales de tools
-
-Los tools individuales son útiles, pero el valor real para un agente está en encadenarlos. Estas recetas cubren los casos típicos de un asistente conversacional pidiendo al MCP de mapalab que arme un mapa rico.
-
-### Guía rápida
-
-- **Basemaps válidos**: `"voyager"` (recomendado) o `"position"`. No uses `"osm"` — no existe en el catálogo.
-- **Filtros de fecha**: usa `get_periodicity` para saber qué años hay. El CQL para año `AAAA` es: `"(fecha >= 'AAAA-01-01' AND fecha < 'AAAA+1-01-01')"`. Se pasa como `filters: {"date": "..."}` en el objeto de capa.
-- **Anotaciones**: tipos `LineString`, `Polygon`, `Emoji`, `Text`. Para emoji usa `type: "Emoji"` con `textLabel: "📍"`. Las anotaciones en swipe son globales (ambos lados).
-- **Municipios**: `municipios(query="Guadalajara")` → clave INEGI. Pasa `municipios: {source: "iieg", selected: ["14039"]}`.
-- **Estructura de capa en share**: acepta string (ID) o objeto `{slug, visible?, opacity?, filters?}`.
-- **Medición previa**: usa `measure_geometry` antes de crear el share para reportar área/longitud en texto.
-
-### Receta 0 — Capa con fecha, centrada en un municipio, con anotaciones
-
-**Escenario:** el usuario pide "homicidios 2025 en Guadalajara marcando el perímetro".
-
-```
-1. search_layers(q="homicidio") → id "homicidio_doloso"
-2. get_periodicity(workspace="seguridad", layer="homicidio_doloso") → años 2017-2026
-3. municipios(query="Guadalajara") → clave "14039"
-4. measure_geometry(poligono aproximado de GDL) → "239 km²"
-5. create_single_share(
-     layers=[{slug:"homicidio_doloso", filters:{date:"(fecha >= '2025-01-01' AND fecha < '2026-01-01')"}}],
-     view={zoom:12, lat:20.677, lon:-103.35},
-     basemap="voyager",
-     municipios={source:"iieg", selected:["14039"]},
-     annotations=[
-       {id:"gdl", type:"Polygon", geometry:{...}, label:"Guadalajara", value:239.92, unit:"km²"},
-       {id:"lmateos", type:"LineString", geometry:{...}, label:"Av. Lopez Mateos"},
-       {id:"pin", type:"Emoji", geometry:{type:"Point",coordinates:[-103.347,20.677]}, textLabel:"📍"}
-     ]
-   )
-6. → {url, embed_html}
-```
-
-### Receta 1 — Medir un polígono y crear un share con la zona resaltada
-
-**Escenario:** el usuario dice "muéstrame el área norte de Guadalajara con la tasa de homicidio". El agente arma un polígono que aproxima la zona, lo mide para reportar el área, y crea un share con la capa de homicidio + el polígono pre-pintado.
-
-**Paso 1 — calcular el área del polígono:**
-
-```bash
-curl -s -X POST http://localhost:3006/mcp/ \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -d '{
-    "jsonrpc": "2.0", "id": 1,
-    "method": "tools/call",
-    "params": {
-      "name": "measure_geometry",
-      "arguments": {
-        "geometry": {
-          "type": "Polygon",
-          "coordinates": [[
-            [-103.39, 20.70], [-103.32, 20.70],
-            [-103.32, 20.75], [-103.39, 20.75],
-            [-103.39, 20.70]
-          ]]
-        }
-      }
-    }
-  }'
-```
-
-Devuelve `{"type":"Polygon","metric":"area","value":~30000000,"unit":"m²","value_km2":~30}`. El agente puede responder al usuario "El área norte que describes mide ~30 km²".
-
-**Paso 2 — crear el share reusando el mismo polígono como `annotation`:**
+**`create_swipe`** — comparación temporal (modo años):
 
 ```bash
 curl -s -X POST http://localhost:3006/mcp/ \
@@ -578,45 +397,107 @@ curl -s -X POST http://localhost:3006/mcp/ \
     "jsonrpc": "2.0", "id": 2,
     "method": "tools/call",
     "params": {
-      "name": "create_single_share",
+      "name": "create_swipe",
+      "arguments": {
+        "layer": "homicidio_doloso",
+        "year_a": "2024",
+        "year_b": "2023",
+        "municipio": "Guadalajara"
+      }
+    }
+  }'
+```
+
+**`create_swipe`** — dos capas distintas, un año por lado, mapa gris:
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "create_swipe",
+      "arguments": {
+        "pane_a_layers": ["robos_casa_habitacion_con_violencia"],
+        "pane_b_layers": ["homicidio_doloso"],
+        "year_a": "2026",
+        "year_b": "2025",
+        "basemap": "position",
+        "label_a": "Robo casa habitación",
+        "label_b": "Homicidio doloso"
+      }
+    }
+  }'
+```
+
+El server arma y valida los filtros de fecha de cada lado contra la periodicidad; el agente no escribe CQL.
+
+### Playground del admin Mariachi
+
+`/administrador/documentacion` tab "Servidor MCP" expone un playground con botón "Probar" por tool — los writes (`create_map`, `create_swipe`) se llaman via `tools/call` JSON-RPC al endpoint `/mcp/`; los de lectura contra sus equivalentes.
+
+Respuesta esperada: `200 OK` con `Content-Type: text/event-stream` y un evento `data:` con `serverInfo: {"name": "MapaLab MCP", ...}`.
+
+## Recetas — combinaciones reales de tools
+
+El flujo típico de un agente es `search_layers` / `describe_layer` para conocer la capa y luego `create_map` o `create_swipe` para entregar el mapa. Con auth activa agrega `-H 'Authorization: Bearer mk_...'` a los curl.
+
+### Guía rápida
+
+- **Basemaps válidos**: `"voyager"` (recomendado), `"position"`, `"sin_mapalab"`. No uses `"osm"` — no existe.
+- **Años disponibles**: `describe_layer(...).periodicidad.años`. `create_map(year=...)` y `create_swipe(year_a/year_b=...)` validan el año contra la periodicidad y devuelven error accionable si no existe.
+- **Municipios**: pasá el nombre o la clave directo (`municipio: "Guadalajara"` o `"14039"`); el MCP resuelve la clave INEGI y auto-encuadra. `municipios(query=...)` sirve para buscar la clave si la necesitás.
+- **Capas en `create_map`**: modo búsqueda (`query`/`theme`) o directo (`layers`: string id u objeto `{slug, opacity?, filters?}`).
+- **Anotaciones**: tipos `LineString`, `Polygon`, `Emoji` (con `textLabel`), `Text`. En swipe son globales (ambos lados).
+
+### Receta 0 — Capa temporal en un municipio, en un paso
+
+**Escenario:** "homicidios 2025 en Guadalajara".
+
+```
+1. describe_layer("homicidio")  → id "homicidio_doloso", periodicidad.años incluye 2025, hasMunicipio=true
+2. create_map(query="homicidio_doloso", year="2025", municipio="Guadalajara")
+3. → {id, url, embed_html, layer}
+```
+
+`create_map` busca la capa, valida el año, arma el filtro de fecha, resuelve la clave del municipio y auto-encuadra. Un solo round-trip para entregar.
+
+### Receta 1 — Mapa directo con capas y anotación
+
+**Escenario:** el agente ya resolvió las capas y quiere resaltar una zona.
+
+```bash
+curl -s -X POST http://localhost:3006/mcp/ \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0", "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "create_map",
       "arguments": {
         "layers": ["tasa_homicidio_doloso"],
-        "view": {"zoom": 12, "lat": 20.725, "lon": -103.355},
         "basemap": "voyager",
-        "annotations": [
-          {
-            "id": "area-norte",
-            "type": "Polygon",
-            "geometry": {
-              "type": "Polygon",
-              "coordinates": [[
-                [-103.39, 20.70], [-103.32, 20.70],
-                [-103.32, 20.75], [-103.39, 20.75],
-                [-103.39, 20.70]
-              ]]
-            },
-            "label": "Área norte (~30 km²)",
-            "value": 30000000,
-            "unit": "m²"
-          },
-          {
-            "id": "label-norte",
-            "type": "Text",
-            "geometry": {"type": "Point", "coordinates": [-103.355, 20.725]},
-            "textLabel": "Zona analizada",
-            "rotation": 0
-          }
-        ]
+        "annotations": [{
+          "id": "area-norte",
+          "type": "Polygon",
+          "geometry": {"type":"Polygon","coordinates":[[
+            [-103.39,20.70],[-103.32,20.70],[-103.32,20.75],[-103.39,20.75],[-103.39,20.70]
+          ]]},
+          "label": "Área norte"
+        }]
       }
     }
   }'
 ```
 
-Devuelve `{id, url, embed_html}`. El bot pega el `embed_html` en su respuesta markdown y el usuario ve el mapa con la capa de homicidio activa, el polígono resaltando el área norte, y la etiqueta "Zona analizada" en el centro.
+Devuelve `{id, kind, url, embed_html}`. Sin `view`, se auto-encuadra a Jalisco (o al municipio si lo pasás).
 
-### Receta 2 — Comparación A|B con swipe
+### Receta 2 — Comparación temporal (swipe por años)
 
-**Escenario:** el usuario pregunta "compárame las zonas con más homicidios versus la densidad poblacional". El agente arma un swipe que muestra una capa de cada lado.
+**Escenario:** "compara homicidios 2024 vs 2023 en Guadalajara".
 
 ```bash
 curl -s -X POST http://localhost:3006/mcp/ \
@@ -626,25 +507,22 @@ curl -s -X POST http://localhost:3006/mcp/ \
     "jsonrpc": "2.0", "id": 1,
     "method": "tools/call",
     "params": {
-      "name": "create_swipe_share",
+      "name": "create_swipe",
       "arguments": {
-        "pane_a_layers": ["tasa_homicidio_doloso"],
-        "pane_b_layers": ["poblacion"],
-        "position": 0.5,
-        "view": {"zoom": 9, "lat": 20.6, "lon": -103.4},
-        "basemap": "voyager",
-        "label_a": "Tasa de homicidio doloso",
-        "label_b": "Población"
+        "layer": "homicidio_doloso",
+        "year_a": "2024",
+        "year_b": "2023",
+        "municipio": "Guadalajara"
       }
     }
   }'
 ```
 
-El visor abre con la barra divisora arrastrable al centro: A muestra homicidio, B muestra población. El usuario puede arrastrar la barra para "frotar" visualmente las dos capas en la misma región. Los `label_a`/`label_b` aparecen en la píldora inferior del visor (`<SlotBadge>`).
+El visor abre con la barra arrastrable: A = 2024, B = 2023. Las etiquetas se arman solas (`<label> <año>`).
 
-### Receta 3 — Swipe con polígono compartido entre ambos lados
+### Receta 3 — Comparación libre (swipe de dos capas)
 
-**Escenario:** el agente quiere comparar dos capas pero además resaltar el municipio sobre el que está la pregunta. Las anotaciones son globales del mapa (no por pane), así que el polígono se pinta sobre los dos lados del swipe.
+**Escenario:** "compara la tasa de homicidio contra la población".
 
 ```bash
 curl -s -X POST http://localhost:3006/mcp/ \
@@ -654,52 +532,22 @@ curl -s -X POST http://localhost:3006/mcp/ \
     "jsonrpc": "2.0", "id": 1,
     "method": "tools/call",
     "params": {
-      "name": "create_swipe_share",
+      "name": "create_swipe",
       "arguments": {
         "pane_a_layers": ["tasa_homicidio_doloso"],
         "pane_b_layers": ["poblacion"],
         "position": 0.5,
-        "view": {"zoom": 11, "lat": 20.66, "lon": -103.35},
-        "basemap": "voyager",
         "label_a": "Homicidio",
         "label_b": "Población",
         "annotations": [
-          {
-            "id": "guadalajara-bbox",
-            "type": "Polygon",
-            "geometry": {
-              "type": "Polygon",
-              "coordinates": [[
-                [-103.42, 20.62], [-103.28, 20.62],
-                [-103.28, 20.74], [-103.42, 20.74],
-                [-103.42, 20.62]
-              ]]
-            },
-            "label": "Guadalajara"
-          },
-          {
-            "id": "centro-gdl",
-            "type": "Emoji",
-            "geometry": {"type": "Point", "coordinates": [-103.349, 20.677]},
-            "textLabel": "📍",
-            "rotation": 0
-          }
+          {"id":"pin","type":"Emoji","geometry":{"type":"Point","coordinates":[-103.349,20.677]},"textLabel":"📍"}
         ]
       }
     }
   }'
 ```
 
-El visor abre con swipe activo + el bbox de Guadalajara y un pin emoji en el centro pintados sobre **ambos** paneles. Al arrastrar la barra, el polígono y el emoji siempre son visibles — son del nivel del mapa, no de un pane. Esto está intencionalmente alineado con la decisión documentada en `docs/swipe.md §Pendientes`: las mediciones son geográficas, no del slot.
-
-### Patrón general: medición → annotation
-
-Cuando un análisis del agente produce una geometría (polígono de un municipio, línea entre dos puntos, área de cobertura), el patrón natural es:
-
-1. `measure_geometry(geometry)` → obtienes `{value, unit, value_km|value_km2}` para reportar al usuario en texto.
-2. `create_single_share` o `create_swipe_share` con la **misma** `geometry` dentro de `annotations[]` y `value`/`unit` del paso 1 en el objeto annotation para preservar el contexto del análisis.
-
-El usuario ve la métrica en texto y el mapa interactivo donde puede explorar la zona.
+Las anotaciones en swipe son globales (visibles sobre ambos paneles): son del nivel del mapa, no de un slot (ver `docs/swipe.md §Pendientes`).
 
 ## Telemetría → Mariachi (v1.30.0+)
 
@@ -748,7 +596,7 @@ Además de la telemetría agregada (anónima) de arriba, cada `tools/call` se re
   |---|---|
   | `endpoint` | `mcp` (en la UI aparece como "Agente / MCP") |
   | `resultado` | `allowed` (HTTP<400), `denied` (error) o `quota_exceeded` (429 por cuota) |
-  | `motivo` | nombre de la herramienta (`get_metadata`, `query_wfs`, …) |
+  | `motivo` | nombre de la herramienta (`describe_layer`, `query_wfs`, …) |
   | `origin` | `null` (el MCP no tiene dominio) |
   | `ip_hash` | `X-Real-IP` hasheado, igual que el embed |
 
@@ -808,7 +656,7 @@ Authorization: Bearer mk_pub_...        # (o mk_priv_..., o X-API-Key: mk_...)
 La key se valida con `app.services.api_key_validator.validate_api_key(key, origin=None, ip=...)` — el mismo validador que ya usa el widget embebible, que consulta a mariachi (`/internal/mapalab/keys/validate`) y cachea el resultado (`EMBED_KEY_CACHE_TTL_SECONDS`, 300 s por defecto). La validación corre en un threadpool (`asyncio.to_thread`) para no bloquear el event loop.
 
 - Sin key o key inválida → **401** con `WWW-Authenticate: Bearer realm="mapalab-mcp"` y un mensaje que explica cómo obtener una.
-- El gate cubre lectura **y** escritura (decisión: cerrar también la fuga de nombres internos de workspaces/schemas vía `get_layer_tree`).
+- El gate cubre lectura **y** escritura (decisión: cerrar también la fuga de nombres internos de workspaces/schemas vía `describe_layer`/`search_layers`).
 - `/health`, `/` y `/metrics` quedan fuera del prefijo `/mcp`, así que el healthcheck del container sigue abierto.
 - Toggle `MCP_AUTH_ENABLED` (default `true`). En `false` el middleware deja pasar todo — útil para dev local sin mariachi.
 
@@ -892,7 +740,7 @@ Corta floods por IP antes de que lleguen al pool chico del MCP (2 workers × 2 c
 
 1. Definir la función en `servers/mapalab.py` decorada con `@mcp.tool()`. Argumentos tipados con `Field(description=...)` para que la descripción aparezca en `tools/list`. Docstring en español (es el "summary" que ven los clientes MCP).
 2. Si la lógica es trivial (lectura directa), implementarla inline. Si reutiliza servicios del backend (medición, share, etc.), importar desde `app.services.*` o `app.repositories.*`.
-3. Para tools de share, ya existe `servers/share_tools.py` con helpers compartidos (`_persist_share`, `_normalize_layer_entries`, etc.) — extender ahí si aplica.
+3. Para tools de share, ya existe `servers/shares.py` con helpers compartidos (`_persist_share`, `_normalize_layer_entries`, etc.) — extender ahí si aplica. Los helpers de resolución de capas/periodicidad viven en `servers/resolve.py` y los de lectura (metadata/stats/wfs) en `servers/layers.py`.
 4. Rebuild del container MCP: `docker compose build mapalab-mcp && docker compose up -d mapalab-mcp`.
 5. Validar: `curl -s -X POST $URL -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq '.result.tools | length'` debería incrementarse.
 
@@ -906,8 +754,8 @@ Corta floods por IP antes de que lleguen al pool chico del MCP (2 workers × 2 c
 ## Limitaciones conocidas
 
 - **`download` queda fuera**: no es trivial exponer un stream de CSV como tool MCP. Si se requiere, considerar un endpoint alternativo que devuelva una URL firmada (S3/Acervo) en lugar del stream directo.
-- **M1 resuelto (cap de vértices + timeout)**: `measure_geometry` topa la geometría a `MAX_COORDINATES_PER_GEOMETRY` (reutiliza `share_service._count_coordinates`) y todas las queries PostGIS del MCP (`measure_geometry`, reproyección WFS, `get_layer_stats`) fijan `SET LOCAL statement_timeout = 5000`. La reproyección de `query_wfs` se hace en una sola query (no N+1).
-- **`filters.date` (CQL) sin validar server-side** (pendiente, M2): el share persiste el CQL verbatim y el visor lo reenvía a GeoServer en `CQL_FILTER`. Validar contra la forma esperada (`parseCQLToSelections`/`generateCQLFilter`) en `servers/share_tools.py`.
+- **Timeout en queries PostGIS**: la reproyección WFS de `query_wfs` fija `SET LOCAL statement_timeout = 5000` y se hace en una sola query (no N+1). La numeralia de `describe_layer` es un `SELECT` plano sobre `mapalab.layer_stats` (sin PostGIS).
+- **`filters.date` (CQL) sin validar server-side** (pendiente, M2): el share persiste el CQL verbatim y el visor lo reenvía a GeoServer en `CQL_FILTER`. Validar contra la forma esperada (`parseCQLToSelections`/`generateCQLFilter`) en `servers/shares.py`.
 - **Cuota aproximada por multiproceso**: en producción el MCP corre con `gunicorn --workers ${MCP_WORKERS}` (default **2**). El `QuotaTracker` es en memoria **por proceso**, así que la cuota efectiva por key es ≈ `MCP_WORKERS × cuota` configurada. Para abuso, basta el `limit_req` de nginx + la cuota como tope blando; si se necesita un tope exacto hay que mover el contador a un store compartido (Redis) o que mariachi haga el pre-check autoritativo.
 - **IP de `ips_permitidas` solo confiable en deploy directo**: el MCP toma el IP de `X-Real-IP` (lo fija el nginx inmediato, sobrescribiendo lo que mande el cliente; ya no se usa el primer `X-Forwarded-For` que era spoofeable). Detrás del gateway, `X-Real-IP` es la IP del gateway, no la del cliente final, así que el allowlist por IP de una key privada no discrimina por cliente en ese trayecto. Para keys de MCP, apóyate en el secreto de la key + cuota, no en `ips_permitidas`. Para habilitar allowlist por cliente detrás del gateway, mapalab-nginx debería propagar el `X-Real-IP` que ya calcula el gateway en vez de sobrescribirlo.
 - **Sin observabilidad propia**: las llamadas a tools no aparecen en `/metrics` (excluido) ni se loggean separadas. Para monitorear, mirar logs de uvicorn/gunicorn filtrando por `/mcp/`.
@@ -936,13 +784,13 @@ Requisitos del MCP como *Resource Server*:
 - [ ] Mapear identidad OAuth → cuota. Decidir si la cuota sigue por "key" (ahora por `sub`/cliente OAuth) reutilizando `QuotaTracker`.
 - [ ] Validación del header `Origin` en las requests a `/mcp`.
 
-### Fase 2 — Anotaciones de los 13 tools
+### Fase 2 — Anotaciones de los 6 tools
 
 El directorio exige que cada tool declare metadata (hoy `servers/mapalab.py` solo tiene docstrings):
 
 - [ ] `title` legible por tool.
-- [ ] `readOnlyHint=True` en los 10 de lectura.
-- [ ] `readOnlyHint=False` (o `destructiveHint`) en los 3 writes (`create_single_share`, `create_swipe_share`, `compare_years`).
+- [ ] `readOnlyHint=True` en los 4 de lectura.
+- [ ] `readOnlyHint=False` (o `destructiveHint`) en los 2 writes (`create_map`, `create_swipe`).
 - [ ] En FastMCP: `@mcp.tool(annotations=ToolAnnotations(title=..., readOnlyHint=True))`.
 
 ### Fase 3 — Assets y submission
