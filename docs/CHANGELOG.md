@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.82.1] - 2026-07-09
+
+### Corregido
+
+- **Pantalla blanca intermitente en carga inicial**: cuando un chunk JS (vendor o lazy) falla al cargarse — por 404 tras un deploy, por latencia de red o por `open_file_cache` frio de nginx — la app quedaba en blanco porque el module loader de ES abortaba toda la ejecucion antes de que React montara. Ahora un script de recuperacion escucha `vite:preloadError`, errores de carga de `<script>`/`<link>` en `/assets/` y `unhandledrejection` de `ChunkLoadError`, y recarga automaticamente la pagina con guarda anti-loop via `sessionStorage`.
+
+- **`VITE_ACERVO_ORIGIN` ausente en las imagenes Docker de build**: el placeholder `__ACERVO_ORIGIN__` en el CSP de `index.html` siempre se reemplazaba por string vacio porque la variable no llegaba a `frontend/Dockerfile` ni a `nginx/Dockerfile`. Agregado `ARG` + `ENV` y mapeado desde `docker-compose.yml`.
+
+### Agregado
+
+- **Telemetria de errores de chunk**: endpoint `POST /api/log/client-error` en el backend que recibe beacons del script de recuperacion (tipo `chunk_load_error`, URL fallida, user-agent, pagina). Incrementa el contador Prometheus `mapalab_client_chunk_errors_total` y loggea en `Logger.warning`.
+
+---
+
 ## [1.82.0] - 2026-07-08
 
 ### MCP enfocado en crear mapas: 15 → 6 tools
