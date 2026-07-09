@@ -1,7 +1,8 @@
 {
     "$schema": "https://unpkg.com/knip@6/schema.json",
     "ignore": [
-        "public/widget/v1/*.js"
+        "public/widget/v1/*.js",
+        "public/error-recovery.js"
     ],
     "ignoreDependencies": [
         "lint-staged"
