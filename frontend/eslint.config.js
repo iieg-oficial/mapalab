@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
 
 export default [
-    { ignores: ['dist', 'public/widget/**'] },
+    { ignores: ['dist', 'public/**'] },
     {
         files: ['**/*.{js,jsx}'],
         languageOptions: {

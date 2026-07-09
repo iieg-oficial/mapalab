@@ -50,6 +50,7 @@ services:
         VITE_APP_ENV: ${VITE_APP_ENV:-beta}
         VITE_COLIBRI_SOURCE_APP: ${VITE_COLIBRI_SOURCE_APP:-mapalab}
         VITE_COLIBRI_API_KEY: ${VITE_COLIBRI_API_KEY:-}
+        VITE_ACERVO_ORIGIN: ${VITE_ACERVO_ORIGIN:-}
     profiles: ["build"]
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
@@ -159,6 +160,7 @@ services:
         VITE_APP_ENV: ${VITE_APP_ENV:-beta}
         VITE_COLIBRI_SOURCE_APP: ${VITE_COLIBRI_SOURCE_APP:-mapalab}
         VITE_COLIBRI_API_KEY: ${VITE_COLIBRI_API_KEY:-}
+        VITE_ACERVO_ORIGIN: ${VITE_ACERVO_ORIGIN:-}
     profiles: ["staging"]
     ports:
       - "${NGINX_PORT:-3006}:80"
