@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.82.3] - 2026-07-16
+
+### Refactor: eliminar defaults inline del compose + `.env.example`
+
+Sin cambios de runtime. Requiere que el `.env` de cada host tenga todas las variables (fail-fast).
+
+#### Agregado
+
+- **`.env.example`**: nuevo archivo con las ~54 variables del compose (placeholders `<>`), que antes no existía.
+
+#### Cambiado
+
+- **`docker-compose.yml`**: eliminados todos los defaults inline `${VAR:-valor}`. Config obligatoria vía `${VAR:?}` (incluye `ENVIRONMENT`, `DEBUG`, `CORS_ORIGINS`, puertos, workers); opcionales de valor vacío como `${VAR}`. **Importante:** cada host debe poblar su `.env` desde `.env.example` (verificar `ENVIRONMENT=production` y `BACKEND_TARGET=production` en S2) antes de desplegar.
+
 ## [1.82.2] - 2026-07-16
 
 ### Seguridad: endurecer configuración de producción del backend
