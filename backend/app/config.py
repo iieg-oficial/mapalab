@@ -1,13 +1,13 @@
 import json
 
 from typing import List, Literal, Optional, Union
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     ENVIRONMENT: Literal["development", "production", "testing"] = "development"
-    DEBUG: bool = True
+    DEBUG: bool = False
     CORS_ORIGINS: List[str] = []
     LOG_LEVEL: str = "INFO"
     DB_USER: str
@@ -49,6 +49,12 @@ class Settings(BaseSettings):
             except json.JSONDecodeError:
                 return [origin.strip() for origin in v.split(',') if origin.strip()]
         return v
+
+    @model_validator(mode="after")
+    def validate_cors_in_production(self) -> "Settings":
+        if self.ENVIRONMENT == "production" and "*" in self.CORS_ORIGINS:
+            raise ValueError("CORS_ORIGINS no puede contener '*' en production")
+        return self
 
     @property
     def get_database_url(self) -> str:

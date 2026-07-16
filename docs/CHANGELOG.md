@@ -5,6 +5,30 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.82.3] - 2026-07-16
+
+### Refactor: eliminar defaults inline del compose + `.env.example`
+
+Sin cambios de runtime. Requiere que el `.env` de cada host tenga todas las variables (fail-fast).
+
+#### Agregado
+
+- **`.env.example`**: nuevo archivo con las ~54 variables del compose (placeholders `<>`), que antes no existía.
+
+#### Cambiado
+
+- **`docker-compose.yml`**: eliminados todos los defaults inline `${VAR:-valor}`. Config obligatoria vía `${VAR:?}` (incluye `ENVIRONMENT`, `DEBUG`, `CORS_ORIGINS`, puertos, workers); opcionales de valor vacío como `${VAR}`. **Importante:** cada host debe poblar su `.env` desde `.env.example` (verificar `ENVIRONMENT=production` y `BACKEND_TARGET=production` en S2) antes de desplegar.
+
+## [1.82.2] - 2026-07-16
+
+### Seguridad: endurecer configuración de producción del backend
+
+#### Cambiado
+
+- **`app/config.py`**: `DEBUG` por defecto pasa de `True` a `False`. Nuevo validador que rechaza `CORS_ORIGINS` con `*` cuando `ENVIRONMENT=production` (mismo patrón que mariachi), evitando `*` combinado con `allow_credentials=True`.
+- **`app/server.py`**: `openapi_url` se cierra en producción (antes solo `docs_url`/`redoc_url`), dejando de exponer el esquema en `/openapi.json`.
+- **`backend/Dockerfile`**: el stage de producción corre como usuario no-root (`appuser`). La imagen no monta código en prod y el lock del scheduler vive en `/tmp`, así que no requiere coordinar UID.
+
 ## [1.82.1] - 2026-07-09
 
 ### Corregido
