@@ -4,6 +4,7 @@ import fcntl
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator, metrics as fastapi_metrics
 
 from sqlalchemy import text
@@ -157,5 +158,38 @@ def health_check():
 
 @app.get('/ontoy')
 def ontoy():
-    from app.__version__ import __version__
-    return {'slug': 'mapalab-backend', 'label': 'MapaLab Backend', 'version': __version__}
+    import app.__version__ as version_module
+    from datetime import datetime, timezone
+
+    checks = {}
+    try:
+        conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+        with conn.get_session() as session:
+            session.execute(text('SELECT 1'))
+        checks['db'] = {'status': 'ok'}
+    except Exception as exc:
+        checks['db'] = {'status': 'down', 'detail': str(exc)[:120]}
+
+    severity = {'ok': 0, 'degraded': 1, 'down': 2}
+    status = max(
+        (c['status'] for c in checks.values()),
+        key=lambda s: severity.get(s, 0),
+        default='ok',
+    )
+
+    try:
+        mtime = os.path.getmtime(version_module.__file__)
+        deployed_at = datetime.fromtimestamp(mtime, tz=timezone.utc) \
+            .isoformat(timespec='seconds').replace('+00:00', 'Z')
+    except OSError:
+        deployed_at = None
+
+    payload = {
+        'slug': 'mapalab-backend',
+        'label': 'MapaLab Backend',
+        'version': version_module.__version__,
+        'deployed_at': deployed_at,
+        'status': status,
+        'checks': checks,
+    }
+    return JSONResponse(payload, status_code=503 if status == 'down' else 200)
