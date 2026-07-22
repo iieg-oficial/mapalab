@@ -1,0 +1,214 @@
+import { useRef, useState } from 'react';
+import { useMapsContext } from '@hooks/useMaps';
+import { useIsMobile } from '@hooks/useIsMobile';
+import Tooltip from '@components/Tooltip';
+import { trackMeasurementTool } from '@services/analyticsService';
+import ToolSelector from '@mapsComponents/MeasurementTools/ToolSelector';
+import EmojiPanel from '@mapsComponents/MeasurementTools/EmojiPanel';
+import TextInlineEditor from '@mapsComponents/MeasurementTools/TextInlineEditor';
+import FeatureEditToolbar from '@mapsComponents/MeasurementTools/FeatureEditToolbar';
+import HistoryButton from '@mapsComponents/MeasurementTools/HistoryButton';
+import HistoryPanel from '@mapsComponents/MeasurementTools/HistoryPanel';
+
+const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo' };
+
+const RulerIcon = ({ className }) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" />
+        <path d="m14.5 12.5 2-2" />
+        <path d="m11.5 9.5 2-2" />
+        <path d="m8.5 6.5 2-2" />
+        <path d="m17.5 15.5 2-2" />
+    </svg>
+);
+
+const CatalogoTools = () => {
+    const {
+        isDrawing,
+        isSketching,
+        measureType,
+        startDrawing,
+        stopDrawing,
+        measurements,
+        deleteMeasurement,
+        toggleMeasurementVisibility,
+        cancelCurrentSketch,
+        undoLastPoint,
+        finishCurrentSketch,
+        restoreLastSelection,
+        showSelectionByIndex,
+        setEmojiTemplate,
+        mapRef,
+        selectedFeature,
+        selectionTick,
+        updateRotation,
+        updateScale,
+        updateFillColor,
+        updateBgColor,
+        updateStrokeColor,
+        updateStrokeWidth,
+        deleteSelected,
+        deselectFeature,
+        freehandColor,
+        freehandWidth,
+        setFreehandColor,
+        setFreehandWidth,
+        editingText,
+        startTextEdit,
+        updateEditingTextLabel,
+        commitTextEdit,
+        cancelTextEdit
+    } = useMapsContext();
+
+    const isMobile = useIsMobile();
+    const [toolsOpen, setToolsOpen] = useState(false);
+    const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+    const [isListOpen, setIsListOpen] = useState(false);
+    const emojiButtonRef = useRef(null);
+    const compact = isMobile && (isDrawing || isEmojiPickerOpen || !!editingText);
+
+    const closeTools = () => {
+        stopDrawing();
+        deselectFeature?.();
+        setIsEmojiPickerOpen(false);
+        setIsListOpen(false);
+        setToolsOpen(false);
+    };
+
+    const togglePill = () => {
+        if (toolsOpen) closeTools();
+        else setToolsOpen(true);
+    };
+
+    const handleMeasureTypeClick = (typeId) => {
+        if (typeId === 'Point') {
+            stopDrawing();
+            return;
+        }
+        if (measureType === typeId && isDrawing) {
+            if (typeId === 'Select' && restoreLastSelection) {
+                restoreLastSelection();
+            }
+            stopDrawing();
+            return;
+        }
+        trackMeasurementTool(TOOL_LABELS[typeId] || typeId);
+        startDrawing(typeId);
+    };
+
+    const handleEmojiButton = () => {
+        setIsEmojiPickerOpen((prev) => !prev);
+    };
+
+    const handleEmojiSelect = (symbol) => {
+        setEmojiTemplate?.(symbol);
+        setIsEmojiPickerOpen(false);
+        trackMeasurementTool('Emoji');
+        startDrawing('Emoji');
+    };
+
+    const handleTextButton = () => {
+        if (measureType === 'Text' && isDrawing) {
+            stopDrawing();
+            return;
+        }
+        trackMeasurementTool('Texto');
+        startDrawing('Text');
+    };
+
+    return (
+        <div className="fixed left-4 top-29 z-20 flex flex-col gap-2 items-start">
+            <Tooltip content="Medir y anotar sobre el mapa" placement="right" delay={300}>
+                <button
+                    type="button"
+                    onClick={togglePill}
+                    aria-pressed={toolsOpen}
+                    aria-label="Herramientas de medición y anotación"
+                    className={[
+                        'size-10 rounded-full flex items-center justify-center shadow-[0_5px_20px_#1A26641A] transition-colors cursor-pointer',
+                        toolsOpen ? 'bg-purple-deep text-white' : 'bg-white text-graphite hover:bg-purple-soft'
+                    ].join(' ')}
+                >
+                    <RulerIcon className="size-5 shrink-0" />
+                </button>
+            </Tooltip>
+
+            {toolsOpen && (
+                <>
+                    <HistoryButton
+                        count={measurements.length}
+                        onClick={() => setIsListOpen((v) => !v)}
+                        isOpen={isListOpen}
+                        tooltip="Mediciones y anotaciones"
+                    />
+
+                    <ToolSelector
+                        visible
+                        compact={compact}
+                        isDrawing={isDrawing}
+                        measureType={measureType}
+                        isEmojiPickerOpen={isEmojiPickerOpen}
+                        onSelect={handleMeasureTypeClick}
+                        onTextToggle={handleTextButton}
+                        onEmojiToggle={handleEmojiButton}
+                        emojiButtonRef={emojiButtonRef}
+                        onUndo={undoLastPoint}
+                        onFinish={finishCurrentSketch}
+                        onCancel={cancelCurrentSketch}
+                        canUndo={isSketching}
+                        freehandColor={freehandColor}
+                        freehandWidth={freehandWidth}
+                        onFreehandColor={setFreehandColor}
+                        onFreehandWidth={setFreehandWidth}
+                        showMeasurements
+                        showAnnotations
+                    />
+
+                    <EmojiPanel
+                        open={isEmojiPickerOpen}
+                        anchorRef={emojiButtonRef}
+                        onSelect={handleEmojiSelect}
+                        onClose={() => setIsEmojiPickerOpen(false)}
+                        placedCount={measurements.filter((m) => m.type === 'Emoji').length}
+                    />
+
+                    <TextInlineEditor
+                        mapRef={mapRef}
+                        feature={editingText}
+                        onChange={updateEditingTextLabel}
+                        onCommit={commitTextEdit}
+                        onCancel={cancelTextEdit}
+                    />
+
+                    <HistoryPanel
+                        open={isListOpen}
+                        measurements={measurements}
+                        onDelete={deleteMeasurement}
+                        onToggleVisibility={toggleMeasurementVisibility}
+                        onClose={() => setIsListOpen(false)}
+                        onShowSelection={showSelectionByIndex}
+                    />
+
+                    {selectedFeature && (
+                        <FeatureEditToolbar
+                            mapRef={mapRef}
+                            feature={selectedFeature}
+                            selectionTick={selectionTick}
+                            onRotate={updateRotation}
+                            onScale={updateScale}
+                            onFillColor={updateFillColor}
+                            onBgColor={updateBgColor}
+                            onStrokeColor={updateStrokeColor}
+                            onStrokeWidth={updateStrokeWidth}
+                            onEdit={startTextEdit}
+                            onDelete={deleteSelected}
+                            onClose={deselectFeature}
+                        />
+                    )}
+                </>
+            )}
+        </div>
+    );
+};
+
+export default CatalogoTools;

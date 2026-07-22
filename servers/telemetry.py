@@ -95,7 +95,7 @@ def _flush_sync(records: list[McpEventRecord]) -> None:
     if not settings.MARIACHI_BACKEND_URL or not settings.MAPALAB_INTERNAL_TOKEN:
         Logger.warning('mcp_telemetry.skip reason=no_config records=%d', len(records))
         return
-    url = f"{settings.MARIACHI_BACKEND_URL.rstrip('/')}/api/administrador/internal/mapalab/mcp/events"
+    url = f"{settings.MARIACHI_BACKEND_URL.rstrip('/')}/api/mariachi/internal/mapalab/mcp/events"
     headers = {'X-Internal-Token': settings.MAPALAB_INTERNAL_TOKEN}
     body = {'items': [r.to_payload() for r in records]}
     try:

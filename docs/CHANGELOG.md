@@ -5,6 +5,50 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.84.0] - 2026-07-22
+
+### Agregado: información por clic y herramientas en el Catálogo
+
+#### Frontend
+
+- **Información por clic (GetFeatureInfo)**: al hacer clic sobre la capa activa se consulta `GetFeatureInfo` de GeoServer y se muestra una tarjeta (`CatalogoInfoBox`) que reutiliza `renderCard` del visor. Usa la configuración de tarjeta heredada de `mapalab.layers` (`littleCard`).
+- **Herramientas de dibujo y medición** (`CatalogoTools`): reutiliza `MeasurementTools`, `useMapDrawing` y `useMapEditing` del visor dentro de la vista de catálogo.
+- **Rediseño del buscador** (`CatalogoSearchModal`): a la altura de los controles del mapa; header "Catálogo" flotante con X (solo abierto) que se desplaza como cabecera de lista + input; lista con fuente 16 (Garet Medium), tope de 80vh con scroll; en mobile se colapsa a una píldora cuando no está activo. Sombras direccionales (lista/input hacia arriba en desktop, más grandes en mobile).
+- **Botón de información**: reubicado a la barra de atribuciones (a la derecha de "Contribuciones", ícono redondo naranja) mediante el nuevo prop `extraRight` de `MapAttribution`; ya no vive junto a "Regresar a Mapalab".
+- **Panel de leyendas**: título a 18, imagen con alto máximo y scroll, botón de eliminar capa sin fondo.
+
+#### Backend
+
+- `GET /catalogo/capas` y `/catalogo/capas/{slug}` ahora incluyen `littleCard` (config de `infobox_config` heredada de `mapalab.layers` vía `LEFT JOIN LATERAL`), para renderizar la tarjeta de información por clic.
+
+## [1.83.1] - 2026-07-22
+
+### Agregado
+
+- **Pista del botón de información del Catálogo**: al entrar por primera vez, el tooltip "¿Qué es esta vista?" se despliega solo y permanece hasta que el usuario interactúa (hover o click). El "visto" se persiste en `localStorage` (reusa `useFeatureSeen`); en visitas posteriores el tooltip solo aparece con hover.
+
+## [1.83.0] - 2026-07-22
+
+### Agregado: sección Catálogo (`/catalogo`)
+
+Vista pública simplificada para explorar y descargar capas sueltas, gestionadas desde mariachi. Requiere la migración `0025_catalogo_capas` en DataEngine (ver RUNBOOK → "Catálogo de capas").
+
+#### Frontend
+
+- Nueva ruta `/catalogo` y `/catalogo/:slug` (fuera de `MapsProvider`): mapa simplificado (Voyager + relieve), buscador desplegable, panel de leyendas con descarga colapsable (GPKG/SHP/CSV) y encuadre al **bbox real de la capa** (reusa `getLayerExtent3857`). Recicla `MapControls`, `ScaleLineControl` y `MapAttribution` (nuevo prop `hideActions`) del visor vía contextos stub.
+- Dos botones de entrada al catálogo desde el visor (junto a Contribuciones y en el sider), gateados a `VITE_APP_ENV ∈ {dev,beta}` (ocultos en producción).
+
+#### Backend
+
+- Endpoints públicos `GET /catalogo/capas` y `/catalogo/capas/{slug}` (repositorio SQL + cache TTL 5 min; resuelve `geoserverWorkspace`).
+- **CSV sin columnas geométricas**: `stream_csv` excluye columnas `geometry`/`geography`; aplica también a las descargas CSV de **capas normales** del visor (para geometría, usar GPKG).
+
+## [1.82.4] - 2026-07-22
+
+### Corregido
+
+- **Caida de `/layers/tree` e `/layers/initial-order` ante lentitud de la BD**: `get_cached_state()` consultaba PostgreSQL en cada request (un `SELECT etag`) aun con el arbol ya en memoria, por lo que un episodio de lentitud o bloqueo de la BD colgaba la carga del mapa (timeouts `504`) pese a tener workers y cache. Ahora `_MEM_CACHE` sirve el arbol **sin tocar la BD** mientras esta fresco (TTL `_MEM_TTL_SECONDS` = 30s), revalida solo el `etag` al expirar, y ante un fallo de la BD sirve el ultimo arbol bueno (`stale-while-error`) en lugar de propagar el error.
+
 ## [1.82.3] - 2026-07-16
 
 ### Refactor: eliminar defaults inline del compose + `.env.example`
@@ -276,7 +320,7 @@ Sesión intensiva de prueba y pulido del MCP con un agente externo. Se crearon s
 #### Docker
 
 - **`docker-compose.yml`**: `MARIACHI_VERIFY_SSL` en containers backend y MCP.
-- **`.env.production`** (local): `MAPALAB_PUBLIC_BASE_URL` a `https://10.25.7.17` para shares locales.
+- **`.env.production`** (local): `MAPALAB_PUBLIC_BASE_URL` a `https://<host-staging>` para shares locales.
 
 ## [1.69.0] - 2026-06-04
 

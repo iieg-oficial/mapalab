@@ -1,4 +1,4 @@
-import { findWMSConfig } from '../pages/maps/helpers/wmsConfig';
+import { findWMSConfig, hydrateWmsConfig } from '../pages/maps/helpers/wmsConfig';
 import { findLayerById } from '../pages/maps/helpers/layers/utils/layerHelpers';
 
 let currentLayers = [];
@@ -295,3 +295,41 @@ export const getAvailableMetadata = (metadata) => {
     }
     return { hasTxt, hasXlsx };
 };
+
+const catalogoFilename = (capa, extension) => {
+    const label = (capa.nombre || capa.slug || 'capa').replace(/\s+/g, '_');
+    const date = new Date().toISOString().slice(0, 10);
+    return `${label}_${date}.${extension}`;
+};
+
+export const downloadCatalogoCapa = (capa, formatId, options = {}) =>
+    wrapDownload(async () => {
+        const { signal, onProgress } = options;
+        const wmsConfig = hydrateWmsConfig({
+            geoserverWorkspace: capa.geoserverWorkspace,
+            geoserverLayer: capa.geoserverLayer,
+        });
+        if (!wmsConfig) return { success: false, error: 'Capa no válida' };
+
+        if (formatId === 'csv') {
+            const csvFmt = VECTOR_FORMATS.find((f) => f.id === 'csv');
+            let blob;
+            try {
+                blob = await fetchWithProgress(
+                    buildBackendCSVUrl(capa.workspaceAlias, capa.geoserverLayer),
+                    signal,
+                    onProgress,
+                );
+            } catch {
+                blob = await fetchWithProgress(buildWFSUrl(wmsConfig, csvFmt), signal, onProgress);
+            }
+            triggerDownload(blob, catalogoFilename(capa, 'csv'));
+            return { success: true };
+        }
+
+        const fmt = VECTOR_FORMATS.find((f) => f.id === formatId);
+        if (!fmt) return { success: false, error: 'Formato no soportado' };
+        const blob = await fetchWithProgress(buildWFSUrl(wmsConfig, fmt), signal, onProgress);
+        triggerDownload(blob, catalogoFilename(capa, fmt.extension));
+        return { success: true };
+    });
