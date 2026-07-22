@@ -169,5 +169,5 @@ local; vive en MapaLab (visor + endpoints `/embed`) y Mariachi (panel admin + ll
 - Los modelos de Tier B requieren migración Alembic + actualizar
   `app/models/__init__.py`.
 - La llave de pruebas activa hoy es `mk_pub_kRrt…` para
-  `https://10.25.7.17` (institución "Pruebas SIEEJ"). Renombrarla a
+  `https://<host-staging>` (institución "Pruebas SIEEJ"). Renombrarla a
   "Pruebas locales" cuando se retomen estos pendientes.

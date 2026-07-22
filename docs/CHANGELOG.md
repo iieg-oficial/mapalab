@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.83.0] - 2026-07-22
+
+### Agregado: sección Catálogo (`/catalogo`)
+
+Vista pública simplificada para explorar y descargar capas sueltas, gestionadas desde mariachi. Requiere la migración `0025_catalogo_capas` en DataEngine (ver RUNBOOK → "Catálogo de capas").
+
+#### Frontend
+
+- Nueva ruta `/catalogo` y `/catalogo/:slug` (fuera de `MapsProvider`): mapa simplificado (Voyager + relieve), buscador desplegable, panel de leyendas con descarga colapsable (GPKG/SHP/CSV) y encuadre al **bbox real de la capa** (reusa `getLayerExtent3857`). Recicla `MapControls`, `ScaleLineControl` y `MapAttribution` (nuevo prop `hideActions`) del visor vía contextos stub.
+- Dos botones de entrada al catálogo desde el visor (junto a Contribuciones y en el sider), gateados a `VITE_APP_ENV ∈ {dev,beta}` (ocultos en producción).
+
+#### Backend
+
+- Endpoints públicos `GET /catalogo/capas` y `/catalogo/capas/{slug}` (repositorio SQL + cache TTL 5 min; resuelve `geoserverWorkspace`).
+- **CSV sin columnas geométricas**: `stream_csv` excluye columnas `geometry`/`geography`; aplica también a las descargas CSV de **capas normales** del visor (para geometría, usar GPKG).
+
 ## [1.82.4] - 2026-07-22
 
 ### Corregido
@@ -282,7 +298,7 @@ Sesión intensiva de prueba y pulido del MCP con un agente externo. Se crearon s
 #### Docker
 
 - **`docker-compose.yml`**: `MARIACHI_VERIFY_SSL` en containers backend y MCP.
-- **`.env.production`** (local): `MAPALAB_PUBLIC_BASE_URL` a `https://10.25.7.17` para shares locales.
+- **`.env.production`** (local): `MAPALAB_PUBLIC_BASE_URL` a `https://<host-staging>` para shares locales.
 
 ## [1.69.0] - 2026-06-04
 
