@@ -117,7 +117,7 @@ def flush_to_mariachi() -> int:
     if not payload_items:
         return 0
 
-    url = f"{settings.MARIACHI_BACKEND_URL.rstrip('/')}/api/administrador/internal/mapalab/keys/usage"
+    url = f"{settings.MARIACHI_BACKEND_URL.rstrip('/')}/api/mariachi/internal/mapalab/keys/usage"
     try:
         with httpx.Client(timeout=8.0, verify=settings.MARIACHI_VERIFY_SSL) as client:
             response = client.post(

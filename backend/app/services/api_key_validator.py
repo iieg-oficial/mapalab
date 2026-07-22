@@ -110,7 +110,7 @@ def _validate_remote(
         Logger.error('embed.validate.missing_internal_token')
         return ValidationResult(valid=False, reason='internal_token_missing')
 
-    url = f"{settings.MARIACHI_BACKEND_URL.rstrip('/')}/api/administrador/internal/mapalab/keys/validate"
+    url = f"{settings.MARIACHI_BACKEND_URL.rstrip('/')}/api/mariachi/internal/mapalab/keys/validate"
     payload = {
         'key': plain_key,
         'origin': origin,
