@@ -12,6 +12,13 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.84.0',
+        items: [
+            { text: 'En el Catálogo ahora puedes medir distancias y áreas, y anotar sobre el mapa con texto, emojis y trazos libres desde un botón; se despliegan al activarlo y puedes gestionarlos en una lista.', tag: 'added' },
+            { text: 'En el Catálogo, al hacer clic sobre la capa se muestra una tarjeta con la información del elemento consultado.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.79.0',
         items: [
             { text: 'Agregamos un sombreado de relieve que resalta la topografía del estado por encima del mapa; permanece visible mientras haya un mapa base y se adapta automáticamente a la vista IIEG o INEGI.', tag: 'added' },
