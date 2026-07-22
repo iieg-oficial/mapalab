@@ -5,6 +5,12 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.82.4] - 2026-07-22
+
+### Corregido
+
+- **Caida de `/layers/tree` e `/layers/initial-order` ante lentitud de la BD**: `get_cached_state()` consultaba PostgreSQL en cada request (un `SELECT etag`) aun con el arbol ya en memoria, por lo que un episodio de lentitud o bloqueo de la BD colgaba la carga del mapa (timeouts `504`) pese a tener workers y cache. Ahora `_MEM_CACHE` sirve el arbol **sin tocar la BD** mientras esta fresco (TTL `_MEM_TTL_SECONDS` = 30s), revalida solo el `etag` al expirar, y ante un fallo de la BD sirve el ultimo arbol bueno (`stale-while-error`) en lugar de propagar el error.
+
 ## [1.82.3] - 2026-07-16
 
 ### Refactor: eliminar defaults inline del compose + `.env.example`

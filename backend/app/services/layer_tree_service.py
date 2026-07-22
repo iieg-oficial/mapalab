@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import threading
+import time
 from datetime import datetime
 from typing import Any, Optional
 
@@ -23,13 +24,24 @@ def _resolve_acervo_icon(raw: str | None) -> str | None:
 
 
 _MEM_LOCK = threading.Lock()
+_MEM_TTL_SECONDS = 30
 _MEM_CACHE: dict[str, Any] = {
     'etag': None,
     'tree': None,
     'initial_order': None,
     'workspaces': None,
     'updated_at': None,
+    'checked_at': 0.0,
 }
+
+
+def _snapshot() -> dict[str, Any]:
+    return {
+        'etag': _MEM_CACHE['etag'],
+        'tree': _MEM_CACHE['tree'],
+        'initial_order': _MEM_CACHE['initial_order'],
+        'workspaces': _MEM_CACHE['workspaces'],
+    }
 
 
 def _workspace_to_dict(ws: Workspace) -> dict:
@@ -265,6 +277,7 @@ def refresh_cache() -> dict[str, Any]:
             _MEM_CACHE['initial_order'] = initial_order
             _MEM_CACHE['workspaces'] = ws_list
             _MEM_CACHE['updated_at'] = datetime.utcnow()
+            _MEM_CACHE['checked_at'] = time.monotonic()
 
         Logger.info(f'layer_tree_cache refreshed: {count} capas, etag={etag}')
 
@@ -278,42 +291,45 @@ def refresh_cache() -> dict[str, Any]:
 
 
 def get_cached_state() -> dict[str, Any]:
-    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
-    with conn.get_session() as session:
-        db_etag = session.query(LayerTreeCache.etag).filter(LayerTreeCache.id == 1).scalar()
+    now = time.monotonic()
+    with _MEM_LOCK:
+        if _MEM_CACHE['tree'] is not None and (now - _MEM_CACHE['checked_at']) < _MEM_TTL_SECONDS:
+            return _snapshot()
 
-        with _MEM_LOCK:
-            if db_etag and _MEM_CACHE['etag'] == db_etag and _MEM_CACHE['tree']:
+    try:
+        conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+        with conn.get_session() as session:
+            db_etag = session.query(LayerTreeCache.etag).filter(LayerTreeCache.id == 1).scalar()
+
+            with _MEM_LOCK:
+                if db_etag and _MEM_CACHE['etag'] == db_etag and _MEM_CACHE['tree'] is not None:
+                    _MEM_CACHE['checked_at'] = now
+                    return _snapshot()
+
+            row = session.query(LayerTreeCache).filter(LayerTreeCache.id == 1).first()
+            if row is None:
+                result = refresh_cache()
                 return {
-                    'etag': _MEM_CACHE['etag'],
-                    'tree': _MEM_CACHE['tree'],
-                    'initial_order': _MEM_CACHE['initial_order'],
-                    'workspaces': _MEM_CACHE['workspaces'],
+                    'etag': result['etag'],
+                    'tree': result['tree'],
+                    'initial_order': result['initial_order'],
+                    'workspaces': result['workspaces'],
                 }
 
-        row = session.query(LayerTreeCache).filter(LayerTreeCache.id == 1).first()
-        if row is None:
-            result = refresh_cache()
-            return {
-                'etag': result['etag'],
-                'tree': result['tree'],
-                'initial_order': result['initial_order'],
-                'workspaces': result['workspaces'],
-            }
-
+            with _MEM_LOCK:
+                _MEM_CACHE['etag'] = row.etag
+                _MEM_CACHE['tree'] = row.tree
+                _MEM_CACHE['initial_order'] = row.initial_order
+                _MEM_CACHE['workspaces'] = row.workspaces
+                _MEM_CACHE['updated_at'] = row.updated_at
+                _MEM_CACHE['checked_at'] = time.monotonic()
+                return _snapshot()
+    except Exception:
         with _MEM_LOCK:
-            _MEM_CACHE['etag'] = row.etag
-            _MEM_CACHE['tree'] = row.tree
-            _MEM_CACHE['initial_order'] = row.initial_order
-            _MEM_CACHE['workspaces'] = row.workspaces
-            _MEM_CACHE['updated_at'] = row.updated_at
-
-        return {
-            'etag': row.etag,
-            'tree': row.tree,
-            'initial_order': row.initial_order,
-            'workspaces': row.workspaces,
-        }
+            if _MEM_CACHE['tree'] is not None:
+                Logger.warning('layer_tree_cache: BD no disponible, sirviendo cache en memoria')
+                return _snapshot()
+        raise
 
 
 def invalidate_memory_cache() -> None:
@@ -323,3 +339,4 @@ def invalidate_memory_cache() -> None:
         _MEM_CACHE['initial_order'] = None
         _MEM_CACHE['workspaces'] = None
         _MEM_CACHE['updated_at'] = None
+        _MEM_CACHE['checked_at'] = 0.0
