@@ -5,9 +5,17 @@ from sqlalchemy.orm import Session
 
 _SELECT = (
     'SELECT c.id, c.slug, c.nombre, c.workspace_alias, '
-    'w.geoserver_workspace, c.geoserver_layer, c.search_tags '
+    'w.geoserver_workspace, c.geoserver_layer, c.search_tags, '
+    'l.infobox_config '
     'FROM mapalab.catalogo_capas c '
     'LEFT JOIN mapalab.workspaces w ON w.alias = c.workspace_alias '
+    'LEFT JOIN LATERAL ('
+    '  SELECT infobox_config FROM mapalab.layers '
+    '  WHERE workspace_alias = c.workspace_alias '
+    '    AND geoserver_layer = c.geoserver_layer '
+    '    AND infobox_config IS NOT NULL '
+    '  LIMIT 1'
+    ') l ON TRUE '
 )
 
 

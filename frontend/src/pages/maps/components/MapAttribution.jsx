@@ -4,7 +4,7 @@ import { BASEMAPS } from '@pages/maps/helpers/basemaps';
 import ReportButton from '@components/ReportButton';
 import CatalogoEntryButton from './CatalogoEntryButton';
 
-const MapAttribution = ({ hideActions = false }) => {
+const MapAttribution = ({ hideActions = false, extraRight = null }) => {
     const { baseMapId } = useMapsContext();
     const basemapConfig = BASEMAPS[baseMapId];
     const [open, setOpen] = useState(false);
@@ -59,6 +59,8 @@ const MapAttribution = ({ hideActions = false }) => {
                     ©
                 </button>
             </div>
+
+            {extraRight}
         </div>
     );
 };

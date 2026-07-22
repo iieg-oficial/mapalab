@@ -10,10 +10,15 @@ import MapsContext from '@contexts/MapsContext';
 import { SiderContext } from '@contexts/SiderContext';
 import MapControls from '@pages/maps/components/MapControls';
 import MapAttribution from '@pages/maps/components/MapAttribution';
+import CatalogoInfoButton from './CatalogoInfoButton';
+import CatalogoInfoBox from './CatalogoInfoBox';
+import CatalogoTools from './CatalogoTools';
 import { BASEMAPS, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 import { JALISCO_BOUNDS, hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
 import { getMinZoom } from '@pages/maps/helpers/defaultView';
 import { useScaleLineControl } from '@hooksMaps/useScaleLineControl';
+import { useMapDrawing } from '@hooksMaps/useMapDrawing';
+import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 
 const buildWmsLayer = (capa) => {
@@ -53,10 +58,29 @@ const CatalogoMapView = ({ capa }) => {
     const scaleRef = useRef(null);
     const mapRef = useRef(null);
     const wmsLayerRef = useRef(null);
+    const clickSeqRef = useRef(0);
     const [isLocating, setIsLocating] = useState(false);
+    const [info, setInfo] = useState(null);
 
     const getMapInstance = useCallback(() => mapRef.current, []);
     useScaleLineControl(getMapInstance, scaleRef);
+
+    const drawing = useMapDrawing(mapRef);
+    const editing = useMapEditing({
+        mapRef,
+        vectorSourceRef: drawing.vectorSourceRef,
+        vectorLayerRef: drawing.vectorLayerRef,
+        measurements: drawing.measurements,
+        setMeasurements: drawing.setMeasurements,
+        isDrawing: drawing.isDrawing,
+        measureType: drawing.measureType,
+        lastPlacedAnnotation: drawing.lastPlacedAnnotation,
+    });
+
+    const isDrawingRef = useRef(false);
+    useEffect(() => {
+        isDrawingRef.current = drawing.isDrawing;
+    }, [drawing.isDrawing]);
 
     const mapsContextValue = useMemo(() => ({
         mapRef,
@@ -65,7 +89,9 @@ const CatalogoMapView = ({ capa }) => {
         paneMapRefs: { current: [] },
         isLocating,
         setIsLocating,
-    }), [isLocating]);
+        ...drawing,
+        ...editing,
+    }), [isLocating, drawing, editing]);
 
     useEffect(() => {
         if (!targetRef.current || mapRef.current) return;
@@ -99,7 +125,37 @@ const CatalogoMapView = ({ capa }) => {
         });
 
         mapRef.current = map;
+
+        const handleClick = async (evt) => {
+            if (isDrawingRef.current) return;
+            const layer = wmsLayerRef.current;
+            if (!layer) {
+                setInfo(null);
+                return;
+            }
+            const view = map.getView();
+            const url = layer.getSource().getFeatureInfoUrl(
+                evt.coordinate,
+                view.getResolution(),
+                view.getProjection(),
+                { INFO_FORMAT: 'application/json', FEATURE_COUNT: 20 },
+            );
+            if (!url) return;
+            const seq = ++clickSeqRef.current;
+            const pixel = evt.pixel;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (seq !== clickSeqRef.current) return;
+                setInfo({ features: data?.features || [], pixel });
+            } catch {
+                if (seq === clickSeqRef.current) setInfo(null);
+            }
+        };
+        map.on('singleclick', handleClick);
+
         return () => {
+            map.un('singleclick', handleClick);
             map.setTarget(undefined);
             mapRef.current = null;
         };
@@ -108,6 +164,7 @@ const CatalogoMapView = ({ capa }) => {
     useEffect(() => {
         const map = mapRef.current;
         if (!map) return;
+        setInfo(null);
         if (wmsLayerRef.current) {
             map.removeLayer(wmsLayerRef.current);
             wmsLayerRef.current = null;
@@ -144,11 +201,21 @@ const CatalogoMapView = ({ capa }) => {
             <MapsContext.Provider value={mapsContextValue}>
                 <SiderContext.Provider value={SIDER_STUB}>
                     <MapControls />
+                    <CatalogoTools />
                 </SiderContext.Provider>
-                <MapAttribution hideActions />
+                <MapAttribution hideActions extraRight={<CatalogoInfoButton />} />
             </MapsContext.Provider>
 
             <div ref={scaleRef} className="fixed left-4 bottom-1 z-10" />
+
+            {info && capa && (
+                <CatalogoInfoBox
+                    capa={capa}
+                    features={info.features}
+                    pixel={info.pixel}
+                    onClose={() => setInfo(null)}
+                />
+            )}
         </>
     );
 };

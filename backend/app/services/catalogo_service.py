@@ -18,6 +18,7 @@ def _serialize(row: dict) -> dict:
         'geoserverWorkspace': row['geoserver_workspace'],
         'geoserverLayer': row['geoserver_layer'],
         'searchTags': row['search_tags'] or [],
+        'littleCard': row.get('infobox_config'),
     }
 
 

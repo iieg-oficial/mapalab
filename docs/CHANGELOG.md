@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.84.0] - 2026-07-22
+
+### Agregado: información por clic y herramientas en el Catálogo
+
+#### Frontend
+
+- **Información por clic (GetFeatureInfo)**: al hacer clic sobre la capa activa se consulta `GetFeatureInfo` de GeoServer y se muestra una tarjeta (`CatalogoInfoBox`) que reutiliza `renderCard` del visor. Usa la configuración de tarjeta heredada de `mapalab.layers` (`littleCard`).
+- **Herramientas de dibujo y medición** (`CatalogoTools`): reutiliza `MeasurementTools`, `useMapDrawing` y `useMapEditing` del visor dentro de la vista de catálogo.
+- **Rediseño del buscador** (`CatalogoSearchModal`): a la altura de los controles del mapa; header "Catálogo" flotante con X (solo abierto) que se desplaza como cabecera de lista + input; lista con fuente 16 (Garet Medium), tope de 80vh con scroll; en mobile se colapsa a una píldora cuando no está activo. Sombras direccionales (lista/input hacia arriba en desktop, más grandes en mobile).
+- **Botón de información**: reubicado a la barra de atribuciones (a la derecha de "Contribuciones", ícono redondo naranja) mediante el nuevo prop `extraRight` de `MapAttribution`; ya no vive junto a "Regresar a Mapalab".
+- **Panel de leyendas**: título a 18, imagen con alto máximo y scroll, botón de eliminar capa sin fondo.
+
+#### Backend
+
+- `GET /catalogo/capas` y `/catalogo/capas/{slug}` ahora incluyen `littleCard` (config de `infobox_config` heredada de `mapalab.layers` vía `LEFT JOIN LATERAL`), para renderizar la tarjeta de información por clic.
+
 ## [1.83.1] - 2026-07-22
 
 ### Agregado

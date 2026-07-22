@@ -18,7 +18,6 @@ const buildLegendUrl = (capa) => {
 };
 
 const ICON_BTN = 'size-8 rounded-full flex items-center justify-center transition-colors';
-const PEACH_BG = 'bg-[#FFE4C4] hover:bg-[#FFD9AD]';
 
 const CatalogoLegends = ({ capa, onClose }) => {
     const [minimized, setMinimized] = useState(false);
@@ -63,9 +62,9 @@ const CatalogoLegends = ({ capa, onClose }) => {
                 onClick={toggleMinimized}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleMinimized(); } }}
                 title={minimized ? 'Expandir' : 'Minimizar'}
-                className="flex items-start justify-between gap-2 px-3.5 pt-3 pb-2.5 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-purple/40"
+                className="flex items-center justify-between gap-2 px-3.5 pt-3 pb-2.5 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-purple/40"
             >
-                <h3 className="min-w-0 wrap-break-word text-[15px] font-bold text-purple font-garet leading-tight">{capa.nombre}</h3>
+                <h3 className="min-w-0 wrap-break-word text-[18px] font-bold text-purple font-garet leading-tight">{capa.nombre}</h3>
                 <span className={`hidden md:flex shrink-0 text-purple ${ICON_BTN}`}>
                     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                         {minimized ? <path d="M12 6v12M6 12h12" /> : <path d="M6 12h12" />}
@@ -76,7 +75,7 @@ const CatalogoLegends = ({ capa, onClose }) => {
             {!minimized && (
                 <div className="px-3.5 pb-3">
                     {legendUrl && (
-                        <div className="p-2 rounded-[10px] bg-[#F4F1F8]">
+                        <div className="p-2 rounded-[10px] bg-[#F4F1F8] max-h-[52vh] overflow-y-auto">
                             <img src={legendUrl} alt={`Leyenda de ${capa.nombre}`} className="max-w-full h-auto" />
                         </div>
                     )}
@@ -91,7 +90,7 @@ const CatalogoLegends = ({ capa, onClose }) => {
                             onClick={onClose}
                             title="Cerrar capa"
                             aria-label="Cerrar capa"
-                            className={`ml-auto ${ICON_BTN} ${PEACH_BG}`}
+                            className={`ml-auto ${ICON_BTN} hover:bg-black/5`}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="w-4.25 h-4.25">
                                 <g fill="none">
