@@ -9,7 +9,7 @@ from prometheus_fastapi_instrumentator import Instrumentator, metrics as fastapi
 
 from sqlalchemy import text
 from app import metrics as metrics_module
-from app.routers import (metadata, periodicity, download, layers, shares, embed, municipios, client_errors)
+from app.routers import (metadata, periodicity, download, layers, shares, embed, municipios, client_errors, catalogo)
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.access_logger import access_flush_loop, get_logger as get_access_logger, _flush_sync as _flush_accesos
 from app.services.api_key_quota import flush_to_mariachi
@@ -146,6 +146,7 @@ app.include_router(shares.router)
 app.include_router(embed.router)
 app.include_router(municipios.router)
 app.include_router(client_errors.router)
+app.include_router(catalogo.router)
 app.include_router(metrics_module.router)
 @app.get('/')
 def root():

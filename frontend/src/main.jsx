@@ -23,6 +23,7 @@ if (!isEmbedRoute) {
 const Home = lazy(() => import('@pages/home/Home'));
 const Maps = lazy(() => import('@pages/maps/Maps'));
 const EmbedRoot = lazy(() => import('@pages/embed/EmbedRoot'));
+const CatalogoPage = lazy(() => import('@pages/catalogo/CatalogoPage'));
 
 const isDev = import.meta.env.VITE_NODE_ENV === 'development';
 
@@ -47,6 +48,8 @@ const router = createBrowserRouter([
             { index: true, element: <Home /> },
             { path: 'mapa', element: <LayersProvider><LayerLoadingProvider><MapsProvider><Maps /></MapsProvider></LayerLoadingProvider></LayersProvider> },
             { path: 'embed', element: <EmbedRoot /> },
+            { path: 'catalogo', element: <CatalogoPage /> },
+            { path: 'catalogo/:slug', element: <CatalogoPage /> },
             { path: '*', element: <NotFound /> },
         ],
     },

@@ -31,19 +31,45 @@ export const useScaleLineControl = (getMapInstance, containerRef) => {
     useEffect(() => {
         if (!mapInstance || !containerRef.current) return;
 
-        const scaleLine = new ScaleLine({
-            target: containerRef.current,
-            units: 'metric',
-            bar: true,
-            text: true,
-            minWidth: 150
-        });
+        let scaleLine = null;
 
-        mapInstance.addControl(scaleLine);
+        const createControl = () => {
+            if (scaleLine) {
+                try {
+                    mapInstance.removeControl(scaleLine);
+                } catch {
+                    /* control ya removido */
+                }
+            }
+            const isMobile = window.innerWidth < 768;
+            const options = {
+                target: containerRef.current,
+                units: 'metric',
+                bar: true,
+                text: true,
+                minWidth: isMobile ? 80 : 150,
+            };
+            if (isMobile) {
+                options.maxWidth = Math.round(window.innerWidth * 0.5);
+            }
+            scaleLine = new ScaleLine(options);
+            mapInstance.addControl(scaleLine);
+        };
+
+        createControl();
+
+        let rafId = null;
+        const handleResize = () => {
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(createControl);
+        };
+        window.addEventListener('resize', handleResize);
 
         return () => {
+            window.removeEventListener('resize', handleResize);
+            if (rafId) cancelAnimationFrame(rafId);
             try {
-                mapInstance.removeControl(scaleLine);
+                if (scaleLine) mapInstance.removeControl(scaleLine);
             } catch {
                 /* mapa ya destruido */
             }

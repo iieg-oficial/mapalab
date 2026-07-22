@@ -22,6 +22,7 @@ import { useBadgeSeen, isBadgeSeen } from '@pages/maps/helpers/badgeSeenStore';
 import { useZenMode } from './ZenMode';
 import MenuItem from './MenuItem';
 import SiderModeButton from './SiderModeButton';
+import CatalogoSiderButton from './CatalogoSiderButton';
 import EnvBadge from './EnvBadge';
 import EventoFunButton from './EventoFunButton';
 
@@ -232,7 +233,7 @@ const MapSider = ({ className = '' }) => {
                     transitionTimingFunction: SIDER_TRANSITION_TIMING,
                     width: `${width}px`
                 }}
-                onMouseEnter={!treatAsMobile ? handleMouseEnter : undefined}
+                onMouseEnter={!treatAsMobile ? (e) => { if (!e.target?.closest?.('[data-sider-nohover]')) handleMouseEnter(); } : undefined}
                 onMouseLeave={!treatAsMobile ? handleMouseLeave : undefined}
             >
                 <div
@@ -255,7 +256,7 @@ const MapSider = ({ className = '' }) => {
                     <EnvBadge />
                     {!isMobile && (
                         <>
-                            <div className="absolute right-0 bottom-0 translate-x-1/2 translate-y-1/2 z-10">
+                            <div data-sider-nohover className="absolute right-0 bottom-0 translate-x-1/2 translate-y-1/2 z-10">
                                 <SiderModeButton lockMode={lockMode} onToggle={handleToggleLock} />
                             </div>
                             {showGlobalFunButton && (
@@ -267,6 +268,9 @@ const MapSider = ({ className = '' }) => {
                                     />
                                 </div>
                             )}
+                            <div data-sider-nohover className="absolute right-0 bottom-0 translate-x-1/2 translate-y-[calc(50%+30px)] z-10">
+                                <CatalogoSiderButton />
+                            </div>
                         </>
                     )}
                 </div>

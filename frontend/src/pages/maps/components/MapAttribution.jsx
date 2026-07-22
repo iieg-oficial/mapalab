@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { BASEMAPS } from '@pages/maps/helpers/basemaps';
 import ReportButton from '@components/ReportButton';
+import CatalogoEntryButton from './CatalogoEntryButton';
 
-const MapAttribution = () => {
+const MapAttribution = ({ hideActions = false }) => {
     const { baseMapId } = useMapsContext();
     const basemapConfig = BASEMAPS[baseMapId];
     const [open, setOpen] = useState(false);
@@ -12,7 +13,12 @@ const MapAttribution = () => {
 
     return (
         <div className="fixed bottom-4 right-4 md:bottom-2 md:right-2 z-10 flex items-center gap-2">
-            <ReportButton variant="floating" label="Reportar problema o sugerencia" extraContext={{ source: 'map_attribution' }} />
+            {!hideActions && (
+                <>
+                    <ReportButton variant="floating" label="Reportar problema o sugerencia" extraContext={{ source: 'map_attribution' }} />
+                    <CatalogoEntryButton />
+                </>
+            )}
             <div className="hidden md:flex justify-end rounded-[20px] bg-[#FFFFFF] px-3 py-1 font-[Garet,sans-serif] font-medium text-[12px] leading-[16px] tracking-[0px] shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] text-[#6E7477] whitespace-nowrap group transition-all duration-300 ease-in-out cursor-default overflow-hidden">
                 <span>Contribuciones ©</span>
                 <span className="max-w-0 opacity-0 group-hover:max-w-[1000px] group-hover:opacity-100 group-hover:ml-1 transition-all duration-300 ease-in-out inline-flex items-center">
