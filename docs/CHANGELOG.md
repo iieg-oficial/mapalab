@@ -21,17 +21,6 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 - `GET /catalogo/capas` y `/catalogo/capas/{slug}` ahora incluyen `littleCard` (config de `infobox_config` heredada de `mapalab.layers` vía `LEFT JOIN LATERAL`), para renderizar la tarjeta de información por clic.
 
-## [1.84.0] - 2026-07-22
-
-### Agregado
-
-- **Herramientas de medición y anotación en el Catálogo**: botón circular bajo el logo que despliega los dos grupos —medición (distancia/área) y anotación (texto, emojis, trazo libre)— con una lista para gestionarlas (ver/ocultar/eliminar). Reutiliza `useMapDrawing`/`useMapEditing` y los componentes del visor (`ToolSelector`, `EmojiPanel`, `TextInlineEditor`, `FeatureEditToolbar`, `HistoryButton`/`HistoryPanel`) vía contextos stub. `MapAttribution` acepta el nuevo prop `extraRight`.
-- **Consulta de elementos en el Catálogo (`CatalogoInfoBox`)**: al hacer clic sobre la capa activa se muestra una tarjeta con la información del elemento, usando la plantilla de InfoBox de la capa. El endpoint público `/catalogo/capas` expone ahora `littleCard` (join lateral a `mapalab.layers.infobox_config`). La consulta por clic se suprime mientras hay una herramienta de dibujo activa.
-
-### Cambiado
-
-- Refinamientos de UI del visor del Catálogo: `CatalogoBackButton`, `CatalogoSearchModal` y `CatalogoLegends`.
-
 ## [1.83.1] - 2026-07-22
 
 ### Agregado
