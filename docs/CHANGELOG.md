@@ -5,6 +5,26 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.85.0] - 2026-07-23
+
+### Cambiado: el relieve se sirve desde GeoWebCache (WMTS)
+
+`createReliefSource` pasa de `TileWMS` a `ol/source/WMTS` contra `/geoserver/gwc/service/wmts`, gridset `EPSG:900913` (31 niveles, tiles de 256 px), compatible con la vista en `EPSG:3857`. Ambas capas (`hillshade_iieg_cog`, `hillshade_inegi_cog`) ya estaban registradas en GWC. Aprovecha el metatiling 4×4 de GWC: un render produce 16 tiles.
+
+**Cada capa lleva su propio `extent`**, tomado del `WGS84BoundingBox` que publica GWC, y por eso el tileGrid se construye por capa en vez de compartirse. No es opcional: WMTS responde **400 `TileOutOfRange`** fuera del área de la capa, y sin `extent` el tileGrid cubre el mundo entero y OpenLayers pide tiles inexistentes. El WMS no tenía ese problema porque devuelve PNG transparente.
+
+Verificado en tres niveles: los rangos de tiles de OpenLayers coinciden **exactamente** con los `TileMatrixSetLimits` de GWC en los 21 niveles de ambas capas; 1684 tiles reales del rango (z=6–11) responden 200; y `basemaps.test.js` fija el rango esperado a z=8 para que un desalineado del grid falle en CI.
+
+### Corregido: el indicador de carga parpadeaba con capas por tiles
+
+Con `ImageWMS` el spinner recibía un `start` y un `end` por render; con `TileWMS` recibía uno por **cada** tile (~70 por pantalla), así que hacía toggle decenas de veces hasta terminar.
+
+`useWMSLayerFactory` ahora cuenta tiles en vuelo: emite `start` con el primero y `end` solo cuando no quedan pendientes **y** pasan 250 ms sin actividad nueva. El margen importa porque OpenLayers carga en tandas y el contador toca 0 entre ellas — sin él vuelve a parpadear. Los tiles con error también descuentan, así que una tanda fallida no deja el indicador colgado. Cubierto por `useWMSLayerFactory.test.js` (3 casos).
+
+### Documentación
+
+Nuevo `docs/render_layers.md`: cadena completa de render (los tres cachés en serie y cómo distinguirlos), estado y motivo de configuración de cada capa, por qué la reproyección **no** es el cuello de botella (medido) y las trampas conocidas — rate limit de control-flow que solo se reproduce con cookie, el include del gateway que vive dentro de la imagen, y el etag del árbol de capas.
+
 ## [1.84.3] - 2026-07-23
 
 ### Agregado

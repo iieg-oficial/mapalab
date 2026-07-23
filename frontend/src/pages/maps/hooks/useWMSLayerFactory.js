@@ -6,6 +6,8 @@ import TileWMS from 'ol/source/TileWMS';
 import { findWMSConfig } from '../helpers/wmsConfig';
 import { useLayers } from '@hooks/useLayers';
 
+const TILE_SETTLE_MS = 250;
+
 export const useWMSLayerFactory = () => {
     const { layers } = useLayers();
     const combineCQLFilters = useCallback((baseFilter, dynamicFilter) => {
@@ -54,20 +56,47 @@ export const useWMSLayerFactory = () => {
                 crossOrigin: 'anonymous'
             });
 
-            if (onLoadStart) {
-                tileSource.on('tileloadstart', () => onLoadStart(layerId));
-            }
+            let pendingTiles = 0;
+            let settleTimer = null;
+            let loadingNotified = false;
 
-            if (onLoadEnd) {
-                tileSource.on('tileloadend', () => onLoadEnd(layerId));
-            }
+            const clearSettleTimer = () => {
+                if (settleTimer) {
+                    clearTimeout(settleTimer);
+                    settleTimer = null;
+                }
+            };
+
+            const tileStarted = () => {
+                pendingTiles += 1;
+                clearSettleTimer();
+                if (!loadingNotified) {
+                    loadingNotified = true;
+                    onLoadStart?.(layerId);
+                }
+            };
+
+            const tileFinished = () => {
+                pendingTiles = Math.max(0, pendingTiles - 1);
+                if (pendingTiles > 0) return;
+                clearSettleTimer();
+                settleTimer = setTimeout(() => {
+                    settleTimer = null;
+                    if (pendingTiles > 0 || !loadingNotified) return;
+                    loadingNotified = false;
+                    onLoadEnd?.(layerId);
+                }, TILE_SETTLE_MS);
+            };
+
+            tileSource.on('tileloadstart', tileStarted);
+            tileSource.on('tileloadend', tileFinished);
 
             tileSource.on('tileloaderror', (event) => {
                 if (import.meta.env.DEV) {
                     const src = event?.tile?.getImage?.()?.src || null;
                     console.warn('[WMS tileloaderror]', { layerId, src, baseUrl: wmsConfig.baseUrl, params: { ...wmsParams } });
                 }
-                onLoadEnd?.(layerId);
+                tileFinished();
             });
 
             return new TileLayer({
