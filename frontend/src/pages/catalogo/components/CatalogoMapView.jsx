@@ -4,7 +4,14 @@ import OLMap from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import ImageLayer from 'ol/layer/Image';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
 import ImageWMS from 'ol/source/ImageWMS';
+import GeoJSON from 'ol/format/GeoJSON';
+import Style from 'ol/style/Style';
+import Stroke from 'ol/style/Stroke';
+import Fill from 'ol/style/Fill';
+import CircleStyle from 'ol/style/Circle';
 import { fromLonLat, transformExtent } from 'ol/proj';
 import MapsContext from '@contexts/MapsContext';
 import { SiderContext } from '@contexts/SiderContext';
@@ -44,6 +51,20 @@ const buildWmsLayer = (capa) => {
     return new ImageLayer({ source, zIndex: 5 });
 };
 
+const geojson = new GeoJSON();
+
+const HIGHLIGHT_Z = 998;
+
+const HIGHLIGHT_STYLE = new Style({
+    stroke: new Stroke({ color: '#FF8300', width: 2.5, lineCap: 'round', lineJoin: 'round' }),
+    fill: new Fill({ color: 'rgba(255, 131, 0, 0.18)' }),
+    image: new CircleStyle({
+        radius: 8,
+        stroke: new Stroke({ color: '#FF8300', width: 2 }),
+        fill: new Fill({ color: 'rgba(255, 131, 0, 0.18)' }),
+    }),
+});
+
 const CATALOGO_ANNOTATIONS_KEY = 'mapalab.catalogo.annotations';
 
 const SIDER_STUB = {
@@ -61,9 +82,15 @@ const CatalogoMapView = ({ capa }) => {
     const scaleRef = useRef(null);
     const mapRef = useRef(null);
     const wmsLayerRef = useRef(null);
+    const highlightSourceRef = useRef(null);
     const clickSeqRef = useRef(0);
     const [isLocating, setIsLocating] = useState(false);
     const [info, setInfo] = useState(null);
+
+    const clearInfo = useCallback(() => {
+        setInfo(null);
+        highlightSourceRef.current?.clear();
+    }, []);
 
     const getMapInstance = useCallback(() => mapRef.current, []);
     useScaleLineControl(getMapInstance, scaleRef);
@@ -134,11 +161,15 @@ const CatalogoMapView = ({ capa }) => {
 
         mapRef.current = map;
 
+        const highlightSource = new VectorSource();
+        highlightSourceRef.current = highlightSource;
+        map.addLayer(new VectorLayer({ source: highlightSource, style: HIGHLIGHT_STYLE, zIndex: HIGHLIGHT_Z }));
+
         const handleClick = async (evt) => {
             if (isDrawingRef.current) return;
             const layer = wmsLayerRef.current;
             if (!layer) {
-                setInfo(null);
+                clearInfo();
                 return;
             }
             const view = map.getView();
@@ -158,8 +189,18 @@ const CatalogoMapView = ({ capa }) => {
                 const features = data?.features || [];
                 trackCatalogoFeatureClick({ slug: capaRef.current?.slug || null, count: features.length });
                 setInfo({ features, pixel });
+                highlightSourceRef.current?.clear();
+                if (features.length) {
+                    const parsed = features
+                        .filter((f) => f?.geometry)
+                        .map((f) => {
+                            try { return geojson.readFeature(f, { dataProjection: 'EPSG:3857', featureProjection: 'EPSG:3857' }); } catch { return null; }
+                        })
+                        .filter(Boolean);
+                    highlightSourceRef.current?.addFeatures(parsed);
+                }
             } catch {
-                if (seq === clickSeqRef.current) setInfo(null);
+                if (seq === clickSeqRef.current) clearInfo();
             }
         };
         map.on('singleclick', handleClick);
@@ -169,12 +210,12 @@ const CatalogoMapView = ({ capa }) => {
             map.setTarget(undefined);
             mapRef.current = null;
         };
-    }, []);
+    }, [clearInfo]);
 
     useEffect(() => {
         const map = mapRef.current;
         if (!map) return;
-        setInfo(null);
+        clearInfo();
         if (wmsLayerRef.current) {
             map.removeLayer(wmsLayerRef.current);
             wmsLayerRef.current = null;
@@ -202,7 +243,7 @@ const CatalogoMapView = ({ capa }) => {
                 if (!cancelled && view) view.fit(jalisco(), { duration: 500, padding: [60, 60, 60, 60] });
             });
         return () => { cancelled = true; };
-    }, [capa]);
+    }, [capa, clearInfo]);
 
     return (
         <>
@@ -223,7 +264,7 @@ const CatalogoMapView = ({ capa }) => {
                     capa={capa}
                     features={info.features}
                     pixel={info.pixel}
-                    onClose={() => setInfo(null)}
+                    onClose={clearInfo}
                 />
             )}
         </>
