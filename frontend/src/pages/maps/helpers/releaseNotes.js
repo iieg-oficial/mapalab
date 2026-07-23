@@ -12,6 +12,13 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.84.1',
+        items: [
+            { text: 'En el Catálogo, las herramientas de medición y anotación ahora se muestran u ocultan con un botón; al cerrarlas se borran los trazos que hiciste.', tag: 'changed' },
+            { text: 'Las leyendas del Catálogo ahora se ven consistentes con las del visor y quedan mejor alineadas.', tag: 'fixed' },
+        ],
+    },
+    {
         version: '1.84.0',
         items: [
             { text: 'En el Catálogo ahora puedes medir distancias y áreas, y anotar sobre el mapa con texto, emojis y trazos libres desde un botón; se despliegan al activarlo y puedes gestionarlos en una lista.', tag: 'added' },

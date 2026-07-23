@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.84.1] - 2026-07-23
+
+### Cambiado
+
+- **Herramientas del Catálogo tras un botón**: las herramientas de medición/anotación pasan de permanentes a un botón circular (regla ↔ X rosa, sin confirmación) que las despliega; el botón se reubica al pie de la columna cuando está activo. Al cerrarlas se **borran los trazos** (`clearDrawings`). Botones a `size-10`, uniformes con el toggle.
+- **Persistencia de anotaciones aislada**: el catálogo usa la llave `mapalab.catalogo.annotations`, ya no comparte trazos con el visor. `useMapDrawing` acepta `{ storageKey }` y `useAnnotationsPersistence` un `storageKey` (default = la llave del visor, sin cambios ahí).
+
+### Corregido
+
+- **Leyendas del Catálogo homologadas** con el panel de capas activas: mismos parámetros de `GetLegendGraphic` (ícono fijo 20×20, `dpi:100`, tipografía Garet, **sin `transparent`**) y mismo contenedor, lo que elimina el espacio sobrante que descuadraba el centrado vertical. Título del panel a 15px.
+- `alt` duplicado ("Leyenda de Leyenda de X") en la leyenda inline del visor.
+
+### Refactor
+
+- `LegendImage` (carga con Logo, fade-in y manejo de error) extraído a `@components/LegendImage` y reutilizado por el visor y el catálogo.
+- `ToolSelector` (`buttonClass`/`iconClass`) y `HistoryButton` (`size`/`iconSize`) aceptan tamaño configurable; los defaults conservan el tamaño del visor.
+
 ## [1.84.0] - 2026-07-22
 
 ### Agregado: información por clic y herramientas en el Catálogo

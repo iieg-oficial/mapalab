@@ -22,6 +22,12 @@ const RulerIcon = ({ className }) => (
     </svg>
 );
 
+const CloseIcon = ({ className }) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M18 6L6 18M6 6l12 12" />
+    </svg>
+);
+
 const CatalogoTools = () => {
     const {
         isDrawing,
@@ -29,6 +35,7 @@ const CatalogoTools = () => {
         measureType,
         startDrawing,
         stopDrawing,
+        clearDrawings,
         measurements,
         deleteMeasurement,
         toggleMeasurementVisibility,
@@ -70,6 +77,7 @@ const CatalogoTools = () => {
     const closeTools = () => {
         stopDrawing();
         deselectFeature?.();
+        clearDrawings();
         setIsEmojiPickerOpen(false);
         setIsListOpen(false);
         setToolsOpen(false);
@@ -116,22 +124,26 @@ const CatalogoTools = () => {
         startDrawing('Text');
     };
 
+    const toggleButton = (
+        <Tooltip content={toolsOpen ? 'Cerrar herramientas' : 'Medir y anotar sobre el mapa'} placement="right" delay={300}>
+            <button
+                type="button"
+                onClick={togglePill}
+                aria-pressed={toolsOpen}
+                aria-label={toolsOpen ? 'Cerrar herramientas de medición y anotación' : 'Herramientas de medición y anotación'}
+                className={[
+                    'size-10 rounded-full flex items-center justify-center shadow-[0_5px_20px_#1A26641A] transition-colors cursor-pointer',
+                    toolsOpen ? 'bg-[#FFE6EC] text-[#FF577D] hover:bg-[#FF577D] hover:text-white' : 'bg-white text-graphite hover:bg-purple-soft'
+                ].join(' ')}
+            >
+                {toolsOpen ? <CloseIcon className="size-5 shrink-0" /> : <RulerIcon className="size-5 shrink-0" />}
+            </button>
+        </Tooltip>
+    );
+
     return (
         <div className="fixed left-4 top-29 z-20 flex flex-col gap-2 items-start">
-            <Tooltip content="Medir y anotar sobre el mapa" placement="right" delay={300}>
-                <button
-                    type="button"
-                    onClick={togglePill}
-                    aria-pressed={toolsOpen}
-                    aria-label="Herramientas de medición y anotación"
-                    className={[
-                        'size-10 rounded-full flex items-center justify-center shadow-[0_5px_20px_#1A26641A] transition-colors cursor-pointer',
-                        toolsOpen ? 'bg-purple-deep text-white' : 'bg-white text-graphite hover:bg-purple-soft'
-                    ].join(' ')}
-                >
-                    <RulerIcon className="size-5 shrink-0" />
-                </button>
-            </Tooltip>
+            {!toolsOpen && toggleButton}
 
             {toolsOpen && (
                 <>
@@ -140,6 +152,8 @@ const CatalogoTools = () => {
                         onClick={() => setIsListOpen((v) => !v)}
                         isOpen={isListOpen}
                         tooltip="Mediciones y anotaciones"
+                        size="size-10"
+                        iconSize="size-8"
                     />
 
                     <ToolSelector
@@ -162,6 +176,8 @@ const CatalogoTools = () => {
                         onFreehandWidth={setFreehandWidth}
                         showMeasurements
                         showAnnotations
+                        buttonClass="size-10"
+                        iconClass="size-8"
                     />
 
                     <EmojiPanel
@@ -205,6 +221,8 @@ const CatalogoTools = () => {
                             onClose={deselectFeature}
                         />
                     )}
+
+                    {toggleButton}
                 </>
             )}
         </div>

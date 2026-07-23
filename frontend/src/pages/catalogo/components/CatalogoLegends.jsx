@@ -2,17 +2,25 @@ import { useEffect, useMemo, useState } from 'react';
 import { hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
 import { downloadCatalogoCapa } from '@services/downloadService';
 import { capaHasGeometry } from '@services/catalogoService';
+import LegendImage from '@components/LegendImage';
 
-const buildLegendUrl = (capa) => {
-    const cfg = hydrateWmsConfig({
-        geoserverWorkspace: capa.geoserverWorkspace,
-        geoserverLayer: capa.geoserverLayer,
-    });
-    if (!cfg) return null;
-    const legendOptions = ['fontName:Garet', 'fontAntiAliasing:true', 'dpi:200', 'forceLabels:on'].join(';');
+const LEGEND_ICON = 20;
+
+const buildLegendUrl = (cfg) => {
+    const legendOptions = [
+        'fontName:Garet Regular',
+        'fontSize:10',
+        'fontStyle:normal',
+        'fontAntiAliasing:true',
+        'fontColor:0x454545',
+        'labelMargin:12',
+        'dpi:100',
+        'forceLabels:on',
+    ].join(';');
     return (
         `${cfg.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic`
-        + `&layer=${encodeURIComponent(cfg.layerName)}&format=image/png&transparent=true`
+        + `&layer=${encodeURIComponent(cfg.layerName)}&format=image/png`
+        + `&width=${LEGEND_ICON}&height=${LEGEND_ICON}`
         + `&LEGEND_OPTIONS=${encodeURIComponent(legendOptions)}`
     );
 };
@@ -24,7 +32,12 @@ const CatalogoLegends = ({ capa, onClose }) => {
     const [showShp, setShowShp] = useState(true);
     const [showFormats, setShowFormats] = useState(false);
     const [downloading, setDownloading] = useState(null);
-    const legendUrl = useMemo(() => buildLegendUrl(capa), [capa]);
+
+    const cfg = useMemo(
+        () => hydrateWmsConfig({ geoserverWorkspace: capa.geoserverWorkspace, geoserverLayer: capa.geoserverLayer }),
+        [capa],
+    );
+    const legendUrl = useMemo(() => (cfg ? buildLegendUrl(cfg) : null), [cfg]);
 
     useEffect(() => {
         let active = true;
@@ -64,7 +77,7 @@ const CatalogoLegends = ({ capa, onClose }) => {
                 title={minimized ? 'Expandir' : 'Minimizar'}
                 className="flex items-center justify-between gap-2 px-3.5 pt-3 pb-2.5 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-purple/40"
             >
-                <h3 className="min-w-0 wrap-break-word text-[18px] font-bold text-purple font-garet leading-tight">{capa.nombre}</h3>
+                <h3 className="min-w-0 wrap-break-word text-[15px] font-bold text-purple font-garet leading-tight">{capa.nombre}</h3>
                 <span className={`hidden md:flex shrink-0 text-purple ${ICON_BTN}`}>
                     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                         {minimized ? <path d="M12 6v12M6 12h12" /> : <path d="M6 12h12" />}
@@ -75,8 +88,8 @@ const CatalogoLegends = ({ capa, onClose }) => {
             {!minimized && (
                 <div className="px-3.5 pb-3">
                     {legendUrl && (
-                        <div className="p-2 rounded-[10px] bg-[#F4F1F8] max-h-[52vh] overflow-y-auto">
-                            <img src={legendUrl} alt={`Leyenda de ${capa.nombre}`} className="max-w-full h-auto" />
+                        <div className="relative w-full bg-white rounded-[13px] p-2 max-h-[52vh] overflow-y-auto">
+                            <LegendImage src={legendUrl} alt={capa.nombre} />
                         </div>
                     )}
                     <div className="flex items-center gap-1.5 mt-3">

@@ -43,6 +43,8 @@ const buildWmsLayer = (capa) => {
     return new ImageLayer({ source, zIndex: 5 });
 };
 
+const CATALOGO_ANNOTATIONS_KEY = 'mapalab.catalogo.annotations';
+
 const SIDER_STUB = {
     siderRef: { current: null },
     toolsButtonRef: { current: null },
@@ -65,7 +67,7 @@ const CatalogoMapView = ({ capa }) => {
     const getMapInstance = useCallback(() => mapRef.current, []);
     useScaleLineControl(getMapInstance, scaleRef);
 
-    const drawing = useMapDrawing(mapRef);
+    const drawing = useMapDrawing(mapRef, null, null, { storageKey: CATALOGO_ANNOTATIONS_KEY });
     const editing = useMapEditing({
         mapRef,
         vectorSourceRef: drawing.vectorSourceRef,
