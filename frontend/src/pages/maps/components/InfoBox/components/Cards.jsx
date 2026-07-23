@@ -27,10 +27,10 @@ const FeatureCards = ({ cards, columns = 1, variant = 'desktop' }) => {
                         key={idx}
                         className="bg-[#EFF3FC] rounded-[5px] py-1 px-2 flex flex-col items-center justify-center"
                     >
-                        <div className={`${valueSize} font-bold text-gray-900 text-center`}>
+                        <div className={`${valueSize} font-garet font-bold text-gray-900 text-center`}>
                             {formatNumber(card.value)}{card.suffix}
                         </div>
-                        <div className={`${labelSize} text-gray-600 text-center leading-tight mt-0.5 flex items-center gap-1`}>
+                        <div className={`${labelSize} font-garet text-gray-600 text-center leading-tight mt-0.5 flex items-center gap-1`}>
                             {genderIcon && <Icon name={genderIcon} className="w-3 h-4" />}
                             {card.label}
                         </div>

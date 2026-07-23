@@ -17,7 +17,7 @@ const InfoCard = ({
     const heightClass = maxHeightClass ? `flex flex-col ${maxHeightClass}` : '';
 
     return (
-        <div className={`bg-white rounded-[10px] shadow-[0px_6px_12px_#2F495C14] overflow-hidden ${heightClass} ${className}`}>
+        <div className={`bg-white rounded-[10px] shadow-[0px_6px_12px_#2F495C14] overflow-hidden flex flex-col ${heightClass} ${className}`}>
             {hasTitle && (
                 isMobile
                     ? <MobileFeatureHeader value={title} index={index} total={total} />

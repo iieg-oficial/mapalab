@@ -307,7 +307,7 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
             className="pb-2"
         >
             {body.length > 0 && (
-                <div className={isMobile ? 'px-5' : 'px-4'}>
+                <div className={`flex-1 flex flex-col justify-center ${isMobile ? 'px-5' : 'px-4'}`}>
                     {body}
                 </div>
             )}
