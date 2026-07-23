@@ -20,6 +20,7 @@ import { useScaleLineControl } from '@hooksMaps/useScaleLineControl';
 import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
+import { trackCatalogoFeatureClick } from '@services/analyticsService';
 
 const buildWmsLayer = (capa) => {
     const cfg = hydrateWmsConfig({
@@ -43,6 +44,8 @@ const buildWmsLayer = (capa) => {
     return new ImageLayer({ source, zIndex: 5 });
 };
 
+const CATALOGO_ANNOTATIONS_KEY = 'mapalab.catalogo.annotations';
+
 const SIDER_STUB = {
     siderRef: { current: null },
     toolsButtonRef: { current: null },
@@ -65,7 +68,7 @@ const CatalogoMapView = ({ capa }) => {
     const getMapInstance = useCallback(() => mapRef.current, []);
     useScaleLineControl(getMapInstance, scaleRef);
 
-    const drawing = useMapDrawing(mapRef);
+    const drawing = useMapDrawing(mapRef, null, null, { storageKey: CATALOGO_ANNOTATIONS_KEY });
     const editing = useMapEditing({
         mapRef,
         vectorSourceRef: drawing.vectorSourceRef,
@@ -81,6 +84,11 @@ const CatalogoMapView = ({ capa }) => {
     useEffect(() => {
         isDrawingRef.current = drawing.isDrawing;
     }, [drawing.isDrawing]);
+
+    const capaRef = useRef(null);
+    useEffect(() => {
+        capaRef.current = capa;
+    }, [capa]);
 
     const mapsContextValue = useMemo(() => ({
         mapRef,
@@ -147,7 +155,9 @@ const CatalogoMapView = ({ capa }) => {
                 const res = await fetch(url);
                 const data = await res.json();
                 if (seq !== clickSeqRef.current) return;
-                setInfo({ features: data?.features || [], pixel });
+                const features = data?.features || [];
+                trackCatalogoFeatureClick({ slug: capaRef.current?.slug || null, count: features.length });
+                setInfo({ features, pixel });
             } catch {
                 if (seq === clickSeqRef.current) setInfo(null);
             }

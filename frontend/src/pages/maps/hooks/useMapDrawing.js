@@ -15,7 +15,7 @@ import { useIsMobile } from '@hooks/useIsMobile';
 import { formatLength, formatArea, formatLengthValue } from '../helpers/formatMeasure';
 import { useMeasurementRecalc } from './useMeasurementRecalc';
 
-export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSelection = null) => {
+export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSelection = null, { storageKey } = {}) => {
     const [measureType, setMeasureType] = useState('Point');
     const [measurements, setMeasurements] = useState([]);
     const [isSketching, setIsSketching] = useState(false);
@@ -618,7 +618,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         tryApply();
     }, [mapRef, ensureVectorLayer, measurementConfig]);
 
-    useAnnotationsPersistence({ measurements, restoreAnnotations });
+    useAnnotationsPersistence({ measurements, restoreAnnotations, storageKey });
 
     return {
         vectorSourceRef,

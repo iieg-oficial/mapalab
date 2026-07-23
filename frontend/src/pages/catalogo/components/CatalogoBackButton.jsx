@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router';
 import Logo from '@components/Logo';
 import Tooltip from '@components/Tooltip';
 import { CATALOGO_RETURN_KEY } from '../useGoToCatalogo';
+import { trackCatalogoBack } from '@services/analyticsService';
 
 const ROUND_BTN = 'size-10 rounded-full bg-white shadow-[0_5px_20px_#1A26641A] flex items-center justify-center text-graphite hover:bg-purple-soft transition-colors cursor-pointer';
 
@@ -16,6 +17,7 @@ const CatalogoBackButton = () => {
         } catch {
             target = '/mapa';
         }
+        trackCatalogoBack(target);
         navigate(target);
     };
 

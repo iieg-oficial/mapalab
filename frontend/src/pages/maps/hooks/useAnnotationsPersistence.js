@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { serializeAnnotations } from '../helpers/annotationsSerialization';
 import { ANNOTATIONS_STORAGE_KEY, ANNOTATIONS_MAX_BYTES } from '../helpers/drawingConstants';
 
-export const useAnnotationsPersistence = ({ measurements, restoreAnnotations }) => {
+export const useAnnotationsPersistence = ({ measurements, restoreAnnotations, storageKey = ANNOTATIONS_STORAGE_KEY }) => {
     const hydratedRef = useRef(false);
     const pendingHydrationRef = useRef(false);
 
@@ -13,7 +13,7 @@ export const useAnnotationsPersistence = ({ measurements, restoreAnnotations }) 
         try { hasShare = new URLSearchParams(window.location.search).has('s'); } catch { hasShare = false; }
         if (hasShare) return;
         let raw;
-        try { raw = localStorage.getItem(ANNOTATIONS_STORAGE_KEY); } catch { raw = null; }
+        try { raw = localStorage.getItem(storageKey); } catch { raw = null; }
         if (raw) {
             try {
                 const parsed = JSON.parse(raw);
@@ -35,11 +35,11 @@ export const useAnnotationsPersistence = ({ measurements, restoreAnnotations }) 
             if (payload && payload.length) {
                 const str = JSON.stringify(payload);
                 if (str.length <= ANNOTATIONS_MAX_BYTES) {
-                    localStorage.setItem(ANNOTATIONS_STORAGE_KEY, str);
+                    localStorage.setItem(storageKey, str);
                 }
             } else {
-                localStorage.removeItem(ANNOTATIONS_STORAGE_KEY);
+                localStorage.removeItem(storageKey);
             }
         } catch { /* storage no disponible */ }
-    }, [measurements]);
+    }, [measurements, storageKey]);
 };

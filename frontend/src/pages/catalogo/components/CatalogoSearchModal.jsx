@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDebounce } from '@hooks/useDebounce';
 import { useOutsideClick } from '@hooks/useOutsideClick';
+import ScrollContainer from '@components/ScrollContainer';
+import { trackCatalogoSearch } from '@services/analyticsService';
 
 const SearchIcon = ({ className }) => (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
@@ -33,6 +35,12 @@ const CatalogoSearchModal = ({ capas, open, onOpen, onClose, onSelect }) => {
         });
     }, [capas, debounced]);
 
+    useEffect(() => {
+        const q = debounced.trim();
+        if (!q) return;
+        trackCatalogoSearch({ query: q, results: results.length });
+    }, [debounced, results.length]);
+
     const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
             e.preventDefault();
@@ -61,9 +69,16 @@ const CatalogoSearchModal = ({ capas, open, onOpen, onClose, onSelect }) => {
                 )}
             </div>
 
-            <div className={`grid transition-all duration-300 ease-out min-h-0 rounded-xl shadow-[0_6px_28px_rgba(26,38,100,0.22)] md:shadow-[0_-28px_64px_rgba(26,38,100,0.2)] ${open ? 'grid-rows-[1fr] opacity-100 mb-4' : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
+            <div className={`relative z-10 grid transition-all duration-300 ease-out min-h-0 rounded-xl shadow-[0_6px_28px_rgba(26,38,100,0.22)] md:shadow-[0_-28px_64px_rgba(26,38,100,0.2)] ${open ? 'grid-rows-[1fr] opacity-100 mb-4' : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
                 <div className="min-h-0 overflow-hidden rounded-xl">
-                    <div className="max-h-[calc(80vh-140px)] overflow-y-auto scrollbar-thin bg-white rounded-xl p-2">
+                    <ScrollContainer
+                        className="max-h-[calc(80vh-140px)] bg-white rounded-xl"
+                        overlayFade
+                        overlayColor="#FFFFFF"
+                        clickableArrows
+                        minItemsForClick={12}
+                        itemCount={results.length}
+                    >
                         {results.length === 0 ? (
                             <p className="px-3 py-4 text-center text-[16px] text-graphite font-garet">
                                 Sin resultados
@@ -72,14 +87,14 @@ const CatalogoSearchModal = ({ capas, open, onOpen, onClose, onSelect }) => {
                             results.map((c) => (
                                 <button
                                     key={c.slug}
-                                    onClick={() => onSelect(c.slug)}
+                                    onClick={() => onSelect(c.slug, { fromSearch: !!debounced.trim() })}
                                     className="w-full text-left px-3 py-2.5 rounded-lg text-[16px] font-medium text-[#454545] font-garet hover:bg-orange/10 hover:text-purple transition-colors"
                                 >
                                     {c.nombre}
                                 </button>
                             ))
                         )}
-                    </div>
+                    </ScrollContainer>
                 </div>
             </div>
 

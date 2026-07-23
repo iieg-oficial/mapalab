@@ -52,6 +52,7 @@ const detectSource = () => {
     if (typeof window === 'undefined') return 'visor';
     const path = window.location.pathname || '';
     if (path.endsWith('/embed') || path.includes('/embed/')) return 'embed';
+    if (path.endsWith('/catalogo') || path.includes('/catalogo/')) return 'catalogo';
     return 'visor';
 };
 

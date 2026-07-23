@@ -5,6 +5,63 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.85.0] - 2026-07-23
+
+### Cambiado: el relieve se sirve desde GeoWebCache (WMTS)
+
+`createReliefSource` pasa de `TileWMS` a `ol/source/WMTS` contra `/geoserver/gwc/service/wmts`, gridset `EPSG:900913` (31 niveles, tiles de 256 px), compatible con la vista en `EPSG:3857`. Ambas capas (`hillshade_iieg_cog`, `hillshade_inegi_cog`) ya estaban registradas en GWC. Aprovecha el metatiling 4×4 de GWC: un render produce 16 tiles.
+
+**Cada capa lleva su propio `extent`**, tomado del `WGS84BoundingBox` que publica GWC, y por eso el tileGrid se construye por capa en vez de compartirse. No es opcional: WMTS responde **400 `TileOutOfRange`** fuera del área de la capa, y sin `extent` el tileGrid cubre el mundo entero y OpenLayers pide tiles inexistentes. El WMS no tenía ese problema porque devuelve PNG transparente.
+
+Verificado en tres niveles: los rangos de tiles de OpenLayers coinciden **exactamente** con los `TileMatrixSetLimits` de GWC en los 21 niveles de ambas capas; 1684 tiles reales del rango (z=6–11) responden 200; y `basemaps.test.js` fija el rango esperado a z=8 para que un desalineado del grid falle en CI.
+
+### Corregido: el indicador de carga parpadeaba con capas por tiles
+
+Con `ImageWMS` el spinner recibía un `start` y un `end` por render; con `TileWMS` recibía uno por **cada** tile (~70 por pantalla), así que hacía toggle decenas de veces hasta terminar.
+
+`useWMSLayerFactory` ahora cuenta tiles en vuelo: emite `start` con el primero y `end` solo cuando no quedan pendientes **y** pasan 250 ms sin actividad nueva. El margen importa porque OpenLayers carga en tandas y el contador toca 0 entre ellas — sin él vuelve a parpadear. Los tiles con error también descuentan, así que una tanda fallida no deja el indicador colgado. Cubierto por `useWMSLayerFactory.test.js` (3 casos).
+
+### Documentación
+
+Nuevo `docs/render_layers.md`: cadena completa de render (los tres cachés en serie y cómo distinguirlos), estado y motivo de configuración de cada capa, por qué la reproyección **no** es el cuello de botella (medido) y las trampas conocidas — rate limit de control-flow que solo se reproduce con cookie, el include del gateway que vive dentro de la imagen, y el etag del árbol de capas.
+
+## [1.84.3] - 2026-07-23
+
+### Agregado
+
+- **Telemetría de la sección Catálogo**: 10 eventos nuevos que instrumentan el embudo completo — `catalogo_open` (`from`, `slug`), `catalogo_search` (`query`, `results`), `catalogo_layer_select` (`slug`, `from_search`), `catalogo_download` (`slug`, `format`), `catalogo_feature_click` (`slug`, `count`), `catalogo_tools_toggle`, `catalogo_layer_close`, `catalogo_info_open`, `catalogo_back` y `catalogo_slug_not_found` (detecta enlaces compartidos rotos). Se emiten con `trackEvent` y no con `withMapInteraction`, para no inflar el agregado `map_interaction` del visor. Inventario en `docs/analytics.md`.
+
+### Corregido
+
+- **El Catálogo se contabilizaba como `visor` en la telemetría propia**: `detectSource()` solo distinguía `embed` de `visor`, así que las sesiones y eventos de `/catalogo` ensuciaban las métricas del visor y solo podían aislarse filtrando por `pathname`. Ahora reporta `source: 'catalogo'`.
+
+## [1.84.2] - 2026-07-23
+
+### Cambiado
+
+- **Lista de capas del Catálogo con `ScrollContainer`**: reutiliza el componente compartido en lugar de un `overflow-y-auto` propio — oculta la barra de scroll, agrega degradado arriba/abajo (`overlayFade` en blanco, al ras del borde) y flechas que aparecen solo cuando hay overflow, clickeables a partir de 12 capas (mismo criterio que `EmojiPanel`).
+
+### Corregido
+
+- La sombra superior del input de búsqueda se proyectaba sobre la lista de capas; la lista ahora lleva `relative z-10` para quedar por encima en el orden de apilado.
+
+## [1.84.1] - 2026-07-23
+
+### Cambiado
+
+- **Herramientas del Catálogo tras un botón**: las herramientas de medición/anotación pasan de permanentes a un botón circular (regla ↔ X rosa, sin confirmación) que las despliega; el botón se reubica al pie de la columna cuando está activo. Al cerrarlas se **borran los trazos** (`clearDrawings`). Botones a `size-10`, uniformes con el toggle.
+- **Persistencia de anotaciones aislada**: el catálogo usa la llave `mapalab.catalogo.annotations`, ya no comparte trazos con el visor. `useMapDrawing` acepta `{ storageKey }` y `useAnnotationsPersistence` un `storageKey` (default = la llave del visor, sin cambios ahí).
+
+### Corregido
+
+- **Leyendas del Catálogo homologadas** con el panel de capas activas: mismos parámetros de `GetLegendGraphic` (ícono fijo 20×20, `dpi:100`, tipografía Garet, **sin `transparent`**) y mismo contenedor, lo que elimina el espacio sobrante que descuadraba el centrado vertical. Título del panel a 15px.
+- `alt` duplicado ("Leyenda de Leyenda de X") en la leyenda inline del visor.
+
+### Refactor
+
+- `LegendImage` (carga con Logo, fade-in y manejo de error) extraído a `@components/LegendImage` y reutilizado por el visor y el catálogo.
+- `ToolSelector` (`buttonClass`/`iconClass`) y `HistoryButton` (`size`/`iconSize`) aceptan tamaño configurable; los defaults conservan el tamaño del visor.
+
 ## [1.84.0] - 2026-07-22
 
 ### Agregado: información por clic y herramientas en el Catálogo

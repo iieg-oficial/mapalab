@@ -127,3 +127,33 @@ export const trackMunicipioSelectionChange = ({ source, count, action }) =>
 
 export const trackMunicipioPanelOpen = ({ source, active }) =>
     trackEvent('municipio_panel_open', { source, active: !!active });
+
+export const trackCatalogoOpen = ({ from, slug = null }) =>
+    trackEvent('catalogo_open', { from, slug });
+
+export const trackCatalogoSearch = ({ query, results }) =>
+    trackEvent('catalogo_search', { query, results });
+
+export const trackCatalogoLayerSelect = ({ slug, fromSearch }) =>
+    trackEvent('catalogo_layer_select', { slug, from_search: !!fromSearch });
+
+export const trackCatalogoLayerClose = (slug) =>
+    trackEvent('catalogo_layer_close', { slug });
+
+export const trackCatalogoDownload = ({ slug, format }) =>
+    trackEvent('catalogo_download', { slug, format });
+
+export const trackCatalogoFeatureClick = ({ slug, count }) =>
+    trackEvent('catalogo_feature_click', { slug, count });
+
+export const trackCatalogoToolsToggle = (open) =>
+    trackEvent('catalogo_tools_toggle', { open: !!open });
+
+export const trackCatalogoInfoOpen = () =>
+    trackEvent('catalogo_info_open', {});
+
+export const trackCatalogoBack = (target) =>
+    trackEvent('catalogo_back', { target });
+
+export const trackCatalogoSlugNotFound = (slug) =>
+    trackEvent('catalogo_slug_not_found', { slug });

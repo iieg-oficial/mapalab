@@ -61,7 +61,9 @@ const ToolSelector = ({
     showAnnotations = true,
     showMeasurements = true,
     compact = false,
-    visible = true
+    visible = true,
+    buttonClass = 'size-12.5',
+    iconClass = 'size-10'
 }) => {
     if (!visible) return null;
 
@@ -76,13 +78,14 @@ const ToolSelector = ({
         return (
             <button
                 className={[
-                    'size-12.5 flex items-center justify-center transition-all rounded-full border border-transparent',
+                    buttonClass,
+                    'flex items-center justify-center transition-all rounded-full border border-transparent',
                     isActive ? 'bg-purple-deep text-white' : 'bg-[#EAEFFA] text-purple-deep hover:border-purple'
                 ].join(' ')}
                 aria-pressed={isActive}
                 {...props}
             >
-                <Icon name={type.icon} state={iconState} className="size-10" />
+                <Icon name={type.icon} state={iconState} className={iconClass} />
             </button>
         );
     };
