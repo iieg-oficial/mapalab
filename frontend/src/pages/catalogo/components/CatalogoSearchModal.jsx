@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDebounce } from '@hooks/useDebounce';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import ScrollContainer from '@components/ScrollContainer';
+import { trackCatalogoSearch } from '@services/analyticsService';
 
 const SearchIcon = ({ className }) => (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
@@ -33,6 +34,12 @@ const CatalogoSearchModal = ({ capas, open, onOpen, onClose, onSelect }) => {
             return inName || inTags;
         });
     }, [capas, debounced]);
+
+    useEffect(() => {
+        const q = debounced.trim();
+        if (!q) return;
+        trackCatalogoSearch({ query: q, results: results.length });
+    }, [debounced, results.length]);
 
     const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
@@ -80,7 +87,7 @@ const CatalogoSearchModal = ({ capas, open, onOpen, onClose, onSelect }) => {
                             results.map((c) => (
                                 <button
                                     key={c.slug}
-                                    onClick={() => onSelect(c.slug)}
+                                    onClick={() => onSelect(c.slug, { fromSearch: !!debounced.trim() })}
                                     className="w-full text-left px-3 py-2.5 rounded-lg text-[16px] font-medium text-[#454545] font-garet hover:bg-orange/10 hover:text-purple transition-colors"
                                 >
                                     {c.nombre}

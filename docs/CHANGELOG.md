@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.84.3] - 2026-07-23
+
+### Agregado
+
+- **Telemetría de la sección Catálogo**: 10 eventos nuevos que instrumentan el embudo completo — `catalogo_open` (`from`, `slug`), `catalogo_search` (`query`, `results`), `catalogo_layer_select` (`slug`, `from_search`), `catalogo_download` (`slug`, `format`), `catalogo_feature_click` (`slug`, `count`), `catalogo_tools_toggle`, `catalogo_layer_close`, `catalogo_info_open`, `catalogo_back` y `catalogo_slug_not_found` (detecta enlaces compartidos rotos). Se emiten con `trackEvent` y no con `withMapInteraction`, para no inflar el agregado `map_interaction` del visor. Inventario en `docs/analytics.md`.
+
+### Corregido
+
+- **El Catálogo se contabilizaba como `visor` en la telemetría propia**: `detectSource()` solo distinguía `embed` de `visor`, así que las sesiones y eventos de `/catalogo` ensuciaban las métricas del visor y solo podían aislarse filtrando por `pathname`. Ahora reporta `source: 'catalogo'`.
+
 ## [1.84.2] - 2026-07-23
 
 ### Cambiado

@@ -3,6 +3,7 @@ import { hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
 import { downloadCatalogoCapa } from '@services/downloadService';
 import { capaHasGeometry } from '@services/catalogoService';
 import LegendImage from '@components/LegendImage';
+import { trackCatalogoDownload } from '@services/analyticsService';
 
 const LEGEND_ICON = 20;
 
@@ -54,6 +55,7 @@ const CatalogoLegends = ({ capa, onClose }) => {
     }, [capa]);
 
     const handleDownload = async (formatId) => {
+        trackCatalogoDownload({ slug: capa.slug, format: formatId });
         setDownloading(formatId);
         await downloadCatalogoCapa(capa, formatId);
         setDownloading(null);

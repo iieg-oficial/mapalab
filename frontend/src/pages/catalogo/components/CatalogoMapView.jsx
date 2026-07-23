@@ -20,6 +20,7 @@ import { useScaleLineControl } from '@hooksMaps/useScaleLineControl';
 import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
+import { trackCatalogoFeatureClick } from '@services/analyticsService';
 
 const buildWmsLayer = (capa) => {
     const cfg = hydrateWmsConfig({
@@ -83,6 +84,11 @@ const CatalogoMapView = ({ capa }) => {
     useEffect(() => {
         isDrawingRef.current = drawing.isDrawing;
     }, [drawing.isDrawing]);
+
+    const capaRef = useRef(null);
+    useEffect(() => {
+        capaRef.current = capa;
+    }, [capa]);
 
     const mapsContextValue = useMemo(() => ({
         mapRef,
@@ -149,7 +155,9 @@ const CatalogoMapView = ({ capa }) => {
                 const res = await fetch(url);
                 const data = await res.json();
                 if (seq !== clickSeqRef.current) return;
-                setInfo({ features: data?.features || [], pixel });
+                const features = data?.features || [];
+                trackCatalogoFeatureClick({ slug: capaRef.current?.slug || null, count: features.length });
+                setInfo({ features, pixel });
             } catch {
                 if (seq === clickSeqRef.current) setInfo(null);
             }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Tooltip from '@components/Tooltip';
 import Modal from '@components/Modal';
+import { trackCatalogoInfoOpen } from '@services/analyticsService';
 import { useFeatureSeen } from '@hooks/useFeatureSeen';
 
 const CatalogoInfoButton = () => {
@@ -19,7 +20,7 @@ const CatalogoInfoButton = () => {
             <Tooltip content="¿Qué es esta vista?" placement="top" delay={200} forceVisible={hintVisible}>
                 <button
                     type="button"
-                    onClick={() => { dismissHint(); setInfoOpen(true); }}
+                    onClick={() => { dismissHint(); trackCatalogoInfoOpen(); setInfoOpen(true); }}
                     onMouseEnter={dismissHint}
                     aria-label="¿Qué es esta vista?"
                     className="size-6 rounded-full bg-[#FFE4C4] hover:bg-[#FFD9AD] text-orange flex items-center justify-center transition-colors shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] cursor-pointer"

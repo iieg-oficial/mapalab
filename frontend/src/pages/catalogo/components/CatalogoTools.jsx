@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useIsMobile } from '@hooks/useIsMobile';
 import Tooltip from '@components/Tooltip';
-import { trackMeasurementTool } from '@services/analyticsService';
+import { trackMeasurementTool, trackCatalogoToolsToggle } from '@services/analyticsService';
 import ToolSelector from '@mapsComponents/MeasurementTools/ToolSelector';
 import EmojiPanel from '@mapsComponents/MeasurementTools/EmojiPanel';
 import TextInlineEditor from '@mapsComponents/MeasurementTools/TextInlineEditor';
@@ -84,6 +84,7 @@ const CatalogoTools = () => {
     };
 
     const togglePill = () => {
+        trackCatalogoToolsToggle(!toolsOpen);
         if (toolsOpen) closeTools();
         else setToolsOpen(true);
     };

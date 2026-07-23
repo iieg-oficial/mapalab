@@ -31,6 +31,25 @@ Los eventos se envian a `window.dataLayer` para ser consumidos por GTM. En desar
 | `evento_center` | `evento_id` | Re-centrado manual del mapa sobre el evento | Al pulsar el botón "Centrar evento" de `<EventoActionsBar>` | Frecuencia con la que el usuario pierde el encuadre del evento |
 | `infobox_action` | `action: center_group\|select_alternative\|empty_suggestions_view\|<tool_id>`, `layer_id` | Acciones dentro del InfoBox | `center_group` al centrar la selección, `empty_suggestions_view` al aparecer el estado vacío con sugerencias, `select_alternative` al elegir una capa sugerida, `<tool_id>` por cada herramienta del header mobile | Uso de herramientas / Fricción del estado vacío |
 
+## Seccion Catalogo (`/catalogo`)
+
+Estos eventos se emiten con `trackEvent` y **no** con `withMapInteraction`, por lo que no suman al agregado `map_interaction` del visor. Ademas, `detectSource()` en `telemetryService` etiqueta la seccion con `source: 'catalogo'` (antes caia como `visor`), lo que permite aislarla en el collector sin filtrar por `pathname`.
+
+Las herramientas de medicion del catalogo reutilizan el tracker del visor, asi que tambien emiten `drawing_tool_use`.
+
+| Evento | Parametros | Que mide | Donde se dispara | KPI |
+|---|---|---|---|---|
+| `catalogo_open` | `from: visor\|directo`, `slug` | Entradas a la seccion y su origen | Al montar `/catalogo`, una sola vez por montaje | Alcance de la seccion |
+| `catalogo_search` | `query`, `results` | Terminos buscados y si arrojan resultados | Al cambiar la busqueda (valor ya debounceado, solo con texto) | Consultas de busqueda / Huecos de catalogo (`results: 0`) |
+| `catalogo_layer_select` | `slug`, `from_search` | Capas abiertas y si se llego por busqueda o por el listado | Al elegir una capa de la lista | Capas mas consultadas |
+| `catalogo_download` | `slug`, `format: geopackage\|shape-zip\|csv` | Descargas por capa y formato | Al pulsar un formato en el panel de leyendas | **Descargas (conversion de la seccion)** |
+| `catalogo_feature_click` | `slug`, `count` | Uso de la consulta por clic y si devuelve datos | Tras el GetFeatureInfo del clic sobre la capa activa | Interaccion en el mapa / Clics sin resultado (`count: 0`) |
+| `catalogo_tools_toggle` | `open` | Uso de las herramientas de medicion/anotacion | Al pulsar el boton regla/X | Uso de herramientas |
+| `catalogo_layer_close` | `slug` | Cierre de la capa activa | Al pulsar el boton de cerrar capa del panel de leyendas | Rotacion entre capas |
+| `catalogo_info_open` | — | Necesidad de explicacion de la seccion | Al abrir el modal "¿Que es el Catalogo?" | Friccion / Claridad de la UI |
+| `catalogo_back` | `target` | Regresos al visor y a que URL | Al pulsar "Regresar a Mapalab" | Catalogo como puerta de entrada vs. salida |
+| `catalogo_slug_not_found` | `slug` | Enlaces a capas inexistentes o mal formados | Cuando `/catalogo/:slug` no resuelve una capa | Calidad de enlaces compartidos |
+
 ## Debug en desarrollo
 
 En `VITE_NODE_ENV=development` aparece un panel flotante en la esquina inferior izquierda que muestra cada evento disparado con sus parametros y hora. Los eventos **no se envian a GA4** en este modo.
