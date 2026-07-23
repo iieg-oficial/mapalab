@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.84.2] - 2026-07-23
+
+### Cambiado
+
+- **Lista de capas del Catálogo con `ScrollContainer`**: reutiliza el componente compartido en lugar de un `overflow-y-auto` propio — oculta la barra de scroll, agrega degradado arriba/abajo (`overlayFade` en blanco, al ras del borde) y flechas que aparecen solo cuando hay overflow, clickeables a partir de 12 capas (mismo criterio que `EmojiPanel`).
+
+### Corregido
+
+- La sombra superior del input de búsqueda se proyectaba sobre la lista de capas; la lista ahora lleva `relative z-10` para quedar por encima en el orden de apilado.
+
 ## [1.84.1] - 2026-07-23
 
 ### Cambiado

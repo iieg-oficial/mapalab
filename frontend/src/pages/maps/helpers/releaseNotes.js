@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.84.2',
+        items: [
+            { text: 'La lista de capas del Catálogo ahora indica con un degradado y flechas cuando hay más capas por ver, y se desplaza sin barra a la vista.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.84.1',
         items: [
             { text: 'En el Catálogo, las herramientas de medición y anotación ahora se muestran u ocultan con un botón; al cerrarlas se borran los trazos que hiciste.', tag: 'changed' },
