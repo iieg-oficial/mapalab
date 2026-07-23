@@ -35,12 +35,12 @@ const FeatureList = ({ rows, variant = 'desktop' }) => {
                         href={row.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`font-medium text-[#5C2472] underline ${size} tracking-normal break-words`}
+                        className={`font-garet font-medium text-[#5C2472] underline ${size} tracking-normal break-words`}
                     >
                         {formatted}
                     </a>
                 ) : (
-                    <span className={`font-medium text-[#465055] ${size} tracking-normal break-words`}>
+                    <span className={`font-garet font-medium text-[#465055] ${size} tracking-normal break-words`}>
                         {formatted}
                     </span>
                 );

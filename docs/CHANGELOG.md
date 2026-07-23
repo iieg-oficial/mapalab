@@ -5,6 +5,12 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.85.4] - 2026-07-23
+
+### Corregido: la vista pública del catálogo respeta el orden manual de las capas
+
+La query de `/catalogo/capas` (`CatalogoRepository.get_enabled_capas`) ordenaba siempre por `nombre` (alfabético), ignorando la columna `orden` de `mapalab.catalogo_capas`. Ahora ordena por `orden, nombre`, de modo que el reordenamiento por drag & drop hecho desde el admin de mariachi se refleja también en la vista pública. Requiere la migración `0027_catalogo_capas_orden` de dataengine (columna `orden`).
+
 ## [1.85.0] - 2026-07-23
 
 ### Cambiado: el relieve se sirve desde GeoWebCache (WMTS)

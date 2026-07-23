@@ -27,7 +27,7 @@ class CatalogoRepository:
             text(
                 _SELECT
                 + 'WHERE c.enabled = TRUE AND c.deleted_at IS NULL '
-                'ORDER BY c.nombre'
+                'ORDER BY c.orden, c.nombre'
             )
         ).mappings().all()
         return [dict(row) for row in rows]

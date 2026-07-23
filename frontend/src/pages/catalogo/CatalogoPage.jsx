@@ -4,6 +4,7 @@ import CatalogoMapView from './components/CatalogoMapView';
 import CatalogoSearchModal from './components/CatalogoSearchModal';
 import CatalogoLegends from './components/CatalogoLegends';
 import CatalogoBackButton from './components/CatalogoBackButton';
+import LottieSpinner from '@components/LottieSpinner';
 import { fetchCatalogoCapas, fetchCatalogoCapa } from '@services/catalogoService';
 import {
     trackCatalogoOpen,
@@ -19,6 +20,7 @@ const CatalogoPage = () => {
     const [capas, setCapas] = useState([]);
     const [selectedCapa, setSelectedCapa] = useState(null);
     const [searchOpen, setSearchOpen] = useState(false);
+    const [loadingCapa, setLoadingCapa] = useState(false);
     const openTrackedRef = useRef(false);
 
     useEffect(() => {
@@ -42,6 +44,7 @@ const CatalogoPage = () => {
     useEffect(() => {
         const ctrl = new AbortController();
         if (slug) {
+            setLoadingCapa(true);
             fetchCatalogoCapa(slug, ctrl.signal)
                 .then((capa) => {
                     if (capa) {
@@ -53,7 +56,8 @@ const CatalogoPage = () => {
                         trackCatalogoSlugNotFound(slug);
                     }
                 })
-                .catch(() => {});
+                .catch(() => {})
+                .finally(() => setLoadingCapa(false));
         } else {
             setSelectedCapa(null);
             setSearchOpen(true);
@@ -77,6 +81,11 @@ const CatalogoPage = () => {
     return (
         <div className="fixed inset-0 overflow-hidden bg-[#EAE7E0]">
             <CatalogoMapView capa={selectedCapa} />
+            {slug && loadingCapa && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                    <LottieSpinner loop autoplay className="w-32 h-32" />
+                </div>
+            )}
             <CatalogoBackButton />
             {selectedCapa && <CatalogoLegends capa={selectedCapa} onClose={handleCloseCapa} />}
             <CatalogoSearchModal
