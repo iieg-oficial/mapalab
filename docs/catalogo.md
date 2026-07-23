@@ -43,6 +43,8 @@ Subpágina "Catálogo" (grupo Mapalab), sin tabs. Botonera con tres acciones que
 
 La tabla tiene **filtros por columna** (búsqueda en nombre/slug/capa, filtro por lista en workspace/etiquetas/habilitada) y **selección múltiple** (checkboxes) con barra de acciones: **eliminar** en lote y **etiquetar** (suma etiquetas a las seleccionadas vía PUT parcial `searchTags`); la edición por doble clic se deshabilita mientras hay selección activa. El alta valida contra GeoServer.
 
+**Reordenar** (mariachi 1.74.0 + mapalab 1.85.4): el botón "Reordenar" cambia la tabla a una lista plana con drag & drop (`@dnd-kit`, componente compartido `SortableTableRow`); al soltar hace `PUT /api/mariachi/catalogo/reorder` `{ ids }` y persiste `orden` en `mapalab.catalogo_capas`. Las capas nuevas quedan al final (`orden = MAX(orden) + 1`). Tanto el admin como la vista pública `/catalogo` (`CatalogoRepository.get_enabled_capas`, `ORDER BY orden, nombre` desde mapalab 1.85.4) respetan ese orden. Requiere la migración `0027_catalogo_capas_orden` (columna `orden`) en dataengine.
+
 ## Despliegue
 
 Aplicar la migración **antes** de los backends (sin la tabla, los endpoints dan 500). Ver `RUNBOOK.md` → "Catálogo de capas (Mapalab)".
