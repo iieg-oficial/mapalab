@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.88.0] - 2026-07-24
+
+### Agregado: las pestañas del panel de símbolos aceptan íconos de imagen y SVG
+
+El ícono de cada categoría del catálogo de símbolos solo podía ser un emoji. Desde mariachi 1.82.0 también puede ser una imagen o un SVG del Acervo, y en ese caso el catálogo público (`GET /api/mapalab/symbols/catalog`) manda `iconUrl` además de `icon`.
+
+- **`EmojiPanel.jsx`**: si la categoría trae `iconUrl` la pestaña renderiza un `<img>`; si no, se mantiene el comportamiento previo (emoji, o la inicial del nombre como respaldo). Sin este cambio la URL se habría pintado como texto crudo.
+
 ## [1.85.4] - 2026-07-23
 
 ### Corregido: la vista pública del catálogo respeta el orden manual de las capas
