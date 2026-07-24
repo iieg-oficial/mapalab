@@ -5,6 +5,105 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.92.0] - 2026-07-24
+
+### Agregado: descarga por streaming a disco para no saturar la memoria
+
+Hasta ahora toda descarga se acumulaba completa en memoria (`fetch` → `new Blob`), lo que en capas pesadas (GeoPackage/Shapefile con geometría) podía tronar el navegador, sobre todo en equipos con poca RAM. Ahora, donde el navegador lo soporta (Chromium: Chrome/Edge de escritorio), la descarga usa la **File System Access API**: el usuario elige dónde guardar y los bytes se escriben a disco por chunks conforme llegan, sin acumularse en RAM. El progreso y el cronómetro siguen funcionando en este modo porque seguimos contando los bytes leídos.
+
+- **`services/downloadUrls.js`**: `supportsFileSystemAccess()`.
+- **`services/downloadService.js`**: se separó "abrir respuesta validada" (`resolveLayerResponse`, con el fallback backend→WFS antes de leer cuerpo) de "consumir" (`consumeResponse`, que escribe a un `writable` de disco **o** arma el Blob). `runLayerDownload` intenta el picker y hace streaming; si el usuario cancela el diálogo reporta cancelado, y si el picker falla por permisos/gesto (o el navegador no soporta la API — Firefox, Safari, móvil) cae al flujo Blob de siempre. Un solo `runLayerDownload` sirve al botón directo, al menú con filtros y al catálogo.
+- Las descargas con metadatos (ZIP) siguen armándose en memoria con `jszip`, que necesita los bytes completos.
+- **`services/downloadMetadata.js`** (nuevo): los helpers de metadatos (`getMetadataFiles`, `addMetadataToZip`, `getAvailableMetadata`) salieron de `downloadService.js` para no rebasar el límite de líneas del lint.
+
+### Agregado: descarga de rasters en el catálogo (GeoTIFF)
+
+El panel de leyendas del catálogo ofrecía siempre GPKG/SHP/CSV, aunque la capa fuera raster. Ahora, si la capa es raster, muestra **GeoTIFF** (`RASTER_FORMATS`) y la descarga va por WCS con `SUBSET=time` de la fecha activa, reutilizando el mismo `fetchLayerBlob`/`runLayerDownload` del visor. Para vectoriales no cambia nada. `CatalogoLegends` se salta la comprobación de geometría (`capaHasGeometry`) cuando es raster.
+
+### Corregido: test intermitente de `useLayerSymbolIcon`
+
+`symbolUrlCache` es un `Map` a nivel de módulo que persistía entre tests y provocaba fallos fantasma según el orden de ejecución. Se expuso `clearSymbolUrlCache()` y el test lo limpia en `beforeEach`.
+
+## [1.91.0] - 2026-07-24
+
+### Corregido: la descarga de CSV cacheados rompía por CSP y las URLs del Acervo estaban mal armadas
+
+El backend, al servir un CSV cacheado (sin filtro de fecha), respondía **307 a una URL prefirmada del Acervo**. Eso no podía funcionar por dos motivos: (1) el gateway sirve `/acervo/` **reescribiendo** la ruta (`/acervo/(.*)` → `/$1`), así que la firma SigV4 —que cubre host y ruta— nunca valida contra lo que ve SeaweedFS; y (2) la URL prefirmada apuntaba a `https://localhost/mapalab/mapalab/downloads/...` (host `localhost` y doble prefijo `/mapalab/mapalab/`), que el `connect-src` del CSP bloqueaba. El resultado en el visor era un error de CSP en consola y una descarga que caía al fallback.
+
+- **`backend/app/services/acervo_client.py`**: nuevo cliente **interno** (`ACERVO_ENDPOINT`, host de la red) y `open_object`/`iter_object_body` para leer el objeto por streaming. `presign_get` se conserva pero ya no se usa en descargas.
+- **`backend/app/routers/download.py`**: en vez de redirigir a la URL prefirmada, el backend hace **streaming del dump** por el endpoint interno (mismo origen). Envía `Content-Disposition: filename="{capa}.csv"` y, como el dump está gzipeado, `Content-Encoding: gzip` para que el navegador lo descomprima y guarde un `.csv`. Sin URL prefirmada no hay problema de CSP, de firma ni de host público. Verificado contra el Acervo real: ruta cacheada (gzip → CSV) y ruta con filtro de fecha (streaming en vivo) funcionan same-origin.
+
+### Corregido: enlaces de metadata (TXT/XLSX) con host y prefijo equivocados
+
+`_metadato_with_acervo` arma `{ACERVO_PUBLIC_URL}/mapalab/metadata/...`, y con `ACERVO_PUBLIC_URL=https://localhost/mapalab` salía `https://localhost/mapalab/mapalab/metadata/...` (mismo doble prefijo y host `localhost`). Se alineó la configuración: `ACERVO_PUBLIC_URL` debe ser `{host público}/acervo` (el gateway reescribe `/acervo/` hacia SeaweedFS). Actualizados `.env.production`, `.env.staging` y `.env.example`; `VITE_ACERVO_ORIGIN` apunta al mismo origen del sitio.
+
+### Corregido: el logo del QR del catálogo dejaba un 404 en consola
+
+Se leía del Acervo por `fetch` (`/acervo/iieg/logos/mapalab_short.svg`), que en entornos sin ese objeto devolvía 404. El mismo logo ya está en el bundle (`@logos/mapalab_short.svg`, mismo origen), así que se usa directo: sin fetch, sin 404, sin taint del canvas.
+
+### Cambiado: el CSV del catálogo respeta la fecha activa
+
+`downloadCatalogoCapa` recibe el `cqlFilter` activo y lo traduce a `date_from`/`date_to` (CSV) o `CQL_FILTER` (GPKG/SHP). Con el streaming del backend arreglado, el catálogo vuelve a aprovechar el dump cacheado same-origin cuando no hay filtro.
+
+## [1.90.0] - 2026-07-24
+
+### Corregido: al recargar la página se perdía la capa seleccionada
+
+Tras un refresh, el visor restauraba las capas activas pero volvía a seleccionar la primera de la lista, no la que tenías. La sesión sí guardaba la selección; el problema era un orden de efectos: `useInitializeFromUrl`/`useShareDeserializer` (en `Maps`, hijo) restauran la selección, pero el efecto de auto-selección de `useSymbology` (en `MapsProvider`, padre) corre después con `activeLayerIds` todavía vacío, hacía `setSelected(null)` y luego auto-elegía la primera capa, pisando lo restaurado.
+
+- **`hooks/useSymbology.js`**: nuevo `restoreSelectedById(id)` que deja el id en un `useRef`; el efecto de auto-selección lo consume antes de elegir la primera capa y respeta la restauración si sigue activa. Robusto al timing de efectos, no depende de que los setters batcheen en un orden concreto.
+- Los tres puntos de restauración (`useInitializeFromUrl` para `?layers=*<id>`, `useShareDeserializer` para `?s=` y para la sesión de `sessionStorage`) llaman `restoreSelectedById` además de `setSelectedLayerForSymbology`.
+
+### Cambiado: una sola petición de descarga para todos los puntos
+
+La descarga del catálogo (`downloadCatalogoCapa`) duplicaba la lógica de elegir backend vs WFS y de armar la URL. Ahora construye un `config` equivalente y pasa por el mismo `fetchLayerBlob` que el botón directo, el menú con filtros y el panel de capas activas. Un cambio en la petición se refleja en todos los puntos sin depurar de uno en uno.
+
+### Corregido: el CSV vía WFS todavía traía la geometría
+
+El fix de 1.87.0 quitó la geometría del CSV del backend y del dump nocturno, pero cuando la descarga cae a WFS (capa con filtro fijo, o el backend falla) el CSV lo genera GeoServer, que incluía las columnas de geometría como WKT gigante — el mismo problema de celdas que rebasan el límite de Excel, ahora por otra vía. Afectaba al botón "Descargar capa" en esas capas y al catálogo.
+
+- **`services/downloadUrls.js`**: nuevo `fetchNonGeometryColumns`, que hace un `DescribeFeatureType` cacheado y devuelve las columnas no-geométricas; `buildWFSUrl` acepta `propertyName`. En CSV vía WFS se piden sólo esas columnas, así el WKT nunca entra al archivo. GeoServer marca únicamente la geometría default como `gml:*`; una segunda columna de geometría aparece como `xsd:MultiPolygon`, así que la detección también compara `localType` contra los tipos geométricos OGC. Verificado en vivo: `desarrollo_social:pobreza` por WFS pasó de incluir `geom_iieg,geom_inegi` a excluir ambas.
+
+### Agregado: cronómetro en el progreso de descarga
+
+`<LayerDownloadProgress>` ahora muestra el tiempo transcurrido (`m:ss`) además de los bytes. Sirve de feedback cuando la respuesta no trae `Content-Length` y no se puede calcular porcentaje.
+
+## [1.89.0] - 2026-07-24
+
+### Corregido: la barra temporal del catálogo tronaba al abrir el selector
+
+`SimpleDateSelector` hace `useContext(MapsContext)` sin tolerar `null`, y la `CatalogoTimeBar` se renderizaba **fuera** del provider stub del catálogo, así que al desplegar el selector la vista se caía con `Cannot destructure property 'getSpecificFilter' of useContext(...) as it is null`. La barra se movió dentro del `MapsContext.Provider`, cuyo stub ya expone `getSpecificFilter`, `getLoopState` y `stopLoop`.
+
+### Agregado: la descarga y lo compartido del catálogo respetan la fecha activa
+
+Antes, si veías junio 2026 en el mapa y descargabas, te llevabas el histórico completo; y el enlace/QR compartido abría la capa sin fecha. Ahora la fecha viaja con las tres acciones.
+
+- **Descarga** (`downloadCatalogoCapa`): recibe el `cqlFilter` activo. El CSV lo traduce a `date_from`/`date_to` con `cqlToDateRange`; GPKG y SHP lo mandan como `CQL_FILTER` a WFS. Sin filtro se comporta igual que antes.
+- **URL compartida**: la fecha se serializa como `?fecha=2026-6` (o `2026` para un año, o varios meses separados por coma). Al abrir el enlace, `CatalogoPage` lee el parámetro y lo aplica como filtro inicial; `useSearchParams` lo mantiene sincronizado con `replace` para no ensuciar el historial. Helpers `cqlToFechaParam`/`fechaParamToCql` en `catalogoRoutes.js`.
+- El estado del tiempo se elevó a un `CatalogoTiempoProvider` (contexto ligero) para que el mapa, el panel de leyendas y la página compartan el mismo filtro sin prop-drilling.
+
+### Agregado: periodicidad de rasters desde la dimensión TIME del GetCapabilities
+
+Las capas raster no están en `public.layer_periodicity` (esa tabla se calcula sobre PostGIS). Ahora su periodicidad se lee de la **dimensión TIME** del `GetCapabilities` que el catálogo ya pedía para el bbox — sin peticiones nuevas.
+
+- `wmsCapabilitiesService`: el índice por workspace guarda `{ extent, time }`; nuevo `getLayerTimePeriodicity` y `parseTimeDimensionToPeriodicity`, que agrupan los valores TIME por año y mes.
+- `useCatalogoTiempo` distingue raster de vector: el raster aplica el valor como parámetro **TIME** del WMS (no `CQL_FILTER`), su default es la fecha más reciente disponible, y alimenta `PeriodicitySection` como `rasterPeriodicity`. El vector sigue con CQL y default al año más reciente sólo en polígonos.
+- La sincronización con la URL (parámetro `fecha`) aplica al filtro vectorial (CQL); el TIME de raster no se serializa por ahora.
+
+### Corregido: la descarga CSV del catálogo y el logo del QR sin ruido en consola
+
+- **CSV del catálogo**: iba primero al backend `/download`, que sin filtro de fecha responde **307 a una URL prefirmada del Acervo**; `fetch` la seguía y `connect-src` la bloqueaba (error de CSP en consola), cayendo al WFS. El catálogo ahora pide el CSV **directo por WFS** (`forceWfsCsv`), que es del mismo origen (`/geoserver/`), excluye la geometría con `fetchNonGeometryColumns` y respeta el filtro de fecha. Sin intento al backend no hay error de CSP ni dependencia del dump cacheado. El visor conserva su ruta con dump + progreso.
+- **Logo del QR**: se leía del Acervo por fetch (`/acervo/iieg/logos/mapalab_short.svg`), que en entornos sin ese objeto devolvía 404 en consola. Como el mismo logo ya está en el bundle (`@logos/mapalab_short.svg`, mismo origen), se usa directo: sin fetch, sin 404, sin taint del canvas.
+
+### Agregado: la leyenda sigue la fecha activa (catálogo y visor)
+
+Nuevo helper compartido `pages/maps/helpers/legendUrl.js::buildLegendGraphicUrl`, que arma la petición `GetLegendGraphic` resolviendo el `STYLE` por fecha (`timeStylePattern`) y, cuando hay filtro activo, pasando el `CQL_FILTER` con `LEGEND_OPTIONS=...;hideEmptyRules:true` para que **la leyenda oculte las clases sin datos** en la fecha filtrada.
+
+- **Visor**: `useWMSLegend.getLegendUrl` se refactorizó sobre el helper. Para capas con `timeStylePattern` resuelve el estilo por fecha (comportamiento previo); para capas vectoriales con filtro de fecha ahora pasa el CQL + `hideEmptyRules`, así la leyenda inline del panel de capas activas refleja lo que está en el mapa. Sin filtro de fecha la petición es byte-idéntica a la anterior (verificado por los tests existentes).
+- **Catálogo**: el panel de leyendas usa el mismo helper y re-renderiza al cambiar la fecha. En raster no pasa CQL (usaría TIME, no CQL).
+
+El costo de `hideEmptyRules` (GeoServer evalúa reglas contra los datos filtrados) sólo se paga cuando hay un filtro de fecha activo; el resto de las leyendas no cambia.
+
 ## [1.88.0] - 2026-07-24
 
 ### Agregado: las pestañas del panel de símbolos aceptan íconos de imagen y SVG
@@ -12,6 +111,79 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 El ícono de cada categoría del catálogo de símbolos solo podía ser un emoji. Desde mariachi 1.82.0 también puede ser una imagen o un SVG del Acervo, y en ese caso el catálogo público (`GET /api/mapalab/symbols/catalog`) manda `iconUrl` además de `icon`.
 
 - **`EmojiPanel.jsx`**: si la categoría trae `iconUrl` la pestaña renderiza un `<img>`; si no, se mantiene el comportamiento previo (emoji, o la inicial del nombre como respaldo). Sin este cambio la URL se habría pintado como texto crudo.
+
+## [1.87.0] - 2026-07-24
+
+### Corregido: los CSV de descarga traían la geometría y se abrían desalineados en Excel
+
+Los CSV de capa incluían las columnas de geometría, y con ellas celdas de cientos de miles de caracteres. Excel admite 32,767 caracteres por celda: al abrir el archivo truncaba esa celda y **el resto de la fila se recorría**, de modo que la columna `fecha` mostraba cualquier otra cosa. En `desarrollo_social:pobreza` una sola fila medía 60,102 caracteres y la celda mayor 345,940; 267 de sus 375 filas rebasaban el límite.
+
+La exclusión de geometría existía en el backend, pero no se aplicaba: `_fetch_export_columns` consultaba `information_schema.columns`, que **no lista vistas materializadas**, así que devolvía una lista vacía y el `SELECT` caía al comodín `*`. De las 87 capas descargables, 72 son vistas materializadas. El dump nocturno de `dataengine` (`run_dump_layers_csv.py`), que es el que alimenta el cache de Acervo servido por 307, hacía `SELECT *` de forma explícita.
+
+- **`backend/app/repositories/download_repository.py`**: `_fetch_export_columns` ahora resuelve las columnas con `pg_attribute` + `pg_type`, que sí cubre `relkind` `m` (materializada), `v`, `r`, `p` y `f`. `_build_select` lanza si la lista viene vacía en vez de degradar a `SELECT *` — un fallback silencioso era justo lo que reintroducía la geometría.
+- **`dataengine/jobs/run_dump_layers_csv.py`**: el `COPY` lista las columnas exportables con la misma consulta.
+
+Efecto medido en `desarrollo_social:pobreza`: **53.6 MB → 20.5 KB** (99.96 % menos), celda mayor de 345,940 → 29 caracteres. Los 87 dumps regenerados suman 29 MB. Las descargas de GeoPackage y Shapefile conservan la geometría, que es su propósito.
+
+### Corregido: "Descargar por fecha activa" descargaba todo
+
+El servicio pasaba `getFilter(layerId)` como `date_from`/`date_to`, pero eso devuelve la expresión CQL combinada (`(fecha >= '2024-01-01' AND fecha < '2025-01-01')`), no una fecha. El backend la rechazaba con 400 por no cumplir `YYYY-MM-DD`, el `catch` caía a WFS **sin filtro alguno** y el usuario recibía la capa completa sin aviso. En GPKG y SHP el filtro se ignoraba desde el principio.
+
+- **`helpers/dateFilterHelpers.js`**: nuevo `cqlToDateRange`, que traduce el CQL a `{dateFrom, dateTo}` reutilizando `parseCQLToSelections`. Resuelve el último día real del mes y cubre el rango completo cuando hay varias selecciones.
+- **`services/downloadService.js`**: usa `getSpecificFilter(layerId, 'date')` y traduce con `cqlToDateRange`. Si la expresión no es traducible a rango, va a WFS pasándola como `CQL_FILTER` en lugar de descargar todo; lo mismo aplica ahora a GPKG y SHP. `buildWFSUrl` combina con `AND` el filtro propio de la capa y el de fecha, en vez de que uno pisara al otro.
+- **`backend/app/routers/download.py`**: si la capa no tiene columna `fecha` (12 de 87, todas atemporales: límites municipales, aeropuertos, regiones), responde 400 con mensaje explícito antes de abrir el stream.
+
+### Agregado: progreso de descarga en el panel de capas activas
+
+El botón de descarga del item seleccionado sólo mostraba un spinner. Ahora despliega debajo una fila colapsable (`<LayerDownloadProgress>`) que empuja la leyenda hacia abajo, con bytes descargados, barra de avance y botón de cancelar. Cuando la respuesta trae `Content-Length` sin `Content-Encoding` —el caso de los dumps servidos desde Acervo— se muestra **porcentaje y tamaño total**; si no, sólo los bytes acumulados, sin fingir un progreso que no se conoce.
+
+### Cambiado
+
+- **`services/downloadUrls.js`** (nuevo): los constructores de URL (WFS, WCS, backend CSV), los formatos y `RASTER_WORKSPACES` salen de `downloadService.js`, que había rebasado el límite de 300 líneas del lint.
+
+## [1.86.0] - 2026-07-24
+
+### Agregado: compartir capas del catálogo con enlace o QR
+
+Nuevo botón "Compartir" junto a "Descargar" en el panel de leyendas, con dos opciones desplegables al estilo de los formatos de descarga:
+
+- **Enlace**: copia la URL de la capa al portapapeles con feedback verde (fallback a `window.prompt` si el navegador bloquea el clipboard).
+- **QR**: genera el código con el **logo corto de Mapalab al centro** y permite descargarlo en PNG a 800 px para materiales impresos. Usa `qr-code-styling` cargado con `import()` dinámico —no entra al arranque de la sección— y nivel de corrección `H`, que tolera el ~30 % de módulos ocluidos por el logo. El logo se pide al Acervo por **ruta relativa** (`/acervo/iieg/logos/mapalab_short.svg`) y se convierte a data URL para que el canvas no quede *tainted*: una URL absoluta violaba el `connect-src` del CSP y quedaba bloqueada. Donde esa ruta no resuelve (entornos sin el Acervo montado en el mismo origen) cae al SVG del bundle, que es el mismo logo.
+
+El mismo componente (`CatalogoShare`) se reutiliza para compartir una institución completa, ahí como popover anclado al botón del header para no sumar otra sección apilada sobre el buscador.
+
+Las tres capas del buscador se ordenan en z de forma explícita (`helpers/catalogoStyles.js`): input abajo, lista de instituciones en medio y lista de capas arriba, de modo que la sombra de una no se proyecte sobre la de enfrente. La sombra es común a las tres, más marcada y en los cuatro lados.
+
+### Agregado: filtro y animación temporal en el catálogo
+
+Las capas con dimensión temporal traen una barra centrada en la parte superior del visor. Colapsada es una pill que dice **qué fecha se está viendo** ("Junio de 2026", "2 años" o "Todas las fechas"); al tocarla se despliega el selector de años y meses con los controles de animación (reproducir, velocidad y dirección).
+
+**Comportamiento por defecto según la geometría de la capa**: polígonos y raster abren filtrados al **año más reciente** —mostrarlos completos superpone años y no se entiende nada—; puntos y líneas abren **sin filtro**, con todas las fechas a la vista. La geometría se detecta con el `DescribeFeatureType` que el visor ya cachea, y el workspace decide si es raster.
+
+Casi todo es código del visor sin modificar: `PeriodicitySection`, `SimpleDateSelector`, los botones de loop, `useDateLoop` y los helpers de fechas. Lo nuevo son dos hooks de cableado (`useCatalogoTiempo`, `useCatalogoLoop`) que resuelven la periodicidad pidiéndola directo con workspace y capa, guardan el filtro de la única capa y lo aplican al WMS. La vista se envuelve en `LayerLoadingProvider`, que es lo único que el motor de animación exige.
+
+Se dejó fuera el modo avanzado (el árbol año → mes → día que en el visor se abre con Ctrl+clic): son 273 KB de interfaz para un modo oculto que nadie descubriría en una vista de exploración.
+
+Detalle de la animación: mientras el ciclo corre se **suprime el indicador de carga** —si no, parpadearía en cada cuadro— y la pill de la fecha pulsa para señalar que está avanzando sola.
+
+### Corregido: el indicador de carga del catálogo no aparecía al abrir una capa
+
+El spinner Lottie sólo se mostraba mientras se resolvía el slug contra el backend. Desde que la capa se resuelve contra la lista ya cargada esa espera desapareció, así que en la práctica nunca se veía — justo cuando más se necesita, que es mientras GeoServer devuelve la imagen WMS. Ahora `CatalogoMapView` escucha `imageloadstart` / `imageloadend` / `imageloaderror` del `ImageWMS` y muestra el spinner **centrado en el viewport** durante la carga real de la capa.
+
+### Agregado: instituciones en el catálogo
+
+Las capas del catálogo ahora se pueden agrupar por la dependencia que las produce, y cada institución tiene su propia URL compartible.
+
+- **Pills** entre la lista y el buscador, con **Todas** activa por defecto (morada, para distinguirla del resto, que van en naranja institucional). Al elegir una institución la lista se filtra y el header pasa de "Catálogo" al nombre de la institución seguido de la palabra `catálogo` en chico y gris, alineada a su línea base. Junto a la X aparece el botón para compartir ese catálogo (enlace o QR), con el mismo ícono que usa el visor para compartir.
+- **Lista desplegable de instituciones**: un botón fijo a la derecha de la fila de pills (que scrollea horizontalmente cuando no caben) abre, debajo de ellas, una lista vertical con **logos**, nombre y número de capas de cada institución. Es la vista pensada para cuando el catálogo crezca a decenas de dependencias, donde las pills dejan de ser cómodas. El logo sale de `logo_url`; sin logo se muestra la inicial. La entrada "Todas" usa el logo corto de Mapalab.
+- **El buscador también encuentra por institución**: escribir el nombre o el slug de una dependencia lista sus capas sin tener que cambiar de filtro.
+- **Rutas**: `/catalogo/<institucion>` para el modo institución y `/catalogo/<institucion>/<capa>` para una capa dentro de él; `/catalogo/<capa>` sigue funcionando igual que antes. Capas e instituciones comparten namespace, así que `resolveCatalogoRoute` decide en cliente contra las listas ya cargadas (sin peticiones extra) y `capas_catalogo_service.py` de mariachi valida el slug contra **ambas** tablas al crear o editar, incluida la generación automática del alta masiva. Si un slug legacy colisionara, gana la capa para no romper enlaces ya compartidos.
+- **Backend**: `GET /catalogo/instituciones` (solo instituciones con al menos una capa habilitada, ordenadas por `orden, nombre`) y `institucion: {slug, nombre}` en cada capa de `/catalogo/capas`. El cache en memoria pasa a ser por colección, con el mismo TTL de 5 minutos.
+- **Invalidación de cache**: nuevo `POST /catalogo/invalidate-cache` con `X-Internal-Token`, que mariachi invoca tras cada alta, edición, borrado o reordenamiento del catálogo. Antes, un cambio en el admin tardaba **hasta 5 minutos** en verse en el visor (el TTL del cache en memoria); una institución recién creada simplemente no aparecía. Mismo patrón que `/layers/refresh-cache` del árbol de capas.
+- **Admin (mariachi)**: la subpágina Catálogo pasa a **pestañas** (Capas | Instituciones) con el conteo de cada una. La de instituciones permite alta —con slug autocompletado conforme se escribe el nombre, hasta que se edite a mano—, edición inline de nombre y slug, borrado (las capas quedan sin institución, no se borran) y reorden por drag & drop que define el orden de las pills. La tabla de capas suma columna de institución con filtro y edición inline, el formulario de alta un selector, el importador de workspace la asigna a todo el lote, y la barra de selección múltiple permite asignarla en lote.
+- **Telemetría**: `catalogo_share` (`scope`, `slug`, `type`) y `catalogo_institucion_select` (`slug`, `capas`).
+
+Requiere la migración `0028_catalogo_instituciones` de dataengine (tabla nueva + columna `institucion_id`), aplicada **antes** de desplegar los backends.
 
 ## [1.85.4] - 2026-07-23
 

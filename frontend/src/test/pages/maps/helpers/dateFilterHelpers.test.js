@@ -1,5 +1,40 @@
 import { describe, it, expect } from 'vitest';
-import { formatIsoAsMonthYear } from '@pages/maps/helpers/dateFilterHelpers';
+import { cqlToDateRange, generateCQLFilter, formatIsoAsMonthYear } from '@pages/maps/helpers/dateFilterHelpers';
+
+describe('cqlToDateRange', () => {
+    it('convierte el filtro de un año completo', () => {
+        expect(cqlToDateRange(generateCQLFilter(new Set(['2024'])))).toEqual({
+            dateFrom: '2024-01-01',
+            dateTo: '2024-12-31',
+        });
+    });
+
+    it('convierte el filtro de un mes al último día real', () => {
+        expect(cqlToDateRange(generateCQLFilter(new Set(['2024-2'])))).toEqual({
+            dateFrom: '2024-02-01',
+            dateTo: '2024-02-29',
+        });
+    });
+
+    it('convierte el filtro de un día exacto', () => {
+        expect(cqlToDateRange("fecha = '2024-03-15'")).toEqual({
+            dateFrom: '2024-03-15',
+            dateTo: '2024-03-15',
+        });
+    });
+
+    it('cubre el rango completo cuando hay varias selecciones', () => {
+        expect(cqlToDateRange(generateCQLFilter(new Set(['2020', '2023'])))).toEqual({
+            dateFrom: '2020-01-01',
+            dateTo: '2023-12-31',
+        });
+    });
+
+    it('retorna null cuando el filtro no es de fecha o está vacío', () => {
+        expect(cqlToDateRange(null)).toBeNull();
+        expect(cqlToDateRange('anio = 2024')).toBeNull();
+    });
+});
 
 describe('formatIsoAsMonthYear', () => {
     it('formatea una fecha ISO completa como "Mes Año"', () => {

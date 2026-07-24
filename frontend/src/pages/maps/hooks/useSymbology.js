@@ -122,6 +122,11 @@ export const useSymbology = ({
     }, [activeLayerIds, getAllChildLayerIds]);
 
     const isStartupRef = useRef(true);
+    const pendingRestoreRef = useRef(null);
+
+    const restoreSelectedById = useCallback((layerId) => {
+        pendingRestoreRef.current = layerId || null;
+    }, []);
 
     useEffect(() => {
         const isSwipeActive = !!compareMode?.active;
@@ -176,6 +181,17 @@ export const useSymbology = ({
                 return prev;
             }
 
+            if (pendingRestoreRef.current) {
+                const pendingId = pendingRestoreRef.current;
+                const restored = [...allParentLayers, ...allIndividualLayers]
+                    .find(l => l.id === pendingId || getAllChildLayerIds(l.id).includes(pendingId));
+                if (restored) {
+                    pendingRestoreRef.current = null;
+                    isStartupRef.current = false;
+                    return restored;
+                }
+            }
+
             if (isStartupRef.current) {
                 isStartupRef.current = false;
                 const limiteLayer = allParentLayers.find(l => l.id === 'limite_iieg') || allIndividualLayers.find(l => l.id === 'limite_iieg');
@@ -200,6 +216,7 @@ export const useSymbology = ({
     return {
         selectedLayerForSymbology,
         setSelectedLayerForSymbology,
+        restoreSelectedById,
         hiddenLayerIds,
         setHiddenLayerIds,
         toggleLayerVisibility,

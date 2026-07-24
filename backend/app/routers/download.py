@@ -2,7 +2,7 @@ import re
 from typing import Optional
 
 from fastapi import APIRouter, Query
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 
 from app.config import settings
 from app.consts.databases import DatabaseType
@@ -11,8 +11,8 @@ from app.databases.async_pool import get_pool
 from app.databases.factory import DatabaseFactory
 from app.exceptions.common_exceptions import NotFoundException, BadRequestException
 from app.metrics import COUNTER_DOWNLOAD_REQUESTS, incr
-from app.repositories.download_repository import DownloadRepository
-from app.services.acervo_client import presign_get
+from app.repositories.download_repository import DATE_COLUMN, DownloadRepository
+from app.services.acervo_client import iter_object_body, open_object
 from app.utils.api_responses import api_responses
 
 router = APIRouter(prefix='/download', tags=['Download'])
@@ -61,13 +61,32 @@ async def download_layer(
                 session, geoserver_key, settings.DOWNLOAD_CACHE_TTL_HOURS
             )
             if object_key:
-                signed = presign_get(object_key)
-                if signed:
-                    return RedirectResponse(signed, status_code=307)
+                obj = open_object(object_key)
+                if obj is not None:
+                    _, _, table_name = geoserver_key.rpartition(':')
+                    headers = {
+                        'Content-Disposition': f'attachment; filename="{table_name}.csv"',
+                        'Access-Control-Expose-Headers': 'Content-Disposition',
+                    }
+                    if object_key.endswith('.gz'):
+                        headers['Content-Encoding'] = 'gzip'
+                    return StreamingResponse(
+                        iter_object_body(obj),
+                        media_type='text/csv; charset=utf-8',
+                        headers=headers,
+                    )
 
         schema, table = _resolve_layer(session, workspace, layer)
         if not schema:
             raise NotFoundException(f'Capa {workspace}:{layer} no encontrada')
+
+        if has_date_filter and not DownloadRepository.column_exists(
+            session, schema, table, DATE_COLUMN
+        ):
+            raise BadRequestException(
+                f'Capa {workspace}:{layer} no tiene columna "{DATE_COLUMN}", '
+                'no se puede filtrar por fecha'
+            )
 
     pool = await get_pool()
     filename = f'{table}.csv'

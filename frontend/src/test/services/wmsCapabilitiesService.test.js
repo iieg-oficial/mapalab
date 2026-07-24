@@ -46,8 +46,8 @@ describe('wmsCapabilitiesService', () => {
 
         const index = await fetchWorkspaceCapabilities('http://gs/demografia/wms');
         expect(index.size).toBeGreaterThan(0);
-        const ext = index.get('demografia:poblacion');
-        expect(ext).toEqual([-105, 18, -101, 22]);
+        const entry = index.get('demografia:poblacion');
+        expect(entry.extent).toEqual([-105, 18, -101, 22]);
     });
 
     it('cachea por baseUrl: una sola request para llamadas repetidas', async () => {

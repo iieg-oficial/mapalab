@@ -2,7 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDebounce } from '@hooks/useDebounce';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import ScrollContainer from '@components/ScrollContainer';
-import { trackCatalogoSearch } from '@services/analyticsService';
+import CatalogoShare from './CatalogoShare';
+import CatalogoInstitucionesList from './CatalogoInstitucionesList';
+import { buildCatalogoShareUrl, filterCapas } from '../helpers/catalogoRoutes';
+import { PANEL_SHADOW, Z_CAPAS, Z_INPUT } from '../helpers/catalogoStyles';
+import { trackCatalogoSearch, trackCatalogoShare } from '@services/analyticsService';
 
 const SearchIcon = ({ className }) => (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
@@ -11,8 +15,45 @@ const SearchIcon = ({ className }) => (
     </svg>
 );
 
-const CatalogoSearchModal = ({ capas, open, onOpen, onClose, onSelect }) => {
+const CloseIcon = ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 6L6 18M6 6l12 12" />
+    </svg>
+);
+
+const CopyIcon = ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="9" width="12" height="12" rx="2.5" />
+        <path d="M6 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V6" />
+    </svg>
+);
+
+const PILL = 'shrink-0 px-3 py-1 rounded-full text-[12px] font-garet font-bold transition-colors cursor-pointer';
+const PILL_SHADOW = 'shadow-[0_5px_20px_#1A26641A]';
+const PILL_TODAS = {
+    on: `bg-purple-deep text-white ${PILL_SHADOW}`,
+    off: 'text-purple hover:bg-purple-soft',
+};
+const PILL_INSTITUCION = {
+    on: `bg-orange text-white ${PILL_SHADOW}`,
+    off: 'text-orange hover:bg-orange/15',
+};
+
+const CatalogoSearchModal = ({
+    capas,
+    instituciones = [],
+    institucionActiva = null,
+    conteosPorInstitucion = {},
+    totalCapas = 0,
+    onSelectInstitucion,
+    open,
+    onOpen,
+    onClose,
+    onSelect,
+}) => {
     const [query, setQuery] = useState('');
+    const [shareOpen, setShareOpen] = useState(false);
+    const [listaOpen, setListaOpen] = useState(false);
     const debounced = useDebounce(query, 300);
     const inputRef = useRef(null);
     const containerRef = useRef(null);
@@ -25,15 +66,20 @@ const CatalogoSearchModal = ({ capas, open, onOpen, onClose, onSelect }) => {
         if (open) inputRef.current?.focus();
     }, [open]);
 
-    const results = useMemo(() => {
-        const q = debounced.trim().toLowerCase();
-        if (!q) return capas;
-        return capas.filter((c) => {
-            const inName = c.nombre?.toLowerCase().includes(q);
-            const inTags = (c.searchTags || []).some((t) => t.toLowerCase().includes(q));
-            return inName || inTags;
-        });
-    }, [capas, debounced]);
+    useEffect(() => {
+        setShareOpen(false);
+        setListaOpen(false);
+    }, [institucionActiva]);
+
+    const handleSelectInstitucion = (slug) => {
+        setListaOpen(false);
+        onSelectInstitucion(slug);
+    };
+
+    const results = useMemo(
+        () => filterCapas(capas, { query: debounced }),
+        [capas, debounced],
+    );
 
     useEffect(() => {
         const q = debounced.trim();
@@ -48,13 +94,73 @@ const CatalogoSearchModal = ({ capas, open, onOpen, onClose, onSelect }) => {
         }
     };
 
+    const headerVisibility = open ? 'flex' : 'hidden md:flex';
+
     return (
         <div
             ref={containerRef}
             className="fixed left-1/2 -translate-x-1/2 bottom-15 z-30 w-[min(460px,90vw)] max-h-[80vh] flex flex-col items-stretch"
         >
-            <div className={`${open ? 'flex' : 'hidden md:flex'} items-center justify-between gap-2 px-3 mb-2`}>
-                <span className="text-[18px] font-bold text-purple font-garet">Catálogo</span>
+            <div className={`${headerVisibility} relative z-30 items-center justify-between gap-2 mb-2`}>
+                <div className="min-w-0 flex items-center gap-2">
+                    {institucionActiva && (
+                        <div className="relative shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setShareOpen((v) => !v)}
+                                aria-pressed={shareOpen}
+                                aria-label={`Compartir el catálogo de ${institucionActiva.nombre}`}
+                                title={`Compartir el catálogo de ${institucionActiva.nombre}`}
+                                className={`p-1.5 rounded-full transition-colors ${shareOpen
+                                    ? 'bg-purple-soft text-purple'
+                                    : 'text-[#6E7477] hover:text-purple hover:bg-purple-soft'}`}
+                            >
+                                <CopyIcon className="w-4.5 h-4.5" />
+                            </button>
+
+                            {shareOpen && (
+                                <div className={`absolute bottom-full left-0 mb-2 w-[min(260px,80vw)] px-3.5 py-3 bg-white rounded-xl ${PANEL_SHADOW}`}>
+                                    <div className="flex items-start justify-between gap-2">
+                                        <p className="text-[12px] font-garet text-graphite">
+                                            Comparte el catálogo de{' '}
+                                            <span className="font-bold text-orange">{institucionActiva.nombre}</span>.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShareOpen(false)}
+                                            aria-label="Cerrar"
+                                            className="shrink-0 -mt-1 -mr-1 p-1 rounded-full text-[#6E7477] hover:text-purple hover:bg-purple-soft transition-colors"
+                                        >
+                                            <CloseIcon className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                    <CatalogoShare
+                                        url={buildCatalogoShareUrl({ institucionSlug: institucionActiva.slug })}
+                                        filename={`mapalab-catalogo-${institucionActiva.slug}`}
+                                        onShare={(type) => trackCatalogoShare({
+                                            scope: 'institucion',
+                                            slug: institucionActiva.slug,
+                                            type,
+                                        })}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    {institucionActiva ? (
+                        <div className="min-w-0 flex items-baseline gap-1.5">
+                            <span className="truncate text-[18px] font-bold text-orange font-garet leading-tight">
+                                {institucionActiva.nombre}
+                            </span>
+                            <span className="shrink-0 text-[11px] font-garet font-bold text-purple leading-tight">
+                                catálogo
+                            </span>
+                        </div>
+                    ) : (
+                        <span className="text-[18px] font-bold text-purple font-garet">Catálogo</span>
+                    )}
+                </div>
+
                 {open && (
                     <button
                         type="button"
@@ -62,14 +168,12 @@ const CatalogoSearchModal = ({ capas, open, onOpen, onClose, onSelect }) => {
                         aria-label="Cerrar buscador"
                         className="shrink-0 p-1.5 rounded-full text-[#6E7477] hover:text-purple hover:bg-purple-soft transition-colors"
                     >
-                        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
+                        <CloseIcon className="w-5 h-5" />
                     </button>
                 )}
             </div>
 
-            <div className={`relative z-10 grid transition-all duration-300 ease-out min-h-0 rounded-xl shadow-[0_6px_28px_rgba(26,38,100,0.22)] md:shadow-[0_-28px_64px_rgba(26,38,100,0.2)] ${open ? 'grid-rows-[1fr] opacity-100 mb-4' : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
+            <div className={`${Z_CAPAS} ${PANEL_SHADOW} grid transition-all duration-300 ease-out min-h-0 rounded-xl ${open ? 'grid-rows-[1fr] opacity-100 mb-4' : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
                 <div className="min-h-0 overflow-hidden rounded-xl">
                     <ScrollContainer
                         className="max-h-[calc(80vh-140px)] bg-white rounded-xl"
@@ -98,6 +202,61 @@ const CatalogoSearchModal = ({ capas, open, onOpen, onClose, onSelect }) => {
                 </div>
             </div>
 
+            {instituciones.length > 0 && (
+                <>
+                    <div className={`${headerVisibility} shrink-0 items-center gap-1.5 mb-4`}>
+                        <div className="min-w-0 flex items-center gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+                            <button
+                                type="button"
+                                onClick={() => handleSelectInstitucion(null)}
+                                aria-pressed={!institucionActiva}
+                                className={`${PILL} ${!institucionActiva ? PILL_TODAS.on : PILL_TODAS.off}`}
+                            >
+                                Todas
+                            </button>
+                            {instituciones.map((institucion) => (
+                                <button
+                                    key={institucion.slug}
+                                    type="button"
+                                    onClick={() => handleSelectInstitucion(institucion.slug)}
+                                    aria-pressed={institucionActiva?.slug === institucion.slug}
+                                    className={`${PILL} ${institucionActiva?.slug === institucion.slug
+                                        ? PILL_INSTITUCION.on
+                                        : PILL_INSTITUCION.off}`}
+                                >
+                                    {institucion.nombre}
+                                </button>
+                            ))}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setListaOpen((v) => !v)}
+                            aria-pressed={listaOpen}
+                            aria-label={listaOpen ? 'Cerrar la lista de instituciones' : 'Ver todas las instituciones'}
+                            title={listaOpen ? 'Cerrar la lista' : 'Ver todas las instituciones'}
+                            className={`ml-auto shrink-0 flex items-center justify-center size-7 rounded-full transition-colors cursor-pointer ${listaOpen
+                                ? 'text-orange bg-orange/15 hover:bg-orange/25'
+                                : 'text-purple hover:bg-purple-soft'}`}
+                        >
+                            <svg viewBox="0 0 24 24" className={`w-4 h-4 transition-transform ${listaOpen ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M6 15l6-6 6 6" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {listaOpen && (
+                        <CatalogoInstitucionesList
+                            instituciones={instituciones}
+                            institucionActiva={institucionActiva}
+                            conteos={conteosPorInstitucion}
+                            totalCapas={totalCapas}
+                            onSelect={handleSelectInstitucion}
+                        />
+                    )}
+                </>
+            )}
+
             <button
                 type="button"
                 onClick={onOpen}
@@ -105,10 +264,10 @@ const CatalogoSearchModal = ({ capas, open, onOpen, onClose, onSelect }) => {
                 className={`${open ? 'hidden' : 'flex md:hidden'} self-center items-center gap-2 px-4 py-2.5 rounded-full bg-white shadow-[0_8px_22px_#1A266429] text-purple font-garet text-[13px] font-bold`}
             >
                 <SearchIcon className="w-4.5 h-4.5" />
-                Catálogo
+                {institucionActiva ? institucionActiva.nombre : 'Catálogo'}
             </button>
 
-            <div className={`${open ? 'flex' : 'hidden md:flex'} shrink-0 relative bg-white rounded-[10px] shadow-[0_6px_28px_rgba(26,38,100,0.22)] md:shadow-[0_-28px_64px_rgba(26,38,100,0.2)] overflow-hidden`}>
+            <div className={`${headerVisibility} ${Z_INPUT} ${PANEL_SHADOW} shrink-0 bg-white rounded-[10px] overflow-hidden`}>
                 <input
                     ref={inputRef}
                     value={query}

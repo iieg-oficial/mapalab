@@ -48,7 +48,9 @@ Las herramientas de medicion del catalogo reutilizan el tracker del visor, asi q
 | `catalogo_layer_close` | `slug` | Cierre de la capa activa | Al pulsar el boton de cerrar capa del panel de leyendas | Rotacion entre capas |
 | `catalogo_info_open` | — | Necesidad de explicacion de la seccion | Al abrir el modal "¿Que es el Catalogo?" | Friccion / Claridad de la UI |
 | `catalogo_back` | `target` | Regresos al visor y a que URL | Al pulsar "Regresar a Mapalab" | Catalogo como puerta de entrada vs. salida |
-| `catalogo_slug_not_found` | `slug` | Enlaces a capas inexistentes o mal formados | Cuando `/catalogo/:slug` no resuelve una capa | Calidad de enlaces compartidos |
+| `catalogo_slug_not_found` | `slug` | Enlaces a capas inexistentes o mal formados | Cuando el slug de la URL no resuelve ni capa ni institucion | Calidad de enlaces compartidos |
+| `catalogo_share` | `scope: capa\|institucion`, `slug`, `type: link\|qr\|qr_download` | Difusion de capas e instituciones y por que medio | Al copiar el enlace, mostrar el QR o descargarlo | **Difusion de la seccion** |
+| `catalogo_institucion_select` | `slug`, `capas` | Uso del filtro por institucion y tamaño del catalogo filtrado | Al pulsar una pill de institucion (`slug: null` = Todas) | Instituciones mas consultadas |
 
 ## Debug en desarrollo
 

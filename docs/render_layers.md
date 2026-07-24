@@ -104,9 +104,8 @@ hace `DROP TABLE IF EXISTS` solo al aplicarse por primera vez).
 Ambos featuretypes tienen **WFS deshabilitado** (`disabledServices`), la original
 desde 2026-02-25 — descargar 35M de vértices tumbaría el servidor.
 
-> Pendiente conocido: `mapalab.layers` marca `downloadable=true` y
-> `wfs_available=true` para `curvas_de_nivel`, y no hay CSV pre-generado en
-> `mapalab.layer_downloads`. El visor ofrece una descarga que no funciona.
+> Resuelto: el visor ya no ofrece descarga ni modal de detalle para
+> `curvas_de_nivel`, así que no hay descarga rota que ofrecer.
 
 ## La reproyección no es el cuello de botella
 

@@ -37,6 +37,10 @@ Sistema bidireccional que sincroniza el estado del mapa con query params. Permit
 
 Si la URL trae `filter_<layerId>`, el `defaultDate` de la definicion se ignora. Garantiza que al compartir un link con fecha especifica, esa fecha se respete.
 
+### Restauracion de la capa seleccionada (`restoreSelectedById`)
+
+Al restaurar (URL con `*<id>`, share por `?s=`, o sesion desde `sessionStorage` en un refresh), la seleccion no se puede aplicar sólo con `setSelectedLayerForSymbology`: el efecto de auto-seleccion de `useSymbology` corre **despues** (vive en `MapsProvider`, padre de `Maps`) con `activeLayerIds` aún stale, hace `setSelected(null)` y luego auto-elige la primera capa, pisando la restauracion. Por eso los tres puntos de restauracion llaman también `restoreSelectedById(id)`, que deja el id en un `useRef`; cuando el efecto va a auto-seleccionar, primero consume ese ref y respeta la capa restaurada si sigue activa. Sin esto, un refresh siempre regresaba a la primera capa de la lista.
+
 ```javascript
 const filterLayerIds = new Set(filterParams.map(f => f.layerId));
 allIds.forEach(id => {

@@ -67,6 +67,7 @@ export const useShareDeserializer = () => {
         getAllChildLayerIds,
         applyFilter,
         setSelectedLayerForSymbology,
+        restoreSelectedById,
         findLayerById,
         setLayerOpacity,
         setHiddenLayerIds,
@@ -121,6 +122,7 @@ export const useShareDeserializer = () => {
             if (shared.selected) {
                 const selectedId = resolveRefToId(shared.selected, layerTree);
                 if (selectedId) {
+                    restoreSelectedById?.(selectedId);
                     const selectedLayer = findLayerById(selectedId);
                     if (selectedLayer) setSelectedLayerForSymbology(selectedLayer);
                 }
@@ -199,6 +201,7 @@ export const useShareDeserializer = () => {
         if (payload.selected) {
             const selectedId = resolveRefToId(payload.selected, layerTree);
             if (selectedId) {
+                restoreSelectedById?.(selectedId);
                 const selectedLayer = findLayerById(selectedId);
                 if (selectedLayer) setSelectedLayerForSymbology(selectedLayer);
             }
@@ -218,5 +221,5 @@ export const useShareDeserializer = () => {
         }
 
         return true;
-    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, setSelectedLayerForSymbology, findLayerById, setLayerOpacity, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode]);
+    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, setLayerOpacity, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode]);
 };

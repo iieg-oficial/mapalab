@@ -17,9 +17,12 @@ import MapsContext from '@contexts/MapsContext';
 import { SiderContext } from '@contexts/SiderContext';
 import MapControls from '@pages/maps/components/MapControls';
 import MapAttribution from '@pages/maps/components/MapAttribution';
+import LottieSpinner from '@components/LottieSpinner';
 import CatalogoInfoButton from './CatalogoInfoButton';
 import CatalogoInfoBox from './CatalogoInfoBox';
 import CatalogoTools from './CatalogoTools';
+import CatalogoTimeBar from './CatalogoTimeBar';
+import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { BASEMAPS, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 import { JALISCO_BOUNDS, hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
 import { getMinZoom } from '@pages/maps/helpers/defaultView';
@@ -78,14 +81,15 @@ const SIDER_STUB = {
 };
 
 const CatalogoMapView = ({ capa }) => {
+    const { tiempo, loop, wmsLayerRef } = useCatalogoTiempoContext();
     const targetRef = useRef(null);
     const scaleRef = useRef(null);
     const mapRef = useRef(null);
-    const wmsLayerRef = useRef(null);
     const highlightSourceRef = useRef(null);
     const clickSeqRef = useRef(0);
     const [isLocating, setIsLocating] = useState(false);
     const [info, setInfo] = useState(null);
+    const [layerLoading, setLayerLoading] = useState(false);
 
     const clearInfo = useCallback(() => {
         setInfo(null);
@@ -124,9 +128,12 @@ const CatalogoMapView = ({ capa }) => {
         paneMapRefs: { current: [] },
         isLocating,
         setIsLocating,
+        getSpecificFilter: tiempo.getSpecificFilter,
+        getLoopState: loop.getLoopState,
+        stopLoop: loop.stopLoop,
         ...drawing,
         ...editing,
-    }), [isLocating, drawing, editing]);
+    }), [isLocating, drawing, editing, tiempo.getSpecificFilter, loop.getLoopState, loop.stopLoop]);
 
     useEffect(() => {
         if (!targetRef.current || mapRef.current) return;
@@ -210,7 +217,7 @@ const CatalogoMapView = ({ capa }) => {
             map.setTarget(undefined);
             mapRef.current = null;
         };
-    }, [clearInfo]);
+    }, [clearInfo, wmsLayerRef]);
 
     useEffect(() => {
         const map = mapRef.current;
@@ -220,11 +227,25 @@ const CatalogoMapView = ({ capa }) => {
             map.removeLayer(wmsLayerRef.current);
             wmsLayerRef.current = null;
         }
-        if (!capa) return;
+        if (!capa) {
+            setLayerLoading(false);
+            return;
+        }
         const layer = buildWmsLayer(capa);
-        if (!layer) return;
+        if (!layer) {
+            setLayerLoading(false);
+            return;
+        }
         map.addLayer(layer);
         wmsLayerRef.current = layer;
+
+        const source = layer.getSource();
+        const onLoadStart = () => setLayerLoading(true);
+        const onLoadEnd = () => setLayerLoading(false);
+        source.on('imageloadstart', onLoadStart);
+        source.on('imageloadend', onLoadEnd);
+        source.on('imageloaderror', onLoadEnd);
+        setLayerLoading(true);
 
         const cfg = hydrateWmsConfig({
             geoserverWorkspace: capa.geoserverWorkspace,
@@ -242,8 +263,13 @@ const CatalogoMapView = ({ capa }) => {
                 const view = mapRef.current?.getView();
                 if (!cancelled && view) view.fit(jalisco(), { duration: 500, padding: [60, 60, 60, 60] });
             });
-        return () => { cancelled = true; };
-    }, [capa, clearInfo]);
+        return () => {
+            cancelled = true;
+            source.un('imageloadstart', onLoadStart);
+            source.un('imageloadend', onLoadEnd);
+            source.un('imageloaderror', onLoadEnd);
+        };
+    }, [capa, clearInfo, wmsLayerRef]);
 
     return (
         <>
@@ -255,9 +281,16 @@ const CatalogoMapView = ({ capa }) => {
                     <CatalogoTools />
                 </SiderContext.Provider>
                 <MapAttribution hideActions extraRight={<CatalogoInfoButton />} />
+                {capa && <CatalogoTimeBar tiempo={tiempo} loop={loop} />}
             </MapsContext.Provider>
 
             <div ref={scaleRef} className="fixed left-4 bottom-1 z-10" />
+
+            {layerLoading && !loop.isLoopPlaying && (
+                <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-20">
+                    <LottieSpinner loop autoplay className="w-32 h-32" />
+                </div>
+            )}
 
             {info && capa && (
                 <CatalogoInfoBox

@@ -9,11 +9,28 @@ export const fetchCatalogoCapas = async (signal) => {
     return res.json();
 };
 
+export const fetchCatalogoInstituciones = async (signal) => {
+    const res = await fetch(buildUrl('catalogo/instituciones'), { signal });
+    if (!res.ok) throw new Error(`GET /catalogo/instituciones fallo ${res.status}`);
+    return res.json();
+};
+
 export const fetchCatalogoCapa = async (slug, signal) => {
     const res = await fetch(buildUrl(`catalogo/capas/${encodeURIComponent(slug)}`), { signal });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`GET /catalogo/capas/${slug} fallo ${res.status}`);
     return res.json();
+};
+
+export const fetchCapaPeriodicidad = async (capa, signal) => {
+    const url = new URL(`${API_HOST}/periodicity/`, window.location.origin);
+    url.searchParams.set('workspace', capa.geoserverWorkspace);
+    url.searchParams.set('layer', capa.geoserverLayer);
+    const res = await fetch(url.toString(), { signal });
+    if (!res.ok) throw new Error(`GET /periodicity fallo ${res.status}`);
+    const data = await res.json();
+    const periodicidad = data?.periodicity;
+    return periodicidad && Object.keys(periodicidad).length ? periodicidad : null;
 };
 
 export const capaHasGeometry = async (capa, signal) => {

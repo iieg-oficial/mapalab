@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 CHUNK_SIZE = 65536
 QUEUE_MAX_CHUNKS = 16
+DATE_COLUMN = 'fecha'
 
 
 def _quote_ident(name: str) -> str:
@@ -18,36 +19,48 @@ def _quote_ident(name: str) -> str:
 def _build_select(
     schema: str,
     table: str,
-    columns: Optional[list[str]],
+    columns: list[str],
     date_from: Optional[str],
     date_to: Optional[str],
 ) -> tuple[str, list]:
-    cols_sql = ', '.join(_quote_ident(c) for c in columns) if columns else '*'
+    if not columns:
+        raise ValueError(f'{schema}.{table} no tiene columnas exportables')
+    cols_sql = ', '.join(_quote_ident(c) for c in columns)
     query = f'SELECT {cols_sql} FROM {_quote_ident(schema)}.{_quote_ident(table)}'
     conditions: list[str] = []
     params: list = []
     if date_from:
         params.append(date.fromisoformat(date_from))
-        conditions.append(f'fecha >= ${len(params)}')
+        conditions.append(f'{_quote_ident(DATE_COLUMN)} >= ${len(params)}')
     if date_to:
         params.append(date.fromisoformat(date_to))
-        conditions.append(f'fecha <= ${len(params)}')
+        conditions.append(f'{_quote_ident(DATE_COLUMN)} <= ${len(params)}')
     if conditions:
         query += ' WHERE ' + ' AND '.join(conditions)
     return query, params
 
 
 async def _fetch_export_columns(conn: asyncpg.Connection, schema: str, table: str) -> list[str]:
-    """Columnas de la tabla excluyendo geometria/geografia (aligera el CSV)."""
+    """Columnas exportables excluyendo geometria/geografia.
+
+    Se consulta ``pg_attribute`` y no ``information_schema.columns`` porque esta
+    ultima no lista vistas materializadas, que son la mayoria de las capas
+    descargables.
+    """
     rows = await conn.fetch(
-        'SELECT column_name FROM information_schema.columns '
-        'WHERE table_schema = $1 AND table_name = $2 '
-        "AND udt_name NOT IN ('geometry', 'geography') "
-        'ORDER BY ordinal_position',
+        'SELECT a.attname FROM pg_attribute a '
+        'JOIN pg_class c ON c.oid = a.attrelid '
+        'JOIN pg_namespace n ON n.oid = c.relnamespace '
+        'JOIN pg_type t ON t.oid = a.atttypid '
+        'WHERE n.nspname = $1 AND c.relname = $2 '
+        "AND c.relkind IN ('r', 'v', 'm', 'p', 'f') "
+        'AND a.attnum > 0 AND NOT a.attisdropped '
+        "AND t.typname NOT IN ('geometry', 'geography') "
+        'ORDER BY a.attnum',
         schema,
         table,
     )
-    return [row['column_name'] for row in rows]
+    return [row['attname'] for row in rows]
 
 
 class DownloadRepository:
@@ -93,6 +106,20 @@ class DownloadRepository:
                 'AND n.nspname = :schema AND c.relname = :table'
             ),
             {'schema': schema, 'table': table},
+        )
+        return result.scalar() is not None
+
+    @staticmethod
+    def column_exists(session: Session, schema: str, table: str, column: str) -> bool:
+        result = session.execute(
+            text(
+                'SELECT 1 FROM pg_attribute a '
+                'JOIN pg_class c ON c.oid = a.attrelid '
+                'JOIN pg_namespace n ON n.oid = c.relnamespace '
+                'WHERE n.nspname = :schema AND c.relname = :table '
+                'AND a.attname = :column AND a.attnum > 0 AND NOT a.attisdropped'
+            ),
+            {'schema': schema, 'table': table, 'column': column},
         )
         return result.scalar() is not None
 

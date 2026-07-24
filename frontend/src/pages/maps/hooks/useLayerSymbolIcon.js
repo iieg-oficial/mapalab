@@ -5,6 +5,8 @@ import { findLayerById, collectLayersWithWMS } from '../helpers/layers/utils/lay
 
 const symbolUrlCache = new Map();
 
+export const clearSymbolUrlCache = () => symbolUrlCache.clear();
+
 export const useLayerSymbolIcon = (layerId, enabled = true) => {
     const { getLegendUrl, getLegendJson } = useWMSLegend();
     const { layers: allLayers } = useLayers();

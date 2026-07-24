@@ -15,6 +15,7 @@ import LayerDateControls from './LayerDateControls';
 import LayerActionsBar from './LayerActionsBar';
 import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
+import LayerDownloadProgress from './LayerDownloadProgress';
 import SlotBadge from './SlotBadge';
 import { computeLabel } from './datePillHelpers';
 import { ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
@@ -293,15 +294,22 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 downloadButtonRef={download.menuAnchorRef}
                             />
                             {canDownload && (
-                                <DownloadMenu
-                                    open={download.menuOpen}
-                                    anchorRef={download.menuAnchorRef}
-                                    onClose={() => download.setMenuOpen(false)}
-                                    isRaster={download.isRaster}
-                                    hasDateFilter={download.hasDateFilter}
-                                    availableMetadata={download.availableMetadata}
-                                    onDownload={download.handleMenuDownload}
-                                />
+                                <>
+                                    <LayerDownloadProgress
+                                        open={download.downloading}
+                                        progress={download.progress}
+                                        onCancel={download.handleCancelDownload}
+                                    />
+                                    <DownloadMenu
+                                        open={download.menuOpen}
+                                        anchorRef={download.menuAnchorRef}
+                                        onClose={() => download.setMenuOpen(false)}
+                                        isRaster={download.isRaster}
+                                        hasDateFilter={download.hasDateFilter}
+                                        availableMetadata={download.availableMetadata}
+                                        onDownload={download.handleMenuDownload}
+                                    />
+                                </>
                             )}
                             <LayerLegendInline
                                 layer={layer}

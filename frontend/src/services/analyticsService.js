@@ -157,3 +157,9 @@ export const trackCatalogoBack = (target) =>
 
 export const trackCatalogoSlugNotFound = (slug) =>
     trackEvent('catalogo_slug_not_found', { slug });
+
+export const trackCatalogoShare = ({ scope, slug, type }) =>
+    trackEvent('catalogo_share', { scope, slug, type });
+
+export const trackCatalogoInstitucionSelect = ({ slug, capas }) =>
+    trackEvent('catalogo_institucion_select', { slug, capas });

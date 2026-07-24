@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import MapsContext from '@contexts/MapsContext';
-import { useLayerSymbolIcon } from '@hooksMaps/useLayerSymbolIcon';
+import { useLayerSymbolIcon, clearSymbolUrlCache } from '@hooksMaps/useLayerSymbolIcon';
 
 const mockLayers = [
     {
@@ -49,6 +49,7 @@ const legendJson = (rules) => ({
 describe('useLayerSymbolIcon', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
+        clearSymbolUrlCache();
     });
 
     it('resuelve icono con rule cuando hay varias reglas con nombre', async () => {
