@@ -274,19 +274,44 @@ DataEngine tiene `max_connections=200`.
 
 ## Descargas
 
-El frontend maneja tres tipos de descarga:
+Existen cinco rutas de descarga distintas:
 
-| Tipo | Mecanismo | Formatos |
-|---|---|---|
-| Vector | WFS GetFeature | GeoPackage (EPSG:6368), Shapefile (EPSG:4326), CSV |
-| Raster | WCS GetCoverage | GeoTIFF |
-| CSV (backend) | PostgreSQL COPY | CSV con filtro de fechas |
+| Tipo | Mecanismo | Formatos | Pieza |
+|---|---|---|---|
+| Capa vectorial | WFS `GetFeature` | GeoPackage (EPSG:6368), Shapefile (EPSG:4326), CSV | `services/downloadService.js` |
+| Capa raster | WCS `GetCoverage` (+ `SUBSET=time(...)` si `timeEnabled`) | GeoTIFF | idem |
+| CSV de capa | Dump cacheado en Acervo, o PostgreSQL `COPY` en vivo | CSV | `GET /download/{workspace}/{layer}` |
+| Selección del InfoBox | CSV armado en el navegador (con BOM UTF-8) | CSV | `InfoBox/utils/downloadFeatures.js` |
+| Exportación del mapa | Composición de canvas (mapa + leyendas + minimapa + fuentes) | PNG, JPG, PDF | `MapExport/hooks/useMapDownload.js` |
 
-Las descargas pueden incluir metadatos (TXT, XLSX) empaquetados en ZIP.
+**Toda descarga de capa pasa por `fetchLayerBlob` en `downloadService.js`** — el punto único que decide raster vs vector, backend vs WFS, y la exclusión de geometría. Lo consumen `downloadSingleFormat`/`downloadWithMenu` (botón directo, menú con filtros, panel de capas activas) **y** `downloadCatalogoCapa` (página de catálogo, que construye un `config` equivalente desde `geoserverWorkspace`/`geoserverLayer`). Un cambio en la petición se refleja en todos los puntos sin depurar de uno en uno. `downloadUrls.js` concentra los constructores de URL (WFS/WCS/backend), los formatos y `RASTER_WORKSPACES`. La UI se arma con `useLayerDownload` + `<DownloadButton>` + `<DownloadMenu>`.
 
-Timeouts de descarga (600s) configurados en:
-- mapalab nginx: `/api/download/` (backend CSV)
-- gateway-hub: `/mapalab/api/download/` (backend CSV), `/geoserver/{workspace}/(wfs|wcs)` (WFS/WCS por workspace), `/geoserver/(wfs|wcs)` (WFS/WCS directo)
+**Streaming a disco (File System Access API)**: donde el navegador lo soporta (Chromium de escritorio), `runLayerDownload` abre `showSaveFilePicker` y escribe los chunks a disco vía `writable` conforme llegan — cero acumulación en RAM, clave para GeoPackage/Shapefile pesados. El core se separó en `resolveLayerResponse` (abre la respuesta validada, con el fallback backend→WFS antes de leer el cuerpo) y `consumeResponse` (escribe a un `writable` de disco **o** arma un Blob). Si el usuario cancela el diálogo → cancelado; si el picker falla por permisos/gesto o el navegador no soporta la API (Firefox, Safari, móvil) → fallback al flujo Blob en memoria. El progreso/cronómetro siguen porque se cuentan los bytes leídos en ambos modos.
+
+Las descargas pueden incluir metadatos (TXT, XLSX) de Acervo empaquetados en ZIP con `jszip` (import dinámico, sólo si se piden; helpers en `downloadMetadata.js`); ese caso arma el Blob en memoria porque `jszip` necesita los bytes completos. El progreso se lee del `ReadableStream`; cuando la respuesta trae `Content-Length` sin `Content-Encoding` se reporta también el total, lo que permite mostrar porcentaje real (`<LayerDownloadProgress>` en el panel de capas activas), más un cronómetro de tiempo transcurrido que sirve de feedback cuando no hay total. Todo el flujo es cancelable con `AbortController`.
+
+### CSV del backend: cache primero, streaming después
+
+1. Sin filtro de fechas, `/download/` busca en `mapalab.layer_downloads` un dump con `generated_at` dentro de `DOWNLOAD_CACHE_TTL_HOURS` (36 h) y **hace streaming del objeto** desde el endpoint interno del Acervo (`open_object`/`iter_object_body` en `acervo_client.py`), con `Content-Encoding: gzip` para que el navegador entregue un `.csv`. No redirige a una presigned URL: el gateway sirve `/acervo/` reescribiendo la ruta, así que una firma SigV4 no validaría, y el host prefirmado no está en el CSP. Con streaming todo es mismo-origen.
+2. Si no hay dump fresco, o si hay filtro de fechas, hace `asyncpg.copy_from_query` con productor/consumidor sobre una `asyncio.Queue` (16 chunks de 64 KB) y responde `StreamingResponse`.
+
+Los dumps los genera el job `run_dump_layers_csv.py` de `dataengine-jobs` (cron diario 05:00), que sube `downloads/{schema}/{tabla}.csv.gz` a Acervo y hace upsert en `mapalab.layer_downloads`.
+
+**Los CSV nunca incluyen geometría** (acuerdo con el equipo geoespacial), en las tres vías:
+- **Backend en vivo** y **dump del cron**: listan columnas explícitas excluyendo los tipos `geometry`/`geography`, resueltas con `pg_attribute` (**no** `information_schema.columns`, que no lista vistas materializadas — y 72 de las 87 capas descargables lo son).
+- **CSV vía WFS** (cuando la capa tiene filtro fijo o el backend falla): `fetchNonGeometryColumns` hace un `DescribeFeatureType` cacheado y pasa `propertyName` con sólo las columnas no-geométricas. Ojo: GeoServer sólo marca la geometría default como `gml:*`; una segunda columna de geometría aparece como `xsd:MultiPolygon`, así que la detección también mira `localType` contra un set de tipos OGC.
+
+Las descargas de GeoPackage y Shapefile sí conservan la geometría, que es su razón de ser.
+
+### Filtro de fecha en la descarga
+
+El menú ofrece "Todas las fechas" y "Fecha activa". En modo activa, el filtro de la capa es una expresión CQL (`(fecha >= '2024-01-01' AND fecha < '2025-01-01')`), no una fecha suelta, así que `cqlToDateRange` (en `dateFilterHelpers.js`) la traduce a `date_from`/`date_to` ISO antes de llamar al backend. Si la expresión no es traducible a un rango (por ejemplo, una capa que filtra por otra columna), la descarga cae a WFS pasando el CQL como `CQL_FILTER`, que también es lo que se hace para GPKG y SHP. El backend filtra por la columna `fecha`; si la capa no la tiene responde **400** con mensaje explícito en vez de romper el stream a media descarga.
+
+### Timeouts
+
+600s configurados en:
+- mapalab nginx: `/api/download/` y `/mapalab/api/download/` (backend CSV), ambos con `proxy_buffering off`
+- gateway-hub: `/mapalab/api/download/`, `/geoserver/{workspace}/(wfs|wcs)` y `/geoserver/(wfs|wcs)`
 
 ## Capas raster/temporales
 
@@ -578,12 +603,13 @@ tema (raiz: "Seguridad", "General", etc.)
 
 ## Panel de capas activas
 
-Cada item de `<ActiveLayerItem>` tiene un layout vertical de hasta 4 filas, expandidas sólo cuando el item está seleccionado:
+Cada item de `<ActiveLayerItem>` tiene un layout vertical de hasta 5 filas, expandidas sólo cuando el item está seleccionado:
 
 1. **Fila 1**: drag handle (sólo visible en seleccionado o hover desktop) + título. En hover de no-activo aparecen los botones rápidos `<LayerInlineActions>` (visible / detalles / eliminar) entre el handle y el título.
 2. **Fila 2** (`<LayerDateControls>`): pill de periodicidad + loop controls + `<SlotBadge>`. Usa CSS Grid `grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]` para que el badge quede matemáticamente centrado al medio del item en todos los modos (no-swipe, AB, solo A, solo B). Loop controls (play/intervalo/dirección) sólo aparecen cuando el loop ya está corriendo; para iniciarlo se usa "Ver animación" del `<LayerDetailModal>`.
 3. **Fila 3** (`<LayerActionsBar>`): visible / detalles / opacidad / **descargar** / leyendas / `<Switch>` A-B (sólo en swipe AB) / eliminar. Click en el switch dispara `setHighlightedSlots(target)` con timeout de 1.5 s para destacar el panel del swipe correspondiente. El botón descargar reutiliza `useLayerDownload` + `<DownloadMenu>` (mismo flujo que el modal de detalles, no descarga directa); sólo aparece si `metadata.capa_descargable !== false`. El botón leyendas en estado activo usa `bg-white border-[#70308A]`. Tooltips dinámicos en swipe: anexan `del lado A`/`del lado B` y, para acciones destructivas en `AB`, `(seguirá en el lado X)`.
-4. **Fila 4** (`<LayerLegendInline>`): GetLegendGraphic lazy con DPI 200 (retina-friendly), `max-w-[220px]`, wrapper estilo `<SymbologyPanel>` (`bg-white rounded-[10px] shadow`). En swipe AB usa el filtro de fecha del `activeSlot`. Visibilidad controlada por toggle global persistido en `localStorage` (`mapalab.activeLayers.legendsVisible`, default `true`). Mientras la imagen carga muestra `<Logo name="mapalab" isLoading />` (Lottie); el contenedor solo aplica `min-h-[40px]` mientras `!isLoaded`. Toda la tarjeta es clickeable (`role="button"` + teclado) y dispara `centerOnLayer` manualmente; en hover muestra el icono `fit_extent` arriba a la derecha como indicador (cursor `pointer`).
+4. **Fila 4** (`<LayerDownloadProgress>`): colapsable que sólo ocupa espacio mientras hay una descarga en curso (`grid-rows-[0fr]` → `[1fr]`), empujando la leyenda hacia abajo. Muestra bytes descargados, cronómetro de tiempo transcurrido (`m:ss`), porcentaje y tamaño total cuando la respuesta trae `Content-Length`, barra de avance y botón de cancelar (el propio botón de descarga de la fila 3 también cancela).
+5. **Fila 5** (`<LayerLegendInline>`): GetLegendGraphic lazy con DPI 200 (retina-friendly), `max-w-[220px]`, wrapper estilo `<SymbologyPanel>` (`bg-white rounded-[10px] shadow`). En swipe AB usa el filtro de fecha del `activeSlot`. Visibilidad controlada por toggle global persistido en `localStorage` (`mapalab.activeLayers.legendsVisible`, default `true`). Mientras la imagen carga muestra `<Logo name="mapalab" isLoading />` (Lottie); el contenedor solo aplica `min-h-[40px]` mientras `!isLoaded`. Toda la tarjeta es clickeable (`role="button"` + teclado) y dispara `centerOnLayer` manualmente; en hover muestra el icono `fit_extent` arriba a la derecha como indicador (cursor `pointer`).
 
 El botón eliminar del item, en swipe, quita la capa de **ambos** slots (`paneA` + `paneB`); para mover entre slots se usa la pildora A|B. Los badges del header del panel cuentan items unificados (`unifiedLayers.length`) en lugar de IDs internos.
 
@@ -604,7 +630,8 @@ Sub-componentes en `frontend/src/pages/maps/components/ActiveLayers/`:
 - `LayerDateControls.jsx` — Fila 2 (pill + loop + badge en grid).
 - `LayerActionsBar.jsx` — Fila 3 (acciones del item expandido).
 - `LayerInlineActions.jsx` — botones rápidos en hover de no-activo.
-- `LayerLegendInline.jsx` — Fila 4 (leyenda WMS inline lazy + tarjeta clickeable que centra la capa).
+- `LayerDownloadProgress.jsx` — Fila 4 (progreso colapsable de la descarga en curso).
+- `LayerLegendInline.jsx` — Fila 5 (leyenda WMS inline lazy + tarjeta clickeable que centra la capa).
 - `LayerOpacityPopover.jsx` — popover del slider de opacidad anclado al botón con `createPortal` + `position: fixed`.
 - `hooks/useLegendsVisibility.jsx` — context provider del toggle global de leyendas con persistencia en `localStorage`.
 

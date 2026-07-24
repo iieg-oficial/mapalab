@@ -75,6 +75,33 @@ export const parseCQLToSelections = (cqlFilter) => {
     return selections;
 };
 
+const toIso = (date) => date.toISOString().slice(0, 10);
+
+export const cqlToDateRange = (cqlFilter) => {
+    const selections = parseCQLToSelections(cqlFilter);
+    if (selections.size === 0) return null;
+
+    let min = null;
+    let max = null;
+
+    for (const selection of selections) {
+        const [year, month, day] = selection.split('-').map(Number);
+        if (!Number.isFinite(year)) continue;
+
+        const start = new Date(Date.UTC(year, (month || 1) - 1, day || 1));
+        let end;
+        if (day) end = start;
+        else if (month) end = new Date(Date.UTC(year, month, 0));
+        else end = new Date(Date.UTC(year, 11, 31));
+
+        if (!min || start < min) min = start;
+        if (!max || end > max) max = end;
+    }
+
+    if (!min || !max) return null;
+    return { dateFrom: toIso(min), dateTo: toIso(max) };
+};
+
 export const generateDefaultDateFilter = (defaultDate, filterColumn = 'fecha') => {
     if (!defaultDate) return null;
 

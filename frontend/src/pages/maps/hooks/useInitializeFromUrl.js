@@ -14,7 +14,7 @@ export const filtersInitializationComplete = { value: false };
 
 export const useInitializeFromUrl = () => {
     const [searchParams] = useSearchParams();
-    const { setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById, municipioMode } = useMapsContext();
+    const { setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, municipioMode } = useMapsContext();
     const { initialOrder: BASE_INITIAL_ORDER, layers: layerTree } = useLayers();
     const deserialize = useShareDeserializer();
     const initialized = useRef(false);
@@ -87,6 +87,7 @@ export const useInitializeFromUrl = () => {
                     if (!allIds.includes(childId)) allIds.push(childId);
                 });
                 setActiveLayerIds(allIds);
+                restoreSelectedById?.(resolved);
                 const selectedLayer = findLayerById(resolved);
                 if (selectedLayer) setSelectedLayerForSymbology(selectedLayer);
                 allIds.forEach(id => applyDefaultDate(id));
@@ -127,6 +128,7 @@ export const useInitializeFromUrl = () => {
             setActiveLayerIds(allIds);
 
             if (selectedId) {
+                restoreSelectedById?.(selectedId);
                 const selectedLayer = findLayerById(selectedId);
                 if (selectedLayer) setSelectedLayerForSymbology(selectedLayer);
             }
@@ -201,5 +203,5 @@ export const useInitializeFromUrl = () => {
             initialized.current = true;
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, findLayerById, layerTree, BASE_INITIAL_ORDER, deserialize, municipioMode]);
+    }, [searchParams, setActiveLayerIds, getAllChildLayerIds, applyFilter, applyDefaultDate, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, layerTree, BASE_INITIAL_ORDER, deserialize, municipioMode]);
 };

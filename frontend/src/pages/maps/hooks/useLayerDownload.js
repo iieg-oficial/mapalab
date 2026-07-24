@@ -58,6 +58,7 @@ export const useLayerDownload = (layerId, { getFilter, getSpecificFilter, metada
             signal: controller.signal,
             onProgress: setProgress,
             getFilter,
+            getSpecificFilter,
         });
 
         abortRef.current = null;
@@ -66,7 +67,7 @@ export const useLayerDownload = (layerId, { getFilter, getSpecificFilter, metada
         if (result?.success) {
             trackLayerDownload(layerId);
         }
-    }, [layerId, downloading, metadata, getFilter]);
+    }, [layerId, downloading, metadata, getFilter, getSpecificFilter]);
 
     const handleCancelDownload = useCallback(() => {
         abortRef.current?.abort();

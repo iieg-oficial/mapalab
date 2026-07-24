@@ -78,7 +78,16 @@ const EmojiPanel = ({ open, anchorRef, onSelect, onClose, placedCount = 0 }) => 
                             className={`p-1.5 text-base rounded-t-lg shrink-0 transition-colors ${activeCategory === idx ? 'bg-[#F3EBFF]' : 'hover:bg-gray-50'}`}
                             title={cat.name}
                         >
-                            {cat.icon || cat.name?.charAt(0) || '·'}
+                            {cat.iconUrl ? (
+                                <img
+                                    src={cat.iconUrl}
+                                    alt={cat.name}
+                                    className="size-5 object-contain"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                cat.icon || cat.name?.charAt(0) || '·'
+                            )}
                         </button>
                     ))}
                 </div>

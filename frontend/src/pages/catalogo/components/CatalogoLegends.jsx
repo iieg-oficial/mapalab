@@ -1,50 +1,54 @@
 import { useEffect, useMemo, useState } from 'react';
 import { hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
-import { downloadCatalogoCapa } from '@services/downloadService';
+import { buildLegendGraphicUrl } from '@pages/maps/helpers/legendUrl';
+import { downloadCatalogoCapa, RASTER_FORMATS } from '@services/downloadService';
 import { capaHasGeometry } from '@services/catalogoService';
 import LegendImage from '@components/LegendImage';
-import { trackCatalogoDownload } from '@services/analyticsService';
-
-const LEGEND_ICON = 20;
-
-const buildLegendUrl = (cfg) => {
-    const legendOptions = [
-        'fontName:Garet Regular',
-        'fontSize:10',
-        'fontStyle:normal',
-        'fontAntiAliasing:true',
-        'fontColor:0x454545',
-        'labelMargin:12',
-        'dpi:100',
-        'forceLabels:on',
-    ].join(';');
-    return (
-        `${cfg.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic`
-        + `&layer=${encodeURIComponent(cfg.layerName)}&format=image/png`
-        + `&width=${LEGEND_ICON}&height=${LEGEND_ICON}`
-        + `&LEGEND_OPTIONS=${encodeURIComponent(legendOptions)}`
-    );
-};
+import CatalogoShare from './CatalogoShare';
+import { buildCatalogoShareUrl, cqlToFechaParam } from '../helpers/catalogoRoutes';
+import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
+import { trackCatalogoDownload, trackCatalogoShare } from '@services/analyticsService';
 
 const ICON_BTN = 'size-8 rounded-full flex items-center justify-center transition-colors';
 
-const CatalogoLegends = ({ capa, onClose }) => {
+const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
+    const { tiempo } = useCatalogoTiempoContext();
+    const filtro = tiempo?.filtro || null;
+    const isRaster = !!tiempo?.isRaster;
+    const cqlFiltro = isRaster ? null : filtro;
     const [minimized, setMinimized] = useState(false);
     const [showShp, setShowShp] = useState(true);
     const [showFormats, setShowFormats] = useState(false);
+    const [showShare, setShowShare] = useState(false);
     const [downloading, setDownloading] = useState(null);
 
     const cfg = useMemo(
         () => hydrateWmsConfig({ geoserverWorkspace: capa.geoserverWorkspace, geoserverLayer: capa.geoserverLayer }),
         [capa],
     );
-    const legendUrl = useMemo(() => (cfg ? buildLegendUrl(cfg) : null), [cfg]);
+    const legendUrl = useMemo(
+        () => (cfg ? buildLegendGraphicUrl({
+            baseUrl: cfg.baseUrl,
+            layerName: cfg.layerName,
+            cqlFilter: cqlFiltro,
+            hideEmptyRules: true,
+        }) : null),
+        [cfg, cqlFiltro],
+    );
+
+    const shareUrl = useMemo(() => {
+        const base = buildCatalogoShareUrl({ institucionSlug, capaSlug: capa.slug });
+        const fecha = cqlToFechaParam(cqlFiltro);
+        return fecha ? `${base}?fecha=${encodeURIComponent(fecha)}` : base;
+    }, [institucionSlug, capa.slug, cqlFiltro]);
 
     useEffect(() => {
         let active = true;
         const ctrl = new AbortController();
         setShowShp(true);
         setShowFormats(false);
+        setShowShare(false);
+        if (isRaster) return undefined;
         capaHasGeometry(capa, ctrl.signal).then((has) => {
             if (active) setShowShp(has);
         });
@@ -52,22 +56,27 @@ const CatalogoLegends = ({ capa, onClose }) => {
             active = false;
             ctrl.abort();
         };
-    }, [capa]);
+    }, [capa, isRaster]);
 
     const handleDownload = async (formatId) => {
         trackCatalogoDownload({ slug: capa.slug, format: formatId });
         setDownloading(formatId);
-        await downloadCatalogoCapa(capa, formatId);
+        await downloadCatalogoCapa(capa, formatId, {
+            cqlFilter: cqlFiltro,
+            timeValue: isRaster ? filtro : null,
+        });
         setDownloading(null);
     };
 
     const toggleMinimized = () => setMinimized((m) => !m);
 
-    const formats = [
-        { id: 'geopackage', label: 'GPKG' },
-        { id: 'shape-zip', label: 'SHP', hidden: !showShp },
-        { id: 'csv', label: 'CSV' },
-    ].filter((f) => !f.hidden);
+    const formats = isRaster
+        ? RASTER_FORMATS.map((f) => ({ id: f.id, label: f.label }))
+        : [
+            { id: 'geopackage', label: 'GPKG' },
+            { id: 'shape-zip', label: 'SHP', hidden: !showShp },
+            { id: 'csv', label: 'CSV' },
+        ].filter((f) => !f.hidden);
 
     return (
         <div className="fixed top-4 right-4 z-20 w-[min(240px,50vw)] md:w-[min(272px,72vw)] bg-white rounded-[14px] shadow-[0_5px_20px_#1A26641A] overflow-hidden">
@@ -96,10 +105,16 @@ const CatalogoLegends = ({ capa, onClose }) => {
                     )}
                     <div className="flex items-center gap-1.5 mt-3">
                         <button
-                            onClick={() => setShowFormats((v) => !v)}
+                            onClick={() => { setShowFormats((v) => !v); setShowShare(false); }}
                             className="px-4 py-1.5 rounded-[30px] text-[12px] font-garet font-bold bg-purple-deep text-white hover:bg-purple transition-colors"
                         >
                             Descargar
+                        </button>
+                        <button
+                            onClick={() => { setShowShare((v) => !v); setShowFormats(false); }}
+                            className={`px-4 py-1.5 rounded-[30px] text-[12px] font-garet font-bold border border-purple-deep transition-colors ${showShare ? 'bg-purple-deep text-white' : 'text-purple-deep hover:bg-purple-deep hover:text-white'}`}
+                        >
+                            Compartir
                         </button>
                         <button
                             onClick={onClose}
@@ -125,12 +140,20 @@ const CatalogoLegends = ({ capa, onClose }) => {
                                     key={f.id}
                                     onClick={() => handleDownload(f.id)}
                                     disabled={downloading === f.id}
-                                    className="text-[12px] font-garet px-3 py-1.5 rounded-[14px] border border-purple-deep text-purple-deep hover:bg-purple-deep hover:text-white transition-colors disabled:opacity-50"
+                                    className="text-[12px] font-garet px-3 py-1.5 rounded-[14px] border border-orange text-orange hover:bg-orange hover:text-white transition-colors disabled:opacity-50"
                                 >
                                     {downloading === f.id ? '…' : f.label}
                                 </button>
                             ))}
                         </div>
+                    )}
+
+                    {showShare && (
+                        <CatalogoShare
+                            url={shareUrl}
+                            filename={`mapalab-${capa.slug}`}
+                            onShare={(type) => trackCatalogoShare({ scope: 'capa', slug: capa.slug, type })}
+                        />
                     )}
                 </div>
             )}

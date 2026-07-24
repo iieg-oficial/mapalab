@@ -12,6 +12,50 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.92.0',
+        items: [
+            { text: 'Al descargar capas pesadas, el navegador ahora te pregunta dónde guardar el archivo y lo escribe directo en tu equipo, en vez de cargarlo completo en memoria; así se evita que se sature con archivos grandes. (Disponible en Chrome y Edge de computadora.)', tag: 'added' },
+        ],
+    },
+    {
+        version: '1.91.0',
+        items: [
+            { text: 'Corregimos la descarga de capas en CSV, que en algunos casos se bloqueaba: ahora baja siempre como un archivo .csv listo para abrir.', tag: 'fixed' },
+            { text: 'Los enlaces a las fichas de metadatos (TXT y Excel) de cada capa vuelven a abrir correctamente.', tag: 'fixed' },
+        ],
+    },
+    {
+        version: '1.90.0',
+        items: [
+            { text: 'Al recargar la página, el visor vuelve a dejar seleccionada la capa que tenías, no la primera de la lista.', tag: 'fixed' },
+            { text: 'Las descargas en CSV ya nunca incluyen la columna de geometría, sin importar desde dónde las bajes (botón directo, con filtros o desde el Catálogo).', tag: 'fixed' },
+            { text: 'Mientras se descarga una capa ahora también se muestra el tiempo transcurrido.', tag: 'added' },
+        ],
+    },
+    {
+        version: '1.89.0',
+        items: [
+            { text: 'En el Catálogo, al descargar o compartir una capa se respeta la fecha que tienes puesta: el archivo trae solo esos datos y el enlace o QR abre la capa en esa misma fecha.', tag: 'added' },
+            { text: 'En el Catálogo, las capas de imágenes satelitales o de clima con varias fechas ya se pueden animar y filtrar por mes, igual que las demás.', tag: 'added' },
+            { text: 'La leyenda ahora oculta las clases que no tienen datos en la fecha seleccionada, tanto en el Catálogo como en el visor, para que muestre solo lo que estás viendo en el mapa.', tag: 'changed' },
+        ],
+    },
+    {
+        version: '1.87.0',
+        items: [
+            { text: 'Los archivos CSV ya no incluyen la columna de geometría: pesan una fracción de lo que pesaban y se abren en Excel con las columnas en su lugar. Antes, esa columna era tan larga que Excel recorría los datos y la fecha aparecía fuera de sitio.', tag: 'fixed' },
+            { text: 'Descargar "por fecha activa" ahora respeta la fecha que tienes seleccionada. Antes se descargaba la capa completa sin avisar, y en GeoPackage y Shapefile la fecha se ignoraba.', tag: 'fixed' },
+            { text: 'Al descargar una capa desde el panel de capas activas se despliega el avance de la descarga, con el porcentaje y el tamaño cuando se conocen, y un botón para cancelar.', tag: 'added' },
+        ],
+    },
+    {
+        version: '1.86.0',
+        items: [
+            { text: 'Ahora puedes compartir una capa del Catálogo con un enlace o con un código QR que lleva el logo de Mapalab al centro, y descargarlo como imagen.', tag: 'added' },
+            { text: 'Las capas del Catálogo se pueden agrupar por institución: elige una en las pastillas del buscador para ver solo sus capas, y comparte ese catálogo con enlace o QR.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.84.2',
         items: [
             { text: 'La lista de capas del Catálogo ahora indica con un degradado y flechas cuando hay más capas por ver, y se desplaza sin barra a la vista.', tag: 'changed' },

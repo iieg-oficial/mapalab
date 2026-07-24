@@ -77,7 +77,7 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-const { isRasterLayer, getLayerConfig, downloadSingleFormat, getAvailableMetadata } = await import('@services/downloadService');
+const { isRasterLayer, getLayerConfig, downloadSingleFormat, downloadWithMenu, getAvailableMetadata } = await import('@services/downloadService');
 
 describe('isRasterLayer', () => {
     it('retorna true para workspace raster', () => {
@@ -203,6 +203,84 @@ describe('downloadSingleFormat — errores', () => {
     it('retorna error para formato no soportado', async () => {
         const result = await downloadSingleFormat('single-vec', 'xml-invalido');
         expect(result.success).toBe(false);
+    });
+});
+
+describe('downloadWithMenu — fecha activa', () => {
+    const yearFilter = "(fecha >= '2024-01-01' AND fecha < '2025-01-01')";
+
+    it('traduce el CQL de fecha activa a date_from/date_to', async () => {
+        const getSpecificFilter = vi.fn(() => yearFilter);
+        await downloadWithMenu('single-vec', { formatId: 'csv', dateMode: 'active', getSpecificFilter });
+        const call = global.fetch.mock.calls[0][0];
+        expect(call).toContain('date_from=2024-01-01');
+        expect(call).toContain('date_to=2024-12-31');
+    });
+
+    it('no manda fechas cuando el modo es todas las fechas', async () => {
+        const getSpecificFilter = vi.fn(() => yearFilter);
+        await downloadWithMenu('single-vec', { formatId: 'csv', dateMode: 'all', getSpecificFilter });
+        const call = global.fetch.mock.calls[0][0];
+        expect(call).not.toContain('date_from');
+    });
+
+    it('aplica el CQL de fecha activa en descargas WFS', async () => {
+        const getSpecificFilter = vi.fn(() => yearFilter);
+        await downloadWithMenu('single-vec', { formatId: 'geopackage', dateMode: 'active', getSpecificFilter });
+        const call = decodeURIComponent(global.fetch.mock.calls[0][0].replace(/\+/g, ' '));
+        expect(call).toContain('CQL_FILTER');
+        expect(call).toContain("fecha >= '2024-01-01'");
+    });
+
+    it('cae a WFS con CQL cuando el filtro no es traducible a rango', async () => {
+        const getSpecificFilter = vi.fn(() => 'anio = 2024');
+        await downloadWithMenu('single-vec', { formatId: 'csv', dateMode: 'active', getSpecificFilter });
+        const getFeatureUrl = global.fetch.mock.calls
+            .map(c => c[0])
+            .find(u => u.includes('GetFeature'));
+        const call = decodeURIComponent(getFeatureUrl.replace(/\+/g, ' '));
+        expect(call).toContain('WFS');
+        expect(call).toContain('anio = 2024');
+    });
+});
+
+describe('fetchLayerBlob — CSV sin geometría vía WFS', () => {
+    it('pide propertyName sin columnas de geometría al descargar CSV por WFS', async () => {
+        global.fetch = vi.fn((url) => {
+            if (String(url).includes('DescribeFeatureType')) {
+                return Promise.resolve({
+                    ok: true,
+                    headers: { get: () => 'application/json' },
+                    json: () => Promise.resolve({
+                        featureTypes: [{
+                            properties: [
+                                { name: 'geom_iieg', type: 'gml:MultiPolygon', localType: 'MultiPolygon' },
+                                { name: 'geom_inegi', type: 'xsd:MultiPolygon', localType: 'MultiPolygon' },
+                                { name: 'nombre', type: 'xsd:string', localType: 'string' },
+                                { name: 'fecha', type: 'xsd:date', localType: 'date' },
+                            ],
+                        }],
+                    }),
+                });
+            }
+            return Promise.resolve({
+                ok: true,
+                headers: { get: () => 'text/csv' },
+                blob: () => Promise.resolve(mockBlob),
+                body: null,
+            });
+        });
+
+        const getSpecificFilter = vi.fn(() => 'anio = 2024');
+        await downloadWithMenu('single-vec', { formatId: 'csv', dateMode: 'active', getSpecificFilter });
+
+        const getFeatureUrl = global.fetch.mock.calls
+            .map(c => c[0])
+            .find(u => u.includes('GetFeature'));
+        const call = decodeURIComponent(getFeatureUrl.replace(/\+/g, ' '));
+        expect(call).toContain('propertyName=nombre,fecha');
+        expect(call).not.toContain('geom_iieg');
+        expect(call).not.toContain('geom_inegi');
     });
 });
 

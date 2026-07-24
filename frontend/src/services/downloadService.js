@@ -1,5 +1,18 @@
 import { findWMSConfig, hydrateWmsConfig } from '../pages/maps/helpers/wmsConfig';
 import { findLayerById } from '../pages/maps/helpers/layers/utils/layerHelpers';
+import { cqlToDateRange } from '../pages/maps/helpers/dateFilterHelpers';
+import { getMetadataFiles, addMetadataToZip, getAvailableMetadata } from './downloadMetadata';
+import {
+    RASTER_FORMATS,
+    RASTER_WORKSPACES,
+    VECTOR_FORMATS,
+    buildBackendCSVUrl,
+    buildWCSUrl,
+    buildWFSUrl,
+    fetchNonGeometryColumns,
+    findVectorFormat,
+    supportsFileSystemAccess,
+} from './downloadUrls';
 
 let currentLayers = [];
 
@@ -7,21 +20,8 @@ export const setLayersForDownloadService = (newLayers) => {
     currentLayers = Array.isArray(newLayers) ? newLayers : [];
 };
 
-const getApiHost = () => import.meta.env.VITE_BACKEND_API_HOST?.replace(/\/+$/, '');
-
-const VECTOR_FORMATS = [
-    { id: 'geopackage', label: 'GPKG', extension: 'gpkg', mimeType: 'application/geopackage+sqlite3', srs: 'EPSG:6368' },
-    { id: 'shape-zip', label: 'SHP', extension: 'shp.zip', mimeType: 'application/zip', srs: 'EPSG:4326' },
-    { id: 'csv', label: 'CSV', extension: 'csv', mimeType: 'text/csv', srs: 'EPSG:4326' }
-];
-
-const RASTER_FORMATS = [
-    { id: 'geotiff', label: 'GeoTIFF', extension: 'tiff' }
-];
-
 export { VECTOR_FORMATS, RASTER_FORMATS };
-
-const RASTER_WORKSPACES = new Set(['raster', 'lluvia', 'temperatura']);
+export { getAvailableMetadata };
 
 const findFirstWMSConfig = (node) => {
     if (!node) return null;
@@ -70,51 +70,6 @@ export const getLayerConfig = (layerId) => {
     };
 };
 
-const buildWFSUrl = (wmsConfig, format, cqlFilter) => {
-    const baseUrl = wmsConfig.baseUrl.replace('/wms', '/wfs');
-    const params = {
-        service: 'WFS',
-        version: '1.1.0',
-        request: 'GetFeature',
-        typeName: wmsConfig.wfsLayerName || wmsConfig.layerName,
-        outputFormat: format.id,
-        srsName: format.srs || 'EPSG:4326'
-    };
-    const url = new URL(baseUrl, window.location.origin);
-    Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
-    const filter = cqlFilter || wmsConfig.cqlFilter;
-    if (filter) {
-        url.searchParams.append('CQL_FILTER', filter);
-    }
-    return url.toString();
-};
-
-const buildWCSUrl = (wmsConfig, timeValue) => {
-    const baseUrl = wmsConfig.baseUrl.replace('/wms', '/wcs');
-    const params = {
-        service: 'WCS',
-        version: '2.0.1',
-        request: 'GetCoverage',
-        coverageId: wmsConfig.layerName,
-        format: 'image/geotiff'
-    };
-    const url = new URL(baseUrl, window.location.origin);
-    Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
-    if (timeValue) {
-        url.searchParams.append('SUBSET', `time("${timeValue}T00:00:00.000Z")`);
-    }
-    return url.toString();
-};
-
-const buildBackendCSVUrl = (workspace, layerName, dateFrom, dateTo) => {
-    const base = `${getApiHost()}/download/${workspace}/${layerName}`;
-    const params = new URLSearchParams();
-    if (dateFrom) params.set('date_from', dateFrom);
-    if (dateTo) params.set('date_to', dateTo);
-    const qs = params.toString();
-    return qs ? `${base}?${qs}` : base;
-};
-
 const triggerDownload = (blob, filename) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -126,72 +81,45 @@ const triggerDownload = (blob, filename) => {
     URL.revokeObjectURL(url);
 };
 
-const fetchBlob = async (url, signal) => {
-    const response = await fetch(url, { signal });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('xml') || contentType.includes('html')) {
-        throw new Error('GeoServer error response');
-    }
-    return response.blob();
+const resolveTotalBytes = (response) => {
+    if (response.headers.get('content-encoding')) return null;
+    const length = Number(response.headers.get('content-length'));
+    return Number.isFinite(length) && length > 0 ? length : null;
 };
 
-const fetchWithProgress = async (url, signal, onProgress) => {
+const openValidatedResponse = async (url, signal) => {
     const response = await fetch(url, { signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('xml') || contentType.includes('html')) {
         throw new Error('GeoServer error response');
     }
+    return response;
+};
 
-    if (!response.body || !onProgress) {
-        return response.blob();
+const consumeResponse = async (response, { onProgress, writable } = {}) => {
+    if (!response.body || (!onProgress && !writable)) {
+        const blob = await response.blob();
+        if (writable) { await writable.write(blob); await writable.close(); return null; }
+        return blob;
     }
 
+    const total = resolveTotalBytes(response);
     const reader = response.body.getReader();
-    const chunks = [];
+    const chunks = writable ? null : [];
     let loaded = 0;
 
     while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        chunks.push(value);
+        if (writable) await writable.write(value);
+        else chunks.push(value);
         loaded += value.length;
-        onProgress({ loaded });
+        onProgress?.({ loaded, total });
     }
 
+    if (writable) { await writable.close(); return null; }
     return new Blob(chunks);
-};
-
-const getMetadataFiles = (metadata) => {
-    let metadatoList = [];
-    if (Array.isArray(metadata?.metadato)) {
-        metadatoList = metadata.metadato;
-    } else if (metadata?.metadato && typeof metadata.metadato === 'object') {
-        metadatoList = [metadata.metadato];
-    }
-    return metadatoList;
-};
-
-const addMetadataToZip = async (zip, metadatoList, selections) => {
-    for (const meta of metadatoList) {
-        if (!meta.enlace) continue;
-        const filename = meta.enlace.split('/').pop() || 'metadata';
-        const ext = filename.split('.').pop()?.toLowerCase();
-        if (selections.txt && (ext === 'txt')) {
-            try {
-                const blob = await fetchBlob(meta.enlace);
-                zip.file(filename, blob);
-            } catch { /* optional */ }
-        }
-        if (selections.xlsx && (ext === 'xlsx' || ext === 'xls')) {
-            try {
-                const blob = await fetchBlob(meta.enlace);
-                zip.file(filename, blob);
-            } catch { /* optional */ }
-        }
-    }
 };
 
 const buildFilename = (layerId, extension) => {
@@ -201,32 +129,77 @@ const buildFilename = (layerId, extension) => {
     return `${label}_${date}.${extension}`;
 };
 
-const fetchLayerBlob = async (config, formatId, { signal, onProgress, dateFrom, dateTo, getFilter, layerId }) => {
+const extForFormat = (config, formatId) => {
+    if (config.isRaster) return 'tiff';
+    if (formatId === 'csv') return 'csv';
+    return findVectorFormat(formatId)?.extension || null;
+};
+
+const resolveLayerResponse = async (config, formatId, { signal, dateFrom, dateTo, dateCql, getFilter, layerId }) => {
     const { wmsConfig, workspace, layerName, isRaster, hasFilter } = config;
 
     if (isRaster) {
         const timeValue = getFilter?.(layerId) || undefined;
-        const url = buildWCSUrl(wmsConfig, timeValue);
-        return { blob: await fetchWithProgress(url, signal, onProgress), ext: 'tiff' };
+        return openValidatedResponse(buildWCSUrl(wmsConfig, timeValue), signal);
     }
 
     if (formatId === 'csv') {
-        let blob;
-        if (hasFilter) {
-            blob = await fetchWithProgress(buildWFSUrl(wmsConfig, VECTOR_FORMATS.find(f => f.id === 'csv')), signal, onProgress);
-        } else {
-            try {
-                blob = await fetchWithProgress(buildBackendCSVUrl(workspace, layerName, dateFrom, dateTo), signal, onProgress);
-            } catch {
-                blob = await fetchWithProgress(buildWFSUrl(wmsConfig, VECTOR_FORMATS.find(f => f.id === 'csv')), signal, onProgress);
-            }
+        const csvFmt = findVectorFormat('csv');
+        const wfsCsv = async () => {
+            const columns = await fetchNonGeometryColumns(wmsConfig, signal);
+            return openValidatedResponse(buildWFSUrl(wmsConfig, csvFmt, dateCql, columns), signal);
+        };
+        const wfsOnly = hasFilter || (dateCql && !dateFrom);
+        if (wfsOnly) return wfsCsv();
+        try {
+            return await openValidatedResponse(buildBackendCSVUrl(workspace, layerName, dateFrom, dateTo), signal);
+        } catch {
+            return wfsCsv();
         }
-        return { blob, ext: 'csv' };
     }
 
-    const fmt = VECTOR_FORMATS.find(f => f.id === formatId);
+    const fmt = findVectorFormat(formatId);
     if (!fmt) return null;
-    return { blob: await fetchWithProgress(buildWFSUrl(wmsConfig, fmt), signal, onProgress), ext: fmt.extension };
+    return openValidatedResponse(buildWFSUrl(wmsConfig, fmt, dateCql), signal);
+};
+
+const fetchLayerBlob = async (config, formatId, options) => {
+    const ext = extForFormat(config, formatId);
+    if (!ext) return null;
+    const response = await resolveLayerResponse(config, formatId, options);
+    if (!response) return null;
+    const blob = await consumeResponse(response, { onProgress: options.onProgress });
+    return { blob, ext };
+};
+
+const runLayerDownload = async (config, formatId, filename, options) => {
+    if (supportsFileSystemAccess()) {
+        let handle;
+        try {
+            handle = await window.showSaveFilePicker({ suggestedName: filename });
+        } catch (error) {
+            if (error?.name === 'AbortError') return { success: false, cancelled: true };
+            handle = null;
+        }
+        if (handle) {
+            const response = await resolveLayerResponse(config, formatId, options);
+            if (!response) return { success: false, error: 'Formato no soportado' };
+            const writable = await handle.createWritable();
+            try {
+                await consumeResponse(response, { onProgress: options.onProgress, writable });
+            } catch (error) {
+                try { await writable.abort(); } catch { /* ya cerrado */ }
+                throw error;
+            }
+            return { success: true };
+        }
+    }
+
+    const response = await resolveLayerResponse(config, formatId, options);
+    if (!response) return { success: false, error: 'Formato no soportado' };
+    const blob = await consumeResponse(response, { onProgress: options.onProgress });
+    triggerDownload(blob, filename);
+    return { success: true };
 };
 
 const wrapDownload = async (fn) => {
@@ -243,35 +216,38 @@ export const downloadSingleFormat = (layerId, formatId, options = {}) =>
     wrapDownload(async () => {
         const config = getLayerConfig(layerId);
         if (!config) return { success: false, error: 'Capa no encontrada' };
-        const result = await fetchLayerBlob(config, formatId, { ...options, layerId });
-        if (!result) return { success: false, error: 'Formato no soportado' };
-        triggerDownload(result.blob, buildFilename(layerId, result.ext));
-        return { success: true };
+        const ext = extForFormat(config, formatId);
+        if (!ext) return { success: false, error: 'Formato no soportado' };
+        return runLayerDownload(config, formatId, buildFilename(layerId, ext), { ...options, layerId });
     });
 
 export const downloadWithMenu = (layerId, menuOptions = {}) =>
     wrapDownload(async () => {
-        const { formatId = 'csv', dateMode = 'all', metadataSelections = { txt: false, xlsx: false }, metadata, signal, onProgress, getFilter } = menuOptions;
+        const { formatId = 'csv', dateMode = 'all', metadataSelections = { txt: false, xlsx: false }, metadata, signal, onProgress, getFilter, getSpecificFilter } = menuOptions;
         const config = getLayerConfig(layerId);
         if (!config) return { success: false, error: 'Capa no encontrada' };
 
-        let dateFrom, dateTo;
-        if (dateMode === 'active' && getFilter) {
-            const filterValue = getFilter(layerId);
-            if (filterValue) { dateFrom = filterValue; dateTo = filterValue; }
+        let dateFrom, dateTo, dateCql;
+        if (dateMode === 'active' && !config.isRaster) {
+            dateCql = getSpecificFilter?.(layerId, 'date') || getFilter?.(layerId) || undefined;
+            const range = cqlToDateRange(dateCql);
+            if (range) {
+                dateFrom = range.dateFrom;
+                dateTo = range.dateTo;
+            }
         }
 
         const hasMetadata = metadataSelections.txt || metadataSelections.xlsx;
         const metadatoList = hasMetadata ? getMetadataFiles(metadata) : [];
         if (!hasMetadata || metadatoList.length === 0) {
-            return downloadSingleFormat(layerId, formatId, { signal, onProgress, dateFrom, dateTo, getFilter });
+            return downloadSingleFormat(layerId, formatId, { signal, onProgress, dateFrom, dateTo, dateCql, getFilter });
         }
 
         const { default: JSZip } = await import('jszip');
         const zip = new JSZip();
         signal?.throwIfAborted();
 
-        const result = await fetchLayerBlob(config, formatId, { signal, onProgress, dateFrom, dateTo, getFilter, layerId });
+        const result = await fetchLayerBlob(config, formatId, { signal, onProgress, dateFrom, dateTo, dateCql, getFilter, layerId });
         if (result) zip.file(`${config.layerName}.${result.ext}`, result.blob);
 
         signal?.throwIfAborted();
@@ -283,19 +259,6 @@ export const downloadWithMenu = (layerId, menuOptions = {}) =>
         return { success: true };
     });
 
-export const getAvailableMetadata = (metadata) => {
-    const metadatoList = getMetadataFiles(metadata);
-    let hasTxt = false;
-    let hasXlsx = false;
-    for (const meta of metadatoList) {
-        if (!meta.enlace) continue;
-        const ext = meta.enlace.split('.').pop()?.toLowerCase();
-        if (ext === 'txt') hasTxt = true;
-        if (ext === 'xlsx' || ext === 'xls') hasXlsx = true;
-    }
-    return { hasTxt, hasXlsx };
-};
-
 const catalogoFilename = (capa, extension) => {
     const label = (capa.nombre || capa.slug || 'capa').replace(/\s+/g, '_');
     const date = new Date().toISOString().slice(0, 10);
@@ -304,32 +267,32 @@ const catalogoFilename = (capa, extension) => {
 
 export const downloadCatalogoCapa = (capa, formatId, options = {}) =>
     wrapDownload(async () => {
-        const { signal, onProgress } = options;
+        const { signal, onProgress, cqlFilter = null, timeValue = null } = options;
         const wmsConfig = hydrateWmsConfig({
             geoserverWorkspace: capa.geoserverWorkspace,
             geoserverLayer: capa.geoserverLayer,
         });
         if (!wmsConfig) return { success: false, error: 'Capa no válida' };
 
-        if (formatId === 'csv') {
-            const csvFmt = VECTOR_FORMATS.find((f) => f.id === 'csv');
-            let blob;
-            try {
-                blob = await fetchWithProgress(
-                    buildBackendCSVUrl(capa.workspaceAlias, capa.geoserverLayer),
-                    signal,
-                    onProgress,
-                );
-            } catch {
-                blob = await fetchWithProgress(buildWFSUrl(wmsConfig, csvFmt), signal, onProgress);
-            }
-            triggerDownload(blob, catalogoFilename(capa, 'csv'));
-            return { success: true };
-        }
+        const dateRange = cqlFilter ? cqlToDateRange(cqlFilter) : null;
+        const config = {
+            wmsConfig,
+            workspace: capa.workspaceAlias,
+            layerName: capa.geoserverLayer,
+            isRaster: RASTER_WORKSPACES.has(wmsConfig.workspace),
+            hasFilter: !!wmsConfig.cqlFilter,
+        };
 
-        const fmt = VECTOR_FORMATS.find((f) => f.id === formatId);
-        if (!fmt) return { success: false, error: 'Formato no soportado' };
-        const blob = await fetchWithProgress(buildWFSUrl(wmsConfig, fmt), signal, onProgress);
-        triggerDownload(blob, catalogoFilename(capa, fmt.extension));
-        return { success: true };
+        const ext = extForFormat(config, formatId);
+        if (!ext) return { success: false, error: 'Formato no soportado' };
+
+        return runLayerDownload(config, formatId, catalogoFilename(capa, ext), {
+            signal,
+            onProgress,
+            dateFrom: dateRange?.dateFrom,
+            dateTo: dateRange?.dateTo,
+            dateCql: cqlFilter || undefined,
+            getFilter: timeValue ? () => timeValue : undefined,
+            layerId: capa.slug,
+        });
     });

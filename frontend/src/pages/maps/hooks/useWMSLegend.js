@@ -1,10 +1,11 @@
 import { useCallback, useContext } from 'react';
-import { findWMSConfig, hasWMSConfig, resolveTimeStyle } from '../helpers/wmsConfig';
+import { findWMSConfig, hasWMSConfig } from '../helpers/wmsConfig';
+import { buildLegendGraphicUrl } from '../helpers/legendUrl';
 import { useLayers } from '@hooks/useLayers';
 import MapsContext from '@contexts/MapsContext';
 
 export const useWMSLegend = () => {
-    const { getFilter } = useContext(MapsContext);
+    const { getFilter, getSpecificFilter } = useContext(MapsContext);
     const { layers } = useLayers();
 
     const resolveWMSId = useCallback((layer) => {
@@ -33,32 +34,26 @@ export const useWMSLegend = () => {
         const effectiveId = resolveWMSId(layer);
         if (!effectiveId) return null;
         const wmsConfig = findWMSConfig(effectiveId, layers);
+        if (!wmsConfig) return null;
 
-        if (wmsConfig) {
-            const legendOptions = [
-                `fontName:${fontName}`,
-                `fontSize:${fontSize}`,
-                `fontStyle:${fontStyle}`,
-                'fontAntiAliasing:true',
-                `fontColor:${fontColor}`,
-                `labelMargin:${labelMargin}`,
-                `dpi:${dpi}`,
-                `forceLabels:${forceLabels}`,
-            ].join(';');
+        const timeValue = dateValue !== undefined ? dateValue : getFilter?.(effectiveId);
+        const cqlFilter = wmsConfig.timeStylePattern ? null : (getSpecificFilter?.(effectiveId, 'date') || null);
 
-            let style = wmsConfig.styles || '';
-            if (wmsConfig.timeStylePattern) {
-                const timeValue = dateValue !== undefined ? dateValue : getFilter?.(effectiveId);
-                if (timeValue) {
-                    style = resolveTimeStyle(wmsConfig.timeStylePattern, timeValue);
-                }
-            }
-
-            const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=image/png&width=${iconWidth}&height=${iconHeight}${transparent ? '&transparent=true' : ''}${rule ? `&rule=${encodeURIComponent(rule)}` : ''}&LEGEND_OPTIONS=${legendOptions}${style ? `&STYLE=${style}` : ''}`;
-            return url;
-        }
-        return null;
-    }, [getFilter, layers, resolveWMSId]);
+        return buildLegendGraphicUrl({
+            baseUrl: wmsConfig.baseUrl,
+            layerName: wmsConfig.layerName,
+            styles: wmsConfig.styles || '',
+            timeStylePattern: wmsConfig.timeStylePattern,
+            dateValue: timeValue,
+            cqlFilter,
+            hideEmptyRules: true,
+            iconWidth,
+            iconHeight,
+            transparent,
+            rule,
+            options: { dpi, fontName, fontSize, fontStyle, fontColor, labelMargin, forceLabels },
+        });
+    }, [getFilter, getSpecificFilter, layers, resolveWMSId]);
 
     const getLegendJson = useCallback(async (layer) => {
         const effectiveId = resolveWMSId(layer);
