@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.95.0] - 2026-07-27
+
+### Agregado: el catálogo puede tener su propia configuración de tarjeta
+
+`mapalab.catalogo_capas` no tenía `infobox_config`: heredaba la del árbol con un `LEFT JOIN LATERAL` sobre `mapalab.layers`. Eso dejaba dos huecos — las capas del catálogo que no existen en el árbol se quedaban sin tarjeta, y cualquier ajuste hecho desde el catálogo habría tenido que escribir en `layers`, cambiando también lo que ve el visor principal.
+
+Con la migración `0029` de dataengine la tabla estrena su propia columna. La lectura hace `COALESCE(c.infobox_config, l.infobox_config)`: si la capa no define la suya sigue heredando, así que nada cambia para las ya configuradas. La respuesta suma `littleCardPropia` para distinguir una configuración propia de una heredada.
+
+Es la base del editor de tarjetas a solicitud del catálogo, cuya escritura tocará únicamente esta columna.
+
 ## [1.94.0] - 2026-07-27
 
 ### Agregado: la tarjeta de información del catálogo reusa el InfoBox del visor

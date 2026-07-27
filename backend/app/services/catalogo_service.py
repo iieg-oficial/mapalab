@@ -25,6 +25,7 @@ def _serialize(row: dict) -> dict:
         'geoserverLayer': row['geoserver_layer'],
         'searchTags': row['search_tags'] or [],
         'littleCard': row.get('infobox_config'),
+        'littleCardPropia': bool(row.get('infobox_propia')),
         'institucion': institucion,
     }
 
