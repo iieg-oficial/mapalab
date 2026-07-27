@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOutsideClick } from '@hooks/useOutsideClick';
+import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import PeriodicitySection from '@pages/maps/components/LayerDetailModal/components/PeriodicitySection';
-import { describeDateFilter, formatLoopLabelLong } from '@pages/maps/helpers/dateLoopHelpers';
-import icoPlayNormal from '@assets/icons/ico_play_normal.svg';
-import icoPauseNormal from '@assets/icons/ico_pause_normal.svg';
+import { describeDateFilter, formatDateFilterPill } from '@pages/maps/helpers/dateLoopHelpers';
+import { RADIUS_ICON, toneButtonFor } from '@pages/maps/helpers/periodicityTones';
 import { PANEL_SHADOW } from '../helpers/catalogoStyles';
 
 const SIN_FILTRO = 'Todas las fechas';
@@ -29,7 +29,8 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
     if (!hasPeriodicidad && !loading) return null;
 
     const prefs = getLoopPrefs?.(layerId);
-    const etiqueta = formatLoopLabelLong(describeDateFilter({ filter: filtro, rasterPeriodicity })) || SIN_FILTRO;
+    const etiqueta = formatDateFilterPill(describeDateFilter({ filter: filtro, rasterPeriodicity })) || SIN_FILTRO;
+    const play = toneButtonFor(null, isLoopPlaying);
 
     return (
         <div
@@ -43,9 +44,9 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
                             type="button"
                             onClick={onToggleLoop}
                             aria-label={isLoopPlaying ? 'Pausar animación' : 'Ver animación'}
-                            className="size-7 shrink-0 rounded-full bg-[#FFF2E5] hover:bg-[#FFE4C4] flex items-center justify-center transition-colors cursor-pointer"
+                            className={`size-7 shrink-0 ${RADIUS_ICON} flex items-center justify-center cursor-pointer ${play.className}`}
                         >
-                            <img src={isLoopPlaying ? icoPauseNormal : icoPlayNormal} alt="" className="size-3" />
+                            <Icon name={isLoopPlaying ? 'pause' : 'play'} className="size-3 shrink-0" />
                         </button>
                     </Tooltip>
                 )}
@@ -61,13 +62,26 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
                     {loading ? 'Cargando fechas…' : etiqueta}
                 </button>
 
-                {filtro && !abierto && (
-                    <Tooltip content="Ver todas las fechas" placement="bottom" delay={200}>
+                {filtro && (
+                    <Tooltip content="Quitar el filtro de fecha" placement="bottom" delay={200}>
                         <button
                             type="button"
                             onClick={() => { stopLoop?.(layerId); clearFilter(); }}
                             aria-label="Quitar el filtro de fecha"
-                            className="size-7 shrink-0 rounded-full text-[#6E7477] hover:text-purple hover:bg-purple-soft flex items-center justify-center transition-colors cursor-pointer"
+                            className={`size-7 shrink-0 ${RADIUS_ICON} text-[#FF577D] hover:bg-[#FFE6EC] flex items-center justify-center transition-colors cursor-pointer`}
+                        >
+                            <Icon name="eliminar" className="size-4 shrink-0" />
+                        </button>
+                    </Tooltip>
+                )}
+
+                {abierto && (
+                    <Tooltip content="Cerrar el panel de fechas" placement="bottom" delay={200}>
+                        <button
+                            type="button"
+                            onClick={() => setAbierto(false)}
+                            aria-label="Cerrar el panel de fechas"
+                            className={`size-7 shrink-0 ${RADIUS_ICON} text-[#6E7477] hover:text-purple hover:bg-purple-soft flex items-center justify-center transition-colors cursor-pointer`}
                         >
                             <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 6L6 18M6 6l12 12" />
@@ -100,6 +114,7 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
                         onSetLoopDirection={(dir) => setLoopDirection(layerId, dir)}
                         onTogglePeriodicityLoop={onToggleLoop}
                         getSpecificFilterOverride={getSpecificFilter}
+                        loopAppliesToSlot
                     />
                 </div>
             )}

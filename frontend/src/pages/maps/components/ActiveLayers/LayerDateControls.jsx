@@ -4,22 +4,10 @@ import Icon from '@components/Icon';
 import DatePill from './DatePill';
 import SlotBadge from './SlotBadge';
 import { computeLabel } from './datePillHelpers';
-import icoPauseNormal from '@assets/icons/ico_pause_normal.svg';
-import icoPauseHover from '@assets/icons/ico_pause_hover.svg';
-import icoPlayNormal from '@assets/icons/ico_play_normal.svg';
-import icoPlayHover from '@assets/icons/ico_play_hover.svg';
+import { DEFAULT_LOOP_INTERVAL_MS, DEFAULT_LOOP_DIRECTION } from '@hooksMaps/useDateLoop';
+import { RADIUS_ICON, toneButtonFor, toneTextClass } from '@pages/maps/helpers/periodicityTones';
 
-const LOOP_PALETTE = {
-    A: { primary: 'bg-[#F2EBFA] border-[#5C2472] hover:bg-[#E2D1EB]', secondary: 'bg-[#F2EBFA] border-[#5C2472] text-[#5C2472] hover:bg-[#E2D1EB]', icon: 'text-[#5C2472]' },
-    B: { primary: 'bg-[#FFF2E5] border-[#FF8300] hover:bg-[#FFE4C4]', secondary: 'bg-[#FFF2E5] border-[#FF8300] text-[#FF8300] hover:bg-[#FFE4C4]', icon: 'text-[#FF8300]' },
-    none: { primary: 'bg-[#FFF2E5] border-[#FF8300] hover:bg-[#FFE4C4]', secondary: 'bg-[#F0EAF3] border-[#703089] text-[#703089] hover:bg-[#E2D1EB]', icon: 'text-[#703089]' },
-};
-
-const DISABLED_PRIMARY = 'bg-gray-100 border-gray-300';
-const DISABLED_SECONDARY = 'bg-gray-100 border-gray-300 text-gray-400';
-const DISABLED_ICON = 'text-gray-400';
-
-const LOOP_BUTTON_BASE = 'flex items-center justify-center size-6 rounded-full border transition-colors shrink-0 disabled:cursor-not-allowed';
+const LOOP_BUTTON_BASE = `flex items-center justify-center size-6 ${RADIUS_ICON} shrink-0 disabled:cursor-not-allowed`;
 
 const LoopControls = ({
     isLooping,
@@ -34,11 +22,12 @@ const LoopControls = ({
     disabled = false,
     disabledHint = ''
 }) => {
-    const palette = LOOP_PALETTE[slotPalette] || LOOP_PALETTE.none;
-    const slotLabel = slotPalette === 'A' || slotPalette === 'B' ? ` (lado ${slotPalette})` : '';
-    const primaryClasses = disabled ? DISABLED_PRIMARY : palette.primary;
-    const secondaryClasses = disabled ? DISABLED_SECONDARY : palette.secondary;
-    const iconColor = disabled ? DISABLED_ICON : palette.icon;
+    const slot = slotPalette === 'A' || slotPalette === 'B' ? slotPalette : null;
+    const slotLabel = slot ? ` (lado ${slot})` : '';
+    const play = toneButtonFor(slot, isLooping, { disabled });
+    const interval = toneButtonFor(slot, (loopIntervalMs ?? DEFAULT_LOOP_INTERVAL_MS) !== DEFAULT_LOOP_INTERVAL_MS, { disabled });
+    const direction = toneButtonFor(slot, (loopDirection ?? DEFAULT_LOOP_DIRECTION) !== DEFAULT_LOOP_DIRECTION, { disabled });
+    const iconColor = disabled ? 'text-gray-400' : toneTextClass(direction.tone);
     const playTooltip = disabled ? disabledHint : (isLooping ? 'Pausar animación' : 'Iniciar animación') + slotLabel;
     const intervalTooltip = disabled ? disabledHint : 'Cambiar velocidad' + slotLabel;
     const directionTooltip = disabled ? disabledHint : (loopDirection === 'rtl' ? 'Dirección: derecha a izquierda' : 'Dirección: izquierda a derecha') + slotLabel;
@@ -48,19 +37,9 @@ const LoopControls = ({
             <button
                 onClick={onPlay}
                 disabled={disabled || !canPlayLoop}
-                className={`group/play ${LOOP_BUTTON_BASE} disabled:opacity-50 ${primaryClasses}`}
+                className={`${LOOP_BUTTON_BASE} disabled:opacity-50 ${play.className}`}
             >
-                {isLooping ? (
-                    <>
-                        <img src={icoPauseNormal} alt="" className="size-2.5 block group-hover/play:hidden" />
-                        <img src={icoPauseHover} alt="" className="size-2.5 hidden group-hover/play:block" />
-                    </>
-                ) : (
-                    <>
-                        <img src={icoPlayNormal} alt="" className="size-2.5 block group-hover/play:hidden" />
-                        <img src={icoPlayHover} alt="" className="size-2.5 hidden group-hover/play:block" />
-                    </>
-                )}
+                <Icon name={isLooping ? 'pause' : 'play'} className="size-2.5 shrink-0" />
             </button>
         </Tooltip>
     );
@@ -70,7 +49,7 @@ const LoopControls = ({
             <button
                 onClick={onInterval}
                 disabled={disabled}
-                className={`${LOOP_BUTTON_BASE} text-[9px] font-garet font-bold tabular-nums ${secondaryClasses}`}
+                className={`${LOOP_BUTTON_BASE} text-[9px] font-garet font-bold tabular-nums ${interval.className}`}
             >
                 {(loopIntervalMs / 1000).toString().replace(/^0(?=\.)/, '').replace(/\.?0+$/, '') || '0'}s
             </button>
@@ -82,7 +61,7 @@ const LoopControls = ({
             <button
                 onClick={onDirection}
                 disabled={disabled}
-                className={`${LOOP_BUTTON_BASE} ${secondaryClasses}`}
+                className={`${LOOP_BUTTON_BASE} ${direction.className}`}
             >
                 <Icon name="downArrow" className={`w-3 h-1.5 transition-transform duration-300 ${iconColor} ${loopDirection === 'rtl' ? 'rotate-90' : '-rotate-90'}`} />
             </button>

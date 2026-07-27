@@ -1,6 +1,6 @@
+import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { SLOT_PILL, getLabelWidthClass } from './datePillHelpers';
-import icoPlayNormal from '@assets/icons/ico_play_normal.svg';
 
 const SIZE_CLASSES = {
     sm: 'h-[22px] px-2 text-[10px]',
@@ -18,7 +18,7 @@ const DatePill = ({ slot, label, kind, onClick, isLoopingPulse, isLooping = fals
                 onClick={onClick}
                 className={`flex items-center justify-center gap-1 rounded-full border font-garet font-bold shrink-0 transition-all tabular-nums ${sizeClass} ${palette.bg} ${palette.border} ${palette.text} ${palette.hover} ${widthClass} ${isLoopingPulse ? 'animate-pulse' : ''}`}
             >
-                {isLooping && <img src={icoPlayNormal} alt="" className="size-[10px] shrink-0" />}
+                {isLooping && <Icon name="play" className="size-2.5 shrink-0" />}
                 <span className="whitespace-nowrap">{label}</span>
             </button>
         </Tooltip>

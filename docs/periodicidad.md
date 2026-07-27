@@ -193,10 +193,25 @@ Desde v1.2.0 el loop (`useDateLoop`, antes `useRasterLoop`) es general: anima ta
 
 | Control | Estilo | Función |
 |---------|--------|---------|
-| `LoopIntervalButton` | Morado, cicla `250/500/1000/2000/3000` ms | Velocidad del tick **per-layer** |
-| `LoopDirectionButton` | Morado, flecha `←` / `→` | Dirección del ciclo (LTR / RTL) **per-layer** |
-| `PlayPauseButton` | Naranja (acción principal) | Inicia/pausa el loop |
+| `LoopIntervalButton` | Morado en `1000` ms; naranja en cualquier otro preset | Velocidad del tick **per-layer**, cicla `250/500/1000/2000/3000` |
+| `LoopDirectionButton` | Morado en LTR; naranja en RTL | Dirección del ciclo **per-layer** |
+| `PlayPauseButton` | Morado detenido; naranja reproduciendo | Inicia/pausa el loop |
 | Botón eliminar filtro | Ícono naranja | Limpia el filtro de fecha (detiene loop y resetea selector) |
+
+### El color codifica estado (v1.93.0)
+
+Desde v1.93.0 el color de los controles no es decorativo: **morado = valor por defecto, naranja = accionado o cambiado**. Aplica también a los años y meses del selector, que en reposo son morados y se ponen naranjas al seleccionarse. El tick del loop se distingue de una selección manual porque va relleno y sin borde.
+
+En modo comparación esta regla cede: el color lo dicta el lado (A morado, B naranja), porque ahí identifica el panel y esa lectura es prioritaria.
+
+La regla vive en `pages/maps/helpers/periodicityTones.js`:
+- `toneStateFor(slot, changed)` → `{ tone, active }`, resolviendo la precedencia slot > estado.
+- `toneClasses(tone, { active, disabled, idleBg })` → clases de superficie. El borde solo aparece en hover y cuando `active`; el texto y el icono llevan el mismo color que ese borde.
+- `toneButtonFor(slot, changed, options)` → atajo que combina ambas.
+
+Radios homologados con el resto del visor: `rounded-full` (`RADIUS_ICON`) para los botones de solo icono, `rounded-[14px]` (`RADIUS_LABEL`) para los que llevan texto.
+
+Los iconos de play y pausa viven en `Icon.jsx` (`play`, `pause`) con `currentColor`, para que hereden el tono del botón. Los cuatro SVG de `assets/icons/ico_play_*` e `ico_pause_*` se eliminaron: traían el naranja quemado en el `fill` y obligaban a duplicar cada icono para el hover.
 
 Cada capa mantiene sus propias preferencias de velocidad y dirección en runtime (no se persisten entre sesiones ni en backend). Se almacenan en `loopPrefs[layerId]` dentro de `useDateLoop`, con fallback a los defaults globales (`DEFAULT_LOOP_INTERVAL_MS = 500`, `DEFAULT_LOOP_DIRECTION = 'ltr'`) cuando el usuario aún no ha configurado nada. La preferencia se elimina automáticamente al desactivar la capa (`cleanupLoop`).
 

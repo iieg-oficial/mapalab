@@ -4,29 +4,22 @@ import { useCarouselOverflow } from '@pages/maps/hooks/useCarouselOverflow';
 import { generateCQLFilter, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import { computeSelectorInitialState } from '@pages/maps/helpers/dateLoopHelpers';
 import { BackButton, YearBadge, CarouselArrow } from './SimpleDateSelectorParts';
+import { RADIUS_LABEL, toneClasses, toneStateFor } from '@pages/maps/helpers/periodicityTones';
 
-const SLOT_COLORS = {
-    A: {
-        activeBg: 'bg-[#F0EAF3]', activeBorder: 'border-[#5C2472]', activeText: 'text-[#5C2472]',
-        loopTickBg: 'bg-[#E2D1EB]', loopTickBorder: 'border-transparent', loopTickText: 'text-[#5C2472]',
-        hoverBg: 'hover:bg-[#F0EAF3]', hoverText: 'hover:text-[#5C2472]', hoverBorder: 'hover:border-[#5C2472]',
-    },
-    B: {
-        activeBg: 'bg-[#FFF2E5]', activeBorder: 'border-[#FF8300]', activeText: 'text-[#FF8300]',
-        loopTickBg: 'bg-[#FFE4C4]', loopTickBorder: 'border-transparent', loopTickText: 'text-[#FF8300]',
-        hoverBg: 'hover:bg-[#FFF2E5]', hoverText: 'hover:text-[#FF8300]', hoverBorder: 'hover:border-[#FF8300]',
-    },
-    default: {
-        activeBg: 'bg-[#F0EAF3]', activeBorder: 'border-[#703089]', activeText: 'text-[#703089]',
-        loopTickBg: 'bg-[#FFF2E5]', loopTickBorder: 'border-transparent', loopTickText: 'text-[#FF8300]',
-        hoverBg: 'hover:bg-[#F0EAF3]', hoverText: 'hover:text-[#703089]', hoverBorder: 'hover:border-[#703089]',
-    },
+const LOOP_TICK_SURFACE = {
+    A: 'bg-[#E2D1EB] border-transparent text-[#5C2472]',
+    B: 'bg-[#FFE4C4] border-transparent text-[#FF8300]',
+    default: 'bg-[#FFE4C4] border-transparent text-[#FF8300]',
+};
+
+const dateBtnClass = ({ slot, isActive, isLoopTick }) => {
+    if (isLoopTick) return `border transition-colors ${LOOP_TICK_SURFACE[slot] || LOOP_TICK_SURFACE.default}`;
+    return toneClasses(toneStateFor(slot, isActive).tone, { active: isActive });
 };
 
 const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, onExpandedYearChange, getSpecificFilterOverride, slot, loopAppliesToSlot = false }) => {
     const { getSpecificFilter: getSpecificFilterCtx, stopLoop: contextStopLoop, getLoopState } = useContext(MapsContext);
     const getSpecificFilter = getSpecificFilterOverride || getSpecificFilterCtx;
-    const palette = SLOT_COLORS[slot] || SLOT_COLORS.default;
     const showLoopHighlight = !getSpecificFilterOverride || loopAppliesToSlot;
     const isRaster = !!rasterPeriodicity;
 
@@ -262,20 +255,12 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                             const abbr = monthObj ? monthObj.name.slice(0, 3).toUpperCase() : monthNum;
                             const isActive = selectedMonths.has(monthNum);
                             const isLoopTick = loopState?.isPlaying && loopState?.mode === 'month' && loopState?.currentKey === monthNum;
-                            const activeStyle = isLoopTick
-                                ? `${palette.loopTickBg} border ${palette.loopTickBorder} ${palette.loopTickText}`
-                                : `${palette.activeBg} border ${palette.activeBorder} ${palette.activeText}`;
-                            const idleStyle = `bg-[#F9FBFF] border border-transparent ${palette.hoverBg} ${palette.hoverText} ${palette.hoverBorder}`;
 
                             return (
                                 <button
                                     key={`${expandedYear}-${monthNum}`}
                                     onClick={() => handleMonthToggle(monthNum)}
-                                    className={`
-                                        shrink-0 px-4 py-2 rounded-[9px] transition-all duration-200
-                                        text-[12px]/[14px] text-[#2E4372] font-medium font-garet
-                                        ${isActive ? activeStyle : idleStyle}
-                                    `}
+                                    className={`shrink-0 px-4 py-2 ${RADIUS_LABEL} text-[12px]/[14px] font-medium font-garet ${dateBtnClass({ slot, isActive, isLoopTick })}`}
                                 >
                                     {abbr}
                                 </button>
@@ -290,10 +275,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
     const yearBtnClass = (year) => {
         const isActive = selectedYear === year;
         const isLoopTick = loopState?.isPlaying && loopState?.mode === 'year' && loopState?.currentKey === year;
-        const activeClasses = (isLoopTick || singleSelectOnly)
-            ? `${palette.loopTickBg} border ${palette.activeBorder} ${palette.loopTickText}`
-            : `${palette.activeBg} border ${palette.activeBorder} ${palette.activeText}`;
-        return `shrink-0 px-5 py-3 rounded-[9px] transition-all duration-200 text-[14px]/[16px] text-[#2E4372] font-medium font-garet bg-[#F9FBFF] border border-transparent ${palette.hoverBg} ${palette.hoverText} ${palette.hoverBorder} ${isActive ? activeClasses : ''}`;
+        return `shrink-0 px-5 py-3 ${RADIUS_LABEL} text-[14px]/[16px] font-medium font-garet ${dateBtnClass({ slot, isActive, isLoopTick: isActive && isLoopTick })}`;
     };
     return (
         <div className="space-y-3">

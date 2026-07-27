@@ -5,6 +5,34 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.93.0] - 2026-07-27
+
+### Cambiado: los controles de periodicidad hablan un solo idioma de color
+
+Hasta ahora el color de los controles de fecha era arbitrario: el botón de animación siempre era naranja (aunque estuviera detenido), la velocidad y la dirección siempre moradas, y los años y meses usaban azul `#2E4372` en reposo. Ahora el color **codifica estado**: morado mientras el control está en su valor por defecto, naranja en cuanto se acciona o se cambia. Aplica al play/pausa (morado detenido, naranja reproduciendo), a la velocidad (naranja si no es 1s), a la dirección (naranja si es de derecha a izquierda) y a los años y meses (naranja cuando están seleccionados).
+
+En modo comparación el color lo sigue dictando el lado (A morado, B naranja), porque ahí identifica el panel y esa lectura es prioritaria.
+
+La regla vive en `pages/maps/helpers/periodicityTones.js` (`toneStateFor`, `toneClasses`, `toneButtonFor`) y la consumen `SimpleDateSelectorParts`, `SimpleDateSelector`, `LayerDateControls` y `CatalogoTimeBar`, en lugar de las tres paletas duplicadas que había.
+
+### Cambiado: bordes y radios homologados en los controles de fecha
+
+Los botones de solo icono (dirección del loop) pasan a `rounded-full` y los que llevan texto (años, meses, velocidad, «Ver animación») a `rounded-[14px]`, el radio de botón con label ya establecido en el resto del visor — antes eran `rounded-[9px]` y `rounded-[12px]`. El borde dejó de estar siempre visible: aparece en hover y cuando el control está accionado, y toma el mismo color que el texto y el icono.
+
+### Corregido: la animación no se reflejaba en el panel de fechas del Catálogo
+
+`SimpleDateSelector` solo resalta el mes o el año en curso cuando `showLoopHighlight` es verdadero, y esa bandera se apaga en cuanto el consumidor pasa `getSpecificFilterOverride`. `CatalogoTimeBar` lo pasaba sin declarar `loopAppliesToSlot`, así que con el panel abierto el loop avanzaba en el mapa pero ningún botón lo indicaba. Ahora lo declara.
+
+### Cambiado: la pill de fecha del Catálogo se resume y estrena bote de basura
+
+Con más de tres meses seleccionados la pill enlistaba todos los nombres y desbordaba. Ahora se resume: rango si son contiguos («Enero a Mayo de 2024») o conteo si no lo son («4 meses de 2024»). El tope vive en `formatDateFilterPill` (`dateLoopHelpers.js`), que envuelve a `formatLoopLabelLong` con `maxMonths: 3`; el helper original no cambia de comportamiento para el resto de sus consumidores.
+
+Además, el botón que quitaba el filtro dejó de ser una «×» ambigua y ahora es un bote de basura rojo, visible también con el panel abierto. La «×» pasó a su papel real: cerrar el panel, a la derecha del bote.
+
+### Eliminado: los cuatro SVG de play y pausa
+
+`ico_play_normal`, `ico_play_hover`, `ico_pause_normal` e `ico_pause_hover` traían el naranja quemado en el `fill`, lo que impedía colorearlos por estado y obligaba a duplicar cada icono para el hover. Se reemplazaron por `play` y `pause` en `Icon.jsx`, que usan `currentColor` y heredan el tono del botón.
+
 ## [1.92.1] - 2026-07-27
 
 ### Cambiado: el título del catálogo se apoya en una píldora de vidrio

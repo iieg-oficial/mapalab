@@ -1,30 +1,7 @@
-import { useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
-import icoPlayNormal from '@assets/icons/ico_play_normal.svg';
-import icoPlayHover from '@assets/icons/ico_play_hover.svg';
-import icoPauseNormal from '@assets/icons/ico_pause_normal.svg';
-import icoPauseHover from '@assets/icons/ico_pause_hover.svg';
-
-const PLAY_PALETTE = {
-    A: 'bg-[#F0EAF3] border-[#5C2472] text-[#5C2472] hover:bg-[#E2D1EB]',
-    B: 'bg-[#FFF2E5] border-[#FF8300] text-[#FF8300] hover:bg-[#FFE4C4]',
-    default: 'bg-[#FFF2E5] border-[#FF8300] text-[#FF8300] hover:bg-[#FFE4C4]',
-};
-
-const SECONDARY_PALETTE = {
-    A: 'bg-[#F0EAF3] border-[#5C2472] text-[#5C2472] hover:bg-[#E2D1EB]',
-    B: 'bg-[#FFF2E5] border-[#FF8300] text-[#FF8300] hover:bg-[#FFE4C4]',
-    default: 'bg-[#F0EAF3] border-[#703089] text-[#703089] hover:bg-[#E2D1EB]',
-};
-
-const BADGE_PALETTE = {
-    A: 'bg-[#F0EAF3] border-[#5C2472] text-[#5C2472]',
-    B: 'bg-[#FFF2E5] border-[#FF8300] text-[#FF8300]',
-    default: 'bg-[#F0EAF3] border-[#703089] text-[#703089]',
-};
-
-const DISABLED_CLASSES = 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed hover:bg-gray-100';
+import { DEFAULT_LOOP_INTERVAL_MS, DEFAULT_LOOP_DIRECTION } from '@hooksMaps/useDateLoop';
+import { RADIUS_ICON, RADIUS_LABEL, toneButtonFor, toneTextClass } from '@pages/maps/helpers/periodicityTones';
 
 export const BackButton = ({ onClick }) => (
     <button onClick={onClick}>
@@ -38,31 +15,25 @@ export const BackButton = ({ onClick }) => (
 );
 
 export const YearBadge = ({ year, slot }) => {
-    const palette = BADGE_PALETTE[slot] || BADGE_PALETTE.default;
+    const { className } = toneButtonFor(slot, true);
     return (
-        <span className={`shrink-0 px-5 py-3 rounded-[9px] text-[14px]/[16px] font-medium font-garet border ${palette}`}>
+        <span className={`shrink-0 px-5 py-3 ${RADIUS_LABEL} text-[14px]/[16px] font-medium font-garet ${className}`}>
             {year}
         </span>
     );
 };
 
 export const PlayPauseButton = ({ isPlaying, onToggle, slot, disabled = false, disabledHint }) => {
-    const [isHovered, setIsHovered] = useState(false);
-    const icon = isPlaying
-        ? (isHovered ? icoPauseHover : icoPauseNormal)
-        : (isHovered ? icoPlayHover : icoPlayNormal);
     const label = isPlaying ? 'PAUSAR' : 'VER ANIMACIÓN';
-    const palette = disabled ? DISABLED_CLASSES : (PLAY_PALETTE[slot] || PLAY_PALETTE.default);
+    const { className } = toneButtonFor(slot, isPlaying, { disabled });
 
     const button = (
         <button
             onClick={disabled ? undefined : onToggle}
             disabled={disabled}
-            onMouseEnter={() => !disabled && setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            className={`flex items-center gap-2 px-2 py-1.5 rounded-[12px] border text-[8px]/[16px] font-bold font-garet transition-colors ${palette}`}
+            className={`flex items-center gap-2 px-2 py-1.5 ${RADIUS_LABEL} text-[8px]/[16px] font-bold font-garet ${className}`}
         >
-            <img src={icon} alt="" className={`w-[10px] h-[10px] ${disabled ? 'opacity-50' : ''}`} />
+            <Icon name={isPlaying ? 'pause' : 'play'} className={`size-2.5 shrink-0 ${disabled ? 'opacity-50' : ''}`} />
             {label}
         </button>
     );
@@ -95,13 +66,13 @@ export const LoopIntervalButton = ({ value, onChange, slot, disabled = false }) 
         const nextIdx = idx === -1 ? 0 : (idx + 1) % LOOP_INTERVAL_PRESETS.length;
         onChange(LOOP_INTERVAL_PRESETS[nextIdx]);
     };
-    const palette = disabled ? DISABLED_CLASSES : (SECONDARY_PALETTE[slot] || SECONDARY_PALETTE.default);
+    const { className } = toneButtonFor(slot, (value ?? DEFAULT_LOOP_INTERVAL_MS) !== DEFAULT_LOOP_INTERVAL_MS, { disabled });
     return (
         <Tooltip content="Cambiar velocidad del loop">
             <button
                 onClick={handleClick}
                 disabled={disabled}
-                className={`flex items-center justify-center h-[30px] px-2 rounded-[12px] border text-[11px]/[16px] font-bold font-garet transition-colors tabular-nums min-w-[44px] ${palette}`}
+                className={`flex items-center justify-center h-7.5 px-2 ${RADIUS_LABEL} text-[11px]/[16px] font-bold font-garet tabular-nums min-w-11 ${className}`}
             >
                 {formatInterval(value)}
             </button>
@@ -112,17 +83,17 @@ export const LoopIntervalButton = ({ value, onChange, slot, disabled = false }) 
 export const LoopDirectionButton = ({ value, onChange, slot, disabled = false }) => {
     const isLtr = value !== 'rtl';
     const handleClick = () => !disabled && onChange(isLtr ? 'rtl' : 'ltr');
-    const palette = disabled ? DISABLED_CLASSES : (SECONDARY_PALETTE[slot] || SECONDARY_PALETTE.default);
+    const { tone, className } = toneButtonFor(slot, (value ?? DEFAULT_LOOP_DIRECTION) !== DEFAULT_LOOP_DIRECTION, { disabled });
     return (
         <Tooltip content={isLtr ? 'Dirección: izquierda a derecha' : 'Dirección: derecha a izquierda'}>
             <button
                 onClick={handleClick}
                 disabled={disabled}
-                className={`flex items-center justify-center h-[30px] w-[30px] rounded-[12px] border transition-colors ${palette}`}
+                className={`flex items-center justify-center size-7.5 ${RADIUS_ICON} ${className}`}
             >
                 <Icon
                     name="downArrow"
-                    className={`w-4 h-2 transition-transform duration-300 ${isLtr ? '-rotate-90' : 'rotate-90'} ${disabled ? 'opacity-50' : ''}`}
+                    className={`w-4 h-2 transition-transform duration-300 ${isLtr ? '-rotate-90' : 'rotate-90'} ${disabled ? 'opacity-50 text-gray-400' : toneTextClass(tone)}`}
                 />
             </button>
         </Tooltip>

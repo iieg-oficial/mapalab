@@ -12,6 +12,14 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.93.0',
+        items: [
+            { text: 'Los controles de fecha y animación ahora se ven morados mientras están en su estado normal y se ponen naranjas en cuanto los usas o cambias su configuración, para que sea evidente qué tienes activo.', tag: 'changed' },
+            { text: 'Mientras corre una animación, el mes o el año que se está mostrando ya se resalta en el panel de fechas abierto.', tag: 'fixed' },
+            { text: 'En el Catálogo, cuando el filtro abarca más de tres meses la fecha se resume («Enero a Mayo de 2024») en vez de enlistarlos todos, y el botón para quitar el filtro ahora es un bote de basura.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.92.0',
         items: [
             { text: 'Al descargar capas pesadas, el navegador ahora te pregunta dónde guardar el archivo y lo escribe directo en tu equipo, en vez de cargarlo completo en memoria; así se evita que se sature con archivos grandes. (Disponible en Chrome y Edge de computadora.)', tag: 'added' },
