@@ -5,7 +5,7 @@ import ScrollContainer from '@components/ScrollContainer';
 import CatalogoShare from './CatalogoShare';
 import CatalogoInstitucionesList from './CatalogoInstitucionesList';
 import { buildCatalogoShareUrl, filterCapas } from '../helpers/catalogoRoutes';
-import { PANEL_SHADOW, Z_CAPAS, Z_INPUT } from '../helpers/catalogoStyles';
+import { PANEL_SHADOW, TITLE_PILL, Z_CAPAS, Z_INPUT } from '../helpers/catalogoStyles';
 import { trackCatalogoSearch, trackCatalogoShare } from '@services/analyticsService';
 
 const SearchIcon = ({ className }) => (
@@ -148,7 +148,7 @@ const CatalogoSearchModal = ({
                         </div>
                     )}
                     {institucionActiva ? (
-                        <div className="min-w-0 flex items-baseline gap-1.5">
+                        <div className={`min-w-0 flex items-baseline gap-1.5 ${TITLE_PILL}`}>
                             <span className="truncate text-[18px] font-bold text-orange font-garet leading-tight">
                                 {institucionActiva.nombre}
                             </span>
@@ -157,7 +157,9 @@ const CatalogoSearchModal = ({
                             </span>
                         </div>
                     ) : (
-                        <span className="text-[18px] font-bold text-purple font-garet">Catálogo</span>
+                        <span className={`inline-flex items-center text-[18px] font-bold text-purple font-garet ${TITLE_PILL}`}>
+                            Catálogo
+                        </span>
                     )}
                 </div>
 

@@ -5,6 +5,12 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.92.1] - 2026-07-27
+
+### Cambiado: el título del catálogo se apoya en una píldora de vidrio
+
+El encabezado del buscador (`CatalogoSearchModal`) dejaba el título flotando directo sobre el mapa, sin superficie propia, así que sobre capas saturadas costaba leerlo. Ahora el título va dentro de una píldora con desenfoque de fondo y sin sombra, en los dos estados del encabezado: nombre de institución activa y «Catálogo». La constante `TITLE_PILL` vive en `helpers/catalogoStyles.js`, junto a `PANEL_SHADOW` y los `Z_*`, para no repartir la decisión en clases sueltas.
+
 ## [1.92.0] - 2026-07-24
 
 ### Agregado: descarga por streaming a disco para no saturar la memoria
