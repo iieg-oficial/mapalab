@@ -17,7 +17,17 @@ La regla vive en `pages/maps/helpers/periodicityTones.js` (`toneStateFor`, `tone
 
 ### Cambiado: bordes y radios homologados en los controles de fecha
 
-Los botones de solo icono (dirección del loop) pasan a `rounded-full` y los que llevan texto (años, meses, velocidad, «Ver animación») a `rounded-[14px]`, el radio de botón con label ya establecido en el resto del visor — antes eran `rounded-[9px]` y `rounded-[12px]`. El borde dejó de estar siempre visible: aparece en hover y cuando el control está accionado, y toma el mismo color que el texto y el icono.
+Los botones de solo icono (dirección del loop) pasan a `rounded-full` y los de acción con texto (velocidad, «Ver animación») a `rounded-[14px]`, el radio de botón con label ya establecido en el resto del visor. Los años, los meses y el badge del año expandido conservan su `rounded-[9px]`.
+
+El borde toma el mismo color que el texto y el icono, y en reposo se pinta del color del propio fondo (`#F9FBFF`) en vez de transparente: así ocupa su píxel siempre y el botón no se percibe más chico cuando no está accionado.
+
+### Cambiado: el título de la sección de periodicidad
+
+Sube a 15 px y pierde los dos puntos finales. Al vivir en `PeriodicitySection`, aplica al modal del visor y al panel del catálogo, en escritorio y en móvil.
+
+### Corregido: regresar a la vista de años ya no borra la selección
+
+La flecha de regreso limpiaba año y meses, dejando la capa sin filtro de fecha. Ahora selecciona el año completo del que se venía, que es lo que el gesto sugiere. En capas raster mensuales conserva el mes: ahí el filtro es un valor `TIME` puntual y «todo el año» no existe, así que vaciarlo dejaba la vista marcando el año mientras el WMS seguía pidiendo el mes anterior.
 
 ### Corregido: la animación no se reflejaba en el panel de fechas del Catálogo
 
@@ -27,11 +37,17 @@ Los botones de solo icono (dirección del loop) pasan a `rounded-full` y los que
 
 Con más de tres meses seleccionados la pill enlistaba todos los nombres y desbordaba. Ahora se resume: rango si son contiguos («Enero a Mayo de 2024») o conteo si no lo son («4 meses de 2024»). El tope vive en `formatDateFilterPill` (`dateLoopHelpers.js`), que envuelve a `formatLoopLabelLong` con `maxMonths: 3`; el helper original no cambia de comportamiento para el resto de sus consumidores.
 
-Además, el botón que quitaba el filtro dejó de ser una «×» ambigua y ahora es un bote de basura rojo, visible también con el panel abierto. La «×» pasó a su papel real: cerrar el panel, a la derecha del bote.
+Además, el botón que quitaba el filtro dejó de ser una «×» ambigua y ahora es un bote de basura rojo. La «×» pasó a su papel real, cerrar el panel, y se coloca según el espacio disponible: en escritorio entra al final de la barra de acciones del panel (vía la nueva prop opcional `trailingAction` de `PeriodicitySection`) y en móvil se queda anclada en la esquina superior derecha, en una fila `sticky` que sigue visible al hacer scroll.
+
+En móvil el bote de basura sale de la pill y queda solo en la barra de acciones del panel, empujado a la derecha con `ml-auto md:ml-0` para que no se pierda si la fila hace wrap. Consecuencia a tener en cuenta: con el panel cerrado hay que abrirlo para quitar el filtro.
+
+La pill y el panel bajan a `PANEL_SHADOW_SOFT` (`0 6px 20px rgba(26,38,100,.10)`), una nueva constante de `catalogoStyles.js`. La sombra anterior proyectaba también hacia arriba (`0 -18px 48px`), que tiene sentido en el buscador — se abre desde el borde inferior — pero no en un panel que cae hacia abajo. `PANEL_SHADOW` sigue vigente para el buscador y la lista de instituciones.
 
 ### Eliminado: los cuatro SVG de play y pausa
 
 `ico_play_normal`, `ico_play_hover`, `ico_pause_normal` e `ico_pause_hover` traían el naranja quemado en el `fill`, lo que impedía colorearlos por estado y obligaba a duplicar cada icono para el hover. Se reemplazaron por `play` y `pause` en `Icon.jsx`, que usan `currentColor` y heredan el tono del botón.
+
+Por la misma razón se agregó `chevron`: el `downArrow` del botón de dirección se sirve como `<img>` desde `ico_down_arrow.svg`, que trae `stroke="#465055"` fijo, así que ninguna clase de color lo alcanzaba y la flecha se veía gris en todos los estados. `downArrow` sigue en uso para el botón de regreso y las flechas del carrusel, que sí quieren ese gris.
 
 ## [1.92.1] - 2026-07-27
 

@@ -16,6 +16,7 @@ const FALLBACK_NOTES = [
         items: [
             { text: 'Los controles de fecha y animación ahora se ven morados mientras están en su estado normal y se ponen naranjas en cuanto los usas o cambias su configuración, para que sea evidente qué tienes activo.', tag: 'changed' },
             { text: 'Mientras corre una animación, el mes o el año que se está mostrando ya se resalta en el panel de fechas abierto.', tag: 'fixed' },
+            { text: 'Al regresar de los meses a la vista de años ya no se pierde el filtro: queda seleccionado el año completo del que venías.', tag: 'fixed' },
             { text: 'En el Catálogo, cuando el filtro abarca más de tres meses la fecha se resume («Enero a Mayo de 2024») en vez de enlistarlos todos, y el botón para quitar el filtro ahora es un bote de basura.', tag: 'changed' },
         ],
     },

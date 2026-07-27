@@ -32,6 +32,7 @@ const PeriodicitySection = ({
     loopDisabled = false,
     loopDisabledHint,
     loopAppliesToSlot = false,
+    trailingAction = null,
 }) => {
     const longPressRef = useRef(null);
 
@@ -55,8 +56,8 @@ const PeriodicitySection = ({
         <div className="mb-4">
             <div className="flex items-center justify-between gap-2 my-5 flex-wrap">
                 <div className="flex items-center gap-2">
-                    <button type="button" className="text-[14px]/[16px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer" onClick={handleClick} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}>
-                        Periodicidad{label ? ` ${label}` : ''}:
+                    <button type="button" className="text-[15px]/[18px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer" onClick={handleClick} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}>
+                        Periodicidad{label ? ` ${label}` : ''}
                     </button>
                     {isAdvancedMode && (
                         <Icon name="info_warning" className="size-4 cursor-help" tooltip="Click simple: navegar opciones. Doble click: seleccionar fecha. Click en seleccionado: deseleccionar." />
@@ -71,10 +72,11 @@ const PeriodicitySection = ({
                         </>
                     )}
                     {hasDateFilter && (
-                        <button onClick={onClearDateFilter} className="inline-flex items-center justify-center h-[30px] leading-none align-middle">
+                        <button onClick={onClearDateFilter} className="ml-auto md:ml-0 inline-flex items-center justify-center h-[30px] leading-none align-middle">
                             <Icon tooltip="Eliminar filtro" name="eliminar" state="hover" className="size-5 cursor-pointer block" />
                         </button>
                     )}
+                    {trailingAction}
                 </div>
             </div>
             {periodicityLoading ? (

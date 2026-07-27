@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import PeriodicitySection from '@pages/maps/components/LayerDetailModal/components/PeriodicitySection';
 import { describeDateFilter, formatDateFilterPill } from '@pages/maps/helpers/dateLoopHelpers';
 import { RADIUS_ICON, toneButtonFor } from '@pages/maps/helpers/periodicityTones';
-import { PANEL_SHADOW } from '../helpers/catalogoStyles';
+import { PANEL_SHADOW_SOFT } from '../helpers/catalogoStyles';
 
 const SIN_FILTRO = 'Todas las fechas';
 
 const CatalogoTimeBar = ({ tiempo, loop }) => {
     const [abierto, setAbierto] = useState(false);
     const containerRef = useRef(null);
+    const isMobile = useIsMobile();
 
     const { layerId, periodicidad, loading, isRaster, hasPeriodicidad, filtro, applyFilter, clearFilter, getSpecificFilter } = tiempo;
     const rasterPeriodicity = isRaster ? periodicidad : null;
@@ -32,12 +34,27 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
     const etiqueta = formatDateFilterPill(describeDateFilter({ filter: filtro, rasterPeriodicity })) || SIN_FILTRO;
     const play = toneButtonFor(null, isLoopPlaying);
 
+    const botonCerrar = (
+        <Tooltip content="Cerrar el panel de fechas" placement={isMobile ? 'left' : 'bottom'} delay={200}>
+            <button
+                type="button"
+                onClick={() => setAbierto(false)}
+                aria-label="Cerrar el panel de fechas"
+                className={`size-7 shrink-0 ${RADIUS_ICON} text-[#6E7477] hover:text-purple hover:bg-purple-soft flex items-center justify-center transition-colors cursor-pointer`}
+            >
+                <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+            </button>
+        </Tooltip>
+    );
+
     return (
         <div
             ref={containerRef}
             className="fixed top-24 md:top-4 left-1/2 -translate-x-1/2 z-20 w-[min(560px,calc(100vw-2rem))] md:w-[min(560px,calc(100vw-26rem))] flex flex-col items-center"
         >
-            <div className={`flex items-center gap-1.5 p-1.5 bg-white rounded-full ${PANEL_SHADOW}`}>
+            <div className={`flex items-center gap-1.5 p-1.5 bg-white rounded-full ${PANEL_SHADOW_SOFT}`}>
                 {canPlay && (
                     <Tooltip content={isLoopPlaying ? 'Pausar animación' : 'Ver animación'} placement="bottom" delay={200}>
                         <button
@@ -62,7 +79,7 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
                     {loading ? 'Cargando fechas…' : etiqueta}
                 </button>
 
-                {filtro && (
+                {filtro && !isMobile && (
                     <Tooltip content="Quitar el filtro de fecha" placement="bottom" delay={200}>
                         <button
                             type="button"
@@ -75,47 +92,41 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
                     </Tooltip>
                 )}
 
-                {abierto && (
-                    <Tooltip content="Cerrar el panel de fechas" placement="bottom" delay={200}>
-                        <button
-                            type="button"
-                            onClick={() => setAbierto(false)}
-                            aria-label="Cerrar el panel de fechas"
-                            className={`size-7 shrink-0 ${RADIUS_ICON} text-[#6E7477] hover:text-purple hover:bg-purple-soft flex items-center justify-center transition-colors cursor-pointer`}
-                        >
-                            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M18 6L6 18M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </Tooltip>
-                )}
             </div>
 
             {abierto && (
-                <div className={`mt-2 w-full px-4 pb-1 bg-white rounded-xl ${PANEL_SHADOW} max-h-[60vh] overflow-y-auto`}>
-                    <PeriodicitySection
-                        layerId={layerId}
-                        periodicity={isRaster ? null : periodicidad}
-                        rasterPeriodicity={rasterPeriodicity}
-                        periodicityLoading={loading}
-                        isAdvancedMode={false}
-                        onFilterApply={(filterData) => applyFilter(layerId, filterData.filterName, filterData.cqlFilter)}
-                        onClearFilter={clearFilter}
-                        onClearDateFilter={() => { stopLoop?.(layerId); clearFilter(); }}
-                        onExpandedYearChange={setExpandedYear}
-                        singleSelectOnly={false}
-                        hasDateFilter={!!filtro}
-                        showLoopControls
-                        canPlay={canPlay}
-                        isLoopPlaying={isLoopPlaying}
-                        layerIntervalMs={prefs?.intervalMs}
-                        layerDirection={prefs?.direction}
-                        onSetLoopIntervalMs={(ms) => setLoopIntervalMs(layerId, ms)}
-                        onSetLoopDirection={(dir) => setLoopDirection(layerId, dir)}
-                        onTogglePeriodicityLoop={onToggleLoop}
-                        getSpecificFilterOverride={getSpecificFilter}
-                        loopAppliesToSlot
-                    />
+                <div className={`mt-2 w-full bg-white rounded-xl ${PANEL_SHADOW_SOFT} max-h-[60vh] overflow-y-auto`}>
+                    {isMobile && (
+                        <div className="sticky top-0 z-10 flex justify-end px-2 pt-2 -mb-5 bg-white">
+                            {botonCerrar}
+                        </div>
+                    )}
+                    <div className="px-4 pb-1">
+                        <PeriodicitySection
+                            layerId={layerId}
+                            periodicity={isRaster ? null : periodicidad}
+                            rasterPeriodicity={rasterPeriodicity}
+                            periodicityLoading={loading}
+                            isAdvancedMode={false}
+                            onFilterApply={(filterData) => applyFilter(layerId, filterData.filterName, filterData.cqlFilter)}
+                            onClearFilter={clearFilter}
+                            onClearDateFilter={() => { stopLoop?.(layerId); clearFilter(); }}
+                            onExpandedYearChange={setExpandedYear}
+                            singleSelectOnly={false}
+                            hasDateFilter={!!filtro}
+                            showLoopControls
+                            canPlay={canPlay}
+                            isLoopPlaying={isLoopPlaying}
+                            layerIntervalMs={prefs?.intervalMs}
+                            layerDirection={prefs?.direction}
+                            onSetLoopIntervalMs={(ms) => setLoopIntervalMs(layerId, ms)}
+                            onSetLoopDirection={(dir) => setLoopDirection(layerId, dir)}
+                            onTogglePeriodicityLoop={onToggleLoop}
+                            getSpecificFilterOverride={getSpecificFilter}
+                            loopAppliesToSlot
+                            trailingAction={isMobile ? null : botonCerrar}
+                        />
+                    </div>
                 </div>
             )}
         </div>

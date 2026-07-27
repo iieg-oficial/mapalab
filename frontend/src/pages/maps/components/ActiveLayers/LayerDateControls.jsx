@@ -63,7 +63,7 @@ const LoopControls = ({
                 disabled={disabled}
                 className={`${LOOP_BUTTON_BASE} ${direction.className}`}
             >
-                <Icon name="downArrow" className={`w-3 h-1.5 transition-transform duration-300 ${iconColor} ${loopDirection === 'rtl' ? 'rotate-90' : '-rotate-90'}`} />
+                <Icon name="chevron" className={`w-3 h-1.5 transition-transform duration-300 ${iconColor} ${loopDirection === 'rtl' ? 'rotate-90' : '-rotate-90'}`} />
             </button>
         </Tooltip>
     );

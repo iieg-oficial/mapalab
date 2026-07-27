@@ -4,12 +4,12 @@ import { useCarouselOverflow } from '@pages/maps/hooks/useCarouselOverflow';
 import { generateCQLFilter, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import { computeSelectorInitialState } from '@pages/maps/helpers/dateLoopHelpers';
 import { BackButton, YearBadge, CarouselArrow } from './SimpleDateSelectorParts';
-import { RADIUS_LABEL, toneClasses, toneStateFor } from '@pages/maps/helpers/periodicityTones';
+import { toneClasses, toneStateFor } from '@pages/maps/helpers/periodicityTones';
 
 const LOOP_TICK_SURFACE = {
-    A: 'bg-[#E2D1EB] border-transparent text-[#5C2472]',
-    B: 'bg-[#FFE4C4] border-transparent text-[#FF8300]',
-    default: 'bg-[#FFE4C4] border-transparent text-[#FF8300]',
+    A: 'bg-[#E2D1EB] border-[#E2D1EB] text-[#5C2472]',
+    B: 'bg-[#FFE4C4] border-[#FFE4C4] text-[#FF8300]',
+    default: 'bg-[#FFE4C4] border-[#FFE4C4] text-[#FF8300]',
 };
 
 const dateBtnClass = ({ slot, isActive, isLoopTick }) => {
@@ -190,11 +190,13 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
 
     const handleBackToYears = () => {
         handleStopLoop();
+        const year = expandedYear;
         setExpandedYear(null);
-        if (!singleSelectOnly) {
-            setSelectedYear(null);
-            setSelectedMonths(new Set());
-        }
+        if (singleSelectOnly) return;
+        setSelectedYear(year);
+        const yearData = year !== null ? periodicityData.fecha[year] : null;
+        const isRasterMonthly = isRaster && yearData && typeof yearData === 'object';
+        if (!isRasterMonthly) setSelectedMonths(new Set());
     };
 
     const handleMonthToggle = (monthNum) => {
@@ -260,7 +262,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                                 <button
                                     key={`${expandedYear}-${monthNum}`}
                                     onClick={() => handleMonthToggle(monthNum)}
-                                    className={`shrink-0 px-4 py-2 ${RADIUS_LABEL} text-[12px]/[14px] font-medium font-garet ${dateBtnClass({ slot, isActive, isLoopTick })}`}
+                                    className={`shrink-0 px-4 py-2 rounded-[9px] text-[12px]/[14px] font-medium font-garet ${dateBtnClass({ slot, isActive, isLoopTick })}`}
                                 >
                                     {abbr}
                                 </button>
@@ -275,7 +277,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
     const yearBtnClass = (year) => {
         const isActive = selectedYear === year;
         const isLoopTick = loopState?.isPlaying && loopState?.mode === 'year' && loopState?.currentKey === year;
-        return `shrink-0 px-5 py-3 ${RADIUS_LABEL} text-[14px]/[16px] font-medium font-garet ${dateBtnClass({ slot, isActive, isLoopTick: isActive && isLoopTick })}`;
+        return `shrink-0 px-5 py-3 rounded-[9px] text-[14px]/[16px] font-medium font-garet ${dateBtnClass({ slot, isActive, isLoopTick: isActive && isLoopTick })}`;
     };
     return (
         <div className="space-y-3">

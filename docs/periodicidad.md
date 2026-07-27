@@ -206,12 +206,18 @@ En modo comparación esta regla cede: el color lo dicta el lado (A morado, B nar
 
 La regla vive en `pages/maps/helpers/periodicityTones.js`:
 - `toneStateFor(slot, changed)` → `{ tone, active }`, resolviendo la precedencia slot > estado.
-- `toneClasses(tone, { active, disabled, idleBg })` → clases de superficie. El borde solo aparece en hover y cuando `active`; el texto y el icono llevan el mismo color que ese borde.
+- `toneClasses(tone, { active, disabled, idleBg, idleBorder })` → clases de superficie. El texto y el icono llevan el mismo color que el borde; en reposo el borde se pinta del color del propio fondo (`#F9FBFF`), no transparente, para que ocupe su píxel siempre y el botón no se perciba más chico que uno accionado.
 - `toneButtonFor(slot, changed, options)` → atajo que combina ambas.
 
-Radios homologados con el resto del visor: `rounded-full` (`RADIUS_ICON`) para los botones de solo icono, `rounded-[14px]` (`RADIUS_LABEL`) para los que llevan texto.
+Radios: `rounded-full` (`RADIUS_ICON`) para los botones de solo icono y `rounded-[14px]` (`RADIUS_LABEL`) para los de acción con texto (velocidad, «Ver animación»), el radio de botón con label del resto del visor. Los años, los meses y el badge del año expandido conservan `rounded-[9px]`.
 
-Los iconos de play y pausa viven en `Icon.jsx` (`play`, `pause`) con `currentColor`, para que hereden el tono del botón. Los cuatro SVG de `assets/icons/ico_play_*` e `ico_pause_*` se eliminaron: traían el naranja quemado en el `fill` y obligaban a duplicar cada icono para el hover.
+Los iconos de play y pausa viven en `Icon.jsx` (`play`, `pause`) con `currentColor`, para que hereden el tono del botón. Los cuatro SVG de `assets/icons/ico_play_*` e `ico_pause_*` se eliminaron: traían el naranja quemado en el `fill` y obligaban a duplicar cada icono para el hover. Por lo mismo se agregó `chevron`, porque el `downArrow` del botón de dirección se sirve como `<img>` desde un SVG con `stroke="#465055"` fijo y no admitía color.
+
+`PeriodicitySection` acepta una prop opcional `trailingAction` que se renderiza al final de la barra de acciones, después del botón de eliminar filtro. La usa el catálogo para colocar ahí su botón de cerrar en escritorio; el modal del visor no la pasa.
+
+### Regresar a la vista de años conserva la selección
+
+La flecha de regreso (`handleBackToYears`) selecciona el año del que se venía y limpia los meses, en vez de dejar la capa sin filtro. En capas raster mensuales conserva el mes seleccionado: ahí el filtro es un valor `TIME` puntual y «todo el año» no es representable, así que vaciarlo dejaría la UI marcando el año mientras el WMS sigue pidiendo el mes anterior. Con `singleSelectOnly` la selección no se toca, como antes.
 
 Cada capa mantiene sus propias preferencias de velocidad y dirección en runtime (no se persisten entre sesiones ni en backend). Se almacenan en `loopPrefs[layerId]` dentro de `useDateLoop`, con fallback a los defaults globales (`DEFAULT_LOOP_INTERVAL_MS = 500`, `DEFAULT_LOOP_DIRECTION = 'ltr'`) cuando el usuario aún no ha configurado nada. La preferencia se elimina automáticamente al desactivar la capa (`cleanupLoop`).
 

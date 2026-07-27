@@ -17,7 +17,7 @@ export const BackButton = ({ onClick }) => (
 export const YearBadge = ({ year, slot }) => {
     const { className } = toneButtonFor(slot, true);
     return (
-        <span className={`shrink-0 px-5 py-3 ${RADIUS_LABEL} text-[14px]/[16px] font-medium font-garet ${className}`}>
+        <span className={`shrink-0 px-5 py-3 rounded-[9px] text-[14px]/[16px] font-medium font-garet ${className}`}>
             {year}
         </span>
     );
@@ -92,7 +92,7 @@ export const LoopDirectionButton = ({ value, onChange, slot, disabled = false })
                 className={`flex items-center justify-center size-7.5 ${RADIUS_ICON} ${className}`}
             >
                 <Icon
-                    name="downArrow"
+                    name="chevron"
                     className={`w-4 h-2 transition-transform duration-300 ${isLtr ? '-rotate-90' : 'rotate-90'} ${disabled ? 'opacity-50 text-gray-400' : toneTextClass(tone)}`}
                 />
             </button>

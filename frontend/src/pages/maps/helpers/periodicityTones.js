@@ -14,6 +14,7 @@ const TONES = {
 };
 
 const IDLE_BG = 'bg-[#F9FBFF]';
+const IDLE_BORDER = 'border-[#F9FBFF]';
 const DISABLED = 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed';
 
 export const RADIUS_LABEL = 'rounded-[14px]';
@@ -27,10 +28,10 @@ export const toneStateFor = (slot, changed = false) => {
 
 export const toneTextClass = (tone) => (TONES[tone] || TONES.purple).text;
 
-export const toneClasses = (tone, { active = false, disabled = false, idleBg = IDLE_BG } = {}) => {
+export const toneClasses = (tone, { active = false, disabled = false, idleBg = IDLE_BG, idleBorder = IDLE_BORDER } = {}) => {
     if (disabled) return `border ${DISABLED}`;
     const t = TONES[tone] || TONES.purple;
-    const surface = active ? `${t.bg} ${t.border}` : `${idleBg} border-transparent`;
+    const surface = active ? `${t.bg} ${t.border}` : `${idleBg} ${idleBorder}`;
     return `border transition-colors ${t.text} ${surface} ${t.hover}`;
 };
 
