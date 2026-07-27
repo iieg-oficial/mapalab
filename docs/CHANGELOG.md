@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.93.1] - 2026-07-27
+
+### Cambiado: el panel de leyendas del catálogo aprovecha el ancho en móvil
+
+Maximizado ocupaba los mismos 240 px que minimizado, así que las leyendas anchas se apretaban en media pantalla. Ahora, cuando está abierto, toma todo el ancho del viewport (`calc(100vw-2rem)`, respetando el margen del `right-4`); minimizado conserva su `min(240px,50vw)`. En escritorio no cambia nada.
+
+Con ese ancho ya cabe el botón de minimizar, que estaba oculto en móvil (`hidden md:flex`): ahora aparece mientras el panel está maximizado y se esconde al minimizarlo, donde no cabe. El encabezado sigue siendo clickeable en ambos estados, así que abrirlo nunca dependió del botón.
+
+El panel abierto sube a `z-21`. `CatalogoBackButton` se monta después en el DOM con el mismo `z-20`, de modo que a ancho completo el logo quedaba encima del contenido de la leyenda.
+
 ## [1.93.0] - 2026-07-27
 
 ### Cambiado: los controles de periodicidad hablan un solo idioma de color

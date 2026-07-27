@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.93.1',
+        items: [
+            { text: 'En el Catálogo desde el celular, el panel de leyendas ahora se abre a todo el ancho de la pantalla y trae su botón para minimizarlo.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.93.0',
         items: [
             { text: 'Los controles de fecha y animación ahora se ven morados mientras están en su estado normal y se ponen naranjas en cuanto los usas o cambias su configuración, para que sea evidente qué tienes activo.', tag: 'changed' },
