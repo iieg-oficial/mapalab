@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.96.2] - 2026-07-27
+
+### Cambiado: la propuesta de tarjeta es anónima, sin campo de correo
+
+El formulario pedía un correo opcional «para avisarte del resultado». Mariachi no tiene envío de correo —lo único que notifica es a Discord por webhook—, así que esa promesa no se podía cumplir: el dato habría quedado guardado sin que nadie lo usara.
+
+Se retira el campo. La propuesta no pide ningún dato personal y el circuito se cierra donde tiene que cerrarse: en la bandeja de moderación del admin. La columna `email` de la tabla queda reservada por si más adelante existe envío, pero nadie la llena.
+
 ## [1.96.1] - 2026-07-27
 
 ### Cambiado: el editor de tarjeta también se abre desde la tarjeta abierta

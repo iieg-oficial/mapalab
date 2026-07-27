@@ -5,8 +5,6 @@ const BTN = 'px-5 py-2 rounded-[30px] text-[13px] font-bold transition-colors cu
 const CatalogoInfoBoxPropuestaForm = ({
     comentario,
     onComentario,
-    email,
-    onEmail,
     website,
     onWebsite,
     enviando,
@@ -24,17 +22,6 @@ const CatalogoInfoBoxPropuestaForm = ({
             rows={4}
             placeholder="Cuéntanos qué información falta o qué haría más útil esta tarjeta."
             className={`${FIELD} mb-4`}
-        />
-
-        <label className={LABEL} htmlFor="propuesta-email">Correo (opcional)</label>
-        <input
-            id="propuesta-email"
-            type="email"
-            value={email}
-            onChange={(e) => onEmail(e.target.value)}
-            maxLength={255}
-            placeholder="Para avisarte del resultado"
-            className={FIELD}
         />
 
         <input

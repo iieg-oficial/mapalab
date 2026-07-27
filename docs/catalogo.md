@@ -83,6 +83,8 @@ Quien usa el catálogo puede proponer qué campos aparecen en la tarjeta de info
 
 **Dónde se guarda**: aprobar escribe en `mapalab.catalogo_capas.infobox_config` (migración `0029` de dataengine) y nunca en `mapalab.layers`, así que el visor principal no cambia. La lectura hace `COALESCE(c.infobox_config, l.infobox_config)`: hereda del árbol mientras el catálogo no tenga la suya. `littleCardPropia` en la respuesta distingue una de otra.
 
+**Anónima**: el formulario sólo pide un comentario opcional, ningún dato personal. El circuito se cierra en la bandeja de moderación del admin, no hay aviso al ciudadano.
+
 **Anti-abuso**: honeypot `website`, 3 propuestas por hora por IP, tope de 10 pendientes por capa. Sin captcha — el filtro real es la aprobación humana. Detalle del razonamiento en el tópico «MapaLab» de la página de Documentación de mariachi.
 
 Piezas fuera de este repo: validador `app/schemas/mapalab_infobox.py`, tabla `mapalab_infobox_propuestas`, `POST /api/public/mapalab/catalogo/infobox-propuestas` y la pantalla «Propuestas de tarjeta», todos en mariachi (1.91.0).

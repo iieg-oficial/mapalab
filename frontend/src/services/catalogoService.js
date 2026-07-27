@@ -35,11 +35,11 @@ export const fetchCapaPeriodicidad = async (capa, signal) => {
 
 const MARIACHI_PUBLIC = (import.meta.env.VITE_MARIACHI_PUBLIC_API_HOST || '/api/public/').replace(/\/+$/, '');
 
-export const postInfoboxPropuesta = async ({ capaSlug, config, comentario, email, website }, signal) => {
+export const postInfoboxPropuesta = async ({ capaSlug, config, comentario, website }, signal) => {
     const res = await fetch(`${MARIACHI_PUBLIC}/mapalab/catalogo/infobox-propuestas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ capaSlug, config, comentario, email, website }),
+        body: JSON.stringify({ capaSlug, config, comentario, website }),
         signal,
     });
     if (res.status === 429) throw new Error('Ya enviaste varias propuestas. Intenta más tarde.');

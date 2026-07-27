@@ -33,7 +33,6 @@ const CatalogoInfoBoxEditor = ({ capa, featureMuestra = null, onClose }) => {
     const [draft, setDraft] = useState(() => draftFromConfig(capa?.littleCard));
     const [paso, setPaso] = useState('editor');
     const [comentario, setComentario] = useState('');
-    const [email, setEmail] = useState('');
     const [website, setWebsite] = useState('');
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState(null);
@@ -89,7 +88,6 @@ const CatalogoInfoBoxEditor = ({ capa, featureMuestra = null, onClose }) => {
                 capaSlug: capa.slug,
                 config: draftToConfig(draft),
                 comentario: comentario.trim() || null,
-                email: email.trim() || null,
                 website,
             });
             trackCatalogoInfoboxPropuesta({ slug: capa.slug, campos: draft.list.length + draft.cards.length });
@@ -127,7 +125,6 @@ const CatalogoInfoBoxEditor = ({ capa, featureMuestra = null, onClose }) => {
                         <p className="text-[16px] font-bold text-purple mb-2">¡Gracias! Tu propuesta ya está en revisión.</p>
                         <p className="text-[13px] text-[#6E7477] mb-6">
                             El equipo del IIEG la revisará antes de publicarla.
-                            {email.trim() ? ' Te avisaremos al correo que dejaste.' : ''}
                         </p>
                         <button
                             type="button"
@@ -141,8 +138,6 @@ const CatalogoInfoBoxEditor = ({ capa, featureMuestra = null, onClose }) => {
                     <CatalogoInfoBoxPropuestaForm
                         comentario={comentario}
                         onComentario={setComentario}
-                        email={email}
-                        onEmail={setEmail}
                         website={website}
                         onWebsite={setWebsite}
                         enviando={enviando}
