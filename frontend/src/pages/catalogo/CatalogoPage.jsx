@@ -4,6 +4,7 @@ import CatalogoMapView from './components/CatalogoMapView';
 import CatalogoSearchModal from './components/CatalogoSearchModal';
 import CatalogoLegends from './components/CatalogoLegends';
 import CatalogoBackButton from './components/CatalogoBackButton';
+import CatalogoInfoBoxEditor from './components/CatalogoInfoBoxEditor';
 import LottieSpinner from '@components/LottieSpinner';
 import { LayerLoadingProvider } from '@contexts/LayerLoadingContext';
 import { CatalogoTiempoProvider } from './hooks/CatalogoTiempoProvider';
@@ -19,9 +20,12 @@ import {
     trackCatalogoLayerClose,
     trackCatalogoSlugNotFound,
     trackCatalogoInstitucionSelect,
+    trackCatalogoInfoboxEditorOpen,
 } from '@services/analyticsService';
 import { CATALOGO_RETURN_KEY } from './useGoToCatalogo';
 import { buildCatalogoPath, filterCapas, resolveCatalogoRoute } from './helpers/catalogoRoutes';
+
+const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
 
 const CatalogoPage = () => {
     const { seg1, seg2 } = useParams();
@@ -35,6 +39,7 @@ const CatalogoPage = () => {
     const [institucionSlug, setInstitucionSlug] = useState(null);
     const [searchOpen, setSearchOpen] = useState(false);
     const [loadingCapa, setLoadingCapa] = useState(false);
+    const [capaEnEdicion, setCapaEnEdicion] = useState(null);
     const openTrackedRef = useRef(false);
 
     useEffect(() => {
@@ -135,6 +140,11 @@ const CatalogoPage = () => {
         navigate(buildCatalogoPath({ institucionSlug: slug }));
     }, [capas, navigate]);
 
+    const handleEditInfobox = useCallback((capa) => {
+        trackCatalogoInfoboxEditorOpen(capa.slug);
+        setCapaEnEdicion(capa);
+    }, []);
+
     const handleFilterChange = useCallback((cql) => {
         initialFilterRef.current = null;
         setSearchParams((prev) => {
@@ -181,7 +191,11 @@ const CatalogoPage = () => {
                 onOpen={() => setSearchOpen(true)}
                 onClose={() => setSearchOpen(false)}
                 onSelect={handleSelect}
+                onEditInfobox={IS_NON_PROD ? handleEditInfobox : null}
             />
+            {capaEnEdicion && (
+                <CatalogoInfoBoxEditor capa={capaEnEdicion} onClose={() => setCapaEnEdicion(null)} />
+            )}
         </div>
     );
 };

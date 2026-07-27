@@ -12,6 +12,12 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.96.0',
+        items: [
+            { text: 'En el Catálogo ya puedes proponer cómo se ve la tarjeta de información de una capa: eliges qué datos aparecen y en qué orden, con vista previa en vivo. Tu propuesta pasa a revisión del IIEG antes de publicarse.', tag: 'added' },
+        ],
+    },
+    {
         version: '1.94.0',
         items: [
             { text: 'La tarjeta de información del Catálogo ahora se queda anclada al punto que consultaste aunque muevas o acerques el mapa, y estrena botones para centrar la selección, descargar las tarjetas y moverla de lugar.', tag: 'added' },

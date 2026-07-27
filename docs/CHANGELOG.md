@@ -5,6 +5,21 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.96.0] - 2026-07-27
+
+### Agregado: personalizar la tarjeta de información desde el catálogo
+
+Cada capa de la lista muestra un botón de edición al pasar el cursor (o al enfocarlo con el teclado), pegado a la orilla derecha. Abre un editor donde se eligen los campos que aparecen al hacer clic en el mapa: se arrastran —o se hacen clic— desde la lista de campos disponibles a tres zonas (título, cifras y detalles), se reordenan y se les pone el nombre con el que los verá quien consulta. La vista previa usa el mismo `renderCard` del visor sobre un registro real de la capa, así que lo que se ve es exactamente lo que quedaría.
+
+La propuesta no publica nada: pasa a revisión del IIEG y sólo al aprobarse cambia la tarjeta pública. Gateado a `VITE_APP_ENV` `dev`/`beta`, como el resto del catálogo.
+
+- **Campos disponibles**: `fetchNonGeometryColumns`, el mismo helper que ya usaba la descarga de CSV vía WFS.
+- **Registro de muestra**: el de la tarjeta abierta si la hay; si no, uno traído con WFS `maxFeatures=1`.
+- **El borrador** vive en `helpers/infoboxDraft.js` como funciones puras, con su propio test: hereda la configuración existente, rellena etiquetas faltantes a partir del nombre del campo, respeta el tope de 12 filas por bloque y produce sólo las claves que el validador del servidor acepta.
+- **Envío**: `POST /api/public/mapalab/catalogo/infobox-propuestas` con honeypot. El servidor limita a 3 por hora por IP y a 10 propuestas pendientes por capa.
+
+Eventos nuevos: `catalogo_infobox_editor_open` y `catalogo_infobox_propuesta`. **Requieren mariachi 1.91.0**, que los registra en `ALLOWED_EVENT_NAMES`.
+
 ## [1.95.0] - 2026-07-27
 
 ### Agregado: el catálogo puede tener su propia configuración de tarjeta
