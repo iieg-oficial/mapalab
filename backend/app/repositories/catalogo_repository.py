@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 _SELECT = (
     'SELECT c.id, c.slug, c.nombre, c.workspace_alias, '
     'w.geoserver_workspace, c.geoserver_layer, c.search_tags, '
-    'l.infobox_config, i.slug AS institucion_slug, i.nombre AS institucion_nombre '
+    'COALESCE(c.infobox_config, l.infobox_config) AS infobox_config, '
+    'c.infobox_config IS NOT NULL AS infobox_propia, '
+    'i.slug AS institucion_slug, i.nombre AS institucion_nombre '
     'FROM mapalab.catalogo_capas c '
     'LEFT JOIN mapalab.workspaces w ON w.alias = c.workspace_alias '
     'LEFT JOIN mapalab.catalogo_instituciones i '

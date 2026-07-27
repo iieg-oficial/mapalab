@@ -23,7 +23,7 @@ const CatalogoInfoButton = () => {
                     onClick={() => { dismissHint(); trackCatalogoInfoOpen(); setInfoOpen(true); }}
                     onMouseEnter={dismissHint}
                     aria-label="¿Qué es esta vista?"
-                    className="size-6 rounded-full bg-[#FFE4C4] hover:bg-[#FFD9AD] text-orange flex items-center justify-center transition-colors shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] cursor-pointer"
+                    className="size-7 md:size-6 rounded-full border border-[#FFE4C4] hover:border-[#FFD9AD] bg-[#FFE4C4] hover:bg-[#FFD9AD] text-orange flex items-center justify-center transition-colors shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] cursor-pointer"
                 >
                     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 6.5h.01" />

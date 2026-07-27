@@ -56,7 +56,11 @@ export const formatLoopLabel = (desc) => {
     return `${desc.year}`;
 };
 
-export const formatLoopLabelLong = (desc) => {
+const MAX_LISTED_MONTHS = 3;
+
+const isContiguous = (months) => months.every((m, i) => i === 0 || m === months[i - 1] + 1);
+
+export const formatLoopLabelLong = (desc, { maxMonths = Infinity } = {}) => {
     if (!desc) return null;
     if (desc.multi) return `${desc.yearCount} años`;
     if (desc.months?.length === 1) {
@@ -67,10 +71,17 @@ export const formatLoopLabelLong = (desc) => {
         const names = desc.months
             .map(n => MONTHS.find(m => m.num === n)?.name)
             .filter(Boolean);
+        if (names.length > maxMonths) {
+            return isContiguous(desc.months)
+                ? `${names[0]} a ${names[names.length - 1]} de ${desc.year}`
+                : `${names.length} meses de ${desc.year}`;
+        }
         return `${names.join(', ')} de ${desc.year}`;
     }
     return `${desc.year}`;
 };
+
+export const formatDateFilterPill = (desc) => formatLoopLabelLong(desc, { maxMonths: MAX_LISTED_MONTHS });
 
 export const computeSelectorInitialState = ({ isRaster, rasterPeriodicity, currentFilter }) => {
     if (isRaster) {

@@ -81,6 +81,22 @@ const icons = {
             <rect x="8" y="1" width="3" height="12" rx="1" />
         </svg>
     ),
+    chevron: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13.171 7.05" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2" aria-hidden="true">
+            <path d="M1.409 1.409 6.6 5.746l5.163-4.337" />
+        </svg>
+    ),
+    play: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 14" fill="currentColor" aria-hidden="true">
+            <path d="M11 6.13 1.5.63A1 1 0 0 0 0 1.5v11a1 1 0 0 0 1.5.87l9.5-5.5a1 1 0 0 0 0-1.74Z" />
+        </svg>
+    ),
+    pause: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 14" fill="currentColor" aria-hidden="true">
+            <rect x="1" y="1" width="3.5" height="12" rx="1.2" />
+            <rect x="7.5" y="1" width="3.5" height="12" rx="1.2" />
+        </svg>
+    ),
     swipe_handle_chevrons_h: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="6 9 12 3 18 9" />

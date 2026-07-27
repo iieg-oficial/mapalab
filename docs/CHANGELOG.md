@@ -5,6 +5,149 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.96.2] - 2026-07-27
+
+### Cambiado: la propuesta de tarjeta es anónima, sin campo de correo
+
+El formulario pedía un correo opcional «para avisarte del resultado». Mariachi no tiene envío de correo —lo único que notifica es a Discord por webhook—, así que esa promesa no se podía cumplir: el dato habría quedado guardado sin que nadie lo usara.
+
+Se retira el campo. La propuesta no pide ningún dato personal y el circuito se cierra donde tiene que cerrarse: en la bandeja de moderación del admin. La columna `email` de la tabla queda reservada por si más adelante existe envío, pero nadie la llena.
+
+## [1.96.1] - 2026-07-27
+
+### Cambiado: el editor de tarjeta también se abre desde la tarjeta abierta
+
+Hasta ahora sólo se llegaba al editor desde la lista de capas. `ActionsToolbar` estrena una prop opcional `onEdit` —aditiva, el visor no la pasa— que suma un botón de lápiz a la columna de acciones del `CatalogoInfoBox`, tanto en la columna de escritorio como en la fila de herramientas del panel móvil.
+
+Al entrar por ahí, el feature que ya está seleccionado se pasa como `featureMuestra`: la vista previa arranca con el dato que el usuario tiene en pantalla en lugar de pedir otro por WFS. La prop existía en el editor y no la usaba nadie.
+
+### Corregido: los items de la lista de capas no mostraban cursor de mano
+
+Tailwind 4 retiró el `cursor: pointer` que los navegadores daban por defecto a `<button>`, así que la fila se sentía inerte aunque fuera clickeable.
+
+## [1.96.0] - 2026-07-27
+
+### Agregado: personalizar la tarjeta de información desde el catálogo
+
+Cada capa de la lista muestra un botón de edición al pasar el cursor (o al enfocarlo con el teclado), pegado a la orilla derecha. Abre un editor donde se eligen los campos que aparecen al hacer clic en el mapa: se arrastran —o se hacen clic— desde la lista de campos disponibles a tres zonas (título, cifras y detalles), se reordenan y se les pone el nombre con el que los verá quien consulta. La vista previa usa el mismo `renderCard` del visor sobre un registro real de la capa, así que lo que se ve es exactamente lo que quedaría.
+
+La propuesta no publica nada: pasa a revisión del IIEG y sólo al aprobarse cambia la tarjeta pública. Gateado a `VITE_APP_ENV` `dev`/`beta`, como el resto del catálogo.
+
+- **Campos disponibles**: `fetchNonGeometryColumns`, el mismo helper que ya usaba la descarga de CSV vía WFS.
+- **Registro de muestra**: el de la tarjeta abierta si la hay; si no, uno traído con WFS `maxFeatures=1`.
+- **El borrador** vive en `helpers/infoboxDraft.js` como funciones puras, con su propio test: hereda la configuración existente, rellena etiquetas faltantes a partir del nombre del campo, respeta el tope de 12 filas por bloque y produce sólo las claves que el validador del servidor acepta.
+- **Envío**: `POST /api/public/mapalab/catalogo/infobox-propuestas` con honeypot. El servidor limita a 3 por hora por IP y a 10 propuestas pendientes por capa.
+
+Eventos nuevos: `catalogo_infobox_editor_open` y `catalogo_infobox_propuesta`. **Requieren mariachi 1.91.0**, que los registra en `ALLOWED_EVENT_NAMES`.
+
+## [1.95.0] - 2026-07-27
+
+### Agregado: el catálogo puede tener su propia configuración de tarjeta
+
+`mapalab.catalogo_capas` no tenía `infobox_config`: heredaba la del árbol con un `LEFT JOIN LATERAL` sobre `mapalab.layers`. Eso dejaba dos huecos — las capas del catálogo que no existen en el árbol se quedaban sin tarjeta, y cualquier ajuste hecho desde el catálogo habría tenido que escribir en `layers`, cambiando también lo que ve el visor principal.
+
+Con la migración `0029` de dataengine la tabla estrena su propia columna. La lectura hace `COALESCE(c.infobox_config, l.infobox_config)`: si la capa no define la suya sigue heredando, así que nada cambia para las ya configuradas. La respuesta suma `littleCardPropia` para distinguir una configuración propia de una heredada.
+
+Es la base del editor de tarjetas a solicitud del catálogo, cuya escritura tocará únicamente esta columna.
+
+## [1.94.0] - 2026-07-27
+
+### Agregado: la tarjeta de información del catálogo reusa el InfoBox del visor
+
+`CatalogoInfoBox` reimplementaba una versión mínima: posicionaba por pixel fijo, con un recorte manual contra el viewport (`PANEL_WIDTH = 239`, `innerHeight - 220`) y sin acciones. El defecto de fondo era el anclaje: la tarjeta guardaba el pixel del clic, así que al mover o hacer zoom en el mapa se quedaba quieta mientras el feature se iba.
+
+Ahora monta las piezas del `InfoBox` del visor, que **reciben todo por props y no tocan ningún contexto**: `InfoBoxArrow` (ancla a la coordenada y la sigue en pan/zoom), `useViewportContainment`, `useDraggablePanel`, `ActionsToolbar` (cerrar / mover / descargar CSV / centrar selección), `ScrollContainer`, y en móvil `MobileSheet` + `InfoBoxTools` + `DismissGesture`, con los mismos estilos del visor. Se ganan la columna de acciones, la vista móvil real y el descarte por gesto.
+
+No se monta `InfoBox.jsx` completo a propósito: está acoplado a `MapsContext`, `SiderContext` y `useFeatureInfo` —que exige `LayersProvider` y `EventoProvider`—, y más de la mitad de su lógica (capas alternativas, swipe, selección por polígono, `WhatsNewModal`) no aplica a una vista de una sola capa. `downloadFeaturesAsCSV` acepta `allLayers` opcional y cae a `result.layerName`, lo que permitió prescindir del árbol.
+
+Dos ajustes puntuales: la tarjeta se queda en `z-30` (en el visor va en `z-5`, debajo de los paneles; aquí quedaría bajo el de leyendas), para lo cual `InfoBoxArrow` recibió una prop `zIndex` con default `4` — cambio aditivo que no altera el visor. Y `centerOnResults` reubica la tarjeta con un `onReposition` que actualiza el pixel en `CatalogoMapView`, en vez del `clickPosition` del provider.
+
+Evento nuevo `catalogo_infobox_action` (`download` / `center_group`). **Requiere mariachi con el evento en `ALLOWED_EVENT_NAMES`**: el collector valida contra lista blanca y un nombre desconocido tumba el lote entero con 422, no solo ese evento.
+
+### Corregido: la lista de instituciones se aplastaba con «Todas» seleccionada
+
+El contenedor del buscador reparte `80vh` entre encabezado, panel de capas, pills, lista de instituciones e input. La lista era el único bloque sin `shrink-0`, así que absorbía toda la compresión: con «Todas» el panel de capas trae todos los resultados y llena su `calc(80vh-140px)`, dejando la lista en poco más de dos elementos. Al filtrar por institución hay menos capas y por eso se veía bien.
+
+Ahora la lista lleva `shrink-0` y el presupuesto se reparte explícitamente: con la lista desplegada, el panel de capas baja a `calc(30vh-70px)` y la lista toma `calc(50vh-70px)` (nueva prop `maxHeight`), que suman exactamente los `80vh` disponibles. Sin ese reparto, el `shrink-0` habría empujado el bloque fuera del viewport.
+
+### Cambiado: superficies homologadas en el buscador del catálogo
+
+Las pills de institución adoptan el `backdrop-blur-md` del título y pierden su sombra propia; en hover toman el mismo relleno sólido que la pill activa. Los márgenes entre encabezado, panel, pills e input se unifican en `STACK_SPACING` (`mb-3`), antes repartidos entre `mb-2` y `mb-4`.
+
+Al quedar todo con la misma sombra, las dos constantes se colapsan en una: `PANEL_SHADOW` pasa a ser la suave (`0 6px 20px rgba(26,38,100,.10)`) y desaparece la anterior, que además proyectaba hacia arriba.
+
+### Cambiado: la barra de periodicidad se reacomoda en móvil
+
+Estaba centrada arriba y chocaba con el logo. Ahora se coloca bajo el botón de «Regresar a Mapalab», alineada a la orilla inferior del bloque del logo (`top-17 left-26`, derivados de sus 92 px de alto y 80 px de ancho más el `gap-2`), con `h-10` explícito para igualar la altura de ese botón. La pill toma sólo el ancho de su contenido; el panel desplegable se sale del contenedor con `-ml-22` para ocupar el ancho completo del viewport. En escritorio se mantiene centrada.
+
+La «×» de cerrar el panel deja de tener fila propia y entra en la misma línea del título «Periodicidad», pegada a la derecha, vía la nueva prop `titleAction` de `PeriodicitySection` (el encabezado ya no crece). El bote de basura vuelve a la pill mientras el panel está cerrado y usa la variante `hover` del icono, que es la roja — la variante `normal` es gris y no se podía recolorear por CSS al servirse como `<img>`.
+
+### Cambiado: el panel de leyendas se ajusta en móvil
+
+El encabezado medía 54 px (`pt-3` + botón `size-8` + `pb-2.5`); baja a 40 px con `min-h-10 py-1.5` y botones `size-7`, homologado con la pill de periodicidad. Minimizado toma `rounded-full` para leerse como pill, y el nombre de la capa se trunca con elipsis en vez de saltar de línea e invadir el espacio de otros componentes — al maximizar vuelve a ocupar las líneas que necesite.
+
+El botón de información de la barra de atribuciones pasa a `size-7 md:size-6`: en móvil empata con el botón `©` de 28 px que tiene al lado y en escritorio con la barra de «Contribuciones», de 24 px de alto.
+
+## [1.93.1] - 2026-07-27
+
+### Cambiado: el panel de leyendas del catálogo aprovecha el ancho en móvil
+
+Maximizado ocupaba los mismos 240 px que minimizado, así que las leyendas anchas se apretaban en media pantalla. Ahora, cuando está abierto, toma todo el ancho del viewport (`calc(100vw-2rem)`, respetando el margen del `right-4`); minimizado conserva su `min(240px,50vw)`. En escritorio no cambia nada.
+
+Con ese ancho ya cabe el botón de minimizar, que estaba oculto en móvil (`hidden md:flex`): ahora aparece mientras el panel está maximizado y se esconde al minimizarlo, donde no cabe. El encabezado sigue siendo clickeable en ambos estados, así que abrirlo nunca dependió del botón.
+
+El panel abierto sube a `z-21`. `CatalogoBackButton` se monta después en el DOM con el mismo `z-20`, de modo que a ancho completo el logo quedaba encima del contenido de la leyenda.
+
+## [1.93.0] - 2026-07-27
+
+### Cambiado: los controles de periodicidad hablan un solo idioma de color
+
+Hasta ahora el color de los controles de fecha era arbitrario: el botón de animación siempre era naranja (aunque estuviera detenido), la velocidad y la dirección siempre moradas, y los años y meses usaban azul `#2E4372` en reposo. Ahora el color **codifica estado**: morado mientras el control está en su valor por defecto, naranja en cuanto se acciona o se cambia. Aplica al play/pausa (morado detenido, naranja reproduciendo), a la velocidad (naranja si no es 1s), a la dirección (naranja si es de derecha a izquierda) y a los años y meses (naranja cuando están seleccionados).
+
+En modo comparación el color lo sigue dictando el lado (A morado, B naranja), porque ahí identifica el panel y esa lectura es prioritaria.
+
+La regla vive en `pages/maps/helpers/periodicityTones.js` (`toneStateFor`, `toneClasses`, `toneButtonFor`) y la consumen `SimpleDateSelectorParts`, `SimpleDateSelector`, `LayerDateControls` y `CatalogoTimeBar`, en lugar de las tres paletas duplicadas que había.
+
+### Cambiado: bordes y radios homologados en los controles de fecha
+
+Los botones de solo icono (dirección del loop) pasan a `rounded-full` y los de acción con texto (velocidad, «Ver animación») a `rounded-[14px]`, el radio de botón con label ya establecido en el resto del visor. Los años, los meses y el badge del año expandido conservan su `rounded-[9px]`.
+
+El borde toma el mismo color que el texto y el icono, y en reposo se pinta del color del propio fondo (`#F9FBFF`) en vez de transparente: así ocupa su píxel siempre y el botón no se percibe más chico cuando no está accionado.
+
+### Cambiado: el título de la sección de periodicidad
+
+Sube a 15 px y pierde los dos puntos finales. Al vivir en `PeriodicitySection`, aplica al modal del visor y al panel del catálogo, en escritorio y en móvil.
+
+### Corregido: regresar a la vista de años ya no borra la selección
+
+La flecha de regreso limpiaba año y meses, dejando la capa sin filtro de fecha. Ahora selecciona el año completo del que se venía, que es lo que el gesto sugiere. En capas raster mensuales conserva el mes: ahí el filtro es un valor `TIME` puntual y «todo el año» no existe, así que vaciarlo dejaba la vista marcando el año mientras el WMS seguía pidiendo el mes anterior.
+
+### Corregido: la animación no se reflejaba en el panel de fechas del Catálogo
+
+`SimpleDateSelector` solo resalta el mes o el año en curso cuando `showLoopHighlight` es verdadero, y esa bandera se apaga en cuanto el consumidor pasa `getSpecificFilterOverride`. `CatalogoTimeBar` lo pasaba sin declarar `loopAppliesToSlot`, así que con el panel abierto el loop avanzaba en el mapa pero ningún botón lo indicaba. Ahora lo declara.
+
+### Cambiado: la pill de fecha del Catálogo se resume y estrena bote de basura
+
+Con más de tres meses seleccionados la pill enlistaba todos los nombres y desbordaba. Ahora se resume: rango si son contiguos («Enero a Mayo de 2024») o conteo si no lo son («4 meses de 2024»). El tope vive en `formatDateFilterPill` (`dateLoopHelpers.js`), que envuelve a `formatLoopLabelLong` con `maxMonths: 3`; el helper original no cambia de comportamiento para el resto de sus consumidores.
+
+Además, el botón que quitaba el filtro dejó de ser una «×» ambigua y ahora es un bote de basura rojo. La «×» pasó a su papel real, cerrar el panel, y se coloca según el espacio disponible: en escritorio entra al final de la barra de acciones del panel (vía la nueva prop opcional `trailingAction` de `PeriodicitySection`) y en móvil se queda anclada en la esquina superior derecha, en una fila `sticky` que sigue visible al hacer scroll.
+
+En móvil el bote de basura sale de la pill y queda solo en la barra de acciones del panel, empujado a la derecha con `ml-auto md:ml-0` para que no se pierda si la fila hace wrap. Consecuencia a tener en cuenta: con el panel cerrado hay que abrirlo para quitar el filtro.
+
+La pill y el panel bajan a `PANEL_SHADOW_SOFT` (`0 6px 20px rgba(26,38,100,.10)`), una nueva constante de `catalogoStyles.js`. La sombra anterior proyectaba también hacia arriba (`0 -18px 48px`), que tiene sentido en el buscador — se abre desde el borde inferior — pero no en un panel que cae hacia abajo. `PANEL_SHADOW` sigue vigente para el buscador y la lista de instituciones.
+
+### Eliminado: los cuatro SVG de play y pausa
+
+`ico_play_normal`, `ico_play_hover`, `ico_pause_normal` e `ico_pause_hover` traían el naranja quemado en el `fill`, lo que impedía colorearlos por estado y obligaba a duplicar cada icono para el hover. Se reemplazaron por `play` y `pause` en `Icon.jsx`, que usan `currentColor` y heredan el tono del botón.
+
+Por la misma razón se agregó `chevron`: el `downArrow` del botón de dirección se sirve como `<img>` desde `ico_down_arrow.svg`, que trae `stroke="#465055"` fijo, así que ninguna clase de color lo alcanzaba y la flecha se veía gris en todos los estados. `downArrow` sigue en uso para el botón de regreso y las flechas del carrusel, que sí quieren ese gris.
+
+## [1.92.1] - 2026-07-27
+
+### Cambiado: el título del catálogo se apoya en una píldora de vidrio
+
+El encabezado del buscador (`CatalogoSearchModal`) dejaba el título flotando directo sobre el mapa, sin superficie propia, así que sobre capas saturadas costaba leerlo. Ahora el título va dentro de una píldora con desenfoque de fondo y sin sombra, en los dos estados del encabezado: nombre de institución activa y «Catálogo». La constante `TITLE_PILL` vive en `helpers/catalogoStyles.js`, junto a `PANEL_SHADOW` y los `Z_*`, para no repartir la decisión en clases sueltas.
+
 ## [1.92.0] - 2026-07-24
 
 ### Agregado: descarga por streaming a disco para no saturar la memoria

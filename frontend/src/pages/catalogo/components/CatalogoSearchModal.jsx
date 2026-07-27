@@ -5,7 +5,7 @@ import ScrollContainer from '@components/ScrollContainer';
 import CatalogoShare from './CatalogoShare';
 import CatalogoInstitucionesList from './CatalogoInstitucionesList';
 import { buildCatalogoShareUrl, filterCapas } from '../helpers/catalogoRoutes';
-import { PANEL_SHADOW, Z_CAPAS, Z_INPUT } from '../helpers/catalogoStyles';
+import { PANEL_SHADOW, STACK_SPACING, TITLE_PILL, Z_CAPAS, Z_INPUT } from '../helpers/catalogoStyles';
 import { trackCatalogoSearch, trackCatalogoShare } from '@services/analyticsService';
 
 const SearchIcon = ({ className }) => (
@@ -28,15 +28,14 @@ const CopyIcon = ({ className }) => (
     </svg>
 );
 
-const PILL = 'shrink-0 px-3 py-1 rounded-full text-[12px] font-garet font-bold transition-colors cursor-pointer';
-const PILL_SHADOW = 'shadow-[0_5px_20px_#1A26641A]';
+const PILL = 'shrink-0 px-3 py-1 rounded-full backdrop-blur-md text-[12px] font-garet font-bold transition-colors cursor-pointer';
 const PILL_TODAS = {
-    on: `bg-purple-deep text-white ${PILL_SHADOW}`,
-    off: 'text-purple hover:bg-purple-soft',
+    on: 'bg-purple-deep text-white',
+    off: 'text-purple hover:bg-purple-deep hover:text-white',
 };
 const PILL_INSTITUCION = {
-    on: `bg-orange text-white ${PILL_SHADOW}`,
-    off: 'text-orange hover:bg-orange/15',
+    on: 'bg-orange text-white',
+    off: 'text-orange hover:bg-orange hover:text-white',
 };
 
 const CatalogoSearchModal = ({
@@ -50,6 +49,7 @@ const CatalogoSearchModal = ({
     onOpen,
     onClose,
     onSelect,
+    onEditInfobox = null,
 }) => {
     const [query, setQuery] = useState('');
     const [shareOpen, setShareOpen] = useState(false);
@@ -101,7 +101,7 @@ const CatalogoSearchModal = ({
             ref={containerRef}
             className="fixed left-1/2 -translate-x-1/2 bottom-15 z-30 w-[min(460px,90vw)] max-h-[80vh] flex flex-col items-stretch"
         >
-            <div className={`${headerVisibility} relative z-30 items-center justify-between gap-2 mb-2`}>
+            <div className={`${headerVisibility} relative z-30 items-center justify-between gap-2 ${STACK_SPACING}`}>
                 <div className="min-w-0 flex items-center gap-2">
                     {institucionActiva && (
                         <div className="relative shrink-0">
@@ -148,7 +148,7 @@ const CatalogoSearchModal = ({
                         </div>
                     )}
                     {institucionActiva ? (
-                        <div className="min-w-0 flex items-baseline gap-1.5">
+                        <div className={`min-w-0 flex items-baseline gap-1.5 ${TITLE_PILL}`}>
                             <span className="truncate text-[18px] font-bold text-orange font-garet leading-tight">
                                 {institucionActiva.nombre}
                             </span>
@@ -157,7 +157,9 @@ const CatalogoSearchModal = ({
                             </span>
                         </div>
                     ) : (
-                        <span className="text-[18px] font-bold text-purple font-garet">Catálogo</span>
+                        <span className={`inline-flex items-center text-[18px] font-bold text-purple font-garet ${TITLE_PILL}`}>
+                            Catálogo
+                        </span>
                     )}
                 </div>
 
@@ -173,10 +175,10 @@ const CatalogoSearchModal = ({
                 )}
             </div>
 
-            <div className={`${Z_CAPAS} ${PANEL_SHADOW} grid transition-all duration-300 ease-out min-h-0 rounded-xl ${open ? 'grid-rows-[1fr] opacity-100 mb-4' : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
+            <div className={`${Z_CAPAS} ${PANEL_SHADOW} grid transition-all duration-300 ease-out min-h-0 rounded-xl ${open ? `grid-rows-[1fr] opacity-100 ${STACK_SPACING}` : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
                 <div className="min-h-0 overflow-hidden rounded-xl">
                     <ScrollContainer
-                        className="max-h-[calc(80vh-140px)] bg-white rounded-xl"
+                        className={`${listaOpen ? 'max-h-[calc(30vh-70px)]' : 'max-h-[calc(80vh-140px)]'} bg-white rounded-xl`}
                         overlayFade
                         overlayColor="#FFFFFF"
                         clickableArrows
@@ -189,13 +191,28 @@ const CatalogoSearchModal = ({
                             </p>
                         ) : (
                             results.map((c) => (
-                                <button
-                                    key={c.slug}
-                                    onClick={() => onSelect(c.slug, { fromSearch: !!debounced.trim() })}
-                                    className="w-full text-left px-3 py-2.5 rounded-lg text-[16px] font-medium text-[#454545] font-garet hover:bg-orange/10 hover:text-purple transition-colors"
-                                >
-                                    {c.nombre}
-                                </button>
+                                <div key={c.slug} className="group/item relative flex items-center rounded-lg hover:bg-orange/10 transition-colors">
+                                    <button
+                                        onClick={() => onSelect(c.slug, { fromSearch: !!debounced.trim() })}
+                                        className="flex-1 min-w-0 text-left px-3 py-2.5 pr-9 text-[16px] font-medium text-[#454545] font-garet group-hover/item:text-purple transition-colors truncate cursor-pointer"
+                                    >
+                                        {c.nombre}
+                                    </button>
+                                    {onEditInfobox && (
+                                        <button
+                                            type="button"
+                                            onClick={() => onEditInfobox(c)}
+                                            aria-label={`Personalizar la tarjeta de ${c.nombre}`}
+                                            title="Personalizar la tarjeta de información"
+                                            className="absolute right-1.5 size-7 rounded-full flex items-center justify-center text-purple opacity-0 group-hover/item:opacity-100 focus-visible:opacity-100 hover:bg-purple-soft transition-opacity cursor-pointer"
+                                        >
+                                            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 20h9" />
+                                                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
                             ))
                         )}
                     </ScrollContainer>
@@ -204,7 +221,7 @@ const CatalogoSearchModal = ({
 
             {instituciones.length > 0 && (
                 <>
-                    <div className={`${headerVisibility} shrink-0 items-center gap-1.5 mb-4`}>
+                    <div className={`${headerVisibility} shrink-0 items-center gap-1.5 ${STACK_SPACING}`}>
                         <div className="min-w-0 flex items-center gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
                             <button
                                 type="button"
@@ -251,6 +268,7 @@ const CatalogoSearchModal = ({
                             institucionActiva={institucionActiva}
                             conteos={conteosPorInstitucion}
                             totalCapas={totalCapas}
+                            maxHeight={open ? 'max-h-[calc(50vh-70px)]' : 'max-h-[45vh]'}
                             onSelect={handleSelectInstitucion}
                         />
                     )}

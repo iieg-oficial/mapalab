@@ -12,6 +12,36 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.96.0',
+        items: [
+            { text: 'En el Catálogo ya puedes proponer cómo se ve la tarjeta de información de una capa: eliges qué datos aparecen y en qué orden, con vista previa en vivo. Tu propuesta pasa a revisión del IIEG antes de publicarse.', tag: 'added' },
+        ],
+    },
+    {
+        version: '1.94.0',
+        items: [
+            { text: 'La tarjeta de información del Catálogo ahora se queda anclada al punto que consultaste aunque muevas o acerques el mapa, y estrena botones para centrar la selección, descargar las tarjetas y moverla de lugar.', tag: 'added' },
+            { text: 'Desde el celular, esa tarjeta se abre como panel inferior y puedes descartar cada resultado deslizándolo.', tag: 'added' },
+            { text: 'La lista de instituciones ya se muestra completa cuando tienes «Todas» seleccionada; antes se alcanzaban a ver solo dos.', tag: 'fixed' },
+            { text: 'En el celular, la barra de fechas del Catálogo se movió debajo del botón de regresar para que no la tape el logo, y el panel de leyendas aprovecha mejor el espacio.', tag: 'changed' },
+        ],
+    },
+    {
+        version: '1.93.1',
+        items: [
+            { text: 'En el Catálogo desde el celular, el panel de leyendas ahora se abre a todo el ancho de la pantalla y trae su botón para minimizarlo.', tag: 'changed' },
+        ],
+    },
+    {
+        version: '1.93.0',
+        items: [
+            { text: 'Los controles de fecha y animación ahora se ven morados mientras están en su estado normal y se ponen naranjas en cuanto los usas o cambias su configuración, para que sea evidente qué tienes activo.', tag: 'changed' },
+            { text: 'Mientras corre una animación, el mes o el año que se está mostrando ya se resalta en el panel de fechas abierto.', tag: 'fixed' },
+            { text: 'Al regresar de los meses a la vista de años ya no se pierde el filtro: queda seleccionado el año completo del que venías.', tag: 'fixed' },
+            { text: 'En el Catálogo, cuando el filtro abarca más de tres meses la fecha se resume («Enero a Mayo de 2024») en vez de enlistarlos todos, y el botón para quitar el filtro ahora es un bote de basura.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.92.0',
         items: [
             { text: 'Al descargar capas pesadas, el navegador ahora te pregunta dónde guardar el archivo y lo escribe directo en tu equipo, en vez de cargarlo completo en memoria; así se evita que se sature con archivos grandes. (Disponible en Chrome y Edge de computadora.)', tag: 'added' },

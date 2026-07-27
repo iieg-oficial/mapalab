@@ -1,6 +1,6 @@
 import ScrollContainer from '@components/ScrollContainer';
 import logoMapalabShort from '@logos/mapalab_short.svg';
-import { PANEL_SHADOW, Z_INSTITUCIONES } from '../helpers/catalogoStyles';
+import { PANEL_SHADOW, STACK_SPACING, Z_INSTITUCIONES } from '../helpers/catalogoStyles';
 
 const ITEM = 'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors';
 const AVATAR = 'size-9 shrink-0 rounded-md flex items-center justify-center';
@@ -28,11 +28,12 @@ const CatalogoInstitucionesList = ({
     institucionActiva,
     conteos = {},
     totalCapas = 0,
+    maxHeight = 'max-h-[45vh]',
     onSelect,
 }) => (
-    <div className={`${Z_INSTITUCIONES} ${PANEL_SHADOW} mb-4 bg-white rounded-xl overflow-hidden`}>
+    <div className={`${Z_INSTITUCIONES} ${PANEL_SHADOW} ${STACK_SPACING} shrink-0 bg-white rounded-xl overflow-hidden`}>
         <ScrollContainer
-            className="max-h-[45vh] p-1.5 flex flex-col gap-1.5"
+            className={`${maxHeight} p-1.5 flex flex-col gap-1.5`}
             overlayFade
             overlayColor="#FFFFFF"
             itemCount={instituciones.length + 1}

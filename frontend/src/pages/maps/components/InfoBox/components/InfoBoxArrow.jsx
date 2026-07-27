@@ -53,7 +53,7 @@ const computeArrowPlacement = (panelRect, featurePixel) => {
     return { anchorX, anchorY, angleDeg, touchesHeader };
 };
 
-const InfoBoxArrow = ({ panelRef, mapInstance, lngLat, fill = '#FFFFFF' }) => {
+const InfoBoxArrow = ({ panelRef, mapInstance, lngLat, fill = '#FFFFFF', zIndex = 4 }) => {
     const polygonRef = useRef(null);
 
     useEffect(() => {
@@ -109,7 +109,7 @@ const InfoBoxArrow = ({ panelRef, mapInstance, lngLat, fill = '#FFFFFF' }) => {
                 width: '100vw',
                 height: '100vh',
                 pointerEvents: 'none',
-                zIndex: 4,
+                zIndex,
                 overflow: 'visible',
             }}
             aria-hidden="true"

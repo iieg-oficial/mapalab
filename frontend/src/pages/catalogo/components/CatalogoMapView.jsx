@@ -12,7 +12,7 @@ import Style from 'ol/style/Style';
 import Stroke from 'ol/style/Stroke';
 import Fill from 'ol/style/Fill';
 import CircleStyle from 'ol/style/Circle';
-import { fromLonLat, transformExtent } from 'ol/proj';
+import { fromLonLat, toLonLat, transformExtent } from 'ol/proj';
 import MapsContext from '@contexts/MapsContext';
 import { SiderContext } from '@contexts/SiderContext';
 import MapControls from '@pages/maps/components/MapControls';
@@ -80,7 +80,7 @@ const SIDER_STUB = {
     isOpen: false,
 };
 
-const CatalogoMapView = ({ capa }) => {
+const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
     const { tiempo, loop, wmsLayerRef } = useCatalogoTiempoContext();
     const targetRef = useRef(null);
     const scaleRef = useRef(null);
@@ -195,7 +195,8 @@ const CatalogoMapView = ({ capa }) => {
                 if (seq !== clickSeqRef.current) return;
                 const features = data?.features || [];
                 trackCatalogoFeatureClick({ slug: capaRef.current?.slug || null, count: features.length });
-                setInfo({ features, pixel });
+                const [lng, lat] = toLonLat(evt.coordinate);
+                setInfo({ features, pixel, lngLat: { lng, lat } });
                 highlightSourceRef.current?.clear();
                 if (features.length) {
                     const parsed = features
@@ -297,6 +298,10 @@ const CatalogoMapView = ({ capa }) => {
                     capa={capa}
                     features={info.features}
                     pixel={info.pixel}
+                    lngLat={info.lngLat}
+                    mapInstance={mapRef.current}
+                    onReposition={(nextPixel) => setInfo((prev) => (prev ? { ...prev, pixel: nextPixel } : prev))}
+                    onEdit={onEditInfobox}
                     onClose={clearInfo}
                 />
             )}
