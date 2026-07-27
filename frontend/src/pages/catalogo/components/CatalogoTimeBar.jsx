@@ -6,7 +6,7 @@ import Tooltip from '@components/Tooltip';
 import PeriodicitySection from '@pages/maps/components/LayerDetailModal/components/PeriodicitySection';
 import { describeDateFilter, formatDateFilterPill } from '@pages/maps/helpers/dateLoopHelpers';
 import { RADIUS_ICON, toneButtonFor } from '@pages/maps/helpers/periodicityTones';
-import { PANEL_SHADOW_SOFT } from '../helpers/catalogoStyles';
+import { PANEL_SHADOW } from '../helpers/catalogoStyles';
 
 const SIN_FILTRO = 'Todas las fechas';
 
@@ -52,9 +52,9 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
     return (
         <div
             ref={containerRef}
-            className="fixed top-24 md:top-4 left-1/2 -translate-x-1/2 z-20 w-[min(560px,calc(100vw-2rem))] md:w-[min(560px,calc(100vw-26rem))] flex flex-col items-center"
+            className="fixed top-17 left-26 md:top-4 md:left-1/2 md:-translate-x-1/2 z-20 w-auto md:w-[min(560px,calc(100vw-26rem))] flex flex-col items-start md:items-center"
         >
-            <div className={`flex items-center gap-1.5 p-1.5 bg-white rounded-full ${PANEL_SHADOW_SOFT}`}>
+            <div className={`flex items-center gap-1.5 h-10 px-1.5 bg-white rounded-full ${PANEL_SHADOW}`}>
                 {canPlay && (
                     <Tooltip content={isLoopPlaying ? 'Pausar animación' : 'Ver animación'} placement="bottom" delay={200}>
                         <button
@@ -79,15 +79,15 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
                     {loading ? 'Cargando fechas…' : etiqueta}
                 </button>
 
-                {filtro && !isMobile && (
+                {filtro && (!isMobile || !abierto) && (
                     <Tooltip content="Quitar el filtro de fecha" placement="bottom" delay={200}>
                         <button
                             type="button"
                             onClick={() => { stopLoop?.(layerId); clearFilter(); }}
                             aria-label="Quitar el filtro de fecha"
-                            className={`size-7 shrink-0 ${RADIUS_ICON} text-[#FF577D] hover:bg-[#FFE6EC] flex items-center justify-center transition-colors cursor-pointer`}
+                            className={`size-7 shrink-0 ${RADIUS_ICON} hover:bg-[#FFE6EC] flex items-center justify-center transition-colors cursor-pointer`}
                         >
-                            <Icon name="eliminar" className="size-4 shrink-0" />
+                            <Icon name="eliminar" state="hover" className="size-4 shrink-0" />
                         </button>
                     </Tooltip>
                 )}
@@ -95,12 +95,7 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
             </div>
 
             {abierto && (
-                <div className={`mt-2 w-full bg-white rounded-xl ${PANEL_SHADOW_SOFT} max-h-[60vh] overflow-y-auto`}>
-                    {isMobile && (
-                        <div className="sticky top-0 z-10 flex justify-end px-2 pt-2 -mb-5 bg-white">
-                            {botonCerrar}
-                        </div>
-                    )}
+                <div className={`mt-2 -ml-22 w-[calc(100vw-2rem)] md:ml-0 md:w-full bg-white rounded-xl ${PANEL_SHADOW} max-h-[60vh] overflow-y-auto`}>
                     <div className="px-4 pb-1">
                         <PeriodicitySection
                             layerId={layerId}
@@ -125,6 +120,7 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
                             getSpecificFilterOverride={getSpecificFilter}
                             loopAppliesToSlot
                             trailingAction={isMobile ? null : botonCerrar}
+                            titleAction={isMobile ? botonCerrar : null}
                         />
                     </div>
                 </div>

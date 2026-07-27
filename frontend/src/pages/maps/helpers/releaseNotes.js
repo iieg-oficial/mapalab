@@ -12,6 +12,15 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '1.94.0',
+        items: [
+            { text: 'La tarjeta de información del Catálogo ahora se queda anclada al punto que consultaste aunque muevas o acerques el mapa, y estrena botones para centrar la selección, descargar las tarjetas y moverla de lugar.', tag: 'added' },
+            { text: 'Desde el celular, esa tarjeta se abre como panel inferior y puedes descartar cada resultado deslizándolo.', tag: 'added' },
+            { text: 'La lista de instituciones ya se muestra completa cuando tienes «Todas» seleccionada; antes se alcanzaban a ver solo dos.', tag: 'fixed' },
+            { text: 'En el celular, la barra de fechas del Catálogo se movió debajo del botón de regresar para que no la tape el logo, y el panel de leyendas aprovecha mejor el espacio.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.93.1',
         items: [
             { text: 'En el Catálogo desde el celular, el panel de leyendas ahora se abre a todo el ancho de la pantalla y trae su botón para minimizarlo.', tag: 'changed' },

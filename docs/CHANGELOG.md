@@ -5,6 +5,44 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.94.0] - 2026-07-27
+
+### Agregado: la tarjeta de información del catálogo reusa el InfoBox del visor
+
+`CatalogoInfoBox` reimplementaba una versión mínima: posicionaba por pixel fijo, con un recorte manual contra el viewport (`PANEL_WIDTH = 239`, `innerHeight - 220`) y sin acciones. El defecto de fondo era el anclaje: la tarjeta guardaba el pixel del clic, así que al mover o hacer zoom en el mapa se quedaba quieta mientras el feature se iba.
+
+Ahora monta las piezas del `InfoBox` del visor, que **reciben todo por props y no tocan ningún contexto**: `InfoBoxArrow` (ancla a la coordenada y la sigue en pan/zoom), `useViewportContainment`, `useDraggablePanel`, `ActionsToolbar` (cerrar / mover / descargar CSV / centrar selección), `ScrollContainer`, y en móvil `MobileSheet` + `InfoBoxTools` + `DismissGesture`, con los mismos estilos del visor. Se ganan la columna de acciones, la vista móvil real y el descarte por gesto.
+
+No se monta `InfoBox.jsx` completo a propósito: está acoplado a `MapsContext`, `SiderContext` y `useFeatureInfo` —que exige `LayersProvider` y `EventoProvider`—, y más de la mitad de su lógica (capas alternativas, swipe, selección por polígono, `WhatsNewModal`) no aplica a una vista de una sola capa. `downloadFeaturesAsCSV` acepta `allLayers` opcional y cae a `result.layerName`, lo que permitió prescindir del árbol.
+
+Dos ajustes puntuales: la tarjeta se queda en `z-30` (en el visor va en `z-5`, debajo de los paneles; aquí quedaría bajo el de leyendas), para lo cual `InfoBoxArrow` recibió una prop `zIndex` con default `4` — cambio aditivo que no altera el visor. Y `centerOnResults` reubica la tarjeta con un `onReposition` que actualiza el pixel en `CatalogoMapView`, en vez del `clickPosition` del provider.
+
+Evento nuevo `catalogo_infobox_action` (`download` / `center_group`). **Requiere mariachi con el evento en `ALLOWED_EVENT_NAMES`**: el collector valida contra lista blanca y un nombre desconocido tumba el lote entero con 422, no solo ese evento.
+
+### Corregido: la lista de instituciones se aplastaba con «Todas» seleccionada
+
+El contenedor del buscador reparte `80vh` entre encabezado, panel de capas, pills, lista de instituciones e input. La lista era el único bloque sin `shrink-0`, así que absorbía toda la compresión: con «Todas» el panel de capas trae todos los resultados y llena su `calc(80vh-140px)`, dejando la lista en poco más de dos elementos. Al filtrar por institución hay menos capas y por eso se veía bien.
+
+Ahora la lista lleva `shrink-0` y el presupuesto se reparte explícitamente: con la lista desplegada, el panel de capas baja a `calc(30vh-70px)` y la lista toma `calc(50vh-70px)` (nueva prop `maxHeight`), que suman exactamente los `80vh` disponibles. Sin ese reparto, el `shrink-0` habría empujado el bloque fuera del viewport.
+
+### Cambiado: superficies homologadas en el buscador del catálogo
+
+Las pills de institución adoptan el `backdrop-blur-md` del título y pierden su sombra propia; en hover toman el mismo relleno sólido que la pill activa. Los márgenes entre encabezado, panel, pills e input se unifican en `STACK_SPACING` (`mb-3`), antes repartidos entre `mb-2` y `mb-4`.
+
+Al quedar todo con la misma sombra, las dos constantes se colapsan en una: `PANEL_SHADOW` pasa a ser la suave (`0 6px 20px rgba(26,38,100,.10)`) y desaparece la anterior, que además proyectaba hacia arriba.
+
+### Cambiado: la barra de periodicidad se reacomoda en móvil
+
+Estaba centrada arriba y chocaba con el logo. Ahora se coloca bajo el botón de «Regresar a Mapalab», alineada a la orilla inferior del bloque del logo (`top-17 left-26`, derivados de sus 92 px de alto y 80 px de ancho más el `gap-2`), con `h-10` explícito para igualar la altura de ese botón. La pill toma sólo el ancho de su contenido; el panel desplegable se sale del contenedor con `-ml-22` para ocupar el ancho completo del viewport. En escritorio se mantiene centrada.
+
+La «×» de cerrar el panel deja de tener fila propia y entra en la misma línea del título «Periodicidad», pegada a la derecha, vía la nueva prop `titleAction` de `PeriodicitySection` (el encabezado ya no crece). El bote de basura vuelve a la pill mientras el panel está cerrado y usa la variante `hover` del icono, que es la roja — la variante `normal` es gris y no se podía recolorear por CSS al servirse como `<img>`.
+
+### Cambiado: el panel de leyendas se ajusta en móvil
+
+El encabezado medía 54 px (`pt-3` + botón `size-8` + `pb-2.5`); baja a 40 px con `min-h-10 py-1.5` y botones `size-7`, homologado con la pill de periodicidad. Minimizado toma `rounded-full` para leerse como pill, y el nombre de la capa se trunca con elipsis en vez de saltar de línea e invadir el espacio de otros componentes — al maximizar vuelve a ocupar las líneas que necesite.
+
+El botón de información de la barra de atribuciones pasa a `size-7 md:size-6`: en móvil empata con el botón `©` de 28 px que tiene al lado y en escritorio con la barra de «Contribuciones», de 24 px de alto.
+
 ## [1.93.1] - 2026-07-27
 
 ### Cambiado: el panel de leyendas del catálogo aprovecha el ancho en móvil

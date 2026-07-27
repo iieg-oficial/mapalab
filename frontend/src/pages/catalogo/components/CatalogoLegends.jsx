@@ -9,7 +9,7 @@ import { buildCatalogoShareUrl, cqlToFechaParam } from '../helpers/catalogoRoute
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { trackCatalogoDownload, trackCatalogoShare } from '@services/analyticsService';
 
-const ICON_BTN = 'size-8 rounded-full flex items-center justify-center transition-colors';
+const ICON_BTN = 'size-7 rounded-full flex items-center justify-center transition-colors';
 
 const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
     const { tiempo } = useCatalogoTiempoContext();
@@ -79,16 +79,21 @@ const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
         ].filter((f) => !f.hidden);
 
     return (
-        <div className={`fixed top-4 right-4 ${minimized ? 'z-20 w-[min(240px,50vw)]' : 'z-21 w-[calc(100vw-2rem)]'} md:w-[min(272px,72vw)] bg-white rounded-[14px] shadow-[0_5px_20px_#1A26641A] overflow-hidden`}>
+        <div className={`fixed top-4 right-4 ${minimized ? 'z-20 w-[min(240px,50vw)] rounded-full md:rounded-[14px]' : 'z-21 w-[calc(100vw-2rem)] rounded-[14px]'} md:w-[min(272px,72vw)] bg-white shadow-[0_5px_20px_#1A26641A] overflow-hidden`}>
             <div
                 role="button"
                 tabIndex={0}
                 onClick={toggleMinimized}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleMinimized(); } }}
                 title={minimized ? 'Expandir' : 'Minimizar'}
-                className="flex items-center justify-between gap-2 px-3.5 pt-3 pb-2.5 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-purple/40"
+                className="flex items-center justify-between gap-2 min-h-10 px-3.5 py-1.5 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-purple/40"
             >
-                <h3 className="min-w-0 wrap-break-word text-[15px] font-bold text-purple font-garet leading-tight">{capa.nombre}</h3>
+                <h3
+                    title={minimized ? capa.nombre : undefined}
+                    className={`min-w-0 text-[15px] font-bold text-purple font-garet leading-tight ${minimized ? 'truncate md:whitespace-normal md:wrap-break-word' : 'wrap-break-word'}`}
+                >
+                    {capa.nombre}
+                </h3>
                 <span className={`${minimized ? 'hidden md:flex' : 'flex'} shrink-0 text-purple ${ICON_BTN}`}>
                     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                         {minimized ? <path d="M12 6v12M6 12h12" /> : <path d="M6 12h12" />}

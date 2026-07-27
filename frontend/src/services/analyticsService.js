@@ -163,3 +163,6 @@ export const trackCatalogoShare = ({ scope, slug, type }) =>
 
 export const trackCatalogoInstitucionSelect = ({ slug, capas }) =>
     trackEvent('catalogo_institucion_select', { slug, capas });
+
+export const trackCatalogoInfoBoxAction = ({ action, slug }) =>
+    trackEvent('catalogo_infobox_action', { action, slug });

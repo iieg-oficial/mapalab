@@ -33,6 +33,7 @@ const PeriodicitySection = ({
     loopDisabledHint,
     loopAppliesToSlot = false,
     trailingAction = null,
+    titleAction = null,
 }) => {
     const longPressRef = useRef(null);
 
@@ -55,13 +56,14 @@ const PeriodicitySection = ({
     return (
         <div className="mb-4">
             <div className="flex items-center justify-between gap-2 my-5 flex-wrap">
-                <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 ${titleAction ? 'w-full' : ''}`}>
                     <button type="button" className="text-[15px]/[18px] font-garet font-bold text-[#5C2472] tracking-normal select-none cursor-pointer" onClick={handleClick} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}>
                         Periodicidad{label ? ` ${label}` : ''}
                     </button>
                     {isAdvancedMode && (
                         <Icon name="info_warning" className="size-4 cursor-help" tooltip="Click simple: navegar opciones. Doble click: seleccionar fecha. Click en seleccionado: deseleccionar." />
                     )}
+                    {titleAction && <span className="ml-auto shrink-0">{titleAction}</span>}
                 </div>
                 <div className="flex items-center gap-2">
                     {showLoopControls && canPlay && (

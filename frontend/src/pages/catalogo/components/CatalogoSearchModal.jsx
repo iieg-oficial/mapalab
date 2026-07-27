@@ -5,7 +5,7 @@ import ScrollContainer from '@components/ScrollContainer';
 import CatalogoShare from './CatalogoShare';
 import CatalogoInstitucionesList from './CatalogoInstitucionesList';
 import { buildCatalogoShareUrl, filterCapas } from '../helpers/catalogoRoutes';
-import { PANEL_SHADOW, TITLE_PILL, Z_CAPAS, Z_INPUT } from '../helpers/catalogoStyles';
+import { PANEL_SHADOW, STACK_SPACING, TITLE_PILL, Z_CAPAS, Z_INPUT } from '../helpers/catalogoStyles';
 import { trackCatalogoSearch, trackCatalogoShare } from '@services/analyticsService';
 
 const SearchIcon = ({ className }) => (
@@ -28,15 +28,14 @@ const CopyIcon = ({ className }) => (
     </svg>
 );
 
-const PILL = 'shrink-0 px-3 py-1 rounded-full text-[12px] font-garet font-bold transition-colors cursor-pointer';
-const PILL_SHADOW = 'shadow-[0_5px_20px_#1A26641A]';
+const PILL = 'shrink-0 px-3 py-1 rounded-full backdrop-blur-md text-[12px] font-garet font-bold transition-colors cursor-pointer';
 const PILL_TODAS = {
-    on: `bg-purple-deep text-white ${PILL_SHADOW}`,
-    off: 'text-purple hover:bg-purple-soft',
+    on: 'bg-purple-deep text-white',
+    off: 'text-purple hover:bg-purple-deep hover:text-white',
 };
 const PILL_INSTITUCION = {
-    on: `bg-orange text-white ${PILL_SHADOW}`,
-    off: 'text-orange hover:bg-orange/15',
+    on: 'bg-orange text-white',
+    off: 'text-orange hover:bg-orange hover:text-white',
 };
 
 const CatalogoSearchModal = ({
@@ -101,7 +100,7 @@ const CatalogoSearchModal = ({
             ref={containerRef}
             className="fixed left-1/2 -translate-x-1/2 bottom-15 z-30 w-[min(460px,90vw)] max-h-[80vh] flex flex-col items-stretch"
         >
-            <div className={`${headerVisibility} relative z-30 items-center justify-between gap-2 mb-2`}>
+            <div className={`${headerVisibility} relative z-30 items-center justify-between gap-2 ${STACK_SPACING}`}>
                 <div className="min-w-0 flex items-center gap-2">
                     {institucionActiva && (
                         <div className="relative shrink-0">
@@ -175,10 +174,10 @@ const CatalogoSearchModal = ({
                 )}
             </div>
 
-            <div className={`${Z_CAPAS} ${PANEL_SHADOW} grid transition-all duration-300 ease-out min-h-0 rounded-xl ${open ? 'grid-rows-[1fr] opacity-100 mb-4' : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
+            <div className={`${Z_CAPAS} ${PANEL_SHADOW} grid transition-all duration-300 ease-out min-h-0 rounded-xl ${open ? `grid-rows-[1fr] opacity-100 ${STACK_SPACING}` : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
                 <div className="min-h-0 overflow-hidden rounded-xl">
                     <ScrollContainer
-                        className="max-h-[calc(80vh-140px)] bg-white rounded-xl"
+                        className={`${listaOpen ? 'max-h-[calc(30vh-70px)]' : 'max-h-[calc(80vh-140px)]'} bg-white rounded-xl`}
                         overlayFade
                         overlayColor="#FFFFFF"
                         clickableArrows
@@ -206,7 +205,7 @@ const CatalogoSearchModal = ({
 
             {instituciones.length > 0 && (
                 <>
-                    <div className={`${headerVisibility} shrink-0 items-center gap-1.5 mb-4`}>
+                    <div className={`${headerVisibility} shrink-0 items-center gap-1.5 ${STACK_SPACING}`}>
                         <div className="min-w-0 flex items-center gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
                             <button
                                 type="button"
@@ -253,6 +252,7 @@ const CatalogoSearchModal = ({
                             institucionActiva={institucionActiva}
                             conteos={conteosPorInstitucion}
                             totalCapas={totalCapas}
+                            maxHeight={open ? 'max-h-[calc(50vh-70px)]' : 'max-h-[45vh]'}
                             onSelect={handleSelectInstitucion}
                         />
                     )}

@@ -51,6 +51,7 @@ Las herramientas de medicion del catalogo reutilizan el tracker del visor, asi q
 | `catalogo_slug_not_found` | `slug` | Enlaces a capas inexistentes o mal formados | Cuando el slug de la URL no resuelve ni capa ni institucion | Calidad de enlaces compartidos |
 | `catalogo_share` | `scope: capa\|institucion`, `slug`, `type: link\|qr\|qr_download` | Difusion de capas e instituciones y por que medio | Al copiar el enlace, mostrar el QR o descargarlo | **Difusion de la seccion** |
 | `catalogo_institucion_select` | `slug`, `capas` | Uso del filtro por institucion y tamaño del catalogo filtrado | Al pulsar una pill de institucion (`slug: null` = Todas) | Instituciones mas consultadas |
+| `catalogo_infobox_action` | `action: download\|center_group`, `slug` | Uso de la columna de acciones de la tarjeta de informacion | Al descargar las tarjetas como CSV o centrar la seleccion | Profundidad de consulta sobre la capa |
 
 ## Debug en desarrollo
 
