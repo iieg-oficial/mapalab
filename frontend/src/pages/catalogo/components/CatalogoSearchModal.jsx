@@ -194,7 +194,7 @@ const CatalogoSearchModal = ({
                                 <div key={c.slug} className="group/item relative flex items-center rounded-lg hover:bg-orange/10 transition-colors">
                                     <button
                                         onClick={() => onSelect(c.slug, { fromSearch: !!debounced.trim() })}
-                                        className="flex-1 min-w-0 text-left px-3 py-2.5 pr-9 text-[16px] font-medium text-[#454545] font-garet group-hover/item:text-purple transition-colors truncate"
+                                        className="flex-1 min-w-0 text-left px-3 py-2.5 pr-9 text-[16px] font-medium text-[#454545] font-garet group-hover/item:text-purple transition-colors truncate cursor-pointer"
                                     >
                                         {c.nombre}
                                     </button>

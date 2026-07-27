@@ -10,6 +10,7 @@ const ActionsToolbar = ({
     onClear,
     onDownload,
     onCenter,
+    onEdit = null,
     moveHandleProps = null,
     isMoving = false,
     visible = true,
@@ -18,10 +19,11 @@ const ActionsToolbar = ({
     downloadTooltip = 'Descargar información',
     centerTooltip = 'Centrar selección en el mapa',
     moveTooltip = 'Arrastrar para mover esta tarjeta',
+    editTooltip = 'Personalizar esta tarjeta',
 }) => {
     if (!visible) return null;
 
-    const hasAction = onClear || onDownload || onCenter || moveHandleProps;
+    const hasAction = onClear || onDownload || onCenter || onEdit || moveHandleProps;
     if (!hasAction) return null;
 
     return (
@@ -76,6 +78,18 @@ const ActionsToolbar = ({
                         className="flex items-center justify-center p-1 rounded-full border border-transparent transition-all bg-[#EAEFFA] text-[#703089] hover:border-purple shadow-[0px_6px_12px_#2F495C14]"
                     >
                         <Icon name="center_group" className="size-5" />
+                    </button>
+                </Tooltip>
+            )}
+
+            {onEdit && (
+                <Tooltip content={editTooltip} placement="left" delay={300}>
+                    <button
+                        type="button"
+                        onClick={onEdit}
+                        className="flex items-center justify-center p-1 rounded-full border border-transparent transition-all bg-[#EAEFFA] text-[#703089] hover:border-purple shadow-[0px_6px_12px_#2F495C14]"
+                    >
+                        <Icon name="pencil" className="size-5" />
                     </button>
                 </Tooltip>
             )}

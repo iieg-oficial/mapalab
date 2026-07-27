@@ -65,6 +65,28 @@ Si el slug no existe en ninguna de las dos listas se abre el buscador y se emite
 - **Fecha en descarga y URL**: `downloadCatalogoCapa` recibe el `cqlFilter` activo — CSV lo traduce a `date_from`/`date_to` con `cqlToDateRange`, GPKG/SHP lo mandan como `CQL_FILTER` a WFS. La fecha vectorial se serializa en la URL compartida como `?fecha=` (`cqlToFechaParam`/`fechaParamToCql`) y se restaura al abrir el enlace. El estado del tiempo vive en `CatalogoTiempoProvider` para que mapa, leyendas y página compartan el mismo filtro.
 - **Leyenda por fecha**: el panel usa `buildLegendGraphicUrl` (compartido con el visor) con `hideEmptyRules`, así la leyenda oculta las clases sin datos en la fecha filtrada. Re-renderiza al cambiar la fecha.
 
+## Editor de tarjeta a solicitud (v1.96.0)
+
+Quien usa el catálogo puede proponer qué campos aparecen en la tarjeta de información de una capa y en qué orden. **No publica nada**: la propuesta va a una bandeja de moderación en mariachi y sólo al aprobarse cambia lo público. Gateado a `VITE_APP_ENV ∈ {dev,beta}` como el resto de la sección.
+
+**Dos entradas**, ambas llaman a `handleEditInfobox(capa, feature)` en `CatalogoPage`:
+- Botón de lápiz en el item de la lista de capas (hover o foco, pegado a la orilla derecha).
+- Botón de lápiz en la columna de acciones de `CatalogoInfoBox` (prop opcional `onEdit` de `ActionsToolbar`, aditiva: el visor no la pasa). Desde aquí se pasa el feature abierto como `featureMuestra`, así la vista previa arranca con el dato que el usuario está mirando en vez de pedir otro por WFS.
+
+**El editor** (`CatalogoInfoBoxEditor` + `CatalogoInfoBoxZone` + `CatalogoInfoBoxPropuestaForm`):
+- Campos disponibles vía `fetchNonGeometryColumns` (el mismo helper del CSV por WFS).
+- Registro de muestra: el de la tarjeta abierta, o uno traído con WFS `maxFeatures=1`.
+- Tres zonas de destino — título, cifras y detalles — que reciben campos por arrastre o clic, se reordenan y se renombran.
+- Vista previa con el `renderCard` del visor sobre el registro real: lo que se ve es lo que quedaría.
+
+**El borrador** vive en `helpers/infoboxDraft.js` como funciones puras (con test): hereda la configuración vigente, rellena etiquetas faltantes desde el nombre del campo, respeta el tope de 12 filas por bloque y `draftToConfig` produce **sólo** las claves que el validador del servidor acepta (`headerField`, `list`, `cards`, `blockOrder`).
+
+**Dónde se guarda**: aprobar escribe en `mapalab.catalogo_capas.infobox_config` (migración `0029` de dataengine) y nunca en `mapalab.layers`, así que el visor principal no cambia. La lectura hace `COALESCE(c.infobox_config, l.infobox_config)`: hereda del árbol mientras el catálogo no tenga la suya. `littleCardPropia` en la respuesta distingue una de otra.
+
+**Anti-abuso**: honeypot `website`, 3 propuestas por hora por IP, tope de 10 pendientes por capa. Sin captcha — el filtro real es la aprobación humana. Detalle del razonamiento en el tópico «MapaLab» de la página de Documentación de mariachi.
+
+Piezas fuera de este repo: validador `app/schemas/mapalab_infobox.py`, tabla `mapalab_infobox_propuestas`, `POST /api/public/mapalab/catalogo/infobox-propuestas` y la pantalla «Propuestas de tarjeta», todos en mariachi (1.91.0).
+
 ## Entradas desde el visor
 
 Dos botones ("Catálogo"): flotante junto a Contribuciones y en el sider bajo el selector de modo. **Gateados** a `VITE_APP_ENV ∈ {dev,beta}` (`IS_NON_PROD`) → ocultos en producción; la ruta `/catalogo` funciona por URL directa.

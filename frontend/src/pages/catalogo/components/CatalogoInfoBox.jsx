@@ -16,7 +16,7 @@ import { trackCatalogoInfoBoxAction } from '@services/analyticsService';
 
 const featureKey = (feature, idx) => feature?.id ?? `feature-${idx}`;
 
-const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposition, onClose }) => {
+const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposition, onEdit, onClose }) => {
     const isMobile = useIsMobile();
     const panelRef = useRef(null);
     const cardRef = useRef(null);
@@ -111,6 +111,7 @@ const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposit
     if (isMobile) {
         const tools = [
             { id: 'center_group', icon: 'center_group', label: 'Centrar selección', tooltip: 'Centrar selección en el mapa', onClick: handleCenter },
+            onEdit && { id: 'edit', icon: 'pencil', label: 'Personalizar tarjeta', tooltip: 'Elegir qué datos aparecen', onClick: () => onEdit(visibles[0] || null) },
             total > 1 && { id: 'download', icon: 'download', label: <>Descargar <span className="text-orange font-bold">{total}</span> {total === 1 ? 'tarjeta' : 'tarjetas'}</>, tooltip: <LicenseTooltipContent />, onClick: handleDownload },
         ];
 
@@ -175,6 +176,7 @@ const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposit
                         isMoving={isDragging}
                         onDownload={total > 1 ? handleDownload : null}
                         onCenter={handleCenter}
+                        onEdit={onEdit ? () => onEdit(visibles[0] || null) : null}
                         downloadCount={total}
                         downloadTooltip={<LicenseTooltipContent />}
                     />

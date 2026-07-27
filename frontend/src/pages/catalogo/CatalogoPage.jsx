@@ -140,9 +140,10 @@ const CatalogoPage = () => {
         navigate(buildCatalogoPath({ institucionSlug: slug }));
     }, [capas, navigate]);
 
-    const handleEditInfobox = useCallback((capa) => {
+    const handleEditInfobox = useCallback((capa, feature = null) => {
+        if (!capa) return;
         trackCatalogoInfoboxEditorOpen(capa.slug);
-        setCapaEnEdicion(capa);
+        setCapaEnEdicion({ capa, feature });
     }, []);
 
     const handleFilterChange = useCallback((cql) => {
@@ -164,7 +165,10 @@ const CatalogoPage = () => {
                     initialFilter={initialFilterRef.current}
                     onFilterChange={handleFilterChange}
                 >
-                    <CatalogoMapView capa={selectedCapa} />
+                    <CatalogoMapView
+                        capa={selectedCapa}
+                        onEditInfobox={IS_NON_PROD ? (feature) => handleEditInfobox(selectedCapa, feature) : null}
+                    />
                     {selectedCapa && (
                         <CatalogoLegends
                             capa={selectedCapa}
@@ -191,10 +195,14 @@ const CatalogoPage = () => {
                 onOpen={() => setSearchOpen(true)}
                 onClose={() => setSearchOpen(false)}
                 onSelect={handleSelect}
-                onEditInfobox={IS_NON_PROD ? handleEditInfobox : null}
+                onEditInfobox={IS_NON_PROD ? (capa) => handleEditInfobox(capa) : null}
             />
             {capaEnEdicion && (
-                <CatalogoInfoBoxEditor capa={capaEnEdicion} onClose={() => setCapaEnEdicion(null)} />
+                <CatalogoInfoBoxEditor
+                    capa={capaEnEdicion.capa}
+                    featureMuestra={capaEnEdicion.feature}
+                    onClose={() => setCapaEnEdicion(null)}
+                />
             )}
         </div>
     );

@@ -80,7 +80,7 @@ const SIDER_STUB = {
     isOpen: false,
 };
 
-const CatalogoMapView = ({ capa }) => {
+const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
     const { tiempo, loop, wmsLayerRef } = useCatalogoTiempoContext();
     const targetRef = useRef(null);
     const scaleRef = useRef(null);
@@ -301,6 +301,7 @@ const CatalogoMapView = ({ capa }) => {
                     lngLat={info.lngLat}
                     mapInstance={mapRef.current}
                     onReposition={(nextPixel) => setInfo((prev) => (prev ? { ...prev, pixel: nextPixel } : prev))}
+                    onEdit={onEditInfobox}
                     onClose={clearInfo}
                 />
             )}

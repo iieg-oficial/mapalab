@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.96.1] - 2026-07-27
+
+### Cambiado: el editor de tarjeta también se abre desde la tarjeta abierta
+
+Hasta ahora sólo se llegaba al editor desde la lista de capas. `ActionsToolbar` estrena una prop opcional `onEdit` —aditiva, el visor no la pasa— que suma un botón de lápiz a la columna de acciones del `CatalogoInfoBox`, tanto en la columna de escritorio como en la fila de herramientas del panel móvil.
+
+Al entrar por ahí, el feature que ya está seleccionado se pasa como `featureMuestra`: la vista previa arranca con el dato que el usuario tiene en pantalla en lugar de pedir otro por WFS. La prop existía en el editor y no la usaba nadie.
+
+### Corregido: los items de la lista de capas no mostraban cursor de mano
+
+Tailwind 4 retiró el `cursor: pointer` que los navegadores daban por defecto a `<button>`, así que la fila se sentía inerte aunque fuera clickeable.
+
 ## [1.96.0] - 2026-07-27
 
 ### Agregado: personalizar la tarjeta de información desde el catálogo
