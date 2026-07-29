@@ -5,6 +5,38 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.97.1] - 2026-07-29
+
+### El contexto, el roadmap y los planes se movieron al repo central
+
+Solo documentacion; sin cambios de codigo.
+
+#### Eliminado
+
+- `docs/context.md`, `docs/roadmap.md`, `docs/taiga.md`, `docs/avisos-multipunto-pendiente.md` y
+  `docs/planes/` completo (9 archivos). Viven ahora en el repositorio central de contexto
+  (`iieg-oficial/context-ame-esta`): `repos/mapalab/contexto.md`, `pendientes.md` (con triage de
+  cada item del roadmap contra este changelog) y `planes/` con los que siguen abiertos. Los planes
+  ya ejecutados —widget embebible y refactor del item de capa activa— quedaron condensados en
+  `historial/`.
+- La guia de Taiga: la gestion de proyectos se maneja **solo** desde el repo central
+  (`ecosistema/taiga.md`), que ademas conserva las credenciales fuera de git. Las dos copias que
+  existian (esta y la de sieej) se contradecian sobre como vincular una historia a una epica; la
+  version verificada quedo en el central.
+
+#### Cambiado
+
+- `docs/render_layers.md` → `docs/render-layers.md` y `docs/stress_test.md` →
+  `docs/stress-test.md`, por la convencion de nombres del ecosistema (kebab-case). El script
+  `scripts/stress_test.py` **no** se renombro: las menciones en los docs apuntan al archivo real.
+- README: el enlace al roadmap ahora apunta al repo central; `docs/municipio-mode.md` apunta al
+  plan migrado.
+
+#### Corregido
+
+- `docs/mcp.md` enlazaba a `../../docs/SKILL.md`, una ruta que nunca existio en este repo (es una
+  skill del repositorio central).
+
 ## [1.97.0] - 2026-07-29
 
 ### Corregido: la pantalla en blanco al recargar el visor

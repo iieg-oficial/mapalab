@@ -203,4 +203,4 @@ Cuando todas las capas críticas tengan `clave_municipio`/`municipio_field` conf
 
 ## Plan a futuro
 
-Documento de plan: [`docs/planes/PLAN_CLAVE_MUNICIPIO_EN_TABLAS.md`](planes/PLAN_CLAVE_MUNICIPIO_EN_TABLAS.md). Resumen: estandarizar todas las tablas relevantes con columna `clave_municipio varchar(5)` indexada, calculada en ETL desde geometrías. Cuando esté listo se podrá reverir el hotfix de `controlflow` y eliminar la lógica de BBOX fallback.
+Documento de plan: `repos/mapalab/planes/clave-municipio-en-tablas.md` en el repositorio central de contexto. Resumen: estandarizar todas las tablas relevantes con columna `clave_municipio varchar(5)` indexada, calculada en ETL desde geometrías. Cuando esté listo se podrá reverir el hotfix de `controlflow` y eliminar la lógica de BBOX fallback.
