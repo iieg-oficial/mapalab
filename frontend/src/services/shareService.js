@@ -16,7 +16,9 @@ export const createShare = async (envelope) => {
 };
 
 export const fetchShare = async (shareId) => {
-    const res = await fetch(buildUrl(`/shares/${encodeURIComponent(shareId)}`));
+    const res = await fetch(buildUrl(`/shares/${encodeURIComponent(shareId)}`), {
+        signal: AbortSignal.timeout(15000),
+    });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`GET /shares/${shareId} ${res.status}`);
     return res.json();

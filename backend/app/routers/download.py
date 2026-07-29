@@ -1,5 +1,6 @@
+import asyncio
 import re
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
@@ -35,6 +36,38 @@ def _resolve_layer(session, workspace: str, layer: str) -> tuple[Optional[str], 
     return None, None
 
 
+def _prepare_download(
+    workspace: str,
+    layer: str,
+    geoserver_key: str,
+    has_date_filter: bool,
+) -> tuple[str, Any, Any]:
+    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+    with conn.get_session() as session:
+        if not has_date_filter:
+            object_key = DownloadRepository.find_fresh_cache(
+                session, geoserver_key, settings.DOWNLOAD_CACHE_TTL_HOURS
+            )
+            if object_key:
+                obj = open_object(object_key)
+                if obj is not None:
+                    return 'cache', object_key, obj
+
+        schema, table = _resolve_layer(session, workspace, layer)
+        if not schema:
+            raise NotFoundException(f'Capa {workspace}:{layer} no encontrada')
+
+        if has_date_filter and not DownloadRepository.column_exists(
+            session, schema, table, DATE_COLUMN
+        ):
+            raise BadRequestException(
+                f'Capa {workspace}:{layer} no tiene columna "{DATE_COLUMN}", '
+                'no se puede filtrar por fecha'
+            )
+
+        return 'table', schema, table
+
+
 @router.get(
     '/{workspace}/{layer}',
     responses=api_responses(400, 404, 500),
@@ -54,44 +87,29 @@ async def download_layer(
     geoserver_key = f'{resolve_schema(workspace)}:{layer}'
     has_date_filter = bool(date_from or date_to)
 
-    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
-    with conn.get_session() as session:
-        if not has_date_filter:
-            object_key = DownloadRepository.find_fresh_cache(
-                session, geoserver_key, settings.DOWNLOAD_CACHE_TTL_HOURS
-            )
-            if object_key:
-                obj = open_object(object_key)
-                if obj is not None:
-                    _, _, table_name = geoserver_key.rpartition(':')
-                    headers = {
-                        'Content-Disposition': f'attachment; filename="{table_name}.csv"',
-                        'Access-Control-Expose-Headers': 'Content-Disposition',
-                    }
-                    if object_key.endswith('.gz'):
-                        headers['Content-Encoding'] = 'gzip'
-                    return StreamingResponse(
-                        iter_object_body(obj),
-                        media_type='text/csv; charset=utf-8',
-                        headers=headers,
-                    )
+    kind, first, second = await asyncio.to_thread(
+        _prepare_download, workspace, layer, geoserver_key, has_date_filter
+    )
 
-        schema, table = _resolve_layer(session, workspace, layer)
-        if not schema:
-            raise NotFoundException(f'Capa {workspace}:{layer} no encontrada')
+    if kind == 'cache':
+        object_key, obj = first, second
+        _, _, table_name = geoserver_key.rpartition(':')
+        headers = {
+            'Content-Disposition': f'attachment; filename="{table_name}.csv"',
+            'Access-Control-Expose-Headers': 'Content-Disposition',
+        }
+        if object_key.endswith('.gz'):
+            headers['Content-Encoding'] = 'gzip'
+        return StreamingResponse(
+            iter_object_body(obj),
+            media_type='text/csv; charset=utf-8',
+            headers=headers,
+        )
 
-        if has_date_filter and not DownloadRepository.column_exists(
-            session, schema, table, DATE_COLUMN
-        ):
-            raise BadRequestException(
-                f'Capa {workspace}:{layer} no tiene columna "{DATE_COLUMN}", '
-                'no se puede filtrar por fecha'
-            )
-
+    schema, table = first, second
     pool = await get_pool()
-    filename = f'{table}.csv'
     headers = {
-        'Content-Disposition': f'attachment; filename="{filename}"',
+        'Content-Disposition': f'attachment; filename="{table}.csv"',
         'Access-Control-Expose-Headers': 'Content-Disposition',
     }
 

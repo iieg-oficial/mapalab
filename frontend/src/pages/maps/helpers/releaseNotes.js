@@ -694,7 +694,7 @@ const FALLBACK_NOTES = [
     }
 ];
 
-const API_URL = `${import.meta.env.VITE_BACKEND_API_HOST}release-notes`;
+const API_URL = `${import.meta.env.VITE_BACKEND_API_HOST || '/api/'}release-notes`;
 
 export const fetchReleaseNotes = async () => {
     try {

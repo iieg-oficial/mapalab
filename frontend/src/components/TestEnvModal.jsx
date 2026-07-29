@@ -7,17 +7,26 @@ const PROD_URL = 'https://iieg.jalisco.gob.mx/mapalab';
 const STORAGE_KEY = 'test-env-modal-dismissed';
 const IS_BETA = import.meta.env.VITE_APP_ENV === 'beta';
 
+const readDismissed = () => {
+    try {
+        return localStorage.getItem(STORAGE_KEY) === 'true';
+    } catch {
+        return false;
+    }
+};
+
 const TestEnvModal = () => {
-    const [open, setOpen] = useState(
-        () => localStorage.getItem(STORAGE_KEY) !== 'true'
-    );
+    const [open, setOpen] = useState(() => !readDismissed());
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
     if (!IS_BETA) return null;
 
     const persistIfChecked = () => {
-        if (dontShowAgain) {
+        if (!dontShowAgain) return;
+        try {
             localStorage.setItem(STORAGE_KEY, 'true');
+        } catch {
+            return;
         }
     };
 

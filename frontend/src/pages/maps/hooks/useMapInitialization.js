@@ -5,7 +5,7 @@ import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import { fromLonLat } from 'ol/proj';
 import { getDefaultMapView, getMinZoom } from '@pages/maps/helpers/defaultView';
-import { RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
+import { BASEMAP_ORDER, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 
 export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOverlayRef, reliefOverlayRef, basemaps, baseMapId }) => {
     const [searchParams] = useSearchParams();
@@ -29,6 +29,12 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOver
     useEffect(() => {
         if (!targetRef.current || mapRef.current) return;
 
+        const initialConfig = basemaps[baseMapId] || basemaps[BASEMAP_ORDER[0]];
+        if (!initialConfig) {
+            console.error(`[useMapInitialization] no hay basemap para "${baseMapId}"`);
+            return;
+        }
+
         const originalGetContext = HTMLCanvasElement.prototype.getContext;
 
         HTMLCanvasElement.prototype.getContext = function (contextType, contextAttributes) {
@@ -41,8 +47,6 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOver
             return originalGetContext.call(this, contextType, contextAttributes);
         };
 
-        const initialConfig = basemaps[baseMapId];
-        if (!initialConfig) return;
         const labelsOverlaySource = initialConfig.createLabelsOverlay
             ? initialConfig.createLabelsOverlay()
             : null;

@@ -5,6 +5,92 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.97.0] - 2026-07-29
+
+### Corregido: la pantalla en blanco al recargar el visor
+
+Tres piezas se alineaban para dejar la pantalla vacía, sin error ni mensaje:
+
+1. **`index.html` sin `Cache-Control` en la raíz de producción.** La regla de `no-cache` vivía
+   anidada en `location /`, que solo cubre el despliegue en la raíz del dominio. En `/mapalab/`
+   nginx resolvía por `alias` más la directiva `index` y devolvía el HTML sin ninguna cabecera
+   de caché, así que el navegador aplicaba caché heurística. Tras un deploy, un `index.html`
+   guardado pedía chunks cuyo hash ya no existe. Los deep links (`/mapalab/mapa`) sí caían en
+   el fallback y sí recibían `no-cache`: de ahí que el fallo pareciera aleatorio.
+2. **El recuperador de chunks era de un solo disparo.** `error-recovery.js` marcaba una bandera
+   en `sessionStorage` antes de recargar y, al volver, si la bandera existía hacía `return`
+   **sin registrar ningún listener**. Un segundo fallo consecutivo —el caso normal, porque el
+   HTML cacheado no cambia— quedaba sin reload, sin reporte y sin mensaje.
+3. **El único ErrorBoundary estaba roto.** Su fallback era `ErrorPage`, que llama
+   `useRouteError()` y renderiza `<Link>`, pero el boundary envolvía al `RouterProvider` desde
+   fuera: al no haber contexto de router, el fallback lanzaba dentro del propio boundary y
+   React desmontaba la raíz. Cualquier error que escapara del router terminaba en blanco.
+
+Ahora `index.html` se sirve con `no-cache` en las dos rutas, los assets con hash responden
+`404` explícito cuando no existen, `error-recovery.js` reintenta hasta dos veces con un
+contador (y a la tercera muestra una pantalla con instrucciones de recarga forzada en lugar de
+nada), y el boundary usa `ErrorScreen`, un componente presentacional sin hooks de router.
+`error-recovery.js` también salió de la regla `immutable` de un año: antes, un arreglo al
+recuperador no llegaba a los usuarios recurrentes.
+
+### Corregido: el visor se quedaba esperando las capas para siempre
+
+`LayersProvider` pedía árbol y orden inicial con `Promise.all` y sin timeout: si el backend no
+respondía —no fallaba, colgaba—, `loading` no volvía nunca a `false`. Y la espera tampoco se
+veía, porque el `LottieSpinner` se montaba sin `loop`, sin `autoplay` y sin clase de tamaño:
+la animación quedaba congelada en un contenedor de dimensión cero. El resultado era otra
+pantalla en blanco.
+
+Los fetch de arranque llevan `AbortSignal.timeout` de 20 s y un reintento; el error muestra
+`ErrorPage` con botón para reintentar sin recargar toda la aplicación, y el spinner ahora se
+ve. El mismo timeout se aplicó a `fetchShare`, que podía colgar la inicialización desde una
+URL compartida (`?s=`) y dejar el mapa sin capas.
+
+### Cambiado: la telemetría de errores de cliente viaja por huachicol
+
+Sentry se retira del proyecto: `@sentry/react`, `@sentry/vite-plugin` y `sentry-sdk[fastapi]`,
+junto con `SENTRY_DSN` y `SENTRY_TRACES_SAMPLE_RATE`. Nunca estuvo activo en producción —el DSN
+no se inyectaba en el build— y el ecosistema ya no lo usa.
+
+El canal ahora es el mismo que vigila el resto de los servicios. El backend acumula los
+beacons de error de cliente en una ventana móvil y los publica como el check `client_errors`
+de `/ontoy`, que huachicol-monitor ya sondea cada 60 s:
+
+```json
+"client_errors": { "status": "degraded", "count": 6, "window_minutes": 15,
+                   "by_type": { "chunk_load_error": 6 },
+                   "detail": "6 errores de carga en el navegador en 15 min (...)" }
+```
+
+El check nunca reporta `down`, así que `/ontoy` sigue respondiendo `200` y un pico de errores
+de navegador no se confunde con el servicio caído: llega a Discord como degradado. Requiere
+huachicol ≥ 2.1.0 para que el detalle aparezca en la alerta. Umbral y ventana se configuran
+con `CLIENT_ERROR_WARN_COUNT` y `CLIENT_ERROR_WINDOW_MINUTES`.
+
+### Corregido: una descarga podía congelar al worker que la atendía
+
+`download_layer` estaba declarado `async def` pero por dentro abría sesión de SQLAlchemy y
+leía de acervo con boto3, ambos síncronos: mientras resolvía la capa, el event loop de ese
+worker quedaba bloqueado y no atendía nada más, ni los endpoints que sirven de caché en
+memoria. Esa preparación se movió a `asyncio.to_thread`; el streaming del CSV no cambia.
+
+### Agregado: timeouts explícitos hacia la base de datos
+
+El engine se creaba sin límites: una conexión o una query atorada retenía su lugar en el pool
+indefinidamente, y con `DB_POOL_SIZE=5` en producción bastan cinco para dejar al worker sin
+conexiones. Se agregan `DB_CONNECT_TIMEOUT_SECONDS` (10) y `DB_STATEMENT_TIMEOUT_SECONDS`
+(30), más `pool_recycle` de 30 min. El límite de sentencia se aplica vía `options` de libpq,
+soportado por el pgbouncer de dataengine (v1.25) y coherente con su `query_timeout=120`.
+
+### Corregido: el mapa quedaba muerto si el basemap no existía
+
+`useMapInitialization` salía temprano cuando `basemaps[baseMapId]` no resolvía —posible al
+restaurar una vista compartida— sin crear el mapa, sin cleanup y dejando parchado el
+`HTMLCanvasElement.prototype.getContext` global. Ahora cae al basemap por defecto y el parche
+se aplica después de la validación. También se protegieron los accesos a `paneSnapshot` en
+`MapView` y la lectura de `localStorage` de `TestEnvModal`, que corría en el primer render de
+todas las rutas y lanzaba `SecurityError` con cookies de terceros bloqueadas.
+
 ## [1.96.2] - 2026-07-27
 
 ### Cambiado: la propuesta de tarjeta es anónima, sin campo de correo

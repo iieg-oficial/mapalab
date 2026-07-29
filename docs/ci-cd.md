@@ -35,7 +35,7 @@ graph LR
 ### CI (`.github/workflows/ci.yml`)
 
 - **Trigger**: Push a feature branches (excluye `develop` y `production`), PRs
-- **Que hace**: Lint (ESLint) + Tests (Vitest con coverage thresholds) + Dead-code check (knip) + Build (Vite, con upload de sourcemaps a Sentry si hay token)
+- **Que hace**: Lint (ESLint) + Tests (Vitest con coverage thresholds) + Dead-code check (knip) + Build (Vite)
 - **Proposito**: Validar codigo antes de mergear a `develop`. CI es la autoridad final — es donde las reglas no se pueden saltar con `--no-verify`
 
 ### Commit Lint (`.github/workflows/commit-lint.yml`)
@@ -189,11 +189,6 @@ Configurados en **Settings → Environments → production → Environment secre
 | `SSH_PORT` | Puerto SSH | `22` |
 | `PROJECT_PATH` | Ruta absoluta del proyecto en el servidor | `/home/egar.guapo/mapalab` |
 | `DISCORD_WEBHOOK_URL` | URL del webhook de Discord | `https://discord.com/api/webhooks/...` |
-| `SENTRY_DSN` | DSN público de Sentry (solo para build de prod, opcional) | `https://...@sentry.io/...` |
-| `SENTRY_AUTH_TOKEN` | Token para subir sourcemaps en build (opcional) | `sntrys_...` |
-| `SENTRY_ORG` | Nombre de organización Sentry | `iieg` |
-| `SENTRY_PROJECT` | Nombre de proyecto Sentry | `mapalab` |
-| `SENTRY_URL` | URL base de Sentry (SaaS o self-hosted) | `https://sentry.io/` |
 
 ## Configuracion del repositorio
 

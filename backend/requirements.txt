@@ -12,7 +12,6 @@ gunicorn
 apscheduler
 rich
 pytz
-sentry-sdk[fastapi]
 fastmcp
 prometheus-fastapi-instrumentator
 boto3
