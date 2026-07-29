@@ -34,10 +34,10 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         return relevantPane;
     }, [useLiveState, relevantPane]);
 
-    const activeLayerIds = useLiveState ? ctx.activeLayerIds : paneSnapshot.activeLayerIds;
-    const hiddenLayerIds = useLiveState ? ctx.hiddenLayerIds : paneSnapshot.hiddenLayerIds;
-    const layerOpacities = useLiveState ? ctx.layerOpacities : paneSnapshot.layerOpacities;
-    const filters = useLiveState ? ctx.filters : paneSnapshot.filters;
+    const activeLayerIds = useLiveState ? ctx.activeLayerIds : paneSnapshot?.activeLayerIds;
+    const hiddenLayerIds = useLiveState ? ctx.hiddenLayerIds : paneSnapshot?.hiddenLayerIds;
+    const layerOpacities = useLiveState ? ctx.layerOpacities : paneSnapshot?.layerOpacities;
+    const filters = useLiveState ? ctx.filters : paneSnapshot?.filters;
 
     const paneGetFilter = useCallback((layerId) => {
         return findFilterFromState(filters, layerId, ctx.allLayers);

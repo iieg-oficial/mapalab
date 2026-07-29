@@ -1,5 +1,8 @@
 const API_BASE = import.meta.env.VITE_BACKEND_API_HOST || '/api/';
 
+const REQUEST_TIMEOUT_MS = 20000;
+const RETRY_DELAY_MS = 1500;
+
 const memoryCache = {
     tree: null,
     etag: null,
@@ -10,6 +13,23 @@ const memoryCache = {
 const buildUrl = (path) => {
     const base = API_BASE.endsWith('/') ? API_BASE : `${API_BASE}/`;
     return `${base}${path.startsWith('/') ? path.slice(1) : path}`;
+};
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const fetchOnce = (url, options = {}) => fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+});
+
+const fetchWithRetry = async (url, options = {}) => {
+    try {
+        return await fetchOnce(url, options);
+    } catch (err) {
+        console.warn(`[layerTreeService] reintentando ${url}: ${err.name}`);
+        await sleep(RETRY_DELAY_MS);
+        return fetchOnce(url, options);
+    }
 };
 
 export const fetchLayerTree = async ({ force = false } = {}) => {
@@ -29,7 +49,7 @@ export const fetchLayerTree = async ({ force = false } = {}) => {
 
     memoryCache.inFlight = (async () => {
         try {
-            const res = await fetch(url, { headers, credentials: 'include' });
+            const res = await fetchWithRetry(url, { headers, credentials: 'include' });
 
             if (res.status === 304 && memoryCache.tree) {
                 return { tree: memoryCache.tree, etag: memoryCache.etag, fromCache: true };
@@ -59,7 +79,7 @@ export const fetchInitialOrder = async () => {
         return memoryCache.initialOrder;
     }
     const url = buildUrl('layers/initial-order');
-    const res = await fetch(url, { credentials: 'include' });
+    const res = await fetchWithRetry(url, { credentials: 'include' });
     if (!res.ok) {
         throw new Error(`GET /layers/initial-order fallo ${res.status}`);
     }

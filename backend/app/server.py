@@ -13,6 +13,7 @@ from app.routers import (metadata, periodicity, download, layers, shares, embed,
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.access_logger import access_flush_loop, get_logger as get_access_logger, _flush_sync as _flush_accesos
 from app.services.api_key_quota import flush_to_mariachi
+from app.services.client_error_tracker import snapshot as client_error_snapshot
 from app.services.scheduler_service import SchedulerService
 from app.services.periodicity_service import PeriodicityService
 from app.consts.databases import DatabaseType
@@ -26,15 +27,6 @@ from app.handlers.handle_exceptions import (
 )
 
 _QUOTA_FLUSH_INTERVAL_SECONDS = 60
-
-if settings.SENTRY_DSN:
-    import sentry_sdk
-    sentry_sdk.init(
-        dsn=settings.SENTRY_DSN,
-        environment=settings.ENVIRONMENT,
-        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
-        send_default_pii=False,
-    )
 
 _lock_file = None
 
@@ -170,6 +162,8 @@ def ontoy():
         checks['db'] = {'status': 'ok'}
     except Exception as exc:
         checks['db'] = {'status': 'down', 'detail': str(exc)[:120]}
+
+    checks['client_errors'] = client_error_snapshot()
 
     severity = {'ok': 0, 'degraded': 1, 'down': 2}
     status = max(

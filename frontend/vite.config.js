@@ -2,7 +2,6 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { sentryVitePlugin } from '@sentry/vite-plugin';
 import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
@@ -107,18 +106,9 @@ export default defineConfig(({ mode }) => {
                 open: false,
                 emitFile: false,
             }),
-            env.SENTRY_AUTH_TOKEN && sentryVitePlugin({
-                org: env.SENTRY_ORG,
-                project: env.SENTRY_PROJECT,
-                url: env.SENTRY_URL,
-                authToken: env.SENTRY_AUTH_TOKEN,
-                release: { name: `mapalab@${pkg.version}` },
-                sourcemaps: { assets: './dist/**' },
-                telemetry: false,
-            }),
         ].filter(Boolean),
         build: {
-            sourcemap: Boolean(env.SENTRY_AUTH_TOKEN),
+            sourcemap: false,
             rollupOptions: {
                 output: {
                     manualChunks: (id) => {
@@ -128,7 +118,6 @@ export default defineConfig(({ mode }) => {
                             if (id.includes('react-router')) return 'vendor-router';
                             if (id.includes('react-dom') || id.includes('react') || id.includes('scheduler')) return 'vendor-react';
                             if (id.includes('@dnd-kit')) return 'vendor-dnd';
-                            if (id.includes('@sentry')) return 'vendor-sentry';
                             if (/\/(jszip|pako|fast-png|fflate|iobuffer)\//.test(id)) return 'vendor-download';
                             if (/\/(jspdf|html2canvas|dompurify|canvg|svg-pathdata|rgbcolor|stackblur-canvas|raf|performance-now|css-line-break|text-segmentation)\//.test(id)) return 'vendor-export';
                         }

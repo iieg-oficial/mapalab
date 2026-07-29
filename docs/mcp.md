@@ -811,6 +811,6 @@ El directorio exige que cada tool declare metadata (hoy `servers/mapalab.py` sol
 
 - [FastMCP docs — Integración con FastAPI](https://gofastmcp.com/integrations/fastapi)
 - [FastMCP docs — Lifespan](https://gofastmcp.com/servers/lifespan)
-- [Skill `fastapi-to-mcp`](../../docs/SKILL.md) — guía que se usó como base
+- Skill `fastapi-to-mcp` del repositorio central de contexto (`.claude/skills/fastapi-to-mcp/`) — guía que se usó como base
 - `backend/app/server.py` — implementación
 - `nginx/nginx.conf` — bloques `location = /mcp[/]` y `location = /mapalab/mcp[/]`

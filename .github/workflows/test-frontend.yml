@@ -29,10 +29,4 @@ jobs:
         run: npm run check:dead-code:strict
       - name: Build
         working-directory: ./frontend
-        env:
-          VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-          SENTRY_URL: ${{ secrets.SENTRY_URL }}
         run: npm run build

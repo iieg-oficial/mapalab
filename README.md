@@ -3,7 +3,7 @@
 Interfaz web para la creacion, gestion y visualizacion de mapas interactivos
 con datos geoespaciales del IIEG Jalisco.
 
-**Version:** 1.96.2
+**Version:** 1.97.1
 
 ## Requisitos
 
@@ -213,7 +213,7 @@ Ver documentacion completa en [docs/ci-cd.md](docs/ci-cd.md).
 | [Esquema de z-index](docs/z-index.md) | Capas del mapa y componentes de UI |
 | [Periodicidad](docs/periodicidad.md) | Filtrado temporal: periodicidad vectorial/raster |
 | [CI/CD](docs/ci-cd.md) | Pipeline de integracion y despliegue continuo |
-| [Roadmap](docs/roadmap.md) | Timeline del proyecto y features planeadas |
+| [Pendientes y planes](https://github.com/iieg-oficial/context-ame-esta/tree/main/repos/mapalab) | Roadmap, pendientes y planes abiertos (repositorio central de contexto) |
 | [Analytics](docs/analytics.md) | Eventos GTM/GA4 y KPIs |
 | [Arquitectura](docs/arquitectura.md) | Diagramas de infraestructura y componentes |
 | [Zoom](docs/zoom.md) | Zoom automatico por capa, rango de visibilidad y boton centrar Jalisco |
