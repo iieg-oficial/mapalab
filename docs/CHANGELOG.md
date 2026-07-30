@@ -5,6 +5,63 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.102.0] - 2026-07-30
+
+### Agregado: sidecar `version-api` que fusiona los checks del backend
+
+MapaLab era el unico servicio del ecosistema sin sidecar `/ontoy`, y por eso `huachicol-monitor`
+tenia que entrar al handler del backend. Ahora tiene el suyo, con una diferencia respecto al del
+resto: **no reemplaza los checks de la aplicacion, los absorbe**.
+
+Un sidecar plano solo reporta `disk` y `containers`. El `/ontoy` del backend publica `db`,
+`client_errors` y `embeds` — y `client_errors` es lo que sustituyo a Sentry para detectar
+pantallas blancas. Cambiar uno por otro habria apagado esa alerta.
+
+La variable `ONTOY_UPSTREAM_URL` (agregada en huachicol 2.2.0, la implementacion de referencia)
+hace que el sidecar consulte el `/ontoy` del backend por la red interna y fusione su respuesta:
+
+- los `checks` del backend se suman a los propios, sin pisarlos;
+- `version`, `released_at` y `deployed_at` se toman del backend, que es quien tiene el dato real
+  (`backend/app/__version__.py`) — el sidecar no necesita un `version.json` propio y no puede
+  quedar desincronizado, que es justo lo que fallo en 1.101.1;
+- si el backend no responde, aparece un check `upstream` en `down` y el `/ontoy` devuelve 503;
+- si el backend se declara `down` sin un check que lo explique, se respeta su `status`.
+
+El sidecar corre bajo el perfil `prod`, monta el socket de Docker en solo lectura y **no recibe
+entrada de usuario**: su unica ruta es `/ontoy` y no acepta parametros. Nueva variable de entorno:
+`ONTOY_DISK_PATH`.
+
+### Cambiado: `/api/ontoy` cerrado, el monitor entra por `/ontoy`
+
+El `deny all` que 1.99.1 puso sobre `= /mapalab/api/ontoy` no cubria `/api/ontoy`, la variante sin
+prefijo que atiende `location /api/` por el puerto directo del nginx. La exposicion a internet ya
+estaba cerrada desde gateway-hub 1.35.1 —el gateway reescribe el prefijo, asi que el deny de aqui
+nunca se evaluaba—, pero cualquiera dentro de la LAN podia leer el payload.
+
+No se podia cerrar sin mas: era por donde entraba `huachicol-monitor` desde otro nodo, y filtrar
+por IP no sirve porque el gateway y el monitor corren en el mismo host y llegan con la misma IP de
+origen. Con el sidecar existiendo, ya hay a donde mandarlo:
+
+| Ruta | Antes | Ahora |
+|---|---|---|
+| `/ontoy` | no existia | proxy al sidecar; es el target del monitor |
+| `/api/ontoy` | 200 en toda la LAN | `deny all` |
+| `/mapalab/api/ontoy` | `deny all` (nunca evaluado) | `deny all` |
+
+Las dos topologias quedan cubiertas con la misma configuracion:
+
+- **monolito** (Proxmox, GCP) — el monitor resuelve `mapalab-version-api:8088` por `iieg-network`,
+  sin pasar por nginx;
+- **microservicios** (S1–S4) — el monitor entra por `http://<S2>:8081/ontoy`, el puerto del nginx
+  que ya esta abierto entre nodos. **No hace falta publicar el 8088 ni pedir apertura al FortiGate.**
+
+**Al desplegar:** `targets.json` de huachicol no se versiona, asi que hay que apuntar el target de
+mapalab a `/ontoy` a mano en cada entorno. Y gateway-hub 1.37.0 tiene que ir **antes**: es quien
+cierra `/mapalab/ontoy` a internet, porque su rewrite deja el prefijo fuera del alcance de este
+nginx.
+
+---
+
 ## [1.101.1] - 2026-07-30
 
 ### Corregido: `sync-version.sh` no sincronizaba la version del backend

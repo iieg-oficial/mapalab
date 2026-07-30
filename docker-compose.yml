@@ -151,6 +151,27 @@ services:
       - iieg-network
     restart: unless-stopped
 
+  version-api:
+    build: ./version-api
+    container_name: mapalab-version-api
+    profiles: ["prod"]
+    environment:
+      ONTOY_SERVICE: mapalab
+      ONTOY_COMPOSE_PROJECT: mapalab
+      ONTOY_DISK_PATH: ${ONTOY_DISK_PATH:?}
+      ONTOY_UPSTREAM_URL: http://backend:${BACKEND_PORT:?}/ontoy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8088), timeout=3).close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - iieg-network
+    restart: unless-stopped
+
   nginx:
     build:
       context: .
