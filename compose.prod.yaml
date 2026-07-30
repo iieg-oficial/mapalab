@@ -1,0 +1,94 @@
+name: mapalab
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-vite-args: &vite-args
+  VITE_BASE_PATH: ${VITE_BASE_PATH:?}
+  VITE_BACKEND_API_HOST: ${VITE_BACKEND_API_HOST:?}
+  VITE_GEOSERVER_URL: ${VITE_GEOSERVER_URL:?}
+  VITE_SITE_URL: ${VITE_SITE_URL?}
+  VITE_NODE_ENV: ${VITE_NODE_ENV:?}
+  VITE_APP_ENV: ${VITE_APP_ENV:?}
+  VITE_COLIBRI_SOURCE_APP: ${VITE_COLIBRI_SOURCE_APP:?}
+  VITE_COLIBRI_API_KEY: ${VITE_COLIBRI_API_KEY?}
+  VITE_ACERVO_ORIGIN: ${VITE_ACERVO_ORIGIN?}
+
+services:
+  backend:
+    build:
+      target: production
+    networks:
+      - default
+      - iieg-network
+    restart: unless-stopped
+
+  mapalab-mcp:
+    build:
+      target: production
+    networks:
+      - default
+      - iieg-network
+    restart: unless-stopped
+
+  frontend-build:
+    profiles: ["build"]
+    build:
+      context: ./frontend
+      args: *vite-args
+    user: "${UID:?}:${GID:?}"
+    volumes:
+      - ./frontend/dist:/output
+    entrypoint: ["sh", "-c", "rm -rf /output/* && cp -r /app/dist/* /output/"]
+
+  version-api:
+    build: ./version-api
+    container_name: mapalab-version-api
+    environment:
+      ONTOY_SERVICE: mapalab
+      ONTOY_COMPOSE_PROJECT: mapalab
+      ONTOY_DISK_PATH: ${ONTOY_DISK_PATH:?}
+      ONTOY_UPSTREAM_URL: http://backend:${BACKEND_PORT:?}/ontoy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8088), timeout=3).close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - iieg-network
+    restart: unless-stopped
+    logging: *logging
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+      args: *vite-args
+    ports:
+      - "${NGINX_BIND_ADDR:?}:${NGINX_PORT:?}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+      mapalab-mcp:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - default
+      - iieg-network
+    restart: unless-stopped
+    logging: *logging
+
+networks:
+  iieg-network:
+    external: true

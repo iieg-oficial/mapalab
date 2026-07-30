@@ -5,8 +5,9 @@ export UID := $(shell id -u)
 export GID := $(shell id -g)
 
 # Compose base commands por entorno
-COMPOSE_DEV  = docker compose -p mapalab-dev --env-file .env.development
-COMPOSE_PROD = docker compose -p mapalab -f docker-compose.yml --env-file .env.production
+COMPOSE_BASE = compose.yaml
+COMPOSE_DEV  = docker compose --env-file .env.development -f $(COMPOSE_BASE) -f compose.dev.yaml
+COMPOSE_PROD = docker compose --env-file .env.production -f $(COMPOSE_BASE) -f compose.prod.yaml
 
 help:
 	@echo "MapaLab - Comandos disponibles:"
@@ -39,7 +40,7 @@ setup-hooks:
 dev: setup-hooks
 	@echo ""
 	@echo "Levantando servicios de desarrollo..."
-	@$(COMPOSE_DEV) --profile dev up -d
+	@$(COMPOSE_DEV) up -d
 	@echo ""
 	@echo "Frontend (Vite):  http://localhost:3006"
 	@echo "Backend API:      http://localhost:8000"
@@ -53,14 +54,14 @@ prod: ensure-networks
 	@$(COMPOSE_PROD) --profile build run --rm --build frontend-build
 	@echo ""
 	@echo "Levantando servicios de produccion..."
-	@$(COMPOSE_PROD) --profile prod up -d --build
+	@$(COMPOSE_PROD) up -d --build
 	@echo ""
 	@echo "Aplicacion lista"
 
 deploy: ensure-networks reset-dist-perms
 	@echo "Desplegando en produccion..."
 	@$(COMPOSE_PROD) --profile build run --rm --build frontend-build
-	@$(COMPOSE_PROD) --profile prod up -d --build --force-recreate
+	@$(COMPOSE_PROD) up -d --build --force-recreate
 	@docker exec gateway-hub-nginx-1 sh -c "rm -rf /var/cache/nginx/mapalab_assets/* 2>/dev/null; nginx -s reload" 2>/dev/null || true
 	@echo "Deploy completado"
 
@@ -70,28 +71,28 @@ reset-dist-perms:
 down: down-dev down-prod
 
 down-dev:
-	@$(COMPOSE_DEV) --profile dev down 2>/dev/null || true
+	@$(COMPOSE_DEV) down 2>/dev/null || true
 	@echo "Servicios de desarrollo detenidos"
 
 down-prod:
-	@$(COMPOSE_PROD) --profile prod --profile build down 2>/dev/null || true
+	@$(COMPOSE_PROD) --profile build down 2>/dev/null || true
 	@echo "Servicios de produccion detenidos"
 
 clean: down
-	@$(COMPOSE_DEV) --profile dev down -v --remove-orphans 2>/dev/null || true
-	@$(COMPOSE_PROD) --profile prod --profile build down -v --remove-orphans 2>/dev/null || true
+	@$(COMPOSE_DEV) down -v --remove-orphans 2>/dev/null || true
+	@$(COMPOSE_PROD) --profile build down -v --remove-orphans 2>/dev/null || true
 	@docker run --rm -v $(CURDIR)/frontend/dist:/dist alpine sh -c "rm -rf /dist/*" 2>/dev/null || true
 	@rm -rf frontend/dist frontend/node_modules
 	@echo "Limpieza completada"
 
 logs-dev:
-	@$(COMPOSE_DEV) --profile dev logs -f
+	@$(COMPOSE_DEV) logs -f
 
 logs-prod:
-	@$(COMPOSE_PROD) --profile prod logs -f
+	@$(COMPOSE_PROD) logs -f
 
 logs:
-	@$(COMPOSE_DEV) --profile dev logs -f
+	@$(COMPOSE_DEV) logs -f
 
 status:
 	@echo "=== DESARROLLO ==="
