@@ -5,6 +5,39 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.98.0] - 2026-07-30
+
+### Eliminado: prometheus, con los contadores mudados a `/ontoy`
+
+huachicol dejo de ser un stack de observabilidad en su 2.0.0 (2026-07-21) y hoy solo sondea el
+`/ontoy` de cada servicio, asi que `GET /metrics` exponia metricas que ya nadie scrapeaba.
+
+Se retiran `prometheus-fastapi-instrumentator`, la dependencia transitiva `prometheus-client`, el
+middleware de instrumentacion, el endpoint `/metrics` y el `location` que lo bloqueaba en
+`nginx/nginx.conf` (defensa en profundidad que dejo de tener objeto). El sistema de contadores
+propio se conserva y ahora viaja en el payload de `/ontoy` bajo la llave `counters`, sumado sobre
+las etiquetas de cada contador:
+
+`tree_requests`, `tree_cache_hits`, `tree_refresh`, `search_requests`, `download_requests`,
+`embed_requests`, `embed_denied`, `embed_quota_exceeded`, `embed_js_errors` y `mcp_calls`.
+
+Quedan contandose en memoria pero sin exponer los `shares_*`, `embed_wms_proxy`, `embed_telemetry` y
+los histogramas de `observe()` (vitals del embed y latencia MCP): un histograma sin base de series
+temporales detras no aporta nada accionable en un sondeo. Añadir un contador es agregar su nombre a
+`ONTOY_COUNTERS`.
+
+### Cambiado: nginx a 1.30.4-alpine
+
+`nginx/Dockerfile` usaba la etiqueta flotante `nginx:stable-alpine`. Se fija la linea estable
+parchada contra **CVE-2026-42533** (CVSS 9.2, desbordamiento de heap con posible ejecucion remota de
+codigo), **CVE-2026-60005** y **CVE-2026-56434**. Ambas configuraciones (`nginx-main.conf` y
+`nginx.conf`) se validaron con `nginx -t` contra 1.30.4 sin cambios.
+
+### Nota de despliegue
+
+Hay que reconstruir las imagenes del backend y de nginx. Quien tuviera algo apuntando a
+`GET /mapalab/api/metrics` debe mirar `counters` en `/ontoy`.
+
 ## [1.97.1] - 2026-07-29
 
 ### El contexto, el roadmap y los planes se movieron al repo central

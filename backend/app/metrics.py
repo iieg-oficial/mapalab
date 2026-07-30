@@ -4,9 +4,6 @@ import threading
 from collections import defaultdict
 from typing import Optional
 
-from fastapi import APIRouter, Response
-from prometheus_client import REGISTRY, generate_latest
-
 _counters: dict[tuple[str, tuple[tuple[str, str], ...]], int] = defaultdict(int)
 _histograms: dict[tuple[str, tuple[tuple[str, str], ...]], dict] = defaultdict(
     lambda: {'sum': 0.0, 'count': 0, 'buckets': defaultdict(int)}
@@ -63,49 +60,24 @@ def observe(name: str, value: float, labels: Optional[dict] = None, buckets: tup
         entry.setdefault('_buckets_def', tuple(buckets))
 
 
-def _format_labels(label_key: tuple[tuple[str, str], ...]) -> str:
-    if not label_key:
-        return ''
-    parts = ','.join(f'{k}="{v}"' for k, v in label_key)
-    return '{' + parts + '}'
+ONTOY_COUNTERS: tuple[str, ...] = (
+    COUNTER_TREE_REQUESTS,
+    COUNTER_TREE_CACHE_HITS,
+    COUNTER_TREE_REFRESH,
+    COUNTER_SEARCH_REQUESTS,
+    COUNTER_DOWNLOAD_REQUESTS,
+    COUNTER_EMBED_REQUESTS,
+    COUNTER_EMBED_DENIED,
+    COUNTER_EMBED_QUOTA_EXCEEDED,
+    COUNTER_EMBED_JS_ERRORS,
+    COUNTER_MCP_CALLS,
+)
 
 
-def _render_prometheus() -> str:
-    by_name: dict[str, list[tuple[tuple[tuple[str, str], ...], int]]] = defaultdict(list)
-    for (name, label_key), value in _counters.items():
-        by_name[name].append((label_key, value))
-
-    lines: list[str] = []
-    for name in sorted(by_name.keys()):
-        lines.append(f'# TYPE {name} counter')
-        for label_key, value in sorted(by_name[name]):
-            lines.append(f'{name}{_format_labels(label_key)} {value}')
-
-    hist_by_name: dict[str, list[tuple[tuple[tuple[str, str], ...], dict]]] = defaultdict(list)
-    for (name, label_key), entry in _histograms.items():
-        hist_by_name[name].append((label_key, entry))
-    for name in sorted(hist_by_name.keys()):
-        lines.append(f'# TYPE {name} histogram')
-        for label_key, entry in sorted(hist_by_name[name], key=lambda x: x[0]):
-            buckets = entry.get('_buckets_def', _DEFAULT_BUCKETS_MS)
-            cumulative = 0
-            for bound in buckets:
-                cumulative += entry['buckets'].get(bound, 0)
-                base = list(label_key) + [('le', str(bound))]
-                lines.append(f'{name}_bucket{_format_labels(tuple(base))} {cumulative}')
-            cumulative += entry['buckets'].get('+Inf', 0)
-            base_inf = list(label_key) + [('le', '+Inf')]
-            lines.append(f'{name}_bucket{_format_labels(tuple(base_inf))} {cumulative}')
-            lines.append(f'{name}_sum{_format_labels(label_key)} {entry["sum"]}')
-            lines.append(f'{name}_count{_format_labels(label_key)} {entry["count"]}')
-
-    return '\n'.join(lines) + '\n'
-
-
-router = APIRouter(tags=['metrics'])
-
-
-@router.get('/metrics', include_in_schema=False)
-async def metrics() -> Response:
-    body = _render_prometheus() + generate_latest(REGISTRY).decode('utf-8')
-    return Response(content=body, media_type='text/plain; version=0.0.4')
+def snapshot() -> dict[str, int]:
+    totales = {name: 0 for name in ONTOY_COUNTERS}
+    with _lock:
+        for (name, _label_key), value in _counters.items():
+            if name in totales:
+                totales[name] += value
+    return totales
