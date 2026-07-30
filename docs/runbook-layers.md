@@ -20,7 +20,7 @@ SELECT id, layer_count, etag, updated_at FROM mapalab.layer_tree_cache;
 "
 
 # 4. Cron jobs (logs recientes)
-cd /IIEG/dataengine && make logs-jobs
+cd /IIEG/dataengine && make logs   # elegir 'jobs' en el selector
 ```
 
 ---
@@ -39,7 +39,7 @@ docker logs --tail 50 mapalab-dev-backend-1 2>&1 | grep -i error
 ### Acción
 ```bash
 # Regenerar cache (ante cualquier duda)
-cd /IIEG/dataengine && make refresh-layer-tree
+cd /IIEG/mapalab && make refresh-layer-tree
 
 # Si falla: cache corrupta → reset manual
 docker exec -i -e PGPASSWORD='Bq7K!Ho6&B' dataengine-primary psql -U gisuser -d iieg_gis <<SQL
@@ -79,7 +79,7 @@ docker exec dataengine-backup /scripts/restore-from-latest.sh mapalab  # nombre 
 ### Acción
 ```bash
 cd /IIEG/dataengine
-make refresh-layer-stats
+make refresh   # elegir 'layer-stats'
 
 # Si sigue fallando, verificar stats_config
 docker exec -e PGPASSWORD='...' dataengine-primary psql -U mariachi_layers -d iieg_gis -c "
@@ -142,7 +142,7 @@ cd /IIEG/dataengine
 docker compose restart jobs
 
 # Ejecución manual inmediata
-make refresh-all
+make refresh   # elegir 'todos'
 ```
 
 ---
@@ -166,7 +166,7 @@ curl -D - -o /dev/null http://localhost:8000/layers/tree | grep -i etag
 curl -X POST http://localhost:8000/layers/invalidate-cache
 
 # 2. Regenerar cache materializada si es necesario
-cd /IIEG/dataengine && make refresh-layer-tree
+cd /IIEG/mapalab && make refresh-layer-tree
 
 # 3. Forzar al cliente a ignorar su cache local
 # (navegador: Ctrl+Shift+R o DevTools → Network → Disable cache)
@@ -306,8 +306,8 @@ Las capas fantasma siguen publicadas en GeoServer (aparecen en `GetCapabilities`
 ## Checklist rápido post-incidente
 
 - [ ] Tree cache regenerado (`make refresh-layer-tree`)
-- [ ] Periodicity actualizada (`make refresh-periodicity`)
-- [ ] Stats actualizadas (`make refresh-layer-stats`)
+- [ ] Periodicity actualizada (`make refresh`, opcion `periodicity`)
+- [ ] Stats actualizadas (`make refresh   # elegir 'layer-stats'`)
 - [ ] Frontend recarga con nuevo ETag
 - [ ] Logs sin errores en mariachi-api, mapalab-backend, dataengine-jobs
 - [ ] Si fue corrupción de datos: snapshot del schema mapalab antes de continuar ediciones

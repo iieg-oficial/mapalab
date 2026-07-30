@@ -275,11 +275,11 @@ curl http://localhost:8000/layers/initial-order > order.json
 
 | Comando | Ubicación |
 |---|---|
-| `make refresh-layer-tree` | mapalab o dataengine |
-| `make refresh-layer-stats` | dataengine |
-| `make refresh-periodicity` | dataengine |
-| `make refresh-all` | dataengine (los tres) |
-| `make logs-jobs` | dataengine (tail del cron log) |
+| `make refresh-layer-tree` | mapalab (POST al backend, no delega a dataengine) |
+| `make refresh` (opcion `layer-stats`) | dataengine |
+| `make refresh` (opcion `periodicity`) | dataengine |
+| `make refresh` (opcion `todos`) | dataengine |
+| `make logs` (servicio `jobs`) | dataengine (tail del cron log) |
 
 ## Deprecaciones
 

@@ -3,7 +3,7 @@
 Interfaz web para la creacion, gestion y visualizacion de mapas interactivos
 con datos geoespaciales del IIEG Jalisco.
 
-**Version:** 1.102.0
+**Version:** 1.103.0
 
 ## Requisitos
 
@@ -25,7 +25,7 @@ cp .env.example .env.development
 ### 2. Desarrollo
 
 ```bash
-make dev
+make up
 # Frontend (Vite):  http://localhost:5173
 # Backend API:      http://localhost:8001
 # Backend Docs:     http://localhost:8001/docs
@@ -36,7 +36,7 @@ make dev
 ```bash
 cp .env.example .env.production
 # Editar .env.production con los valores del entorno
-make prod
+make deploy
 # App: http://localhost:3006
 ```
 
@@ -44,14 +44,12 @@ make prod
 
 | Comando | Descripcion |
 |---------|-------------|
-| `make dev` | Modo desarrollo (Vite + Backend hot-reload) |
-| `make prod` | Produccion con `.env.production` (Nginx + Backend Gunicorn) |
-| `make deploy` | Build + up en produccion (usado por CD) |
-| `make down` | Detener todos los servicios |
+| `make up` | Levantar sin reconstruir (Vite + Backend hot-reload) |
+| `make deploy` | Produccion con `.env.production`: git pull + down + build + up (usado por CD) |
+| `make down` | Detener lo que este levantado |
 | `make clean` | Detener servicios y limpiar todo |
 | `make status` | Ver estado de los servicios |
-| `make logs-dev` | Ver logs de desarrollo |
-| `make logs-prod` | Ver logs de produccion |
+| `make logs` | Ver logs, con selector de servicio |
 | `make setup-hooks` | Configurar git hooks del proyecto |
 
 ## Variables de entorno
@@ -68,7 +66,7 @@ Las variables se organizan en secciones:
 
 ## Arquitectura
 
-### Desarrollo (`make dev`)
+### Desarrollo (`make up`)
 
 ```
 Browser --> Vite Dev Server (:5173) --> proxy /api --> Backend Uvicorn (:8001)
@@ -79,7 +77,7 @@ Browser --> Vite Dev Server (:5173) --> proxy /api --> Backend Uvicorn (:8001)
 - Backend con `--reload` via Uvicorn en `network_mode: host`
 - GeoServer externo (no gestionado por este repo)
 
-### Produccion (`make prod`)
+### Produccion (`make deploy`)
 
 ```
 Browser --> Nginx (:3006) --> /       --> Frontend estaticos (dist/)
@@ -92,7 +90,7 @@ Browser --> Nginx (:3006) --> /       --> Frontend estaticos (dist/)
 
 ## Stack tecnologico
 
-- **Frontend:** React 19, Vite, Tailwind CSS 4, OpenLayers
+- **Frontend:** React 19, Vite 8, Tailwind CSS 4, OpenLayers
 - **Backend:** FastAPI, SQLModel, PostgreSQL
 - **Infra:** Docker, Nginx, GeoServer (externo)
 
