@@ -14,7 +14,7 @@ import httpx
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.config import settings
-from app.metrics import COUNTER_MCP_CALLS, HISTOGRAM_MCP_LATENCY, incr, observe
+from app.metrics import COUNTER_MCP_CALLS, incr
 from app.services.access_logger import get_logger as get_access_logger
 from app.services.api_key_quota import get_tracker
 from app.utils.logger import Logger
@@ -248,8 +248,6 @@ class MCPTelemetryMiddleware:
             ))
             metric_labels = {'method': method, 'tool': tool or '', 'status': outcome}
             incr(COUNTER_MCP_CALLS, metric_labels)
-            if method == 'tools/call' and tool:
-                observe(HISTOGRAM_MCP_LATENCY, duration_ms, {'tool': tool})
             if method == 'tools/call' and key_id is not None:
                 get_tracker().record(key_id, error=(outcome == 'error'), bytes_out=state['bytes_out'] or 0)
                 get_access_logger().record(

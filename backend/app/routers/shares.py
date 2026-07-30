@@ -10,12 +10,6 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
-from app.metrics import (
-    COUNTER_SHARES_ACCESSED,
-    COUNTER_SHARES_CREATED,
-    COUNTER_SHARES_PINNED,
-    incr,
-)
 from app.repositories.share_repository import ShareRepository
 from app.services.share_service import (
     CURRENT_SCHEMA_VERSION,
@@ -147,8 +141,6 @@ def create_share(envelope: ShareEnvelope, request: Request):
         )
         session.commit()
 
-        incr(COUNTER_SHARES_CREATED, {'kind': kind})
-
         return ShareCreateResponse(
             id=share.id,
             kind=share.kind,
@@ -176,8 +168,6 @@ def get_share(share_id: str):
             raise HTTPException(status_code=404, detail='Share no existe o expiro')
         ShareRepository.bump_access(session, share)
         session.commit()
-
-        incr(COUNTER_SHARES_ACCESSED, {'kind': share.kind})
 
         return ShareReadResponse(
             id=share.id,
@@ -209,8 +199,6 @@ def pin_share(share_id: str):
         until = datetime.utcnow() + timedelta(days=PIN_DURATION_DAYS)
         ShareRepository.pin(session, share, until)
         session.commit()
-
-        incr(COUNTER_SHARES_PINNED)
 
         return {'ok': True, 'pinnedUntil': until.isoformat() + 'Z'}
 
@@ -259,7 +247,5 @@ def pin_share_permanent(share_id: str):
             raise HTTPException(status_code=404, detail='Share no existe o expiro')
         ShareRepository.pin(session, share, PERMANENT_SENTINEL)
         session.commit()
-
-        incr(COUNTER_SHARES_PINNED)
 
         return {'ok': True, 'pinnedUntil': PERMANENT_SENTINEL.isoformat() + 'Z', 'permanent': True}

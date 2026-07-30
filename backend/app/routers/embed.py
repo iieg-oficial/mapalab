@@ -13,11 +13,7 @@ from app.metrics import (
     COUNTER_EMBED_JS_ERRORS,
     COUNTER_EMBED_QUOTA_EXCEEDED,
     COUNTER_EMBED_REQUESTS,
-    COUNTER_EMBED_TELEMETRY,
-    COUNTER_EMBED_WMS_PROXY,
-    HISTOGRAM_EMBED_VITAL,
     incr,
-    observe,
 )
 from app.services.access_logger import get_logger as get_access_logger
 from app.services.api_key_quota import get_tracker
@@ -248,7 +244,6 @@ def wms_proxy(
     layers_param = params.get('layers') or params.get('LAYERS') or ''
     requested = [s.strip() for s in layers_param.split(',') if s.strip()]
     result = _validate_or_403(request, key, 'wms', requested_layers=requested, record_quota=False)
-    incr(COUNTER_EMBED_WMS_PROXY, {'prefix': key[:12]})
 
     if result.capas_permitidas:
         allowed = set(result.capas_permitidas)
@@ -313,9 +308,6 @@ class _TelemetryPayload(BaseModel):
     errors: list[_TelemetryError] = Field(default_factory=list)
 
 
-_VITAL_ALLOWLIST = {'LCP', 'CLS', 'INP', 'FCP', 'TTFB', 'IFRAME_READY'}
-
-
 @router.post('/telemetry', responses=api_responses(403, 429, 500))
 def post_telemetry(
     request: Request,
@@ -327,14 +319,6 @@ def post_telemetry(
     origin = _extract_request_origin(request)
     _set_response_headers(response, origin, result.dominios_permitidos)
     prefix = key[:12] if key else ''
-    incr(COUNTER_EMBED_TELEMETRY, {'prefix': prefix})
-    for vital in payload.vitals[:8]:
-        name = (vital.name or '').upper()
-        if name not in _VITAL_ALLOWLIST:
-            continue
-        # CLS llega como score (0–1+) escalado x1000 para reusar el histograma en ms
-        value = vital.value * 1000 if name == 'CLS' else vital.value
-        observe(HISTOGRAM_EMBED_VITAL, value, {'metric': name, 'prefix': prefix})
     for err in payload.errors[:5]:
         incr(COUNTER_EMBED_JS_ERRORS, {'prefix': prefix})
         Logger.warning(f"embed.telemetry.js_error prefix={prefix} msg={(err.message or '')[:120]}")

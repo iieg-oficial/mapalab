@@ -5,6 +5,25 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.99.0] - 2026-07-30
+
+### Eliminado: la instrumentacion que ya no lee nadie
+
+La 1.98.0 dejo contadores e histogramas calculandose en memoria sin superficie de lectura. Se
+borran los cinco contadores que `/ontoy` no publica (`shares_created`, `shares_accessed`,
+`shares_pinned`, `embed_wms_proxy`, `embed_telemetry`) y **todo el motor de histogramas**:
+`observe()`, el diccionario `_histograms`, los buckets por defecto y las dos series que lo usaban
+(`embed_vital_ms` y `mcp_latency_ms`).
+
+Con los histogramas se va el bucle que procesaba los Web Vitals en `POST /embed/telemetry` y su
+allowlist. **El endpoint sigue aceptando el campo `vitals`**: el widget lo manda y hacerlo fallar
+seria romper a los embebedores en producción; simplemente ya no se procesa. Los errores JS, que si
+se publican en `/ontoy`, se siguen registrando igual.
+
+Un histograma sin base de series temporales detras no da percentiles ni tasas: si mas adelante se
+quieren latencias, el camino es medirlas donde haya con que agregarlas, no reconstruir los buckets
+a mano.
+
 ## [1.98.0] - 2026-07-30
 
 ### Eliminado: prometheus, con los contadores mudados a `/ontoy`
