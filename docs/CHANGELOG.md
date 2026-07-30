@@ -5,6 +5,43 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.104.0] - 2026-07-30
+
+### Cambiado: Vite 8 con Rolldown, y React 19.2.8
+
+Vite 8 reemplaza esbuild y Rollup por **Rolldown** (bundler en Rust) y **Oxc**. El build del
+frontend pasa de **4.46 s a 400 ms** y el arranque del dev server a 176 ms. El widget se construye
+en 28 ms. Junto con Vite suben `@vitejs/plugin-react` a 6.0.5, React y React-DOM a 19.2.8, Vitest
+a 4.1.10 y Tailwind a 4.3.3.
+
+La migración obligó a reescribir el chunking. `build.rollupOptions` es ahora
+`build.rolldownOptions`, y la función `manualChunks` quedó deprecada en favor de
+`output.codeSplitting.groups`, donde cada grupo se declara con una expresión regular contra el id
+del módulo y una prioridad en vez de una cadena de `if`.
+
+**El detalle que importa:** a diferencia de `manualChunks`, un grupo de `codeSplitting` arrastra
+las dependencias de los módulos que captura. Con las prioridades traducidas literalmente del orden
+anterior, React terminó dentro de `vendor-lottie` y React-DOM dentro de `vendor-router` — la app
+habría tenido que descargar los 316 kB de Lottie para arrancar. Por eso `vendor-react` tiene ahora
+la prioridad más alta (70) y el resto de los grupos van por debajo. Los ocho chunks resultantes
+son equivalentes a los de Vite 7: `vendor-react` 189 kB (antes 193), `vendor-router` 90 kB
+(antes 88), `vendor-ol` 378 kB (antes 386).
+
+`html2canvas-pro` se agregó al grupo `vendor-export`, donde ya estaban sus pares, en vez de quedar
+como chunk suelto.
+
+El spinner de carga usa expresiones de After Effects (`loopOut`), que Lottie evalúa con `eval`
+directo en runtime. Rolldown avisa de ello y el minificador Oxc podría haber renombrado las
+variables de ese scope; se verificó ejecutando la animación desde el bundle minificado — renderiza
+y avanza de frame sin errores.
+
+Los 814 tests siguen pasando y `rollup-plugin-visualizer` funciona con Rolldown sin cambios.
+Requiere reconstruir las imágenes de `frontend` y `nginx`.
+
+**Aviso de despliegue:** el cambio de bundler cambia todos los hashes de los assets. Las sesiones
+abiertas durante el deploy pueden caer en `chunk_load_error`; `public/error-recovery.js` las
+recupera, pero conviene vigilar el check `client_errors` de `/ontoy` en la primera hora.
+
 ## [1.103.0] - 2026-07-30
 
 ### Cambiado: Makefile homologado con el resto del ecosistema
@@ -1956,80 +1993,6 @@ Reusar la misma constante mantiene consistencia entre sider y widget — si en e
 ---
 
 ## [No publicado]
-
-### perf(download): cache de CSVs en Acervo (redirect 307) + endpoint async con asyncpg + buckets de latencia extendidos
-
-Conjunto de cambios para descargar la presión del backend de MapaLab en producción al servir CSVs de capas. La métrica `http_request_duration_seconds` del instrumentator de FastAPI mide hasta el cierre del response, así que en `/download/{workspace}/{layer}` el "request duration" incluye el tiempo de transferencia al cliente — un CSV grande con cliente en conexión normal saturaba el bucket superior (10s) del histograma y disparaba `HighLatency` en Huachicol sin que hubiera problema real (100% 2xx). En producción los servidores son 4 separados (Gateway+Acervo en S1, MapaLab en S2, DataEngine en S4); en GCP staging todos comparten 1 VM y el almacenamiento es limitado, por eso el redirect a Acervo es opcional y la ruta on-the-fly sigue disponible.
-
-#### Cambiado
-
-- **`backend/app/routers/download.py`** (`download_layer`): convertido a `async def`. Si la request no trae filtros `date_from`/`date_to` y la tabla `mapalab.layer_downloads` tiene un registro con `generated_at` dentro del TTL (`DOWNLOAD_CACHE_TTL_HOURS=36` por default), devuelve `307` a `${ACERVO_MAPALAB_BUCKET_PATH}/{object_key}` (default `/acervo/mapalab/downloads/{schema}/{table}.csv.gz`). Sin filtros y sin dump fresco, o con filtros, cae a streaming on-the-fly.
-- **`backend/app/repositories/download_repository.py`**:
-  - Nuevo método `find_fresh_cache(session, layer_key, ttl_hours)` que devuelve `object_key` del dump si está dentro del TTL.
-  - `stream_csv()` reescrito a `async def` + `asyncpg.Pool.copy_from_query(..., output=async_callable)` con una `asyncio.Queue` como puente entre el productor y el `StreamingResponse`. Reemplaza el workaround anterior de `os.pipe()` + thread bloqueante con `psycopg2.copy_expert`, que ocupaba un thread del threadpool de Starlette durante toda la descarga.
-- **`backend/app/databases/async_pool.py`** (nuevo): pool `asyncpg` lazy, compartido entre workers de gunicorn, con `command_timeout=600s` y `max_size=max(DB_POOL_SIZE, 4)`. Reutiliza la resolución de `DB_NAME` del factory síncrono existente.
-- **`backend/app/services/acervo_client.py`** (nuevo): wrapper boto3 lazy con `signature_version='s3v4'` para generar URLs presigned con TTL. Usa `ACERVO_PUBLIC_ENDPOINT` (default cae a `ACERVO_ENDPOINT` si no se setea) — la URL firmada debe apuntar al endpoint que el cliente final puede resolver, no al hostname interno de Docker.
-- **`backend/app/server.py`**: el instrumentator extiende los buckets del histograma de latencia con `15, 30, 60, 120, 300` s para que las descargas largas no saturen el bucket superior y dejen ver el p95/p99 reales. `lifespan` ahora cierra el pool de asyncpg en shutdown.
-- **`backend/app/config.py`**: nuevas variables `ACERVO_ENDPOINT`, `ACERVO_PUBLIC_ENDPOINT`, `ACERVO_ACCESS_KEY`, `ACERVO_SECRET_KEY` (credenciales del usuario `mapalab-user` del bucket `mapalab` de Acervo, no globales), `ACERVO_BUCKET` (default `mapalab`), `ACERVO_PRESIGN_TTL_SECONDS` (default 3600), `DOWNLOAD_CACHE_TTL_HOURS` (default 36).
-- **`backend/requirements.txt`**: nuevas dependencias `asyncpg`, `boto3`.
-- **`docker-compose.yml`**: el servicio `backend` ahora recibe `ACERVO_ENDPOINT`, `ACERVO_PUBLIC_ENDPOINT`, `ACERVO_ACCESS_KEY`, `ACERVO_SECRET_KEY`, `ACERVO_BUCKET`, `ACERVO_PRESIGN_TTL_SECONDS`, `DOWNLOAD_CACHE_TTL_HOURS`.
-
-#### Notas de implementación
-
-- **asyncpg + bytearray**: `asyncpg.Connection.copy_from_query(..., output=callable)` invoca el callable con `bytearray` (no `bytes`). Starlette's `StreamingResponse` espera `bytes | str` y falla con `AttributeError: 'bytearray' object has no attribute 'encode'`. El writer convierte explícitamente con `bytes(buf)` antes de poner en la queue.
-- **asyncpg + fechas**: los parámetros de query con tipo `DATE` en Postgres no aceptan string en asyncpg (a diferencia de psycopg2). `_build_select` ahora hace `date.fromisoformat(date_from)` y `date.fromisoformat(date_to)` antes de pasarlos como params; el regex existente en el endpoint (`^\d{4}-\d{2}-\d{2}$`) garantiza que el string es parseable.
-
-#### Por qué minor
-
-Sin cambios visibles para el usuario del visor; sin breaking changes para integradores que usen `/download/`. En GCP staging todo sigue funcionando idéntico mientras `mapalab.layer_downloads` esté vacía (cae a streaming). En producción, requiere la migración Alembic `0016_layer_downloads` y el cron de dataengine para tomar efecto.
-
-### Agregado: modo Vista por municipio (beta, sólo dev/staging)
-
-Nuevo botón **"Jalisco"** en la barra superior derecha (al lado derecho de Descargar) que permite enfocar el visor en uno o varios municipios del estado. Layout final: `[Descargar | 📍 Jalisco | Share]` (sin `InfoModal`).
-
-- **UI**: panel con buscador + lista de los 125 municipios; pill compacta con default "Jalisco" o "N municipios"/"Guadalajara" según selección.
-- **Máscara visual**: VectorLayer sobre el mapa con polígono (outer = viewport, holes = municipios) en `rgba(0,0,0,0.4)`. Se replica en ambos paneles del modo swipe. El usuario percibe que ve solo esos municipios sin que las capas necesiten configuración.
-- **Sin filtros CQL, sin metadata por capa**: el modo funciona uniforme para TODAS las capas (raster, vector, externas) sin requerir configuración en mariachi.
-- **Switch IIEG/INEGI**: la fuente de polígonos (`geom_iieg` vs `geom_inegi`) se elige automáticamente según las capas de límite activas.
-- **Backend propio**: vista materializada `mapalab.municipios` que une `mapa_base.limite_municipal` (IIEG) e `mapa_base.limite_municipal_inegi`. Refresh mensual desde dataengine-jobs (1° de cada mes a las 05:00) o manual con `make refresh-municipios`. Sin dependencia de GeoServer en runtime.
-- **Endpoints REST**: `GET /municipios/` (lista con ETag + cache 1h) y `GET /municipios/geometries?source=...&claves=...` (GeoJSON EPSG:3857).
-- **Persistencia completa**: URL (`?municipios=014,067`), share JSON (bump v1 → v2 con `payload.municipios`), sessionStorage.
-- **Telemetría**: eventos `municipio_mode_enter/exit/change` y `municipio_panel_open`. Documentados en mariachi-admin → Documentación → Telemetría.
-
-Gated por `VITE_APP_ENV in [dev, beta]` — el botón no aparece en producción.
-
-Documentación completa en [`docs/municipio-mode.md`](municipio-mode.md).
-
-#### Que cambio
-
-**Dataengine:**
-- **`jobs/alembic/versions/20260525_0015_municipios_materialized_view.py`** (nuevo): MV `mapalab.municipios` con `clave_geo`, `nombre`, `region`, `area_km2`, `area_ha`, `geom_iieg`, `geom_inegi` + indexes GIST.
-- **`jobs/run_refresh_municipios.py`** (nuevo): `REFRESH MATERIALIZED VIEW CONCURRENTLY`.
-- **`jobs/crontab`**: entrada `0 5 1 * *` para refresh mensual.
-- **`Makefile`**: target `refresh-municipios` + entrada en `refresh-all`.
-
-**Backend mapalab:**
-- **`backend/app/routers/municipios.py`** (nuevo): endpoints REST con ETag.
-- **`backend/app/repositories/municipios_repository.py`** (nuevo): SQL crudo con `ST_AsGeoJSON(ST_Transform(...))`.
-- **`backend/app/server.py`**: registro del router.
-
-**Frontend mapalab:**
-- **`services/municipioService.js`** (nuevo): fetch + cache contra `/api/municipios/`.
-- **`pages/maps/helpers/municipioMask.js`** (nuevo): helpers puros `buildMaskPolygon`, `unionGeometriesExtent`, `extractHoleRings`.
-- **`pages/maps/hooks/useMunicipioMode.js`** (nuevo): estado + selección + telemetría.
-- **`pages/maps/hooks/useMunicipioMask.js`** (nuevo): VectorLayer por map instance, recálculo en pan/zoom.
-- **`pages/maps/components/MapExport/MunicipioFilterButton.jsx`** y **`MunicipioFilterPanel.jsx`** (nuevos): UI del modo.
-- **`providers/MapsProvider.jsx`**: instanciación de los hooks + fit al bbox.
-- **`pages/maps/components/MapToolsPanel.jsx`**: layout reorganizado, `InfoModal` eliminado.
-- **`pages/maps/components/MapExport/Download.jsx`**: botón "Descargar" compacto (w-30) en lugar de "Descargar visualización" (w-235).
-- **`pages/maps/hooks/useShareSerializer.js`** y **`useShareDeserializer.js`**: bump a `version: 2` + payload `municipios`, con backwards-compat para v1.
-- **`pages/maps/hooks/useInitializeFromUrl.js`**: parseo de `?municipios=`.
-- **`services/analyticsService.js`**: 4 trackers nuevos.
-
-**Mariachi-admin:**
-- **`features/documentacion/topics/TelemetryTopic.jsx`**: nueva Card con la documentación de los eventos del modo.
-
----
 
 ## [1.49.0] - 2026-05-25
 

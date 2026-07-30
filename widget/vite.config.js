@@ -9,17 +9,16 @@ export default defineConfig({
         emptyOutDir: true,
         cssCodeSplit: false,
         lib: {
-            entry: resolve(__dirname, 'src/index.js'),
+            entry: resolve(import.meta.dirname, 'src/index.js'),
             name: 'MapalabWidget',
             formats: ['iife', 'es'],
             fileName: (format) => format === 'iife' ? 'mapalab.v1.js' : 'mapalab.v1.es.js',
         },
-        rollupOptions: {
+        rolldownOptions: {
             output: {
-                inlineDynamicImports: true,
+                codeSplitting: false,
             },
         },
         sourcemap: true,
-        minify: 'esbuild',
     },
 });
