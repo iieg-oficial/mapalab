@@ -63,7 +63,7 @@ make refresh-layer-tree    # reconstruye desde layers
 # Opción A: si tienes el JSON más reciente exportado
 cd /IIEG/dataengine
 cd /IIEG/dataengine
-make prod-migration PROD_MIGRATION_FLAGS="--skip-etl --layers-json /path/to/layers_export.json"
+./scripts/bootstrap-v14.sh --layers-json /path/to/layers_export.json   # en dataengine
 
 # Opción B: restaurar desde backup diario de DataEngine
 docker exec dataengine-backup /scripts/restore-from-latest.sh mapalab  # nombre aprox., ver dataengine docs
@@ -186,7 +186,7 @@ docker exec -i -e PGPASSWORD='...' dataengine-primary psql -U gisuser -d iieg_gi
 
 # Opción B: re-seed completo desde JSON (sin tocar el Sheet ETL)
 cd /IIEG/dataengine
-make prod-migration PROD_MIGRATION_FLAGS="--skip-etl --layers-json /path/to/known-good.json"
+./scripts/bootstrap-v14.sh --layers-json /path/to/known-good.json   # en dataengine
 ```
 
 ---
@@ -215,7 +215,7 @@ docker exec -i -e PGPASSWORD='...' dataengine-primary psql -U gisuser -d iieg_gi
 DROP SCHEMA mapalab CASCADE;
 CREATE SCHEMA mapalab AUTHORIZATION mariachi_layers;
 SQL
-make prod-migration PROD_MIGRATION_FLAGS="--skip-etl --layers-json /path/to/latest.json"
+./scripts/bootstrap-v14.sh --layers-json /path/to/latest.json   # en dataengine
 ```
 
 ---

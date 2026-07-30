@@ -251,9 +251,9 @@ Primer deploy a prod de DataEngine requiere correr el script de bootstrap:
 
 ```bash
 cd /IIEG/dataengine
-make prod-migration           # pull final del Sheet + bootstrap + seed + migrate + stamp
+make bootstrap                # rol, schema, grants, seed, migrate y stamp
 # o sin ETL (si ya corriste el Sheet hoy o estas en dev sin credenciales):
-make prod-migration PROD_MIGRATION_FLAGS="--skip-etl"
+make bootstrap
 ```
 
 Pasos idempotentes:
