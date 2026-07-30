@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.101.1] - 2026-07-30
+
+### Corregido: `sync-version.sh` no sincronizaba la version del backend
+
+El script alineaba `README.md` y `package-lock.json` con `frontend/package.json`, pero dejaba
+fuera `backend/app/__version__.py` — que es de donde sale el `version` de `/ontoy`. Al depender de
+que alguien lo actualizara a mano, **estuvo congelado en 1.74.0 desde mayo** mientras el frontend
+avanzaba hasta 1.96.x.
+
+Consecuencia: el monitor y el panel de Observabilidad reportaban una version falsa de MapaLab
+durante meses, y la verificacion `curl /ontoy | grep version` de los despliegues **nunca podia
+pasar** para este repo. Confirmado en produccion el 2026-07-30, donde `/ontoy` seguia diciendo
+`1.74.0` con el codigo en 1.96.2.
+
+#### Corregido
+
+- `scripts/sync-version.sh` escribe tambien `backend/app/__version__.py` desde
+  `frontend/package.json`, que es la fuente unica de version del repo.
+
+---
+
 ## [1.100.1] - 2026-07-30
 
 ### Corregido: una leyenda que no carga deja de reportarse como error
