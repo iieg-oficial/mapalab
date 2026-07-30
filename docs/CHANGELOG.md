@@ -5,6 +5,25 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.105.0] - 2026-07-30
+
+### Cambiado: React Router 8 por el advisory GHSA-qwww-vcr4-c8h2
+
+El advisory de React Router (bypass de CSRF que permite ejecutar acciones antes de un 400) cubre
+`>=7.12.0 <8.3.0`: **no hay corrección dentro de la línea 7**, así que la única salida era el
+major. Sube de 7.14.2 a 8.3.0.
+
+El agujero está en el modo RSC —React Server Components con server actions—, que MapaLab no usa:
+es una SPA con `createBrowserRouter`. No era explotable aquí, pero mantenerlo dejaba un `high`
+permanente en `npm audit` sin forma de distinguirlo de uno real.
+
+La migración no tocó código. Pese a lo que sugiere la guía de actualización, en 8.3.0 todo se
+sigue exportando desde `react-router`, y `react-router/dom` conserva `RouterProvider`, que es de
+donde ya lo importaba `main.jsx`. Lo que desaparece es el paquete `react-router-dom`, que este
+repo no usa. Los 814 tests pasan sin cambios.
+
+Requiere React >= 19.2.7 (ya en 19.2.8) y Node >= 22.22.
+
 ## [1.104.0] - 2026-07-30
 
 ### Cambiado: Vite 8 con Rolldown, y React 19.2.8
