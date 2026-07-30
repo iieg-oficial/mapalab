@@ -70,7 +70,7 @@ export const useWMSLegend = () => {
             const data = await response.json();
             return data;
         } catch (error) {
-            console.error('Error fetching legend JSON:', error);
+            console.debug('[wmsLegend] fallo:', error?.message || error);
             return null;
         }
     }, [layers, resolveWMSId]);
