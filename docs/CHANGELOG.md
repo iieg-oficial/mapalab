@@ -5,6 +5,32 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.99.1] - 2026-07-30
+
+### Corregido: `/ontoy` estaba expuesto a internet y ahora publica contadores
+
+Al mudar los contadores a `/ontoy` en la 1.99.0 se revisó quién puede leer ese endpoint. Resulta que
+**el `/ontoy` del backend era alcanzable desde fuera** por dos rutas: `/mapalab/api/ontoy` a través
+del gateway (que enruta todo `/mapalab/api/` al backend) y el puerto `3006` de `mapalab-nginx`
+publicado en el host. Respondía 200 a cualquiera.
+
+No era una exposición de diseño: el gateway publica a propósito el `/ontoy` de gateway-hub,
+geoserver, acervo, huachicol y sieej —sidecars que solo dicen versión y estado—, pero mapalab no
+está en esa lista; caía por la regla general del prefijo. mariachi, con el mismo patrón de handler,
+no es alcanzable por ninguna ruta pública.
+
+Lo que se habría filtrado al desplegar la 1.99.0: el volumen de árbol, búsquedas, descargas, embeds
+y llamadas MCP, y sobre todo `embed_denied` y `embed_quota_exceeded`, que le sirven a quien esté
+probando API keys como oráculo para saber si sus intentos se están rechazando. Ya sin contadores,
+el payload también trae `checks.db.detail` con el mensaje de la excepción, que ante una caída de
+Postgres puede incluir host y usuario.
+
+Se bloquea `= /mapalab/api/ontoy` en `nginx/nginx.conf` con el mismo `deny all` que tenía
+`/metrics`. El bloqueo cierra las dos rutas de una vez, porque el gateway pasa por ese mismo nginx.
+huachicol no se ve afectado: sondea `http://mapalab-backend-1:8000/ontoy` por la red interna, sin
+pasar por nginx —verificado, sigue respondiendo 200—, y el panel de monitoreo del admin tampoco,
+porque lee `/sistema/monitor/status` del backend de mariachi y no los `/ontoy` directamente.
+
 ## [1.99.0] - 2026-07-30
 
 ### Eliminado: la instrumentacion que ya no lee nadie
