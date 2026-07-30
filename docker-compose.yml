@@ -165,7 +165,7 @@ services:
         VITE_COLIBRI_SOURCE_APP: ${VITE_COLIBRI_SOURCE_APP:?}
         VITE_COLIBRI_API_KEY: ${VITE_COLIBRI_API_KEY}
         VITE_ACERVO_ORIGIN: ${VITE_ACERVO_ORIGIN}
-    profiles: ["staging"]
+    profiles: ["prod"]
     ports:
       - "${NGINX_PORT:?}:80"
     depends_on:

@@ -1,6 +1,6 @@
 # Modo Vista por municipio
 
-Feature beta (sólo dev/staging) que permite al usuario enfocar el visor en uno o varios municipios de Jalisco. Combina **máscara visual** + **filtros CQL por capa** + **zoom al bbox** para que la vista se sienta exclusiva del municipio seleccionado.
+Feature beta (sólo con `VITE_APP_ENV` en `dev` o `beta`) que permite al usuario enfocar el visor en uno o varios municipios de Jalisco. Combina **máscara visual** + **filtros CQL por capa** + **zoom al bbox** para que la vista se sienta exclusiva del municipio seleccionado.
 
 ## Estado: beta
 

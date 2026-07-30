@@ -42,7 +42,7 @@ Ejemplo: `feat: add layer download in GeoJSON format`
 - Describir que cambia y por que
 - Asegurar que los tests pasan: `npm test` (frontend)
 - Asegurar que el linter pasa: `npm run lint` (frontend)
-- Revisar que `make dev` y `make staging` funcionan correctamente
+- Revisar que `make dev` y `make prod` funcionan correctamente
 
 ## Convenciones de codigo
 

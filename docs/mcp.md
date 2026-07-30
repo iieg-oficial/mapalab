@@ -95,7 +95,7 @@ app.add_middleware(MCPTelemetryMiddleware, path_prefix='/mcp')
 |---|---|
 | Interna (entre containers) | `http://mapalab-mcp:8000/mcp` |
 | Local desde host (puerto publicado) | `http://localhost:3006/mcp` |
-| Via gateway-hub (staging/prod) | `https://<dominio>/mapalab/mcp` |
+| Via gateway-hub (produccion) | `https://<dominio>/mapalab/mcp` |
 
 **Sin prefijo `/api`** — el MCP no es REST, es JSON-RPC sobre HTTP streamable. Convive con el API REST del backend en lugar de "dentro" del API. Alineado con la convención dominante en la industria (FastMCP default `path='/mcp'`, Cloudflare remote MCP servers, etc.) y con el patron de `iieg-oficial/agent/servers`. Desde mapalab 1.45.0 las URLs viejas `/api/mcp` y `/mapalab/api/mcp` ya no existen — son 404.
 

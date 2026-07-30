@@ -42,7 +42,7 @@ El **panel administrativo** `/administrador/mapalab/api-keys` permite armar mapa
 | `controls` | string | `zoom` | Controles a mostrar separados por coma: `zoom`, `fullscreen`, `search`. |
 | `height` | string | — | Altura del componente. Acepta `500`, `100%`, `60vh`, etc. |
 | `width` | string | `100%` | Ancho del componente. |
-| `base-url` | string | `https://iieg.gob.mx` | Override del base URL — útil sólo para entornos locales/staging. En producción **no lo uses**. |
+| `base-url` | string | `https://iieg.gob.mx` | Override del base URL — útil sólo para entornos locales. En producción **no lo uses**. |
 | `title` | string | `"Mapa MapaLab"` | Atributo `title` del iframe (accesibilidad). |
 | `ready-timeout-ms` | number | `8000` | Milisegundos a esperar a que el visor emita `mapalab:ready` antes de mostrar el fallback. |
 

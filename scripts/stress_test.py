@@ -4,17 +4,14 @@ Stress test con usuarios reales — MapaLab
 
 Uso:
   python stress_test.py --env local                          # local (https://localhost)
-  python stress_test.py --env staging                        # GCP staging
   python stress_test.py --env production                     # produccion
   python stress_test.py --url https://mi-dominio.com/mapalab/mapa  # URL custom
 
   python stress_test.py --env local --mode fixed --users 80
-  python stress_test.py --env staging --mode ramp --users 200 --ramp-steps 8
   python stress_test.py --env production --mode ramp --users 200 --ramp-steps 1 --sessions 5
 
 Entornos:
   local       https://localhost/mapalab/mapa      (ssl=False)
-  staging     Leer de env var STRESS_TEST_STAGING_URL o pasar --url
   production  Leer de env var STRESS_TEST_PRODUCTION_URL o pasar --url
 
 Simula visitas completas (igual que un navegador real):
@@ -45,10 +42,6 @@ ENVS = {
     "local": {
         "url": "https://localhost/mapalab/mapa",
         "ssl": False,
-    },
-    "staging": {
-        "url": os.environ.get("STRESS_TEST_STAGING_URL", ""),
-        "ssl": True,
     },
     "production": {
         "url": os.environ.get("STRESS_TEST_PRODUCTION_URL", ""),
@@ -423,7 +416,7 @@ async def run_fixed(users, duration, sessions_per_user):
 
 def main():
     parser = argparse.ArgumentParser(description="Stress test con usuarios reales para mapalab")
-    parser.add_argument("--env", choices=["local", "staging", "production"], default="local",
+    parser.add_argument("--env", choices=["local", "production"], default="local",
                         help="Entorno objetivo (default: local)")
     parser.add_argument("--url", type=str, default="",
                         help="URL custom (sobreescribe --env)")

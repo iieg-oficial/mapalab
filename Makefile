@@ -1,13 +1,12 @@
-.PHONY: help dev staging prod deploy down down-dev down-staging down-prod build logs logs-dev logs-staging status clean setup-hooks ensure-networks refresh-layer-tree reset-dist-perms
+.PHONY: help dev prod deploy down down-dev down-prod build logs logs-dev logs-prod status clean setup-hooks ensure-networks refresh-layer-tree reset-dist-perms
 
 # UID/GID del host para que volumes escritos por contenedores (ej. frontend-build → dist/) tengan ownership correcto
 export UID := $(shell id -u)
 export GID := $(shell id -g)
 
 # Compose base commands por entorno
-COMPOSE_DEV     = docker compose -p mapalab-dev --env-file .env.development
-COMPOSE_STAGING = docker compose -p mapalab-staging -f docker-compose.yml --env-file .env.staging
-COMPOSE_PROD    = docker compose -p mapalab -f docker-compose.yml --env-file .env.production
+COMPOSE_DEV  = docker compose -p mapalab-dev --env-file .env.development
+COMPOSE_PROD = docker compose -p mapalab -f docker-compose.yml --env-file .env.production
 
 help:
 	@echo "MapaLab - Comandos disponibles:"
@@ -17,13 +16,11 @@ help:
 	@echo "  make logs-dev     - Ver logs de desarrollo"
 	@echo "  make down-dev     - Detener servicios de desarrollo"
 	@echo ""
-	@echo "STAGING/PRODUCCION:"
-	@echo "  make staging      - Modo staging (Nginx + Backend Gunicorn)"
-	@echo "  make prod         - Alias de staging con .env.production"
+	@echo "PRODUCCION:"
+	@echo "  make prod         - Modo produccion (Nginx + Backend Gunicorn)"
 	@echo "  make deploy       - Build + up en produccion (usado por CD)"
-	@echo "  make logs-staging - Ver logs de staging"
-	@echo "  make down-staging - Detener servicios de staging"
-	@echo "  make down-prod    - Detener servicios de produccion (deploy)"
+	@echo "  make logs-prod    - Ver logs de produccion"
+	@echo "  make down-prod    - Detener servicios de produccion"
 	@echo ""
 	@echo "GENERAL:"
 	@echo "  make down              - Detener todos los servicios"
@@ -50,54 +47,39 @@ dev: setup-hooks
 	@echo ""
 	@echo "Hot-reload activado en frontend y backend"
 
-staging: ensure-networks
-	@echo ""
-	@echo "Construyendo frontend..."
-	@$(COMPOSE_STAGING) --profile build run --rm --build frontend-build
-	@echo ""
-	@echo "Levantando servicios de staging..."
-	@$(COMPOSE_STAGING) --profile staging up -d --build
-	@echo ""
-	@echo "Aplicacion: http://localhost:3006"
-
 prod: ensure-networks
 	@echo ""
 	@echo "Construyendo frontend..."
 	@$(COMPOSE_PROD) --profile build run --rm --build frontend-build
 	@echo ""
 	@echo "Levantando servicios de produccion..."
-	@$(COMPOSE_PROD) --profile staging up -d --build
+	@$(COMPOSE_PROD) --profile prod up -d --build
 	@echo ""
 	@echo "Aplicacion lista"
 
 deploy: ensure-networks reset-dist-perms
 	@echo "Desplegando en produccion..."
 	@$(COMPOSE_PROD) --profile build run --rm --build frontend-build
-	@$(COMPOSE_PROD) --profile staging up -d --build --force-recreate
+	@$(COMPOSE_PROD) --profile prod up -d --build --force-recreate
 	@docker exec gateway-hub-nginx-1 sh -c "rm -rf /var/cache/nginx/mapalab_assets/* 2>/dev/null; nginx -s reload" 2>/dev/null || true
 	@echo "Deploy completado"
 
 reset-dist-perms:
 	@docker run --rm -v "$(CURDIR)/frontend":/w alpine sh -c "rm -rf /w/dist && mkdir -m 0755 -p /w/dist && chown $$(id -u):$$(id -g) /w/dist"
 
-down: down-dev down-staging down-prod
+down: down-dev down-prod
 
 down-dev:
 	@$(COMPOSE_DEV) --profile dev down 2>/dev/null || true
 	@echo "Servicios de desarrollo detenidos"
 
-down-staging:
-	@$(COMPOSE_STAGING) --profile staging --profile build down 2>/dev/null || true
-	@echo "Servicios de staging detenidos"
-
 down-prod:
-	@$(COMPOSE_PROD) --profile staging --profile build down 2>/dev/null || true
+	@$(COMPOSE_PROD) --profile prod --profile build down 2>/dev/null || true
 	@echo "Servicios de produccion detenidos"
 
 clean: down
 	@$(COMPOSE_DEV) --profile dev down -v --remove-orphans 2>/dev/null || true
-	@$(COMPOSE_STAGING) --profile staging --profile build down -v --remove-orphans 2>/dev/null || true
-	@$(COMPOSE_PROD) --profile staging --profile build down -v --remove-orphans 2>/dev/null || true
+	@$(COMPOSE_PROD) --profile prod --profile build down -v --remove-orphans 2>/dev/null || true
 	@docker run --rm -v $(CURDIR)/frontend/dist:/dist alpine sh -c "rm -rf /dist/*" 2>/dev/null || true
 	@rm -rf frontend/dist frontend/node_modules
 	@echo "Limpieza completada"
@@ -105,8 +87,8 @@ clean: down
 logs-dev:
 	@$(COMPOSE_DEV) --profile dev logs -f
 
-logs-staging:
-	@$(COMPOSE_STAGING) --profile staging logs -f
+logs-prod:
+	@$(COMPOSE_PROD) --profile prod logs -f
 
 logs:
 	@$(COMPOSE_DEV) --profile dev logs -f
@@ -115,8 +97,8 @@ status:
 	@echo "=== DESARROLLO ==="
 	@$(COMPOSE_DEV) ps 2>/dev/null || echo "  No hay servicios de desarrollo corriendo"
 	@echo ""
-	@echo "=== STAGING ==="
-	@$(COMPOSE_STAGING) ps 2>/dev/null || echo "  No hay servicios de staging corriendo"
+	@echo "=== PRODUCCION ==="
+	@$(COMPOSE_PROD) ps 2>/dev/null || echo "  No hay servicios de produccion corriendo"
 
 BACKEND_HOST ?= http://localhost:8000
 DATAENGINE_DIR ?= ../dataengine

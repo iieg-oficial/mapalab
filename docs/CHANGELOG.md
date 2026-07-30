@@ -20,6 +20,40 @@ resolver un extent.
 
 ---
 
+## [1.101.0] - 2026-07-30
+
+### Se va el entorno staging; el profile de nginx se llama `prod`
+
+El staging nunca se uso. No habia rama, ni pipeline, ni VM propia: solo un `.env.staging` que
+apuntaba a localhost con `ENVIRONMENT=production` adentro, y tres targets de `make` que en la
+practica eran el modo produccion con otro nombre.
+
+Lo que si existe y se queda es el despliegue de GCP, que no es un staging: es produccion con
+`VITE_APP_ENV=beta`, y esa etiqueta es la que enciende el badge naranja «test», el `TestEnvModal`
+y las herramientas `nonProdOnly`. Nada de eso se toco.
+
+#### Eliminado
+
+- Targets `make staging`, `make down-staging` y `make logs-staging`, y la variable
+  `COMPOSE_STAGING` del Makefile. `make logs-prod` reemplaza a `logs-staging`.
+- El archivo `.env.staging` (no estaba versionado).
+- El perfil `--env staging` y la variable `STRESS_TEST_STAGING_URL` de `scripts/stress_test.py`.
+
+#### Cambiado
+
+- **El profile de compose `staging` pasa a llamarse `prod`.** Nunca fue un profile de staging: era
+  el que levanta nginx, y `make prod` y `make deploy` ya lo usaban con `.env.production`.
+- **Al desplegar esta version hay que bajar los contenedores viejos antes.** Un
+  `docker compose --profile prod down` no ve lo que se levanto con el profile anterior:
+
+  ```bash
+  docker compose -p mapalab --profile staging down   # con el checkout viejo
+  # o, si ya se hizo checkout del nuevo:
+  docker stop mapalab-nginx-1 && docker rm mapalab-nginx-1
+  ```
+
+---
+
 ## [1.100.0] - 2026-07-30
 
 ### Cambiado: los rechazos de embed son un check, y el resto de contadores se va
