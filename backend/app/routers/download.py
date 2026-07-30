@@ -11,7 +11,6 @@ from app.consts.workspaces import resolve_schema
 from app.databases.async_pool import get_pool
 from app.databases.factory import DatabaseFactory
 from app.exceptions.common_exceptions import NotFoundException, BadRequestException
-from app.metrics import COUNTER_DOWNLOAD_REQUESTS, incr
 from app.repositories.download_repository import DATE_COLUMN, DownloadRepository
 from app.services.acervo_client import iter_object_body, open_object
 from app.utils.api_responses import api_responses
@@ -78,7 +77,6 @@ async def download_layer(
     date_from: Optional[str] = Query(default=None, description='Fecha inicio (YYYY-MM-DD)'),
     date_to: Optional[str] = Query(default=None, description='Fecha fin (YYYY-MM-DD)'),
 ):
-    incr(COUNTER_DOWNLOAD_REQUESTS)
     if date_from and not _DATE_PATTERN.match(date_from):
         raise BadRequestException('date_from debe tener formato YYYY-MM-DD')
     if date_to and not _DATE_PATTERN.match(date_to):

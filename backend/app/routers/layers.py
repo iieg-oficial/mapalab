@@ -5,13 +5,6 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from app.auth.internal_token import require_internal_token
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
-from app.metrics import (
-    COUNTER_SEARCH_REQUESTS,
-    COUNTER_TREE_CACHE_HITS,
-    COUNTER_TREE_REFRESH,
-    COUNTER_TREE_REQUESTS,
-    incr,
-)
 from app.repositories.layers_repository import LayersRepository
 from app.services.layer_tree_service import get_cached_state, invalidate_memory_cache, refresh_cache
 from app.utils.api_responses import api_responses
@@ -51,12 +44,10 @@ def get_layer_tree(
     response: Response,
     if_none_match: Optional[str] = Header(default=None),
 ):
-    incr(COUNTER_TREE_REQUESTS)
     state = get_cached_state()
     etag = state['etag']
 
     if if_none_match and if_none_match == etag:
-        incr(COUNTER_TREE_CACHE_HITS)
         response.status_code = 304
         response.headers['ETag'] = etag
         response.headers['Cache-Control'] = 'no-cache, must-revalidate'
@@ -114,7 +105,6 @@ def get_workspaces():
     ),
 )
 def refresh_cache_endpoint():
-    incr(COUNTER_TREE_REFRESH)
     result = refresh_cache()
     return {
         'ok': True,
@@ -159,7 +149,6 @@ def search_layers(
     q: str = Query(min_length=1, description='Texto a buscar en label, tags o id de la capa'),
     limit: int = Query(default=50, ge=1, le=200, description='Máximo de resultados (1-200, default 50)'),
 ):
-    incr(COUNTER_SEARCH_REQUESTS)
     state = get_cached_state()
     index = _flatten_tree(state['tree'])
 

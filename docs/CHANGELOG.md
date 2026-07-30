@@ -5,6 +5,42 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.100.0] - 2026-07-30
+
+### Cambiado: los rechazos de embed son un check, y el resto de contadores se va
+
+Los contadores que la 1.99.0 mudo a `/ontoy` no los leia nadie: el monitor de huachicol solo
+persiste `status`, `checks`, `containers`, `version` y `deployed_at`. Y ademas eran acumulados en
+memoria de cada worker, asi que los numeros salian parciales y nunca podian compararse contra un
+umbral.
+
+Los dos que si dicen algo pasan a ser un check con su propio `status`:
+
+- **`embeds`**: rechazos por llave invalida (`denied`) y por cuota agotada (`quota_exceeded`),
+  contados sobre una ventana de 15 minutos. `degraded` a partir de 30, con detalle del desglose.
+  Sirve para notar que alguien esta probando llaves; ese conteo era justo el que no convenia
+  publicar en abierto, y desde la 1.99.1 el endpoint ya no lo esta.
+
+Los errores JS del embed dejan de tener contador propio y se registran en `client_errors`, que ya
+era un check con umbral: un solo lugar para los sintomas del navegador.
+
+Se borran los de volumen puro —`tree_requests`, `tree_cache_hits`, `tree_refresh`,
+`search_requests`, `download_requests`, `embed_requests`, `mcp_calls`—, el modulo `app/metrics.py`
+completo y el `/metrics` que quedaba en el servidor MCP. Medir trafico pide una base de series
+temporales, que es justo lo que el ecosistema decidio no tener.
+
+La mecanica de ventana con archivo y `flock` que ya usaba `client_errors` se extrajo a
+`services/ventana_eventos.py` y ahora la comparten los dos trackers.
+
+### Nota de despliegue
+
+**Hay dos variables nuevas en el `.env`**, sin las cuales el compose falla al levantar (usa `:?`):
+
+```
+EMBED_ABUSE_WINDOW_MINUTES=15
+EMBED_ABUSE_WARN_COUNT=30
+```
+
 ## [1.99.1] - 2026-07-30
 
 ### Corregido: `/ontoy` estaba expuesto a internet y ahora publica contadores

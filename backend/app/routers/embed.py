@@ -8,13 +8,8 @@ from fastapi import APIRouter, Body, Header, HTTPException, Query, Request, Resp
 from pydantic import BaseModel, Field
 
 from app.config import settings
-from app.metrics import (
-    COUNTER_EMBED_DENIED,
-    COUNTER_EMBED_JS_ERRORS,
-    COUNTER_EMBED_QUOTA_EXCEEDED,
-    COUNTER_EMBED_REQUESTS,
-    incr,
-)
+from app.services import embed_abuse_tracker
+from app.services.client_error_tracker import record as record_client_error
 from app.services.access_logger import get_logger as get_access_logger
 from app.services.api_key_quota import get_tracker
 from app.services.api_key_validator import (
@@ -116,7 +111,7 @@ def _validate_or_403(
     access_logger = get_access_logger()
     request_id = request.headers.get('x-request-id')
     if not result.valid:
-        incr(COUNTER_EMBED_DENIED, {'endpoint': endpoint, 'reason': result.reason or 'unknown'})
+        embed_abuse_tracker.record(embed_abuse_tracker.TIPO_DENEGADO)
         Logger.warning(
             f"embed.validate.denied reason={result.reason} origin={origin} prefix={prefix}"
         )
@@ -139,7 +134,7 @@ def _validate_or_403(
     if result.key_id is not None and not tracker.can_consume(
         result.key_id, result.cuota_diaria, result.cuota_mensual
     ):
-        incr(COUNTER_EMBED_QUOTA_EXCEEDED, {'prefix': prefix})
+        embed_abuse_tracker.record(embed_abuse_tracker.TIPO_CUOTA)
         access_logger.record(
             api_key_id=result.key_id,
             endpoint=endpoint,
@@ -156,7 +151,6 @@ def _validate_or_403(
         )
     if record_quota and result.key_id is not None:
         tracker.record(result.key_id)
-    incr(COUNTER_EMBED_REQUESTS, {'endpoint': endpoint, 'prefix': prefix})
     access_logger.record(
         api_key_id=result.key_id,
         endpoint=endpoint,
@@ -320,7 +314,7 @@ def post_telemetry(
     _set_response_headers(response, origin, result.dominios_permitidos)
     prefix = key[:12] if key else ''
     for err in payload.errors[:5]:
-        incr(COUNTER_EMBED_JS_ERRORS, {'prefix': prefix})
+        record_client_error('embed_js')
         Logger.warning(f"embed.telemetry.js_error prefix={prefix} msg={(err.message or '')[:120]}")
     return {'ok': True}
 

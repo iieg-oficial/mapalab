@@ -7,12 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from sqlalchemy import text
-from app import metrics as metrics_module
 from app.routers import (metadata, periodicity, download, layers, shares, embed, municipios, client_errors, catalogo)
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.access_logger import access_flush_loop, get_logger as get_access_logger, _flush_sync as _flush_accesos
 from app.services.api_key_quota import flush_to_mariachi
 from app.services.client_error_tracker import snapshot as client_error_snapshot
+from app.services.embed_abuse_tracker import snapshot as embed_abuse_snapshot
 from app.services.scheduler_service import SchedulerService
 from app.services.periodicity_service import PeriodicityService
 from app.consts.databases import DatabaseType
@@ -154,6 +154,7 @@ def ontoy():
         checks['db'] = {'status': 'down', 'detail': str(exc)[:120]}
 
     checks['client_errors'] = client_error_snapshot()
+    checks['embeds'] = embed_abuse_snapshot()
 
     severity = {'ok': 0, 'degraded': 1, 'down': 2}
     status = max(
@@ -176,6 +177,5 @@ def ontoy():
         'deployed_at': deployed_at,
         'status': status,
         'checks': checks,
-        'counters': metrics_module.snapshot(),
     }
     return JSONResponse(payload, status_code=503 if status == 'down' else 200)
