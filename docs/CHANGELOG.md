@@ -5,6 +5,21 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.100.1] - 2026-07-30
+
+### Corregido: una leyenda que no carga deja de reportarse como error
+
+`useWMSLegend` registraba con `console.error` el fallo de `GetLegendGraphic`, pese a que el caso
+es recuperable: devuelve `null` y la capa se dibuja sin leyenda. El resultado era una traza roja
+completa en la consola del navegador cada vez que GeoServer no respondia esa peticion, y el mismo
+ruido en la salida de los tests que ejercitan ese camino.
+
+Pasa a `console.debug`, con el formato que ya usan los dos avisos equivalentes del flujo de capas
+WMS: `wmsCapabilitiesService` ante un GetCapabilities fallido y `centerOnLayer` cuando no puede
+resolver un extent.
+
+---
+
 ## [1.100.0] - 2026-07-30
 
 ### Cambiado: los rechazos de embed son un check, y el resto de contadores se va
