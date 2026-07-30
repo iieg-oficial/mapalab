@@ -13,5 +13,4 @@ apscheduler
 rich
 pytz
 fastmcp
-prometheus-fastapi-instrumentator
 boto3

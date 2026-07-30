@@ -14,7 +14,6 @@ import httpx
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.config import settings
-from app.metrics import COUNTER_MCP_CALLS, HISTOGRAM_MCP_LATENCY, incr, observe
 from app.services.access_logger import get_logger as get_access_logger
 from app.services.api_key_quota import get_tracker
 from app.utils.logger import Logger
@@ -212,7 +211,6 @@ class MCPTelemetryMiddleware:
                     {'error': 'quota_exceeded', 'message': 'Cuota de la API key agotada. Intenta más tarde.'},
                     [(b'retry-after', b'60')],
                 )
-                incr(COUNTER_MCP_CALLS, {'method': method, 'tool': tool or '', 'status': 'quota'})
                 return
 
         state = {'status': 0, 'bytes_out': 0}
@@ -246,10 +244,6 @@ class MCPTelemetryMiddleware:
                 client_name=client_name,
                 client_version=client_version,
             ))
-            metric_labels = {'method': method, 'tool': tool or '', 'status': outcome}
-            incr(COUNTER_MCP_CALLS, metric_labels)
-            if method == 'tools/call' and tool:
-                observe(HISTOGRAM_MCP_LATENCY, duration_ms, {'tool': tool})
             if method == 'tools/call' and key_id is not None:
                 get_tracker().record(key_id, error=(outcome == 'error'), bytes_out=state['bytes_out'] or 0)
                 get_access_logger().record(

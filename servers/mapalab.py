@@ -23,7 +23,6 @@ from fastmcp import FastMCP
 from fastmcp.utilities.lifespan import combine_lifespans
 from pydantic import Field
 
-from app import metrics as metrics_module
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.services.access_logger import (
@@ -401,11 +400,6 @@ def root():
 @_admin_app.get('/health')
 def health() -> dict[str, str]:
     return {'status': 'ok'}
-
-
-@_admin_app.get('/metrics', include_in_schema=False)
-async def metrics():
-    return await metrics_module.metrics()
 
 
 mcp_app = mcp.http_app(path='/mcp', stateless_http=True)

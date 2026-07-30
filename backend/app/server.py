@@ -5,15 +5,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from prometheus_fastapi_instrumentator import Instrumentator, metrics as fastapi_metrics
 
 from sqlalchemy import text
-from app import metrics as metrics_module
 from app.routers import (metadata, periodicity, download, layers, shares, embed, municipios, client_errors, catalogo)
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.access_logger import access_flush_loop, get_logger as get_access_logger, _flush_sync as _flush_accesos
 from app.services.api_key_quota import flush_to_mariachi
 from app.services.client_error_tracker import snapshot as client_error_snapshot
+from app.services.embed_abuse_tracker import snapshot as embed_abuse_snapshot
 from app.services.scheduler_service import SchedulerService
 from app.services.periodicity_service import PeriodicityService
 from app.consts.databases import DatabaseType
@@ -117,16 +116,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-Instrumentator(
-    excluded_handlers=["^/metrics$", "^/health$", "^/ontoy$", "^/$"],
-    should_group_status_codes=True,
-    should_ignore_untemplated=True,
-).add(
-    fastapi_metrics.requests()
-).add(
-    fastapi_metrics.latency(buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 15, 30, 60, 120, 300))
-).instrument(app)
-
 app.add_exception_handler(BaseAppException, app_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
@@ -139,7 +128,8 @@ app.include_router(embed.router)
 app.include_router(municipios.router)
 app.include_router(client_errors.router)
 app.include_router(catalogo.router)
-app.include_router(metrics_module.router)
+
+
 @app.get('/')
 def root():
     return {'message':'MapaLab Backend API'}
@@ -164,6 +154,7 @@ def ontoy():
         checks['db'] = {'status': 'down', 'detail': str(exc)[:120]}
 
     checks['client_errors'] = client_error_snapshot()
+    checks['embeds'] = embed_abuse_snapshot()
 
     severity = {'ok': 0, 'degraded': 1, 'down': 2}
     status = max(

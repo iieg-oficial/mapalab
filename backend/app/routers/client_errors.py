@@ -3,7 +3,6 @@ from __future__ import annotations
 from fastapi import APIRouter, Body, Request
 from pydantic import BaseModel, Field
 
-from app.metrics import incr
 from app.services.client_error_tracker import record
 from app.utils.logger import Logger
 
@@ -20,7 +19,6 @@ class ClientErrorPayload(BaseModel):
 
 @router.post('/log/client-error', include_in_schema=False)
 async def log_client_error(payload: ClientErrorPayload = Body(...), request: Request = None):
-    incr('mapalab_client_chunk_errors_total', {'type': payload.type})
     record(payload.type)
     Logger.warning(
         f'client.chunk_error type={payload.type} '

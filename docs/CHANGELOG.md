@@ -5,6 +5,120 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.100.0] - 2026-07-30
+
+### Cambiado: los rechazos de embed son un check, y el resto de contadores se va
+
+Los contadores que la 1.99.0 mudo a `/ontoy` no los leia nadie: el monitor de huachicol solo
+persiste `status`, `checks`, `containers`, `version` y `deployed_at`. Y ademas eran acumulados en
+memoria de cada worker, asi que los numeros salian parciales y nunca podian compararse contra un
+umbral.
+
+Los dos que si dicen algo pasan a ser un check con su propio `status`:
+
+- **`embeds`**: rechazos por llave invalida (`denied`) y por cuota agotada (`quota_exceeded`),
+  contados sobre una ventana de 15 minutos. `degraded` a partir de 30, con detalle del desglose.
+  Sirve para notar que alguien esta probando llaves; ese conteo era justo el que no convenia
+  publicar en abierto, y desde la 1.99.1 el endpoint ya no lo esta.
+
+Los errores JS del embed dejan de tener contador propio y se registran en `client_errors`, que ya
+era un check con umbral: un solo lugar para los sintomas del navegador.
+
+Se borran los de volumen puro —`tree_requests`, `tree_cache_hits`, `tree_refresh`,
+`search_requests`, `download_requests`, `embed_requests`, `mcp_calls`—, el modulo `app/metrics.py`
+completo y el `/metrics` que quedaba en el servidor MCP. Medir trafico pide una base de series
+temporales, que es justo lo que el ecosistema decidio no tener.
+
+La mecanica de ventana con archivo y `flock` que ya usaba `client_errors` se extrajo a
+`services/ventana_eventos.py` y ahora la comparten los dos trackers.
+
+### Nota de despliegue
+
+**Hay dos variables nuevas en el `.env`**, sin las cuales el compose falla al levantar (usa `:?`):
+
+```
+EMBED_ABUSE_WINDOW_MINUTES=15
+EMBED_ABUSE_WARN_COUNT=30
+```
+
+## [1.99.1] - 2026-07-30
+
+### Corregido: `/ontoy` estaba expuesto a internet y ahora publica contadores
+
+Al mudar los contadores a `/ontoy` en la 1.99.0 se revisó quién puede leer ese endpoint. Resulta que
+**el `/ontoy` del backend era alcanzable desde fuera** por dos rutas: `/mapalab/api/ontoy` a través
+del gateway (que enruta todo `/mapalab/api/` al backend) y el puerto `3006` de `mapalab-nginx`
+publicado en el host. Respondía 200 a cualquiera.
+
+No era una exposición de diseño: el gateway publica a propósito el `/ontoy` de gateway-hub,
+geoserver, acervo, huachicol y sieej —sidecars que solo dicen versión y estado—, pero mapalab no
+está en esa lista; caía por la regla general del prefijo. mariachi, con el mismo patrón de handler,
+no es alcanzable por ninguna ruta pública.
+
+Lo que se habría filtrado al desplegar la 1.99.0: el volumen de árbol, búsquedas, descargas, embeds
+y llamadas MCP, y sobre todo `embed_denied` y `embed_quota_exceeded`, que le sirven a quien esté
+probando API keys como oráculo para saber si sus intentos se están rechazando. Ya sin contadores,
+el payload también trae `checks.db.detail` con el mensaje de la excepción, que ante una caída de
+Postgres puede incluir host y usuario.
+
+Se bloquea `= /mapalab/api/ontoy` en `nginx/nginx.conf` con el mismo `deny all` que tenía
+`/metrics`. El bloqueo cierra las dos rutas de una vez, porque el gateway pasa por ese mismo nginx.
+huachicol no se ve afectado: sondea `http://mapalab-backend-1:8000/ontoy` por la red interna, sin
+pasar por nginx —verificado, sigue respondiendo 200—, y el panel de monitoreo del admin tampoco,
+porque lee `/sistema/monitor/status` del backend de mariachi y no los `/ontoy` directamente.
+
+## [1.99.0] - 2026-07-30
+
+### Eliminado: la instrumentacion que ya no lee nadie
+
+La 1.98.0 dejo contadores e histogramas calculandose en memoria sin superficie de lectura. Se
+borran los cinco contadores que `/ontoy` no publica (`shares_created`, `shares_accessed`,
+`shares_pinned`, `embed_wms_proxy`, `embed_telemetry`) y **todo el motor de histogramas**:
+`observe()`, el diccionario `_histograms`, los buckets por defecto y las dos series que lo usaban
+(`embed_vital_ms` y `mcp_latency_ms`).
+
+Con los histogramas se va el bucle que procesaba los Web Vitals en `POST /embed/telemetry` y su
+allowlist. **El endpoint sigue aceptando el campo `vitals`**: el widget lo manda y hacerlo fallar
+seria romper a los embebedores en producción; simplemente ya no se procesa. Los errores JS, que si
+se publican en `/ontoy`, se siguen registrando igual.
+
+Un histograma sin base de series temporales detras no da percentiles ni tasas: si mas adelante se
+quieren latencias, el camino es medirlas donde haya con que agregarlas, no reconstruir los buckets
+a mano.
+
+## [1.98.0] - 2026-07-30
+
+### Eliminado: prometheus, con los contadores mudados a `/ontoy`
+
+huachicol dejo de ser un stack de observabilidad en su 2.0.0 (2026-07-21) y hoy solo sondea el
+`/ontoy` de cada servicio, asi que `GET /metrics` exponia metricas que ya nadie scrapeaba.
+
+Se retiran `prometheus-fastapi-instrumentator`, la dependencia transitiva `prometheus-client`, el
+middleware de instrumentacion, el endpoint `/metrics` y el `location` que lo bloqueaba en
+`nginx/nginx.conf` (defensa en profundidad que dejo de tener objeto). El sistema de contadores
+propio se conserva y ahora viaja en el payload de `/ontoy` bajo la llave `counters`, sumado sobre
+las etiquetas de cada contador:
+
+`tree_requests`, `tree_cache_hits`, `tree_refresh`, `search_requests`, `download_requests`,
+`embed_requests`, `embed_denied`, `embed_quota_exceeded`, `embed_js_errors` y `mcp_calls`.
+
+Quedan contandose en memoria pero sin exponer los `shares_*`, `embed_wms_proxy`, `embed_telemetry` y
+los histogramas de `observe()` (vitals del embed y latencia MCP): un histograma sin base de series
+temporales detras no aporta nada accionable en un sondeo. Añadir un contador es agregar su nombre a
+`ONTOY_COUNTERS`.
+
+### Cambiado: nginx a 1.30.4-alpine
+
+`nginx/Dockerfile` usaba la etiqueta flotante `nginx:stable-alpine`. Se fija la linea estable
+parchada contra **CVE-2026-42533** (CVSS 9.2, desbordamiento de heap con posible ejecucion remota de
+codigo), **CVE-2026-60005** y **CVE-2026-56434**. Ambas configuraciones (`nginx-main.conf` y
+`nginx.conf`) se validaron con `nginx -t` contra 1.30.4 sin cambios.
+
+### Nota de despliegue
+
+Hay que reconstruir las imagenes del backend y de nginx. Quien tuviera algo apuntando a
+`GET /mapalab/api/metrics` debe mirar `counters` en `/ontoy`.
+
 ## [1.97.1] - 2026-07-29
 
 ### El contexto, el roadmap y los planes se movieron al repo central
