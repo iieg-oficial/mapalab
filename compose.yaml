@@ -19,16 +19,13 @@ x-backend-env: &backend-env
   LOG_LEVEL: ${LOG_LEVEL:?}
   GEOSERVER_URL: ${GEOSERVER_URL:?}
   GEOSERVER_USER: ${GEOSERVER_USER:?}
-  GEOSERVER_PASSWORD: ${GEOSERVER_PASSWORD:?}
   DB_USER: ${DB_USER:?}
-  DB_PASSWORD: ${DB_PASSWORD:?}
   DB_HOST: ${DB_HOST:?}
   DB_PORT: ${DB_PORT:?}
   DB_NAME: ${DB_NAME:?}
   DB_CONNECT_TIMEOUT_SECONDS: ${DB_CONNECT_TIMEOUT_SECONDS:?}
   DB_STATEMENT_TIMEOUT_SECONDS: ${DB_STATEMENT_TIMEOUT_SECONDS:?}
   ACERVO_PUBLIC_URL: ${ACERVO_PUBLIC_URL:?}
-  MAPALAB_INTERNAL_TOKEN: ${MAPALAB_INTERNAL_TOKEN:?}
   MARIACHI_VERIFY_SSL: ${MARIACHI_VERIFY_SSL:?}
 
 services:
@@ -42,8 +39,6 @@ services:
       BACKEND_PORT: ${BACKEND_PORT:?}
       ACERVO_ENDPOINT: ${ACERVO_ENDPOINT:?}
       ACERVO_PUBLIC_ENDPOINT: ${ACERVO_PUBLIC_ENDPOINT:?}
-      ACERVO_ACCESS_KEY: ${ACERVO_ACCESS_KEY:?}
-      ACERVO_SECRET_KEY: ${ACERVO_SECRET_KEY:?}
       ACERVO_BUCKET: ${ACERVO_BUCKET:?}
       ACERVO_PRESIGN_TTL_SECONDS: ${ACERVO_PRESIGN_TTL_SECONDS:?}
       DOWNLOAD_CACHE_TTL_HOURS: ${DOWNLOAD_CACHE_TTL_HOURS:?}
@@ -60,6 +55,14 @@ services:
     healthcheck:
       <<: *healthcheck
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:${BACKEND_PORT:?}/health')\""]
+    secrets:
+      - db_password
+      - geoserver_password
+      - acervo_access_key
+      - acervo_secret_key
+      - mapalab_internal_token
+    group_add:
+      - "${SECRETS_GID:?}"
     networks:
       - default
     logging: *logging
@@ -80,6 +83,12 @@ services:
     healthcheck:
       <<: *healthcheck
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\""]
+    secrets:
+      - db_password
+      - geoserver_password
+      - acervo_access_key
+      - acervo_secret_key
+      - mapalab_internal_token
     networks:
       - default
     logging: *logging
@@ -90,3 +99,15 @@ volumes:
 networks:
   default:
     name: ${MAPALAB_NETWORK_NAME:?}
+
+secrets:
+  db_password:
+    file: ./secrets/db_password
+  geoserver_password:
+    file: ./secrets/geoserver_password
+  acervo_access_key:
+    file: ./secrets/acervo_access_key
+  acervo_secret_key:
+    file: ./secrets/acervo_secret_key
+  mapalab_internal_token:
+    file: ./secrets/mapalab_internal_token

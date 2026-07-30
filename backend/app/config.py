@@ -5,7 +5,7 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", secrets_dir="/run/secrets")
     ENVIRONMENT: Literal["development", "production", "testing"] = "development"
     DEBUG: bool = False
     CORS_ORIGINS: List[str] = []
