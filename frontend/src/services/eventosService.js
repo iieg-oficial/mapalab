@@ -59,7 +59,7 @@ export const fetchHomeContent = async () => {
     return cache.homeInFlight;
 };
 
-const POLL_INTERVAL_MS = 30000;
+const POLL_INTERVAL_MS = 600000;
 const VERSION_EVENT_EVENTOS = 'mapalab:eventos-changed';
 const VERSION_EVENT_HOME = 'mapalab:home-changed';
 let watcherTimer = null;
