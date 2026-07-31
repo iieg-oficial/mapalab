@@ -1,9 +1,10 @@
 import { useState, useCallback, useContext, useRef } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useLayerLoading } from '@hooks/useLayerLoading';
-import { getFeatureInfoForActiveLayers, getFeaturesInPolygonForActiveLayers, FEATURE_COUNT_CAP, FEATURE_COUNT_TOTAL } from '@services/featureInfoService';
+import { getFeatureInfoForActiveLayers, FEATURE_COUNT_CAP, FEATURE_COUNT_TOTAL } from '@services/featureInfoService';
 import { useLoadMoreFeatures } from './useLoadMoreFeatures';
 import { useLoadMorePolygonFeatures } from './useLoadMorePolygonFeatures';
+import { usePolygonSelection } from './usePolygonSelection';
 import { toLonLat } from 'ol/proj';
 import { useLayers } from '@hooks/useLayers';
 import { useEventoContext } from '@hooks/useEvento';
@@ -23,7 +24,9 @@ export const useFeatureInfo = (overrides = null) => {
     const { getAliasByLayerId } = useEventoContext();
     const { setLayerLoading } = useLayerLoading();
     const [loading, setLoading] = useState(false);
-    const polygonPageRef = useRef(null);
+    const localPolygonPageRef = useRef(null);
+    const polygonPageRef = ctx.polygonPageRef || localPolygonPageRef;
+    const { queryPolygon } = usePolygonSelection({ getFilter, pageRef: polygonPageRef });
 
     const getAllActiveLayers = useCallback(() => {
         const hiddenIdSet = new Set(hiddenLayerIds || []);
@@ -278,9 +281,8 @@ export const useFeatureInfo = (overrides = null) => {
         setLayerLoading(FEATURE_INFO_LOADING_ID, true);
         try {
             const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
-            const page = await getFeaturesInPolygonForActiveLayers(activeLayers, map, polygonGeometry, getFilter, isInegiMode, allLayers);
-            const { results, matched, nextIndex, hasMore } = page;
-            polygonPageRef.current = { activeLayers, map, polygonGeometry, isInegiMode, allLayers, nextIndex, hasMore, matched };
+            const page = await queryPolygon({ map, polygonGeometry, activeLayers, allLayers, isInegiMode });
+            const { results, matched, hasMore } = page || { results: [], matched: 0, hasMore: false };
             const [lng, lat] = toLonLat(centerCoordinate);
 
             if (results && results.length > 0) {
@@ -293,7 +295,7 @@ export const useFeatureInfo = (overrides = null) => {
                     }));
 
                 if (onFeatureCountUpdate) {
-                    onFeatureCountUpdate(totalFeatures, layerBreakdown, results);
+                    onFeatureCountUpdate(Math.max(matched || 0, totalFeatures), layerBreakdown, results);
                 }
 
                 setTimeout(() => {
@@ -327,7 +329,7 @@ export const useFeatureInfo = (overrides = null) => {
             setLayerLoading(FEATURE_INFO_LOADING_ID, false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, setLayerLoading]);
+    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, setLayerLoading, queryPolygon]);
 
     const clearFeatureInfo = useCallback(() => {
         setSelectedFeatureInfo(null);

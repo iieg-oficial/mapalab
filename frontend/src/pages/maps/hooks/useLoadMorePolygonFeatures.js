@@ -1,44 +1,36 @@
 import { useCallback } from 'react';
-import { getFeaturesInPolygonForActiveLayers } from '@services/featureInfoService';
+import { usePolygonSelection } from './usePolygonSelection';
+
+export const mergePolygonPage = (info, page) => {
+    if (!info?.results) return info;
+
+    const byLayer = new Map(info.results.map(r => [r.layerId, r]));
+
+    page.results.forEach((incoming) => {
+        const current = byLayer.get(incoming.layerId);
+        if (current) {
+            const merged = [...current.features, ...incoming.features];
+            byLayer.set(incoming.layerId, { ...current, features: merged, totalFeatures: merged.length });
+        } else {
+            byLayer.set(incoming.layerId, incoming);
+        }
+    });
+
+    return { ...info, results: Array.from(byLayer.values()), hasMore: page.hasMore };
+};
 
 export const useLoadMorePolygonFeatures = (pageRef, getFilter, setSelectedFeatureInfo) => {
+    const { loadMorePage } = usePolygonSelection({ getFilter, pageRef });
+
     return useCallback(async () => {
-        const state = pageRef.current;
-        if (!state || !state.hasMore || state.busy) return 0;
+        const page = await loadMorePage();
 
-        state.busy = true;
-        try {
-            const page = await getFeaturesInPolygonForActiveLayers(
-                state.activeLayers, state.map, state.polygonGeometry, getFilter,
-                state.isInegiMode, state.allLayers,
-                { startIndex: state.nextIndex }
-            );
-
-            state.nextIndex = page.nextIndex;
-            state.hasMore = page.hasMore;
-            if (!page.results.length) return 0;
-
-            let added = 0;
-            setSelectedFeatureInfo((info) => {
-                if (!info?.results) return info;
-                const byLayer = new Map(info.results.map(r => [r.layerId, r]));
-                page.results.forEach((incoming) => {
-                    const current = byLayer.get(incoming.layerId);
-                    if (current) {
-                        const merged = [...current.features, ...incoming.features];
-                        byLayer.set(incoming.layerId, { ...current, features: merged, totalFeatures: merged.length });
-                    } else {
-                        byLayer.set(incoming.layerId, incoming);
-                    }
-                    added += incoming.features.length;
-                });
-                return { ...info, results: Array.from(byLayer.values()), hasMore: page.hasMore };
-            });
-            return added;
-        } catch {
+        if (!page || !page.results.length) {
+            setSelectedFeatureInfo((info) => (info?.results ? { ...info, hasMore: false } : info));
             return 0;
-        } finally {
-            state.busy = false;
         }
-    }, [pageRef, getFilter, setSelectedFeatureInfo]);
+
+        setSelectedFeatureInfo((info) => mergePolygonPage(info, page));
+        return page.results.reduce((total, result) => total + result.features.length, 0);
+    }, [loadMorePage, setSelectedFeatureInfo]);
 };

@@ -230,9 +230,12 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
                 OUTPUTFORMAT: 'application/json',
                 SRSNAME: projectionCode,
                 CQL_FILTER: cqlFilters.join(';'),
-                COUNT: String(count),
-                STARTINDEX: String(startIndex)
+                COUNT: String(count)
             };
+
+            if (startIndex > 0) {
+                params.STARTINDEX = String(startIndex);
+            }
 
             const url = baseUrl + '?' + new URLSearchParams(params).toString();
             const response = await fetch(url, { signal: AbortSignal.timeout(10000) });

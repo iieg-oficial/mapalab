@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const DOWNLOAD_HARD_CAP = 5000;
 
 export const useInfoBoxLazyLoad = ({ results, isPolygonSelection, polygonHasMore, loadMoreFeatures, loadMorePolygonFeatures }) => {
     const [loadingMore, setLoadingMore] = useState(false);
-    const sentinelRef = useRef(null);
+    const [sentinelNode, setSentinelNode] = useState(null);
+    const sentinelRef = useCallback((node) => setSentinelNode(node), []);
 
     const totalAvailable = results
         ? results.reduce((sum, r) => sum + (r.totalAvailable ?? r.features.length), 0)
@@ -25,7 +26,7 @@ export const useInfoBoxLazyLoad = ({ results, isPolygonSelection, polygonHasMore
     const layerWithMoreLoaded = layerWithMore?.features.length;
 
     useEffect(() => {
-        const sentinel = sentinelRef.current;
+        const sentinel = sentinelNode;
         if (!sentinel || loadingMore) return;
         if (!layerWithMoreId && !canLoadMorePolygon) return;
 
@@ -53,7 +54,7 @@ export const useInfoBoxLazyLoad = ({ results, isPolygonSelection, polygonHasMore
         }, { root: observerRoot, rootMargin: '120px', threshold: 0 });
         observer.observe(sentinel);
         return () => observer.disconnect();
-    }, [layerWithMoreId, layerWithMoreLoaded, loadingMore, loadMoreFeatures, canLoadMorePolygon, totalFeatures, loadMorePolygonFeatures]);
+    }, [sentinelNode, layerWithMoreId, layerWithMoreLoaded, loadingMore, loadMoreFeatures, canLoadMorePolygon, totalFeatures, loadMorePolygonFeatures]);
 
     const enrichResultsForDownload = useCallback(async () => {
         if (!results || results.length === 0) return [];
