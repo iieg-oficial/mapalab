@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const DOWNLOAD_HARD_CAP = 5000;
 
-export const useInfoBoxLazyLoad = ({ results, isPolygonSelection, loadMoreFeatures }) => {
+export const useInfoBoxLazyLoad = ({ results, isPolygonSelection, polygonHasMore, loadMoreFeatures, loadMorePolygonFeatures }) => {
     const [loadingMore, setLoadingMore] = useState(false);
-    const sentinelRef = useRef(null);
+    const [sentinelNode, setSentinelNode] = useState(null);
+    const sentinelRef = useCallback((node) => setSentinelNode(node), []);
 
     const totalAvailable = results
         ? results.reduce((sum, r) => sum + (r.totalAvailable ?? r.features.length), 0)
@@ -15,7 +16,8 @@ export const useInfoBoxLazyLoad = ({ results, isPolygonSelection, loadMoreFeatur
     const hasMoreKnown = !isPolygonSelection && totalAvailable > totalFeatures;
     const cappedAtFetchLimit = !!results && !isPolygonSelection
         && results.some((r) => r.cappedAtLimit);
-    const canLoadMore = hasMoreKnown;
+    const canLoadMorePolygon = !!isPolygonSelection && !!polygonHasMore;
+    const canLoadMore = hasMoreKnown || canLoadMorePolygon;
     const showCountIndicator = canLoadMore || cappedAtFetchLimit;
     const layerWithMore = canLoadMore && results
         ? results.find((r) => (r.totalAvailable ?? r.features.length) > r.features.length)
@@ -24,8 +26,9 @@ export const useInfoBoxLazyLoad = ({ results, isPolygonSelection, loadMoreFeatur
     const layerWithMoreLoaded = layerWithMore?.features.length;
 
     useEffect(() => {
-        const sentinel = sentinelRef.current;
-        if (!sentinel || !layerWithMoreId || loadingMore) return;
+        const sentinel = sentinelNode;
+        if (!sentinel || loadingMore) return;
+        if (!layerWithMoreId && !canLoadMorePolygon) return;
 
         let root = sentinel.parentElement;
         while (root && root !== document.body) {
@@ -40,14 +43,18 @@ export const useInfoBoxLazyLoad = ({ results, isPolygonSelection, loadMoreFeatur
             if (!entry?.isIntersecting) return;
             setLoadingMore(true);
             try {
-                await loadMoreFeatures(layerWithMoreId, 50);
+                if (canLoadMorePolygon) {
+                    await loadMorePolygonFeatures();
+                } else {
+                    await loadMoreFeatures(layerWithMoreId, 50);
+                }
             } finally {
                 setLoadingMore(false);
             }
         }, { root: observerRoot, rootMargin: '120px', threshold: 0 });
         observer.observe(sentinel);
         return () => observer.disconnect();
-    }, [layerWithMoreId, layerWithMoreLoaded, loadingMore, loadMoreFeatures]);
+    }, [sentinelNode, layerWithMoreId, layerWithMoreLoaded, loadingMore, loadMoreFeatures, canLoadMorePolygon, totalFeatures, loadMorePolygonFeatures]);
 
     const enrichResultsForDownload = useCallback(async () => {
         if (!results || results.length === 0) return [];

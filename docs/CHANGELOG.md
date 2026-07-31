@@ -5,6 +5,212 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.112.0] - 2026-07-31
+
+### Agregado: el tipo de geometría de cada capa en el panel de capas activas
+
+Cada capa del panel muestra ahora, a la derecha de su nombre, un distintivo de qué es: puntos,
+líneas, polígonos o ráster. Antes había que abrirla o mirar la leyenda para saberlo, y con varias
+capas encimadas el usuario no tenía forma de anticipar cuál iba a responder al clic sobre el mapa
+ni qué formatos de descarga le tocaban.
+
+El tipo lo resuelve `useLayerGeometryType`, que no consulta nada nuevo al GeoServer: para ráster
+se apoya en `RASTER_WORKSPACES` —el mismo criterio de `isRasterLayer` en las descargas— y para
+las vectoriales reusa `fetchGeometryType` de `featureInfoUtils`, que ya parsea el
+`DescribeFeatureType` del WFS para saber qué columna es la geometría. Esas peticiones ya venían
+agrupadas por `queueMicrotask` y cacheadas por `baseUrl:typeName`, así que abrir varias capas no
+suma llamadas; encima se cachea por `layerId` para que el distintivo aparezca de inmediato al
+reabrir el panel. En los grupos se toma el primer descendiente con `wmsConfig`, igual que
+`useLayerSymbolIcon`.
+
+Cuando el tipo no se puede determinar —capa sin WMS, WFS que no responde, geometría desconocida—
+no se dibuja nada y el encabezado queda como estaba.
+
+Los cuatro iconos (`geom_point`, `geom_line`, `geom_polygon`, `geom_raster`) se agregaron al
+registro de `Icon`, de modo que el catálogo o el modal de detalle pueden usarlos sin duplicarlos.
+
+## [1.111.0] - 2026-07-31
+
+### Eliminado: el servicio `frontend-build` y el `dist` que no consumía nadie
+
+`make deploy` compilaba el frontend dos veces. Primero en los guardas, con `build_frontend` →
+`docker compose --profile build run frontend-build`, que corría `frontend/Dockerfile` y volcaba el
+resultado en `./frontend/dist`. Después otra vez en el `up --build`, porque `nginx/Dockerfile`
+repite el `npm ci` y el `npm run build` del mismo código para servirlo desde su propia imagen. Al
+ser contextos de build distintos (`./frontend` contra `.`) no comparten capas ni caché: era el
+build completo dos veces, en serie, en cada deploy.
+
+De las dos, la que sirve es la del nginx. `./frontend/dist` no lo monta nadie: el gateway sólo
+monta el dist de **sieej** (`SIEEJ_DIST_PATH`), y en desarrollo se usa el servicio `frontend` con
+Vite. Era un artefacto huérfano heredado de cuando el nginx sí lo montaba.
+
+Se van con él `build_frontend`, `reset_dist_perms` —existía sólo para que el dist lo escribiera el
+usuario y no root—, el servicio `frontend-build` de `compose.prod.yaml` y las variables `UID` y
+`GID`, que no usaba nadie más. Los guardas de deploy quedan en `ensure_network`.
+
+En los `.env.production` de cada nodo, `UID` y `GID` quedan sobrantes; se pueden borrar en la
+siguiente ventana. Ya no están en el `.env.example`.
+
+### Cambiado: `clean` deja de necesitar Docker para borrar el `dist`
+
+`clean_artifacts` levantaba un contenedor alpine para borrar `frontend/dist`, porque el dist podía
+ser de root. Sin `frontend-build` no hay dist que borrar y `rm -rf frontend/node_modules` basta.
+
+## [1.110.0] - 2026-07-31
+
+### Agregado: seleccion por poligono en el catalogo
+
+Dibujar un poligono sobre el mapa del catalogo consulta por WFS la capa que se esta viendo y abre
+el InfoBox con las tarjetas de lo que cae dentro del area, con el mismo scroll infinito del visor.
+La consulta respeta el filtro de tiempo activo de la capa.
+
+La logica de consulta salio de `useFeatureInfo` a `usePolygonSelection`, un hook sin contexto que
+recibe capas, mapa y geometria por parametro: el visor le pasa sus capas activas y el catalogo su
+capa unica. El catalogo no necesita `LayersProvider` ni `MapsProvider` para usarlo, asi que no
+carga el arbol de 209 capas para consultar una.
+
+### Cambiado: la seleccion por poligono muestra cuantos elementos hay, no cuantos cargo
+
+El contador de las tarjetas decia `1/200` aunque en el area cayeran 89 169 elementos, porque
+contaba lo cargado. Ahora usa el `numberMatched` que GeoServer ya devuelve en la primera respuesta
+—sin traer un solo feature de mas— y el resumen de seleccion aclara "Se muestran los primeros
+200" cuando no estan todos. La descarga sigue anunciando lo que realmente baja.
+
+### Corregido: la seleccion por poligono no devolvia nada en 73 de las 118 capas WFS
+
+Desde que se pagino la consulta, cada peticion incluia `STARTINDEX`. GeoServer lo rechaza con un
+400 (`Cannot do natural order without a primary key`) en las capas publicadas sobre vistas sin
+clave primaria — 73 de 118, entre ellas todas las de delitos y las de pobreza. El resultado era
+que el usuario dibujaba un poligono y no pasaba nada.
+
+`STARTINDEX` ahora solo viaja a partir de la segunda pagina, asi que la primera funciona en todas
+las capas. Cuando el servidor rechaza la siguiente pagina, la seleccion deja de ofrecer mas
+resultados en vez de reintentar. La solucion de fondo — dar clave primaria a esas vistas — es
+trabajo de dataengine.
+
+### Corregido: el scroll infinito del poligono seguia sin cargar la segunda pagina
+
+Dos causas, ambas invisibles para los tests:
+
+- El sentinel del InfoBox se monta al pulsar "Ver detalles", pero para entonces el efecto que crea
+  el `IntersectionObserver` ya se habia ejecutado (con el sentinel aun sin montar) y ninguna de sus
+  dependencias volvia a cambiar. `useInfoBoxLazyLoad` usa ahora un callback ref, de modo que el
+  montaje del nodo vuelve a disparar el efecto.
+- `polygonPageRef` vivia en cada instancia de `useFeatureInfo`. El InfoBox crea la suya, distinta
+  de la de `MapView`, y la veia siempre vacia: `loadMorePolygonFeatures()` devolvia 0 sin pedir
+  nada. El estado de paginacion pasa a `MapsProvider`, compartido por ambas.
+
+## [1.109.0] - 2026-07-31
+
+### Cambiado: el catalogo alinea su cap de features con el visor
+
+El clic del catalogo pedia `FEATURE_COUNT: 20` hardcodeado mientras el visor usa
+`FEATURE_COUNT_CAP` (50). Ahora comparten la constante. El catalogo **no tiene seleccion por
+poligono**, asi que la paginacion contra el servidor no le aplica: su unica consulta es el
+`GetFeatureInfo` del clic.
+
+### Corregido: el scroll infinito del poligono no llegaba a dispararse
+
+La 1.106.0 dejo la paginacion contra el servidor funcionando y expuso
+`loadMorePolygonFeatures`, pero **ningun componente la llamaba**: `useInfoBoxLazyLoad` traia un
+`!isPolygonSelection` que deshabilitaba el lazy load para la seleccion por poligono — tenia sentido
+cuando se pedian todas las features de golpe, no ahora.
+
+El `IntersectionObserver` del InfoBox dispara ahora `loadMorePolygonFeatures()` cuando la seleccion
+es por poligono y quedan paginas, y sigue usando `loadMoreFeatures` (cache en memoria) para el
+resto.
+
+## [1.108.0] - 2026-07-31
+
+### Agregado: el catalogo recibe las mismas optimizaciones que el visor
+
+`CatalogoMapView` tenia su propia `View` sin `constrainResolution` ni interacciones configuradas, y
+su `buildWmsLayer` ignoraba `format` y `antialias` de la capa. Ahora comparte con el visor la
+constante `ZOOM_ANIMATION_MS`, el zoom sin animacion, `ratio: 1` y los parametros de render por
+capa.
+
+### Cambiado: el default de `antialias` pasa a `text`
+
+`WMS_BASE_CONFIG` reproduce el default nuevo de la base (migracion `0033`), para que una capa sin
+el campo resuelto se comporte igual que una configurada.
+
+## [1.107.0] - 2026-07-31
+
+### Cambiado: zoom instantaneo para no repedir los tiles de cada nivel intermedio
+
+Al acercarse, el visor seguia descargando tiles un buen rato despues de que el viewport ya estaba
+completo. Medido en el log del gateway: rafagas de **466 peticiones en un minuto** —unos 6-7
+viewports— con silencio total entre ellas. No era un bucle: OpenLayers renderiza **cada nivel
+intermedio** de la animacion de zoom y pide sus tiles, y como cada nivel tiene 4x mas tiles que el
+anterior, la cola crece al acercarse. Por eso solo pasaba con zoom in y paraba al llegar al maximo.
+
+`ZOOM_ANIMATION_MS` (en `helpers/defaultView.js`, usada por la rueda y por los botones +/-) pasa de
+los 250 ms por defecto de OpenLayers a **0**: el zoom salta directo al nivel destino sin renderizar
+los intermedios. Se probaron 250, 120 y 0; con 250 y 120 la diferencia de rendimiento se seguia
+notando, asi que se opto por el salto instantaneo aunque la transicion sea mas brusca.
+
+`constrainResolution: true` en la View acompana el cambio: fija el destino en un nivel entero y
+evita un re-render extra. Por si solo **no** resuelve nada — solo afecta la resolucion final, no el
+recorrido de la animacion.
+
+La otra mitad del problema estaba en el gateway: los tiles del relieve se repedian enteros en cada
+zoom porque salian con `no-store`. Corregido en gateway-hub 1.40.0.
+
+### Cambiado: `ratio` de `ImageWMS` de 1.5 a 1
+
+Las capas no tileadas pedian una imagen 1.5x el viewport —2.25x en area— para tener margen y no
+volver a pedir en pans cortos. Con `ratio: 1` se pide exactamente lo visible: menos pixeles por
+render, a cambio de que **cualquier desplazamiento dispare una peticion nueva**. Es un intercambio,
+no una mejora sin coste: se optimiza la carga y el zoom a costa del pan.
+
+Aplicado tanto al visor (`useWMSLayerFactory`) como a la vista de capa del catalogo
+(`CatalogoMapView`).
+
+## [1.106.0] - 2026-07-31
+
+### Agregado: formato de imagen y antialias por capa
+
+El visor deja de pedir siempre `image/png` con el antialias por defecto: ahora usa
+`wmsConfig.format` y `wmsConfig.antialias`, que llegan del arbol de capas y se configuran desde
+mariachi. El antialias viaja como `format_options=antialias:<valor>` y **solo se manda cuando no
+es `full`**, para no ensuciar la URL ni multiplicar llaves en el cache del gateway.
+
+### Agregado: paginacion real en la seleccion por poligono
+
+Antes se pedian **todas** las features del poligono en una sola peticion y se recortaban de a 50
+en memoria (`useLoadMoreFeatures`), asi que un poligono grande sobre una capa densa cargaba todo
+antes de mostrar nada. Ahora `getFeaturesInPolygonForActiveLayers` acepta `{ startIndex, count }`
+y devuelve `{ results, matched, returned, nextIndex, hasMore }`; el hook nuevo
+`useLoadMorePolygonFeatures` pide la siguiente pagina al servidor y la anexa por capa.
+
+Tamano de pagina: 200 (`POLYGON_PAGE_SIZE`). El corte se decide con `numberMatched` y
+`numberReturned`, que WFS 2.0 incluye en la respuesta GeoJSON — en 1.1.0 no existen.
+
+### Cambiado: WFS 1.1.0 a 2.0.0
+
+Los cuatro servicios que hablan WFS migran a 2.0.0: `featureInfoService` (seleccion por
+poligono), `downloadUrls` (descargas y `DescribeFeatureType`), `layerExtentService` y
+`catalogoService`. Cambian los nombres de parametro: `typeName` a `typeNames` y `maxFeatures` a
+`count`.
+
+**El clic sigue en WMS `GetFeatureInfo` 1.1.0 a proposito.** No es lo mismo que `GetFeature`:
+responde "que hay en este pixel" respetando simbologia y capas visibles, y funciona en capas con
+WFS deshabilitado en GeoServer — `curvas_de_nivel` y `curvas_de_nivel_render` lo tienen
+deshabilitado (`GetFeature` sobre ellas responde 400), asi que migrar el clic a WFS lo habria
+roto ahi.
+
+### Eliminado: `srs` del `WMS_BASE_CONFIG`
+
+Declaraba `EPSG:6368` pero **nunca tuvo efecto**: la documentacion de OpenLayers dice que en
+`ImageWMS` y `TileWMS` los parametros `WIDTH`, `HEIGHT`, `BBOX` y `CRS`/`SRS` "will be set
+dynamically" — se sobrescriben con la proyeccion de la vista, que es 3857. Se retira de
+`wmsConfig`, de `useWMSLayerFactory` y de `CatalogoMapView` para que nadie lo lea y crea que
+puede cambiar la proyeccion del visor desde ahi.
+
+No confundir con los otros dos `srs` del codigo, que si son reales: `format.srs` en
+`downloadUrls` (CRS de descarga) y el `EPSG:6368` de `municipioCqlBuilder`, que es el CRS contra
+el que se evalua el `BBOX()` del CQL.
+
 ## [1.105.1] - 2026-07-31
 
 ### Corregido: el visor caía en pantalla de error con Vite 8 (interop CJS de Rolldown)

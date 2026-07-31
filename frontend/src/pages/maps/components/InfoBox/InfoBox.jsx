@@ -30,7 +30,7 @@ const InfoBox = () => {
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers, mapRef, paneMapInstances, compareMode } = useContext(MapsContext);
     const { isMobile } = useSider();
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
-    const { selectAlternativeLayer, loadMoreFeatures } = useFeatureInfo();
+    const { selectAlternativeLayer, loadMoreFeatures, loadMorePolygonFeatures } = useFeatureInfo();
     const panelRef = useRef(null);
     const cardRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -71,7 +71,9 @@ const InfoBox = () => {
     const lazyLoad = useInfoBoxLazyLoad({
         results: selectedFeatureInfo?.results,
         isPolygonSelection: selectedFeatureInfo?.isPolygonSelection,
+        polygonHasMore: selectedFeatureInfo?.hasMore,
         loadMoreFeatures,
+        loadMorePolygonFeatures,
     });
 
     const baseTransform = lazyLoad.totalFeatures === 1 ? 'translate(-50%, -100%)' : '';
@@ -193,7 +195,10 @@ const InfoBox = () => {
 
 
     let globalCardIdx = 0;
-    const cardTotal = totalAvailable > 0 ? totalAvailable : totalFeatures;
+    const polygonMatched = isPolygonSelection ? (selectedFeatureInfo?.matched || 0) : 0;
+    const cardTotal = polygonMatched > totalFeatures
+        ? polygonMatched
+        : (totalAvailable > 0 ? totalAvailable : totalFeatures);
     const featuresList = !showEmptySuggestions && !hasNoResults && (!isPolygonSelection || isExpanded) && (
         <div className="space-y-2">
             {results.map((result) => (
@@ -299,6 +304,7 @@ const InfoBox = () => {
                             <SummaryCard
                                 visible={isPolygonSelection}
                                 results={results || []}
+                                matched={selectedFeatureInfo?.matched || 0}
                                 isExpanded={isExpanded}
                                 isLoadingExpand={isLoadingExpand}
                                 onToggleExpand={handleToggleExpand}
@@ -343,6 +349,7 @@ const InfoBox = () => {
                     <SummaryCard
                         visible={isPolygonSelection}
                         results={results || []}
+                        matched={selectedFeatureInfo?.matched || 0}
                         isExpanded={isExpanded}
                         isLoadingExpand={isLoadingExpand}
                         onToggleExpand={handleToggleExpand}

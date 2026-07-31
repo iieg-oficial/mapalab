@@ -5,7 +5,7 @@ import ScrollContainer from '@components/ScrollContainer';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import InfoCard from './InfoCard';
 
-const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpand, onToggleExpand, onClose, variant = 'desktop' }) => {
+const SummaryCard = ({ visible = false, results = [], matched = 0, isExpanded, isLoadingExpand, onToggleExpand, onClose, variant = 'desktop' }) => {
     const [showWarning, setShowWarning] = useState(false);
 
     if (!visible) return null;
@@ -16,6 +16,7 @@ const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpan
     const badgeSize = isMobile ? 'text-[11px]/[14px]' : 'text-[10px]/[14px]';
 
     const totalFeatures = results.reduce((total, result) => total + result.features.length, 0);
+    const totalEnArea = matched > totalFeatures ? matched : totalFeatures;
     const hasMany = totalFeatures > 5000;
 
     const layerBreakdown = results
@@ -50,8 +51,13 @@ const SummaryCard = ({ visible = false, results = [], isExpanded, isLoadingExpan
                 <>
                     <div className={`${padX} pt-3 pb-2 shrink-0`}>
                         <div className={`font-garet font-medium ${bodySize} text-[#465055]`}>
-                            <span className="font-bold">Total de elementos:</span> {formatNumber(totalFeatures)}
+                            <span className="font-bold">Total de elementos:</span> {formatNumber(totalEnArea)}
                         </div>
+                        {totalEnArea > totalFeatures && (
+                            <div className={`font-garet ${bodySize} text-[#7e8a91] mt-0.5`}>
+                                Se muestran los primeros {formatNumber(totalFeatures)}
+                            </div>
+                        )}
                     </div>
 
                     <ScrollContainer

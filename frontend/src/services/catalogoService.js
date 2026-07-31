@@ -55,11 +55,11 @@ export const fetchCapaSampleFeature = async (capa, signal) => {
     const gsWorkspace = capa.geoserverWorkspace;
     const url = new URL(`${GEOSERVER_BASE}/${gsWorkspace}/wfs`, window.location.origin);
     url.searchParams.set('service', 'WFS');
-    url.searchParams.set('version', '1.1.0');
+    url.searchParams.set('version', '2.0.0');
     url.searchParams.set('request', 'GetFeature');
-    url.searchParams.set('typeName', `${gsWorkspace}:${capa.geoserverLayer}`);
+    url.searchParams.set('typeNames', `${gsWorkspace}:${capa.geoserverLayer}`);
     url.searchParams.set('outputFormat', 'application/json');
-    url.searchParams.set('maxFeatures', '1');
+    url.searchParams.set('count', '1');
     const res = await fetch(url.toString(), { signal });
     if (!res.ok) return null;
     const data = await res.json();
@@ -71,9 +71,9 @@ export const capaHasGeometry = async (capa, signal) => {
         const gsWorkspace = capa.geoserverWorkspace;
         const url = new URL(`${GEOSERVER_BASE}/${gsWorkspace}/wfs`, window.location.origin);
         url.searchParams.set('service', 'WFS');
-        url.searchParams.set('version', '1.1.0');
+        url.searchParams.set('version', '2.0.0');
         url.searchParams.set('request', 'DescribeFeatureType');
-        url.searchParams.set('typeName', `${gsWorkspace}:${capa.geoserverLayer}`);
+        url.searchParams.set('typeNames', `${gsWorkspace}:${capa.geoserverLayer}`);
         url.searchParams.set('outputFormat', 'application/json');
         const res = await fetch(url.toString(), { signal });
         if (!res.ok) return true;

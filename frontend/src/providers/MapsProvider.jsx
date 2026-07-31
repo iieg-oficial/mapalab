@@ -32,6 +32,7 @@ const MapsProvider = ({ children }) => {
     const [selectedFeatureInfo, setSelectedFeatureInfo] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
     const queryFeaturesInPolygonRef = useRef(null);
+    const polygonPageRef = useRef(null);
     const clickPosition = useClickPosition();
     const targetRef = useRef(null);
     const mapRef = useRef(null);
@@ -255,6 +256,7 @@ const MapsProvider = ({ children }) => {
         setSelectedFeatureInfo,
         clickPosition,
         queryFeaturesInPolygonRef,
+        polygonPageRef,
         allLayers,
 
         ...layerManagement,

@@ -1,4 +1,5 @@
 import { useMapsContext } from '@hooks/useMaps';
+import { ZOOM_ANIMATION_MS } from '@pages/maps/helpers/defaultView';
 import { useSiderAdaptivePosition, useSider } from '@contexts/SiderContext';
 import { getFitPadding, ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
 import { useCallback, useState, useEffect, useRef } from 'react';
@@ -40,7 +41,7 @@ const MapControls = () => {
         const maxZoom = view.getMaxZoom();
 
         if (currentZoom < maxZoom) {
-            view.animate({ zoom: currentZoom + 1, duration: 250 });
+            view.animate({ zoom: currentZoom + 1, duration: ZOOM_ANIMATION_MS });
             trackMapZoomLevel(currentZoom + 1);
         }
     }, [getActiveMap]);
@@ -54,7 +55,7 @@ const MapControls = () => {
         const minZoom = view.getMinZoom();
 
         if (currentZoom > minZoom) {
-            view.animate({ zoom: currentZoom - 1, duration: 250 });
+            view.animate({ zoom: currentZoom - 1, duration: ZOOM_ANIMATION_MS });
             trackMapZoomLevel(currentZoom - 1);
         }
 

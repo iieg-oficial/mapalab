@@ -11,3 +11,5 @@ export const getDefaultMapView = () => {
 };
 
 export const getMinZoom = () => (isMobileViewport() ? 7 : 8);
+
+export const ZOOM_ANIMATION_MS = 0;

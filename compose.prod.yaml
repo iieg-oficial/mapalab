@@ -34,16 +34,6 @@ services:
       - iieg-network
     restart: unless-stopped
 
-  frontend-build:
-    profiles: ["build"]
-    build:
-      context: ./frontend
-      args: *vite-args
-    user: "${UID:?}:${GID:?}"
-    volumes:
-      - ./frontend/dist:/output
-    entrypoint: ["sh", "-c", "rm -rf /output/* && cp -r /app/dist/* /output/"]
-
   version-api:
     build: ./version-api
     container_name: mapalab-version-api

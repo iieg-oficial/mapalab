@@ -43,6 +43,28 @@ export const PinBadge = () => {
     );
 };
 
+const GEOMETRY_TYPES = {
+    point: { icon: 'geom_point', label: 'Capa de puntos' },
+    line: { icon: 'geom_line', label: 'Capa de líneas' },
+    polygon: { icon: 'geom_polygon', label: 'Capa de polígonos' },
+    raster: { icon: 'geom_raster', label: 'Capa ráster' }
+};
+
+export const GeometryTypeBadge = ({ type }) => {
+    const geometry = GEOMETRY_TYPES[type];
+    if (!geometry) return null;
+    return (
+        <Tooltip content={geometry.label}>
+            <span
+                aria-label={geometry.label}
+                className="p-1 rounded-full shrink-0 bg-[#F8F8F8] text-[#70308A] inline-flex items-center justify-center"
+            >
+                <Icon name={geometry.icon} className="size-4" />
+            </span>
+        </Tooltip>
+    );
+};
+
 export const EventoLayerIcon = ({ evento }) => {
     if (!evento?.iconoUrl) return null;
     const tooltipContent = (
