@@ -7,6 +7,13 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [1.109.0] - 2026-07-31
 
+### Cambiado: el catalogo alinea su cap de features con el visor
+
+El clic del catalogo pedia `FEATURE_COUNT: 20` hardcodeado mientras el visor usa
+`FEATURE_COUNT_CAP` (50). Ahora comparten la constante. El catalogo **no tiene seleccion por
+poligono**, asi que la paginacion contra el servidor no le aplica: su unica consulta es el
+`GetFeatureInfo` del clic.
+
 ### Corregido: el scroll infinito del poligono no llegaba a dispararse
 
 La 1.106.0 dejo la paginacion contra el servidor funcionando y expuso

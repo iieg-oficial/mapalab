@@ -33,6 +33,7 @@ import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { trackCatalogoFeatureClick } from '@services/analyticsService';
+import { FEATURE_COUNT_CAP } from '@services/featureInfoService';
 
 const buildWmsLayer = (capa) => {
     const render = {};
@@ -197,7 +198,7 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
                 evt.coordinate,
                 view.getResolution(),
                 view.getProjection(),
-                { INFO_FORMAT: 'application/json', FEATURE_COUNT: 20 },
+                { INFO_FORMAT: 'application/json', FEATURE_COUNT: FEATURE_COUNT_CAP },
             );
             if (!url) return;
             const seq = ++clickSeqRef.current;
