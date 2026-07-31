@@ -3,15 +3,8 @@ import 'ol/ol.css';
 import OLMap from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
-import ImageLayer from 'ol/layer/Image';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import ImageWMS from 'ol/source/ImageWMS';
-import GeoJSON from 'ol/format/GeoJSON';
-import Style from 'ol/style/Style';
-import Stroke from 'ol/style/Stroke';
-import Fill from 'ol/style/Fill';
-import CircleStyle from 'ol/style/Circle';
 import { fromLonLat, toLonLat, transformExtent } from 'ol/proj';
 import { defaults as defaultInteractions } from 'ol/interaction/defaults';
 import MouseWheelZoom from 'ol/interaction/MouseWheelZoom';
@@ -25,6 +18,8 @@ import CatalogoInfoBox from './CatalogoInfoBox';
 import CatalogoTools from './CatalogoTools';
 import CatalogoTimeBar from './CatalogoTimeBar';
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
+import { useCatalogoPoligono } from '../hooks/useCatalogoPoligono';
+import { buildWmsLayer, geojson, HIGHLIGHT_STYLE, HIGHLIGHT_Z } from '../helpers/catalogoMapLayer';
 import { BASEMAPS, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 import { JALISCO_BOUNDS, hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
 import { getMinZoom, ZOOM_ANIMATION_MS } from '@pages/maps/helpers/defaultView';
@@ -34,50 +29,6 @@ import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { trackCatalogoFeatureClick } from '@services/analyticsService';
 import { FEATURE_COUNT_CAP } from '@services/featureInfoService';
-
-const buildWmsLayer = (capa) => {
-    const render = {};
-    const format = capa.imageFormat || capa.image_format;
-    if (format) render.format = format;
-    if (capa.antialias) render.antialias = capa.antialias;
-    const cfg = hydrateWmsConfig({
-        geoserverWorkspace: capa.geoserverWorkspace,
-        geoserverLayer: capa.geoserverLayer,
-        ...render,
-    });
-    if (!cfg) return null;
-    const params = {
-        LAYERS: cfg.layerName,
-        FORMAT: cfg.format,
-        TRANSPARENT: cfg.transparent,
-        VERSION: cfg.version,
-    };
-    if (cfg.antialias && cfg.antialias !== 'full') {
-        params.format_options = `antialias:${cfg.antialias}`;
-    }
-    const source = new ImageWMS({
-        url: cfg.baseUrl,
-        params,
-        ratio: 1,
-        serverType: 'geoserver',
-        crossOrigin: 'anonymous',
-    });
-    return new ImageLayer({ source, zIndex: 5 });
-};
-
-const geojson = new GeoJSON();
-
-const HIGHLIGHT_Z = 998;
-
-const HIGHLIGHT_STYLE = new Style({
-    stroke: new Stroke({ color: '#FF8300', width: 2.5, lineCap: 'round', lineJoin: 'round' }),
-    fill: new Fill({ color: 'rgba(255, 131, 0, 0.18)' }),
-    image: new CircleStyle({
-        radius: 8,
-        stroke: new Stroke({ color: '#FF8300', width: 2 }),
-        fill: new Fill({ color: 'rgba(255, 131, 0, 0.18)' }),
-    }),
-});
 
 const CATALOGO_ANNOTATIONS_KEY = 'mapalab.catalogo.annotations';
 
@@ -102,15 +53,29 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
     const [info, setInfo] = useState(null);
     const [layerLoading, setLayerLoading] = useState(false);
 
+    const { seleccion, consultar, cargarMas, limpiar, reposicionar } = useCatalogoPoligono({ mapRef, capa, tiempo });
+
     const clearInfo = useCallback(() => {
         setInfo(null);
         highlightSourceRef.current?.clear();
-    }, []);
+        limpiar();
+    }, [limpiar]);
 
     const getMapInstance = useCallback(() => mapRef.current, []);
     useScaleLineControl(getMapInstance, scaleRef);
 
-    const drawing = useMapDrawing(mapRef, null, null, { storageKey: CATALOGO_ANNOTATIONS_KEY });
+    const consultarRef = useRef(null);
+    useEffect(() => {
+        consultarRef.current = consultar;
+    }, [consultar]);
+
+    const handlePolygonComplete = useCallback((geometry, centerCoordinate, onFeatureCountUpdate) => {
+        setInfo(null);
+        highlightSourceRef.current?.clear();
+        consultarRef.current?.(geometry, centerCoordinate, onFeatureCountUpdate);
+    }, []);
+
+    const drawing = useMapDrawing(mapRef, handlePolygonComplete, null, { storageKey: CATALOGO_ANNOTATIONS_KEY });
     const editing = useMapEditing({
         mapRef,
         vectorSourceRef: drawing.vectorSourceRef,
@@ -317,6 +282,22 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
                     onReposition={(nextPixel) => setInfo((prev) => (prev ? { ...prev, pixel: nextPixel } : prev))}
                     onEdit={onEditInfobox}
                     onClose={clearInfo}
+                />
+            )}
+
+            {seleccion && capa && (
+                <CatalogoInfoBox
+                    capa={capa}
+                    features={seleccion.features}
+                    pixel={seleccion.pixel}
+                    lngLat={seleccion.lngLat}
+                    mapInstance={mapRef.current}
+                    onReposition={reposicionar}
+                    onEdit={onEditInfobox}
+                    onClose={clearInfo}
+                    hasMore={seleccion.hasMore}
+                    onLoadMore={cargarMas}
+                    matched={seleccion.matched}
                 />
             )}
         </>

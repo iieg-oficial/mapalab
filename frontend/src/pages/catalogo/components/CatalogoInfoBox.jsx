@@ -11,12 +11,13 @@ import DismissGesture from '@pages/maps/components/InfoBox/components/DismissGes
 import InfoBoxTools from '@pages/maps/components/InfoBox/components/InfoBoxTools';
 import { useViewportContainment } from '@pages/maps/components/InfoBox/hooks/useViewportContainment';
 import { useDraggablePanel } from '@pages/maps/components/InfoBox/hooks/useDraggablePanel';
+import { useInfoBoxLazyLoad } from '@hooksMaps/useInfoBoxLazyLoad';
 import { centerOnResults } from '@pages/maps/helpers/featureGeometry';
 import { trackCatalogoInfoBoxAction } from '@services/analyticsService';
 
 const featureKey = (feature, idx) => feature?.id ?? `feature-${idx}`;
 
-const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposition, onEdit, onClose }) => {
+const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposition, onEdit, onClose, hasMore = false, onLoadMore = null, matched = 0 }) => {
     const isMobile = useIsMobile();
     const panelRef = useRef(null);
     const cardRef = useRef(null);
@@ -41,7 +42,16 @@ const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposit
     }], [layerId, capa, visibles]);
 
     const total = visibles.length;
+    const totalEnArea = matched > total ? matched : total;
     const isSingle = total === 1;
+
+    const { sentinelRef, loadingMore } = useInfoBoxLazyLoad({
+        results,
+        isPolygonSelection: !!onLoadMore,
+        polygonHasMore: hasMore,
+        loadMoreFeatures: onLoadMore,
+        loadMorePolygonFeatures: onLoadMore,
+    });
 
     const baseTransform = isSingle ? 'translate(-50%, -100%)' : '';
     const { isDragging, handleProps: moveHandleProps, reset: resetDrag } = useDraggablePanel({ panelRef, baseTransform });
@@ -89,10 +99,10 @@ const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposit
             null,
             isMobile ? 'mobile' : 'desktop',
             idx + 1,
-            visibles.length,
+            totalEnArea,
             null,
         ),
-    })).filter((c) => c.node), [visibles, capa, layerId, isMobile, handleRemove]);
+    })).filter((c) => c.node), [visibles, capa, layerId, isMobile, handleRemove, totalEnArea]);
 
     if (cards.length === 0 || (!pixel && !isMobile)) return null;
 
@@ -105,6 +115,11 @@ const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposit
             ) : (
                 <div key={key}>{node}</div>
             )))}
+            {hasMore && onLoadMore && (
+                <div ref={sentinelRef} className="py-3 text-center text-[11px]/[14px] font-garet text-[#7e8a91]">
+                    {loadingMore ? 'Cargando mas...' : 'Sigue desplazando para cargar mas'}
+                </div>
+            )}
         </div>
     );
 

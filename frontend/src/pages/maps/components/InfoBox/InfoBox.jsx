@@ -195,7 +195,10 @@ const InfoBox = () => {
 
 
     let globalCardIdx = 0;
-    const cardTotal = totalAvailable > 0 ? totalAvailable : totalFeatures;
+    const polygonMatched = isPolygonSelection ? (selectedFeatureInfo?.matched || 0) : 0;
+    const cardTotal = polygonMatched > totalFeatures
+        ? polygonMatched
+        : (totalAvailable > 0 ? totalAvailable : totalFeatures);
     const featuresList = !showEmptySuggestions && !hasNoResults && (!isPolygonSelection || isExpanded) && (
         <div className="space-y-2">
             {results.map((result) => (
@@ -301,6 +304,7 @@ const InfoBox = () => {
                             <SummaryCard
                                 visible={isPolygonSelection}
                                 results={results || []}
+                                matched={selectedFeatureInfo?.matched || 0}
                                 isExpanded={isExpanded}
                                 isLoadingExpand={isLoadingExpand}
                                 onToggleExpand={handleToggleExpand}
@@ -345,6 +349,7 @@ const InfoBox = () => {
                     <SummaryCard
                         visible={isPolygonSelection}
                         results={results || []}
+                        matched={selectedFeatureInfo?.matched || 0}
                         isExpanded={isExpanded}
                         isLoadingExpand={isLoadingExpand}
                         onToggleExpand={handleToggleExpand}

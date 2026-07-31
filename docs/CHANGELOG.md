@@ -5,6 +5,50 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.110.0] - 2026-07-31
+
+### Agregado: seleccion por poligono en el catalogo
+
+Dibujar un poligono sobre el mapa del catalogo consulta por WFS la capa que se esta viendo y abre
+el InfoBox con las tarjetas de lo que cae dentro del area, con el mismo scroll infinito del visor.
+La consulta respeta el filtro de tiempo activo de la capa.
+
+La logica de consulta salio de `useFeatureInfo` a `usePolygonSelection`, un hook sin contexto que
+recibe capas, mapa y geometria por parametro: el visor le pasa sus capas activas y el catalogo su
+capa unica. El catalogo no necesita `LayersProvider` ni `MapsProvider` para usarlo, asi que no
+carga el arbol de 209 capas para consultar una.
+
+### Cambiado: la seleccion por poligono muestra cuantos elementos hay, no cuantos cargo
+
+El contador de las tarjetas decia `1/200` aunque en el area cayeran 89 169 elementos, porque
+contaba lo cargado. Ahora usa el `numberMatched` que GeoServer ya devuelve en la primera respuesta
+—sin traer un solo feature de mas— y el resumen de seleccion aclara "Se muestran los primeros
+200" cuando no estan todos. La descarga sigue anunciando lo que realmente baja.
+
+### Corregido: la seleccion por poligono no devolvia nada en 73 de las 118 capas WFS
+
+Desde que se pagino la consulta, cada peticion incluia `STARTINDEX`. GeoServer lo rechaza con un
+400 (`Cannot do natural order without a primary key`) en las capas publicadas sobre vistas sin
+clave primaria — 73 de 118, entre ellas todas las de delitos y las de pobreza. El resultado era
+que el usuario dibujaba un poligono y no pasaba nada.
+
+`STARTINDEX` ahora solo viaja a partir de la segunda pagina, asi que la primera funciona en todas
+las capas. Cuando el servidor rechaza la siguiente pagina, la seleccion deja de ofrecer mas
+resultados en vez de reintentar. La solucion de fondo — dar clave primaria a esas vistas — es
+trabajo de dataengine.
+
+### Corregido: el scroll infinito del poligono seguia sin cargar la segunda pagina
+
+Dos causas, ambas invisibles para los tests:
+
+- El sentinel del InfoBox se monta al pulsar "Ver detalles", pero para entonces el efecto que crea
+  el `IntersectionObserver` ya se habia ejecutado (con el sentinel aun sin montar) y ninguna de sus
+  dependencias volvia a cambiar. `useInfoBoxLazyLoad` usa ahora un callback ref, de modo que el
+  montaje del nodo vuelve a disparar el efecto.
+- `polygonPageRef` vivia en cada instancia de `useFeatureInfo`. El InfoBox crea la suya, distinta
+  de la de `MapView`, y la veia siempre vacia: `loadMorePolygonFeatures()` devolvia 0 sin pedir
+  nada. El estado de paginacion pasa a `MapsProvider`, compartido por ambas.
+
 ## [1.109.0] - 2026-07-31
 
 ### Cambiado: el catalogo alinea su cap de features con el visor
