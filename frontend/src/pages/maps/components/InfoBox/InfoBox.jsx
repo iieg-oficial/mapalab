@@ -30,7 +30,7 @@ const InfoBox = () => {
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers, mapRef, paneMapInstances, compareMode } = useContext(MapsContext);
     const { isMobile } = useSider();
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
-    const { selectAlternativeLayer, loadMoreFeatures } = useFeatureInfo();
+    const { selectAlternativeLayer, loadMoreFeatures, loadMorePolygonFeatures } = useFeatureInfo();
     const panelRef = useRef(null);
     const cardRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -71,7 +71,9 @@ const InfoBox = () => {
     const lazyLoad = useInfoBoxLazyLoad({
         results: selectedFeatureInfo?.results,
         isPolygonSelection: selectedFeatureInfo?.isPolygonSelection,
+        polygonHasMore: selectedFeatureInfo?.hasMore,
         loadMoreFeatures,
+        loadMorePolygonFeatures,
     });
 
     const baseTransform = lazyLoad.totalFeatures === 1 ? 'translate(-50%, -100%)' : '';

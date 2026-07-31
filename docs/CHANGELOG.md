@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.109.0] - 2026-07-31
+
+### Corregido: el scroll infinito del poligono no llegaba a dispararse
+
+La 1.106.0 dejo la paginacion contra el servidor funcionando y expuso
+`loadMorePolygonFeatures`, pero **ningun componente la llamaba**: `useInfoBoxLazyLoad` traia un
+`!isPolygonSelection` que deshabilitaba el lazy load para la seleccion por poligono — tenia sentido
+cuando se pedian todas las features de golpe, no ahora.
+
+El `IntersectionObserver` del InfoBox dispara ahora `loadMorePolygonFeatures()` cuando la seleccion
+es por poligono y quedan paginas, y sigue usando `loadMoreFeatures` (cache en memoria) para el
+resto.
+
 ## [1.108.0] - 2026-07-31
 
 ### Agregado: el catalogo recibe las mismas optimizaciones que el visor
