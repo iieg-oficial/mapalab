@@ -230,6 +230,6 @@ Al cargar un share con `annotations`, `useShareDeserializer` invoca `restoreAnno
 
 ## Performance
 
-Costo inherente: en swipe son **dos `GetMap` por cada cambio de view** (uno por pane). En GCP staging (1 VM con 2 cores que comparte CPU con backend, GeoServer y nginx) ese doble request hace que el zoom sea perceptiblemente más lento. En producción real (4 servidores dedicados, GeoServer en su propio servidor con 8 cores) no se nota.
+Costo inherente: en swipe son **dos `GetMap` por cada cambio de view** (uno por pane). En la VM de GCP (1 VM con 2 cores que comparte CPU con backend, GeoServer y nginx) ese doble request hace que el zoom sea perceptiblemente más lento. En producción real (4 servidores dedicados, GeoServer en su propio servidor con 8 cores) no se nota.
 
 El fix de "shared View" (mismo `View` instance en los dos mapas) elimina las requests intermedias del thrashing durante una animación de zoom — pero las dos requests finales son inherentes al diseño "dos mapas independientes". Cambiarlo requeriría perder la independencia de filtros/fechas entre A y B.

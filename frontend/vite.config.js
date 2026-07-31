@@ -109,18 +109,18 @@ export default defineConfig(({ mode }) => {
         ].filter(Boolean),
         build: {
             sourcemap: false,
-            rollupOptions: {
+            rolldownOptions: {
                 output: {
-                    manualChunks: (id) => {
-                        if (id.includes('node_modules')) {
-                            if (id.includes('/ol/')) return 'vendor-ol';
-                            if (id.includes('lottie-web') || id.includes('lottie-react')) return 'vendor-lottie';
-                            if (id.includes('react-router')) return 'vendor-router';
-                            if (id.includes('react-dom') || id.includes('react') || id.includes('scheduler')) return 'vendor-react';
-                            if (id.includes('@dnd-kit')) return 'vendor-dnd';
-                            if (/\/(jszip|pako|fast-png|fflate|iobuffer)\//.test(id)) return 'vendor-download';
-                            if (/\/(jspdf|html2canvas|dompurify|canvg|svg-pathdata|rgbcolor|stackblur-canvas|raf|performance-now|css-line-break|text-segmentation)\//.test(id)) return 'vendor-export';
-                        }
+                    codeSplitting: {
+                        groups: [
+                            { name: 'vendor-react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 70 },
+                            { name: 'vendor-router', test: /node_modules[\\/]react-router/, priority: 65 },
+                            { name: 'vendor-ol', test: /node_modules[\\/]ol[\\/]/, priority: 60 },
+                            { name: 'vendor-lottie', test: /node_modules[\\/](lottie-web|lottie-react)[\\/]/, priority: 55 },
+                            { name: 'vendor-dnd', test: /node_modules[\\/]@dnd-kit[\\/]/, priority: 40 },
+                            { name: 'vendor-download', test: /[\\/](jszip|pako|fast-png|fflate|iobuffer)[\\/]/, priority: 35 },
+                            { name: 'vendor-export', test: /[\\/](jspdf|html2canvas|html2canvas-pro|dompurify|canvg|svg-pathdata|rgbcolor|stackblur-canvas|raf|performance-now|css-line-break|text-segmentation)[\\/]/, priority: 30 },
+                        ],
                     },
                 },
             },
@@ -160,6 +160,7 @@ export default defineConfig(({ mode }) => {
         },
         resolve: {
             alias: {
+                'lottie-react': resolve(__dirname, './node_modules/lottie-react/build/index.es.js'),
                 '@components': resolve(__dirname, './src/components'),
                 '@mapsComponents': resolve(__dirname, './src/pages/maps/components'),
                 '@layouts': resolve(__dirname, './src/layouts'),

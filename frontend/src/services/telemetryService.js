@@ -1,5 +1,5 @@
 const FLUSH_INTERVAL_MS = 30_000;
-const HEARTBEAT_INTERVAL_MS = 60_000;
+const HEARTBEAT_INTERVAL_MS = 300_000;
 const MAX_BATCH = 50;
 const MAX_RETRIES = 3;
 const SESSION_STORAGE_KEY = 'mapalab.telemetry.session';
@@ -156,6 +156,17 @@ const flush = async (useBeacon = false) => {
     }
 };
 
+const emitHeartbeat = () => {
+    const now = Date.now();
+    const startedAt = (readSession() || {}).startedAt || now;
+    enqueue('session_heartbeat', { durationSec: Math.round((now - startedAt) / 1000) });
+};
+
+const flushOnExit = () => {
+    emitHeartbeat();
+    flush(true);
+};
+
 const ensureStarted = () => {
     if (!enabled || dnt || state.started || typeof window === 'undefined') return;
     state.started = true;
@@ -163,14 +174,12 @@ const ensureStarted = () => {
     state.flushTimer = window.setInterval(flush, FLUSH_INTERVAL_MS);
     state.heartbeatTimer = window.setInterval(() => {
         if (document.visibilityState !== 'visible') return;
-        const now = Date.now();
-        const startedAt = (readSession() || {}).startedAt || now;
-        enqueue('session_heartbeat', { durationSec: Math.round((now - startedAt) / 1000) });
+        emitHeartbeat();
     }, HEARTBEAT_INTERVAL_MS);
-    window.addEventListener('pagehide', () => flush(true));
-    window.addEventListener('beforeunload', () => flush(true));
+    window.addEventListener('pagehide', flushOnExit);
+    window.addEventListener('beforeunload', flushOnExit);
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') flush(true);
+        if (document.visibilityState === 'hidden') flushOnExit();
     });
     enqueue('session_start', { source: state.source });
 };

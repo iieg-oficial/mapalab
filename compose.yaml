@@ -1,0 +1,113 @@
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-healthcheck: &healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 3
+  start_period: 60s
+
+x-host-gateway: &host-gateway
+  - "host.docker.internal:host-gateway"
+
+x-backend-env: &backend-env
+  ENVIRONMENT: ${ENVIRONMENT:?}
+  DEBUG: ${DEBUG:?}
+  LOG_LEVEL: ${LOG_LEVEL:?}
+  GEOSERVER_URL: ${GEOSERVER_URL:?}
+  GEOSERVER_USER: ${GEOSERVER_USER:?}
+  DB_USER: ${DB_USER:?}
+  DB_HOST: ${DB_HOST:?}
+  DB_PORT: ${DB_PORT:?}
+  DB_NAME: ${DB_NAME:?}
+  DB_CONNECT_TIMEOUT_SECONDS: ${DB_CONNECT_TIMEOUT_SECONDS:?}
+  DB_STATEMENT_TIMEOUT_SECONDS: ${DB_STATEMENT_TIMEOUT_SECONDS:?}
+  ACERVO_PUBLIC_URL: ${ACERVO_PUBLIC_URL:?}
+  MARIACHI_VERIFY_SSL: ${MARIACHI_VERIFY_SSL:?}
+
+services:
+  backend:
+    build:
+      context: ./backend
+    init: true
+    environment:
+      <<: *backend-env
+      CORS_ORIGINS: ${CORS_ORIGINS:?}
+      BACKEND_PORT: ${BACKEND_PORT:?}
+      ACERVO_ENDPOINT: ${ACERVO_ENDPOINT:?}
+      ACERVO_PUBLIC_ENDPOINT: ${ACERVO_PUBLIC_ENDPOINT:?}
+      ACERVO_BUCKET: ${ACERVO_BUCKET:?}
+      ACERVO_PRESIGN_TTL_SECONDS: ${ACERVO_PRESIGN_TTL_SECONDS:?}
+      DOWNLOAD_CACHE_TTL_HOURS: ${DOWNLOAD_CACHE_TTL_HOURS:?}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:?}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:?}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:?}
+      CLIENT_ERROR_WINDOW_MINUTES: ${CLIENT_ERROR_WINDOW_MINUTES:?}
+      CLIENT_ERROR_WARN_COUNT: ${CLIENT_ERROR_WARN_COUNT:?}
+      EMBED_ABUSE_WINDOW_MINUTES: ${EMBED_ABUSE_WINDOW_MINUTES:?}
+      EMBED_ABUSE_WARN_COUNT: ${EMBED_ABUSE_WARN_COUNT:?}
+      MARIACHI_BACKEND_URL: ${MARIACHI_BACKEND_URL:?}
+      EMBED_KEY_CACHE_TTL_SECONDS: ${EMBED_KEY_CACHE_TTL_SECONDS:?}
+    extra_hosts: *host-gateway
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:${BACKEND_PORT:?}/health')\""]
+    secrets:
+      - db_password
+      - geoserver_password
+      - acervo_access_key
+      - acervo_secret_key
+      - mapalab_internal_token
+    group_add:
+      - "${SECRETS_GID:?}"
+    networks:
+      - default
+    logging: *logging
+
+  mapalab-mcp:
+    build:
+      context: .
+      dockerfile: servers/Dockerfile
+    init: true
+    environment:
+      <<: *backend-env
+      DB_POOL_SIZE: ${MCP_DB_POOL_SIZE:?}
+      DB_MAX_OVERFLOW: ${MCP_DB_MAX_OVERFLOW:?}
+      MCP_WORKERS: ${MCP_WORKERS:?}
+      MARIACHI_BACKEND_URL: ${MARIACHI_BACKEND_INTERNAL_URL:?}
+      MAPALAB_PUBLIC_BASE_URL: ${MAPALAB_PUBLIC_BASE_URL:?}
+    extra_hosts: *host-gateway
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\""]
+    secrets:
+      - db_password
+      - geoserver_password
+      - acervo_access_key
+      - acervo_secret_key
+      - mapalab_internal_token
+    networks:
+      - default
+    logging: *logging
+
+volumes:
+  frontend-node-modules:
+
+networks:
+  default:
+    name: ${MAPALAB_NETWORK_NAME:?}
+
+secrets:
+  db_password:
+    file: ./secrets/db_password
+  geoserver_password:
+    file: ./secrets/geoserver_password
+  acervo_access_key:
+    file: ./secrets/acervo_access_key
+  acervo_secret_key:
+    file: ./secrets/acervo_secret_key
+  mapalab_internal_token:
+    file: ./secrets/mapalab_internal_token

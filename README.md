@@ -3,7 +3,7 @@
 Interfaz web para la creacion, gestion y visualizacion de mapas interactivos
 con datos geoespaciales del IIEG Jalisco.
 
-**Version:** 1.100.1
+**Version:** 1.105.1
 
 ## Requisitos
 
@@ -25,18 +25,18 @@ cp .env.example .env.development
 ### 2. Desarrollo
 
 ```bash
-make dev
+make up
 # Frontend (Vite):  http://localhost:5173
 # Backend API:      http://localhost:8001
 # Backend Docs:     http://localhost:8001/docs
 ```
 
-### 3. Staging (simula produccion)
+### 3. Produccion
 
 ```bash
-cp .env.example .env.staging
-# Editar .env.staging con valores de staging
-make staging
+cp .env.example .env.production
+# Editar .env.production con los valores del entorno
+make deploy
 # App: http://localhost:3006
 ```
 
@@ -44,15 +44,12 @@ make staging
 
 | Comando | Descripcion |
 |---------|-------------|
-| `make dev` | Modo desarrollo (Vite + Backend hot-reload) |
-| `make staging` | Modo staging (Nginx + Backend Gunicorn) |
-| `make prod` | Produccion con `.env.production` |
-| `make deploy` | Build + up en produccion (usado por CD) |
-| `make down` | Detener todos los servicios |
+| `make up` | Levantar sin reconstruir (Vite + Backend hot-reload) |
+| `make deploy` | Produccion con `.env.production`: git pull + down + build + up (usado por CD) |
+| `make down` | Detener lo que este levantado |
 | `make clean` | Detener servicios y limpiar todo |
 | `make status` | Ver estado de los servicios |
-| `make logs-dev` | Ver logs de desarrollo |
-| `make logs-staging` | Ver logs de staging |
+| `make logs` | Ver logs, con selector de servicio |
 | `make setup-hooks` | Configurar git hooks del proyecto |
 
 ## Variables de entorno
@@ -63,13 +60,13 @@ Las variables se organizan en secciones:
 - **General:** `NETWORK_NAME`
 - **Frontend:** Variables `VITE_*`, puertos, proxies de desarrollo
 - **Backend:** Entorno, base de datos, GeoServer, CORS
-- **Nginx:** Puerto (solo staging/produccion)
+- **Nginx:** Puerto (solo produccion)
 
 **Nota:** La base de datos PostgreSQL y GeoServer son servicios **externos**, no gestionados por este repo. Configurar sus conexiones en las variables de entorno.
 
 ## Arquitectura
 
-### Desarrollo (`make dev`)
+### Desarrollo (`make up`)
 
 ```
 Browser --> Vite Dev Server (:5173) --> proxy /api --> Backend Uvicorn (:8001)
@@ -80,7 +77,7 @@ Browser --> Vite Dev Server (:5173) --> proxy /api --> Backend Uvicorn (:8001)
 - Backend con `--reload` via Uvicorn en `network_mode: host`
 - GeoServer externo (no gestionado por este repo)
 
-### Staging/Produccion (`make staging` / `make prod`)
+### Produccion (`make deploy`)
 
 ```
 Browser --> Nginx (:3006) --> /       --> Frontend estaticos (dist/)
@@ -93,7 +90,7 @@ Browser --> Nginx (:3006) --> /       --> Frontend estaticos (dist/)
 
 ## Stack tecnologico
 
-- **Frontend:** React 19, Vite, Tailwind CSS 4, OpenLayers
+- **Frontend:** React 19, Vite 8, Tailwind CSS 4, OpenLayers
 - **Backend:** FastAPI, SQLModel, PostgreSQL
 - **Infra:** Docker, Nginx, GeoServer (externo)
 
@@ -101,7 +98,7 @@ Browser --> Nginx (:3006) --> /       --> Frontend estaticos (dist/)
 
 ```
 mapalab/
-├── docker-compose.yml          # Servicios unificados con profiles (dev/staging)
+├── docker-compose.yml          # Servicios unificados con profiles (dev/build/prod)
 ├── docker-compose.override.yml # Overrides de desarrollo (network_mode: host)
 ├── .env.example                # Template de variables de entorno
 ├── Makefile                    # Orquestador de comandos
@@ -118,7 +115,7 @@ mapalab/
 │       ├── schemas/            # Modelos Pydantic/SQLModel
 │       ├── services/           # Logica de negocio
 │       └── databases/          # Conexiones a bases de datos
-└── nginx/                      # Reverse proxy (staging/prod)
+└── nginx/                      # Reverse proxy (prod)
     ├── Dockerfile
     └── nginx.conf
 ```

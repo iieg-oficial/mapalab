@@ -155,9 +155,9 @@ docker image prune -f --filter "until=168h"
 
 ### `make deploy`
 
-1. Crea la red `iieg-network` si no existe (`ensure-networks`)
+1. Crea la red `iieg-network` si no existe
 2. Construye el frontend en Docker (Node 24 Alpine) con `--profile build`
-3. Levanta backend + nginx con `--profile staging`, `--force-recreate` y `--env-file .env.production`
+3. Levanta backend + nginx con `--profile prod`, `--force-recreate` y `--env-file .env.production`
 
 ## Health Check
 
@@ -231,11 +231,10 @@ En **Settings → General → Pull Requests**:
 ### Health check falla
 
 - Verificar que `https://mapalab-iieg.app` sea accesible desde internet
-- Revisar logs de nginx en el servidor: `make logs-nginx`
+- Revisar logs de nginx en el servidor: `make logs`
 - Verificar certificados SSL: `ls -la nginx/certs/`
 
 ### Nginx no encuentra certificados SSL
 
 - `make deploy` detecta SSL via `SSL_MODE=true` en `nginx/.env`
 - Los certificados deben existir en la ruta definida por `SSL_VOLUME_PATH` en `nginx/.env`
-- Para regenerar: `make ssl`

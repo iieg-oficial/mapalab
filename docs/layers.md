@@ -251,9 +251,9 @@ Primer deploy a prod de DataEngine requiere correr el script de bootstrap:
 
 ```bash
 cd /IIEG/dataengine
-make prod-migration           # pull final del Sheet + bootstrap + seed + migrate + stamp
+make bootstrap                # rol, schema, grants, seed, migrate y stamp
 # o sin ETL (si ya corriste el Sheet hoy o estas en dev sin credenciales):
-make prod-migration PROD_MIGRATION_FLAGS="--skip-etl"
+make bootstrap
 ```
 
 Pasos idempotentes:
@@ -275,11 +275,11 @@ curl http://localhost:8000/layers/initial-order > order.json
 
 | Comando | Ubicación |
 |---|---|
-| `make refresh-layer-tree` | mapalab o dataengine |
-| `make refresh-layer-stats` | dataengine |
-| `make refresh-periodicity` | dataengine |
-| `make refresh-all` | dataengine (los tres) |
-| `make logs-jobs` | dataengine (tail del cron log) |
+| `make refresh-layer-tree` | mapalab (POST al backend, no delega a dataengine) |
+| `make refresh` (opcion `layer-stats`) | dataengine |
+| `make refresh` (opcion `periodicity`) | dataengine |
+| `make refresh` (opcion `todos`) | dataengine |
+| `make logs` (servicio `jobs`) | dataengine (tail del cron log) |
 
 ## Deprecaciones
 

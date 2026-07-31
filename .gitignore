@@ -25,7 +25,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-docker-compose.local.yaml
+compose.local.yaml
 
 *.local
 *.local.md
@@ -50,3 +50,8 @@ coverage/
 .vitest
 
 !backend/requirements.txt
+
+secrets/*
+!secrets/.gitkeep
+!secrets/*.example
+compose.local.yaml

@@ -5,7 +5,7 @@
 1. Clonar el repo
 2. Configurar git hooks: `make setup-hooks`
 3. Copiar variables de entorno: `cp .env.example .env.development`
-4. Levantar servicios: `make dev`
+4. Levantar servicios: `make up`
 
 ## Flujo de trabajo con Git
 
@@ -42,7 +42,7 @@ Ejemplo: `feat: add layer download in GeoJSON format`
 - Describir que cambia y por que
 - Asegurar que los tests pasan: `npm test` (frontend)
 - Asegurar que el linter pasa: `npm run lint` (frontend)
-- Revisar que `make dev` y `make staging` funcionan correctamente
+- Revisar que `make up` y `make deploy` funcionan correctamente
 
 ## Convenciones de codigo
 

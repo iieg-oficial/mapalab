@@ -1,0 +1,60 @@
+name: mapalab-dev
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  backend:
+    build:
+      target: development
+    ports:
+      - "${BACKEND_BIND_ADDR:?}:${BACKEND_PORT:?}:${BACKEND_PORT:?}"
+    volumes:
+      - ./backend/app:/app/app
+
+  mapalab-mcp:
+    build:
+      target: development
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    init: true
+    environment:
+      VITE_BACKEND_API_HOST: ${VITE_BACKEND_API_HOST:?}
+      VITE_GEOSERVER_URL: ${VITE_GEOSERVER_URL:?}
+      VITE_ACERVO_ORIGIN: ${VITE_ACERVO_ORIGIN?}
+      VITE_NODE_ENV: ${VITE_NODE_ENV:?}
+      VITE_APP_ENV: ${VITE_APP_ENV:?}
+      VITE_PORT: ${VITE_PORT:?}
+      VITE_SITE_URL: ${VITE_SITE_URL?}
+      VITE_BASE_PATH: ${VITE_BASE_PATH:?}
+      VITE_COLIBRI_SOURCE_APP: ${VITE_COLIBRI_SOURCE_APP:?}
+      VITE_COLIBRI_API_KEY: ${VITE_COLIBRI_API_KEY?}
+      GEOSERVER_DEV_TARGET: ${GEOSERVER_DEV_TARGET?}
+      BACKEND_DEV_TARGET: ${BACKEND_DEV_TARGET?}
+      MARIACHI_DEV_TARGET: ${MARIACHI_DEV_TARGET?}
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+      - ./frontend/index.html:/app/index.html:ro
+      - ./frontend/vite.config.js:/app/vite.config.js:ro
+      - ./frontend/vitest.config.js:/app/vitest.config.js:ro
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "${FRONTEND_BIND_ADDR:?}:${FRONTEND_PORT:?}:${VITE_PORT:?}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${VITE_PORT:?}/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - default
+    logging: *logging
