@@ -21,9 +21,9 @@ export const buildWFSUrl = (wmsConfig, format, cqlFilter, propertyNames) => {
     const baseUrl = wmsConfig.baseUrl.replace('/wms', '/wfs');
     const params = {
         service: 'WFS',
-        version: '1.1.0',
+        version: '2.0.0',
         request: 'GetFeature',
-        typeName: wmsConfig.wfsLayerName || wmsConfig.layerName,
+        typeNames: wmsConfig.wfsLayerName || wmsConfig.layerName,
         outputFormat: format.id,
         srsName: format.srs || 'EPSG:4326'
     };
@@ -61,9 +61,9 @@ export const fetchNonGeometryColumns = async (wmsConfig, signal) => {
         const baseUrl = wmsConfig.baseUrl.replace('/wms', '/wfs');
         const url = new URL(baseUrl, window.location.origin);
         url.searchParams.set('service', 'WFS');
-        url.searchParams.set('version', '1.1.0');
+        url.searchParams.set('version', '2.0.0');
         url.searchParams.set('request', 'DescribeFeatureType');
-        url.searchParams.set('typeName', typeName);
+        url.searchParams.set('typeNames', typeName);
         url.searchParams.set('outputFormat', 'application/json');
         const res = await fetch(url.toString(), { signal });
         if (!res.ok) { nonGeomColumnsCache.set(typeName, null); return null; }

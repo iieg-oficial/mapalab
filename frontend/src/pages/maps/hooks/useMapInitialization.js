@@ -4,7 +4,9 @@ import OLMap from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import { fromLonLat } from 'ol/proj';
-import { getDefaultMapView, getMinZoom } from '@pages/maps/helpers/defaultView';
+import { defaults as defaultInteractions } from 'ol/interaction/defaults';
+import MouseWheelZoom from 'ol/interaction/MouseWheelZoom';
+import { getDefaultMapView, getMinZoom, ZOOM_ANIMATION_MS } from '@pages/maps/helpers/defaultView';
 import { BASEMAP_ORDER, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 
 export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOverlayRef, reliefOverlayRef, basemaps, baseMapId }) => {
@@ -77,9 +79,12 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOver
                 zoom: initialViewParams.zoom,
                 minZoom: getMinZoom(),
                 maxZoom: 18,
-                projection: 'EPSG:3857'
+                projection: 'EPSG:3857',
+                constrainResolution: true
             }),
-            controls: []
+            controls: [],
+            interactions: defaultInteractions({ mouseWheelZoom: false })
+                .extend([new MouseWheelZoom({ duration: ZOOM_ANIMATION_MS })])
         });
 
         initialLayers.forEach(layer => {

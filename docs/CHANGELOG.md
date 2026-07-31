@@ -5,6 +5,83 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.107.0] - 2026-07-31
+
+### Cambiado: zoom instantaneo para no repedir los tiles de cada nivel intermedio
+
+Al acercarse, el visor seguia descargando tiles un buen rato despues de que el viewport ya estaba
+completo. Medido en el log del gateway: rafagas de **466 peticiones en un minuto** —unos 6-7
+viewports— con silencio total entre ellas. No era un bucle: OpenLayers renderiza **cada nivel
+intermedio** de la animacion de zoom y pide sus tiles, y como cada nivel tiene 4x mas tiles que el
+anterior, la cola crece al acercarse. Por eso solo pasaba con zoom in y paraba al llegar al maximo.
+
+`ZOOM_ANIMATION_MS` (en `helpers/defaultView.js`, usada por la rueda y por los botones +/-) pasa de
+los 250 ms por defecto de OpenLayers a **0**: el zoom salta directo al nivel destino sin renderizar
+los intermedios. Se probaron 250, 120 y 0; con 250 y 120 la diferencia de rendimiento se seguia
+notando, asi que se opto por el salto instantaneo aunque la transicion sea mas brusca.
+
+`constrainResolution: true` en la View acompana el cambio: fija el destino en un nivel entero y
+evita un re-render extra. Por si solo **no** resuelve nada — solo afecta la resolucion final, no el
+recorrido de la animacion.
+
+La otra mitad del problema estaba en el gateway: los tiles del relieve se repedian enteros en cada
+zoom porque salian con `no-store`. Corregido en gateway-hub 1.40.0.
+
+### Cambiado: `ratio` de `ImageWMS` de 1.5 a 1
+
+Las capas no tileadas pedian una imagen 1.5x el viewport —2.25x en area— para tener margen y no
+volver a pedir en pans cortos. Con `ratio: 1` se pide exactamente lo visible: menos pixeles por
+render, a cambio de que **cualquier desplazamiento dispare una peticion nueva**. Es un intercambio,
+no una mejora sin coste: se optimiza la carga y el zoom a costa del pan.
+
+Aplicado tanto al visor (`useWMSLayerFactory`) como a la vista de capa del catalogo
+(`CatalogoMapView`).
+
+## [1.106.0] - 2026-07-31
+
+### Agregado: formato de imagen y antialias por capa
+
+El visor deja de pedir siempre `image/png` con el antialias por defecto: ahora usa
+`wmsConfig.format` y `wmsConfig.antialias`, que llegan del arbol de capas y se configuran desde
+mariachi. El antialias viaja como `format_options=antialias:<valor>` y **solo se manda cuando no
+es `full`**, para no ensuciar la URL ni multiplicar llaves en el cache del gateway.
+
+### Agregado: paginacion real en la seleccion por poligono
+
+Antes se pedian **todas** las features del poligono en una sola peticion y se recortaban de a 50
+en memoria (`useLoadMoreFeatures`), asi que un poligono grande sobre una capa densa cargaba todo
+antes de mostrar nada. Ahora `getFeaturesInPolygonForActiveLayers` acepta `{ startIndex, count }`
+y devuelve `{ results, matched, returned, nextIndex, hasMore }`; el hook nuevo
+`useLoadMorePolygonFeatures` pide la siguiente pagina al servidor y la anexa por capa.
+
+Tamano de pagina: 200 (`POLYGON_PAGE_SIZE`). El corte se decide con `numberMatched` y
+`numberReturned`, que WFS 2.0 incluye en la respuesta GeoJSON — en 1.1.0 no existen.
+
+### Cambiado: WFS 1.1.0 a 2.0.0
+
+Los cuatro servicios que hablan WFS migran a 2.0.0: `featureInfoService` (seleccion por
+poligono), `downloadUrls` (descargas y `DescribeFeatureType`), `layerExtentService` y
+`catalogoService`. Cambian los nombres de parametro: `typeName` a `typeNames` y `maxFeatures` a
+`count`.
+
+**El clic sigue en WMS `GetFeatureInfo` 1.1.0 a proposito.** No es lo mismo que `GetFeature`:
+responde "que hay en este pixel" respetando simbologia y capas visibles, y funciona en capas con
+WFS deshabilitado en GeoServer — `curvas_de_nivel` y `curvas_de_nivel_render` lo tienen
+deshabilitado (`GetFeature` sobre ellas responde 400), asi que migrar el clic a WFS lo habria
+roto ahi.
+
+### Eliminado: `srs` del `WMS_BASE_CONFIG`
+
+Declaraba `EPSG:6368` pero **nunca tuvo efecto**: la documentacion de OpenLayers dice que en
+`ImageWMS` y `TileWMS` los parametros `WIDTH`, `HEIGHT`, `BBOX` y `CRS`/`SRS` "will be set
+dynamically" — se sobrescriben con la proyeccion de la vista, que es 3857. Se retira de
+`wmsConfig`, de `useWMSLayerFactory` y de `CatalogoMapView` para que nadie lo lea y crea que
+puede cambiar la proyeccion del visor desde ahi.
+
+No confundir con los otros dos `srs` del codigo, que si son reales: `format.srs` en
+`downloadUrls` (CRS de descarga) y el `EPSG:6368` de `municipioCqlBuilder`, que es el CRS contra
+el que se evalua el `BBOX()` del CQL.
+
 ## [1.105.1] - 2026-07-31
 
 ### Corregido: el visor caía en pantalla de error con Vite 8 (interop CJS de Rolldown)

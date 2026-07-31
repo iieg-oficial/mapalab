@@ -1,8 +1,8 @@
 const WMS_BASE_CONFIG = {
     format: 'image/png',
+    antialias: 'full',
     transparent: true,
-    version: '1.1.0',
-    srs: 'EPSG:6368'
+    version: '1.1.0'
 };
 
 export const JALISCO_BOUNDS = {

@@ -68,7 +68,8 @@ describe('hydrateWmsConfig', () => {
         expect(cfg.format).toBe('image/png');
         expect(cfg.transparent).toBe(true);
         expect(cfg.version).toBe('1.1.0');
-        expect(cfg.srs).toBe('EPSG:6368');
+        expect(cfg.antialias).toBe('full');
+        expect(cfg.srs).toBeUndefined();
     });
 
     it('preserva styles, cqlFilter y otros campos del backend', () => {

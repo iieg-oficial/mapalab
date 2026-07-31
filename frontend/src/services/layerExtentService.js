@@ -24,9 +24,9 @@ export const fetchLayerExtent = async (layer, { timeoutMs = 10000 } = {}) => {
     const wfsUrl = getWfsUrl(wmsConfig.baseUrl);
     const params = {
         SERVICE: 'WFS',
-        VERSION: '1.1.0',
+        VERSION: '2.0.0',
         REQUEST: 'GetFeature',
-        TYPENAME: wmsConfig.layerName,
+        TYPENAMES: wmsConfig.layerName,
         OUTPUTFORMAT: 'application/json',
         SRSNAME: 'EPSG:3857'
     };

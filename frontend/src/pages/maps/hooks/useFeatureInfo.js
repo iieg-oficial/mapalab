@@ -1,8 +1,9 @@
-import { useState, useCallback, useContext } from 'react';
+import { useState, useCallback, useContext, useRef } from 'react';
 import MapsContext from '@contexts/MapsContext';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 import { getFeatureInfoForActiveLayers, getFeaturesInPolygonForActiveLayers, FEATURE_COUNT_CAP, FEATURE_COUNT_TOTAL } from '@services/featureInfoService';
 import { useLoadMoreFeatures } from './useLoadMoreFeatures';
+import { useLoadMorePolygonFeatures } from './useLoadMorePolygonFeatures';
 import { toLonLat } from 'ol/proj';
 import { useLayers } from '@hooks/useLayers';
 import { useEventoContext } from '@hooks/useEvento';
@@ -22,6 +23,7 @@ export const useFeatureInfo = (overrides = null) => {
     const { getAliasByLayerId } = useEventoContext();
     const { setLayerLoading } = useLayerLoading();
     const [loading, setLoading] = useState(false);
+    const polygonPageRef = useRef(null);
 
     const getAllActiveLayers = useCallback(() => {
         const hiddenIdSet = new Set(hiddenLayerIds || []);
@@ -276,7 +278,9 @@ export const useFeatureInfo = (overrides = null) => {
         setLayerLoading(FEATURE_INFO_LOADING_ID, true);
         try {
             const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
-            const results = await getFeaturesInPolygonForActiveLayers(activeLayers, map, polygonGeometry, getFilter, isInegiMode, allLayers);
+            const page = await getFeaturesInPolygonForActiveLayers(activeLayers, map, polygonGeometry, getFilter, isInegiMode, allLayers);
+            const { results, matched, nextIndex, hasMore } = page;
+            polygonPageRef.current = { activeLayers, map, polygonGeometry, isInegiMode, allLayers, nextIndex, hasMore, matched };
             const [lng, lat] = toLonLat(centerCoordinate);
 
             if (results && results.length > 0) {
@@ -299,7 +303,9 @@ export const useFeatureInfo = (overrides = null) => {
                     setSelectedFeatureInfo({
                         lngLat: { lng, lat },
                         results,
-                        isPolygonSelection: true
+                        isPolygonSelection: true,
+                        matched,
+                        hasMore
                     });
                 }, 100);
                 return results;
@@ -329,6 +335,7 @@ export const useFeatureInfo = (overrides = null) => {
     }, [setSelectedFeatureInfo, clickPosition]);
 
     const loadMoreFeatures = useLoadMoreFeatures(selectedFeatureInfo, setSelectedFeatureInfo);
+    const loadMorePolygonFeatures = useLoadMorePolygonFeatures(polygonPageRef, getFilter, setSelectedFeatureInfo);
 
     return {
         queryFeatures,
@@ -336,6 +343,7 @@ export const useFeatureInfo = (overrides = null) => {
         clearFeatureInfo,
         selectAlternativeLayer,
         loadMoreFeatures,
+        loadMorePolygonFeatures,
         loading
     };
 };

@@ -25,8 +25,7 @@ export const useWMSLayerFactory = () => {
             'LAYERS': wmsConfig.layerName,
             'FORMAT': wmsConfig.format,
             'TRANSPARENT': wmsConfig.transparent,
-            'VERSION': wmsConfig.version,
-            'SRS': wmsConfig.srs
+            'VERSION': wmsConfig.version
         };
 
         if (wmsConfig._embedKey) {
@@ -35,6 +34,10 @@ export const useWMSLayerFactory = () => {
 
         if (wmsConfig.styles && wmsConfig.styles.trim() !== '') {
             wmsParams.STYLES = wmsConfig.styles;
+        }
+
+        if (wmsConfig.antialias && wmsConfig.antialias !== 'full') {
+            wmsParams.format_options = `antialias:${wmsConfig.antialias}`;
         }
 
         if (customParams) {
@@ -112,7 +115,7 @@ export const useWMSLayerFactory = () => {
         const wmsSource = new ImageWMS({
             url: wmsConfig.baseUrl,
             params: wmsParams,
-            ratio: 1.5,
+            ratio: 1,
             serverType: 'geoserver',
             crossOrigin: 'anonymous'
         });

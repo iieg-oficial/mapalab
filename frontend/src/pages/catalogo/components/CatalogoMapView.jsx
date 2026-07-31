@@ -45,9 +45,8 @@ const buildWmsLayer = (capa) => {
             FORMAT: cfg.format,
             TRANSPARENT: cfg.transparent,
             VERSION: cfg.version,
-            SRS: cfg.srs,
         },
-        ratio: 1.5,
+        ratio: 1,
         serverType: 'geoserver',
         crossOrigin: 'anonymous',
     });

@@ -3,6 +3,7 @@ import { combineCQLFilters, fetchGeometryColumns, getWmsUrl, getWfsUrl, filterVa
 
 export const FEATURE_COUNT_CAP = 50;
 export const FEATURE_COUNT_TOTAL = 2000;
+export const POLYGON_PAGE_SIZE = 200;
 
 const matchesFilter = (properties, cqlFilter) => {
     if (!cqlFilter || !properties) return true;
@@ -164,11 +165,14 @@ export const getFeatureInfoForActiveLayers = async (activeLayers, map, coordinat
     return results.flat().filter(r => r !== null);
 };
 
-export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, polygonGeometry, getFilterFn = null, isInegiMode = false, allLayers = []) => {
+export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, polygonGeometry, getFilterFn = null, isInegiMode = false, allLayers = [], page = {}) => {
+    const startIndex = Number.isInteger(page.startIndex) ? page.startIndex : 0;
+    const count = Number.isInteger(page.count) ? page.count : POLYGON_PAGE_SIZE;
+
     const validLayers = filterValidLayers(activeLayers, allLayers, findWMSConfig)
         .filter(({ wmsConfig }) => wmsConfig.wfsAvailable !== false);
 
-    if (validLayers.length === 0) return [];
+    if (validLayers.length === 0) return { results: [], matched: 0, returned: 0, nextIndex: startIndex, hasMore: false };
 
     const layersByUrl = groupLayersByUrl(validLayers, getWfsUrl);
 
@@ -220,12 +224,14 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
 
             const params = {
                 SERVICE: 'WFS',
-                VERSION: '1.1.0',
+                VERSION: '2.0.0',
                 REQUEST: 'GetFeature',
-                TYPENAME: localTypeNames.join(','),
+                TYPENAMES: localTypeNames.join(','),
                 OUTPUTFORMAT: 'application/json',
                 SRSNAME: projectionCode,
-                CQL_FILTER: cqlFilters.join(';')
+                CQL_FILTER: cqlFilters.join(';'),
+                COUNT: String(count),
+                STARTINDEX: String(startIndex)
             };
 
             const url = baseUrl + '?' + new URLSearchParams(params).toString();
@@ -270,7 +276,7 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
                 }
             });
 
-            return Object.values(resultsByLayerId).map(({ layer, features }) => {
+            const items = Object.values(resultsByLayerId).map(({ layer, features }) => {
                 return {
                     layerName: layer.name,
                     layerId: layer.id,
@@ -280,21 +286,30 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
                 };
             });
 
+            return {
+                items,
+                matched: Number(data.numberMatched) || 0,
+                returned: Number(data.numberReturned) || items.reduce((n, i) => n + i.features.length, 0)
+            };
+
         } catch {
             return null;
         }
     });
 
-    const results = await Promise.allSettled(promises);
+    const settled = await Promise.allSettled(promises);
+    const pages = settled
+        .map(r => (r.status === 'fulfilled' && r.value !== null ? r.value : null))
+        .filter(Boolean);
 
-    return results
-        .map(result => {
-            if (result.status === 'fulfilled' && result.value !== null) {
-                return result.value;
-            }
-            return null;
-        })
-        .flat()
-        .filter(info => info !== null && info.features && info.features.length > 0);
+    const results = pages
+        .flatMap(p => p.items)
+        .filter(info => info && info.features && info.features.length > 0);
+
+    const matched = pages.reduce((n, p) => n + p.matched, 0);
+    const returned = pages.reduce((n, p) => n + p.returned, 0);
+    const nextIndex = startIndex + returned;
+
+    return { results, matched, returned, nextIndex, hasMore: returned >= count && nextIndex < matched };
 };
 
