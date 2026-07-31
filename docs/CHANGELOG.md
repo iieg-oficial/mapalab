@@ -5,6 +5,33 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.111.0] - 2026-07-31
+
+### Eliminado: el servicio `frontend-build` y el `dist` que no consumía nadie
+
+`make deploy` compilaba el frontend dos veces. Primero en los guardas, con `build_frontend` →
+`docker compose --profile build run frontend-build`, que corría `frontend/Dockerfile` y volcaba el
+resultado en `./frontend/dist`. Después otra vez en el `up --build`, porque `nginx/Dockerfile`
+repite el `npm ci` y el `npm run build` del mismo código para servirlo desde su propia imagen. Al
+ser contextos de build distintos (`./frontend` contra `.`) no comparten capas ni caché: era el
+build completo dos veces, en serie, en cada deploy.
+
+De las dos, la que sirve es la del nginx. `./frontend/dist` no lo monta nadie: el gateway sólo
+monta el dist de **sieej** (`SIEEJ_DIST_PATH`), y en desarrollo se usa el servicio `frontend` con
+Vite. Era un artefacto huérfano heredado de cuando el nginx sí lo montaba.
+
+Se van con él `build_frontend`, `reset_dist_perms` —existía sólo para que el dist lo escribiera el
+usuario y no root—, el servicio `frontend-build` de `compose.prod.yaml` y las variables `UID` y
+`GID`, que no usaba nadie más. Los guardas de deploy quedan en `ensure_network`.
+
+En los `.env.production` de cada nodo, `UID` y `GID` quedan sobrantes; se pueden borrar en la
+siguiente ventana. Ya no están en el `.env.example`.
+
+### Cambiado: `clean` deja de necesitar Docker para borrar el `dist`
+
+`clean_artifacts` levantaba un contenedor alpine para borrar `frontend/dist`, porque el dist podía
+ser de root. Sin `frontend-build` no hay dist que borrar y `rm -rf frontend/node_modules` basta.
+
 ## [1.110.0] - 2026-07-31
 
 ### Agregado: seleccion por poligono en el catalogo
