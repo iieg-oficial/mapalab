@@ -160,6 +160,7 @@ export default defineConfig(({ mode }) => {
         },
         resolve: {
             alias: {
+                'lottie-react': resolve(__dirname, './node_modules/lottie-react/build/index.es.js'),
                 '@components': resolve(__dirname, './src/components'),
                 '@mapsComponents': resolve(__dirname, './src/pages/maps/components'),
                 '@layouts': resolve(__dirname, './src/layouts'),

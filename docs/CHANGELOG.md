@@ -5,6 +5,33 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.105.1] - 2026-07-31
+
+### Corregido: el visor caía en pantalla de error con Vite 8 (interop CJS de Rolldown)
+
+`/mapa` mostraba «Algo salió mal...» desde el despliegue de 1.104.0. El error real era un React
+#130 —«element type is invalid: got object»— capturado por el `errorElement` del router.
+
+El culpable es el **interop CJS de Rolldown**. `lottie-react` se resuelve por su campo `browser`,
+que apunta a un UMD, y Rolldown lo envuelve con `__toESM(mod, 1)`. Ese segundo argumento es
+`isNodeMode`: con él, el helper asigna `default = module.exports` **ignorando el `__esModule`** que
+el propio UMD declara. Resultado: `import Lottie from 'lottie-react'` entregaba el namespace
+completo `{LottiePlayer, default, useLottie, useLottieInteractivity}` en vez del componente, y
+`<Lottie />` recibía un objeto. Con Rollup (Vite 7) el interop respetaba `__esModule` y `default`
+era el componente.
+
+El arreglo es un alias en `vite.config.js` que apunta `lottie-react` a su build ESM
+(`build/index.es.js`), con lo que no hay CJS que interoperar. Se revisó el resto de dependencias:
+sólo `lottie-react` combina las tres condiciones que hacen falta para el fallo —CJS, `__esModule`
+declarado e import por `default`—. `qr-code-styling` también entra como UMD, pero su chunk exporta
+la clase directamente y el envoltorio queda correcto; `react-datasheet-grid` en mariachi usa
+imports nombrados, que sobreviven al interop.
+
+**Por qué no lo detectaron los tests ni el CI:** los 814 tests corren sobre el código fuente con el
+pipeline de Vitest, no sobre el bundle de producción, y el `build` del CI sólo verifica que compile.
+Un bundle que compila y falla al renderizar pasa las dos puertas. La verificación de este arreglo se
+hizo cargando `/mapa` en Chrome headless contra el `dist` real.
+
 ## [1.105.0] - 2026-07-30
 
 ### Cambiado: React Router 8 por el advisory GHSA-qwww-vcr4-c8h2
