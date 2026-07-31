@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.108.0] - 2026-07-31
+
+### Agregado: el catalogo recibe las mismas optimizaciones que el visor
+
+`CatalogoMapView` tenia su propia `View` sin `constrainResolution` ni interacciones configuradas, y
+su `buildWmsLayer` ignoraba `format` y `antialias` de la capa. Ahora comparte con el visor la
+constante `ZOOM_ANIMATION_MS`, el zoom sin animacion, `ratio: 1` y los parametros de render por
+capa.
+
+### Cambiado: el default de `antialias` pasa a `text`
+
+`WMS_BASE_CONFIG` reproduce el default nuevo de la base (migracion `0033`), para que una capa sin
+el campo resuelto se comporte igual que una configurada.
+
 ## [1.107.0] - 2026-07-31
 
 ### Cambiado: zoom instantaneo para no repedir los tiles de cada nivel intermedio

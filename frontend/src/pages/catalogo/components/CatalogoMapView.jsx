@@ -13,6 +13,8 @@ import Stroke from 'ol/style/Stroke';
 import Fill from 'ol/style/Fill';
 import CircleStyle from 'ol/style/Circle';
 import { fromLonLat, toLonLat, transformExtent } from 'ol/proj';
+import { defaults as defaultInteractions } from 'ol/interaction/defaults';
+import MouseWheelZoom from 'ol/interaction/MouseWheelZoom';
 import MapsContext from '@contexts/MapsContext';
 import { SiderContext } from '@contexts/SiderContext';
 import MapControls from '@pages/maps/components/MapControls';
@@ -25,7 +27,7 @@ import CatalogoTimeBar from './CatalogoTimeBar';
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { BASEMAPS, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 import { JALISCO_BOUNDS, hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
-import { getMinZoom } from '@pages/maps/helpers/defaultView';
+import { getMinZoom, ZOOM_ANIMATION_MS } from '@pages/maps/helpers/defaultView';
 import { useScaleLineControl } from '@hooksMaps/useScaleLineControl';
 import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
@@ -33,19 +35,28 @@ import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { trackCatalogoFeatureClick } from '@services/analyticsService';
 
 const buildWmsLayer = (capa) => {
+    const render = {};
+    const format = capa.imageFormat || capa.image_format;
+    if (format) render.format = format;
+    if (capa.antialias) render.antialias = capa.antialias;
     const cfg = hydrateWmsConfig({
         geoserverWorkspace: capa.geoserverWorkspace,
         geoserverLayer: capa.geoserverLayer,
+        ...render,
     });
     if (!cfg) return null;
+    const params = {
+        LAYERS: cfg.layerName,
+        FORMAT: cfg.format,
+        TRANSPARENT: cfg.transparent,
+        VERSION: cfg.version,
+    };
+    if (cfg.antialias && cfg.antialias !== 'full') {
+        params.format_options = `antialias:${cfg.antialias}`;
+    }
     const source = new ImageWMS({
         url: cfg.baseUrl,
-        params: {
-            LAYERS: cfg.layerName,
-            FORMAT: cfg.format,
-            TRANSPARENT: cfg.transparent,
-            VERSION: cfg.version,
-        },
+        params,
         ratio: 1,
         serverType: 'geoserver',
         crossOrigin: 'anonymous',
@@ -161,8 +172,11 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
                 minZoom: getMinZoom(),
                 maxZoom: 18,
                 projection: 'EPSG:3857',
+                constrainResolution: true,
             }),
             controls: [],
+            interactions: defaultInteractions({ mouseWheelZoom: false })
+                .extend([new MouseWheelZoom({ duration: ZOOM_ANIMATION_MS })]),
         });
 
         mapRef.current = map;

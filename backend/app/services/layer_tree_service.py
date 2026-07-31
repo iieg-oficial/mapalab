@@ -68,7 +68,7 @@ def _layer_to_wms_config(layer: Layer, workspace_map: dict[str, Workspace]) -> O
         'wmsGroup': layer.wms_group,
         'tiled': bool(layer.tiled),
         'format': layer.image_format or 'image/png',
-        'antialias': layer.antialias or 'full',
+        'antialias': layer.antialias or 'text',
         'wfsAvailable': layer.wfs_available,
         'wfsLayerName': layer.wfs_layer_name,
         'timeEnabled': layer.time_enabled,

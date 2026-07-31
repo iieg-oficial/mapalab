@@ -68,7 +68,7 @@ describe('hydrateWmsConfig', () => {
         expect(cfg.format).toBe('image/png');
         expect(cfg.transparent).toBe(true);
         expect(cfg.version).toBe('1.1.0');
-        expect(cfg.antialias).toBe('full');
+        expect(cfg.antialias).toBe('text');
         expect(cfg.srs).toBeUndefined();
     });
 
@@ -208,5 +208,18 @@ describe('findLayerDef', () => {
 
     it('retorna null para ID inexistente', () => {
         expect(findLayerDef('fantasma', LAYERS)).toBeNull();
+    });
+});
+
+describe('hydrateWmsConfig con campos undefined', () => {
+    it('no deja que un undefined pise el default', () => {
+        const cfg = hydrateWmsConfig({
+            geoserverWorkspace: 'general',
+            geoserverLayer: 'limites',
+            format: undefined,
+            antialias: undefined,
+        });
+        expect(cfg.format).toBe('image/png');
+        expect(cfg.antialias).toBe('text');
     });
 });

@@ -1,6 +1,6 @@
 const WMS_BASE_CONFIG = {
     format: 'image/png',
-    antialias: 'full',
+    antialias: 'text',
     transparent: true,
     version: '1.1.0'
 };
@@ -19,9 +19,12 @@ export const hydrateWmsConfig = (wmsConfig) => {
     const gsLayer = wmsConfig.geoserverLayer;
     if (!gsWorkspace || !gsLayer) return null;
     const layerName = `${gsWorkspace}:${gsLayer}`;
+    const clean = Object.fromEntries(
+        Object.entries(wmsConfig).filter(([, v]) => v !== undefined)
+    );
     return {
         ...WMS_BASE_CONFIG,
-        ...wmsConfig,
+        ...clean,
         baseUrl: `${GEOSERVER_BASE}/${gsWorkspace}/wms`,
         layerName,
         tiled: wmsConfig.tiled === true,
