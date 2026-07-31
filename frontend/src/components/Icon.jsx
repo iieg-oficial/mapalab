@@ -137,6 +137,37 @@ const icons = {
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
         </svg>
     ),
+    geom_point: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+            <circle cx="7" cy="8" r="2.4" />
+            <circle cx="16.5" cy="6.5" r="2.4" />
+            <circle cx="11.5" cy="16.5" r="2.4" />
+        </svg>
+    ),
+    geom_line: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 18 9.5 9 15 14l5-9" />
+            <circle cx="4" cy="18" r="1.8" fill="currentColor" stroke="none" />
+            <circle cx="20" cy="5" r="1.8" fill="currentColor" stroke="none" />
+        </svg>
+    ),
+    geom_polygon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+            <path d="M12 3.5 20 9l-3 9.5H7L4 9z" fill="currentColor" fillOpacity="0.18" />
+            <circle cx="12" cy="3.5" r="1.6" fill="currentColor" stroke="none" />
+            <circle cx="20" cy="9" r="1.6" fill="currentColor" stroke="none" />
+            <circle cx="4" cy="9" r="1.6" fill="currentColor" stroke="none" />
+        </svg>
+    ),
+    geom_raster: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+            <rect x="3.5" y="3.5" width="17" height="17" rx="1.5" />
+            <path d="M9.17 3.5v17M14.83 3.5v17M3.5 9.17h17M3.5 14.83h17" strokeWidth="1.2" />
+            <rect x="3.5" y="9.17" width="5.67" height="5.66" fill="currentColor" fillOpacity="0.28" stroke="none" />
+            <rect x="14.83" y="3.5" width="5.67" height="5.67" fill="currentColor" fillOpacity="0.28" stroke="none" />
+            <rect x="9.17" y="14.83" width="5.66" height="5.67" fill="currentColor" fillOpacity="0.28" stroke="none" />
+        </svg>
+    ),
 };
 
 const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visible = true, tooltip = null, onClick = null }) => {

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { usePolygonSelection } from './usePolygonSelection';
 
-export const mergePolygonPage = (info, page) => {
+const mergePolygonPage = (info, page) => {
     if (!info?.results) return info;
 
     const byLayer = new Map(info.results.map(r => [r.layerId, r]));

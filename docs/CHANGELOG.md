@@ -5,6 +5,30 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.112.0] - 2026-07-31
+
+### Agregado: el tipo de geometría de cada capa en el panel de capas activas
+
+Cada capa del panel muestra ahora, a la derecha de su nombre, un distintivo de qué es: puntos,
+líneas, polígonos o ráster. Antes había que abrirla o mirar la leyenda para saberlo, y con varias
+capas encimadas el usuario no tenía forma de anticipar cuál iba a responder al clic sobre el mapa
+ni qué formatos de descarga le tocaban.
+
+El tipo lo resuelve `useLayerGeometryType`, que no consulta nada nuevo al GeoServer: para ráster
+se apoya en `RASTER_WORKSPACES` —el mismo criterio de `isRasterLayer` en las descargas— y para
+las vectoriales reusa `fetchGeometryType` de `featureInfoUtils`, que ya parsea el
+`DescribeFeatureType` del WFS para saber qué columna es la geometría. Esas peticiones ya venían
+agrupadas por `queueMicrotask` y cacheadas por `baseUrl:typeName`, así que abrir varias capas no
+suma llamadas; encima se cachea por `layerId` para que el distintivo aparezca de inmediato al
+reabrir el panel. En los grupos se toma el primer descendiente con `wmsConfig`, igual que
+`useLayerSymbolIcon`.
+
+Cuando el tipo no se puede determinar —capa sin WMS, WFS que no responde, geometría desconocida—
+no se dibuja nada y el encabezado queda como estaba.
+
+Los cuatro iconos (`geom_point`, `geom_line`, `geom_polygon`, `geom_raster`) se agregaron al
+registro de `Icon`, de modo que el catálogo o el modal de detalle pueden usarlos sin duplicarlos.
+
 ## [1.111.0] - 2026-07-31
 
 ### Eliminado: el servicio `frontend-build` y el `dist` que no consumía nadie
