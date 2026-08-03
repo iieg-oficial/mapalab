@@ -48,7 +48,7 @@ const EmbedInner = ({ params, config }) => {
                 <MapView />
                 <LayerNotices enabled={noticesEnabled} />
                 <EmbedBrand params={params} />
-                <InfoBox />
+                <InfoBox forceDesktop />
                 <MapControls />
                 <ScaleLineControl />
                 <MapAttribution hideActions />

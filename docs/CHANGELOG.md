@@ -23,6 +23,12 @@ Los dos son texto plano, con espacios colapsados y recortados a 120 y 400 caract
 escapa al renderizarlos y `raw` en `List` sólo evita el formateo numérico, así que no hay camino de
 HTML desde la URL a la tarjeta.
 
+La tarjeta del embed va **siempre en variante de escritorio**, con `InfoBox forceDesktop`. Sus
+breakpoints miran el ancho del iframe, no el de la ventana: un embed de 640px dentro de un monitor
+de 1920 daba por hecho que era un teléfono y abría el bottom sheet a pantalla completa sobre el
+mapa. El visor completo no cambia. El logo bajó a `z-[4]` para pasar por debajo del panel, que va
+en `z-5`.
+
 ### Corregido: la configuración de vitest no reflejaba la del build
 
 `vitest.config.js` no declaraba los alias `@logos`, `@icons` ni `@png`, ni los `define` de

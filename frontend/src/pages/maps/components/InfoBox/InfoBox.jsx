@@ -25,10 +25,11 @@ import DismissGesture from './components/DismissGesture';
 import WhatsNewModal from '../WhatsNewModal';
 import { useColibriOpen } from '@hooks/useColibriOpen';
 
-const InfoBox = () => {
+const InfoBox = ({ forceDesktop = false }) => {
     const openColibri = useColibriOpen();
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers, mapRef, paneMapInstances, compareMode } = useContext(MapsContext);
-    const { isMobile } = useSider();
+    const { isMobile: siderIsMobile } = useSider();
+    const isMobile = forceDesktop ? false : siderIsMobile;
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
     const { selectAlternativeLayer, loadMoreFeatures, loadMorePolygonFeatures } = useFeatureInfo();
     const panelRef = useRef(null);
