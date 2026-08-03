@@ -5,6 +5,25 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.0] - 2026-08-03
+
+### Corregido: la tarjeta del embed abría como bottom sheet en escritorio
+
+`InfoBox` decidía su variante con el `isMobile` de `SiderContext`, que mide **el ancho del iframe,
+no el de la ventana**. Un embed de 640px dentro de un monitor de 1920 se daba por teléfono y abría
+el bottom sheet a pantalla completa, tapando el mapa que el visitante quería ver.
+
+La prop nueva `forceDesktop` corta esa decisión en el único punto donde se toma; el embed la pasa y
+el visor completo queda igual. Al probarlo salió lo que no se veía con la tarjeta cerrada: el logo
+la tapaba, porque estaba en `z-10` y el panel va en `z-5`. El logo bajó a `z-[4]`.
+
+### Cambiado: el logo del embed toma la métrica de la barra de zoom
+
+40px de alto —el ancho exacto de ese contenedor—, su misma sombra y un SVG de 24px, la altura de
+sus iconos. El radio se queda en los 8px de `--mapalab-radius`, el del contenedor del widget: la
+píldora de la barra de zoom no le sienta a una marca. Se retiró el escalón `md:`, porque la barra
+de zoom tampoco lo tiene y el logo se encogía sólo él dentro de iframes angostos.
+
 ## [1.115.0] - 2026-08-03
 
 ### Agregado: barra de escala y tarjeta del marcador en el embed
@@ -22,18 +41,6 @@ lo que muestra el marcador `iieg_hq` del visor: quien embebe marca su propia sed
 Los dos son texto plano, con espacios colapsados y recortados a 120 y 400 caracteres. React los
 escapa al renderizarlos y `raw` en `List` sólo evita el formateo numérico, así que no hay camino de
 HTML desde la URL a la tarjeta.
-
-La tarjeta del embed va **siempre en variante de escritorio**, con `InfoBox forceDesktop`. Sus
-breakpoints miran el ancho del iframe, no el de la ventana: un embed de 640px dentro de un monitor
-de 1920 daba por hecho que era un teléfono y abría el bottom sheet a pantalla completa sobre el
-mapa. El visor completo no cambia. El logo bajó a `z-[4]` para pasar por debajo del panel, que va
-en `z-5`.
-
-El logo toma su métrica de la barra de zoom: 40px de alto —el ancho de ese contenedor—, la misma
-sombra y un SVG de 24px, igual que sus iconos. El radio se queda en los 8px de
-`--mapalab-radius`, el del contenedor del widget: la píldora de la barra de zoom no le sienta a una
-marca. Sin escalón `md:`, porque la barra de zoom tampoco lo tiene y el logo se encogía sólo él
-dentro de iframes angostos.
 
 ### Corregido: la configuración de vitest no reflejaba la del build
 
