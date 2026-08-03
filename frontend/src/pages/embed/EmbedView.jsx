@@ -1,8 +1,12 @@
 import 'ol/ol.css';
 import { useEffect, useState } from 'react';
 import MapView from '@mapsComponents/MapView';
+import MapAttribution from '@mapsComponents/MapAttribution';
+import MapControls from '@mapsComponents/MapControls';
 import LayerNotices from '@mapsComponents/LayerNotices/LayerNotices';
 import Loading from '@components/Loading';
+import { SiderProvider } from '@contexts/SiderContext';
+import EmbedBrand from '@pages/embed/EmbedBrand';
 import EmbedError from '@pages/embed/EmbedError';
 import { fetchEmbedConfig } from '@services/embedService';
 import { useEmbedActivation } from '@pages/embed/hooks/useEmbedActivation';
@@ -31,10 +35,15 @@ const EmbedInner = ({ params, config }) => {
     }, [config, params.layers, params.share, markReady]);
     const noticesEnabled = params.notices !== 'false';
     return (
-        <div className="relative w-full h-dvh">
-            <MapView />
-            <LayerNotices enabled={noticesEnabled} />
-        </div>
+        <SiderProvider>
+            <div className="relative w-full h-dvh">
+                <MapView />
+                <LayerNotices enabled={noticesEnabled} />
+                <EmbedBrand params={params} />
+                <MapControls />
+                <MapAttribution hideActions />
+            </div>
+        </SiderProvider>
     );
 };
 

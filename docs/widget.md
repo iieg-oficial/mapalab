@@ -1,6 +1,6 @@
 # Widget embebible `<iieg-mapalab>`
 
-> Versión actual: **`1.2.0`** · Bundle ~24 KB / **8.6 KB gzip**
+> Versión actual: **`1.3.0`** · Bundle ~23 KB / **8.4 KB gzip**
 
 Web Component que permite a otras instituciones embeber el visor MapaLab en sus sitios mediante una API key administrada en mariachi. Monta un `<iframe>` aislado que renderiza el visor en `/embed` y captura métricas de Core Web Vitals desde el navegador del visitante.
 
@@ -42,7 +42,7 @@ El **panel administrativo** `/administrador/mapalab/api-keys` permite armar mapa
 | `marker-color` | string | `#5c2472` | Color hex del círculo detrás del icono. Con `marker-icon` propio y sin este atributo, el icono se dibuja sin círculo. |
 | `zoom` | string | "" | Zoom inicial (1–20). |
 | `basemap` | string | `osm` | Identificador del basemap. |
-| `controls` | string | `zoom` | Controles a mostrar separados por coma: `zoom`, `fullscreen`, `search`. |
+| `controls` | string | `zoom` | **Sin efecto todavía.** Viaja a la URL del embed pero nada lo lee: el visor embebido muestra siempre su barra de acercar / mi ubicación / alejar. Se conserva para no romper a quien ya lo pasa. |
 | `height` | string | — | Altura del componente. Acepta `500`, `100%`, `60vh`, etc. |
 | `width` | string | `100%` | Ancho del componente. |
 | `base-url` | string | `https://iieg.gob.mx` | Override del base URL — útil sólo para entornos locales. En producción **no lo uses**. |
@@ -146,6 +146,22 @@ Para ver las capas disponibles, consulta `/mapalab/api/layers/tree` o usa el Pla
 </iieg-mapalab>
 ```
 
+## Qué trae el visor embebido
+
+Sobre el mapa van tres cosas, todas heredadas del visor completo y ninguna configurable:
+
+- **Logo de MapaLab**, arriba a la izquierda. Es un enlace: abre el visor completo en pestaña
+  nueva con el mismo estado —`share` si lo hay, o `layers` + `center`/`marker` + `zoom`—, así que
+  el visitante siempre tiene a dónde ir por el mapa entero.
+- **Controles**, abajo a la izquierda: acercar, mi ubicación y alejar; al alejar aparece además
+  "centrar en Jalisco". Son los mismos `MapControls` del visor. "Mi ubicación" necesita que el
+  iframe traiga `allow="geolocation"`, que el widget ya pone.
+- **Atribución**, abajo a la derecha. En pantallas anchas es una pastilla "Contribuciones ©" que se
+  despliega al pasar el cursor; en angostas, un botón `©` que abre la lista. Cubre OpenStreetMap,
+  CARTO, OpenLayers, GeoServer, PostGIS y la licencia del IIEG.
+
+El embed sigue siendo de solo lectura: no hay panel de capas, dibujo, medición ni swipe.
+
 ## Eventos (postMessage → CustomEvent)
 
 El iframe del embed emite mensajes al `window.parent` y el widget los reexpone como eventos custom del elemento:
@@ -235,7 +251,7 @@ En los tres casos el overlay incluye:
 - Botón **Reintentar** (recarga el iframe).
 - Link **Abrir el mapa en MapaLab** (visor completo del IIEG en pestaña nueva, con los mismos `share` o `layers`).
 
-El widget también pinta un footer pequeño "Fuente: IIEG" en la esquina inferior derecha mientras el mapa está cargado, como atribución obligatoria (no se puede ocultar).
+La atribución no la pinta el widget: vive dentro del visor embebido (ver abajo).
 
 ## Métricas y administración
 

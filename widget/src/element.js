@@ -96,25 +96,6 @@ export class IiegMapalab extends LitElement {
         .mapalab-overlay a:hover, .mapalab-overlay button:hover {
             opacity: 0.9;
         }
-        .mapalab-footer {
-            position: absolute;
-            bottom: 6px;
-            right: 8px;
-            font-size: 10px;
-            color: rgba(0, 0, 0, 0.5);
-            background: rgba(255, 255, 255, 0.8);
-            padding: 2px 6px;
-            border-radius: 4px;
-            pointer-events: auto;
-            z-index: 2;
-        }
-        .mapalab-footer a {
-            color: inherit;
-            text-decoration: none;
-        }
-        .mapalab-footer a:hover {
-            text-decoration: underline;
-        }
     `;
 
     constructor() {
@@ -287,7 +268,6 @@ export class IiegMapalab extends LitElement {
             );
         }
         const src = this._buildSrc();
-        const showFooter = !this._ready ? false : true;
         return html`
             <iframe
                 src=${src}
@@ -296,11 +276,6 @@ export class IiegMapalab extends LitElement {
                 referrerpolicy="strict-origin-when-cross-origin"
                 loading="lazy"
             ></iframe>
-            ${showFooter ? html`
-                <div class="mapalab-footer" aria-hidden="true">
-                    Fuente: <a href="https://iieg.gob.mx" target="_blank" rel="noopener">IIEG</a>
-                </div>
-            ` : ''}
         `;
     }
 }

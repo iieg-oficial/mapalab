@@ -5,6 +5,38 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.114.0] - 2026-08-03
+
+### Agregado: el embed estrena controles, logo y atribución del visor
+
+El visor embebido era un mapa mudo: se podía arrastrar y hacer rueda, pero no había botones de
+zoom, nada identificaba de dónde venía el mapa y la única marca era un `Fuente: IIEG` de diez
+píxeles que pintaba el widget por fuera del iframe.
+
+Ahora monta tres piezas que ya existían en el visor completo, sin componentes nuevos salvo el del
+logo: `MapControls` abajo a la izquierda (acercar, mi ubicación, alejar y el "centrar en Jalisco"
+que asoma al alejar) y `MapAttribution` abajo a la derecha, con `hideActions` para dejar fuera el
+botón de reportar y la entrada al catálogo, que no aplican a un embed. La atribución arranca
+contraída —pastilla "Contribuciones ©" en pantallas anchas, botón `©` en angostas— y se despliega
+sola al pasar el cursor.
+
+Los dos cuelgan de `SiderContext`, así que el embed se envuelve en `SiderProvider`. Sin sider que
+esquivar, `useSiderAdaptivePosition` los ancla a 16px del borde y no hay nada más que ajustar.
+
+Arriba a la izquierda va el logo grande de MapaLab, que es un enlace al visor completo con el
+estado actual (`share`, o `layers` + `center`/`marker` + `zoom`). Reemplaza al `Fuente: IIEG` con
+algo que además sirve para navegar.
+
+### Eliminado: el footer `Fuente: IIEG` del widget (1.3.0)
+
+Vivía en el shadow DOM del web component, superpuesto al iframe. La atribución real ahora la pinta
+el visor, que es donde están los datos que hay que atribuir —OpenStreetMap, CARTO, OpenLayers,
+GeoServer, PostGIS y la licencia del IIEG— y no sólo el nombre del instituto. El bundle baja de
+24 KB a 23.3 KB.
+
+`controls` queda documentado como **sin efecto**: viaja a la URL del embed y nadie lo lee. Se
+conserva el atributo para no romper a quien ya lo pasa.
+
 ## [1.113.0] - 2026-08-03
 
 ### Agregado: marcador de punto en el embed y en el widget
