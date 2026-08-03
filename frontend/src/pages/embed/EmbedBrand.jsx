@@ -25,7 +25,7 @@ const EmbedBrand = ({ params }) => {
             target="_blank"
             rel="noopener noreferrer"
             title="Abrir en MapaLab"
-            className="absolute top-3 left-3 z-[4] flex h-10 items-center rounded-[20px] bg-white px-2 shadow-[0_5px_20px_#1A26641A]"
+            className="absolute top-3 left-3 z-[4] flex h-10 items-center rounded-[8px] bg-white px-2 shadow-[0_5px_20px_#1A26641A]"
         >
             <img src={mapalabLarge} alt="MapaLab — IIEG" className="h-6 w-auto" />
         </a>

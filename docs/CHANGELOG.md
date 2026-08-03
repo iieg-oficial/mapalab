@@ -29,9 +29,11 @@ de 1920 daba por hecho que era un teléfono y abría el bottom sheet a pantalla 
 mapa. El visor completo no cambia. El logo bajó a `z-[4]` para pasar por debajo del panel, que va
 en `z-5`.
 
-El logo toma su métrica de la barra de zoom: 40px de alto —el ancho de ese contenedor—, el mismo
-`rounded-[20px]`, la misma sombra y un SVG de 24px, igual que sus iconos. Sin escalón `md:`,
-porque la barra de zoom tampoco lo tiene y el logo se encogía sólo él dentro de iframes angostos.
+El logo toma su métrica de la barra de zoom: 40px de alto —el ancho de ese contenedor—, la misma
+sombra y un SVG de 24px, igual que sus iconos. El radio se queda en los 8px de
+`--mapalab-radius`, el del contenedor del widget: la píldora de la barra de zoom no le sienta a una
+marca. Sin escalón `md:`, porque la barra de zoom tampoco lo tiene y el logo se encogía sólo él
+dentro de iframes angostos.
 
 ### Corregido: la configuración de vitest no reflejaba la del build
 
