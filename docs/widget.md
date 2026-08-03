@@ -1,6 +1,6 @@
 # Widget embebible `<iieg-mapalab>`
 
-> Versión actual: **`1.1.0`** · Bundle ~23 KB / **8.4 KB gzip**
+> Versión actual: **`1.2.0`** · Bundle ~24 KB / **8.6 KB gzip**
 
 Web Component que permite a otras instituciones embeber el visor MapaLab en sus sitios mediante una API key administrada en mariachi. Monta un `<iframe>` aislado que renderiza el visor en `/embed` y captura métricas de Core Web Vitals desde el navegador del visitante.
 
@@ -37,6 +37,9 @@ El **panel administrativo** `/administrador/mapalab/api-keys` permite armar mapa
 | `share` | string | `""` | Hash corto de un share guardado en mapalab (ej. `zoqpv4eu2t`). Si está presente, **ignora** `layers`/`center`/`zoom` y recrea el estado completo del share: capas, opacidades, filtros CQL, vista y simbología. |
 | `layers` | string | `""` | Lista separada por comas de capas en formato `workspace:layer` o por id interno. Ej: `economia:cultivos,salud:hospitales`. Sólo se usa si **no** se pasó `share`. |
 | `center` | string | "" | Coordenadas iniciales `lat,lng`. Si vacío, usa el centro default de Jalisco. |
+| `marker` | string | `""` | Coordenadas `lat,lng` de un marcador fijo. Si no se dio `center`, el mapa además se centra ahí. Funciona junto con `share` y con `layers`. |
+| `marker-icon` | string | — | URL de la imagen del marcador (`https:` o `data:image/…`). Si se omite, se usa el pin circular de MapaLab. |
+| `marker-color` | string | `#5c2472` | Color hex del círculo detrás del icono. Con `marker-icon` propio y sin este atributo, el icono se dibuja sin círculo. |
 | `zoom` | string | "" | Zoom inicial (1–20). |
 | `basemap` | string | `osm` | Identificador del basemap. |
 | `controls` | string | `zoom` | Controles a mostrar separados por coma: `zoom`, `fullscreen`, `search`. |
@@ -75,6 +78,41 @@ Ventajas frente a listar `layers`:
 4. Copiar el `hash` del final de la URL (`?s=<hash>`) y pegarlo en el atributo `share` del widget.
 
 Los shares creados desde la UI son **temporales** (90 días). Para que un embed funcione indefinidamente, un admin debe **anclar** (pin) el share desde el endpoint interno `POST /shares/{id}/pin-permanent` para que no expire.
+
+## Marcar un punto en el mapa
+
+Para los casos de "aquí estamos" —una página de contacto, la sede de una dependencia, la ubicación
+de un trámite— no hace falta ninguna capa: basta el marcador.
+
+```html
+<!-- Sede del IIEG con el pin institucional -->
+<iieg-mapalab
+    api-key="mk_pub_…"
+    marker="20.68443,-103.44669"
+    zoom="16"
+    height="400">
+</iieg-mapalab>
+
+<!-- Icono propio, sin círculo de fondo -->
+<iieg-mapalab
+    api-key="mk_pub_…"
+    marker="20.68443,-103.44669"
+    marker-icon="https://mi-dependencia.gob.mx/pin.svg"
+    zoom="16"
+    height="400">
+</iieg-mapalab>
+```
+
+El orden es `lat,lng`, igual que en `center` y que en Google Maps. Sin `zoom` el mapa abre en la
+vista default de Jalisco, que para un punto individual queda demasiado lejos: para una dirección
+usa entre 15 y 17.
+
+El icono default es el cuadro de MapaLab sobre un círculo `#5c2472`, anclado al centro del punto.
+Un `marker-icon` propio se ancla a su base (`[0.5, 1]`), que es la convención de los pines en gota,
+y se dibuja a escala 1: la imagen debe venir ya al tamaño deseado.
+
+Solo se aceptan iconos por `https:`, `http:` o `data:image/…`, y colores en hexadecimal; cualquier
+otro valor se ignora y se cae al default.
 
 ## Identificar capas: formato `workspace:layer`
 

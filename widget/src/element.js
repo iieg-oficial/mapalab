@@ -15,6 +15,9 @@ export class IiegMapalab extends LitElement {
         basemap: { type: String },
         controls: { type: String },
         notices: { type: String },
+        marker: { type: String },
+        markerIcon: { type: String, attribute: 'marker-icon' },
+        markerColor: { type: String, attribute: 'marker-color' },
         height: { type: String, reflect: true },
         width: { type: String, reflect: true },
         baseUrl: { type: String, attribute: 'base-url' },
@@ -124,6 +127,9 @@ export class IiegMapalab extends LitElement {
         this.basemap = '';
         this.controls = '';
         this.notices = '';
+        this.marker = '';
+        this.markerIcon = '';
+        this.markerColor = '';
         this.height = '';
         this.width = '';
         this.baseUrl = '';
@@ -200,9 +206,10 @@ export class IiegMapalab extends LitElement {
         const params = new URLSearchParams();
         if (this.share) {
             params.set('s', this.share);
-        } else if (this.layers) {
-            params.set('layers', this.layers);
+        } else {
+            if (this.layers) params.set('layers', this.layers);
             if (this.center) params.set('center', this.center);
+            if (this.marker) params.set('marker', this.marker);
             if (this.zoom) params.set('zoom', this.zoom);
         }
         const qs = params.toString();
@@ -220,6 +227,9 @@ export class IiegMapalab extends LitElement {
             if (this.center) params.set('center', this.center);
             if (this.zoom) params.set('zoom', this.zoom);
         }
+        if (this.marker) params.set('marker', this.marker);
+        if (this.markerIcon) params.set('markerIcon', this.markerIcon);
+        if (this.markerColor) params.set('markerColor', this.markerColor);
         if (this.basemap) params.set('basemap', this.basemap);
         if (this.controls) params.set('controls', this.controls);
         if (this.notices === 'false' || this.notices === false) params.set('notices', 'false');

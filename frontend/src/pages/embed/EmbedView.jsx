@@ -7,6 +7,7 @@ import EmbedError from '@pages/embed/EmbedError';
 import { fetchEmbedConfig } from '@services/embedService';
 import { useEmbedActivation } from '@pages/embed/hooks/useEmbedActivation';
 import { useEmbedFeatureRelay } from '@pages/embed/hooks/useEmbedFeatureRelay';
+import { useEmbedMarker } from '@pages/embed/hooks/useEmbedMarker';
 import { useEmbedTelemetry } from '@pages/embed/hooks/useEmbedTelemetry';
 import { useEmbedViewSync } from '@pages/embed/hooks/useEmbedViewSync';
 import { postError, postReady } from '@pages/embed/helpers/postMessage';
@@ -15,6 +16,7 @@ import { postError, postReady } from '@pages/embed/helpers/postMessage';
 const EmbedInner = ({ params, config }) => {
     useEmbedActivation({ shareId: params.share, requestedLayers: params.layers });
     useEmbedFeatureRelay();
+    useEmbedMarker({ marker: params.marker, icon: params.markerIcon, color: params.markerColor });
     useEmbedViewSync();
     const { markReady } = useEmbedTelemetry({ apiKey: params.key, enabled: Boolean(params.key) });
     useEffect(() => {

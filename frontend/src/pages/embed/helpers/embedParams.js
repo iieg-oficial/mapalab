@@ -1,3 +1,29 @@
+import { parseLatLng } from '@pages/maps/helpers/defaultView';
+
+const ICON_ALLOWED_SCHEMES = ['https:', 'http:'];
+const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+
+export const sanitizeIconUrl = (raw) => {
+    if (!raw) return null;
+    const value = String(raw).trim();
+    if (value.startsWith('data:image/')) return value;
+    try {
+        const parsed = new URL(value, window.location.origin);
+        return ICON_ALLOWED_SCHEMES.includes(parsed.protocol) ? parsed.href : null;
+    } catch {
+        return null;
+    }
+};
+
+
+export const sanitizeColor = (raw) => {
+    if (!raw) return null;
+    const value = String(raw).trim();
+    return HEX_COLOR.test(value) ? value : null;
+};
+
+
 export const parseEmbedParams = (searchParams) => {
     const key = searchParams.get('key') || '';
     const share = searchParams.get('s') || searchParams.get('share') || '';
@@ -6,7 +32,6 @@ export const parseEmbedParams = (searchParams) => {
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean);
-    const center = searchParams.get('center');
     const zoomRaw = searchParams.get('zoom');
     const basemap = searchParams.get('basemap') || 'osm';
     const controlsRaw = searchParams.get('controls') || 'zoom';
@@ -15,13 +40,8 @@ export const parseEmbedParams = (searchParams) => {
         .map((s) => s.trim())
         .filter(Boolean);
 
-    let centerCoords = null;
-    if (center) {
-        const parts = center.split(',').map((n) => Number(n.trim()));
-        if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) {
-            centerCoords = parts;
-        }
-    }
+    const centerCoords = parseLatLng(searchParams.get('center'));
+    const markerCoords = parseLatLng(searchParams.get('marker'));
 
     const zoom = zoomRaw ? Number(zoomRaw) : null;
     const notices = searchParams.get('notices');
@@ -34,6 +54,9 @@ export const parseEmbedParams = (searchParams) => {
         basemap,
         controls,
         notices,
+        marker: markerCoords,
+        markerIcon: sanitizeIconUrl(searchParams.get('markerIcon')),
+        markerColor: sanitizeColor(searchParams.get('markerColor')),
     };
 };
 

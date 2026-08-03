@@ -5,6 +5,36 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.113.0] - 2026-08-03
+
+### Agregado: marcador de punto en el embed y en el widget
+
+El embed sabe pintar un marcador. Se pide con `marker=lat,lng` en la URL o con el atributo
+`marker` del widget, y no necesita ninguna capa activa: alcanza para los casos de "aquí estamos"
+—una página de contacto, la sede de una dependencia— que hasta ahora obligaban a embeber Google
+Maps porque MapaLab no tenía forma de señalar un punto.
+
+El pin default es el cuadro de MapaLab sobre un círculo `#5c2472`, el mismo del marcador de la
+sede que ya vivía en `markerDefinitions`. Quien embeba puede sustituirlo con `marker-icon` y
+`marker-color`: el icono se acepta por `https:`, `http:` o `data:image/`, el color solo en
+hexadecimal, y lo que no valide se ignora en silencio y cae al default en vez de romper el mapa.
+Con icono propio y sin color, el pin se dibuja sin círculo y anclado a su base.
+
+El render reusa `showMarker` de `useMapMarker`, que ya estaba en `MapsProvider` y del que el embed
+ya colgaba sin usarlo. El hook nuevo, `useEmbedMarker`, solo espera a que exista la instancia del
+mapa y lo llama una vez.
+
+### Corregido: `center` y `zoom` del embed no hacían nada
+
+`parseEmbedParams` los leía desde 1.90.0 y nadie los consumía: `useMapInitialization` buscaba `lat`
+y `lon` —otros nombres— y encima solo los aplicaba cuando la URL traía `layers`. El resultado es
+que todo embed sin capas abría en la vista default de Jalisco, y el atributo `center` documentado
+en el widget nunca funcionó.
+
+Ahora `center` se resuelve con `parseLatLng` y se aplica sin exigir capas; si no viene `center`
+pero sí `marker`, el mapa se centra en el marcador. Los parámetros `lat`/`lon` del visor full
+siguen intactos.
+
 ## [1.112.0] - 2026-07-31
 
 ### Agregado: el tipo de geometría de cada capa en el panel de capas activas

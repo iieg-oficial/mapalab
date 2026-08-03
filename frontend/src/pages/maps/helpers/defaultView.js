@@ -10,6 +10,15 @@ export const getDefaultMapView = () => {
     };
 };
 
+export const parseLatLng = (raw) => {
+    if (!raw) return null;
+    const parts = String(raw).split(',').map((n) => Number(n.trim()));
+    if (parts.length !== 2 || !parts.every((n) => Number.isFinite(n))) return null;
+    const [lat, lng] = parts;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    return [lat, lng];
+};
+
 export const getMinZoom = () => (isMobileViewport() ? 7 : 8);
 
 export const ZOOM_ANIMATION_MS = 0;
