@@ -5,7 +5,7 @@ import { buildEmbedMarker } from '@pages/maps/helpers/markerDefinitions';
 const RETRY_MS = 200;
 const MARKER_ID = 'embed_marker';
 
-export const useEmbedMarker = ({ marker, icon = null, color = null }) => {
+export const useEmbedMarker = ({ marker, icon = null, color = null, title = null, description = null }) => {
     const { mapRef, showMarker, hideMarker } = useMapsContext();
     const appliedRef = useRef(false);
 
@@ -17,7 +17,7 @@ export const useEmbedMarker = ({ marker, icon = null, color = null }) => {
         const apply = () => {
             if (!mapRef?.current || typeof showMarker !== 'function') return false;
             appliedRef.current = true;
-            showMarker(buildEmbedMarker({ center: [lng, lat], icon, color }));
+            showMarker(buildEmbedMarker({ center: [lng, lat], icon, color, title, description }));
             return true;
         };
 
@@ -33,7 +33,7 @@ export const useEmbedMarker = ({ marker, icon = null, color = null }) => {
         return () => {
             if (intervalId) clearInterval(intervalId);
         };
-    }, [marker, icon, color, mapRef, showMarker]);
+    }, [marker, icon, color, title, description, mapRef, showMarker]);
 
     useEffect(() => () => {
         if (appliedRef.current) hideMarker?.(MARKER_ID);

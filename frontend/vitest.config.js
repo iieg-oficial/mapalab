@@ -7,6 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
     plugins: [react()],
+    define: {
+        __APP_VERSION__: JSON.stringify('0.0.0-test'),
+        __APP_LOC__: JSON.stringify(0)
+    },
     test: {
         globals: true,
         environment: 'happy-dom',
@@ -44,6 +48,9 @@ export default defineConfig({
             '@hooksMaps': path.resolve(__dirname, './src/pages/maps/hooks'),
             '@services': path.resolve(__dirname, './src/services'),
             '@assets': path.resolve(__dirname, './src/assets'),
+            '@logos': path.resolve(__dirname, './src/assets/logos'),
+            '@icons': path.resolve(__dirname, './src/assets/icons'),
+            '@png': path.resolve(__dirname, './src/assets/png'),
             '@constants': path.resolve(__dirname, './src/constants'),
             '@providers': path.resolve(__dirname, './src/providers'),
         }

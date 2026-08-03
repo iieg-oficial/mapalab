@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import MapView from '@mapsComponents/MapView';
 import MapAttribution from '@mapsComponents/MapAttribution';
 import MapControls from '@mapsComponents/MapControls';
+import ScaleLineControl from '@mapsComponents/ScaleLineControl';
+import InfoBox from '@mapsComponents/InfoBox/InfoBox';
 import LayerNotices from '@mapsComponents/LayerNotices/LayerNotices';
 import Loading from '@components/Loading';
 import { SiderProvider } from '@contexts/SiderContext';
@@ -20,7 +22,13 @@ import { postError, postReady } from '@pages/embed/helpers/postMessage';
 const EmbedInner = ({ params, config }) => {
     useEmbedActivation({ shareId: params.share, requestedLayers: params.layers });
     useEmbedFeatureRelay();
-    useEmbedMarker({ marker: params.marker, icon: params.markerIcon, color: params.markerColor });
+    useEmbedMarker({
+        marker: params.marker,
+        icon: params.markerIcon,
+        color: params.markerColor,
+        title: params.markerTitle,
+        description: params.markerDescription,
+    });
     useEmbedViewSync();
     const { markReady } = useEmbedTelemetry({ apiKey: params.key, enabled: Boolean(params.key) });
     useEffect(() => {
@@ -40,7 +48,9 @@ const EmbedInner = ({ params, config }) => {
                 <MapView />
                 <LayerNotices enabled={noticesEnabled} />
                 <EmbedBrand params={params} />
+                <InfoBox />
                 <MapControls />
+                <ScaleLineControl />
                 <MapAttribution hideActions />
             </div>
         </SiderProvider>

@@ -2,6 +2,8 @@ import { parseLatLng } from '@pages/maps/helpers/defaultView';
 
 const ICON_ALLOWED_SCHEMES = ['https:', 'http:'];
 const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+const MARKER_TITLE_MAX = 120;
+const MARKER_DESCRIPTION_MAX = 400;
 
 
 export const sanitizeIconUrl = (raw) => {
@@ -21,6 +23,13 @@ export const sanitizeColor = (raw) => {
     if (!raw) return null;
     const value = String(raw).trim();
     return HEX_COLOR.test(value) ? value : null;
+};
+
+
+export const sanitizeText = (raw, maxLength) => {
+    if (!raw) return null;
+    const value = String(raw).replace(/\s+/g, ' ').trim();
+    return value ? value.slice(0, maxLength) : null;
 };
 
 
@@ -57,6 +66,8 @@ export const parseEmbedParams = (searchParams) => {
         marker: markerCoords,
         markerIcon: sanitizeIconUrl(searchParams.get('markerIcon')),
         markerColor: sanitizeColor(searchParams.get('markerColor')),
+        markerTitle: sanitizeText(searchParams.get('markerTitle'), MARKER_TITLE_MAX),
+        markerDescription: sanitizeText(searchParams.get('markerDescription'), MARKER_DESCRIPTION_MAX),
     };
 };
 

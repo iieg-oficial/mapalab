@@ -5,6 +5,31 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.115.0] - 2026-08-03
+
+### Agregado: barra de escala y tarjeta del marcador en el embed
+
+`ScaleLineControl` se monta igual que los otros dos controles —mismo `SiderContext`, mismo anclaje
+a la izquierda— y queda justo debajo de los botones de zoom. Un mapa sin escala obliga a adivinar
+distancias, y el embed no tiene el panel de capas ni las herramientas de medición con que
+compensarlo.
+
+El marcador ya puede abrir una tarjeta. `marker-title` y `marker-description` la llenan y el
+`InfoBox` del visor la pinta; sin `marker-title` el pin sigue siendo decorativo y el clic no hace
+nada. Se decidió que fueran configurables en vez de heredar la ficha institucional del IIEG, que es
+lo que muestra el marcador `iieg_hq` del visor: quien embebe marca su propia sede, no la nuestra.
+
+Los dos son texto plano, con espacios colapsados y recortados a 120 y 400 caracteres. React los
+escapa al renderizarlos y `raw` en `List` sólo evita el formateo numérico, así que no hay camino de
+HTML desde la URL a la tarjeta.
+
+### Corregido: la configuración de vitest no reflejaba la del build
+
+`vitest.config.js` no declaraba los alias `@logos`, `@icons` ni `@png`, ni los `define` de
+`__APP_VERSION__` y `__APP_LOC__`. Cualquier test que tocara un módulo con un logo importado
+—`markerDefinitions`, por ejemplo— fallaba al resolver el import, no por el test sino por la
+config. Los tests nuevos del marcador del embed son los primeros que pasan por ahí.
+
 ## [1.114.0] - 2026-08-03
 
 ### Agregado: el embed estrena controles, logo y atribución del visor
