@@ -25,9 +25,9 @@ const EmbedBrand = ({ params }) => {
             target="_blank"
             rel="noopener noreferrer"
             title="Abrir en MapaLab"
-            className="absolute top-3 left-3 z-[4] flex items-center rounded-[12px] bg-white/90 px-2 py-1 shadow-[0_2px_4px_0_rgba(0,0,0,0.10)] transition-colors hover:bg-white md:px-3 md:py-1.5"
+            className="absolute top-3 left-3 z-[4] flex h-10 items-center rounded-[20px] bg-white px-2 shadow-[0_5px_20px_#1A26641A]"
         >
-            <img src={mapalabLarge} alt="MapaLab — IIEG" className="h-5 w-auto md:h-7" />
+            <img src={mapalabLarge} alt="MapaLab — IIEG" className="h-6 w-auto" />
         </a>
     );
 };
