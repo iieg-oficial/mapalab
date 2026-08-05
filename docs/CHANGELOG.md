@@ -5,6 +5,21 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.1] - 2026-08-05
+
+### Cambiado: el aviso de privacidad se enlaza desde acervo
+
+`footerConfig.linkPrivacyPolicy` y el enlace de soporte de la home pasan a
+`https://iieg.jalisco.gob.mx/aviso-de-privacidad`, ruta reservada del dominio que el gateway sirve
+desde acervo. La URL no lleva fecha ni ruta del objeto: publicar una versión nueva es reemplazar el
+archivo en el bucket, sin tocar este repo. Antes cada frontend guardaba la URL con la fecha del PDF
+y quedaban desincronizados — sieej se quedó apuntando a la versión de enero de 2025 y llevaba meses
+respondiendo 404.
+
+**El valor del config es solo el respaldo.** La home lee `apiFooter.privacyPolicyHref` del CMS de
+mariachi y solo cae al config si viene vacío, así que en cada entorno hay que actualizar también el
+campo *URL del aviso de privacidad* de la sección footer.
+
 ## [1.116.0] - 2026-08-03
 
 ### Corregido: la tarjeta del embed abría como bottom sheet en escritorio
