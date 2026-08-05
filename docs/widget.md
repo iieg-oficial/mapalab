@@ -1,6 +1,6 @@
 # Widget embebible `<iieg-mapalab>`
 
-> Versión actual: **`1.1.0`** · Bundle ~23 KB / **8.4 KB gzip**
+> Versión actual: **`1.4.0`** · Bundle ~23.5 KB / **8.5 KB gzip**
 
 Web Component que permite a otras instituciones embeber el visor MapaLab en sus sitios mediante una API key administrada en mariachi. Monta un `<iframe>` aislado que renderiza el visor en `/embed` y captura métricas de Core Web Vitals desde el navegador del visitante.
 
@@ -37,9 +37,14 @@ El **panel administrativo** `/administrador/mapalab/api-keys` permite armar mapa
 | `share` | string | `""` | Hash corto de un share guardado en mapalab (ej. `zoqpv4eu2t`). Si está presente, **ignora** `layers`/`center`/`zoom` y recrea el estado completo del share: capas, opacidades, filtros CQL, vista y simbología. |
 | `layers` | string | `""` | Lista separada por comas de capas en formato `workspace:layer` o por id interno. Ej: `economia:cultivos,salud:hospitales`. Sólo se usa si **no** se pasó `share`. |
 | `center` | string | "" | Coordenadas iniciales `lat,lng`. Si vacío, usa el centro default de Jalisco. |
+| `marker` | string | `""` | Coordenadas `lat,lng` de un marcador fijo. Si no se dio `center`, el mapa además se centra ahí. Funciona junto con `share` y con `layers`. |
+| `marker-icon` | string | — | URL de la imagen del marcador (`https:` o `data:image/…`). Si se omite, se usa el pin circular de MapaLab. |
+| `marker-color` | string | `#5c2472` | Color hex del círculo detrás del icono. Con `marker-icon` propio y sin este atributo, el icono se dibuja sin círculo. |
+| `marker-title` | string | — | Encabezado de la tarjeta que abre el marcador al hacer clic. Sin este atributo el pin no tiene tarjeta. Máximo 120 caracteres. |
+| `marker-description` | string | — | Cuerpo de esa tarjeta. Se ignora si no hay `marker-title`. Máximo 400 caracteres. |
 | `zoom` | string | "" | Zoom inicial (1–20). |
 | `basemap` | string | `osm` | Identificador del basemap. |
-| `controls` | string | `zoom` | Controles a mostrar separados por coma: `zoom`, `fullscreen`, `search`. |
+| `controls` | string | `zoom` | **Sin efecto todavía.** Viaja a la URL del embed pero nada lo lee: el visor embebido muestra siempre su barra de acercar / mi ubicación / alejar. Se conserva para no romper a quien ya lo pasa. |
 | `height` | string | — | Altura del componente. Acepta `500`, `100%`, `60vh`, etc. |
 | `width` | string | `100%` | Ancho del componente. |
 | `base-url` | string | `https://iieg.gob.mx` | Override del base URL — útil sólo para entornos locales. En producción **no lo uses**. |
@@ -76,6 +81,60 @@ Ventajas frente a listar `layers`:
 
 Los shares creados desde la UI son **temporales** (90 días). Para que un embed funcione indefinidamente, un admin debe **anclar** (pin) el share desde el endpoint interno `POST /shares/{id}/pin-permanent` para que no expire.
 
+## Marcar un punto en el mapa
+
+Para los casos de "aquí estamos" —una página de contacto, la sede de una dependencia, la ubicación
+de un trámite— no hace falta ninguna capa: basta el marcador.
+
+```html
+<!-- Sede del IIEG con el pin institucional -->
+<iieg-mapalab
+    api-key="mk_pub_…"
+    marker="20.68443,-103.44669"
+    zoom="16"
+    height="400">
+</iieg-mapalab>
+
+<!-- Icono propio, sin círculo de fondo -->
+<iieg-mapalab
+    api-key="mk_pub_…"
+    marker="20.68443,-103.44669"
+    marker-icon="https://mi-dependencia.gob.mx/pin.svg"
+    zoom="16"
+    height="400">
+</iieg-mapalab>
+```
+
+El orden es `lat,lng`, igual que en `center` y que en Google Maps. Sin `zoom` el mapa abre en la
+vista default de Jalisco, que para un punto individual queda demasiado lejos: para una dirección
+usa entre 15 y 17.
+
+El icono default es el cuadro de MapaLab sobre un círculo `#5c2472`, anclado al centro del punto.
+Un `marker-icon` propio se ancla a su base (`[0.5, 1]`), que es la convención de los pines en gota,
+y se dibuja a escala 1: la imagen debe venir ya al tamaño deseado.
+
+Solo se aceptan iconos por `https:`, `http:` o `data:image/…`, y colores en hexadecimal; cualquier
+otro valor se ignora y se cae al default.
+
+### Tarjeta al hacer clic
+
+Con `marker-title` el pin deja de ser decorativo y abre la tarjeta del visor:
+
+```html
+<iieg-mapalab
+    api-key="mk_pub_…"
+    marker="20.68443,-103.44669"
+    marker-title="Instituto de Información Estadística y Geográfica de Jalisco"
+    marker-description="Calz. de los Pirules #71, Granja, 45010. Zapopan, Jal."
+    zoom="16"
+    height="400">
+</iieg-mapalab>
+```
+
+Sin `marker-title` no hay tarjeta y el clic no hace nada; `marker-description` sola se ignora. Los
+dos son texto plano —se colapsan los espacios y se recortan a 120 y 400 caracteres— y se pintan
+escapados: no admiten HTML ni enlaces.
+
 ## Identificar capas: formato `workspace:layer`
 
 El sistema acepta capas en dos formatos:
@@ -107,6 +166,22 @@ Para ver las capas disponibles, consulta `/mapalab/api/layers/tree` o usa el Pla
     height="500">
 </iieg-mapalab>
 ```
+
+## Qué trae el visor embebido
+
+Sobre el mapa van tres cosas, todas heredadas del visor completo y ninguna configurable:
+
+- **Logo de MapaLab**, arriba a la izquierda. Es un enlace: abre el visor completo en pestaña
+  nueva con el mismo estado —`share` si lo hay, o `layers` + `center`/`marker` + `zoom`—, así que
+  el visitante siempre tiene a dónde ir por el mapa entero.
+- **Controles**, abajo a la izquierda: acercar, mi ubicación y alejar; al alejar aparece además
+  "centrar en Jalisco". Son los mismos `MapControls` del visor. "Mi ubicación" necesita que el
+  iframe traiga `allow="geolocation"`, que el widget ya pone.
+- **Atribución**, abajo a la derecha. En pantallas anchas es una pastilla "Contribuciones ©" que se
+  despliega al pasar el cursor; en angostas, un botón `©` que abre la lista. Cubre OpenStreetMap,
+  CARTO, OpenLayers, GeoServer, PostGIS y la licencia del IIEG.
+
+El embed sigue siendo de solo lectura: no hay panel de capas, dibujo, medición ni swipe.
 
 ## Eventos (postMessage → CustomEvent)
 
@@ -197,7 +272,7 @@ En los tres casos el overlay incluye:
 - Botón **Reintentar** (recarga el iframe).
 - Link **Abrir el mapa en MapaLab** (visor completo del IIEG en pestaña nueva, con los mismos `share` o `layers`).
 
-El widget también pinta un footer pequeño "Fuente: IIEG" en la esquina inferior derecha mientras el mapa está cargado, como atribución obligatoria (no se puede ocultar).
+La atribución no la pinta el widget: vive dentro del visor embebido (ver abajo).
 
 ## Métricas y administración
 

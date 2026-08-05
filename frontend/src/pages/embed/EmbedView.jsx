@@ -1,12 +1,19 @@
 import 'ol/ol.css';
 import { useEffect, useState } from 'react';
 import MapView from '@mapsComponents/MapView';
+import MapAttribution from '@mapsComponents/MapAttribution';
+import MapControls from '@mapsComponents/MapControls';
+import ScaleLineControl from '@mapsComponents/ScaleLineControl';
+import InfoBox from '@mapsComponents/InfoBox/InfoBox';
 import LayerNotices from '@mapsComponents/LayerNotices/LayerNotices';
 import Loading from '@components/Loading';
+import { SiderProvider } from '@contexts/SiderContext';
+import EmbedBrand from '@pages/embed/EmbedBrand';
 import EmbedError from '@pages/embed/EmbedError';
 import { fetchEmbedConfig } from '@services/embedService';
 import { useEmbedActivation } from '@pages/embed/hooks/useEmbedActivation';
 import { useEmbedFeatureRelay } from '@pages/embed/hooks/useEmbedFeatureRelay';
+import { useEmbedMarker } from '@pages/embed/hooks/useEmbedMarker';
 import { useEmbedTelemetry } from '@pages/embed/hooks/useEmbedTelemetry';
 import { useEmbedViewSync } from '@pages/embed/hooks/useEmbedViewSync';
 import { postError, postReady } from '@pages/embed/helpers/postMessage';
@@ -15,6 +22,13 @@ import { postError, postReady } from '@pages/embed/helpers/postMessage';
 const EmbedInner = ({ params, config }) => {
     useEmbedActivation({ shareId: params.share, requestedLayers: params.layers });
     useEmbedFeatureRelay();
+    useEmbedMarker({
+        marker: params.marker,
+        icon: params.markerIcon,
+        color: params.markerColor,
+        title: params.markerTitle,
+        description: params.markerDescription,
+    });
     useEmbedViewSync();
     const { markReady } = useEmbedTelemetry({ apiKey: params.key, enabled: Boolean(params.key) });
     useEffect(() => {
@@ -29,10 +43,17 @@ const EmbedInner = ({ params, config }) => {
     }, [config, params.layers, params.share, markReady]);
     const noticesEnabled = params.notices !== 'false';
     return (
-        <div className="relative w-full h-dvh">
-            <MapView />
-            <LayerNotices enabled={noticesEnabled} />
-        </div>
+        <SiderProvider>
+            <div className="relative w-full h-dvh">
+                <MapView />
+                <LayerNotices enabled={noticesEnabled} />
+                <EmbedBrand params={params} />
+                <InfoBox forceDesktop />
+                <MapControls />
+                <ScaleLineControl />
+                <MapAttribution hideActions />
+            </div>
+        </SiderProvider>
     );
 };
 

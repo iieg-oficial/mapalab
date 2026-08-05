@@ -29,7 +29,7 @@ const footerConfig = {
     ],
     copyright: `Instituto de Información Estadística y Geográfica de Jalisco © ${new Date().getFullYear()}`,
     privacyPolicy: 'Aviso de Privacidad',
-    linkPrivacyPolicy: 'https://iieg.gob.mx/ns/wp-content/uploads/2025/06/Aviso_de_Privacidad_Integral_IIEG_06_2025.pdf'
+    linkPrivacyPolicy: 'https://iieg.jalisco.gob.mx/aviso-de-privacidad'
 };
 
 export default footerConfig;

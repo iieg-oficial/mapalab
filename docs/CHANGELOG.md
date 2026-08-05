@@ -5,6 +5,127 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.1] - 2026-08-05
+
+### Cambiado: el aviso de privacidad se enlaza desde acervo
+
+`footerConfig.linkPrivacyPolicy` y el enlace de soporte de la home pasan a
+`https://iieg.jalisco.gob.mx/aviso-de-privacidad`, ruta reservada del dominio que el gateway sirve
+desde acervo. La URL no lleva fecha ni ruta del objeto: publicar una versión nueva es reemplazar el
+archivo en el bucket, sin tocar este repo. Antes cada frontend guardaba la URL con la fecha del PDF
+y quedaban desincronizados — sieej se quedó apuntando a la versión de enero de 2025 y llevaba meses
+respondiendo 404.
+
+**El valor del config es solo el respaldo.** La home lee `apiFooter.privacyPolicyHref` del CMS de
+mariachi y solo cae al config si viene vacío, así que en cada entorno hay que actualizar también el
+campo *URL del aviso de privacidad* de la sección footer.
+
+## [1.116.0] - 2026-08-03
+
+### Corregido: la tarjeta del embed abría como bottom sheet en escritorio
+
+`InfoBox` decidía su variante con el `isMobile` de `SiderContext`, que mide **el ancho del iframe,
+no el de la ventana**. Un embed de 640px dentro de un monitor de 1920 se daba por teléfono y abría
+el bottom sheet a pantalla completa, tapando el mapa que el visitante quería ver.
+
+La prop nueva `forceDesktop` corta esa decisión en el único punto donde se toma; el embed la pasa y
+el visor completo queda igual. Al probarlo salió lo que no se veía con la tarjeta cerrada: el logo
+la tapaba, porque estaba en `z-10` y el panel va en `z-5`. El logo bajó a `z-[4]`.
+
+### Cambiado: el logo del embed toma la métrica de la barra de zoom
+
+40px de alto —el ancho exacto de ese contenedor—, su misma sombra y un SVG de 24px, la altura de
+sus iconos. El radio se queda en los 8px de `--mapalab-radius`, el del contenedor del widget: la
+píldora de la barra de zoom no le sienta a una marca. Se retiró el escalón `md:`, porque la barra
+de zoom tampoco lo tiene y el logo se encogía sólo él dentro de iframes angostos.
+
+## [1.115.0] - 2026-08-03
+
+### Agregado: barra de escala y tarjeta del marcador en el embed
+
+`ScaleLineControl` se monta igual que los otros dos controles —mismo `SiderContext`, mismo anclaje
+a la izquierda— y queda justo debajo de los botones de zoom. Un mapa sin escala obliga a adivinar
+distancias, y el embed no tiene el panel de capas ni las herramientas de medición con que
+compensarlo.
+
+El marcador ya puede abrir una tarjeta. `marker-title` y `marker-description` la llenan y el
+`InfoBox` del visor la pinta; sin `marker-title` el pin sigue siendo decorativo y el clic no hace
+nada. Se decidió que fueran configurables en vez de heredar la ficha institucional del IIEG, que es
+lo que muestra el marcador `iieg_hq` del visor: quien embebe marca su propia sede, no la nuestra.
+
+Los dos son texto plano, con espacios colapsados y recortados a 120 y 400 caracteres. React los
+escapa al renderizarlos y `raw` en `List` sólo evita el formateo numérico, así que no hay camino de
+HTML desde la URL a la tarjeta.
+
+### Corregido: la configuración de vitest no reflejaba la del build
+
+`vitest.config.js` no declaraba los alias `@logos`, `@icons` ni `@png`, ni los `define` de
+`__APP_VERSION__` y `__APP_LOC__`. Cualquier test que tocara un módulo con un logo importado
+—`markerDefinitions`, por ejemplo— fallaba al resolver el import, no por el test sino por la
+config. Los tests nuevos del marcador del embed son los primeros que pasan por ahí.
+
+## [1.114.0] - 2026-08-03
+
+### Agregado: el embed estrena controles, logo y atribución del visor
+
+El visor embebido era un mapa mudo: se podía arrastrar y hacer rueda, pero no había botones de
+zoom, nada identificaba de dónde venía el mapa y la única marca era un `Fuente: IIEG` de diez
+píxeles que pintaba el widget por fuera del iframe.
+
+Ahora monta tres piezas que ya existían en el visor completo, sin componentes nuevos salvo el del
+logo: `MapControls` abajo a la izquierda (acercar, mi ubicación, alejar y el "centrar en Jalisco"
+que asoma al alejar) y `MapAttribution` abajo a la derecha, con `hideActions` para dejar fuera el
+botón de reportar y la entrada al catálogo, que no aplican a un embed. La atribución arranca
+contraída —pastilla "Contribuciones ©" en pantallas anchas, botón `©` en angostas— y se despliega
+sola al pasar el cursor.
+
+Los dos cuelgan de `SiderContext`, así que el embed se envuelve en `SiderProvider`. Sin sider que
+esquivar, `useSiderAdaptivePosition` los ancla a 16px del borde y no hay nada más que ajustar.
+
+Arriba a la izquierda va el logo grande de MapaLab, que es un enlace al visor completo con el
+estado actual (`share`, o `layers` + `center`/`marker` + `zoom`). Reemplaza al `Fuente: IIEG` con
+algo que además sirve para navegar.
+
+### Eliminado: el footer `Fuente: IIEG` del widget (1.3.0)
+
+Vivía en el shadow DOM del web component, superpuesto al iframe. La atribución real ahora la pinta
+el visor, que es donde están los datos que hay que atribuir —OpenStreetMap, CARTO, OpenLayers,
+GeoServer, PostGIS y la licencia del IIEG— y no sólo el nombre del instituto. El bundle baja de
+24 KB a 23.3 KB.
+
+`controls` queda documentado como **sin efecto**: viaja a la URL del embed y nadie lo lee. Se
+conserva el atributo para no romper a quien ya lo pasa.
+
+## [1.113.0] - 2026-08-03
+
+### Agregado: marcador de punto en el embed y en el widget
+
+El embed sabe pintar un marcador. Se pide con `marker=lat,lng` en la URL o con el atributo
+`marker` del widget, y no necesita ninguna capa activa: alcanza para los casos de "aquí estamos"
+—una página de contacto, la sede de una dependencia— que hasta ahora obligaban a embeber Google
+Maps porque MapaLab no tenía forma de señalar un punto.
+
+El pin default es el cuadro de MapaLab sobre un círculo `#5c2472`, el mismo del marcador de la
+sede que ya vivía en `markerDefinitions`. Quien embeba puede sustituirlo con `marker-icon` y
+`marker-color`: el icono se acepta por `https:`, `http:` o `data:image/`, el color solo en
+hexadecimal, y lo que no valide se ignora en silencio y cae al default en vez de romper el mapa.
+Con icono propio y sin color, el pin se dibuja sin círculo y anclado a su base.
+
+El render reusa `showMarker` de `useMapMarker`, que ya estaba en `MapsProvider` y del que el embed
+ya colgaba sin usarlo. El hook nuevo, `useEmbedMarker`, solo espera a que exista la instancia del
+mapa y lo llama una vez.
+
+### Corregido: `center` y `zoom` del embed no hacían nada
+
+`parseEmbedParams` los leía desde 1.90.0 y nadie los consumía: `useMapInitialization` buscaba `lat`
+y `lon` —otros nombres— y encima solo los aplicaba cuando la URL traía `layers`. El resultado es
+que todo embed sin capas abría en la vista default de Jalisco, y el atributo `center` documentado
+en el widget nunca funcionó.
+
+Ahora `center` se resuelve con `parseLatLng` y se aplica sin exigir capas; si no viene `center`
+pero sí `marker`, el mapa se centra en el marcador. Los parámetros `lat`/`lon` del visor full
+siguen intactos.
+
 ## [1.112.0] - 2026-07-31
 
 ### Agregado: el tipo de geometría de cada capa en el panel de capas activas

@@ -15,6 +15,11 @@ export class IiegMapalab extends LitElement {
         basemap: { type: String },
         controls: { type: String },
         notices: { type: String },
+        marker: { type: String },
+        markerIcon: { type: String, attribute: 'marker-icon' },
+        markerColor: { type: String, attribute: 'marker-color' },
+        markerTitle: { type: String, attribute: 'marker-title' },
+        markerDescription: { type: String, attribute: 'marker-description' },
         height: { type: String, reflect: true },
         width: { type: String, reflect: true },
         baseUrl: { type: String, attribute: 'base-url' },
@@ -93,25 +98,6 @@ export class IiegMapalab extends LitElement {
         .mapalab-overlay a:hover, .mapalab-overlay button:hover {
             opacity: 0.9;
         }
-        .mapalab-footer {
-            position: absolute;
-            bottom: 6px;
-            right: 8px;
-            font-size: 10px;
-            color: rgba(0, 0, 0, 0.5);
-            background: rgba(255, 255, 255, 0.8);
-            padding: 2px 6px;
-            border-radius: 4px;
-            pointer-events: auto;
-            z-index: 2;
-        }
-        .mapalab-footer a {
-            color: inherit;
-            text-decoration: none;
-        }
-        .mapalab-footer a:hover {
-            text-decoration: underline;
-        }
     `;
 
     constructor() {
@@ -124,6 +110,11 @@ export class IiegMapalab extends LitElement {
         this.basemap = '';
         this.controls = '';
         this.notices = '';
+        this.marker = '';
+        this.markerIcon = '';
+        this.markerColor = '';
+        this.markerTitle = '';
+        this.markerDescription = '';
         this.height = '';
         this.width = '';
         this.baseUrl = '';
@@ -200,9 +191,10 @@ export class IiegMapalab extends LitElement {
         const params = new URLSearchParams();
         if (this.share) {
             params.set('s', this.share);
-        } else if (this.layers) {
-            params.set('layers', this.layers);
+        } else {
+            if (this.layers) params.set('layers', this.layers);
             if (this.center) params.set('center', this.center);
+            if (this.marker) params.set('marker', this.marker);
             if (this.zoom) params.set('zoom', this.zoom);
         }
         const qs = params.toString();
@@ -220,6 +212,11 @@ export class IiegMapalab extends LitElement {
             if (this.center) params.set('center', this.center);
             if (this.zoom) params.set('zoom', this.zoom);
         }
+        if (this.marker) params.set('marker', this.marker);
+        if (this.markerIcon) params.set('markerIcon', this.markerIcon);
+        if (this.markerColor) params.set('markerColor', this.markerColor);
+        if (this.markerTitle) params.set('markerTitle', this.markerTitle);
+        if (this.markerDescription) params.set('markerDescription', this.markerDescription);
         if (this.basemap) params.set('basemap', this.basemap);
         if (this.controls) params.set('controls', this.controls);
         if (this.notices === 'false' || this.notices === false) params.set('notices', 'false');
@@ -277,7 +274,6 @@ export class IiegMapalab extends LitElement {
             );
         }
         const src = this._buildSrc();
-        const showFooter = !this._ready ? false : true;
         return html`
             <iframe
                 src=${src}
@@ -286,11 +282,6 @@ export class IiegMapalab extends LitElement {
                 referrerpolicy="strict-origin-when-cross-origin"
                 loading="lazy"
             ></iframe>
-            ${showFooter ? html`
-                <div class="mapalab-footer" aria-hidden="true">
-                    Fuente: <a href="https://iieg.gob.mx" target="_blank" rel="noopener">IIEG</a>
-                </div>
-            ` : ''}
         `;
     }
 }

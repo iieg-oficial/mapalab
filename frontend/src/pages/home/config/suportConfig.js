@@ -23,7 +23,7 @@ const suportConfig = [{
     label: 'Aviso de privacidad',
     icon: icoAvisoPrivacidad,
     iconHover: icoAvisoPrivacidad,
-    link: 'https://iieg.gob.mx/ns/wp-content/uploads/2025/06/Aviso_de_Privacidad_Integral_IIEG_06_2025.pdf',
+    link: 'https://iieg.jalisco.gob.mx/aviso-de-privacidad',
     content: [],
 }
 ];

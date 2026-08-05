@@ -6,7 +6,7 @@ import TileLayer from 'ol/layer/Tile';
 import { fromLonLat } from 'ol/proj';
 import { defaults as defaultInteractions } from 'ol/interaction/defaults';
 import MouseWheelZoom from 'ol/interaction/MouseWheelZoom';
-import { getDefaultMapView, getMinZoom, ZOOM_ANIMATION_MS } from '@pages/maps/helpers/defaultView';
+import { getDefaultMapView, getMinZoom, parseLatLng, ZOOM_ANIMATION_MS } from '@pages/maps/helpers/defaultView';
 import { BASEMAP_ORDER, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 
 export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOverlayRef, reliefOverlayRef, basemaps, baseMapId }) => {
@@ -20,6 +20,16 @@ export const useMapInitialization = ({ targetRef, mapRef, baseMapRef, labelsOver
         const layersParam = searchParams.get('layers');
         const hasLayers = !!(layersParam && layersParam.trim().length > 0);
         const defaults = getDefaultMapView();
+
+        const anchor = parseLatLng(searchParams.get('center'))
+            || parseLatLng(searchParams.get('marker'));
+        if (anchor) {
+            const [anchorLat, anchorLng] = anchor;
+            return {
+                center: fromLonLat([anchorLng, anchorLat]),
+                zoom: zoom ? parseFloat(zoom) : defaults.zoom
+            };
+        }
 
         return {
             center: (hasLayers && lat && lon) ? fromLonLat([parseFloat(lon), parseFloat(lat)]) : defaults.center,

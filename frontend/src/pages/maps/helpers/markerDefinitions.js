@@ -65,3 +65,33 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) =
         }
     }
 });
+
+export const EMBED_MARKER_COLOR = '#5c2472';
+
+export const buildEmbedMarker = ({ center, icon = null, color = null, title = null, description = null } = {}) => {
+    const useDefaultIcon = !icon;
+    const marker = {
+        id: 'embed_marker',
+        center,
+        icon: icon || mapalabSquareIcon,
+        scale: useDefaultIcon ? 0.12 : 1,
+        anchor: useDefaultIcon ? [0.5, 0.5] : [0.5, 1]
+    };
+    const bgColor = color || (useDefaultIcon ? EMBED_MARKER_COLOR : null);
+    if (bgColor) {
+        marker.bgColor = bgColor;
+        marker.bgRadius = 22;
+    }
+    if (title) {
+        marker.infoBox = {
+            layerName: title,
+            properties: { titulo: title, descripcion: description || '' },
+            littleCard: {
+                headerField: 'titulo',
+                bodyOrder: ['list'],
+                list: [{ label: '', field: 'descripcion', raw: true }]
+            }
+        };
+    }
+    return marker;
+};
