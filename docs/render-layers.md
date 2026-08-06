@@ -5,7 +5,7 @@ petición, dónde está cada caché y por qué las capas están configuradas com
 están. Complementa [`runbook-layers.md`](runbook-layers.md), que cubre la
 recuperación del stack de datos.
 
-Última revisión: 2026-07-23.
+Última revisión: 2026-08-06.
 
 ## La cadena
 
@@ -48,19 +48,41 @@ GetMap normal con `TILED=true` se sirve desde GWC sin cambiar de endpoint. Por
 eso marcar una capa como `tiled` en el panel basta para que empiece a cachearse:
 no hace falta migrarla a WMTS ni conocer su bbox.
 
-**Requisito**: la capa no debe llevar `CQL_FILTER`. Verificado: la misma capa
-(`uso_de_suelo_serie_7`) da `HIT` sin CQL y `MISS` siempre con él, porque GWC no
-cachea parámetros que no estén declarados como `parameterFilter`. Las 8 capas
-`economia:cultivos` usan CQL y por eso no se benefician del caché.
+**Requisito**: cada parámetro que mande el visor tiene que estar declarado como
+`parameterFilter` en GWC, o la capa responde `MISS` siempre. Son dos:
+
+- **`ENV`** en todas, sin excepción. `useWMSLayerManager` pone
+  `ENV=geom:geom_iieg` en `customParams` de cada GetMap, sin condición. Medido
+  sobre `demografia:poblacion`: con `ENV` y sin el filtro declarado da MISS ·
+  MISS · MISS; sin mandar `ENV`, MISS · HIT · HIT.
+- **`CQL_FILTER`**, con su valor exacto, en las capas que lo llevan.
+
+De ahí la regla que importa: **marcar `tiled=true` sin declarar el filtro de ENV
+deja la capa en ~70 peticiones por pantalla, todas sin caché, contra 1 sola de
+`ImageWMS`. Es peor que no activarlo.**
+
+Los filtros los declara `sextante/scripts/init-gwc-filters.sh` desde
+`config/gwc-filters.txt`, que lista las 121 capas del catálogo y se aplica en
+cada `make up` y `make deploy` de sextante. Los valores de CQL se capturan del
+tráfico real con `--learn`: declararlos a mano casi siempre falla porque tienen
+que coincidir byte a byte con lo que manda el visor, que envuelve cada filtro en
+paréntesis y combina varios con `' OR '`.
 
 ## Estado de las capas
+
+`mapalab.layers.tiled` está activo en las **101 capas sin `CQL_FILTER`** (111
+hojas del catálogo). Las 20 con CQL siguen en imagen única a propósito: su valor
+cambia según qué capas encienda el usuario, así que hay que capturar las
+combinaciones reales con `--learn` antes de activarlas.
 
 | Capa | Sirve por | Notas |
 |---|---|---|
 | `raster:hillshade_iieg_cog` / `_inegi_cog` | WMTS nativo | basemap de relieve, ver abajo |
 | `general:curvas_de_nivel_render` | WMS + GWC | tabla subdividida, ver abajo |
 | `general:cuerpos_de_agua_50k` | WMS + GWC | `tiled=true`, sin CQL |
-| `economia:cultivos` (×8) | WMS directo | `CQL_FILTER` por cultivo, no cacheable |
+| 99 capas temáticas y de mapa base | WMS + GWC | `tiled=true` desde 2026-08-06 |
+| `economia:cultivos` (×8) | WMS + GWC | CQL declarado en `gwc-filters.txt` |
+| 19 capas restantes con CQL | WMS directo | pendiente de `init-gwc-filters.sh --learn` |
 
 ### Relieve por WMTS
 
@@ -177,11 +199,21 @@ reloj — `mariachi-postgres` corre en `UTC` y `dataengine-primary` en
 ## Verificaciones rápidas
 
 ```bash
-# ¿la capa se sirve desde GWC?
+# el BBOX tiene que caer en una celda del gridset: con uno arbitrario GWC
+# responde MISS para siempre y parece que el cache no funciona
+python3 -c "
+import math
+z=11; span=40075016.68557849/(2**z); o=-20037508.342789244
+x,y=-11545572,2378187
+c=math.floor((x-o)/span); r=math.floor((y-o)/span)
+print(f'{o+c*span:.6f},{o+r*span:.6f},{o+(c+1)*span:.6f},{o+(r+1)*span:.6f}')"
+
+# ¿la capa se sirve desde GWC? la 2a peticion identica debe dar HIT
+BB=-11564616.631434,2367713.388162,-11545048.752193,2387281.267403
 docker exec geoserver sh -c "curl -s -o /dev/null -D - \
   'http://localhost:8080/geoserver/general/wms?REQUEST=GetMap&SERVICE=WMS&VERSION=1.1.0\
 &FORMAT=image%2Fpng&STYLES=&TRANSPARENT=true&LAYERS=general%3Acurvas_de_nivel_render\
-&TILED=true&WIDTH=256&HEIGHT=256&SRS=EPSG%3A3857&BBOX=-11549572,2374187,-11541572,2382187'" \
+&TILED=true&ENV=geom%3Ageom_iieg&WIDTH=256&HEIGHT=256&SRS=EPSG%3A3857&BBOX=$BB'" \
   | grep -i geowebcache
 
 # ¿hay capas con timestamp en el futuro? (congelan el etag del arbol)
