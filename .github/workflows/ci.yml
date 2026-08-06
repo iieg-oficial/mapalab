@@ -3,6 +3,11 @@ name: CI
 on:
   push:
     branches-ignore: [develop, production]
+    paths-ignore: ['**.md', 'docs/**', '.gitignore', 'LICENSE']
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
