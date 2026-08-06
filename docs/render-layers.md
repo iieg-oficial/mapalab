@@ -55,7 +55,10 @@ no hace falta migrarla a WMTS ni conocer su bbox.
   `ENV=geom:geom_iieg` en `customParams` de cada GetMap, sin condición. Medido
   sobre `demografia:poblacion`: con `ENV` y sin el filtro declarado da MISS ·
   MISS · MISS; sin mandar `ENV`, MISS · HIT · HIT.
-- **`CQL_FILTER`**, con su valor exacto, en las capas que lo llevan.
+- **`CQL_FILTER`**, con su valor exacto, en las capas que lo llevan. Ojo: no basta con mirar
+  `mapalab.layers.cql_filter`. Una capa con `default_date` o `time_enabled` **también** manda
+  CQL, generado en el frontend por `getFilterRef` (y `'1=0'` si aún no hay fecha elegida). De las
+  211 hojas del catálogo, 108 traen CQL fijo y 59 más lo generan por fecha.
 
 De ahí la regla que importa: **marcar `tiled=true` sin declarar el filtro de ENV
 deja la capa en ~70 peticiones por pantalla, todas sin caché, contra 1 sola de
@@ -70,19 +73,34 @@ paréntesis y combina varios con `' OR '`.
 
 ## Estado de las capas
 
-`mapalab.layers.tiled` está activo en las **101 capas sin `CQL_FILTER`** (111
-hojas del catálogo). Las 20 con CQL siguen en imagen única a propósito: su valor
-cambia según qué capas encienda el usuario, así que hay que capturar las
-combinaciones reales con `--learn` antes de activarlas.
+`mapalab.layers.tiled` está activo en las **52 hojas que no mandan ningún
+`CQL_FILTER`**: ni fijo en `cql_filter`, ni generado por `default_date` o
+`time_enabled`. Las demás siguen en imagen única a propósito, hasta capturar sus
+valores reales con `--learn`.
 
 | Capa | Sirve por | Notas |
 |---|---|---|
 | `raster:hillshade_iieg_cog` / `_inegi_cog` | WMTS nativo | basemap de relieve, ver abajo |
 | `general:curvas_de_nivel_render` | WMS + GWC | tabla subdividida, ver abajo |
-| `general:cuerpos_de_agua_50k` | WMS + GWC | `tiled=true`, sin CQL |
-| 99 capas temáticas y de mapa base | WMS + GWC | `tiled=true` desde 2026-08-06 |
+| `general:*`, `eventos:*` y mapa base | WMS + GWC | `tiled=true` desde 2026-08-06 |
 | `economia:cultivos` (×8) | WMS + GWC | CQL declarado en `gwc-filters.txt` |
-| 19 capas restantes con CQL | WMS directo | pendiente de `init-gwc-filters.sh --learn` |
+| Temáticas con `default_date` (59) | WMS directo | pendiente de `init-gwc-filters.sh --learn` |
+| Resto con CQL fijo | WMS directo | ídem |
+
+### El costo real no estaba en los tiles
+
+Las 83 vistas materializadas temáticas repiten la geometría completa del
+municipio en cada periodo: ~1.25 GB con ~17 000 filas. Hasta el 2026-08-06
+**ninguna salvo `mapalab.municipios` tenía índice GiST**, así que cada tile hacía
+un Seq Scan de la vista entera. Medido sobre `personas_localizadas` con la
+consulta real de un tile (envelope + `fecha`): **5 436 ms → 1.291 ms**, y de
+63 961 buffers a 21. Lo corrige la migración `0034_matviews_spatial_index` de
+dataengine.
+
+Al medir, hay dos formas fáciles de obtener un número que no significa nada:
+pedir un tile **fuera del extent de la capa** (GWC no lo cachea, responde MISS
+para siempre) y pedirlo **sin el `CQL_FILTER` de fecha** que el visor sí manda —
+eso renderiza todos los periodos superpuestos y da 11 s donde el uso real da 0.8.
 
 ### Relieve por WMTS
 
