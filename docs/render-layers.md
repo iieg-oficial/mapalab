@@ -5,7 +5,7 @@ petición, dónde está cada caché y por qué las capas están configuradas com
 están. Complementa [`runbook-layers.md`](runbook-layers.md), que cubre la
 recuperación del stack de datos.
 
-Última revisión: 2026-07-23.
+Última revisión: 2026-08-06.
 
 ## La cadena
 
@@ -48,19 +48,59 @@ GetMap normal con `TILED=true` se sirve desde GWC sin cambiar de endpoint. Por
 eso marcar una capa como `tiled` en el panel basta para que empiece a cachearse:
 no hace falta migrarla a WMTS ni conocer su bbox.
 
-**Requisito**: la capa no debe llevar `CQL_FILTER`. Verificado: la misma capa
-(`uso_de_suelo_serie_7`) da `HIT` sin CQL y `MISS` siempre con él, porque GWC no
-cachea parámetros que no estén declarados como `parameterFilter`. Las 8 capas
-`economia:cultivos` usan CQL y por eso no se benefician del caché.
+**Requisito**: cada parámetro que mande el visor tiene que estar declarado como
+`parameterFilter` en GWC, o la capa responde `MISS` siempre. Son dos:
+
+- **`ENV`** en todas, sin excepción. `useWMSLayerManager` pone
+  `ENV=geom:geom_iieg` en `customParams` de cada GetMap, sin condición. Medido
+  sobre `demografia:poblacion`: con `ENV` y sin el filtro declarado da MISS ·
+  MISS · MISS; sin mandar `ENV`, MISS · HIT · HIT.
+- **`CQL_FILTER`**, con su valor exacto, en las capas que lo llevan. Ojo: no basta con mirar
+  `mapalab.layers.cql_filter`. Una capa con `default_date` o `time_enabled` **también** manda
+  CQL, generado en el frontend por `getFilterRef` (y `'1=0'` si aún no hay fecha elegida). De las
+  211 hojas del catálogo, 108 traen CQL fijo y 59 más lo generan por fecha.
+
+De ahí la regla que importa: **marcar `tiled=true` sin declarar el filtro de ENV
+deja la capa en ~70 peticiones por pantalla, todas sin caché, contra 1 sola de
+`ImageWMS`. Es peor que no activarlo.**
+
+Los filtros los declara `sextante/scripts/init-gwc-filters.sh` desde
+`config/gwc-filters.txt`, que lista las 121 capas del catálogo y se aplica en
+cada `make up` y `make deploy` de sextante. Los valores de CQL se capturan del
+tráfico real con `--learn`: declararlos a mano casi siempre falla porque tienen
+que coincidir byte a byte con lo que manda el visor, que envuelve cada filtro en
+paréntesis y combina varios con `' OR '`.
 
 ## Estado de las capas
+
+`mapalab.layers.tiled` está activo en las **52 hojas que no mandan ningún
+`CQL_FILTER`**: ni fijo en `cql_filter`, ni generado por `default_date` o
+`time_enabled`. Las demás siguen en imagen única a propósito, hasta capturar sus
+valores reales con `--learn`.
 
 | Capa | Sirve por | Notas |
 |---|---|---|
 | `raster:hillshade_iieg_cog` / `_inegi_cog` | WMTS nativo | basemap de relieve, ver abajo |
 | `general:curvas_de_nivel_render` | WMS + GWC | tabla subdividida, ver abajo |
-| `general:cuerpos_de_agua_50k` | WMS + GWC | `tiled=true`, sin CQL |
-| `economia:cultivos` (×8) | WMS directo | `CQL_FILTER` por cultivo, no cacheable |
+| `general:*`, `eventos:*` y mapa base | WMS + GWC | `tiled=true` desde 2026-08-06 |
+| `economia:cultivos` (×8) | WMS + GWC | CQL declarado en `gwc-filters.txt` |
+| Temáticas con `default_date` (59) | WMS directo | pendiente de `init-gwc-filters.sh --learn` |
+| Resto con CQL fijo | WMS directo | ídem |
+
+### El costo real no estaba en los tiles
+
+Las 83 vistas materializadas temáticas repiten la geometría completa del
+municipio en cada periodo: ~1.25 GB con ~17 000 filas. Hasta el 2026-08-06
+**ninguna salvo `mapalab.municipios` tenía índice GiST**, así que cada tile hacía
+un Seq Scan de la vista entera. Medido sobre `personas_localizadas` con la
+consulta real de un tile (envelope + `fecha`): **5 436 ms → 1.291 ms**, y de
+63 961 buffers a 21. Lo corrige la migración `0034_matviews_spatial_index` de
+dataengine.
+
+Al medir, hay dos formas fáciles de obtener un número que no significa nada:
+pedir un tile **fuera del extent de la capa** (GWC no lo cachea, responde MISS
+para siempre) y pedirlo **sin el `CQL_FILTER` de fecha** que el visor sí manda —
+eso renderiza todos los periodos superpuestos y da 11 s donde el uso real da 0.8.
 
 ### Relieve por WMTS
 
@@ -177,11 +217,21 @@ reloj — `mariachi-postgres` corre en `UTC` y `dataengine-primary` en
 ## Verificaciones rápidas
 
 ```bash
-# ¿la capa se sirve desde GWC?
+# el BBOX tiene que caer en una celda del gridset: con uno arbitrario GWC
+# responde MISS para siempre y parece que el cache no funciona
+python3 -c "
+import math
+z=11; span=40075016.68557849/(2**z); o=-20037508.342789244
+x,y=-11545572,2378187
+c=math.floor((x-o)/span); r=math.floor((y-o)/span)
+print(f'{o+c*span:.6f},{o+r*span:.6f},{o+(c+1)*span:.6f},{o+(r+1)*span:.6f}')"
+
+# ¿la capa se sirve desde GWC? la 2a peticion identica debe dar HIT
+BB=-11564616.631434,2367713.388162,-11545048.752193,2387281.267403
 docker exec geoserver sh -c "curl -s -o /dev/null -D - \
   'http://localhost:8080/geoserver/general/wms?REQUEST=GetMap&SERVICE=WMS&VERSION=1.1.0\
 &FORMAT=image%2Fpng&STYLES=&TRANSPARENT=true&LAYERS=general%3Acurvas_de_nivel_render\
-&TILED=true&WIDTH=256&HEIGHT=256&SRS=EPSG%3A3857&BBOX=-11549572,2374187,-11541572,2382187'" \
+&TILED=true&ENV=geom%3Ageom_iieg&WIDTH=256&HEIGHT=256&SRS=EPSG%3A3857&BBOX=$BB'" \
   | grep -i geowebcache
 
 # ¿hay capas con timestamp en el futuro? (congelan el etag del arbol)
