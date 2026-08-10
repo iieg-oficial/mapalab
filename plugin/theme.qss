@@ -1,0 +1,60 @@
+/* Generado por mariachi desde el modulo Identidad. No editar a mano. */
+
+/* Se aplica sobre el widget raiz del consumidor, no sobre la aplicacion.
+   Solo define marca: familia, acentos, radios y espaciados.
+   Fondos y texto base se dejan al tema del anfitrion salvo donde
+   la identidad lo exige, para no romper el modo oscuro. */
+
+/* Fuentes de la marca (descargar y registrar en el cliente):
+   Garet 400: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-book.otf
+   Garet 500: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-medium.otf
+   Garet 700: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-bold.otf
+*/
+
+* {
+    font-family: "Garet", "system-ui", "sans-serif";
+    font-size: 16px;
+}
+
+QPushButton[brandRole="primary"] {
+    background-color: #5C2472;
+    color: #FFFFFF;
+    border-radius: 4px;
+    padding: 8px 12px;
+    border: none;
+}
+
+QPushButton[brandRole="primary"]:disabled {
+    background-color: palette(mid);
+    color: palette(disabled-text);
+}
+
+QTreeView::item:selected, QTreeWidget::item:selected {
+    background-color: #5C2472;
+    color: #FFFFFF;
+}
+
+QLineEdit:focus {
+    border: 1px solid #5C2472;
+}
+
+QLineEdit {
+    border-radius: 4px;
+    padding: 8px;
+    border: 1px solid palette(mid);
+}
+
+QLabel[brandRole="heading"] {
+    color: #2e4372;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* El acento no cumple contraste AA como texto: solo fondo. */
+QLabel[brandRole="badge"] {
+    background-color: #FF8300;
+    color: #465055;
+    border-radius: 8px;
+    padding: 1px 8px;
+    font-size: 14px;
+}

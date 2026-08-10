@@ -16,7 +16,8 @@ def hydrate_wms_config(wms_config: Optional[dict[str, Any]]) -> Optional[dict[st
     hydrated = dict(wms_config)
     hydrated['baseUrl'] = geoserver_url(workspace)
     hydrated['wfsUrl'] = wfs_url(workspace)
-    hydrated['layerName'] = f'{workspace}:{layer}'
+    hydrated['layerName'] = layer
+    hydrated['qualifiedName'] = f'{workspace}:{layer}'
     hydrated['format'] = wms_config.get('format') or WMS_FORMAT
     hydrated['version'] = WMS_VERSION
     hydrated['crs'] = DATA_CRS
@@ -91,7 +92,7 @@ def is_disabled(node: dict[str, Any]) -> bool:
 
 def layer_key(node: dict[str, Any]) -> Optional[str]:
     wms_config = node.get('wmsConfig') or {}
-    return wms_config.get('layerName')
+    return wms_config.get('qualifiedName')
 
 
 def has_wfs(node: dict[str, Any]) -> bool:
@@ -115,4 +116,4 @@ def node_cql(node: dict[str, Any]) -> str:
 
 def typename(node: dict[str, Any]) -> str:
     wms_config = node.get('wmsConfig') or {}
-    return wms_config.get('wfsLayerName') or wms_config.get('layerName') or ''
+    return wms_config.get('wfsLayerName') or wms_config.get('qualifiedName') or ''

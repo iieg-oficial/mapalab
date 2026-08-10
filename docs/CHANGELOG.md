@@ -7,6 +7,24 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [1.117.0] - 2026-08-10
 
+### Agregado: el plugin usa la identidad del IIEG
+
+`theme.qss` lo genera mariachi desde el módulo Identidad (artefacto `tokens.qss`, mariachi 1.123.0)
+y el plugin lo aplica **al panel, no a la aplicación**: `setStyleSheet` sobre el widget raíz solo
+alcanza a sus descendientes, así que no contamina el resto de QGIS.
+
+La regla que decide qué se pinta y qué no: **marca sí, chrome no.** Se pintan botón primario,
+selección del árbol, foco de los campos, encabezados y badges. Fondos, bordes y texto base quedan
+en `palette(...)`, del tema del anfitrión, porque QGIS tiene tema claro y oscuro a elección del
+usuario y un panel que impone su paleta se vuelve ilegible en la mitad de los casos.
+
+`LayerItemDelegate` dibuja los badges «Nueva/Actualizada» del catálogo directo en el árbol, con el
+color y la etiqueta que trae cada nodo, recortando el rectángulo del texto para que no se
+encimen. Hoy hay 2 capas con badge vigente.
+
+El QSS no se edita a mano: se regenera desde mariachi cuando cambian los tokens. Los colores no
+viven en el plugin.
+
 ### Agregado: plugin de QGIS con el catálogo del visor
 
 `plugin/` trae un plugin de QGIS 3.40 que monta el árbol de temas de MapaLab dentro del panel
@@ -40,6 +58,18 @@ que la capa llega con fuente, metodología y vigencia.
 El cliente HTTP usa `QgsBlockingNetworkRequest` y no `requests`: el gateway responde **403** a los
 User-Agent de cliente programático, y el de QGIS es de los que pasan. El árbol se cachea en el
 perfil de QGIS y se revalida con `If-None-Match`.
+
+**El nombre de capa va sin prefijo en WMS y calificado en WFS, y no es un descuido.** En el
+endpoint de un workspace (`/sextante/general/wms`) GeoServer anuncia sus capas como
+`cuerpos_de_agua_50k`, no `general:cuerpos_de_agua_50k`. Las dos formas funcionan en un GetMap
+—por eso el visor, que manda la calificada, nunca lo notó—, pero QGIS valida el nombre contra las
+capabilities antes de dibujar: con el prefijo no lo encuentra y falla con `cannot calculate
+extent`. El WFS sí exige la forma calificada. Homologar las dos rompe una de las dos vías.
+
+Como el nombre difiere del que manda el visor, las peticiones del plugin **no comparten entradas
+de cache con él**. Se pierde poco: el troceado de QGIS tampoco caía en la malla de OpenLayers, así
+que esas URLs nunca coincidieron. Lo que sí se conserva es que los tiles del plugin se repitan
+entre sí, que era el grueso del beneficio.
 
 La dirección del servidor se configura en el panel; no viaja en el código.
 

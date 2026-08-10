@@ -18,7 +18,9 @@ from qgis.PyQt.QtWidgets import (
 from ..api.client import MapaLabClient, MapaLabError
 from ..config import get_base_url, set_base_url
 from ..model.tree import clean_label, filter_tree, hydrate_tree, is_disabled
+from ..theme import apply_theme, set_role
 from .actions import LayerActions
+from .delegate import LayerItemDelegate
 
 NODE_ROLE: int = int(Qt.UserRole)
 
@@ -60,6 +62,7 @@ class MapaLabDock(QDockWidget):
 
         self._widget_tree = QTreeWidget()
         self._widget_tree.setHeaderHidden(True)
+        self._widget_tree.setItemDelegate(LayerItemDelegate(NODE_ROLE, self._widget_tree))
         self._widget_tree.itemDoubleClicked.connect(self._on_double_click)
         layout.addWidget(self._widget_tree)
 
@@ -87,6 +90,10 @@ class MapaLabDock(QDockWidget):
 
         container.setLayout(layout)
         self.setWidget(container)
+
+        set_role(self._add_button, 'primary')
+        set_role(self._url_button, 'primary')
+        apply_theme(container)
 
     def _refresh_url_state(self) -> None:
         base_url = get_base_url()

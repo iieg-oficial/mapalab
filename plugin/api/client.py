@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from typing import Any, Optional
 
 from qgis.PyQt.QtCore import QUrl
@@ -19,6 +20,17 @@ from ..config import (
 
 class MapaLabError(Exception):
     pass
+
+
+def _describe(content: bytes) -> str:
+    text = content[:400].decode('utf-8', errors='replace').strip()
+    if not text:
+        return 'Respuesta vacía.'
+    if text.lstrip().lower().startswith(('<!doctype', '<html')):
+        title = re.search(r'<title[^>]*>(.*?)</title>', text, re.IGNORECASE | re.DOTALL)
+        detail = title.group(1).strip() if title else 'sin título'
+        return f'Llegó una página HTML ({detail}), no la API.'
+    return f'Empieza con: {text[:120]!r}'
 
 
 def _cache_dir() -> str:
@@ -58,11 +70,11 @@ class MapaLabClient:
 
         request = QNetworkRequest(QUrl(url))
         request.setRawHeader(CLIENT_HEADER, CLIENT_VALUE)
+        request.setTransferTimeout(timeout_ms)
         if etag:
             request.setRawHeader(b'If-None-Match', etag.encode('utf-8'))
 
         blocking = QgsBlockingNetworkRequest()
-        blocking.setTimeout(timeout_ms)
         error = blocking.get(request, forceRefresh=True)
         reply = blocking.reply()
         status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) or 0
@@ -74,14 +86,22 @@ class MapaLabClient:
         new_etag = bytes(raw_etag).decode('utf-8') if raw_etag else None
         return int(status), bytes(reply.content()), new_etag
 
-    def _get_json(self, path: str) -> Any:
-        _, content, _ = self._request(api_url(path))
-        if not content:
-            return None
+    def _decode_json(self, status: int, content: bytes, label: str) -> Any:
+        if status and status >= 400:
+            raise MapaLabError(f'{label}: el servidor respondió {status}. {_describe(content)}')
+        if not content.strip():
+            raise MapaLabError(
+                f'{label}: el servidor respondió {status or "sin estado"} y sin contenido. '
+                'Revisa la dirección y que el certificado esté aceptado.')
         try:
             return json.loads(content.decode('utf-8'))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise MapaLabError(f'Respuesta inválida de {path}') from exc
+            raise MapaLabError(
+                f'{label}: la respuesta no es JSON ({status}). {_describe(content)}') from exc
+
+    def _get_json(self, path: str) -> Any:
+        status, content, _ = self._request(api_url(path))
+        return self._decode_json(status, content, path)
 
     def fetch_tree(self, force: bool = False) -> list[dict[str, Any]]:
         if self._tree is not None and not force:
@@ -89,9 +109,12 @@ class MapaLabClient:
 
         cached_etag = _read_cache(ETAG_CACHE_FILE)
         cached_tree = _read_cache(TREE_CACHE_FILE)
+        url = api_url('/layers/tree')
 
         try:
-            status, content, etag = self._request(api_url('/layers/tree'), etag=cached_etag)
+            status, content, etag = self._request(url, etag=cached_etag)
+            if status == 304 and not cached_tree:
+                status, content, etag = self._request(url)
         except MapaLabError:
             if cached_tree:
                 self._tree = json.loads(cached_tree)
@@ -102,9 +125,8 @@ class MapaLabClient:
             self._tree = json.loads(cached_tree)
             return self._tree
 
-        text = content.decode('utf-8')
-        self._tree = json.loads(text)
-        _write_cache(TREE_CACHE_FILE, text)
+        self._tree = self._decode_json(status, content, 'Catálogo de capas')
+        _write_cache(TREE_CACHE_FILE, content.decode('utf-8'))
         if etag:
             _write_cache(ETAG_CACHE_FILE, etag)
         return self._tree

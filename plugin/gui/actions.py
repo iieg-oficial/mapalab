@@ -44,9 +44,9 @@ class LayerActions:
         label = clean_label(node.get('label') or '')
         self._busy(True)
         try:
-            layer = add_wms_layer(node, apply_node_filter=keep_filter)
+            layer, reason = add_wms_layer(node, apply_node_filter=keep_filter)
             if layer is None:
-                return f'No se pudo agregar «{label}».'
+                return f'No se pudo agregar «{label}»: {reason}'
             self._attach_metadata(layer, node)
         finally:
             self._busy(False)

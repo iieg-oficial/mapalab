@@ -16,7 +16,7 @@ homepage=https://github.com/iieg-oficial/mapalab
 
 category=Web
 icon=icon.svg
-experimental=True
+experimental=False
 deprecated=False
 hasProcessingProvider=no
 server=False

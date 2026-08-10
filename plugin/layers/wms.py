@@ -39,11 +39,25 @@ def build_wms_uri(wms_config: dict[str, Any], cql_filter: str = '',
     return bytes(uri.encodedUri()).decode('utf-8')
 
 
+def _failure_reason(layer: QgsRasterLayer) -> str:
+    error = layer.error()
+    summary = error.summary() if error else ''
+    if not summary:
+        provider = layer.dataProvider()
+        provider_error = provider.error() if provider else None
+        summary = provider_error.summary() if provider_error else ''
+    summary = summary.strip()
+    if not summary or summary.lower().startswith('provider is not valid'):
+        return ('el proveedor WMS no pudo construirse. El detalle está en '
+                'Ver → Paneles → Mensajes de registro, pestaña WMS.')
+    return summary
+
+
 def add_wms_layer(node: dict[str, Any], apply_node_filter: bool = False,
-                  time_value: Optional[str] = None) -> Optional[QgsRasterLayer]:
+                  time_value: Optional[str] = None) -> tuple[Optional[QgsRasterLayer], str]:
     wms_config = node.get('wmsConfig')
     if not wms_config:
-        return None
+        return None, 'La capa no trae configuración WMS.'
 
     cql_filter = (wms_config.get('cqlFilter') or '') if apply_node_filter else ''
     uri = build_wms_uri(wms_config, cql_filter, time_value)
@@ -51,7 +65,7 @@ def add_wms_layer(node: dict[str, Any], apply_node_filter: bool = False,
 
     layer = QgsRasterLayer(uri, name, 'wms')
     if not layer.isValid():
-        return None
+        return None, _failure_reason(layer)
 
     QgsProject.instance().addMapLayer(layer)
-    return layer
+    return layer, ''
