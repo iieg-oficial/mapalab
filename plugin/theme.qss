@@ -28,11 +28,14 @@ QPushButton[brandRole="primary"]:disabled {
     color: palette(disabled-text);
 }
 
-/* Se usa la variante oscura del acento, no el acento base: sobre
-   #FF8300 el blanco da 2.47:1 y ningun texto cumple AA salvo negro. */
+/* Seleccion: superficie clara del acento con el acento oscuro en el
+   texto (4.86:1). El acento base da 2.09:1 sobre ese fondo. El lado
+   izquierdo va sin radio para que empalme con la rama teñida. */
 QTreeView::item:selected, QTreeWidget::item:selected {
-    background-color: #A85700;
-    color: #FFFFFF;
+    background-color: #FFE9CC;
+    color: #9E5200;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
 }
 
 QLineEdit:focus {
@@ -43,6 +46,20 @@ QLineEdit {
     border-radius: 4px;
     padding: 8px;
     border: 1px solid palette(mid);
+}
+
+/* Campo de busqueda: misma superficie, radio y color de texto que
+   el buscador del visor, sin borde y con el foco en el primario. */
+QLineEdit[brandRole="search"] {
+    background-color: #EAEFFA;
+    color: #5C2472;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 12px;
+}
+
+QLineEdit[brandRole="search"]:focus {
+    border: 1px solid #703088;
 }
 
 QPushButton[brandRole="secondary"] {
@@ -97,7 +114,7 @@ QTreeView::item:hover, QTreeWidget::item:hover {
 /* La rama hereda el azul nativo si no se tine: la seleccion se
    veria partida entre la sangria y el texto. */
 QTreeView::branch:selected, QTreeWidget::branch:selected {
-    background-color: #A85700;
+    background-color: #FFE9CC;
 }
 
 QTreeView::branch:hover, QTreeWidget::branch:hover {

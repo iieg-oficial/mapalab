@@ -60,6 +60,7 @@ class MapaLabDock(QDockWidget):
         self._search = QLineEdit()
         self._search.setPlaceholderText('Buscar capa…')
         self._search.textChanged.connect(self._on_search)
+        set_role(self._search, 'search')
         layout.addWidget(self._search)
 
         self._widget_tree = QTreeWidget()
