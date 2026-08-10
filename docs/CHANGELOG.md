@@ -5,6 +5,44 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.117.0] - 2026-08-10
+
+### Agregado: plugin de QGIS con el catálogo del visor
+
+`plugin/` trae un plugin de QGIS 3.40 que monta el árbol de temas de MapaLab dentro del panel
+lateral y agrega cualquier capa al lienzo sin teclear una URL de WMS. Es **solo lectura**: el WFS
+de sextante corre con `serviceLevel BASIC`, así que la escritura ya está cerrada del lado del
+servidor y el plugin no la contempla.
+
+Dos decisiones que definen su comportamiento:
+
+- **La capa llega completa.** De los 209 nodos del árbol, 108 traen `cqlFilter` y **ninguno es
+  temporal**: son filtros de identidad (`nivel_atencion`, `modalidad`, `tipo`) que salen de solo 20
+  tablas. Aplicarlos en QGIS partiría una tabla en hasta 33 entradas —el caso de
+  `salud:unidades_salud`— cuando ahí conviene una capa y un filtro por atributo. El árbol se
+  muestra igual, pero al agregar la capa el filtro es una casilla opcional. Se verificó que todos
+  los nodos de una misma tabla comparten `styles`, así que la simbología no cambia. El catálogo
+  queda en 119 capas distintas.
+- **WMS troceado a 256 px.** La cache del gateway usa `$request_uri` como clave y el proveedor WMS
+  de QGIS pide por defecto una imagen del viewport completo, que nunca repite URL: cada paneo sería
+  un MISS y llenaría la cache de entradas de un solo uso, desplazando por LRU los tiles que el
+  visor sí reutiliza. Con `maxWidth`/`maxHeight` la petición se trocea y vuelve a caer en el
+  patrón que la cache aprovecha.
+
+El `defaultDate` de los 60 nodos que lo declaran se ignora a propósito: es el «último año» que
+aplica el visor en runtime, y en QGIS estorba.
+
+Para analizar, la capa se descarga completa a un GeoPackage local en una sola petición, en lugar de
+un WFS vivo con bbox que pediría features en cada movimiento del mapa. Las capas pesan entre 1 y 16
+MB y bajan en menos de un segundo. La metadata de `/metadata` se vuelca a `QgsLayerMetadata`, así
+que la capa llega con fuente, metodología y vigencia.
+
+El cliente HTTP usa `QgsBlockingNetworkRequest` y no `requests`: el gateway responde **403** a los
+User-Agent de cliente programático, y el de QGIS es de los que pasan. El árbol se cachea en el
+perfil de QGIS y se revalida con `If-None-Match`.
+
+La dirección del servidor se configura en el panel; no viaja en el código.
+
 ## [1.116.2] - 2026-08-10
 
 ### Corregido: el beacon de errores de carga no decía qué se había roto
