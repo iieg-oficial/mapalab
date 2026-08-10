@@ -18,6 +18,17 @@ WMS_VERSION: str = '1.1.0'
 TREE_CACHE_FILE: str = 'layer_tree.json'
 ETAG_CACHE_FILE: str = 'layer_tree.etag'
 
+LOGOS_PATH: str = '/acervo/iieg/logos'
+
+LOGOS: dict[str, tuple[str, str]] = {
+    'mapalab': ('mapalab_large.svg', 'mapalab_large_dark.svg'),
+    'iieg': ('iieg_large.svg', 'iieg_large_dark.svg'),
+}
+
+LOGO_HEIGHT: int = 40
+
+FONT_SCALE_PX: int = 2
+
 REQUEST_TIMEOUT_MS: int = 30000
 DOWNLOAD_TIMEOUT_MS: int = 600000
 
@@ -41,3 +52,9 @@ def geoserver_url(workspace: str) -> str:
 
 def wfs_url(workspace: str) -> str:
     return f'{get_base_url()}/sextante/{workspace}/wfs'
+
+
+def logo_url(marca: str, oscuro: bool) -> str:
+    claro, oscuro_file = LOGOS.get(marca, ('', ''))
+    archivo = oscuro_file if oscuro and oscuro_file else claro
+    return f'{get_base_url()}{LOGOS_PATH}/{archivo}' if archivo else ''

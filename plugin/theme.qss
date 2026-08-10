@@ -56,12 +56,14 @@ QPushButton[brandRole="secondary"]:hover {
     color: #FFFFFF;
 }
 
+/* Mismo sangrado horizontal que primary y secondary, para que los
+   tres textos arranquen en la misma linea vertical. */
 QPushButton[brandRole="quiet"] {
     background-color: transparent;
     color: #465055;
     border: none;
     text-align: left;
-    padding: 8px 0px;
+    padding: 8px 12px;
 }
 
 QPushButton[brandRole="quiet"]:hover {
@@ -80,7 +82,18 @@ QTreeView::item, QTreeWidget::item {
 }
 
 QTreeView::item:hover, QTreeWidget::item:hover {
-    background-color: palette(alternate-base);
+    background-color: rgba(92, 36, 114, 0.1);
+    color: palette(text);
+}
+
+/* La rama hereda el azul nativo si no se tine: la seleccion se
+   veria partida entre la sangria y el texto. */
+QTreeView::branch:selected, QTreeWidget::branch:selected {
+    background-color: #5C2472;
+}
+
+QTreeView::branch:hover, QTreeWidget::branch:hover {
+    background-color: rgba(92, 36, 114, 0.1);
 }
 
 QLabel[brandRole="title"] {

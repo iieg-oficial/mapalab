@@ -40,50 +40,47 @@ class LayerActions:
             return
         apply_metadata(layer, payload, node)
 
-    def add_as_wms(self, node: dict[str, Any], keep_filter: bool) -> str:
+    def add_as_wms(self, node: dict[str, Any]) -> tuple[bool, str]:
         label = clean_label(node.get('label') or '')
         self._busy(True)
         try:
-            layer, reason = add_wms_layer(node, apply_node_filter=keep_filter)
+            layer, reason = add_wms_layer(node)
             if layer is None:
-                return f'No se pudo agregar «{label}»: {reason}'
+                return False, f'No se pudo agregar «{label}»: {reason}'
             self._attach_metadata(layer, node)
         finally:
             self._busy(False)
 
-        suffix = ' con el filtro del visor' if keep_filter else ' completa'
-        return f'«{label}» agregada como WMS{suffix}.'
+        return True, ''
 
     def _target_dir(self, parent: Optional[QWidget]) -> str:
         return QFileDialog.getExistingDirectory(
             parent, 'Dónde guardar el GeoPackage', os.path.expanduser('~'))
 
-    def download_as_vector(self, node: dict[str, Any], keep_filter: bool,
-                           parent: Optional[QWidget] = None) -> str:
+    def download_as_vector(self, node: dict[str, Any],
+                           parent: Optional[QWidget] = None) -> tuple[bool, str]:
         label = clean_label(node.get('label') or '')
 
         if not has_wfs(node):
-            return f'«{label}» no está publicada como vectorial.'
+            return False, f'«{label}» no está publicada como vectorial.'
         if not is_downloadable(node):
-            return f'«{label}» no es descargable.'
+            return False, f'«{label}» no es descargable.'
 
         target_dir = self._target_dir(parent)
         if not target_dir:
-            return 'Descarga cancelada.'
+            return True, ''
 
         self._busy(True)
         try:
-            path, error = download_vector(
-                node, self._client, target_dir, apply_node_filter=keep_filter)
+            path, error = download_vector(node, self._client, target_dir)
             if path is None:
-                return f'No se pudo descargar «{label}»: {error}'
+                return False, f'No se pudo descargar «{label}»: {error}'
 
             layer = add_vector_layer(path, node)
             if layer is None:
-                return f'Se descargó en {path}, pero QGIS no pudo abrirlo.'
+                return False, f'Se descargó en {path}, pero QGIS no pudo abrirlo.'
             self._attach_metadata(layer, node)
         finally:
             self._busy(False)
 
-        size_mb = os.path.getsize(path) / (1024 * 1024)
-        return f'«{label}» descargada ({size_mb:.1f} MB) y agregada desde {path}.'
+        return True, ''

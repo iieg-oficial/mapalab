@@ -2,7 +2,6 @@ from typing import Any, Optional
 
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import (
-    QCheckBox,
     QDockWidget,
     QHBoxLayout,
     QLabel,
@@ -67,11 +66,6 @@ class MapaLabDock(QDockWidget):
         self._widget_tree.itemDoubleClicked.connect(self._on_double_click)
         layout.addWidget(self._widget_tree)
 
-        self._keep_filter = QCheckBox('Conservar el filtro del visor')
-        self._keep_filter.setToolTip(
-            'Sin marcar, la capa llega completa y el filtrado se hace en QGIS.')
-        layout.addWidget(self._keep_filter)
-
         buttons = QHBoxLayout()
         self._add_button = QPushButton('Agregar al mapa')
         self._add_button.clicked.connect(self._on_add)
@@ -87,6 +81,7 @@ class MapaLabDock(QDockWidget):
 
         self._status = QLabel('')
         self._status.setWordWrap(True)
+        self._status.setVisible(False)
         layout.addWidget(self._status)
 
         container.setLayout(layout)
@@ -102,9 +97,8 @@ class MapaLabDock(QDockWidget):
     def _montar_titulo(self) -> None:
         barra = TitleBar(self._client, self)
         apply_theme(barra)
+        barra.cargar()
         self.setTitleBarWidget(barra)
-        if not barra.cargar_logo():
-            apply_theme(barra)
 
     def _refresh_url_state(self) -> None:
         base_url = get_base_url()
@@ -114,7 +108,7 @@ class MapaLabDock(QDockWidget):
         if configured:
             self.load_tree()
         else:
-            self._status.setText('Configura la dirección del servidor para cargar el catálogo.')
+            self._mensaje('Configura la dirección del servidor para cargar el catálogo.')
 
     def _on_save_url(self) -> None:
         value = self._url_input.text().strip()
@@ -124,25 +118,17 @@ class MapaLabDock(QDockWidget):
         self._refresh_url_state()
 
     def load_tree(self, force: bool = False) -> None:
-        self._status.setText('Cargando catálogo…')
+        self._mensaje('Cargando catálogo…')
         try:
             raw = self._client.fetch_tree(force=force)
         except MapaLabError as exc:
-            self._status.setText(f'No se pudo cargar el catálogo: {exc}')
+            self._mensaje(f'No se pudo cargar el catálogo: {exc}')
             self._url_row.setVisible(True)
             return
 
         self._tree = hydrate_tree(raw)
         self._populate(self._tree)
-        self._status.setText(f'{self._count_layers(self._tree)} capas disponibles.')
-
-    def _count_layers(self, nodes: list[dict[str, Any]]) -> int:
-        total = 0
-        for node in nodes:
-            if node.get('wmsConfig'):
-                total += 1
-            total += self._count_layers(node.get('children') or [])
-        return total
+        self._mensaje('')
 
     def _populate(self, nodes: list[dict[str, Any]]) -> None:
         self._widget_tree.clear()
@@ -188,17 +174,22 @@ class MapaLabDock(QDockWidget):
         if isinstance(node, dict) and node.get('wmsConfig'):
             self._on_add()
 
+    def _mensaje(self, texto: str) -> None:
+        self._status.setText(texto)
+        self._status.setVisible(bool(texto))
+
+    def _reportar(self, resultado: tuple[bool, str]) -> None:
+        correcto, mensaje = resultado
+        self._mensaje('' if correcto else mensaje)
+
     def _on_add(self) -> None:
         node = self._require_layer_node()
         if node is None:
             return
-        message = self._actions.add_as_wms(node, self._keep_filter.isChecked())
-        self._status.setText(message)
+        self._reportar(self._actions.add_as_wms(node))
 
     def _on_download(self) -> None:
         node = self._require_layer_node()
         if node is None:
             return
-        message = self._actions.download_as_vector(
-            node, self._keep_filter.isChecked(), self)
-        self._status.setText(message)
+        self._reportar(self._actions.download_as_vector(node, self))
