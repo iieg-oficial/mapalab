@@ -3,6 +3,7 @@ import re
 from typing import Optional
 
 from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QWidget
 
 from .config import FONT_SCALE_PX
@@ -10,6 +11,8 @@ from .config import FONT_SCALE_PX
 THEME_FILE: str = 'theme.qss'
 
 ASSETS_DIR: str = 'assets'
+
+REFRESH_ICON: str = 'refrescar.svg'
 
 BRAND_ROLE: str = 'brandRole'
 
@@ -31,9 +34,9 @@ def load_stylesheet() -> str:
         return ''
 
 
-def _asset_url(nombre: str) -> str:
-    ruta = os.path.join(os.path.dirname(__file__), ASSETS_DIR, nombre)
-    return ruta.replace(os.sep, '/')
+def icono_refrescar() -> QIcon:
+    ruta = os.path.join(os.path.dirname(__file__), ASSETS_DIR, REFRESH_ICON)
+    return QIcon(ruta) if os.path.exists(ruta) else QIcon()
 
 
 def _escalar_fuentes(stylesheet: str) -> str:
@@ -45,16 +48,9 @@ def _escalar_fuentes(stylesheet: str) -> str:
 
 
 def _reglas_locales() -> str:
-    cerrado = _asset_url('chevron-right.svg')
-    abierto = _asset_url('chevron-down.svg')
     return (
-        '\nQTreeView::branch:has-children:closed,\n'
-        'QTreeWidget::branch:has-children:closed {\n'
-        f'    image: url("{cerrado}");\n'
-        '}\n\n'
-        'QTreeView::branch:has-children:open,\n'
-        'QTreeWidget::branch:has-children:open {\n'
-        f'    image: url("{abierto}");\n'
+        '\nQTreeView::branch, QTreeWidget::branch {\n'
+        '    image: none;\n'
         '}\n'
     )
 

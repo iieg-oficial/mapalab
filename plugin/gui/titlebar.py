@@ -3,13 +3,12 @@ from typing import Optional
 
 from qgis.PyQt.QtCore import QSize, Qt
 from qgis.PyQt.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
-from qgis.core import QgsApplication
 
 from ..api.client import MapaLabClient
 from ..assets_cache import fetch_asset
 from ..config import LOGO_HEIGHT
 from ..identidad import guardar_icono, icono_urls, logo_urls
-from ..theme import set_role
+from ..theme import icono_refrescar, set_role
 
 TITULO: str = 'MapaLab'
 
@@ -76,7 +75,7 @@ class TitleBar(QWidget):
 
     def _boton_recargar(self) -> QPushButton:
         boton = QPushButton()
-        boton.setIcon(QgsApplication.getThemeIcon('/mActionRefresh.svg'))
+        boton.setIcon(icono_refrescar())
         boton.setIconSize(QSize(18, 18))
         boton.setFixedSize(28, 28)
         boton.setToolTip('Recargar catálogo')
