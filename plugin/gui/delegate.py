@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from qgis.PyQt.QtCore import QModelIndex, QRect, QSize, Qt
 from qgis.PyQt.QtGui import QColor, QFont, QPainter
-from qgis.PyQt.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem
+from qgis.PyQt.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem
 
 BADGE_COLORS: dict[str, str] = {
     'new': '#2e7d32',
@@ -19,6 +19,14 @@ BADGE_LABELS: dict[str, str] = {
 BADGE_PADDING: int = 6
 BADGE_GAP: int = 8
 BADGE_RADIUS: int = 7
+
+ACCENT_COLOR: str = '#FF8300'
+
+ACCENT_BAR_WIDTH: int = 6
+
+ACCENT_BAR_GAP: int = 10
+
+ACCENT_BAR_RATIO: float = 0.5
 
 ROOT_HEIGHT: int = 52
 ITEM_HEIGHT: int = 26
@@ -74,9 +82,38 @@ class LayerItemDelegate(QStyledItemDelegate):
         painter.drawText(rect, int(Qt.AlignCenter), texto)
         painter.restore()
 
+    def _pintar_barra_tema(self, painter: QPainter, option: QStyleOptionViewItem) -> None:
+        alto = max(12, int(option.rect.height() * ACCENT_BAR_RATIO))
+        top = option.rect.top() + (option.rect.height() - alto) // 2
+        rect = QRect(option.rect.left(), top, ACCENT_BAR_WIDTH, alto)
+        painter.save()
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor(ACCENT_COLOR))
+        painter.drawRoundedRect(rect, ACCENT_BAR_WIDTH // 2, ACCENT_BAR_WIDTH // 2)
+        painter.restore()
+
+    def _tema_abierto(self, option: QStyleOptionViewItem, index: QModelIndex) -> bool:
+        return self._es_raiz(index) and bool(option.state & QStyle.State_Open)
+
     def paint(self, painter: QPainter, option: QStyleOptionViewItem,
               index: QModelIndex) -> None:
         badge = badge_of(index.data(self._node_role))
+        if self._tema_abierto(option, index):
+            desplazada = QStyleOptionViewItem(option)
+            desplazada.rect = QRect(option.rect)
+            desplazada.rect.setLeft(option.rect.left() + ACCENT_BAR_WIDTH + ACCENT_BAR_GAP)
+            super().paint(painter, desplazada, index)
+            self._pintar_barra_tema(painter, option)
+            if badge is not None:
+                opcion = QStyleOptionViewItem(option)
+                self.initStyleOption(opcion, index)
+                fuente = self._fuente_menor(opcion)
+                ancho = self._ancho(opcion, badge[0], fuente) + BADGE_PADDING * 2
+                rect = QRect(option.rect.right() - ancho - BADGE_GAP, option.rect.top() + 3,
+                             ancho, option.rect.height() - 6)
+                self._pintar_pildora(painter, rect, badge[0], badge[1], fuente)
+            return
+
         if badge is None:
             super().paint(painter, option, index)
             return
