@@ -7,7 +7,6 @@ from qgis.PyQt.QtWidgets import QApplication, QFileDialog, QWidget
 
 from ..api.client import MapaLabClient, MapaLabError
 from ..layers.metadata import apply_metadata
-from ..layers.vector import add_vector_layer, download_vector
 from ..layers.wms import add_wms_layer
 from ..model.tree import (
     clean_label,
@@ -15,6 +14,7 @@ from ..model.tree import (
     is_downloadable,
     workspace_and_layer,
 )
+from ..tasks import DescargarVectorTask
 
 
 class LayerActions:
@@ -57,30 +57,17 @@ class LayerActions:
         return QFileDialog.getExistingDirectory(
             parent, 'Dónde guardar el GeoPackage', os.path.expanduser('~'))
 
-    def download_as_vector(self, node: dict[str, Any],
-                           parent: Optional[QWidget] = None) -> tuple[bool, str]:
+    def download_as_vector(self, node: dict[str, Any], parent: Optional[QWidget] = None,
+                           ) -> tuple[Optional[DescargarVectorTask], str]:
         label = clean_label(node.get('label') or '')
 
         if not has_wfs(node):
-            return False, f'«{label}» no está publicada como vectorial.'
+            return None, f'«{label}» no está publicada como vectorial.'
         if not is_downloadable(node):
-            return False, f'«{label}» no es descargable.'
+            return None, f'«{label}» no es descargable.'
 
         target_dir = self._target_dir(parent)
         if not target_dir:
-            return True, ''
+            return None, ''
 
-        self._busy(True)
-        try:
-            path, error = download_vector(node, self._client, target_dir)
-            if path is None:
-                return False, f'No se pudo descargar «{label}»: {error}'
-
-            layer = add_vector_layer(path, node)
-            if layer is None:
-                return False, f'Se descargó en {path}, pero QGIS no pudo abrirlo.'
-            self._attach_metadata(layer, node)
-        finally:
-            self._busy(False)
-
-        return True, ''
+        return DescargarVectorTask(self._client, node, target_dir), ''

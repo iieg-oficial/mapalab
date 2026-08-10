@@ -6,6 +6,7 @@ from qgis.PyQt.QtGui import QIcon, QImage, QPixmap
 from ..api.client import MapaLabClient
 from ..assets_cache import fetch_asset
 from ..identidad import tema_icono_urls
+from ..model.tree import alias_de_tema
 
 ICON_SIZE: int = 20
 
@@ -53,18 +54,6 @@ def icono_de_url(client: MapaLabClient, url: str) -> Optional[QIcon]:
 
     _memoria[url] = icono
     return icono
-
-
-def alias_de_tema(node: dict[str, Any]) -> str:
-    wms_config = node.get('wmsConfig') or {}
-    alias = wms_config.get('workspace')
-    if isinstance(alias, str) and alias:
-        return alias
-    for hijo in node.get('children') or []:
-        encontrado = alias_de_tema(hijo)
-        if encontrado:
-            return encontrado
-    return ''
 
 
 def icono_de_tema(client: MapaLabClient, node: dict[str, Any],

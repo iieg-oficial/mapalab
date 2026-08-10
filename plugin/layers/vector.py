@@ -1,9 +1,9 @@
 import os
 import re
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 from urllib.parse import urlencode
 
-from qgis.core import QgsProject, QgsVectorLayer
+from qgis.core import QgsFeedback, QgsProject, QgsVectorLayer
 
 from ..api.client import MapaLabClient, MapaLabError
 from ..config import DOWNLOAD_CRS, DOWNLOAD_TIMEOUT_MS
@@ -33,7 +33,10 @@ def build_wfs_url(wms_config: dict[str, Any], type_name: str, cql_filter: str = 
 
 def download_vector(node: dict[str, Any], client: MapaLabClient, target_dir: str,
                     apply_node_filter: bool = False,
-                    extra_cql: str = '') -> tuple[Optional[str], str]:
+                    extra_cql: str = '',
+                    feedback: Optional[QgsFeedback] = None,
+                    on_progress: Optional[Callable[[int, int], None]] = None,
+                    ) -> tuple[Optional[str], str]:
     wms_config = node.get('wmsConfig') or {}
     type_name = typename(node)
     if not type_name:
@@ -56,7 +59,8 @@ def download_vector(node: dict[str, Any], client: MapaLabClient, target_dir: str
     destination = os.path.join(target_dir, f'{_safe_name(type_name)}.gpkg')
 
     try:
-        written = client.download(url, destination, DOWNLOAD_TIMEOUT_MS)
+        written = client.download(
+            url, destination, DOWNLOAD_TIMEOUT_MS, feedback=feedback, on_progress=on_progress)
     except MapaLabError as exc:
         return None, str(exc)
 

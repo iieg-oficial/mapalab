@@ -47,6 +47,23 @@ def logo_widget(client: MapaLabClient, marca: str, oscuro: bool,
     return widget
 
 
+def montar_footer(footer: QWidget, layout: QHBoxLayout, client: MapaLabClient,
+                  alto: int) -> None:
+    oscuro = es_tema_oscuro(footer)
+    iieg = logo_widget(client, 'iieg', oscuro, alto)
+    jalisco = logo_widget(client, 'jalisco', oscuro, alto)
+
+    if iieg is None and jalisco is None:
+        footer.hide()
+        return
+
+    if iieg is not None:
+        layout.addWidget(iieg, 0, Qt.AlignVCenter)
+    layout.addStretch(1)
+    if jalisco is not None:
+        layout.addWidget(jalisco, 0, Qt.AlignVCenter)
+
+
 class TitleBar(QWidget):
 
     def __init__(self, client: MapaLabClient, al_recargar=None,

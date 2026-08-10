@@ -2,9 +2,9 @@ import hashlib
 import os
 from typing import Optional
 
-from qgis.core import QgsApplication
+from qgis.core import QgsApplication, QgsFeedback
 
-from .api.client import MapaLabClient, MapaLabError
+from .api.client import MapaLabCancelado, MapaLabClient, MapaLabError
 
 CACHE_DIR: str = 'assets'
 
@@ -40,9 +40,12 @@ def _escribir(nombre: str, datos: bytes) -> None:
         pass
 
 
-def _descargar(client: MapaLabClient, url: str) -> Optional[bytes]:
+def _descargar(client: MapaLabClient, url: str,
+               feedback: Optional[QgsFeedback] = None) -> Optional[bytes]:
     try:
-        status, content, _ = client._request(url)
+        status, content, _ = client._request(url, feedback=feedback)
+    except MapaLabCancelado:
+        raise
     except MapaLabError:
         return None
     if (status and status >= 400) or not content:
@@ -50,7 +53,8 @@ def _descargar(client: MapaLabClient, url: str) -> Optional[bytes]:
     return content
 
 
-def fetch_asset(client: MapaLabClient, urls: list[str]) -> Optional[bytes]:
+def fetch_asset(client: MapaLabClient, urls: list[str],
+                feedback: Optional[QgsFeedback] = None) -> Optional[bytes]:
     candidatas = [url for url in urls if url]
     if not candidatas:
         return None
@@ -61,7 +65,9 @@ def fetch_asset(client: MapaLabClient, urls: list[str]) -> Optional[bytes]:
             return cacheado
 
     for url in candidatas:
-        datos = _descargar(client, url)
+        if feedback is not None and feedback.isCanceled():
+            return None
+        datos = _descargar(client, url, feedback)
         if datos:
             _escribir(_cache_name(url), datos)
             return datos

@@ -90,6 +90,18 @@ def is_disabled(node: dict[str, Any]) -> bool:
     return str(node.get('label') or '').startswith('*')
 
 
+def alias_de_tema(node: dict[str, Any]) -> str:
+    wms_config = node.get('wmsConfig') or {}
+    alias = wms_config.get('workspace')
+    if isinstance(alias, str) and alias:
+        return alias
+    for hijo in node.get('children') or []:
+        encontrado = alias_de_tema(hijo)
+        if encontrado:
+            return encontrado
+    return ''
+
+
 def layer_key(node: dict[str, Any]) -> Optional[str]:
     wms_config = node.get('wmsConfig') or {}
     return wms_config.get('qualifiedName')

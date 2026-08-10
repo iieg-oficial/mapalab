@@ -14,7 +14,7 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
-from ..api.client import MapaLabClient, MapaLabError
+from ..api.client import MapaLabClient
 from ..config import (
     FOOTER_BAR_HEIGHT,
     FOOTER_LOGO_HEIGHT,
@@ -22,12 +22,13 @@ from ..config import (
     get_base_url,
     set_base_url,
 )
-from ..model.tree import clean_label, filter_tree, hydrate_tree, is_disabled
+from ..model.tree import clean_label, filter_tree, is_disabled
 from ..theme import apply_theme, set_role, sombra_en_hover
 from .actions import LayerActions
 from .delegate import LayerItemDelegate
+from ..tasks import CargarArbolTask, Coordinador
 from .icons import TEMA_ICON_SIZE, icono_de_nodo
-from .titlebar import TitleBar, es_tema_oscuro, logo_widget
+from .titlebar import TitleBar, montar_footer
 
 NODE_ROLE: int = int(Qt.UserRole)
 
@@ -43,6 +44,7 @@ class MapaLabDock(QDockWidget):
         self._client = MapaLabClient()
         self._actions = LayerActions(iface, self._client)
         self._tree: list[dict[str, Any]] = []
+        self._tareas = Coordinador()
         self._hover_item: Optional[QTreeWidgetItem] = None
         self._build_ui()
         apply_theme(self)
@@ -123,7 +125,7 @@ class MapaLabDock(QDockWidget):
         set_role(self._download_button, 'secondary')
         apply_theme(container)
         self._montar_titulo()
-        self._montar_footer()
+        montar_footer(self._footer, self._footer_layout, self._client, FOOTER_LOGO_HEIGHT)
 
     def _montar_titulo(self) -> None:
         barra = TitleBar(self._client, lambda: self.load_tree(force=True), self)
@@ -132,21 +134,6 @@ class MapaLabDock(QDockWidget):
         apply_theme(barra)
         barra.cargar()
         self.setTitleBarWidget(barra)
-
-    def _montar_footer(self) -> None:
-        oscuro = es_tema_oscuro(self._footer)
-        iieg = logo_widget(self._client, 'iieg', oscuro, FOOTER_LOGO_HEIGHT)
-        jalisco = logo_widget(self._client, 'jalisco', oscuro, FOOTER_LOGO_HEIGHT)
-
-        if iieg is None and jalisco is None:
-            self._footer.hide()
-            return
-
-        if iieg is not None:
-            self._footer_layout.addWidget(iieg, 0, Qt.AlignVCenter)
-        self._footer_layout.addStretch(1)
-        if jalisco is not None:
-            self._footer_layout.addWidget(jalisco, 0, Qt.AlignVCenter)
 
     def _refresh_url_state(self) -> None:
         base_url = get_base_url()
@@ -166,17 +153,20 @@ class MapaLabDock(QDockWidget):
         self._refresh_url_state()
 
     def load_tree(self, force: bool = False) -> None:
-        self._mensaje('Cargando catálogo…')
-        try:
-            raw = self._client.fetch_tree(force=force)
-        except MapaLabError as exc:
-            self._mensaje(f'No se pudo cargar el catálogo: {exc}')
-            self._url_row.setVisible(True)
+        if self._tareas.ocupado('arbol'):
             return
+        self._mensaje('Cargando catálogo…')
+        tarea = CargarArbolTask(self._client, force)
+        self._tareas.lanzar('arbol', tarea, self._arbol_listo, self._arbol_fallo)
 
-        self._tree = hydrate_tree(raw)
+    def _arbol_listo(self, arbol: list[dict[str, Any]]) -> None:
+        self._tree = arbol
         self._populate(self._tree)
         self._mensaje('')
+
+    def _arbol_fallo(self, detalle: str) -> None:
+        self._mensaje(f'No se pudo cargar el catálogo: {detalle}')
+        self._url_row.setVisible(True)
 
     def _populate(self, nodes: list[dict[str, Any]]) -> None:
         self._hover_item = None
@@ -289,4 +279,21 @@ class MapaLabDock(QDockWidget):
         node = self._require_layer_node()
         if node is None:
             return
-        self._reportar(self._actions.download_as_vector(node, self))
+        if self._tareas.ocupado('descarga'):
+            self._mensaje('Ya hay una descarga en curso.')
+            return
+
+        tarea, error = self._actions.download_as_vector(node, self)
+        if tarea is None:
+            self._mensaje(error)
+            return
+
+        self._mensaje('Descargando… puedes seguir trabajando.')
+        self._tareas.lanzar('descarga', tarea, self._descarga_lista, self._mensaje)
+
+    def _descarga_lista(self, path: str) -> None:
+        self._mensaje('')
+
+    def closeEvent(self, evento: Any) -> None:
+        self._tareas.cancelar_todo()
+        super().closeEvent(evento)

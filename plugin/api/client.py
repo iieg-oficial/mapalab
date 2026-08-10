@@ -1,11 +1,11 @@
 import json
 import os
 import re
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtNetwork import QNetworkRequest
-from qgis.core import QgsApplication, QgsBlockingNetworkRequest
+from qgis.core import QgsApplication, QgsBlockingNetworkRequest, QgsFeedback
 
 from ..config import (
     CLIENT_HEADER,
@@ -19,6 +19,10 @@ from ..config import (
 
 
 class MapaLabError(Exception):
+    pass
+
+
+class MapaLabCancelado(MapaLabError):
     pass
 
 
@@ -64,7 +68,10 @@ class MapaLabClient:
         self._tree: Optional[list[dict[str, Any]]] = None
 
     def _request(self, url: str, etag: Optional[str] = None,
-                 timeout_ms: int = REQUEST_TIMEOUT_MS) -> tuple[int, bytes, Optional[str]]:
+                 timeout_ms: int = REQUEST_TIMEOUT_MS,
+                 feedback: Optional[QgsFeedback] = None,
+                 on_progress: Optional[Callable[[int, int], None]] = None,
+                 ) -> tuple[int, bytes, Optional[str]]:
         if not get_base_url():
             raise MapaLabError('Falta configurar la dirección de MapaLab.')
 
@@ -75,7 +82,13 @@ class MapaLabClient:
             request.setRawHeader(b'If-None-Match', etag.encode('utf-8'))
 
         blocking = QgsBlockingNetworkRequest()
-        error = blocking.get(request, forceRefresh=True)
+        if on_progress is not None:
+            blocking.downloadProgress.connect(on_progress)
+        error = blocking.get(request, forceRefresh=True, feedback=feedback)
+
+        if feedback is not None and feedback.isCanceled():
+            raise MapaLabCancelado('Operación cancelada.')
+
         reply = blocking.reply()
         status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) or 0
 
@@ -99,11 +112,12 @@ class MapaLabClient:
             raise MapaLabError(
                 f'{label}: la respuesta no es JSON ({status}). {_describe(content)}') from exc
 
-    def _get_json(self, path: str) -> Any:
-        status, content, _ = self._request(api_url(path))
+    def _get_json(self, path: str, feedback: Optional[QgsFeedback] = None) -> Any:
+        status, content, _ = self._request(api_url(path), feedback=feedback)
         return self._decode_json(status, content, path)
 
-    def fetch_tree(self, force: bool = False) -> list[dict[str, Any]]:
+    def fetch_tree(self, force: bool = False,
+                   feedback: Optional[QgsFeedback] = None) -> list[dict[str, Any]]:
         if self._tree is not None and not force:
             return self._tree
 
@@ -112,9 +126,11 @@ class MapaLabClient:
         url = api_url('/layers/tree')
 
         try:
-            status, content, etag = self._request(url, etag=cached_etag)
+            status, content, etag = self._request(url, etag=cached_etag, feedback=feedback)
             if status == 304 and not cached_tree:
-                status, content, etag = self._request(url)
+                status, content, etag = self._request(url, feedback=feedback)
+        except MapaLabCancelado:
+            raise
         except MapaLabError:
             if cached_tree:
                 self._tree = json.loads(cached_tree)
@@ -131,8 +147,10 @@ class MapaLabClient:
             _write_cache(ETAG_CACHE_FILE, etag)
         return self._tree
 
-    def fetch_metadata(self, workspace: str, layer: str) -> Any:
-        return self._get_json(f'/metadata/?workspace={workspace}&layer={layer}')
+    def fetch_metadata(self, workspace: str, layer: str,
+                       feedback: Optional[QgsFeedback] = None) -> Any:
+        return self._get_json(
+            f'/metadata/?workspace={workspace}&layer={layer}', feedback=feedback)
 
     def fetch_periodicity(self, workspace: str, layer: str) -> dict[str, Any]:
         payload = self._get_json(f'/periodicity/?workspace={workspace}&layer={layer}')
@@ -146,8 +164,11 @@ class MapaLabClient:
             return payload.get('items') or []
         return []
 
-    def download(self, url: str, destination: str, timeout_ms: int) -> int:
-        _, content, _ = self._request(url, timeout_ms=timeout_ms)
+    def download(self, url: str, destination: str, timeout_ms: int,
+                 feedback: Optional[QgsFeedback] = None,
+                 on_progress: Optional[Callable[[int, int], None]] = None) -> int:
+        _, content, _ = self._request(
+            url, timeout_ms=timeout_ms, feedback=feedback, on_progress=on_progress)
         with open(destination, 'wb') as handle:
             handle.write(content)
         return len(content)
