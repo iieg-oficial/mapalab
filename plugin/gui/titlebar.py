@@ -1,7 +1,9 @@
 import os
 from typing import Optional
 
-from qgis.PyQt.QtWidgets import QHBoxLayout, QLabel, QWidget
+from qgis.PyQt.QtCore import QSize, Qt
+from qgis.PyQt.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
+from qgis.core import QgsApplication
 
 from ..api.client import MapaLabClient
 from ..assets_cache import fetch_asset
@@ -16,7 +18,7 @@ def es_tema_oscuro(widget: QWidget) -> bool:
     return widget.palette().window().color().lightness() < 128
 
 
-def _widget_svg(datos: bytes) -> Optional[QWidget]:
+def _widget_svg(datos: bytes, alto: int = LOGO_HEIGHT) -> Optional[QWidget]:
     try:
         from qgis.PyQt.QtSvg import QSvgWidget
     except ImportError:
@@ -27,16 +29,32 @@ def _widget_svg(datos: bytes) -> Optional[QWidget]:
     tamano = widget.renderer().defaultSize()
     if not tamano.isValid() or tamano.height() <= 0:
         return None
-    ancho = int(tamano.width() * LOGO_HEIGHT / tamano.height())
-    widget.setFixedSize(ancho, LOGO_HEIGHT)
+    ancho = int(tamano.width() * alto / tamano.height())
+    widget.setFixedSize(ancho, alto)
+    return widget
+
+
+FOOTER_HEIGHT: int = 26
+
+
+def logo_widget(client: MapaLabClient, marca: str, oscuro: bool,
+                alto: int = FOOTER_HEIGHT) -> Optional[QWidget]:
+    datos = fetch_asset(client, logo_urls(marca, oscuro))
+    if not datos:
+        return None
+    widget = _widget_svg(datos, alto)
+    if widget is not None:
+        widget.setToolTip(marca.upper())
     return widget
 
 
 class TitleBar(QWidget):
 
-    def __init__(self, client: MapaLabClient, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, client: MapaLabClient, al_recargar=None,
+                 parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._client = client
+        self._al_recargar = al_recargar
         self.setMinimumHeight(LOGO_HEIGHT + 12)
 
         layout = QHBoxLayout()
@@ -51,20 +69,24 @@ class TitleBar(QWidget):
         self._layout.addWidget(self._logo_o_texto('mapalab', oscuro, TITULO))
         self._layout.addStretch(1)
 
-        derecha = self._logo('iieg', oscuro)
-        if derecha is not None:
-            self._layout.addWidget(derecha)
+        if self._al_recargar is not None:
+            self._layout.addWidget(self._boton_recargar(), 0, Qt.AlignVCenter)
 
         self._asegurar_icono()
 
+    def _boton_recargar(self) -> QPushButton:
+        boton = QPushButton()
+        boton.setIcon(QgsApplication.getThemeIcon('/mActionRefresh.svg'))
+        boton.setIconSize(QSize(18, 18))
+        boton.setFixedSize(28, 28)
+        boton.setToolTip('Recargar catálogo')
+        boton.setFlat(True)
+        boton.clicked.connect(self._al_recargar)
+        set_role(boton, 'icon')
+        return boton
+
     def _logo(self, marca: str, oscuro: bool) -> Optional[QWidget]:
-        datos = fetch_asset(self._client, logo_urls(marca, oscuro))
-        if not datos:
-            return None
-        widget = _widget_svg(datos)
-        if widget is not None:
-            widget.setToolTip(marca.upper())
-        return widget
+        return logo_widget(self._client, marca, oscuro, LOGO_HEIGHT)
 
     def _logo_o_texto(self, marca: str, oscuro: bool, texto: str) -> QWidget:
         widget = self._logo(marca, oscuro)

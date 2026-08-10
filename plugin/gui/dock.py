@@ -21,7 +21,7 @@ from ..theme import apply_theme, set_role
 from .actions import LayerActions
 from .delegate import LayerItemDelegate
 from .icons import icono_de_nodo
-from .titlebar import TitleBar
+from .titlebar import TitleBar, es_tema_oscuro, logo_widget
 
 NODE_ROLE: int = int(Qt.UserRole)
 
@@ -76,14 +76,18 @@ class MapaLabDock(QDockWidget):
         buttons.addWidget(self._download_button)
         layout.addLayout(buttons)
 
-        self._reload_button = QPushButton('Recargar catálogo')
-        self._reload_button.clicked.connect(lambda: self.load_tree(force=True))
-        layout.addWidget(self._reload_button)
-
         self._status = QLabel('')
         self._status.setWordWrap(True)
         self._status.setVisible(False)
         layout.addWidget(self._status)
+
+        self._footer = QWidget()
+        footer_layout = QHBoxLayout()
+        footer_layout.setContentsMargins(0, 6, 0, 0)
+        footer_layout.addStretch(1)
+        self._footer.setLayout(footer_layout)
+        self._footer_layout = footer_layout
+        layout.addWidget(self._footer)
 
         container.setLayout(layout)
         self.setWidget(container)
@@ -91,15 +95,22 @@ class MapaLabDock(QDockWidget):
         set_role(self._add_button, 'primary')
         set_role(self._url_button, 'primary')
         set_role(self._download_button, 'secondary')
-        set_role(self._reload_button, 'quiet')
         apply_theme(container)
         self._montar_titulo()
+        self._montar_footer()
 
     def _montar_titulo(self) -> None:
-        barra = TitleBar(self._client, self)
+        barra = TitleBar(self._client, lambda: self.load_tree(force=True), self)
         apply_theme(barra)
         barra.cargar()
         self.setTitleBarWidget(barra)
+
+    def _montar_footer(self) -> None:
+        logo = logo_widget(self._client, 'iieg', es_tema_oscuro(self._footer))
+        if logo is not None:
+            self._footer_layout.addWidget(logo)
+        else:
+            self._footer.hide()
 
     def _refresh_url_state(self) -> None:
         base_url = get_base_url()
