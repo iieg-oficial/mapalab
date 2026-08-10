@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from qgis.PyQt.QtCore import QSize, Qt
+from qgis.PyQt.QtCore import QEvent, QSize, Qt
 from qgis.PyQt.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
@@ -80,6 +80,7 @@ class MapaLabDock(QDockWidget):
         self._widget_tree.setAllColumnsShowFocus(True)
         self._widget_tree.setUniformRowHeights(False)
         self._widget_tree.setMouseTracking(True)
+        self._widget_tree.viewport().installEventFilter(self)
         self._widget_tree.setExpandsOnDoubleClick(False)
         self._widget_tree.setItemDelegate(LayerItemDelegate(NODE_ROLE, self._widget_tree))
         self._widget_tree.setIconSize(QSize(TEMA_ICON_SIZE, TEMA_ICON_SIZE))
@@ -179,6 +180,7 @@ class MapaLabDock(QDockWidget):
         self._mensaje('')
 
     def _populate(self, nodes: list[dict[str, Any]]) -> None:
+        self._hover_item = None
         self._widget_tree.clear()
         for node in nodes:
             self._widget_tree.addTopLevelItem(self._build_item(node, es_raiz=True))
@@ -232,11 +234,22 @@ class MapaLabDock(QDockWidget):
         if icono is not None:
             item.setIcon(0, icono)
 
+    def eventFilter(self, objeto: Any, evento: Any) -> bool:
+        if evento.type() == QEvent.Leave:
+            self._limpiar_hover()
+        return False
+
+    def _limpiar_hover(self) -> None:
+        if self._hover_item is None:
+            return
+        item, self._hover_item = self._hover_item, None
+        if not item.isExpanded():
+            self._actualizar_icono(item, False)
+
     def _on_entered(self, item: QTreeWidgetItem, column: int) -> None:
         if item is self._hover_item:
             return
-        if self._hover_item is not None and not self._hover_item.isExpanded():
-            self._actualizar_icono(self._hover_item, False)
+        self._limpiar_hover()
         self._hover_item = item
         self._actualizar_icono(item, True)
 
