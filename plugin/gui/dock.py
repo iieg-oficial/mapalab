@@ -237,6 +237,10 @@ class MapaLabDock(QDockWidget):
     def eventFilter(self, objeto: Any, evento: Any) -> bool:
         if evento.type() == QEvent.Leave:
             self._limpiar_hover()
+        elif evento.type() == QEvent.MouseButtonPress:
+            if self._widget_tree.itemAt(evento.pos()) is None:
+                self._widget_tree.clearSelection()
+                self._widget_tree.setCurrentItem(None)
         return False
 
     def _limpiar_hover(self) -> None:
