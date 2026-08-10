@@ -2,6 +2,7 @@ import os
 import re
 from typing import Optional
 
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QWidget
 
 from .config import FONT_SCALE_PX
@@ -75,6 +76,7 @@ def apply_theme(widget: QWidget) -> bool:
 
 def set_role(widget: QWidget, role: Optional[str]) -> None:
     widget.setProperty(BRAND_ROLE, role)
+    widget.setAttribute(Qt.WA_StyledBackground, True)
     style = widget.style()
     if style is not None:
         style.unpolish(widget)
