@@ -50,7 +50,7 @@ QLineEdit {
 }
 
 QTreeView, QTreeWidget {
-    background-color: #EAEFFA;
+    background-color: #FFFFFF;
     border-radius: 16px;
 }
 
@@ -117,7 +117,7 @@ QTreeView::item, QTreeWidget::item {
 }
 
 QTreeView::item:hover, QTreeWidget::item:hover {
-    background-color: #FFE9CC;
+    background-color: rgba(70, 80, 85, 0.08);
     color: palette(text);
 }
 
@@ -128,7 +128,7 @@ QTreeView::branch:selected, QTreeWidget::branch:selected {
 }
 
 QTreeView::branch:hover, QTreeWidget::branch:hover {
-    background-color: #FFE9CC;
+    background-color: rgba(70, 80, 85, 0.08);
 }
 
 QLabel[brandRole="title"] {
