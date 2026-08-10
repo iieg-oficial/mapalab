@@ -77,7 +77,6 @@ class MapaLabDock(QDockWidget):
         self._widget_tree = QTreeWidget()
         self._widget_tree.setHeaderHidden(True)
         self._widget_tree.header().setStretchLastSection(True)
-        self._widget_tree.setAllColumnsShowFocus(True)
         self._widget_tree.setUniformRowHeights(False)
         self._widget_tree.setMouseTracking(True)
         self._widget_tree.viewport().installEventFilter(self)

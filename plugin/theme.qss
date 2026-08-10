@@ -6,7 +6,7 @@
    la identidad lo exige, para no romper el modo oscuro. */
 
 /* Fuentes de la marca (descargar y registrar en el cliente):
-   Garet 400: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-book.otf
+   Garet 400: https://x/a.otf
 */
 
 * {
@@ -103,7 +103,9 @@ QPushButton[brandRole="quiet"]:hover {
 QTreeView, QTreeWidget {
     border: none;
     outline: none;
-    show-decoration-selected: 1;
+/* 0 = el realce cubre solo la etiqueta y su icono, no la fila
+   entera hasta el borde del panel. */
+    show-decoration-selected: 0;
 }
 
 QWidget[brandRole="card"] {
