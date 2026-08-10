@@ -29,7 +29,7 @@ ACCENT_BAR_GAP: int = 10
 ACCENT_BAR_RATIO: float = 0.5
 
 ROOT_HEIGHT: int = 52
-ITEM_HEIGHT: int = 26
+ITEM_HEIGHT: int = 30
 
 def badge_of(node: Optional[dict[str, Any]]) -> Optional[tuple[str, QColor]]:
     if not isinstance(node, dict):
