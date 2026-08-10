@@ -5,6 +5,7 @@ from qgis.PyQt.QtGui import QIcon, QImage, QPixmap
 
 from ..api.client import MapaLabClient
 from ..assets_cache import fetch_asset
+from ..identidad import tema_icono_urls
 
 ICON_SIZE: int = 20
 
@@ -52,8 +53,36 @@ def icono_de_url(client: MapaLabClient, url: str) -> Optional[QIcon]:
     return icono
 
 
-def icono_de_nodo(client: MapaLabClient, node: dict[str, Any]) -> Optional[QIcon]:
+def alias_de_tema(node: dict[str, Any]) -> str:
+    wms_config = node.get('wmsConfig') or {}
+    alias = wms_config.get('workspace')
+    if isinstance(alias, str) and alias:
+        return alias
+    for hijo in node.get('children') or []:
+        encontrado = alias_de_tema(hijo)
+        if encontrado:
+            return encontrado
+    return ''
+
+
+def icono_de_tema(client: MapaLabClient, node: dict[str, Any]) -> Optional[QIcon]:
+    alias = alias_de_tema(node)
+    if not alias:
+        return None
+    if alias in _memoria:
+        return _memoria[alias]
+
+    datos = fetch_asset(client, tema_icono_urls(alias))
+    icono = _desde_svg(datos) if datos and b'<svg' in datos[:400] else None
+    _memoria[alias] = icono
+    return icono
+
+
+def icono_de_nodo(client: MapaLabClient, node: dict[str, Any],
+                  es_raiz: bool = False) -> Optional[QIcon]:
     url = node.get('iconUrl')
     if isinstance(url, str) and url:
         return icono_de_url(client, url)
+    if es_raiz:
+        return icono_de_tema(client, node)
     return None

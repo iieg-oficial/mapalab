@@ -23,7 +23,10 @@ LOGOS_PATH: str = '/acervo/iieg/logos'
 LOGOS: dict[str, tuple[str, str]] = {
     'mapalab': ('mapalab_large.svg', 'mapalab_large_dark.svg'),
     'iieg': ('iieg_large.svg', 'iieg_large_dark.svg'),
+    'jalisco': ('jalisco_large_dark.svg', 'jalisco_large_dark.svg'),
 }
+
+TEMAS_PATH: str = '/acervo/mapalab/svg/temas'
 
 ICONO_ARCHIVO: str = 'mapalab_short.svg'
 
@@ -60,6 +63,11 @@ def geoserver_url(workspace: str) -> str:
 
 def wfs_url(workspace: str) -> str:
     return f'{get_base_url()}/sextante/{workspace}/wfs'
+
+
+def tema_icono_url(alias: str) -> str:
+    base = get_base_url()
+    return f'{base}{TEMAS_PATH}/{alias}.svg' if base and alias else ''
 
 
 def logo_url(marca: str, oscuro: bool) -> str:

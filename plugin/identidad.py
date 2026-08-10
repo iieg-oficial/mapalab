@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from qgis.core import QgsApplication
 
-from .config import ICONO_ARCHIVO, ICONO_CACHE, LOGOS, LOGOS_PATH, get_base_url
+from .config import ICONO_ARCHIVO, ICONO_CACHE, LOGOS, LOGOS_PATH, TEMAS_PATH, get_base_url
 
 IDENTIDAD_FILE: str = 'identidad.json'
 
@@ -40,6 +40,17 @@ def icono_urls() -> list[str]:
     catalogo = _url_catalogo('mapalab', False)
     remoto = catalogo.rsplit('/', 1)[0] + f'/{ICONO_ARCHIVO}' if catalogo else ''
     return [_url_servidor(ICONO_ARCHIVO), remoto]
+
+
+def tema_icono_urls(alias: str) -> list[str]:
+    if not alias:
+        return []
+    base = get_base_url()
+    propio = f'{base}{TEMAS_PATH}/{alias}.svg' if base else ''
+    catalogo = _url_catalogo('iieg', False)
+    raiz = catalogo.split('/acervo/')[0] if '/acervo/' in catalogo else ''
+    respaldo = f'{raiz}{TEMAS_PATH}/{alias}.svg' if raiz else ''
+    return [propio, respaldo]
 
 
 def icono_cache_path() -> str:

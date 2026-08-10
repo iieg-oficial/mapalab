@@ -86,7 +86,6 @@ class MapaLabDock(QDockWidget):
         self._footer.setFixedHeight(FOOTER_BAR_HEIGHT)
         footer_layout = QHBoxLayout()
         footer_layout.setContentsMargins(10, 6, 10, 6)
-        footer_layout.setAlignment(Qt.AlignCenter)
         self._footer.setLayout(footer_layout)
         self._footer_layout = footer_layout
         layout.addWidget(self._footer)
@@ -108,11 +107,20 @@ class MapaLabDock(QDockWidget):
         self.setTitleBarWidget(barra)
 
     def _montar_footer(self) -> None:
-        logo = logo_widget(self._client, 'iieg', es_tema_oscuro(self._footer), FOOTER_LOGO_HEIGHT)
-        if logo is not None:
-            self._footer_layout.addWidget(logo, 0, Qt.AlignCenter)
-        else:
+        oscuro = es_tema_oscuro(self._footer)
+        iieg = logo_widget(self._client, 'iieg', oscuro, FOOTER_LOGO_HEIGHT)
+        jalisco = logo_widget(self._client, 'jalisco', oscuro, FOOTER_LOGO_HEIGHT)
+
+        if iieg is None and jalisco is None:
             self._footer.hide()
+            return
+
+        self._footer_layout.addStretch(1)
+        if iieg is not None:
+            self._footer_layout.addWidget(iieg, 0, Qt.AlignVCenter)
+        self._footer_layout.addStretch(1)
+        if jalisco is not None:
+            self._footer_layout.addWidget(jalisco, 0, Qt.AlignVCenter)
 
     def _refresh_url_state(self) -> None:
         base_url = get_base_url()
@@ -147,15 +155,15 @@ class MapaLabDock(QDockWidget):
     def _populate(self, nodes: list[dict[str, Any]]) -> None:
         self._widget_tree.clear()
         for node in nodes:
-            self._widget_tree.addTopLevelItem(self._build_item(node))
+            self._widget_tree.addTopLevelItem(self._build_item(node, es_raiz=True))
 
-    def _build_item(self, node: dict[str, Any]) -> QTreeWidgetItem:
+    def _build_item(self, node: dict[str, Any], es_raiz: bool = False) -> QTreeWidgetItem:
         item = QTreeWidgetItem([clean_label(node.get('label') or '')])
         item.setData(0, NODE_ROLE, node)
         if is_disabled(node):
             item.setDisabled(True)
 
-        icono = icono_de_nodo(self._client, node)
+        icono = icono_de_nodo(self._client, node, es_raiz)
         if icono is not None:
             item.setIcon(0, icono)
 
