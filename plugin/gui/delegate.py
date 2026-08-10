@@ -22,7 +22,11 @@ BADGE_RADIUS: int = 7
 
 ACCENT_COLOR: str = '#FF8300'
 
-ACCENT_BAR_WIDTH: int = 4
+ACCENT_BAR_WIDTH: int = 6
+
+ACCENT_BAR_GAP: int = 10
+
+ACCENT_BAR_RATIO: float = 0.5
 
 ROOT_HEIGHT: int = 52
 ITEM_HEIGHT: int = 26
@@ -79,12 +83,13 @@ class LayerItemDelegate(QStyledItemDelegate):
         painter.restore()
 
     def _pintar_barra_tema(self, painter: QPainter, option: QStyleOptionViewItem) -> None:
-        rect = QRect(option.rect.left(), option.rect.top() + 4,
-                     ACCENT_BAR_WIDTH, option.rect.height() - 8)
+        alto = max(12, int(option.rect.height() * ACCENT_BAR_RATIO))
+        top = option.rect.top() + (option.rect.height() - alto) // 2
+        rect = QRect(option.rect.left(), top, ACCENT_BAR_WIDTH, alto)
         painter.save()
         painter.setPen(Qt.NoPen)
         painter.setBrush(QColor(ACCENT_COLOR))
-        painter.drawRoundedRect(rect, 2, 2)
+        painter.drawRoundedRect(rect, ACCENT_BAR_WIDTH // 2, ACCENT_BAR_WIDTH // 2)
         painter.restore()
 
     def _tema_abierto(self, option: QStyleOptionViewItem, index: QModelIndex) -> bool:
@@ -94,7 +99,10 @@ class LayerItemDelegate(QStyledItemDelegate):
               index: QModelIndex) -> None:
         badge = badge_of(index.data(self._node_role))
         if self._tema_abierto(option, index):
-            super().paint(painter, option, index)
+            desplazada = QStyleOptionViewItem(option)
+            desplazada.rect = QRect(option.rect)
+            desplazada.rect.setLeft(option.rect.left() + ACCENT_BAR_WIDTH + ACCENT_BAR_GAP)
+            super().paint(painter, desplazada, index)
             self._pintar_barra_tema(painter, option)
             if badge is not None:
                 opcion = QStyleOptionViewItem(option)
