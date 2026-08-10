@@ -7,7 +7,6 @@
 
 /* Fuentes de la marca (descargar y registrar en el cliente):
    Garet 400: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-book.otf
-   Garet 700: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-bold.otf
 */
 
 * {
@@ -73,11 +72,8 @@ QPushButton[brandRole="quiet"]:hover {
     text-decoration: underline;
 }
 
-/* Contenedores redondeados, como las tarjetas del visor. */
 QTreeView, QTreeWidget {
-    border: 1px solid palette(mid);
-    border-radius: 8px;
-    padding: 8px;
+    border: none;
     show-decoration-selected: 1;
 }
 

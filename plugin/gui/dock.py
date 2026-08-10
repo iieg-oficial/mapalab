@@ -15,7 +15,7 @@ from qgis.PyQt.QtWidgets import (
 )
 
 from ..api.client import MapaLabClient, MapaLabError
-from ..config import get_base_url, set_base_url
+from ..config import FOOTER_BAR_HEIGHT, FOOTER_LOGO_HEIGHT, get_base_url, set_base_url
 from ..model.tree import clean_label, filter_tree, hydrate_tree, is_disabled
 from ..theme import apply_theme, set_role
 from .actions import LayerActions
@@ -83,9 +83,10 @@ class MapaLabDock(QDockWidget):
         layout.addWidget(self._status)
 
         self._footer = QWidget()
+        self._footer.setFixedHeight(FOOTER_BAR_HEIGHT)
         footer_layout = QHBoxLayout()
-        footer_layout.setContentsMargins(0, 6, 0, 0)
-        footer_layout.addStretch(1)
+        footer_layout.setContentsMargins(10, 6, 10, 6)
+        footer_layout.setAlignment(Qt.AlignCenter)
         self._footer.setLayout(footer_layout)
         self._footer_layout = footer_layout
         layout.addWidget(self._footer)
@@ -107,9 +108,9 @@ class MapaLabDock(QDockWidget):
         self.setTitleBarWidget(barra)
 
     def _montar_footer(self) -> None:
-        logo = logo_widget(self._client, 'iieg', es_tema_oscuro(self._footer))
+        logo = logo_widget(self._client, 'iieg', es_tema_oscuro(self._footer), FOOTER_LOGO_HEIGHT)
         if logo is not None:
-            self._footer_layout.addWidget(logo)
+            self._footer_layout.addWidget(logo, 0, Qt.AlignCenter)
         else:
             self._footer.hide()
 
