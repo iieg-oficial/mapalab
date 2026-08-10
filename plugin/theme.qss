@@ -28,11 +28,11 @@ QPushButton[brandRole="primary"]:disabled {
     color: palette(disabled-text);
 }
 
-/* Texto negro sobre el acento: es el unico que cumple AA sobre el
-   naranja institucional (8.5:1; blanco da 2.47:1). */
+/* Se usa la variante oscura del acento, no el acento base: sobre
+   #FF8300 el blanco da 2.47:1 y ningun texto cumple AA salvo negro. */
 QTreeView::item:selected, QTreeWidget::item:selected {
-    background-color: #FF8300;
-    color: #000000;
+    background-color: #A85700;
+    color: #FFFFFF;
 }
 
 QLineEdit:focus {
@@ -73,9 +73,18 @@ QPushButton[brandRole="quiet"]:hover {
     text-decoration: underline;
 }
 
+/* Contenedores redondeados, como las tarjetas del visor. */
 QTreeView, QTreeWidget {
-    border: none;
+    border: 1px solid palette(mid);
+    border-radius: 8px;
+    padding: 8px;
     show-decoration-selected: 1;
+}
+
+QWidget[brandRole="card"] {
+    border-radius: 8px;
+    border: 1px solid palette(mid);
+    padding: 8px;
 }
 
 QTreeView::item, QTreeWidget::item {
@@ -84,18 +93,18 @@ QTreeView::item, QTreeWidget::item {
 }
 
 QTreeView::item:hover, QTreeWidget::item:hover {
-    background-color: rgba(255, 131, 0, 0.18);
+    background-color: #FFE9CC;
     color: palette(text);
 }
 
 /* La rama hereda el azul nativo si no se tine: la seleccion se
    veria partida entre la sangria y el texto. */
 QTreeView::branch:selected, QTreeWidget::branch:selected {
-    background-color: #FF8300;
+    background-color: #A85700;
 }
 
 QTreeView::branch:hover, QTreeWidget::branch:hover {
-    background-color: rgba(255, 131, 0, 0.18);
+    background-color: #FFE9CC;
 }
 
 QLabel[brandRole="title"] {

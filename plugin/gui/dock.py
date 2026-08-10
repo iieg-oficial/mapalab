@@ -54,6 +54,7 @@ class MapaLabDock(QDockWidget):
         url_layout.addWidget(self._url_input)
         url_layout.addWidget(self._url_button)
         self._url_row.setLayout(url_layout)
+        set_role(self._url_row, 'card')
         layout.addWidget(self._url_row)
 
         self._search = QLineEdit()
