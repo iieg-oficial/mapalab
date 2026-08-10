@@ -145,6 +145,42 @@ QLabel[brandRole="title"] {
     padding: 8px 0px;
 }
 
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: rgba(70, 80, 85, 0.28);
+    border-radius: 5px;
+    min-height: 28px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #5C2472;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+    height: 0px;
+}
+
+QScrollBar:horizontal { height: 10px; background: transparent; }
+
+QScrollBar::handle:horizontal {
+    background: rgba(70, 80, 85, 0.28);
+    border-radius: 5px;
+    min-width: 28px;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+    width: 0px;
+}
+
 QLabel[brandRole="heading"] {
     color: #2e4372;
     font-size: 18px;

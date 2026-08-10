@@ -43,6 +43,7 @@ class MapaLabDock(QDockWidget):
         self._client = MapaLabClient()
         self._actions = LayerActions(iface, self._client)
         self._tree: list[dict[str, Any]] = []
+        self._hover_item: Optional[QTreeWidgetItem] = None
         self._build_ui()
         apply_theme(self)
         self._refresh_url_state()
@@ -75,10 +76,16 @@ class MapaLabDock(QDockWidget):
 
         self._widget_tree = QTreeWidget()
         self._widget_tree.setHeaderHidden(True)
+        self._widget_tree.header().setStretchLastSection(True)
+        self._widget_tree.setAllColumnsShowFocus(True)
+        self._widget_tree.setUniformRowHeights(False)
+        self._widget_tree.setMouseTracking(True)
+        self._widget_tree.setExpandsOnDoubleClick(False)
         self._widget_tree.setItemDelegate(LayerItemDelegate(NODE_ROLE, self._widget_tree))
         self._widget_tree.setIconSize(QSize(TEMA_ICON_SIZE, TEMA_ICON_SIZE))
         self._widget_tree.itemDoubleClicked.connect(self._on_double_click)
         self._widget_tree.itemClicked.connect(self._on_click)
+        self._widget_tree.itemEntered.connect(self._on_entered)
         self._widget_tree.itemExpanded.connect(self._on_expandido)
         self._widget_tree.itemCollapsed.connect(self._on_colapsado)
         layout.addWidget(self._widget_tree)
@@ -224,6 +231,14 @@ class MapaLabDock(QDockWidget):
         icono = icono_de_nodo(self._client, node, es_raiz=True, hover=hover)
         if icono is not None:
             item.setIcon(0, icono)
+
+    def _on_entered(self, item: QTreeWidgetItem, column: int) -> None:
+        if item is self._hover_item:
+            return
+        if self._hover_item is not None and not self._hover_item.isExpanded():
+            self._actualizar_icono(self._hover_item, False)
+        self._hover_item = item
+        self._actualizar_icono(item, True)
 
     def _on_expandido(self, item: QTreeWidgetItem) -> None:
         self._actualizar_icono(item, True)
