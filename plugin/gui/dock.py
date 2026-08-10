@@ -15,7 +15,13 @@ from qgis.PyQt.QtWidgets import (
 )
 
 from ..api.client import MapaLabClient, MapaLabError
-from ..config import FOOTER_BAR_HEIGHT, FOOTER_LOGO_HEIGHT, get_base_url, set_base_url
+from ..config import (
+    FOOTER_BAR_HEIGHT,
+    FOOTER_LOGO_HEIGHT,
+    SECTION_GAP,
+    get_base_url,
+    set_base_url,
+)
 from ..model.tree import clean_label, filter_tree, hydrate_tree, is_disabled
 from ..theme import apply_theme, set_role
 from .actions import LayerActions
@@ -32,16 +38,20 @@ class MapaLabDock(QDockWidget):
         super().__init__('MapaLab', parent)
         self.setObjectName('MapaLabDock')
         self._iface = iface
+        set_role(self, 'panel')
+        self.setAutoFillBackground(True)
         self._client = MapaLabClient()
         self._actions = LayerActions(iface, self._client)
         self._tree: list[dict[str, Any]] = []
         self._build_ui()
+        apply_theme(self)
         self._refresh_url_state()
 
     def _build_ui(self) -> None:
         container = QWidget()
         layout = QVBoxLayout()
-        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(SECTION_GAP)
 
         self._url_row = QWidget()
         url_layout = QHBoxLayout()

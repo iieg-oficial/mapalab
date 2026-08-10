@@ -51,7 +51,7 @@ QLineEdit {
 
 QTreeView, QTreeWidget {
     background-color: #EAEFFA;
-    border-radius: 8px;
+    border-radius: 16px;
 }
 
 QWidget[brandRole="panel"] {
@@ -64,7 +64,7 @@ QLineEdit[brandRole="search"] {
     background-color: #EAEFFA;
     color: #5C2472;
     border: none;
-    border-radius: 8px;
+    border-radius: 16px;
     padding: 12px 12px;
 }
 
