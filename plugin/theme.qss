@@ -14,10 +14,11 @@
     font-size: 16px;
 }
 
+/* Los botones van en pildora, como los del visor (rounded-full). */
 QPushButton[brandRole="primary"] {
     background-color: #5C2472;
     color: #FFFFFF;
-    border-radius: 4px;
+    border-radius: 9999px;
     padding: 8px 12px;
     border: 1px solid #5C2472;
 }
@@ -48,7 +49,7 @@ QPushButton[brandRole="secondary"] {
     background-color: transparent;
     color: #5C2472;
     border: 1px solid #5C2472;
-    border-radius: 4px;
+    border-radius: 9999px;
     padding: 8px 12px;
 }
 
