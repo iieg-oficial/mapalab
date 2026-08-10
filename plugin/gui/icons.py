@@ -67,24 +67,30 @@ def alias_de_tema(node: dict[str, Any]) -> str:
     return ''
 
 
-def icono_de_tema(client: MapaLabClient, node: dict[str, Any]) -> Optional[QIcon]:
+def icono_de_tema(client: MapaLabClient, node: dict[str, Any],
+                  hover: bool = False) -> Optional[QIcon]:
     alias = alias_de_tema(node)
     if not alias:
         return None
-    if alias in _memoria:
-        return _memoria[alias]
 
-    datos = fetch_asset(client, tema_icono_urls(alias))
+    clave = f'{alias}:hover' if hover else alias
+    if clave in _memoria:
+        return _memoria[clave]
+
+    datos = fetch_asset(client, tema_icono_urls(alias, hover))
     icono = _desde_svg(datos, TEMA_ICON_SIZE) if datos and b'<svg' in datos[:400] else None
-    _memoria[alias] = icono
+    if icono is None and hover:
+        icono = icono_de_tema(client, node, hover=False)
+
+    _memoria[clave] = icono
     return icono
 
 
 def icono_de_nodo(client: MapaLabClient, node: dict[str, Any],
-                  es_raiz: bool = False) -> Optional[QIcon]:
+                  es_raiz: bool = False, hover: bool = False) -> Optional[QIcon]:
     url = node.get('iconUrl')
     if isinstance(url, str) and url:
         return icono_de_url(client, url)
     if es_raiz:
-        return icono_de_tema(client, node)
+        return icono_de_tema(client, node, hover)
     return None

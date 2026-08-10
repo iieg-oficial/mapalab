@@ -42,14 +42,15 @@ def icono_urls() -> list[str]:
     return [_url_servidor(ICONO_ARCHIVO), remoto]
 
 
-def tema_icono_urls(alias: str) -> list[str]:
+def tema_icono_urls(alias: str, hover: bool = False) -> list[str]:
     if not alias:
         return []
+    archivo = f'{alias}_hover.svg' if hover else f'{alias}.svg'
     base = get_base_url()
-    propio = f'{base}{TEMAS_PATH}/{alias}.svg' if base else ''
+    propio = f'{base}{TEMAS_PATH}/{archivo}' if base else ''
     catalogo = _url_catalogo('iieg', False)
     raiz = catalogo.split('/acervo/')[0] if '/acervo/' in catalogo else ''
-    respaldo = f'{raiz}{TEMAS_PATH}/{alias}.svg' if raiz else ''
+    respaldo = f'{raiz}{TEMAS_PATH}/{archivo}' if raiz else ''
     return [propio, respaldo]
 
 

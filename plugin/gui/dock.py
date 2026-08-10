@@ -79,6 +79,8 @@ class MapaLabDock(QDockWidget):
         self._widget_tree.setIconSize(QSize(TEMA_ICON_SIZE, TEMA_ICON_SIZE))
         self._widget_tree.itemDoubleClicked.connect(self._on_double_click)
         self._widget_tree.itemClicked.connect(self._on_click)
+        self._widget_tree.itemExpanded.connect(self._on_expandido)
+        self._widget_tree.itemCollapsed.connect(self._on_colapsado)
         layout.addWidget(self._widget_tree)
 
         buttons = QHBoxLayout()
@@ -212,6 +214,22 @@ class MapaLabDock(QDockWidget):
                 self, 'MapaLab', 'Ese elemento es una carpeta, no una capa.')
             return None
         return node
+
+    def _actualizar_icono(self, item: QTreeWidgetItem, hover: bool) -> None:
+        if item.parent() is not None:
+            return
+        node = item.data(0, NODE_ROLE)
+        if not isinstance(node, dict):
+            return
+        icono = icono_de_nodo(self._client, node, es_raiz=True, hover=hover)
+        if icono is not None:
+            item.setIcon(0, icono)
+
+    def _on_expandido(self, item: QTreeWidgetItem) -> None:
+        self._actualizar_icono(item, True)
+
+    def _on_colapsado(self, item: QTreeWidgetItem) -> None:
+        self._actualizar_icono(item, False)
 
     def _on_click(self, item: QTreeWidgetItem, column: int) -> None:
         if item.childCount():
