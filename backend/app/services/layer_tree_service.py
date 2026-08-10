@@ -179,6 +179,10 @@ def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace], aliases_ma
     if highlight_shape:
         result['highlightShape'] = highlight_shape
 
+    geometry_type = getattr(layer, 'geometry_type', None)
+    if geometry_type:
+        result['geometryType'] = geometry_type
+
     return result
 
 

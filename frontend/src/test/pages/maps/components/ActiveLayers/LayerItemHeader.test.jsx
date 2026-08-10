@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DragHandle, LayerTitle, PinBadge, EventoLayerIcon } from '@pages/maps/components/ActiveLayers/LayerItemHeader';
+import { DragHandle, LayerTitle, PinBadge, EventoLayerIcon, GeometryTypeBadge } from '@pages/maps/components/ActiveLayers/LayerItemHeader';
 
 describe('LayerTitle', () => {
     it('renderiza el nombre como texto', () => {
@@ -51,6 +51,28 @@ describe('PinBadge', () => {
     it('renderiza un span con el icono hide', () => {
         const { container } = render(<PinBadge />);
         expect(container.querySelector('span')).toBeInTheDocument();
+    });
+});
+
+describe('GeometryTypeBadge', () => {
+    it('no renderiza nada sin tipo', () => {
+        const { container } = render(<GeometryTypeBadge type={null} />);
+        expect(container).toBeEmptyDOMElement();
+    });
+
+    it('no renderiza nada con un tipo desconocido', () => {
+        const { container } = render(<GeometryTypeBadge type="multipoligono" />);
+        expect(container).toBeEmptyDOMElement();
+    });
+
+    it.each([
+        ['point', 'Capa de puntos'],
+        ['line', 'Capa de líneas'],
+        ['polygon', 'Capa de polígonos'],
+        ['raster', 'Capa ráster']
+    ])('renderiza el icono de %s con su etiqueta', (type, label) => {
+        render(<GeometryTypeBadge type={type} />);
+        expect(screen.getByLabelText(label)).toBeInTheDocument();
     });
 });
 

@@ -95,6 +95,12 @@ export const collectLayersWithWMS = (layer) => {
 export const collectLayerIdsWithWMS = (layer) =>
     collectLayersWithWMS(layer).map(node => node.id);
 
+export const resolveGeometryType = (layer) => {
+    if (!layer) return null;
+    if (layer.geometryType) return layer.geometryType;
+    return collectLayersWithWMS(layer).find(node => node.geometryType)?.geometryType || null;
+};
+
 export const collectCatalogUnits = (layer) => {
     if (!layer) return [];
 

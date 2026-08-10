@@ -20,7 +20,6 @@ import SlotBadge from './SlotBadge';
 import { computeLabel } from './datePillHelpers';
 import { ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
-import { useLayerGeometryType } from '@hooksMaps/useLayerGeometryType';
 import { useLayerMetadata } from '@hooksMaps/useLayerMetadata';
 import { useLayerDownload } from '@hooksMaps/useLayerDownload';
 import DownloadMenu from '@mapsComponents/LayerDetailModal/components/DownloadMenu';
@@ -198,7 +197,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
 
     const { hasLegend } = useWMSLegend();
     const layerHasLegend = hasLegend(layer);
-    const geometryType = useLayerGeometryType(layer.id);
 
     const warningContent = 'Al seleccionar un punto en el mapa, éste mostrará información de esta capa. Puedes cambiar la selección dando clic en la capa que necesites visualizar.';
 
@@ -246,7 +244,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                             <EventoLayerIcon evento={layerEvento} />
                         )}
                         <LayerTitle name={layer.name} />
-                        <GeometryTypeBadge type={geometryType} />
+                        <GeometryTypeBadge type={layer.geometryType} />
                         <LayerBadge badge={layer.badge} />
                         {isLoading && !isLooping && (
                             <Loading visible={true} size="size-5" border="border-2" />

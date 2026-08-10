@@ -20,6 +20,17 @@ BADGE_PADDING: int = 6
 BADGE_GAP: int = 8
 BADGE_RADIUS: int = 7
 
+GEOM_SIZE: int = 11
+
+GEOM_GAP: int = 8
+
+GEOM_COLORS: dict[str, str] = {
+    'point': '#2e4372',
+    'line': '#2e7d32',
+    'polygon': '#5C2472',
+    'raster': '#9E5200',
+}
+
 ACCENT_COLOR: str = '#FF8300'
 
 ACCENT_BAR_WIDTH: int = 6
@@ -44,6 +55,13 @@ def badge_of(node: Optional[dict[str, Any]]) -> Optional[tuple[str, QColor]]:
     if not color.isValid():
         color = QColor('#465055')
     return label, color
+
+
+def geometry_of(node: Optional[dict[str, Any]]) -> Optional[str]:
+    if not isinstance(node, dict):
+        return None
+    tipo = node.get('geometryType')
+    return tipo if tipo in GEOM_COLORS else None
 
 
 class LayerItemDelegate(QStyledItemDelegate):
@@ -95,43 +113,87 @@ class LayerItemDelegate(QStyledItemDelegate):
     def _tema_abierto(self, option: QStyleOptionViewItem, index: QModelIndex) -> bool:
         return self._es_raiz(index) and bool(option.state & QStyle.State_Open)
 
+    def _pintar_geometria(self, painter: QPainter, rect: QRect, tipo: str) -> None:
+        color = QColor(GEOM_COLORS.get(tipo, '#465055'))
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(color)
+        centro = rect.center()
+        if tipo == 'point':
+            painter.drawEllipse(centro, GEOM_SIZE // 3, GEOM_SIZE // 3)
+        elif tipo == 'line':
+            painter.setPen(color)
+            painter.drawLine(rect.left(), rect.bottom() - 2, rect.right(), rect.top() + 2)
+        elif tipo == 'raster':
+            paso = GEOM_SIZE // 2
+            for fila in range(2):
+                for col in range(2):
+                    if (fila + col) % 2 == 0:
+                        painter.drawRect(rect.left() + col * paso, rect.top() + fila * paso,
+                                         paso - 1, paso - 1)
+        else:
+            painter.drawRoundedRect(rect.adjusted(0, 2, 0, -2), 2, 2)
+        painter.restore()
+
+    def _medir_adornos(self, opcion: QStyleOptionViewItem, rect: QRect,
+                       badge: Optional[tuple[str, QColor]], tipo: Optional[str],
+                       fuente: QFont) -> tuple[Optional[QRect], Optional[QRect], int]:
+        derecha = rect.right() - BADGE_GAP
+        rect_badge: Optional[QRect] = None
+        rect_geom: Optional[QRect] = None
+
+        if badge is not None:
+            ancho = self._ancho(opcion, badge[0], fuente) + BADGE_PADDING * 2
+            rect_badge = QRect(derecha - ancho, rect.top() + 3, ancho, rect.height() - 6)
+            derecha = rect_badge.left() - BADGE_GAP
+
+        if tipo is not None:
+            top = rect.top() + (rect.height() - GEOM_SIZE) // 2
+            rect_geom = QRect(derecha - GEOM_SIZE, top, GEOM_SIZE, GEOM_SIZE)
+            derecha = rect_geom.left() - GEOM_GAP
+
+        return rect_badge, rect_geom, derecha
+
+    def _pintar_adornos(self, painter: QPainter, rect_badge: Optional[QRect],
+                        rect_geom: Optional[QRect], badge: Optional[tuple[str, QColor]],
+                        tipo: Optional[str], fuente: QFont) -> None:
+        if rect_badge is not None and badge is not None:
+            self._pintar_pildora(painter, rect_badge, badge[0], badge[1], fuente)
+        if rect_geom is not None and tipo is not None:
+            self._pintar_geometria(painter, rect_geom, tipo)
+
     def paint(self, painter: QPainter, option: QStyleOptionViewItem,
               index: QModelIndex) -> None:
-        badge = badge_of(index.data(self._node_role))
+        node = index.data(self._node_role)
+        badge = badge_of(node)
+        tipo = geometry_of(node)
+
+        opcion = QStyleOptionViewItem(option)
+        self.initStyleOption(opcion, index)
+        fuente_menor = self._fuente_menor(opcion)
+        rect_badge, rect_geom, limite = self._medir_adornos(
+            opcion, option.rect, badge, tipo, fuente_menor)
+
         if self._tema_abierto(option, index):
             desplazada = QStyleOptionViewItem(option)
             desplazada.rect = QRect(option.rect)
             desplazada.rect.setLeft(option.rect.left() + ACCENT_BAR_WIDTH + ACCENT_BAR_GAP)
             super().paint(painter, desplazada, index)
             self._pintar_barra_tema(painter, option)
-            if badge is not None:
-                opcion = QStyleOptionViewItem(option)
-                self.initStyleOption(opcion, index)
-                fuente = self._fuente_menor(opcion)
-                ancho = self._ancho(opcion, badge[0], fuente) + BADGE_PADDING * 2
-                rect = QRect(option.rect.right() - ancho - BADGE_GAP, option.rect.top() + 3,
-                             ancho, option.rect.height() - 6)
-                self._pintar_pildora(painter, rect, badge[0], badge[1], fuente)
+            self._pintar_adornos(painter, rect_badge, rect_geom, badge, tipo, fuente_menor)
             return
 
-        if badge is None:
+        if badge is None and tipo is None:
             super().paint(painter, option, index)
             return
 
-        opcion = QStyleOptionViewItem(option)
-        self.initStyleOption(opcion, index)
-        fuente_menor = self._fuente_menor(opcion)
-
-        ancho = self._ancho(opcion, badge[0], fuente_menor) + BADGE_PADDING * 2
-        rect_badge = QRect(option.rect.right() - ancho - BADGE_GAP, option.rect.top() + 3,
-                           ancho, option.rect.height() - 6)
-
         recortada = QStyleOptionViewItem(opcion)
         recortada.rect = QRect(option.rect)
-        recortada.rect.setRight(max(option.rect.left(), rect_badge.left() - BADGE_GAP))
+        recortada.rect.setRight(max(option.rect.left(), limite))
         super().paint(painter, recortada, index)
 
-        self._pintar_pildora(painter, rect_badge, badge[0], badge[1], fuente_menor)
+        self._pintar_adornos(painter, rect_badge, rect_geom, badge, tipo, fuente_menor)
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
         size = super().sizeHint(option, index)

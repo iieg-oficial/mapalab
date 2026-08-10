@@ -5,6 +5,29 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.118.0] - 2026-08-10
+
+### Agregado: el tipo de geometría viaja en el árbol
+
+`GET /layers/tree` publica `geometryType` por nodo, con el valor que guarda
+`mapalab.layers.geometry_type` (dataengine 1.33.0): `point`, `line`, `polygon` o `raster`.
+
+En el visor, `GeometryTypeBadge` estaba construido desde hace tiempo y no se veía nunca: el hook
+que lo alimentaba resolvía el tipo pidiendo un `DescribeFeatureType` por capa al abrir el panel, y
+cuando esa consulta no llegaba a tiempo o fallaba el componente recibía `null` y devolvía `null`.
+Ahora el dato llega con el árbol, ya resuelto, y `useActiveLayersLogic` lo pone en la capa activa
+—los grupos heredan el tipo del primer descendiente con WMS, como ya hacía el hook—. El hook
+`useLayerGeometryType` se elimina; `fetchGeometryType` sigue en pie para sus otros tres usos.
+
+En el plugin de QGIS, `LayerItemDelegate` pinta el glifo junto al badge del catálogo: círculo para
+punto, diagonal para línea, rectángulo para polígono y tablero para ráster, con el color de cada
+tipo. Los adornos se miden de derecha a izquierda antes de dibujar y el rectángulo del texto se
+recorta hasta donde empiezan, así que la etiqueta nunca queda debajo. Se elimina
+`plugin/model/geometria.py`, que resolvía el tipo bajo demanda y era el plan provisional.
+
+Una capa se queda sin glifo, `curvas_de_nivel`: se publica solo por WMS y no hay WFS del cual
+deducir su geometría. Se le puede asignar a mano desde el editor de capas de mariachi.
+
 ## [1.117.0] - 2026-08-10
 
 ### Agregado: el plugin usa la identidad del IIEG

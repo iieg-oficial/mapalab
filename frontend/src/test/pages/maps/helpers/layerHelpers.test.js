@@ -6,7 +6,8 @@ import {
     collectLayersWithWMS,
     collectLayerIdsWithWMS,
     findParentGroup,
-    getSymbologyStats
+    getSymbologyStats,
+    resolveGeometryType
 } from '@pages/maps/helpers/layers/utils/layerHelpers';
 
 const LAYERS = [
@@ -163,5 +164,30 @@ describe('getSymbologyStats', () => {
         const layers = [{ id: 'l', wmsConfig: {}, symbology: [{ isFallback: true }] }];
         const stats = getSymbologyStats(layers);
         expect(stats.fallbackSymbology).toBe(1);
+    });
+});
+
+describe('resolveGeometryType', () => {
+    it('devuelve null sin nodo', () => {
+        expect(resolveGeometryType(null)).toBeNull();
+    });
+
+    it('devuelve el tipo propio de la hoja', () => {
+        expect(resolveGeometryType({ id: 'l', wmsConfig: {}, geometryType: 'point' })).toBe('point');
+    });
+
+    it('hereda el tipo del primer descendiente con WMS', () => {
+        const grupo = {
+            id: 'g',
+            children: [
+                { id: 'sin-wms', geometryType: 'raster' },
+                { id: 'hijo', wmsConfig: {}, geometryType: 'polygon' }
+            ]
+        };
+        expect(resolveGeometryType(grupo)).toBe('polygon');
+    });
+
+    it('devuelve null cuando ningun descendiente lo trae', () => {
+        expect(resolveGeometryType({ id: 'g', children: [{ id: 'h', wmsConfig: {} }] })).toBeNull();
     });
 });
