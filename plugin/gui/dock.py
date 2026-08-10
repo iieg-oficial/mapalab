@@ -21,6 +21,7 @@ from ..model.tree import clean_label, filter_tree, hydrate_tree, is_disabled
 from ..theme import apply_theme, set_role
 from .actions import LayerActions
 from .delegate import LayerItemDelegate
+from .titlebar import TitleBar
 
 NODE_ROLE: int = int(Qt.UserRole)
 
@@ -93,7 +94,17 @@ class MapaLabDock(QDockWidget):
 
         set_role(self._add_button, 'primary')
         set_role(self._url_button, 'primary')
+        set_role(self._download_button, 'secondary')
+        set_role(self._reload_button, 'quiet')
         apply_theme(container)
+        self._montar_titulo()
+
+    def _montar_titulo(self) -> None:
+        barra = TitleBar(self._client, self)
+        apply_theme(barra)
+        self.setTitleBarWidget(barra)
+        if not barra.cargar_logo():
+            apply_theme(barra)
 
     def _refresh_url_state(self) -> None:
         base_url = get_base_url()

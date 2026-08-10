@@ -22,8 +22,23 @@ usuario y un panel que impone su paleta se vuelve ilegible en la mitad de los ca
 color y la etiqueta que trae cada nodo, recortando el rectángulo del texto para que no se
 encimen. Hoy hay 2 capas con badge vigente.
 
+La barra de título del panel deja de ser el texto plano de Qt: `TitleBar` la reemplaza vía
+`setTitleBarWidget` y muestra el **logo del IIEG**, eligiendo la variante clara u oscura según la
+luminancia de la paleta del anfitrión. El archivo **no viaja en el repo** —la norma de identidad
+manda que los logos vivan en el Acervo—, así que se descarga de la URL que declara el catálogo y se
+cachea.
+
+**Hoy esa descarga falla con 404**: `logo.largo.claro` apunta a `/acervo/iieg/logos/iieg_large.svg`
+y esa ruta no existe en el Acervo, aunque `/acervo/iieg/iconos/` sí. Mientras no se suban los
+archivos, la barra cae al título en texto con el color primario. Cuando se suban, el logo aparece
+solo, sin tocar el plugin.
+
+Los tres botones expresan jerarquía en vez de verse iguales: «Agregar al mapa» es `primary`,
+«Descargar vectorial» es `secondary` (contorno que se rellena al pasar el cursor) y «Recargar
+catálogo» es `quiet`, sin recuadro.
+
 El QSS no se edita a mano: se regenera desde mariachi cuando cambian los tokens. Los colores no
-viven en el plugin.
+viven en el plugin. `identidad.json` guarda las URLs de logo por la misma razón.
 
 ### Agregado: plugin de QGIS con el catálogo del visor
 

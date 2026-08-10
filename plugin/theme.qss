@@ -7,7 +7,6 @@
 
 /* Fuentes de la marca (descargar y registrar en el cliente):
    Garet 400: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-book.otf
-   Garet 500: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-medium.otf
    Garet 700: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-bold.otf
 */
 
@@ -42,6 +41,53 @@ QLineEdit {
     border-radius: 4px;
     padding: 8px;
     border: 1px solid palette(mid);
+}
+
+QPushButton[brandRole="secondary"] {
+    background-color: transparent;
+    color: #5C2472;
+    border: 1px solid #5C2472;
+    border-radius: 4px;
+    padding: 8px 12px;
+}
+
+QPushButton[brandRole="secondary"]:hover {
+    background-color: #5C2472;
+    color: #FFFFFF;
+}
+
+QPushButton[brandRole="quiet"] {
+    background-color: transparent;
+    color: #465055;
+    border: none;
+    text-align: left;
+    padding: 8px 0px;
+}
+
+QPushButton[brandRole="quiet"]:hover {
+    color: #5C2472;
+    text-decoration: underline;
+}
+
+QTreeView, QTreeWidget {
+    border: none;
+    show-decoration-selected: 1;
+}
+
+QTreeView::item, QTreeWidget::item {
+    padding: 2px 0px;
+    border-radius: 4px;
+}
+
+QTreeView::item:hover, QTreeWidget::item:hover {
+    background-color: palette(alternate-base);
+}
+
+QLabel[brandRole="title"] {
+    color: #5C2472;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 8px 0px;
 }
 
 QLabel[brandRole="heading"] {
