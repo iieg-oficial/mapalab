@@ -2,69 +2,18 @@ import os
 from typing import Optional
 
 from qgis.PyQt.QtWidgets import QHBoxLayout, QLabel, QWidget
-from qgis.core import QgsApplication
 
-from ..api.client import MapaLabClient, MapaLabError
-from ..config import LOGO_HEIGHT, LOGOS, logo_url
+from ..api.client import MapaLabClient
+from ..assets_cache import fetch_asset
+from ..config import LOGO_HEIGHT
+from ..identidad import guardar_icono, icono_urls, logo_urls
 from ..theme import set_role
 
 TITULO: str = 'MapaLab'
 
-CACHE_DIR: str = 'logos'
-
-
-def _cache_path(nombre: str) -> str:
-    carpeta = os.path.join(QgsApplication.qgisSettingsDirPath(), 'mapalab', CACHE_DIR)
-    os.makedirs(carpeta, exist_ok=True)
-    return os.path.join(carpeta, nombre)
-
-
-def _leer_cache(nombre: str) -> Optional[bytes]:
-    path = _cache_path(nombre)
-    if not os.path.exists(path):
-        return None
-    try:
-        with open(path, 'rb') as handle:
-            return handle.read() or None
-    except OSError:
-        return None
-
-
-def _escribir_cache(nombre: str, datos: bytes) -> None:
-    try:
-        with open(_cache_path(nombre), 'wb') as handle:
-            handle.write(datos)
-    except OSError:
-        pass
-
 
 def es_tema_oscuro(widget: QWidget) -> bool:
     return widget.palette().window().color().lightness() < 128
-
-
-def obtener_logo(client: MapaLabClient, marca: str, oscuro: bool) -> Optional[bytes]:
-    archivo = LOGOS.get(marca, ('', ''))[1 if oscuro else 0]
-    if not archivo:
-        return None
-
-    cacheado = _leer_cache(archivo)
-    if cacheado:
-        return cacheado
-
-    url = logo_url(marca, oscuro)
-    if not url:
-        return None
-
-    try:
-        status, content, _ = client._request(url)
-    except MapaLabError:
-        return None
-
-    if (status and status >= 400) or not content:
-        return None
-
-    _escribir_cache(archivo, content)
-    return content
 
 
 def _widget_svg(datos: bytes) -> Optional[QWidget]:
@@ -99,16 +48,17 @@ class TitleBar(QWidget):
     def cargar(self) -> None:
         oscuro = es_tema_oscuro(self)
 
-        izquierda = self._logo_o_texto('mapalab', oscuro, TITULO)
-        self._layout.addWidget(izquierda)
+        self._layout.addWidget(self._logo_o_texto('mapalab', oscuro, TITULO))
         self._layout.addStretch(1)
 
         derecha = self._logo('iieg', oscuro)
         if derecha is not None:
             self._layout.addWidget(derecha)
 
+        self._asegurar_icono()
+
     def _logo(self, marca: str, oscuro: bool) -> Optional[QWidget]:
-        datos = obtener_logo(self._client, marca, oscuro)
+        datos = fetch_asset(self._client, logo_urls(marca, oscuro))
         if not datos:
             return None
         widget = _widget_svg(datos)
@@ -123,3 +73,12 @@ class TitleBar(QWidget):
         etiqueta = QLabel(texto)
         set_role(etiqueta, 'title')
         return etiqueta
+
+    def _asegurar_icono(self) -> None:
+        from ..identidad import icono_guardado
+
+        if icono_guardado():
+            return
+        datos = fetch_asset(self._client, icono_urls())
+        if datos:
+            guardar_icono(datos)

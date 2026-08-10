@@ -6,6 +6,7 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 
 from .gui.dock import MapaLabDock
+from .identidad import icono_guardado
 
 MENU_TITLE: str = 'MapaLab'
 
@@ -18,6 +19,9 @@ class MapaLabPlugin:
         self._dock: Optional[MapaLabDock] = None
 
     def _icon(self) -> QIcon:
+        oficial = icono_guardado()
+        if oficial:
+            return QIcon(oficial)
         path = os.path.join(os.path.dirname(__file__), 'icon.svg')
         return QIcon(path) if os.path.exists(path) else QIcon()
 
@@ -30,12 +34,16 @@ class MapaLabPlugin:
         self._iface.addPluginToWebMenu(MENU_TITLE, self._action)
 
     def _toggle(self, checked: bool) -> None:
+        primera_vez = self._dock is None
         if self._dock is None:
             self._dock = MapaLabDock(self._iface, self._iface.mainWindow())
             self._dock.visibilityChanged.connect(self._on_visibility)
             self._iface.addDockWidget(Qt.RightDockWidgetArea, self._dock)
 
         self._dock.setVisible(checked)
+
+        if primera_vez and self._action is not None:
+            self._action.setIcon(self._icon())
 
     def _on_visibility(self, visible: bool) -> None:
         if self._action is not None:

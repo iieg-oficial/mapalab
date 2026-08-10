@@ -25,6 +25,10 @@ LOGOS: dict[str, tuple[str, str]] = {
     'iieg': ('iieg_large.svg', 'iieg_large_dark.svg'),
 }
 
+ICONO_ARCHIVO: str = 'mapalab_short.svg'
+
+ICONO_CACHE: str = 'toolbar_icon.svg'
+
 LOGO_HEIGHT: int = 40
 
 FONT_SCALE_PX: int = 2

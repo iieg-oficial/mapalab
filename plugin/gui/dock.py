@@ -20,6 +20,7 @@ from ..model.tree import clean_label, filter_tree, hydrate_tree, is_disabled
 from ..theme import apply_theme, set_role
 from .actions import LayerActions
 from .delegate import LayerItemDelegate
+from .icons import icono_de_nodo
 from .titlebar import TitleBar
 
 NODE_ROLE: int = int(Qt.UserRole)
@@ -140,6 +141,11 @@ class MapaLabDock(QDockWidget):
         item.setData(0, NODE_ROLE, node)
         if is_disabled(node):
             item.setDisabled(True)
+
+        icono = icono_de_nodo(self._client, node)
+        if icono is not None:
+            item.setIcon(0, icono)
+
         for child in node.get('children') or []:
             item.addChild(self._build_item(child))
         return item

@@ -1,9 +1,14 @@
 {
   "marca": "iieg",
+  "origen": "catalogo de identidad de mariachi",
   "logos": {
-    "logo.largo.claro": "https://iieg.jalisco.gob.mx/acervo/iieg/logos/iieg_large.svg",
-    "logo.largo.oscuro": "https://iieg.jalisco.gob.mx/acervo/iieg/logos/iieg_large_dark.svg",
-    "logo.corto.claro": "https://iieg.jalisco.gob.mx/acervo/iieg/logos/iieg_short.svg",
-    "logo.clearspace.factor": "1"
+    "iieg": {
+      "claro": "https://iieg.jalisco.gob.mx/acervo/iieg/logos/iieg_large.svg",
+      "oscuro": "https://iieg.jalisco.gob.mx/acervo/iieg/logos/iieg_large_dark.svg"
+    },
+    "mapalab": {
+      "claro": "https://iieg.jalisco.gob.mx/acervo/iieg/logos/mapalab_large.svg",
+      "oscuro": "https://iieg.jalisco.gob.mx/acervo/iieg/logos/mapalab_large_dark.svg"
+    }
   }
 }
