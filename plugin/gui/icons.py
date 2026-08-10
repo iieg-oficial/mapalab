@@ -9,10 +9,12 @@ from ..identidad import tema_icono_urls
 
 ICON_SIZE: int = 20
 
+TEMA_ICON_SIZE: int = 34
+
 _memoria: dict[str, Optional[QIcon]] = {}
 
 
-def _desde_svg(datos: bytes) -> Optional[QIcon]:
+def _desde_svg(datos: bytes, tamano: int = ICON_SIZE) -> Optional[QIcon]:
     try:
         from qgis.PyQt.QtSvg import QSvgRenderer
     except ImportError:
@@ -23,7 +25,7 @@ def _desde_svg(datos: bytes) -> Optional[QIcon]:
         return None
 
     from qgis.PyQt.QtGui import QPainter
-    imagen = QImage(ICON_SIZE, ICON_SIZE, QImage.Format_ARGB32)
+    imagen = QImage(tamano, tamano, QImage.Format_ARGB32)
     imagen.fill(0)
     painter = QPainter(imagen)
     renderer.render(painter)
@@ -73,7 +75,7 @@ def icono_de_tema(client: MapaLabClient, node: dict[str, Any]) -> Optional[QIcon
         return _memoria[alias]
 
     datos = fetch_asset(client, tema_icono_urls(alias))
-    icono = _desde_svg(datos) if datos and b'<svg' in datos[:400] else None
+    icono = _desde_svg(datos, TEMA_ICON_SIZE) if datos and b'<svg' in datos[:400] else None
     _memoria[alias] = icono
     return icono
 

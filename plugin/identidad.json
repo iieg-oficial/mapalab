@@ -9,6 +9,10 @@
     "mapalab": {
       "claro": "https://iieg.jalisco.gob.mx/acervo/iieg/logos/mapalab_large.svg",
       "oscuro": "https://iieg.jalisco.gob.mx/acervo/iieg/logos/mapalab_large_dark.svg"
+    },
+    "jalisco": {
+      "claro": "https://iieg.jalisco.gob.mx/acervo/iieg/logos/jalisco_large.svg",
+      "oscuro": "https://iieg.jalisco.gob.mx/acervo/iieg/logos/jalisco_large_dark.svg"
     }
   }
 }

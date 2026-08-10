@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtCore import QSize, Qt
 from qgis.PyQt.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
@@ -20,7 +20,7 @@ from ..model.tree import clean_label, filter_tree, hydrate_tree, is_disabled
 from ..theme import apply_theme, set_role
 from .actions import LayerActions
 from .delegate import LayerItemDelegate
-from .icons import icono_de_nodo
+from .icons import TEMA_ICON_SIZE, icono_de_nodo
 from .titlebar import TitleBar, es_tema_oscuro, logo_widget
 
 NODE_ROLE: int = int(Qt.UserRole)
@@ -65,6 +65,7 @@ class MapaLabDock(QDockWidget):
         self._widget_tree = QTreeWidget()
         self._widget_tree.setHeaderHidden(True)
         self._widget_tree.setItemDelegate(LayerItemDelegate(NODE_ROLE, self._widget_tree))
+        self._widget_tree.setIconSize(QSize(TEMA_ICON_SIZE, TEMA_ICON_SIZE))
         self._widget_tree.itemDoubleClicked.connect(self._on_double_click)
         layout.addWidget(self._widget_tree)
 

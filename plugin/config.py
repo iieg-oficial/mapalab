@@ -23,7 +23,7 @@ LOGOS_PATH: str = '/acervo/iieg/logos'
 LOGOS: dict[str, tuple[str, str]] = {
     'mapalab': ('mapalab_large.svg', 'mapalab_large_dark.svg'),
     'iieg': ('iieg_large.svg', 'iieg_large_dark.svg'),
-    'jalisco': ('jalisco_large_dark.svg', 'jalisco_large_dark.svg'),
+    'jalisco': ('jalisco_large.svg', 'jalisco_large_dark.svg'),
 }
 
 TEMAS_PATH: str = '/acervo/mapalab/svg/temas'
