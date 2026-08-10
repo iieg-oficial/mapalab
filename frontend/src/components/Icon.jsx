@@ -139,9 +139,9 @@ const icons = {
     ),
     geom_point: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-            <circle cx="7" cy="8" r="2.4" />
-            <circle cx="16.5" cy="6.5" r="2.4" />
-            <circle cx="11.5" cy="16.5" r="2.4" />
+            <circle cx="12" cy="5.5" r="1.9" />
+            <circle cx="18.5" cy="16.5" r="1.9" />
+            <circle cx="5.5" cy="16.5" r="1.9" />
         </svg>
     ),
     geom_line: (
@@ -161,11 +161,10 @@ const icons = {
     ),
     geom_raster: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
-            <rect x="3.5" y="3.5" width="17" height="17" rx="1.5" />
-            <path d="M9.17 3.5v17M14.83 3.5v17M3.5 9.17h17M3.5 14.83h17" strokeWidth="1.2" />
-            <rect x="3.5" y="9.17" width="5.67" height="5.66" fill="currentColor" fillOpacity="0.28" stroke="none" />
-            <rect x="14.83" y="3.5" width="5.67" height="5.67" fill="currentColor" fillOpacity="0.28" stroke="none" />
-            <rect x="9.17" y="14.83" width="5.66" height="5.67" fill="currentColor" fillOpacity="0.28" stroke="none" />
+            <rect x="4" y="4" width="16" height="16" rx="1.5" />
+            <path d="M12 4v16M4 12h16" />
+            <rect x="4" y="4" width="8" height="8" fill="currentColor" fillOpacity="0.18" stroke="none" />
+            <rect x="12" y="12" width="8" height="8" fill="currentColor" fillOpacity="0.18" stroke="none" />
         </svg>
     ),
 };

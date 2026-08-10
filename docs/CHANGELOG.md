@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.118.1] - 2026-08-10
+
+### Corregido: los íconos de punto y ráster no eran de la misma familia
+
+Los cuatro íconos del badge de geometría hablan ahora el idioma de las herramientas de medición:
+trazo de 1.8 y los vértices como círculos llenos. Punto son esos mismos vértices sueltos —eran
+tres discos macizos de radio 2.4, más pesados que todo lo demás y sin alinear con nada— y ráster
+es una malla de dos por dos con el relleno al 18 % del polígono, en lugar de la rejilla de tres
+por tres que a 16 px, el tamaño real en el panel, se veía como una mancha. Ráster es el único sin
+vértices, a propósito: no es una geometría vectorial.
+
+Línea y polígono no cambian.
+
 ## [1.118.0] - 2026-08-10
 
 ### Agregado: el tipo de geometría viaja en el árbol
