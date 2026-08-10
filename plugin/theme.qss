@@ -130,16 +130,6 @@ QTreeView::item:hover, QTreeWidget::item:hover {
     outline: none;
 }
 
-/* La rama hereda el azul nativo si no se tine: la seleccion se
-   veria partida entre la sangria y el texto. */
-QTreeView::branch:selected, QTreeWidget::branch:selected {
-    background-color: #FFE9CC;
-}
-
-QTreeView::branch:hover, QTreeWidget::branch:hover {
-    background-color: rgba(70, 80, 85, 0.08);
-}
-
 QLabel[brandRole="title"] {
     color: #5C2472;
     font-size: 18px;
