@@ -1,6 +1,9 @@
 (function() {
     var ATTEMPTS_KEY = 'mapalab:reload-attempts';
     var MAX_ATTEMPTS = 2;
+    var BURST_MS = 2000;
+    var RELOAD_FALLBACK_MS = 3000;
+    var lastHandledAt = 0;
 
     function readAttempts() {
         try {
@@ -19,13 +22,33 @@
         try { window.sessionStorage.removeItem(ATTEMPTS_KEY); } catch (e) {}
     }
 
+    function describeError(err) {
+        if (!err) return '';
+        if (typeof err === 'string') return err;
+        var name = err.name || 'Error';
+        var message = err.message || String(err);
+        return name + ': ' + message;
+    }
+
+    function describeTarget(target) {
+        var parts = [String(target.tagName || '').toLowerCase()];
+        if (target.rel) parts.push('rel=' + target.rel);
+        if (target.type) parts.push('type=' + target.type);
+        return parts.join(' ');
+    }
+
+    function extractUrl(text) {
+        var match = String(text || '').match(/https?:\/\/[^\s'")]+/);
+        return match ? match[0] : '';
+    }
+
     function report(type, failedUrl, detail) {
         try {
             var apiBase = (location.pathname.indexOf('/mapalab/') === 0) ? '/mapalab/api/' : '/api/';
             var beaconUrl = (location.origin || '') + apiBase + 'log/client-error';
             var body = JSON.stringify({
                 type: type,
-                url: String(failedUrl).slice(0, 2000),
+                url: String(failedUrl || '').slice(0, 2000),
                 message: String(detail || '').slice(0, 500),
                 userAgent: String(navigator.userAgent || '').slice(0, 500),
                 href: String(location.href || '').slice(0, 2000)
@@ -36,8 +59,37 @@
         } catch (e) {}
     }
 
-    function showFatal(failedUrl) {
-        report('chunk_load_error_fatal', failedUrl, 'agotados ' + MAX_ATTEMPTS + ' reintentos');
+    function revalidateAndReload(failedUrl) {
+        var reloaded = false;
+
+        function go() {
+            if (reloaded) return;
+            reloaded = true;
+            window.location.reload();
+        }
+
+        window.setTimeout(go, RELOAD_FALLBACK_MS);
+
+        try {
+            if (!window.fetch) { go(); return; }
+            var urls = [location.href];
+            if (failedUrl && failedUrl.indexOf('http') === 0) urls.push(failedUrl);
+            var pending = urls.length;
+            urls.forEach(function(url) {
+                window.fetch(url, { cache: 'reload' })
+                    .catch(function() {})
+                    .then(function() {
+                        pending -= 1;
+                        if (pending <= 0) go();
+                    });
+            });
+        } catch (e) {
+            go();
+        }
+    }
+
+    function showFatal(failedUrl, detail) {
+        report('chunk_load_error_fatal', failedUrl, detail);
         var root = document.getElementById('root');
         if (!root || root.childElementCount > 0) return;
         root.innerHTML = '<div style="min-height:100vh;display:flex;flex-direction:column;'
@@ -54,24 +106,35 @@
         var button = document.getElementById('mapalab-hard-reload');
         if (button) {
             button.addEventListener('click', function() {
+                button.disabled = true;
+                button.textContent = 'Recargando…';
                 clearAttempts();
-                window.location.reload();
+                revalidateAndReload(failedUrl);
             });
         }
     }
 
-    function handleChunkError(event) {
-        var payload = event && event.payload;
-        var failedUrl = (payload && payload.src) || (payload && payload.href) || (event && event.message) || 'unknown';
+    function handleChunkError(info) {
+        var now = Date.now();
+        if (now - lastHandledAt < BURST_MS) return;
+        lastHandledAt = now;
+
+        var failedUrl = (info && info.url) || 'unknown';
+        var detail = (info && info.detail) || '';
         var attempts = readAttempts();
-        console.error('[mapalab] chunk load error', { url: failedUrl, attempts: attempts, href: location.href });
+        console.error('[mapalab] chunk load error', {
+            url: failedUrl,
+            detail: detail,
+            attempts: attempts,
+            href: location.href
+        });
 
         if (attempts >= MAX_ATTEMPTS) {
-            showFatal(failedUrl);
+            showFatal(failedUrl, detail);
             return;
         }
 
-        report('chunk_load_error', failedUrl, 'reintento ' + (attempts + 1));
+        report('chunk_load_error', failedUrl, detail);
         writeAttempts(attempts + 1);
         window.location.reload();
     }
@@ -83,14 +146,20 @@
         }, 5000);
     });
 
-    window.addEventListener('vite:preloadError', handleChunkError);
+    window.addEventListener('vite:preloadError', function(event) {
+        var payload = event && event.payload;
+        var url = (payload && (payload.src || payload.href))
+            || extractUrl(payload && payload.message)
+            || 'unknown';
+        handleChunkError({ url: url, detail: 'vite:preloadError ' + describeError(payload) });
+    });
 
     window.addEventListener('error', function(event) {
         var target = event.target;
         if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
             var src = target.src || target.href;
             if (src && (src.indexOf('/assets/') !== -1 || src.indexOf('/mapalab/assets/') !== -1)) {
-                handleChunkError({ payload: { src: src } });
+                handleChunkError({ url: src, detail: 'elemento ' + describeTarget(target) });
             }
         }
     }, true);
@@ -99,7 +168,10 @@
         var reason = event && event.reason;
         var msg = reason && (reason.message || String(reason));
         if (msg && /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|ChunkLoadError/i.test(msg)) {
-            handleChunkError({ message: msg });
+            handleChunkError({
+                url: extractUrl(msg) || 'unknown',
+                detail: 'unhandledrejection ' + describeError(reason)
+            });
         }
     });
 })();

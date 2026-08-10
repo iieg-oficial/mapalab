@@ -5,6 +5,38 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.2] - 2026-08-10
+
+### Corregido: el beacon de errores de carga no decía qué se había roto
+
+`report()` mandaba en `message` el texto `'reintento N'`, que ya se deduce del `type`, mientras las
+tres vías de detección traían el detalle real y se descartaba. En `unhandledrejection` era peor: el
+mensaje se pasaba como `failedUrl` y terminaba **en el campo `url`**. Como el backend loguea ese
+campo como `detalle=`, cada alerta de `client_errors` avisaba sin decir qué archivo falló, que es lo
+único que permite cerrar el incidente. Es la telemetría que sustituyó a Sentry.
+
+Ahora cada vía aporta lo que sabe: `describeError` para el `Error` de `vite:preloadError` y para el
+`reason` del rechazo, `describeTarget` para el tagName y el `rel` del elemento, y `extractUrl`
+recupera la URL del texto del mensaje cuando no viene por separado.
+
+### Corregido: «Recargar ahora» no reemplazaba el asset en caché
+
+El botón de la pantalla fatal hacía `window.location.reload()`, que respeta el `immutable` de los
+assets: si la copia local era la rota, se volvía a ejecutar igual y la única salida real era el
+Ctrl+F5 que sugiere el texto. Ahora `revalidateAndReload` pasa por `fetch(url, { cache: 'reload' })`
+sobre el documento y el asset fallido antes de recargar, con salida a los 3 s si la red no responde.
+
+### Corregido: los reintentos se agotaban sin haber recargado nunca
+
+`attempts` contaba elementos fallidos, no cargas. El listener de `error` en fase de captura se
+dispara una vez por cada `<script>`/`<link>` roto de la misma página, así que tres elementos
+agotaban los dos reintentos de una sola vez, mostraban la pantalla fatal sin recargar y triplicaban
+la cuenta del check `client_errors` por usuario. La ráfaga se agrupa con una ventana de 2 s, que no
+ciega un fallo posterior de un chunk lazy.
+
+**Al desplegar:** `CLIENT_ERROR_WARN_COUNT` se calibró con la cuenta inflada, así que conviene
+bajarlo.
+
 ## [1.116.1] - 2026-08-05
 
 ### Cambiado: el aviso de privacidad se enlaza desde acervo
