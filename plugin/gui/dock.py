@@ -23,7 +23,7 @@ from ..config import (
     set_base_url,
 )
 from ..model.tree import clean_label, filter_tree, hydrate_tree, is_disabled
-from ..theme import apply_theme, set_role
+from ..theme import apply_theme, set_role, sombra_en_hover
 from .actions import LayerActions
 from .delegate import LayerItemDelegate
 from .icons import TEMA_ICON_SIZE, icono_de_nodo
@@ -109,6 +109,7 @@ class MapaLabDock(QDockWidget):
         self.setWidget(container)
 
         set_role(self._add_button, 'primary')
+        sombra_en_hover(self._add_button)
         set_role(self._url_button, 'primary')
         set_role(self._download_button, 'secondary')
         apply_theme(container)

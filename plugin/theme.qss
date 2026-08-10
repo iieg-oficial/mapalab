@@ -102,6 +102,7 @@ QPushButton[brandRole="quiet"]:hover {
 
 QTreeView, QTreeWidget {
     border: none;
+    outline: none;
     show-decoration-selected: 1;
 }
 
@@ -111,14 +112,20 @@ QWidget[brandRole="card"] {
     padding: 8px;
 }
 
+/* Sin borde ni outline: el estilo nativo dibuja su propio realce
+   azul encima del hover si no se anulan los dos. */
 QTreeView::item, QTreeWidget::item {
     padding: 2px 0px;
     border-radius: 4px;
+    border: none;
+    outline: none;
 }
 
 QTreeView::item:hover, QTreeWidget::item:hover {
     background-color: rgba(70, 80, 85, 0.08);
     color: palette(text);
+    border: none;
+    outline: none;
 }
 
 /* La rama hereda el azul nativo si no se tine: la seleccion se

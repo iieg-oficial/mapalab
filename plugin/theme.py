@@ -2,9 +2,9 @@ import os
 import re
 from typing import Optional
 
-from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QWidget
+from qgis.PyQt.QtCore import QEvent, QObject, Qt
+from qgis.PyQt.QtGui import QColor, QIcon
+from qgis.PyQt.QtWidgets import QGraphicsDropShadowEffect, QWidget
 
 from .config import FONT_SCALE_PX
 
@@ -32,6 +32,37 @@ def load_stylesheet() -> str:
             return handle.read()
     except OSError:
         return ''
+
+
+SHADOW_BLUR: float = 14.0
+
+SHADOW_OFFSET: float = 2.0
+
+SHADOW_ALPHA: int = 90
+
+
+class _SombraEnHover(QObject):
+
+    def __init__(self, widget: QWidget) -> None:
+        super().__init__(widget)
+        self._efecto = QGraphicsDropShadowEffect(widget)
+        self._efecto.setBlurRadius(SHADOW_BLUR)
+        self._efecto.setOffset(0, SHADOW_OFFSET)
+        self._efecto.setColor(QColor(0, 0, 0, SHADOW_ALPHA))
+        self._efecto.setEnabled(False)
+        widget.setGraphicsEffect(self._efecto)
+        widget.installEventFilter(self)
+
+    def eventFilter(self, objeto: QObject, evento) -> bool:
+        if evento.type() == QEvent.Enter:
+            self._efecto.setEnabled(True)
+        elif evento.type() == QEvent.Leave:
+            self._efecto.setEnabled(False)
+        return False
+
+
+def sombra_en_hover(widget: QWidget) -> None:
+    _SombraEnHover(widget)
 
 
 def icono_refrescar() -> QIcon:
