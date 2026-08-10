@@ -93,6 +93,8 @@ class MapaLabDock(QDockWidget):
         layout.addWidget(self._footer)
 
         container.setLayout(layout)
+        set_role(container, 'panel')
+        container.setAutoFillBackground(True)
         self.setWidget(container)
 
         set_role(self._add_button, 'primary')
@@ -104,6 +106,8 @@ class MapaLabDock(QDockWidget):
 
     def _montar_titulo(self) -> None:
         barra = TitleBar(self._client, lambda: self.load_tree(force=True), self)
+        set_role(barra, 'panel')
+        barra.setAutoFillBackground(True)
         apply_theme(barra)
         barra.cargar()
         self.setTitleBarWidget(barra)

@@ -14,11 +14,12 @@
     font-size: 16px;
 }
 
-/* Los botones van en pildora, como los del visor (rounded-full). */
+/* Pildora, como los botones del visor. El radio se acota a la mitad
+   del alto: Qt no interpreta un 9999px como CSS y deja la esquina recta. */
 QPushButton[brandRole="primary"] {
     background-color: #5C2472;
     color: #FFFFFF;
-    border-radius: 9999px;
+    border-radius: 19px;
     padding: 8px 12px;
     border: 1px solid #5C2472;
 }
@@ -48,6 +49,15 @@ QLineEdit {
     border: 1px solid palette(mid);
 }
 
+QTreeView, QTreeWidget {
+    background-color: #EAEFFA;
+    border-radius: 8px;
+}
+
+QWidget[brandRole="panel"] {
+    background-color: #FFFFFF;
+}
+
 /* Campo de busqueda: misma superficie, radio y color de texto que
    el buscador del visor, sin borde y con el foco en el primario. */
 QLineEdit[brandRole="search"] {
@@ -66,7 +76,7 @@ QPushButton[brandRole="secondary"] {
     background-color: transparent;
     color: #5C2472;
     border: 1px solid #5C2472;
-    border-radius: 9999px;
+    border-radius: 19px;
     padding: 8px 12px;
 }
 
