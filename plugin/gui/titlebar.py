@@ -7,7 +7,7 @@ from qgis.PyQt.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 from ..api.client import MapaLabClient
 from ..assets_cache import fetch_asset
 from ..config import LOGO_HEIGHT
-from ..identidad import guardar_icono, icono_urls, logo_urls
+from ..identidad import guardar_icono, icono_urls, logo_urls, refrescar_urls
 from ..theme import icono_refrescar, set_role
 
 TITULO: str = 'MapaLab'
@@ -75,7 +75,7 @@ class TitleBar(QWidget):
 
     def _boton_recargar(self) -> QPushButton:
         boton = QPushButton()
-        boton.setIcon(icono_refrescar())
+        boton.setIcon(self._icono_refrescar())
         boton.setIconSize(QSize(18, 18))
         boton.setFixedSize(28, 28)
         boton.setToolTip('Recargar catálogo')
@@ -83,6 +83,16 @@ class TitleBar(QWidget):
         boton.clicked.connect(self._al_recargar)
         set_role(boton, 'icon')
         return boton
+
+    def _icono_refrescar(self):
+        from qgis.PyQt.QtGui import QIcon, QPixmap
+
+        datos = fetch_asset(self._client, refrescar_urls())
+        if datos:
+            pixmap = QPixmap()
+            if pixmap.loadFromData(datos):
+                return QIcon(pixmap)
+        return icono_refrescar()
 
     def _logo(self, marca: str, oscuro: bool) -> Optional[QWidget]:
         return logo_widget(self._client, marca, oscuro, LOGO_HEIGHT)

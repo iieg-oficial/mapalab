@@ -28,6 +28,10 @@ LOGOS: dict[str, tuple[str, str]] = {
 
 TEMAS_PATH: str = '/acervo/mapalab/svg/temas'
 
+ICONOS_PATH: str = '/acervo/iieg/iconos'
+
+REFRESH_ARCHIVO: str = 'refrescar.svg'
+
 ICONO_ARCHIVO: str = 'mapalab_short.svg'
 
 ICONO_CACHE: str = 'toolbar_icon.svg'

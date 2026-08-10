@@ -4,7 +4,16 @@ from typing import Any, Optional
 
 from qgis.core import QgsApplication
 
-from .config import ICONO_ARCHIVO, ICONO_CACHE, LOGOS, LOGOS_PATH, TEMAS_PATH, get_base_url
+from .config import (
+    ICONO_ARCHIVO,
+    ICONO_CACHE,
+    ICONOS_PATH,
+    LOGOS,
+    LOGOS_PATH,
+    REFRESH_ARCHIVO,
+    TEMAS_PATH,
+    get_base_url,
+)
 
 IDENTIDAD_FILE: str = 'identidad.json'
 
@@ -51,6 +60,15 @@ def tema_icono_urls(alias: str, hover: bool = False) -> list[str]:
     catalogo = _url_catalogo('iieg', False)
     raiz = catalogo.split('/acervo/')[0] if '/acervo/' in catalogo else ''
     respaldo = f'{raiz}{TEMAS_PATH}/{archivo}' if raiz else ''
+    return [propio, respaldo]
+
+
+def refrescar_urls() -> list[str]:
+    base = get_base_url()
+    propio = f'{base}{ICONOS_PATH}/{REFRESH_ARCHIVO}' if base else ''
+    catalogo = _url_catalogo('iieg', False)
+    raiz = catalogo.split('/acervo/')[0] if '/acervo/' in catalogo else ''
+    respaldo = f'{raiz}{ICONOS_PATH}/{REFRESH_ARCHIVO}' if raiz else ''
     return [propio, respaldo]
 
 
