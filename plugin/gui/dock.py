@@ -116,7 +116,6 @@ class MapaLabDock(QDockWidget):
             self._footer.hide()
             return
 
-        self._footer_layout.addStretch(1)
         if iieg is not None:
             self._footer_layout.addWidget(iieg, 0, Qt.AlignVCenter)
         self._footer_layout.addStretch(1)
