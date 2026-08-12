@@ -72,16 +72,16 @@ def con_env(uri_actual: str, modo: Optional[str]) -> str:
     return bytes(uri.encodedUri()).decode('utf-8')
 
 
-def add_wms_layer(node: dict[str, Any], apply_node_filter: bool = False,
-                  time_value: Optional[str] = None, al_tope: bool = False,
-                  modo: Optional[str] = None) -> tuple[Optional[QgsRasterLayer], str]:
+def crear_wms_layer(node: dict[str, Any], cql_filter: str = '',
+                    time_value: Optional[str] = None, modo: Optional[str] = None,
+                    nombre: str = '') -> tuple[Optional[QgsRasterLayer], str]:
     wms_config = node.get('wmsConfig')
     if not wms_config:
         return None, 'La capa no trae configuración WMS.'
 
-    cql_filter = (wms_config.get('cqlFilter') or '') if apply_node_filter else ''
     uri = build_wms_uri(wms_config, cql_filter, time_value, modo)
-    name = clean_label(node.get('label') or wms_config.get('layerName') or 'MapaLab')
+    name = nombre or clean_label(
+        node.get('label') or wms_config.get('layerName') or 'MapaLab')
 
     layer = QgsRasterLayer(uri, name, 'wms')
     if not layer.isValid():
@@ -89,6 +89,18 @@ def add_wms_layer(node: dict[str, Any], apply_node_filter: bool = False,
 
     layer.setCustomProperty(NODE_ID_PROPERTY, str(node.get('id') or ''))
     layer.setCustomProperty('identify/format', IDENTIFY_FORMAT)
+    return layer, ''
+
+
+def add_wms_layer(node: dict[str, Any], apply_node_filter: bool = False,
+                  time_value: Optional[str] = None, al_tope: bool = False,
+                  modo: Optional[str] = None) -> tuple[Optional[QgsRasterLayer], str]:
+    wms_config = node.get('wmsConfig') or {}
+    cql_filter = (wms_config.get('cqlFilter') or '') if apply_node_filter else ''
+
+    layer, razon = crear_wms_layer(node, cql_filter, time_value, modo)
+    if layer is None:
+        return None, razon
 
     project = QgsProject.instance()
     if al_tope:

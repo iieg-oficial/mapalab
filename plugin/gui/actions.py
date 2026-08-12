@@ -6,6 +6,7 @@ from qgis.PyQt.QtGui import QCursor
 from qgis.PyQt.QtWidgets import QApplication, QFileDialog, QWidget
 
 from ..api.client import MapaLabClient, MapaLabError
+from ..layers.grupos import add_group_layers, es_grupo
 from ..layers.limites import aplicar_modo, modo_actual
 from ..layers.metadata import apply_metadata
 from ..layers.seleccion import agregar
@@ -45,7 +46,22 @@ class LayerActions:
             return
         apply_metadata(layer, payload, node)
 
+    def add_group(self, node: dict[str, Any]) -> tuple[bool, str]:
+        label = clean_label(node.get('label') or '')
+        self._busy(True)
+        try:
+            agregadas, razon = add_group_layers(node, modo_actual())
+        finally:
+            self._busy(False)
+
+        if agregadas == 0:
+            return False, f'No se pudo agregar «{label}»: {razon}'
+        return True, ''
+
     def add_as_wms(self, node: dict[str, Any]) -> tuple[bool, str]:
+        if es_grupo(node):
+            return self.add_group(node)
+
         label = clean_label(node.get('label') or '')
         self._busy(True)
         try:

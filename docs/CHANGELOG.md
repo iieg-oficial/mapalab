@@ -5,6 +5,25 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.123.0] - 2026-08-12
+
+### Agregado: un grupo del catálogo se agrega completo
+
+Consecuencia de que cada nodo traiga ya su filtro: para ver los ocho cultivos había que agregarlos
+de uno en uno. Ahora, al seleccionar un grupo en el árbol, «Agregar al mapa» pasa a decir «Agregar
+grupo completo» y lo trae entero.
+
+No es una capa por nodo, que serían 33 peticiones para Establecimientos de salud. El grupo se
+junta **por tabla de GeoServer**: los nodos que comparten tabla entran como una sola capa con sus
+filtros combinados en un `OR`, y si el grupo toca varias tablas, cada una es una capa dentro de un
+grupo de QGIS con el nombre del tema. Los 33 nodos de salud y los 8 de cultivos quedan en una capa
+cada uno; «Pobreza y vulnerabilidades», que son 16 tablas distintas, en 16 capas agrupadas.
+
+El `OR` se usa mientras quepa en 4000 caracteres, y si no, la capa va sin filtro. El caso más
+largo del catálogo es justo el de salud: 3321 caracteres, que el servidor responde sin problema
+—medido— y que importa mantener, porque sin filtro se dibujan registros de la tabla que no están
+en el grupo.
+
 ## [1.122.0] - 2026-08-12
 
 ### Cambiado: el nodo del catálogo trae lo suyo, no la tabla entera

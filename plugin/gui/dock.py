@@ -1,7 +1,6 @@
 from typing import Any, Optional
 
 from qgis.core import QgsProject
-from qgis.PyQt.QtCore import QSize
 from qgis.PyQt.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
@@ -21,6 +20,7 @@ from ..config import (
     get_base_url,
     set_base_url,
 )
+from ..layers.grupos import es_grupo
 from ..layers.limites import modo_actual
 from ..model.tree import filter_tree
 from ..theme import apply_theme, set_role, sombra_en_hover
@@ -28,13 +28,13 @@ from .actions import LayerActions
 from .arbol import ArbolCatalogo
 from .consulta import HerramientaConsulta
 from ..tasks import CargarArbolTask, Coordinador
-from .icons import icono_de_recarga
+from .icons import boton_de_recarga
 from .switch import SwitchModoBase
 from .titlebar import TitleBar, montar_footer
 
-RELOAD_ICON_SIZE: int = 18
+TEXTO_CAPA: str = 'Agregar al mapa'
 
-RELOAD_BUTTON_SIZE: int = 34
+TEXTO_GRUPO: str = 'Agregar grupo completo'
 
 
 class MapaLabDock(QDockWidget):
@@ -86,16 +86,18 @@ class MapaLabDock(QDockWidget):
         search_row = QHBoxLayout()
         search_row.setContentsMargins(0, 0, 0, 0)
         search_row.setSpacing(8)
-        self._reload_button = self._boton_recargar()
+        self._reload_button = boton_de_recarga(
+            self._client, lambda: self.load_tree(force=True))
         search_row.addWidget(self._search)
         search_row.addWidget(self._reload_button)
         layout.addLayout(search_row)
 
         self._widget_tree = ArbolCatalogo(self._client, self._on_add)
+        self._widget_tree.itemSelectionChanged.connect(self._actualizar_add)
         layout.addWidget(self._widget_tree)
 
         buttons = QHBoxLayout()
-        self._add_button = QPushButton('Agregar al mapa')
+        self._add_button = QPushButton(TEXTO_CAPA)
         self._add_button.clicked.connect(self._on_add)
         self._download_button = QPushButton('Descargar vectorial')
         self._download_button.clicked.connect(self._on_download)
@@ -128,17 +130,6 @@ class MapaLabDock(QDockWidget):
         apply_theme(container)
         self._montar_titulo()
         montar_footer(self._footer, self._footer_layout, self._client, FOOTER_LOGO_HEIGHT)
-
-    def _boton_recargar(self) -> QPushButton:
-        boton = QPushButton()
-        boton.setIcon(icono_de_recarga(self._client))
-        boton.setIconSize(QSize(RELOAD_ICON_SIZE, RELOAD_ICON_SIZE))
-        boton.setFixedSize(RELOAD_BUTTON_SIZE, RELOAD_BUTTON_SIZE)
-        boton.setToolTip('Recargar catálogo')
-        boton.setFlat(True)
-        boton.clicked.connect(lambda: self.load_tree(force=True))
-        set_role(boton, 'icon')
-        return boton
 
     def _montar_titulo(self) -> None:
         barra = TitleBar(self._client, self._switch, self)
@@ -208,11 +199,18 @@ class MapaLabDock(QDockWidget):
         if text.strip():
             self._widget_tree.expandAll()
 
-    def _require_layer_node(self) -> Optional[dict[str, Any]]:
+    def _actualizar_add(self) -> None:
+        node = self._widget_tree.nodo_actual()
+        self._add_button.setText(
+            TEXTO_GRUPO if es_grupo(node) else TEXTO_CAPA)
+
+    def _require_layer_node(self, permitir_grupo: bool = False) -> Optional[dict[str, Any]]:
         node = self._widget_tree.nodo_actual()
         if node is None:
             QMessageBox.information(self, 'MapaLab', 'Selecciona una capa del árbol.')
             return None
+        if permitir_grupo and es_grupo(node):
+            return node
         if not node.get('wmsConfig'):
             QMessageBox.information(
                 self, 'MapaLab', 'Ese elemento es una carpeta, no una capa.')
@@ -228,7 +226,7 @@ class MapaLabDock(QDockWidget):
         self._mensaje('' if correcto else mensaje)
 
     def _on_add(self) -> None:
-        node = self._require_layer_node()
+        node = self._require_layer_node(permitir_grupo=True)
         if node is None:
             return
         self._reportar(self._actions.add_as_wms(node))

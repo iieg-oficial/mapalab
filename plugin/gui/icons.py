@@ -1,17 +1,22 @@
 from typing import Any, Optional
 
-from qgis.PyQt.QtCore import QByteArray
+from qgis.PyQt.QtCore import QByteArray, QSize
 from qgis.PyQt.QtGui import QIcon, QImage, QPixmap
+from qgis.PyQt.QtWidgets import QPushButton
 
 from ..api.client import MapaLabClient
 from ..assets_cache import fetch_asset
 from ..identidad import refrescar_urls, tema_icono_urls
 from ..model.tree import alias_de_tema
-from ..theme import icono_refrescar
+from ..theme import icono_refrescar, set_role
 
 ICON_SIZE: int = 20
 
 TEMA_ICON_SIZE: int = 34
+
+RECARGA_ICON_SIZE: int = 18
+
+RECARGA_BOTON_SIZE: int = 34
 
 _memoria: dict[str, Optional[QIcon]] = {}
 
@@ -83,6 +88,18 @@ def icono_de_recarga(client: MapaLabClient) -> QIcon:
         if pixmap.loadFromData(datos):
             return QIcon(pixmap)
     return icono_refrescar()
+
+
+def boton_de_recarga(client: MapaLabClient, al_pulsar: Any) -> QPushButton:
+    boton = QPushButton()
+    boton.setIcon(icono_de_recarga(client))
+    boton.setIconSize(QSize(RECARGA_ICON_SIZE, RECARGA_ICON_SIZE))
+    boton.setFixedSize(RECARGA_BOTON_SIZE, RECARGA_BOTON_SIZE)
+    boton.setToolTip('Recargar catálogo')
+    boton.setFlat(True)
+    boton.clicked.connect(al_pulsar)
+    set_role(boton, 'icon')
+    return boton
 
 
 def icono_de_nodo(client: MapaLabClient, node: dict[str, Any],
