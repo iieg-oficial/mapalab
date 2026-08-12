@@ -5,6 +5,72 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.119.0] - 2026-08-12
+
+### Agregado: el switch IIEG | INEGI en el plugin de QGIS
+
+El mismo control que el visor tiene sobre las capas activas, ahora en la barra del panel: IIEG
+pone `limite_iieg`, `limite_municipal` y `regiones`; INEGI pone `limite_inegi` y
+`limite_municipal_inegi`, y cada lado retira el del otro. Las capas se insertan al tope del árbol
+de QGIS, que es el equivalente del pinning always-on-top del visor.
+
+Como en el visor, el modo no es un estado que el plugin guarde: se deduce de lo que hay en el
+proyecto. Cada capa que agrega el plugin queda marcada con la propiedad `mapalab/nodeId`, y el
+switch lee esa marca de las capas del proyecto cada vez que QGIS agrega o quita una, así que
+también se entera de lo que el usuario haga a mano en el panel de capas. Reconoce además las
+capas por el `layers` de su URI WMS, para no ignorar las que se agregaron antes de que existiera
+la marca. Sin ninguna de las cinco,
+el switch se muestra neutro y el primer clic simplemente agrega el conjunto elegido.
+
+El botón de recargar el catálogo cede su lugar al switch y se muda junto al buscador, provisional
+mientras se le encuentra un sitio definitivo. El árbol del panel sale de `dock.py` a `gui/arbol.py`
+y el estilo del switch toma sus colores del `theme.qss` que emite mariachi, sin hardcodear
+ninguno. El lado activo lleva la misma sombra que el botón primario del panel: el helper
+`sombra_en_hover` se partió en dos para poder encenderla y apagarla, en vez de atarla al hover.
+
+### Agregado: consultar un elemento con clic, con su geometría
+
+Con el panel de MapaLab abierto, el clic en el lienzo consulta: no hay que activar nada. El
+elemento que devuelve el servidor —**con geometría**, no solo atributos— se copia a una capa
+vectorial en memoria, `Selección — <capa>`, donde queda seleccionado y con su ficha de atributos
+abierta. De ahí en adelante es una capa como cualquier otra: zoom a la selección, copiar, exportar
+a GeoPackage. Al cerrar u ocultar el panel, el lienzo recupera la herramienta que tuviera.
+
+**No hace falta cargar la capa.** Si hay una capa seleccionada en el árbol del catálogo, el clic
+consulta esa, esté o no en el mapa: el plugin arma el `GetFeatureInfo` con el extent y el tamaño
+del lienzo, y reproyecta lo que llega al CRS de los datos. Sin selección en el árbol, identifica
+sobre las capas del plugin que sí estén cargadas, de arriba abajo, y se queda con la primera que
+responde.
+
+Entran todos los elementos del punto, no solo el primero —en una capa con serie temporal, un clic
+puede traer diez—, y todos quedan seleccionados. Los clics se acumulan en la capa de selección,
+una por capa consultada, y volver a clicar un elemento ya consultado no lo duplica: lo vuelve a
+seleccionar. La capa va al 50 % de opacidad para no tapar lo que hay debajo.
+
+De la ficha se excluyen las columnas que no son datos: una segunda columna geométrica como el
+`geom_inegi` de Feminicidios llegaba como un GeoJSON entero volcado en texto y rompía la copia con
+`Could not convert value "" to target type "string"`.
+
+Esto es lo que las capas WMS no podían dar por sí solas —son ráster, no se seleccionan—, y lo que
+lo hace posible es que sextante publica sus capas como `queryable` y responde `GetFeatureInfo` con
+la geometría incluida. Las capas del plugin se agregan ya con `identify/format=Feature`, así que
+la herramienta nativa de identificación de QGIS también devuelve entidades completas.
+
+### Corregido: el plugin se saltaba el gateway en cada petición
+
+`GetMap` y `GetFeatureInfo` no salían por el gateway sino a `http://<geoserver>:8080/…/ows`: QGIS
+usa el `OnlineResource` que anuncian las capabilities, y GeoServer las publica con su URL interna.
+Solo se notaba dentro de la red, donde ese puerto responde; para cualquiera fuera, el plugin no
+habría dibujado nada. De paso, todo ese tráfico se saltaba la cache, el rate limit y la protección
+de bots, que es justo lo que el modelo de acceso del plan daba por puesto.
+
+El URI del proveedor lleva ahora `IgnoreGetMapUrl` e `IgnoreGetFeatureInfoUrl`, con lo que las dos
+peticiones vuelven a `https://<gateway>/sextante/{ws}/wms`. Con eso, identificar un elemento con
+clic funciona contra el servidor público: la herramienta Identificar de QGIS devuelve los
+atributos de la capa —`nombre`, `clave_geo`, `region`, las áreas—, y el URI declara
+`featureCount=10` para que el clic no se quede en un solo elemento. La capa recién agregada queda
+además como capa activa, que es sobre la que Identificar trabaja.
+
 ## [1.118.1] - 2026-08-10
 
 ### Corregido: los íconos de punto y ráster no eran de la misma familia

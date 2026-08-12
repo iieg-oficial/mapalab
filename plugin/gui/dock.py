@@ -26,6 +26,7 @@ from ..model.tree import filter_tree
 from ..theme import apply_theme, set_role, sombra_en_hover
 from .actions import LayerActions
 from .arbol import ArbolCatalogo
+from .consulta import HerramientaConsulta
 from ..tasks import CargarArbolTask, Coordinador
 from .icons import icono_de_recarga
 from .switch import SwitchModoBase
@@ -48,6 +49,7 @@ class MapaLabDock(QDockWidget):
         self._actions = LayerActions(iface, self._client)
         self._tree: list[dict[str, Any]] = []
         self._tareas = Coordinador()
+        self._consulta_tool: Optional[HerramientaConsulta] = None
         self._switch = SwitchModoBase()
         self._switch.setEnabled(False)
         self._switch.cambiado.connect(self._on_cambio_modo)
@@ -231,6 +233,37 @@ class MapaLabDock(QDockWidget):
             return
         self._reportar(self._actions.add_as_wms(node))
 
+    def _canvas(self) -> Optional[Any]:
+        return self._iface.mapCanvas() if self._iface is not None else None
+
+    def _activar_consulta(self) -> None:
+        canvas = self._canvas()
+        if canvas is None:
+            return
+        if self._consulta_tool is None:
+            self._consulta_tool = HerramientaConsulta(
+                canvas, self._client, self._widget_tree.nodo_actual, self._al_consultar)
+        canvas.setMapTool(self._consulta_tool)
+
+    def _desactivar_consulta(self) -> None:
+        canvas = self._canvas()
+        if canvas is not None and self._consulta_tool is not None:
+            canvas.unsetMapTool(self._consulta_tool)
+
+    def _al_consultar(self, datos: Optional[tuple], aviso: str) -> None:
+        if datos is None:
+            self._mensaje(aviso)
+            return
+        self._reportar(self._actions.abrir_feature(datos))
+
+    def showEvent(self, evento: Any) -> None:
+        super().showEvent(evento)
+        self._activar_consulta()
+
+    def hideEvent(self, evento: Any) -> None:
+        super().hideEvent(evento)
+        self._desactivar_consulta()
+
     def _on_download(self) -> None:
         node = self._require_layer_node()
         if node is None:
@@ -251,5 +284,6 @@ class MapaLabDock(QDockWidget):
         self._mensaje('')
 
     def closeEvent(self, evento: Any) -> None:
+        self._desactivar_consulta()
         self._tareas.cancelar_todo()
         super().closeEvent(evento)

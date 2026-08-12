@@ -147,6 +147,12 @@ class MapaLabClient:
             _write_cache(ETAG_CACHE_FILE, etag)
         return self._tree
 
+    def fetch_text(self, url: str, feedback: Optional[QgsFeedback] = None) -> str:
+        status, content, _ = self._request(url, feedback=feedback)
+        if status and status >= 400:
+            raise MapaLabError(f'El servidor respondió {status}. {_describe(content)}')
+        return content.decode('utf-8', errors='replace')
+
     def fetch_metadata(self, workspace: str, layer: str,
                        feedback: Optional[QgsFeedback] = None) -> Any:
         return self._get_json(

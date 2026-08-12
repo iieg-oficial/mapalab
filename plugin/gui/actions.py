@@ -8,6 +8,7 @@ from qgis.PyQt.QtWidgets import QApplication, QFileDialog, QWidget
 from ..api.client import MapaLabClient, MapaLabError
 from ..layers.limites import aplicar_modo
 from ..layers.metadata import apply_metadata
+from ..layers.seleccion import agregar
 from ..layers.wms import add_wms_layer
 from ..model.tree import (
     clean_label,
@@ -49,9 +50,34 @@ class LayerActions:
             if layer is None:
                 return False, f'No se pudo agregar «{label}»: {reason}'
             self._attach_metadata(layer, node)
+            if self._iface is not None:
+                self._iface.setActiveLayer(layer)
         finally:
             self._busy(False)
 
+        return True, ''
+
+    def abrir_feature(self, datos: tuple) -> tuple[bool, str]:
+        node_id, nombre, crs, elementos = datos
+        capa: Any = None
+        fids: list[int] = []
+        fallo = ''
+
+        for feature, marca in elementos:
+            destino, fid, error = agregar(node_id, nombre, crs, feature, marca)
+            if destino is None:
+                fallo = error
+                continue
+            capa = destino
+            fids.append(fid)
+
+        if capa is None or not fids:
+            return False, fallo or 'No se pudo consultar ese elemento.'
+
+        capa.selectByIds(fids)
+        if self._iface is not None:
+            self._iface.setActiveLayer(capa)
+            self._iface.openFeatureForm(capa, capa.getFeature(fids[0]), False, False)
         return True, ''
 
     def set_base_mode(self, arbol: list[dict[str, Any]], modo: str) -> tuple[bool, str]:
