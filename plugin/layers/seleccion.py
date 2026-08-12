@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 from qgis.core import (
+    Qgis,
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
     QgsFeature,
@@ -28,6 +29,8 @@ PREFIJO: str = 'Selección — '
 
 ALPHA_RELLENO: int = 60
 
+ALPHA_RESALTE: int = 150
+
 ANCHO_BORDE: str = '0.5'
 
 TAMANO_PUNTO: str = '3'
@@ -49,6 +52,12 @@ def _colores() -> tuple[str, str]:
     relleno = QColor(borde)
     relleno.setAlpha(ALPHA_RELLENO)
     return relleno.name(QColor.HexArgb), borde.name()
+
+
+def _color_resalte() -> QColor:
+    color = QColor(color_de_rol('primary', 'background-color', '#5C2472'))
+    color.setAlpha(ALPHA_RESALTE)
+    return color
 
 
 def _simbolo(capa: QgsVectorLayer) -> Any:
@@ -109,6 +118,9 @@ def _crear(node_id: str, nombre: str, feature: QgsFeature) -> Optional[QgsVector
     capa.updateFields()
     capa.setCustomProperty(SELECCION_PROPERTY, node_id)
     capa.renderer().setSymbol(_simbolo(capa))
+    seleccion = capa.selectionProperties()
+    seleccion.setSelectionRenderingMode(Qgis.SelectionRenderingMode.CustomColor)
+    seleccion.setSelectionColor(_color_resalte())
 
     project = QgsProject.instance()
     project.addMapLayer(capa, False)

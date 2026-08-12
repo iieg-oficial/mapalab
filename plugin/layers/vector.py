@@ -56,7 +56,10 @@ def download_vector(node: dict[str, Any], client: MapaLabClient, target_dir: str
         cql_filter = ''
 
     url = build_wfs_url(wms_config, type_name, cql_filter)
-    destination = os.path.join(target_dir, f'{_safe_name(type_name)}.gpkg')
+    nombre = _safe_name(type_name)
+    if apply_node_filter and wms_config.get('cqlFilter'):
+        nombre = f"{nombre}_{_safe_name(str(node.get('id') or ''))}"
+    destination = os.path.join(target_dir, f'{nombre}.gpkg')
 
     try:
         written = client.download(

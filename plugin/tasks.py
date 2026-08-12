@@ -104,7 +104,7 @@ class DescargarVectorTask(_TareaMapaLab):
 
     def run(self) -> bool:
         path, error = download_vector(
-            self._node, self._client, self._target_dir,
+            self._node, self._client, self._target_dir, apply_node_filter=True,
             feedback=self._feedback, on_progress=self._progreso)
 
         if self.isCanceled():
