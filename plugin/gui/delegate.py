@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
-from qgis.PyQt.QtCore import QModelIndex, QRect, QSize, Qt
-from qgis.PyQt.QtGui import QColor, QFont, QPainter
+from qgis.PyQt.QtCore import QModelIndex, QPointF, QRect, QRectF, QSize, Qt
+from qgis.PyQt.QtGui import QColor, QFont, QPainter, QPainterPath, QPen
 from qgis.PyQt.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem
 
 BADGE_COLORS: dict[str, str] = {
@@ -20,7 +20,24 @@ BADGE_PADDING: int = 6
 BADGE_GAP: int = 8
 BADGE_RADIUS: int = 7
 
-GEOM_SIZE: int = 11
+GEOM_SIZE: int = 16
+
+VIEWBOX: float = 24.0
+
+TRAZO: float = 1.8
+
+RELLENO_ALPHA: int = 46
+
+VERTICES: dict[str, tuple[tuple[float, float, float], ...]] = {
+    'point': ((12.0, 5.5, 1.9), (18.5, 16.5, 1.9), (5.5, 16.5, 1.9)),
+    'line': ((4.0, 18.0, 1.8), (20.0, 5.0, 1.8)),
+    'polygon': ((12.0, 3.5, 1.6), (20.0, 9.0, 1.6), (4.0, 9.0, 1.6)),
+}
+
+TRAZOS: dict[str, tuple[tuple[float, float], ...]] = {
+    'line': ((4.0, 18.0), (9.5, 9.0), (15.0, 14.0), (20.0, 5.0)),
+    'polygon': ((12.0, 3.5), (20.0, 9.0), (17.0, 18.5), (7.0, 18.5), (4.0, 9.0)),
+}
 
 GEOM_GAP: int = 8
 
@@ -113,27 +130,56 @@ class LayerItemDelegate(QStyledItemDelegate):
     def _tema_abierto(self, option: QStyleOptionViewItem, index: QModelIndex) -> bool:
         return self._es_raiz(index) and bool(option.state & QStyle.State_Open)
 
-    def _pintar_geometria(self, painter: QPainter, rect: QRect, tipo: str) -> None:
-        color = QColor(GEOM_COLORS.get(tipo, '#465055'))
-        painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, True)
+    def _camino(self, tipo: str, cerrado: bool) -> QPainterPath:
+        camino = QPainterPath()
+        puntos = TRAZOS[tipo]
+        camino.moveTo(QPointF(*puntos[0]))
+        for punto in puntos[1:]:
+            camino.lineTo(QPointF(*punto))
+        if cerrado:
+            camino.closeSubpath()
+        return camino
+
+    def _pintar_vertices(self, painter: QPainter, tipo: str, color: QColor) -> None:
         painter.setPen(Qt.NoPen)
         painter.setBrush(color)
-        centro = rect.center()
-        if tipo == 'point':
-            painter.drawEllipse(centro, GEOM_SIZE // 3, GEOM_SIZE // 3)
-        elif tipo == 'line':
-            painter.setPen(color)
-            painter.drawLine(rect.left(), rect.bottom() - 2, rect.right(), rect.top() + 2)
-        elif tipo == 'raster':
-            paso = GEOM_SIZE // 2
-            for fila in range(2):
-                for col in range(2):
-                    if (fila + col) % 2 == 0:
-                        painter.drawRect(rect.left() + col * paso, rect.top() + fila * paso,
-                                         paso - 1, paso - 1)
+        for x, y, radio in VERTICES.get(tipo, ()):
+            painter.drawEllipse(QPointF(x, y), radio, radio)
+
+    def _pintar_raster(self, painter: QPainter, color: QColor, suave: QColor) -> None:
+        painter.setBrush(Qt.NoBrush)
+        painter.drawRoundedRect(QRectF(4.0, 4.0, 16.0, 16.0), 1.5, 1.5)
+        painter.drawLine(QPointF(12.0, 4.0), QPointF(12.0, 20.0))
+        painter.drawLine(QPointF(4.0, 12.0), QPointF(20.0, 12.0))
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(suave)
+        painter.drawRect(QRectF(4.0, 4.0, 8.0, 8.0))
+        painter.drawRect(QRectF(12.0, 12.0, 8.0, 8.0))
+
+    def _pintar_geometria(self, painter: QPainter, rect: QRect, tipo: str) -> None:
+        color = QColor(GEOM_COLORS.get(tipo, '#465055'))
+        suave = QColor(color)
+        suave.setAlpha(RELLENO_ALPHA)
+
+        pluma = QPen(color, TRAZO)
+        pluma.setJoinStyle(Qt.RoundJoin)
+        pluma.setCapStyle(Qt.RoundCap)
+
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.translate(rect.left(), rect.top())
+        painter.scale(rect.width() / VIEWBOX, rect.height() / VIEWBOX)
+        painter.setPen(pluma)
+
+        if tipo == 'raster':
+            self._pintar_raster(painter, color, suave)
+        elif tipo == 'point':
+            self._pintar_vertices(painter, tipo, color)
         else:
-            painter.drawRoundedRect(rect.adjusted(0, 2, 0, -2), 2, 2)
+            painter.setBrush(suave if tipo == 'polygon' else Qt.NoBrush)
+            painter.drawPath(self._camino(tipo, tipo == 'polygon'))
+            self._pintar_vertices(painter, tipo, color)
+
         painter.restore()
 
     def _medir_adornos(self, opcion: QStyleOptionViewItem, rect: QRect,

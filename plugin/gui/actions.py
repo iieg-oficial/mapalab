@@ -17,6 +17,7 @@ from ..model.tree import (
     workspace_and_layer,
 )
 from ..tasks import DescargarVectorTask
+from .ficha import abrir_ficha
 
 
 class LayerActions:
@@ -24,6 +25,8 @@ class LayerActions:
     def __init__(self, iface: Any, client: MapaLabClient) -> None:
         self._iface = iface
         self._client = client
+        self._ficha: Any = None
+        self._ficha_feature: Any = None
 
     def _busy(self, active: bool) -> None:
         if active:
@@ -77,7 +80,8 @@ class LayerActions:
 
         capa.selectByIds(fids)
         if self._iface is not None:
-            self._iface.openFeatureForm(capa, capa.getFeature(fids[0]), False, False)
+            self._ficha_feature = capa.getFeature(fids[0])
+            self._ficha = abrir_ficha(capa, self._ficha_feature, self._iface.mainWindow())
         return True, ''
 
     def set_base_mode(self, arbol: list[dict[str, Any]], modo: str) -> tuple[bool, str]:

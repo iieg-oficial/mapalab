@@ -5,6 +5,41 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.122.0] - 2026-08-12
+
+### Cambiado: el nodo del catálogo trae lo suyo, no la tabla entera
+
+El plugin ignoraba el `cqlFilter` del nodo, así que elegir «Maíz» dibujaba los veinte cultivos, y
+la descarga escribía siempre el mismo `cultivos.gpkg` con todo dentro. Era una decisión del plan
+—traer la tabla completa y dejar el filtro como casilla opcional—, y en uso real desconcierta.
+
+Ahora agregar y descargar aplican el filtro del nodo, y el GeoPackage filtrado se nombra
+`{tabla}_{nodo}.gpkg` para no pisar al de al lado. Medido sobre `economia:cultivos`: el render pasa
+de 275 KB a 155 KB y el WFS de 346 836 a 135 544 entidades. La consulta por clic ya mandaba ese
+filtro, así que las tres rutas coinciden. El árbol no cambia: los nodos se siguen viendo como en
+el visor.
+
+### Corregido: los glifos de geometría del árbol no se distinguían
+
+Estaban dibujados a 11 px con formas planas —una elipse, una diagonal, una barra rellena—, y a ese
+tamaño el de polígono se leía como una raya igual que el de línea. Ahora son los mismos cuatro
+íconos del visor, a 16 px: tres vértices sueltos para punto, la polilínea quebrada con sus dos
+vértices para línea, el pentágono con relleno al 18 % para polígono y la malla de dos por dos para
+ráster.
+
+### Corregido: el resalte de la selección seguía saliendo amarillo
+
+Fijar `selectionColor` en la capa no basta: el lienzo lo ignora en silencio si antes no se declara
+`setSelectionRenderingMode(CustomColor)`. Con las dos cosas, el elemento consultado se resalta en
+el morado de la marca.
+
+### Cambiado: la ficha del elemento se ajusta a lo que trae
+
+Abría siempre con el tamaño que QGIS recordara, así que una capa de tres campos dejaba medio
+diálogo vacío y una de treinta obligaba a hacer scroll desde la primera fila. Ahora la ficha la
+abre el plugin y se dimensiona al contenido, con mínimo de 320×180 y tope de 720×640, acotado
+además al 75 % de la pantalla disponible.
+
 ## [1.121.0] - 2026-08-12
 
 ### Agregado: cada capa se puede traer como mapa o como datos
