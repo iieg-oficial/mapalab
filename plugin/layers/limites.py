@@ -4,7 +4,7 @@ from qgis.core import QgsDataSourceUri, QgsMapLayer, QgsProject
 
 from ..config import CAPAS_BASE, MODO_IIEG, MODO_INEGI, NODE_ID_PROPERTY
 from ..model.tree import find_node
-from .wms import add_wms_layer
+from .wms import add_wms_layer, con_env
 
 
 def _node_id(layer: QgsMapLayer) -> str:
@@ -45,6 +45,23 @@ def _quitar(modo: str) -> None:
         project.removeMapLayer(capa.id())
 
 
+def capas_del_plugin() -> list[QgsMapLayer]:
+    return [capa for capa in QgsProject.instance().mapLayers().values()
+            if capa.providerType() == 'wms' and capa.customProperty(NODE_ID_PROPERTY)]
+
+
+def actualizar_env(modo: str) -> int:
+    cambiadas = 0
+    for capa in capas_del_plugin():
+        uri = con_env(capa.source(), modo)
+        if uri == capa.source():
+            continue
+        capa.setDataSource(uri, capa.name(), 'wms')
+        capa.triggerRepaint()
+        cambiadas += 1
+    return cambiadas
+
+
 def aplicar_modo(arbol: list[dict[str, Any]], modo: str) -> tuple[bool, str]:
     ids = CAPAS_BASE.get(modo)
     if not ids:
@@ -61,9 +78,11 @@ def aplicar_modo(arbol: list[dict[str, Any]], modo: str) -> tuple[bool, str]:
         if node is None:
             sin_catalogo.append(node_id)
             continue
-        capa, razon = add_wms_layer(node, al_tope=True)
+        capa, razon = add_wms_layer(node, al_tope=True, modo=modo)
         if capa is None:
             return False, f'No se pudo agregar «{node_id}»: {razon}'
+
+    actualizar_env(modo)
 
     if sin_catalogo:
         return False, 'El catálogo no trae: ' + ', '.join(sin_catalogo)

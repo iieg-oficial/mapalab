@@ -1,10 +1,10 @@
 import json
-from typing import Any
+from typing import Any, Optional
 from urllib.parse import urlencode
 
 from qgis.core import QgsFeature, QgsJsonUtils, QgsRectangle
 
-from ..config import FEATURE_COUNT
+from ..config import FEATURE_COUNT, env_de_modo
 
 INFO_VERSION: str = '1.1.1'
 
@@ -12,7 +12,8 @@ INFO_MIME: str = 'application/json'
 
 
 def url_de_consulta(wms_config: dict[str, Any], extent: QgsRectangle, ancho: int,
-                    alto: int, crs_authid: str, x: int, y: int) -> str:
+                    alto: int, crs_authid: str, x: int, y: int,
+                    modo: Optional[str] = None) -> str:
     base_url = wms_config.get('baseUrl') or ''
     capa = wms_config.get('layerName') or ''
     if not base_url or not capa:
@@ -33,6 +34,7 @@ def url_de_consulta(wms_config: dict[str, Any], extent: QgsRectangle, ancho: int
         'Y': str(y),
         'INFO_FORMAT': INFO_MIME,
         'FEATURE_COUNT': str(FEATURE_COUNT),
+        'ENV': env_de_modo(modo),
     }
 
     cql = wms_config.get('cqlFilter') or ''

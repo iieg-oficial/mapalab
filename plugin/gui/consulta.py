@@ -6,6 +6,7 @@ from qgis.gui import QgsMapToolIdentify
 from ..api.client import MapaLabClient, MapaLabError
 from ..config import NODE_ID_PROPERTY
 from ..layers.featureinfo import features_de_json, url_de_consulta
+from ..layers.limites import modo_actual
 from ..model.tree import clean_label
 
 
@@ -20,9 +21,13 @@ def capas_del_plugin() -> list[QgsMapLayer]:
     return capas
 
 
-def esta_cargada(node_id: str) -> bool:
-    return any(str(capa.customProperty(NODE_ID_PROPERTY) or '') == node_id
-               for capa in QgsProject.instance().mapLayers().values())
+def capa_cargada(node_id: str) -> Optional[QgsMapLayer]:
+    if not node_id:
+        return None
+    for capa in QgsProject.instance().mapLayers().values():
+        if str(capa.customProperty(NODE_ID_PROPERTY) or '') == node_id:
+            return capa
+    return None
 
 
 class HerramientaConsulta(QgsMapToolIdentify):
@@ -36,14 +41,31 @@ class HerramientaConsulta(QgsMapToolIdentify):
         self._al_consultar = al_consultar
 
     def canvasReleaseEvent(self, evento: Any) -> None:
+        x, y = int(evento.x()), int(evento.y())
         node = self._nodo_actual()
-        if node and node.get('wmsConfig') and not esta_cargada(str(node.get('id') or '')):
-            self._consultar_catalogo(node, int(evento.x()), int(evento.y()))
-            return
-        self._consultar_cargadas(int(evento.x()), int(evento.y()))
 
-    def _consultar_cargadas(self, x: int, y: int) -> None:
-        capas = capas_del_plugin()
+        if node and node.get('wmsConfig'):
+            capa = capa_cargada(str(node.get('id') or ''))
+            if capa is None:
+                self._consultar_catalogo(node, x, y)
+            else:
+                self._consultar_cargadas([capa], x, y)
+            return
+
+        activa = self._capa_activa()
+        if activa is not None:
+            self._consultar_cargadas([activa], x, y)
+            return
+
+        self._consultar_cargadas(capas_del_plugin(), x, y)
+
+    def _capa_activa(self) -> Optional[QgsMapLayer]:
+        capa = self.canvas().currentLayer()
+        if capa is None or not capa.customProperty(NODE_ID_PROPERTY):
+            return None
+        return capa
+
+    def _consultar_cargadas(self, capas: list[QgsMapLayer], x: int, y: int) -> None:
         if not capas:
             self._al_consultar(None, 'Selecciona una capa del árbol o agrégala al mapa.')
             return
@@ -69,7 +91,7 @@ class HerramientaConsulta(QgsMapToolIdentify):
         settings = canvas.mapSettings()
         crs: QgsCoordinateReferenceSystem = settings.destinationCrs()
         url = url_de_consulta(node['wmsConfig'], settings.extent(), canvas.width(),
-                              canvas.height(), crs.authid(), x, y)
+                              canvas.height(), crs.authid(), x, y, modo_actual())
         if not url:
             self._al_consultar(None, 'Esa capa no trae configuración WMS.')
             return

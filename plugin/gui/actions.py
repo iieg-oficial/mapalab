@@ -6,7 +6,7 @@ from qgis.PyQt.QtGui import QCursor
 from qgis.PyQt.QtWidgets import QApplication, QFileDialog, QWidget
 
 from ..api.client import MapaLabClient, MapaLabError
-from ..layers.limites import aplicar_modo
+from ..layers.limites import aplicar_modo, modo_actual
 from ..layers.metadata import apply_metadata
 from ..layers.seleccion import agregar
 from ..layers.wms import add_wms_layer
@@ -46,7 +46,7 @@ class LayerActions:
         label = clean_label(node.get('label') or '')
         self._busy(True)
         try:
-            layer, reason = add_wms_layer(node)
+            layer, reason = add_wms_layer(node, modo=modo_actual())
             if layer is None:
                 return False, f'No se pudo agregar «{label}»: {reason}'
             self._attach_metadata(layer, node)
@@ -76,7 +76,6 @@ class LayerActions:
 
         capa.selectByIds(fids)
         if self._iface is not None:
-            self._iface.setActiveLayer(capa)
             self._iface.openFeatureForm(capa, capa.getFeature(fids[0]), False, False)
         return True, ''
 

@@ -5,6 +5,50 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.120.0] - 2026-08-12
+
+### Agregado: el switch del plugin cambia la geometría con la que se dibuja
+
+El switch movía las capas de límites, pero las temáticas seguían dibujándose con la geometría del
+IIEG aunque estuviera en INEGI. Le faltaba lo que el visor sí manda desde `useWMSLayerManager`: el
+parámetro `ENV` del WMS, `geom:geom_iieg` o `geom:geom_inegi`, con el que GeoServer elige la
+columna geométrica. Comprobado contra el servidor: el mismo tile de `poblacion_mujeres` pesa 63 KB
+con una y 70 KB con la otra.
+
+Las capas nuevas nacen con el `ENV` del modo vigente, y al cambiar el switch se reescribe el de
+todas las capas del plugin ya cargadas, sin quitarlas ni volver a agregarlas. La consulta por clic
+manda el mismo `ENV`, así que en modo INEGI devuelve la geometría del INEGI.
+
+### Corregido: la selección se perdía en las capas con dos geometrías
+
+`Could not store attribute "geom_inegi"`, y con eso se caía la copia entera del elemento. Las
+capas del ecosistema traen dos columnas geométricas, `geom_iieg` y `geom_inegi`, y el proveedor
+WMS de QGIS declara **todos** los campos del `GetFeatureInfo` como texto, incluida esa: el filtro
+por tipo del release anterior no la veía llegar, porque su tipo declarado era legítimo y lo que no
+encajaba era el valor, un objeto entero.
+
+Ahora la decisión se toma por el valor y no por el tipo declarado, así que las columnas
+geométricas quedan fuera de la ficha por las dos rutas de consulta —el `GetFeatureInfo` directo ya
+las excluía por tipo— y lo que sí es dato se convierte a texto cuando hace falta en vez de tumbar
+el guardado.
+
+### Cambiado: el clic consulta la capa que tengas seleccionada
+
+El orden es explícito: si hay una capa seleccionada en el árbol del catálogo manda esa —cargada o
+no—; si no, la capa activa del panel de capas de QGIS, siempre que sea del plugin; y solo si no
+hay ninguna de las dos, la primera que responda de arriba abajo, que era el único criterio hasta
+ahora.
+
+Para que ese orden se sostenga, la ficha ya no cambia la capa activa: antes dejaba activa la capa
+de selección, y con eso el segundo clic habría dejado de consultar la capa que el usuario tenía
+elegida.
+
+### Cambiado: la capa de selección va en el morado de la marca
+
+Era el color aleatorio de QGIS al 50 % de opacidad. Ahora toma el primario del `theme.qss` de
+mariachi: relleno del mismo morado con alfa 60 —el «morado bajito»— y borde sólido, para que se
+lea encima de cualquier capa sin taparla.
+
 ## [1.119.0] - 2026-08-12
 
 ### Agregado: el switch IIEG | INEGI en el plugin de QGIS

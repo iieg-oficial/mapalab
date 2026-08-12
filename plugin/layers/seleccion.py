@@ -6,14 +6,19 @@ from qgis.core import (
     QgsFeature,
     QgsField,
     QgsFields,
+    QgsFillSymbol,
+    QgsLineSymbol,
+    QgsMarkerSymbol,
     QgsProject,
     QgsVariantUtils,
     QgsVectorLayer,
     QgsWkbTypes,
 )
 from qgis.PyQt.QtCore import QVariant
+from qgis.PyQt.QtGui import QColor
 
 from ..config import DATA_CRS
+from ..theme import color_de_rol
 
 SELECCION_PROPERTY: str = 'mapalab/seleccionDe'
 
@@ -21,7 +26,11 @@ CAMPO_ORIGEN: str = 'mapalab_fid'
 
 PREFIJO: str = 'Selección — '
 
-OPACIDAD: float = 0.5
+ALPHA_RELLENO: int = 60
+
+ANCHO_BORDE: str = '0.5'
+
+TAMANO_PUNTO: str = '3'
 
 TIPOS_SOPORTADOS: set = {
     QVariant.Bool,
@@ -33,6 +42,24 @@ TIPOS_SOPORTADOS: set = {
     QVariant.String,
     QVariant.Time,
 }
+
+
+def _colores() -> tuple[str, str]:
+    borde = QColor(color_de_rol('primary', 'background-color', '#5C2472'))
+    relleno = QColor(borde)
+    relleno.setAlpha(ALPHA_RELLENO)
+    return relleno.name(QColor.HexArgb), borde.name()
+
+
+def _simbolo(capa: QgsVectorLayer) -> Any:
+    relleno, borde = _colores()
+    if capa.geometryType() == QgsWkbTypes.PointGeometry:
+        return QgsMarkerSymbol.createSimple(
+            {'color': relleno, 'outline_color': borde, 'size': TAMANO_PUNTO})
+    if capa.geometryType() == QgsWkbTypes.LineGeometry:
+        return QgsLineSymbol.createSimple({'color': borde, 'width': ANCHO_BORDE})
+    return QgsFillSymbol.createSimple(
+        {'color': relleno, 'outline_color': borde, 'outline_width': ANCHO_BORDE})
 
 
 def _es_estructura(valor: Any) -> bool:
@@ -81,7 +108,7 @@ def _crear(node_id: str, nombre: str, feature: QgsFeature) -> Optional[QgsVector
     capa.dataProvider().addAttributes(campos)
     capa.updateFields()
     capa.setCustomProperty(SELECCION_PROPERTY, node_id)
-    capa.setOpacity(OPACIDAD)
+    capa.renderer().setSymbol(_simbolo(capa))
 
     project = QgsProject.instance()
     project.addMapLayer(capa, False)

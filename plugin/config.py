@@ -1,3 +1,5 @@
+from typing import Optional
+
 from qgis.PyQt.QtCore import QSettings
 
 SETTINGS_GROUP: str = 'mapalab'
@@ -29,6 +31,15 @@ CAPAS_BASE: dict[str, tuple[str, ...]] = {
     MODO_IIEG: ('limite_iieg', 'limite_municipal', 'regiones'),
     MODO_INEGI: ('limite_inegi', 'limite_municipal_inegi'),
 }
+
+ENV_GEOM: dict[str, str] = {
+    MODO_IIEG: 'geom:geom_iieg',
+    MODO_INEGI: 'geom:geom_inegi',
+}
+
+
+def env_de_modo(modo: Optional[str]) -> str:
+    return ENV_GEOM.get(modo or '', ENV_GEOM[MODO_IIEG])
 
 LOGOS_PATH: str = '/acervo/iieg/logos'
 
