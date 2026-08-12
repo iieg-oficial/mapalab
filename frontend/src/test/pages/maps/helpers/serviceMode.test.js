@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canUseVectorService, SERVICE_WMS, SERVICE_VECTOR } from '@pages/maps/helpers/serviceMode';
+import { canUseVectorService, resolveVectorTargets, SERVICE_WMS, SERVICE_VECTOR } from '@pages/maps/helpers/serviceMode';
 
 const layer = (overrides = {}) => ({
     id: 'unidades_salud',
@@ -43,5 +43,45 @@ describe('canUseVectorService', () => {
 
     it('mantiene distintos los dos modos', () => {
         expect(SERVICE_WMS).not.toBe(SERVICE_VECTOR);
+    });
+});
+
+describe('resolveVectorTargets', () => {
+    const arbol = [{
+        id: 'aeropuertos',
+        label: 'Aeropuertos',
+        children: [
+            layer({ id: 'aeropuerto_internacional' }),
+            layer({ id: 'base_aerea' }),
+            layer({ id: 'pista_raster', geometryType: 'raster' })
+        ]
+    }, layer({ id: 'suelta' })];
+
+    it('resuelve las hojas elegibles de un grupo', () => {
+        const targets = resolveVectorTargets(
+            ['aeropuerto_internacional', 'base_aerea', 'pista_raster'],
+            arbol,
+            ['aeropuerto_internacional', 'base_aerea', 'pista_raster']
+        );
+        expect(targets).toEqual(['aeropuerto_internacional', 'base_aerea']);
+    });
+
+    it('resuelve la capa suelta, que llega como su propio hijo', () => {
+        expect(resolveVectorTargets(['suelta'], arbol, ['suelta'])).toEqual(['suelta']);
+    });
+
+    it('ignora las hojas del grupo que no están activas', () => {
+        const targets = resolveVectorTargets(
+            ['aeropuerto_internacional', 'base_aerea'],
+            arbol,
+            ['base_aerea']
+        );
+        expect(targets).toEqual(['base_aerea']);
+    });
+
+    it('devuelve vacío cuando ninguna hoja sirve', () => {
+        expect(resolveVectorTargets(['pista_raster'], arbol, ['pista_raster'])).toEqual([]);
+        expect(resolveVectorTargets([], arbol, [])).toEqual([]);
+        expect(resolveVectorTargets(null, arbol, [])).toEqual([]);
     });
 });

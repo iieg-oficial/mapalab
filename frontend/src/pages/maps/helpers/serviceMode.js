@@ -1,4 +1,5 @@
 import { RASTER_WORKSPACES } from './layerCqlSegment';
+import { findLayerDef } from './wmsConfig';
 
 export const SERVICE_WMS = 'wms';
 export const SERVICE_VECTOR = 'vector';
@@ -23,3 +24,14 @@ export const canUseVectorService = (layerDef) => {
 };
 
 export const isVectorService = (mode) => mode === SERVICE_VECTOR;
+
+export const resolveVectorTargets = (childIds, allLayers, activeLayerIds) => {
+    if (!Array.isArray(childIds) || childIds.length === 0) return [];
+    const active = Array.isArray(activeLayerIds) ? new Set(activeLayerIds) : null;
+
+    return childIds
+        .filter(id => !active || active.has(id))
+        .map(id => findLayerDef(id, allLayers || []))
+        .filter(canUseVectorService)
+        .map(layerDef => layerDef.id);
+};

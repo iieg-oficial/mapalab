@@ -275,7 +275,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 onDirection={handleDirectionClick}
                                 onCycleSlot={handleCycleSlot}
                             />
-                            <LayerServiceSegmented layerDef={layerDef} />
+                            <LayerServiceSegmented childIds={layer.childIds} />
                             <LayerActionsBar
                                 layerId={layer.id}
                                 visible={layer.visible}
