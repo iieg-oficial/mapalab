@@ -35,8 +35,19 @@ TIPOS_SOPORTADOS: set = {
 }
 
 
-def _campos_utiles(campos: QgsFields) -> list[QgsField]:
-    return [QgsField(campo) for campo in campos if campo.type() in TIPOS_SOPORTADOS]
+def _es_estructura(valor: Any) -> bool:
+    return isinstance(valor, (dict, list, tuple, bytes, bytearray))
+
+
+def _campos_utiles(feature: QgsFeature) -> list[QgsField]:
+    utiles: list[QgsField] = []
+    for campo in feature.fields():
+        if campo.type() not in TIPOS_SOPORTADOS:
+            continue
+        if _es_estructura(feature[campo.name()]):
+            continue
+        utiles.append(QgsField(campo))
+    return utiles
 
 
 def _copiar_atributos(destino: QgsFeature, origen: QgsFeature, campos: QgsFields) -> None:
@@ -45,8 +56,10 @@ def _copiar_atributos(destino: QgsFeature, origen: QgsFeature, campos: QgsFields
         if indice < 0:
             continue
         valor: Any = origen[campo.name()]
-        if QgsVariantUtils.isNull(valor):
+        if QgsVariantUtils.isNull(valor) or _es_estructura(valor):
             continue
+        if campos.at(indice).type() == QVariant.String and not isinstance(valor, str):
+            valor = str(valor)
         destino.setAttribute(indice, valor)
 
 
@@ -63,7 +76,7 @@ def _crear(node_id: str, nombre: str, feature: QgsFeature) -> Optional[QgsVector
     if not capa.isValid():
         return None
 
-    campos = _campos_utiles(feature.fields())
+    campos = _campos_utiles(feature)
     campos.append(QgsField(CAMPO_ORIGEN, QVariant.String))
     capa.dataProvider().addAttributes(campos)
     capa.updateFields()
