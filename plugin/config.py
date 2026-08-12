@@ -14,6 +14,8 @@ DOWNLOAD_CRS: str = 'EPSG:6368'
 TILE_SIZE: int = 256
 WMS_FORMAT: str = 'image/png'
 WMS_VERSION: str = '1.1.0'
+FEATURE_COUNT: int = 10
+IDENTIFY_FORMAT: str = 'Feature'
 
 TREE_CACHE_FILE: str = 'layer_tree.json'
 ETAG_CACHE_FILE: str = 'layer_tree.etag'

@@ -3,7 +3,8 @@ from urllib.parse import urlencode
 
 from qgis.core import QgsDataSourceUri, QgsProject, QgsRasterLayer
 
-from ..config import DATA_CRS, NODE_ID_PROPERTY, TILE_SIZE
+from ..config import (DATA_CRS, FEATURE_COUNT, IDENTIFY_FORMAT, NODE_ID_PROPERTY,
+                      TILE_SIZE)
 from ..model.tree import clean_label
 
 
@@ -36,6 +37,9 @@ def build_wms_uri(wms_config: dict[str, Any], cql_filter: str = '',
     uri.setParam('maxHeight', str(TILE_SIZE))
     uri.setParam('dpiMode', '7')
     uri.setParam('contextualWMSLegend', '0')
+    uri.setParam('featureCount', str(FEATURE_COUNT))
+    uri.setParam('IgnoreGetMapUrl', '1')
+    uri.setParam('IgnoreGetFeatureInfoUrl', '1')
     return bytes(uri.encodedUri()).decode('utf-8')
 
 
@@ -69,6 +73,7 @@ def add_wms_layer(node: dict[str, Any], apply_node_filter: bool = False,
         return None, _failure_reason(layer)
 
     layer.setCustomProperty(NODE_ID_PROPERTY, str(node.get('id') or ''))
+    layer.setCustomProperty('identify/format', IDENTIFY_FORMAT)
 
     project = QgsProject.instance()
     if al_tope:
