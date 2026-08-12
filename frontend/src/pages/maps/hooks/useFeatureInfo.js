@@ -9,6 +9,7 @@ import { toLonLat } from 'ol/proj';
 import { useLayers } from '@hooks/useLayers';
 import { useEventoContext } from '@hooks/useEvento';
 import { findLayerById, collectLayersWithWMS, findParentGroup, resolveLayerDisplayName, groupAlternativeResults } from '../helpers/layers/utils/layerHelpers';
+import { resolveLocalFeatureResults } from '../helpers/vectorFeatureQuery';
 
 const FEATURE_INFO_LOADING_ID = 'feature_info_query';
 
@@ -16,7 +17,7 @@ const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
 export const useFeatureInfo = (overrides = null) => {
     const ctx = useContext(MapsContext);
-    const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, selectedLayerForSymbology, setSelectedLayerForSymbology } = ctx;
+    const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, selectedLayerForSymbology, setSelectedLayerForSymbology, getServiceMode } = ctx;
     const activeLayerIds = overrides?.activeLayerIds ?? ctx.activeLayerIds;
     const hiddenLayerIds = overrides?.hiddenLayerIds ?? ctx.hiddenLayerIds;
     const getFilter = overrides?.getFilter ?? ctx.getFilter;
@@ -105,19 +106,20 @@ export const useFeatureInfo = (overrides = null) => {
                 }
             }
         }
-        const activeLayers = layersToQuery;
+        const { remoteLayers: activeLayers, localResults } = resolveLocalFeatureResults(map, coordinate, layersToQuery, getServiceMode);
 
         setLoading(true);
         setLayerLoading(FEATURE_INFO_LOADING_ID, true);
 
         try {
             const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
-            const results = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_CAP);
+            const remoteResults = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_CAP);
+            const results = [...localResults, ...(remoteResults || [])];
             // Solo lanzamos el segundo fetch (cap 2000) si alguna capa llego al cap.
             // Si todas devuelven < 50, ya tenemos todo y nos ahorramos la request.
-            const needsTotal = (results || []).some(r => (r.features?.length || 0) >= FEATURE_COUNT_CAP);
+            const needsTotal = (remoteResults || []).some(r => (r.features?.length || 0) >= FEATURE_COUNT_CAP);
             const totalResults = needsTotal
-                ? await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_TOTAL)
+                ? [...localResults, ...(await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_TOTAL) || [])]
                 : results;
             const [lng, lat] = toLonLat(coordinate);
 
@@ -183,7 +185,7 @@ export const useFeatureInfo = (overrides = null) => {
             setLayerLoading(FEATURE_INFO_LOADING_ID, false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, selectedLayerForSymbology, setLayerLoading, getAllActiveLayers, getAliasByLayerId]);
+    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, selectedLayerForSymbology, setLayerLoading, getAllActiveLayers, getAliasByLayerId, getServiceMode]);
 
     const selectAlternativeLayer = useCallback((layer) => {
         const layerNode = findLayerById(layer.id, allLayers);

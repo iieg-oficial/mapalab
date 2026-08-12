@@ -4,6 +4,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
 import { initialCompareMode } from '@pages/maps/helpers/swipeMode';
+import { VECTOR_SERVICE_ENABLED } from '@pages/maps/helpers/serviceMode';
 
 const VIEW_RETRY_INTERVAL_MS = 100;
 const VIEW_RETRY_MAX_ATTEMPTS = 60;
@@ -70,6 +71,7 @@ export const useShareDeserializer = () => {
         restoreSelectedById,
         findLayerById,
         setLayerOpacity,
+        setServiceMode,
         setHiddenLayerIds,
         setLayerOpacities,
         setFilters,
@@ -114,6 +116,14 @@ export const useShareDeserializer = () => {
             } else {
                 Object.entries(livePane.filters).forEach(([layerId, layerFilters]) => {
                     Object.entries(layerFilters).forEach(([name, cql]) => applyFilter(layerId, name, cql));
+                });
+            }
+
+            if (typeof setServiceMode === 'function' && VECTOR_SERVICE_ENABLED) {
+                [...paneAEntries, ...paneBEntries].forEach((entry) => {
+                    if (!entry.service) return;
+                    const layerId = resolveRefToId(entry.slug, layerTree);
+                    if (layerId) setServiceMode(layerId, entry.service);
                 });
             }
 
@@ -168,6 +178,7 @@ export const useShareDeserializer = () => {
         const resolvedIds = [];
         const hidden = [];
         const opacities = {};
+        const services = [];
 
         layers.forEach((entry) => {
             const layerId = resolveRefToId(entry.slug, layerTree);
@@ -180,6 +191,7 @@ export const useShareDeserializer = () => {
             }
             if (entry.visible === false) hidden.push(layerId);
             if (typeof entry.opacity === 'number') opacities[layerId] = entry.opacity;
+            if (entry.service) services.push([layerId, entry.service]);
 
             Object.entries(entry.filters || {}).forEach(([name, cql]) => {
                 if (cql) applyFilter(layerId, name, cql);
@@ -190,6 +202,9 @@ export const useShareDeserializer = () => {
         if (typeof setHiddenLayerIds === 'function') setHiddenLayerIds(hidden);
         if (typeof setLayerOpacity === 'function') {
             Object.entries(opacities).forEach(([id, op]) => setLayerOpacity(id, op));
+        }
+        if (typeof setServiceMode === 'function' && VECTOR_SERVICE_ENABLED) {
+            services.forEach(([id, mode]) => setServiceMode(id, mode));
         }
 
         if (payload.basemap && typeof setBaseMapId === 'function') {
@@ -221,5 +236,5 @@ export const useShareDeserializer = () => {
         }
 
         return true;
-    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, setLayerOpacity, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode]);
+    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, setLayerOpacity, setServiceMode, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode]);
 };

@@ -5,6 +5,37 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.121.0] - 2026-08-12
+
+### Agregado: cada capa se puede traer como mapa o como datos
+
+El item de capa activa estrena un segmento «Mapa | Datos». En **Mapa** todo sigue igual: el
+servidor dibuja la imagen y manda la simbología oficial. En **Datos** la capa se pide por WFS como
+GeoJSON, las geometrías viven en el navegador y el clic se resuelve sin ir a la red, con
+`forEachFeatureAtPixel` en vez de un `GetFeatureInfo` por cada punto.
+
+No hizo falta tocar el backend ni el catálogo: `wfsAvailable` y `geometryType` ya viajaban en el
+árbol de capas. El segmento solo aparece donde tiene sentido — capas con WFS publicado, con tipo
+de geometría y que no sean ráster ni grupos—, así que `curvas_de_nivel` y las capas de lluvia y
+temperatura no lo muestran.
+
+Se pide `resultType=hits` antes de cambiar de modo: por arriba de 20 000 elementos la capa se
+queda en modo mapa y el item explica por qué, en vez de colgar el navegador con una descarga que
+no iba a terminar bien. La simbología en modo datos es genérica, derivada del tipo de geometría,
+y por eso la leyenda del servidor se oculta: describe un SLD que ya no es el que se está viendo.
+
+El modo viaja en los mapas compartidos y en la sesión, pero solo se escribe cuando difiere del
+default, así que los shares que ya existen no cambian de tamaño ni de forma. Por ahora el control
+solo se muestra en `beta` y `dev`; producción queda exactamente como estaba.
+
+### Cambiado: el filtro CQL y el z-index de las capas salieron a helpers propios
+
+`useWMSLayerManager` calculaba el segmento CQL de cada capa —filtro base, filtro dinámico, recorte
+por municipio y el `1=0` de las capas con `defaultDate`— y su z-index dentro del propio hook. Los
+dos se movieron a `helpers/layerCqlSegment.js` y `helpers/layerZIndex.js` para que el modo
+vectorial use exactamente el mismo cálculo en vez de una copia condenada a desincronizarse. El
+comportamiento del WMS no cambia: lo cubren los mismos tests de antes.
+
 ## [1.120.0] - 2026-08-12
 
 ### Agregado: el switch del plugin cambia la geometría con la que se dibuja

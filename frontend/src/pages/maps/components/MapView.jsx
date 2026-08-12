@@ -9,10 +9,14 @@ import { useLayers } from '@hooks/useLayers';
 
 import { useWMSLayerFactory } from '@hooksMaps/useWMSLayerFactory';
 import { useWMSLayerManager } from '@hooksMaps/useWMSLayerManager';
+import { useVectorServiceLayerManager } from '@hooksMaps/useVectorServiceLayerManager';
+import { SERVICE_VECTOR } from '@pages/maps/helpers/serviceMode';
 import { useMapInteractions } from '@hooksMaps/useMapInteractions';
 import { useWMSFilterUpdater } from '@hooksMaps/useWMSFilterUpdater';
 import { findFilterFromState } from '@hooksMaps/useCQLFilter';
 import { useAlwaysOnTopPinning } from '@hooksMaps/useAlwaysOnTopPinning';
+
+const EMPTY_VECTOR_IDS = new Set();
 
 const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full' }) => {
     const ctx = useMapsContext();
@@ -98,10 +102,36 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
     const compareModeActive = !!ctx.compareMode?.active;
     const pinnedLayerIds = useAlwaysOnTopPinning({ activeLayerIds, hiddenLayerIds, compareModeActive });
     const municipioContext = ctx.municipioMode?.municipioContext || null;
+
+    const vectorLayerIds = useMemo(() => {
+        const modes = ctx.layerServiceModes;
+        if (!modes || modes.size === 0) return EMPTY_VECTOR_IDS;
+        const ids = new Set();
+        modes.forEach((mode, id) => {
+            if (mode === SERVICE_VECTOR) ids.add(id);
+        });
+        return ids.size > 0 ? ids : EMPTY_VECTOR_IDS;
+    }, [ctx.layerServiceModes]);
+
     const { wmsLayersRef } = useWMSLayerManager({
         mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getAllChildLayerIds,
         getLayerOpacity, layerOpacities, getFilter, combineCQLFilters,
-        pinnedLayerIds, initialOrder, municipioContext
+        pinnedLayerIds, initialOrder, municipioContext, vectorLayerIds
+    });
+
+    const { rejectVectorMode } = ctx;
+    const handleVectorTooLarge = useCallback((layerId, info) => {
+        rejectVectorMode?.(layerId, { reason: 'too-large', ...info });
+    }, [rejectVectorMode]);
+    const handleVectorError = useCallback((layerId) => {
+        rejectVectorMode?.(layerId, { reason: 'error' });
+    }, [rejectVectorMode]);
+
+    useVectorServiceLayerManager({
+        mapRef, activeLayerIds, hiddenLayerIds, vectorLayerIds,
+        getFilter, combineCQLFilters, getLayerOpacity, layerOpacities,
+        pinnedLayerIds, initialOrder, municipioContext,
+        onTooLarge: handleVectorTooLarge, onError: handleVectorError
     });
 
     useMapInteractions(mapRef, handlePaneClick, isDrawing, markerClickedRef, editingClickedRef, ctx.municipioMode?.isInsideMunicipios);

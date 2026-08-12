@@ -9,6 +9,7 @@ import { BASEMAPS } from '@pages/maps/helpers/basemaps';
 import { useLayerManagement } from '@hooksMaps/useLayerManagement';
 import { useSymbology } from '@hooksMaps/useSymbology';
 import { useLayerOpacity } from '@hooksMaps/useLayerOpacity';
+import { useLayerServiceMode } from '@hooksMaps/useLayerServiceMode';
 import { useLayerToggle } from '@hooksMaps/useLayerToggle';
 import { useCQLFilter } from '@hooksMaps/useCQLFilter';
 import { useDateLoop } from '@hooksMaps/useDateLoop';
@@ -66,6 +67,7 @@ const MapsProvider = ({ children }) => {
     }, [lmActiveLayerIds, lmFindLayerById]);
 
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
+    const layerServiceMode = useLayerServiceMode(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
     const cqlFilter = useCQLFilter();
     const periodicityCache = usePeriodicityCache(layerManagement.activeLayerIds);
     const mapMarker = useMapMarker(mapRef, paneMapRefs, compareModeRef, { setSelectedFeatureInfo, clickPosition });
@@ -264,6 +266,7 @@ const MapsProvider = ({ children }) => {
         applyDefaultDate: layerToggle.applyDefaultDate,
         ...symbology,
         ...layerOpacity,
+        ...layerServiceMode,
         ...cqlFilter,
         ...dateLoop,
         ...mapDrawing,
@@ -289,6 +292,7 @@ const MapsProvider = ({ children }) => {
         layerToggle.applyDefaultDate,
         symbology,
         layerOpacity,
+        layerServiceMode,
         selectedFeatureInfo,
         setSelectedFeatureInfo,
         clickPosition,

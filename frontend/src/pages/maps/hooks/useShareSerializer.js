@@ -4,6 +4,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { findLayerDef, slugForLayer } from '@pages/maps/helpers/wmsConfig';
 import { serializeAnnotations } from '@pages/maps/helpers/annotationsSerialization';
+import { SERVICE_WMS } from '@pages/maps/helpers/serviceMode';
 
 const round = (value, decimals) => {
     if (value === null || value === undefined || Number.isNaN(value)) return value;
@@ -41,21 +42,33 @@ const opacityFor = (opacities, id) => {
     return opacities?.[id] ?? 1;
 };
 
-const serializePaneLayers = (snapshot, layerTree) => {
+const serviceFor = (serviceModes, id) => {
+    const mode = serviceModes instanceof Map ? serviceModes.get(id) : serviceModes?.[id];
+    return mode && mode !== SERVICE_WMS ? mode : null;
+};
+
+const serializeLayerEntry = (id, layerTree, hidden, opacities, filters, serviceModes) => {
+    const layer = findLayerDef(id, layerTree);
+    if (!layer || layer.isLabel || layer.isCategory) return null;
+
+    const entry = {
+        slug: slugForLayer(id, layerTree),
+        visible: !hidden.has(id),
+        opacity: round(opacityFor(opacities, id), 2),
+        filters: serializeFilters(filters?.[id]),
+    };
+
+    const service = serviceFor(serviceModes, id);
+    if (service) entry.service = service;
+
+    return entry;
+};
+
+const serializePaneLayers = (snapshot, layerTree, serviceModes) => {
     const ids = snapshot?.activeLayerIds || [];
     const hidden = new Set(snapshot?.hiddenLayerIds || []);
     return ids
-        .map(id => {
-            const layer = findLayerDef(id, layerTree);
-            if (!layer || layer.isLabel || layer.isCategory) return null;
-            const slug = slugForLayer(id, layerTree);
-            return {
-                slug,
-                visible: !hidden.has(id),
-                opacity: round(opacityFor(snapshot?.layerOpacities, id), 2),
-                filters: serializeFilters(snapshot?.filters?.[id]),
-            };
-        })
+        .map(id => serializeLayerEntry(id, layerTree, hidden, snapshot?.layerOpacities, snapshot?.filters, serviceModes))
         .filter(Boolean);
 };
 
@@ -64,6 +77,7 @@ export const useShareSerializer = () => {
         activeLayerIds,
         hiddenLayerIds,
         layerOpacities,
+        layerServiceModes,
         filters,
         selectedLayerForSymbology,
         baseMapId,
@@ -96,17 +110,7 @@ export const useShareSerializer = () => {
 
         const hidden = new Set(hiddenLayerIds || []);
         const layers = (activeLayerIds || [])
-            .map(id => {
-                const layer = findLayerDef(id, layerTree);
-                if (!layer || layer.isLabel || layer.isCategory) return null;
-                const slug = slugForLayer(id, layerTree);
-                return {
-                    slug,
-                    visible: !hidden.has(id),
-                    opacity: round(opacityFor(layerOpacities, id), 2),
-                    filters: serializeFilters(filters?.[id]),
-                };
-            })
+            .map(id => serializeLayerEntry(id, layerTree, hidden, layerOpacities, filters, layerServiceModes))
             .filter(Boolean);
 
         const selectedSlug = selectedLayerForSymbology?.id ? slugForLayer(selectedLayerForSymbology.id, layerTree) : null;
@@ -148,11 +152,11 @@ export const useShareSerializer = () => {
                 shared: sharedPayload,
                 paneA: {
                     label: paneA.label || 'A',
-                    layers: serializePaneLayers(paneA, layerTree),
+                    layers: serializePaneLayers(paneA, layerTree, layerServiceModes),
                 },
                 paneB: {
                     label: paneB.label || 'B',
-                    layers: serializePaneLayers(paneB, layerTree),
+                    layers: serializePaneLayers(paneB, layerTree, layerServiceModes),
                 },
                 activeSlot,
                 position: typeof extra.position === 'number' ? extra.position : (compareMode?.swipePosition ?? 0.5),
@@ -170,5 +174,5 @@ export const useShareSerializer = () => {
             kind: 'single',
             payload: basePayload,
         };
-    }, [activeLayerIds, hiddenLayerIds, layerOpacities, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode, measurements, municipioMode]);
+    }, [activeLayerIds, hiddenLayerIds, layerOpacities, layerServiceModes, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode, measurements, municipioMode]);
 };
