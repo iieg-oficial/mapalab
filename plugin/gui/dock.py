@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
-from qgis.PyQt.QtCore import QEvent, QSize, Qt
+from qgis.core import QgsProject
+from qgis.PyQt.QtCore import QSize
 from qgis.PyQt.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
@@ -8,8 +9,6 @@ from qgis.PyQt.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
-    QTreeWidget,
-    QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -22,15 +21,19 @@ from ..config import (
     get_base_url,
     set_base_url,
 )
-from ..model.tree import clean_label, filter_tree, is_disabled
+from ..layers.limites import modo_actual
+from ..model.tree import filter_tree
 from ..theme import apply_theme, set_role, sombra_en_hover
 from .actions import LayerActions
-from .delegate import LayerItemDelegate
+from .arbol import ArbolCatalogo
 from ..tasks import CargarArbolTask, Coordinador
-from .icons import TEMA_ICON_SIZE, icono_de_nodo
+from .icons import icono_de_recarga
+from .switch import SwitchModoBase
 from .titlebar import TitleBar, montar_footer
 
-NODE_ROLE: int = int(Qt.UserRole)
+RELOAD_ICON_SIZE: int = 18
+
+RELOAD_BUTTON_SIZE: int = 34
 
 
 class MapaLabDock(QDockWidget):
@@ -45,9 +48,12 @@ class MapaLabDock(QDockWidget):
         self._actions = LayerActions(iface, self._client)
         self._tree: list[dict[str, Any]] = []
         self._tareas = Coordinador()
-        self._hover_item: Optional[QTreeWidgetItem] = None
+        self._switch = SwitchModoBase()
+        self._switch.setEnabled(False)
+        self._switch.cambiado.connect(self._on_cambio_modo)
         self._build_ui()
         apply_theme(self)
+        self._conectar_proyecto()
         self._refresh_url_state()
 
     def _build_ui(self) -> None:
@@ -74,22 +80,16 @@ class MapaLabDock(QDockWidget):
         self._search.setPlaceholderText('Buscar capa…')
         self._search.textChanged.connect(self._on_search)
         set_role(self._search, 'search')
-        layout.addWidget(self._search)
 
-        self._widget_tree = QTreeWidget()
-        self._widget_tree.setHeaderHidden(True)
-        self._widget_tree.header().setStretchLastSection(True)
-        self._widget_tree.setUniformRowHeights(False)
-        self._widget_tree.setMouseTracking(True)
-        self._widget_tree.viewport().installEventFilter(self)
-        self._widget_tree.setExpandsOnDoubleClick(False)
-        self._widget_tree.setItemDelegate(LayerItemDelegate(NODE_ROLE, self._widget_tree))
-        self._widget_tree.setIconSize(QSize(TEMA_ICON_SIZE, TEMA_ICON_SIZE))
-        self._widget_tree.itemDoubleClicked.connect(self._on_double_click)
-        self._widget_tree.itemClicked.connect(self._on_click)
-        self._widget_tree.itemEntered.connect(self._on_entered)
-        self._widget_tree.itemExpanded.connect(self._on_expandido)
-        self._widget_tree.itemCollapsed.connect(self._on_colapsado)
+        search_row = QHBoxLayout()
+        search_row.setContentsMargins(0, 0, 0, 0)
+        search_row.setSpacing(8)
+        self._reload_button = self._boton_recargar()
+        search_row.addWidget(self._search)
+        search_row.addWidget(self._reload_button)
+        layout.addLayout(search_row)
+
+        self._widget_tree = ArbolCatalogo(self._client, self._on_add)
         layout.addWidget(self._widget_tree)
 
         buttons = QHBoxLayout()
@@ -127,13 +127,41 @@ class MapaLabDock(QDockWidget):
         self._montar_titulo()
         montar_footer(self._footer, self._footer_layout, self._client, FOOTER_LOGO_HEIGHT)
 
+    def _boton_recargar(self) -> QPushButton:
+        boton = QPushButton()
+        boton.setIcon(icono_de_recarga(self._client))
+        boton.setIconSize(QSize(RELOAD_ICON_SIZE, RELOAD_ICON_SIZE))
+        boton.setFixedSize(RELOAD_BUTTON_SIZE, RELOAD_BUTTON_SIZE)
+        boton.setToolTip('Recargar catálogo')
+        boton.setFlat(True)
+        boton.clicked.connect(lambda: self.load_tree(force=True))
+        set_role(boton, 'icon')
+        return boton
+
     def _montar_titulo(self) -> None:
-        barra = TitleBar(self._client, lambda: self.load_tree(force=True), self)
+        barra = TitleBar(self._client, self._switch, self)
         set_role(barra, 'panel')
         barra.setAutoFillBackground(True)
         apply_theme(barra)
         barra.cargar()
         self.setTitleBarWidget(barra)
+
+    def _conectar_proyecto(self) -> None:
+        proyecto = QgsProject.instance()
+        proyecto.layersAdded.connect(self._sincronizar_switch)
+        proyecto.layersRemoved.connect(self._sincronizar_switch)
+        self._sincronizar_switch()
+
+    def _sincronizar_switch(self, *args: Any) -> None:
+        self._switch.mostrar(modo_actual())
+
+    def _on_cambio_modo(self, modo: str) -> None:
+        if not self._tree:
+            self._mensaje('El catálogo aún no carga.')
+            self._sincronizar_switch()
+            return
+        self._reportar(self._actions.set_base_mode(self._tree, modo))
+        self._sincronizar_switch()
 
     def _refresh_url_state(self) -> None:
         base_url = get_base_url()
@@ -161,49 +189,25 @@ class MapaLabDock(QDockWidget):
 
     def _arbol_listo(self, arbol: list[dict[str, Any]]) -> None:
         self._tree = arbol
-        self._populate(self._tree)
+        self._widget_tree.poblar(self._tree)
+        self._switch.setEnabled(True)
+        self._sincronizar_switch()
         self._mensaje('')
 
     def _arbol_fallo(self, detalle: str) -> None:
+        self._switch.setEnabled(False)
         self._mensaje(f'No se pudo cargar el catálogo: {detalle}')
         self._url_row.setVisible(True)
-
-    def _populate(self, nodes: list[dict[str, Any]]) -> None:
-        self._hover_item = None
-        self._widget_tree.clear()
-        for node in nodes:
-            self._widget_tree.addTopLevelItem(self._build_item(node, es_raiz=True))
-
-    def _build_item(self, node: dict[str, Any], es_raiz: bool = False) -> QTreeWidgetItem:
-        item = QTreeWidgetItem([clean_label(node.get('label') or '')])
-        item.setData(0, NODE_ROLE, node)
-        if is_disabled(node):
-            item.setDisabled(True)
-
-        icono = icono_de_nodo(self._client, node, es_raiz)
-        if icono is not None:
-            item.setIcon(0, icono)
-
-        for child in node.get('children') or []:
-            item.addChild(self._build_item(child))
-        return item
 
     def _on_search(self, text: str) -> None:
         if not self._tree:
             return
-        self._populate(filter_tree(self._tree, text.strip()))
+        self._widget_tree.poblar(filter_tree(self._tree, text.strip()))
         if text.strip():
             self._widget_tree.expandAll()
 
-    def _selected_node(self) -> Optional[dict[str, Any]]:
-        item = self._widget_tree.currentItem()
-        if item is None:
-            return None
-        node = item.data(0, NODE_ROLE)
-        return node if isinstance(node, dict) else None
-
     def _require_layer_node(self) -> Optional[dict[str, Any]]:
-        node = self._selected_node()
+        node = self._widget_tree.nodo_actual()
         if node is None:
             QMessageBox.information(self, 'MapaLab', 'Selecciona una capa del árbol.')
             return None
@@ -212,54 +216,6 @@ class MapaLabDock(QDockWidget):
                 self, 'MapaLab', 'Ese elemento es una carpeta, no una capa.')
             return None
         return node
-
-    def _actualizar_icono(self, item: QTreeWidgetItem, hover: bool) -> None:
-        if item.parent() is not None:
-            return
-        node = item.data(0, NODE_ROLE)
-        if not isinstance(node, dict):
-            return
-        icono = icono_de_nodo(self._client, node, es_raiz=True, hover=hover)
-        if icono is not None:
-            item.setIcon(0, icono)
-
-    def eventFilter(self, objeto: Any, evento: Any) -> bool:
-        if evento.type() == QEvent.Leave:
-            self._limpiar_hover()
-        elif evento.type() == QEvent.MouseButtonPress:
-            if self._widget_tree.itemAt(evento.pos()) is None:
-                self._widget_tree.clearSelection()
-                self._widget_tree.setCurrentItem(None)
-        return False
-
-    def _limpiar_hover(self) -> None:
-        if self._hover_item is None:
-            return
-        item, self._hover_item = self._hover_item, None
-        if not item.isExpanded():
-            self._actualizar_icono(item, False)
-
-    def _on_entered(self, item: QTreeWidgetItem, column: int) -> None:
-        if item is self._hover_item:
-            return
-        self._limpiar_hover()
-        self._hover_item = item
-        self._actualizar_icono(item, True)
-
-    def _on_expandido(self, item: QTreeWidgetItem) -> None:
-        self._actualizar_icono(item, True)
-
-    def _on_colapsado(self, item: QTreeWidgetItem) -> None:
-        self._actualizar_icono(item, False)
-
-    def _on_click(self, item: QTreeWidgetItem, column: int) -> None:
-        if item.childCount():
-            item.setExpanded(not item.isExpanded())
-
-    def _on_double_click(self, item: QTreeWidgetItem, column: int) -> None:
-        node = item.data(0, NODE_ROLE)
-        if isinstance(node, dict) and node.get('wmsConfig'):
-            self._on_add()
 
     def _mensaje(self, texto: str) -> None:
         self._status.setText(texto)

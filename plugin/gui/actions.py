@@ -6,6 +6,7 @@ from qgis.PyQt.QtGui import QCursor
 from qgis.PyQt.QtWidgets import QApplication, QFileDialog, QWidget
 
 from ..api.client import MapaLabClient, MapaLabError
+from ..layers.limites import aplicar_modo
 from ..layers.metadata import apply_metadata
 from ..layers.wms import add_wms_layer
 from ..model.tree import (
@@ -52,6 +53,13 @@ class LayerActions:
             self._busy(False)
 
         return True, ''
+
+    def set_base_mode(self, arbol: list[dict[str, Any]], modo: str) -> tuple[bool, str]:
+        self._busy(True)
+        try:
+            return aplicar_modo(arbol, modo)
+        finally:
+            self._busy(False)
 
     def _target_dir(self, parent: Optional[QWidget]) -> str:
         return QFileDialog.getExistingDirectory(

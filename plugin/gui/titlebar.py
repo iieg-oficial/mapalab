@@ -1,14 +1,13 @@
-import os
 from typing import Optional
 
-from qgis.PyQt.QtCore import QSize, Qt
-from qgis.PyQt.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtWidgets import QHBoxLayout, QLabel, QWidget
 
 from ..api.client import MapaLabClient
 from ..assets_cache import fetch_asset
 from ..config import LOGO_HEIGHT
-from ..identidad import guardar_icono, icono_urls, logo_urls, refrescar_urls
-from ..theme import icono_refrescar, set_role
+from ..identidad import guardar_icono, icono_urls, logo_urls
+from ..theme import set_role
 
 TITULO: str = 'MapaLab'
 
@@ -66,11 +65,11 @@ def montar_footer(footer: QWidget, layout: QHBoxLayout, client: MapaLabClient,
 
 class TitleBar(QWidget):
 
-    def __init__(self, client: MapaLabClient, al_recargar=None,
+    def __init__(self, client: MapaLabClient, switch: Optional[QWidget] = None,
                  parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._client = client
-        self._al_recargar = al_recargar
+        self._switch = switch
         self.setMinimumHeight(LOGO_HEIGHT + 12)
 
         layout = QHBoxLayout()
@@ -85,31 +84,10 @@ class TitleBar(QWidget):
         self._layout.addWidget(self._logo_o_texto('mapalab', oscuro, TITULO))
         self._layout.addStretch(1)
 
-        if self._al_recargar is not None:
-            self._layout.addWidget(self._boton_recargar(), 0, Qt.AlignVCenter)
+        if self._switch is not None:
+            self._layout.addWidget(self._switch, 0, Qt.AlignVCenter)
 
         self._asegurar_icono()
-
-    def _boton_recargar(self) -> QPushButton:
-        boton = QPushButton()
-        boton.setIcon(self._icono_refrescar())
-        boton.setIconSize(QSize(18, 18))
-        boton.setFixedSize(28, 28)
-        boton.setToolTip('Recargar catálogo')
-        boton.setFlat(True)
-        boton.clicked.connect(self._al_recargar)
-        set_role(boton, 'icon')
-        return boton
-
-    def _icono_refrescar(self):
-        from qgis.PyQt.QtGui import QIcon, QPixmap
-
-        datos = fetch_asset(self._client, refrescar_urls())
-        if datos:
-            pixmap = QPixmap()
-            if pixmap.loadFromData(datos):
-                return QIcon(pixmap)
-        return icono_refrescar()
 
     def _logo(self, marca: str, oscuro: bool) -> Optional[QWidget]:
         return logo_widget(self._client, marca, oscuro, LOGO_HEIGHT)

@@ -5,8 +5,9 @@ from qgis.PyQt.QtGui import QIcon, QImage, QPixmap
 
 from ..api.client import MapaLabClient
 from ..assets_cache import fetch_asset
-from ..identidad import tema_icono_urls
+from ..identidad import refrescar_urls, tema_icono_urls
 from ..model.tree import alias_de_tema
+from ..theme import icono_refrescar
 
 ICON_SIZE: int = 20
 
@@ -73,6 +74,15 @@ def icono_de_tema(client: MapaLabClient, node: dict[str, Any],
 
     _memoria[clave] = icono
     return icono
+
+
+def icono_de_recarga(client: MapaLabClient) -> QIcon:
+    datos = fetch_asset(client, refrescar_urls())
+    if datos:
+        pixmap = QPixmap()
+        if pixmap.loadFromData(datos):
+            return QIcon(pixmap)
+    return icono_refrescar()
 
 
 def icono_de_nodo(client: MapaLabClient, node: dict[str, Any],

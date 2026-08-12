@@ -41,16 +41,22 @@ SHADOW_OFFSET: float = 2.0
 SHADOW_ALPHA: int = 90
 
 
+def sombra(widget: QWidget, blur: float = SHADOW_BLUR,
+           offset: float = SHADOW_OFFSET) -> QGraphicsDropShadowEffect:
+    efecto = QGraphicsDropShadowEffect(widget)
+    efecto.setBlurRadius(blur)
+    efecto.setOffset(0, offset)
+    efecto.setColor(QColor(0, 0, 0, SHADOW_ALPHA))
+    efecto.setEnabled(False)
+    widget.setGraphicsEffect(efecto)
+    return efecto
+
+
 class _SombraEnHover(QObject):
 
     def __init__(self, widget: QWidget) -> None:
         super().__init__(widget)
-        self._efecto = QGraphicsDropShadowEffect(widget)
-        self._efecto.setBlurRadius(SHADOW_BLUR)
-        self._efecto.setOffset(0, SHADOW_OFFSET)
-        self._efecto.setColor(QColor(0, 0, 0, SHADOW_ALPHA))
-        self._efecto.setEnabled(False)
-        widget.setGraphicsEffect(self._efecto)
+        self._efecto = sombra(widget)
         widget.installEventFilter(self)
 
     def eventFilter(self, objeto: QObject, evento) -> bool:
@@ -76,6 +82,18 @@ def _escalar_fuentes(stylesheet: str) -> str:
         return f'{coincidencia.group(1)}{tamano}{coincidencia.group(3)}'
 
     return BASE_FONT_RE.sub(subir, stylesheet)
+
+
+def _bloque_de_rol(rol: str) -> str:
+    patron = r'\[brandRole="' + re.escape(rol) + r'"\]\s*\{([^}]*)\}'
+    encontrado = re.search(patron, load_stylesheet())
+    return encontrado.group(1) if encontrado else ''
+
+
+def color_de_rol(rol: str, propiedad: str, respaldo: str) -> str:
+    patron = r'(?:^|[;{\s])' + re.escape(propiedad) + r'\s*:\s*([^;]+);'
+    valor = re.search(patron, _bloque_de_rol(rol))
+    return valor.group(1).strip() if valor else respaldo
 
 
 def _reglas_locales() -> str:

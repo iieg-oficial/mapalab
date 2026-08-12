@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 
 from qgis.core import QgsDataSourceUri, QgsProject, QgsRasterLayer
 
-from ..config import DATA_CRS, TILE_SIZE
+from ..config import DATA_CRS, NODE_ID_PROPERTY, TILE_SIZE
 from ..model.tree import clean_label
 
 
@@ -54,7 +54,8 @@ def _failure_reason(layer: QgsRasterLayer) -> str:
 
 
 def add_wms_layer(node: dict[str, Any], apply_node_filter: bool = False,
-                  time_value: Optional[str] = None) -> tuple[Optional[QgsRasterLayer], str]:
+                  time_value: Optional[str] = None, al_tope: bool = False,
+                  ) -> tuple[Optional[QgsRasterLayer], str]:
     wms_config = node.get('wmsConfig')
     if not wms_config:
         return None, 'La capa no trae configuración WMS.'
@@ -67,5 +68,12 @@ def add_wms_layer(node: dict[str, Any], apply_node_filter: bool = False,
     if not layer.isValid():
         return None, _failure_reason(layer)
 
-    QgsProject.instance().addMapLayer(layer)
+    layer.setCustomProperty(NODE_ID_PROPERTY, str(node.get('id') or ''))
+
+    project = QgsProject.instance()
+    if al_tope:
+        project.addMapLayer(layer, False)
+        project.layerTreeRoot().insertLayer(0, layer)
+    else:
+        project.addMapLayer(layer)
     return layer, ''

@@ -18,6 +18,16 @@ WMS_VERSION: str = '1.1.0'
 TREE_CACHE_FILE: str = 'layer_tree.json'
 ETAG_CACHE_FILE: str = 'layer_tree.etag'
 
+NODE_ID_PROPERTY: str = 'mapalab/nodeId'
+
+MODO_IIEG: str = 'iieg'
+MODO_INEGI: str = 'inegi'
+
+CAPAS_BASE: dict[str, tuple[str, ...]] = {
+    MODO_IIEG: ('limite_iieg', 'limite_municipal', 'regiones'),
+    MODO_INEGI: ('limite_inegi', 'limite_municipal_inegi'),
+}
+
 LOGOS_PATH: str = '/acervo/iieg/logos'
 
 LOGOS: dict[str, tuple[str, str]] = {
