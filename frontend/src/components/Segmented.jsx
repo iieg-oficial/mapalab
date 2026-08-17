@@ -1,6 +1,8 @@
 import Tooltip from '@components/Tooltip';
 
-const Segmented = ({ options, value, onChange, disabled = false, className = '', ariaLabel }) => {
+const Segmented = ({ options, value, onChange, disabled = false, compact = false, className = '', ariaLabel }) => {
+    const sizeClasses = compact ? 'px-2 py-[3px] text-[9px]' : 'px-2.5 py-0.5 text-[11px]';
+
     const handleClick = (e, optionValue) => {
         e.stopPropagation();
         if (disabled || optionValue === value) return;
@@ -28,7 +30,7 @@ const Segmented = ({ options, value, onChange, disabled = false, className = '',
                         disabled={disabled}
                         onClick={(e) => handleClick(e, option.value)}
                         className={`
-                            px-2.5 py-0.5 rounded-full text-[11px] font-garet font-bold
+                            ${sizeClasses} rounded-full font-garet font-bold
                             transition-colors duration-200 ease-in-out select-none
                             ${isSelected ? 'bg-white text-[#70308A] shadow-[0px_2px_4px_#00000014]' : 'text-[#465055] hover:text-[#70308A]'}
                             ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}

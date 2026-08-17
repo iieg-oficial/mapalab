@@ -13,7 +13,6 @@ import { DragHandle, LayerTitle, PinBadge, EventoLayerIcon, GeometryTypeBadge } 
 import LayerBadge from '@mapsComponents/LayerBadge';
 import LayerDateControls from './LayerDateControls';
 import LayerActionsBar from './LayerActionsBar';
-import LayerServiceSegmented from './LayerServiceSegmented';
 import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
 import LayerDownloadProgress from './LayerDownloadProgress';
@@ -275,7 +274,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 onDirection={handleDirectionClick}
                                 onCycleSlot={handleCycleSlot}
                             />
-                            <LayerServiceSegmented childIds={layer.childIds} />
                             <LayerActionsBar
                                 layerId={layer.id}
                                 visible={layer.visible}

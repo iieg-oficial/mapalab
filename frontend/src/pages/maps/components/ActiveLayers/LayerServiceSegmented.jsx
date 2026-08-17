@@ -1,50 +1,66 @@
 import { useMemo } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import Segmented from '@components/Segmented';
+import Tooltip from '@components/Tooltip';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import { SERVICE_WMS, SERVICE_VECTOR, VECTOR_SERVICE_ENABLED, resolveVectorTargets } from '@pages/maps/helpers/serviceMode';
 
 const OPTIONS = [
-    { value: SERVICE_WMS, label: 'Mapa', tooltip: 'Imagen dibujada por el servidor (WMS), con la simbología oficial' },
-    { value: SERVICE_VECTOR, label: 'Datos', tooltip: 'Geometrías traídas al navegador (WFS): la selección es inmediata y la simbología es genérica' }
+    { value: SERVICE_WMS, label: 'Mapa' },
+    { value: SERVICE_VECTOR, label: 'Datos' }
 ];
 
 const rejectionMessage = (rejection) => {
     if (!rejection) return null;
     if (rejection.reason === 'too-large') {
-        return `Esta capa tiene ${formatNumber(rejection.count)} elementos y el máximo son ${formatNumber(rejection.limit)}. Se queda en modo mapa.`;
+        return `Tiene ${formatNumber(rejection.count)} elementos y el máximo son ${formatNumber(rejection.limit)}: se queda en Mapa.`;
     }
-    return 'No se pudieron traer los datos de esta capa. Se queda en modo mapa.';
+    return 'No se pudieron traer los datos: se queda en Mapa.';
 };
 
-const LayerServiceSegmented = ({ childIds }) => {
-    const { getServiceMode, setServiceMode, getVectorRejection, allLayers, activeLayerIds } = useMapsContext();
+const LayerServiceSegmented = () => {
+    const {
+        selectedLayerForSymbology,
+        getAllChildLayerIds,
+        getServiceMode,
+        setServiceMode,
+        getVectorRejection,
+        allLayers,
+        activeLayerIds
+    } = useMapsContext();
 
-    const targetIds = useMemo(
-        () => resolveVectorTargets(childIds, allLayers, activeLayerIds),
-        [childIds, allLayers, activeLayerIds]
-    );
+    const targetIds = useMemo(() => {
+        const selectedId = selectedLayerForSymbology?.id;
+        if (!selectedId) return [];
+        const childIds = [selectedId, ...(getAllChildLayerIds?.(selectedId) || [])];
+        return resolveVectorTargets(childIds, allLayers, activeLayerIds);
+    }, [selectedLayerForSymbology, getAllChildLayerIds, allLayers, activeLayerIds]);
 
     if (!VECTOR_SERVICE_ENABLED || targetIds.length === 0) return null;
 
+    const layerName = selectedLayerForSymbology?.name || selectedLayerForSymbology?.label || 'la capa seleccionada';
     const message = rejectionMessage(getVectorRejection?.(targetIds[0]));
-    const handleChange = (mode) => targetIds.forEach(id => setServiceMode?.(id, mode));
+
+    const tooltip = (
+        <div className="flex flex-col gap-0.5 leading-tight">
+            <span className="font-semibold">Solo aplica a «{layerName}»</span>
+            <span className="text-[11px] opacity-80">
+                Mapa: la dibuja el servidor. Datos: trae las geometrías al navegador.
+            </span>
+            {message && <span className="text-[11px]">{message}</span>}
+        </div>
+    );
 
     return (
-        <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-                <span className="text-[11px] font-garet text-[#6E7477]">Servicio</span>
-                <Segmented
-                    ariaLabel="Tipo de servicio de la capa"
-                    options={OPTIONS}
-                    value={getServiceMode?.(targetIds[0]) ?? SERVICE_WMS}
-                    onChange={handleChange}
-                />
-            </div>
-            {message && (
-                <span className="text-[11px] font-garet text-[#9E5200] leading-tight">{message}</span>
-            )}
-        </div>
+        <Tooltip content={tooltip} variant={message ? 'warning' : undefined} placement="bottom">
+            <Segmented
+                compact
+                ariaLabel={`Tipo de servicio de ${layerName}`}
+                options={OPTIONS}
+                value={getServiceMode?.(targetIds[0]) ?? SERVICE_WMS}
+                onChange={(mode) => targetIds.forEach(id => setServiceMode?.(id, mode))}
+            />
+        </Tooltip>
     );
 };
 

@@ -8,6 +8,7 @@ import { useLayerSorting } from './hooks/useLayerSorting';
 import { LegendsVisibilityProvider } from './hooks/useLegendsVisibility';
 import { SortableList, SortableItem } from './SortableList';
 import ActiveLayerItem from './ActiveLayerItem';
+import LayerServiceSegmented from './LayerServiceSegmented';
 import ActiveLayersToolbar from './ActiveLayersToolbar';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
@@ -230,6 +231,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
                 hasActiveLoops={hasActiveLoops}
                 activeLoopsCount={activeLoopsCount}
                 isInegiMode={isInegiMode}
+                serviceControl={<LayerServiceSegmented />}
                 onToggleVisibilityAll={handleToggleVisibilityAll}
                 onRemoveAll={handleRemoveAll}
                 onPauseAll={pauseAllLoops}
