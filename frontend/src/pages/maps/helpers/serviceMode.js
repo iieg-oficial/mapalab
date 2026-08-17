@@ -3,6 +3,9 @@ import { findLayerDef } from './wmsConfig';
 
 export const SERVICE_WMS = 'wms';
 export const SERVICE_VECTOR = 'vector';
+export const SERVICE_HEXBIN = 'hexbin';
+
+export const LOCAL_SERVICES = new Set([SERVICE_VECTOR, SERVICE_HEXBIN]);
 
 export const VECTOR_LAYER_FLAG = 'mapalabVectorService';
 
@@ -23,9 +26,16 @@ export const canUseVectorService = (layerDef) => {
     return VECTOR_GEOMETRY_TYPES.has(layerDef.geometryType);
 };
 
-export const isVectorService = (mode) => mode === SERVICE_VECTOR;
+export const isVectorService = (mode) => LOCAL_SERVICES.has(mode);
 
-export const resolveVectorTargets = (childIds, allLayers, activeLayerIds) => {
+export const isHexbinService = (mode) => mode === SERVICE_HEXBIN;
+
+export const hasHexbinMode = (layerIds, getServiceMode) => {
+    if (!Array.isArray(layerIds) || typeof getServiceMode !== 'function') return false;
+    return layerIds.some(id => getServiceMode(id) === SERVICE_HEXBIN);
+};
+
+export const resolveVectorTargets = (childIds, allLayers, activeLayerIds, options = {}) => {
     if (!Array.isArray(childIds) || childIds.length === 0) return [];
     const active = Array.isArray(activeLayerIds) ? new Set(activeLayerIds) : null;
 
@@ -33,5 +43,6 @@ export const resolveVectorTargets = (childIds, allLayers, activeLayerIds) => {
         .filter(id => !active || active.has(id))
         .map(id => findLayerDef(id, allLayers || []))
         .filter(canUseVectorService)
+        .filter(layerDef => !options.pointsOnly || layerDef.geometryType === 'point')
         .map(layerDef => layerDef.id);
 };

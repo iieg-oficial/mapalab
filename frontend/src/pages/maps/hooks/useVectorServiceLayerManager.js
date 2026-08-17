@@ -9,11 +9,14 @@ import { findWMSConfig, findLayerDef } from '../helpers/wmsConfig';
 import { buildLayerCqlSegment } from '../helpers/layerCqlSegment';
 import { computeLayerZIndex } from '../helpers/layerZIndex';
 import { createVectorLayerStyle, resolveVectorColor } from '../helpers/vectorLayerStyles';
-import { VECTOR_FEATURE_LIMIT, VECTOR_LAYER_FLAG } from '../helpers/serviceMode';
+import { createHexbinLayer, fillHexbinLayer } from '../helpers/hexbinLayer';
+import { resolutionForZoom } from '@constants/hexbin';
+import { VECTOR_FEATURE_LIMIT, VECTOR_LAYER_FLAG, SERVICE_HEXBIN } from '../helpers/serviceMode';
 import { countVectorFeatures, fetchVectorFeatures, VECTOR_PROJECTION } from '@services/vectorLayerService';
 
 const EMPTY_IDS = [];
 const EMPTY_SET = new Set();
+const EMPTY_MODES = new Map();
 const EMPTY_ORDER = [];
 const EMPTY_MUNICIPIO_CTX = { active: false, claves: [], nombres: [], bbox: null };
 
@@ -21,7 +24,7 @@ export const useVectorServiceLayerManager = ({
     mapRef,
     activeLayerIds = EMPTY_IDS,
     hiddenLayerIds = EMPTY_IDS,
-    vectorLayerIds = EMPTY_SET,
+    vectorModes = EMPTY_MODES,
     getFilter,
     combineCQLFilters,
     getLayerOpacity,
@@ -30,7 +33,8 @@ export const useVectorServiceLayerManager = ({
     initialOrder = EMPTY_ORDER,
     municipioContext = EMPTY_MUNICIPIO_CTX,
     onTooLarge,
-    onError
+    onError,
+    onHexbinStats
 }) => {
     const { layers } = useLayers();
     const { setLayerLoading } = useLayerLoading();
@@ -54,47 +58,71 @@ export const useVectorServiceLayerManager = ({
     onTooLargeRef.current = onTooLarge;
     const onErrorRef = useRef(onError);
     onErrorRef.current = onError;
+    const onHexbinStatsRef = useRef(onHexbinStats);
+    onHexbinStatsRef.current = onHexbinStats;
 
-    const removeEntry = useCallback((layerId) => {
-        const entry = entriesRef.current.get(layerId);
+    const setGroupLoading = useCallback((memberIds, isLoading) => {
+        memberIds.forEach(id => setLayerLoading(id, isLoading));
+    }, [setLayerLoading]);
+
+    const removeEntry = useCallback((groupKey) => {
+        const entry = entriesRef.current.get(groupKey);
         if (!entry) return;
         entry.controller.abort();
         mapRef.current?.removeLayer(entry.layer);
-        entriesRef.current.delete(layerId);
-        setLayerLoading(layerId, false);
-    }, [mapRef, setLayerLoading]);
+        entriesRef.current.delete(groupKey);
+        setGroupLoading(entry.memberIds, false);
+    }, [mapRef, setGroupLoading]);
 
-    const loadInto = useCallback(async (layerId, wmsConfig, cqlFilter, source, controller) => {
-        setLayerLoading(layerId, true);
+    const currentZoom = useCallback(() => mapRef.current?.getView?.()?.getZoom?.(), [mapRef]);
+
+    const loadInto = useCallback(async (groupKey, target, controller) => {
+        const { wmsConfig, cqlFilter, memberIds, hexbin } = target;
+        setGroupLoading(memberIds, true);
+
         try {
             const matched = await countVectorFeatures(wmsConfig, cqlFilter, controller.signal);
             if (controller.signal.aborted) return;
 
             if (matched !== null && matched > VECTOR_FEATURE_LIMIT) {
-                onTooLargeRef.current?.(layerId, { count: matched, limit: VECTOR_FEATURE_LIMIT });
+                memberIds.forEach(id => {
+                    onTooLargeRef.current?.(id, { count: matched, limit: VECTOR_FEATURE_LIMIT });
+                });
                 return;
             }
 
             const data = await fetchVectorFeatures(wmsConfig, cqlFilter, controller.signal);
             if (controller.signal.aborted || !data?.features) return;
 
-            source.addFeatures(new GeoJSON().readFeatures(data, {
+            const features = new GeoJSON().readFeatures(data, {
                 dataProjection: VECTOR_PROJECTION,
                 featureProjection: VECTOR_PROJECTION
-            }));
+            });
+
+            const entry = entriesRef.current.get(groupKey);
+            if (!entry) return;
+            entry.features = features;
+
+            if (hexbin) {
+                const stats = fillHexbinLayer(entry.layer, features, resolutionForZoom(currentZoom()));
+                onHexbinStatsRef.current?.(memberIds, stats);
+                return;
+            }
+
+            entry.layer.getSource().addFeatures(features);
         } catch (error) {
             if (controller.signal.aborted) return;
-            onErrorRef.current?.(layerId, error);
+            memberIds.forEach(id => onErrorRef.current?.(id, error));
         } finally {
-            setLayerLoading(layerId, false);
+            setGroupLoading(memberIds, false);
         }
-    }, [setLayerLoading]);
+    }, [setGroupLoading, currentZoom]);
 
     const buildTargets = useCallback(() => {
-        const targets = new Map();
+        const groups = new Map();
 
         debouncedActiveLayerIds.forEach((id, index) => {
-            if (!vectorLayerIds.has(id)) return;
+            if (!vectorModes.has(id)) return;
             if (debouncedHiddenLayerIds.includes(id)) return;
 
             const wmsConfig = findWMSConfig(id, layers);
@@ -109,25 +137,54 @@ export const useVectorServiceLayerManager = ({
             });
             if (segment === '1=0') return;
 
-            targets.set(id, { wmsConfig, index, cqlFilter: segment === 'INCLUDE' ? '' : segment });
+            const typeName = wmsConfig.wfsLayerName || wmsConfig.layerName;
+            const groupKey = `${wmsConfig.baseUrl}|${typeName}|${vectorModes.get(id)}`;
+            const existing = groups.get(groupKey);
+
+            if (!existing) {
+                groups.set(groupKey, {
+                    wmsConfig,
+                    index,
+                    segments: [segment],
+                    memberIds: [id],
+                    hexbin: vectorModes.get(id) === SERVICE_HEXBIN
+                });
+                return;
+            }
+
+            existing.segments.push(segment);
+            existing.memberIds.push(id);
+            if (index < existing.index) existing.index = index;
         });
 
-        return targets;
-    }, [debouncedActiveLayerIds, debouncedHiddenLayerIds, vectorLayerIds, layers]);
+        groups.forEach((group) => {
+            const unique = [...new Set(group.segments)];
+            group.cqlFilter = unique.includes('INCLUDE')
+                ? ''
+                : unique.map(segment => `(${segment})`).join(' OR ');
+        });
 
-    const createEntry = useCallback((layerId, target, zIndex, opacity) => {
+        return groups;
+    }, [debouncedActiveLayerIds, debouncedHiddenLayerIds, vectorModes, layers]);
+
+    const createEntry = useCallback((groupKey, target, zIndex, opacity) => {
         const map = mapRef.current;
+        const layerId = target.memberIds[0];
         const layerDef = findLayerDef(layerId, layers);
-        const source = new VectorSource();
-        const layer = new VectorLayer({
-            source,
-            zIndex,
-            opacity,
-            style: createVectorLayerStyle(layerDef?.geometryType, resolveVectorColor(layerDef)),
-            layerId,
-            wmsConfig: target.wmsConfig,
-            [VECTOR_LAYER_FLAG]: true
-        });
+
+        const layer = target.hexbin
+            ? createHexbinLayer({ layerId, zIndex, opacity })
+            : new VectorLayer({
+                source: new VectorSource(),
+                zIndex,
+                opacity,
+                style: createVectorLayerStyle(layerDef?.geometryType, resolveVectorColor(layerDef)),
+                layerId,
+                wmsConfig: target.wmsConfig,
+                [VECTOR_LAYER_FLAG]: true
+            });
+
+        layer.set('memberIds', target.memberIds);
 
         const zoomRange = layerDef?.zoomRange;
         if (zoomRange?.min != null) layer.setMinZoom(zoomRange.min);
@@ -135,8 +192,14 @@ export const useVectorServiceLayerManager = ({
 
         const controller = new AbortController();
         map.addLayer(layer);
-        entriesRef.current.set(layerId, { layer, cqlFilter: target.cqlFilter, controller });
-        loadInto(layerId, target.wmsConfig, target.cqlFilter, source, controller);
+        entriesRef.current.set(groupKey, {
+            layer,
+            cqlFilter: target.cqlFilter,
+            hexbin: target.hexbin,
+            memberIds: target.memberIds,
+            controller
+        });
+        loadInto(groupKey, target, controller);
     }, [mapRef, layers, loadInto]);
 
     const syncLayers = useCallback(() => {
@@ -144,31 +207,32 @@ export const useVectorServiceLayerManager = ({
 
         const targets = buildTargets();
 
-        Array.from(entriesRef.current.keys()).forEach(id => {
-            if (!targets.has(id)) removeEntry(id);
+        Array.from(entriesRef.current.keys()).forEach(groupKey => {
+            if (!targets.has(groupKey)) removeEntry(groupKey);
         });
 
         const total = debouncedActiveLayerIds.length;
 
-        targets.forEach((target, id) => {
+        targets.forEach((target, groupKey) => {
+            const representativeId = target.memberIds[0];
             const zIndex = computeLayerZIndex({
-                layerId: id,
+                layerId: representativeId,
                 index: target.index,
                 total,
                 pinnedLayerIds: pinnedLayerIdsRef.current,
                 initialOrder: initialOrderRef.current
             });
-            const opacity = getLayerOpacityRef.current?.(id) ?? 1;
-            const existing = entriesRef.current.get(id);
+            const opacity = getLayerOpacityRef.current?.(representativeId) ?? 1;
+            const existing = entriesRef.current.get(groupKey);
 
-            if (existing && existing.cqlFilter === target.cqlFilter) {
+            if (existing && existing.cqlFilter === target.cqlFilter && existing.hexbin === target.hexbin) {
                 if (existing.layer.getZIndex() !== zIndex) existing.layer.setZIndex(zIndex);
                 if (existing.layer.getOpacity() !== opacity) existing.layer.setOpacity(opacity);
                 return;
             }
 
-            if (existing) removeEntry(id);
-            createEntry(id, target, zIndex, opacity);
+            if (existing) removeEntry(groupKey);
+            createEntry(groupKey, target, zIndex, opacity);
         });
     }, [mapRef, buildTargets, removeEntry, createEntry, debouncedActiveLayerIds]);
 
@@ -178,6 +242,28 @@ export const useVectorServiceLayerManager = ({
         syncLayers();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pinnedLayerIds, initialOrder, municipioContext, getFilter]);
+
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map) return undefined;
+
+        let lastResolution = null;
+
+        const reaggregate = () => {
+            const resolution = resolutionForZoom(map.getView()?.getZoom());
+            if (resolution === lastResolution) return;
+            lastResolution = resolution;
+
+            entriesRef.current.forEach((entry) => {
+                if (!entry.hexbin || !entry.features) return;
+                const stats = fillHexbinLayer(entry.layer, entry.features, resolution);
+                onHexbinStatsRef.current?.(entry.memberIds, stats);
+            });
+        };
+
+        map.on('moveend', reaggregate);
+        return () => map.un('moveend', reaggregate);
+    }, [mapRef]);
 
     useEffect(() => {
         if (!getLayerOpacity) return;

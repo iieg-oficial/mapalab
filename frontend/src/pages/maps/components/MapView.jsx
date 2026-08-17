@@ -10,13 +10,14 @@ import { useLayers } from '@hooks/useLayers';
 import { useWMSLayerFactory } from '@hooksMaps/useWMSLayerFactory';
 import { useWMSLayerManager } from '@hooksMaps/useWMSLayerManager';
 import { useVectorServiceLayerManager } from '@hooksMaps/useVectorServiceLayerManager';
-import { SERVICE_VECTOR } from '@pages/maps/helpers/serviceMode';
+import { isVectorService } from '@pages/maps/helpers/serviceMode';
+import { findHexbinCellAtPixel, markSelectedCell } from '@pages/maps/helpers/vectorFeatureQuery';
 import { useMapInteractions } from '@hooksMaps/useMapInteractions';
 import { useWMSFilterUpdater } from '@hooksMaps/useWMSFilterUpdater';
 import { findFilterFromState } from '@hooksMaps/useCQLFilter';
 import { useAlwaysOnTopPinning } from '@hooksMaps/useAlwaysOnTopPinning';
 
-const EMPTY_VECTOR_IDS = new Set();
+const EMPTY_VECTOR_MODES = new Map();
 
 const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full' }) => {
     const ctx = useMapsContext();
@@ -79,8 +80,15 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         if (isCompare && !isActiveSlotPane && setActiveSlot) {
             setActiveSlot(paneIndex === 0 ? 'A' : 'B');
         }
+
+        const cell = findHexbinCellAtPixel(map, coordinate, vectorLayerIdsRef.current);
+        if (cell) {
+            markSelectedCell(cell.layer, cell.h3Index);
+            return queryFeaturesInPolygon(map, cell.geometry, coordinate);
+        }
+
         return queryFeatures(map, coordinate, evt);
-    }, [queryFeatures, isCompare, isActiveSlotPane, setActiveSlot, paneIndex]);
+    }, [queryFeatures, queryFeaturesInPolygon, isCompare, isActiveSlotPane, setActiveSlot, paneIndex]);
 
     useEffect(() => {
         if (isCompare) return;
@@ -103,15 +111,19 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
     const pinnedLayerIds = useAlwaysOnTopPinning({ activeLayerIds, hiddenLayerIds, compareModeActive });
     const municipioContext = ctx.municipioMode?.municipioContext || null;
 
-    const vectorLayerIds = useMemo(() => {
+    const vectorModes = useMemo(() => {
         const modes = ctx.layerServiceModes;
-        if (!modes || modes.size === 0) return EMPTY_VECTOR_IDS;
-        const ids = new Set();
+        if (!modes || modes.size === 0) return EMPTY_VECTOR_MODES;
+        const local = new Map();
         modes.forEach((mode, id) => {
-            if (mode === SERVICE_VECTOR) ids.add(id);
+            if (isVectorService(mode)) local.set(id, mode);
         });
-        return ids.size > 0 ? ids : EMPTY_VECTOR_IDS;
+        return local.size > 0 ? local : EMPTY_VECTOR_MODES;
     }, [ctx.layerServiceModes]);
+
+    const vectorLayerIds = useMemo(() => new Set(vectorModes.keys()), [vectorModes]);
+    const vectorLayerIdsRef = useRef(vectorLayerIds);
+    vectorLayerIdsRef.current = vectorLayerIds;
 
     const { wmsLayersRef } = useWMSLayerManager({
         mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getAllChildLayerIds,
@@ -119,7 +131,7 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         pinnedLayerIds, initialOrder, municipioContext, vectorLayerIds
     });
 
-    const { rejectVectorMode } = ctx;
+    const { rejectVectorMode, applyHexbinStats } = ctx;
     const handleVectorTooLarge = useCallback((layerId, info) => {
         rejectVectorMode?.(layerId, { reason: 'too-large', ...info });
     }, [rejectVectorMode]);
@@ -128,10 +140,11 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
     }, [rejectVectorMode]);
 
     useVectorServiceLayerManager({
-        mapRef, activeLayerIds, hiddenLayerIds, vectorLayerIds,
+        mapRef, activeLayerIds, hiddenLayerIds, vectorModes,
         getFilter, combineCQLFilters, getLayerOpacity, layerOpacities,
         pinnedLayerIds, initialOrder, municipioContext,
-        onTooLarge: handleVectorTooLarge, onError: handleVectorError
+        onTooLarge: handleVectorTooLarge, onError: handleVectorError,
+        onHexbinStats: applyHexbinStats
     });
 
     useMapInteractions(mapRef, handlePaneClick, isDrawing, markerClickedRef, editingClickedRef, ctx.municipioMode?.isInsideMunicipios);

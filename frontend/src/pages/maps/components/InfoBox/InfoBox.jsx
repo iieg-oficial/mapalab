@@ -309,7 +309,6 @@ const InfoBox = ({ forceDesktop = false }) => {
                                 isExpanded={isExpanded}
                                 isLoadingExpand={isLoadingExpand}
                                 onToggleExpand={handleToggleExpand}
-                                onClose={handleClose}
                                 variant="mobile"
                             />
 
@@ -354,7 +353,6 @@ const InfoBox = ({ forceDesktop = false }) => {
                         isExpanded={isExpanded}
                         isLoadingExpand={isLoadingExpand}
                         onToggleExpand={handleToggleExpand}
-                        onClose={handleClose}
                     />
 
                     {featuresList && (

@@ -153,10 +153,16 @@ const icons = {
     ),
     geom_polygon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
-            <path d="M12 3.5 20 9l-3 9.5H7L4 9z" fill="currentColor" fillOpacity="0.18" />
-            <circle cx="12" cy="3.5" r="1.6" fill="currentColor" stroke="none" />
-            <circle cx="20" cy="9" r="1.6" fill="currentColor" stroke="none" />
-            <circle cx="4" cy="9" r="1.6" fill="currentColor" stroke="none" />
+            <path d="M12 4 20.5 18.5H3.5z" fill="currentColor" fillOpacity="0.18" />
+            <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none" />
+            <circle cx="20.5" cy="18.5" r="1.6" fill="currentColor" stroke="none" />
+            <circle cx="3.5" cy="18.5" r="1.6" fill="currentColor" stroke="none" />
+        </svg>
+    ),
+    geom_hexbin: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+            <path d="M12 3 19 7v10l-7 4-7-4V7z" fill="currentColor" fillOpacity="0.32" />
+            <path d="M12 8.5 15.5 10.5v4L12 16.5 8.5 14.5v-4z" fill="currentColor" fillOpacity="0.55" stroke="none" />
         </svg>
     ),
     geom_raster: (

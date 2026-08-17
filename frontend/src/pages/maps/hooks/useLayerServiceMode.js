@@ -4,6 +4,19 @@ import { SERVICE_WMS } from '../helpers/serviceMode';
 export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
     const [layerServiceModes, setLayerServiceModes] = useState(new Map());
     const [vectorRejections, setVectorRejections] = useState(new Map());
+    const [hexbinStats, setHexbinStats] = useState(new Map());
+
+    const applyHexbinStats = useCallback((layerIds, stats) => {
+        setHexbinStats(prev => {
+            const next = new Map(prev);
+            (layerIds || []).forEach(id => next.set(id, stats));
+            return next;
+        });
+    }, []);
+
+    const getHexbinStats = useCallback((layerId) => {
+        return hexbinStats.get(layerId) ?? null;
+    }, [hexbinStats]);
 
     const clearVectorRejection = useCallback((layerId) => {
         setVectorRejections(prev => {
@@ -48,6 +61,8 @@ export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
     }, [layerServiceModes]);
 
     useEffect(() => {
+        if (!activeLayerIds?.length) return;
+
         setLayerServiceModes(prev => {
             if (prev.size === 0) return prev;
 
@@ -75,6 +90,9 @@ export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
         getServiceMode,
         rejectVectorMode,
         getVectorRejection,
-        clearVectorRejection
+        clearVectorRejection,
+        hexbinStats,
+        applyHexbinStats,
+        getHexbinStats
     };
 };

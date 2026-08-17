@@ -33,13 +33,35 @@ describe('useLayerServiceMode', () => {
         expect(result.current.getServiceMode('hija')).toBe(SERVICE_WMS);
     });
 
+    it('conserva el modo restaurado que llega antes de que las capas se activen', () => {
+        const { result, rerender } = renderHook(({ ids }) => useLayerServiceMode(noChildren, ids), {
+            initialProps: { ids: [] }
+        });
+
+        act(() => result.current.setServiceMode('capa', SERVICE_VECTOR));
+        rerender({ ids: ['capa'] });
+
+        expect(result.current.getServiceMode('capa')).toBe(SERVICE_VECTOR);
+    });
+
+    it('no purga nada mientras no haya capas activas', () => {
+        const { result, rerender } = renderHook(({ ids }) => useLayerServiceMode(noChildren, ids), {
+            initialProps: { ids: ['capa'] }
+        });
+
+        act(() => result.current.setServiceMode('capa', SERVICE_VECTOR));
+        rerender({ ids: [] });
+
+        expect(result.current.layerServiceModes.size).toBe(1);
+    });
+
     it('purga el modo cuando la capa deja de estar activa', () => {
         const { result, rerender } = render(['capa']);
 
         act(() => result.current.setServiceMode('capa', SERVICE_VECTOR));
         expect(result.current.layerServiceModes.size).toBe(1);
 
-        rerender({ ids: [] });
+        rerender({ ids: ['otra'] });
         expect(result.current.layerServiceModes.size).toBe(0);
     });
 

@@ -50,14 +50,16 @@ const GEOMETRY_TYPES = {
     raster: { icon: 'geom_raster', label: 'Capa ráster' }
 };
 
-export const GeometryTypeBadge = ({ type }) => {
-    const geometry = GEOMETRY_TYPES[type];
+const HEXBIN_BADGE = { icon: 'geom_hexbin', label: 'Agrupada en hexágonos' };
+
+export const GeometryTypeBadge = ({ type, hexbin = false }) => {
+    const geometry = hexbin ? HEXBIN_BADGE : GEOMETRY_TYPES[type];
     if (!geometry) return null;
     return (
         <Tooltip content={geometry.label}>
             <span
                 aria-label={geometry.label}
-                className="p-1 rounded-full shrink-0 bg-[#F8F8F8] text-[#70308A] inline-flex items-center justify-center"
+                className="shrink-0 text-[#9E5200] inline-flex items-center justify-center"
             >
                 <Icon name={geometry.icon} className="size-4" />
             </span>

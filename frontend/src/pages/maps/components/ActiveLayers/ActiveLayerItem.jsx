@@ -6,6 +6,7 @@ import Loading from '@components/Loading';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Tooltip from '@components/Tooltip';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
+import { hasHexbinMode } from '@pages/maps/helpers/serviceMode';
 import { LOOP_INTERVAL_PRESETS } from '@hooksMaps/useDateLoop';
 import { handleKeyActivate } from '@utils/a11y';
 
@@ -52,7 +53,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         setLayerOpacity,
         setActiveSlot,
         centerOnLayer,
-        pulseLayer
+        pulseLayer,
+        getServiceMode
     } = useMapsContext();
 
     const { findEventoByLayerId } = useEventoContext();
@@ -244,7 +246,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                             <EventoLayerIcon evento={layerEvento} />
                         )}
                         <LayerTitle name={layer.name} />
-                        <GeometryTypeBadge type={layer.geometryType} />
+                        <GeometryTypeBadge type={layer.geometryType} hexbin={hasHexbinMode(layer.childIds || [layer.id], getServiceMode)} />
                         <LayerBadge badge={layer.badge} />
                         {isLoading && !isLooping && (
                             <Loading visible={true} size="size-5" border="border-2" />
