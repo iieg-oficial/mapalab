@@ -82,6 +82,35 @@ def filter_tree(nodes: list[dict[str, Any]], query: str) -> list[dict[str, Any]]
     return filtered
 
 
+TIPO_TEMA: str = 'tema'
+
+TIPO_CATEGORIA: str = 'category'
+
+TIPO_GRUPO: str = 'group'
+
+TIPO_ETIQUETA: str = 'label'
+
+TIPO_CAPA: str = 'leaf'
+
+
+def node_type(node: Optional[dict[str, Any]]) -> str:
+    if not isinstance(node, dict):
+        return ''
+    return str(node.get('nodeType') or '')
+
+
+def es_etiqueta(node: Optional[dict[str, Any]]) -> bool:
+    return node_type(node) == TIPO_ETIQUETA
+
+
+def es_categoria(node: Optional[dict[str, Any]]) -> bool:
+    return node_type(node) == TIPO_CATEGORIA
+
+
+def es_grupo_declarado(node: Optional[dict[str, Any]]) -> bool:
+    return node_type(node) == TIPO_GRUPO
+
+
 def clean_label(label: str) -> str:
     return label[1:] if label.startswith('*') else label
 

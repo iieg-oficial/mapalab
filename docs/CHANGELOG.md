@@ -5,6 +5,34 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.127.0] - 2026-08-17
+
+### Cambiado: el árbol del plugin usa los tipos que declara el catálogo
+
+El árbol ya traía `nodeType` en cada nodo y el plugin lo ignoraba, así que estaba adivinando por
+la forma del subárbol: contaba hojas y tablas para decidir qué era un grupo. Ahora usa lo que dice
+el catálogo, que es lo mismo que usa el visor:
+
+| Tipo | Cómo se ve | Qué hace |
+|---|---|---|
+| `tema` | negrita, ícono, barra de acento | se abre y cierra |
+| `category` | gris tenue, un punto menor | se abre y cierra, arranca abierta |
+| `label` | negrita en el morado de la marca | **no colapsa**: es un encabezado |
+| `group` | texto normal con **casilla** | trae o retira el grupo completo |
+| `leaf` | texto normal con glifo de geometría | es una capa |
+
+La casilla pasa a los **19 nodos que el catálogo declara `group`** —Establecimientos de salud,
+Clasificador de cultivos IIEG, Centros educativos, Aeropuertos, los robos— en vez de los 29 que
+salían de la heurística, que incluía etiquetas como «Primer nivel» y categorías como «Acceso a
+servicios de salud».
+
+Las filas que sí se pueden plegar llevan ahora un **chevron** a la derecha, que apunta abajo
+cuando están abiertas: antes no había ninguna señal de que se pudieran plegar, porque el `theme.qss`
+apaga el indicador de rama de Qt. Las etiquetas no lo llevan, porque no se pliegan.
+
+Los glifos de geometría salen de `delegate.py` a `gui/glifos.py`; el delegate se estaba acercando
+al máximo de líneas del repo.
+
 ## [1.126.0] - 2026-08-17
 
 ### Cambiado: las filas de organización se ven como lo que son

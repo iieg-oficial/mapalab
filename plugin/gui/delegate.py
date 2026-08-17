@@ -1,13 +1,12 @@
 from typing import Any, Optional
 
-from qgis.PyQt.QtCore import QModelIndex, QPointF, QRect, QRectF, QSize, Qt
-from qgis.PyQt.QtGui import QColor, QFont, QPainter, QPainterPath, QPalette, QPen
+from qgis.PyQt.QtCore import QModelIndex, QPointF, QRect, QSize, Qt
+from qgis.PyQt.QtGui import QColor, QFont, QPainter, QPalette, QPen
 from qgis.PyQt.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem
 
-from ..layers.grupos import es_grupo_de_propiedades
+from ..model.tree import es_categoria, es_etiqueta
 from ..theme import color_de_rol
-
-CARPETA_ESCALA_PX: float = 1.0
+from .glifos import GEOM_COLORS, pintar_geometria
 
 BADGE_COLORS: dict[str, str] = {
     'new': '#2e7d32',
@@ -27,31 +26,15 @@ BADGE_RADIUS: int = 7
 
 GEOM_SIZE: int = 16
 
-VIEWBOX: float = 24.0
+TENUE_ESCALA_PX: float = 1.0
 
-TRAZO: float = 1.8
+CHEVRON_SIZE: int = 9
 
-RELLENO_ALPHA: int = 46
+CHEVRON_GAP: int = 7
 
-VERTICES: dict[str, tuple[tuple[float, float, float], ...]] = {
-    'point': ((12.0, 5.5, 1.9), (18.5, 16.5, 1.9), (5.5, 16.5, 1.9)),
-    'line': ((4.0, 18.0, 1.8), (20.0, 5.0, 1.8)),
-    'polygon': ((12.0, 3.5, 1.6), (20.0, 9.0, 1.6), (4.0, 9.0, 1.6)),
-}
-
-TRAZOS: dict[str, tuple[tuple[float, float], ...]] = {
-    'line': ((4.0, 18.0), (9.5, 9.0), (15.0, 14.0), (20.0, 5.0)),
-    'polygon': ((12.0, 3.5), (20.0, 9.0), (17.0, 18.5), (7.0, 18.5), (4.0, 9.0)),
-}
+CHEVRON_TRAZO: float = 1.6
 
 GEOM_GAP: int = 8
-
-GEOM_COLORS: dict[str, str] = {
-    'point': '#2e4372',
-    'line': '#2e7d32',
-    'polygon': '#5C2472',
-    'raster': '#9E5200',
-}
 
 ACCENT_COLOR: str = '#FF8300'
 
@@ -79,12 +62,6 @@ def badge_of(node: Optional[dict[str, Any]]) -> Optional[tuple[str, QColor]]:
     return label, color
 
 
-def es_carpeta(node: Optional[dict[str, Any]]) -> bool:
-    if not isinstance(node, dict) or node.get('wmsConfig'):
-        return False
-    return not es_grupo_de_propiedades(node)
-
-
 def geometry_of(node: Optional[dict[str, Any]]) -> Optional[str]:
     if not isinstance(node, dict):
         return None
@@ -107,12 +84,46 @@ class LayerItemDelegate(QStyledItemDelegate):
             option.font.setBold(True)
             return
 
-        if es_carpeta(index.data(self._node_role)):
-            option.font.setPointSizeF(
-                max(6.0, option.font.pointSizeF() - CARPETA_ESCALA_PX))
-            tenue = QColor(color_de_rol('quiet', 'color', '#465055'))
-            option.palette.setColor(QPalette.Text, tenue)
-            option.palette.setColor(QPalette.HighlightedText, tenue)
+        node = index.data(self._node_role)
+        if es_etiqueta(node):
+            option.font.setBold(True)
+            self._tenue(option, color_de_rol('title', 'color', '#5C2472'))
+        elif es_categoria(node):
+            self._tenue(option, color_de_rol('quiet', 'color', '#465055'))
+
+    def _tenue(self, option: QStyleOptionViewItem, color: str) -> None:
+        option.font.setPointSizeF(
+            max(6.0, option.font.pointSizeF() - TENUE_ESCALA_PX))
+        tinta = QColor(color)
+        option.palette.setColor(QPalette.Text, tinta)
+        option.palette.setColor(QPalette.HighlightedText, tinta)
+
+    def _rect_chevron(self, rect: QRect) -> QRect:
+        top = rect.top() + (rect.height() - CHEVRON_SIZE) // 2
+        return QRect(rect.right() - CHEVRON_GAP - CHEVRON_SIZE, top,
+                     CHEVRON_SIZE, CHEVRON_SIZE)
+
+    def _pintar_chevron(self, painter: QPainter, rect: QRect, abierto: bool) -> None:
+        pluma = QPen(QColor(color_de_rol('quiet', 'color', '#465055')), CHEVRON_TRAZO)
+        pluma.setCapStyle(Qt.RoundCap)
+        pluma.setJoinStyle(Qt.RoundJoin)
+
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setPen(pluma)
+        painter.setBrush(Qt.NoBrush)
+        if abierto:
+            painter.drawPolyline(QPointF(rect.left(), rect.top() + 2.0),
+                                 QPointF(rect.center().x(), rect.bottom() - 1.0),
+                                 QPointF(rect.right(), rect.top() + 2.0))
+        else:
+            painter.drawPolyline(QPointF(rect.left() + 2.0, rect.top()),
+                                 QPointF(rect.right() - 1.0, rect.center().y()),
+                                 QPointF(rect.left() + 2.0, rect.bottom()))
+        painter.restore()
+
+    def _hay_chevron(self, option: QStyleOptionViewItem, node: Any) -> bool:
+        return bool(option.state & QStyle.State_Children) and not es_etiqueta(node)
 
     def _fuente_menor(self, option: QStyleOptionViewItem) -> QFont:
         font = QFont(option.font)
@@ -149,58 +160,6 @@ class LayerItemDelegate(QStyledItemDelegate):
     def _tema_abierto(self, option: QStyleOptionViewItem, index: QModelIndex) -> bool:
         return self._es_raiz(index) and bool(option.state & QStyle.State_Open)
 
-    def _camino(self, tipo: str, cerrado: bool) -> QPainterPath:
-        camino = QPainterPath()
-        puntos = TRAZOS[tipo]
-        camino.moveTo(QPointF(*puntos[0]))
-        for punto in puntos[1:]:
-            camino.lineTo(QPointF(*punto))
-        if cerrado:
-            camino.closeSubpath()
-        return camino
-
-    def _pintar_vertices(self, painter: QPainter, tipo: str, color: QColor) -> None:
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(color)
-        for x, y, radio in VERTICES.get(tipo, ()):
-            painter.drawEllipse(QPointF(x, y), radio, radio)
-
-    def _pintar_raster(self, painter: QPainter, color: QColor, suave: QColor) -> None:
-        painter.setBrush(Qt.NoBrush)
-        painter.drawRoundedRect(QRectF(4.0, 4.0, 16.0, 16.0), 1.5, 1.5)
-        painter.drawLine(QPointF(12.0, 4.0), QPointF(12.0, 20.0))
-        painter.drawLine(QPointF(4.0, 12.0), QPointF(20.0, 12.0))
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(suave)
-        painter.drawRect(QRectF(4.0, 4.0, 8.0, 8.0))
-        painter.drawRect(QRectF(12.0, 12.0, 8.0, 8.0))
-
-    def _pintar_geometria(self, painter: QPainter, rect: QRect, tipo: str) -> None:
-        color = QColor(GEOM_COLORS.get(tipo, '#465055'))
-        suave = QColor(color)
-        suave.setAlpha(RELLENO_ALPHA)
-
-        pluma = QPen(color, TRAZO)
-        pluma.setJoinStyle(Qt.RoundJoin)
-        pluma.setCapStyle(Qt.RoundCap)
-
-        painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.translate(rect.left(), rect.top())
-        painter.scale(rect.width() / VIEWBOX, rect.height() / VIEWBOX)
-        painter.setPen(pluma)
-
-        if tipo == 'raster':
-            self._pintar_raster(painter, color, suave)
-        elif tipo == 'point':
-            self._pintar_vertices(painter, tipo, color)
-        else:
-            painter.setBrush(suave if tipo == 'polygon' else Qt.NoBrush)
-            painter.drawPath(self._camino(tipo, tipo == 'polygon'))
-            self._pintar_vertices(painter, tipo, color)
-
-        painter.restore()
-
     def _medir_adornos(self, opcion: QStyleOptionViewItem, rect: QRect,
                        badge: Optional[tuple[str, QColor]], tipo: Optional[str],
                        fuente: QFont) -> tuple[Optional[QRect], Optional[QRect], int]:
@@ -226,19 +185,23 @@ class LayerItemDelegate(QStyledItemDelegate):
         if rect_badge is not None and badge is not None:
             self._pintar_pildora(painter, rect_badge, badge[0], badge[1], fuente)
         if rect_geom is not None and tipo is not None:
-            self._pintar_geometria(painter, rect_geom, tipo)
+            pintar_geometria(painter, rect_geom, tipo)
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem,
               index: QModelIndex) -> None:
         node = index.data(self._node_role)
         badge = badge_of(node)
         tipo = geometry_of(node)
+        chevron = self._hay_chevron(option, node)
 
         opcion = QStyleOptionViewItem(option)
         self.initStyleOption(opcion, index)
         fuente_menor = self._fuente_menor(opcion)
+        medible = QRect(option.rect)
+        if chevron:
+            medible.setRight(self._rect_chevron(option.rect).left() - CHEVRON_GAP)
         rect_badge, rect_geom, limite = self._medir_adornos(
-            opcion, option.rect, badge, tipo, fuente_menor)
+            opcion, medible, badge, tipo, fuente_menor)
 
         if self._tema_abierto(option, index):
             desplazada = QStyleOptionViewItem(option)
@@ -247,9 +210,10 @@ class LayerItemDelegate(QStyledItemDelegate):
             super().paint(painter, desplazada, index)
             self._pintar_barra_tema(painter, option)
             self._pintar_adornos(painter, rect_badge, rect_geom, badge, tipo, fuente_menor)
+            self._pintar_chevron(painter, self._rect_chevron(option.rect), True)
             return
 
-        if badge is None and tipo is None:
+        if badge is None and tipo is None and not chevron:
             super().paint(painter, option, index)
             return
 
@@ -259,6 +223,9 @@ class LayerItemDelegate(QStyledItemDelegate):
         super().paint(painter, recortada, index)
 
         self._pintar_adornos(painter, rect_badge, rect_geom, badge, tipo, fuente_menor)
+        if chevron:
+            self._pintar_chevron(painter, self._rect_chevron(option.rect),
+                                 bool(option.state & QStyle.State_Open))
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
         size = super().sizeHint(option, index)

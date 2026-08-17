@@ -22,12 +22,6 @@ def es_grupo(node: Optional[dict[str, Any]]) -> bool:
     return len(hojas_de(node)) > 1
 
 
-def es_grupo_de_propiedades(node: Optional[dict[str, Any]]) -> bool:
-    if not es_grupo(node):
-        return False
-    return len(por_tabla(hojas_de(node))) == 1
-
-
 def capas_de_grupo(node_id: str) -> list[QgsMapLayer]:
     if not node_id:
         return []

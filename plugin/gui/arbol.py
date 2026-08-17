@@ -4,8 +4,14 @@ from qgis.PyQt.QtCore import QEvent, QSize, Qt
 from qgis.PyQt.QtWidgets import QTreeWidget, QTreeWidgetItem, QWidget
 
 from ..api.client import MapaLabClient
-from ..layers.grupos import es_grupo_de_propiedades, grupo_cargado
-from ..model.tree import clean_label, is_disabled
+from ..layers.grupos import grupo_cargado
+from ..model.tree import (
+    clean_label,
+    es_categoria,
+    es_etiqueta,
+    es_grupo_declarado,
+    is_disabled,
+)
 from .delegate import LayerItemDelegate
 from .icons import TEMA_ICON_SIZE, icono_de_nodo
 
@@ -38,6 +44,7 @@ class ArbolCatalogo(QTreeWidget):
         self.itemExpanded.connect(self._on_expandido)
         self.itemCollapsed.connect(self._on_colapsado)
         self.itemChanged.connect(self._on_marcado)
+        self.setExpandsOnDoubleClick(False)
 
     def poblar(self, nodes: list[dict[str, Any]]) -> None:
         self._hover_item = None
@@ -57,8 +64,8 @@ class ArbolCatalogo(QTreeWidget):
         item.setData(0, NODE_ROLE, node)
         if is_disabled(node):
             item.setDisabled(True)
-        if es_grupo_de_propiedades(node):
-            item.setToolTip(0, 'Marca para traer todas sus propiedades')
+        if es_grupo_declarado(node):
+            item.setToolTip(0, 'Marca para traer el grupo completo')
             item.setCheckState(0, self._estado(node))
 
         icono = icono_de_nodo(self._client, node, es_raiz)
@@ -67,6 +74,9 @@ class ArbolCatalogo(QTreeWidget):
 
         for child in node.get('children') or []:
             item.addChild(self._build_item(child))
+
+        if es_etiqueta(node) or es_categoria(node):
+            item.setExpanded(True)
         return item
 
     def _estado(self, node: dict[str, Any]) -> Qt.CheckState:
@@ -77,7 +87,7 @@ class ArbolCatalogo(QTreeWidget):
         node = item.data(0, NODE_ROLE)
         if self._silencio or self._al_alternar is None or not isinstance(node, dict):
             return
-        if es_grupo_de_propiedades(node):
+        if es_grupo_declarado(node):
             self._al_alternar(node, item.checkState(0) == Qt.Checked)
 
     def sincronizar(self, item: Optional[QTreeWidgetItem] = None) -> None:
@@ -87,7 +97,7 @@ class ArbolCatalogo(QTreeWidget):
                      if item is None else [item.child(i) for i in range(item.childCount())])
             for hijo in hijos:
                 node = hijo.data(0, NODE_ROLE)
-                if isinstance(node, dict) and es_grupo_de_propiedades(node):
+                if isinstance(node, dict) and es_grupo_declarado(node):
                     hijo.setCheckState(0, self._estado(node))
                 self.sincronizar(hijo)
         finally:
@@ -131,10 +141,13 @@ class ArbolCatalogo(QTreeWidget):
         self._actualizar_icono(item, True)
 
     def _on_colapsado(self, item: QTreeWidgetItem) -> None:
+        if es_etiqueta(item.data(0, NODE_ROLE)):
+            item.setExpanded(True)
+            return
         self._actualizar_icono(item, False)
 
     def _on_click(self, item: QTreeWidgetItem, column: int) -> None:
-        if item.childCount():
+        if item.childCount() and not es_etiqueta(item.data(0, NODE_ROLE)):
             item.setExpanded(not item.isExpanded())
 
     def _on_double_click(self, item: QTreeWidgetItem, column: int) -> None:
