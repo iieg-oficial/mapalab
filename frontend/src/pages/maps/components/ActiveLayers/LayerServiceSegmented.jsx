@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import Segmented from '@components/Segmented';
 import Tooltip from '@components/Tooltip';
+import Badge from '@components/Badge';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import { SERVICE_WMS, SERVICE_VECTOR, VECTOR_SERVICE_ENABLED, resolveVectorTargets } from '@pages/maps/helpers/serviceMode';
 
@@ -53,13 +54,16 @@ const LayerServiceSegmented = () => {
 
     return (
         <Tooltip content={tooltip} variant={message ? 'warning' : undefined} placement="bottom">
-            <Segmented
-                compact
-                ariaLabel={`Tipo de servicio de ${layerName}`}
-                options={OPTIONS}
-                value={getServiceMode?.(targetIds[0]) ?? SERVICE_WMS}
-                onChange={(mode) => targetIds.forEach(id => setServiceMode?.(id, mode))}
-            />
+            <span className="relative inline-flex">
+                <Segmented
+                    compact
+                    ariaLabel={`Tipo de servicio de ${layerName}`}
+                    options={OPTIONS}
+                    value={getServiceMode?.(targetIds[0]) ?? SERVICE_WMS}
+                    onChange={(mode) => targetIds.forEach(id => setServiceMode?.(id, mode))}
+                />
+                <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-2 text-[8px] px-1.5" />
+            </span>
         </Tooltip>
     );
 };

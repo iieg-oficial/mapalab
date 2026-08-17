@@ -48,29 +48,37 @@ describe('countVectorFeatures', () => {
         global.fetch.mockResolvedValue({
             ok: true,
             headers: { get: () => 'application/json' },
-            json: async () => body
+            text: async () => body
         });
     };
 
+    const HITS_XML = '<?xml version="1.0" encoding="UTF-8"?><wfs:FeatureCollection'
+        + ' numberMatched="110215" numberReturned="0" xmlns:wfs="http://www.opengis.net/wfs/2.0"/>';
+
     it('pide resultType=hits', async () => {
-        respondWith({ numberMatched: 12 });
+        respondWith(HITS_XML);
         await countVectorFeatures(wmsConfig, '');
         const url = new URL(global.fetch.mock.calls[0][0]);
         expect(url.searchParams.get('resultType')).toBe('hits');
     });
 
-    it('devuelve el numberMatched numérico', async () => {
-        respondWith({ numberMatched: 4218 });
-        expect(await countVectorFeatures(wmsConfig, '')).toBe(4218);
+    it('lee el numberMatched del XML, que es lo que responde GeoServer a un hits', async () => {
+        respondWith(HITS_XML);
+        expect(await countVectorFeatures(wmsConfig, '')).toBe(110215);
     });
 
-    it('convierte el numberMatched que llega como texto', async () => {
-        respondWith({ numberMatched: '4218' });
+    it('acepta también el numberMatched en JSON', async () => {
+        respondWith(JSON.stringify({ numberMatched: 4218 }));
         expect(await countVectorFeatures(wmsConfig, '')).toBe(4218);
     });
 
     it('devuelve null cuando el servidor no reporta el total', async () => {
-        respondWith({ features: [] });
+        respondWith(JSON.stringify({ features: [] }));
         expect(await countVectorFeatures(wmsConfig, '')).toBe(null);
+    });
+
+    it('propaga el error HTTP en vez de dar por bueno el conteo', async () => {
+        global.fetch.mockResolvedValue({ ok: false, status: 500, text: async () => '' });
+        await expect(countVectorFeatures(wmsConfig, '')).rejects.toThrow('500');
     });
 });

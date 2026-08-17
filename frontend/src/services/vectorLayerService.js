@@ -25,13 +25,24 @@ export const buildVectorWFSUrl = (wmsConfig, cqlFilter, extraParams = null) => {
     return `${baseUrl}?${new URLSearchParams(params).toString()}`;
 };
 
+const NUMBER_MATCHED_XML = /numberMatched="(\d+)"/;
+
 export const countVectorFeatures = async (wmsConfig, cqlFilter, signal) => {
     const url = buildVectorWFSUrl(wmsConfig, cqlFilter, { resultType: 'hits' });
-    const data = await parseResponse(await fetch(url, fetchOptions(signal)));
-    const matched = typeof data?.numberMatched === 'string'
-        ? Number.parseInt(data.numberMatched, 10)
-        : data?.numberMatched;
-    return Number.isFinite(matched) ? matched : null;
+    const response = await fetch(url, fetchOptions(signal));
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const body = await response.text();
+
+    const fromXml = NUMBER_MATCHED_XML.exec(body);
+    if (fromXml) return Number.parseInt(fromXml[1], 10);
+
+    try {
+        const matched = Number.parseInt(JSON.parse(body)?.numberMatched, 10);
+        return Number.isFinite(matched) ? matched : null;
+    } catch {
+        return null;
+    }
 };
 
 export const fetchVectorFeatures = async (wmsConfig, cqlFilter, signal) => {

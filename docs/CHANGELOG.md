@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.128.1] - 2026-08-17
+
+### Corregido: el tope de elementos del modo Datos nunca se aplicaba
+
+El guardarraíl que debía impedir traer una capa enorme al navegador estaba muerto desde que se
+publicó. Pedía el conteo con `resultType=hits` y `outputFormat=application/json`, pero **GeoServer
+ignora el `outputFormat` en un `hits` y responde XML**; el parser del visor devuelve `null` ante
+XML, así que el conteo siempre era `null` y la comparación contra el máximo nunca se cumplía.
+
+Ahora el total se lee del atributo `numberMatched` del XML, con el JSON como respaldo, y un error
+HTTP se propaga en vez de pasar por «no sé cuántos son» —que era la otra forma de colarse—.
+
+Lo que dejaba pasar, medido contra el servidor: `delitos_fiscalia_violencia_familiar` tiene
+**110 215 puntos**, unos 75 MB de GeoJSON. También quedó medido el peso por elemento, que era el
+número que faltaba para justificar el tope: **≈700 bytes**, así que 20 000 elementos son ~14 MB.
+
+### Agregado: el segmento de servicio lleva badge BETA
+
+El mismo distintivo que ya usan el catálogo y el filtro de municipio, con el que se anuncia que la
+función está en prueba. Sigue apareciendo sólo en `beta` y `dev`.
+
 ## [1.128.0] - 2026-08-17
 
 ### Agregado: quitar una capa desde el propio catálogo
