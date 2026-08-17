@@ -45,20 +45,14 @@ def fila_acciones(al_agregar: Any, al_descargar: Any,
     return fila, agregar, descargar
 
 
-def fila_limpieza(al_limpiar_seleccion: Any, al_limpiar: Any) -> QHBoxLayout:
+def fila_limpieza(al_limpiar_seleccion: Any) -> QHBoxLayout:
+    boton = QPushButton('Limpiar seleccionados')
+    boton.setToolTip('Quita las capas de selección que dejó la consulta por clic.')
+    boton.clicked.connect(al_limpiar_seleccion)
+    set_role(boton, 'quiet')
+
     fila = QHBoxLayout()
     fila.addStretch(1)
-
-    for texto, ayuda, accion in (
-        ('Limpiar seleccionados', 'Quita las capas de selección que dejó la consulta por clic.',
-         al_limpiar_seleccion),
-        ('Limpiar', 'Quita del proyecto todas las capas que agregó MapaLab.', al_limpiar),
-    ):
-        boton = QPushButton(texto)
-        boton.setToolTip(ayuda)
-        boton.clicked.connect(accion)
-        set_role(boton, 'quiet')
-        fila.addWidget(boton)
-
+    fila.addWidget(boton)
     fila.addStretch(1)
     return fila

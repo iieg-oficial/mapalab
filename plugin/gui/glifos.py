@@ -1,18 +1,13 @@
 from qgis.PyQt.QtCore import QPointF, QRect, QRectF, Qt
 from qgis.PyQt.QtGui import QColor, QPainter, QPainterPath, QPen
 
-from ..theme import color_de_rol, color_de_selector
+from ..theme import color_de_selector
 
-LINEA_RESPALDO: str = '#2e7d32'
+TIPOS: tuple[str, ...] = ('point', 'line', 'polygon', 'raster')
 
 
-def geom_colors() -> dict[str, str]:
-    return {
-        'point': color_de_rol('heading', 'color', '#2e4372'),
-        'line': LINEA_RESPALDO,
-        'polygon': color_de_rol('primary', 'background-color', '#5C2472'),
-        'raster': color_de_selector('QTreeView::item:selected', 'color', '#A85700'),
-    }
+def color_glifo() -> str:
+    return color_de_selector('QTreeView::item:selected', 'color', '#A85700')
 
 VIEWBOX: float = 24.0
 
@@ -23,12 +18,12 @@ RELLENO_ALPHA: int = 46
 VERTICES: dict[str, tuple[tuple[float, float, float], ...]] = {
     'point': ((12.0, 5.5, 1.9), (18.5, 16.5, 1.9), (5.5, 16.5, 1.9)),
     'line': ((4.0, 18.0, 1.8), (20.0, 5.0, 1.8)),
-    'polygon': ((12.0, 3.5, 1.6), (20.0, 9.0, 1.6), (4.0, 9.0, 1.6)),
+    'polygon': ((12.0, 4.0, 1.6), (20.5, 18.5, 1.6), (3.5, 18.5, 1.6)),
 }
 
 TRAZOS: dict[str, tuple[tuple[float, float], ...]] = {
     'line': ((4.0, 18.0), (9.5, 9.0), (15.0, 14.0), (20.0, 5.0)),
-    'polygon': ((12.0, 3.5), (20.0, 9.0), (17.0, 18.5), (7.0, 18.5), (4.0, 9.0)),
+    'polygon': ((12.0, 4.0), (20.5, 18.5), (3.5, 18.5)),
 }
 
 
@@ -62,7 +57,7 @@ def _pintar_raster(painter: QPainter, suave: QColor) -> None:
 
 
 def pintar_geometria(painter: QPainter, rect: QRect, tipo: str) -> None:
-    color = QColor(geom_colors().get(tipo, color_de_rol('quiet', 'color', '#465055')))
+    color = QColor(color_glifo())
     suave = QColor(color)
     suave.setAlpha(RELLENO_ALPHA)
 

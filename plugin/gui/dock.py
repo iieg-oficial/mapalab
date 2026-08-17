@@ -90,7 +90,7 @@ class MapaLabDock(QDockWidget):
         buttons, self._add_button, self._download_button = fila_acciones(
             self._on_add, self._on_download, TEXTO_CAPA)
         layout.addLayout(buttons)
-        layout.addLayout(fila_limpieza(self._on_clear_seleccion, self._on_clear))
+        layout.addLayout(fila_limpieza(self._on_clear_seleccion))
 
         self._status = QLabel('')
         self._status.setWordWrap(True)
@@ -214,10 +214,6 @@ class MapaLabDock(QDockWidget):
             self._descargar(node, completa)
             return
         self._reportar(self._actions.add_as_wms(node, completa))
-
-    def _on_clear(self) -> None:
-        quitadas = self._actions.clear_all()
-        self._mensaje('' if quitadas else 'No hay capas de MapaLab en el proyecto.')
 
     def _on_clear_seleccion(self) -> None:
         quitadas = self._actions.clear_selections()

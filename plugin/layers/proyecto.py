@@ -54,10 +54,3 @@ def limpiar_selecciones() -> int:
     return len(capas)
 
 
-def limpiar_todo() -> int:
-    project = QgsProject.instance()
-    capas = [capa for capa in project.mapLayers().values() if es_del_plugin(capa)]
-    for capa in capas:
-        project.removeMapLayer(capa.id())
-    quitar_grupos_vacios()
-    return len(capas)
