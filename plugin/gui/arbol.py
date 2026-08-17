@@ -4,7 +4,7 @@ from qgis.PyQt.QtCore import QEvent, QSize, Qt
 from qgis.PyQt.QtWidgets import QTreeWidget, QTreeWidgetItem, QWidget
 
 from ..api.client import MapaLabClient
-from ..layers.grupos import es_grupo, grupo_cargado
+from ..layers.grupos import es_grupo_de_propiedades, grupo_cargado
 from ..model.tree import clean_label, is_disabled
 from .delegate import LayerItemDelegate
 from .icons import TEMA_ICON_SIZE, icono_de_nodo
@@ -57,8 +57,8 @@ class ArbolCatalogo(QTreeWidget):
         item.setData(0, NODE_ROLE, node)
         if is_disabled(node):
             item.setDisabled(True)
-        if es_grupo(node):
-            item.setToolTip(0, 'Marca para traer el tema completo')
+        if es_grupo_de_propiedades(node):
+            item.setToolTip(0, 'Marca para traer todas sus propiedades')
             item.setCheckState(0, self._estado(node))
 
         icono = icono_de_nodo(self._client, node, es_raiz)
@@ -77,7 +77,7 @@ class ArbolCatalogo(QTreeWidget):
         node = item.data(0, NODE_ROLE)
         if self._silencio or self._al_alternar is None or not isinstance(node, dict):
             return
-        if es_grupo(node):
+        if es_grupo_de_propiedades(node):
             self._al_alternar(node, item.checkState(0) == Qt.Checked)
 
     def sincronizar(self, item: Optional[QTreeWidgetItem] = None) -> None:
@@ -87,7 +87,7 @@ class ArbolCatalogo(QTreeWidget):
                      if item is None else [item.child(i) for i in range(item.childCount())])
             for hijo in hijos:
                 node = hijo.data(0, NODE_ROLE)
-                if isinstance(node, dict) and es_grupo(node):
+                if isinstance(node, dict) and es_grupo_de_propiedades(node):
                     hijo.setCheckState(0, self._estado(node))
                 self.sincronizar(hijo)
         finally:

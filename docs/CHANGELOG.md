@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.125.1] - 2026-08-17
+
+### Corregido: la casilla salía en temas donde no significa nada
+
+Aparecía en cualquier nodo con más de una capa debajo, así que «General» o «Pobreza y
+vulnerabilidades» —dieciséis tablas distintas— ofrecían marcarse enteros, que no es lo que la
+casilla resuelve. Ahora sale solo donde los hijos son **propiedades de la misma tabla**:
+Establecimientos de salud, Clasificador de cultivos IIEG, Usos de suelo serie VII y los demás del
+mismo corte, **29 de los 48 grupos** del catálogo.
+
+Los grupos de varias tablas se siguen pudiendo agregar enteros desde el botón, que para eso
+cambia su texto al seleccionarlos.
+
 ## [1.125.0] - 2026-08-17
 
 ### Cambiado: el grupo se marca desde su propia fila
