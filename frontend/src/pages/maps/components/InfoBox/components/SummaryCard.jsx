@@ -4,8 +4,26 @@ import Alert from '@components/Alert';
 import ScrollContainer from '@components/ScrollContainer';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import InfoCard from './InfoCard';
+import SymbolIcon from './SymbolIcon';
+import { useLayerSymbolIcon } from '@hooksMaps/useLayerSymbolIcon';
 
-const SummaryCard = ({ visible = false, results = [], matched = 0, isExpanded, isLoadingExpand, onToggleExpand, onClose, variant = 'desktop' }) => {
+const LayerRow = ({ layerId, name, count, bodySize, badgeSize }) => {
+    const symbolUrl = useLayerSymbolIcon(layerId);
+
+    return (
+        <div className="bg-[#EFF3FC] rounded-[5px] py-2 px-3 flex justify-between items-center">
+            <span className="flex items-center gap-1.5 min-w-0">
+                <SymbolIcon url={symbolUrl} className="size-4" />
+                <span className={`font-garet font-medium ${bodySize} text-[#465055] truncate`}>{name}</span>
+            </span>
+            <span className={`font-garet font-bold ${badgeSize} text-[#FF8300] bg-white px-2 py-0.5 rounded-full shrink-0 ml-2`}>
+                {formatNumber(count)}
+            </span>
+        </div>
+    );
+};
+
+const SummaryCard = ({ visible = false, results = [], matched = 0, isExpanded, isLoadingExpand, onToggleExpand, variant = 'desktop' }) => {
     const [showWarning, setShowWarning] = useState(false);
 
     if (!visible) return null;
@@ -22,6 +40,7 @@ const SummaryCard = ({ visible = false, results = [], matched = 0, isExpanded, i
     const layerBreakdown = results
         .filter(result => result.features?.length > 0)
         .map(result => ({
+            layerId: result.layerId,
             name: result.layerName,
             count: result.features.length
         }));
@@ -43,7 +62,6 @@ const SummaryCard = ({ visible = false, results = [], matched = 0, isExpanded, i
         <InfoCard
             title={isExpanded ? null : 'Resumen de selección'}
             variant={variant}
-            onClose={isExpanded ? undefined : onClose}
             maxHeightClass={isExpanded ? '' : 'max-h-[60vh]'}
             className="mb-2"
         >
@@ -70,15 +88,14 @@ const SummaryCard = ({ visible = false, results = [], matched = 0, isExpanded, i
                     >
                         <div className="space-y-1 mb-3">
                             {layerBreakdown.map((layer, idx) => (
-                                <div
-                                    key={idx}
-                                    className="bg-[#EFF3FC] rounded-[5px] py-2 px-3 flex justify-between items-center"
-                                >
-                                    <span className={`font-garet font-medium ${bodySize} text-[#465055] truncate`}>{layer.name}</span>
-                                    <span className={`font-garet font-bold ${badgeSize} text-[#FF8300] bg-white px-2 py-0.5 rounded-full shrink-0 ml-2`}>
-                                        {formatNumber(layer.count)}
-                                    </span>
-                                </div>
+                                <LayerRow
+                                    key={layer.layerId || idx}
+                                    layerId={layer.layerId}
+                                    name={layer.name}
+                                    count={layer.count}
+                                    bodySize={bodySize}
+                                    badgeSize={badgeSize}
+                                />
                             ))}
                         </div>
                     </ScrollContainer>

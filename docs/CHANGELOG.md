@@ -5,6 +5,58 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.129.0] - 2026-08-17
+
+### Agregado: las capas de puntos se pueden ver agrupadas en hexágonos
+
+El control del panel de capas activas pasa de decir el protocolo a decir el resultado:
+**`Puntos | Hexágonos`**. En Hexágonos los puntos se agrupan en celdas y cada una se colorea según
+cuántos caen dentro, con la escala en cinco clases por cuantiles. Sólo aparece en capas de puntos
+—35 tablas del catálogo—, sólo en `beta` y `dev`, y con badge BETA.
+
+Las celdas son **H3**, el índice hexagonal jerárquico, no una rejilla dibujada al vuelo. La
+diferencia importa: cada celda tiene un identificador estable y resoluciones anidadas, así que dos
+capas distintas caen en las mismas celdas y se pueden comparar, y lo que mañana se calcule en la
+base de datos coincidirá con lo que hoy se calcula en el navegador.
+
+La resolución sale del zoom con una tabla explícita en `constants/hexbin.js`, medida contra el
+tamaño real de las celdas en Jalisco: la 5 ronda los 10 km de lado y la 9 los 219 m. Al cambiar de
+zoom se reagrupa con los puntos que ya están en memoria, sin volver a pedir nada al servidor.
+
+Medido con `educacion:centros_educativos`, que con 15 702 puntos es el caso más pesado que el tope
+admite: **37 ms** para agrupar en la resolución más gruesa, 1 342 celdas y hasta 656 puntos en la
+más densa.
+
+El clic sobre un hexágono **abre el Resumen de Selección**, el mismo panel de la herramienta de
+selección por polígono: usa la celda como polígono, así que hereda su conteo, su paginación, su
+descarga a CSV y su vista expandida sin panel nuevo. La celda elegida se marca con borde naranja
+sobre el relleno morado.
+
+La leyenda es propia —la del servidor describe otra cosa— y cumple lo que pide
+`ecosistema/identidad-visual.md`: paleta secuencial y leyenda obligatoria en mapas.
+
+En el panel, el badge de geometría cambia al icono de hexágono cuando la capa está agrupada. Los
+iconos de tipo de capa perdieron el círculo que los envolvía y pasaron a naranja; el de polígono
+es ahora un triángulo, porque el pentágono anterior se confundía con el del hexbin.
+
+**El modo «Datos» desaparece de la interfaz.** Nadie debería elegir un protocolo: lo que hacía
+—traer las geometrías al navegador— es ahora el motor de Hexágonos.
+
+### Cambiado: el Resumen de Selección muestra el símbolo de cada capa
+
+Cada renglón del resumen lleva el símbolo de su capa, con el mismo mecanismo que ya usaban las
+alternativas de capa: `GetLegendGraphic` en JSON, con cache por capa, así que cada símbolo se pide
+una vez por sesión.
+
+Y se corrigió de paso **qué símbolo se pide**. Se tomaba siempre la primera regla del SLD, pero las
+capas traen varias —`unidades_salud` tiene 4 y `centros_educativos` **16**—, cada una con su nombre
+y su filtro. Ahora la regla se casa con el nodo por nombre, y si no coincide, por su `cqlFilter`.
+En `centros_educativos` el símbolo estaba mal en 15 de 16 nodos; el fallo venía de las alternativas
+de capa, no del resumen.
+
+También se le quitó la **X** al encabezado del Resumen de Selección: el cierre ya lo da la barra de
+acciones, y la X de cada tarjeta sigue sirviendo para descartar un elemento suelto.
+
 ## [1.128.1] - 2026-08-17
 
 ### Corregido: el tope de elementos del modo Datos nunca se aplicaba

@@ -1,20 +1,9 @@
 import { useEffect } from 'react';
 import InfoCard from './InfoCard';
+import SymbolIcon from './SymbolIcon';
 import { useLayerSymbolIcon } from '@hooksMaps/useLayerSymbolIcon';
 import { useMapsContext } from '@hooks/useMaps';
 import { trackInfoBoxAction } from '@services/analyticsService';
-
-const SymbolIcon = ({ url, className = 'size-5' }) => {
-    if (!url) return null;
-    return (
-        <img
-            src={url}
-            alt=""
-            className={`${className} rounded shrink-0 object-cover object-top`}
-            onError={(e) => { e.target.style.display = 'none'; }}
-        />
-    );
-};
 
 const AlternativeButton = ({ layer, isMobile, onSelect, onPulse, onPulseEnd }) => {
     const symbolUrl = useLayerSymbolIcon(layer.id);
