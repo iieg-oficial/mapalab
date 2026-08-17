@@ -2,7 +2,7 @@
 name=MapaLab
 qgisMinimumVersion=3.40
 description=Catálogo de capas geoespaciales del IIEG dentro de QGIS
-version=0.10.0
+version=0.10.1
 author=Instituto de Información Estadística y Geográfica de Jalisco
 email=contacto@iieg.gob.mx
 

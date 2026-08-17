@@ -26,7 +26,13 @@ BADGE_RADIUS: int = 7
 
 GEOM_SIZE: int = 16
 
-TENUE_ESCALA_PX: float = 1.0
+TENUE_REDUCCION: float = 1.0
+
+BADGE_REDUCCION: float = 2.0
+
+PX_MINIMO: int = 10
+
+PT_MINIMO: float = 7.0
 
 CHEVRON_SIZE: int = 9
 
@@ -91,9 +97,14 @@ class LayerItemDelegate(QStyledItemDelegate):
         elif es_categoria(node):
             self._tenue(option, color_de_rol('quiet', 'color', '#465055'))
 
+    def _encoger(self, fuente: QFont, cantidad: float) -> None:
+        if fuente.pixelSize() > 0:
+            fuente.setPixelSize(max(PX_MINIMO, fuente.pixelSize() - int(cantidad)))
+        else:
+            fuente.setPointSizeF(max(PT_MINIMO, fuente.pointSizeF() - cantidad))
+
     def _tenue(self, option: QStyleOptionViewItem, color: str) -> None:
-        option.font.setPointSizeF(
-            max(6.0, option.font.pointSizeF() - TENUE_ESCALA_PX))
+        self._encoger(option.font, TENUE_REDUCCION)
         tinta = QColor(color)
         option.palette.setColor(QPalette.Text, tinta)
         option.palette.setColor(QPalette.HighlightedText, tinta)
@@ -128,7 +139,7 @@ class LayerItemDelegate(QStyledItemDelegate):
     def _fuente_menor(self, option: QStyleOptionViewItem) -> QFont:
         font = QFont(option.font)
         font.setBold(False)
-        font.setPointSizeF(max(6.0, option.font.pointSizeF() - 1.5))
+        self._encoger(font, BADGE_REDUCCION)
         return font
 
     def _ancho(self, option: QStyleOptionViewItem, texto: str, fuente: QFont) -> int:
