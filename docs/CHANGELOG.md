@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.126.0] - 2026-08-17
+
+### Cambiado: las filas de organización se ven como lo que son
+
+En el árbol conviven tres cosas distintas que se veían igual: los temas, las capas y los nodos que
+solo agrupan. Estos últimos —«Acceso a servicios de salud», «Medio Físico»— van ahora un punto más
+chicos y en el gris tenue del `theme.qss`, sin casilla ni glifo, que es lo que les corresponde: no
+se agregan, solo ordenan.
+
+Los grupos de propiedades quedan con su texto normal y su casilla, y las capas con su glifo de
+geometría, así que las tres filas se distinguen de un vistazo.
+
 ## [1.125.1] - 2026-08-17
 
 ### Corregido: la casilla salía en temas donde no significa nada

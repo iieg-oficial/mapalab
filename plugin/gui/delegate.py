@@ -1,8 +1,13 @@
 from typing import Any, Optional
 
 from qgis.PyQt.QtCore import QModelIndex, QPointF, QRect, QRectF, QSize, Qt
-from qgis.PyQt.QtGui import QColor, QFont, QPainter, QPainterPath, QPen
+from qgis.PyQt.QtGui import QColor, QFont, QPainter, QPainterPath, QPalette, QPen
 from qgis.PyQt.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem
+
+from ..layers.grupos import es_grupo_de_propiedades
+from ..theme import color_de_rol
+
+CARPETA_ESCALA_PX: float = 1.0
 
 BADGE_COLORS: dict[str, str] = {
     'new': '#2e7d32',
@@ -74,6 +79,12 @@ def badge_of(node: Optional[dict[str, Any]]) -> Optional[tuple[str, QColor]]:
     return label, color
 
 
+def es_carpeta(node: Optional[dict[str, Any]]) -> bool:
+    if not isinstance(node, dict) or node.get('wmsConfig'):
+        return False
+    return not es_grupo_de_propiedades(node)
+
+
 def geometry_of(node: Optional[dict[str, Any]]) -> Optional[str]:
     if not isinstance(node, dict):
         return None
@@ -94,6 +105,14 @@ class LayerItemDelegate(QStyledItemDelegate):
         super().initStyleOption(option, index)
         if self._es_raiz(index):
             option.font.setBold(True)
+            return
+
+        if es_carpeta(index.data(self._node_role)):
+            option.font.setPointSizeF(
+                max(6.0, option.font.pointSizeF() - CARPETA_ESCALA_PX))
+            tenue = QColor(color_de_rol('quiet', 'color', '#465055'))
+            option.palette.setColor(QPalette.Text, tenue)
+            option.palette.setColor(QPalette.HighlightedText, tenue)
 
     def _fuente_menor(self, option: QStyleOptionViewItem) -> QFont:
         font = QFont(option.font)
