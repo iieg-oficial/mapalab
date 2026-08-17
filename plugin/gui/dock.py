@@ -21,7 +21,7 @@ from ..config import (
     get_base_url,
     set_base_url,
 )
-from ..layers.grupos import es_grupo
+from ..layers.grupos import es_grupo, quitar_grupo
 from ..layers.limites import modo_actual
 from ..model.tree import filter_tree
 from ..theme import apply_theme, set_role, sombra_en_hover
@@ -95,7 +95,7 @@ class MapaLabDock(QDockWidget):
         search_row.addWidget(self._reload_button)
         layout.addLayout(search_row)
 
-        self._widget_tree = ArbolCatalogo(self._client, self._on_add)
+        self._widget_tree = ArbolCatalogo(self._client, self._on_add, self._alternar_grupo)
         self._widget_tree.itemSelectionChanged.connect(self._actualizar_add)
         layout.addWidget(self._widget_tree)
 
@@ -155,6 +155,7 @@ class MapaLabDock(QDockWidget):
 
     def _sincronizar_switch(self, *args: Any) -> None:
         self._switch.mostrar(modo_actual())
+        self._widget_tree.sincronizar()
 
     def _on_cambio_modo(self, modo: str) -> None:
         if not self._tree:
@@ -176,10 +177,9 @@ class MapaLabDock(QDockWidget):
 
     def _on_save_url(self) -> None:
         value = self._url_input.text().strip()
-        if not value:
-            return
-        set_base_url(value)
-        self._refresh_url_state()
+        if value:
+            set_base_url(value)
+            self._refresh_url_state()
 
     def load_tree(self, force: bool = False) -> None:
         if self._tareas.ocupado('arbol'):
@@ -209,8 +209,13 @@ class MapaLabDock(QDockWidget):
 
     def _actualizar_add(self) -> None:
         node = self._widget_tree.nodo_actual()
-        self._add_button.setText(
-            TEXTO_GRUPO if es_grupo(node) else TEXTO_CAPA)
+        self._add_button.setText(TEXTO_GRUPO if es_grupo(node) else TEXTO_CAPA)
+
+    def _alternar_grupo(self, node: dict[str, Any], marcado: bool) -> None:
+        if marcado:
+            self._agregar(node)
+        else:
+            quitar_grupo(str(node.get('id') or ''))
 
     def _require_layer_node(self, permitir_grupo: bool = False) -> Optional[dict[str, Any]]:
         node = self._widget_tree.nodo_actual()
@@ -233,17 +238,16 @@ class MapaLabDock(QDockWidget):
         correcto, mensaje = resultado
         self._mensaje('' if correcto else mensaje)
 
-    def _on_add(self) -> None:
-        node = self._require_layer_node(permitir_grupo=True)
-        if node is None:
-            return
+    def _agregar(self, node: dict[str, Any]) -> None:
         self._reportar(self._actions.add_as_wms(node, self._completa.isChecked()))
 
-    def _canvas(self) -> Optional[Any]:
-        return self._iface.mapCanvas() if self._iface is not None else None
+    def _on_add(self) -> None:
+        node = self._require_layer_node(permitir_grupo=True)
+        if node is not None:
+            self._agregar(node)
 
     def _activar_consulta(self) -> None:
-        canvas = self._canvas()
+        canvas = self._iface.mapCanvas() if self._iface is not None else None
         if canvas is None:
             return
         if self._consulta_tool is None:
@@ -252,7 +256,7 @@ class MapaLabDock(QDockWidget):
         canvas.setMapTool(self._consulta_tool)
 
     def _desactivar_consulta(self) -> None:
-        canvas = self._canvas()
+        canvas = self._iface.mapCanvas() if self._iface is not None else None
         if canvas is not None and self._consulta_tool is not None:
             canvas.unsetMapTool(self._consulta_tool)
 

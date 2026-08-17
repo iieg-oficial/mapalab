@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.125.0] - 2026-08-17
+
+### Cambiado: el grupo se marca desde su propia fila
+
+La casilla vive ahora en la fila del tema, en el árbol, en vez de obligar a seleccionarlo y bajar
+al botón. Marcarla trae el grupo completo con las mismas reglas de siempre —junto por tabla, con
+los filtros combinados— y desmarcarla retira esas capas del proyecto, incluido el grupo de QGIS
+que hubieran creado si quedó vacío.
+
+Para poder retirarlas, cada capa que entra por esta vía queda marcada con `mapalab/grupoId`, y de
+ahí sale también el estado de la casilla: si borras las capas a mano en el panel de QGIS, la
+casilla se desmarca sola. Las hojas no llevan casilla; se siguen agregando con el botón, que
+mantiene su texto contextual.
+
 ## [1.124.0] - 2026-08-17
 
 ### Agregado: la casilla «Traer la tabla completa»

@@ -4,6 +4,7 @@ from qgis.PyQt.QtCore import QEvent, QSize, Qt
 from qgis.PyQt.QtWidgets import QTreeWidget, QTreeWidgetItem, QWidget
 
 from ..api.client import MapaLabClient
+from ..layers.grupos import es_grupo, grupo_cargado
 from ..model.tree import clean_label, is_disabled
 from .delegate import LayerItemDelegate
 from .icons import TEMA_ICON_SIZE, icono_de_nodo
@@ -14,11 +15,14 @@ NODE_ROLE: int = int(Qt.UserRole)
 class ArbolCatalogo(QTreeWidget):
 
     def __init__(self, client: MapaLabClient, al_activar: Callable[[], None],
+                 al_alternar: Optional[Callable[[dict[str, Any], bool], None]] = None,
                  parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._client = client
         self._al_activar = al_activar
+        self._al_alternar = al_alternar
         self._hover_item: Optional[QTreeWidgetItem] = None
+        self._silencio = False
 
         self.setHeaderHidden(True)
         self.header().setStretchLastSection(True)
@@ -33,6 +37,7 @@ class ArbolCatalogo(QTreeWidget):
         self.itemEntered.connect(self._on_entered)
         self.itemExpanded.connect(self._on_expandido)
         self.itemCollapsed.connect(self._on_colapsado)
+        self.itemChanged.connect(self._on_marcado)
 
     def poblar(self, nodes: list[dict[str, Any]]) -> None:
         self._hover_item = None
@@ -52,6 +57,9 @@ class ArbolCatalogo(QTreeWidget):
         item.setData(0, NODE_ROLE, node)
         if is_disabled(node):
             item.setDisabled(True)
+        if es_grupo(node):
+            item.setToolTip(0, 'Marca para traer el tema completo')
+            item.setCheckState(0, self._estado(node))
 
         icono = icono_de_nodo(self._client, node, es_raiz)
         if icono is not None:
@@ -60,6 +68,31 @@ class ArbolCatalogo(QTreeWidget):
         for child in node.get('children') or []:
             item.addChild(self._build_item(child))
         return item
+
+    def _estado(self, node: dict[str, Any]) -> Qt.CheckState:
+        cargado = grupo_cargado(str(node.get('id') or ''))
+        return Qt.Checked if cargado else Qt.Unchecked
+
+    def _on_marcado(self, item: QTreeWidgetItem, column: int) -> None:
+        node = item.data(0, NODE_ROLE)
+        if self._silencio or self._al_alternar is None or not isinstance(node, dict):
+            return
+        if es_grupo(node):
+            self._al_alternar(node, item.checkState(0) == Qt.Checked)
+
+    def sincronizar(self, item: Optional[QTreeWidgetItem] = None) -> None:
+        self._silencio = True
+        try:
+            hijos = ([self.topLevelItem(i) for i in range(self.topLevelItemCount())]
+                     if item is None else [item.child(i) for i in range(item.childCount())])
+            for hijo in hijos:
+                node = hijo.data(0, NODE_ROLE)
+                if isinstance(node, dict) and es_grupo(node):
+                    hijo.setCheckState(0, self._estado(node))
+                self.sincronizar(hijo)
+        finally:
+            if item is None:
+                self._silencio = False
 
     def _actualizar_icono(self, item: QTreeWidgetItem, hover: bool) -> None:
         if item.parent() is not None:
