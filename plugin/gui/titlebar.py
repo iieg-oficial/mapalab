@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QHBoxLayout, QLabel, QWidget
@@ -61,6 +61,17 @@ def montar_footer(footer: QWidget, layout: QHBoxLayout, client: MapaLabClient,
     layout.addStretch(1)
     if jalisco is not None:
         layout.addWidget(jalisco, 0, Qt.AlignVCenter)
+
+
+def montar_titulo(dock: Any, client: MapaLabClient, switch: QWidget) -> None:
+    from ..theme import apply_theme
+
+    barra = TitleBar(client, switch, dock)
+    set_role(barra, 'panel')
+    barra.setAutoFillBackground(True)
+    apply_theme(barra)
+    barra.cargar()
+    dock.setTitleBarWidget(barra)
 
 
 class TitleBar(QWidget):

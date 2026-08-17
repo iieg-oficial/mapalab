@@ -5,7 +5,6 @@ from qgis.PyQt.QtWidgets import QTreeWidget, QTreeWidgetItem, QWidget
 
 from ..api.client import MapaLabClient
 from ..layers.grupos import grupo_cargado
-from ..layers.proyecto import quitar_nodo
 from ..model.tree import (
     clean_label,
     es_categoria,
@@ -23,11 +22,13 @@ class ArbolCatalogo(QTreeWidget):
 
     def __init__(self, client: MapaLabClient, al_activar: Callable[[], None],
                  al_alternar: Optional[Callable[[dict[str, Any], bool], None]] = None,
+                 al_cerrar: Optional[Callable[[dict[str, Any]], None]] = None,
                  parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._client = client
         self._al_activar = al_activar
         self._al_alternar = al_alternar
+        self._al_cerrar = al_cerrar
         self._hover_item: Optional[QTreeWidgetItem] = None
         self._silencio = False
 
@@ -53,8 +54,8 @@ class ArbolCatalogo(QTreeWidget):
         node = item.data(0, NODE_ROLE) if item is not None else None
         if isinstance(node, dict) and self._delegado.hay_cerrar(node):
             rect = self._delegado.rect_cerrar(self.visualRect(self.indexAt(evento.pos())))
-            if rect.contains(evento.pos()):
-                quitar_nodo(str(node.get('id') or ''))
+            if rect.contains(evento.pos()) and self._al_cerrar is not None:
+                self._al_cerrar(node)
                 self.viewport().update()
                 return
         super().mouseReleaseEvent(evento)
@@ -64,6 +65,16 @@ class ArbolCatalogo(QTreeWidget):
         self.clear()
         for node in nodes:
             self.addTopLevelItem(self._build_item(node, es_raiz=True))
+        self._abrir_fijos()
+
+    def _abrir_fijos(self, item: Optional[QTreeWidgetItem] = None) -> None:
+        hijos = ([self.topLevelItem(i) for i in range(self.topLevelItemCount())]
+                 if item is None else [item.child(i) for i in range(item.childCount())])
+        for hijo in hijos:
+            node = hijo.data(0, NODE_ROLE)
+            if es_etiqueta(node) or es_categoria(node):
+                hijo.setExpanded(True)
+            self._abrir_fijos(hijo)
 
     def nodo_actual(self) -> Optional[dict[str, Any]]:
         item = self.currentItem()
@@ -88,8 +99,6 @@ class ArbolCatalogo(QTreeWidget):
         for child in node.get('children') or []:
             item.addChild(self._build_item(child))
 
-        if es_etiqueta(node) or es_categoria(node):
-            item.setExpanded(True)
         return item
 
     def _estado(self, node: dict[str, Any]) -> Qt.CheckState:

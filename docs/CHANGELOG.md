@@ -26,6 +26,26 @@ número que faltaba para justificar el tope: **≈700 bytes**, así que 20 000 e
 El mismo distintivo que ya usan el catálogo y el filtro de municipio, con el que se anuncia que la
 función está en prueba. Sigue apareciendo sólo en `beta` y `dev`.
 
+## [1.128.1] - 2026-08-17
+
+### Corregido: las etiquetas anidadas no desplegaban sus capas
+
+«Establecimientos de salud» reparte sus 33 capas en cuatro etiquetas —«Primer nivel», «Segundo
+nivel», «Tercer nivel», «Otros»— y ninguna se abría, así que el grupo se veía vacío por dentro. La
+expansión se pedía mientras se construía el ítem, antes de que existiera en el árbol, y Qt la
+ignora: ahora se recorre el árbol ya montado, después de poblarlo. Con eso las cuatro etiquetas
+abren sus 13, 9, 5 y 6 capas, y las categorías también arrancan abiertas como en el visor.
+
+### Corregido: la aspa quitaba la capa de la leyenda pero no del lienzo
+
+Faltaba refrescar el lienzo tras retirarla del proyecto, así que el dibujo anterior se quedaba en
+pantalla hasta el siguiente movimiento del mapa.
+
+### Cambiado: la aspa va a la izquierda de la etiqueta
+
+Estaba a la derecha, donde compite con el badge y el glifo de geometría. Ahora abre la fila y el
+texto se recorre para dejarle su lugar.
+
 ## [1.128.0] - 2026-08-17
 
 ### Agregado: quitar una capa desde el propio catálogo

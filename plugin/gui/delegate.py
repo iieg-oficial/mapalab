@@ -124,8 +124,7 @@ class LayerItemDelegate(QStyledItemDelegate):
 
     def rect_cerrar(self, rect: QRect) -> QRect:
         top = rect.top() + (rect.height() - CERRAR_SIZE) // 2
-        return QRect(rect.right() - CERRAR_GAP - CERRAR_SIZE, top,
-                     CERRAR_SIZE, CERRAR_SIZE)
+        return QRect(rect.left() + CERRAR_GAP, top, CERRAR_SIZE, CERRAR_SIZE)
 
     def hay_cerrar(self, node: Any) -> bool:
         if not isinstance(node, dict) or not node.get('wmsConfig'):
@@ -247,8 +246,8 @@ class LayerItemDelegate(QStyledItemDelegate):
         medible = QRect(option.rect)
         if chevron:
             medible.setRight(self._rect_chevron(option.rect).left() - CHEVRON_GAP)
-        elif cerrar:
-            medible.setRight(self.rect_cerrar(option.rect).left() - CERRAR_GAP)
+        if cerrar:
+            medible.setLeft(self.rect_cerrar(option.rect).right() + CERRAR_GAP)
         rect_badge, rect_geom, limite = self._medir_adornos(
             opcion, medible, badge, tipo, fuente_menor)
 
@@ -269,6 +268,8 @@ class LayerItemDelegate(QStyledItemDelegate):
         recortada = QStyleOptionViewItem(opcion)
         recortada.rect = QRect(option.rect)
         recortada.rect.setRight(max(option.rect.left(), limite))
+        if cerrar:
+            recortada.rect.setLeft(medible.left())
         super().paint(painter, recortada, index)
 
         self._pintar_adornos(painter, rect_badge, rect_geom, badge, tipo, fuente_menor)

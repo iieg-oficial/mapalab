@@ -31,7 +31,7 @@ from .consulta import HerramientaConsulta
 from ..tasks import CargarArbolTask, Coordinador
 from .icons import boton_de_recarga
 from .switch import SwitchModoBase
-from .titlebar import TitleBar, montar_footer
+from .titlebar import montar_footer, montar_titulo
 
 TEXTO_COMPLETA: str = 'Traer la tabla completa'
 
@@ -95,7 +95,8 @@ class MapaLabDock(QDockWidget):
         search_row.addWidget(self._reload_button)
         layout.addLayout(search_row)
 
-        self._widget_tree = ArbolCatalogo(self._client, self._on_add, self._alternar_grupo)
+        self._widget_tree = ArbolCatalogo(
+            self._client, self._on_add, self._alternar_grupo, self._cerrar_nodo)
         self._widget_tree.itemSelectionChanged.connect(self._actualizar_add)
         layout.addWidget(self._widget_tree)
 
@@ -136,16 +137,8 @@ class MapaLabDock(QDockWidget):
         set_role(self._url_button, 'primary')
         set_role(self._download_button, 'secondary')
         apply_theme(container)
-        self._montar_titulo()
+        montar_titulo(self, self._client, self._switch)
         montar_footer(self._footer, self._footer_layout, self._client, FOOTER_LOGO_HEIGHT)
-
-    def _montar_titulo(self) -> None:
-        barra = TitleBar(self._client, self._switch, self)
-        set_role(barra, 'panel')
-        barra.setAutoFillBackground(True)
-        apply_theme(barra)
-        barra.cargar()
-        self.setTitleBarWidget(barra)
 
     def _conectar_proyecto(self) -> None:
         proyecto = QgsProject.instance()
@@ -210,6 +203,9 @@ class MapaLabDock(QDockWidget):
     def _actualizar_add(self) -> None:
         node = self._widget_tree.nodo_actual()
         self._add_button.setText(TEXTO_GRUPO if es_grupo(node) else TEXTO_CAPA)
+
+    def _cerrar_nodo(self, node: dict[str, Any]) -> None:
+        self._actions.remove_node(str(node.get('id') or ''))
 
     def _alternar_grupo(self, node: dict[str, Any], marcado: bool) -> None:
         if marcado:
