@@ -7,7 +7,7 @@ from qgis.PyQt.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewIte
 from ..layers.proyecto import nodo_cargado
 from ..model.tree import es_categoria, es_etiqueta
 from ..theme import color_de_rol
-from .glifos import GEOM_COLORS, pintar_geometria
+from .glifos import geom_colors, pintar_geometria
 
 BADGE_COLORS: dict[str, str] = {
     'new': '#2e7d32',
@@ -77,7 +77,7 @@ def geometry_of(node: Optional[dict[str, Any]]) -> Optional[str]:
     if not isinstance(node, dict):
         return None
     tipo = node.get('geometryType')
-    return tipo if tipo in GEOM_COLORS else None
+    return tipo if tipo in geom_colors() else None
 
 
 class LayerItemDelegate(QStyledItemDelegate):

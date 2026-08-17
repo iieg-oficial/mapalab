@@ -1,4 +1,4 @@
-.PHONY: setup-hooks refresh-layer-tree plugin-zip
+.PHONY: setup-hooks refresh-layer-tree plugin-zip plugin-tokens
 
 ##@ MapaLab
 
@@ -17,3 +17,9 @@ plugin-zip: ## Empaquetar el plugin de QGIS para instalacion manual
 	banner 'PLUGIN' 'zip de QGIS'
 	rule
 	./scripts/build-plugin-zip.sh
+
+plugin-tokens: ## Traer el theme.qss del modulo Identidad de mariachi
+	@$(LIB)
+	banner 'PLUGIN' 'tokens de identidad'
+	rule
+	./scripts/sync-plugin-tokens.sh $(ARCHIVO)

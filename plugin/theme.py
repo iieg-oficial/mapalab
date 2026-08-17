@@ -90,10 +90,24 @@ def _bloque_de_rol(rol: str) -> str:
     return encontrado.group(1) if encontrado else ''
 
 
-def color_de_rol(rol: str, propiedad: str, respaldo: str) -> str:
+def _bloque_de_selector(selector: str) -> str:
+    patron = re.escape(selector) + r'[^{]*\{([^}]*)\}'
+    encontrado = re.search(patron, load_stylesheet())
+    return encontrado.group(1) if encontrado else ''
+
+
+def _color(bloque: str, propiedad: str, respaldo: str) -> str:
     patron = r'(?:^|[;{\s])' + re.escape(propiedad) + r'\s*:\s*([^;]+);'
-    valor = re.search(patron, _bloque_de_rol(rol))
+    valor = re.search(patron, bloque)
     return valor.group(1).strip() if valor else respaldo
+
+
+def color_de_selector(selector: str, propiedad: str, respaldo: str) -> str:
+    return _color(_bloque_de_selector(selector), propiedad, respaldo)
+
+
+def color_de_rol(rol: str, propiedad: str, respaldo: str) -> str:
+    return _color(_bloque_de_rol(rol), propiedad, respaldo)
 
 
 def _reglas_locales() -> str:

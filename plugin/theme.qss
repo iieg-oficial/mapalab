@@ -6,7 +6,13 @@
    la identidad lo exige, para no romper el modo oscuro. */
 
 /* Fuentes de la marca (descargar y registrar en el cliente):
-   Garet 400: https://x/a.otf
+   Garet 100: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-thin.otf
+   Garet 300: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-light.otf
+   Garet 400: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-book.otf
+   Garet 500: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-medium.otf
+   Garet 700: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-bold.otf
+   Garet 800: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-heavy.otf
+   Garet 900: https://iieg.jalisco.gob.mx/acervo/iieg/tipografia/garet-black.otf
 */
 
 * {
@@ -34,7 +40,7 @@ QPushButton[brandRole="primary"]:disabled {
    izquierdo va sin radio para que empalme con la rama teñida. */
 QTreeView::item:selected, QTreeWidget::item:selected {
     background-color: #FFE9CC;
-    color: #9E5200;
+    color: #A85700;
     border-top-left-radius: 0px;
     border-bottom-left-radius: 0px;
 }
@@ -188,3 +194,4 @@ QLabel[brandRole="badge"] {
     padding: 1px 8px;
     font-size: 14px;
 }
+
