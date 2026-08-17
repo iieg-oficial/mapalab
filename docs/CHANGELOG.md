@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.127.2] - 2026-08-17
+
+### Cambiado: la píldora del badge y el realce de las categorías
+
+El badge del árbol —«Actualizada», «Nueva»— llevaba un radio fijo de 7 px, que con la altura real
+de la fila dejaba las esquinas a medio redondear en vez de la píldora del visor. Ahora el radio se
+calcula como la mitad del alto, así que es píldora siempre.
+
+Las categorías dejan de pintar fondo al pasar por encima o al seleccionarlas: se realzan
+poniéndose en negrita. Son filas de organización, y el fondo las hacía parecer seleccionables como
+una capa.
+
 ## [1.127.1] - 2026-08-17
 
 ### Corregido: las etiquetas y el badge salían diminutos

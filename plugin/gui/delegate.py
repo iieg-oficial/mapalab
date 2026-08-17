@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from qgis.PyQt.QtCore import QModelIndex, QPointF, QRect, QSize, Qt
+from qgis.PyQt.QtCore import QModelIndex, QPointF, QRect, QRectF, QSize, Qt
 from qgis.PyQt.QtGui import QColor, QFont, QPainter, QPalette, QPen
 from qgis.PyQt.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem
 
@@ -22,8 +22,6 @@ BADGE_LABELS: dict[str, str] = {
 
 BADGE_PADDING: int = 6
 BADGE_GAP: int = 8
-BADGE_RADIUS: int = 7
-
 GEOM_SIZE: int = 16
 
 TENUE_REDUCCION: float = 1.0
@@ -96,6 +94,7 @@ class LayerItemDelegate(QStyledItemDelegate):
             self._tenue(option, color_de_rol('title', 'color', '#5C2472'))
         elif es_categoria(node):
             self._tenue(option, color_de_rol('quiet', 'color', '#465055'))
+            self._sin_fondo(option)
 
     def _encoger(self, fuente: QFont, cantidad: float) -> None:
         if fuente.pixelSize() > 0:
@@ -108,6 +107,13 @@ class LayerItemDelegate(QStyledItemDelegate):
         tinta = QColor(color)
         option.palette.setColor(QPalette.Text, tinta)
         option.palette.setColor(QPalette.HighlightedText, tinta)
+
+    def _sin_fondo(self, option: QStyleOptionViewItem) -> None:
+        realzada = bool(option.state & (QStyle.State_MouseOver | QStyle.State_Selected))
+        option.state &= ~QStyle.State_MouseOver
+        option.state &= ~QStyle.State_Selected
+        if realzada:
+            option.font.setBold(True)
 
     def _rect_chevron(self, rect: QRect) -> QRect:
         top = rect.top() + (rect.height() - CHEVRON_SIZE) // 2
@@ -152,7 +158,8 @@ class LayerItemDelegate(QStyledItemDelegate):
         painter.setRenderHint(QPainter.Antialiasing, True)
         painter.setPen(Qt.NoPen)
         painter.setBrush(color)
-        painter.drawRoundedRect(rect, BADGE_RADIUS, BADGE_RADIUS)
+        radio = rect.height() / 2.0
+        painter.drawRoundedRect(QRectF(rect), radio, radio)
         painter.setPen(QColor('#FFFFFF'))
         painter.setFont(fuente)
         painter.drawText(rect, int(Qt.AlignCenter), texto)
