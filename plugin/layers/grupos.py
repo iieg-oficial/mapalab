@@ -3,11 +3,10 @@ from typing import Any, Optional
 from qgis.core import QgsMapLayer, QgsProject
 
 from ..model.tree import clean_label, iter_leaves, layer_key, node_cql
+from .proyecto import GRUPO_PROPERTY, quitar_grupos_vacios
 from .wms import crear_wms_layer
 
 CQL_MAXIMO: int = 4000
-
-GRUPO_PROPERTY: str = 'mapalab/grupoId'
 
 
 def hojas_de(node: dict[str, Any]) -> list[dict[str, Any]]:
@@ -39,10 +38,7 @@ def quitar_grupo(node_id: str) -> int:
     for capa in capas:
         project.removeMapLayer(capa.id())
 
-    raiz = project.layerTreeRoot()
-    for nodo in list(raiz.children()):
-        if hasattr(nodo, 'children') and not nodo.children() and nodo.name():
-            raiz.removeChildNode(nodo)
+    quitar_grupos_vacios()
     return len(capas)
 
 

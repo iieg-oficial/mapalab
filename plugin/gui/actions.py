@@ -8,7 +8,7 @@ from qgis.PyQt.QtWidgets import QApplication, QFileDialog, QWidget
 from ..api.client import MapaLabClient, MapaLabError
 from ..layers.grupos import add_group_layers, es_grupo
 from ..layers.limites import aplicar_modo, modo_actual
-from ..layers.proyecto import quitar_nodo
+from ..layers.proyecto import limpiar_todo, quitar_nodo
 from ..layers.metadata import apply_metadata
 from ..layers.seleccion import agregar
 from ..layers.wms import add_wms_layer
@@ -46,6 +46,12 @@ class LayerActions:
         except MapaLabError:
             return
         apply_metadata(layer, payload, node)
+
+    def clear_all(self) -> int:
+        quitadas = limpiar_todo()
+        if quitadas and self._iface is not None:
+            self._iface.mapCanvas().refresh()
+        return quitadas
 
     def remove_node(self, node_id: str) -> int:
         quitadas = quitar_nodo(node_id)

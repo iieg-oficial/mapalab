@@ -20,8 +20,7 @@ from qgis.PyQt.QtGui import QColor
 
 from ..config import DATA_CRS
 from ..theme import color_de_rol
-
-SELECCION_PROPERTY: str = 'mapalab/seleccionDe'
+from .proyecto import SELECCION_PROPERTY
 
 CAMPO_ORIGEN: str = 'mapalab_fid'
 

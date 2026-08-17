@@ -1,10 +1,10 @@
 from typing import Any, Callable, Optional
 
 from qgis.PyQt.QtCore import QEvent, QSize, Qt
-from qgis.PyQt.QtWidgets import QTreeWidget, QTreeWidgetItem, QWidget
+from qgis.PyQt.QtWidgets import QMenu, QTreeWidget, QTreeWidgetItem, QWidget
 
 from ..api.client import MapaLabClient
-from ..layers.grupos import grupo_cargado
+from ..layers.grupos import es_grupo, grupo_cargado
 from ..model.tree import (
     clean_label,
     es_categoria,
@@ -23,12 +23,14 @@ class ArbolCatalogo(QTreeWidget):
     def __init__(self, client: MapaLabClient, al_activar: Callable[[], None],
                  al_alternar: Optional[Callable[[dict[str, Any], bool], None]] = None,
                  al_cerrar: Optional[Callable[[dict[str, Any]], None]] = None,
+                 al_agregar: Optional[Callable[[dict[str, Any], bool, bool], None]] = None,
                  parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._client = client
         self._al_activar = al_activar
         self._al_alternar = al_alternar
         self._al_cerrar = al_cerrar
+        self._al_agregar = al_agregar
         self._hover_item: Optional[QTreeWidgetItem] = None
         self._silencio = False
 
@@ -47,7 +49,33 @@ class ArbolCatalogo(QTreeWidget):
         self.itemExpanded.connect(self._on_expandido)
         self.itemCollapsed.connect(self._on_colapsado)
         self.itemChanged.connect(self._on_marcado)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._on_menu)
         self.setExpandsOnDoubleClick(False)
+
+    def _on_menu(self, pos: Any) -> None:
+        item = self.itemAt(pos)
+        node = item.data(0, NODE_ROLE) if item is not None else None
+        if self._al_agregar is None or not isinstance(node, dict):
+            return
+        if not node.get('wmsConfig') and not es_grupo(node):
+            return
+
+        menu = QMenu(self)
+        es_capa = bool(node.get('wmsConfig'))
+        menu.addAction(
+            'Agregar al mapa' if es_capa else 'Agregar el grupo completo',
+            lambda: self._al_agregar(node, False, False))
+        menu.addAction(
+            'Traer la tabla completa',
+            lambda: self._al_agregar(node, True, False))
+        if es_capa:
+            menu.addSeparator()
+            menu.addAction('Descargar vectorial',
+                           lambda: self._al_agregar(node, False, True))
+            menu.addAction('Descargar la tabla completa',
+                           lambda: self._al_agregar(node, True, True))
+        menu.exec_(self.viewport().mapToGlobal(pos))
 
     def mouseReleaseEvent(self, evento: Any) -> None:
         item = self.itemAt(evento.pos())

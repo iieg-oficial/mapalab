@@ -2,7 +2,6 @@ from typing import Any, Optional
 
 from qgis.core import QgsProject
 from qgis.PyQt.QtWidgets import (
-    QCheckBox,
     QDockWidget,
     QHBoxLayout,
     QLabel,
@@ -30,10 +29,9 @@ from .arbol import ArbolCatalogo
 from .consulta import HerramientaConsulta
 from ..tasks import CargarArbolTask, Coordinador
 from .icons import boton_de_recarga
+from .servidor import fila_servidor
 from .switch import SwitchModoBase
 from .titlebar import montar_footer, montar_titulo
-
-TEXTO_COMPLETA: str = 'Traer la tabla completa'
 
 TEXTO_CAPA: str = 'Agregar al mapa'
 
@@ -67,18 +65,7 @@ class MapaLabDock(QDockWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(SECTION_GAP)
 
-        self._url_row = QWidget()
-        url_layout = QHBoxLayout()
-        url_layout.setContentsMargins(0, 0, 0, 0)
-        self._url_input = QLineEdit()
-        self._url_input.setPlaceholderText('https://dominio-del-iieg')
-        self._url_button = QPushButton('Guardar')
-        self._url_button.clicked.connect(self._on_save_url)
-        url_layout.addWidget(QLabel('Servidor:'))
-        url_layout.addWidget(self._url_input)
-        url_layout.addWidget(self._url_button)
-        self._url_row.setLayout(url_layout)
-        set_role(self._url_row, 'card')
+        self._url_row, self._url_input = fila_servidor(self._on_save_url)
         layout.addWidget(self._url_row)
 
         self._search = QLineEdit()
@@ -96,7 +83,8 @@ class MapaLabDock(QDockWidget):
         layout.addLayout(search_row)
 
         self._widget_tree = ArbolCatalogo(
-            self._client, self._on_add, self._alternar_grupo, self._cerrar_nodo)
+            self._client, self._on_add, self._alternar_grupo, self._cerrar_nodo,
+            self._agregar)
         self._widget_tree.itemSelectionChanged.connect(self._actualizar_add)
         layout.addWidget(self._widget_tree)
 
@@ -105,14 +93,14 @@ class MapaLabDock(QDockWidget):
         self._add_button.clicked.connect(self._on_add)
         self._download_button = QPushButton('Descargar vectorial')
         self._download_button.clicked.connect(self._on_download)
+        self._clear_button = QPushButton('Limpiar')
+        self._clear_button.setToolTip(
+            'Quita del proyecto las capas de MapaLab y sus capas de selección.')
+        self._clear_button.clicked.connect(self._on_clear)
         buttons.addWidget(self._add_button)
         buttons.addWidget(self._download_button)
+        buttons.addWidget(self._clear_button)
         layout.addLayout(buttons)
-
-        self._completa = QCheckBox(TEXTO_COMPLETA)
-        self._completa.setToolTip(
-            'Ignora el filtro del nodo: la capa llega con todos los registros de su tabla.')
-        layout.addWidget(self._completa)
 
         self._status = QLabel('')
         self._status.setWordWrap(True)
@@ -134,8 +122,8 @@ class MapaLabDock(QDockWidget):
 
         set_role(self._add_button, 'primary')
         sombra_en_hover(self._add_button)
-        set_role(self._url_button, 'primary')
         set_role(self._download_button, 'secondary')
+        set_role(self._clear_button, 'quiet')
         apply_theme(container)
         montar_titulo(self, self._client, self._switch)
         montar_footer(self._footer, self._footer_layout, self._client, FOOTER_LOGO_HEIGHT)
@@ -234,8 +222,16 @@ class MapaLabDock(QDockWidget):
         correcto, mensaje = resultado
         self._mensaje('' if correcto else mensaje)
 
-    def _agregar(self, node: dict[str, Any]) -> None:
-        self._reportar(self._actions.add_as_wms(node, self._completa.isChecked()))
+    def _agregar(self, node: dict[str, Any], completa: bool = False,
+                 descargar: bool = False) -> None:
+        if descargar:
+            self._descargar(node, completa)
+            return
+        self._reportar(self._actions.add_as_wms(node, completa))
+
+    def _on_clear(self) -> None:
+        quitadas = self._actions.clear_all()
+        self._mensaje('' if quitadas else 'No hay capas de MapaLab en el proyecto.')
 
     def _on_add(self) -> None:
         node = self._require_layer_node(permitir_grupo=True)
@@ -272,14 +268,15 @@ class MapaLabDock(QDockWidget):
 
     def _on_download(self) -> None:
         node = self._require_layer_node()
-        if node is None:
-            return
+        if node is not None:
+            self._descargar(node, False)
+
+    def _descargar(self, node: dict[str, Any], completa: bool) -> None:
         if self._tareas.ocupado('descarga'):
             self._mensaje('Ya hay una descarga en curso.')
             return
 
-        tarea, error = self._actions.download_as_vector(
-            node, self, self._completa.isChecked())
+        tarea, error = self._actions.download_as_vector(node, self, completa)
         if tarea is None:
             self._mensaje(error)
             return
