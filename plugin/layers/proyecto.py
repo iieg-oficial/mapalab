@@ -45,6 +45,15 @@ def quitar_grupos_vacios() -> None:
             raiz.removeChildNode(nodo)
 
 
+def limpiar_selecciones() -> int:
+    project = QgsProject.instance()
+    capas = [capa for capa in project.mapLayers().values()
+             if capa.customProperty(SELECCION_PROPERTY)]
+    for capa in capas:
+        project.removeMapLayer(capa.id())
+    return len(capas)
+
+
 def limpiar_todo() -> int:
     project = QgsProject.instance()
     capas = [capa for capa in project.mapLayers().values() if es_del_plugin(capa)]

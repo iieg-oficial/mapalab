@@ -7,7 +7,6 @@ from qgis.PyQt.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -23,13 +22,13 @@ from ..config import (
 from ..layers.grupos import es_grupo, quitar_grupo
 from ..layers.limites import modo_actual
 from ..model.tree import filter_tree
-from ..theme import apply_theme, set_role, sombra_en_hover
+from ..theme import apply_theme, set_role
 from .actions import LayerActions
 from .arbol import ArbolCatalogo
 from .consulta import HerramientaConsulta
 from ..tasks import CargarArbolTask, Coordinador
 from .icons import boton_de_recarga
-from .servidor import fila_servidor
+from .filas import fila_acciones, fila_limpieza, fila_servidor
 from .switch import SwitchModoBase
 from .titlebar import montar_footer, montar_titulo
 
@@ -88,19 +87,10 @@ class MapaLabDock(QDockWidget):
         self._widget_tree.itemSelectionChanged.connect(self._actualizar_add)
         layout.addWidget(self._widget_tree)
 
-        buttons = QHBoxLayout()
-        self._add_button = QPushButton(TEXTO_CAPA)
-        self._add_button.clicked.connect(self._on_add)
-        self._download_button = QPushButton('Descargar vectorial')
-        self._download_button.clicked.connect(self._on_download)
-        self._clear_button = QPushButton('Limpiar')
-        self._clear_button.setToolTip(
-            'Quita del proyecto las capas de MapaLab y sus capas de selección.')
-        self._clear_button.clicked.connect(self._on_clear)
-        buttons.addWidget(self._add_button)
-        buttons.addWidget(self._download_button)
-        buttons.addWidget(self._clear_button)
+        buttons, self._add_button, self._download_button = fila_acciones(
+            self._on_add, self._on_download, TEXTO_CAPA)
         layout.addLayout(buttons)
+        layout.addLayout(fila_limpieza(self._on_clear_seleccion, self._on_clear))
 
         self._status = QLabel('')
         self._status.setWordWrap(True)
@@ -120,10 +110,6 @@ class MapaLabDock(QDockWidget):
         container.setAutoFillBackground(True)
         self.setWidget(container)
 
-        set_role(self._add_button, 'primary')
-        sombra_en_hover(self._add_button)
-        set_role(self._download_button, 'secondary')
-        set_role(self._clear_button, 'quiet')
         apply_theme(container)
         montar_titulo(self, self._client, self._switch)
         montar_footer(self._footer, self._footer_layout, self._client, FOOTER_LOGO_HEIGHT)
@@ -232,6 +218,10 @@ class MapaLabDock(QDockWidget):
     def _on_clear(self) -> None:
         quitadas = self._actions.clear_all()
         self._mensaje('' if quitadas else 'No hay capas de MapaLab en el proyecto.')
+
+    def _on_clear_seleccion(self) -> None:
+        quitadas = self._actions.clear_selections()
+        self._mensaje('' if quitadas else 'No hay capas de selección en el proyecto.')
 
     def _on_add(self) -> None:
         node = self._require_layer_node(permitir_grupo=True)
