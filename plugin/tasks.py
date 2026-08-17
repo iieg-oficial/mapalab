@@ -79,12 +79,14 @@ class DescargarVectorTask(_TareaMapaLab):
     listo = pyqtSignal(str)
     fallo = pyqtSignal(str)
 
-    def __init__(self, client: MapaLabClient, node: dict[str, Any], target_dir: str) -> None:
+    def __init__(self, client: MapaLabClient, node: dict[str, Any], target_dir: str,
+                 aplicar_filtro: bool = True) -> None:
         etiqueta = clean_label(node.get('label') or 'capa')
         super().__init__(f'MapaLab: descargando «{etiqueta}»')
         self._client = client
         self._node = node
         self._target_dir = target_dir
+        self._aplicar_filtro = aplicar_filtro
         self._etiqueta = etiqueta
         self._path: Optional[str] = None
         self._metadata: Any = None
@@ -104,7 +106,8 @@ class DescargarVectorTask(_TareaMapaLab):
 
     def run(self) -> bool:
         path, error = download_vector(
-            self._node, self._client, self._target_dir, apply_node_filter=True,
+            self._node, self._client, self._target_dir,
+            apply_node_filter=self._aplicar_filtro,
             feedback=self._feedback, on_progress=self._progreso)
 
         if self.isCanceled():

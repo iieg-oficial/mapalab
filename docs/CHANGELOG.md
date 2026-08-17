@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.124.0] - 2026-08-17
+
+### Agregado: la casilla «Traer la tabla completa»
+
+Desde que el nodo aplica su filtro y el grupo combina los suyos, no quedaba forma de pedir la
+tabla tal como está publicada en GeoServer, que es lo que el plugin hacía siempre hasta 1.121.0.
+La casilla, debajo de los botones del panel, ignora el filtro del catálogo tanto al agregar como
+al descargar: «Maíz» con ella marcada trae los veinte cultivos, y el grupo entero también.
+
+Sigue apagada por omisión, que es el comportamiento que se pidió: lo que eliges en el árbol es lo
+que ves.
+
 ## [1.123.0] - 2026-08-12
 
 ### Agregado: un grupo del catálogo se agrega completo

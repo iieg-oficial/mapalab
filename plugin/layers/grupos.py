@@ -53,7 +53,7 @@ def _nombre(hojas: list[dict[str, Any]], etiqueta_grupo: str) -> str:
 
 
 def add_group_layers(node: dict[str, Any], modo: Optional[str] = None,
-                     ) -> tuple[int, str]:
+                     completa: bool = False) -> tuple[int, str]:
     hojas = hojas_de(node)
     tablas = por_tabla(hojas)
     if not tablas:
@@ -68,9 +68,9 @@ def add_group_layers(node: dict[str, Any], modo: Optional[str] = None,
     agregadas = 0
     fallo = ''
     for hojas_tabla in tablas.values():
+        cql = '' if completa else cql_de_tabla(hojas_tabla)
         capa, razon = crear_wms_layer(
-            hojas_tabla[0], cql_de_tabla(hojas_tabla), None, modo,
-            _nombre(hojas_tabla, etiqueta))
+            hojas_tabla[0], cql, None, modo, _nombre(hojas_tabla, etiqueta))
         if capa is None:
             fallo = razon
             continue

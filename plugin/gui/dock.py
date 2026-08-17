@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 from qgis.core import QgsProject
 from qgis.PyQt.QtWidgets import (
+    QCheckBox,
     QDockWidget,
     QHBoxLayout,
     QLabel,
@@ -31,6 +32,8 @@ from ..tasks import CargarArbolTask, Coordinador
 from .icons import boton_de_recarga
 from .switch import SwitchModoBase
 from .titlebar import TitleBar, montar_footer
+
+TEXTO_COMPLETA: str = 'Traer la tabla completa'
 
 TEXTO_CAPA: str = 'Agregar al mapa'
 
@@ -104,6 +107,11 @@ class MapaLabDock(QDockWidget):
         buttons.addWidget(self._add_button)
         buttons.addWidget(self._download_button)
         layout.addLayout(buttons)
+
+        self._completa = QCheckBox(TEXTO_COMPLETA)
+        self._completa.setToolTip(
+            'Ignora el filtro del nodo: la capa llega con todos los registros de su tabla.')
+        layout.addWidget(self._completa)
 
         self._status = QLabel('')
         self._status.setWordWrap(True)
@@ -229,7 +237,7 @@ class MapaLabDock(QDockWidget):
         node = self._require_layer_node(permitir_grupo=True)
         if node is None:
             return
-        self._reportar(self._actions.add_as_wms(node))
+        self._reportar(self._actions.add_as_wms(node, self._completa.isChecked()))
 
     def _canvas(self) -> Optional[Any]:
         return self._iface.mapCanvas() if self._iface is not None else None
@@ -270,7 +278,8 @@ class MapaLabDock(QDockWidget):
             self._mensaje('Ya hay una descarga en curso.')
             return
 
-        tarea, error = self._actions.download_as_vector(node, self)
+        tarea, error = self._actions.download_as_vector(
+            node, self, self._completa.isChecked())
         if tarea is None:
             self._mensaje(error)
             return

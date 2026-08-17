@@ -46,11 +46,11 @@ class LayerActions:
             return
         apply_metadata(layer, payload, node)
 
-    def add_group(self, node: dict[str, Any]) -> tuple[bool, str]:
+    def add_group(self, node: dict[str, Any], completa: bool = False) -> tuple[bool, str]:
         label = clean_label(node.get('label') or '')
         self._busy(True)
         try:
-            agregadas, razon = add_group_layers(node, modo_actual())
+            agregadas, razon = add_group_layers(node, modo_actual(), completa)
         finally:
             self._busy(False)
 
@@ -58,14 +58,14 @@ class LayerActions:
             return False, f'No se pudo agregar «{label}»: {razon}'
         return True, ''
 
-    def add_as_wms(self, node: dict[str, Any]) -> tuple[bool, str]:
+    def add_as_wms(self, node: dict[str, Any], completa: bool = False) -> tuple[bool, str]:
         if es_grupo(node):
-            return self.add_group(node)
+            return self.add_group(node, completa)
 
         label = clean_label(node.get('label') or '')
         self._busy(True)
         try:
-            layer, reason = add_wms_layer(node, apply_node_filter=True,
+            layer, reason = add_wms_layer(node, apply_node_filter=not completa,
                                           modo=modo_actual())
             if layer is None:
                 return False, f'No se pudo agregar «{label}»: {reason}'
@@ -112,6 +112,7 @@ class LayerActions:
             parent, 'Dónde guardar el GeoPackage', os.path.expanduser('~'))
 
     def download_as_vector(self, node: dict[str, Any], parent: Optional[QWidget] = None,
+                           completa: bool = False,
                            ) -> tuple[Optional[DescargarVectorTask], str]:
         label = clean_label(node.get('label') or '')
 
@@ -124,4 +125,4 @@ class LayerActions:
         if not target_dir:
             return None, ''
 
-        return DescargarVectorTask(self._client, node, target_dir), ''
+        return DescargarVectorTask(self._client, node, target_dir, not completa), ''
