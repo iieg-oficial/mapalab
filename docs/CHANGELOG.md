@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.128.0] - 2026-08-17
+
+### Agregado: quitar una capa desde el propio catálogo
+
+Las filas cuya capa ya está en el mapa muestran una **aspa** a la derecha que la retira del
+proyecto. Sirve además como señal de estado: si la fila tiene aspa, esa capa está cargada.
+
+Sale solo en las capas, no en los grupos —esos se retiran desmarcando su casilla— y desaparece en
+cuanto la capa deja el proyecto, la quites desde aquí o desde el panel de capas de QGIS.
+
 ## [1.127.2] - 2026-08-17
 
 ### Cambiado: la píldora del badge y el realce de las categorías

@@ -4,6 +4,7 @@ from qgis.PyQt.QtCore import QModelIndex, QPointF, QRect, QRectF, QSize, Qt
 from qgis.PyQt.QtGui import QColor, QFont, QPainter, QPalette, QPen
 from qgis.PyQt.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem
 
+from ..layers.proyecto import nodo_cargado
 from ..model.tree import es_categoria, es_etiqueta
 from ..theme import color_de_rol
 from .glifos import GEOM_COLORS, pintar_geometria
@@ -37,6 +38,12 @@ CHEVRON_SIZE: int = 9
 CHEVRON_GAP: int = 7
 
 CHEVRON_TRAZO: float = 1.6
+
+CERRAR_SIZE: int = 10
+
+CERRAR_GAP: int = 7
+
+CERRAR_TRAZO: float = 1.6
 
 GEOM_GAP: int = 8
 
@@ -114,6 +121,27 @@ class LayerItemDelegate(QStyledItemDelegate):
         option.state &= ~QStyle.State_Selected
         if realzada:
             option.font.setBold(True)
+
+    def rect_cerrar(self, rect: QRect) -> QRect:
+        top = rect.top() + (rect.height() - CERRAR_SIZE) // 2
+        return QRect(rect.right() - CERRAR_GAP - CERRAR_SIZE, top,
+                     CERRAR_SIZE, CERRAR_SIZE)
+
+    def hay_cerrar(self, node: Any) -> bool:
+        if not isinstance(node, dict) or not node.get('wmsConfig'):
+            return False
+        return nodo_cargado(str(node.get('id') or ''))
+
+    def _pintar_cerrar(self, painter: QPainter, rect: QRect) -> None:
+        pluma = QPen(QColor(color_de_rol('quiet', 'color', '#465055')), CERRAR_TRAZO)
+        pluma.setCapStyle(Qt.RoundCap)
+
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setPen(pluma)
+        painter.drawLine(rect.topLeft(), rect.bottomRight())
+        painter.drawLine(rect.topRight(), rect.bottomLeft())
+        painter.restore()
 
     def _rect_chevron(self, rect: QRect) -> QRect:
         top = rect.top() + (rect.height() - CHEVRON_SIZE) // 2
@@ -211,6 +239,7 @@ class LayerItemDelegate(QStyledItemDelegate):
         badge = badge_of(node)
         tipo = geometry_of(node)
         chevron = self._hay_chevron(option, node)
+        cerrar = self.hay_cerrar(node)
 
         opcion = QStyleOptionViewItem(option)
         self.initStyleOption(opcion, index)
@@ -218,6 +247,8 @@ class LayerItemDelegate(QStyledItemDelegate):
         medible = QRect(option.rect)
         if chevron:
             medible.setRight(self._rect_chevron(option.rect).left() - CHEVRON_GAP)
+        elif cerrar:
+            medible.setRight(self.rect_cerrar(option.rect).left() - CERRAR_GAP)
         rect_badge, rect_geom, limite = self._medir_adornos(
             opcion, medible, badge, tipo, fuente_menor)
 
@@ -231,7 +262,7 @@ class LayerItemDelegate(QStyledItemDelegate):
             self._pintar_chevron(painter, self._rect_chevron(option.rect), True)
             return
 
-        if badge is None and tipo is None and not chevron:
+        if badge is None and tipo is None and not chevron and not cerrar:
             super().paint(painter, option, index)
             return
 
@@ -244,6 +275,8 @@ class LayerItemDelegate(QStyledItemDelegate):
         if chevron:
             self._pintar_chevron(painter, self._rect_chevron(option.rect),
                                  bool(option.state & QStyle.State_Open))
+        elif cerrar:
+            self._pintar_cerrar(painter, self.rect_cerrar(option.rect))
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
         size = super().sizeHint(option, index)

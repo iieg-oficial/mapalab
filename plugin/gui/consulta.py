@@ -7,6 +7,7 @@ from ..api.client import MapaLabClient, MapaLabError
 from ..config import NODE_ID_PROPERTY
 from ..layers.featureinfo import features_de_json, url_de_consulta
 from ..layers.limites import modo_actual
+from ..layers.proyecto import capa_por_nodo
 from ..model.tree import clean_label
 
 
@@ -21,13 +22,7 @@ def capas_del_plugin() -> list[QgsMapLayer]:
     return capas
 
 
-def capa_cargada(node_id: str) -> Optional[QgsMapLayer]:
-    if not node_id:
-        return None
-    for capa in QgsProject.instance().mapLayers().values():
-        if str(capa.customProperty(NODE_ID_PROPERTY) or '') == node_id:
-            return capa
-    return None
+
 
 
 class HerramientaConsulta(QgsMapToolIdentify):
@@ -45,7 +40,7 @@ class HerramientaConsulta(QgsMapToolIdentify):
         node = self._nodo_actual()
 
         if node and node.get('wmsConfig'):
-            capa = capa_cargada(str(node.get('id') or ''))
+            capa = capa_por_nodo(str(node.get('id') or ''))
             if capa is None:
                 self._consultar_catalogo(node, x, y)
             else:

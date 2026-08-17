@@ -5,6 +5,7 @@ from qgis.PyQt.QtWidgets import QTreeWidget, QTreeWidgetItem, QWidget
 
 from ..api.client import MapaLabClient
 from ..layers.grupos import grupo_cargado
+from ..layers.proyecto import quitar_nodo
 from ..model.tree import (
     clean_label,
     es_categoria,
@@ -36,7 +37,8 @@ class ArbolCatalogo(QTreeWidget):
         self.setMouseTracking(True)
         self.viewport().installEventFilter(self)
         self.setExpandsOnDoubleClick(False)
-        self.setItemDelegate(LayerItemDelegate(NODE_ROLE, self))
+        self._delegado = LayerItemDelegate(NODE_ROLE, self)
+        self.setItemDelegate(self._delegado)
         self.setIconSize(QSize(TEMA_ICON_SIZE, TEMA_ICON_SIZE))
         self.itemDoubleClicked.connect(self._on_double_click)
         self.itemClicked.connect(self._on_click)
@@ -45,6 +47,17 @@ class ArbolCatalogo(QTreeWidget):
         self.itemCollapsed.connect(self._on_colapsado)
         self.itemChanged.connect(self._on_marcado)
         self.setExpandsOnDoubleClick(False)
+
+    def mouseReleaseEvent(self, evento: Any) -> None:
+        item = self.itemAt(evento.pos())
+        node = item.data(0, NODE_ROLE) if item is not None else None
+        if isinstance(node, dict) and self._delegado.hay_cerrar(node):
+            rect = self._delegado.rect_cerrar(self.visualRect(self.indexAt(evento.pos())))
+            if rect.contains(evento.pos()):
+                quitar_nodo(str(node.get('id') or ''))
+                self.viewport().update()
+                return
+        super().mouseReleaseEvent(evento)
 
     def poblar(self, nodes: list[dict[str, Any]]) -> None:
         self._hover_item = None
@@ -103,6 +116,7 @@ class ArbolCatalogo(QTreeWidget):
         finally:
             if item is None:
                 self._silencio = False
+                self.viewport().update()
 
     def _actualizar_icono(self, item: QTreeWidgetItem, hover: bool) -> None:
         if item.parent() is not None:
