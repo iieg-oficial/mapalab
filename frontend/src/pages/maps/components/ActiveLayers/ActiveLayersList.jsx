@@ -139,15 +139,6 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
 
     const noLayers = unifiedLayers.length === 0;
 
-    const allHidden = useMemo(() => {
-        return unifiedLayers.length > 0 && unifiedLayers.every(l => !l.visible);
-    }, [unifiedLayers]);
-
-    const visibilityCount = useMemo(() => {
-        if (allHidden) return unifiedLayers.length;
-        return unifiedLayers.filter(l => l.visible).length;
-    }, [unifiedLayers, allHidden]);
-
     const activeLoopsCount = useMemo(() => {
         return Object.values(dateLoops || {}).filter(l => l?.isPlaying).length;
     }, [dateLoops]);
@@ -235,7 +226,6 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
                 displayedLayers={displayedLayers}
                 isFiltering={isFiltering}
                 soloSeleccionada={soloSeleccionada}
-                visibilityCount={visibilityCount}
                 hasActiveLoops={hasActiveLoops}
                 activeLoopsCount={activeLoopsCount}
                 isInegiMode={isInegiMode}

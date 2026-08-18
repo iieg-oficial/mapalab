@@ -11,7 +11,6 @@ const ActiveLayersToolbar = ({
     displayedLayers,
     isFiltering,
     soloSeleccionada,
-    visibilityCount,
     hasActiveLoops,
     activeLoopsCount,
     isInegiMode,
@@ -41,24 +40,22 @@ const ActiveLayersToolbar = ({
         <>
             <div className="flex items-center justify-between shrink-0 mb-2 gap-1.5">
                 <div className="flex items-center gap-2 md:gap-3 shrink md:shrink-0 min-w-0">
-                    <button
-                        type="button"
-                        disabled={noLayers}
-                        className={`group/vis flex items-center gap-1 shrink-0 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                        onClick={onToggleVisibilityAll}
-                    >
-                        <span className={`relative p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/vis:border-purple'}`}>
-                            <Icon name="visible" state={soloSeleccionada ? 'hover' : 'gray'} className="size-5 shrink-0" />
-                            <Badge
-                                visible={visibilityCount > 0}
-                                count={visibilityCount}
-                                color="purple"
-                                size="sm"
-                                className="absolute -top-1 -right-1 pointer-events-none"
-                            />
-                        </span>
-                        <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium text-graphite whitespace-nowrap truncate leading-none pt-[1.5px]`}>{soloSeleccionada ? 'Mostrar todas' : 'Solo la seleccionada'}</span>
-                    </button>
+                    <Tooltip content={soloSeleccionada
+                        ? 'Volver a mostrar todas las capas que tienes activas'
+                        : 'Ocultar las demás y dejar visible solo la capa seleccionada'}>
+                        <button
+                            type="button"
+                            disabled={noLayers}
+                            aria-pressed={soloSeleccionada}
+                            className={`group/vis flex items-center gap-1 shrink-0 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                            onClick={onToggleVisibilityAll}
+                        >
+                            <span className={`p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/vis:border-purple'}`}>
+                                <Icon name="visible" state={soloSeleccionada ? 'hover' : 'gray'} className="size-5 shrink-0" />
+                            </span>
+                            <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium text-graphite whitespace-nowrap truncate leading-none pt-[1.5px]`}>{soloSeleccionada ? 'Mostrar todas' : 'Solo la seleccionada'}</span>
+                        </button>
+                    </Tooltip>
 
                     <div className="relative shrink-0">
                         <button

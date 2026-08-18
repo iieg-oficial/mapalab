@@ -17,18 +17,21 @@ tooltip.
 ### Agregado: botón para quitar el relleno de los hexágonos
 
 El relleno se apagaba solo en las capas que no estaban seleccionadas, y eso obligaba a cambiar de
-capa para ver otra cosa. Ahora es un botón por capa, junto al segmento: se queda como lo dejes.
+capa para ver otra cosa. Ahora es un botón por capa que **ocupa el lugar del de opacidad mientras la
+capa está en hexágonos**, en la barra de acciones del item: se queda como lo dejes.
 
 ### Cambiado: el botón de visibilidad aísla la capa seleccionada
 
 Antes alternaba entre mostrar y ocultar **todas**, que con una sola capa activa no hacía nada útil.
 Ahora deja visible sólo la capa seleccionada y sus hijas, y al pulsarlo de nuevo devuelve todas.
+Perdió el contador —decía cuántas capas se ven, que no es lo que hace el botón— y ganó un tooltip
+que explica el efecto antes de pulsarlo.
 
 ### Cambiado: la etiqueta de estado de capa se reduce a su inicial
 
 «Actualizada», «Nueva» y «Próximamente» ocupaban más que el nombre de la capa en un panel estrecho.
-Queda un círculo con la inicial —**A**, **N**, **P**— y el nombre completo, su descripción y la
-fecha de vigencia pasan al tooltip.
+Queda un círculo con la inicial —**A**, **N**, **P**— junto al icono de tipo de geometría, y el
+nombre completo, su descripción y la fecha de vigencia pasan al tooltip.
 
 ## [1.132.1] - 2026-08-18
 

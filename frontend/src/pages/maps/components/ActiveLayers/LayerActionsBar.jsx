@@ -16,6 +16,9 @@ const LayerActionsBar = ({
     isLooping,
     canOpenModal,
     opacity = 1,
+    enHexagonos = false,
+    conFondo = true,
+    onToggleFondo,
     onToggleVisibility,
     onOpenDetails,
     onChangeOpacity,
@@ -77,20 +80,32 @@ const LayerActionsBar = ({
                 </Tooltip>
             )}
 
-            <Tooltip content={`Opacidad${sideTag}${opacityCustom ? `: ${opacityPercent}%` : ''}`}>
-                <button
-                    ref={opacityButtonRef}
-                    className={`${BUTTON_BASE} hover:border-[#70308A] flex items-center justify-center text-gray-500 hover:text-[#5C2472]`}
-                    onClick={(e) => { e.stopPropagation(); setIsOpacityOpen(p => !p); }}
-                >
-                    {opacityCustom ? (
-                        <span className={`${SIZE_BUTTON} flex items-center justify-center text-[10px] font-garet font-bold tabular-nums leading-none`}>{opacityPercent}</span>
-                    ) : (
-                        <Icon name="opacity" className={SIZE_BUTTON} />
-                    )}
-                </button>
-            </Tooltip>
-            {isOpacityOpen && (
+            {enHexagonos ? (
+                <Tooltip content={conFondo ? 'Quitar el relleno y dejar solo el contorno' : 'Rellenar los hexágonos'}>
+                    <button
+                        aria-pressed={!conFondo}
+                        className={`${BUTTON_BASE} hover:border-[#70308A] flex items-center justify-center ${conFondo ? 'text-[#5C2472]' : 'text-gray-400'}`}
+                        onClick={(e) => { e.stopPropagation(); onToggleFondo?.(); }}
+                    >
+                        <Icon name="geom_hexbin" className={SIZE_BUTTON} />
+                    </button>
+                </Tooltip>
+            ) : (
+                <Tooltip content={`Opacidad${sideTag}${opacityCustom ? `: ${opacityPercent}%` : ''}`}>
+                    <button
+                        ref={opacityButtonRef}
+                        className={`${BUTTON_BASE} hover:border-[#70308A] flex items-center justify-center text-gray-500 hover:text-[#5C2472]`}
+                        onClick={(e) => { e.stopPropagation(); setIsOpacityOpen(p => !p); }}
+                    >
+                        {opacityCustom ? (
+                            <span className={`${SIZE_BUTTON} flex items-center justify-center text-[10px] font-garet font-bold tabular-nums leading-none`}>{opacityPercent}</span>
+                        ) : (
+                            <Icon name="opacity" className={SIZE_BUTTON} />
+                        )}
+                    </button>
+                </Tooltip>
+            )}
+            {!enHexagonos && isOpacityOpen && (
                 <LayerOpacityPopover
                     anchorRef={opacityButtonRef}
                     value={opacity}

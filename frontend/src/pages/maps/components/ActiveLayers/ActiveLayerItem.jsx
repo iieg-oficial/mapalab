@@ -55,7 +55,9 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         setActiveSlot,
         centerOnLayer,
         pulseLayer,
-        getServiceMode
+        getServiceMode,
+        tieneFondo,
+        toggleHexbinFondo
     } = useMapsContext();
 
     const { findEventoByLayerId } = useEventoContext();
@@ -129,15 +131,15 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         toggleLayerVisibility(layer.id);
     };
 
-    const handleSetSelectedLayerClick = (e) => {
-        e.stopPropagation();
-        setSelectedLayer(layer);
-    };
+    const handleSetSelectedLayerClick = (e) => { e.stopPropagation(); setSelectedLayer(layer); };
 
     const loopState = getLoopState?.(layer.id);
     const isLooping = loopState?.isPlaying;
 
     const layerDef = useMemo(() => findLayerDef(layer.id, allLayers), [layer.id, allLayers]);
+    const hexbinIds = layer.childIds?.length ? layer.childIds : [layer.id];
+    const enHexagonos = hasHexbinMode(hexbinIds, getServiceMode);
+
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
     const dateFilter = getSpecificFilter?.(layer.id, 'date') || null;
 
@@ -168,10 +170,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         return inferLoopConfig?.(layer.id) != null;
     }, [isLooping, inferLoopConfig, layer.id]);
 
-    const handlePlayClick = (e) => {
-        e.stopPropagation();
-        toggleLoop?.(layer.id);
-    };
+    const handlePlayClick = (e) => { e.stopPropagation(); toggleLoop?.(layer.id); };
 
     const handleIntervalClick = (e) => {
         e.stopPropagation();
@@ -241,7 +240,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                             <EventoLayerIcon evento={layerEvento} />
                         )}
                         <LayerTitle name={layer.name} />
-                        <GeometryTypeBadge type={layer.geometryType} hexbin={hasHexbinMode(layer.childIds || [layer.id], getServiceMode)} /><LayerBadge badge={layer.badge} />
+                        <LayerBadge badge={layer.badge} />
+                        <GeometryTypeBadge type={layer.geometryType} hexbin={enHexagonos} />
                         {isLoading && !isLooping && (
                             <Loading visible={true} size="size-5" border="border-2" />
                         )}
@@ -281,6 +281,9 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 onToggleVisibility={handleToggleVisibilityClick}
                                 onOpenDetails={handleSetSelectedLayerClick}
                                 onChangeOpacity={(v) => setLayerOpacity?.(layer.id, v)}
+                                enHexagonos={enHexagonos}
+                                conFondo={tieneFondo?.(hexbinIds[0]) !== false}
+                                onToggleFondo={() => toggleHexbinFondo?.(hexbinIds)}
                                 onRemove={handleRemoveClick}
                                 hasLegend={layerHasLegend}
                                 slotMembership={slotMembership}
