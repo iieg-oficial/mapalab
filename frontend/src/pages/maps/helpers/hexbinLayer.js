@@ -77,6 +77,24 @@ export const createHexbinLayer = ({ layerId, zIndex, opacity }) => {
     return layer;
 };
 
+export const fillHexbinLayerFromCells = (layer, celdas) => {
+    const totales = celdas.map(celda => Number(celda.get('total')) || 0);
+    const breaks = quantileBreaks(totales, HEXBIN_CLASSES);
+    const max = totales.length ? Math.max(...totales) : 0;
+
+    celdas.forEach(celda => {
+        celda.set('count', Number(celda.get('total')) || 0);
+        celda.set('h3Index', celda.get('h3_index'));
+    });
+
+    layer.set('hexbinBreaks', breaks);
+    layer.set('hexbinMax', max);
+    const source = layer.getSource();
+    source.clear(true);
+    source.addFeatures(celdas);
+    return { breaks, max, cells: celdas.length };
+};
+
 export const fillHexbinLayer = (layer, features, resolution) => {
     const { features: hexes, breaks, max } = buildHexbinFeatures(features, resolution);
     layer.set('hexbinBreaks', breaks);

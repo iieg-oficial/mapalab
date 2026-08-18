@@ -9,7 +9,8 @@ import { findWMSConfig, findLayerDef } from '../helpers/wmsConfig';
 import { buildLayerCqlSegment } from '../helpers/layerCqlSegment';
 import { computeLayerZIndex } from '../helpers/layerZIndex';
 import { createVectorLayerStyle, resolveVectorColor } from '../helpers/vectorLayerStyles';
-import { createHexbinLayer, fillHexbinLayer } from '../helpers/hexbinLayer';
+import { createHexbinLayer, fillHexbinLayer, fillHexbinLayerFromCells } from '../helpers/hexbinLayer';
+import { fetchAggregatedCells, PRECOMPUTED_RESOLUTIONS } from '@services/hexbinAggregateService';
 import { resolutionForZoom } from '@constants/hexbin';
 import { VECTOR_FEATURE_LIMIT, VECTOR_LAYER_FLAG, SERVICE_HEXBIN } from '../helpers/serviceMode';
 import { countVectorFeatures, fetchVectorFeatures, VECTOR_PROJECTION } from '@services/vectorLayerService';
@@ -76,11 +77,33 @@ export const useVectorServiceLayerManager = ({
 
     const currentZoom = useCallback(() => mapRef.current?.getView?.()?.getZoom?.(), [mapRef]);
 
+    const _usarPrecalculado = useCallback(async (groupKey, memberIds, zoom, controller) => {
+        const resolucion = resolutionForZoom(zoom);
+        if (!PRECOMPUTED_RESOLUTIONS.has(resolucion)) return null;
+
+        const celdas = await fetchAggregatedCells(memberIds, resolucion, controller.signal);
+        if (!celdas?.length || controller.signal.aborted) return null;
+
+        const entry = entriesRef.current.get(groupKey);
+        if (!entry) return null;
+
+        entry.precalculado = true;
+        return fillHexbinLayerFromCells(entry.layer, celdas);
+    }, []);
+
     const loadInto = useCallback(async (groupKey, target, controller) => {
-        const { wmsConfig, cqlFilter, memberIds, hexbin } = target;
+        const { wmsConfig, cqlFilter, memberIds, hexbin, precalculable } = target;
         setGroupLoading(memberIds, true);
 
         try {
+            if (hexbin && precalculable) {
+                const stats = await _usarPrecalculado(groupKey, memberIds, currentZoom(), controller);
+                if (stats) {
+                    onHexbinStatsRef.current?.(memberIds, stats);
+                    return;
+                }
+            }
+
             const matched = await countVectorFeatures(wmsConfig, cqlFilter, controller.signal);
             if (controller.signal.aborted) return;
 
@@ -116,7 +139,7 @@ export const useVectorServiceLayerManager = ({
         } finally {
             setGroupLoading(memberIds, false);
         }
-    }, [setGroupLoading, currentZoom]);
+    }, [setGroupLoading, currentZoom, _usarPrecalculado]);
 
     const buildTargets = useCallback(() => {
         const groups = new Map();
@@ -137,6 +160,7 @@ export const useVectorServiceLayerManager = ({
             });
             if (segment === '1=0') return;
 
+            const sinFiltroUsuario = !getFilterRef.current?.(id) && !municipioContextRef.current?.active;
             const typeName = wmsConfig.wfsLayerName || wmsConfig.layerName;
             const groupKey = `${wmsConfig.baseUrl}|${typeName}|${vectorModes.get(id)}`;
             const existing = groups.get(groupKey);
@@ -147,13 +171,15 @@ export const useVectorServiceLayerManager = ({
                     index,
                     segments: [segment],
                     memberIds: [id],
-                    hexbin: vectorModes.get(id) === SERVICE_HEXBIN
+                    hexbin: vectorModes.get(id) === SERVICE_HEXBIN,
+                    precalculable: sinFiltroUsuario
                 });
                 return;
             }
 
             existing.segments.push(segment);
             existing.memberIds.push(id);
+            existing.precalculable = existing.precalculable && sinFiltroUsuario;
             if (index < existing.index) existing.index = index;
         });
 

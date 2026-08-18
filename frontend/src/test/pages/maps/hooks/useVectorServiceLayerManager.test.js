@@ -26,6 +26,11 @@ vi.mock('@services/vectorLayerService', () => ({
     fetchVectorFeatures: (...args) => mockFetch(...args)
 }));
 
+vi.mock('@services/hexbinAggregateService', () => ({
+    PRECOMPUTED_RESOLUTIONS: new Set([3, 4, 6, 7]),
+    fetchAggregatedCells: () => Promise.resolve(null)
+}));
+
 vi.mock('@hooks/useLayers', () => ({ useLayers: () => ({ layers: [] }) }));
 vi.mock('@hooks/useDebounce', () => ({ useDebounce: (value) => value }));
 vi.mock('@hooks/useLayerLoading', () => ({

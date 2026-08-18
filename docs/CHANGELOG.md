@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.131.0] - 2026-08-18
+
+### Agregado: los hexágonos usan los conteos precalculados cuando existen
+
+dataengine precalcula los conteos H3 de las capas de puntos (su 1.34.0) y sextante los publica como
+`general:hexbin_agregado`. El visor los usa ahora en vez de descargar los puntos y contarlos.
+
+La diferencia es de escala: la capa peor, `delitos_fiscalia_violencia_familiar`, pasa de traer
+**110 215 puntos y 50 MB** a traer **2 169 hexágonos ya contados**. Y como el tope de 20 000
+elementos existía para proteger esa descarga, deja de aplicar en este camino.
+
+Se usa lo precalculado sólo cuando **coincide con lo que el servidor agregó**: sin filtros del
+usuario, sin recorte por municipio y en una de las cuatro resoluciones que el job guarda —3, 4, 6
+y 7—. En cualquier otro caso se cae al cálculo en el navegador, que respeta cualquier filtro. Si la
+capa no está precalculada, la petición vuelve vacía y el visor sigue por el camino de siempre, sin
+error visible.
+
+La leyenda, el clic sobre la celda y el resaltado no cambian: las celdas precalculadas llegan con el
+mismo índice H3 y el mismo conteo que las calculadas en el cliente, porque **Python y JavaScript
+devuelven la misma celda para el mismo punto**.
+
 ## [1.130.0] - 2026-08-18
 
 ### Agregado: paleta secuencial propia para la agregación de datos
