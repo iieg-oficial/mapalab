@@ -132,6 +132,12 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
     });
 
     const { rejectVectorMode, applyHexbinStats } = ctx;
+
+    const selectedLayerIds = useMemo(() => {
+        const id = ctx.selectedLayerForSymbology?.id;
+        if (!id) return null;
+        return new Set([id, ...(getAllChildLayerIds?.(id) || [])]);
+    }, [ctx.selectedLayerForSymbology, getAllChildLayerIds]);
     const handleVectorTooLarge = useCallback((layerId, info) => {
         rejectVectorMode?.(layerId, { reason: 'too-large', ...info });
     }, [rejectVectorMode]);
@@ -145,7 +151,7 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         pinnedLayerIds, initialOrder, municipioContext,
         onTooLarge: handleVectorTooLarge, onError: handleVectorError,
         onHexbinStats: applyHexbinStats,
-        selectedLayerId: ctx.selectedLayerForSymbology?.id || null
+        selectedLayerIds
     });
 
     useMapInteractions(mapRef, handlePaneClick, isDrawing, markerClickedRef, editingClickedRef, ctx.municipioMode?.isInsideMunicipios);

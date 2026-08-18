@@ -5,6 +5,45 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.132.1] - 2026-08-18
+
+### Corregido: el zoom no reagrupaba las capas que vienen precalculadas
+
+Al cambiar de zoom sólo se reagrupaban las capas que descargan sus puntos. Las precalculadas no los
+tienen —traen celdas ya contadas— así que se quedaban con la resolución de su primera carga: unas
+capas cambiaban de tamaño de celda al alejar y otras no, en el mismo mapa. Ahora vuelven a pedir la
+resolución que toca, y cada capa recuerda con cuál quedó para no repetir la petición.
+
+### Corregido: el relleno no seguía a la capa seleccionada
+
+El panel de capas activas muestra **grupos**, y la comprobación se hacía contra las hojas del grupo,
+donde el id del grupo nunca aparece. Resultado: al seleccionar cualquier capa, ninguna se rellenaba.
+Ahora se compara contra la hoja seleccionada y sus hijas.
+
+### Corregido: las capas sin relleno se veían todas del mismo color
+
+El contorno tomaba el color de **la clase de cada celda** —el de la rampa—, y en las celdas de
+conteo bajo ese color es casi blanco: las capas de fondo quedaban pálidas e indistinguibles entre
+sí. Ahora usa el tono base de su capa. De paso el borde pasa a **0.9 px con 45 % de opacidad**, para
+que acompañe sin competir con la capa que sí lleva relleno.
+
+### Corregido: el control de opacidad no afectaba a los hexágonos
+
+Cuando las peticiones se agruparon por tabla, el registro de capas pasó a indexarse por grupo, pero
+el efecto de opacidad seguía usando esa clave como si fuera un id de capa: no encontraba nada y
+dejaba la opacidad en 1. Es el tercer sitio que quedó apuntando al id de capa después de ese cambio,
+junto con el clic y el relleno.
+
+### Cambiado: el tono de cada capa ya no depende de su posición en el panel
+
+Se asignaba por orden de aparición, así que reordenar el panel repintaba las capas. Ahora el tono se
+reserva cuando la capa entra en hexágonos y se conserva mientras siga agregada; al salir se libera
+para que lo tome la siguiente. **Sigue reasignándose al recargar la página**: el registro vive en
+memoria y no viaja en la sesión.
+
+El reagrupado por zoom salió a su propio hook, `useHexbinZoomRefresh`, y la elección de tono libre a
+`menorTonoLibre`, porque el manager se había pasado del máximo de 300 líneas.
+
 ## [1.132.0] - 2026-08-18
 
 ### Agregado: varias capas en hexágonos se distinguen entre sí

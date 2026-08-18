@@ -50,6 +50,13 @@ const mezclar = (hex, factor) => {
     return `#${[hacia(r), hacia(g), hacia(b)].map(v => v.toString(16).padStart(2, '0')).join('')}`;
 };
 
+export const menorTonoLibre = (usados) => {
+    const ocupados = usados instanceof Set ? usados : new Set(usados || []);
+    let libre = 0;
+    while (ocupados.has(libre)) libre += 1;
+    return libre;
+};
+
 export const rampFor = (paletteIndex) => {
     const base = baseColorFor(paletteIndex);
     if (!rampCache.has(base)) {
@@ -60,6 +67,9 @@ export const rampFor = (paletteIndex) => {
 };
 
 const FILL_ALPHA = 0.75;
+
+const OUTLINE_ALPHA = 0.45;
+const OUTLINE_WIDTH = 0.9;
 
 const styleCache = new Map();
 
@@ -84,16 +94,16 @@ export const hexbinStyle = (count, breaks, opciones = {}) => {
 
     if (!styleCache.has(key)) {
         const color = hexbinColor(count, breaks, paletteIndex);
-        const borde = selectedCell
-            ? new Stroke({ color: SELECTED_STROKE, width: 3 })
-            : new Stroke({
-                color: relleno ? 'rgba(255, 255, 255, 0.55)' : color,
-                width: relleno ? 1 : 1.6
-            });
-
         styleCache.set(key, new Style({
             fill: relleno ? new Fill({ color: withAlpha(color, FILL_ALPHA) }) : null,
-            stroke: borde
+            stroke: selectedCell
+                ? new Stroke({ color: SELECTED_STROKE, width: 3 })
+                : new Stroke({
+                    color: relleno
+                        ? 'rgba(255, 255, 255, 0.55)'
+                        : withAlpha(baseColorFor(paletteIndex), OUTLINE_ALPHA),
+                    width: relleno ? 1 : OUTLINE_WIDTH
+                })
         }));
     }
     return styleCache.get(key);

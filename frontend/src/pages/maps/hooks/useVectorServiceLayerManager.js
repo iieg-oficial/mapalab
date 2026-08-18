@@ -10,6 +10,8 @@ import { buildLayerCqlSegment } from '../helpers/layerCqlSegment';
 import { computeLayerZIndex } from '../helpers/layerZIndex';
 import { createVectorLayerStyle, resolveVectorColor } from '../helpers/vectorLayerStyles';
 import { createHexbinLayer, fillHexbinLayer, fillHexbinLayerFromCells } from '../helpers/hexbinLayer';
+import { menorTonoLibre } from '../helpers/hexbinStyles';
+import { useHexbinZoomRefresh } from './useHexbinZoomRefresh';
 import { fetchAggregatedCells, nearestPrecomputed } from '@services/hexbinAggregateService';
 import { resolutionForZoom } from '@constants/hexbin';
 import { VECTOR_FEATURE_LIMIT, VECTOR_LAYER_FLAG, SERVICE_HEXBIN } from '../helpers/serviceMode';
@@ -36,11 +38,12 @@ export const useVectorServiceLayerManager = ({
     onTooLarge,
     onError,
     onHexbinStats,
-    selectedLayerId = null
+    selectedLayerIds = null
 }) => {
     const { layers } = useLayers();
     const { setLayerLoading } = useLayerLoading();
     const entriesRef = useRef(new Map());
+    const palettesRef = useRef(new Map());
     const debouncedActiveLayerIds = useDebounce(activeLayerIds, 30);
     const debouncedHiddenLayerIds = useDebounce(hiddenLayerIds, 30);
 
@@ -67,12 +70,21 @@ export const useVectorServiceLayerManager = ({
         memberIds.forEach(id => setLayerLoading(id, isLoading));
     }, [setLayerLoading]);
 
+    const _tonoDe = useCallback((groupKey) => {
+        const registro = palettesRef.current;
+        if (!registro.has(groupKey)) {
+            registro.set(groupKey, menorTonoLibre(new Set(registro.values())));
+        }
+        return registro.get(groupKey);
+    }, []);
+
     const removeEntry = useCallback((groupKey) => {
         const entry = entriesRef.current.get(groupKey);
         if (!entry) return;
         entry.controller.abort();
         mapRef.current?.removeLayer(entry.layer);
         entriesRef.current.delete(groupKey);
+        palettesRef.current.delete(groupKey);
         setGroupLoading(entry.memberIds, false);
     }, [mapRef, setGroupLoading]);
 
@@ -89,6 +101,7 @@ export const useVectorServiceLayerManager = ({
         if (!entry) return null;
 
         entry.precalculado = true;
+        entry.resolucion = resolucion;
         return fillHexbinLayerFromCells(entry.layer, celdas);
     }, []);
 
@@ -128,7 +141,8 @@ export const useVectorServiceLayerManager = ({
             entry.features = features;
 
             if (hexbin) {
-                const stats = fillHexbinLayer(entry.layer, features, resolutionForZoom(currentZoom()));
+                entry.resolucion = resolutionForZoom(currentZoom());
+                const stats = fillHexbinLayer(entry.layer, features, entry.resolucion);
                 onHexbinStatsRef.current?.(memberIds, stats);
                 return;
             }
@@ -233,7 +247,6 @@ export const useVectorServiceLayerManager = ({
         if (!mapRef.current) return;
 
         const targets = buildTargets();
-        let indicePaleta = 0;
 
         Array.from(entriesRef.current.keys()).forEach(groupKey => {
             if (!targets.has(groupKey)) removeEntry(groupKey);
@@ -243,8 +256,7 @@ export const useVectorServiceLayerManager = ({
 
         targets.forEach((target, groupKey) => {
             if (target.hexbin) {
-                target.paletteIndex = indicePaleta;
-                indicePaleta += 1;
+                target.paletteIndex = _tonoDe(groupKey);
             }
 
             const representativeId = target.memberIds[0];
@@ -271,7 +283,7 @@ export const useVectorServiceLayerManager = ({
             if (existing) removeEntry(groupKey);
             createEntry(groupKey, target, zIndex, opacity);
         });
-    }, [mapRef, buildTargets, removeEntry, createEntry, debouncedActiveLayerIds]);
+    }, [mapRef, buildTargets, removeEntry, createEntry, debouncedActiveLayerIds, _tonoDe]);
 
     useEffect(syncLayers, [syncLayers]);
 
@@ -280,42 +292,23 @@ export const useVectorServiceLayerManager = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pinnedLayerIds, initialOrder, municipioContext, getFilter]);
 
-    useEffect(() => {
-        const map = mapRef.current;
-        if (!map) return undefined;
-
-        let lastResolution = null;
-
-        const reaggregate = () => {
-            const resolution = resolutionForZoom(map.getView()?.getZoom());
-            if (resolution === lastResolution) return;
-            lastResolution = resolution;
-
-            entriesRef.current.forEach((entry) => {
-                if (!entry.hexbin || !entry.features) return;
-                const stats = fillHexbinLayer(entry.layer, entry.features, resolution);
-                onHexbinStatsRef.current?.(entry.memberIds, stats);
-            });
-        };
-
-        map.on('moveend', reaggregate);
-        return () => map.un('moveend', reaggregate);
-    }, [mapRef]);
+    useHexbinZoomRefresh({ mapRef, entriesRef, usarPrecalculado: _usarPrecalculado, onStats: onHexbinStatsRef });
 
     useEffect(() => {
         entriesRef.current.forEach((entry) => {
             if (!entry.hexbin) return;
-            const conRelleno = !selectedLayerId || entry.memberIds.includes(selectedLayerId);
+            const conRelleno = !selectedLayerIds?.size
+                || entry.memberIds.some(id => selectedLayerIds.has(id));
             if (entry.layer.get('rellenoActivo') === conRelleno) return;
             entry.layer.set('rellenoActivo', conRelleno);
             entry.layer.changed();
         });
-    }, [selectedLayerId]);
+    }, [selectedLayerIds]);
 
     useEffect(() => {
         if (!getLayerOpacity) return;
-        entriesRef.current.forEach((entry, layerId) => {
-            const opacity = getLayerOpacity(layerId);
+        entriesRef.current.forEach((entry) => {
+            const opacity = getLayerOpacity(entry.memberIds[0]) ?? 1;
             if (entry.layer.getOpacity() !== opacity) entry.layer.setOpacity(opacity);
         });
     }, [layerOpacities, getLayerOpacity]);
