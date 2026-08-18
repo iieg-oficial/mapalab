@@ -10,7 +10,7 @@ import { buildLayerCqlSegment } from '../helpers/layerCqlSegment';
 import { computeLayerZIndex } from '../helpers/layerZIndex';
 import { createVectorLayerStyle, resolveVectorColor } from '../helpers/vectorLayerStyles';
 import { createHexbinLayer, fillHexbinLayer, fillHexbinLayerFromCells } from '../helpers/hexbinLayer';
-import { fetchAggregatedCells, PRECOMPUTED_RESOLUTIONS } from '@services/hexbinAggregateService';
+import { fetchAggregatedCells, nearestPrecomputed } from '@services/hexbinAggregateService';
 import { resolutionForZoom } from '@constants/hexbin';
 import { VECTOR_FEATURE_LIMIT, VECTOR_LAYER_FLAG, SERVICE_HEXBIN } from '../helpers/serviceMode';
 import { countVectorFeatures, fetchVectorFeatures, VECTOR_PROJECTION } from '@services/vectorLayerService';
@@ -78,8 +78,8 @@ export const useVectorServiceLayerManager = ({
     const currentZoom = useCallback(() => mapRef.current?.getView?.()?.getZoom?.(), [mapRef]);
 
     const _usarPrecalculado = useCallback(async (groupKey, memberIds, zoom, controller) => {
-        const resolucion = resolutionForZoom(zoom);
-        if (!PRECOMPUTED_RESOLUTIONS.has(resolucion)) return null;
+        const resolucion = nearestPrecomputed(resolutionForZoom(zoom));
+        if (!resolucion) return null;
 
         const celdas = await fetchAggregatedCells(memberIds, resolucion, controller.signal);
         if (!celdas?.length || controller.signal.aborted) return null;

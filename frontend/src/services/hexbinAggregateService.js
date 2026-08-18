@@ -1,9 +1,16 @@
 import GeoJSON from 'ol/format/GeoJSON';
 import { VECTOR_PROJECTION } from '@services/vectorLayerService';
 
-const HEXBIN_LAYER = 'general:hexbin_agregado';
+const HEXBIN_LAYER = 'mapalab:hexbin_agregado';
 
-export const PRECOMPUTED_RESOLUTIONS = new Set([3, 4, 6, 7]);
+export const PRECOMPUTED_RESOLUTIONS = new Set([3, 4, 5, 6, 7, 8]);
+
+export const nearestPrecomputed = (resolution) => {
+    if (!Number.isFinite(resolution)) return null;
+    if (PRECOMPUTED_RESOLUTIONS.has(resolution)) return resolution;
+    const menores = [...PRECOMPUTED_RESOLUTIONS].filter(r => r < resolution);
+    return menores.length ? Math.max(...menores) : null;
+};
 
 const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
 

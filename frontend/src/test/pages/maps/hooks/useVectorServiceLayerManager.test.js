@@ -27,7 +27,7 @@ vi.mock('@services/vectorLayerService', () => ({
 }));
 
 vi.mock('@services/hexbinAggregateService', () => ({
-    PRECOMPUTED_RESOLUTIONS: new Set([3, 4, 6, 7]),
+    nearestPrecomputed: (r) => (r >= 3 && r <= 8 ? r : 8),
     fetchAggregatedCells: () => Promise.resolve(null)
 }));
 

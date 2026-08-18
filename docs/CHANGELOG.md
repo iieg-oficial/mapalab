@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.131.1] - 2026-08-18
+
+### Corregido: los hexagonos no aparecian en el zoom inicial
+
+El visor pide la resolucion 5 al abrir el mapa y el precalculado no la tenia, asi que las capas
+grandes caian al calculo en el navegador y el tope de 20 000 las rechazaba: en delitos no habia
+forma de ver hexagonos. dataengine ya guarda de la 3 a la 8, y cuando el zoom pide una mas fina
+—de la 9 en adelante— el visor usa la mas fina disponible en vez de rendirse.
+
+La capa se movio al workspace `mapalab` de GeoServer, porque en `general` el reapuntado de
+datastores de sextante la dejaba inservible.
+
 ## [1.131.0] - 2026-08-18
 
 ### Agregado: los hexágonos usan los conteos precalculados cuando existen
