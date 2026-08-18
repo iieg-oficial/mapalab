@@ -5,6 +5,13 @@
     line-height: 1.5;
     font-weight: 400;
 
+    /* Paleta secuencial de dataviz: la consume JS, no clases de Tailwind */
+    --color-viz-seq-1: #E6D3EF;
+    --color-viz-seq-2: #C9A5DC;
+    --color-viz-seq-3: #A66FC0;
+    --color-viz-seq-4: #8039A0;
+    --color-viz-seq-5: #5C2472;
+
     color-scheme: light;
     color: #213547;
     background-color: #ffffff;

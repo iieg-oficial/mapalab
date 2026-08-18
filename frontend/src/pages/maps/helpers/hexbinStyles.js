@@ -3,13 +3,30 @@ import { classOf } from './h3Aggregation';
 
 export const HEXBIN_CLASSES = 5;
 
-export const HEXBIN_RAMP = [
-    '#EDE0F3',
-    '#D4B8E0',
-    '#B183C6',
-    '#8B4FA6',
+const FALLBACK_RAMP = [
+    '#E6D3EF',
+    '#C9A5DC',
+    '#A66FC0',
+    '#8039A0',
     '#5C2472'
 ];
+
+let cachedRamp = null;
+
+const readToken = (name, fallback) => {
+    if (typeof window === 'undefined' || !document?.documentElement) return fallback;
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+};
+
+export const hexbinRamp = () => {
+    if (!cachedRamp) {
+        cachedRamp = FALLBACK_RAMP.map((fallback, index) => readToken(`--color-viz-seq-${index + 1}`, fallback));
+    }
+    return cachedRamp;
+};
+
+export const clearRampCache = () => { cachedRamp = null; };
 
 const FILL_ALPHA = 0.75;
 
@@ -22,7 +39,10 @@ const withAlpha = (hex, alpha) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-export const hexbinColor = (count, breaks) => HEXBIN_RAMP[classOf(count, breaks)] || HEXBIN_RAMP[0];
+export const hexbinColor = (count, breaks) => {
+    const ramp = hexbinRamp();
+    return ramp[classOf(count, breaks)] || ramp[0];
+};
 
 export const SELECTED_STROKE = '#FF8300';
 
@@ -32,7 +52,7 @@ export const hexbinStyle = (count, breaks, isSelected = false) => {
 
     if (!styleCache.has(key)) {
         styleCache.set(key, new Style({
-            fill: new Fill({ color: withAlpha(HEXBIN_RAMP[index] || HEXBIN_RAMP[0], FILL_ALPHA) }),
+            fill: new Fill({ color: withAlpha(hexbinColor(count, breaks), FILL_ALPHA) }),
             stroke: isSelected
                 ? new Stroke({ color: SELECTED_STROKE, width: 3 })
                 : new Stroke({ color: 'rgba(255, 255, 255, 0.55)', width: 1 })
@@ -49,7 +69,7 @@ export const legendEntries = (breaks, max) => {
 
     return bounds.map((upper, index) => {
         const entry = {
-            color: HEXBIN_RAMP[index] || HEXBIN_RAMP[0],
+            color: hexbinRamp()[index] || hexbinRamp()[0],
             from: lower,
             to: upper
         };

@@ -3,7 +3,7 @@ import VectorSource from 'ol/source/Vector';
 import Feature from 'ol/Feature';
 import Polygon from 'ol/geom/Polygon';
 import { fromLonLat, toLonLat } from 'ol/proj';
-import { cellOf, cellRing, quantileBreaks, chooseBreakdownField, breakdownOf } from './h3Aggregation';
+import { cellOf, cellRing, quantileBreaks } from './h3Aggregation';
 import { hexbinStyle, HEXBIN_CLASSES } from './hexbinStyles';
 import { VECTOR_PROJECTION } from '@services/vectorLayerService';
 
@@ -33,7 +33,6 @@ export const pointsFromFeatures = (features) => {
 
 export const buildHexbinFeatures = (features, resolution) => {
     const byCell = new Map();
-    const breakdownField = chooseBreakdownField(features);
 
     (features || []).forEach((feature) => {
         pointsFromFeatures([feature]).forEach((lonLat) => {
@@ -44,7 +43,7 @@ export const buildHexbinFeatures = (features, resolution) => {
         });
     });
 
-    if (byCell.size === 0) return { features: [], breaks: [], max: 0, breakdownField: null };
+    if (byCell.size === 0) return { features: [], breaks: [], max: 0 };
 
     const values = Array.from(byCell.values(), members => members.length);
     const breaks = quantileBreaks(values, HEXBIN_CLASSES);
@@ -55,13 +54,10 @@ export const buildHexbinFeatures = (features, resolution) => {
         const feature = new Feature({ geometry: new Polygon([[...ring, ring[0]]]) });
         feature.set('h3Index', cell);
         feature.set('count', members.length);
-        feature.set('breakdownField', breakdownField);
-        feature.set('breakdown', breakdownOf(members, breakdownField));
-        feature.set('members', members);
         return feature;
     });
 
-    return { features: hexes, breaks, max, breakdownField };
+    return { features: hexes, breaks, max };
 };
 
 export const createHexbinLayer = ({ layerId, zIndex, opacity }) => {

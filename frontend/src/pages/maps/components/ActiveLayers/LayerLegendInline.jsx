@@ -26,7 +26,7 @@ const LayerLegendInline = ({ layer, compareMode, slotMembership }) => {
         if (!stats) return null;
         return (
             <div className="w-full bg-white rounded-[13px] overflow-hidden">
-                <HexbinLegend entries={legendEntries(stats.breaks, stats.max)} cells={stats.cells} />
+                <HexbinLegend entries={legendEntries(stats.breaks, stats.max)} />
             </div>
         );
     }
