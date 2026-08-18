@@ -12,6 +12,13 @@
     --color-viz-seq-4: #8039A0;
     --color-viz-seq-5: #5C2472;
 
+    /* Categorica: el tono base de cada capa agregada, rota cada 5 */
+    --color-viz-cat-1: #5C2472;
+    --color-viz-cat-2: #D55E00;
+    --color-viz-cat-3: #0072B2;
+    --color-viz-cat-4: #117733;
+    --color-viz-cat-5: #CC79A7;
+
     color-scheme: light;
     color: #213547;
     background-color: #ffffff;

@@ -35,7 +35,8 @@ export const useVectorServiceLayerManager = ({
     municipioContext = EMPTY_MUNICIPIO_CTX,
     onTooLarge,
     onError,
-    onHexbinStats
+    onHexbinStats,
+    selectedLayerId = null
 }) => {
     const { layers } = useLayers();
     const { setLayerLoading } = useLayerLoading();
@@ -199,7 +200,7 @@ export const useVectorServiceLayerManager = ({
         const layerDef = findLayerDef(layerId, layers);
 
         const layer = target.hexbin
-            ? createHexbinLayer({ layerId, zIndex, opacity })
+            ? createHexbinLayer({ layerId, zIndex, opacity, paletteIndex: target.paletteIndex || 0 })
             : new VectorLayer({
                 source: new VectorSource(),
                 zIndex,
@@ -232,6 +233,7 @@ export const useVectorServiceLayerManager = ({
         if (!mapRef.current) return;
 
         const targets = buildTargets();
+        let indicePaleta = 0;
 
         Array.from(entriesRef.current.keys()).forEach(groupKey => {
             if (!targets.has(groupKey)) removeEntry(groupKey);
@@ -240,6 +242,11 @@ export const useVectorServiceLayerManager = ({
         const total = debouncedActiveLayerIds.length;
 
         targets.forEach((target, groupKey) => {
+            if (target.hexbin) {
+                target.paletteIndex = indicePaleta;
+                indicePaleta += 1;
+            }
+
             const representativeId = target.memberIds[0];
             const zIndex = computeLayerZIndex({
                 layerId: representativeId,
@@ -254,6 +261,10 @@ export const useVectorServiceLayerManager = ({
             if (existing && existing.cqlFilter === target.cqlFilter && existing.hexbin === target.hexbin) {
                 if (existing.layer.getZIndex() !== zIndex) existing.layer.setZIndex(zIndex);
                 if (existing.layer.getOpacity() !== opacity) existing.layer.setOpacity(opacity);
+                if (target.hexbin && existing.layer.get('paletteIndex') !== target.paletteIndex) {
+                    existing.layer.set('paletteIndex', target.paletteIndex);
+                    existing.layer.changed();
+                }
                 return;
             }
 
@@ -290,6 +301,16 @@ export const useVectorServiceLayerManager = ({
         map.on('moveend', reaggregate);
         return () => map.un('moveend', reaggregate);
     }, [mapRef]);
+
+    useEffect(() => {
+        entriesRef.current.forEach((entry) => {
+            if (!entry.hexbin) return;
+            const conRelleno = !selectedLayerId || entry.memberIds.includes(selectedLayerId);
+            if (entry.layer.get('rellenoActivo') === conRelleno) return;
+            entry.layer.set('rellenoActivo', conRelleno);
+            entry.layer.changed();
+        });
+    }, [selectedLayerId]);
 
     useEffect(() => {
         if (!getLayerOpacity) return;

@@ -3,7 +3,7 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { fromLonLat } from 'ol/proj';
 import { buildHexbinFeatures, pointsFromFeatures } from '@pages/maps/helpers/hexbinLayer';
-import { legendEntries, hexbinRamp } from '@pages/maps/helpers/hexbinStyles';
+import { legendEntries, hexbinRamp, baseColorFor, rampFor } from '@pages/maps/helpers/hexbinStyles';
 
 const punto = (lon, lat) => new Feature({ geometry: new Point(fromLonLat([lon, lat], 'EPSG:3857')) });
 
@@ -75,5 +75,34 @@ describe('legendEntries', () => {
 
     it('sin máximo no hay leyenda', () => {
         expect(legendEntries([], null)).toEqual([]);
+    });
+});
+
+describe('paleta por capa', () => {
+    it('rota cada cinco capas', () => {
+        expect(baseColorFor(0)).toBe(baseColorFor(5));
+        expect(baseColorFor(1)).toBe(baseColorFor(6));
+    });
+
+    it('da un tono distinto a cada una de las cinco', () => {
+        const tonos = [0, 1, 2, 3, 4].map(baseColorFor);
+        expect(new Set(tonos).size).toBe(5);
+    });
+
+    it('sobrevive a índices negativos o raros', () => {
+        expect(baseColorFor(-1)).toBeTruthy();
+        expect(baseColorFor(undefined)).toBe(baseColorFor(0));
+    });
+
+    it('cada rampa va de claro a su tono base', () => {
+        const rampa = rampFor(1);
+        expect(rampa.length).toBe(5);
+        expect(rampa[4].toLowerCase()).toBe(baseColorFor(1).toLowerCase());
+        expect(rampa[0]).not.toBe(rampa[4]);
+    });
+
+    it('la leyenda usa la rampa de su capa', () => {
+        const conTono = legendEntries([2, 5], 9, 2);
+        expect(conTono.map(e => e.color)).toEqual(rampFor(2).slice(0, conTono.length));
     });
 });

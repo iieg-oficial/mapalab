@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.132.0] - 2026-08-18
+
+### Agregado: varias capas en hexágonos se distinguen entre sí
+
+Con una sola rampa morada, dos capas agregadas a la vez se veían igual y no había forma de saber
+cuál era cuál. Ahora cada capa toma un tono de una **paleta categórica de cinco** —`--color-viz-cat-*`—
+y su escala va de claro a ese tono. A partir de la sexta los tonos se repiten, y está bien: con seis
+superficies encimadas no se distingue nada por mucho color que se les ponga.
+
+Los cinco tonos salen del morado institucional más cuatro de Okabe-Ito, la referencia para
+daltonismo. Medido: el par más cercano bajo deuteranopia queda en 37 sobre 255, por debajo de los 40
+que uno querría, y no hay combinación de cinco que lo supere. Se compensa por dos vías: los tonos
+están separados en luminancia y, sobre todo, **sólo la capa seleccionada lleva relleno**.
+
+Esa es la otra mitad del cambio: las capas agregadas que no están seleccionadas se dibujan **sólo
+con el contorno** de su tono. Se sigue viendo dónde cae cada una, pero una sola compite por la
+atención, que es la única forma de que un mapa de densidad se lea. Es la opción A del plan
+`jerarquia-visual-capas.md`, aplicada aquí.
+
+La leyenda de cada capa usa su propia rampa, tanto en el panel como en el mapa exportado.
+
 ## [1.131.1] - 2026-08-18
 
 ### Corregido: los hexagonos no aparecian en el zoom inicial

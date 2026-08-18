@@ -144,7 +144,8 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         getFilter, combineCQLFilters, getLayerOpacity, layerOpacities,
         pinnedLayerIds, initialOrder, municipioContext,
         onTooLarge: handleVectorTooLarge, onError: handleVectorError,
-        onHexbinStats: applyHexbinStats
+        onHexbinStats: applyHexbinStats,
+        selectedLayerId: ctx.selectedLayerForSymbology?.id || null
     });
 
     useMapInteractions(mapRef, handlePaneClick, isDrawing, markerClickedRef, editingClickedRef, ctx.municipioMode?.isInsideMunicipios);

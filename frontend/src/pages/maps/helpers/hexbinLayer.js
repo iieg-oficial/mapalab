@@ -60,20 +60,21 @@ export const buildHexbinFeatures = (features, resolution) => {
     return { features: hexes, breaks, max };
 };
 
-export const createHexbinLayer = ({ layerId, zIndex, opacity }) => {
+export const createHexbinLayer = ({ layerId, zIndex, opacity, paletteIndex = 0 }) => {
     const layer = new VectorLayer({
         source: new VectorSource(),
         zIndex,
         opacity,
         layerId,
+        paletteIndex,
         [HEXBIN_LAYER_FLAG]: true
     });
 
-    layer.setStyle((feature) => hexbinStyle(
-        feature.get('count'),
-        layer.get('hexbinBreaks') || [],
-        feature.get('h3Index') === layer.get('selectedCell')
-    ));
+    layer.setStyle((feature) => hexbinStyle(feature.get('count'), layer.get('hexbinBreaks') || [], {
+        selectedCell: feature.get('h3Index') === layer.get('selectedCell'),
+        paletteIndex: layer.get('paletteIndex') || 0,
+        relleno: layer.get('rellenoActivo') !== false
+    }));
     return layer;
 };
 
@@ -92,7 +93,7 @@ export const fillHexbinLayerFromCells = (layer, celdas) => {
     const source = layer.getSource();
     source.clear(true);
     source.addFeatures(celdas);
-    return { breaks, max, cells: celdas.length };
+    return { breaks, max, cells: celdas.length, paletteIndex: layer.get('paletteIndex') || 0 };
 };
 
 export const fillHexbinLayer = (layer, features, resolution) => {
@@ -102,5 +103,5 @@ export const fillHexbinLayer = (layer, features, resolution) => {
     const source = layer.getSource();
     source.clear(true);
     source.addFeatures(hexes);
-    return { breaks, max, cells: hexes.length };
+    return { breaks, max, cells: hexes.length, paletteIndex: layer.get('paletteIndex') || 0 };
 };
