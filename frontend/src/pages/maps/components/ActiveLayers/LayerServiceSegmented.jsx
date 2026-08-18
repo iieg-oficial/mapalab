@@ -19,7 +19,7 @@ const rejectionMessage = (rejection) => {
     return 'No se pudieron traer los datos: se queda en Puntos.';
 };
 
-const LayerServiceSegmented = ({ layer }) => {
+const LayerServiceSegmented = ({ layer, fallback = null }) => {
     const { getServiceMode, setServiceMode, getVectorRejection, allLayers, activeLayerIds } = useMapsContext();
 
     const targetIds = useMemo(() => {
@@ -27,7 +27,7 @@ const LayerServiceSegmented = ({ layer }) => {
         return resolveVectorTargets(childIds, allLayers, activeLayerIds, { pointsOnly: true });
     }, [layer, allLayers, activeLayerIds]);
 
-    if (!VECTOR_SERVICE_ENABLED || targetIds.length === 0) return null;
+    if (!VECTOR_SERVICE_ENABLED || targetIds.length === 0) return fallback;
 
     const message = rejectionMessage(getVectorRejection?.(targetIds[0]));
 

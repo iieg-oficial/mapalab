@@ -10,9 +10,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 ### Cambiado: el control de hexágonos vuelve al item de su capa
 
 Estaba en la barra del panel, junto al switch IIEG/INEGI, y ahí parecía que aplicaba a todas las
-capas. Vuelve al item de la capa que afecta, y con **iconos en vez de texto** —un punto y un
-hexágono— para que quepa sin empujar el resto de la fila. El nombre de cada opción sigue en su
-tooltip.
+capas. Vuelve al item de la capa que afecta, **ocupando el sitio del icono de tipo de geometría** en
+la misma fila del nombre: así no añade un renglón al item. Sus dos opciones son iconos —un punto y
+un hexágono— con el nombre en el tooltip, y en las capas que no admiten agregación el icono de tipo
+se queda como estaba.
 
 ### Agregado: botón para quitar el relleno de los hexágonos
 
@@ -24,8 +25,9 @@ capa está en hexágonos**, en la barra de acciones del item: se queda como lo d
 
 Antes alternaba entre mostrar y ocultar **todas**, que con una sola capa activa no hacía nada útil.
 Ahora deja visible sólo la capa seleccionada y sus hijas, y al pulsarlo de nuevo devuelve todas.
-Perdió el contador —decía cuántas capas se ven, que no es lo que hace el botón— y ganó un tooltip
-que explica el efecto antes de pulsarlo.
+Perdió el contador —decía cuántas capas se ven, que no es lo que hace el botón—, ganó un tooltip que
+explica el efecto antes de pulsarlo y estrena icono: tres capas apiladas con la de arriba destacada,
+que dice lo que hace mejor que el ojo genérico.
 
 ### Cambiado: la etiqueta de estado de capa se reduce a su inicial
 

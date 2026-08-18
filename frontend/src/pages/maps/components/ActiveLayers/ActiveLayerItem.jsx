@@ -131,6 +131,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         toggleLayerVisibility(layer.id);
     };
 
+
     const handleSetSelectedLayerClick = (e) => { e.stopPropagation(); setSelectedLayer(layer); };
 
     const loopState = getLoopState?.(layer.id);
@@ -179,10 +180,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         setLoopIntervalMs?.(layer.id, LOOP_INTERVAL_PRESETS[nextIdx]);
     };
 
-    const handleDirectionClick = (e) => {
-        e.stopPropagation();
-        setLoopDirection?.(layer.id, loopDirection === 'rtl' ? 'ltr' : 'rtl');
-    };
+    const handleDirectionClick = (e) => { e.stopPropagation(); setLoopDirection?.(layer.id, loopDirection === 'rtl' ? 'ltr' : 'rtl'); };
 
     const isLoading = useMemo(() => {
         if (loadingLayers.has(layer.id)) return true;
@@ -241,7 +239,10 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                         )}
                         <LayerTitle name={layer.name} />
                         <LayerBadge badge={layer.badge} />
-                        <GeometryTypeBadge type={layer.geometryType} hexbin={enHexagonos} />
+                        <LayerServiceSegmented
+                            layer={layer}
+                            fallback={<GeometryTypeBadge type={layer.geometryType} hexbin={enHexagonos} />}
+                        />
                         {isLoading && !isLooping && (
                             <Loading visible={true} size="size-5" border="border-2" />
                         )}
@@ -270,7 +271,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 onDirection={handleDirectionClick}
                                 onCycleSlot={handleCycleSlot}
                             />
-                            <LayerServiceSegmented layer={layer} />
                             <LayerActionsBar
                                 layerId={layer.id}
                                 visible={layer.visible}

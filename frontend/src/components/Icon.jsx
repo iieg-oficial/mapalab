@@ -159,6 +159,13 @@ const icons = {
             <circle cx="3.5" cy="18.5" r="1.6" fill="currentColor" stroke="none" />
         </svg>
     ),
+    solo_capa: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round">
+            <path d="M12 3 20.5 7.5 12 12 3.5 7.5z" fill="currentColor" stroke="none" />
+            <path d="M4.5 12.5 12 16.3l7.5-3.8" opacity="0.45" />
+            <path d="M4.5 17 12 20.8l7.5-3.8" opacity="0.22" />
+        </svg>
+    ),
     geom_hexbin: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
             <path d="M12 3 19 7v10l-7 4-7-4V7z" fill="currentColor" fillOpacity="0.32" />
