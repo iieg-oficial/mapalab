@@ -5,6 +5,51 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.130.0] - 2026-08-18
+
+### Agregado: paleta secuencial propia para la agregación de datos
+
+`identidad-visual.md` exige una paleta **secuencial** para datos ordenados, y mapalab no tenía
+ninguna: sólo los tokens de marca. Se declaran `--color-viz-seq-1` … `-5` y la rampa del hexbin los
+lee en runtime, con los hex como respaldo, así que cambiar el token cambia el mapa sin recompilar.
+
+Al validarla salió una mejora: la rampa anterior arrancaba en `#EDE0F3`, con **1.27 de contraste
+contra blanco**, y la celda de menos elementos era casi invisible sobre el mapa. La nueva arranca en
+`#E6D3EF` y gana en las dos dimensiones que importan: **1.41 contra blanco** y **1.51 de salto
+mínimo entre clases**, antes 1.41. Sigue siendo monocroma derivada del morado institucional, así
+que es segura para daltonismo por construcción.
+
+Los tokens van en `:root`, no en `@theme`: **Tailwind 4 hace tree-shaking de los tokens de `@theme`
+que ninguna clase utilitaria usa**, y éstos los consume JavaScript. Puestos ahí, no llegaban al CSS.
+
+### Corregido: la resolución de los hexágonos estaba mal en los extremos del zoom
+
+La tabla que traduce zoom a resolución H3 daba **97 celdas a lo ancho en el zoom 5** —una maraña— y
+sólo **8 en el 17**. Recalculada contra el tamaño real de las celdas en Jalisco y un viewport de
+1 200 px, todo el rango 5–18 queda ahora entre **11 y 48 celdas**. Para cubrir la vista más alejada
+hubo que admitir la resolución 3, de celdas de 75 km.
+
+Un test recorre los catorce niveles de zoom y falla si alguno sale de ese rango, para que la tabla
+no se vuelva a ajustar a ojo.
+
+### Corregido: el mapa exportado llevaba la leyenda equivocada
+
+Al exportar una capa en modo hexágonos se incrustaba la leyenda **del servidor**, que describe la
+simbología de los puntos y no la escala de la agregación. El PDF dibuja ahora los recuadros de
+color del hexbin con sus rangos.
+
+### Cambiado: la leyenda del hexbin en el panel de capas
+
+Sin el encabezado «Elementos por celda» y con más aire respecto al contenedor.
+
+### Eliminado: el desglose por atributo que ya nadie leía
+
+Cuando el clic sobre un hexágono pasó al Resumen de Selección, el desglose por atributo se quedó
+huérfano: se calculaba en cada agregación —un `Map` por celda, 4 802 de ellas en la resolución 8, más
+un barrido de 500 elementos para elegir el campo— y ningún componente leía el resultado. El Resumen
+ya da ese desglose por capa. Se retiró también la lista de elementos que cada celda guardaba, que
+retenía referencias a todas las geometrías.
+
 ## [1.129.0] - 2026-08-17
 
 ### Agregado: las capas de puntos se pueden ver agrupadas en hexágonos
