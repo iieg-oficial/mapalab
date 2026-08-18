@@ -7,7 +7,7 @@ const baseProps = {
     unifiedLayers: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }],
     displayedLayers: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }],
     isFiltering: false,
-    allHidden: false,
+    soloSeleccionada: false,
     visibilityCount: 2,
     hasActiveLoops: false,
     activeLoopsCount: 0,
@@ -28,7 +28,7 @@ const baseProps = {
 describe('ActiveLayersToolbar - modo botones', () => {
     it('renderiza el switch IIEG/INEGI y los botones de acción', () => {
         render(<ActiveLayersToolbar {...baseProps} />);
-        expect(screen.getByText(/Ocultar mis capas/i)).toBeInTheDocument();
+        expect(screen.getByText(/Solo la seleccionada/i)).toBeInTheDocument();
         expect(screen.getByText(/Eliminar mis capas/i)).toBeInTheDocument();
     });
 
@@ -51,13 +51,18 @@ describe('ActiveLayersToolbar - modo botones', () => {
     it('invoca onToggleVisibilityAll al hacer click en el botón de visibilidad', () => {
         const onToggleVisibilityAll = vi.fn();
         render(<ActiveLayersToolbar {...baseProps} onToggleVisibilityAll={onToggleVisibilityAll} />);
-        fireEvent.click(screen.getByText(/Ocultar mis capas/i));
+        fireEvent.click(screen.getByText(/Solo la seleccionada/i));
         expect(onToggleVisibilityAll).toHaveBeenCalled();
     });
 
-    it('cambia el label de visibilidad cuando allHidden=true', () => {
-        render(<ActiveLayersToolbar {...baseProps} allHidden />);
-        expect(screen.getByText(/Mostrar mis capas/i)).toBeInTheDocument();
+    it('ofrece mostrar todas cuando ya solo se ve la seleccionada', () => {
+        render(<ActiveLayersToolbar {...baseProps} soloSeleccionada />);
+        expect(screen.getByText(/Mostrar todas/i)).toBeInTheDocument();
+    });
+
+    it('ofrece aislar la seleccionada cuando se ven varias', () => {
+        render(<ActiveLayersToolbar {...baseProps} />);
+        expect(screen.getByText(/Solo la seleccionada/i)).toBeInTheDocument();
     });
 
     it('muestra el botón de pausar animaciones cuando hasActiveLoops', () => {

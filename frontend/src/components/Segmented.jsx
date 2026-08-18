@@ -1,4 +1,5 @@
 import Tooltip from '@components/Tooltip';
+import Icon from '@components/Icon';
 
 const Segmented = ({ options, value, onChange, disabled = false, compact = false, className = '', ariaLabel }) => {
     const sizeClasses = compact ? 'px-2 py-[3px] text-[9px]' : 'px-2.5 py-0.5 text-[11px]';
@@ -30,13 +31,16 @@ const Segmented = ({ options, value, onChange, disabled = false, compact = false
                         disabled={disabled}
                         onClick={(e) => handleClick(e, option.value)}
                         className={`
-                            ${sizeClasses} rounded-full font-garet font-bold
+                            ${option.icon ? 'px-2 py-1' : sizeClasses} rounded-full font-garet font-bold
+                            inline-flex items-center justify-center
                             transition-colors duration-200 ease-in-out select-none
                             ${isSelected ? 'bg-white text-[#70308A] shadow-[0px_2px_4px_#00000014]' : 'text-[#465055] hover:text-[#70308A]'}
                             ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
                         `}
                     >
-                        {option.label}
+                        {option.icon
+                            ? <Icon name={option.icon} className="size-3.5" />
+                            : option.label}
                     </button>
                 );
 

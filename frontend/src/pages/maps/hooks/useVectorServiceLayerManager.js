@@ -38,7 +38,7 @@ export const useVectorServiceLayerManager = ({
     onTooLarge,
     onError,
     onHexbinStats,
-    selectedLayerIds = null
+    sinFondo = null
 }) => {
     const { layers } = useLayers();
     const { setLayerLoading } = useLayerLoading();
@@ -297,13 +297,12 @@ export const useVectorServiceLayerManager = ({
     useEffect(() => {
         entriesRef.current.forEach((entry) => {
             if (!entry.hexbin) return;
-            const conRelleno = !selectedLayerIds?.size
-                || entry.memberIds.some(id => selectedLayerIds.has(id));
+            const conRelleno = !sinFondo?.size || !entry.memberIds.some(id => sinFondo.has(id));
             if (entry.layer.get('rellenoActivo') === conRelleno) return;
             entry.layer.set('rellenoActivo', conRelleno);
             entry.layer.changed();
         });
-    }, [selectedLayerIds]);
+    }, [sinFondo]);
 
     useEffect(() => {
         if (!getLayerOpacity) return;

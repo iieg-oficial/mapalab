@@ -14,6 +14,7 @@ import { DragHandle, LayerTitle, PinBadge, EventoLayerIcon, GeometryTypeBadge } 
 import LayerBadge from '@mapsComponents/LayerBadge';
 import LayerDateControls from './LayerDateControls';
 import LayerActionsBar from './LayerActionsBar';
+import LayerServiceSegmented from './LayerServiceSegmented';
 import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
 import LayerDownloadProgress from './LayerDownloadProgress';
@@ -167,11 +168,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         return inferLoopConfig?.(layer.id) != null;
     }, [isLooping, inferLoopConfig, layer.id]);
 
-    const handleDateLabelClick = (e) => {
-        e.stopPropagation();
-        setSelectedLayer(layer);
-    };
-
     const handlePlayClick = (e) => {
         e.stopPropagation();
         toggleLoop?.(layer.id);
@@ -201,7 +197,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const layerHasLegend = hasLegend(layer);
 
     const warningContent = 'Al seleccionar un punto en el mapa, éste mostrará información de esta capa. Puedes cambiar la selección dando clic en la capa que necesites visualizar.';
-
     return (
         <div
             ref={itemRef}
@@ -246,8 +241,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                             <EventoLayerIcon evento={layerEvento} />
                         )}
                         <LayerTitle name={layer.name} />
-                        <GeometryTypeBadge type={layer.geometryType} hexbin={hasHexbinMode(layer.childIds || [layer.id], getServiceMode)} />
-                        <LayerBadge badge={layer.badge} />
+                        <GeometryTypeBadge type={layer.geometryType} hexbin={hasHexbinMode(layer.childIds || [layer.id], getServiceMode)} /><LayerBadge badge={layer.badge} />
                         {isLoading && !isLooping && (
                             <Loading visible={true} size="size-5" border="border-2" />
                         )}
@@ -270,12 +264,13 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 canPlayLoop={canPlayLoop}
                                 loopIntervalMs={loopIntervalMs}
                                 loopDirection={loopDirection}
-                                onPillClick={handleDateLabelClick}
+                                onPillClick={handleSetSelectedLayerClick}
                                 onPlay={handlePlayClick}
                                 onInterval={handleIntervalClick}
                                 onDirection={handleDirectionClick}
                                 onCycleSlot={handleCycleSlot}
                             />
+                            <LayerServiceSegmented layer={layer} />
                             <LayerActionsBar
                                 layerId={layer.id}
                                 visible={layer.visible}

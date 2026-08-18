@@ -5,6 +5,31 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.133.0] - 2026-08-18
+
+### Cambiado: el control de hexágonos vuelve al item de su capa
+
+Estaba en la barra del panel, junto al switch IIEG/INEGI, y ahí parecía que aplicaba a todas las
+capas. Vuelve al item de la capa que afecta, y con **iconos en vez de texto** —un punto y un
+hexágono— para que quepa sin empujar el resto de la fila. El nombre de cada opción sigue en su
+tooltip.
+
+### Agregado: botón para quitar el relleno de los hexágonos
+
+El relleno se apagaba solo en las capas que no estaban seleccionadas, y eso obligaba a cambiar de
+capa para ver otra cosa. Ahora es un botón por capa, junto al segmento: se queda como lo dejes.
+
+### Cambiado: el botón de visibilidad aísla la capa seleccionada
+
+Antes alternaba entre mostrar y ocultar **todas**, que con una sola capa activa no hacía nada útil.
+Ahora deja visible sólo la capa seleccionada y sus hijas, y al pulsarlo de nuevo devuelve todas.
+
+### Cambiado: la etiqueta de estado de capa se reduce a su inicial
+
+«Actualizada», «Nueva» y «Próximamente» ocupaban más que el nombre de la capa en un panel estrecho.
+Queda un círculo con la inicial —**A**, **N**, **P**— y el nombre completo, su descripción y la
+fecha de vigencia pasan al tooltip.
+
 ## [1.132.1] - 2026-08-18
 
 ### Corregido: el zoom no reagrupaba las capas que vienen precalculadas

@@ -8,7 +8,6 @@ import { useLayerSorting } from './hooks/useLayerSorting';
 import { LegendsVisibilityProvider } from './hooks/useLegendsVisibility';
 import { SortableList, SortableItem } from './SortableList';
 import ActiveLayerItem from './ActiveLayerItem';
-import LayerServiceSegmented from './LayerServiceSegmented';
 import ActiveLayersToolbar from './ActiveLayersToolbar';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
@@ -34,6 +33,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         getAllChildLayerIds,
         showAllLayers,
         hideAllLayers,
+        toggleLayerVisibility,
         mapRef,
         hasActiveLoops,
         pauseAllLoops,
@@ -182,13 +182,21 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         }
     }, [activeLayerIds, getAllChildLayerIds, clearLayerFilters, onToggleLayer, setSelectedLayerForSymbology, setSearchParams, mapRef]);
 
+    const soloSeleccionada = useMemo(() => {
+        const id = selectedLayerForSymbology?.id;
+        if (!id) return false;
+        return unifiedLayers.every(l => (l.id === id) === l.visible);
+    }, [selectedLayerForSymbology, unifiedLayers]);
+
     const handleToggleVisibilityAll = useCallback(() => {
-        if (allHidden) {
+        const id = selectedLayerForSymbology?.id;
+        if (!id || soloSeleccionada) {
             showAllLayers();
-        } else {
-            hideAllLayers();
+            return;
         }
-    }, [allHidden, showAllLayers, hideAllLayers]);
+        hideAllLayers();
+        [id, ...getAllChildLayerIds(id)].forEach(cid => toggleLayerVisibility(cid));
+    }, [selectedLayerForSymbology, soloSeleccionada, showAllLayers, hideAllLayers, getAllChildLayerIds, toggleLayerVisibility]);
 
     if (collapse.isCollapsed) {
         return (
@@ -226,12 +234,11 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
                 unifiedLayers={unifiedLayers}
                 displayedLayers={displayedLayers}
                 isFiltering={isFiltering}
-                allHidden={allHidden}
+                soloSeleccionada={soloSeleccionada}
                 visibilityCount={visibilityCount}
                 hasActiveLoops={hasActiveLoops}
                 activeLoopsCount={activeLoopsCount}
                 isInegiMode={isInegiMode}
-                serviceControl={<LayerServiceSegmented />}
                 onToggleVisibilityAll={handleToggleVisibilityAll}
                 onRemoveAll={handleRemoveAll}
                 onPauseAll={pauseAllLoops}

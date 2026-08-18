@@ -5,6 +5,18 @@ export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
     const [layerServiceModes, setLayerServiceModes] = useState(new Map());
     const [vectorRejections, setVectorRejections] = useState(new Map());
     const [hexbinStats, setHexbinStats] = useState(new Map());
+    const [hexbinSinFondo, setHexbinSinFondo] = useState(new Set());
+
+    const toggleHexbinFondo = useCallback((layerIds) => {
+        setHexbinSinFondo(prev => {
+            const next = new Set(prev);
+            const apagar = !layerIds.some(id => next.has(id));
+            layerIds.forEach(id => (apagar ? next.add(id) : next.delete(id)));
+            return next;
+        });
+    }, []);
+
+    const tieneFondo = useCallback((layerId) => !hexbinSinFondo.has(layerId), [hexbinSinFondo]);
 
     const applyHexbinStats = useCallback((layerIds, stats) => {
         setHexbinStats(prev => {
@@ -93,6 +105,9 @@ export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
         clearVectorRejection,
         hexbinStats,
         applyHexbinStats,
-        getHexbinStats
+        getHexbinStats,
+        hexbinSinFondo,
+        toggleHexbinFondo,
+        tieneFondo
     };
 };
