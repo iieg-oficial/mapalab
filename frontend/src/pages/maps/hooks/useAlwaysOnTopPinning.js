@@ -18,8 +18,6 @@ const BACKGROUND_POLYGON_LAYER_NAMES = new Set([
     'recursos:areas_naturales_protegidas'
 ]);
 
-export { PIN_Z_OFFSET } from '@pages/maps/helpers/layerZIndex';
-
 export const sortItemsWithPinnedFirst = (items, pinnedSet, initialOrder) => {
     if (pinnedSet.size === 0) return items;
     const orderOf = id => {

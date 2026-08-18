@@ -47,7 +47,7 @@ export const markSelectedCell = (layer, h3Index) => {
     layer.changed();
 };
 
-export const queryVectorFeaturesAtPixel = (map, coordinate, targetLayerIds) => {
+const queryVectorFeaturesAtPixel = (map, coordinate, targetLayerIds) => {
     if (!map || !coordinate || !targetLayerIds || targetLayerIds.size === 0) return [];
 
     const pixel = map.getPixelFromCoordinate(coordinate);

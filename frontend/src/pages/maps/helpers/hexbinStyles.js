@@ -26,8 +26,6 @@ export const hexbinRamp = () => {
     return cachedRamp;
 };
 
-export const clearRampCache = () => { cachedRamp = null; };
-
 const FILL_ALPHA = 0.75;
 
 const styleCache = new Map();
@@ -39,12 +37,12 @@ const withAlpha = (hex, alpha) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-export const hexbinColor = (count, breaks) => {
+const hexbinColor = (count, breaks) => {
     const ramp = hexbinRamp();
     return ramp[classOf(count, breaks)] || ramp[0];
 };
 
-export const SELECTED_STROKE = '#FF8300';
+const SELECTED_STROKE = '#FF8300';
 
 export const hexbinStyle = (count, breaks, isSelected = false) => {
     const index = classOf(count, breaks);

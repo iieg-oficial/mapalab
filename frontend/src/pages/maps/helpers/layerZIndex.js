@@ -1,4 +1,4 @@
-export const PIN_Z_OFFSET = 9000;
+const PIN_Z_OFFSET = 9000;
 
 export const computeLayerZIndex = ({ layerId, index, total, pinnedLayerIds, initialOrder }) => {
     if (pinnedLayerIds?.has(layerId)) {

@@ -28,8 +28,6 @@ export const canUseVectorService = (layerDef) => {
 
 export const isVectorService = (mode) => LOCAL_SERVICES.has(mode);
 
-export const isHexbinService = (mode) => mode === SERVICE_HEXBIN;
-
 export const hasHexbinMode = (layerIds, getServiceMode) => {
     if (!Array.isArray(layerIds) || typeof getServiceMode !== 'function') return false;
     return layerIds.some(id => getServiceMode(id) === SERVICE_HEXBIN);
