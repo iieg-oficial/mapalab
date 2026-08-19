@@ -11,6 +11,9 @@ export const useSessionPersistence = () => {
         filters,
         layerOpacities,
         layerServiceModes,
+        hexbinSinFondo,
+        hexbinPalettes,
+        soloSeleccionada,
         hiddenLayerIds,
         selectedLayerForSymbology,
         baseMapId,
@@ -49,7 +52,7 @@ export const useSessionPersistence = () => {
 
         return () => clearTimeout(saveTimerRef.current);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeLayerIds, filters, layerOpacities, layerServiceModes, hiddenLayerIds, selectedLayerForSymbology, baseMapId, serialize, compareMode]);
+    }, [activeLayerIds, filters, layerOpacities, layerServiceModes, hexbinSinFondo, hexbinPalettes, soloSeleccionada, hiddenLayerIds, selectedLayerForSymbology, baseMapId, serialize, compareMode]);
 
     useEffect(() => {
         const map = mapRef?.current;

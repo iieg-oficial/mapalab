@@ -32,8 +32,9 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         clearLayerFilters,
         getAllChildLayerIds,
         showAllLayers,
-        hideAllLayers,
-        toggleLayerVisibility,
+        setHiddenLayerIds,
+        soloSeleccionada,
+        setSoloSeleccionada,
         mapRef,
         hasActiveLoops,
         pauseAllLoops,
@@ -173,21 +174,21 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         }
     }, [activeLayerIds, getAllChildLayerIds, clearLayerFilters, onToggleLayer, setSelectedLayerForSymbology, setSearchParams, mapRef]);
 
-    const soloSeleccionada = useMemo(() => {
+    useEffect(() => {
+        if (!soloSeleccionada) return;
         const id = selectedLayerForSymbology?.id;
-        if (!id) return false;
-        return unifiedLayers.every(l => (l.id === id) === l.visible);
-    }, [selectedLayerForSymbology, unifiedLayers]);
+        if (!id) return;
+
+        const visibles = new Set([id, ...getAllChildLayerIds(id)]);
+        setHiddenLayerIds?.(effectiveActiveLayerIds.filter(cid => !visibles.has(cid)));
+    }, [soloSeleccionada, selectedLayerForSymbology?.id, effectiveActiveLayerIds, getAllChildLayerIds, setHiddenLayerIds]);
 
     const handleToggleVisibilityAll = useCallback(() => {
-        const id = selectedLayerForSymbology?.id;
-        if (!id || soloSeleccionada) {
-            showAllLayers();
-            return;
-        }
-        hideAllLayers();
-        [id, ...getAllChildLayerIds(id)].forEach(cid => toggleLayerVisibility(cid));
-    }, [selectedLayerForSymbology, soloSeleccionada, showAllLayers, hideAllLayers, getAllChildLayerIds, toggleLayerVisibility]);
+        setSoloSeleccionada(prev => {
+            if (prev) showAllLayers();
+            return !prev;
+        });
+    }, [showAllLayers, setSoloSeleccionada]);
 
     if (collapse.isCollapsed) {
         return (

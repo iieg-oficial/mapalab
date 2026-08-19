@@ -16,6 +16,7 @@ export const useSymbology = ({
 }) => {
     const [selectedLayerForSymbology, setSelectedLayerForSymbology] = useState(null);
     const [hiddenLayerIds, setHiddenLayerIds] = useState([]);
+    const [soloSeleccionada, setSoloSeleccionada] = useState(false);
 
     const showAllLayers = useCallback(() => {
         setHiddenLayerIds([]);
@@ -219,6 +220,8 @@ export const useSymbology = ({
         restoreSelectedById,
         hiddenLayerIds,
         setHiddenLayerIds,
+        soloSeleccionada,
+        setSoloSeleccionada,
         toggleLayerVisibility,
         isLayerVisible,
         showAllLayers,

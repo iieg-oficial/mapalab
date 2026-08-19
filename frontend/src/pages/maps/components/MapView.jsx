@@ -146,7 +146,8 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
         pinnedLayerIds, initialOrder, municipioContext,
         onTooLarge: handleVectorTooLarge, onError: handleVectorError,
         onHexbinStats: applyHexbinStats,
-        sinFondo: ctx.hexbinSinFondo
+        sinFondo: ctx.hexbinSinFondo,
+        getPaletteIndex: ctx.getHexbinPalette
     });
 
     useMapInteractions(mapRef, handlePaneClick, isDrawing, markerClickedRef, editingClickedRef, ctx.municipioMode?.isInsideMunicipios);

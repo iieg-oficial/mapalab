@@ -15,7 +15,7 @@ const Segmented = ({ options, value, onChange, disabled = false, compact = false
             role="radiogroup"
             aria-label={ariaLabel}
             className={`
-                inline-flex items-center gap-0.5 rounded-full bg-[#E9EDF7] p-0.5 shrink-0
+                inline-flex items-center gap-0.5 rounded-full bg-white p-0.5 shrink-0 shadow-[0px_1px_3px_#00000014]
                 ${disabled ? 'opacity-50' : ''}
                 ${className}
             `}
@@ -34,7 +34,7 @@ const Segmented = ({ options, value, onChange, disabled = false, compact = false
                             ${option.icon ? 'px-2 py-1' : sizeClasses} rounded-full font-garet font-bold
                             inline-flex items-center justify-center
                             transition-colors duration-200 ease-in-out select-none
-                            ${isSelected ? 'bg-white text-[#70308A] shadow-[0px_2px_4px_#00000014]' : 'text-[#465055] hover:text-[#70308A]'}
+                            ${isSelected ? 'bg-[#E9EDF7] text-[#70308A]' : 'text-[#9AA7B8] hover:text-[#70308A]'}
                             ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
                         `}
                     >

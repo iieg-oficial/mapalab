@@ -47,7 +47,7 @@ const serviceFor = (serviceModes, id) => {
     return mode && mode !== SERVICE_WMS ? mode : null;
 };
 
-const serializeLayerEntry = (id, layerTree, hidden, opacities, filters, serviceModes) => {
+const serializeLayerEntry = (id, layerTree, hidden, opacities, filters, serviceModes, sinFondo, palettes) => {
     const layer = findLayerDef(id, layerTree);
     if (!layer || layer.isLabel || layer.isCategory) return null;
 
@@ -60,15 +60,19 @@ const serializeLayerEntry = (id, layerTree, hidden, opacities, filters, serviceM
 
     const service = serviceFor(serviceModes, id);
     if (service) entry.service = service;
+    if (sinFondo?.has?.(id)) entry.fill = false;
+
+    const tono = palettes?.get?.(id);
+    if (service && Number.isInteger(tono)) entry.palette = tono;
 
     return entry;
 };
 
-const serializePaneLayers = (snapshot, layerTree, serviceModes) => {
+const serializePaneLayers = (snapshot, layerTree, serviceModes, sinFondo, palettes) => {
     const ids = snapshot?.activeLayerIds || [];
     const hidden = new Set(snapshot?.hiddenLayerIds || []);
     return ids
-        .map(id => serializeLayerEntry(id, layerTree, hidden, snapshot?.layerOpacities, snapshot?.filters, serviceModes))
+        .map(id => serializeLayerEntry(id, layerTree, hidden, snapshot?.layerOpacities, snapshot?.filters, serviceModes, sinFondo, palettes))
         .filter(Boolean);
 };
 
@@ -78,6 +82,9 @@ export const useShareSerializer = () => {
         hiddenLayerIds,
         layerOpacities,
         layerServiceModes,
+        hexbinSinFondo,
+        hexbinPalettes,
+        soloSeleccionada,
         filters,
         selectedLayerForSymbology,
         baseMapId,
@@ -110,7 +117,7 @@ export const useShareSerializer = () => {
 
         const hidden = new Set(hiddenLayerIds || []);
         const layers = (activeLayerIds || [])
-            .map(id => serializeLayerEntry(id, layerTree, hidden, layerOpacities, filters, layerServiceModes))
+            .map(id => serializeLayerEntry(id, layerTree, hidden, layerOpacities, filters, layerServiceModes, hexbinSinFondo, hexbinPalettes))
             .filter(Boolean);
 
         const selectedSlug = selectedLayerForSymbology?.id ? slugForLayer(selectedLayerForSymbology.id, layerTree) : null;
@@ -126,6 +133,7 @@ export const useShareSerializer = () => {
             layers,
             loop: serializeLoop(dateLoops, loopPrefs, layerTree),
         };
+        if (soloSeleccionada) basePayload.soloSeleccionada = true;
         if (annotations) basePayload.annotations = annotations;
         if (municipioPayload) basePayload.municipios = municipioPayload;
 
@@ -152,11 +160,11 @@ export const useShareSerializer = () => {
                 shared: sharedPayload,
                 paneA: {
                     label: paneA.label || 'A',
-                    layers: serializePaneLayers(paneA, layerTree, layerServiceModes),
+                    layers: serializePaneLayers(paneA, layerTree, layerServiceModes, hexbinSinFondo, hexbinPalettes),
                 },
                 paneB: {
                     label: paneB.label || 'B',
-                    layers: serializePaneLayers(paneB, layerTree, layerServiceModes),
+                    layers: serializePaneLayers(paneB, layerTree, layerServiceModes, hexbinSinFondo, hexbinPalettes),
                 },
                 activeSlot,
                 position: typeof extra.position === 'number' ? extra.position : (compareMode?.swipePosition ?? 0.5),
@@ -174,5 +182,5 @@ export const useShareSerializer = () => {
             kind: 'single',
             payload: basePayload,
         };
-    }, [activeLayerIds, hiddenLayerIds, layerOpacities, layerServiceModes, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode, measurements, municipioMode]);
+    }, [activeLayerIds, hiddenLayerIds, layerOpacities, layerServiceModes, hexbinSinFondo, hexbinPalettes, soloSeleccionada, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode, measurements, municipioMode]);
 };

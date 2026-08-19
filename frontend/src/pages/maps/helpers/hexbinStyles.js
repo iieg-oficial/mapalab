@@ -17,10 +17,16 @@ let cachedRamp = null;
 let cachedCategorical = null;
 const rampCache = new Map();
 
+const expandHex = (hex) => {
+    const valor = String(hex || '').trim();
+    if (valor.length !== 4 || !/^#[0-9a-f]{3}$/i.test(valor)) return valor;
+    return `#${valor[1]}${valor[1]}${valor[2]}${valor[2]}${valor[3]}${valor[3]}`;
+};
+
 const readToken = (name, fallback) => {
-    if (typeof window === 'undefined' || !document?.documentElement) return fallback;
+    if (typeof window === 'undefined' || !document?.documentElement) return expandHex(fallback);
     const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    return value || fallback;
+    return expandHex(value || fallback);
 };
 
 export const hexbinRamp = () => {
@@ -42,7 +48,8 @@ export const baseColorFor = (paletteIndex) => {
     return paleta[((paletteIndex || 0) % paleta.length + paleta.length) % paleta.length];
 };
 
-const mezclar = (hex, factor) => {
+const mezclar = (color, factor) => {
+    const hex = expandHex(color);
     const r = Number.parseInt(hex.slice(1, 3), 16);
     const g = Number.parseInt(hex.slice(3, 5), 16);
     const b = Number.parseInt(hex.slice(5, 7), 16);
@@ -73,7 +80,8 @@ const OUTLINE_WIDTH = 0.9;
 
 const styleCache = new Map();
 
-const withAlpha = (hex, alpha) => {
+const withAlpha = (color, alpha) => {
+    const hex = expandHex(color);
     const r = Number.parseInt(hex.slice(1, 3), 16);
     const g = Number.parseInt(hex.slice(3, 5), 16);
     const b = Number.parseInt(hex.slice(5, 7), 16);

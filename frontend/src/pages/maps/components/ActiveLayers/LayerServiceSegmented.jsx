@@ -19,15 +19,15 @@ const rejectionMessage = (rejection) => {
     return 'No se pudieron traer los datos: se queda en Puntos.';
 };
 
-const LayerServiceSegmented = ({ layer, fallback = null }) => {
-    const { getServiceMode, setServiceMode, getVectorRejection, allLayers, activeLayerIds } = useMapsContext();
+const LayerServiceSegmented = ({ layer, fallback = null, activo = false }) => {
+    const { getServiceMode, setServiceMode, getVectorRejection, asignarTono, liberarTono, allLayers, activeLayerIds } = useMapsContext();
 
     const targetIds = useMemo(() => {
         const childIds = layer?.childIds?.length ? layer.childIds : [layer?.id].filter(Boolean);
         return resolveVectorTargets(childIds, allLayers, activeLayerIds, { pointsOnly: true });
     }, [layer, allLayers, activeLayerIds]);
 
-    if (!VECTOR_SERVICE_ENABLED || targetIds.length === 0) return fallback;
+    if (!VECTOR_SERVICE_ENABLED || targetIds.length === 0 || !activo) return fallback;
 
     const message = rejectionMessage(getVectorRejection?.(targetIds[0]));
 
@@ -49,7 +49,11 @@ const LayerServiceSegmented = ({ layer, fallback = null }) => {
                     ariaLabel={`Forma de ver ${layer?.name || 'la capa'}`}
                     options={OPTIONS}
                     value={getServiceMode?.(targetIds[0]) ?? SERVICE_WMS}
-                    onChange={(mode) => targetIds.forEach(id => setServiceMode?.(id, mode))}
+                    onChange={(mode) => {
+                        if (mode === SERVICE_HEXBIN) asignarTono?.(targetIds);
+                        else liberarTono?.(targetIds);
+                        targetIds.forEach(id => setServiceMode?.(id, mode));
+                    }}
                 />
                 <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-2 text-[8px] px-1.5" />
             </span>

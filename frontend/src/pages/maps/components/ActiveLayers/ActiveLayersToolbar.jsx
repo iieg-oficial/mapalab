@@ -50,7 +50,7 @@ const ActiveLayersToolbar = ({
                             className={`group/vis flex items-center gap-1 shrink-0 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                             onClick={onToggleVisibilityAll}
                         >
-                            <span className={`p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/vis:border-purple'}`}>
+                            <span className={`p-0.5 rounded-full border transition-colors ${soloSeleccionada ? 'border-purple' : 'border-transparent'} ${noLayers ? '' : 'group-hover/vis:border-purple'}`}>
                                 <Icon name="solo_capa" className={`size-5 shrink-0 ${soloSeleccionada ? 'text-purple' : 'text-graphite'}`} />
                             </span>
                             <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium text-graphite whitespace-nowrap truncate leading-none pt-[1.5px]`}>{soloSeleccionada ? 'Mostrar todas' : 'Solo la seleccionada'}</span>

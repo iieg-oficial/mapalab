@@ -10,7 +10,6 @@ import { buildLayerCqlSegment } from '../helpers/layerCqlSegment';
 import { computeLayerZIndex } from '../helpers/layerZIndex';
 import { createVectorLayerStyle, resolveVectorColor } from '../helpers/vectorLayerStyles';
 import { createHexbinLayer, fillHexbinLayer, fillHexbinLayerFromCells } from '../helpers/hexbinLayer';
-import { menorTonoLibre } from '../helpers/hexbinStyles';
 import { useHexbinZoomRefresh } from './useHexbinZoomRefresh';
 import { fetchAggregatedCells, nearestPrecomputed } from '@services/hexbinAggregateService';
 import { resolutionForZoom } from '@constants/hexbin';
@@ -38,12 +37,12 @@ export const useVectorServiceLayerManager = ({
     onTooLarge,
     onError,
     onHexbinStats,
-    sinFondo = null
+    sinFondo = null,
+    getPaletteIndex = null
 }) => {
     const { layers } = useLayers();
     const { setLayerLoading } = useLayerLoading();
     const entriesRef = useRef(new Map());
-    const palettesRef = useRef(new Map());
     const debouncedActiveLayerIds = useDebounce(activeLayerIds, 30);
     const debouncedHiddenLayerIds = useDebounce(hiddenLayerIds, 30);
 
@@ -70,21 +69,12 @@ export const useVectorServiceLayerManager = ({
         memberIds.forEach(id => setLayerLoading(id, isLoading));
     }, [setLayerLoading]);
 
-    const _tonoDe = useCallback((groupKey) => {
-        const registro = palettesRef.current;
-        if (!registro.has(groupKey)) {
-            registro.set(groupKey, menorTonoLibre(new Set(registro.values())));
-        }
-        return registro.get(groupKey);
-    }, []);
-
     const removeEntry = useCallback((groupKey) => {
         const entry = entriesRef.current.get(groupKey);
         if (!entry) return;
         entry.controller.abort();
         mapRef.current?.removeLayer(entry.layer);
         entriesRef.current.delete(groupKey);
-        palettesRef.current.delete(groupKey);
         setGroupLoading(entry.memberIds, false);
     }, [mapRef, setGroupLoading]);
 
@@ -256,7 +246,7 @@ export const useVectorServiceLayerManager = ({
 
         targets.forEach((target, groupKey) => {
             if (target.hexbin) {
-                target.paletteIndex = _tonoDe(groupKey);
+                target.paletteIndex = getPaletteIndex?.(target.memberIds[0]) ?? 0;
             }
 
             const representativeId = target.memberIds[0];
@@ -283,7 +273,7 @@ export const useVectorServiceLayerManager = ({
             if (existing) removeEntry(groupKey);
             createEntry(groupKey, target, zIndex, opacity);
         });
-    }, [mapRef, buildTargets, removeEntry, createEntry, debouncedActiveLayerIds, _tonoDe]);
+    }, [mapRef, buildTargets, removeEntry, createEntry, debouncedActiveLayerIds, getPaletteIndex]);
 
     useEffect(syncLayers, [syncLayers]);
 

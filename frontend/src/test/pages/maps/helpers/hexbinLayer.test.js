@@ -106,3 +106,23 @@ describe('paleta por capa', () => {
         expect(conTono.map(e => e.color)).toEqual(rampFor(2).slice(0, conTono.length));
     });
 });
+
+describe('colores que el minificador acorta', () => {
+    it('la cuarta rampa es un verde válido, no negro', () => {
+        const rampa = rampFor(3);
+        rampa.forEach(color => expect(color).toMatch(/^#[0-9a-f]{6}$/i));
+        expect(rampa[4].toLowerCase()).toBe('#117733');
+    });
+
+    it('las cinco rampas dan colores de seis dígitos', () => {
+        [0, 1, 2, 3, 4].forEach(i => {
+            rampFor(i).forEach(color => expect(color).toMatch(/^#[0-9a-f]{6}$/i));
+        });
+    });
+
+    it('la leyenda de la cuarta capa no queda vacía', () => {
+        const entries = legendEntries([2, 5], 9, 3);
+        expect(entries.length).toBeGreaterThan(0);
+        entries.forEach(e => expect(e.color).toMatch(/^#[0-9a-f]{6}$/i));
+    });
+});

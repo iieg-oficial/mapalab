@@ -5,6 +5,51 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.134.0] - 2026-08-19
+
+### Corregido: la cuarta capa agregada se dibujaba en negro
+
+El minificador de CSS comprime `#117733` a **`#173`**, su forma corta de tres dígitos, que es CSS
+perfectamente válido. Pero la rampa leía el color con cortes fijos de dos caracteres, así que el
+tercer canal salía `NaN` y OpenLayers, ante un color inválido, pinta negro; la leyenda usaba la
+misma rampa rota y salía vacía.
+
+Sólo le ocurría a los colores cuyos tres pares son repetidos, y en la paleta sólo el cuarto lo
+cumple: de ahí que fuera siempre la cuarta capa y ninguna otra. Ahora el valor se normaliza al
+leerlo del token y dentro de las funciones que lo descomponen.
+
+### Agregado: el aislar, el relleno y el color de cada capa sobreviven al F5
+
+Tres cosas que se perdían al recargar y ahora viajan en la sesión:
+
+- **El modo «solo la capa seleccionada»**, a nivel de mapa, porque no es propiedad de ninguna capa
+  sino de cómo se está mirando.
+- **El relleno de los hexágonos**, por capa, y sólo cuando está apagado.
+- **El tono asignado a cada capa agregada**, para que vuelva con su mismo color en vez de repartirse
+  otra vez por orden de aparición.
+
+El tono se guarda como índice y sólo si la capa está agregada. Se comprueba con `Number.isInteger`,
+no con una condición ingenua: el primer tono es el **0** y la primera capa habría perdido su color.
+
+La opacidad ya persistía desde antes; el fallo de ayer era que no se aplicaba a las capas agregadas.
+
+### Cambiado: «solo la capa seleccionada» pasa de acción a modo
+
+Antes calculaba la visibilidad una vez y se olvidaba: al cambiar de capa seleccionada, el mapa
+seguía mostrando la anterior. Ahora es un estado que **sigue a la selección** mientras está
+encendido. Y dejó de ser derivado: se deducía comparando la visibilidad de todas las capas, lo que
+daba falsos positivos si por casualidad ocultabas las demás a mano.
+
+El botón mantiene el borde morado mientras está activo, perdió el contador y estrena icono —tres
+capas apiladas con la de arriba destacada—, porque el ojo genérico ya se usa para la visibilidad
+individual de cada capa y tenerlo en dos sitios con significados distintos era parte del problema.
+
+### Cambiado: el segmento sólo aparece en la capa seleccionada
+
+En las demás se ve el icono del modo activo: hexágono si está agregada, punto si no. Además el riel
+del control pasa a blanco con el botón activo en gris, porque en el fondo lila del item seleccionado
+el riel gris se perdía.
+
 ## [1.133.0] - 2026-08-18
 
 ### Cambiado: el control de hexágonos vuelve al item de su capa

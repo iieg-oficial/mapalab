@@ -1,11 +1,37 @@
 import { useState, useCallback, useEffect } from 'react';
-import { SERVICE_WMS } from '../helpers/serviceMode';
+import { SERVICE_WMS, SERVICE_HEXBIN } from '../helpers/serviceMode';
+import { menorTonoLibre } from '../helpers/hexbinStyles';
 
 export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
     const [layerServiceModes, setLayerServiceModes] = useState(new Map());
     const [vectorRejections, setVectorRejections] = useState(new Map());
     const [hexbinStats, setHexbinStats] = useState(new Map());
     const [hexbinSinFondo, setHexbinSinFondo] = useState(new Set());
+    const [hexbinPalettes, setHexbinPalettes] = useState(new Map());
+
+    const asignarTono = useCallback((layerIds, tono = null) => {
+        setHexbinPalettes(prev => {
+            const ids = Array.isArray(layerIds) ? layerIds : [layerIds];
+            if (tono === null && ids.some(id => prev.has(id))) return prev;
+
+            const elegido = tono ?? menorTonoLibre(new Set(prev.values()));
+            const next = new Map(prev);
+            ids.forEach(id => next.set(id, elegido));
+            return next;
+        });
+    }, []);
+
+    const liberarTono = useCallback((layerIds) => {
+        setHexbinPalettes(prev => {
+            const ids = Array.isArray(layerIds) ? layerIds : [layerIds];
+            if (!ids.some(id => prev.has(id))) return prev;
+            const next = new Map(prev);
+            ids.forEach(id => next.delete(id));
+            return next;
+        });
+    }, []);
+
+    const getHexbinPalette = useCallback((layerId) => hexbinPalettes.get(layerId) ?? 0, [hexbinPalettes]);
 
     const toggleHexbinFondo = useCallback((layerIds) => {
         setHexbinSinFondo(prev => {
@@ -108,6 +134,10 @@ export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
         getHexbinStats,
         hexbinSinFondo,
         toggleHexbinFondo,
-        tieneFondo
+        tieneFondo,
+        hexbinPalettes,
+        asignarTono,
+        liberarTono,
+        getHexbinPalette
     };
 };

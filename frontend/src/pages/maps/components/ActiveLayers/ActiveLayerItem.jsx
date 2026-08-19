@@ -241,6 +241,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                         <LayerBadge badge={layer.badge} />
                         <LayerServiceSegmented
                             layer={layer}
+                            activo={isSelected}
                             fallback={<GeometryTypeBadge type={layer.geometryType} hexbin={enHexagonos} />}
                         />
                         {isLoading && !isLooping && (
