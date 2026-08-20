@@ -156,7 +156,7 @@ docker image prune -f --filter "until=168h"
 ### `make deploy`
 
 1. Crea la red `iieg-network` si no existe
-2. Construye el frontend en Docker (Node 24 Alpine) con `--profile build`
+2. Construye el frontend en Docker (Node 26 Alpine) con `--profile build`
 3. Levanta backend + nginx con `--profile prod`, `--force-recreate` y `--env-file .env.production`
 
 ## Health Check
