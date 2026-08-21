@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.134.1] - 2026-08-21
+
+### Corregido: el scrollbar del detalle de capa volvio a verse como el del navegador
+
+`html` declara `scrollbar-color`, que es una propiedad **heredada**, asi que llegaba hasta el div del
+modal. Desde Chrome 121 un elemento con `scrollbar-color` o `scrollbar-width` en efecto hace que el
+navegador ignore por completo los `::-webkit-scrollbar`, y con ellos el `width: 4px` de
+`.scrollbar-thin`. El codigo nunca cambio: la regla esta en el repo desde el commit inicial y el
+modal conserva sus clases. Lo que cambio fue el navegador, cuando estreno soporte al estandar.
+
+Medido en Chrome 151 sobre el CSS real, el contenedor pasaba de 4 px a 15 px de ancho de barra.
+
+`.scrollbar-thin` y `.scrollbar-thumb-gray-*` ahora declaran tambien las propiedades estandar
+(`scrollbar-width` y `scrollbar-color`), que es la via que Chrome y Firefox respetan por igual; las
+reglas webkit se conservan para Safari. La barra queda en 10 px: el estandar solo acepta `auto`,
+`thin` o `none`, de modo que no hay forma de pedir los 4 px originales sin volver a depender de una
+API que Chrome ya esta dejando morir.
+
+Alcanza a los tres contenedores con scroll propio: el detalle de capa, el `Modal` generico y el menu
+de descarga, que ademas nunca tuvo las clases y salia con la barra del navegador en todos lados.
+
 ## [1.134.0] - 2026-08-19
 
 ### Corregido: la cuarta capa agregada se dibujaba en negro
