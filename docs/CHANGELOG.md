@@ -40,6 +40,42 @@ Las etiquetas de «Eliminar mis capas» y «Pausar animaciones» siguen ocultas 
 tocar. Una prueba nueva fija que la del chip permanezca visible y la de eliminar no, para que el
 patron no vuelva a colarse.
 
+### Agregado: la numeralia responde al municipio y al rango de fechas
+
+`GET /metadata/` acepta tres parametros nuevos y opcionales: `municipio` (claves INEGI de cinco
+digitos separadas por coma), `fecha_inicio` y `fecha_fin` (`YYYY-MM-DD`). Con ellos la numeralia se
+**calcula al vuelo** contra la tabla real de la capa en vez de servir el valor precalculado:
+
+```
+/metadata/?workspace=educacion&layer=centros_educativos                        → 15702 establecimientos
+/metadata/?workspace=educacion&layer=centros_educativos&municipio=14039        →  1910
+/metadata/?workspace=educacion&layer=centros_educativos&municipio=14039,14098,14120 → 4176
+```
+
+**Sin parametros no cambia nada**: se sirve `layer_stats.values`, el mismo camino de siempre. Eso
+mantiene intacta la home, donde no hay municipio seleccionado, y deja el cron de dataengine como
+unico escritor de la numeralia persistida.
+
+Que una estadistica responda al contexto lo decide su configuracion, no el endpoint: solo se filtran
+las que declaran filtros con placeholders (`{{municipio.nombres}}`, `{{fecha.inicio}}`). Una
+estadistica sin ellos devuelve el mismo numero con o sin parametros, que es lo correcto para un dato
+que no depende del municipio.
+
+**Lo que se calcula al vuelo se cachea en memoria** por combinacion de capa, contexto y
+configuracion, con el `ttl_minutes` de la propia capa. La clave normaliza el orden de las claves de
+municipio, asi que `14039,14098` y `14098,14039` comparten entrada, e incluye una firma de la
+`stats_config`: al reconfigurar una capa, las entradas viejas dejan de usarse sin esperar al TTL.
+El cache es por proceso y esta acotado a 256 entradas.
+
+**El motor es una tercera copia** de la logica que ya vive en `mariachi/api/app/services/
+stats_templates.py` y `dataengine/jobs/run_refresh_layer_stats.py`, en
+`backend/app/services/stats_engine.py`. Son tres repos separados sin paquete comun; la alternativa
+—que el visor le pidiera el calculo a mariachi— pondria al CMS en el camino de cada peticion
+publica. Deuda declarada: una operacion nueva se agrega en los tres.
+
+Las claves de municipio se validan con `^\d{5}$` (maximo 125) y las fechas con `YYYY-MM-DD`; los
+valores viajan siempre como bind params.
+
 ## [1.134.3] - 2026-08-21
 
 ### Corregido: un raster no volvia a dibujarse despues de ocultarlo y mostrarlo
