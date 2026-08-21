@@ -35,7 +35,17 @@ graph LR
 ### CI (`.github/workflows/ci.yml`)
 
 - **Trigger**: Push a feature branches (excluye `develop` y `production`), PRs
-- **Que hace**: Lint (ESLint) + Tests (Vitest con coverage thresholds) + Dead-code check (knip) + Build (Vite)
+- **Que hace**: Lint (ESLint) + Tests (Vitest con coverage thresholds) + Dead-code check (knip) + Build (Vite) + Smoke test del bundle (Playwright)
+
+El smoke test cierra el hueco que dejan los otros pasos: Vitest corre sobre el **codigo fuente** y el
+build solo comprueba que el bundle **compile**, asi que un bundle que compila y revienta al renderizar
+pasa las dos puertas —es lo que ocurrio al desplegar Vite 8 en 1.105.1. `npm run smoke` levanta el
+`dist` real con `vite preview` y lo abre en un navegador headless en `/`, `/mapa` y `/catalogo`,
+verificando que la app monte, que no aparezca la pantalla de recuperacion de `error-recovery.js` y que
+no haya excepciones sin capturar. Corre sin backend: los errores de red se ignoran a proposito.
+
+El navegador sale de `google-chrome-stable` si el equipo lo tiene, y si no del Chromium que descarga
+`npx playwright install chromium`. Sus librerias del sistema se instalan una sola vez en el runner.
 - **Proposito**: Validar codigo antes de mergear a `develop`. CI es la autoridad final — es donde las reglas no se pueden saltar con `--no-verify`
 
 ### Commit Lint (`.github/workflows/commit-lint.yml`)

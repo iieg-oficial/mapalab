@@ -31,3 +31,9 @@ jobs:
       - name: Build
         working-directory: ./frontend
         run: npm run build
+      - name: Navegador para el smoke test
+        working-directory: ./frontend
+        run: npx playwright install chromium
+      - name: Smoke test del bundle
+        working-directory: ./frontend
+        run: npm run smoke
