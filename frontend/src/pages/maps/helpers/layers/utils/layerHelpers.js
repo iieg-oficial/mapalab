@@ -11,6 +11,12 @@ export const findLayerById = (layerId, layersArray) => {
     return null;
 };
 
+export const resolveSelectedLayerLabel = (selected, layersArray) => {
+    if (!selected?.id) return null;
+    const node = findLayerById(selected.id, layersArray || []);
+    return node?.label || selected.label || selected.name || null;
+};
+
 export const findAncestorChain = (layerId, layersArray) => {
     if (!layerId || !Array.isArray(layersArray)) return [];
     const walk = (layers, trail) => {

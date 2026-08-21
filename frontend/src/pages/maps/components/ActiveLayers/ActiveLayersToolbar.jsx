@@ -11,6 +11,7 @@ const ActiveLayersToolbar = ({
     displayedLayers,
     isFiltering,
     soloSeleccionada,
+    selectedLayerLabel = null,
     hasActiveLoops,
     activeLoopsCount,
     isInegiMode,
@@ -36,24 +37,40 @@ const ActiveLayersToolbar = ({
     const searchTooltip = noLayers ? 'No hay capas para buscar' : searchLabel;
     const onSearchClick = searchOpen ? onCloseSearch : onOpenSearch;
 
+    const puedeAislar = !noLayers && !!selectedLayerLabel;
+    const textoAislar = soloSeleccionada
+        ? selectedLayerLabel
+        : (puedeAislar ? 'Solo seleccionada' : 'Elige una capa');
+    const tooltipAislar = noLayers
+        ? 'No hay capas activas'
+        : !puedeAislar
+            ? 'Selecciona una capa de la lista para dejarla sola en el mapa'
+            : soloSeleccionada
+                ? `Volver a mostrar todas las capas. Ahora solo se ve ${selectedLayerLabel}`
+                : 'Ocultar las demás y dejar visible solo la capa seleccionada';
+
     return (
         <>
             <div className="flex items-center justify-between shrink-0 mb-2 gap-1.5">
                 <div className="flex items-center gap-2 md:gap-3 shrink md:shrink-0 min-w-0">
-                    <Tooltip content={soloSeleccionada
-                        ? 'Volver a mostrar todas las capas que tienes activas'
-                        : 'Ocultar las demás y dejar visible solo la capa seleccionada'}>
+                    <Tooltip content={tooltipAislar}>
                         <button
                             type="button"
-                            disabled={noLayers}
+                            disabled={!puedeAislar}
                             aria-pressed={soloSeleccionada}
-                            className={`group/vis flex items-center gap-1 shrink-0 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                            className={`
+                                flex items-center gap-1.5 h-6 pl-1 rounded-full shrink min-w-0 transition-colors
+                                ${soloSeleccionada ? 'bg-purple-soft pr-1.5' : 'bg-[#EFF3FC] pr-2.5'}
+                                ${puedeAislar ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}
+                                ${puedeAislar && !soloSeleccionada ? 'hover:bg-[#E1E8F7]' : ''}
+                            `}
                             onClick={onToggleVisibilityAll}
                         >
-                            <span className={`p-0.5 rounded-full border transition-colors ${soloSeleccionada ? 'border-purple' : 'border-transparent'} ${noLayers ? '' : 'group-hover/vis:border-purple'}`}>
-                                <Icon name="solo_capa" className={`size-5 shrink-0 ${soloSeleccionada ? 'text-purple' : 'text-graphite'}`} />
-                            </span>
-                            <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium text-graphite whitespace-nowrap truncate leading-none pt-[1.5px]`}>{soloSeleccionada ? 'Mostrar todas' : 'Solo la seleccionada'}</span>
+                            <Icon name="solo_capa" className={`size-5 shrink-0 ${soloSeleccionada ? 'text-purple' : 'text-graphite'}`} />
+                            <span className={`text-[10px] font-garet font-semibold leading-none truncate max-w-[110px] md:max-w-[158px] ${soloSeleccionada ? 'text-purple' : 'text-graphite'}`}>{textoAislar}</span>
+                            {soloSeleccionada && (
+                                <span aria-hidden="true" className="grid place-items-center size-3.5 shrink-0 rounded-full bg-purple/15 text-purple text-[11px] leading-none">×</span>
+                            )}
                         </button>
                     </Tooltip>
 

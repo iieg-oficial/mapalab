@@ -8,6 +8,7 @@ const baseProps = {
     displayedLayers: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }],
     isFiltering: false,
     soloSeleccionada: false,
+    selectedLayerLabel: 'Temperatura media mensual',
     visibilityCount: 2,
     hasActiveLoops: false,
     activeLoopsCount: 0,
@@ -28,7 +29,7 @@ const baseProps = {
 describe('ActiveLayersToolbar - modo botones', () => {
     it('renderiza el switch IIEG/INEGI y los botones de acción', () => {
         render(<ActiveLayersToolbar {...baseProps} />);
-        expect(screen.getByText(/Solo la seleccionada/i)).toBeInTheDocument();
+        expect(screen.getByText(/Solo seleccionada/i)).toBeInTheDocument();
         expect(screen.getByText(/Eliminar mis capas/i)).toBeInTheDocument();
     });
 
@@ -51,18 +52,46 @@ describe('ActiveLayersToolbar - modo botones', () => {
     it('invoca onToggleVisibilityAll al hacer click en el botón de visibilidad', () => {
         const onToggleVisibilityAll = vi.fn();
         render(<ActiveLayersToolbar {...baseProps} onToggleVisibilityAll={onToggleVisibilityAll} />);
-        fireEvent.click(screen.getByText(/Solo la seleccionada/i));
+        fireEvent.click(screen.getByText(/Solo seleccionada/i));
         expect(onToggleVisibilityAll).toHaveBeenCalled();
     });
 
-    it('ofrece mostrar todas cuando ya solo se ve la seleccionada', () => {
+    it('nombra la capa aislada cuando el modo está encendido', () => {
         render(<ActiveLayersToolbar {...baseProps} soloSeleccionada />);
-        expect(screen.getByText(/Mostrar todas/i)).toBeInTheDocument();
+        expect(screen.getByText('Temperatura media mensual')).toBeInTheDocument();
+        expect(screen.queryByText(/Solo seleccionada/i)).not.toBeInTheDocument();
     });
 
     it('ofrece aislar la seleccionada cuando se ven varias', () => {
         render(<ActiveLayersToolbar {...baseProps} />);
-        expect(screen.getByText(/Solo la seleccionada/i)).toBeInTheDocument();
+        expect(screen.getByText(/Solo seleccionada/i)).toBeInTheDocument();
+    });
+
+    it('ofrece la salida con una × solo mientras está encendido', () => {
+        const { rerender } = render(<ActiveLayersToolbar {...baseProps} />);
+        expect(screen.queryByText('×')).not.toBeInTheDocument();
+        rerender(<ActiveLayersToolbar {...baseProps} soloSeleccionada />);
+        expect(screen.getByText('×')).toBeInTheDocument();
+    });
+
+    it('pide elegir una capa y se deshabilita cuando no hay selección', () => {
+        const onToggleVisibilityAll = vi.fn();
+        render(<ActiveLayersToolbar {...baseProps} selectedLayerLabel={null} onToggleVisibilityAll={onToggleVisibilityAll} />);
+        const chip = screen.getByText(/Elige una capa/i).closest('button');
+        expect(chip).toBeDisabled();
+        fireEvent.click(chip);
+        expect(onToggleVisibilityAll).not.toHaveBeenCalled();
+    });
+
+    it('se deshabilita también sin capas activas', () => {
+        render(<ActiveLayersToolbar {...baseProps} noLayers unifiedLayers={[]} displayedLayers={[]} />);
+        expect(screen.getByText(/Elige una capa/i).closest('button')).toBeDisabled();
+    });
+
+    it('mantiene visible la etiqueta del chip aunque las demás se oculten', () => {
+        render(<ActiveLayersToolbar {...baseProps} />);
+        expect(screen.getByText(/Solo seleccionada/i).className).not.toMatch(/\bhidden\b/);
+        expect(screen.getByText(/Eliminar mis capas/i).className).toMatch(/\bhidden\b/);
     });
 
     it('muestra el botón de pausar animaciones cuando hasActiveLoops', () => {

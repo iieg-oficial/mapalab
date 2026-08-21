@@ -7,7 +7,8 @@ import {
     collectLayerIdsWithWMS,
     findParentGroup,
     getSymbologyStats,
-    resolveGeometryType
+    resolveGeometryType,
+    resolveSelectedLayerLabel
 } from '@pages/maps/helpers/layers/utils/layerHelpers';
 
 const LAYERS = [
@@ -189,5 +190,41 @@ describe('resolveGeometryType', () => {
 
     it('devuelve null cuando ningun descendiente lo trae', () => {
         expect(resolveGeometryType({ id: 'g', children: [{ id: 'h', wmsConfig: {} }] })).toBeNull();
+    });
+});
+
+describe('resolveSelectedLayerLabel', () => {
+    const arbol = [
+        {
+            id: 'clima',
+            label: 'Clima',
+            children: [
+                { id: 'temperatura_media_mensual', label: 'Temperatura media mensual' },
+            ],
+        },
+    ];
+
+    it('toma el label del arbol aunque la seleccion no lo traiga', () => {
+        const seleccion = { id: 'temperatura_media_mensual', name: 'temperaturas' };
+        expect(resolveSelectedLayerLabel(seleccion, arbol)).toBe('Temperatura media mensual');
+    });
+
+    it('prefiere el arbol sobre un name desactualizado', () => {
+        const seleccion = { id: 'temperatura_media_mensual', label: 'Nombre viejo' };
+        expect(resolveSelectedLayerLabel(seleccion, arbol)).toBe('Temperatura media mensual');
+    });
+
+    it('cae al label o al name cuando el id no esta en el arbol', () => {
+        expect(resolveSelectedLayerLabel({ id: 'fantasma', label: 'Suelta' }, arbol)).toBe('Suelta');
+        expect(resolveSelectedLayerLabel({ id: 'fantasma', name: 'Por name' }, arbol)).toBe('Por name');
+    });
+
+    it('retorna null sin seleccion o sin id', () => {
+        expect(resolveSelectedLayerLabel(null, arbol)).toBeNull();
+        expect(resolveSelectedLayerLabel({ label: 'Sin id' }, arbol)).toBeNull();
+    });
+
+    it('no revienta con un arbol ausente', () => {
+        expect(resolveSelectedLayerLabel({ id: 'x', name: 'X' }, undefined)).toBe('X');
     });
 });

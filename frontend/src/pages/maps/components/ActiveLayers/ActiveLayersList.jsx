@@ -15,6 +15,7 @@ import Badge from '@components/Badge';
 import ScrollContainer from '@components/ScrollContainer';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
+import { resolveSelectedLayerLabel } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { getDefaultMapView } from '@pages/maps/helpers/defaultView';
 import { isInegiBaseMode } from '@pages/maps/helpers/basemaps';
 
@@ -86,7 +87,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         hiddenLayerIds: effectiveHiddenLayerIds,
         compareModeActive: isSwipe
     });
-    const { initialOrder } = useLayers();
+    const { layers: layerTreeNodes, initialOrder } = useLayers();
     const unifiedLayers = useMemo(
         () => sortItemsWithPinnedFirst(rawUnifiedLayers, pinnedLayerIds, initialOrder),
         [rawUnifiedLayers, pinnedLayerIds, initialOrder]
@@ -183,6 +184,11 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         setHiddenLayerIds?.(effectiveActiveLayerIds.filter(cid => !visibles.has(cid)));
     }, [soloSeleccionada, selectedLayerForSymbology?.id, effectiveActiveLayerIds, getAllChildLayerIds, setHiddenLayerIds]);
 
+    const selectedLayerLabel = useMemo(() => {
+        const enPanel = unifiedLayers.find(l => l.id === selectedLayerForSymbology?.id);
+        return enPanel?.name || resolveSelectedLayerLabel(selectedLayerForSymbology, layerTreeNodes);
+    }, [unifiedLayers, selectedLayerForSymbology, layerTreeNodes]);
+
     const handleToggleVisibilityAll = useCallback(() => {
         setSoloSeleccionada(prev => {
             if (prev) showAllLayers();
@@ -227,6 +233,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
                 displayedLayers={displayedLayers}
                 isFiltering={isFiltering}
                 soloSeleccionada={soloSeleccionada}
+                selectedLayerLabel={selectedLayerLabel}
                 hasActiveLoops={hasActiveLoops}
                 activeLoopsCount={activeLoopsCount}
                 isInegiMode={isInegiMode}

@@ -5,6 +5,41 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.135.0] - 2026-08-21
+
+### Cambiado: el boton para aislar una capa ahora se anuncia y dice cual capa aisla
+
+Era un icono de 20 px con un aro morado de 1 px como unica senal de encendido: el mismo aro que
+aparece al pasar el mouse, asi que estado y hover se veian igual. Su etiqueta existia en el codigo
+pero nunca llegaba a la pantalla — `hideHeaderLabels` sale de `visibleHeaderButtons > 2` y el minimo
+es 3, de modo que la condicion siempre fue verdadera. Las pruebas no lo detectaban porque
+`getByText` encuentra el nodo aunque lleve la clase `hidden`, que en jsdom no hace nada.
+
+El boton pasa a ser un chip con relleno azul permanente (`#EFF3FC`, el de las tarjetas de datos), lo
+que le da presencia frente a sus vecinos, que siguen siendo iconos sueltos. La etiqueta ya no se
+oculta nunca. Sus estados:
+
+- **En reposo:** «Solo seleccionada», que dice para que sirve sin haberlo tocado.
+- **Encendido:** el nombre de la capa aislada, truncado, con una × que ofrece la salida. Sin ella el
+  texto no decia como volver a ver todo.
+- **Sin seleccion:** deshabilitado, con la leyenda «Elige una capa». Antes se podia encender sin una
+  capa seleccionada y no pasaba nada: el efecto de `ActiveLayersList` sale temprano y el boton
+  quedaba encendido con el mapa intacto.
+
+El nombre que muestra el chip sale de la lista del panel, no del objeto de seleccion: cambiar de
+capa desde las alternativas del InfoBox guardaba `{ id, name }` **sin `label`**, y el chip se quedaba
+sin texto. La resolucion ahora prueba en orden el nombre visible en el panel, el label del arbol y
+por ultimo lo que traiga la seleccion, de modo que el chip diga siempre lo mismo que la fila de la
+capa — alias incluidos.
+
+El tooltip nombra la capa aislada, para los nombres que no caben. El texto se trunca a 110 px en
+movil y 158 px de `md` en adelante, en lugar de desaparecer: ocultarlo devolveria el problema que
+este cambio resuelve.
+
+Las etiquetas de «Eliminar mis capas» y «Pausar animaciones» siguen ocultas por el mismo umbral, sin
+tocar. Una prueba nueva fija que la del chip permanezca visible y la de eliminar no, para que el
+patron no vuelva a colarse.
+
 ## [1.134.3] - 2026-08-21
 
 ### Corregido: un raster no volvia a dibujarse despues de ocultarlo y mostrarlo
