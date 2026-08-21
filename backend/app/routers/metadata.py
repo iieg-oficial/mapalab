@@ -1,4 +1,6 @@
+import re
 from time import monotonic
+from typing import Optional
 
 from fastapi import APIRouter, Query
 from sqlalchemy import text
@@ -9,12 +11,33 @@ from app.schemas import (MetadataResponse, LayerSourceResponse)
 from app.services import layer_metadata_service
 from app.utils.api_responses import api_responses
 from app.config import settings
+from app.exceptions.common_exceptions import BadRequestException
 from app.utils.logger import Logger
 
 router = APIRouter(prefix="/metadata", tags=["Metadata"])
 
 _DB_STATS_TTL_SECONDS = 3600
 _db_stats_cache: dict = {"value": None, "expires_at": 0.0}
+_CLAVE_PATTERN = re.compile(r"^\d{5}$")
+_DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+MAX_MUNICIPIOS = 125
+
+
+def _parse_claves(municipio: Optional[str]) -> list[str]:
+    if not municipio:
+        return []
+    claves = [c.strip() for c in municipio.split(",") if c.strip()]
+    if len(claves) > MAX_MUNICIPIOS:
+        raise BadRequestException(f"municipio admite hasta {MAX_MUNICIPIOS} claves")
+    for clave in claves:
+        if not _CLAVE_PATTERN.match(clave):
+            raise BadRequestException(f"clave de municipio invalida: '{clave}' (5 digitos)")
+    return sorted(set(claves))
+
+
+def _validate_fecha(value: Optional[str], label: str) -> None:
+    if value and not _DATE_PATTERN.match(value):
+        raise BadRequestException(f"{label} debe tener formato YYYY-MM-DD")
 
 
 def _acervo_base() -> str:
@@ -61,8 +84,28 @@ def get_sources_batch(
 def get_metadata(
     workspace: str = Query(description="Alias del workspace (p. ej. seguridad)"),
     layer: str = Query(description="Nombre de la capa dentro del workspace"),
+    municipio: Optional[str] = Query(
+        default=None,
+        description="Claves INEGI de 5 digitos separadas por coma; recalcula la numeralia para esos municipios",
+    ),
+    fecha_inicio: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
+    fecha_fin: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
 ):
-    modern = layer_metadata_service.get_metadata_response(workspace, layer, _acervo_base())
+    claves = _parse_claves(municipio)
+    _validate_fecha(fecha_inicio, "fecha_inicio")
+    _validate_fecha(fecha_fin, "fecha_fin")
+
+    context = None
+    if claves or fecha_inicio or fecha_fin:
+        conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+        with conn.get_session() as session:
+            context = layer_metadata_service.build_stats_context(
+                session, claves, fecha_inicio, fecha_fin
+            )
+
+    modern = layer_metadata_service.get_metadata_response(
+        workspace, layer, _acervo_base(), context
+    )
     if modern:
         return [MetadataResponse(**modern)]
     return []

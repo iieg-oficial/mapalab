@@ -1,11 +1,13 @@
 from typing import Optional
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.consts.databases import DatabaseType
 from app.consts.workspaces import resolve_schema
 from app.databases.factory import DatabaseFactory
 from app.models.layer import Layer, LayerMetadata, LayerStats, Workspace
+from app.services.stats_engine import compute_numeralia
 
 
 def _resolve_workspace_name(session: Session, workspace_alias: str) -> str:
@@ -57,9 +59,13 @@ def _metadato_with_acervo(metadato: Optional[list], acervo_base: str) -> Optiona
 
 
 def _numeralia_from_stats(stats: Optional[LayerStats]) -> list:
-    if not stats or not stats.values:
+    return _numeralia_from_values(stats.values if stats else None)
+
+
+def _numeralia_from_values(values: Optional[list]) -> list:
+    if not values:
         return [{'valor': None, 'nombre': None, 'simbolo': None} for _ in range(8)]
-    by_pos = {v.get('posicion'): v for v in stats.values if isinstance(v, dict)}
+    by_pos = {v.get('posicion'): v for v in values if isinstance(v, dict)}
     result = []
     for i in range(1, 9):
         v = by_pos.get(i)
@@ -74,8 +80,28 @@ def _numeralia_from_stats(stats: Optional[LayerStats]) -> list:
     return result
 
 
+def _municipio_context(session, claves: list[str]) -> dict:
+    rows = session.execute(
+        text('SELECT clave_geo, nombre FROM mapalab.municipios WHERE clave_geo = ANY(:claves)'),
+        {'claves': claves},
+    ).fetchall()
+    nombres = [r[1] for r in rows]
+    return {'municipio.claves': claves, 'municipio.nombres': nombres}
+
+
+def build_stats_context(session, claves: list[str], fecha_inicio: str, fecha_fin: str) -> dict:
+    context: dict = {}
+    if claves:
+        context.update(_municipio_context(session, claves))
+    if fecha_inicio:
+        context['fecha.inicio'] = fecha_inicio
+    if fecha_fin:
+        context['fecha.fin'] = fecha_fin
+    return context
+
+
 def get_metadata_response(
-    workspace_alias: str, layer: str, acervo_base: str = ''
+    workspace_alias: str, layer: str, acervo_base: str = '', context: Optional[dict] = None
 ) -> Optional[dict]:
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
     with conn.get_session() as session:
@@ -86,6 +112,14 @@ def get_metadata_response(
             return None
 
         stats = session.query(LayerStats).filter(LayerStats.layer_key == layer_key).first()
+
+        numeralia = _numeralia_from_stats(stats)
+        if context and stats and stats.stats_config:
+            calculada = compute_numeralia(
+                session, layer_key, stats.stats_config, context, stats.ttl_minutes or 1440
+            )
+            if calculada:
+                numeralia = _numeralia_from_values(calculada)
 
         fuentes_list = _to_list_of_dicts(meta.fuentes)
         metodologia_list = _to_list_of_dicts(meta.metodologia)
@@ -116,7 +150,7 @@ def get_metadata_response(
             'metadato_xlsx': None,
             'tarjeta_punto_poligono': meta.tarjeta_punto_poligono,
             'created_at': None,
-            'numeralia': _numeralia_from_stats(stats),
+            'numeralia': numeralia,
             'nombre_pie_numeralia': stats.pie_numeralia if stats else None,
             'metadato': _metadato_with_acervo(meta.metadato, acervo_base),
             'fuentes': fuentes_list or None,
