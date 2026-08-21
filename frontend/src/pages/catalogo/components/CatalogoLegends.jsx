@@ -64,6 +64,7 @@ const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
         await downloadCatalogoCapa(capa, formatId, {
             cqlFilter: cqlFiltro,
             timeValue: isRaster ? filtro : null,
+            rasterPeriodicity: isRaster ? tiempo?.periodicidad || null : null,
         });
         setDownloading(null);
     };

@@ -735,6 +735,25 @@ entre sí, que era el grueso del beneficio.
 
 La dirección del servidor se configura en el panel; no viaja en el código.
 
+## [1.116.3] - 2026-08-21
+
+### Corregido: las descargas se nombraban con la fecha del día, no con la del dato
+
+`buildFilename` sellaba el nombre con `new Date()`, así que bajar temperatura de enero y de febrero
+producía dos veces `Temperatura_media_2026-08-21.tiff`: el segundo archivo pisaba al primero o
+quedaba como copia numerada, sin manera de saber qué mes traía cada uno. Afectaba por igual al
+visor, al ZIP con metadatos y al catálogo.
+
+Ahora el nombre lleva el periodo que realmente se descargó, resuelto con `describeDateFilter`, que
+es el mismo helper que rotula las píldoras de fecha del panel de capas. Un mes sale como
+`Temperatura_media_2026-01.tiff`, un año como `_2026`, y varios meses como `_2026-01_a_2026-03`. En
+raster el periodo se traduce con la `rasterPeriodicity` de la capa; en vectoriales se deduce del CQL
+del filtro activo. Sin filtro de fecha se conserva la fecha de descarga, que es la que aplica cuando
+el archivo trae la serie completa.
+
+La descarga rápida de capas vectoriales sigue bajando todas las fechas y por eso conserva la fecha
+de descarga: el nombre describe el contenido del archivo, no lo que esté filtrado en pantalla.
+
 ## [1.116.2] - 2026-08-10
 
 ### Corregido: el beacon de errores de carga no decía qué se había roto
