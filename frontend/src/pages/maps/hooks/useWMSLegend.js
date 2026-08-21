@@ -37,7 +37,7 @@ export const useWMSLegend = () => {
         if (!wmsConfig) return null;
 
         const timeValue = dateValue !== undefined ? dateValue : getFilter?.(effectiveId);
-        const cqlFilter = wmsConfig.timeStylePattern ? null : (getSpecificFilter?.(effectiveId, 'date') || null);
+        const cqlFilter = wmsConfig.timeEnabled ? null : (getSpecificFilter?.(effectiveId, 'date') || null);
 
         return buildLegendGraphicUrl({
             baseUrl: wmsConfig.baseUrl,

@@ -5,6 +5,29 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.134.2] - 2026-08-21
+
+### Corregido: la leyenda no aparecia en las capas raster con dimension TIME
+
+`useWMSLegend` decidia mandar el filtro de fecha como `CQL_FILTER` mirando `timeStylePattern`. Pero
+en una capa con `timeEnabled` el filtro guardado **no es CQL**: es el instante TIME (`2025-03-01`).
+En las capas que ademas tienen patron de estilo la condicion lo tapaba por accidente; en las que no,
+el valor viajaba tal cual y GeoServer respondia `Could not parse CQL filter list`. Como devuelve la
+excepcion con HTTP 200 y cuerpo XML, el `<img>` fallaba al decodificar y `LegendImage` se ocultaba:
+ninguna leyenda, ningun error visible.
+
+Afectaba a **Temperatura media mensual** en el visor, tanto la leyenda del panel como el icono de
+simbologia junto al nombre de la capa. Las anuales nunca tuvieron filtro de fecha y por eso si se
+veian, lo que hacia parecer que el problema era de los raster en general.
+
+La condicion ahora mira `timeEnabled`, que es lo que de verdad determina si el valor es un instante
+TIME o una expresion CQL, el mismo criterio que ya usa `useWMSFilterUpdater` para elegir entre el
+parametro `TIME` y `CQL_FILTER`. El Catalogo no estaba afectado: ahi el CQL ya se anulaba a mano
+para raster.
+
+Verificado contra el GeoServer de sextante: la peticion con `CQL_FILTER=2025-03-01` devuelve la
+excepcion, y sin el filtro devuelve el PNG de la leyenda.
+
 ## [1.134.1] - 2026-08-21
 
 ### Corregido: el scrollbar del detalle de capa volvio a verse como el del navegador
