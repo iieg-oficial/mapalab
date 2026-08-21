@@ -1,8 +1,8 @@
 import { useEffect, useCallback, useRef, useMemo } from 'react';
-import { hasWMSConfig, findWMSConfig } from '../helpers/wmsConfig';
+import { hasWMSConfig, findWMSConfig, resolveTimeStyle } from '../helpers/wmsConfig';
 import { useLayers } from '@hooks/useLayers';
 import { findLayerById } from '../helpers/layers/utils/layerHelpers';
-import { buildLayerCqlSegment } from '../helpers/layerCqlSegment';
+import { buildLayerCqlSegment, isSingleTimeLayer } from '../helpers/layerCqlSegment';
 import { filtersInitializationComplete } from './useInitializeFromUrl';
 import { useDebounce } from '@hooks/useDebounce';
 import { useLayerLoading } from '@hooks/useLayerLoading';
@@ -152,12 +152,20 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
                 const allInclude = cqlFilterSegments.every(f => f === 'INCLUDE');
                 const finalCqlFilter = allInclude ? null : cqlFilterSegments.join(';');
 
+                const timeSubLayers = wmsLayersOrdered.length === 1 ? wmsLayersOrdered[0].subLayers : null;
+                const timeSub = isSingleTimeLayer(timeSubLayers) ? timeSubLayers[0] : null;
+                const timeValue = timeSub ? getFilterRef.current?.(timeSub.id) : null;
+
                 const customParams = {
                     LAYERS: layersParam,
                     STYLES: stylesParam,
                     ENV: envParam,
                 };
-                if (finalCqlFilter) {
+                if (timeValue) {
+                    customParams.TIME = timeValue;
+                    const resolvedStyle = resolveTimeStyle(timeSub.wmsConfig.timeStylePattern, timeValue);
+                    if (resolvedStyle) customParams.STYLES = resolvedStyle;
+                } else if (finalCqlFilter) {
                     customParams.CQL_FILTER = finalCqlFilter;
                 }
 

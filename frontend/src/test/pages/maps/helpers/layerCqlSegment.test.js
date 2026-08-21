@@ -13,7 +13,7 @@ vi.mock('@pages/maps/helpers/municipioCqlBuilder', () => ({
     buildLayerMunicipioCql: (...args) => mockBuildLayerMunicipioCql(...args)
 }));
 
-import { buildLayerCqlSegment } from '@pages/maps/helpers/layerCqlSegment';
+import { buildLayerCqlSegment, isSingleTimeLayer } from '@pages/maps/helpers/layerCqlSegment';
 
 const combineCQLFilters = (base, dynamic) => {
     if (!base && !dynamic) return null;
@@ -92,5 +92,50 @@ describe('buildLayerCqlSegment', () => {
             municipioContext: { active: true }
         });
         expect(segment).toBe('INCLUDE');
+    });
+});
+
+describe('buildLayerCqlSegment - capas con dimension TIME', () => {
+    const raster = [{ id: 'temperatura_media_mensual', wmsConfig: { timeEnabled: true, cqlFilter: '' } }];
+
+    it('no manda el instante TIME como CQL', () => {
+        const segment = buildLayerCqlSegment({
+            subLayers: raster,
+            layers: [],
+            getFilter: () => '2025-03-01',
+            combineCQLFilters,
+            municipioContext: null,
+        });
+        expect(segment).toBe('INCLUDE');
+        expect(segment).not.toContain('2025-03-01');
+    });
+
+    it('conserva el cqlFilter estatico de la capa si lo tiene', () => {
+        const segment = buildLayerCqlSegment({
+            subLayers: [{ id: 'r', wmsConfig: { timeEnabled: true, cqlFilter: "region = 'norte'" } }],
+            layers: [],
+            getFilter: () => '2025-03-01',
+            combineCQLFilters,
+            municipioContext: null,
+        });
+        expect(segment).toBe("region = 'norte'");
+    });
+
+    it('una capa sin timeEnabled si usa su filtro dinamico como CQL', () => {
+        const segment = buildLayerCqlSegment({
+            subLayers: [{ id: 'vec', wmsConfig: { timeEnabled: false } }],
+            layers: [],
+            getFilter: () => "fecha = '2025-03-01'",
+            combineCQLFilters,
+            municipioContext: null,
+        });
+        expect(segment).toBe("(fecha = '2025-03-01')");
+    });
+
+    it('isSingleTimeLayer solo aplica a grupos de una capa', () => {
+        expect(isSingleTimeLayer(raster)).toBe(true);
+        expect(isSingleTimeLayer([...raster, { id: 'otra', wmsConfig: { timeEnabled: true } }])).toBe(false);
+        expect(isSingleTimeLayer([{ id: 'v', wmsConfig: {} }])).toBe(false);
+        expect(isSingleTimeLayer(null)).toBe(false);
     });
 });

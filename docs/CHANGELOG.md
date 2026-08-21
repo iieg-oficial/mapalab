@@ -5,6 +5,30 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.134.3] - 2026-08-21
+
+### Corregido: un raster no volvia a dibujarse despues de ocultarlo y mostrarlo
+
+Al ocultar una capa —lo que hace «Solo la seleccionada» con todas las demas— el gestor la **quita
+del mapa** y la borra de `wmsLayersRef`; al volver a mostrarla la **crea de cero**. Los parametros
+iniciales salian de `buildLayerCqlSegment`, que trataba el filtro `date` de la capa como CQL. En un
+raster con dimension TIME ese filtro no es CQL: es el instante `2025-03-01`. La capa nacia entonces
+con `CQL_FILTER=(2025-03-01)` y sin `TIME`, y GeoServer respondia `Could not parse CQL filter list`
+en vez de la imagen.
+
+Por eso fallaba solo al regresar y no en la primera activacion: la primera vez la capa se crea antes
+de que se aplique la fecha por defecto, asi que nace limpia y `useWMSFilterUpdater` le pone el `TIME`
+cuando cambian los filtros. Al re-mostrarla el filtro ya existe, el CQL invalido queda horneado en la
+fuente, y ese effect no vuelve a correr porque depende de `filters` y los filtros no cambiaron.
+
+`buildLayerCqlSegment` ya no convierte en CQL el filtro de una capa `timeEnabled`, y el gestor siembra
+`TIME` —y el estilo resuelto por patron— al crear la capa, con el mismo criterio que ya usaba
+`useWMSFilterUpdater`. Es el tercer sitio donde el instante TIME se confundia con una expresion CQL,
+despues de la descarga y de la leyenda.
+
+Verificado contra el GeoServer de sextante: el GetMap con `TIME=2025-03-01` devuelve el PNG; el mismo
+GetMap con `CQL_FILTER=(2025-03-01)` devuelve la excepcion.
+
 ## [1.134.2] - 2026-08-21
 
 ### Corregido: la leyenda no aparecia en las capas raster con dimension TIME

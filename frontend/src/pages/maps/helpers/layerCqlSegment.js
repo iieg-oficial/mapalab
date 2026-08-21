@@ -3,7 +3,14 @@ import { buildLayerMunicipioCql } from './municipioCqlBuilder';
 
 export const RASTER_WORKSPACES = new Set(['raster', 'lluvia', 'temperatura']);
 
+export const isSingleTimeLayer = (subLayers) =>
+    subLayers?.length === 1 && !!subLayers[0]?.wmsConfig?.timeEnabled;
+
 export const buildLayerCqlSegment = ({ subLayers, layers, getFilter, combineCQLFilters, municipioContext }) => {
+    if (isSingleTimeLayer(subLayers)) {
+        return subLayers[0].wmsConfig.cqlFilter?.trim() || 'INCLUDE';
+    }
+
     const subFilters = subLayers.map(sub => {
         const baseCqlFilter = sub.wmsConfig.cqlFilter?.trim() || null;
         const dynamicFilter = getFilter?.(sub.id);
