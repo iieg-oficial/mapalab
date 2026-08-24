@@ -97,6 +97,8 @@ const MapsProvider = ({ children }) => {
         compareMode: swipeMode.compareMode,
     });
 
+    const municipioModeRef = useRef(null);
+
     const layerToggle = useLayerToggle({
         ...layerManagement,
         setSelectedLayer,
@@ -106,7 +108,8 @@ const MapsProvider = ({ children }) => {
         periodicityCache,
         mapRef,
         showMarker: mapMarker.showMarker,
-        hideMarker: mapMarker.hideMarker
+        hideMarker: mapMarker.hideMarker,
+        municipioModeRef
     });
     const swipeFilterRef = useRef({});
     swipeFilterRef.current = {
@@ -178,7 +181,6 @@ const MapsProvider = ({ children }) => {
         return undefined;
     }, [swipeMode, layerToggle]);
 
-    const municipioModeRef = useRef(null);
     const handlePolygonComplete = useCallback((geometry, centerCoordinate, onFeatureCountUpdate) => {
         const guard = municipioModeRef.current?.polygonIntersectsMunicipios;
         if (typeof guard === 'function' && !guard(geometry)) {

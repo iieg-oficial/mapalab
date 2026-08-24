@@ -14,11 +14,15 @@ const setCached = (key, value) => {
     }
 };
 
-export const fetchLayerExtent = async (layer, { timeoutMs = 10000 } = {}) => {
+export const fetchLayerExtent = async (layer, { timeoutMs = 10000, municipioCql = null } = {}) => {
     const wmsConfig = layer?.wmsConfig;
     if (!wmsConfig?.baseUrl || !wmsConfig?.layerName) return null;
 
-    const cacheKey = `${wmsConfig.baseUrl}|${wmsConfig.layerName}|${wmsConfig.cqlFilter || ''}`;
+    const base = wmsConfig.cqlFilter?.trim() || '';
+    let filtro = base;
+    if (municipioCql) filtro = base ? `(${municipioCql}) AND (${base})` : municipioCql;
+
+    const cacheKey = `${wmsConfig.baseUrl}|${wmsConfig.layerName}|${filtro}`;
     if (extentCache.has(cacheKey)) return extentCache.get(cacheKey);
 
     const wfsUrl = getWfsUrl(wmsConfig.baseUrl);
@@ -30,7 +34,7 @@ export const fetchLayerExtent = async (layer, { timeoutMs = 10000 } = {}) => {
         OUTPUTFORMAT: 'application/json',
         SRSNAME: 'EPSG:3857'
     };
-    if (wmsConfig.cqlFilter) params.CQL_FILTER = wmsConfig.cqlFilter;
+    if (filtro) params.CQL_FILTER = filtro;
 
     const url = wfsUrl + '?' + new URLSearchParams(params).toString();
 
