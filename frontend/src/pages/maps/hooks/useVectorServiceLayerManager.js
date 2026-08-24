@@ -6,7 +6,7 @@ import { useLayers } from '@hooks/useLayers';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 import { useDebounce } from '@hooks/useDebounce';
 import { findWMSConfig, findLayerDef } from '../helpers/wmsConfig';
-import { buildLayerCqlSegment } from '../helpers/layerCqlSegment';
+import { buildLayerCqlSegment, buildMunicipioCqlDeGrupo } from '../helpers/layerCqlSegment';
 import { computeLayerZIndex } from '../helpers/layerZIndex';
 import { createVectorLayerStyle, resolveVectorColor } from '../helpers/vectorLayerStyles';
 import { createHexbinLayer, fillHexbinLayer, fillHexbinLayerFromCells } from '../helpers/hexbinLayer';
@@ -161,9 +161,16 @@ export const useVectorServiceLayerManager = ({
                 layers,
                 getFilter: getFilterRef.current,
                 combineCQLFilters: combineCQLFiltersRef.current,
-                municipioContext: municipioContextRef.current
+                municipioContext: municipioContextRef.current,
+                omitirMunicipio: true
             });
             if (segment === '1=0') return;
+
+            const muniCql = buildMunicipioCqlDeGrupo({
+                subLayers: [{ id, wmsConfig }],
+                layers,
+                municipioContext: municipioContextRef.current
+            });
 
             const sinFiltroUsuario = !getFilterRef.current?.(id) && !municipioContextRef.current?.active;
             const typeName = wmsConfig.wfsLayerName || wmsConfig.layerName;
@@ -175,6 +182,7 @@ export const useVectorServiceLayerManager = ({
                     wmsConfig,
                     index,
                     segments: [segment],
+                    muniCql,
                     memberIds: [id],
                     hexbin: vectorModes.get(id) === SERVICE_HEXBIN,
                     precalculable: sinFiltroUsuario
@@ -190,9 +198,15 @@ export const useVectorServiceLayerManager = ({
 
         groups.forEach((group) => {
             const unique = [...new Set(group.segments)];
-            group.cqlFilter = unique.includes('INCLUDE')
+            const unido = unique.includes('INCLUDE')
                 ? ''
                 : unique.map(segment => `(${segment})`).join(' OR ');
+
+            if (!group.muniCql) {
+                group.cqlFilter = unido;
+                return;
+            }
+            group.cqlFilter = unido ? `(${group.muniCql}) AND (${unido})` : group.muniCql;
         });
 
         return groups;

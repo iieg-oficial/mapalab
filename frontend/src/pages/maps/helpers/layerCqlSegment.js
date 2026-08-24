@@ -6,7 +6,16 @@ export const RASTER_WORKSPACES = new Set(['raster', 'lluvia', 'temperatura']);
 export const isSingleTimeLayer = (subLayers) =>
     subLayers?.length === 1 && !!subLayers[0]?.wmsConfig?.timeEnabled;
 
-export const buildLayerCqlSegment = ({ subLayers, layers, getFilter, combineCQLFilters, municipioContext }) => {
+export const buildMunicipioCqlDeGrupo = ({ subLayers, layers, municipioContext }) => {
+    if (!municipioContext?.active) return null;
+    if (subLayers.some(sub => RASTER_WORKSPACES.has(sub.wmsConfig?.workspace))) return null;
+    const primero = subLayers[0];
+    if (!primero) return null;
+    const layerDef = findLayerById(primero.id, layers);
+    return buildLayerMunicipioCql(layerDef?.searchMeta, municipioContext, primero.id);
+};
+
+export const buildLayerCqlSegment = ({ subLayers, layers, getFilter, combineCQLFilters, municipioContext, omitirMunicipio = false }) => {
     if (isSingleTimeLayer(subLayers)) {
         return subLayers[0].wmsConfig.cqlFilter?.trim() || 'INCLUDE';
     }
@@ -25,15 +34,10 @@ export const buildLayerCqlSegment = ({ subLayers, layers, getFilter, combineCQLF
         segment = subFilters.map(f => `(${f})`).join(' OR ');
     }
 
-    if (municipioContext?.active && segment !== '1=0') {
-        const isRaster = subLayers.some(sub => RASTER_WORKSPACES.has(sub.wmsConfig?.workspace));
-        if (!isRaster) {
-            const firstSub = subLayers[0];
-            const layerDef = findLayerById(firstSub.id, layers);
-            const muniCql = buildLayerMunicipioCql(layerDef?.searchMeta, municipioContext, firstSub.id);
-            if (muniCql) {
-                segment = segment === 'INCLUDE' ? muniCql : `(${muniCql}) AND (${segment})`;
-            }
+    if (!omitirMunicipio && segment !== '1=0') {
+        const muniCql = buildMunicipioCqlDeGrupo({ subLayers, layers, municipioContext });
+        if (muniCql) {
+            segment = segment === 'INCLUDE' ? muniCql : `(${muniCql}) AND (${segment})`;
         }
     }
 
