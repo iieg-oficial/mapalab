@@ -61,6 +61,25 @@ Las etiquetas de «Eliminar mis capas» y «Pausar animaciones» siguen ocultas 
 tocar. Una prueba nueva fija que la del chip permanezca visible y la de eliminar no, para que el
 patron no vuelva a colarse.
 
+### Agregado: el visor pide la numeralia con el municipio seleccionado
+
+El endpoint aceptaba contexto desde esta misma version, pero el visor no se lo mandaba: pedia
+`/metadata/?workspace=&layer=` y nada mas, asi que la tarjeta de la capa seguia mostrando el total
+estatal aunque el mapa estuviera filtrado por municipio.
+
+Ahora `getLayerMetadata` acepta un contexto opcional y el modal de detalle le pasa las claves de
+`municipioContext`, el mismo estado que ya alimenta el filtro CQL de las capas. Al cambiar la
+seleccion, la metadata se vuelve a pedir: la clave de contexto entra en las dependencias del hook.
+Sin municipios seleccionados la peticion es identica a la de antes.
+
+Las claves se ordenan antes de armar la URL, asi que dos usuarios con la misma seleccion en distinto
+orden comparten entrada de cache en el gateway.
+
+**Falta el lado temporal.** El servicio ya acepta `fechaInicio` y `fechaFin` y los traduce a
+parametros, pero el visor todavia no los manda: la fecha se elige por slot y en modo comparacion hay
+dos vivas a la vez, con una sola numeralia en pantalla. Esa decision esta anotada en
+`context-ame-esta/ecosistema/planes/numeralia-por-contexto.md`.
+
 ### Agregado: la numeralia responde al municipio y al rango de fechas
 
 `GET /metadata/` acepta tres parametros nuevos y opcionales: `municipio` (claves INEGI de cinco
