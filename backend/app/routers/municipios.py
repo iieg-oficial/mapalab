@@ -65,14 +65,12 @@ def list_municipios(
     '/geometries',
     responses=api_responses(400, 500),
     operation_id='get_municipios_geometries',
-    summary='Geometrías GeoJSON + WKT unión simplificado de los municipios seleccionados',
+    summary='Geometrías GeoJSON y bbox unión de los municipios seleccionados',
     description=(
         "Devuelve un `FeatureCollection` GeoJSON con las geometrías detalladas de los "
-        "municipios (EPSG:3857 para máscara visual en OpenLayers) **más** el campo "
-        "`unionWkt`: el WKT del polígono unión simplificado (`ST_SimplifyPreserveTopology` "
-        "con tolerancia 50m) en EPSG:6368, listo para usar como `INTERSECTS(geom, …)` "
-        "en CQL_FILTER de WMS. El WKT simplificado evita explosión de URL al combinar "
-        "varios municipios."
+        "municipios (EPSG:3857, para la máscara visual en OpenLayers) más `unionBbox`, "
+        "la caja envolvente de la selección en EPSG:6368. El visor usa el bbox como "
+        "filtro de respaldo en las capas que todavía no declaran su campo de municipio."
     ),
 )
 def get_geometries(
@@ -88,18 +86,11 @@ def get_geometries(
     src = _normalize_source(source)
     with _get_session() as session:
         features = MunicipiosRepository.get_geometries(session, claves_list, src)
-        union_wkt, tolerance_used = MunicipiosRepository.get_union_wkt(
-            session, claves_list, src, tolerance_m=50.0, max_size_bytes=8000,
-        )
         union_bbox = MunicipiosRepository.get_union_bbox(session, claves_list, src)
     response.headers['Cache-Control'] = 'public, max-age=3600'
     return {
         'type': 'FeatureCollection',
         'source': src,
         'features': features,
-        'unionWkt': union_wkt,
-        'unionSrid': 6368,
-        'unionToleranceMeters': tolerance_used,
-        'unionIsEnvelope': tolerance_used == -1.0,
         'unionBbox': union_bbox,
     }

@@ -32,7 +32,7 @@ export const fetchMunicipiosList = async ({ signal, force = false } = {}) => {
     return items;
 };
 
-const EMPTY_RESULT = Object.freeze({ items: [], unionWkt: null, unionSrid: null, unionBbox: null });
+const EMPTY_RESULT = Object.freeze({ items: [], unionBbox: null });
 
 export const fetchMunicipiosGeometries = async (sourceId = 'iieg', claves = [], { signal, force = false } = {}) => {
     if (!Array.isArray(claves) || claves.length === 0) return EMPTY_RESULT;
@@ -59,8 +59,6 @@ export const fetchMunicipiosGeometries = async (sourceId = 'iieg', claves = [], 
     })).filter(item => item.clave && item.geometry);
     const result = {
         items,
-        unionWkt: data?.unionWkt || null,
-        unionSrid: data?.unionSrid || null,
         unionBbox: Array.isArray(data?.unionBbox) && data.unionBbox.length === 4
             ? data.unionBbox.map(Number)
             : null,

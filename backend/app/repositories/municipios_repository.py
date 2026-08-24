@@ -72,68 +72,6 @@ class MunicipiosRepository:
         return features
 
     @staticmethod
-    def get_union_wkt(
-        session: Session,
-        claves: list[str],
-        source: str = 'iieg',
-        tolerance_m: float = 50.0,
-        target_srid: Optional[int] = None,
-        max_size_bytes: int = 8000,
-    ) -> tuple[Optional[str], Optional[float]]:
-        if not claves:
-            return None, None
-        geom_col = _resolve_geom_column(source)
-        if target_srid:
-            geom_expr = f'ST_Transform(ST_Union(ST_SimplifyPreserveTopology({geom_col}, :tol)), :srid)'
-        else:
-            geom_expr = f'ST_Union(ST_SimplifyPreserveTopology({geom_col}, :tol))'
-        sql = (
-            f'SELECT ST_AsText({geom_expr}) AS wkt '
-            f'FROM mapalab.municipios '
-            f'WHERE clave_geo = ANY(:claves) AND {geom_col} IS NOT NULL'
-        )
-
-        tolerances = [tolerance_m, 100.0, 250.0, 500.0, 1000.0, 2000.0, 5000.0]
-        seen = set()
-        ordered_tolerances = []
-        for tol in tolerances:
-            if tol >= tolerance_m and tol not in seen:
-                ordered_tolerances.append(tol)
-                seen.add(tol)
-
-        last_wkt = None
-        last_tol = None
-        for tol in ordered_tolerances:
-            params = {'claves': list(claves), 'tol': tol}
-            if target_srid:
-                params['srid'] = target_srid
-            wkt = session.execute(text(sql), params).scalar()
-            if not wkt:
-                return None, None
-            last_wkt = wkt
-            last_tol = tol
-            if len(wkt) <= max_size_bytes:
-                return wkt, tol
-
-        if target_srid:
-            envelope_expr = f'ST_AsText(ST_Transform(ST_Envelope(ST_Union({geom_col})), :srid))'
-        else:
-            envelope_expr = f'ST_AsText(ST_Envelope(ST_Union({geom_col})))'
-        envelope_sql = (
-            f'SELECT {envelope_expr} AS wkt '
-            f'FROM mapalab.municipios '
-            f'WHERE clave_geo = ANY(:claves) AND {geom_col} IS NOT NULL'
-        )
-        envelope_params = {'claves': list(claves)}
-        if target_srid:
-            envelope_params['srid'] = target_srid
-        envelope_wkt = session.execute(text(envelope_sql), envelope_params).scalar()
-        if envelope_wkt and len(envelope_wkt) <= max_size_bytes:
-            return envelope_wkt, -1.0
-
-        return last_wkt, last_tol
-
-    @staticmethod
     def get_union_bbox(
         session: Session,
         claves: list[str],

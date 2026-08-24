@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.136.0] - 2026-08-21
+
+### Eliminado: el WKT union de `/municipios/geometries`, que ya no lee nadie
+
+Cuando «Vista por municipio» filtraba todas las capas con un mismo
+`INTERSECTS(geom, POLYGON(...))`, el backend calculaba el poligono union simplificado y lo mandaba
+como `unionWkt`. El WKT median entre 3 y 8 KB y viajaba en la URL de cada capa activa, asi que
+`get_union_wkt` traia una biseccion de tolerancia —50, 100, 250, 500, 1000, 2000, 5000 m, y un
+`ST_Envelope` de ultimo recurso— para meterlo a la fuerza en 8 000 bytes.
+
+Ese camino murio en la **1.50.0**, cuando `municipioCqlBuilder` paso a armar el CQL por capa. Desde
+entonces el WKT se calculaba en PostGIS en cada cambio de seleccion, viajaba por la red y se
+descartaba: `municipioService` lo guardaba en un objeto que ningun consumidor leia. Comprobado sobre
+todo el repo y sobre mapalab-qgis antes de quitarlo.
+
+Se van `MunicipiosRepository.get_union_wkt` con su biseccion, y los campos `unionWkt`, `unionSrid`,
+`unionToleranceMeters` y `unionIsEnvelope` de la respuesta. **`unionBbox` se queda**: es lo que
+alimenta el filtro de respaldo `BBOX` de las capas que todavia no declaran su campo de municipio.
+
+La respuesta queda en `type`, `source`, `features` y `unionBbox`.
+
 ## [1.135.0] - 2026-08-21
 
 ### Cambiado: el boton para aislar una capa ahora se anuncia y dice cual capa aisla
