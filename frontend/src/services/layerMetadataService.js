@@ -138,7 +138,13 @@ export const getLayersSources = async (layerIds) => {
     return Object.fromEntries(entries.map(({ id, key }) => [id, byKey[key] ?? null]));
 };
 
-export const getLayerMetadata = async (layerId) => {
+export const buildMetadataContextKey = (context) => {
+    if (!context) return '';
+    const claves = Array.isArray(context.claves) ? context.claves.slice().sort().join(',') : '';
+    return [claves, context.fechaInicio || '', context.fechaFin || ''].join('|');
+};
+
+export const getLayerMetadata = async (layerId, context = null) => {
     if (!API_HOST) {
         console.error('VITE_BACKEND_API_HOST no está configurado');
         return null;
@@ -153,6 +159,12 @@ export const getLayerMetadata = async (layerId) => {
     const url = new URL(METADATA_ENDPOINT, window.location.origin);
     url.searchParams.set('workspace', params.workspace);
     url.searchParams.set('layer', params.layer);
+
+    if (context?.claves?.length) {
+        url.searchParams.set('municipio', context.claves.slice().sort().join(','));
+    }
+    if (context?.fechaInicio) url.searchParams.set('fecha_inicio', context.fechaInicio);
+    if (context?.fechaFin) url.searchParams.set('fecha_fin', context.fechaFin);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);

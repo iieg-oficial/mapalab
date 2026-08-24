@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { trackLayerDetailOpen, trackPeriodicityAdvanced } from '@services/analyticsService';
-import { useLayerMetadata } from '../../hooks/useLayerMetadata';
+import { useLayerMetadata, useMetadataContext } from '../../hooks/useLayerMetadata';
 import { useLayerPeriodicity } from '../../hooks/useLayerPeriodicity';
 import { useLayerDownload } from '../../hooks/useLayerDownload';
 import { useSider } from '@contexts/SiderContext';
@@ -28,7 +28,7 @@ const LayerDetailModal = () => {
         getLayerOpacity, setLayerOpacity,
         getLoopState, startLoop, toggleLoop, stopLoop, inferLoopConfig,
         getLoopPrefs, setLoopIntervalMs, setLoopDirection, allLayers,
-        compareMode, applyFilterToSlot, clearFilterFromSlot, setActiveSlot,
+        compareMode, applyFilterToSlot, clearFilterFromSlot, setActiveSlot, municipioMode,
     } = useContext(MapsContext);
     const { activeEvento, getAliasByLayerId } = useEventoContext();
     const [expandedYear, setExpandedYear] = useState(null);
@@ -45,7 +45,7 @@ const LayerDetailModal = () => {
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
     const hidePeriodicity = layerDef?.hidePeriodicity || false;
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
-    const { metadata, loading } = useLayerMetadata(selectedLayer?.id);
+    const { metadata, loading } = useLayerMetadata(selectedLayer?.id, useMetadataContext(municipioMode));
     const themeName = themeNode?.label || metadata?.tema || 'General';
     const { periodicity, loading: periodicityLoading } = useLayerPeriodicity(selectedLayer?.id);
     const { isMobile } = useSider();
