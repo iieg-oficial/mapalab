@@ -1,6 +1,7 @@
 import { useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { trackLayerDetailOpen, trackPeriodicityAdvanced } from '@services/analyticsService';
 import { useLayerMetadata, useMetadataContext } from '../../hooks/useLayerMetadata';
+import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
 import { useLayerPeriodicity } from '../../hooks/useLayerPeriodicity';
 import { useLayerDownload } from '../../hooks/useLayerDownload';
 import { useSider } from '@contexts/SiderContext';
@@ -46,6 +47,7 @@ const LayerDetailModal = () => {
     const hidePeriodicity = layerDef?.hidePeriodicity || false;
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id, useMetadataContext(municipioMode));
+    const { detachedLayerId, detach } = useNumeraliaPanel();
     const themeName = themeNode?.label || metadata?.tema || 'General';
     const { periodicity, loading: periodicityLoading } = useLayerPeriodicity(selectedLayer?.id);
     const { isMobile } = useSider();
@@ -217,11 +219,14 @@ const LayerDetailModal = () => {
                                 </div>
                             )}
 
-                            <NumeraliaSection
-                                numeralia={metadata?.numeralia}
-                                pie={metadata?.nombre_pie_numeralia}
-                                ambito={metadata?.ambito}
-                            />
+                            {detachedLayerId !== selectedLayer?.id && (
+                                <NumeraliaSection
+                                    numeralia={metadata?.numeralia}
+                                    pie={metadata?.nombre_pie_numeralia}
+                                    ambito={metadata?.ambito}
+                                    onDetach={() => detach?.(selectedLayer?.id)}
+                                />
+                            )}
 
                             {hasPeriodicity && slotMembership === 'AB' ? (
                                 <>

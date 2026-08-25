@@ -6,6 +6,7 @@ import { useAlwaysOnTopPinning, sortItemsWithPinnedFirst } from '../../hooks/use
 import { useLayerCollapse } from './hooks/useLayerCollapse';
 import { useLayerSorting } from './hooks/useLayerSorting';
 import { LegendsVisibilityProvider } from './hooks/useLegendsVisibility';
+import { StatsVisibilityProvider } from './hooks/useStatsVisibility';
 import { SortableList, SortableItem } from './SortableList';
 import ActiveLayerItem from './ActiveLayerItem';
 import ActiveLayersToolbar from './ActiveLayersToolbar';
@@ -284,7 +285,9 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
 
 const ActiveLayersList = (props) => (
     <LegendsVisibilityProvider>
-        <ActiveLayersListInner {...props} />
+        <StatsVisibilityProvider>
+            <ActiveLayersListInner {...props} />
+        </StatsVisibilityProvider>
     </LegendsVisibilityProvider>
 );
 

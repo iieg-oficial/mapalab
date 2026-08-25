@@ -5,6 +5,7 @@ import Switch from '@components/Switch';
 import Loading from '@components/Loading';
 import LayerOpacityPopover from './LayerOpacityPopover';
 import { useLegendsVisibility } from './hooks/useLegendsVisibility';
+import { useStatsVisibility } from './hooks/useStatsVisibility';
 import { useMapsContext } from '@hooks/useMaps';
 
 const SIZE_BUTTON = 'size-5';
@@ -28,6 +29,7 @@ const LayerActionsBar = ({
     activeSlot = null,
     onSwitchSlot,
     canDownload = false,
+    hasStats = false,
     isDownloading = false,
     onDownloadClick,
     downloadButtonRef,
@@ -40,6 +42,7 @@ const LayerActionsBar = ({
     const [isOpacityOpen, setIsOpacityOpen] = useState(false);
     const opacityButtonRef = useRef(null);
     const { visible: legendsVisible, setVisible: setLegendsVisible } = useLegendsVisibility();
+    const { visible: statsVisible, setVisible: setStatsVisible } = useStatsVisibility();
     const { setHighlightedSlots } = useMapsContext();
 
     const opacityPercent = Math.round(opacity * 100);
@@ -127,6 +130,19 @@ const LayerActionsBar = ({
                         ) : (
                             <Icon name="download" className={SIZE_BUTTON} />
                         )}
+                    </button>
+                </Tooltip>
+            )}
+
+            {hasStats && (
+                <Tooltip content={`${statsVisible ? 'Ocultar' : 'Mostrar'} estadísticas`}>
+                    <button
+                        className={`p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center size-8 ${statsVisible ? 'bg-white border border-[#70308A]' : `${BUTTON_BASE} hover:border-[#70308A]`}`}
+                        onClick={(e) => { e.stopPropagation(); setStatsVisible(p => !p); }}
+                        aria-pressed={statsVisible}
+                        aria-label={`${statsVisible ? 'Ocultar' : 'Mostrar'} estadísticas de la capa`}
+                    >
+                        <Icon name="geom_hexbin" className={SIZE_BUTTON} />
                     </button>
                 </Tooltip>
             )}

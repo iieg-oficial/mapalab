@@ -18,6 +18,7 @@ import LayerServiceSegmented from './LayerServiceSegmented';
 import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
 import LayerDownloadProgress from './LayerDownloadProgress';
+import LayerStatsInline from './LayerStatsInline';
 import SlotBadge from './SlotBadge';
 import { computeLabel } from './datePillHelpers';
 import { ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
@@ -290,7 +291,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 slotMembership={slotMembership}
                                 activeSlot={compareMode?.activeSlot}
                                 onSwitchSlot={setActiveSlot}
-                                canDownload={canDownload}
+                                canDownload={canDownload} hasStats={Boolean(metadata?.numeralia?.some(s => s.nombre && s.valor))}
                                 isDownloading={download.downloading}
                                 onDownloadClick={handleDownloadClick}
                                 downloadButtonRef={download.menuAnchorRef}
@@ -313,8 +314,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                     />
                                 </>
                             )}
-                            <LayerLegendInline
-                                layer={layer}
+                            <LayerStatsInline layer={layer} />
+                            <LayerLegendInline layer={layer}
                                 compareMode={compareMode}
                                 slotMembership={slotMembership}
                             />
