@@ -166,6 +166,14 @@ const icons = {
             <path d="M4.5 17 12 20.8l7.5-3.8" opacity="0.22" />
         </svg>
     ),
+    numeralia: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round">
+            <path d="M4 20h16" />
+            <rect x="5" y="12" width="4" height="6" rx="1" fill="currentColor" fillOpacity="0.32" />
+            <rect x="10.5" y="8" width="4" height="10" rx="1" fill="currentColor" fillOpacity="0.55" />
+            <rect x="16" y="4" width="4" height="14" rx="1" fill="currentColor" fillOpacity="0.32" />
+        </svg>
+    ),
     geom_hexbin: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
             <path d="M12 3 19 7v10l-7 4-7-4V7z" fill="currentColor" fillOpacity="0.32" />

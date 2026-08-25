@@ -13,31 +13,31 @@ const NumeraliaPanel = () => {
     if (!detachedLayerId || !metadata?.numeralia?.some(s => s.nombre || s.valor)) return null;
 
     return (
-        <aside
-            className="hidden md:block fixed top-20 right-4 z-11 w-80 max-h-[70vh] overflow-y-auto scrollbar-thin bg-white rounded-2xl shadow-lg border border-[#E7E3EB] p-4"
+        <section
+            className="w-auto px-4.5 py-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] shrink-0 flex flex-col max-md:pointer-events-auto"
             aria-label={`Estadísticas de ${metadata.nombre_capa_usuario || 'la capa'}`}
         >
-            <div className="flex items-start justify-between gap-2">
-                <p className="text-[13px]/[16px] font-garet font-bold text-numeralia tracking-normal">
-                    {metadata.nombre_capa_usuario || 'Estadísticas'}
-                </p>
-                <Tooltip content="Regresar las estadísticas al detalle de la capa">
-                    <button
-                        type="button"
-                        onClick={attach}
-                        className="shrink-0 p-1 rounded-full text-gray-500 hover:text-purple cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-purple"
-                        aria-label="Cerrar el panel de estadísticas"
-                    >
-                        <Icon name="close" className="size-4" />
+            <div className="flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
+                    <Icon name="numeralia" className="size-8 shrink-0" />
+                    <h3 className="font-garet font-bold text-[18px]/[47px] truncate">
+                        {metadata.nombre_capa_usuario || 'Estadísticas'}
+                    </h3>
+                </div>
+
+                <Tooltip content="Cerrar estadísticas">
+                    <button onClick={attach} className="cursor-pointer" aria-label="Cerrar el panel de estadísticas">
+                        <Icon name="zoomout" className="size-6" />
                     </button>
                 </Tooltip>
             </div>
+
             <NumeraliaSection
                 numeralia={metadata.numeralia}
                 pie={metadata.nombre_pie_numeralia}
                 ambito={metadata.ambito}
             />
-        </aside>
+        </section>
     );
 };
 

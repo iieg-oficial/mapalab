@@ -90,7 +90,7 @@ const LayerActionsBar = ({
                         className={`${BUTTON_BASE} hover:border-[#70308A] flex items-center justify-center ${conFondo ? 'text-[#5C2472]' : 'text-gray-400'}`}
                         onClick={(e) => { e.stopPropagation(); onToggleFondo?.(); }}
                     >
-                        <Icon name="geom_hexbin" className={SIZE_BUTTON} />
+                        <Icon name="numeralia" className={SIZE_BUTTON} />
                     </button>
                 </Tooltip>
             ) : (

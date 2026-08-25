@@ -224,7 +224,7 @@ const LayerDetailModal = () => {
                                     numeralia={metadata?.numeralia}
                                     pie={metadata?.nombre_pie_numeralia}
                                     ambito={metadata?.ambito}
-                                    onDetach={() => detach?.(selectedLayer?.id)}
+                                    onDetach={() => { detach?.(selectedLayer?.id); setSelectedLayer(null); }}
                                 />
                             )}
 

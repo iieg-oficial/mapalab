@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { ActiveLayersList } from './ActiveLayers';
 import SymbologyPanel from './SymbologyPanel';
+import NumeraliaPanel from './NumeraliaPanel';
 import Panel from '@components/Panel';
 import Message from '@components/Message';
 import { useSlowLoading } from '@hooks/useSlowLoading';
@@ -40,6 +41,7 @@ const MapLayersPanels = () => {
                 </div>
             )}
             <ActiveLayersList onCollapseChange={handleLayersCollapse} />
+            <NumeraliaPanel />
             {SYMBOLOGY_PANEL_ENABLED && <SymbologyPanel onCollapseChange={handleSymbologyCollapse} />}
         </Panel>
     );
