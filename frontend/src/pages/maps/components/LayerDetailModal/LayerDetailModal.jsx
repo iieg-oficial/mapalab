@@ -221,7 +221,6 @@ const LayerDetailModal = () => {
                                 numeralia={metadata?.numeralia}
                                 pie={metadata?.nombre_pie_numeralia}
                                 ambito={metadata?.ambito}
-                                onClearMunicipio={municipioMode?.exit}
                             />
 
                             {hasPeriodicity && slotMembership === 'AB' ? (
