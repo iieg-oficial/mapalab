@@ -1,4 +1,5 @@
 import { Polygon } from 'ol/geom';
+import { getIntersection, isEmpty } from 'ol/extent';
 
 export const expandExtent = (extent, factor = 0.5) => {
     if (!extent || extent.length !== 4) return null;
@@ -61,4 +62,14 @@ export const buildMaskPolygon = (viewExtent, geometries, padFactor = 0.5) => {
     const outer = extentToRing(expanded);
     const holes = (geometries || []).flatMap(extractHoleRings);
     return new Polygon([outer, ...holes]);
+};
+
+export const acotarExtentAMunicipio = (extent, municipioMode) => {
+    if (!municipioMode?.active) return extent;
+    const geometrias = (municipioMode.geometries || []).map(m => m.geometry).filter(Boolean);
+    const seleccion = unionGeometriesExtent(geometrias);
+    if (!seleccion) return extent;
+    if (!extent) return seleccion;
+    const interseccion = getIntersection(extent, seleccion);
+    return isEmpty(interseccion) ? seleccion : interseccion;
 };

@@ -98,7 +98,6 @@ const MapsProvider = ({ children }) => {
     });
 
     const municipioModeRef = useRef(null);
-
     const layerToggle = useLayerToggle({
         ...layerManagement,
         setSelectedLayer,
@@ -240,7 +239,7 @@ const MapsProvider = ({ children }) => {
         mapRef,
         paneMapInstances,
         compareMode: swipeMode.compareMode,
-        allLayers,
+        allLayers, municipioModeRef,
     });
 
     const value = useMemo(() => ({

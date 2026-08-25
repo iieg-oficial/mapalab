@@ -5,6 +5,7 @@ import ImageWMS from 'ol/source/ImageWMS';
 import { findLayerById, collectLayersWithWMS, findAncestorChain } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { getFitPadding } from '@pages/maps/helpers/mapFit';
+import { acotarExtentAMunicipio } from '@pages/maps/helpers/municipioMask';
 
 const PULSE_DURATION_MS = 6000;
 const OVERLAY_Z_INDEX = 1_000_000;
@@ -97,9 +98,10 @@ const resolveTargetIds = (layerId, allLayers) => {
     return new Set(nodes.map(n => n.id));
 };
 
-export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLayers }) => {
+export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLayers, municipioModeRef }) => {
     const centerOnLayer = useCallback(async (layerId, fitOptions = {}) => {
-        const extent = await resolveCenterExtent(layerId, allLayers);
+        const bruto = await resolveCenterExtent(layerId, allLayers);
+        const extent = acotarExtentAMunicipio(bruto, municipioModeRef?.current);
         if (!extent) {
             console.debug('centerOnLayer: sin extent resoluble para', layerId);
             return false;
@@ -119,7 +121,7 @@ export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLa
             fit(mapRef.current);
         }
         return true;
-    }, [allLayers, mapRef, paneMapInstances, compareMode]);
+    }, [allLayers, mapRef, paneMapInstances, compareMode, municipioModeRef]);
 
     const { pulseLayer, cancelPulse } = useLayerSelectionPulse({ mapRef, paneMapInstances, compareMode, allLayers });
 
