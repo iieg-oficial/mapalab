@@ -100,6 +100,39 @@ def build_stats_context(session, claves: list[str], fecha_inicio: str, fecha_fin
     return context
 
 
+def _ambito_geografico(nombres: list[str]) -> str:
+    if not nombres:
+        return 'Jalisco'
+    if len(nombres) == 1:
+        return nombres[0]
+    if len(nombres) <= 3:
+        return f"{', '.join(nombres[:-1])} y {nombres[-1]}"
+    return f'{len(nombres)} municipios'
+
+
+def _ambito_temporal(inicio: Optional[str], fin: Optional[str]) -> Optional[str]:
+    if inicio and fin:
+        anio_inicio, anio_fin = inicio[:4], fin[:4]
+        return anio_inicio if anio_inicio == anio_fin else f'{anio_inicio}–{anio_fin}'
+    if inicio:
+        return f'desde {inicio}'
+    if fin:
+        return f'hasta {fin}'
+    return None
+
+
+def build_ambito(context: Optional[dict]) -> dict:
+    context = context or {}
+    claves = context.get('municipio.claves') or []
+    nombres = context.get('municipio.nombres') or []
+    return {
+        'geografico': _ambito_geografico(nombres),
+        'temporal': _ambito_temporal(context.get('fecha.inicio'), context.get('fecha.fin')),
+        'claves': claves,
+        'filtrado': bool(claves or context.get('fecha.inicio') or context.get('fecha.fin')),
+    }
+
+
 def get_metadata_response(
     workspace_alias: str, layer: str, acervo_base: str = '', context: Optional[dict] = None
 ) -> Optional[dict]:
@@ -114,6 +147,7 @@ def get_metadata_response(
         stats = session.query(LayerStats).filter(LayerStats.layer_key == layer_key).first()
 
         numeralia = _numeralia_from_stats(stats)
+        ambito = build_ambito(context)
         if context and stats and stats.stats_config:
             calculada = compute_numeralia(
                 session, layer_key, stats.stats_config, context, stats.ttl_minutes or 1440
@@ -151,6 +185,7 @@ def get_metadata_response(
             'tarjeta_punto_poligono': meta.tarjeta_punto_poligono,
             'created_at': None,
             'numeralia': numeralia,
+            'ambito': ambito,
             'nombre_pie_numeralia': stats.pie_numeralia if stats else None,
             'metadato': _metadato_with_acervo(meta.metadato, acervo_base),
             'fuentes': fuentes_list or None,

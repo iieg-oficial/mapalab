@@ -13,7 +13,7 @@ import { buildLoopValues } from '../../helpers/dateLoopHelpers';
 import PeriodicitySection from './components/PeriodicitySection';
 import OpacityControl from './components/OpacityControl';
 import InfoCard from './components/InfoCard';
-import StatCard from './components/StatCard';
+import NumeraliaSection from './components/NumeraliaSection';
 import LayerInfoSections from './components/LayerInfoSections';
 import LayerDetailHeader from './components/LayerDetailHeader';
 import DownloadButton from './components/DownloadButton';
@@ -217,20 +217,12 @@ const LayerDetailModal = () => {
                                 </div>
                             )}
 
-                            {metadata?.numeralia?.filter(s => s.nombre || s.valor).length > 0 && (
-                                <div className="mb-4">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {metadata.numeralia.filter(s => s.nombre || s.valor).map((stat, index) => (
-                                            <StatCard key={index} label={stat.nombre} value={stat.valor} simbolo={stat.simbolo} />
-                                        ))}
-                                    </div>
-                                    {metadata?.nombre_pie_numeralia && (
-                                        <p className="text-[10px]/[11px] font-garet font-medium text-[#465055] tracking-normal mt-6">
-                                            {metadata.nombre_pie_numeralia}
-                                        </p>
-                                    )}
-                                </div>
-                            )}
+                            <NumeraliaSection
+                                numeralia={metadata?.numeralia}
+                                pie={metadata?.nombre_pie_numeralia}
+                                ambito={metadata?.ambito}
+                                onClearMunicipio={municipioMode?.exit}
+                            />
 
                             {hasPeriodicity && slotMembership === 'AB' ? (
                                 <>
