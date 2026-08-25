@@ -121,13 +121,27 @@ def _ambito_temporal(inicio: Optional[str], fin: Optional[str]) -> Optional[str]
     return None
 
 
-def build_ambito(context: Optional[dict]) -> dict:
+def _periodo_del_dato(session, layer_key: str) -> Optional[str]:
+    periodicity = session.execute(
+        text('SELECT periodicity FROM public.layer_periodicity WHERE layer_key = :k'),
+        {'k': layer_key},
+    ).scalar()
+    if not isinstance(periodicity, dict) or not periodicity:
+        return None
+    anios = sorted(a for a in periodicity if str(a).isdigit())
+    if not anios:
+        return None
+    return anios[0] if anios[0] == anios[-1] else f'{anios[0]}–{anios[-1]}'
+
+
+def build_ambito(session, layer_key: str, context: Optional[dict]) -> dict:
     context = context or {}
     claves = context.get('municipio.claves') or []
     nombres = context.get('municipio.nombres') or []
+    temporal = _ambito_temporal(context.get('fecha.inicio'), context.get('fecha.fin'))
     return {
         'geografico': _ambito_geografico(nombres),
-        'temporal': _ambito_temporal(context.get('fecha.inicio'), context.get('fecha.fin')),
+        'temporal': temporal or _periodo_del_dato(session, layer_key),
         'claves': claves,
         'filtrado': bool(claves or context.get('fecha.inicio') or context.get('fecha.fin')),
     }
@@ -147,7 +161,7 @@ def get_metadata_response(
         stats = session.query(LayerStats).filter(LayerStats.layer_key == layer_key).first()
 
         numeralia = _numeralia_from_stats(stats)
-        ambito = build_ambito(context)
+        ambito = build_ambito(session, layer_key, context)
         if context and stats and stats.stats_config:
             calculada = compute_numeralia(
                 session, layer_key, stats.stats_config, context, stats.ttl_minutes or 1440
