@@ -5,6 +5,26 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.4] - 2026-08-26
+
+### Corregido: el mapa base salía cubierto por el watermark «API key required» de CARTO
+
+CARTO empezó a exigir API key en sus basemaps raster y a marcar los tiles que se piden sin ella. Los
+tiles siguen respondiendo 200, así que no había error en consola ni en los logs del gateway: el
+fondo simplemente aparecía cubierto por un mosaico repetido con el texto. Afectaba a los dos mapas
+base del visor y a su overlay de etiquetas, y por herencia al embed, al widget `<iieg-mapalab>` y al
+mapa de contacto del portal.
+
+`cartoSource` arma ahora la URL con `?key=` cuando `VITE_CARTO_API_KEY` trae valor, y la deja
+idéntica a la anterior cuando está vacía. La variable viaja como build arg en los dos Dockerfiles y
+en el ancla `x-vite-args` de `compose.prod.yaml`, declarada con `?` y no con `:?` para que un
+entorno que todavía no tenga llave pueda desplegar.
+
+**Es build-time:** cambiar la llave obliga a reconstruir el bundle, un `make up` no la aplica.
+
+El relieve no estaba afectado —sale de GeoServer propio por WMTS— ni «Sin Mapa Base», que no pide
+tiles. El CSP tampoco cambia: `?key=` no altera el origen.
+
 ## [1.116.3] - 2026-08-21
 
 ### Corregido: las descargas se nombraban con la fecha del día, no con la del dato
