@@ -167,11 +167,10 @@ const icons = {
         </svg>
     ),
     numeralia: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round">
-            <path d="M4 20h16" />
-            <rect x="5" y="12" width="4" height="6" rx="1" fill="currentColor" fillOpacity="0.32" />
-            <rect x="10.5" y="8" width="4" height="10" rx="1" fill="currentColor" fillOpacity="0.55" />
-            <rect x="16" y="4" width="4" height="14" rx="1" fill="currentColor" fillOpacity="0.32" />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="3" y="13" width="4.5" height="7" rx="1" />
+            <rect x="9.75" y="8" width="4.5" height="12" rx="1" />
+            <rect x="16.5" y="4" width="4.5" height="16" rx="1" />
         </svg>
     ),
     geom_hexbin: (

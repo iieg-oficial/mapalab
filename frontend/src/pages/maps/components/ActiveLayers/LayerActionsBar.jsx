@@ -90,7 +90,11 @@ const LayerActionsBar = ({
                         className={`${BUTTON_BASE} hover:border-[#70308A] flex items-center justify-center ${conFondo ? 'text-[#5C2472]' : 'text-gray-400'}`}
                         onClick={(e) => { e.stopPropagation(); onToggleFondo?.(); }}
                     >
-                        <Icon name="numeralia" className={SIZE_BUTTON} />
+                        {statsVisible ? (
+                            <Icon name="upArrow" className="size-3" />
+                        ) : (
+                            <Icon name="numeralia" className={SIZE_BUTTON} />
+                        )}
                     </button>
                 </Tooltip>
             ) : (

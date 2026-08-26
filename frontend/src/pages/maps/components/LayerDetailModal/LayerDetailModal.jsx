@@ -15,6 +15,7 @@ import PeriodicitySection from './components/PeriodicitySection';
 import OpacityControl from './components/OpacityControl';
 import InfoCard from './components/InfoCard';
 import NumeraliaSection from './components/NumeraliaSection';
+import DetachStatsButton from './components/DetachStatsButton';
 import LayerInfoSections from './components/LayerInfoSections';
 import LayerDetailHeader from './components/LayerDetailHeader';
 import DownloadButton from './components/DownloadButton';
@@ -47,7 +48,9 @@ const LayerDetailModal = () => {
     const hidePeriodicity = layerDef?.hidePeriodicity || false;
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
     const { metadata, loading } = useLayerMetadata(selectedLayer?.id, useMetadataContext(municipioMode));
-    const { detachedLayerId, detach } = useNumeraliaPanel();
+    const { detach } = useNumeraliaPanel();
+    const hasNumeralia = Boolean(metadata?.numeralia?.some(s => s.nombre || s.valor));
+    const handleDetach = () => { detach?.(selectedLayer?.id); setSelectedLayer(null); };
     const themeName = themeNode?.label || metadata?.tema || 'General';
     const { periodicity, loading: periodicityLoading } = useLayerPeriodicity(selectedLayer?.id);
     const { isMobile } = useSider();
@@ -183,6 +186,7 @@ const LayerDetailModal = () => {
                                     />
                                 </>
                             )}
+                            {hasNumeralia && <DetachStatsButton onDetach={handleDetach} />}
                             <Icon name="cerrarModal" aria-label="Cerrar" onClick={() => setSelectedLayer(null)} classNameBG="rounded-full hover:shadow-[0px_5px_20px_#101F3629]" className="cursor-pointer" />
                         </div>
                     </div>
@@ -219,14 +223,11 @@ const LayerDetailModal = () => {
                                 </div>
                             )}
 
-                            {detachedLayerId !== selectedLayer?.id && (
-                                <NumeraliaSection
-                                    numeralia={metadata?.numeralia}
-                                    pie={metadata?.nombre_pie_numeralia}
-                                    ambito={metadata?.ambito}
-                                    onDetach={() => { detach?.(selectedLayer?.id); setSelectedLayer(null); }}
-                                />
-                            )}
+                            <NumeraliaSection
+                                numeralia={metadata?.numeralia}
+                                pie={metadata?.nombre_pie_numeralia}
+                                ambito={metadata?.ambito}
+                            />
 
                             {hasPeriodicity && slotMembership === 'AB' ? (
                                 <>
