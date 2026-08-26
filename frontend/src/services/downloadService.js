@@ -2,6 +2,7 @@ import { findWMSConfig, hydrateWmsConfig } from '../pages/maps/helpers/wmsConfig
 import { findLayerById } from '../pages/maps/helpers/layers/utils/layerHelpers';
 import { cqlToDateRange } from '../pages/maps/helpers/dateFilterHelpers';
 import { getMetadataFiles, addMetadataToZip, getAvailableMetadata } from './downloadMetadata';
+import { buildFilename } from './downloadFilename';
 import {
     RASTER_FORMATS,
     RASTER_WORKSPACES,
@@ -122,12 +123,14 @@ const consumeResponse = async (response, { onProgress, writable } = {}) => {
     return new Blob(chunks);
 };
 
-const buildFilename = (layerId, extension) => {
-    const layerNode = findLayerById(layerId, currentLayers);
-    const label = (layerNode?.label || layerNode?.name || layerId).replace(/\s+/g, '_');
-    const date = new Date().toISOString().slice(0, 10);
-    return `${label}_${date}.${extension}`;
+const layerFilename = (layerId, extension, filter, labelOverride = null) => {
+    const node = findLayerById(layerId, currentLayers);
+    const label = labelOverride || node?.label || node?.name || layerId;
+    return buildFilename(label, extension, { filter, rasterPeriodicity: node?.rasterPeriodicity || null });
 };
+
+const downloadedFilter = (config, layerId, { getFilter, dateCql } = {}) =>
+    (config.isRaster ? getFilter?.(layerId) : dateCql) || null;
 
 const extForFormat = (config, formatId) => {
     if (config.isRaster) return 'tiff';
@@ -218,7 +221,8 @@ export const downloadSingleFormat = (layerId, formatId, options = {}) =>
         if (!config) return { success: false, error: 'Capa no encontrada' };
         const ext = extForFormat(config, formatId);
         if (!ext) return { success: false, error: 'Formato no soportado' };
-        return runLayerDownload(config, formatId, buildFilename(layerId, ext), { ...options, layerId });
+        const filter = downloadedFilter(config, layerId, options);
+        return runLayerDownload(config, formatId, layerFilename(layerId, ext, filter), { ...options, layerId });
     });
 
 export const downloadWithMenu = (layerId, menuOptions = {}) =>
@@ -247,27 +251,22 @@ export const downloadWithMenu = (layerId, menuOptions = {}) =>
         const zip = new JSZip();
         signal?.throwIfAborted();
 
+        const filter = downloadedFilter(config, layerId, { getFilter, dateCql });
         const result = await fetchLayerBlob(config, formatId, { signal, onProgress, dateFrom, dateTo, dateCql, getFilter, layerId });
-        if (result) zip.file(`${config.layerName}.${result.ext}`, result.blob);
+        if (result) zip.file(layerFilename(layerId, result.ext, filter, config.layerName), result.blob);
 
         signal?.throwIfAborted();
         await addMetadataToZip(zip, metadatoList, metadataSelections);
 
         signal?.throwIfAborted();
         const zipBlob = await zip.generateAsync({ type: 'blob' });
-        triggerDownload(zipBlob, buildFilename(layerId, 'zip'));
+        triggerDownload(zipBlob, layerFilename(layerId, 'zip', filter));
         return { success: true };
     });
 
-const catalogoFilename = (capa, extension) => {
-    const label = (capa.nombre || capa.slug || 'capa').replace(/\s+/g, '_');
-    const date = new Date().toISOString().slice(0, 10);
-    return `${label}_${date}.${extension}`;
-};
-
 export const downloadCatalogoCapa = (capa, formatId, options = {}) =>
     wrapDownload(async () => {
-        const { signal, onProgress, cqlFilter = null, timeValue = null } = options;
+        const { signal, onProgress, cqlFilter = null, timeValue = null, rasterPeriodicity = null } = options;
         const wmsConfig = hydrateWmsConfig({
             geoserverWorkspace: capa.geoserverWorkspace,
             geoserverLayer: capa.geoserverLayer,
@@ -286,7 +285,9 @@ export const downloadCatalogoCapa = (capa, formatId, options = {}) =>
         const ext = extForFormat(config, formatId);
         if (!ext) return { success: false, error: 'Formato no soportado' };
 
-        return runLayerDownload(config, formatId, catalogoFilename(capa, ext), {
+        const filter = config.isRaster ? timeValue : cqlFilter;
+        const filename = buildFilename(capa.nombre || capa.slug, ext, { filter, rasterPeriodicity });
+        return runLayerDownload(config, formatId, filename, {
             signal,
             onProgress,
             dateFrom: dateRange?.dateFrom,

@@ -11,6 +11,7 @@ const testLayers = [
     {
         id: 'single-raster',
         label: 'Capa Raster',
+        rasterPeriodicity: { 2024: { 3: '2024-03-01', 4: '2024-04-01' } },
         wmsConfig: { workspace: 'raster', baseUrl: 'http://geo.test/geoserver/raster/wms', layerName: 'raster:lluvia_2024', timeEnabled: true }
     },
     {
@@ -173,6 +174,25 @@ describe('downloadSingleFormat — raster', () => {
         const call = global.fetch.mock.calls[0][0];
         expect(call).not.toContain('SUBSET');
     });
+
+    it('nombra el archivo con el mes descargado, no con el de hoy', async () => {
+        const getFilter = vi.fn(() => '2024-03-01');
+        await downloadSingleFormat('single-raster', 'geotiff', { getFilter });
+        expect(clickedLink.download).toBe('Capa_Raster_2024-03.tiff');
+    });
+
+    it('da nombres distintos a meses distintos de la misma capa', async () => {
+        await downloadSingleFormat('single-raster', 'geotiff', { getFilter: () => '2024-03-01' });
+        const marzo = clickedLink.download;
+        await downloadSingleFormat('single-raster', 'geotiff', { getFilter: () => '2024-04-01' });
+        expect(clickedLink.download).not.toBe(marzo);
+        expect(clickedLink.download).toBe('Capa_Raster_2024-04.tiff');
+    });
+
+    it('cae a la fecha de descarga cuando no hay filtro de tiempo', async () => {
+        await downloadSingleFormat('single-raster', 'geotiff');
+        expect(clickedLink.download).toMatch(/^Capa_Raster_\d{4}-\d{2}-\d{2}\.tiff$/);
+    });
 });
 
 describe('downloadSingleFormat — cancelación', () => {
@@ -230,6 +250,18 @@ describe('downloadWithMenu — fecha activa', () => {
         const call = decodeURIComponent(global.fetch.mock.calls[0][0].replace(/\+/g, ' '));
         expect(call).toContain('CQL_FILTER');
         expect(call).toContain("fecha >= '2024-01-01'");
+    });
+
+    it('nombra el archivo con el periodo del filtro activo', async () => {
+        const getSpecificFilter = vi.fn(() => yearFilter);
+        await downloadWithMenu('single-vec', { formatId: 'csv', dateMode: 'active', getSpecificFilter });
+        expect(clickedLink.download).toBe('Capa_Sola_2024.csv');
+    });
+
+    it('conserva la fecha de descarga cuando el modo es todas las fechas', async () => {
+        const getSpecificFilter = vi.fn(() => yearFilter);
+        await downloadWithMenu('single-vec', { formatId: 'csv', dateMode: 'all', getSpecificFilter });
+        expect(clickedLink.download).toMatch(/^Capa_Sola_\d{4}-\d{2}-\d{2}\.csv$/);
     });
 
     it('cae a WFS con CQL cuando el filtro no es traducible a rango', async () => {
