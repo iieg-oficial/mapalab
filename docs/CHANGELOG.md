@@ -5,6 +5,29 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.5] - 2026-08-26
+
+### Corregido: los assets salian con dos cabeceras `Cache-Control`
+
+El bloque de estaticos combinaba `expires 1y` con `add_header Cache-Control "public, immutable"`.
+La directiva `expires` **ya emite su propia** `Cache-Control: max-age=31536000`, y nginx no las
+fusiona: cada archivo con hash se servia con **dos** cabeceras distintas.
+
+De ahi que el gateway tuviera que hacer `proxy_hide_header Cache-Control` y rehacerla — no faltaba
+la cabecera, venia duplicada. Ahora se emite una sola, completa, con el mismo estilo que ya usaba
+`/widget/` en este mismo archivo:
+
+```nginx
+add_header Cache-Control "public, max-age=31536000, immutable";
+```
+
+Sin `always` a proposito: el conjunto de codigos por defecto de `add_header` incluye el `304` y
+**excluye el `404`**, que es justo lo que se quiere. Con `always`, un 404 le diria al cliente que lo
+cachee un anio.
+
+Se pierde la cabecera `Expires` de compatibilidad con HTTP/1.0; ningun cliente relevante la necesita
+teniendo `Cache-Control`.
+
 ## [1.116.4] - 2026-08-26
 
 ### Corregido: el mapa base salía cubierto por el watermark «API key required» de CARTO
