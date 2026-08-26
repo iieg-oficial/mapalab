@@ -5,6 +5,21 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.136.1] - 2026-08-26
+
+### Corregido: la numeralia con filtro de municipio no hallaba el binding de cuatro workspaces
+
+`_LAYER_BINDING_SQL` localizaba la capa por `workspace_alias || ':' || geoserver_layer`, pero el
+`layer_key` que recibe ya viene canonico —`_resolve_layer_key` traduce el alias al workspace real
+de GeoServer antes de consultar—. En `desarrollo`, `gobierno`, `recursos` y `seguridad` las dos
+formas no coinciden, asi que la consulta devolvia cero filas y `@municipio` se quedaba sin campo
+al que apuntar.
+
+No mordia todavia: ninguna de esas capas tiene hoy `stats_config` y un `municipio_field` en su
+cadena de padres al mismo tiempo. Se arregla ahora para que no aparezca al configurar la primera.
+
+Mismo cambio en `load_layer_binding` de mariachi, que arrastraba la consulta identica.
+
 ## [1.136.0] - 2026-08-21
 
 ### Eliminado: el WKT union de `/municipios/geometries`, que ya no lee nadie

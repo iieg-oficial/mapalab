@@ -23,10 +23,11 @@ MAX_CACHE_ENTRIES = 256
 _PLACEHOLDER = re.compile(r'^\{\{([a-z_.]+)\}\}$')
 _LAYER_BINDING_SQL = """
     WITH RECURSIVE cadena AS (
-        SELECT id, parent_id, municipio_field, municipio_field_type
-        FROM mapalab.layers
-        WHERE workspace_alias || ':' || geoserver_layer = :layer_key
-          AND deleted_at IS NULL
+        SELECT l.id, l.parent_id, l.municipio_field, l.municipio_field_type
+        FROM mapalab.layers l
+        JOIN mapalab.workspaces w ON w.alias = l.workspace_alias
+        WHERE w.geoserver_workspace || ':' || l.geoserver_layer = :layer_key
+          AND l.deleted_at IS NULL
         UNION ALL
         SELECT p.id, p.parent_id, p.municipio_field, p.municipio_field_type
         FROM mapalab.layers p
