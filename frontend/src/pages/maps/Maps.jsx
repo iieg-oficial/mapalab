@@ -8,6 +8,7 @@ import MapToolsPanel from '@mapsComponents/MapToolsPanel';
 import MunicipioActiveChip from '@mapsComponents/MapExport/MunicipioActiveChip';
 import MapLayersPanels from '@mapsComponents/MapLayersPanels';
 import LayerDetailModal from './components/LayerDetailModal/LayerDetailModal';
+import NumeraliaPanel from './components/NumeraliaPanel';
 import InfoBox from './components/InfoBox/InfoBox';
 import MapControls from './components/MapControls';
 import MeasurementTools from './components/MeasurementTools/ToolsPanel';
@@ -49,6 +50,7 @@ const Maps = () => {
                         <MunicipioActiveChip />
                         <MapLayersPanels />
                         <LayerDetailModal />
+                        <NumeraliaPanel />
                         <InfoBox />
                         <ScaleLineControl />
                         <MapAttribution />
