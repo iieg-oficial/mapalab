@@ -6,6 +6,7 @@ import Loading from '@components/Loading';
 import LayerOpacityPopover from './LayerOpacityPopover';
 import { useLegendsVisibility } from './hooks/useLegendsVisibility';
 import { useStatsVisibility } from './hooks/useStatsVisibility';
+import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
 import { useMapsContext } from '@hooks/useMaps';
 
 const SIZE_BUTTON = 'size-5';
@@ -43,6 +44,8 @@ const LayerActionsBar = ({
     const opacityButtonRef = useRef(null);
     const { visible: legendsVisible, setVisible: setLegendsVisible } = useLegendsVisibility();
     const { visible: statsVisible, setVisible: setStatsVisible } = useStatsVisibility();
+    const { detachedLayerId, resaltar } = useNumeraliaPanel();
+    const statsEnPanel = detachedLayerId === layerId;
     const { setHighlightedSlots } = useMapsContext();
 
     const opacityPercent = Math.round(opacity * 100);
@@ -90,11 +93,7 @@ const LayerActionsBar = ({
                         className={`${BUTTON_BASE} hover:border-[#70308A] flex items-center justify-center ${conFondo ? 'text-[#5C2472]' : 'text-gray-400'}`}
                         onClick={(e) => { e.stopPropagation(); onToggleFondo?.(); }}
                     >
-                        {statsVisible ? (
-                            <Icon name="upArrow" className="size-3" />
-                        ) : (
-                            <Icon name="numeralia" className={SIZE_BUTTON} />
-                        )}
+                        <Icon name="geom_hexbin" className={SIZE_BUTTON} />
                     </button>
                 </Tooltip>
             ) : (
@@ -139,14 +138,18 @@ const LayerActionsBar = ({
             )}
 
             {hasStats && (
-                <Tooltip content={`${statsVisible ? 'Ocultar' : 'Mostrar'} estadísticas`}>
+                <Tooltip content={statsEnPanel ? 'Las estadísticas están en su panel' : `${statsVisible ? 'Ocultar' : 'Mostrar'} estadísticas`}>
                     <button
                         className={`p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center size-8 ${statsVisible ? 'bg-white border border-[#70308A]' : `${BUTTON_BASE} hover:border-[#70308A]`}`}
-                        onClick={(e) => { e.stopPropagation(); if (!statsVisible) setLegendsVisible(false); setStatsVisible(p => !p); }}
+                        onClick={(e) => { e.stopPropagation(); if (statsEnPanel) { resaltar?.(); return; } if (!statsVisible) setLegendsVisible(false); setStatsVisible(p => !p); }}
                         aria-pressed={statsVisible}
                         aria-label={`${statsVisible ? 'Ocultar' : 'Mostrar'} estadísticas de la capa`}
                     >
-                        <Icon name="geom_hexbin" className={SIZE_BUTTON} />
+                        {statsVisible && !statsEnPanel ? (
+                            <Icon name="upArrow" className="size-3" />
+                        ) : (
+                            <Icon name="numeralia" className={SIZE_BUTTON} />
+                        )}
                     </button>
                 </Tooltip>
             )}

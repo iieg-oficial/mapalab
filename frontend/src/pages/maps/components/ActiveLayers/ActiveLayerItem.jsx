@@ -314,7 +314,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                     />
                                 </>
                             )}
-                            <LayerStatsInline metadata={metadata} />
+                            <LayerStatsInline metadata={metadata} layerId={layer.id} />
                             <LayerLegendInline layer={layer}
                                 compareMode={compareMode}
                                 slotMembership={slotMembership}

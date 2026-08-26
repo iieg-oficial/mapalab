@@ -1,9 +1,11 @@
 import StatCard from '@mapsComponents/LayerDetailModal/components/StatCard';
+import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
 import { useStatsVisibility } from './hooks/useStatsVisibility';
 
-const LayerStatsInline = ({ metadata }) => {
+const LayerStatsInline = ({ metadata, layerId }) => {
     const { visible } = useStatsVisibility();
-    if (!visible) return null;
+    const { detachedLayerId } = useNumeraliaPanel();
+    if (!visible || detachedLayerId === layerId) return null;
 
     const slots = (metadata?.numeralia || []).filter(s => s.nombre && s.valor);
     if (slots.length === 0) return null;
