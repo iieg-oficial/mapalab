@@ -1,7 +1,7 @@
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 
-const DetachStatsButton = ({ onDetach }) => (
+const DetachStatsButton = ({ onDetach, iconClassName = 'size-5' }) => (
     <Tooltip content="Ver las estadísticas en un panel junto a capas activas">
         <button
             type="button"
@@ -9,7 +9,7 @@ const DetachStatsButton = ({ onDetach }) => (
             aria-label="Convertir las estadísticas en panel"
             className="cursor-pointer text-gray-500 hover:text-purple focus:outline-none focus-visible:ring-2 focus-visible:ring-purple rounded-full"
         >
-            <Icon name="numeralia" className="size-5" />
+            <Icon name="numeralia" className={iconClassName} />
         </button>
     </Tooltip>
 );
