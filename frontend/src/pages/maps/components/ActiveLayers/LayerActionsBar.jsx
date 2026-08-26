@@ -142,7 +142,7 @@ const LayerActionsBar = ({
                 <Tooltip content={`${statsVisible ? 'Ocultar' : 'Mostrar'} estadísticas`}>
                     <button
                         className={`p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center size-8 ${statsVisible ? 'bg-white border border-[#70308A]' : `${BUTTON_BASE} hover:border-[#70308A]`}`}
-                        onClick={(e) => { e.stopPropagation(); setStatsVisible(p => !p); }}
+                        onClick={(e) => { e.stopPropagation(); if (!statsVisible) setLegendsVisible(false); setStatsVisible(p => !p); }}
                         aria-pressed={statsVisible}
                         aria-label={`${statsVisible ? 'Ocultar' : 'Mostrar'} estadísticas de la capa`}
                     >
@@ -155,7 +155,7 @@ const LayerActionsBar = ({
                 <Tooltip content={`${legendsVisible ? 'Ocultar' : 'Mostrar'} leyendas${targetSlot ? ` del lado ${targetSlot}` : ''}`}>
                     <button
                         className={`p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center size-8 ${legendsVisible ? 'bg-white border border-[#70308A]' : `${BUTTON_BASE} hover:border-[#70308A]`}`}
-                        onClick={(e) => { e.stopPropagation(); setLegendsVisible(p => !p); }}
+                        onClick={(e) => { e.stopPropagation(); if (!legendsVisible) setStatsVisible(false); setLegendsVisible(p => !p); }}
                         onMouseEnter={() => setIsLegendsHovered(true)}
                         onMouseLeave={() => setIsLegendsHovered(false)}
                     >
