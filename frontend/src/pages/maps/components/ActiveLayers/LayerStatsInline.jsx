@@ -1,14 +1,9 @@
-import { useMapsContext } from '@hooks/useMaps';
-import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
 import StatCard from '@mapsComponents/LayerDetailModal/components/StatCard';
 import { useStatsVisibility } from './hooks/useStatsVisibility';
 
-const LayerStatsInline = ({ layer }) => {
+const LayerStatsInline = ({ metadata }) => {
     const { visible } = useStatsVisibility();
-    const { municipioMode } = useMapsContext();
-    const { metadata } = useLayerMetadata(visible ? layer?.id : null, useMetadataContext(municipioMode));
-
-    if (!visible || !layer) return null;
+    if (!visible) return null;
 
     const slots = (metadata?.numeralia || []).filter(s => s.nombre && s.valor);
     if (slots.length === 0) return null;

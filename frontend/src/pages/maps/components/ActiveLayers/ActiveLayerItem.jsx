@@ -23,7 +23,7 @@ import SlotBadge from './SlotBadge';
 import { computeLabel } from './datePillHelpers';
 import { ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
-import { useLayerMetadata } from '@hooksMaps/useLayerMetadata';
+import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
 import { useLayerDownload } from '@hooksMaps/useLayerDownload';
 import DownloadMenu from '@mapsComponents/LayerDetailModal/components/DownloadMenu';
 
@@ -58,7 +58,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         pulseLayer,
         getServiceMode,
         tieneFondo,
-        toggleHexbinFondo
+        toggleHexbinFondo, municipioMode
     } = useMapsContext();
 
     const { findEventoByLayerId } = useEventoContext();
@@ -88,7 +88,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const isExpanded = isSelected;
     const showHandle = !isPinned && (isSelected || (!isMobile && isHovered));
 
-    const { metadata } = useLayerMetadata(isExpanded ? layer.id : null);
+    const { metadata } = useLayerMetadata(isExpanded ? layer.id : null, useMetadataContext(municipioMode));
     const download = useLayerDownload(isExpanded ? layer.id : null, { getFilter, getSpecificFilter, metadata });
     const canDownload = isExpanded && metadata?.capa_descargable !== false;
     const handleDownloadClick = () => {
@@ -314,7 +314,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                     />
                                 </>
                             )}
-                            <LayerStatsInline layer={layer} />
+                            <LayerStatsInline metadata={metadata} />
                             <LayerLegendInline layer={layer}
                                 compareMode={compareMode}
                                 slotMembership={slotMembership}
