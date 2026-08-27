@@ -126,6 +126,8 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
                         receta={receta}
                         valor={formatNumber(value)}
                         simbolo={simbolo}
+                        titulo={label}
+                        onCerrar={cerrar.current}
                         puntero={posicion.puntero}
                         punteroAbajo={posicion.cabeArriba}
                     />
