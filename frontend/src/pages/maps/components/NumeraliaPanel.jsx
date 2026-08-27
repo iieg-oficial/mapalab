@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { useMapsContext } from '@hooks/useMaps';
+import { SIDER_COLLAPSED_WIDTH } from '@constants/sider';
 import { PANEL_GAP, VIEWPORT_EDGE } from '@pages/maps/helpers/mapFit';
 import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
 import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
@@ -29,7 +30,7 @@ const NumeraliaPanel = () => {
     return (
         <div
             className="hidden md:flex fixed bottom-16 z-11 justify-center pointer-events-none"
-            style={{ left: VIEWPORT_EDGE + PANEL_GAP, right: VIEWPORT_EDGE + PANEL_GAP }}
+            style={{ left: SIDER_COLLAPSED_WIDTH + VIEWPORT_EDGE + PANEL_GAP, right: VIEWPORT_EDGE + PANEL_GAP }}
         >
             <section
                 ref={panelRef}
