@@ -39,7 +39,7 @@ const NumeraliaPanel = () => {
 
     return (
         <div
-            className={`flex fixed bottom-4 md:bottom-16 z-11 justify-center pointer-events-none ${SIDER_TRANSITION_CLASSES}`}
+            className={`flex fixed bottom-16 z-11 justify-center pointer-events-none ${SIDER_TRANSITION_CLASSES}`}
             style={{
                 left: isMobile ? VIEWPORT_EDGE : siderWidth + VIEWPORT_EDGE + PANEL_GAP,
                 right: VIEWPORT_EDGE + (isMobile ? 0 : PANEL_GAP),
@@ -56,7 +56,6 @@ const NumeraliaPanel = () => {
                 >
                     <Icon name="numeralia" className="size-5 shrink-0 text-purple" />
                     <span className="font-garet font-bold text-[12px]/[15px] truncate">{nombreCapa}</span>
-                    <span className="font-garet text-[11px] text-purple shrink-0">{slots.length}</span>
                     <Icon name="upArrow" className="size-2.5 shrink-0" />
                 </button>
             ) : (
