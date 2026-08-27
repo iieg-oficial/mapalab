@@ -31,7 +31,13 @@ const StatReceta = ({ receta, valor, simbolo }) => {
     }
 
     return (
-        <div className="rounded-[10px] bg-white shadow-[0_5px_20px_#1A26641A] px-3 py-2.5 w-[270px] text-[10px]">
+        <div className="rounded-[10px] bg-white shadow-[0_5px_20px_#1A26641A] px-3 py-2.5 w-[290px] text-[10px]">
+            {receta.formula && (
+                <pre className="mb-2 overflow-x-auto rounded-lg bg-[#2A2233] px-2 py-1.5 text-[9px]/[15px] text-[#E9E4EE] font-mono whitespace-pre">
+                    {receta.formula}
+                </pre>
+            )}
+
             <div className="grid grid-cols-[16px_1fr_auto] gap-x-1.5 gap-y-1 items-baseline">
                 {receta.pasos.map((paso, index) => <Paso key={index} paso={paso} />)}
             </div>

@@ -438,6 +438,67 @@ def _conteo_acumulado(session: Session, cfg: dict, filtros: list[dict], context:
         return None
 
 
+def _literal_sql(value: Any) -> str:
+    if value is None:
+        return 'NULL'
+    if isinstance(value, bool):
+        return 'TRUE' if value else 'FALSE'
+    if isinstance(value, (int, float)):
+        return str(value)
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def formula_legible(cfg: dict, context: dict | None) -> str | None:
+    op = cfg.get('operation')
+    if op not in PRIMITIVE_OPERATIONS:
+        return None
+
+    field = cfg.get('field')
+    if op in ('count', 'count_where'):
+        seleccion = 'COUNT(*)'
+    elif op == 'count_distinct':
+        seleccion = f'COUNT(DISTINCT {field})'
+    elif op == 'latest':
+        seleccion = field
+    else:
+        seleccion = f'{op.upper()}({field})'
+
+    condiciones = []
+    for item in _effective_filters(cfg, cfg.get('filters') or []):
+        campo = item['field']
+        operador = item['op']
+        if operador == 'is_not_null':
+            condiciones.append(f'{campo} IS NOT NULL')
+            continue
+        valor = item.get('value')
+        if operador == 'between':
+            bounds = valor if isinstance(valor, list) else [valor]
+            resueltos = [_resolve_context(v, context) for v in bounds]
+            if len(resueltos) != 2 or not all(ok for _, ok in resueltos):
+                continue
+            condiciones.append(
+                f'{campo} BETWEEN {_literal_sql(resueltos[0][0])} AND {_literal_sql(resueltos[1][0])}'
+            )
+            continue
+        resuelto, ok = _resolve_context(valor, context)
+        if not ok:
+            continue
+        if operador == 'in':
+            items = resuelto if isinstance(resuelto, (list, tuple)) else [resuelto]
+            lista = ', '.join(_literal_sql(v) for v in items)
+            condiciones.append(f'{campo} IN ({lista})')
+            continue
+        condiciones.append(f'{campo} {SQL_COMPARATORS[operador]} {_literal_sql(resuelto)}')
+
+    lineas = [f'SELECT {seleccion}', f"FROM {cfg.get('schema')}.{cfg.get('table')}"]
+    if condiciones:
+        lineas.append(f'WHERE {condiciones[0]}')
+        lineas.extend(f'  AND {c}' for c in condiciones[1:])
+    if op == 'latest' and cfg.get('order_field'):
+        lineas.append(f"ORDER BY {cfg['order_field']} DESC LIMIT 1")
+    return '\n'.join(lineas)
+
+
 def build_receta(cfg: dict, context: dict | None, session: Session | None = None) -> dict:
     operacion = cfg.get('operation')
 
@@ -485,6 +546,7 @@ def build_receta(cfg: dict, context: dict | None, session: Session | None = None
 
     return {
         'tipo': 'primitiva',
+        'formula': formula_legible(cfg, context),
         'origen': f"{cfg.get('schema')}.{cfg.get('table')}",
         'operacion': OPERACION_LEGIBLE.get(operacion, operacion),
         'columna': cfg.get('field') if operacion not in OPERATIONS_WITHOUT_FIELD else None,
