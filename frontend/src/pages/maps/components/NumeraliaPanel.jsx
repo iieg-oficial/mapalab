@@ -3,6 +3,8 @@ import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
+import { SIDER_EXPANDED_WIDTH } from '@constants/sider';
+import { ACTIVE_LAYERS_PANEL_WIDTH, PANEL_GAP, VIEWPORT_EDGE } from '@pages/maps/helpers/mapFit';
 import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
 import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
 import StatCard from './LayerDetailModal/components/StatCard';
@@ -10,7 +12,7 @@ import StatCard from './LayerDetailModal/components/StatCard';
 const NumeraliaPanel = () => {
     const { detachedLayerId, attach, highlight } = useNumeraliaPanel();
     const { municipioMode } = useMapsContext();
-    const { width: siderWidth, isMobile } = useSider();
+    const { isMobile } = useSider();
     const { metadata } = useLayerMetadata(detachedLayerId, useMetadataContext(municipioMode));
     const [resaltado, setResaltado] = useState(false);
     const panelRef = useRef(null);
@@ -29,8 +31,11 @@ const NumeraliaPanel = () => {
 
     return (
         <div
-            className="hidden md:flex fixed bottom-10 right-0 z-11 justify-center pointer-events-none px-4"
-            style={{ left: isMobile ? 0 : siderWidth }}
+            className="hidden md:flex fixed bottom-16 z-11 justify-center pointer-events-none"
+            style={{
+                left: isMobile ? VIEWPORT_EDGE : VIEWPORT_EDGE + SIDER_EXPANDED_WIDTH + PANEL_GAP,
+                right: isMobile ? VIEWPORT_EDGE : VIEWPORT_EDGE + ACTIVE_LAYERS_PANEL_WIDTH + PANEL_GAP,
+            }}
         >
             <section
                 ref={panelRef}
@@ -39,7 +44,8 @@ const NumeraliaPanel = () => {
                 aria-live="polite"
             >
                 <div className="flex items-center justify-between gap-4 mb-2">
-                    <div className="flex items-baseline gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <Icon name="numeralia" className="size-8 shrink-0 text-purple" />
                         <h3 className="font-garet font-bold text-[13px]/[16px] truncate">
                             {metadata.nombre_capa_usuario || 'Estadísticas'}
                         </h3>
