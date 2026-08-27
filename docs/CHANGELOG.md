@@ -5,6 +5,35 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.138.0] - 2026-08-27
+
+### Agregado: el municipio seleccionado queda fijo al recorrer la lista
+
+En el selector, la opcion activa se ancla al borde superior o inferior segun hacia donde se
+desplace, asi que con 125 municipios siempre se ve cual esta aplicado.
+
+Necesito fondo opaco: el `bg-orange/10` del seleccionado es semitransparente y al flotar sobre la
+lista dejaba ver los renglones de abajo. Se usa su equivalente solido sobre blanco, `#FFF3E6`, mas
+una sombra suave para que se lea como flotante y no como un renglon mas.
+
+La lista deja de usar la mascara de degradado del `ScrollContainer`. Esa mascara desvanece el 10 %
+superior e inferior, justo donde se ancla el elemento fijo: arriba lo volvia invisible y abajo se lo
+comia a medias. Las flechas siguen indicando que hay mas contenido.
+
+### Corregido: el selector tenia dos scrolls anidados
+
+El panel estaba capado a `max-h-[32rem]` y la lista a `max-h-100` fija. Sumando encabezado, buscador
+y pestanas el contenido superaba el tope del panel, asi que **scrolleaban los dos**. El efecto
+visible: el elemento fijo del inicio de la lista quedaba fuera del area visible y la flecha de mas
+contenido caia debajo del recorte.
+
+El contenido pasa a ser una columna flex real: el encabezado no se comprime, la caja de la lista se
+queda con el alto que sobra y solo ella desplaza. La lista deja de tener alto fijo y se ajusta al
+espacio disponible. Se retira el `sticky` del encabezado, que existia para compensar el scroll de
+mas, y el `HIDDEN_SCROLLBAR` que lo ocultaba.
+
+Aplica igual al selector que abre desde la barra de herramientas, al compartir componente.
+
 ## [1.137.0] - 2026-08-27
 
 ### Agregado: la pill de municipio abre el selector
