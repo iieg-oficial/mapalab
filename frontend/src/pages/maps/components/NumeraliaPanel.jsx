@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { useMapsContext } from '@hooks/useMaps';
-import { SIDER_COLLAPSED_WIDTH } from '@constants/sider';
+import { useSider } from '@contexts/SiderContext';
+import { SIDER_TRANSITION_CLASSES } from '@constants/sider';
 import { PANEL_GAP, VIEWPORT_EDGE } from '@pages/maps/helpers/mapFit';
 import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
 import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
@@ -11,6 +12,7 @@ import StatCard from './LayerDetailModal/components/StatCard';
 const NumeraliaPanel = () => {
     const { detachedLayerId, attach, highlight } = useNumeraliaPanel();
     const { municipioMode } = useMapsContext();
+    const { width: siderWidth, isMobile } = useSider();
     const { metadata } = useLayerMetadata(detachedLayerId, useMetadataContext(municipioMode));
     const [resaltado, setResaltado] = useState(false);
     const panelRef = useRef(null);
@@ -29,8 +31,11 @@ const NumeraliaPanel = () => {
 
     return (
         <div
-            className="hidden md:flex fixed bottom-16 z-11 justify-center pointer-events-none"
-            style={{ left: SIDER_COLLAPSED_WIDTH + VIEWPORT_EDGE + PANEL_GAP, right: VIEWPORT_EDGE + PANEL_GAP }}
+            className={`hidden md:flex fixed bottom-16 z-11 justify-center pointer-events-none ${SIDER_TRANSITION_CLASSES}`}
+            style={{
+                left: (isMobile ? 0 : siderWidth) + VIEWPORT_EDGE + PANEL_GAP,
+                right: VIEWPORT_EDGE + PANEL_GAP,
+            }}
         >
             <section
                 ref={panelRef}
