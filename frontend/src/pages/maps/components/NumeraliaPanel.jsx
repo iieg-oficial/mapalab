@@ -67,7 +67,7 @@ const NumeraliaPanel = () => {
                     </Tooltip>
                 </div>
 
-                <div className="grid grid-rows-2 grid-flow-col auto-cols-[minmax(120px,1fr)] gap-2">
+                <div className="grid grid-rows-2 auto-rows-fr grid-flow-col auto-cols-[minmax(120px,1fr)] gap-2">
                     {slots.map((stat, index) => (
                         <StatCard key={index} label={stat.nombre} value={stat.valor} simbolo={stat.simbolo} size="compact" receta={stat.receta} />
                     ))}

@@ -189,9 +189,9 @@ const icons = {
     ),
     desacoplar: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="6" y="3" width="12" height="18" rx="2" />
-            <path d="M12 8v7" />
-            <path d="m9 12 3 3 3-3" />
+            <rect x="4" y="4" width="16" height="16" rx="2.5" />
+            <path d="M12 8v6.5" />
+            <path d="m9 11.5 3 3 3-3" />
         </svg>
     ),
 };

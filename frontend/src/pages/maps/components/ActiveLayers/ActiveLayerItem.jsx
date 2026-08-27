@@ -5,6 +5,7 @@ import { useSider } from '@contexts/SiderContext';
 import Loading from '@components/Loading';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Tooltip from '@components/Tooltip';
+import { useAvisoSeleccion } from './avisoSeleccion';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { hasHexbinMode } from '@pages/maps/helpers/serviceMode';
 import { LOOP_INTERVAL_PRESETS } from '@hooksMaps/useDateLoop';
@@ -194,7 +195,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const { hasLegend } = useWMSLegend();
     const layerHasLegend = hasLegend(layer);
 
-    const warningContent = 'Al seleccionar un punto en el mapa, éste mostrará información de esta capa. Puedes cambiar la selección dando clic en la capa que necesites visualizar.';
+    const warningContent = useAvisoSeleccion(isSelected);
     return (
         <div
             ref={itemRef}
@@ -212,12 +213,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
             onMouseLeave={() => setIsHovered(false)}
         >
             <Tooltip
-                content={isSelected ? warningContent : null}
-                variant="warning"
-                placement={isMobile ? 'top' : 'left'}
-                disabled={!isSelected || download.menuOpen}
-                triggerBlock
-                triggerClassName="w-full"
+                content={isSelected ? warningContent : null} variant="warning" placement={isMobile ? 'top' : 'left'}
+                disabled={!isSelected || download.menuOpen || !warningContent} triggerBlock triggerClassName="w-full"
             >
                 <div className="flex flex-col gap-1.5 px-2 py-2 w-full">
                     <div className="flex items-center gap-2 min-h-8 w-full">

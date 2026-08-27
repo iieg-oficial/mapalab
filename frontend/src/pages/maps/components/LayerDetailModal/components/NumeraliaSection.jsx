@@ -23,7 +23,7 @@ const NumeraliaSection = ({ numeralia, pie, ambito, onDetach }) => {
                 <AmbitoTitle ambito={ambito} />
                 {onDetach && <DetachStatsButton onDetach={onDetach} />}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 auto-rows-fr gap-3">
                 {slots.map((stat, index) => (
                     <StatCard key={index} label={stat.nombre} value={stat.valor} simbolo={stat.simbolo} receta={stat.receta} />
                 ))}

@@ -23,9 +23,9 @@ const LayerStatsInline = ({ metadata, layerId }) => {
                 </p>
                 <DetachStatsButton onDetach={() => detach?.(layerId)} iconClassName="size-4" />
             </div>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 auto-rows-fr gap-2.5">
                 {slots.map((stat, index) => (
-                    <StatCard key={index} label={stat.nombre} value={stat.valor} simbolo={stat.simbolo} size="compact" receta={stat.receta} />
+                    <StatCard key={index} label={stat.nombre} value={stat.valor} simbolo={stat.simbolo} size="compact" receta={stat.receta} lado="izquierda" />
                 ))}
             </div>
         </div>

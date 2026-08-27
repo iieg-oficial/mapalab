@@ -23,7 +23,7 @@ const soltarTurno = (cerrar) => {
 const ANCHO_FICHA = 270;
 const SEPARACION = 6;
 
-const StatCard = ({ label, value, simbolo, className = '', size = 'default', receta = null }) => {
+const StatCard = ({ label, value, simbolo, className = '', size = 'default', receta = null, lado = 'auto' }) => {
     const s = SIZES[size] || SIZES.default;
     const Contenedor = receta ? 'button' : 'div';
     const [posicion, setPosicion] = useState(null);
@@ -49,11 +49,20 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
         if (!rect) return;
         tomarTurno(cerrar.current);
         const centro = rect.left + rect.width / 2;
+        const deseada = lado === 'izquierda'
+            ? rect.right - ANCHO_FICHA
+            : centro - ANCHO_FICHA / 2;
         const izquierda = Math.min(
-            Math.max(SEPARACION, centro - ANCHO_FICHA / 2),
+            Math.max(SEPARACION, deseada),
             window.innerWidth - ANCHO_FICHA - SEPARACION,
         );
-        setPosicion({ izquierda, arriba: rect.top, abajo: rect.bottom, cabeArriba: rect.top > 220 });
+        setPosicion({
+            izquierda,
+            arriba: rect.top,
+            abajo: rect.bottom,
+            cabeArriba: rect.top > 220,
+            puntero: Math.min(Math.max(12, centro - izquierda), ANCHO_FICHA - 12),
+        });
     };
 
     const programar = () => {
@@ -113,7 +122,13 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
                         : { left: posicion.izquierda, top: posicion.abajo + SEPARACION }}
                     role="tooltip"
                 >
-                    <StatReceta receta={receta} valor={formatNumber(value)} simbolo={simbolo} />
+                    <StatReceta
+                        receta={receta}
+                        valor={formatNumber(value)}
+                        simbolo={simbolo}
+                        puntero={posicion.puntero}
+                        punteroAbajo={posicion.cabeArriba}
+                    />
                 </div>,
                 document.body,
             )}
