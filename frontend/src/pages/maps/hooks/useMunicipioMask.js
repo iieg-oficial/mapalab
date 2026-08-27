@@ -7,9 +7,13 @@ import { buildMaskPolygon } from '@pages/maps/helpers/municipioMask';
 
 const MASK_Z_INDEX = 9500;
 
+const VELO = 'rgba(0, 0, 0, 0.18)';
+const CONTORNO = '#5C2472';
+const CONTORNO_GROSOR = 2.5;
+
 const MASK_STYLE = new Style({
-    fill: new Fill({ color: 'rgba(0, 0, 0, 0.85)' }),
-    stroke: new Stroke({ color: 'rgba(0, 0, 0, 0)', width: 0 }),
+    fill: new Fill({ color: VELO }),
+    stroke: new Stroke({ color: CONTORNO, width: CONTORNO_GROSOR }),
 });
 
 const createMaskLayer = () => {
