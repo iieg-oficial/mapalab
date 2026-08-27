@@ -9,7 +9,7 @@ const DetachStatsButton = ({ onDetach, iconClassName = 'size-5' }) => (
             aria-label="Convertir las estadísticas en panel"
             className="cursor-pointer text-gray-500 hover:text-purple focus:outline-none focus-visible:ring-2 focus-visible:ring-purple rounded-full"
         >
-            <Icon name="numeralia" className={iconClassName} />
+            <Icon name="desacoplar" className={iconClassName} />
         </button>
     </Tooltip>
 );

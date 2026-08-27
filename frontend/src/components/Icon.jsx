@@ -187,6 +187,13 @@ const icons = {
             <rect x="12" y="12" width="8" height="8" fill="currentColor" fillOpacity="0.18" stroke="none" />
         </svg>
     ),
+    desacoplar: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="6" y="3" width="12" height="18" rx="2" />
+            <path d="M12 8v7" />
+            <path d="m9 12 3 3 3-3" />
+        </svg>
+    ),
 };
 
 const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visible = true, tooltip = null, onClick = null }) => {

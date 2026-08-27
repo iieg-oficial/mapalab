@@ -15,7 +15,6 @@ import PeriodicitySection from './components/PeriodicitySection';
 import OpacityControl from './components/OpacityControl';
 import InfoCard from './components/InfoCard';
 import NumeraliaSection from './components/NumeraliaSection';
-import DetachStatsButton from './components/DetachStatsButton';
 import LayerInfoSections from './components/LayerInfoSections';
 import LayerDetailHeader from './components/LayerDetailHeader';
 import DownloadButton from './components/DownloadButton';
@@ -186,7 +185,6 @@ const LayerDetailModal = () => {
                                     />
                                 </>
                             )}
-                            {hasNumeralia && <DetachStatsButton onDetach={handleDetach} />}
                             <Icon name="cerrarModal" aria-label="Cerrar" onClick={() => setSelectedLayer(null)} classNameBG="rounded-full hover:shadow-[0px_5px_20px_#101F3629]" className="cursor-pointer" />
                         </div>
                     </div>
@@ -227,6 +225,7 @@ const LayerDetailModal = () => {
                                 numeralia={metadata?.numeralia}
                                 pie={metadata?.nombre_pie_numeralia}
                                 ambito={metadata?.ambito}
+                                onDetach={hasNumeralia ? handleDetach : null}
                             />
 
                             {hasPeriodicity && slotMembership === 'AB' ? (
