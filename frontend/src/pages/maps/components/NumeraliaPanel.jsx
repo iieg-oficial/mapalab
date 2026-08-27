@@ -39,7 +39,7 @@ const NumeraliaPanel = () => {
 
     return (
         <div
-            className={`flex fixed bottom-16 z-11 justify-center pointer-events-none ${SIDER_TRANSITION_CLASSES}`}
+            className={`flex fixed bottom-15 md:bottom-16 z-11 justify-center pointer-events-none ${SIDER_TRANSITION_CLASSES}`}
             style={{
                 left: isMobile ? VIEWPORT_EDGE : siderWidth + VIEWPORT_EDGE + PANEL_GAP,
                 right: VIEWPORT_EDGE + (isMobile ? 0 : PANEL_GAP),
