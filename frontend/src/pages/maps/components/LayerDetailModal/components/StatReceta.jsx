@@ -5,22 +5,26 @@ const Eslabon = ({ titulo, children, destacado = false }) => (
     </div>
 );
 
+const Union = ({ signo = '↓' }) => (
+    <span className="text-[#5C2472] font-bold text-[10px] leading-none pl-2.5" aria-hidden="true">{signo}</span>
+);
+
 const Cadena = ({ receta, valor, simbolo }) => (
-    <div className="flex items-center gap-1 flex-wrap text-[10px] text-[#465055]">
+    <div className="flex flex-col gap-0.5 text-[10px] text-[#465055]">
         <Eslabon titulo="Origen">{receta.origen}</Eslabon>
         {receta.filtros.map((f, i) => (
             <span key={i} className="contents">
-                <span className="text-[#5C2472] font-bold">→</span>
+                <Union />
                 <Eslabon titulo={f.delContexto ? 'Filtro del visor' : 'Filtro'}>
                     {f.campo} {f.operador} {f.valor ?? ''}
                 </Eslabon>
             </span>
         ))}
-        <span className="text-[#5C2472] font-bold">→</span>
+        <Union />
         <Eslabon titulo="Operación">
             {receta.operacion}{receta.columna ? ` ${receta.columna}` : ''}
         </Eslabon>
-        <span className="text-[#5C2472] font-bold">=</span>
+        <Union signo="=" />
         <Eslabon titulo="Resultado" destacado>
             <strong className="text-[13px] text-[#5C2472] tabular-nums">{valor}{simbolo ? ` ${simbolo}` : ''}</strong>
         </Eslabon>
