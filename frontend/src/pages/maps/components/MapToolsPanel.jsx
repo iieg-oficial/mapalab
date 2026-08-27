@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router';
 import Download from './MapExport/Download';
 import MunicipioFilterButton from './MapExport/MunicipioFilterButton';
@@ -9,9 +9,15 @@ import FloatingIconButton from '@components/FloatingIconButton';
 import ExportPreview from './MapExport/ExportPreview';
 import { useShareDirtiness } from '@pages/maps/hooks/useShareDirtiness';
 import { useMapsContext } from '@hooks/useMaps';
-import { SIDER_EXPANDED_WIDTH, TABLET_MEDIA_QUERY } from '@constants/sider';
+import { SIDER_EXPANDED_WIDTH, TOOLS_COMPACT_MEDIA_QUERY } from '@constants/sider';
+import { useMediaQuery } from '@hooks/useMediaQuery';
+import { useIsMobile } from '@hooks/useIsMobile';
+import {
+    leerPreferenciaCompacta,
+    guardarPreferenciaCompacta,
+    resolveToolsCollapsed,
+} from '@pages/maps/helpers/toolsPanelCollapse';
 
-const COLLAPSE_KEY = 'mapalab.tools.collapsed';
 const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
 
 const MapToolsPanel = () => {
@@ -28,25 +34,17 @@ const MapToolsPanel = () => {
     const { isDirty, loadedShareId, markPending } = useShareDirtiness();
     const inSyncWithShare = !!loadedShareId && !isDirty;
     const isModifiedFromShare = !!loadedShareId && isDirty;
-    const [prefiereCompacto, setPrefiereCompacto] = useState(() => {
-        try { return localStorage.getItem(COLLAPSE_KEY) === '1'; } catch { return false; }
-    });
-    const [esTablet, setEsTablet] = useState(() => (
-        typeof window !== 'undefined' && window.matchMedia(TABLET_MEDIA_QUERY).matches
-    ));
+    const [preferencia, setPreferencia] = useState(leerPreferenciaCompacta);
+    const esCompacto = useMediaQuery(TOOLS_COMPACT_MEDIA_QUERY);
+    const isMobile = useIsMobile();
 
-    useEffect(() => {
-        try { localStorage.setItem(COLLAPSE_KEY, prefiereCompacto ? '1' : '0'); } catch { /* storage off */ }
-    }, [prefiereCompacto]);
+    const isCollapsed = resolveToolsCollapsed({ isMobile, esCompacto, preferencia });
 
-    useEffect(() => {
-        const mq = window.matchMedia(TABLET_MEDIA_QUERY);
-        const alCambiar = (e) => setEsTablet(e.matches);
-        mq.addEventListener('change', alCambiar);
-        return () => mq.removeEventListener('change', alCambiar);
-    }, []);
-
-    const isCollapsed = esTablet || prefiereCompacto;
+    const alternarCompacto = useCallback(() => {
+        const siguiente = isCollapsed ? '0' : '1';
+        guardarPreferenciaCompacta(siguiente);
+        setPreferencia(siguiente);
+    }, [isCollapsed]);
 
     const handleRevert = useCallback(() => {
         window.location.reload();
@@ -104,13 +102,13 @@ const MapToolsPanel = () => {
                         </button>
                     </div>
                 )}
-                <div className={`${esTablet ? 'hidden' : 'hidden md:flex'} shrink-0 -mr-5 mt-2.5 z-12 relative`}>
+                <div className="hidden md:flex shrink-0 -mr-5 mt-2.5 z-12 relative">
                     <FloatingIconButton
                         iconKey={collapseIconKey}
                         tooltip={collapseTooltip}
                         placement="left"
                         delay={300}
-                        onClick={() => setPrefiereCompacto(prev => !prev)}
+                        onClick={alternarCompacto}
                     />
                 </div>
                 <Panel
