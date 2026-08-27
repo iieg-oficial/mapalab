@@ -10,4 +10,7 @@ export const SIDER_HOVER_DELAY_LEAVE_WITH_MENU = 500;
 export const SIDER_HOVER_DELAY_LEAVE_WITH_TOOLS = 300;
 export const MOBILE_BREAKPOINT = 768;
 export const MOBILE_MEDIA_QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`;
+
+export const TABLET_BREAKPOINT = 1280;
+export const TABLET_MEDIA_QUERY = `(max-width: ${TABLET_BREAKPOINT - 1}px)`;
 export const SIDER_MOBILE_WIDTH = 88;
