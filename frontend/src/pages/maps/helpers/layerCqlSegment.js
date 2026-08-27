@@ -1,5 +1,5 @@
 import { findLayerById } from './layers/utils/layerHelpers';
-import { buildLayerMunicipioCql } from './municipioCqlBuilder';
+import { buildLayerMunicipioCql, CQL_SIN_RESOLVER } from './municipioCqlBuilder';
 
 export const RASTER_WORKSPACES = new Set(['raster', 'lluvia', 'temperatura']);
 
@@ -36,7 +36,9 @@ export const buildLayerCqlSegment = ({ subLayers, layers, getFilter, combineCQLF
 
     if (!omitirMunicipio && segment !== '1=0') {
         const muniCql = buildMunicipioCqlDeGrupo({ subLayers, layers, municipioContext });
-        if (muniCql) {
+        if (muniCql === CQL_SIN_RESOLVER) {
+            segment = CQL_SIN_RESOLVER;
+        } else if (muniCql) {
             segment = segment === 'INCLUDE' ? muniCql : `(${muniCql}) AND (${segment})`;
         }
     }

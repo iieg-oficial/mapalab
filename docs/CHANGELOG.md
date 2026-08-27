@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.140.1] - 2026-08-27
+
+### Corregido: las capas ya no se piden completas mientras carga la lista de municipios
+
+Al abrir el visor con un municipio en la URL, la lista de `mapalab.municipios` todavia viaja por red.
+Las capas que filtran por nombre no podian resolverlo y se pedian sin recorte —Jalisco entero— para
+corregirse un instante despues. Ahora esperan: mientras la lista no llegue, la capa no se solicita.
+Las que filtran por clave nunca dependieron de la lista y siguen igual de rapidas.
+
+El aviso de consola que reportaba claves sin nombre se disparaba en esa misma ventana. Como solo
+avisa una vez por capa, la falsa alarma del arranque quemaba el aviso y despues callaba los casos
+reales. Ahora solo habla cuando la lista ya esta cargada.
+
 ## [1.140.0] - 2026-08-27
 
 ### Cambiado: la barra de herramientas se contrae solo en movil y tablet
@@ -30,19 +43,6 @@ repartida entre dos `useEffect` y un booleano. De paso, `useIsMobile` pasa a apo
 
 `TABLET_BREAKPOINT` y `TABLET_MEDIA_QUERY` se retiran: la barra era su unico consumidor y el chequeo
 de codigo muerto los marcaba.
-
-## [1.139.1] - 2026-08-27
-
-### Corregido: las capas ya no se piden completas mientras carga la lista de municipios
-
-Al abrir el visor con un municipio en la URL, la lista de `mapalab.municipios` todavia viaja por red.
-Las capas que filtran por nombre no podian resolverlo y se pedian sin recorte —Jalisco entero— para
-corregirse un instante despues. Ahora esperan: mientras la lista no llegue, la capa no se solicita.
-Las que filtran por clave nunca dependieron de la lista y siguen igual de rapidas.
-
-El aviso de consola que reportaba claves sin nombre se disparaba en esa misma ventana. Como solo
-avisa una vez por capa, la falsa alarma del arranque quemaba el aviso y despues callaba los casos
-reales. Ahora solo habla cuando la lista ya esta cargada.
 
 ## [1.139.0] - 2026-08-27
 

@@ -7,6 +7,7 @@ import { useLayerLoading } from '@hooks/useLayerLoading';
 import { useDebounce } from '@hooks/useDebounce';
 import { findWMSConfig, findLayerDef } from '../helpers/wmsConfig';
 import { buildLayerCqlSegment, buildMunicipioCqlDeGrupo } from '../helpers/layerCqlSegment';
+import { CQL_SIN_RESOLVER } from '../helpers/municipioCqlBuilder';
 import { computeLayerZIndex } from '../helpers/layerZIndex';
 import { createVectorLayerStyle, resolveVectorColor } from '../helpers/vectorLayerStyles';
 import { createHexbinLayer, fillHexbinLayer, fillHexbinLayerFromCells } from '../helpers/hexbinLayer';
@@ -171,6 +172,7 @@ export const useVectorServiceLayerManager = ({
                 layers,
                 municipioContext: municipioContextRef.current
             });
+            if (muniCql === CQL_SIN_RESOLVER) return;
 
             const sinFiltroUsuario = !getFilterRef.current?.(id) && !municipioContextRef.current?.active;
             const typeName = wmsConfig.wfsLayerName || wmsConfig.layerName;

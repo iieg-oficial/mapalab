@@ -10,6 +10,7 @@ vi.mock('@pages/maps/helpers/layers/utils/layerHelpers', () => ({
 }));
 
 vi.mock('@pages/maps/helpers/municipioCqlBuilder', () => ({
+    CQL_SIN_RESOLVER: '1=0',
     buildLayerMunicipioCql: (...args) => mockBuildLayerMunicipioCql(...args)
 }));
 

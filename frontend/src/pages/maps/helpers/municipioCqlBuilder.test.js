@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { buildLayerMunicipioCql } from './municipioCqlBuilder';
+import { buildLayerMunicipioCql, CQL_SIN_RESOLVER } from './municipioCqlBuilder';
 
 const baseContext = {
     active: true,
@@ -11,6 +11,7 @@ const baseContext = {
 };
 
 beforeEach(() => {
+    vi.clearAllMocks();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
 
@@ -69,5 +70,27 @@ describe('buildLayerMunicipioCql', () => {
         const meta = { hasMunicipio: false };
         const context = { ...baseContext, bbox: null };
         expect(buildLayerMunicipioCql(meta, context)).toBeNull();
+    });
+
+    it('no pide nada mientras la lista de municipios no ha cargado', () => {
+        const meta = { hasMunicipio: true, municipioField: 'nom_mun', municipioFieldType: 'nombre' };
+        const context = { ...baseContext, nombres: [], bbox: null, allMunicipiosCount: 0, listLoading: true };
+        expect(buildLayerMunicipioCql(meta, context, 'capa_z')).toBe(CQL_SIN_RESOLVER);
+        expect(console.warn).not.toHaveBeenCalled();
+    });
+
+    it('no advierte cuando la lista aun no llega aunque ya no este cargando', () => {
+        const meta = { hasMunicipio: true, municipioField: 'nom_mun', municipioFieldType: 'nombre' };
+        const context = { ...baseContext, nombres: [], bbox: null, allMunicipiosCount: 0, listLoading: false };
+        expect(buildLayerMunicipioCql(meta, context, 'capa_w')).toBe(CQL_SIN_RESOLVER);
+        expect(console.warn).not.toHaveBeenCalled();
+    });
+
+    it('filtra por clave sin esperar la lista de municipios', () => {
+        const meta = { hasMunicipio: true, municipioField: 'cve_mun' };
+        const context = { ...baseContext, nombres: [], bbox: null, allMunicipiosCount: 0, listLoading: true };
+        expect(buildLayerMunicipioCql(meta, context, 'capa_v')).toBe(
+            "cve_mun IN ('14039','14120')",
+        );
     });
 });

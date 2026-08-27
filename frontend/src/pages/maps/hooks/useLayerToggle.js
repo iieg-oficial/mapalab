@@ -4,7 +4,7 @@ import { transformExtent } from 'ol/proj';
 import { trackLayerToggle } from '@services/analyticsService';
 import { generateDefaultDateFilter } from '@pages/maps/helpers/dateFilterHelpers';
 import { findParentGroup } from '@pages/maps/helpers/layers/utils/layerHelpers';
-import { buildLayerMunicipioCql } from '@pages/maps/helpers/municipioCqlBuilder';
+import { buildLayerMunicipioCql, CQL_SIN_RESOLVER } from '@pages/maps/helpers/municipioCqlBuilder';
 import { useLayers } from '@hooks/useLayers';
 import { getLayerPeriodicity } from '@services/layerMetadataService';
 import { fetchLayerExtent } from '@services/layerExtentService';
@@ -96,6 +96,7 @@ export const useLayerToggle = ({
             const municipioCql = ctx?.active
                 ? buildLayerMunicipioCql(layer?.searchMeta, ctx, layerId)
                 : null;
+            if (municipioCql === CQL_SIN_RESOLVER) return;
             const extent = await fetchLayerExtent(layer, { municipioCql });
             if (extent && mapRef.current) {
                 view.fit(extent, { duration: FIT_DURATION, maxZoom: FIT_MAX_ZOOM, padding: FIT_PADDING });
