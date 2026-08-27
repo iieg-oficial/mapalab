@@ -20,7 +20,7 @@ const tomarTurno = (cerrar) => {
 const soltarTurno = (cerrar) => {
     if (cerrarFichaAbierta === cerrar) cerrarFichaAbierta = null;
 };
-const ANCHO_FICHA = 270;
+const ANCHO_FICHA = 290;
 const SEPARACION = 6;
 
 const StatCard = ({ label, value, simbolo, className = '', size = 'default', receta = null, lado = 'auto' }) => {
@@ -49,9 +49,12 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
         if (!rect) return;
         tomarTurno(cerrar.current);
         const centro = rect.left + rect.width / 2;
-        const deseada = lado === 'izquierda'
-            ? rect.right - ANCHO_FICHA
-            : centro - ANCHO_FICHA / 2;
+        const mitad = ANCHO_FICHA / 2;
+        const pegadaDerecha = centro + mitad > window.innerWidth - SEPARACION;
+        const pegadaIzquierda = centro - mitad < SEPARACION;
+        let deseada = centro - mitad;
+        if (lado === 'izquierda' || pegadaDerecha) deseada = rect.right - ANCHO_FICHA;
+        else if (pegadaIzquierda) deseada = rect.left;
         const izquierda = Math.min(
             Math.max(SEPARACION, deseada),
             window.innerWidth - ANCHO_FICHA - SEPARACION,
