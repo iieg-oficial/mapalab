@@ -44,8 +44,8 @@ const LayerActionsBar = ({
     const opacityButtonRef = useRef(null);
     const { visible: legendsVisible, setVisible: setLegendsVisible } = useLegendsVisibility();
     const { visible: statsVisible, setVisible: setStatsVisible } = useStatsVisibility();
-    const { detachedLayerId, resaltar } = useNumeraliaPanel();
-    const statsEnPanel = detachedLayerId === layerId;
+    const { abierto, detachedLayerId, resaltar } = useNumeraliaPanel();
+    const statsEnPanel = abierto && detachedLayerId === layerId;
     const { setHighlightedSlots } = useMapsContext();
 
     const opacityPercent = Math.round(opacity * 100);

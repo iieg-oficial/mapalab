@@ -6,13 +6,24 @@ export const NumeraliaPanelProvider = ({ children }) => {
     const [detachedLayerId, setDetachedLayerId] = useState(null);
     const [highlight, setHighlight] = useState(0);
 
-    const detach = useCallback((layerId) => setDetachedLayerId(layerId || null), []);
-    const attach = useCallback(() => setDetachedLayerId(null), []);
+    const [abierto, setAbierto] = useState(false);
+
+    const detach = useCallback((layerId) => {
+        setAbierto(true);
+        if (layerId) setDetachedLayerId(layerId);
+    }, []);
+    const attach = useCallback(() => {
+        setAbierto(false);
+        setDetachedLayerId(null);
+    }, []);
+    const seguir = useCallback((layerId) => {
+        if (layerId) setDetachedLayerId(layerId);
+    }, []);
     const resaltar = useCallback(() => setHighlight(n => n + 1), []);
 
     const value = useMemo(
-        () => ({ detachedLayerId, detach, attach, resaltar, highlight }),
-        [detachedLayerId, detach, attach, resaltar, highlight],
+        () => ({ abierto, detachedLayerId, detach, attach, seguir, resaltar, highlight }),
+        [abierto, detachedLayerId, detach, attach, seguir, resaltar, highlight],
     );
 
     return (

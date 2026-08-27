@@ -5,8 +5,8 @@ import { useStatsVisibility } from './hooks/useStatsVisibility';
 
 const LayerStatsInline = ({ metadata, layerId }) => {
     const { visible } = useStatsVisibility();
-    const { detachedLayerId, detach } = useNumeraliaPanel();
-    if (!visible || detachedLayerId === layerId) return null;
+    const { abierto, detachedLayerId, detach } = useNumeraliaPanel();
+    if (!visible || (abierto && detachedLayerId === layerId)) return null;
 
     const slots = (metadata?.numeralia || []).filter(s => s.nombre && s.valor);
     if (slots.length === 0) return null;

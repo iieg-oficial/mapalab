@@ -10,12 +10,17 @@ import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadat
 import StatCard from './LayerDetailModal/components/StatCard';
 
 const NumeraliaPanel = () => {
-    const { detachedLayerId, attach, highlight } = useNumeraliaPanel();
-    const { municipioMode } = useMapsContext();
+    const { abierto, detachedLayerId, attach, seguir, highlight } = useNumeraliaPanel();
+    const { municipioMode, selectedLayer } = useMapsContext();
     const { width: siderWidth, isMobile } = useSider();
-    const { metadata } = useLayerMetadata(detachedLayerId, useMetadataContext(municipioMode));
+    const layerId = abierto ? (selectedLayer?.id || detachedLayerId) : null;
+    const { metadata } = useLayerMetadata(layerId, useMetadataContext(municipioMode));
     const [resaltado, setResaltado] = useState(false);
     const panelRef = useRef(null);
+
+    useEffect(() => {
+        if (abierto && selectedLayer?.id) seguir(selectedLayer.id);
+    }, [abierto, selectedLayer?.id, seguir]);
 
     useEffect(() => {
         if (!highlight) return undefined;
@@ -25,7 +30,7 @@ const NumeraliaPanel = () => {
     }, [highlight]);
 
     const slots = (metadata?.numeralia || []).filter(s => s.nombre && s.valor);
-    if (!detachedLayerId || slots.length === 0) return null;
+    if (!abierto || slots.length === 0) return null;
 
     const ambito = metadata?.ambito;
 

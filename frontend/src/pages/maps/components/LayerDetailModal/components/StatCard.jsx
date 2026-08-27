@@ -11,7 +11,9 @@ const RETARDO_MS = 2000;
 
 const StatCard = ({ label, value, simbolo, className = '', size = 'default', receta = null }) => {
     const s = SIZES[size] || SIZES.default;
+    const Contenedor = receta ? 'button' : 'div';
     const [abierta, setAbierta] = useState(false);
+    const [fijada, setFijada] = useState(false);
     const temporizador = useRef(null);
 
     useEffect(() => () => clearTimeout(temporizador.current), []);
@@ -24,7 +26,13 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
 
     const cancelar = () => {
         clearTimeout(temporizador.current);
-        setAbierta(false);
+        if (!fijada) setAbierta(false);
+    };
+
+    const alternar = () => {
+        clearTimeout(temporizador.current);
+        setFijada(v => !v);
+        setAbierta(v => !(v && fijada));
     };
 
     return (
@@ -35,7 +43,10 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
             onFocus={programar}
             onBlur={cancelar}
         >
-            <div className={`bg-[#EFF3FC] rounded-[14px] ${s.box} min-h-auto flex flex-col justify-center ${className}`}>
+            <Contenedor
+                className={`bg-[#EFF3FC] rounded-[14px] ${s.box} min-h-auto flex flex-col justify-center w-full ${receta ? 'cursor-pointer' : ''} ${className}`}
+                {...(receta ? { type: 'button', onClick: alternar, 'aria-expanded': abierta } : {})}
+            >
                 <div className="flex flex-col items-center justify-center text-center w-full">
                     <p className={`${s.value} font-garet font-bold text-purple`}>
                         {formatNumber(value)}{simbolo && <span className={`${s.simbolo} font-medium ml-1`}>{simbolo}</span>}
@@ -43,19 +54,8 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
                     <p className={`${s.label} font-garet font-medium text-[#465055] tracking-normal`}>
                         {label}
                     </p>
-                    {receta && (
-                        <button
-                            type="button"
-                            onClick={() => (abierta ? cancelar() : setAbierta(true))}
-                            aria-expanded={abierta}
-                            aria-label={`Ver cómo se calcula ${label}`}
-                            className="sr-only focus:not-sr-only focus:mt-1 focus:text-[9px] focus:text-purple"
-                        >
-                            cómo se calcula
-                        </button>
-                    )}
                 </div>
-            </div>
+            </Contenedor>
 
             {abierta && receta && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 font-garet" role="tooltip">
