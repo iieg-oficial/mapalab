@@ -2,15 +2,18 @@ import { formatNumber } from '@pages/maps/helpers/formatNumber';
 
 const Paso = ({ paso }) => (
     <>
-        <span className="text-[13px] font-bold text-[#5C2472] text-center leading-tight" aria-hidden="true">
+        <span
+            className={`text-[13px] font-bold text-center leading-tight ${paso.inactivo ? 'text-[#A9B0BC]' : 'text-[#5C2472]'}`}
+            aria-hidden="true"
+        >
             {paso.signo || ''}
         </span>
-        <span className="leading-tight">
-            <span className="text-[#2E4372] font-medium">{paso.concepto}</span>
-            {paso.detalle && <span className="text-[#465055]"> {paso.detalle}</span>}
-            {paso.delContexto && <span className="text-[#FF8300]"> · del visor</span>}
+        <span className={`leading-tight ${paso.inactivo ? 'text-[#A9B0BC]' : ''}`}>
+            <span className={paso.inactivo ? '' : 'text-[#2E4372] font-medium'}>{paso.concepto}</span>
+            {paso.detalle && <span className={paso.inactivo ? '' : 'text-[#465055]'}> {paso.detalle}</span>}
+            {paso.delContexto && !paso.inactivo && <span className="text-[#FF8300]"> · del visor</span>}
         </span>
-        <span className="text-right tabular-nums text-[#465055] leading-tight">
+        <span className={`text-right tabular-nums leading-tight ${paso.inactivo ? 'text-[#A9B0BC]' : 'text-[#465055]'}`}>
             {paso.valor === null || paso.valor === undefined ? '—' : formatNumber(String(paso.valor))}
         </span>
     </>
@@ -45,7 +48,7 @@ const StatReceta = ({ receta, valor, simbolo }) => {
 
             {receta.omitidos?.length > 0 && (
                 <p className="mt-2 leading-snug text-[#465055]">
-                    Sin filtro de {receta.omitidos.join(' ni ')}: la cifra es de todo el estado y todo el periodo.
+                    Los filtros en gris se activan al elegir {receta.omitidos.join(' o ')} en el visor.
                 </p>
             )}
         </div>

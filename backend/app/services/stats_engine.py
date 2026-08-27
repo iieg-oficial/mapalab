@@ -464,6 +464,14 @@ def build_receta(cfg: dict, context: dict | None, session: Session | None = None
         acumulados = []
         for filtro, legible in zip(crudos, legibles):
             if legible['valor'] == 'sin filtrar':
+                pasos.append({
+                    'signo': legible['operador'],
+                    'concepto': legible['campo'],
+                    'detalle': 'sin seleccionar en el visor',
+                    'valor': None,
+                    'delContexto': True,
+                    'inactivo': True,
+                })
                 continue
             acumulados.append(filtro)
             pasos.append({
@@ -472,6 +480,7 @@ def build_receta(cfg: dict, context: dict | None, session: Session | None = None
                 'detalle': legible['valor'],
                 'valor': _conteo_acumulado(session, cfg, acumulados, context),
                 'delContexto': legible['delContexto'],
+                'inactivo': False,
             })
 
     return {
