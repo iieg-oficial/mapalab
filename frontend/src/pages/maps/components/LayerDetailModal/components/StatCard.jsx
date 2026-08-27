@@ -58,13 +58,14 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
     return (
         <div
             ref={anclaRef}
+            className="h-full"
             onMouseEnter={programar}
             onMouseLeave={cancelar}
             onFocus={programar}
             onBlur={cancelar}
         >
             <Contenedor
-                className={`bg-[#EFF3FC] rounded-[14px] ${s.box} min-h-auto flex flex-col justify-center w-full ${receta ? 'cursor-pointer' : ''} ${className}`}
+                className={`bg-[#EFF3FC] rounded-[14px] ${s.box} min-h-auto flex flex-col justify-center w-full h-full ${receta ? 'cursor-pointer' : ''} ${className}`}
                 {...(receta ? { type: 'button', onClick: alternar, 'aria-expanded': Boolean(posicion) } : {})}
             >
                 <div className="flex flex-col items-center justify-center text-center w-full">
