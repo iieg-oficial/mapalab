@@ -61,8 +61,13 @@ const NumeraliaPanel = () => {
                     </div>
 
                     <Tooltip content="Cerrar estadísticas">
-                        <button onClick={attach} className="cursor-pointer shrink-0" aria-label="Cerrar el panel de estadísticas">
-                            <Icon name="cerrar" className="size-4" />
+                        <button
+                            type="button"
+                            onClick={attach}
+                            className="size-6 shrink-0 flex items-center justify-center rounded-full text-purple hover:bg-purple hover:text-white transition cursor-pointer"
+                            aria-label="Cerrar el panel de estadísticas"
+                        >
+                            <Icon name="close" className="size-3.5" />
                         </button>
                     </Tooltip>
                 </div>
