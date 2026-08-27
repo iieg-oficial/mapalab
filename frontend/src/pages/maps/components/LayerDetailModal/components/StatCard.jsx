@@ -79,7 +79,8 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
         }
     };
 
-    const alternar = () => {
+    const alternar = (evento) => {
+        evento?.stopPropagation();
         clearTimeout(temporizador.current);
         if (fijada) {
             setFijada(false);
