@@ -9,6 +9,17 @@ const SIZES = {
 };
 
 const RETARDO_MS = 2000;
+
+let cerrarFichaAbierta = null;
+
+const tomarTurno = (cerrar) => {
+    if (cerrarFichaAbierta && cerrarFichaAbierta !== cerrar) cerrarFichaAbierta();
+    cerrarFichaAbierta = cerrar;
+};
+
+const soltarTurno = (cerrar) => {
+    if (cerrarFichaAbierta === cerrar) cerrarFichaAbierta = null;
+};
 const ANCHO_FICHA = 270;
 const SEPARACION = 6;
 
@@ -20,11 +31,23 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
     const temporizador = useRef(null);
     const anclaRef = useRef(null);
 
-    useEffect(() => () => clearTimeout(temporizador.current), []);
+    const cerrar = useRef(() => {
+        setPosicion(null);
+        setFijada(false);
+    });
+
+    useEffect(() => {
+        const propia = cerrar.current;
+        return () => {
+            clearTimeout(temporizador.current);
+            soltarTurno(propia);
+        };
+    }, []);
 
     const calcular = () => {
         const rect = anclaRef.current?.getBoundingClientRect();
         if (!rect) return;
+        tomarTurno(cerrar.current);
         const centro = rect.left + rect.width / 2;
         const izquierda = Math.min(
             Math.max(SEPARACION, centro - ANCHO_FICHA / 2),
@@ -41,7 +64,10 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
 
     const cancelar = () => {
         clearTimeout(temporizador.current);
-        if (!fijada) setPosicion(null);
+        if (!fijada) {
+            setPosicion(null);
+            soltarTurno(cerrar.current);
+        }
     };
 
     const alternar = () => {
@@ -49,6 +75,7 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
         if (fijada) {
             setFijada(false);
             setPosicion(null);
+            soltarTurno(cerrar.current);
             return;
         }
         setFijada(true);

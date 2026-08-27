@@ -3,11 +3,10 @@ import { formatNumber } from '@pages/maps/helpers/formatNumber';
 const Paso = ({ paso }) => (
     <>
         <span className="leading-tight">
-            <span className="text-[#2E4372] font-medium">{paso.concepto}</span>
-            {paso.detalle && <span className="text-[#465055]"> {paso.detalle}</span>}
-            {paso.delContexto && <span className="text-[#FF8300]"> · del visor</span>}
+            <span className="block text-[#2E4372] font-medium">{paso.concepto}</span>
+            {paso.detalle && <span className="block text-[9px] text-[#465055]">{paso.detalle}</span>}
         </span>
-        <span className="text-right tabular-nums leading-tight text-[#465055]">
+        <span className="text-right tabular-nums leading-tight font-bold text-purple">
             {formatNumber(String(paso.valor))}
         </span>
     </>
@@ -36,7 +35,7 @@ const StatReceta = ({ receta, valor, simbolo }) => {
                 <span className="flex-1 text-[#465055] leading-tight">
                     {receta.operacion}{receta.columna ? ` ${receta.columna}` : ''}
                 </span>
-                <strong className="text-[14px] text-[#5C2472] tabular-nums leading-none">
+                <strong className="text-[14px] text-orange tabular-nums leading-none">
                     {valor}{simbolo ? ` ${simbolo}` : ''}
                 </strong>
             </div>
