@@ -7,7 +7,7 @@ from app.consts.databases import DatabaseType
 from app.consts.workspaces import resolve_schema
 from app.databases.factory import DatabaseFactory
 from app.models.layer import Layer, LayerMetadata, LayerStats, Workspace
-from app.services.stats_engine import compute_numeralia
+from app.services.stats_engine import build_recetas, compute_numeralia
 
 
 def _resolve_workspace_name(session: Session, workspace_alias: str) -> str:
@@ -74,6 +74,7 @@ def _numeralia_from_values(values: Optional[list]) -> list:
                 'valor': v.get('valor'),
                 'nombre': v.get('nombre'),
                 'simbolo': v.get('simbolo'),
+                'receta': v.get('receta'),
             })
         else:
             result.append({'valor': None, 'nombre': None, 'simbolo': None})
@@ -168,6 +169,11 @@ def get_metadata_response(
             )
             if calculada:
                 numeralia = _numeralia_from_values(calculada)
+        elif stats and stats.stats_config:
+            recetas = build_recetas(session, layer_key, stats.stats_config, context)
+            for slot, item in enumerate(numeralia, start=1):
+                if recetas.get(slot):
+                    item['receta'] = recetas[slot]
 
         fuentes_list = _to_list_of_dicts(meta.fuentes)
         metodologia_list = _to_list_of_dicts(meta.metodologia)

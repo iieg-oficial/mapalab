@@ -357,6 +357,99 @@ def _cache_put(key: str, values: list, ttl_seconds: float) -> None:
         _cache[key] = (monotonic() + ttl_seconds, values)
 
 
+OPERACION_LEGIBLE = {
+    'count': 'Contar registros',
+    'count_where': 'Contar registros',
+    'count_distinct': 'Contar valores distintos',
+    'sum': 'Sumar',
+    'avg': 'Promediar',
+    'min': 'Valor mínimo',
+    'max': 'Valor máximo',
+    'latest': 'Último valor',
+}
+
+OPERADOR_LEGIBLE = {
+    'eq': '=',
+    'in': 'en',
+    'gte': '≥',
+    'lte': '≤',
+    'between': 'entre',
+    'is_not_null': 'tiene dato',
+}
+
+
+def _valor_legible(value: Any, context: dict | None) -> tuple[str, bool]:
+    key = _placeholder_key(value)
+    if key is None:
+        if isinstance(value, (list, tuple)):
+            return ', '.join(str(v) for v in value), False
+        return str(value), False
+    resolved, ok = _resolve_context(value, context)
+    if not ok:
+        return 'sin filtrar', True
+    if isinstance(resolved, (list, tuple)):
+        return ', '.join(str(v) for v in resolved), True
+    return str(resolved), True
+
+
+def _filtro_legible(item: dict, context: dict | None) -> dict:
+    op = item.get('op')
+    if op == 'is_not_null':
+        return {'campo': item.get('field'), 'operador': OPERADOR_LEGIBLE[op], 'valor': None, 'delContexto': False}
+    value = item.get('value')
+    if op == 'between' and isinstance(value, list) and len(value) == 2:
+        inicio, ctx_a = _valor_legible(value[0], context)
+        fin, ctx_b = _valor_legible(value[1], context)
+        if ctx_a and inicio == 'sin filtrar':
+            return {'campo': item.get('field'), 'operador': OPERADOR_LEGIBLE[op], 'valor': 'sin filtrar', 'delContexto': True}
+        return {
+            'campo': item.get('field'),
+            'operador': OPERADOR_LEGIBLE[op],
+            'valor': f'{inicio} y {fin}',
+            'delContexto': ctx_a or ctx_b,
+        }
+    legible, del_contexto = _valor_legible(value, context)
+    return {
+        'campo': item.get('field'),
+        'operador': OPERADOR_LEGIBLE.get(op, op),
+        'valor': legible,
+        'delContexto': del_contexto,
+    }
+
+
+def build_receta(cfg: dict, context: dict | None) -> dict:
+    operacion = cfg.get('operation')
+
+    if operacion == 'static':
+        return {'tipo': 'static', 'operacion': 'Valor capturado a mano', 'filtros': []}
+
+    if operacion == 'formula':
+        return {'tipo': 'formula', 'operacion': 'Combinación de otras cifras', 'filtros': []}
+
+    filtros = [_filtro_legible(f, context) for f in _effective_filters(cfg, cfg.get('filters') or [])]
+    aplicados = [f for f in filtros if f['valor'] != 'sin filtrar']
+    omitidos = [f['campo'] for f in filtros if f['valor'] == 'sin filtrar']
+
+    return {
+        'tipo': 'primitiva',
+        'origen': f"{cfg.get('schema')}.{cfg.get('table')}",
+        'operacion': OPERACION_LEGIBLE.get(operacion, operacion),
+        'columna': cfg.get('field') if operacion not in OPERATIONS_WITHOUT_FIELD else None,
+        'filtros': aplicados,
+        'omitidos': omitidos,
+    }
+
+
+def build_recetas(session: Session, layer_key: str, stats_config: list | None, context: dict | None) -> dict:
+    binding = load_layer_binding(session, layer_key)
+    recetas = {}
+    for cfg in bind_layer_fields(stats_config, binding):
+        position = cfg.get('position') or cfg.get('posicion')
+        if isinstance(position, int):
+            recetas[position] = build_receta(cfg, context)
+    return recetas
+
+
 def compute_numeralia(
     session: Session,
     layer_key: str,
@@ -385,6 +478,7 @@ def compute_numeralia(
             'valor': format_stat_value(raw, cfg.get('format')),
             'nombre': cfg.get('label') or cfg.get('nombre'),
             'simbolo': cfg.get('symbol') or cfg.get('simbolo'),
+            'receta': build_receta(cfg, context),
         })
 
     values.sort(key=lambda item: item['posicion'] if isinstance(item['posicion'], int) else 99)

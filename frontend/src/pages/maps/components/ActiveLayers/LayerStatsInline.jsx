@@ -25,7 +25,7 @@ const LayerStatsInline = ({ metadata, layerId }) => {
             </div>
             <div className="grid grid-cols-2 gap-2.5">
                 {slots.map((stat, index) => (
-                    <StatCard key={index} label={stat.nombre} value={stat.valor} simbolo={stat.simbolo} size="compact" />
+                    <StatCard key={index} label={stat.nombre} value={stat.valor} simbolo={stat.simbolo} size="compact" receta={stat.receta} />
                 ))}
             </div>
         </div>
