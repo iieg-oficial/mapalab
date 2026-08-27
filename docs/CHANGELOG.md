@@ -5,6 +5,64 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.137.0] - 2026-08-27
+
+### Agregado: la pill de municipio abre el selector
+
+La pill del encabezado mostraba el municipio activo y al hacer clic centraba el mapa. Ahora abre el
+mismo selector que el boton de la barra, reusando `MunicipioFilterPanel`, asi que no hay dos
+selectores que mantener.
+
+Centrar y salir del modo pasan a botones que **aparecen al pasar el mouse sobre la pill**: centrar a
+la izquierda, salir a la derecha. Van en posicion absoluta para que al aparecer no empujen la pill,
+que esta centrada en pantalla; el area de hover es continua —padding en vez de margen— porque con un
+hueco de 8 px el boton se escondia antes de alcanzarlo; y llevan medio segundo de gracia para
+desaparecer, con `visibility` en lugar de `pointer-events` para que sigan siendo clicables mientras
+se desvanecen. Tambien se revelan con foco de teclado.
+
+### Cambiado: el selector de municipio se organiza en pestanas
+
+Municipios por defecto, mas Regiones y ZMG. Al abrir, la pestana se sincroniza con lo que este
+activo y la lista hace scroll hasta el elemento seleccionado. El titulo cambia con la pestana.
+
+El elemento seleccionado trae su propia **X para quitar el filtro**, y volver a hacerle clic tambien
+lo quita. Se agrega una X para cerrar el panel, y titulo, buscador y pestanas quedan `sticky`. La
+opcion de ZMG usa el alto que necesita, al ser una sola.
+
+Se retira «Fuente: IIEG» y el boton «Salir del modo» del panel.
+
+### Corregido: los paneles flotantes se posicionaban con el contenido sin medir
+
+`useFloatingPosition` observaba solo el ancla, nunca el contenido. En la primera apertura el panel
+aun no tenia ancho, el centrado calculaba con `offsetWidth` en cero y no se recalculaba nunca porque
+el ancla no cambia de tamano. Se veia como un panel corrido media anchura y cortado por el viewport.
+
+Estaba latente: ningun `placement` dependia del ancho del panel hasta que se agrego `bottom`
+centrado, que hacia falta para anclar bajo un elemento centrado en pantalla.
+
+### Agregado: la barra de herramientas se compacta sola en tablet
+
+Por debajo de **1280 px** la barra pasa a modo compacto y se oculta su boton de colapso, que ahi no
+haria nada. Reacciona con `matchMedia`, asi que al rotar la tablet se ajusta sin recargar.
+
+**No pisa la preferencia manual**: «Compactar barra» se sigue guardando aparte, de modo que una
+sesion en tablet no deja la barra compacta en escritorio.
+
+### Cambiado: la mascara del modo municipio deja de tapar el estado
+
+Era negro al **85 %**, que no atenuaba el contexto sino que lo borraba. Pasa a un velo del **18 %**
+con el contorno del municipio en morado institucional.
+
+El contorno no cuesta geometria nueva: la mascara ya es un poligono con los municipios como huecos,
+asi que el `stroke` traza sus bordes; el borde exterior cae fuera de pantalla porque el extent va
+expandido. Los tres valores quedan como constantes al inicio del archivo.
+
+### Cambiado: el boton de desacoplar estadisticas
+
+Baja del encabezado del modal, donde quedaba junto a la X de cerrar, al lado derecho del titulo de
+la seccion. Estrena icono propio —un rectangulo vertical con una flecha hacia abajo— en vez de
+reusar el de numeralia. El bloque de capa activa lo hereda, al compartir componente.
+
 ## [1.136.1] - 2026-08-26
 
 ### Corregido: la numeralia con filtro de municipio no hallaba el binding de cuatro workspaces
