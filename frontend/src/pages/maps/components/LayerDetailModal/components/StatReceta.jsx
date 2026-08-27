@@ -36,21 +36,15 @@ const StatReceta = ({ receta, valor, simbolo }) => {
                 {receta.pasos.map((paso, index) => <Paso key={index} paso={paso} />)}
             </div>
 
-            <div className="grid grid-cols-[16px_1fr_auto] gap-x-1.5 items-baseline mt-1.5 pt-1.5 border-t border-[#E2E8F4]">
-                <span className="text-[15px] font-bold text-[#5C2472] text-center leading-none" aria-hidden="true">=</span>
-                <span className="text-[#465055] leading-tight">
+            <div className="flex items-center gap-1.5 mt-2 rounded-lg bg-[#EFF3FC] px-2 py-1.5">
+                <span className="text-[15px] font-bold text-[#5C2472] leading-none w-[16px] text-center" aria-hidden="true">=</span>
+                <span className="flex-1 text-[#465055] leading-tight">
                     {receta.operacion}{receta.columna ? ` ${receta.columna}` : ''}
                 </span>
-                <strong className="text-[13px] text-[#5C2472] tabular-nums leading-tight">
+                <strong className="text-[14px] text-[#5C2472] tabular-nums leading-none">
                     {valor}{simbolo ? ` ${simbolo}` : ''}
                 </strong>
             </div>
-
-            {receta.omitidos?.length > 0 && (
-                <p className="mt-2 leading-snug text-[#465055]">
-                    Los filtros en gris se activan al elegir {receta.omitidos.join(' o ')} en el visor.
-                </p>
-            )}
         </div>
     );
 };
