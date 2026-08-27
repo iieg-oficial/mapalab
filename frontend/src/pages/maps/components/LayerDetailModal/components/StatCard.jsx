@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import StatReceta from './StatReceta';
 
@@ -7,12 +7,34 @@ const SIZES = {
     compact: { box: 'p-2', value: 'text-[11px]/[16px]', simbolo: 'text-[9px]', label: 'text-[9px]/[11px]' },
 };
 
+const RETARDO_MS = 2000;
+
 const StatCard = ({ label, value, simbolo, className = '', size = 'default', receta = null }) => {
     const s = SIZES[size] || SIZES.default;
     const [abierta, setAbierta] = useState(false);
+    const temporizador = useRef(null);
+
+    useEffect(() => () => clearTimeout(temporizador.current), []);
+
+    const programar = () => {
+        if (!receta) return;
+        clearTimeout(temporizador.current);
+        temporizador.current = setTimeout(() => setAbierta(true), RETARDO_MS);
+    };
+
+    const cancelar = () => {
+        clearTimeout(temporizador.current);
+        setAbierta(false);
+    };
 
     return (
-        <div className="flex flex-col gap-1.5">
+        <div
+            className="relative"
+            onMouseEnter={programar}
+            onMouseLeave={cancelar}
+            onFocus={programar}
+            onBlur={cancelar}
+        >
             <div className={`bg-[#EFF3FC] rounded-[14px] ${s.box} min-h-auto flex flex-col justify-center ${className}`}>
                 <div className="flex flex-col items-center justify-center text-center w-full">
                     <p className={`${s.value} font-garet font-bold text-purple`}>
@@ -24,16 +46,22 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
                     {receta && (
                         <button
                             type="button"
-                            onClick={() => setAbierta(v => !v)}
+                            onClick={() => (abierta ? cancelar() : setAbierta(true))}
                             aria-expanded={abierta}
-                            className="mt-1 text-[9px] font-garet text-purple cursor-pointer hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-purple rounded"
+                            aria-label={`Ver cómo se calcula ${label}`}
+                            className="sr-only focus:not-sr-only focus:mt-1 focus:text-[9px] focus:text-purple"
                         >
-                            {abierta ? 'ocultar cálculo ▴' : 'cómo se calcula ▾'}
+                            cómo se calcula
                         </button>
                     )}
                 </div>
             </div>
-            {abierta && <StatReceta receta={receta} valor={formatNumber(value)} simbolo={simbolo} />}
+
+            {abierta && receta && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 font-garet" role="tooltip">
+                    <StatReceta receta={receta} valor={formatNumber(value)} simbolo={simbolo} />
+                </div>
+            )}
         </div>
     );
 };

@@ -417,25 +417,69 @@ def _filtro_legible(item: dict, context: dict | None) -> dict:
     }
 
 
-def build_receta(cfg: dict, context: dict | None) -> dict:
+def _conteo_acumulado(session: Session, cfg: dict, filtros: list[dict], context: dict | None) -> int | None:
+    parcial = {
+        'operation': 'count',
+        'schema': cfg.get('schema'),
+        'table': cfg.get('table'),
+        'filters': filtros,
+    }
+    built = build_query(parcial, context)
+    if built is None:
+        return None
+    sql, params = built
+    savepoint = session.begin_nested()
+    try:
+        total = session.execute(text(sql), params).scalar()
+        savepoint.commit()
+        return total
+    except Exception:
+        savepoint.rollback()
+        return None
+
+
+def build_receta(cfg: dict, context: dict | None, session: Session | None = None) -> dict:
     operacion = cfg.get('operation')
 
     if operacion == 'static':
-        return {'tipo': 'static', 'operacion': 'Valor capturado a mano', 'filtros': []}
+        return {'tipo': 'static', 'operacion': 'Valor capturado a mano', 'pasos': []}
 
     if operacion == 'formula':
-        return {'tipo': 'formula', 'operacion': 'Combinación de otras cifras', 'filtros': []}
+        return {'tipo': 'formula', 'operacion': 'Combinación de otras cifras', 'pasos': []}
 
-    filtros = [_filtro_legible(f, context) for f in _effective_filters(cfg, cfg.get('filters') or [])]
-    aplicados = [f for f in filtros if f['valor'] != 'sin filtrar']
-    omitidos = [f['campo'] for f in filtros if f['valor'] == 'sin filtrar']
+    crudos = _effective_filters(cfg, cfg.get('filters') or [])
+    legibles = [_filtro_legible(f, context) for f in crudos]
+    omitidos = [legible['campo'] for legible in legibles if legible['valor'] == 'sin filtrar']
+
+    pasos = []
+    if session is not None:
+        total = _conteo_acumulado(session, cfg, [], context)
+        pasos.append({
+            'signo': None,
+            'concepto': f"{cfg.get('schema')}.{cfg.get('table')}",
+            'detalle': 'registros en la tabla',
+            'valor': total,
+            'delContexto': False,
+        })
+        acumulados = []
+        for filtro, legible in zip(crudos, legibles):
+            if legible['valor'] == 'sin filtrar':
+                continue
+            acumulados.append(filtro)
+            pasos.append({
+                'signo': legible['operador'],
+                'concepto': legible['campo'],
+                'detalle': legible['valor'],
+                'valor': _conteo_acumulado(session, cfg, acumulados, context),
+                'delContexto': legible['delContexto'],
+            })
 
     return {
         'tipo': 'primitiva',
         'origen': f"{cfg.get('schema')}.{cfg.get('table')}",
         'operacion': OPERACION_LEGIBLE.get(operacion, operacion),
         'columna': cfg.get('field') if operacion not in OPERATIONS_WITHOUT_FIELD else None,
-        'filtros': aplicados,
+        'pasos': pasos,
         'omitidos': omitidos,
     }
 
@@ -446,7 +490,7 @@ def build_recetas(session: Session, layer_key: str, stats_config: list | None, c
     for cfg in bind_layer_fields(stats_config, binding):
         position = cfg.get('position') or cfg.get('posicion')
         if isinstance(position, int):
-            recetas[position] = build_receta(cfg, context)
+            recetas[position] = build_receta(cfg, context, session)
     return recetas
 
 
@@ -478,7 +522,7 @@ def compute_numeralia(
             'valor': format_stat_value(raw, cfg.get('format')),
             'nombre': cfg.get('label') or cfg.get('nombre'),
             'simbolo': cfg.get('symbol') or cfg.get('simbolo'),
-            'receta': build_receta(cfg, context),
+            'receta': build_receta(cfg, context, session),
         })
 
     values.sort(key=lambda item: item['posicion'] if isinstance(item['posicion'], int) else 99)
