@@ -2,9 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { useMapsContext } from '@hooks/useMaps';
-import { useSider } from '@contexts/SiderContext';
-import { SIDER_EXPANDED_WIDTH } from '@constants/sider';
-import { ACTIVE_LAYERS_PANEL_WIDTH, PANEL_GAP, VIEWPORT_EDGE } from '@pages/maps/helpers/mapFit';
+import { PANEL_GAP, VIEWPORT_EDGE } from '@pages/maps/helpers/mapFit';
 import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
 import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
 import StatCard from './LayerDetailModal/components/StatCard';
@@ -12,7 +10,6 @@ import StatCard from './LayerDetailModal/components/StatCard';
 const NumeraliaPanel = () => {
     const { detachedLayerId, attach, highlight } = useNumeraliaPanel();
     const { municipioMode } = useMapsContext();
-    const { isMobile } = useSider();
     const { metadata } = useLayerMetadata(detachedLayerId, useMetadataContext(municipioMode));
     const [resaltado, setResaltado] = useState(false);
     const panelRef = useRef(null);
@@ -32,10 +29,7 @@ const NumeraliaPanel = () => {
     return (
         <div
             className="hidden md:flex fixed bottom-16 z-11 justify-center pointer-events-none"
-            style={{
-                left: isMobile ? VIEWPORT_EDGE : VIEWPORT_EDGE + SIDER_EXPANDED_WIDTH + PANEL_GAP,
-                right: isMobile ? VIEWPORT_EDGE : VIEWPORT_EDGE + ACTIVE_LAYERS_PANEL_WIDTH + PANEL_GAP,
-            }}
+            style={{ left: VIEWPORT_EDGE + PANEL_GAP, right: VIEWPORT_EDGE + PANEL_GAP }}
         >
             <section
                 ref={panelRef}
