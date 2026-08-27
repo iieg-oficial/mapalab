@@ -3,7 +3,6 @@ import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import ScrollContainer from '@components/ScrollContainer';
 import { useDebounce } from '@hooks/useDebounce';
-import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { SCOPE_TYPES, ZMG_LABEL } from '@pages/maps/hooks/useMunicipioMode';
 
 const TABS = [
@@ -22,7 +21,9 @@ const Opcion = ({ label, detalle, meta, checked, onSelect, onQuitar, itemRef, mu
         ref={itemRef}
         className={[
             'w-full flex items-center gap-1 rounded-lg transition group',
-            checked ? 'bg-orange/10' : 'hover:bg-orange/10',
+            checked
+                ? 'sticky top-0 bottom-0 z-10 bg-[#FFF3E6] shadow-[0_2px_8px_#1A26641A]'
+                : 'hover:bg-orange/10',
         ].join(' ')}
     >
         <button
@@ -120,8 +121,8 @@ const MunicipioFilterPanel = ({ municipioMode, onClose }) => {
     const buscable = tab !== SCOPE_TYPES.ZMG;
 
     return (
-        <div className={`pb-5 px-4 w-full bg-[#F9FBFF] rounded-[14px] ${HIDDEN_SCROLLBAR}`}>
-            <div className="sticky top-0 z-20 bg-[#F9FBFF] pt-3 pb-3 rounded-t-[14px]">
+        <div className="flex flex-1 flex-col min-h-0 pb-5 px-4 w-full bg-[#F9FBFF] rounded-[14px]">
+            <div className="shrink-0 bg-[#F9FBFF] pt-3 pb-3 rounded-t-[14px]">
                 <div className="flex items-center justify-between mb-3 gap-2">
                     <h3 className="block text-[18px]/[24px] font-garet font-bold text-purple tracking-normal">
                         {TABS.find(t => t.id === tab)?.titulo}
@@ -194,8 +195,8 @@ const MunicipioFilterPanel = ({ municipioMode, onClose }) => {
                 </div>
             )}
 
-            <div className="relative bg-white rounded-[7px] p-2">
-                <ScrollContainer className="max-h-100">
+            <div className="relative flex flex-1 min-h-0 bg-white rounded-[7px] p-2">
+                <ScrollContainer className="flex-1 min-h-0" showMask={false}>
                     {opciones.length === 0 && !listLoading && (
                         <div className="text-center py-6">
                             <p className="text-[13px]/[19px] font-garet font-medium text-graphite">
