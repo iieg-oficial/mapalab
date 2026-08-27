@@ -10,7 +10,7 @@ import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadat
 import StatCard from './LayerDetailModal/components/StatCard';
 
 const NumeraliaPanel = () => {
-    const { abierto, detachedLayerId, attach, seguir, highlight } = useNumeraliaPanel();
+    const { abierto, minimizado, detachedLayerId, attach, seguir, alternarMinimizado, highlight } = useNumeraliaPanel();
     const { municipioMode, selectedLayer, selectedLayerForSymbology } = useMapsContext();
     const { width: siderWidth, isMobile } = useSider();
     const enFoco = selectedLayerForSymbology?.id || selectedLayer?.id || null;
@@ -34,6 +34,8 @@ const NumeraliaPanel = () => {
     if (!abierto || slots.length === 0) return null;
 
     const ambito = metadata?.ambito;
+    const nombreCapa = metadata.nombre_capa_usuario || 'Estadísticas';
+    const anillo = resaltado ? 'ring-2 ring-[#70308A]' : '';
 
     return (
         <div
@@ -43,42 +45,70 @@ const NumeraliaPanel = () => {
                 right: VIEWPORT_EDGE + (isMobile ? 0 : PANEL_GAP),
             }}
         >
-            <section
-                ref={panelRef}
-                className={`pointer-events-auto max-w-full overflow-x-auto scrollbar-thin px-4 py-2.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] transition-shadow ${resaltado ? 'ring-2 ring-[#70308A]' : ''}`}
-                aria-label={`Estadísticas de ${metadata.nombre_capa_usuario || 'la capa'}`}
-                aria-live="polite"
-            >
-                <div className="flex items-center justify-between gap-4 mb-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                        <Icon name="numeralia" className="size-8 shrink-0 text-purple" />
-                        <h3 className="font-garet font-bold text-[13px]/[16px] truncate">
-                            {metadata.nombre_capa_usuario || 'Estadísticas'}
-                        </h3>
-                        <p className="text-[11px]/[13px] font-garet font-bold text-purple tracking-normal shrink-0">
-                            {ambito?.geografico || 'Jalisco'}
-                            {ambito?.temporal && <span className="text-orange"> {ambito.temporal}</span>}
-                        </p>
+            {minimizado ? (
+                <button
+                    type="button"
+                    ref={panelRef}
+                    onClick={alternarMinimizado}
+                    aria-expanded="false"
+                    aria-label={`Abrir las estadísticas de ${nombreCapa}`}
+                    className={`pointer-events-auto max-w-full flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] cursor-pointer transition-shadow ${anillo}`}
+                >
+                    <Icon name="numeralia" className="size-5 shrink-0 text-purple" />
+                    <span className="font-garet font-bold text-[12px]/[15px] truncate">{nombreCapa}</span>
+                    <span className="font-garet text-[11px] text-purple shrink-0">{slots.length}</span>
+                    <Icon name="upArrow" className="size-2.5 shrink-0" />
+                </button>
+            ) : (
+                <section
+                    ref={panelRef}
+                    className={`pointer-events-auto max-w-full max-h-[60vh] overflow-auto scrollbar-thin px-4 py-2.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] transition-shadow ${anillo}`}
+                    aria-label={`Estadísticas de ${nombreCapa}`}
+                    aria-live="polite"
+                >
+                    <div className="flex items-center justify-between gap-4 mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <Icon name="numeralia" className="size-8 shrink-0 text-purple" />
+                            <h3 className="font-garet font-bold text-[13px]/[16px] truncate">{nombreCapa}</h3>
+                            <p className="text-[11px]/[13px] font-garet font-bold text-purple tracking-normal shrink-0">
+                                {ambito?.geografico || 'Jalisco'}
+                                {ambito?.temporal && <span className="text-orange"> {ambito.temporal}</span>}
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                            <Tooltip content="Minimizar estadísticas">
+                                <button
+                                    type="button"
+                                    onClick={alternarMinimizado}
+                                    aria-expanded="true"
+                                    className="size-6 flex items-center justify-center rounded-full text-purple hover:bg-purple hover:text-white transition cursor-pointer"
+                                    aria-label="Minimizar el panel de estadísticas"
+                                >
+                                    <span className="block w-2.5 h-[2px] bg-current rounded-full" />
+                                </button>
+                            </Tooltip>
+
+                            <Tooltip content="Cerrar estadísticas">
+                                <button
+                                    type="button"
+                                    onClick={attach}
+                                    className="size-6 flex items-center justify-center rounded-full text-purple hover:bg-purple hover:text-white transition cursor-pointer"
+                                    aria-label="Cerrar el panel de estadísticas"
+                                >
+                                    <Icon name="close" className="size-3.5" />
+                                </button>
+                            </Tooltip>
+                        </div>
                     </div>
 
-                    <Tooltip content="Cerrar estadísticas">
-                        <button
-                            type="button"
-                            onClick={attach}
-                            className="size-6 shrink-0 flex items-center justify-center rounded-full text-purple hover:bg-purple hover:text-white transition cursor-pointer"
-                            aria-label="Cerrar el panel de estadísticas"
-                        >
-                            <Icon name="close" className="size-3.5" />
-                        </button>
-                    </Tooltip>
-                </div>
-
-                <div className="grid grid-rows-2 auto-rows-fr grid-flow-col auto-cols-[minmax(120px,1fr)] gap-2">
-                    {slots.map((stat, index) => (
-                        <StatCard key={index} label={stat.nombre} value={stat.valor} simbolo={stat.simbolo} size="compact" receta={stat.receta} />
-                    ))}
-                </div>
-            </section>
+                    <div className="grid grid-cols-2 auto-rows-fr gap-2 md:grid-cols-none md:grid-rows-2 md:grid-flow-col md:auto-cols-[minmax(120px,1fr)]">
+                        {slots.map((stat, index) => (
+                            <StatCard key={index} label={stat.nombre} value={stat.valor} simbolo={stat.simbolo} size="compact" receta={stat.receta} />
+                        ))}
+                    </div>
+                </section>
+            )}
         </div>
     );
 };
