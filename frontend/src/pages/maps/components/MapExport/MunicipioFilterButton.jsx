@@ -84,7 +84,7 @@ const MunicipioFilterButton = ({ municipioMode, onOpenChange, collapsed = false 
                 noPadding
                 bg="bg-transparent"
             >
-                <MunicipioFilterPanel municipioMode={municipioMode} />
+                <MunicipioFilterPanel municipioMode={municipioMode} onClose={() => handleSetOpen(false)} />
             </Panel>
         </div>
     );
