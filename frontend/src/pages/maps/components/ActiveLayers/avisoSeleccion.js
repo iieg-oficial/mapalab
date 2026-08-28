@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'mapalab.activeLayers.avisoSeleccionVisto';
 
-export const AVISO_SELECCION = 'Al seleccionar un punto en el mapa, éste mostrará información de esta capa. Puedes cambiar la selección dando clic en la capa que necesites visualizar.';
+const AVISO_SELECCION = 'Al seleccionar un punto en el mapa, éste mostrará información de esta capa. Puedes cambiar la selección dando clic en la capa que necesites visualizar.';
 
-export const avisoSeleccionVisto = () => {
+const avisoSeleccionVisto = () => {
     try {
         return localStorage.getItem(STORAGE_KEY) === 'true';
     } catch {
@@ -12,7 +12,7 @@ export const avisoSeleccionVisto = () => {
     }
 };
 
-export const marcarAvisoSeleccion = () => {
+const marcarAvisoSeleccion = () => {
     try {
         localStorage.setItem(STORAGE_KEY, 'true');
     } catch {
