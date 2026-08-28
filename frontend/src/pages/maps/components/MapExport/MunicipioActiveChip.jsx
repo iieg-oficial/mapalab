@@ -4,7 +4,7 @@ import Panel from '@components/Panel';
 import Tooltip from '@components/Tooltip';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
-import { useOverlapOffset } from '@hooks/useOverlapOffset';
+import { useClearance } from '@hooks/useClearance';
 import { trackMunicipioPanelOpen } from '@services/analyticsService';
 import { SCOPE_TYPES } from '@pages/maps/hooks/useMunicipioMode';
 import MunicipioFilterPanel from './MunicipioFilterPanel';
@@ -19,7 +19,7 @@ const MunicipioActiveChip = () => {
     const anchorRef = useRef(null);
     const filaRef = useRef(null);
     const { toolsPanelRef } = useSider();
-    const desplazamiento = useOverlapOffset(filaRef, toolsPanelRef, { activo: active && !!scope?.type });
+    const superior = useClearance(filaRef, { obstaculos: [toolsPanelRef], base: 16, activo: active && !!scope?.type });
 
     if (!IS_NON_PROD || !active || !scope?.type) return null;
 
@@ -32,7 +32,7 @@ const MunicipioActiveChip = () => {
 
     return (
         <div
-            style={{ top: 16 + desplazamiento }}
+            style={{ top: superior }}
             className="flex fixed inset-x-0 z-11 max-md:z-23 justify-center pointer-events-none transition-[top] duration-200"
         >
             <div ref={filaRef} className="flex items-center gap-2 max-w-[60vw] pointer-events-auto">

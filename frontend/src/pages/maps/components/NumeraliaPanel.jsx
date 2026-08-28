@@ -4,7 +4,7 @@ import PanelHeader from '@components/PanelHeader';
 import ActionIconButton from '@components/ActionIconButton';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
-import { useBottomClearance } from '@hooks/useBottomClearance';
+import { useClearance } from '@hooks/useClearance';
 import { SIDER_TRANSITION_CLASSES } from '@constants/sider';
 import { PANEL_GAP, VIEWPORT_EDGE } from '@pages/maps/helpers/mapFit';
 import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
@@ -20,6 +20,8 @@ import RankingTabla from './NumeraliaPanel/RankingTabla';
 import Constructor from './NumeraliaPanel/Constructor';
 import TarjetasResumen from './NumeraliaPanel/TarjetasResumen';
 import PillMinimizada from './NumeraliaPanel/PillMinimizada';
+
+const CONTROLES_DEL_MAPA = ['.ol-scale-line', '.ol-attribution'];
 
 const MODOS = [
     { clave: 'comparar', icono: 'comparar', titulo: 'Comparar municipios', etiqueta: 'Comparar estadísticas entre municipios' },
@@ -55,7 +57,7 @@ const NumeraliaPanel = () => {
     const enRanking = modo === 'ranking';
     const creando = modo === 'crear';
 
-    const inferior = useBottomClearance(panelRef, { base: isMobile ? 60 : 8, activo: abierto && minimizado });
+    const inferior = useClearance(panelRef, { lado: 'bottom', obstaculos: CONTROLES_DEL_MAPA, base: isMobile ? 60 : 8, separacion: 8, activo: abierto && minimizado });
     const { columnas, cargando } = useNumeraliaComparador(comparando ? layerId : null, clavesComparadas);
     const { ranking, cargando: cargandoRanking } = useNumeraliaRanking(layerId, enRanking);
     const catalogo = useCatalogoCampos(layerId, creando);
