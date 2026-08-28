@@ -11,9 +11,8 @@ const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
 
 const MunicipioActiveChip = () => {
     const { municipioMode } = useMapsContext();
-    const { active, scope, scopeLabel, exit, centerOnSelection, sourceId } = municipioMode || {};
+    const { active, scope, scopeLabel, exit, sourceId } = municipioMode || {};
     const [closeHovered, setCloseHovered] = useState(false);
-    const [centerHovered, setCenterHovered] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const anchorRef = useRef(null);
 
@@ -27,31 +26,14 @@ const MunicipioActiveChip = () => {
     };
 
     return (
-        <div className="hidden md:flex fixed top-4 inset-x-0 z-11 justify-center pointer-events-none">
+        <div className="flex fixed top-[calc(1rem+74px+1rem)] md:top-4 inset-x-0 z-11 max-md:z-23 justify-center pointer-events-none">
             <div className="flex items-center gap-2 max-w-[60vw] pointer-events-auto">
                 <div className="group relative flex min-w-0">
-                    <Tooltip
-                        content={`Centrar en ${displayLabel}`}
-                        placement="left"
-                        delay={300}
-                        triggerClassName="absolute right-full pr-2 top-1/2 -translate-y-1/2 invisible opacity-0 transition-[opacity,visibility] duration-150 delay-500 group-hover:visible group-hover:opacity-100 group-hover:delay-0 group-focus-within:visible group-focus-within:opacity-100 group-focus-within:delay-0"
-                    >
-                        <button
-                            type="button"
-                            onClick={() => centerOnSelection?.()}
-                            onMouseEnter={() => setCenterHovered(true)}
-                            onMouseLeave={() => setCenterHovered(false)}
-                            className="size-10 flex items-center justify-center rounded-full bg-white shadow-[0_5px_20px_#1A26641A] border border-[#EAEFFA] hover:border-purple transition-all cursor-pointer shrink-0"
-                            aria-label={`Centrar el mapa en ${displayLabel}`}
-                        >
-                            <Icon name="fit_extent" state={centerHovered ? 'hover' : 'normal'} className="size-5" />
-                        </button>
-                    </Tooltip>
                     <Tooltip
                         content="Salir del modo"
                         placement="right"
                         delay={300}
-                        triggerClassName="absolute left-full pl-2 top-1/2 -translate-y-1/2 invisible opacity-0 transition-[opacity,visibility] duration-150 delay-500 group-hover:visible group-hover:opacity-100 group-hover:delay-0 group-focus-within:visible group-focus-within:opacity-100 group-focus-within:delay-0"
+                        triggerClassName="absolute left-full pl-2 top-1/2 -translate-y-1/2 transition-[opacity,visibility] duration-150 md:invisible md:opacity-0 md:delay-500 md:group-hover:visible md:group-hover:opacity-100 md:group-hover:delay-0 md:group-focus-within:visible md:group-focus-within:opacity-100 md:group-focus-within:delay-0"
                     >
                         <button
                             type="button"
@@ -88,7 +70,7 @@ const MunicipioActiveChip = () => {
                         onClose={() => handleSetOpen(false)}
                         variant="solid"
                         width="w-80"
-                        maxHeight="max-h-[32rem] max-md:max-h-[calc(100dvh-6rem)]"
+                        maxHeight="max-h-[32rem] max-md:max-h-[calc(100dvh-158px-1rem)]"
                         className="z-50 shadow-none border-none rounded-[14px]"
                         offset={12}
                         placement="bottom"

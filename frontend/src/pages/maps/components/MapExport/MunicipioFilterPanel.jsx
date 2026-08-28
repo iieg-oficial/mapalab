@@ -121,7 +121,7 @@ const MunicipioFilterPanel = ({ municipioMode, onClose }) => {
     const buscable = tab !== SCOPE_TYPES.ZMG;
 
     return (
-        <div className="flex flex-1 flex-col min-h-0 pb-5 px-4 w-full bg-[#F9FBFF] rounded-[14px]">
+        <div className="flex flex-1 flex-col min-h-0 pb-3 px-4 w-full bg-[#F9FBFF] rounded-[14px]">
             <div className="shrink-0 bg-[#F9FBFF] pt-3 pb-3 rounded-t-[14px]">
                 <div className="flex items-center justify-between mb-3 gap-2">
                     <h3 className="block text-[18px]/[24px] font-garet font-bold text-purple tracking-normal">

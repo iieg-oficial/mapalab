@@ -15,13 +15,10 @@ import Icon from '@components/Icon';
 import { trackMapZoomLevel, trackGeolocate } from '@services/analyticsService';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 
-const isTouchDevice = () => 'ontouchstart' in window;
 
 const MapControls = () => {
-    const { mapRef, compareMode, paneMapRefs, isLocating, setIsLocating } = useMapsContext();
+    const { mapRef, compareMode, paneMapRefs, isLocating, setIsLocating, municipioMode } = useMapsContext();
     const [hoveredButton, setHoveredButton] = useState(null);
-    const [showFitExtent, setShowFitExtent] = useState(false);
-    const fitExtentTimeoutRef = useRef(null);
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 180 });
     const { width: siderWidth, isMobile } = useSider();
     const locationLayerRef = useRef(null);
@@ -59,41 +56,19 @@ const MapControls = () => {
             trackMapZoomLevel(currentZoom - 1);
         }
 
-        if (isTouchDevice()) {
-            clearTimeout(fitExtentTimeoutRef.current);
-            setShowFitExtent(true);
-            fitExtentTimeoutRef.current = setTimeout(() => setShowFitExtent(false), 3000);
-        }
     }, [getActiveMap]);
 
-    const handleFitJalisco = useCallback(() => {
+    const enMunicipio = !!municipioMode?.active && !!municipioMode?.scope?.type;
+
+    const handleEncuadrar = useCallback(() => {
+        if (municipioMode?.active && municipioMode.centerOnSelection?.()) return;
         const map = getActiveMap();
         if (!map) return;
         const view = map.getView();
         const extent = transformExtent(JALISCO_BOUNDS.coords, 'EPSG:4326', 'EPSG:3857');
         const padding = getFitPadding({ mapSize: map.getSize(), siderWidth, isMobile, rightPanelWidth: ACTIVE_LAYERS_PANEL_WIDTH });
         view.fit(extent, { duration: 500, padding });
-        setShowFitExtent(false);
-    }, [getActiveMap, siderWidth, isMobile]);
-
-    const handleZoomOutEnter = useCallback(() => {
-        if (isTouchDevice()) return;
-        clearTimeout(fitExtentTimeoutRef.current);
-        setHoveredButton('zoomout');
-        setShowFitExtent(true);
-    }, []);
-
-    const handleFitExtentEnter = useCallback(() => {
-        if (isTouchDevice()) return;
-        clearTimeout(fitExtentTimeoutRef.current);
-        setHoveredButton('fit_extent');
-    }, []);
-
-    const handleFitExtentLeave = useCallback(() => {
-        if (isTouchDevice()) return;
-        setHoveredButton(null);
-        fitExtentTimeoutRef.current = setTimeout(() => setShowFitExtent(false), 300);
-    }, []);
+    }, [getActiveMap, siderWidth, isMobile, municipioMode]);
 
     const handleLocateMe = useCallback(() => {
         const primaryMap = getActiveMap();
@@ -171,7 +146,6 @@ const MapControls = () => {
         const paneRefs = paneMapRefs;
 
         return () => {
-            clearTimeout(fitExtentTimeoutRef.current);
             const locationLayer = locationLayerRef.current;
             if (!locationLayer) return;
 
@@ -223,9 +197,23 @@ const MapControls = () => {
                     />
                 </button>
                 <button
+                    onClick={handleEncuadrar}
+                    onMouseEnter={() => setHoveredButton('fit_extent')}
+                    onMouseLeave={() => setHoveredButton(null)}
+                    className="p-2"
+                    title={enMunicipio ? `Encuadrar ${municipioMode.scopeLabel}` : 'Encuadrar Jalisco'}
+                    aria-label={enMunicipio ? `Encuadrar la vista en ${municipioMode.scopeLabel}` : 'Encuadrar la vista en Jalisco'}
+                >
+                    <Icon
+                        name="fit_extent"
+                        state={hoveredButton === 'fit_extent' ? 'hover' : 'normal'}
+                        className="w-6 h-6"
+                    />
+                </button>
+                <button
                     onClick={handleZoomOut}
-                    onMouseEnter={handleZoomOutEnter}
-                    onMouseLeave={() => { if (!isTouchDevice()) { setHoveredButton(null); handleFitExtentLeave(); } }}
+                    onMouseEnter={() => setHoveredButton('zoomout')}
+                    onMouseLeave={() => setHoveredButton(null)}
                     className="p-2"
                     title="Alejar"
                     aria-label="Alejar zoom"
@@ -233,24 +221,6 @@ const MapControls = () => {
                     <Icon
                         name="zoomout"
                         state={hoveredButton === 'zoomout' ? 'hover' : 'normal'}
-                        className="w-6 h-6"
-                    />
-                </button>
-            </div>
-            <div
-                className={`transition-all duration-200 overflow-hidden ${showFitExtent ? 'w-10 opacity-100 ml-1.5' : 'w-0 opacity-0 ml-0'}`}
-                onMouseEnter={handleFitExtentEnter}
-                onMouseLeave={handleFitExtentLeave}
-            >
-                <button
-                    onClick={handleFitJalisco}
-                    className="p-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A]"
-                    title="Centrar en Jalisco"
-                    aria-label="Centrar vista en Jalisco"
-                >
-                    <Icon
-                        name="fit_extent"
-                        state={hoveredButton === 'fit_extent' ? 'hover' : 'normal'}
                         className="w-6 h-6"
                     />
                 </button>
