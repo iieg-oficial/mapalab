@@ -166,6 +166,26 @@ const icons = {
             <path d="M4.5 17 12 20.8l7.5-3.8" opacity="0.22" />
         </svg>
     ),
+    crear: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
+        </svg>
+    ),
+    ranking: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 20V4l-3 3" />
+            <path d="M12 6h9" />
+            <path d="M12 12h6" />
+            <path d="M12 18h3" />
+        </svg>
+    ),
+    comparar: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 8h15l-3.5-3.5" />
+            <path d="M21 16H6l3.5 3.5" />
+        </svg>
+    ),
     numeralia: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
             <rect x="3" y="13" width="4.5" height="7" rx="1" />

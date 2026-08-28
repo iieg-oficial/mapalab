@@ -72,7 +72,7 @@ const extractWorkspaceFromBaseUrl = (baseUrl) => {
     return null;
 };
 
-const getLayerRequestParams = (layerId) => {
+export const getLayerRequestParams = (layerId) => {
     const layerNode = findLayerById(layerId, currentLayers);
     if (!layerNode) return null;
 

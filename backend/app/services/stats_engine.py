@@ -442,10 +442,10 @@ def build_receta(cfg: dict, context: dict | None, session: Session | None = None
     operacion = cfg.get('operation')
 
     if operacion == 'static':
-        return {'tipo': 'static', 'operacion': 'Valor capturado a mano', 'pasos': []}
+        return {'tipo': 'static', 'op': 'static', 'operacion': 'Valor capturado a mano', 'pasos': []}
 
     if operacion == 'formula':
-        return {'tipo': 'formula', 'operacion': 'Combinación de otras cifras', 'pasos': []}
+        return {'tipo': 'formula', 'op': 'formula', 'operacion': 'Combinación de otras cifras', 'pasos': []}
 
     crudos = _effective_filters(cfg, cfg.get('filters') or [])
     legibles = [_filtro_legible(f, context) for f in crudos]
@@ -477,6 +477,7 @@ def build_receta(cfg: dict, context: dict | None, session: Session | None = None
 
     return {
         'tipo': 'primitiva',
+        'op': operacion,
         'origen': f"{cfg.get('schema')}.{cfg.get('table')}",
         'operacion': OPERACION_LEGIBLE.get(operacion, operacion),
         'columna': cfg.get('field') if operacion not in OPERATIONS_WITHOUT_FIELD else None,

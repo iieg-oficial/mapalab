@@ -1,0 +1,1 @@
+export const COLORES_COMPARADOR = ['#70308A', '#B85C00', '#24573F', '#2E4372', '#8B2B3D', '#1F6B7A'];

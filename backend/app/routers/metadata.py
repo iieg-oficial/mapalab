@@ -1,8 +1,9 @@
 import re
 from time import monotonic
-from typing import Optional
+from typing import Any, Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 from app.consts.databases import DatabaseType
@@ -109,6 +110,119 @@ def get_metadata(
     if modern:
         return [MetadataResponse(**modern)]
     return []
+
+
+class FiltroPersonalizado(BaseModel):
+    field: str = Field(description="Columna del catálogo de la capa")
+    op: str = Field(description="eq, in, gte, lte, between o is_not_null")
+    value: Any = Field(default=None, description="Valor o lista de valores")
+
+
+class DefinicionPersonalizada(BaseModel):
+    operation: str = Field(description="count, count_distinct, sum, avg, min o max")
+    field: Optional[str] = Field(default=None, description="Columna sobre la que opera")
+    label: Optional[str] = Field(default=None, max_length=60)
+    symbol: Optional[str] = Field(default=None, max_length=8)
+    filters: list[FiltroPersonalizado] = Field(default_factory=list, max_length=6)
+
+
+@router.get(
+    "/campos",
+    responses=api_responses(404, 500),
+    operation_id="get_layer_fields",
+    summary="Columnas y valores que el visor puede ofrecer para armar una estadística",
+    description=(
+        "Devuelve las columnas filtrables de la tabla que respalda la capa, con sus valores "
+        "cuando son pocos (hasta 50 distintos). Las columnas de alta cardinalidad se omiten "
+        "a propósito: no sirven para un selector. El esquema y la tabla salen de la "
+        "configuración de la capa, nunca del cliente."
+    ),
+)
+def get_layer_fields(
+    workspace: str = Query(description="Alias del workspace (p. ej. educacion)"),
+    layer: str = Query(description="Nombre de la capa dentro del workspace"),
+):
+    catalogo = layer_metadata_service.get_catalogo_response(workspace, layer)
+    if not catalogo:
+        raise HTTPException(status_code=404, detail="La capa no tiene estadisticas dinamicas")
+    return catalogo
+
+
+@router.post(
+    "/personalizada",
+    responses=api_responses(400, 404, 500),
+    operation_id="compute_custom_stat",
+    summary="Calcula una estadística armada en el visor",
+    description=(
+        "Evalúa una definición armada con el catálogo de `/metadata/campos`. La operación, "
+        "las columnas y los operadores se validan contra ese catálogo, los valores viajan "
+        "como parámetros ligados y la tabla la resuelve el servidor a partir de la capa: el "
+        "cliente no puede apuntar a otra. Devuelve el valor y su receta, igual que las "
+        "estadísticas configuradas."
+    ),
+)
+def compute_custom_stat(
+    definicion: DefinicionPersonalizada,
+    workspace: str = Query(description="Alias del workspace (p. ej. educacion)"),
+    layer: str = Query(description="Nombre de la capa dentro del workspace"),
+    municipio: Optional[str] = Query(default=None, description="Claves INEGI separadas por coma"),
+    fecha_inicio: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
+    fecha_fin: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
+):
+    claves = _parse_claves(municipio)
+    _validate_fecha(fecha_inicio, "fecha_inicio")
+    _validate_fecha(fecha_fin, "fecha_fin")
+
+    context = None
+    if claves or fecha_inicio or fecha_fin:
+        conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+        with conn.get_session() as session:
+            context = layer_metadata_service.build_stats_context(
+                session, claves, fecha_inicio, fecha_fin
+            )
+
+    resultado = layer_metadata_service.get_personalizada_response(
+        workspace, layer, definicion.model_dump(), context
+    )
+    if not resultado:
+        raise HTTPException(status_code=400, detail="La definicion no es valida para esta capa")
+    return resultado
+
+
+@router.get(
+    "/ranking",
+    responses=api_responses(404, 500),
+    operation_id="get_layer_ranking",
+    summary="Numeralia de una capa agrupada por municipio",
+    description=(
+        "Devuelve, para cada municipio con datos en la capa, el valor de cada slot de la "
+        "numeralia que sea agrupable (count, count_where, count_distinct y sum). Es una "
+        "consulta con GROUP BY por capa, no 125 consultas sueltas. El filtro de municipio "
+        "de la configuración se ignora a propósito: aquí el municipio es la llave de "
+        "agrupación. Devuelve 404 si la capa no tiene estadísticas dinámicas."
+    ),
+)
+def get_layer_ranking(
+    workspace: str = Query(description="Alias del workspace (p. ej. educacion)"),
+    layer: str = Query(description="Nombre de la capa dentro del workspace"),
+    fecha_inicio: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
+    fecha_fin: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
+):
+    _validate_fecha(fecha_inicio, "fecha_inicio")
+    _validate_fecha(fecha_fin, "fecha_fin")
+
+    context = None
+    if fecha_inicio or fecha_fin:
+        conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+        with conn.get_session() as session:
+            context = layer_metadata_service.build_stats_context(
+                session, [], fecha_inicio, fecha_fin
+            )
+
+    ranking = layer_metadata_service.get_ranking_response(workspace, layer, context)
+    if not ranking:
+        raise HTTPException(status_code=404, detail="La capa no tiene estadisticas agrupables")
+    return ranking
 
 
 @router.get(

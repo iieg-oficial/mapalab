@@ -23,7 +23,7 @@ const soltarTurno = (cerrar) => {
 const ANCHO_FICHA = 290;
 const SEPARACION = 6;
 
-const StatCard = ({ label, value, simbolo, className = '', size = 'default', receta = null, lado = 'auto' }) => {
+const StatCard = ({ label, value, simbolo, className = '', size = 'default', receta = null, lado = 'auto', fondo = 'bg-[#EFF3FC]' }) => {
     const s = SIZES[size] || SIZES.default;
     const Contenedor = receta ? 'button' : 'div';
     const [posicion, setPosicion] = useState(null);
@@ -105,7 +105,7 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
             onBlur={cancelar}
         >
             <Contenedor
-                className={`bg-[#EFF3FC] rounded-[14px] ${s.box} min-h-auto flex flex-col justify-center w-full h-full ${receta ? 'cursor-pointer' : ''} ${className}`}
+                className={`${fondo} rounded-[14px] ${s.box} min-h-auto flex flex-col justify-center w-full h-full ${receta ? 'cursor-pointer' : ''} ${className}`}
                 {...(receta ? { type: 'button', onClick: alternar, 'aria-expanded': Boolean(posicion) } : {})}
             >
                 <div className="flex flex-col items-center justify-center text-center w-full">
