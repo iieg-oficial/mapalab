@@ -48,6 +48,9 @@ services:
       ONTOY_UPSTREAM_URL: http://backend:${BACKEND_PORT:?}/ontoy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8088), timeout=3).close()"]
       interval: 30s
