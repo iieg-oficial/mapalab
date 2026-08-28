@@ -1,5 +1,6 @@
 import mapalabSquareIcon from '@logos/mapalab_square.svg';
 import { APP_VERSION, APP_LOC } from '@constants/app';
+import { MULTIVALOR_SEPARADOR } from '@constants/multivalor';
 import { collectCatalogUnits } from './layers/utils/layerHelpers';
 
 export const computeIiegStats = ({ allLayers = [] } = {}) => {
@@ -33,7 +34,7 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) =
             telefono: '(33) 3777 1770',
             correo: 'iieg@jalisco.gob.mx',
             sitio_web: 'iieg.gob.mx',
-            tecnologias: 'React, OpenLayers, FastAPI, GeoServer, PostGIS',
+            tecnologias: ['React', 'OpenLayers', 'FastAPI', 'GeoServer', 'PostGIS'].join(MULTIVALOR_SEPARADOR),
             capas_disponibles: formatCount(totalLayers),
             registros_geograficos: formatCount(totalRecords),
             lineas_codigo: formatCount(APP_LOC)

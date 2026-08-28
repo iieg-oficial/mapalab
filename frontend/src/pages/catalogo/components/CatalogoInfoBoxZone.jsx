@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MAX_LABEL, MAX_ROWS } from '../helpers/infoboxDraft';
+import { headerDisplay, MAX_LABEL, MAX_ROWS } from '../helpers/infoboxDraft';
 
 const CHIP = 'px-2.5 py-1 rounded-full text-[12px] font-garet border transition-colors';
 
@@ -21,7 +21,7 @@ export const FieldChip = ({ field, onAdd, disabled }) => (
 export const Zone = ({ zone, draft, onDrop, onRemove, onRename, onMove }) => {
     const [over, setOver] = useState(false);
     const rows = zone.id === 'header'
-        ? (draft.headerField ? [{ field: draft.headerField, label: null }] : [])
+        ? (draft.headerField ? [{ key: 'header', display: headerDisplay(draft.headerField), label: null }] : [])
         : draft[zone.id];
     const lleno = zone.id !== 'header' && rows.length >= MAX_ROWS;
 
@@ -51,7 +51,7 @@ export const Zone = ({ zone, draft, onDrop, onRemove, onRename, onMove }) => {
             ) : (
                 <div className="flex flex-col gap-1.5">
                     {rows.map((row, idx) => (
-                        <div key={row.field} className="flex items-center gap-2 bg-white rounded-lg px-2 py-1.5 border border-[#E3E0E8]">
+                        <div key={row.key} className="flex items-center gap-2 bg-white rounded-lg px-2 py-1.5 border border-[#E3E0E8]">
                             {zone.id !== 'header' && (
                                 <div className="flex flex-col shrink-0">
                                     <button
@@ -70,22 +70,22 @@ export const Zone = ({ zone, draft, onDrop, onRemove, onRename, onMove }) => {
                                     >▼</button>
                                 </div>
                             )}
-                            <span className="shrink-0 text-[11px] font-garet text-[#6E7477] max-w-[35%] truncate" title={row.field}>
-                                {row.field}
+                            <span className="shrink-0 text-[11px] font-garet text-[#6E7477] max-w-[35%] truncate" title={row.display}>
+                                {row.display}
                             </span>
                             {zone.id !== 'header' && (
                                 <input
                                     value={row.label}
                                     maxLength={MAX_LABEL}
-                                    onChange={(e) => onRename(zone.id, row.field, e.target.value)}
+                                    onChange={(e) => onRename(zone.id, row.key, e.target.value)}
                                     placeholder="Cómo se llama para quien consulta"
                                     className="flex-1 min-w-0 text-[12px] font-garet text-[#454545] bg-[#F9FBFF] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple/40"
                                 />
                             )}
                             <button
                                 type="button"
-                                onClick={() => onRemove(zone.id, row.field)}
-                                aria-label={`Quitar ${row.field}`}
+                                onClick={() => onRemove(zone.id, row.key)}
+                                aria-label={`Quitar ${row.display}`}
                                 className="shrink-0 size-5 rounded-full text-[#FF577D] hover:bg-[#FFE6EC] flex items-center justify-center transition-colors cursor-pointer"
                             >
                                 <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">

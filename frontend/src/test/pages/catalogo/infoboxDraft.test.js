@@ -24,10 +24,32 @@ describe('draftFromConfig', () => {
             list: [{ field: 'ano_construccion' }, { field: 'municipio', label: 'Municipio' }],
         });
         expect(draft.headerField).toBe('nombre');
-        expect(draft.list).toEqual([
-            { field: 'ano_construccion', label: 'Ano construccion' },
-            { field: 'municipio', label: 'Municipio' },
+        expect(draft.list.map((r) => [r.field, r.label])).toEqual([
+            ['ano_construccion', 'Ano construccion'],
+            ['municipio', 'Municipio'],
         ]);
+    });
+
+    it('conserva las filas compuestas que el editor ciudadano no sabe editar', () => {
+        const compose = ['calle', { field: 'numero_ext', prefix: '#' }, 'colonia'];
+        const draft = draftFromConfig({
+            list: [{ compose, sep: ', ', label: 'Dirección' }, { field: 'municipio', label: 'Municipio' }],
+        });
+        expect(draft.list).toHaveLength(2);
+        expect(draft.list[0].display).toBe('calle + numero_ext + colonia');
+        expect(draftToConfig(draft).list[0]).toEqual({ compose, sep: ', ', label: 'Dirección' });
+    });
+
+    it('los campos de una fila compuesta cuentan como usados', () => {
+        const draft = draftFromConfig({ list: [{ compose: ['calle', 'colonia'], label: 'Dirección' }] });
+        expect(availableFields(['calle', 'colonia', 'municipio'], draft)).toEqual(['municipio']);
+    });
+
+    it('quita y renombra una fila compuesta por su llave', () => {
+        const draft = draftFromConfig({ list: [{ compose: ['calle', 'colonia'], label: 'Dirección' }] });
+        const key = draft.list[0].key;
+        expect(renameField(draft, 'list', key, 'Domicilio').list[0].label).toBe('Domicilio');
+        expect(removeField(draft, 'list', key).list).toEqual([]);
     });
 
     it('descarta filas sin campo y recorta al máximo', () => {

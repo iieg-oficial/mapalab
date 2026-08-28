@@ -5,6 +5,58 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.145.0] - 2026-08-28
+
+### Agregado: una tarjeta puede armar un dato con varias columnas
+
+`compose` sustituye a `field` en cualquier bloque de la tarjeta —titulo, lista, cifras, etiquetas,
+iconos con texto— y une varias columnas en un solo valor. El caso que lo pidio es la direccion, que
+casi siempre llega partida en `calle`, `numero`, `colonia` y `cp`.
+
+```json
+{ "label": "Direccion", "compose": ["calle", { "field": "numero_ext", "prefix": "#" }, "colonia"], "sep": ", " }
+```
+
+Cada parte es un nombre de columna o un objeto con `prefix` y `suffix`. **Una parte vacia se va con
+su prefijo y su sufijo**: sin esa regla, la capa sin numero mostraba `Calle Hidalgo #, Col. Centro`
+con el gancho colgando. El pegamento es `sep`, que por defecto es `", "`. Si todas las partes
+quedan vacias, el renglon desaparece, igual que un `field` sin valor.
+
+Con `"op": "sum"` las partes se suman en vez de unirse, para las cifras que hoy exigen una columna
+calculada en la base (`hombres` + `mujeres`). Las partes que no sean numericas se ignoran.
+
+Un valor unido **no pasa por el formato de numeros**: una direccion que se reduzca a su codigo
+postal se veia como `45 010`. Una suma si se formatea.
+
+### Cambiado: las columnas multivalor se separan con `; `
+
+El separador de una celda con varios valores queda fijado en `; ` —punto y coma mas un espacio— y
+`splitValues` parte estricto por punto y coma, sin respaldo por coma. La coma vive dentro de los
+valores reales (`Zapopan, Jal.`, `React, OpenLayers`) y partir por ella los destroza; ademas la
+descarga de tarjetas es CSV delimitado por comas. Ninguna capa usaba `splitValues` todavia: el
+unico dato afectado era el `tecnologias` quemado del marcador del IIEG.
+
+La bandera deja de vivir solo en `labelGroups`: un renglon de `list` con `split: true` se pinta
+como varios valores en vez de una linea larga.
+
+### Cambiado: una sola forma de leer un campo de la tarjeta
+
+`renderCard` leia una propiedad en seis lugares y de dos maneras distintas. Todas pasan ahora por
+`makeValueResolver`, y los cinco renderizadores de bloque salieron a `cardBlocks.jsx`: el archivo
+baja de 316 a 87 lineas.
+
+### Corregido: la tarjeta ignoraba las columnas publicadas en mayusculas
+
+`headerField` y los bloques de texto resolvian sin distinguir mayusculas; la lista, las cifras, las
+etiquetas y los iconos con texto comparaban exacto. Una capa con `CALLE` mostraba el titulo y se
+comia el renglon. Ahora las seis lecturas son insensibles a mayusculas.
+
+### Corregido: el editor de tarjeta del catalogo borraba las filas compuestas
+
+`draftFromConfig` filtraba por `row.field`, asi que una capa con campos compuestos perdia esos
+renglones al abrir el editor ciudadano y la propuesta enviada los borraba. Ahora sobreviven como
+chip bloqueado, sus columnas cuentan como usadas y vuelven intactas al guardar.
+
 ## [1.144.2] - 2026-08-28
 
 ### Corregido: se retira codigo muerto que dejo el panel de estadisticas

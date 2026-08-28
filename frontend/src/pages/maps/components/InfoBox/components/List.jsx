@@ -30,7 +30,18 @@ const FeatureList = ({ rows, variant = 'desktop' }) => {
                 const formatted = row.raw
                     ? formatValue(row.label, row.value)
                     : formatNumber(formatValue(row.label, row.value));
-                const valueEl = row.href ? (
+                const valueEl = row.values?.length ? (
+                    <div className="flex flex-col gap-0.5 w-full">
+                        {row.values.map((item, itemIdx) => (
+                            <span
+                                key={itemIdx}
+                                className={`font-garet font-medium text-[#465055] ${size} tracking-normal break-words`}
+                            >
+                                {item}
+                            </span>
+                        ))}
+                    </div>
+                ) : row.href ? (
                     <a
                         href={row.href}
                         target="_blank"
