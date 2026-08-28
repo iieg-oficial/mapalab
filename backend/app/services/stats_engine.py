@@ -271,6 +271,10 @@ def format_stat_value(value: Any, fmt: str | None) -> str | None:
         return str(int(round(number)))
     if fmt in ('decimal_2', 'currency_mxn'):
         return f'{number:.2f}'
+    if fmt == 'decimal_auto':
+        if number == int(number):
+            return str(int(number))
+        return f'{number:.2f}'.rstrip('0').rstrip('.')
     if fmt == 'percentage':
         return f'{number:.1f}'
     if fmt == 'compact':

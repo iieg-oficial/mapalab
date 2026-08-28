@@ -1,69 +1,84 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
+import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import Icon from '@components/Icon';
-import Tooltip from '@components/Tooltip';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
-import { COLORES_COMPARADOR } from '@pages/maps/helpers/coloresComparador';
+import ComparadorColumna from './ComparadorColumna';
 import MunicipioPicker from './MunicipioPicker';
 
-const ANCHO_COLUMNA = 74;
-const ANCHO_PICKER = 208;
+const ANCHO_COLUMNA = 78;
+const ANCHO_PICKER = 288;
 const SEPARACION = 8;
 
-const Ventaja = ({ fila }) => {
-    if (fila.ventaja === null) return null;
-    const texto = fila.enPuntos
-        ? `+${fila.ventaja.toFixed(1)}`
-        : `+${formatNumber(String(Math.round(fila.ventaja)))}`;
-    return <span className="ml-0.5 text-[9px]/[10px] font-bold text-[#B85C00] align-super">{texto}</span>;
-};
+const CAJA = 'grid grid-cols-[1fr_34px] gap-1 items-center w-full px-1 py-0.5 rounded-md border';
 
-const Celda = ({ celda, marcada, fila }) => {
-    if (celda.texto === null) {
-        return <span className="text-right text-[11px]/[14px] text-[#A9B4CC] tabular-nums">—</span>;
+const Celda = ({ celda, fila, indice }) => {
+    if (celda.bruto === null) {
+        return (
+            <span className={`${CAJA} border-transparent`}>
+                <span className="text-right text-[11px]/[14px] font-garet text-[#A9B4CC] tabular-nums">—</span>
+                <span />
+            </span>
+        );
     }
-    const clases = marcada
-        ? 'bg-[#EDE3F3] rounded text-purple -mx-1 px-1'
-        : 'text-[#2E4372]';
+
+    const esAlto = fila.alto?.columna === indice;
+    const esBajo = fila.bajo?.columna === indice;
+    const marca = esAlto
+        ? { borde: 'border-[#24573F]', tono: 'text-[#24573F]', signo: '+', ventaja: fila.alto.ventaja }
+        : esBajo
+            ? { borde: 'border-[#8B2B3D]', tono: 'text-[#8B2B3D]', signo: '−', ventaja: fila.bajo.ventaja }
+            : null;
+    const conDiferencia = Boolean(marca && marca.ventaja > 0);
+
     return (
-        <span className={`text-right text-[11px]/[14px] font-bold tabular-nums ${clases}`}>
-            {celda.porcentaje === null ? formatNumber(String(celda.texto)) : celda.texto}
-            {marcada && <Ventaja fila={fila} />}
+        <span className={`${CAJA} ${conDiferencia ? marca.borde : 'border-transparent'}`}>
+            <span className="text-right font-garet text-[15px]/[22px] font-bold tabular-nums text-[#191919]">
+                {formatNumber(String(celda.bruto))}
+            </span>
+            <span className="flex flex-col items-start justify-center leading-none">
+                <span className="h-[11px] text-[9px]/[11px] text-gray-400 tabular-nums">
+                    {celda.porcentaje === null ? '' : `${celda.porcentaje.toFixed(1)}%`}
+                </span>
+                <span className={`h-[11px] text-[9px]/[11px] font-bold tabular-nums ${marca ? marca.tono : ''}`}>
+                    {conDiferencia
+                        ? `${marca.signo}${fila.enPuntos ? marca.ventaja.toFixed(1) : formatNumber(String(Math.round(marca.ventaja)))}`
+                        : ''}
+                </span>
+            </span>
         </span>
     );
 };
 
-const Encabezado = ({ columna, indice, onQuitar, sePuedeQuitar }) => (
-    <span className="flex flex-col gap-px pb-1 border-b border-[#DEE6F4] min-w-0">
-        <span className="flex items-center justify-between gap-1">
-            <span className="size-1.5 rounded-[2px] shrink-0" style={{ background: COLORES_COMPARADOR[indice % COLORES_COMPARADOR.length] }} />
-            {sePuedeQuitar && (
-                <button
-                    type="button"
-                    onClick={() => onQuitar(columna.clave)}
-                    aria-label={`Quitar ${columna.nombre} de la comparación`}
-                    className="text-[#A9B4CC] hover:text-purple transition cursor-pointer leading-none"
-                >
-                    <Icon name="close" className="size-2" />
-                </button>
-            )}
+const Fila = ({ fila }) => (
+    <>
+        <span className={`sticky left-0 z-[2] bg-[#F9FBFF] pr-2 flex items-center text-[11px]/[14px] font-garet ${fila.esBase ? 'font-bold text-[#2E4372]' : 'text-[#465055]'}`}>
+            {fila.nombre}
         </span>
-        <span className="text-[10px]/[12px] font-bold text-[#2E4372] text-right truncate" title={columna.nombre}>
-            {columna.nombre}
-        </span>
-    </span>
+        {fila.celdas.map((celda, indice) => (
+            <span key={indice} className="flex items-center">
+                <Celda celda={celda} fila={fila} indice={indice} />
+            </span>
+        ))}
+    </>
 );
 
-const ComparadorTabla = ({ columnas, filas, modo, onModo, onQuitar, picker, vacio }) => {
-    const plantilla = `minmax(96px,1fr) repeat(${columnas.length}, ${ANCHO_COLUMNA}px) 20px`;
+const ComparadorTabla = ({ columnas, filas, onQuitar, onReordenar, picker, vacio }) => {
     const masRef = useRef(null);
     const [posicion, setPosicion] = useState(null);
+
+    const sensores = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    );
 
     const ubicar = useCallback(() => {
         const rect = masRef.current?.getBoundingClientRect();
         if (!rect) return;
         setPosicion({
             izquierda: Math.min(
-                Math.max(SEPARACION, rect.right - ANCHO_PICKER),
+                Math.max(SEPARACION, rect.left),
                 window.innerWidth - ANCHO_PICKER - SEPARACION,
             ),
             abajo: window.innerHeight - rect.top + SEPARACION,
@@ -77,19 +92,28 @@ const ComparadorTabla = ({ columnas, filas, modo, onModo, onQuitar, picker, vaci
         return () => window.removeEventListener('resize', ubicar);
     }, [picker.abierto, ubicar]);
 
+    const alSoltar = ({ active, over }) => {
+        if (!over || active.id === over.id) return;
+        const desde = columnas.findIndex(c => c.clave === active.id);
+        const hasta = columnas.findIndex(c => c.clave === over.id);
+        if (desde < 0 || hasta < 0) return;
+        onReordenar(arrayMove(columnas.map(c => c.clave), desde, hasta));
+    };
+
     const botonMas = (
-        <Tooltip content="Agregar municipio">
-            <button
-                type="button"
-                ref={masRef}
-                onClick={picker.onAlternar}
-                aria-expanded={picker.abierto}
-                aria-label="Agregar un municipio a la comparación"
-                className={`size-4 flex items-center justify-center rounded-full transition cursor-pointer ${picker.abierto ? 'bg-purple text-white' : 'text-purple hover:bg-[#EFF3FC]'}`}
-            >
-                <span className="text-[13px]/[13px] font-medium">+</span>
-            </button>
-        </Tooltip>
+        <button
+            type="button"
+            onClick={picker.onAlternar}
+            aria-expanded={picker.abierto}
+            aria-label="Agregar un municipio a la comparación"
+            className={`flex items-center gap-1 pl-1.5 pr-2.5 py-1 rounded-full border text-[10px]/[13px] font-garet font-bold transition-colors cursor-pointer ${picker.abierto
+                ? 'bg-purple text-white border-purple'
+                : 'bg-white text-purple border-purple hover:bg-purple-soft'}`}
+        >
+            <Icon name="crear" className="size-3" />
+            <span className="md:hidden">Municipio</span>
+            <span className="max-md:hidden">Agregar municipio</span>
+        </button>
     );
 
     const caja = picker.abierto && (
@@ -108,65 +132,42 @@ const ComparadorTabla = ({ columnas, filas, modo, onModo, onQuitar, picker, vaci
         return (
             <div className="flex items-center gap-2 py-2">
                 <p className="text-[11px]/[14px] font-garet text-[#8894AE]">{vacio}</p>
-                {botonMas}
+                <span ref={masRef} className="flex">{botonMas}</span>
                 {caja}
             </div>
         );
     }
 
     return (
-        <div className="grid gap-x-2 gap-y-1 items-end" style={{ gridTemplateColumns: plantilla }}>
-            <span className="flex items-end pb-1 border-b border-[#DEE6F4]">
-                <span className="inline-flex rounded-full overflow-hidden border border-[#DCE3F0] bg-white text-[9px]/[11px] font-semibold">
-                    {['mas', 'menos'].map(valor => (
-                        <button
-                            key={valor}
-                            type="button"
-                            onClick={() => onModo(valor)}
-                            aria-pressed={modo === valor}
-                            className={`px-2 py-0.5 cursor-pointer transition ${modo === valor ? 'bg-purple text-white' : 'text-[#5C6B8C] hover:bg-[#EFF3FC]'}`}
-                        >
-                            {valor === 'mas' ? '▲ más' : '▼ menos'}
-                        </button>
+        <DndContext
+            sensors={sensores}
+            collisionDetection={closestCenter}
+            onDragEnd={alSoltar}
+            modifiers={[restrictToHorizontalAxis]}
+        >
+            <div
+                className="grid gap-x-3 gap-y-2 items-center font-garet overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 pb-1"
+                style={{ gridTemplateColumns: `minmax(104px,max-content) repeat(${columnas.length}, ${ANCHO_COLUMNA}px)` }}
+            >
+                <span ref={masRef} className="sticky left-0 z-[3] bg-[#F9FBFF] pr-2 flex items-end justify-start pb-1">{botonMas}</span>
+
+                <SortableContext items={columnas.map(c => c.clave)} strategy={horizontalListSortingStrategy}>
+                    {columnas.map((columna, indice) => (
+                        <ComparadorColumna
+                            key={columna.clave}
+                            columna={columna}
+                            indice={indice}
+                            onQuitar={onQuitar}
+                            sePuedeQuitar={columnas.length > 1}
+                        />
                     ))}
-                </span>
-            </span>
+                </SortableContext>
 
-            {columnas.map((columna, indice) => (
-                <Encabezado
-                    key={columna.clave}
-                    columna={columna}
-                    indice={indice}
-                    onQuitar={onQuitar}
-                    sePuedeQuitar={columnas.length > 1}
-                />
-            ))}
-
-            <span className="flex items-end justify-center pb-1 border-b border-[#DEE6F4]">
-                {botonMas}
-            </span>
-
-            {filas.map(fila => (
-                <Fila key={fila.nombre} fila={fila} />
-            ))}
-
+                {filas.map(fila => <Fila key={fila.nombre} fila={fila} />)}
+            </div>
             {caja}
-        </div>
+        </DndContext>
     );
 };
-
-const Fila = ({ fila }) => (
-    <>
-        <span className={`text-[10px]/[13px] ${fila.esBase ? 'font-bold text-[#2E4372] pb-1 border-b border-[#E9EEF8]' : 'text-[#465055]'}`}>
-            {fila.nombre}
-        </span>
-        {fila.celdas.map((celda, indice) => (
-            <span key={indice} className={fila.esBase ? 'pb-1 border-b border-[#E9EEF8] flex justify-end' : 'flex justify-end'}>
-                <Celda celda={celda} marcada={fila.marcada === indice} fila={fila} />
-            </span>
-        ))}
-        <span className={fila.esBase ? 'border-b border-[#E9EEF8]' : ''} />
-    </>
-);
 
 export default ComparadorTabla;

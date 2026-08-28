@@ -1,3 +1,4 @@
+import Icon from '@components/Icon';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import { MAX_FILTROS, esCompleta, operadoresDe } from '@hooksMaps/useStatsBuilder';
 import ConstructorFila, { Campo, Paso, Texto } from './ConstructorFila';
@@ -76,16 +77,16 @@ const Constructor = ({ catalogo, definicion, onDefinicion, previa, calculando, o
             ))}
 
             {restantes > 0 && (
-                <Paso numero="+" activo={false}>
+                <div className="flex justify-center">
                     <button
                         type="button"
                         onClick={agregarFiltro}
-                        className="text-[10px]/[13px] text-purple font-semibold hover:underline cursor-pointer"
+                        className="flex items-center gap-1 pl-1.5 pr-2.5 py-1 rounded-full border border-purple bg-white text-purple text-[10px]/[13px] font-garet font-bold transition-colors cursor-pointer hover:bg-purple-soft"
                     >
-                        agregar condición
+                        <Icon name="crear" className="size-3" />
+                        Agregar condición
                     </button>
-                    <Texto>· quedan {restantes} de {MAX_FILTROS}</Texto>
-                </Paso>
+                </div>
             )}
 
             <Paso numero={definicion.filters.length + 2}>
@@ -104,7 +105,10 @@ const Constructor = ({ catalogo, definicion, onDefinicion, previa, calculando, o
 
             <div className="flex items-center justify-between gap-3 rounded-lg bg-[#EFF3FC] px-2.5 py-1.5 mt-0.5">
                 <span className="min-w-0">
-                    <span className="block text-[9px]/[12px] text-[#465055]">Vista previa</span>
+                    <span className="block text-[9px]/[12px] text-[#465055]">
+                        Vista previa
+                        <span className="text-[#8894AE]"> · quedan {restantes} de {MAX_FILTROS} condiciones</span>
+                    </span>
                     <Cadena receta={previa?.receta} />
                 </span>
                 <span className="flex items-center gap-2 shrink-0">

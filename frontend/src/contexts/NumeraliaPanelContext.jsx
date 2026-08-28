@@ -1,95 +1,188 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { definicionVacia, MAX_PROPIAS } from '@hooksMaps/useStatsBuilder';
 
 const NumeraliaPanelContext = createContext(null);
 
-const STORAGE_KEY = 'mapalab.numeralia.panelAbierto';
-const STORAGE_MIN = 'mapalab.numeralia.panelMinimizado';
+const STORAGE_ESTADO = 'mapalab.numeralia.estado';
+const STORAGE_PROPIAS = 'mapalab.numeralia.personalizadas';
 const MAX_COMPARADOS = 6;
 
-const leerGuardado = () => {
+const INICIAL = {
+    abierto: false,
+    minimizado: false,
+    modo: 'resumen',
+    clavesComparadas: [],
+    rankingPorcentaje: false,
+    rankingPorCapa: {},
+    borradorPorCapa: {},
+};
+
+const leer = () => {
     try {
-        return localStorage.getItem(STORAGE_KEY) === 'true';
+        const crudo = JSON.parse(localStorage.getItem(STORAGE_ESTADO) || 'null');
+        if (!crudo || typeof crudo !== 'object') return INICIAL;
+        return { ...INICIAL, ...crudo };
     } catch {
-        return false;
+        return INICIAL;
     }
 };
 
-const guardar = (valor) => {
+const guardar = (estado) => {
     try {
-        localStorage.setItem(STORAGE_KEY, String(valor));
+        localStorage.setItem(STORAGE_ESTADO, JSON.stringify(estado));
     } catch {
         /* ignore */
     }
 };
 
-const leerMinimizado = () => {
+const limpiar = () => {
     try {
-        return localStorage.getItem(STORAGE_MIN) === 'true';
+        localStorage.removeItem(STORAGE_ESTADO);
     } catch {
-        return false;
+        /* ignore */
     }
 };
 
-const guardarMinimizado = (valor) => {
+const leerPropias = () => {
     try {
-        localStorage.setItem(STORAGE_MIN, String(valor));
+        const crudo = JSON.parse(localStorage.getItem(STORAGE_PROPIAS) || '{}');
+        return crudo && typeof crudo === 'object' ? crudo : {};
+    } catch {
+        return {};
+    }
+};
+
+const guardarPropias = (todas) => {
+    try {
+        localStorage.setItem(STORAGE_PROPIAS, JSON.stringify(todas));
     } catch {
         /* ignore */
     }
 };
 
 export const NumeraliaPanelProvider = ({ children }) => {
+    const [estado, setEstado] = useState(leer);
+    const [propiasPorCapa, setPropiasPorCapa] = useState(leerPropias);
     const [detachedLayerId, setDetachedLayerId] = useState(null);
-    const [modo, setModo] = useState('resumen');
-    const [clavesComparadas, setClavesComparadas] = useState([]);
     const [highlight, setHighlight] = useState(0);
 
-    const [abierto, setAbierto] = useState(leerGuardado);
-    const [minimizado, setMinimizado] = useState(leerMinimizado);
-
-    const detach = useCallback((layerId) => {
-        setAbierto(true);
-        guardar(true);
-        if (layerId) setDetachedLayerId(layerId);
-    }, []);
-    const attach = useCallback(() => {
-        setAbierto(false);
-        guardar(false);
-        setDetachedLayerId(null);
-        setModo('resumen');
-    }, []);
-    const abrirModo = useCallback((siguiente) => {
-        setModo(actual => (actual === siguiente ? 'resumen' : siguiente));
-    }, []);
-    const cerrarModo = useCallback(() => setModo('resumen'), []);
-    const compararCon = useCallback((claves) => {
-        setClavesComparadas(previas => {
-            const unicas = [...new Set([...previas, ...claves.map(String)])];
-            return unicas.slice(0, MAX_COMPARADOS);
+    const aplicar = useCallback((parche) => {
+        setEstado(previo => {
+            const siguiente = typeof parche === 'function' ? parche(previo) : { ...previo, ...parche };
+            guardar(siguiente);
+            return siguiente;
         });
     }, []);
-    const quitarComparado = useCallback((clave) => {
-        setClavesComparadas(previas => previas.filter(c => c !== String(clave)));
+
+    const detach = useCallback((layerId) => {
+        aplicar({ abierto: true });
+        if (layerId) setDetachedLayerId(layerId);
+    }, [aplicar]);
+
+    const attach = useCallback(() => {
+        limpiar();
+        setEstado(INICIAL);
+        setDetachedLayerId(null);
     }, []);
+
     const seguir = useCallback((layerId) => {
         if (layerId) setDetachedLayerId(layerId);
     }, []);
-    const alternarMinimizado = useCallback(() => setMinimizado(v => {
-        guardarMinimizado(!v);
-        return !v;
-    }), []);
+
+    const alternarMinimizado = useCallback(() => {
+        aplicar(previo => ({ ...previo, minimizado: !previo.minimizado }));
+    }, [aplicar]);
+
+    const abrirModo = useCallback((siguiente) => {
+        aplicar(previo => ({ ...previo, modo: previo.modo === siguiente ? 'resumen' : siguiente }));
+    }, [aplicar]);
+
+    const cerrarModo = useCallback(() => aplicar({ modo: 'resumen' }), [aplicar]);
+
+    const compararCon = useCallback((claves) => {
+        aplicar(previo => ({
+            ...previo,
+            clavesComparadas: [...new Set([...previo.clavesComparadas, ...claves.map(String)])].slice(0, MAX_COMPARADOS),
+        }));
+    }, [aplicar]);
+
+    const quitarComparado = useCallback((clave) => {
+        aplicar(previo => ({
+            ...previo,
+            clavesComparadas: previo.clavesComparadas.filter(c => c !== String(clave)),
+        }));
+    }, [aplicar]);
+
+    const reordenarComparados = useCallback((claves) => {
+        aplicar({ clavesComparadas: claves.map(String) });
+    }, [aplicar]);
+
+    const fijarRankingPorcentaje = useCallback((valor) => {
+        aplicar({ rankingPorcentaje: Boolean(valor) });
+    }, [aplicar]);
+
+    const fijarRankingIndice = useCallback((layerId, indice) => {
+        if (!layerId) return;
+        aplicar(previo => ({ ...previo, rankingPorCapa: { ...previo.rankingPorCapa, [layerId]: indice } }));
+    }, [aplicar]);
+
+    const fijarBorrador = useCallback((layerId, definicion) => {
+        if (!layerId) return;
+        aplicar(previo => ({ ...previo, borradorPorCapa: { ...previo.borradorPorCapa, [layerId]: definicion } }));
+    }, [aplicar]);
+
+    const agregarPersonalizada = useCallback((layerId, definicion) => {
+        if (!layerId) return;
+        setPropiasPorCapa(previas => {
+            const actuales = previas[layerId] || [];
+            const siguientes = { ...previas, [layerId]: [...actuales, definicion].slice(-MAX_PROPIAS) };
+            guardarPropias(siguientes);
+            return siguientes;
+        });
+    }, []);
+
+    const quitarPersonalizada = useCallback((layerId, indice) => {
+        if (!layerId) return;
+        setPropiasPorCapa(previas => {
+            const actuales = previas[layerId] || [];
+            const siguientes = { ...previas, [layerId]: actuales.filter((_, i) => i !== indice) };
+            guardarPropias(siguientes);
+            return siguientes;
+        });
+    }, []);
+
     const resaltar = useCallback(() => setHighlight(n => n + 1), []);
 
-    const value = useMemo(
-        () => ({
-            abierto, minimizado, detachedLayerId, detach, attach, seguir, alternarMinimizado, resaltar, highlight,
-            modo, abrirModo, cerrarModo, clavesComparadas, compararCon, quitarComparado,
-        }),
-        [
-            abierto, minimizado, detachedLayerId, detach, attach, seguir, alternarMinimizado, resaltar, highlight,
-            modo, abrirModo, cerrarModo, clavesComparadas, compararCon, quitarComparado,
-        ],
-    );
+    const value = useMemo(() => ({
+        ...estado,
+        detachedLayerId,
+        highlight,
+        detach,
+        attach,
+        seguir,
+        alternarMinimizado,
+        resaltar,
+        abrirModo,
+        cerrarModo,
+        compararCon,
+        quitarComparado,
+        reordenarComparados,
+        fijarRankingPorcentaje,
+        fijarRankingIndice,
+        fijarBorrador,
+        agregarPersonalizada,
+        quitarPersonalizada,
+        rankingIndiceDe: (layerId) => estado.rankingPorCapa[layerId] ?? 0,
+        borradorDe: (layerId) => estado.borradorPorCapa[layerId] || definicionVacia(),
+        personalizadasDe: (layerId) => propiasPorCapa[layerId] || [],
+    }), [
+        estado, propiasPorCapa, detachedLayerId, highlight,
+        detach, attach, seguir, alternarMinimizado, resaltar,
+        abrirModo, cerrarModo,
+        compararCon, quitarComparado, reordenarComparados,
+        fijarRankingPorcentaje, fijarRankingIndice, fijarBorrador,
+        agregarPersonalizada, quitarPersonalizada,
+    ]);
 
     return (
         <NumeraliaPanelContext.Provider value={value}>

@@ -6,6 +6,7 @@ import Loading from '@components/Loading';
 import LayerOpacityPopover from './LayerOpacityPopover';
 import { useLegendsVisibility } from './hooks/useLegendsVisibility';
 import { useStatsVisibility } from './hooks/useStatsVisibility';
+import Badge from '@components/Badge';
 import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
 import { useMapsContext } from '@hooks/useMaps';
 
@@ -44,7 +45,17 @@ const LayerActionsBar = ({
     const opacityButtonRef = useRef(null);
     const { visible: legendsVisible, setVisible: setLegendsVisible } = useLegendsVisibility();
     const { visible: statsVisible, setVisible: setStatsVisible } = useStatsVisibility();
-    const { abierto, detachedLayerId, resaltar } = useNumeraliaPanel();
+    const {
+        abierto, detachedLayerId, resaltar, minimizado, alternarMinimizado,
+        personalizadasDe, clavesComparadas,
+    } = useNumeraliaPanel();
+    const propias = personalizadasDe?.(layerId)?.length || 0;
+    const comparados = clavesComparadas?.length || 0;
+    const guardadas = propias + (comparados > 1 ? 1 : 0);
+    const resumenGuardado = [
+        propias > 0 && `${propias} estadística${propias === 1 ? '' : 's'} propia${propias === 1 ? '' : 's'}`,
+        comparados > 1 && `${comparados} municipios en comparación`,
+    ].filter(Boolean).join(' · ');
     const statsEnPanel = abierto && detachedLayerId === layerId;
     const { setHighlightedSlots } = useMapsContext();
 
@@ -138,18 +149,22 @@ const LayerActionsBar = ({
             )}
 
             {hasStats && (
-                <Tooltip content={statsEnPanel ? 'Las estadísticas están en su panel' : `${statsVisible ? 'Ocultar' : 'Mostrar'} estadísticas`}>
+                <Tooltip content={resumenGuardado
+                    || (statsEnPanel ? `${minimizado ? 'Expandir' : 'Contraer'} el panel de estadísticas` : `${statsVisible ? 'Ocultar' : 'Mostrar'} estadísticas`)}>
                     <button
-                        className={`p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center size-8 ${statsVisible ? 'bg-white border border-[#70308A]' : `${BUTTON_BASE} hover:border-[#70308A]`}`}
-                        onClick={(e) => { e.stopPropagation(); if (statsEnPanel) { resaltar?.(); return; } if (!statsVisible) setLegendsVisible(false); setStatsVisible(p => !p); }}
+                        className={`relative p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center size-8 ${statsVisible ? 'bg-white border border-[#70308A]' : `${BUTTON_BASE} hover:border-[#70308A]`}`}
+                        onClick={(e) => { e.stopPropagation(); if (statsEnPanel) { alternarMinimizado?.(); resaltar?.(); return; } if (!statsVisible) setLegendsVisible(false); setStatsVisible(p => !p); }}
                         aria-pressed={statsVisible}
-                        aria-label={`${statsVisible ? 'Ocultar' : 'Mostrar'} estadísticas de la capa`}
+                        aria-label={statsEnPanel
+                            ? `${minimizado ? 'Expandir' : 'Contraer'} el panel de estadísticas`
+                            : `${statsVisible ? 'Ocultar' : 'Mostrar'} estadísticas de la capa`}
                     >
-                        {statsVisible && !statsEnPanel ? (
+                        {(statsVisible && !statsEnPanel) || (statsEnPanel && !minimizado) ? (
                             <Icon name="upArrow" className="size-3" />
                         ) : (
                             <Icon name="numeralia" className={SIZE_BUTTON} />
                         )}
+                        <Badge visible={guardadas > 0} count={guardadas} size="sm" className="absolute -top-1 -right-1" />
                     </button>
                 </Tooltip>
             )}

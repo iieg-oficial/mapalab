@@ -176,7 +176,7 @@ def calcular_personalizada(
         'schema': catalogo['esquema'],
         'table': catalogo['tabla'],
         'field': campo,
-        'format': 'integer' if operacion.startswith('count') else 'decimal_2',
+        'format': 'integer' if operacion.startswith('count') else 'decimal_auto',
         'filters': [
             {'field': MUNICIPIO_FIELD_TOKEN, 'op': 'in', 'value': '{{municipio}}'},
             *filtros,

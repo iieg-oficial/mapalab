@@ -214,7 +214,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
     }
 
     return (
-        <div className="w-auto px-4.5 py-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] flex-1 min-h-0 flex flex-col max-md:pointer-events-auto">
+        <div className="w-auto px-4.5 pt-2 pb-4.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] flex-1 min-h-0 flex flex-col max-md:pointer-events-auto">
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                     <Icon name="capa_activa" className="size-8" />

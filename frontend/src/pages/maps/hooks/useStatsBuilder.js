@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getLayerCampos, calcularPersonalizada } from '@services/layerBuilderService';
 
-const STORAGE = 'mapalab.numeralia.personalizadas';
 export const MAX_FILTROS = 6;
 export const MAX_PROPIAS = 4;
 
@@ -18,51 +17,6 @@ export const definicionVacia = () => ({ operation: 'count', field: null, label: 
 export const esCompleta = (definicion) => {
     if (!definicion.label?.trim()) return false;
     return definicion.filters.every(f => f.field && f.op && (f.op === 'is_not_null' || f.value !== null && f.value !== ''));
-};
-
-const leerGuardadas = () => {
-    try {
-        const crudo = JSON.parse(localStorage.getItem(STORAGE) || '{}');
-        return crudo && typeof crudo === 'object' ? crudo : {};
-    } catch {
-        return {};
-    }
-};
-
-const guardarTodas = (todas) => {
-    try {
-        localStorage.setItem(STORAGE, JSON.stringify(todas));
-    } catch {
-        /* ignore */
-    }
-};
-
-export const usePersonalizadas = (layerId) => {
-    const [todas, setTodas] = useState(leerGuardadas);
-
-    const propias = useMemo(() => (layerId ? todas[layerId] || [] : []), [todas, layerId]);
-
-    const agregar = useCallback((definicion) => {
-        if (!layerId) return;
-        setTodas(previas => {
-            const actuales = previas[layerId] || [];
-            const siguientes = { ...previas, [layerId]: [...actuales, definicion].slice(-MAX_PROPIAS) };
-            guardarTodas(siguientes);
-            return siguientes;
-        });
-    }, [layerId]);
-
-    const quitar = useCallback((indice) => {
-        if (!layerId) return;
-        setTodas(previas => {
-            const actuales = previas[layerId] || [];
-            const siguientes = { ...previas, [layerId]: actuales.filter((_, i) => i !== indice) };
-            guardarTodas(siguientes);
-            return siguientes;
-        });
-    }, [layerId]);
-
-    return { propias, agregar, quitar };
 };
 
 export const useCatalogoCampos = (layerId, activo) => {

@@ -24,7 +24,7 @@ const celdaDe = (slot, universo, proporcional) => {
     };
 };
 
-export const construirFilas = (columnas, modo) => {
+export const construirFilas = (columnas) => {
     const plantilla = columnas[0]?.numeralia || [];
     if (plantilla.length === 0) return [];
 
@@ -42,14 +42,18 @@ export const construirFilas = (columnas, modo) => {
             .filter(item => Number.isFinite(item.orden));
 
         const fila = { nombre: slot.nombre, simbolo: slot.simbolo, esBase, celdas, enPuntos: proporcional };
+        if (ordenables.length < 2) return { ...fila, alto: null, bajo: null };
 
-        if (esBase || ordenables.length < 2) return { ...fila, marcada: null, ventaja: null };
+        const porValor = [...ordenables].sort((a, b) => b.orden - a.orden);
+        const mayor = porValor[0];
+        const menor = porValor[porValor.length - 1];
+        if (mayor.orden === menor.orden) return { ...fila, alto: null, bajo: null };
 
-        ordenables.sort((a, b) => (modo === 'menos' ? a.orden - b.orden : b.orden - a.orden));
-        const [primero, segundo] = ordenables;
-        if (primero.orden === segundo.orden) return { ...fila, marcada: null, ventaja: null };
-
-        return { ...fila, marcada: primero.columna, ventaja: Math.abs(primero.orden - segundo.orden) };
+        return {
+            ...fila,
+            alto: { columna: mayor.columna, ventaja: mayor.orden - porValor[1].orden },
+            bajo: { columna: menor.columna, ventaja: porValor[porValor.length - 2].orden - menor.orden },
+        };
     });
 };
 
