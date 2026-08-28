@@ -5,6 +5,39 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.142.0] - 2026-08-28
+
+### Agregado: el panel de estadisticas gana comparador, ranking y estadisticas propias
+
+El encabezado del panel estrena tres botones. Aparecen solo cuando la capa los merece: comparar y
+ranking exigen que la capa declare su campo de municipio, y los tres exigen que tenga estadisticas
+dinamicas. En una capa con valores capturados a mano no sale ninguno, porque no tendrian nada que
+calcular.
+
+**Comparar** transpone la tabla: cada indicador baja a una fila y cada municipio gana una columna,
+que se quita con la equis de su propio encabezado y se agrega con la columna del mas al final. Las
+celdas hablan en porcentajes del total de ese municipio, para que Guadalajara y Etzatlan se puedan
+poner lado a lado sin que los absolutos aplasten la lectura. El interruptor de mas y menos resalta
+una sola celda por renglon —la mas alta o la mas baja— con su ventaja sobre el segundo lugar, asi
+que la comparacion no gasta una columna y funciona igual con dos municipios que con seis. No hay
+backend nuevo: cada columna es la misma peticion de siempre con otro municipio.
+
+**Ranking** ordena los 125 municipios por el indicador que se elija, en total o en porcentaje, y
+resalta el que este seleccionado en el visor aunque caiga en el lugar ochenta. Aqui si hubo motor
+nuevo: una consulta agrupada por municipio en vez de 125 sueltas. El filtro de municipio de la
+configuracion se ignora a proposito, porque en este modo el municipio es la llave de agrupacion.
+
+**Crear** entrega el panel completo a un constructor guiado, con un boton discreto para volver. Los
+pasos se leen como una frase y las opciones salen de la propia tabla: las columnas de texto con
+pocos valores distintos se vuelven selectores con sus valores reales, y las de alta cardinalidad se
+omiten porque no sirven para elegir. El esquema y la tabla los resuelve el servidor a partir de la
+capa, nunca el cliente, y cada columna, operador y operacion se valida contra ese catalogo. Lo que
+se guarda en el navegador son definiciones, no numeros, asi que una estadistica propia se recalcula
+con el municipio seleccionado igual que las oficiales.
+
+Las tres cosas heredan la ficha de receta sin tocarla: una estadistica armada en el visor explica su
+cadena de ingredientes igual que una configurada en el CMS.
+
 ## [1.141.0] - 2026-08-28
 
 ### Cambiado: encuadrar deja la pill y se integra a los controles de zoom
