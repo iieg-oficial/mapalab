@@ -5,6 +5,35 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.142.1] - 2026-08-28
+
+### Cambiado: el chip de aislar capa cierra con el mismo boton que las pills flotantes
+
+La × que estrenó 1.135.0 vivía **dentro** del chip, como un adorno sin foco propio ni nombre
+accesible: el chip entero apagaba el modo y la × solo señalaba por dónde. Ahora la salida es el mismo
+botón rosa que usan las pills flotantes del visor —`#FFE6EC` en reposo, `#FF577D` al pasar encima,
+ícono `cerrar`—, con su propio `aria-label` y su tooltip, y **revelado en hover** igual que aquellas:
+oculto por defecto de `md` para arriba, visible siempre en móvil, donde no hay hover que valga.
+
+Va en tamaño `sm`: 24 px de botón contra los 40 px de las pills flotantes, para no pasarse de la
+altura del chip, que es `h-6`.
+
+Ese patrón estaba **duplicado literal** en dos componentes, así que salió a
+`components/PillCloseButton.jsx` con dos tamaños. Hoy solo lo consume el chip: la pill de municipio y
+la de estadísticas siguen con su copia porque ambas están siendo reescritas en otra rama de trabajo,
+y migrarlas ahí es cambiar el bloque por una etiqueta de cuatro líneas.
+
+A diferencia de las pills flotantes, que colocan su botón en absoluto sobre el mapa, aquí el botón va
+**en el flujo**: colapsado a `max-width: 0` con `overflow-hidden`, y al pasar el mouse se abre a 28 px
+—4 de separación más 24 de botón— empujando a los botones que siguen. Así no queda hueco reservado
+cuando no se usa, ni el botón cae encima del ícono de eliminar capas, que está a solo 12 px.
+
+Medido en el navegador contra el CSS compilado: en reposo el contenedor mide 0 px y el vecino arranca
+en x=187; con el hover mide 28 px y el vecino se recorre a x=215.
+
+`PillCloseButton` toma esa diferencia como prop `reveal`: `overlay` para las pills flotantes —oculta
+por visibilidad, sin tocar el layout— e `inline` para el chip.
+
 ## [1.142.0] - 2026-08-28
 
 ### Agregado: el panel de estadisticas gana comparador, ranking y estadisticas propias

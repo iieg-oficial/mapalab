@@ -4,6 +4,7 @@ import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
 import Switch from '@components/Switch';
 import ConfirmDropdown from '@components/ConfirmDropdown';
+import PillCloseButton from '@components/PillCloseButton';
 
 const ActiveLayersToolbar = ({
     noLayers,
@@ -53,26 +54,34 @@ const ActiveLayersToolbar = ({
         <>
             <div className="flex items-center justify-between shrink-0 mb-2 gap-1.5">
                 <div className="flex items-center gap-2 md:gap-3 shrink md:shrink-0 min-w-0">
-                    <Tooltip content={tooltipAislar}>
-                        <button
-                            type="button"
-                            disabled={!puedeAislar}
-                            aria-pressed={soloSeleccionada}
-                            className={`
-                                flex items-center gap-1.5 h-6 pl-1 rounded-full shrink min-w-0 transition-colors
-                                ${soloSeleccionada ? 'bg-purple-soft pr-1.5' : 'bg-[#EFF3FC] pr-2.5'}
-                                ${puedeAislar ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}
-                                ${puedeAislar && !soloSeleccionada ? 'hover:bg-[#E1E8F7]' : ''}
-                            `}
-                            onClick={onToggleVisibilityAll}
-                        >
-                            <Icon name="solo_capa" className={`size-5 shrink-0 ${soloSeleccionada ? 'text-purple' : 'text-graphite'}`} />
-                            <span className={`text-[10px] font-garet font-semibold leading-none truncate max-w-[110px] md:max-w-[158px] ${soloSeleccionada ? 'text-purple' : 'text-graphite'}`}>{textoAislar}</span>
-                            {soloSeleccionada && (
-                                <span aria-hidden="true" className="grid place-items-center size-3.5 shrink-0 rounded-full bg-purple/15 text-purple text-[11px] leading-none">×</span>
-                            )}
-                        </button>
-                    </Tooltip>
+                    <div className="group flex items-center shrink min-w-0">
+                        <Tooltip content={tooltipAislar}>
+                            <button
+                                type="button"
+                                disabled={!puedeAislar}
+                                aria-pressed={soloSeleccionada}
+                                className={`
+                                    flex items-center gap-1.5 h-6 pl-1 pr-2.5 rounded-full shrink min-w-0 transition-colors
+                                    ${soloSeleccionada ? 'bg-purple-soft' : 'bg-[#EFF3FC]'}
+                                    ${puedeAislar ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}
+                                    ${puedeAislar && !soloSeleccionada ? 'hover:bg-[#E1E8F7]' : ''}
+                                `}
+                                onClick={onToggleVisibilityAll}
+                            >
+                                <Icon name="solo_capa" className={`size-5 shrink-0 ${soloSeleccionada ? 'text-purple' : 'text-graphite'}`} />
+                                <span className={`text-[10px] font-garet font-semibold leading-none truncate max-w-[110px] md:max-w-[158px] ${soloSeleccionada ? 'text-purple' : 'text-graphite'}`}>{textoAislar}</span>
+                            </button>
+                        </Tooltip>
+                        {soloSeleccionada && (
+                            <PillCloseButton
+                                onClick={onToggleVisibilityAll}
+                                size="sm"
+                                reveal="inline"
+                                tooltip="Volver a mostrar todas las capas"
+                                ariaLabel="Volver a mostrar todas las capas"
+                            />
+                        )}
+                    </div>
 
                     <div className="relative shrink-0">
                         <button

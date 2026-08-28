@@ -67,11 +67,19 @@ describe('ActiveLayersToolbar - modo botones', () => {
         expect(screen.getByText(/Solo seleccionada/i)).toBeInTheDocument();
     });
 
-    it('ofrece la salida con una × solo mientras está encendido', () => {
+    it('ofrece la salida con el boton de cerrar solo mientras está encendido', () => {
+        const salida = /volver a mostrar todas las capas/i;
         const { rerender } = render(<ActiveLayersToolbar {...baseProps} />);
-        expect(screen.queryByText('×')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: salida })).not.toBeInTheDocument();
         rerender(<ActiveLayersToolbar {...baseProps} soloSeleccionada />);
-        expect(screen.getByText('×')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: salida })).toBeInTheDocument();
+    });
+
+    it('el boton de cerrar apaga el modo', () => {
+        const onToggleVisibilityAll = vi.fn();
+        render(<ActiveLayersToolbar {...baseProps} soloSeleccionada onToggleVisibilityAll={onToggleVisibilityAll} />);
+        fireEvent.click(screen.getByRole('button', { name: /volver a mostrar todas las capas/i }));
+        expect(onToggleVisibilityAll).toHaveBeenCalled();
     });
 
     it('pide elegir una capa y se deshabilita cuando no hay selección', () => {
