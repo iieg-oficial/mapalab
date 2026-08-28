@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.143.0] - 2026-08-28
+
+### Cambiado: la pill de municipio baja solo cuando algo la tapa
+
+Bajaba en toda pantalla movil, con un `74px` escrito a mano que era el alto de la barra de
+herramientas. La barra esta anclada a la derecha y la pill va centrada, asi que **verticalmente
+siempre coinciden**: que se estorben depende del ancho de la barra y del largo del nombre del
+municipio. Con la barra compacta y un nombre corto no habia estorbo y la pill bajaba igual.
+
+Ahora la decision se mide. El nuevo `useOverlapOffset` recibe dos referencias y devuelve cuantos
+pixeles hay que bajar: cero si las cajas no se cruzan, y lo justo para librar el obstaculo si se
+cruzan. Un `ResizeObserver` sobre ambos elementos lo recalcula cuando la barra se compacta, cuando
+cambia el municipio o cuando gira el dispositivo.
+
+`SiderContext` expone `toolsPanelRef` junto a los refs de geometria que ya guardaba, que es como
+`useSiderAdaptivePosition` resuelve lo mismo para el sider.
+
+Detalle de implementacion: el hook recuerda su propio desplazamiento para medir siempre la posicion
+natural del objetivo; sin eso, medir un elemento ya desplazado realimenta el calculo y oscila. Y
+mueve con `top`, no con `transform`, que crearia bloque contenedor para cualquier hijo `fixed`.
+
 ## [1.142.1] - 2026-08-28
 
 ### Cambiado: el chip de aislar capa cierra con el mismo boton que las pills flotantes
