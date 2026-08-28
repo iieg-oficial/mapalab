@@ -5,6 +5,17 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.144.2] - 2026-08-28
+
+### Corregido: se retira codigo muerto que dejo el panel de estadisticas
+
+`AccionesEncabezado` se extrajo para sacar los botones del encabezado y quedo huerfano al aparecer
+`PanelHeader` y `ActionIconButton`, que hacen lo mismo de forma reutilizable. Se borra.
+
+En `avisoSeleccion` tres simbolos estaban exportados sin que nadie los importara: solo se usan
+dentro del propio modulo, detras de `useAvisoSeleccion`. Pasan a ser privados, que es lo que
+siempre fueron en la practica.
+
 ## [1.144.1] - 2026-08-28
 
 ### Cambiado: un solo hook aparta a los controles flotantes que se tapan
