@@ -5,6 +5,61 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.144.0] - 2026-08-28
+
+### Agregado: el panel de estadisticas recuerda la sesion y homologa su interfaz
+
+Las tres herramientas nuevas —comparador, ranking y constructor— ahora **sobreviven al refresco**.
+El estado completo vive en una sola llave del navegador y se borra al cerrar la herramienta, que es
+el gesto de «ya termine». Los municipios comparados son globales y te siguen al cambiar de capa,
+porque comparar Guadalajara contra Zapopan tiene sentido en cualquiera. El indicador del ranking y
+el borrador del constructor son por capa, porque el indicador numero tres de una capa no es el
+mismo que el de otra y las columnas pertenecen a su tabla.
+
+Las estadisticas propias se separan de ese estado: viven en su propia llave y **no se borran al
+cerrar**, porque son trabajo guardado y no sesion. Para que el panel de capas activas pudiera
+avisar de ellas en vivo, la lista dejo de leerse suelta en cada componente y paso a una sola
+fuente; el boton de estadisticas del item activo estrena un badge que cuenta lo propio de la capa
+y la comparacion en curso, con el detalle en su tooltip.
+
+Ese mismo boton dejo de ser decorativo cuando las estadisticas ya estan en el panel: **contrae y
+expande**, muestra la flecha cuando esta abierto, y el destello del panel pasa al naranja
+institucional.
+
+### Cambiado: la interfaz del panel adopta el lenguaje del resto del visor
+
+Salieron tres componentes reutilizables —`PanelHeader`, `ActionIconButton` y `DropdownPill`— mas un
+hook `useBottomClearance` que levanta la pastilla contraida solo si de verdad se cruza con la barra
+de escala o las atribuciones, en vez de reservar un margen fijo.
+
+La pastilla contraida adopta la forma de la de municipio: misma altura, mismo radio, mismo borde
+que se pone morado, y el boton de cerrar rosa que aparece al pasar por encima. Se le quito la
+flecha, que ninguna otra pastilla tiene. El encabezado del panel se vuelve pegajoso con desenfoque,
+cambia el icono por una flecha de regreso al entrar a una seccion, y sus acciones se pintan de
+naranja cuando estan activas, como en el buscador del catalogo.
+
+En el comparador cada columna se arrastra con dnd-kit, se quita desde su propio encabezado y solo
+las columnas de municipio se desplazan: la de indicadores queda fija. Los numeros se muestran en
+absoluto con su porcentaje al lado, y el que manda o el que menos tiene se encierra en un recuadro
+verde o rojo con su diferencia, en vez de teñirse entero. En el ranking los desplegables se
+construyen con el lenguaje del selector de municipio, el municipio seleccionado queda pegado a la
+vista mientras se recorre la lista, y el conteo se mudo al pie porque es resultado de la consulta y
+no atributo de la capa.
+
+### Corregido: los desplegables ya no los recorta el panel
+
+El selector de municipio del comparador y los del ranking se abrian hacia arriba y **el
+`overflow` del panel los cortaba**. No era z-index: ningun valor los hubiera salvado desde adentro.
+Los dos se dibujan ahora fuera del panel con posicion fija, anclados a su boton y con tope en los
+bordes de la pantalla.
+
+El `.scrollbar-thin` del proyecto solo definia ancho, asi que toda barra horizontal salia gruesa;
+ahora tambien define alto. Y las estadisticas armadas en el visor dejan de mostrar decimales
+siempre: un maximo entero se lee `3192` y no `3192.00`.
+
+El panel de capas activas homologa su relleno inferior con el de los costados, que venia mas
+apretado.
+
 ## [1.143.0] - 2026-08-28
 
 ### Cambiado: la pill de municipio baja solo cuando algo la tapa
