@@ -5,6 +5,26 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.141.0] - 2026-08-28
+
+### Cambiado: encuadrar deja la pill y se integra a los controles de zoom
+
+El boton de centrar vivia colgado de la pill de municipio y solo aparecia al pasar el mouse por
+encima. Ahora es un boton fijo de la columna de zoom, debajo de ubicacion, y **su alcance depende del
+contexto**: con un municipio activo encuadra ese municipio, y sin el encuadra Jalisco. El titulo y la
+etiqueta de accesibilidad nombran el ambito, asi que se sabe que hace antes de tocarlo.
+
+Con eso se retira el "centrar en Jalisco" que se revelaba al pasar por el boton de alejar —o tres
+segundos despues de un zoom en pantallas tactiles—. Eran dos temporizadores, tres callbacks y un
+`isTouchDevice` para sostener un boton que casi nadie encontraba.
+
+El icono adopta la convencion de la columna: **gris `#7C8BAD` en normal y morado `#5C2472` en hover**,
+como zoom y ubicacion. Venia en morado por haber nacido en la pill, donde no tenia con que contrastar.
+El mismo cambio corrige la leyenda de capa, que ya tenia estados y iba de morado a morado oscuro.
+
+En movil la pill de municipio baja debajo del panel de descargas y su desplegable se limita al
+viewport visible, en vez de quedar tapada.
+
 ## [1.140.1] - 2026-08-27
 
 ### Corregido: las capas ya no se piden completas mientras carga la lista de municipios
