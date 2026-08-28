@@ -5,6 +5,24 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.144.1] - 2026-08-28
+
+### Cambiado: un solo hook aparta a los controles flotantes que se tapan
+
+`useOverlapOffset` y `useBottomClearance` nacieron el mismo dia en sesiones distintas y median lo
+mismo en direcciones opuestas: cruzar la caja propia contra la ajena y devolver cuanto hay que
+moverse. Quedan fusionados en `useClearance`, que recibe el lado (`top` o `bottom`) y los obstaculos
+—referencias o selectores CSS, que es como se alcanzan la escala y la atribucion de OpenLayers—.
+
+De paso se corrige que el de abajo solo cruzaba las cajas en horizontal: un elemento que estorbara
+en X pero estuviera lejos en Y tambien levantaba el piso. Ahora se exige cruce en los dos ejes.
+
+Tambien desaparece la correccion de realimentacion que arrastraba el otro. En un elemento `fixed`
+posicionado por `top` o `bottom`, la posicion natural **es** la base, asi que no hace falta recordar
+el desplazamiento previo para no oscilar.
+
+Ninguno de los dos tenia pruebas; el unificado estrena seis.
+
 ## [1.144.0] - 2026-08-28
 
 ### Agregado: el panel de estadisticas recuerda la sesion y homologa su interfaz
