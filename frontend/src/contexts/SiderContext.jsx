@@ -19,6 +19,7 @@ SiderContext.displayName = 'SiderContext';
 export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH, expandedWidth = SIDER_EXPANDED_WIDTH }) => {
     const siderRef = useRef(null);
     const toolsButtonRef = useRef(null);
+    const toolsPanelRef = useRef(null);
     const [width, setWidth] = useState(collapsedWidth);
     const [isHovered, setIsHovered] = useState(false);
     const [openMenusCount, setOpenMenusCount] = useState(0);
@@ -104,6 +105,7 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
     const value = {
         siderRef,
         toolsButtonRef,
+        toolsPanelRef,
         width,
         isHovered,
         setIsHovered,

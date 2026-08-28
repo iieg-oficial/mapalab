@@ -12,6 +12,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { SIDER_EXPANDED_WIDTH, TOOLS_COMPACT_MEDIA_QUERY } from '@constants/sider';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import { useIsMobile } from '@hooks/useIsMobile';
+import { useSider } from '@contexts/SiderContext';
 import {
     leerPreferenciaCompacta,
     guardarPreferenciaCompacta,
@@ -26,6 +27,7 @@ const MapToolsPanel = () => {
     const [isMunicipioOpen, setIsMunicipioOpen] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
     const { municipioMode } = useMapsContext();
+    const { toolsPanelRef } = useSider();
     const [previewFormat, setPreviewFormat] = useState('png');
     const [previewLegends, setPreviewLegends] = useState([]);
     const [previewTitle, setPreviewTitle] = useState('');
@@ -78,7 +80,7 @@ const MapToolsPanel = () => {
 
     return (
         <>
-            <div className={`fixed top-4 right-4 z-11 ${isAnyPanelOpen ? 'max-md:z-60' : 'max-md:z-21'} flex flex-row items-center`}>
+            <div ref={toolsPanelRef} className={`fixed top-4 right-4 z-11 ${isAnyPanelOpen ? 'max-md:z-60' : 'max-md:z-21'} flex flex-row items-center`}>
                 {inSyncWithShare && (
                     <ShareActiveChip loadedShareId={loadedShareId} onMarkPending={markPending} />
                 )}
