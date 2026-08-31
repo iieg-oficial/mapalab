@@ -14,8 +14,8 @@ import FilaTarjeta from './FilaTarjeta';
 import PestanasTablas from './PestanasTablas';
 import VentanaBarra from './VentanaBarra';
 
-const Ventana = ({ layerId, indice, activa, minimizada, esMovil, nombreDe }) => {
-    const { activar, cerrar } = useTablaAtributos();
+const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
+    const { activar, cerrar, nombreDe, capaDe } = useTablaAtributos();
     const { municipioMode } = useMapsContext();
     const datos = useTablaDatos(layerId, { minimizada });
     const catalogo = useCatalogoCampos(layerId, !minimizada);
@@ -24,7 +24,8 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil, nombreDe }) => 
     const [verCql, setVerCql] = useState(false);
     const [pestana, setPestana] = useState('datos');
 
-    const nombre = datos.layerDef?.label || datos.layerDef?.name || 'Capa';
+    const nombre = nombreDe(layerId);
+    const oculta = capaDe(layerId)?.visible === false;
 
     const municipiosDe = useMemo(() => (columna) => {
         const meta = datos.layerDef?.searchMeta;
@@ -41,6 +42,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil, nombreDe }) => 
     const cabecera = (
         <VentanaBarra
             nombre={nombre}
+            oculta={oculta}
             esGrupo={datos.esGrupo}
             hojasDelGrupo={datos.hojasDelGrupo}
             datos={datos}
@@ -143,7 +145,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil, nombreDe }) => 
             {cabecera}
             {!esMovil && (
                 <div className="px-2.5 py-1.5 border-b border-[#EAEFFA]">
-                    <PestanasTablas nombreDe={nombreDe} tamano="compacta" />
+                    <PestanasTablas tamano="compacta" />
                 </div>
             )}
             {datos.error && (
@@ -208,7 +210,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil, nombreDe }) => 
             aria-label={`Tabla de atributos de ${nombre}`}
             onPointerDown={() => activar(layerId)}
             style={{ left: posicion.x, top: posicion.y, zIndex: activa ? 13 : 12 }}
-            className="fixed w-[min(760px,92vw)] h-[min(420px,60vh)] flex flex-col rounded-[10px] bg-white shadow-[0_5px_20px_#1A26641A] border border-[#EAEFFA] overflow-hidden"
+            className={`fixed w-[min(760px,92vw)] h-[min(420px,60vh)] flex flex-col rounded-[10px] bg-white shadow-[0_5px_20px_#1A26641A] border overflow-hidden transition-colors ${activa ? 'border-purple' : 'border-[#EAEFFA]'}`}
         >
             {cuerpoCompleto}
         </div>

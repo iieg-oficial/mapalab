@@ -1,23 +1,22 @@
-import { useMemo, useRef } from 'react';
-import { useMapsContext } from '@hooks/useMaps';
+import { useRef } from 'react';
 import { useIsMobile } from '@hooks/useIsMobile';
 import { useClearance } from '@hooks/useClearance';
+import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
-import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
-import { descriptorVacio, etiquetaFiltro } from '@pages/maps/helpers/tablaCqlBuilder';
+import { useBordeDerecho } from '@hooksMaps/useBordeDerecho';
+import { PANEL_GAP, VIEWPORT_EDGE } from '@pages/maps/helpers/mapFit';
 import BarraEstado from './BarraEstado';
 import Ventana from './Ventana';
 
 const CONTROLES_DEL_MAPA = ['.ol-scale-line', '.ol-attribution'];
+const ALTO_BARRA = 120;
 
 const TablaAtributos = () => {
-    const { allLayers } = useMapsContext();
-    const {
-        activo, tablas, activaId, minimizado, estadoDe, quitarFiltro, limpiarFiltros,
-        fijarExpresionPropia,
-    } = useTablaAtributos();
+    const { activo, tablas, activaId, minimizado } = useTablaAtributos();
     const isMobile = useIsMobile();
+    const { leftPosition, className: transicionSider } = useSiderAdaptivePosition({ bottomOffset: ALTO_BARRA });
     const barraRef = useRef(null);
+
     const inferior = useClearance(barraRef, {
         lado: 'bottom',
         obstaculos: CONTROLES_DEL_MAPA,
@@ -26,52 +25,35 @@ const TablaAtributos = () => {
         activo: minimizado && tablas.length > 0,
     });
 
-    const nombreDe = useMemo(() => (layerId) => {
-        const layerDef = findLayerDef(layerId, allLayers || []);
-        return layerDef?.label || layerDef?.name || 'Capa';
-    }, [allLayers]);
-
-    const estadoActiva = activaId ? estadoDe(activaId) : null;
-
-    const chips = useMemo(() => {
-        if (!estadoActiva) return [];
-        if (estadoActiva.expresionPropia) {
-            return [{ columna: null, etiqueta: 'expresión propia', propia: true }];
-        }
-        return Object.entries(estadoActiva.filtros)
-            .filter(([, descriptor]) => !descriptorVacio(descriptor))
-            .map(([columna, descriptor]) => ({ columna, etiqueta: etiquetaFiltro(columna, descriptor) }));
-    }, [estadoActiva]);
+    const bordeControles = useBordeDerecho('[data-controles-mapa]', {
+        base: leftPosition,
+        activo: minimizado && !isMobile,
+    });
 
     if (!activo || tablas.length === 0) return null;
 
-    const quitarChip = (columna) => {
-        if (columna === null) fijarExpresionPropia(activaId, null);
-        else quitarFiltro(activaId, columna);
-    };
+    const izquierda = isMobile ? VIEWPORT_EDGE : bordeControles + PANEL_GAP;
+    const derecha = isMobile ? VIEWPORT_EDGE : VIEWPORT_EDGE + PANEL_GAP;
 
     return (
         <>
-            {tablas.map((layerId, indice) => (
+            {tablas.map((capa, indice) => (
                 <Ventana
-                    key={layerId}
-                    layerId={layerId}
+                    key={capa.id}
+                    layerId={capa.id}
                     indice={indice}
-                    activa={layerId === activaId}
-                    minimizada={minimizado || layerId !== activaId}
+                    activa={capa.id === activaId}
+                    minimizada={minimizado || capa.id !== activaId}
                     esMovil={isMobile}
-                    nombreDe={nombreDe}
                 />
             ))}
             {minimizado && (
                 <div ref={barraRef}>
                     <BarraEstado
-                        nombreDe={nombreDe}
-                        chips={chips}
-                        vista={estadoActiva?.vista || 'libre'}
-                        onQuitarChip={quitarChip}
-                        onLimpiarChips={() => limpiarFiltros(activaId)}
                         inferior={inferior}
+                        izquierda={izquierda}
+                        derecha={derecha}
+                        transicion={transicionSider}
                     />
                 </div>
             )}

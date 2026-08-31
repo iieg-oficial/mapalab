@@ -2,7 +2,7 @@ import { useTablaAtributos } from '@contexts/TablaAtributosContext';
 
 const BOTON = 'h-6 px-2 rounded-full border text-[11px] font-garet cursor-pointer whitespace-nowrap';
 
-const VentanaBarra = ({ nombre, esGrupo, hojasDelGrupo, datos, verCql, onAlternarCql, onCerrar, arrastre }) => {
+const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, datos, verCql, onAlternarCql, onCerrar, arrastre }) => {
     const { alternarMinimizado } = useTablaAtributos();
     const { vista } = datos;
     const siguiendo = vista.vista === 'visible';
@@ -13,7 +13,12 @@ const VentanaBarra = ({ nombre, esGrupo, hojasDelGrupo, datos, verCql, onAlterna
             {...(arrastre || {})}
             className={`h-9 px-2.5 flex items-center gap-2 bg-[#F5F7FC] border-b border-[#DCE3F0] ${arrastre ? 'cursor-move touch-none' : ''}`}
         >
-            <span className="text-[12px] font-garet font-bold text-purple truncate">{nombre}</span>
+            <span
+                title={oculta ? `${nombre} (oculta en el mapa)` : nombre}
+                className={`text-[12px] font-garet font-bold text-purple truncate ${oculta ? 'opacity-50' : ''}`}
+            >
+                {nombre}
+            </span>
             {esGrupo && hojasDelGrupo > 1 && (
                 <span
                     title={`Es un grupo: la tabla trae los datos de sus ${hojasDelGrupo} capas juntas`}

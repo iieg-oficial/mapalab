@@ -5,6 +5,34 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.152.0] - 2026-08-28
+
+### Cambiado: la barra de la tabla de datos se comporta como el resto de las pills
+
+- **El contenedor es la pill y adentro van los badges.** Un solo bloque redondeado con los badges de
+  las tablas dentro, sin icono ni conteo, para gastar el menor ancho posible.
+- **Los grupos son una capa.** Los badges salen de `unifiedLayers`, que es la misma lista que pinta
+  el panel de capas activas: grupos colapsados, con sus alias. Antes se desagregaban en sus hojas.
+- **La posicion respeta el estado del sider, no su ancho maximo.** Usa
+  `useSiderAdaptivePosition`, igual que los controles del mapa: solo se corre por el sider si el
+  sider de verdad llega a esa altura. Encima toma el borde derecho real del control de zoom, medido
+  con `ResizeObserver`, y acompana la animacion del sider en vez de saltar.
+- **La barra le avisa a la pill de estadisticas.** Numeralia suma `[data-barra-tabla]` a los
+  obstaculos de su `useClearance`, asi que su pill se desplaza hacia arriba con la separacion que ya
+  usaba. El aviso va en un solo sentido a proposito: si las dos se observaran, `useClearance` se
+  perseguiria a si mismo. La regla es entre pills y barras; cuando alguna esta abierta como panel,
+  no hay interaccion.
+- Una capa activa pero oculta en el mapa aparece atenuada, y el panel toma los mismos estados que su
+  badge: borde morado cuando es la tabla activa, titulo atenuado cuando la capa esta oculta.
+
+### Corregido: 400 del WFS al abrir la tabla de un grupo
+
+Las filas y el conteo se pedian en paralelo con el sondeo de columnas, asi que el `GetFeature`
+salia antes de saber si la capa era consultable. Con los grupos se notaba porque su nombre
+compartido suele ser un **layer group de GeoServer**, que es una entidad de WMS y no un feature type
+de WFS. Ahora el `DescribeFeatureType` decide: sin columnas no hay consulta, y el panel dice que las
+capas del grupo no comparten una tabla consultable.
+
 ## [1.151.0] - 2026-08-28
 
 ### Agregado: el comparador de municipios se puede leer como grafica

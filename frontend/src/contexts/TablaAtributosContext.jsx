@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
+import { useActiveLayersLogic } from '@hooksMaps/useActiveLayersLogic';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
 
@@ -15,7 +16,8 @@ const ESTADO_CAPA = {
 };
 
 export const TablaAtributosProvider = ({ children }) => {
-    const { allLayers, activeLayerIds } = useMapsContext();
+    const { allLayers, activeLayerIds, hiddenLayerIds } = useMapsContext();
+    const { unifiedLayers } = useActiveLayersLogic(activeLayerIds || [], hiddenLayerIds || []);
     const [activo, setActivo] = useState(false);
     const [cerradas, setCerradas] = useState([]);
     const [activaId, setActivaId] = useState(null);
@@ -24,11 +26,11 @@ export const TablaAtributosProvider = ({ children }) => {
 
     const tablas = useMemo(() => {
         if (!activo) return [];
-        return (activeLayerIds || []).filter(id => {
-            if (cerradas.includes(id)) return false;
-            return Boolean(resolverObjetivo(findLayerDef(id, allLayers || [])).wmsConfig);
-        });
-    }, [activeLayerIds, allLayers, activo, cerradas]);
+        return unifiedLayers
+            .filter(capa => !cerradas.includes(capa.id))
+            .filter(capa => Boolean(resolverObjetivo(findLayerDef(capa.id, allLayers || [])).wmsConfig))
+            .map(capa => ({ id: capa.id, nombre: capa.name, visible: capa.visible !== false }));
+    }, [allLayers, activo, cerradas, unifiedLayers]);
 
     useEffect(() => {
         if (!activo) return;
@@ -37,7 +39,7 @@ export const TablaAtributosProvider = ({ children }) => {
             setActivaId(null);
             return;
         }
-        if (!activaId || !tablas.includes(activaId)) setActivaId(tablas[0]);
+        if (!activaId || !tablas.some(capa => capa.id === activaId)) setActivaId(tablas[0].id);
     }, [activaId, activo, tablas]);
 
     const parchear = useCallback((layerId, parche) => {
@@ -126,7 +128,9 @@ export const TablaAtributosProvider = ({ children }) => {
         tablas,
         activaId,
         minimizado,
-        estaAbierta: (layerId) => tablas.includes(layerId),
+        estaAbierta: (layerId) => tablas.some(capa => capa.id === layerId),
+        nombreDe: (layerId) => tablas.find(capa => capa.id === layerId)?.nombre || 'Capa',
+        capaDe: (layerId) => tablas.find(capa => capa.id === layerId) || null,
         abrir,
         cerrar,
         cerrarTodas,

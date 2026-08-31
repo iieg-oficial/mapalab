@@ -42,9 +42,11 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
 
     const mensaje = useMemo(() => {
         if (objetivo.motivo) return objetivo.motivo;
-        if (sinColumnas) return 'Esta capa no publica columnas de datos: solo tiene geometría.';
-        return null;
-    }, [objetivo.motivo, sinColumnas]);
+        if (!sinColumnas) return null;
+        return objetivo.esGrupo
+            ? 'Las capas de este grupo no comparten una tabla que se pueda consultar.'
+            : 'Esta capa no publica columnas de datos: solo tiene geometría.';
+    }, [objetivo.esGrupo, objetivo.motivo, sinColumnas]);
 
     const heredado = useMemo(
         () => filtroHeredado(getLayerFilters?.(layerId), wmsConfig?.timeEnabled),
@@ -99,7 +101,7 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
     }, [activeLayerIds, disponible, vista.vista, wmsConfig]);
 
     useEffect(() => {
-        if (!disponible) return undefined;
+        if (!disponible || !columnasListas) return undefined;
 
         const controlador = new AbortController();
         peticionRef.current?.abort();
@@ -134,7 +136,7 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
 
         pedir();
         return () => controlador.abort();
-    }, [consulta, disponible, fijarConteo, layerId, minimizada, wmsConfig]);
+    }, [columnasListas, consulta, disponible, fijarConteo, layerId, minimizada, wmsConfig]);
 
     const visibles = useMemo(() => columnas.filter(columna => columna.visible), [columnas]);
     const totalPaginas = Number.isFinite(total) ? Math.max(Math.ceil(total / TAMANO_PAGINA), 1) : 1;
@@ -151,7 +153,7 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         total,
         pagina,
         totalPaginas,
-        cargando: cargando || vista.recalculando,
+        cargando: (cargando || vista.recalculando || !columnasListas) && Boolean(wmsConfig),
         error,
         filtros,
         vista,
