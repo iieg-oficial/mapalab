@@ -5,6 +5,26 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.154.0] - 2026-08-28
+
+### Corregido: la tabla ignoraba la seleccion de municipio
+
+El filtro de municipio **no vive en `useCQLFilter`**: se arma en cada peticion WMS con
+`buildLayerMunicipioCql(searchMeta, municipioContext)`, asi que la tabla nunca lo veia y seguir con
+Atoyac seleccionado devolvia el estado completo. Ahora la tabla lo construye igual que el WMS, con
+el `searchMeta` de la capa —o el de la primera hoja, si es un grupo— y lo suma al resto de la
+consulta.
+
+### Cambiado: pestanas parejas y las dos pills en el mismo renglon
+
+- Las pestanas se reparten el ancho en partes iguales (`flex-1 basis-0`), que es lo que las hacia
+  verse con separacion despareja, y perdieron su boton de cerrar: son el reflejo de las capas
+  activas, asi que se quitan desde el panel de capas y no desde aqui.
+- **La pill de tablas se acomoda al lado de la de estadisticas** en vez de apilarse encima. Se mide
+  la vecina por `[data-pill-minimizada]` y, si se encimarian, la de tablas se corre a su derecha; al
+  moverse avisa por `mapalab:layout` para que la vecina vuelva a bajar. En movil se conserva el
+  apilado, porque a lo ancho no caben.
+
 ## [1.153.1] - 2026-08-28
 
 ### Cambiado: las pestanas del panel dicen que capa esta en foco y cual esta apagada

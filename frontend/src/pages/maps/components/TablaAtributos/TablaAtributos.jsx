@@ -54,6 +54,7 @@ const TablaAtributos = () => {
                         izquierda={izquierda}
                         derecha={derecha}
                         transicion={transicionSider}
+                        enFila={!isMobile}
                     />
                 </div>
             )}

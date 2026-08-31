@@ -37,7 +37,7 @@ const PillMinimizada = ({
     const chrome = `rounded-full bg-white shadow-[0_5px_20px_#1A26641A] border transition-all ${activa ? 'border-purple' : 'border-[#EAEFFA] hover:border-purple'} ${anillo}`;
 
     return (
-        <div ref={pillRef} className="group relative flex min-w-0 pointer-events-auto">
+        <div ref={pillRef} data-pill-minimizada className="group relative flex min-w-0 pointer-events-auto">
             <Tooltip content={tooltipAbrir} placement="top" delay={300}>
                 <button
                     type="button"

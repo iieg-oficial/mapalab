@@ -8,6 +8,8 @@ import { useTablaFiltros } from '@hooksMaps/useTablaFiltros';
 import { INEGI_LAYER_IDS } from '@hooksMaps/useFeatureInfo';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
+import { buildLayerMunicipioCql } from '@pages/maps/helpers/municipioCqlBuilder';
+import { RASTER_WORKSPACES } from '@pages/maps/helpers/layerCqlSegment';
 import { combinar, construirBbox, filtroHeredado, filtrosComunes } from '@pages/maps/helpers/tablaCqlBuilder';
 import { fetchNonGeometryColumns } from '@services/downloadUrls';
 import { countVectorFeatures } from '@services/vectorLayerService';
@@ -17,7 +19,7 @@ import { fetchGeometryColumns, getWfsUrl } from '@utils/featureInfoUtils';
 const RETARDO_CONSULTA = 300;
 
 export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
-    const { allLayers, activeLayerIds, getLayerFilters } = useMapsContext();
+    const { allLayers, activeLayerIds, getLayerFilters, municipioMode } = useMapsContext();
     const { estadoDe, fijarConteo, fijarOrden } = useTablaAtributos();
     const { orden } = estadoDe(layerId);
     const configuracion = useColumnasConfig(layerId);
@@ -57,14 +59,22 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         return filtroHeredado(propios, wmsConfig?.timeEnabled);
     }, [getLayerFilters, layerId, objetivo.capas, objetivo.esGrupo, wmsConfig?.timeEnabled]);
 
+    const municipio = useMemo(() => {
+        const ctx = municipioMode?.municipioContext;
+        if (!ctx?.active || !wmsConfig) return null;
+        if (RASTER_WORKSPACES.has(wmsConfig.workspace)) return null;
+        const base = objetivo.esGrupo ? (objetivo.capas?.[0] || layerDef) : layerDef;
+        return buildLayerMunicipioCql(base?.searchMeta, ctx, base?.id);
+    }, [layerDef, municipioMode?.municipioContext, objetivo.capas, objetivo.esGrupo, wmsConfig]);
+
     const bbox = useMemo(() => {
         if (!campoGeometria || !vista.extent) return null;
         return construirBbox(campoGeometria, vista.extent, vista.srs);
     }, [campoGeometria, vista.extent, vista.srs]);
 
     const cqlCompleto = useMemo(
-        () => combinar([wmsConfig?.cqlFilter, heredado, filtros.cql, bbox]),
-        [bbox, filtros.cql, heredado, wmsConfig?.cqlFilter],
+        () => combinar([wmsConfig?.cqlFilter, municipio, heredado, filtros.cql, bbox]),
+        [bbox, filtros.cql, heredado, municipio, wmsConfig?.cqlFilter],
     );
 
     const consulta = useDebounce(
