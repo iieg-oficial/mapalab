@@ -81,9 +81,9 @@ const Constructor = ({ catalogo, definicion, onDefinicion, previa, calculando, o
                     <button
                         type="button"
                         onClick={agregarFiltro}
-                        className="flex items-center gap-1 pl-1.5 pr-2.5 py-1 rounded-full border border-purple bg-white text-purple text-[10px]/[13px] font-garet font-bold transition-colors cursor-pointer hover:bg-purple-soft"
+                        className="flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full border border-purple bg-white text-purple text-[11px]/[14px] font-garet font-bold transition-colors cursor-pointer hover:bg-purple-soft"
                     >
-                        <Icon name="crear" className="size-3" />
+                        <Icon name="crear" className="size-3.5" />
                         Agregar condición
                     </button>
                 </div>

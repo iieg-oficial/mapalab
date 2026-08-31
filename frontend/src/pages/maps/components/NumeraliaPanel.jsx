@@ -16,12 +16,13 @@ import {
     usePersonalizadasCalculadas, useVistaPrevia,
 } from '@hooksMaps/useStatsBuilder';
 import ComparadorTabla from './NumeraliaPanel/ComparadorTabla';
+import ComparadorGrafica from './NumeraliaPanel/ComparadorGrafica';
 import RankingTabla from './NumeraliaPanel/RankingTabla';
 import Constructor from './NumeraliaPanel/Constructor';
 import TarjetasResumen from './NumeraliaPanel/TarjetasResumen';
 import PillMinimizada from './NumeraliaPanel/PillMinimizada';
 
-const CONTROLES_DEL_MAPA = ['.ol-scale-line', '.ol-attribution'];
+const CONTROLES_DEL_MAPA = ['.ol-scale-line', '.ol-attribution', '[data-barra-tabla]'];
 
 const MODOS = [
     { clave: 'comparar', icono: 'comparar', titulo: 'Comparar municipios', etiqueta: 'Comparar estadísticas entre municipios' },
@@ -31,6 +32,9 @@ const MODOS = [
 
 const TITULOS = { comparar: 'Comparar municipios', ranking: 'Ranking estatal', crear: 'Nueva estadística' };
 const TITULOS_CORTOS = { comparar: 'Comparador', ranking: 'Ranking', crear: 'Nueva' };
+
+const slotsDe = (metadata) => (metadata?.numeralia || []).filter(s => s.nombre && s.valor);
+const dinamicaDe = (metadata) => slotsDe(metadata).some(s => s.receta?.tipo === 'primitiva');
 
 const NumeraliaPanel = () => {
     const {
@@ -48,6 +52,7 @@ const NumeraliaPanel = () => {
     const { metadata } = useLayerMetadata(layerId, contexto);
     const [resaltado, setResaltado] = useState(false);
     const [eligiendo, setEligiendo] = useState(false);
+    const [vistaGrafica, setVistaGrafica] = useState(false);
     const panelRef = useRef(null);
 
     const indiceGuardado = rankingIndiceDe(layerId);
@@ -75,6 +80,10 @@ const NumeraliaPanel = () => {
         const id = setTimeout(() => setResaltado(false), 1200);
         return () => clearTimeout(id);
     }, [highlight]);
+
+    useEffect(() => {
+        if (metadata && !dinamicaDe(metadata) && modo !== 'resumen') cerrarModo();
+    }, [metadata, modo, cerrarModo]);
 
     useEffect(() => {
         if (!comparando) { setEligiendo(false); return; }
@@ -138,10 +147,10 @@ const NumeraliaPanel = () => {
         cerrarModo();
     };
 
-    const slots = (metadata?.numeralia || []).filter(s => s.nombre && s.valor);
+    const slots = slotsDe(metadata);
     if (!abierto || slots.length === 0) return null;
 
-    const dinamica = slots.some(s => s.receta?.tipo === 'primitiva');
+    const dinamica = dinamicaDe(metadata);
     const ambito = metadata?.ambito;
     const nombreCapa = metadata.nombre_capa_usuario || 'Estadísticas';
     const anillo = resaltado ? 'ring-2 ring-orange' : '';
@@ -155,19 +164,22 @@ const NumeraliaPanel = () => {
 
     const acciones = (
         <>
-            {dinamica && MODOS.map(item => (
+            {MODOS.map(item => (
                 <ActionIconButton
                     key={item.clave}
                     onClick={() => abrirModo(item.clave)}
                     activo={modo === item.clave}
-                    titulo={modo === item.clave ? 'Volver al resumen' : item.titulo}
+                    deshabilitado={!dinamica}
+                    titulo={dinamica
+                        ? (modo === item.clave ? 'Volver al resumen' : item.titulo)
+                        : 'Esta capa tiene estadísticas capturadas a mano, no calculadas contra la base'}
                     etiqueta={item.etiqueta}
                     tamano="sm"
                 >
                     <Icon name={item.icono} className="size-3.5" />
                 </ActionIconButton>
             ))}
-            {dinamica && <span className="w-px h-3 bg-[#DCE3F0] mx-0.5" />}
+            <span className="w-px h-3 bg-[#DCE3F0] mx-0.5" />
             <ActionIconButton onClick={alternarMinimizado} titulo="Minimizar estadísticas" etiqueta="Minimizar el panel de estadísticas" tamano="sm">
                 <span className="block w-2.5 h-[2px] bg-current rounded-full" />
             </ActionIconButton>
@@ -249,8 +261,12 @@ const NumeraliaPanel = () => {
                             onQuitar={quitarComparado}
                             onReordenar={reordenarComparados}
                             picker={picker}
+                            vistaGrafica={vistaGrafica}
+                            onVistaGrafica={setVistaGrafica}
                             vacio={cargando ? 'Calculando…' : 'Elige un municipio para comparar.'}
-                        />
+                        >
+                            <ComparadorGrafica columnas={columnasConNombre} filas={filas} />
+                        </ComparadorTabla>
                     )}
 
                     {modo === 'resumen' && (

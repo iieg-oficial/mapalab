@@ -23,7 +23,7 @@ const soltarTurno = (cerrar) => {
 const ANCHO_FICHA = 290;
 const SEPARACION = 6;
 
-const StatCard = ({ label, value, simbolo, className = '', size = 'default', receta = null, lado = 'auto', fondo = 'bg-[#EFF3FC]' }) => {
+const StatCard = ({ label, value, simbolo, className = '', contenedorClassName = '', size = 'default', receta = null, lado = 'auto', fondo = 'bg-[#EFF3FC]' }) => {
     const s = SIZES[size] || SIZES.default;
     const Contenedor = receta ? 'button' : 'div';
     const [posicion, setPosicion] = useState(null);
@@ -98,7 +98,7 @@ const StatCard = ({ label, value, simbolo, className = '', size = 'default', rec
     return (
         <div
             ref={anclaRef}
-            className="h-full"
+            className={`h-full ${contenedorClassName}`}
             onMouseEnter={programar}
             onMouseLeave={cancelar}
             onFocus={programar}

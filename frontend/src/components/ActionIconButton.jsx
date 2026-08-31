@@ -13,6 +13,7 @@ const ActionIconButton = ({
     onClick,
     activo = false,
     apagado = false,
+    deshabilitado = false,
     titulo,
     etiqueta,
     tamano = 'md',
@@ -20,15 +21,16 @@ const ActionIconButton = ({
     children,
     ...props
 }) => {
-    const estado = apagado ? 'apagado' : (activo ? 'activo' : 'normal');
+    const estado = (apagado || deshabilitado) ? 'apagado' : (activo ? 'activo' : 'normal');
 
     const boton = (
         <button
             type="button"
             onClick={onClick}
+            disabled={deshabilitado}
             aria-pressed={activo}
             aria-label={etiqueta || titulo}
-            className={`${BASE} ${TAMANOS[tamano] || TAMANOS.md} ${ESTADOS[estado]} ${className}`}
+            className={`${BASE} ${TAMANOS[tamano] || TAMANOS.md} ${ESTADOS[estado]} ${deshabilitado ? 'opacity-40 cursor-not-allowed' : ''} ${className}`}
             {...props}
         >
             {children}

@@ -3,6 +3,7 @@ import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSe
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import Icon from '@components/Icon';
+import Segmented from '@components/Segmented';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import ComparadorColumna from './ComparadorColumna';
 import MunicipioPicker from './MunicipioPicker';
@@ -53,18 +54,18 @@ const Celda = ({ celda, fila, indice }) => {
 
 const Fila = ({ fila }) => (
     <>
-        <span className={`sticky left-0 z-[2] bg-[#F9FBFF] pr-2 flex items-center text-[11px]/[14px] font-garet ${fila.esBase ? 'font-bold text-[#2E4372]' : 'text-[#465055]'}`}>
+        <span className={`sticky left-0 z-[2] bg-[#F9FBFF] pr-2 self-center flex items-center text-[11px]/[14px] font-garet ${fila.esBase ? 'font-bold text-[#2E4372]' : 'text-[#465055]'}`}>
             {fila.nombre}
         </span>
         {fila.celdas.map((celda, indice) => (
-            <span key={indice} className="flex items-center">
+            <span key={indice} className="flex items-center self-center">
                 <Celda celda={celda} fila={fila} indice={indice} />
             </span>
         ))}
     </>
 );
 
-const ComparadorTabla = ({ columnas, filas, onQuitar, onReordenar, picker, vacio }) => {
+const ComparadorTabla = ({ columnas, filas, onQuitar, onReordenar, picker, vacio, vistaGrafica, onVistaGrafica, children }) => {
     const masRef = useRef(null);
     const [posicion, setPosicion] = useState(null);
 
@@ -106,14 +107,33 @@ const ComparadorTabla = ({ columnas, filas, onQuitar, onReordenar, picker, vacio
             onClick={picker.onAlternar}
             aria-expanded={picker.abierto}
             aria-label="Agregar un municipio a la comparación"
-            className={`flex items-center gap-1 pl-1.5 pr-2.5 py-1 rounded-full border text-[10px]/[13px] font-garet font-bold transition-colors cursor-pointer ${picker.abierto
+            className={`flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full border text-[11px]/[14px] font-garet font-bold transition-colors cursor-pointer ${picker.abierto
                 ? 'bg-purple text-white border-purple'
                 : 'bg-white text-purple border-purple hover:bg-purple-soft'}`}
         >
-            <Icon name="crear" className="size-3" />
-            <span className="md:hidden">Municipio</span>
+            <Icon name="crear" className="size-3.5" />
             <span className="max-md:hidden">Agregar municipio</span>
         </button>
+    );
+
+    const segmento = (
+        <Segmented
+            compact
+            ariaLabel="Forma de ver la comparación"
+            value={vistaGrafica ? 'grafica' : 'tabla'}
+            onChange={(v) => onVistaGrafica(v === 'grafica')}
+            options={[
+                { value: 'tabla', icon: 'tabla', tooltip: 'Ver como tabla' },
+                { value: 'grafica', icon: 'grafica', tooltip: 'Ver como gráfica' },
+            ]}
+        />
+    );
+
+    const controles = (
+        <div className="flex items-center gap-2">
+            <span ref={masRef} className="flex shrink-0">{botonMas}</span>
+            {segmento}
+        </div>
     );
 
     const caja = picker.abierto && (
@@ -130,9 +150,21 @@ const ComparadorTabla = ({ columnas, filas, onQuitar, onReordenar, picker, vacio
 
     if (columnas.length === 0) {
         return (
-            <div className="flex items-center gap-2 py-2">
-                <p className="text-[11px]/[14px] font-garet text-[#8894AE]">{vacio}</p>
-                <span ref={masRef} className="flex">{botonMas}</span>
+            <div>
+                <div className="flex items-center gap-2 py-1">
+                    <span ref={masRef} className="flex shrink-0">{botonMas}</span>
+                    <p className="text-[11px]/[14px] font-garet text-[#8894AE]">{vacio}</p>
+                </div>
+                {caja}
+            </div>
+        );
+    }
+
+    if (vistaGrafica) {
+        return (
+            <div>
+                <div className="mb-2">{controles}</div>
+                {children}
                 {caja}
             </div>
         );
@@ -146,10 +178,10 @@ const ComparadorTabla = ({ columnas, filas, onQuitar, onReordenar, picker, vacio
             modifiers={[restrictToHorizontalAxis]}
         >
             <div
-                className="grid gap-x-3 gap-y-2 items-center font-garet overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 pb-1"
-                style={{ gridTemplateColumns: `minmax(104px,max-content) repeat(${columnas.length}, ${ANCHO_COLUMNA}px)` }}
+                className="grid gap-x-3 gap-y-2 items-end font-garet overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 pb-1"
+                style={{ gridTemplateColumns: `minmax(150px,max-content) repeat(${columnas.length}, ${ANCHO_COLUMNA}px)` }}
             >
-                <span ref={masRef} className="sticky left-0 z-[3] bg-[#F9FBFF] pr-2 flex items-end justify-start pb-1">{botonMas}</span>
+                <span className="sticky left-0 z-[3] bg-[#F9FBFF] pr-2 pb-1">{controles}</span>
 
                 <SortableContext items={columnas.map(c => c.clave)} strategy={horizontalListSortingStrategy}>
                     {columnas.map((columna, indice) => (

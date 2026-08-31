@@ -40,7 +40,7 @@ const TarjetasResumen = ({ slots, propias, onQuitarPropia }) => {
                     simbolo={stat.simbolo}
                     size="compact"
                     receta={stat.receta}
-                    className={esUltima(indice) ? relleno : ''}
+                    contenedorClassName={esUltima(indice) ? relleno : ''}
                 />
             ))}
             {propias.map((stat, indice) => (
