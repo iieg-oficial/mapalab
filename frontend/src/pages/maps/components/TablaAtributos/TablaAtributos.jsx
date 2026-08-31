@@ -13,7 +13,8 @@ const CONTROLES_DEL_MAPA = ['.ol-scale-line', '.ol-attribution'];
 const TablaAtributos = () => {
     const { allLayers } = useMapsContext();
     const {
-        tablas, activaId, minimizado, estadoDe, quitarFiltro, limpiarFiltros, fijarExpresionPropia,
+        activo, tablas, activaId, minimizado, estadoDe, quitarFiltro, limpiarFiltros,
+        fijarExpresionPropia,
     } = useTablaAtributos();
     const isMobile = useIsMobile();
     const barraRef = useRef(null);
@@ -22,7 +23,7 @@ const TablaAtributos = () => {
         obstaculos: CONTROLES_DEL_MAPA,
         base: isMobile ? 68 : 12,
         separacion: 8,
-        activo: tablas.length > 0,
+        activo: minimizado && tablas.length > 0,
     });
 
     const nombreDe = useMemo(() => (layerId) => {
@@ -42,7 +43,7 @@ const TablaAtributos = () => {
             .map(([columna, descriptor]) => ({ columna, etiqueta: etiquetaFiltro(columna, descriptor) }));
     }, [estadoActiva]);
 
-    if (tablas.length === 0) return null;
+    if (!activo || tablas.length === 0) return null;
 
     const quitarChip = (columna) => {
         if (columna === null) fijarExpresionPropia(activaId, null);
@@ -57,20 +58,23 @@ const TablaAtributos = () => {
                     layerId={layerId}
                     indice={indice}
                     activa={layerId === activaId}
-                    minimizada={minimizado || (isMobile && layerId !== activaId)}
+                    minimizada={minimizado || layerId !== activaId}
                     esMovil={isMobile}
+                    nombreDe={nombreDe}
                 />
             ))}
-            <div ref={barraRef}>
-                <BarraEstado
-                    nombreDe={nombreDe}
-                    chips={chips}
-                    vista={estadoActiva?.vista || 'libre'}
-                    onQuitarChip={quitarChip}
-                    onLimpiarChips={() => limpiarFiltros(activaId)}
-                    inferior={inferior}
-                />
-            </div>
+            {minimizado && (
+                <div ref={barraRef}>
+                    <BarraEstado
+                        nombreDe={nombreDe}
+                        chips={chips}
+                        vista={estadoActiva?.vista || 'libre'}
+                        onQuitarChip={quitarChip}
+                        onLimpiarChips={() => limpiarFiltros(activaId)}
+                        inferior={inferior}
+                    />
+                </div>
+            )}
         </>
     );
 };

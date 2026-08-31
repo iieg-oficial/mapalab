@@ -1,26 +1,29 @@
 import { useState } from 'react';
 import MenuColumna from './MenuColumna';
 
-const Encabezado = ({ columnas, campos, orden, filtros, municipiosDe, onAplicar, onLimpiar, onOrdenar }) => {
+const Encabezado = ({ columnas, plantilla, campos, orden, filtros, municipiosDe, onAplicar, onLimpiar, onOrdenar }) => {
     const [abierta, setAbierta] = useState(null);
 
     return (
-        <div className="flex sticky top-0 z-2 bg-[#F5F7FC] border-b border-[#DCE3F0]">
+        <div
+            className="sticky top-0 z-2 grid bg-[#F9FBFF] border-b border-[#EAEFFA]"
+            style={{ gridTemplateColumns: plantilla }}
+        >
             {columnas.map(columna => {
                 const conFiltro = Boolean(filtros[columna.nombre]);
                 const esOrdenada = orden?.columna === columna.nombre;
                 return (
-                    <div key={columna.nombre} className="relative min-w-40 flex-1 border-r border-[#EAEFFA] last:border-r-0">
+                    <div key={columna.nombre} className="relative min-w-0">
                         <button
                             type="button"
                             onClick={() => setAbierta(actual => (actual === columna.nombre ? null : columna.nombre))}
                             aria-expanded={abierta === columna.nombre}
-                            className={`w-full h-9 px-2.5 flex items-center gap-1 text-left text-[12px] font-garet font-bold cursor-pointer hover:text-purple ${conFiltro || esOrdenada ? 'text-purple' : 'text-graphite'}`}
+                            title={columna.nombre}
+                            className={`w-full h-8 px-2 flex items-center gap-1 text-left text-[11px]/[14px] font-garet font-bold cursor-pointer hover:text-purple ${conFiltro || esOrdenada ? 'text-purple' : 'text-[#2E4372]'}`}
                         >
                             <span className="truncate">{columna.etiqueta}</span>
                             {esOrdenada && <span aria-hidden="true">{orden.descendente ? '↓' : '↑'}</span>}
                             {conFiltro && <span className="size-1.5 rounded-full bg-orange shrink-0" aria-hidden="true" />}
-                            <span className="ml-auto text-[9px] opacity-60" aria-hidden="true">▾</span>
                         </button>
 
                         {abierta === columna.nombre && (

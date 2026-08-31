@@ -11,9 +11,10 @@ import Encabezado from './Encabezado';
 import Cuerpo from './Cuerpo';
 import ExpresionCql from './ExpresionCql';
 import FilaTarjeta from './FilaTarjeta';
+import PestanasTablas from './PestanasTablas';
 import VentanaBarra from './VentanaBarra';
 
-const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
+const Ventana = ({ layerId, indice, activa, minimizada, esMovil, nombreDe }) => {
     const { activar, cerrar } = useTablaAtributos();
     const { municipioMode } = useMapsContext();
     const datos = useTablaDatos(layerId, { minimizada });
@@ -64,6 +65,8 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
         </div>
     );
 
+    const plantilla = `repeat(${Math.max(datos.visibles.length, 1)}, minmax(150px, 1fr))`;
+
     const tabla = datos.disponible ? (
         <div className="flex-1 min-h-0 overflow-auto scrollbar-thin">
             {esMovil ? (
@@ -77,9 +80,10 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                     />
                 ))
             ) : (
-                <>
+                <div className="min-w-full w-max">
                     <Encabezado
                         columnas={datos.visibles}
+                        plantilla={plantilla}
                         campos={catalogo?.campos}
                         orden={datos.orden}
                         filtros={datos.filtros.filtros}
@@ -90,11 +94,12 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                     />
                     <Cuerpo
                         columnas={datos.visibles}
+                        plantilla={plantilla}
                         filas={datos.filas}
                         seleccionada={seleccion.seleccionada}
                         onSeleccionar={seleccion.seleccionar}
                     />
-                </>
+                </div>
             )}
             {!datos.cargando && datos.filas.length === 0 && !datos.error && (
                 <p className="p-4 text-[12px] font-garet text-[#8A94A6]">
@@ -136,6 +141,11 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
     const cuerpoCompleto = (
         <>
             {cabecera}
+            {!esMovil && (
+                <div className="px-2.5 py-1.5 border-b border-[#EAEFFA]">
+                    <PestanasTablas nombreDe={nombreDe} tamano="compacta" />
+                </div>
+            )}
             {datos.error && (
                 <p className="px-3 py-2 text-[11px] font-garet text-[#C0392B] border-b border-[#EAEFFA]">
                     {datos.error}
@@ -176,6 +186,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                         <div className="flex-1 overflow-auto scrollbar-thin">
                             <Encabezado
                                 columnas={datos.visibles}
+                                plantilla={plantilla}
                                 campos={catalogo?.campos}
                                 orden={datos.orden}
                                 filtros={datos.filtros.filtros}

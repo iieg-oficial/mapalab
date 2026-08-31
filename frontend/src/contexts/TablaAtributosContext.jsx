@@ -1,8 +1,9 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useMapsContext } from '@hooks/useMaps';
+import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
+import { resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
 
 const TablaAtributosContext = createContext(null);
-
-const MAX_TABLAS = 4;
 
 const ESTADO_CAPA = {
     filtros: {},
@@ -14,10 +15,30 @@ const ESTADO_CAPA = {
 };
 
 export const TablaAtributosProvider = ({ children }) => {
-    const [tablas, setTablas] = useState([]);
+    const { allLayers, activeLayerIds } = useMapsContext();
+    const [activo, setActivo] = useState(false);
+    const [cerradas, setCerradas] = useState([]);
     const [activaId, setActivaId] = useState(null);
     const [minimizado, setMinimizado] = useState(false);
     const [porCapa, setPorCapa] = useState({});
+
+    const tablas = useMemo(() => {
+        if (!activo) return [];
+        return (activeLayerIds || []).filter(id => {
+            if (cerradas.includes(id)) return false;
+            return Boolean(resolverObjetivo(findLayerDef(id, allLayers || [])).wmsConfig);
+        });
+    }, [activeLayerIds, allLayers, activo, cerradas]);
+
+    useEffect(() => {
+        if (!activo) return;
+        if (tablas.length === 0) {
+            setActivo(false);
+            setActivaId(null);
+            return;
+        }
+        if (!activaId || !tablas.includes(activaId)) setActivaId(tablas[0]);
+    }, [activaId, activo, tablas]);
 
     const parchear = useCallback((layerId, parche) => {
         setPorCapa(previo => {
@@ -28,22 +49,15 @@ export const TablaAtributosProvider = ({ children }) => {
     }, []);
 
     const abrir = useCallback((layerId) => {
-        if (!layerId) return;
-        setTablas(previas => {
-            if (previas.includes(layerId)) return previas;
-            return [...previas, layerId].slice(-MAX_TABLAS);
-        });
-        setPorCapa(previo => (previo[layerId] ? previo : { ...previo, [layerId]: ESTADO_CAPA }));
-        setActivaId(layerId);
+        setActivo(true);
         setMinimizado(false);
+        if (!layerId) return;
+        setCerradas(previas => previas.filter(id => id !== layerId));
+        setActivaId(layerId);
     }, []);
 
     const cerrar = useCallback((layerId) => {
-        setTablas(previas => {
-            const siguientes = previas.filter(id => id !== layerId);
-            setActivaId(actual => (actual === layerId ? siguientes[siguientes.length - 1] || null : actual));
-            return siguientes;
-        });
+        setCerradas(previas => (previas.includes(layerId) ? previas : [...previas, layerId]));
         setPorCapa(previo => {
             const siguiente = { ...previo };
             delete siguiente[layerId];
@@ -52,7 +66,8 @@ export const TablaAtributosProvider = ({ children }) => {
     }, []);
 
     const cerrarTodas = useCallback(() => {
-        setTablas([]);
+        setActivo(false);
+        setCerradas([]);
         setActivaId(null);
         setPorCapa({});
         setMinimizado(false);
@@ -107,10 +122,10 @@ export const TablaAtributosProvider = ({ children }) => {
     }, [parchear]);
 
     const value = useMemo(() => ({
+        activo,
         tablas,
         activaId,
         minimizado,
-        abierta: tablas.length > 0,
         estaAbierta: (layerId) => tablas.includes(layerId),
         abrir,
         cerrar,
@@ -126,7 +141,7 @@ export const TablaAtributosProvider = ({ children }) => {
         fijarVista,
         fijarConteo,
     }), [
-        tablas, activaId, minimizado, abrir, cerrar, cerrarTodas, activar, alternarMinimizado,
+        activo, tablas, activaId, minimizado, abrir, cerrar, cerrarTodas, activar, alternarMinimizado,
         estadoDe, ponerFiltro, quitarFiltro, limpiarFiltros, fijarExpresionPropia, fijarOrden,
         fijarVista, fijarConteo,
     ]);

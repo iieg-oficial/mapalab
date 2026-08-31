@@ -48,7 +48,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
         compareMode, exitCompareMode, enterCompareMode,
         selectedLayer, selectedLayerForSymbology, activeLayerIds, allLayers,
     } = useMapsContext();
-    const { abrir: abrirTabla, estaAbierta, cerrar: cerrarTabla } = useTablaAtributos();
+    const { activo: tablaActiva, abrir: abrirTabla, cerrarTodas: cerrarTablas } = useTablaAtributos();
     const { closeSider } = useSider();
     const [hoveredId, setHoveredId] = useState(null);
 
@@ -63,10 +63,11 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     };
 
     const alternarTabla = () => {
-        const layerId = capaParaTabla();
-        if (!layerId) return;
-        if (estaAbierta(layerId)) cerrarTabla(layerId);
-        else abrirTabla(layerId);
+        if (tablaActiva) {
+            cerrarTablas();
+            return;
+        }
+        abrirTabla(capaParaTabla());
     };
 
     const startSwipe = () => {
@@ -94,10 +95,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     const isActive = (id) => {
         if (id === 'mediciones') return !!areMeasurementToolsVisible;
         if (id === 'anotaciones') return !!areAnnotationToolsVisible;
-        if (id === 'tabla') {
-            const layerId = capaParaTabla();
-            return !!layerId && estaAbierta(layerId);
-        }
+        if (id === 'tabla') return tablaActiva;
         if (id === 'compare-swipe') return !!compareMode?.active;
         return false;
     };

@@ -1,27 +1,32 @@
 import { formatearValor } from '@pages/maps/helpers/tablaFormato';
 
-const Cuerpo = ({ columnas, filas, seleccionada, onSeleccionar }) => (
-    <div className="min-w-max">
+const NUMERICOS = new Set(['entero', 'decimal', 'moneda']);
+
+const Cuerpo = ({ columnas, plantilla, filas, seleccionada, onSeleccionar }) => (
+    <div>
         {filas.map((feature, indice) => {
             const propiedades = feature?.properties || {};
             const activa = seleccionada === feature?.id;
             return (
-                <button
+                <div
                     key={feature?.id || indice}
-                    type="button"
+                    role="row"
+                    tabIndex={0}
                     onClick={() => onSeleccionar(feature)}
-                    className={`w-full flex text-left border-b border-[#EAEFFA] cursor-pointer ${activa ? 'bg-purple-soft' : 'hover:bg-[#F7F9FD]'}`}
+                    onKeyDown={evento => { if (evento.key === 'Enter') onSeleccionar(feature); }}
+                    style={{ gridTemplateColumns: plantilla }}
+                    className={`grid border-b border-[#EAEFFA] cursor-pointer ${activa ? 'bg-[#FFF3E6]' : 'hover:bg-[#F9FBFF]'}`}
                 >
                     {columnas.map(columna => (
                         <span
                             key={columna.nombre}
-                            className={`min-w-40 flex-1 px-2.5 py-1.5 text-[12px] font-garet truncate border-r border-[#F2F5FB] last:border-r-0 ${activa ? 'text-purple' : 'text-graphite'}`}
+                            className={`min-w-0 px-2 py-1 text-[13px]/[18px] font-garet truncate ${NUMERICOS.has(columna.formato) ? 'text-right tabular-nums' : ''} ${activa ? 'font-bold text-purple' : 'text-[#454545]'}`}
                             title={String(propiedades[columna.nombre] ?? '')}
                         >
                             {formatearValor(propiedades[columna.nombre], columna.formato)}
                         </span>
                     ))}
-                </button>
+                </div>
             );
         })}
     </div>

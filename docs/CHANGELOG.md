@@ -5,6 +5,34 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.148.0] - 2026-08-28
+
+### Cambiado: la tabla de atributos navega por pestanas y se ve como el resto del visor
+
+- **Las pestanas son las capas activas.** Ya no hay una lista propia de tablas abiertas: se navega
+  entre las capas del panel de capas activas que tienen datos. Quitar una pestana la saca de la
+  herramienta; volver a activar la capa la trae de vuelta.
+- **La barra inferior solo aparece minimizada.** Con la ventana abierta, las pestanas viven debajo
+  de su encabezado. Antes la barra estaba siempre y duplicaba la informacion.
+- **Las pestanas son pills.** La pastilla de numeralia se generalizo a `components/PillMinimizada`
+  y ahora la usan las dos: misma forma redondeada, misma sombra, mismo boton de cerrar rosa. La de
+  numeralia quedo como una envoltura con sus textos, asi que se ve y se comporta igual que antes. A
+  la compartida se le agregaron un tamano compacto, el conteo como sufijo y la variante con el
+  cierre **dentro** de la pastilla, que es la que necesitan las pestanas para que la X no tape a la
+  vecina. Aparece al pasar el mouse por esa pestana, no por toda la barra.
+- Se fueron el separador vertical y el boton de flecha de la barra: se abre tocando su pestana, como
+  cualquier pill del visor.
+
+### Corregido: el encabezado de la tabla se desalineaba de sus columnas
+
+El encabezado y las filas se dibujaban en dos contenedores distintos —uno `flex`, otro `min-w-max`—
+asi que con scroll horizontal las columnas dejaban de coincidir con sus celdas. Ahora comparten un
+`grid-template-columns` y viven en el mismo contenedor con scroll, con el encabezado `sticky`.
+
+Los estilos se homologaron con las tablas de estadisticas dinamicas: encabezado en `#2E4372` a 11px,
+celdas a 13px en `#454545`, numeros alineados a la derecha con `tabular-nums` y la fila seleccionada
+en el mismo ambar del ranking.
+
 ## [1.147.1] - 2026-08-28
 
 ### Corregido: la tabla de atributos, contra capas reales
