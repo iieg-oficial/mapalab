@@ -23,6 +23,9 @@ def _resolve_acervo_icon(raw: str | None) -> str | None:
     return f'/acervo/{raw.lstrip("/")}'
 
 
+_TREE_SCHEMA = '2'
+_ETAG_PREFIX = f'W/"{_TREE_SCHEMA}-'
+
 _MEM_LOCK = threading.Lock()
 _MEM_TTL_SECONDS = 30
 _MEM_CACHE: dict[str, Any] = {
@@ -99,17 +102,16 @@ def _layer_to_search_meta(layer: Layer) -> Optional[dict]:
 
 
 def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace], aliases_map: dict[str, list[str]]) -> dict:
-    label = layer.label
-    if layer.disabled:
-        label = f'*{label}'
-
     result: dict[str, Any] = {
         'id': layer.id,
-        'label': label,
+        'label': layer.label,
         'nodeType': layer.node_type,
         'sortOrder': layer.sort_order,
         'children': [],
     }
+
+    if layer.disabled:
+        result['disabled'] = True
 
     if layer.slug:
         result['slug'] = layer.slug
@@ -234,7 +236,11 @@ def _compute_etag(max_updated_at: Optional[datetime], count: int) -> str:
     ts = max_updated_at.isoformat() if max_updated_at else 'empty'
     raw = f'{ts}|{count}'
     digest = hashlib.md5(raw.encode()).hexdigest()[:16]
-    return f'W/"{digest}"'
+    return f'{_ETAG_PREFIX}{digest}"'
+
+
+def _is_current_schema(etag: Optional[str]) -> bool:
+    return bool(etag) and etag.startswith(_ETAG_PREFIX)
 
 
 def refresh_cache() -> dict[str, Any]:
@@ -299,7 +305,11 @@ def refresh_cache() -> dict[str, Any]:
 def get_cached_state() -> dict[str, Any]:
     now = time.monotonic()
     with _MEM_LOCK:
-        if _MEM_CACHE['tree'] is not None and (now - _MEM_CACHE['checked_at']) < _MEM_TTL_SECONDS:
+        if (
+            _MEM_CACHE['tree'] is not None
+            and _is_current_schema(_MEM_CACHE['etag'])
+            and (now - _MEM_CACHE['checked_at']) < _MEM_TTL_SECONDS
+        ):
             return _snapshot()
 
     try:
@@ -312,7 +322,9 @@ def get_cached_state() -> dict[str, Any]:
                     _MEM_CACHE['checked_at'] = now
                     return _snapshot()
 
-            row = session.query(LayerTreeCache).filter(LayerTreeCache.id == 1).first()
+            row = None if not _is_current_schema(db_etag) else (
+                session.query(LayerTreeCache).filter(LayerTreeCache.id == 1).first()
+            )
             if row is None:
                 result = refresh_cache()
                 return {

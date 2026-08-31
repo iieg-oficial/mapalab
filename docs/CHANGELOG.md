@@ -5,6 +5,29 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.146.0] - 2026-08-28
+
+### Cambiado: el estado «deshabilitada» viaja como dato, no como asterisco en el nombre
+
+`/layers/tree` dejo de anteponer `*` al `label` de una capa deshabilitada y ahora publica
+`disabled: true` en el nodo. El asterisco era la unica senal de ese estado: nadie fuera del arbol
+podia distinguir una capa apagada sin inspeccionar la primera letra de su nombre, y el nombre
+llegaba sucio a todo lo que lo muestra —leyenda, capas activas, exportacion del mapa y el titulo
+de la tarjeta—.
+
+`LayerItem` deduce el estado del campo nuevo. El resto del visor no cambia de comportamiento:
+solo deja de arrastrar el asterisco en el texto.
+
+**El ETag ahora lleva el numero de esquema del arbol** (`W/"2-..."`). Sin eso el deploy no se
+notaba: la cache materializada en `mapalab.layer_tree_cache` solo se regenera cuando cambia una
+capa o a las 04:00, asi que produccion habria seguido sirviendo el arbol viejo —con asteriscos y
+sin `disabled`— hasta la madrugada siguiente. Al arrancar con un esquema distinto al cacheado, la
+cache se reconstruye sola.
+
+**Consumidores.** El complemento de QGIS lee este arbol y detectaba el estado por el asterisco; su
+0.14.1 acepta las dos formas, porque vive instalado en maquinas que no se actualizan al mismo
+tiempo. El admin de mariachi hace lo mismo durante la ventana de deploy.
+
 ## [1.145.0] - 2026-08-28
 
 ### Agregado: una tarjeta puede armar un dato con varias columnas

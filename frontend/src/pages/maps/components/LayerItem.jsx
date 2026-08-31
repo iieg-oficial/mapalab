@@ -43,7 +43,7 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
         };
     }, [layer, activeLayerIds, hasChildren, getAllDescendantIds]);
 
-    const isDisabled = layer.label && layer.label.startsWith('*');
+    const isDisabled = layer.disabled === true;
     const isExpanded = hasChildren && (isManuallyExpanded || allChildrenActive || hasPartialSelection || hasAnyChildActive);
 
     const handleSwitchChange = useCallback((newValue) => {
