@@ -34,13 +34,19 @@ export const construirOrden = (orden) => {
     return `${orden.columna} ${orden.descendente ? 'D' : 'A'}`;
 };
 
-export const fetchPagina = async (wmsConfig, { cql, pagina = 0, tamano = TAMANO_PAGINA, orden = null, signal } = {}) => {
-    const extra = {
-        count: String(tamano),
-        startIndex: String(pagina * tamano),
-    };
+export const fetchPagina = async (wmsConfig, {
+    cql, pagina = 0, tamano = TAMANO_PAGINA, orden = null, ordenPorDefecto = null, signal,
+} = {}) => {
+    const extra = { count: String(tamano) };
     const sortBy = construirOrden(orden);
-    if (sortBy) extra.sortBy = sortBy;
+
+    if (pagina > 0) {
+        extra.startIndex = String(pagina * tamano);
+        const estable = sortBy || (ordenPorDefecto ? `${ordenPorDefecto} A` : null);
+        if (estable) extra.sortBy = estable;
+    } else if (sortBy) {
+        extra.sortBy = sortBy;
+    }
 
     const url = buildVectorWFSUrl(wmsConfig, cql || null, extra);
     const datos = await leerRespuesta(await fetch(url, { signal }));

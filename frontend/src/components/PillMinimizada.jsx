@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
+import PillCloseButton from '@components/PillCloseButton';
 
 const TAMANOS = {
     normal: {
@@ -8,16 +8,12 @@ const TAMANOS = {
         gap: 'gap-2',
         icono: 'size-5',
         texto: 'text-[13px]/[16px] max-w-70',
-        cerrar: 'size-10',
-        iconoCerrar: 'size-7',
     },
     compacta: {
         pill: 'h-7 pl-2.5 pr-3',
         gap: 'gap-1.5',
         icono: 'size-3.5',
         texto: 'text-[12px]/[15px] max-w-44',
-        cerrar: 'size-7',
-        iconoCerrar: 'size-5',
     },
 };
 
@@ -37,7 +33,6 @@ const PillMinimizada = ({
     anillo = '',
     pillRef,
 }) => {
-    const [cierreEncima, setCierreEncima] = useState(false);
     const medida = TAMANOS[tamano] || TAMANOS.normal;
 
     const chrome = `rounded-full bg-white shadow-[0_5px_20px_#1A26641A] border transition-all ${activa ? 'border-purple' : 'border-[#EAEFFA] hover:border-purple'} ${anillo}`;
@@ -65,17 +60,13 @@ const PillMinimizada = ({
                 </button>
 
                 {onCerrar && (
-                    <button
-                        type="button"
+                    <PillCloseButton
                         onClick={onCerrar}
-                        onMouseEnter={() => setCierreEncima(true)}
-                        onMouseLeave={() => setCierreEncima(false)}
-                        title={tooltipCerrar}
-                        aria-label={ariaCerrar}
-                        className={`ml-1.5 shrink-0 size-5 flex items-center justify-center rounded-full border cursor-pointer transition-all md:invisible md:opacity-0 md:group-hover:visible md:group-hover:opacity-100 md:group-focus-within:visible md:group-focus-within:opacity-100 ${cierreEncima ? 'bg-[#FF577D] border-[#FF577D]' : 'bg-[#FFE6EC] border-[#FFE6EC]'}`}
-                    >
-                        <Icon name="cerrar" state={cierreEncima ? 'hover' : 'normal'} className="size-4" />
-                    </button>
+                        tooltip={tooltipCerrar}
+                        ariaLabel={ariaCerrar}
+                        size="sm"
+                        reveal="inline"
+                    />
                 )}
             </div>
         );
@@ -106,27 +97,13 @@ const PillMinimizada = ({
             </Tooltip>
 
             {onCerrar && (
-                <Tooltip
-                    content={tooltipCerrar}
-                    placement="right"
-                    delay={300}
-                    triggerClassName="absolute left-full pl-2 top-1/2 -translate-y-1/2 transition-[opacity,visibility] duration-150 md:invisible md:opacity-0 md:delay-500 md:group-hover:visible md:group-hover:opacity-100 md:group-hover:delay-0 md:group-focus-within:visible md:group-focus-within:opacity-100 md:group-focus-within:delay-0"
-                >
-                    <button
-                        type="button"
-                        onClick={onCerrar}
-                        onMouseEnter={() => setCierreEncima(true)}
-                        onMouseLeave={() => setCierreEncima(false)}
-                        className={[
-                            medida.cerrar,
-                            'flex items-center justify-center rounded-full border transition-all cursor-pointer shrink-0',
-                            cierreEncima ? 'bg-[#FF577D] border-[#FF577D]' : 'bg-[#FFE6EC] border-[#FFE6EC] hover:border-[#FF577D]',
-                        ].join(' ')}
-                        aria-label={ariaCerrar}
-                    >
-                        <Icon name="cerrar" state={cierreEncima ? 'hover' : 'normal'} className={medida.iconoCerrar} />
-                    </button>
-                </Tooltip>
+                <PillCloseButton
+                    onClick={onCerrar}
+                    tooltip={tooltipCerrar}
+                    ariaLabel={ariaCerrar}
+                    size={tamano === 'compacta' ? 'sm' : 'md'}
+                    className="absolute left-full pl-2 top-1/2 -translate-y-1/2"
+                />
             )}
         </div>
     );

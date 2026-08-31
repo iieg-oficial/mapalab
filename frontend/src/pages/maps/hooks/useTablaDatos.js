@@ -122,6 +122,7 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
                     cql: consulta.cql,
                     pagina: consulta.pagina,
                     orden: consulta.orden,
+                    ordenPorDefecto: columnas.find(columna => columna.visible)?.nombre || null,
                     signal: controlador.signal,
                 });
                 if (!controlador.signal.aborted) setFilas(features);
@@ -136,7 +137,7 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
 
         pedir();
         return () => controlador.abort();
-    }, [columnasListas, consulta, disponible, fijarConteo, layerId, minimizada, wmsConfig]);
+    }, [columnas, columnasListas, consulta, disponible, fijarConteo, layerId, minimizada, wmsConfig]);
 
     const visibles = useMemo(() => columnas.filter(columna => columna.visible), [columnas]);
     const totalPaginas = Number.isFinite(total) ? Math.max(Math.ceil(total / TAMANO_PAGINA), 1) : 1;

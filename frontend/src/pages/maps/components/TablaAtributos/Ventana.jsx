@@ -53,24 +53,21 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
         />
     );
 
-    const filtrosActivos = (
-        <div className="px-3 py-1.5 flex items-center gap-2 border-b border-[#EAEFFA] min-h-9 overflow-x-auto scrollbar-thin">
+    const filtrosActivos = datos.filtros.chips.length > 0 && (
+        <div className="px-3 py-1.5 flex items-center gap-2 border-b border-[#EAEFFA] overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400">
             <ChipsFiltro
                 chips={datos.filtros.chips}
                 onQuitar={datos.filtros.quitar}
                 onLimpiar={datos.filtros.limpiar}
                 compacto
             />
-            {datos.filtros.chips.length === 0 && (
-                <span className="text-[11px] font-garet text-[#8A94A6]">Sin filtros: se muestra la capa completa</span>
-            )}
         </div>
     );
 
     const plantilla = `repeat(${Math.max(datos.visibles.length, 1)}, minmax(150px, 1fr))`;
 
     const tabla = datos.disponible ? (
-        <div className="flex-1 min-h-0 overflow-auto scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-auto scrollbar-thin scrollbar-thumb-gray-400">
             {esMovil ? (
                 datos.filas.map((feature, posicionFila) => (
                     <FilaTarjeta
@@ -115,9 +112,14 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
 
     const pie = datos.disponible && (
         <div className="px-3 h-8 flex items-center gap-3 border-t border-[#EAEFFA] text-[11px] font-garet text-[#6B7585]">
-            <span className="tabular-nums">
+            <span className="tabular-nums shrink-0">
                 {datos.cargando ? 'Consultando…' : `${(datos.total ?? 0).toLocaleString('es-MX')} registros`}
             </span>
+            {datos.error && (
+                <span className="min-w-0 truncate text-[#C0392B]" title={datos.error}>
+                    {datos.error}
+                </span>
+            )}
             <span className="ml-auto flex items-center gap-2">
                 <button
                     type="button"
@@ -144,14 +146,9 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
         <>
             {cabecera}
             {!esMovil && (
-                <div className="px-2.5 py-1.5 border-b border-[#EAEFFA]">
+                <div className="px-2.5 pb-1.5">
                     <PestanasTablas tamano="compacta" />
                 </div>
-            )}
-            {datos.error && (
-                <p className="px-3 py-2 text-[11px] font-garet text-[#C0392B] border-b border-[#EAEFFA]">
-                    {datos.error}
-                </p>
             )}
             {verCql && datos.disponible && (
                 <ExpresionCql
@@ -185,7 +182,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                         ))}
                     </div>
                     {pestana === 'datos' ? cuerpoCompleto : (
-                        <div className="flex-1 overflow-auto scrollbar-thin">
+                        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-gray-400">
                             <Encabezado
                                 columnas={datos.visibles}
                                 plantilla={plantilla}

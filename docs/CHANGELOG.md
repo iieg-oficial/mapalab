@@ -5,6 +5,28 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.152.1] - 2026-08-28
+
+### Corregido: la tabla de un grupo devolvia 400 y se quedaba sin datos
+
+`educacion:centros_educativos` son ocho capas del catalogo que apuntan al **mismo** feature type,
+cada una con su `cqlFilter` por nivel educativo. Al abrir el grupo, el `GetFeature` salia con
+`startIndex=0` y GeoServer respondia 400: sin llave primaria no puede resolver el orden natural que
+exige el paginado, y pide un `sortBy`.
+
+Ahora la primera pagina no manda `startIndex` —no lo necesita— y de la segunda en adelante viaja
+con un orden estable: el que haya elegido el usuario o, si no eligio ninguno, la primera columna
+visible.
+
+### Cambiado: detalles del panel de la tabla
+
+- El encabezado va en blanco, con el titulo en la tipografia de los demas paneles del visor
+  (`font-garet` bold a 18px en morado) y sin la linea que lo separaba de las pestanas.
+- Los errores del servicio dejaron de ocupar su propio renglon: ahora salen junto al conteo de
+  registros, al pie.
+- La X de cada badge de la barra minimizada salio del badge, como la del contenedor y como la del
+  chip de municipio.
+
 ## [1.152.0] - 2026-08-28
 
 ### Cambiado: la barra de la tabla de datos se comporta como el resto de las pills

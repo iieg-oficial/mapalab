@@ -51,6 +51,39 @@ describe('fetchPagina', () => {
         expect(resultado.features).toHaveLength(1);
     });
 
+    it('no manda startIndex en la primera pagina', async () => {
+        global.fetch.mockReturnValue(responder(JSON.stringify({ features: [] })));
+        await fetchPagina(wmsConfig, { pagina: 0, tamano: 100 });
+
+        const url = global.fetch.mock.calls[0][0];
+        expect(url).toContain('count=100');
+        expect(url).not.toContain('startIndex');
+        expect(url).not.toContain('sortBy');
+    });
+
+    it('al paginar agrega un orden estable, que es lo que GeoServer exige sin llave primaria', async () => {
+        global.fetch.mockReturnValue(responder(JSON.stringify({ features: [] })));
+        await fetchPagina(wmsConfig, { pagina: 1, tamano: 100, ordenPorDefecto: 'clave' });
+
+        const url = global.fetch.mock.calls[0][0];
+        expect(url).toContain('startIndex=100');
+        expect(url).toContain('sortBy=clave+A');
+    });
+
+    it('el orden elegido gana sobre el orden por defecto', async () => {
+        global.fetch.mockReturnValue(responder(JSON.stringify({ features: [] })));
+        await fetchPagina(wmsConfig, {
+            pagina: 2,
+            tamano: 50,
+            orden: { columna: 'alumnos', descendente: true },
+            ordenPorDefecto: 'clave',
+        });
+
+        const url = global.fetch.mock.calls[0][0];
+        expect(url).toContain('sortBy=alumnos+D');
+        expect(url).toContain('startIndex=100');
+    });
+
     it('traduce el 400 de una capa que el servicio no puede consultar', async () => {
         global.fetch.mockReturnValue(Promise.resolve({
             ok: false,
