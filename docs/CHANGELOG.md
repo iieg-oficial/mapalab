@@ -5,6 +5,48 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.151.0] - 2026-08-28
+
+### Agregado: el comparador de municipios se puede leer como grafica
+
+Un segmento de dos iconos alterna entre la tabla y una grafica de lineas, junto al boton de agregar
+municipio y solo dentro del comparador. La grafica traza **un perfil por municipio** —el porcentaje
+que representa cada indicador sobre el total de ese municipio— y se elige cual ver con un selector
+que existe solo en modo grafica, para no estorbar en la tabla. Seis lineas encimadas no se leian;
+una sola si, y deja lugar para etiquetar su indicador mas alto y el mas bajo.
+
+La linea **se corta donde falta el dato** en vez de interpolar entre los vecinos, que seria dibujar
+un valor que nadie midio. La fila de totales queda fuera del trazo: tiene otra escala y aplastaria
+todo lo demas, o exigiria un segundo eje.
+
+### Corregido: la paleta que distingue municipios no era distinguible
+
+Los seis colores del comparador se habian elegido a ojo. Medidos, fallaban tres comprobaciones: dos
+quedaban fuera de la banda de luminosidad, tres por debajo del piso de croma —leen como gris— y
+`#2E4372` contra `#24573F` daban una diferencia de 12.3, por debajo del piso de 15, o sea dificiles
+de separar **incluso con vision de color normal**. La paleta nueva pasa las seis comprobaciones
+sobre la superficie del panel, incluido contraste 3:1 y separacion para daltonismo. Como esos
+colores tambien identifican cada columna, el arreglo alcanza a la tabla.
+
+### Corregido: los tres modos desaparecian en casi todas las capas
+
+Comparar, ranking y crear se dibujaban solo si la capa tenia estadisticas dinamicas. Como hoy solo
+**una capa de 209** las tiene, los botones no aparecian en ninguna otra y la funcion se leia como
+rota. Ahora los tres se dibujan siempre y salen deshabilitados donde no aplican, con la razon en su
+tooltip. Ademas, si el modo guardado no lo soporta la capa en foco, el panel vuelve solo al resumen:
+antes se podia quedar atrapado en comparar sin botones para salir.
+
+### Corregido: la tarjeta impar nunca ocupo el hueco de su acompañante
+
+`StatCard` aplica el `className` que recibe a su elemento interno, pero el item de la rejilla es el
+contenedor externo, asi que el `row-span-2` se pintaba donde no tenia efecto. Con `contenedorClassName`
+la clase llega al item correcto y la ultima tarjeta rellena el hueco cuando el total es impar.
+
+El panel vuelve a centrarse dentro del area libre —seguia contemplando el sider, pero `justify-start`
+lo pegaba a la izquierda en vez de balancearlo—, las acciones regresan a la fila de los titulos de
+columna, y el segmento adopta el componente `Segmented` que ya usaba el selector de puntos y
+hexagonos, en vez de una copia parecida.
+
 ## [1.150.0] - 2026-08-31
 
 ### Cambiado: la tarjetita se resuelve en un solo lugar
