@@ -9,12 +9,18 @@ export const MAX_PAGINAS = 200;
 
 const EXCEPCION = /<(?:ows:)?ExceptionText[^>]*>([\s\S]*?)<\/(?:ows:)?ExceptionText>/i;
 
-const leerRespuesta = async (response) => {
-    if (!response.ok) throw new Error(`El servicio respondió ${response.status}`);
+const mensajeDeEstado = (status) => {
+    if (status === 400) return 'El servicio no pudo resolver la consulta de esta capa';
+    if (status === 404) return 'El servicio no encontró esta capa';
+    if (status >= 500) return 'El servicio de datos no está respondiendo';
+    return `El servicio respondió ${status}`;
+};
 
+const leerRespuesta = async (response) => {
     const cuerpo = await response.text();
     const fallo = EXCEPCION.exec(cuerpo);
     if (fallo) throw new Error(fallo[1].trim());
+    if (!response.ok) throw new Error(mensajeDeEstado(response.status));
 
     try {
         return JSON.parse(cuerpo);

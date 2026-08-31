@@ -5,6 +5,30 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.147.1] - 2026-08-28
+
+### Corregido: la tabla de atributos, contra capas reales
+
+Cinco cosas que aparecieron al usarla:
+
+- **Los grupos de capas ya abren tabla.** Un grupo suele ser la misma tabla publicada con distintos
+  filtros —las once de delitos son `delitos_fiscalia`—, asi que ahora se resuelve a la tabla que
+  comparten sus hojas y se consulta **sin el filtro de ninguna**, que es lo que significa abrir el
+  grupo. Si las hojas apuntan a tablas distintas se usa la primera. La barra de la ventana lo dice
+  con una etiqueta `grupo · n`.
+- **Minimizar y cerrar no respondian.** El encabezado tomaba `setPointerCapture` en el `pointerdown`
+  para poder arrastrar, y con el puntero capturado el `click` nunca llegaba al boton. El arrastre
+  ahora ignora los `pointerdown` que nacen sobre un control.
+- **Una capa sin columnas de datos ya no truena con 400.** Si el `DescribeFeatureType` no devuelve
+  ninguna columna que no sea la geometria, la tabla lo dice en vez de mandar un `GetFeature` que el
+  servicio rechaza. Los codigos de estado tambien se traducen a mensajes legibles, y el mensaje de
+  GeoServer gana sobre el codigo cuando viene en el cuerpo.
+- **La ventana abre centrada** en la pantalla, con su desfase por cada tabla abierta, en vez de
+  aparecer pegada a la esquina superior izquierda.
+- **`GET /metadata/columnas` responde 200 aunque `atributos.columnas` no exista.** Mientras la
+  migracion 0046 de dataengine no corra, la tabla se sirve con los nombres crudos: es la misma regla
+  que hace que una capa sin configurar funcione igual.
+
 ## [1.147.0] - 2026-08-28
 
 ### Agregado: tabla de atributos del visor

@@ -7,8 +7,7 @@ import { useTablaVista } from '@hooksMaps/useTablaVista';
 import { useTablaFiltros } from '@hooksMaps/useTablaFiltros';
 import { INEGI_LAYER_IDS } from '@hooksMaps/useFeatureInfo';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
-import { canUseVectorService } from '@pages/maps/helpers/serviceMode';
-import { RASTER_WORKSPACES } from '@pages/maps/helpers/layerCqlSegment';
+import { resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
 import { combinar, construirBbox, filtroHeredado } from '@pages/maps/helpers/tablaCqlBuilder';
 import { fetchNonGeometryColumns } from '@services/downloadUrls';
 import { countVectorFeatures } from '@services/vectorLayerService';
@@ -32,23 +31,20 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState(null);
     const [campoGeometria, setCampoGeometria] = useState(null);
+    const [columnasListas, setColumnasListas] = useState(false);
     const peticionRef = useRef(null);
 
     const layerDef = useMemo(() => findLayerDef(layerId, allLayers || []), [allLayers, layerId]);
-    const wmsConfig = layerDef?.wmsConfig || null;
-    const disponible = Boolean(layerDef && canUseVectorService(layerDef) && wmsConfig?.baseUrl);
+    const objetivo = useMemo(() => resolverObjetivo(layerDef), [layerDef]);
+    const wmsConfig = objetivo.wmsConfig;
+    const sinColumnas = columnas.length === 0 && columnasListas;
+    const disponible = Boolean(wmsConfig) && !sinColumnas;
 
     const mensaje = useMemo(() => {
-        if (disponible) return null;
-        if (!layerDef) return 'No se encontró la capa.';
-        if (Array.isArray(layerDef.children) && layerDef.children.length > 0) {
-            return 'Este es un grupo de capas: abre la tabla desde una de sus capas.';
-        }
-        if (RASTER_WORKSPACES.has(wmsConfig?.workspace)) {
-            return 'Esta capa es una imagen: no tiene tabla de datos.';
-        }
-        return 'Esta capa no publica sus datos.';
-    }, [disponible, layerDef, wmsConfig?.workspace]);
+        if (objetivo.motivo) return objetivo.motivo;
+        if (sinColumnas) return 'Esta capa no publica columnas de datos: solo tiene geometría.';
+        return null;
+    }, [objetivo.motivo, sinColumnas]);
 
     const heredado = useMemo(
         () => filtroHeredado(getLayerFilters?.(layerId), wmsConfig?.timeEnabled),
@@ -73,18 +69,21 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
     useEffect(() => setPagina(0), [cqlCompleto, orden]);
 
     useEffect(() => {
-        if (!disponible) {
+        if (!wmsConfig) {
             setColumnas([]);
+            setColumnasListas(false);
             return undefined;
         }
 
         const controlador = new AbortController();
+        setColumnasListas(false);
         fetchNonGeometryColumns(wmsConfig, controlador.signal)
             .then(nombres => setColumnas(ordenarColumnas(nombres || [], configuracion)))
-            .catch(() => setColumnas([]));
+            .catch(() => setColumnas([]))
+            .finally(() => { if (!controlador.signal.aborted) setColumnasListas(true); });
 
         return () => controlador.abort();
-    }, [configuracion, disponible, wmsConfig]);
+    }, [configuracion, wmsConfig]);
 
     useEffect(() => {
         if (!disponible || vista.vista === 'libre') return;
@@ -142,6 +141,8 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
 
     return {
         layerDef,
+        esGrupo: objetivo.esGrupo,
+        hojasDelGrupo: objetivo.hojas || 0,
         disponible,
         mensaje,
         columnas,

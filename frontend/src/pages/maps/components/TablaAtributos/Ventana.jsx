@@ -4,7 +4,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
 import { useTablaDatos } from '@hooksMaps/useTablaDatos';
 import { useTablaSeleccion } from '@hooksMaps/useTablaSeleccion';
-import { useArrastreVentana } from '@hooksMaps/useArrastreVentana';
+import { posicionCentrada, useArrastreVentana } from '@hooksMaps/useArrastreVentana';
 import { useCatalogoCampos } from '@hooksMaps/useStatsBuilder';
 import ChipsFiltro from './ChipsFiltro';
 import Encabezado from './Encabezado';
@@ -19,7 +19,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
     const datos = useTablaDatos(layerId, { minimizada });
     const catalogo = useCatalogoCampos(layerId, !minimizada);
     const seleccion = useTablaSeleccion(layerId, datos.layerDef);
-    const { posicion, manejadores } = useArrastreVentana({ x: 72 + indice * 26, y: 96 + indice * 26 });
+    const { posicion, manejadores } = useArrastreVentana(() => posicionCentrada(indice));
     const [verCql, setVerCql] = useState(false);
     const [pestana, setPestana] = useState('datos');
 
@@ -40,6 +40,8 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
     const cabecera = (
         <VentanaBarra
             nombre={nombre}
+            esGrupo={datos.esGrupo}
+            hojasDelGrupo={datos.hojasDelGrupo}
             datos={datos}
             verCql={verCql}
             onAlternarCql={() => setVerCql(valor => !valor)}

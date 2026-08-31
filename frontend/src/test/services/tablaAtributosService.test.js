@@ -51,6 +51,25 @@ describe('fetchPagina', () => {
         expect(resultado.features).toHaveLength(1);
     });
 
+    it('traduce el 400 de una capa que el servicio no puede consultar', async () => {
+        global.fetch.mockReturnValue(Promise.resolve({
+            ok: false,
+            status: 400,
+            text: () => Promise.resolve('Bad Request'),
+        }));
+        await expect(fetchPagina(wmsConfig, {}))
+            .rejects.toThrow('El servicio no pudo resolver la consulta de esta capa');
+    });
+
+    it('prefiere el mensaje de GeoServer sobre el codigo de estado', async () => {
+        global.fetch.mockReturnValue(Promise.resolve({
+            ok: false,
+            status: 400,
+            text: () => Promise.resolve('<ows:ExceptionText>Unknown property name</ows:ExceptionText>'),
+        }));
+        await expect(fetchPagina(wmsConfig, {})).rejects.toThrow('Unknown property name');
+    });
+
     it('convierte en error la excepcion que GeoServer manda con HTTP 200', async () => {
         global.fetch.mockReturnValue(responder(
             '<ows:ExceptionReport><ows:ExceptionText>Could not parse CQL filter list</ows:ExceptionText></ows:ExceptionReport>',
