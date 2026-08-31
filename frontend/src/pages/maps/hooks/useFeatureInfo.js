@@ -13,7 +13,7 @@ import { resolveLocalFeatureResults } from '../helpers/vectorFeatureQuery';
 
 const FEATURE_INFO_LOADING_ID = 'feature_info_query';
 
-const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
+export const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
 export const useFeatureInfo = (overrides = null) => {
     const ctx = useContext(MapsContext);

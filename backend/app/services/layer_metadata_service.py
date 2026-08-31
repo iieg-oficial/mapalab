@@ -31,6 +31,10 @@ def _resolve_layer_key(session: Session, workspace_alias: str, layer: str) -> st
     return f'{ws_name}:{layer}'
 
 
+def resolve_layer_key(session: Session, workspace_alias: str, layer: str) -> str:
+    return _resolve_layer_key(session, workspace_alias, layer)
+
+
 def _to_list_of_dicts(value) -> list[dict]:
     if not value:
         return []

@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
+import { useTablaAtributos } from '@contexts/TablaAtributosContext';
+import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
+import { canUseVectorService } from '@pages/maps/helpers/serviceMode';
 import { useSider } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
 import Icon from '@components/Icon';
@@ -23,6 +26,14 @@ const allTools = [
         icon: 'tool_swipe',
     },
     {
+        id: 'tabla',
+        label: 'Tabla de datos',
+        description: 'Columnas, celdas y filtros',
+        beta: true,
+        nonProdOnly: true,
+        icon: 'tabla',
+    },
+    {
         id: 'anotaciones',
         label: 'Anotaciones',
         description: 'Texto, emojis, trazo libre',
@@ -33,9 +44,30 @@ const allTools = [
 const tools = allTools.filter(tool => !tool.nonProdOnly || IS_NON_PROD);
 
 const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementToolsVisible, areAnnotationToolsVisible, toggleAnnotationTools }) => {
-    const { compareMode, exitCompareMode, enterCompareMode } = useMapsContext();
+    const {
+        compareMode, exitCompareMode, enterCompareMode,
+        selectedLayer, selectedLayerForSymbology, activeLayerIds, allLayers,
+    } = useMapsContext();
+    const { abrir: abrirTabla, estaAbierta, cerrar: cerrarTabla } = useTablaAtributos();
     const { closeSider } = useSider();
     const [hoveredId, setHoveredId] = useState(null);
+
+    const capaParaTabla = () => {
+        const enFoco = selectedLayerForSymbology?.id || selectedLayer?.id || null;
+        if (enFoco) return enFoco;
+        const conTabla = (activeLayerIds || []).find(id => {
+            const layerDef = findLayerDef(id, allLayers || []);
+            return layerDef && canUseVectorService(layerDef);
+        });
+        return conTabla || (activeLayerIds || [])[0] || null;
+    };
+
+    const alternarTabla = () => {
+        const layerId = capaParaTabla();
+        if (!layerId) return;
+        if (estaAbierta(layerId)) cerrarTabla(layerId);
+        else abrirTabla(layerId);
+    };
 
     const startSwipe = () => {
         enterCompareMode();
@@ -47,6 +79,8 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
             toggleMeasurementTools?.();
         } else if (id === 'anotaciones') {
             toggleAnnotationTools?.();
+        } else if (id === 'tabla') {
+            alternarTabla();
         } else if (id === 'compare-swipe') {
             if (compareMode?.active) {
                 exitCompareMode();
@@ -60,6 +94,10 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     const isActive = (id) => {
         if (id === 'mediciones') return !!areMeasurementToolsVisible;
         if (id === 'anotaciones') return !!areAnnotationToolsVisible;
+        if (id === 'tabla') {
+            const layerId = capaParaTabla();
+            return !!layerId && estaAbierta(layerId);
+        }
         if (id === 'compare-swipe') return !!compareMode?.active;
         return false;
     };

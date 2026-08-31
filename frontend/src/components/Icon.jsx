@@ -25,6 +25,15 @@ const icons = {
             <path d="M4 10h8a6 6 0 1 1 0 12H9" />
         </svg>
     ),
+    tabla: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <line x1="3" y1="9" x2="21" y2="9" />
+            <line x1="3" y1="14.5" x2="21" y2="14.5" />
+            <line x1="9.5" y1="9" x2="9.5" y2="20" />
+            <line x1="15.5" y1="9" x2="15.5" y2="20" />
+        </svg>
+    ),
     close: (
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" />

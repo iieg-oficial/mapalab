@@ -9,7 +9,7 @@ from sqlalchemy import text
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.schemas import (MetadataResponse, LayerSourceResponse)
-from app.services import layer_metadata_service
+from app.services import columnas_service, layer_metadata_service
 from app.utils.api_responses import api_responses
 from app.config import settings
 from app.exceptions.common_exceptions import BadRequestException
@@ -146,6 +146,29 @@ def get_layer_fields(
     if not catalogo:
         raise HTTPException(status_code=404, detail="La capa no tiene estadisticas dinamicas")
     return catalogo
+
+
+@router.get(
+    "/columnas",
+    responses=api_responses(404, 500),
+    operation_id="get_layer_columns_config",
+    summary="Alias y orden de las columnas en la tabla de atributos",
+    description=(
+        "Devuelve la configuracion de presentacion de las columnas de una capa: alias, "
+        "orden, visibilidad y formato. El WFS entrega los nombres crudos de la base "
+        "(`cve_mun`, `p_total`), y esta tabla es lo que los vuelve legibles. Una capa sin "
+        "configurar responde con la lista vacia: la tabla del visor la muestra igual, con "
+        "los nombres crudos en el orden del WFS."
+    ),
+)
+def get_layer_columns_config(
+    workspace: str = Query(description="Alias del workspace (p. ej. educacion)"),
+    layer: str = Query(description="Nombre de la capa dentro del workspace"),
+):
+    configuracion = columnas_service.get_columnas_response(workspace, layer)
+    if configuracion is None:
+        raise HTTPException(status_code=404, detail="La capa no existe")
+    return configuracion
 
 
 @router.post(

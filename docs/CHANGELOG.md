@@ -5,6 +5,34 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.147.0] - 2026-08-28
+
+### Agregado: tabla de atributos del visor
+
+Una herramienta nueva en el menu de Herramientas —solo en `dev` y `beta`, como el swipe— que abre
+los datos crudos de una capa en una ventana flotante: columnas, celdas y filtros por columna, como
+en QGIS. Se pueden abrir varias a la vez y todas se recogen a una sola barra de estado al pie del
+mapa, con una pastilla por tabla, su conteo y los chips de filtro de la que este activa.
+
+Los filtros son una sola expresion CQL vista con tres lentes: el menu de cada columna la escribe
+—con el control que corresponde a su tipo, y la lista de municipios cuando la capa declara su
+`municipioField`—, los chips la muestran y `Ver como CQL` la deja editar a mano. Editarla colapsa
+los chips en uno solo: no se intenta reconstruir chips desde CQL arbitrario. Lo que se filtra en la
+tabla recorta la capa en el mapa bajo la llave `tabla`, que se limpia al cerrar la ventana.
+
+`Solo lo visible` ata la tabla al extent del mapa y `Congelar` fija ese recorte para poder navegar
+sin que la tabla cambie bajo los pies. Se usa el extent completo de la vista aunque la ventana tape
+una parte: restar ese rectangulo haria cambiar el conteo al mover la ventana sin mover el mapa.
+
+Una capa sin configurar funciona igual, con los nombres crudos que entrega el WFS. Los alias, el
+orden, la visibilidad y el formato se administran desde la pestana Columnas del CMS de mariachi y
+viven en el schema `atributos` de dataengine.
+
+Detalles que costaron y quedan cubiertos con tests: la excepcion que GeoServer devuelve **con HTTP
+200** y cuerpo XML se convierte en un mensaje visible en vez de una tabla vacia; el filtro `date` de
+una capa `timeEnabled` no viaja como CQL; y cada peticion nace cancelable, porque arrastrar el mapa
+encadena consultas cuyas respuestas llegan desordenadas.
+
 ## [1.146.0] - 2026-08-28
 
 ### Cambiado: el estado «deshabilitada» viaja como dato, no como asterisco en el nombre
