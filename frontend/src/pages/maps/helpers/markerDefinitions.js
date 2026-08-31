@@ -1,6 +1,6 @@
 import mapalabSquareIcon from '@logos/mapalab_square.svg';
 import { APP_VERSION, APP_LOC } from '@constants/app';
-import { MULTIVALOR_SEPARADOR } from '@constants/multivalor';
+import { MULTIVALOR_SEPARADOR } from '@utils/infoboxPlan';
 import { collectCatalogUnits } from './layers/utils/layerHelpers';
 
 export const computeIiegStats = ({ allLayers = [] } = {}) => {

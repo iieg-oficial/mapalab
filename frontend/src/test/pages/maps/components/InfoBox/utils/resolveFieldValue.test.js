@@ -4,7 +4,7 @@ import {
     isJoinedDef,
     makeValueResolver,
     splitMultivalue,
-} from '@pages/maps/components/InfoBox/utils/resolveFieldValue';
+} from '@utils/infoboxPlan';
 
 const PROPS = {
     CALLE: 'Calz. de los Pirules',

@@ -1,4 +1,4 @@
-import { CARACTERISTICA_STYLE } from '../utils/cardTemplates';
+const CARACTERISTICA_STYLE = { color: '#7B61FF', bg: '#F3F0FF' };
 
 const FeatureLabel = ({ value, color = CARACTERISTICA_STYLE.color, bg = CARACTERISTICA_STYLE.bg, fullWidth = false, variant = 'desktop' }) => {
     if (!value) return null;

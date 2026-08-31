@@ -1,35 +1,15 @@
-import { formatNumber } from '@pages/maps/helpers/formatNumber';
-
 const FeatureList = ({ rows, variant = 'desktop' }) => {
     if (!rows || rows.length === 0) return null;
 
     const validRows = rows.filter(row => row.value !== null && row.value !== undefined && row.value !== '');
     if (validRows.length === 0) return null;
 
-    const formatValue = (label, value) => {
-        if (label.includes('Año de la información')) {
-            const date = new Date(value);
-            if (!isNaN(date.getTime())) {
-                return date.getFullYear();
-            }
-        }
-        if (label.includes('Fecha')) {
-            const date = new Date(value);
-            if (!isNaN(date.getTime())) {
-                return date.toISOString().split('T')[0];
-            }
-        }
-        return value;
-    };
-
     const size = variant === 'mobile' ? 'text-[12px]' : 'text-[10px]';
 
     return (
         <div className="space-y-1 mb-3">
             {validRows.map((row, idx) => {
-                const formatted = row.raw
-                    ? formatValue(row.label, row.value)
-                    : formatNumber(formatValue(row.label, row.value));
+                const formatted = row.value;
                 const valueEl = row.values?.length ? (
                     <div className="flex flex-col gap-0.5 w-full">
                         {row.values.map((item, itemIdx) => (

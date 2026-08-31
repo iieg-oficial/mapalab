@@ -5,6 +5,31 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.150.0] - 2026-08-31
+
+### Cambiado: la tarjetita se resuelve en un solo lugar
+
+`utils/infoboxPlan.js` es ahora la **copia canonica** de toda la resolucion de la tarjetita:
+configuracion mas propiedades de una feature dan un *plan* —titulo y bloques con sus valores ya
+resueltos y formateados— y el visor solo lo pinta. Es un modulo puro, sin React y sin estilos, y
+mariachi tiene una copia byte a byte que su `scripts/sync-infobox-plan.sh --check` vigila.
+
+El motivo es concreto: el editor de mariachi reimplementaba esta logica y ya divergio una vez esta
+semana —los campos compuestos servian en el visor y el preview los ignoraba—. Con una vista previa
+chica al lado eso es un defecto; con el editor de lienzo que viene, seria el producto.
+
+**Nada cambia en pantalla.** Los 1113 tests pasan sin tocarse.
+
+### Eliminado: tres modulos que la resolucion absorbio
+
+`resolveFieldValue.js`, `infoBoxTextBlocks.js` y `cardTemplates.js` desaparecen, y con ellos
+`constants/multivalor.js`. Sus decisiones —resolver un campo, unir columnas, partir por `; `,
+normalizar la forma vieja, inferir una tarjeta cuando no hay configuracion— viven ahora en
+`infoboxPlan.js`. Las plantillas `TDEMEC*` que quedaban en `cardTemplates.js` no las importaba nadie.
+
+`List`, `Cards` e `IconText` dejan de decidir: ya no formatean numeros ni fechas, no deducen el
+icono de genero ni arman el link de Google Maps. Reciben el valor listo y lo pintan.
+
 ## [1.149.0] - 2026-08-31
 
 ### Agregado: una tarjeta puede repetir el mismo tipo de bloque

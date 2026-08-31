@@ -68,6 +68,16 @@ export default [
         },
     },
     {
+        files: ['**/utils/infoboxPlan.js'],
+        rules: {
+            'max-lines': ['error', {
+                'max': 400,
+                'skipBlankLines': true,
+                'skipComments': true
+            }],
+        },
+    },
+    {
         files: ['**/useMapDrawing.js'],
         rules: {
             'max-lines': ['error', {
