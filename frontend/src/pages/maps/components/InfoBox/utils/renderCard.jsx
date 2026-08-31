@@ -1,35 +1,24 @@
 import InfoCard from '../components/InfoCard';
 import { cardTemplates } from './cardTemplates';
-import { isTextKey, mkTextKey, normalizeFinalConfig, textIdOf } from './infoBoxTextBlocks';
+import { normalizeFinalConfig } from './infoBoxTextBlocks';
 import { makeValueResolver } from './resolveFieldValue';
 import {
     applyHeaderTransform,
+    blockInstances,
     BODY_RENDERERS,
+    BODY_TYPES,
     extractSuffixFromLayerId,
-    renderTextBlock,
 } from './cardBlocks.jsx';
 
 export { applyHeaderTransform, resolveStaticValue } from './cardBlocks.jsx';
 
-const DEFAULT_BODY_ORDER = ['labelGroups', 'list', 'iconText', 'text', 'cards'];
+const presentInstances = (cfg) => BODY_TYPES.flatMap((type) => blockInstances(cfg, type));
 
-const expandPresentKeys = (cfg) => {
-    const out = [];
-    for (const k of DEFAULT_BODY_ORDER) {
-        if (k === 'text') {
-            (cfg.text || []).forEach((b) => out.push(mkTextKey(b.id)));
-        } else {
-            out.push(k);
-        }
-    }
-    return out;
-};
-
-const resolveBodyOrder = (cfg) => {
-    const present = expandPresentKeys(cfg);
+const resolveBodyOrder = (instances, blockOrder) => {
+    const present = instances.map((i) => i.key);
     const validKeys = new Set(present);
-    const explicit = Array.isArray(cfg.blockOrder)
-        ? cfg.blockOrder.filter((k) => validKeys.has(k))
+    const explicit = Array.isArray(blockOrder)
+        ? blockOrder.filter((k) => validKeys.has(k))
         : [];
     const remaining = present.filter((k) => !explicit.includes(k));
     return [...explicit, ...remaining];
@@ -56,14 +45,12 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
     const titleValue = resolveHeader(finalConfig.headerField, resolve, featureId, finalConfig.headerTransform);
 
     const ctx = { finalConfig, suffix, variant, dateValue, onAction, resolve, getValue: readField, body };
-    resolveBodyOrder(finalConfig).forEach((key) => {
-        if (isTextKey(key)) {
-            const id = textIdOf(key);
-            const block = (finalConfig.text || []).find((b) => b.id === id);
-            renderTextBlock({ ...ctx, block });
-            return;
-        }
-        BODY_RENDERERS[key]?.(ctx);
+    const instances = presentInstances(finalConfig);
+    const byKey = new Map(instances.map((i) => [i.key, i]));
+    resolveBodyOrder(instances, finalConfig.blockOrder).forEach((key) => {
+        const instance = byKey.get(key);
+        if (!instance) return;
+        BODY_RENDERERS[instance.type]?.({ ...ctx, items: instance.items, blockKey: instance.key });
     });
 
     if (!titleValue && body.length === 0) return null;

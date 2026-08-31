@@ -61,9 +61,26 @@ const shouldIncludeField = (fieldName, suffix) => {
 
 const isEmptyValue = (value) => value === null || value === undefined || value === '';
 
-const renderLabelGroups = ({ finalConfig, resolve, variant, dateValue, body }) => {
-    if (!finalConfig.labelGroups) return;
-    finalConfig.labelGroups.forEach((group, groupIdx) => {
+export const BODY_TYPES = ['labelGroups', 'list', 'iconText', 'text', 'cards'];
+
+const isInstanced = (arr) => !!arr[0]
+    && typeof arr[0] === 'object'
+    && typeof arr[0].id === 'string'
+    && Array.isArray(arr[0].items);
+
+export const blockInstances = (cfg, type) => {
+    const raw = cfg?.[type];
+    if (raw == null) return [];
+    if (!Array.isArray(raw)) return [{ key: type, type, items: [raw] }];
+    if (raw.length === 0) return [];
+    if (isInstanced(raw)) {
+        return raw.map((block) => ({ key: `${type}:${block.id}`, type, items: block.items || [] }));
+    }
+    return [{ key: type, type, items: raw }];
+};
+
+const renderLabelGroups = ({ items, blockKey, resolve, variant, dateValue, body }) => {
+    items.forEach((group, groupIdx) => {
         const groupElements = [];
 
         if (group.staticValues) {
@@ -72,7 +89,7 @@ const renderLabelGroups = ({ finalConfig, resolve, variant, dateValue, body }) =
                 if (isEmptyValue(resolvedValue)) return;
                 groupElements.push(
                     <Label
-                        key={`labelgroup-${groupIdx}-static-${idx}`}
+                        key={`${blockKey}-${groupIdx}-static-${idx}`}
                         value={resolvedValue}
                         color={group.color}
                         bg={group.bg}
@@ -96,12 +113,12 @@ const renderLabelGroups = ({ finalConfig, resolve, variant, dateValue, body }) =
                 if ((def.split ?? group.splitValues) && typeof value === 'string') {
                     splitMultivalue(value).forEach((item, splitIdx) => {
                         groupElements.push(
-                            <Label key={`labelgroup-${groupIdx}-${idx}-${splitIdx}`} value={item} {...commonProps} />
+                            <Label key={`${blockKey}-${groupIdx}-${idx}-${splitIdx}`} value={item} {...commonProps} />
                         );
                     });
                 } else {
                     groupElements.push(
-                        <Label key={`labelgroup-${groupIdx}-${idx}`} value={value} {...commonProps} />
+                        <Label key={`${blockKey}-${groupIdx}-${idx}`} value={value} {...commonProps} />
                     );
                 }
             });
@@ -109,7 +126,7 @@ const renderLabelGroups = ({ finalConfig, resolve, variant, dateValue, body }) =
 
         if (groupElements.length > 0) {
             body.push(
-                <div key={`labelgroup-${groupIdx}`} className="flex flex-wrap gap-1 mb-3">
+                <div key={`${blockKey}-${groupIdx}`} className="flex flex-wrap gap-1 mb-3">
                     {groupElements}
                 </div>
             );
@@ -117,9 +134,8 @@ const renderLabelGroups = ({ finalConfig, resolve, variant, dateValue, body }) =
     });
 };
 
-const renderList = ({ finalConfig, suffix, variant, body, resolve, getValue }) => {
-    if (!finalConfig.list) return;
-    const rows = finalConfig.list
+const renderList = ({ items, blockKey, suffix, variant, body, resolve, getValue }) => {
+    const rows = items
         .filter(row => shouldIncludeField(row.field, suffix))
         .map(row => {
             const value = resolve(row);
@@ -136,7 +152,7 @@ const renderList = ({ finalConfig, suffix, variant, body, resolve, getValue }) =
     if (rows.length > 0) {
         body.push(
             <List
-                key="list"
+                key={blockKey}
                 rows={rows}
                 variant={variant}
             />
@@ -144,10 +160,8 @@ const renderList = ({ finalConfig, suffix, variant, body, resolve, getValue }) =
     }
 };
 
-const renderIconText = ({ finalConfig, onAction, variant, body, resolve, getValue }) => {
-    if (!finalConfig.iconText) return;
-    const iconTextItems = Array.isArray(finalConfig.iconText) ? finalConfig.iconText : [finalConfig.iconText];
-    const validItems = iconTextItems
+const renderIconText = ({ items, blockKey, onAction, variant, body, resolve, getValue }) => {
+    const validItems = items
         .filter(item => item)
         .map(item => ({ item, fieldValue: resolve(item) }))
         .filter(({ item, fieldValue }) => item.label || fieldValue || item.value)
@@ -164,18 +178,17 @@ const renderIconText = ({ finalConfig, onAction, variant, body, resolve, getValu
         const resolvedHref = item.href ? resolveHref(item.href, getValue) : null;
         if (resolvedHref) iconTextProps.href = resolvedHref;
         if (item.action && onAction) iconTextProps.onClick = () => onAction(item.action);
-        body.push(<IconText key={`icontext-${idx}`} {...iconTextProps} variant={variant} />);
+        body.push(<IconText key={`${blockKey}-${idx}`} {...iconTextProps} variant={variant} />);
     });
 };
 
-export const renderTextBlock = ({ block, resolve, getValue, variant, body }) => {
-    if (!block?.items?.length) return;
-    block.items.forEach((textItem, idx) => {
+const renderTextBlock = ({ items, blockKey, resolve, getValue, variant, body }) => {
+    items.forEach((textItem, idx) => {
         const value = resolve(textItem);
         if (textItem.label || value) {
             body.push(
                 <Text
-                    key={`text-${block.id}-${idx}`}
+                    key={`${blockKey}-${idx}`}
                     label={textItem.label}
                     value={value}
                     href={resolveHref(textItem.href, getValue)}
@@ -186,9 +199,8 @@ export const renderTextBlock = ({ block, resolve, getValue, variant, body }) => 
     });
 };
 
-const renderCards = ({ finalConfig, suffix, variant, body, resolve }) => {
-    if (!finalConfig.cards) return;
-    const cards = finalConfig.cards
+const renderCards = ({ items, blockKey, finalConfig, suffix, variant, body, resolve }) => {
+    const cards = items
         .filter(Boolean)
         .filter(card => shouldIncludeField(card.field, suffix))
         .map(card => {
@@ -214,7 +226,7 @@ const renderCards = ({ finalConfig, suffix, variant, body, resolve }) => {
         const effectiveColumns = finalConfig.cardsColumns ?? (variant === 'mobile' ? 2 : 1);
         body.push(
             <Cards
-                key="cards"
+                key={blockKey}
                 cards={cards}
                 columns={effectiveColumns}
                 variant={variant}
@@ -227,5 +239,6 @@ export const BODY_RENDERERS = {
     labelGroups: renderLabelGroups,
     list: renderList,
     iconText: renderIconText,
+    text: renderTextBlock,
     cards: renderCards,
 };

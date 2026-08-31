@@ -5,6 +5,30 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.149.0] - 2026-08-31
+
+### Agregado: una tarjeta puede repetir el mismo tipo de bloque
+
+Hasta ahora cada tipo de bloque —etiquetas, lista, cifras, iconos, texto— existia una sola vez,
+porque vivia bajo su propia clave del JSON. Ahora cualquiera de los cinco acepta **varias
+instancias en posiciones distintas**: un grupo de etiquetas arriba y otro al final, dos listas
+separadas por un bloque de cifras, lo que haga falta.
+
+La forma en disco es la que `text` ya usaba, extendida a los otros cuatro:
+
+```json
+{ "list": [ { "id": "a", "items": [ … ] }, { "id": "b", "items": [ … ] } ],
+  "blockOrder": ["list:a", "labelGroups", "list:b"] }
+```
+
+**La forma de siempre sigue valiendo y es la que se guarda mientras haya una sola instancia**:
+`list` como arreglo plano de renglones. Solo al duplicar se convierte a la forma con ids, y al
+quedar una sola vuelve sola a la forma plana. Ninguna tarjetita existente cambia.
+
+Por dentro los cinco renderizadores dejaron de leer `finalConfig[tipo]` y reciben los items de su
+instancia, asi que `text` dejo de ser un caso aparte con su propio despacho: es un tipo mas de la
+tabla `BODY_RENDERERS`.
+
 ## [1.148.0] - 2026-08-28
 
 ### Cambiado: la tabla de atributos navega por pestanas y se ve como el resto del visor
