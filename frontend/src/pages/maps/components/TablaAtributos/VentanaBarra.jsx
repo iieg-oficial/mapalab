@@ -81,8 +81,8 @@ const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, datos, verCql, o
 
                 <ActionIconButton
                     onClick={onCerrar}
-                    titulo="Cerrar la tabla"
-                    etiqueta={`Cerrar la tabla de ${nombre}`}
+                    titulo="Cerrar la tabla de datos"
+                    etiqueta="Cerrar la herramienta de tabla de datos"
                     tamano="sm"
                 >
                     <Icon name="close" className="size-3.5" />

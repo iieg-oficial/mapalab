@@ -19,7 +19,6 @@ export const TablaAtributosProvider = ({ children }) => {
     const { allLayers, activeLayerIds, hiddenLayerIds } = useMapsContext();
     const { unifiedLayers } = useActiveLayersLogic(activeLayerIds || [], hiddenLayerIds || []);
     const [activo, setActivo] = useState(false);
-    const [cerradas, setCerradas] = useState([]);
     const [activaId, setActivaId] = useState(null);
     const [minimizado, setMinimizado] = useState(false);
     const [porCapa, setPorCapa] = useState({});
@@ -27,7 +26,6 @@ export const TablaAtributosProvider = ({ children }) => {
     const tablas = useMemo(() => {
         if (!activo) return [];
         return unifiedLayers
-            .filter(capa => !cerradas.includes(capa.id))
             .filter(capa => Boolean(resolverObjetivo(findLayerDef(capa.id, allLayers || [])).wmsConfig))
             .map(capa => ({
                 id: capa.id,
@@ -35,7 +33,7 @@ export const TablaAtributosProvider = ({ children }) => {
                 visible: capa.visible !== false,
                 childIds: capa.childIds || [capa.id],
             }));
-    }, [allLayers, activo, cerradas, unifiedLayers]);
+    }, [allLayers, activo, unifiedLayers]);
 
     useEffect(() => {
         if (!activo) return;
@@ -59,22 +57,11 @@ export const TablaAtributosProvider = ({ children }) => {
         setActivo(true);
         setMinimizado(false);
         if (!layerId) return;
-        setCerradas(previas => previas.filter(id => id !== layerId));
         setActivaId(layerId);
-    }, []);
-
-    const cerrar = useCallback((layerId) => {
-        setCerradas(previas => (previas.includes(layerId) ? previas : [...previas, layerId]));
-        setPorCapa(previo => {
-            const siguiente = { ...previo };
-            delete siguiente[layerId];
-            return siguiente;
-        });
     }, []);
 
     const cerrarTodas = useCallback(() => {
         setActivo(false);
-        setCerradas([]);
         setActivaId(null);
         setPorCapa({});
         setMinimizado(false);
@@ -137,7 +124,6 @@ export const TablaAtributosProvider = ({ children }) => {
         nombreDe: (layerId) => tablas.find(capa => capa.id === layerId)?.nombre || 'Capa',
         capaDe: (layerId) => tablas.find(capa => capa.id === layerId) || null,
         abrir,
-        cerrar,
         cerrarTodas,
         activar,
         alternarMinimizado,
@@ -150,7 +136,7 @@ export const TablaAtributosProvider = ({ children }) => {
         fijarVista,
         fijarConteo,
     }), [
-        activo, tablas, activaId, minimizado, abrir, cerrar, cerrarTodas, activar, alternarMinimizado,
+        activo, tablas, activaId, minimizado, abrir, cerrarTodas, activar, alternarMinimizado,
         estadoDe, ponerFiltro, quitarFiltro, limpiarFiltros, fijarExpresionPropia, fijarOrden,
         fijarVista, fijarConteo,
     ]);

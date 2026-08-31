@@ -5,21 +5,24 @@ const ChipsFiltro = ({ chips, onQuitar, onLimpiar, compacto = false }) => {
         <div className={`flex items-center gap-1.5 ${compacto ? '' : 'flex-wrap'} min-w-0`}>
             {chips.map(chip => (
                 <span
-                    key={chip.columna || 'propia'}
-                    className="shrink-0 max-w-56 h-6 pl-2.5 pr-1 flex items-center gap-1 rounded-full border border-purple-deep bg-purple-soft text-[11px] font-garet text-purple"
+                    key={chip.columna || chip.etiqueta}
+                    title={chip.fijo ? `${chip.etiqueta} · viene de la selección del mapa` : chip.etiqueta}
+                    className={`shrink-0 max-w-56 h-6 pl-2.5 flex items-center gap-1 rounded-full border text-[11px] font-garet ${chip.fijo ? 'pr-2.5 border-[#DCE3F0] bg-[#F9FBFF] text-[#6B7585]' : 'pr-1 border-purple-deep bg-purple-soft text-purple'}`}
                 >
                     <span className="truncate">{chip.etiqueta}</span>
-                    <button
-                        type="button"
-                        onClick={() => onQuitar(chip.columna)}
-                        aria-label={`Quitar el filtro ${chip.etiqueta}`}
-                        className="size-4 flex items-center justify-center rounded-full hover:bg-white cursor-pointer"
-                    >
-                        ✕
-                    </button>
+                    {!chip.fijo && (
+                        <button
+                            type="button"
+                            onClick={() => onQuitar(chip.columna)}
+                            aria-label={`Quitar el filtro ${chip.etiqueta}`}
+                            className="size-4 flex items-center justify-center rounded-full hover:bg-white cursor-pointer"
+                        >
+                            ✕
+                        </button>
+                    )}
                 </span>
             ))}
-            {chips.length > 1 && (
+            {chips.filter(chip => !chip.fijo).length > 1 && (
                 <button
                     type="button"
                     onClick={onLimpiar}

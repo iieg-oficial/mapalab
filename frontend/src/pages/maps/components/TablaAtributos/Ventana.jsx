@@ -15,7 +15,7 @@ import PestanasTablas from './PestanasTablas';
 import VentanaBarra from './VentanaBarra';
 
 const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
-    const { activar, cerrar, nombreDe, capaDe } = useTablaAtributos();
+    const { activar, cerrarTodas, nombreDe, capaDe } = useTablaAtributos();
     const { municipioMode } = useMapsContext();
     const datos = useTablaDatos(layerId, { minimizada });
     const catalogo = useCatalogoCampos(layerId, !minimizada);
@@ -48,15 +48,17 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
             datos={datos}
             verCql={verCql}
             onAlternarCql={() => setVerCql(valor => !valor)}
-            onCerrar={() => cerrar(layerId)}
+            onCerrar={cerrarTodas}
             arrastre={esMovil ? null : manejadores}
         />
     );
 
-    const filtrosActivos = datos.filtros.chips.length > 0 && (
+    const chips = [...datos.chipsHeredados, ...datos.filtros.chips];
+
+    const filtrosActivos = chips.length > 0 && (
         <div className="px-3 py-1.5 flex items-center gap-2 border-b border-[#EAEFFA] overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400">
             <ChipsFiltro
-                chips={datos.filtros.chips}
+                chips={chips}
                 onQuitar={datos.filtros.quitar}
                 onLimpiar={datos.filtros.limpiar}
                 compacto
@@ -160,7 +162,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
 
     if (esMovil) {
         return (
-            <MobileSheet open onClose={() => cerrar(layerId)} maxHeightClass="max-h-[92vh]">
+            <MobileSheet open onClose={cerrarTodas} maxHeightClass="max-h-[92vh]">
                 <div className="flex flex-col h-[85vh]">
                     <div className="flex border-b border-[#EAEFFA]">
                         {[['datos', 'Datos'], ['filtros', 'Filtros']].map(([clave, texto]) => (

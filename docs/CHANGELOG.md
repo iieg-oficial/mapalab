@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.156.0] - 2026-08-28
+
+### Cambiado: cerrar cierra la herramienta, y el municipio se ve como filtro
+
+- **La seleccion de municipio aparece en el renglon de filtros**, como un chip gris sin boton de
+  quitar: no es un filtro de la tabla, viene de la seleccion del mapa y se cambia desde ahi. Dice el
+  nombre cuando es uno solo y «3 municipios» cuando son varios.
+- **El boton de cerrar cierra toda la herramienta.** Ya no se quitan tablas de una en una: las
+  tablas son el reflejo del panel de capas activas, y ahi es donde se agregan y se quitan. Con eso
+  desaparecio el estado de tablas cerradas a mano.
+- **El cerrar de las pills quedo arriba de la pastilla**, centrado, en vez de a su derecha. Aplica a
+  las dos, porque las dos usan `PillMinimizada`.
+
 ## [1.155.0] - 2026-08-28
 
 ### Cambiado: las pills minimizadas comparten un solo dock

@@ -176,6 +176,16 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         }
     }, [cargando, cargandoMas, hayMas, pagina, pedirPagina]);
 
+    const chipsHeredados = useMemo(() => {
+        const ctx = municipioMode?.municipioContext;
+        if (!municipio || !ctx?.active) return [];
+        const nombres = ctx.nombres || [];
+        const etiqueta = nombres.length === 1
+            ? `Municipio: ${nombres[0]}`
+            : `${ctx.claves?.length || nombres.length} municipios`;
+        return [{ columna: null, etiqueta, fijo: true }];
+    }, [municipio, municipioMode?.municipioContext]);
+
     const visibles = useMemo(() => columnas.filter(columna => columna.visible), [columnas]);
 
     return {
@@ -194,6 +204,7 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         cargando: (cargando || vista.recalculando || !columnasListas) && Boolean(wmsConfig),
         error,
         filtros,
+        chipsHeredados,
         vista,
         orden,
         alternarOrden: useCallback(columna => fijarOrden(layerId, columna), [fijarOrden, layerId]),
