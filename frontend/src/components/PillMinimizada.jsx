@@ -19,7 +19,6 @@ const TAMANOS = {
 
 const PillMinimizada = ({
     etiqueta,
-    cierreDentro = false,
     icono = 'numeralia',
     sufijo = null,
     activa = false,
@@ -36,41 +35,6 @@ const PillMinimizada = ({
     const medida = TAMANOS[tamano] || TAMANOS.normal;
 
     const chrome = `rounded-full bg-white shadow-[0_5px_20px_#1A26641A] border transition-all ${activa ? 'border-purple' : 'border-[#EAEFFA] hover:border-purple'} ${anillo}`;
-
-    if (cierreDentro) {
-        return (
-            <div ref={pillRef} className={`group shrink-0 flex items-center ${medida.pill} ${medida.gap} ${chrome} pointer-events-auto`}>
-                <button
-                    type="button"
-                    onClick={onAbrir}
-                    aria-pressed={activa}
-                    aria-label={ariaAbrir}
-                    title={tooltipAbrir}
-                    className={`flex items-center ${medida.gap} min-w-0 cursor-pointer bg-transparent`}
-                >
-                    <Icon name={icono} className={`${medida.icono} shrink-0 text-purple`} />
-                    <span className={`${medida.texto} font-garet font-bold text-purple tracking-normal whitespace-nowrap truncate`}>
-                        {etiqueta}
-                    </span>
-                    {sufijo !== null && (
-                        <span className="text-[11px]/[14px] font-garet text-[#8894AE] tabular-nums shrink-0">
-                            {sufijo}
-                        </span>
-                    )}
-                </button>
-
-                {onCerrar && (
-                    <PillCloseButton
-                        onClick={onCerrar}
-                        tooltip={tooltipCerrar}
-                        ariaLabel={ariaCerrar}
-                        size="sm"
-                        reveal="inline"
-                    />
-                )}
-            </div>
-        );
-    }
 
     return (
         <div ref={pillRef} className="group relative flex min-w-0 pointer-events-auto">

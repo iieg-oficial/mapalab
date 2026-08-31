@@ -29,7 +29,12 @@ export const TablaAtributosProvider = ({ children }) => {
         return unifiedLayers
             .filter(capa => !cerradas.includes(capa.id))
             .filter(capa => Boolean(resolverObjetivo(findLayerDef(capa.id, allLayers || [])).wmsConfig))
-            .map(capa => ({ id: capa.id, nombre: capa.name, visible: capa.visible !== false }));
+            .map(capa => ({
+                id: capa.id,
+                nombre: capa.name,
+                visible: capa.visible !== false,
+                childIds: capa.childIds || [capa.id],
+            }));
     }, [allLayers, activo, cerradas, unifiedLayers]);
 
     useEffect(() => {

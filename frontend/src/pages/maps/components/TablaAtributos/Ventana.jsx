@@ -139,8 +139,8 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
         <>
             {cabecera}
             {!esMovil && (
-                <div className="px-2.5 pb-1.5">
-                    <PestanasTablas tamano="compacta" />
+                <div className="px-3 pb-1.5">
+                    <PestanasTablas />
                 </div>
             )}
             {verCql && datos.disponible && (

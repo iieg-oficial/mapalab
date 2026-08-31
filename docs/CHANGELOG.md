@@ -5,6 +5,17 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.153.1] - 2026-08-28
+
+### Cambiado: las pestanas del panel dicen que capa esta en foco y cual esta apagada
+
+Se les quito el icono y el conteo en gris, y ahora ocupan el ancho completo del panel repartiendose
+entre ellas. Toman prestado el lenguaje del panel de capas activas para que signifiquen lo mismo:
+la capa seleccionada ahi va con el aro morado sobre `#F7F0FA` y las que estan sin visibilidad, con
+el fondo `#EFF3FC`. La pestana cuya tabla se esta viendo se distingue aparte, con borde morado y
+texto en negritas, asi que las tres cosas se pueden ver a la vez. En un grupo, el aro tambien
+aparece cuando la capa en foco es una de sus hojas.
+
 ## [1.153.0] - 2026-08-28
 
 ### Cambiado: la tabla de datos carga por scroll infinito y su barra es una sola pill
