@@ -163,7 +163,6 @@ const MapControls = () => {
 
     return (
         <div
-            data-controles-mapa
             className={`fixed bottom-15 z-10 flex items-end ${className}`}
             style={style}
         >

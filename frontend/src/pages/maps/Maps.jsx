@@ -22,6 +22,7 @@ import { ZenModeProvider } from './components/ZenMode';
 import { NumeraliaPanelProvider } from '@contexts/NumeraliaPanelContext';
 import { TablaAtributosProvider } from '@contexts/TablaAtributosContext';
 import TablaAtributos from './components/TablaAtributos/TablaAtributos';
+import DockPills from './components/DockPills';
 import useThemeColor from '@hooks/useThemeColor';
 import { useMapsContext } from '@hooks/useMaps';
 
@@ -62,6 +63,7 @@ const Maps = () => {
                             {isComparing ? <SwipeView /> : <MapView />}
                             {isComparing && <SwipeSlotControls />}
                             <LayerNotices />
+                            <DockPills />
                             <TablaAtributos />
                         </div>
                     </TablaAtributosProvider>

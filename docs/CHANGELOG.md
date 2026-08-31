@@ -5,6 +5,21 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.155.0] - 2026-08-28
+
+### Cambiado: las pills minimizadas comparten un solo dock
+
+Hasta ahora cada flotante se posicionaba solo y se apartaba de los demas con `useClearance`, asi que
+la pill de estadisticas y la de la tabla se apilaban una encima de otra. Ahora hay un **dock**:
+un renglon fijo al pie del mapa, centrado, que se aparta de la escala y de la atribucion y respeta
+el estado del sider. `PillMinimizada` se rinde ahi con un portal, asi que **cualquier pill del visor
+cae en el mismo renglon** sin que su panel tenga que saber de las demas.
+
+En escritorio quedan una al lado de otra; en movil el dock se apila, porque a lo ancho no caben.
+
+Se fueron con esto dos parches que ya no hacen falta: el hook que media el borde del control de zoom
+y el que corria una pill a la derecha de su vecina.
+
 ## [1.154.0] - 2026-08-28
 
 ### Corregido: la tabla ignoraba la seleccion de municipio

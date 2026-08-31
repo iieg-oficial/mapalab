@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import PillCloseButton from '@components/PillCloseButton';
@@ -33,11 +34,12 @@ const PillMinimizada = ({
     pillRef,
 }) => {
     const medida = TAMANOS[tamano] || TAMANOS.normal;
+    const dock = typeof document === 'undefined' ? null : document.getElementById('dock-pills');
 
     const chrome = `rounded-full bg-white shadow-[0_5px_20px_#1A26641A] border transition-all ${activa ? 'border-purple' : 'border-[#EAEFFA] hover:border-purple'} ${anillo}`;
 
-    return (
-        <div ref={pillRef} data-pill-minimizada className="group relative flex min-w-0 pointer-events-auto">
+    const pill = (
+        <div ref={pillRef} className="group relative flex min-w-0 pointer-events-auto">
             <Tooltip content={tooltipAbrir} placement="top" delay={300}>
                 <button
                     type="button"
@@ -71,6 +73,8 @@ const PillMinimizada = ({
             )}
         </div>
     );
+
+    return dock ? createPortal(pill, dock) : pill;
 };
 
 export default PillMinimizada;
