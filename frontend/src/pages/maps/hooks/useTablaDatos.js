@@ -8,10 +8,10 @@ import { useTablaFiltros } from '@hooksMaps/useTablaFiltros';
 import { INEGI_LAYER_IDS } from '@hooksMaps/useFeatureInfo';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
-import { combinar, construirBbox, filtroHeredado } from '@pages/maps/helpers/tablaCqlBuilder';
+import { combinar, construirBbox, filtroHeredado, filtrosComunes } from '@pages/maps/helpers/tablaCqlBuilder';
 import { fetchNonGeometryColumns } from '@services/downloadUrls';
 import { countVectorFeatures } from '@services/vectorLayerService';
-import { fetchPagina, ordenarColumnas, TAMANO_PAGINA } from '@services/tablaAtributosService';
+import { fetchPagina, ordenarColumnas } from '@services/tablaAtributosService';
 import { fetchGeometryColumns, getWfsUrl } from '@utils/featureInfoUtils';
 
 const RETARDO_CONSULTA = 300;
@@ -32,7 +32,9 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
     const [error, setError] = useState(null);
     const [campoGeometria, setCampoGeometria] = useState(null);
     const [columnasListas, setColumnasListas] = useState(false);
+    const [cargandoMas, setCargandoMas] = useState(false);
     const peticionRef = useRef(null);
+    const masRef = useRef(null);
 
     const layerDef = useMemo(() => findLayerDef(layerId, allLayers || []), [allLayers, layerId]);
     const objetivo = useMemo(() => resolverObjetivo(layerDef), [layerDef]);
@@ -48,10 +50,12 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
             : 'Esta capa no publica columnas de datos: solo tiene geometría.';
     }, [objetivo.esGrupo, objetivo.motivo, sinColumnas]);
 
-    const heredado = useMemo(
-        () => filtroHeredado(getLayerFilters?.(layerId), wmsConfig?.timeEnabled),
-        [getLayerFilters, layerId, wmsConfig?.timeEnabled],
-    );
+    const heredado = useMemo(() => {
+        const propios = objetivo.esGrupo
+            ? filtrosComunes((objetivo.capas || []).map(hoja => getLayerFilters?.(hoja.id)))
+            : getLayerFilters?.(layerId);
+        return filtroHeredado(propios, wmsConfig?.timeEnabled);
+    }, [getLayerFilters, layerId, objetivo.capas, objetivo.esGrupo, wmsConfig?.timeEnabled]);
 
     const bbox = useMemo(() => {
         if (!campoGeometria || !vista.extent) return null;
@@ -64,11 +68,9 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
     );
 
     const consulta = useDebounce(
-        useMemo(() => ({ cql: cqlCompleto, orden, pagina }), [cqlCompleto, orden, pagina]),
+        useMemo(() => ({ cql: cqlCompleto, orden }), [cqlCompleto, orden]),
         RETARDO_CONSULTA,
     );
-
-    useEffect(() => setPagina(0), [cqlCompleto, orden]);
 
     useEffect(() => {
         if (!wmsConfig) {
@@ -100,6 +102,14 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
             .catch(() => setCampoGeometria(null));
     }, [activeLayerIds, disponible, vista.vista, wmsConfig]);
 
+    const pedirPagina = useCallback(async (pagina, controlador) => fetchPagina(wmsConfig, {
+        cql: consulta.cql,
+        pagina,
+        orden: consulta.orden,
+        ordenPorDefecto: columnas.find(columna => columna.visible)?.nombre || null,
+        signal: controlador.signal,
+    }), [columnas, consulta.cql, consulta.orden, wmsConfig]);
+
     useEffect(() => {
         if (!disponible || !columnasListas) return undefined;
 
@@ -118,14 +128,10 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
 
                 if (minimizada) return;
 
-                const { features } = await fetchPagina(wmsConfig, {
-                    cql: consulta.cql,
-                    pagina: consulta.pagina,
-                    orden: consulta.orden,
-                    ordenPorDefecto: columnas.find(columna => columna.visible)?.nombre || null,
-                    signal: controlador.signal,
-                });
-                if (!controlador.signal.aborted) setFilas(features);
+                const { features } = await pedirPagina(0, controlador);
+                if (controlador.signal.aborted) return;
+                setFilas(features);
+                setPagina(0);
             } catch (fallo) {
                 if (fallo?.name === 'AbortError' || controlador.signal.aborted) return;
                 setError(fallo?.message || 'No se pudieron traer los datos');
@@ -137,10 +143,30 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
 
         pedir();
         return () => controlador.abort();
-    }, [columnas, columnasListas, consulta, disponible, fijarConteo, layerId, minimizada, wmsConfig]);
+    }, [columnasListas, consulta.cql, disponible, fijarConteo, layerId, minimizada, pedirPagina, wmsConfig]);
+
+    const hayMas = Number.isFinite(total) ? filas.length < total : false;
+
+    const cargarMas = useCallback(async () => {
+        if (!hayMas || cargandoMas || cargando) return;
+        const controlador = new AbortController();
+        masRef.current = controlador;
+        setCargandoMas(true);
+        try {
+            const { features } = await pedirPagina(pagina + 1, controlador);
+            if (controlador.signal.aborted) return;
+            setFilas(previas => [...previas, ...features]);
+            setPagina(actual => actual + 1);
+        } catch (fallo) {
+            if (fallo?.name !== 'AbortError' && !controlador.signal.aborted) {
+                setError(fallo?.message || 'No se pudieron traer más registros');
+            }
+        } finally {
+            if (!controlador.signal.aborted) setCargandoMas(false);
+        }
+    }, [cargando, cargandoMas, hayMas, pagina, pedirPagina]);
 
     const visibles = useMemo(() => columnas.filter(columna => columna.visible), [columnas]);
-    const totalPaginas = Number.isFinite(total) ? Math.max(Math.ceil(total / TAMANO_PAGINA), 1) : 1;
 
     return {
         layerDef,
@@ -152,14 +178,14 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         visibles,
         filas,
         total,
-        pagina,
-        totalPaginas,
+        hayMas,
+        cargandoMas,
+        cargarMas,
         cargando: (cargando || vista.recalculando || !columnasListas) && Boolean(wmsConfig),
         error,
         filtros,
         vista,
         orden,
         alternarOrden: useCallback(columna => fijarOrden(layerId, columna), [fijarOrden, layerId]),
-        irAPagina: setPagina,
     };
 };

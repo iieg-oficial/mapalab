@@ -1,5 +1,11 @@
 import { useState, useRef, useLayoutEffect } from 'react';
 
+export const EVENTO_LAYOUT = 'mapalab:layout';
+
+export const avisarLayout = () => {
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event(EVENTO_LAYOUT));
+};
+
 const cajasDe = (obstaculos) => {
     const cajas = [];
     for (const obstaculo of obstaculos) {
@@ -60,14 +66,20 @@ export const useClearance = (objetivoRef, {
         const observador = new ResizeObserver(() => requestAnimationFrame(medir));
         if (objetivoRef.current) observador.observe(objetivoRef.current);
         for (const obstaculo of obstaculosRef.current) {
-            if (obstaculo?.current) observador.observe(obstaculo.current);
+            if (typeof obstaculo === 'string') {
+                for (const nodo of document.querySelectorAll(obstaculo)) observador.observe(nodo);
+            } else if (obstaculo?.current) {
+                observador.observe(obstaculo.current);
+            }
         }
         window.addEventListener('resize', medir);
+        window.addEventListener(EVENTO_LAYOUT, medir);
 
         return () => {
             cancelAnimationFrame(id);
             observador.disconnect();
             window.removeEventListener('resize', medir);
+            window.removeEventListener(EVENTO_LAYOUT, medir);
         };
     }, [objetivoRef, lado, base, separacion, activo]);
 

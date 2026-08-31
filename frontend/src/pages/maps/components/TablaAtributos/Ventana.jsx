@@ -66,8 +66,13 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
 
     const plantilla = `repeat(${Math.max(datos.visibles.length, 1)}, minmax(150px, 1fr))`;
 
+    const alScroll = (evento) => {
+        const { scrollTop, scrollHeight, clientHeight } = evento.currentTarget;
+        if (scrollHeight - scrollTop - clientHeight < 160) datos.cargarMas();
+    };
+
     const tabla = datos.disponible ? (
-        <div className="flex-1 min-h-0 overflow-auto scrollbar-thin scrollbar-thumb-gray-400">
+        <div className="flex-1 min-h-0 overflow-auto scrollbar-thin scrollbar-thumb-gray-400" onScroll={alScroll}>
             {esMovil ? (
                 datos.filas.map((feature, posicionFila) => (
                     <FilaTarjeta
@@ -105,6 +110,11 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                     Ningún registro cumple con los filtros.
                 </p>
             )}
+            {datos.cargandoMas && (
+                <p className="p-2 text-center text-[11px] font-garet text-[#8A94A6]">
+                    Trayendo más registros…
+                </p>
+            )}
         </div>
     ) : (
         <p className="p-4 text-[12px] font-garet text-graphite">{datos.mensaje}</p>
@@ -113,32 +123,15 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
     const pie = datos.disponible && (
         <div className="px-3 h-8 flex items-center gap-3 border-t border-[#EAEFFA] text-[11px] font-garet text-[#6B7585]">
             <span className="tabular-nums shrink-0">
-                {datos.cargando ? 'Consultando…' : `${(datos.total ?? 0).toLocaleString('es-MX')} registros`}
+                {datos.cargando
+                    ? 'Consultando…'
+                    : `${datos.filas.length.toLocaleString('es-MX')} de ${(datos.total ?? 0).toLocaleString('es-MX')} registros`}
             </span>
             {datos.error && (
                 <span className="min-w-0 truncate text-[#C0392B]" title={datos.error}>
                     {datos.error}
                 </span>
             )}
-            <span className="ml-auto flex items-center gap-2">
-                <button
-                    type="button"
-                    disabled={datos.pagina === 0}
-                    onClick={() => datos.irAPagina(datos.pagina - 1)}
-                    className="px-1.5 rounded hover:text-purple disabled:opacity-40 disabled:cursor-default cursor-pointer"
-                >
-                    ◀
-                </button>
-                <span className="tabular-nums">{datos.pagina + 1} de {datos.totalPaginas}</span>
-                <button
-                    type="button"
-                    disabled={datos.pagina + 1 >= datos.totalPaginas}
-                    onClick={() => datos.irAPagina(datos.pagina + 1)}
-                    className="px-1.5 rounded hover:text-purple disabled:opacity-40 disabled:cursor-default cursor-pointer"
-                >
-                    ▶
-                </button>
-            </span>
         </div>
     );
 

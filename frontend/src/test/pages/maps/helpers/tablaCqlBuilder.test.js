@@ -8,6 +8,7 @@ import {
     etiquetaFiltro,
     familiaDeColumna,
     filtroHeredado,
+    filtrosComunes,
 } from '@pages/maps/helpers/tablaCqlBuilder';
 
 describe('construirCqlColumna', () => {
@@ -111,5 +112,24 @@ describe('familiaDeColumna y etiquetaFiltro', () => {
             .toBe('municipio: 3 valores');
         expect(etiquetaFiltro('alumnos', { familia: 'numero', min: 400, max: null }))
             .toBe('alumnos ≥ 400');
+    });
+});
+
+describe('filtrosComunes', () => {
+    it('conserva solo lo que todas las hojas del grupo comparten', () => {
+        const comunes = filtrosComunes([
+            { municipio: "cve = '014'", _interno: 'a', nivel: "n = 'primaria'" },
+            { municipio: "cve = '014'", _interno: 'a', nivel: "n = 'secundaria'" },
+        ]);
+        expect(comunes).toEqual({ municipio: "cve = '014'", _interno: 'a' });
+    });
+
+    it('con una sola hoja devuelve sus filtros tal cual', () => {
+        expect(filtrosComunes([{ municipio: 'a' }])).toEqual({ municipio: 'a' });
+    });
+
+    it('sin hojas devuelve nada', () => {
+        expect(filtrosComunes([])).toEqual({});
+        expect(filtrosComunes([undefined, null])).toEqual({});
     });
 });

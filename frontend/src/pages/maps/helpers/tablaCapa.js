@@ -40,9 +40,10 @@ export const resolverObjetivo = (layerDef) => {
             wmsConfig: hojas.length > 1 ? sinFiltro : primera,
             esGrupo: true,
             hojas: hojas.length,
+            capas: hojas,
             motivo: null,
         };
     }
 
-    return { wmsConfig: primera, esGrupo: true, hojas: hojas.length, motivo: null };
+    return { wmsConfig: primera, esGrupo: true, hojas: hojas.length, capas: hojas, motivo: null };
 };

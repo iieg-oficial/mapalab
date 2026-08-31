@@ -5,6 +5,29 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.153.0] - 2026-08-28
+
+### Cambiado: la tabla de datos carga por scroll infinito y su barra es una sola pill
+
+- **Se acabo el paginador.** Las filas se acumulan al llegar al final del scroll, con el pie
+  diciendo «125 de 1 248 registros». El tope por peticion sigue siendo 100, pero el usuario ya no
+  tiene que saberlo.
+- **La barra minimizada es una sola pill**, como la de estadisticas: icono, «3 tablas» y la X por
+  fuera. Se abre tocandola. Los badges por tabla se quedan dentro del panel, que es donde hay
+  espacio para distinguirlos.
+
+### Corregido: los filtros de un grupo y el traslape con la pill de estadisticas
+
+- **Un grupo hereda los filtros que ya estaban puestos.** `useCQLFilter` los guarda por capa hoja y
+  su busqueda va de hijo a padre, asi que al abrir la tabla de un grupo no se encontraba nada:
+  filtrar por Atoyac no llegaba a la tabla de centros educativos. Ahora se toma la **interseccion**
+  de los filtros de sus hojas —lo que todas comparten, como el municipio— y se descarta lo que
+  distingue a una de otra, que es justo lo que el grupo no debe recortar.
+- **`useClearance` solo observaba los obstaculos pasados como ref, nunca los que son selector.**
+  Por eso la pill de estadisticas no se enteraba de que aparecia la barra de tablas y se
+  encimaban. Ahora tambien observa los nodos que hacen match con el selector y escucha un aviso
+  (`mapalab:layout`) que emite quien aparece o desaparece.
+
 ## [1.152.1] - 2026-08-28
 
 ### Corregido: la tabla de un grupo devolvia 400 y se quedaba sin datos

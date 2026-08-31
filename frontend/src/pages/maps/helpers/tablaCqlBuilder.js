@@ -76,6 +76,17 @@ export const construirBbox = (campoGeometria, extent, srs) => {
 
 export const LLAVE_TABLA = 'tabla';
 
+export const filtrosComunes = (filtrosPorCapa) => {
+    const listas = (filtrosPorCapa || []).filter(Boolean);
+    if (listas.length === 0) return {};
+    const [primera, ...resto] = listas;
+    const comunes = {};
+    for (const [llave, valor] of Object.entries(primera)) {
+        if (resto.every(otra => otra[llave] === valor)) comunes[llave] = valor;
+    }
+    return comunes;
+};
+
 export const filtroHeredado = (filtrosDeCapa, timeEnabled) => {
     if (!filtrosDeCapa) return null;
     const entradas = Object.entries(filtrosDeCapa).filter(([llave, valor]) => {
