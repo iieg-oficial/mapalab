@@ -5,6 +5,17 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.157.3] - 2026-09-01
+
+### Corregido: la tarjeta salia en la esquina al elegir un registro de la tabla
+
+`centerOnResults` ya sabia colocar la tarjeta sobre el feature —recibe `clickPosition` y le pasa el
+pixel del centro cuando termina la animacion—, pero la tabla no se lo estaba pasando, asi que la
+tarjeta se quedaba sin posicion y aterrizaba arriba a la izquierda. Ahora la tabla marca el pixel
+del feature **antes** de animar, para que la tarjeta no parpadee en la esquina, y deja que
+`centerOnResults` la reacomode al terminar. De paso viaja el `lngLat` del centro, que antes iba en
+`null`.
+
 ## [1.157.2] - 2026-09-01
 
 ### Cambiado: las pills del dock ya no muestran tooltip
