@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.157.1] - 2026-09-01
+
+### Corregido: el backend y el MCP no arrancaban por `httpx`
+
+`fastmcp` no esta pineado y su 4.0.0 cambio de cliente HTTP: ahora trae **`httpx2`** en vez de
+`httpx`. El backend importa `httpx` directo en `embed.py`, `access_logger.py`, `api_key_quota.py` y
+`api_key_validator.py`, pero **nunca lo declaro**: venia de arrastre por fastmcp. Al reconstruir, el
+worker moria con `ModuleNotFoundError: No module named 'httpx'` y el deploy fallaba con
+`container mapalab-backend-1 is unhealthy`. El MCP se cae igual porque comparte
+`backend/requirements.txt`.
+
+`httpx` queda declarado como lo que es: una dependencia directa.
+
 ## [1.157.0] - 2026-09-01
 
 ### Corregido: ante un 429 el recuperador de chunks amplificaba la saturacion
