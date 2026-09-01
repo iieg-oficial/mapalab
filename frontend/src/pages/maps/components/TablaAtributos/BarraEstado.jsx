@@ -18,7 +18,6 @@ const BarraEstado = () => {
         <PillMinimizada
             etiqueta={cuantas === 1 ? '1 tabla' : `${cuantas} tablas`}
             icono="tabla"
-            tooltipAbrir="Ver la tabla de datos"
             tooltipCerrar="Cerrar la tabla de datos"
             ariaAbrir="Abrir el panel de la tabla de datos"
             ariaCerrar="Cerrar la tabla de datos"

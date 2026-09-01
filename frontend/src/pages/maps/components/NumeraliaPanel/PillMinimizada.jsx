@@ -4,8 +4,6 @@ const PillNumeralia = ({ nombreCapa, ...resto }) => (
     <PillMinimizada
         etiqueta={nombreCapa}
         icono="numeralia"
-        tooltipAbrir="Ver estadísticas"
-        tooltipCerrar="Cerrar estadísticas"
         ariaAbrir={`Abrir las estadísticas de ${nombreCapa}`}
         ariaCerrar="Cerrar el panel de estadísticas"
         {...resto}

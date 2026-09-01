@@ -1,6 +1,5 @@
 import { createPortal } from 'react-dom';
 import Icon from '@components/Icon';
-import Tooltip from '@components/Tooltip';
 import PillCloseButton from '@components/PillCloseButton';
 
 const TAMANOS = {
@@ -24,7 +23,6 @@ const PillMinimizada = ({
     sufijo = null,
     activa = false,
     tamano = 'normal',
-    tooltipAbrir,
     tooltipCerrar,
     ariaAbrir,
     ariaCerrar,
@@ -40,27 +38,25 @@ const PillMinimizada = ({
 
     const pill = (
         <div ref={pillRef} className="group relative flex min-w-0 pointer-events-auto">
-            <Tooltip content={tooltipAbrir} placement="top" delay={300}>
-                <button
-                    type="button"
-                    onClick={onAbrir}
-                    aria-pressed={activa}
-                    aria-label={ariaAbrir}
-                    className={`
-                        ${medida.pill} ${medida.gap} max-w-full flex items-center cursor-pointer ${chrome}
-                    `}
-                >
-                    <Icon name={icono} className={`${medida.icono} shrink-0 text-purple`} />
-                    <span className={`${medida.texto} font-garet font-bold text-purple tracking-normal whitespace-nowrap truncate`}>
-                        {etiqueta}
+            <button
+                type="button"
+                onClick={onAbrir}
+                aria-pressed={activa}
+                aria-label={ariaAbrir}
+                className={`
+                    ${medida.pill} ${medida.gap} max-w-full flex items-center cursor-pointer ${chrome}
+                `}
+            >
+                <Icon name={icono} className={`${medida.icono} shrink-0 text-purple`} />
+                <span className={`${medida.texto} font-garet font-bold text-purple tracking-normal whitespace-nowrap truncate`}>
+                    {etiqueta}
+                </span>
+                {sufijo !== null && (
+                    <span className="text-[11px]/[14px] font-garet text-[#8894AE] tabular-nums shrink-0">
+                        {sufijo}
                     </span>
-                    {sufijo !== null && (
-                        <span className="text-[11px]/[14px] font-garet text-[#8894AE] tabular-nums shrink-0">
-                            {sufijo}
-                        </span>
-                    )}
-                </button>
-            </Tooltip>
+                )}
+            </button>
 
             {onCerrar && (
                 <PillCloseButton

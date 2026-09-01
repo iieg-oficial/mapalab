@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.157.2] - 2026-09-01
+
+### Cambiado: las pills del dock ya no muestran tooltip
+
+La pastilla dice lo mismo que decia su tooltip, asi que el globo solo tapaba el mapa al pasar por
+encima. Aplica a las dos, porque comparten `PillMinimizada`. El boton de cerrar conserva el suyo,
+que si aporta: aparece al pasar el mouse y aclara que cierra.
+
 ## [1.157.1] - 2026-09-01
 
 ### Corregido: el backend y el MCP no arrancaban por `httpx`
