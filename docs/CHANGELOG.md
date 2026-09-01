@@ -1691,6 +1691,31 @@ que esas URLs nunca coincidieron. Lo que sí se conserva es que los tiles del pl
 entre sí, que era el grueso del beneficio.
 
 La dirección del servidor se configura en el panel; no viaja en el código.
+## [1.116.6] - 2026-09-01
+
+### Corregido: ante un 429 el recuperador de chunks amplificaba la saturacion
+
+`error-recovery.js` respondia a cualquier fallo de chunk con `window.location.reload()`, hasta dos
+veces. Una recarga completa vuelve a pedir el HTML y los ~25 assets, asi que **cada visitante
+afectado sumaba ~50 peticiones** contra el mismo cubo de rate limit que ya estaba saturado, mas un
+beacon a `/mapalab/api/log/client-error` por intento. El 2026-08-31, con el gateway rechazando los
+bundles por 429, el propio frontend multiplicaba la inundacion que le impedia cargar.
+
+Ahora sondea con `HEAD` la URL que fallo antes de decidir:
+
+- **429** — no recarga nada. Espera con backoff exponencial y jitter (4 s de base, tope 60 s, seis
+  rondas), reintentando solo el sondeo, y recarga una vez cuando el gateway vuelve a responder
+  2xx/3xx. El beacon se manda **una sola vez** por sesion.
+- **Cualquier otro fallo** — el comportamiento de siempre, correcto para el caso para el que se
+  escribio: hashes viejos en cache tras un deploy.
+
+Tambien se separo el mensaje. Ante un 429 decia «Tu navegador guardo una version anterior de la
+aplicacion», diagnostico equivocado que manda al usuario a hacer Ctrl+F5 —o sea, a inundar mas—.
+Ahora hay uno propio, «MapaLab esta saturado», sin boton mientras reintenta solo.
+
+Va tambien en `tamal-rojo` como 1.157.0.
+
+
 ## [1.116.5] - 2026-08-26
 
 ### Corregido: los assets salian con dos cabeceras `Cache-Control`
