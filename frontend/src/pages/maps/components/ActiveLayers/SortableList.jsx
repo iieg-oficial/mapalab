@@ -21,7 +21,7 @@ const KEYBOARD_SENSOR_OPTIONS = {
     coordinateGetter: sortableKeyboardCoordinates,
 };
 
-export const SortableList = ({ items, onSortEnd, children, strategy = verticalListSortingStrategy, disabled = false }) => {
+export const SortableList = ({ items, onSortEnd, children, strategy = verticalListSortingStrategy, modifiers = [restrictToVerticalAxis], disabled = false }) => {
     const sensors = useSensors(
         useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
         useSensor(TouchSensor, TOUCH_SENSOR_OPTIONS),
@@ -33,7 +33,7 @@ export const SortableList = ({ items, onSortEnd, children, strategy = verticalLi
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={onSortEnd}
-            modifiers={[restrictToVerticalAxis]}
+            modifiers={modifiers}
         >
             <SortableContext
                 items={items}
@@ -69,7 +69,7 @@ export function SortableItem(props) {
     };
 
     return (
-        <div ref={setNodeRef} style={style} {...(isSticky ? { 'data-sticky': '' } : {})}>
+        <div ref={setNodeRef} style={style} className={props.className || ''} {...(isSticky ? { 'data-sticky': '' } : {})}>
             {React.Children.map(props.children, child => {
                 if (React.isValidElement(child)) {
                     return React.cloneElement(child, {

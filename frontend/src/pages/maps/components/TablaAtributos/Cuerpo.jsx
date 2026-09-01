@@ -1,22 +1,33 @@
+import Checkbox from '@components/Checkbox';
 import { formatearValor } from '@pages/maps/helpers/tablaFormato';
 
 const NUMERICOS = new Set(['entero', 'decimal', 'moneda']);
 
-const Cuerpo = ({ columnas, plantilla, filas, seleccionada, onSeleccionar }) => (
+const Cuerpo = ({ columnas, plantilla, filas, seleccionadas, onSeleccionar }) => (
     <div>
         {filas.map((feature, indice) => {
             const propiedades = feature?.properties || {};
-            const activa = seleccionada === feature?.id;
+            const activa = seleccionadas.has(feature?.id);
             return (
                 <div
                     key={feature?.id || indice}
                     role="row"
                     tabIndex={0}
-                    onClick={() => onSeleccionar(feature)}
-                    onKeyDown={evento => { if (evento.key === 'Enter') onSeleccionar(feature); }}
+                    onClick={evento => onSeleccionar(feature, indice, {
+                        rango: evento.shiftKey,
+                        alternar: evento.ctrlKey || evento.metaKey,
+                    })}
+                    onKeyDown={evento => { if (evento.key === 'Enter') onSeleccionar(feature, indice, {}); }}
                     style={{ gridTemplateColumns: plantilla }}
-                    className={`grid border-b border-[#EAEFFA] cursor-pointer ${activa ? 'bg-[#FFF3E6]' : 'hover:bg-[#F9FBFF]'}`}
+                    className={`grid border-b border-[#EAEFFA] cursor-pointer select-none ${activa ? 'bg-[#FFF3E6]' : 'hover:bg-[#F9FBFF]'}`}
                 >
+                    <span className="flex items-center justify-center">
+                        <Checkbox
+                            checked={activa}
+                            onChange={() => onSeleccionar(feature, indice, { alternar: true })}
+                            className="mr-0"
+                        />
+                    </span>
                     {columnas.map(columna => (
                         <span
                             key={columna.nombre}

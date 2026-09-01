@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.158.0] - 2026-09-01
+
+### Agregado: seleccion multiple de registros y pestanas que mandan sobre las capas activas
+
+- **Varios registros a la vez.** Cada fila lleva casilla, `Ctrl`/`Cmd` alterna de a uno y `Shift`
+  toma el rango desde el ultimo tocado. Todos los elegidos se resaltan juntos en el mapa y el pie
+  dice cuantos van, con un enlace para limpiar.
+- **Las pestanas seleccionan la capa** en el panel de capas activas al tocarlas, asi que abrir una
+  tabla deja esa capa en foco para simbologia y estadisticas.
+- **Las pestanas se arrastran para reordenar** y el orden se escribe en las capas activas. Un grupo
+  arrastra a sus hojas: se expande a los ids reales antes de guardar el orden, y las capas activas
+  que no son pestana —etiquetas, categorias— se quedan donde estaban.
+
+Se reusaron `SortableList` y `SortableItem` del panel de capas activas, que ahora aceptan
+`modifiers` y `className` para poder ordenarse en horizontal.
+
 ## [1.157.3] - 2026-09-01
 
 ### Corregido: la tarjeta salia en la esquina al elegir un registro de la tabla

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hojasConTabla, resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
+import { hojasConTabla, reordenarActivas, resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
 
 const hoja = (id, extra = {}) => ({
     id,
@@ -75,5 +75,27 @@ describe('hojasConTabla', () => {
             ],
         };
         expect(hojasConTabla(arbol).map(item => item.id)).toEqual(['a', 'b']);
+    });
+});
+
+describe('reordenarActivas', () => {
+    const tablas = [
+        { id: 'grupo', childIds: ['a', 'b'] },
+        { id: 'suelta', childIds: ['c'] },
+    ];
+
+    it('expande cada pestana a sus hojas conservando el orden nuevo', () => {
+        expect(reordenarActivas(['suelta', 'grupo'], tablas, ['a', 'b', 'c']))
+            .toEqual(['c', 'a', 'b']);
+    });
+
+    it('conserva las capas activas que no son pestana', () => {
+        expect(reordenarActivas(['grupo'], tablas, ['a', 'b', 'etiqueta']))
+            .toEqual(['a', 'b', 'etiqueta']);
+    });
+
+    it('ignora hojas que ya no estan activas', () => {
+        expect(reordenarActivas(['grupo', 'suelta'], tablas, ['b', 'c']))
+            .toEqual(['b', 'c']);
     });
 });

@@ -9,6 +9,7 @@ const Encabezado = ({ columnas, plantilla, campos, orden, filtros, municipiosDe,
             className="sticky top-0 z-2 grid bg-[#F9FBFF] border-b border-[#EAEFFA]"
             style={{ gridTemplateColumns: plantilla }}
         >
+            <span aria-hidden="true" />
             {columnas.map(columna => {
                 const conFiltro = Boolean(filtros[columna.nombre]);
                 const esOrdenada = orden?.columna === columna.nombre;

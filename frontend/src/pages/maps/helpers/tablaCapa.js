@@ -47,3 +47,25 @@ export const resolverObjetivo = (layerDef) => {
 
     return { wmsConfig: primera, esGrupo: true, hojas: hojas.length, capas: hojas, motivo: null };
 };
+
+export const reordenarActivas = (ordenTablas, tablas, activeLayerIds) => {
+    const activas = Array.isArray(activeLayerIds) ? activeLayerIds : [];
+    const hojasDe = new Map((tablas || []).map(tabla => [tabla.id, tabla.childIds || [tabla.id]]));
+    const usados = new Set();
+    const resultado = [];
+
+    for (const id of ordenTablas || []) {
+        for (const hoja of hojasDe.get(id) || [id]) {
+            if (activas.includes(hoja) && !usados.has(hoja)) {
+                resultado.push(hoja);
+                usados.add(hoja);
+            }
+        }
+    }
+
+    for (const id of activas) {
+        if (!usados.has(id)) resultado.push(id);
+    }
+
+    return resultado;
+};

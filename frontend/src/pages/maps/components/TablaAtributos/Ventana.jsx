@@ -19,7 +19,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
     const { municipioMode } = useMapsContext();
     const datos = useTablaDatos(layerId, { minimizada });
     const catalogo = useCatalogoCampos(layerId, !minimizada);
-    const seleccion = useTablaSeleccion(layerId, datos.layerDef);
+    const seleccion = useTablaSeleccion(layerId, datos.layerDef, datos.filas);
     const { posicion, manejadores } = useArrastreVentana(() => posicionCentrada(indice));
     const [verCql, setVerCql] = useState(false);
     const [pestana, setPestana] = useState('datos');
@@ -66,7 +66,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
         </div>
     );
 
-    const plantilla = `repeat(${Math.max(datos.visibles.length, 1)}, minmax(150px, 1fr))`;
+    const plantilla = `32px repeat(${Math.max(datos.visibles.length, 1)}, minmax(150px, 1fr))`;
 
     const alScroll = (evento) => {
         const { scrollTop, scrollHeight, clientHeight } = evento.currentTarget;
@@ -81,8 +81,8 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                         key={feature?.id || posicionFila}
                         columnas={datos.visibles}
                         feature={feature}
-                        activa={seleccion.seleccionada === feature?.id}
-                        onSeleccionar={seleccion.seleccionar}
+                        activa={seleccion.seleccionadas.has(feature?.id)}
+                        onSeleccionar={fila => seleccion.seleccionar(fila, posicionFila, {})}
                     />
                 ))
             ) : (
@@ -102,7 +102,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                         columnas={datos.visibles}
                         plantilla={plantilla}
                         filas={datos.filas}
-                        seleccionada={seleccion.seleccionada}
+                        seleccionadas={seleccion.seleccionadas}
                         onSeleccionar={seleccion.seleccionar}
                     />
                 </div>
@@ -129,6 +129,15 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                     ? 'Consultando…'
                     : `${datos.filas.length.toLocaleString('es-MX')} de ${(datos.total ?? 0).toLocaleString('es-MX')} registros`}
             </span>
+            {seleccion.cuantas > 0 && (
+                <button
+                    type="button"
+                    onClick={seleccion.limpiar}
+                    className="shrink-0 text-purple hover:underline cursor-pointer"
+                >
+                    {seleccion.cuantas === 1 ? '1 seleccionado' : `${seleccion.cuantas} seleccionados`} · limpiar
+                </button>
+            )}
             {datos.error && (
                 <span className="min-w-0 truncate text-[#C0392B]" title={datos.error}>
                     {datos.error}
