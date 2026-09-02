@@ -84,16 +84,17 @@ const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, layerId, datos, 
 
                 <span className="w-px h-3 bg-[#DCE3F0] mx-0.5" />
 
-                {acople !== 'flotante' && (
-                    <ActionIconButton
-                        onClick={() => onAcoplar('flotante')}
-                        titulo="Soltar el panel: vuelve a ser una ventana que se mueve por encima del mapa"
-                        etiqueta="Soltar el panel"
-                        tamano="sm"
-                    >
-                        <Icon name="desacoplar" className="size-3.5" />
-                    </ActionIconButton>
-                )}
+                <ActionIconButton
+                    onClick={() => onAcoplar(acople === 'abajo' ? 'flotante' : 'abajo')}
+                    activo={acople === 'abajo'}
+                    titulo={acople === 'abajo'
+                        ? 'Soltar el panel: vuelve a ser una ventana que se mueve por encima del mapa'
+                        : 'Fijar el panel al pie: el mapa se hace más bajo y le cede el espacio, en vez de quedar tapado'}
+                    etiqueta={acople === 'abajo' ? 'Soltar el panel' : 'Fijar el panel al pie'}
+                    tamano="sm"
+                >
+                    <Icon name="desacoplar" className="size-3.5" />
+                </ActionIconButton>
 
                 <ActionIconButton
                     onClick={alternarMinimizado}

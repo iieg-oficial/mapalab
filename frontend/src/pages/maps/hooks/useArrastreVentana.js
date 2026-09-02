@@ -34,7 +34,7 @@ export const useArrastreVentana = (inicial, onSoltarEnZona) => {
             y: limitar(origen.y + evento.clientY - origen.clienteY, 0, Math.max(alto - 120, 0)),
         });
 
-        const siguiente = zonaDeSnap({ x: evento.clientX, y: evento.clientY, ancho, alto });
+        const siguiente = zonaDeSnap({ y: evento.clientY, alto });
         if (siguiente !== zonaRef.current) {
             zonaRef.current = siguiente;
             setZona(siguiente);

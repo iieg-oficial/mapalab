@@ -13,6 +13,7 @@ import { SIDER_EXPANDED_WIDTH, TOOLS_COMPACT_MEDIA_QUERY } from '@constants/side
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import { useIsMobile } from '@hooks/useIsMobile';
 import { useSider } from '@contexts/SiderContext';
+import { useAreaUtil } from '@contexts/AreaUtilContext';
 import {
     leerPreferenciaCompacta,
     guardarPreferenciaCompacta,
@@ -39,8 +40,9 @@ const MapToolsPanel = () => {
     const [preferencia, setPreferencia] = useState(leerPreferenciaCompacta);
     const esCompacto = useMediaQuery(TOOLS_COMPACT_MEDIA_QUERY);
     const isMobile = useIsMobile();
+    const { acoplado } = useAreaUtil();
 
-    const isCollapsed = resolveToolsCollapsed({ isMobile, esCompacto, preferencia });
+    const isCollapsed = acoplado || resolveToolsCollapsed({ isMobile, esCompacto, preferencia });
 
     const alternarCompacto = useCallback(() => {
         const siguiente = isCollapsed ? '0' : '1';

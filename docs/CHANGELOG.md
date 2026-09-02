@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.163.0] - 2026-09-02
+
+### Cambiado: el acoplado se queda solo con el borde inferior
+
+Los tres bordes restantes chocaban con la interfaz —el sider a la izquierda, los paneles de capas
+activas y descargas a la derecha—, asi que el acoplado se queda con el unico que no pelea con nadie.
+Con eso, el gesto deja de ser lo unico que acopla: hay un boton fijo en el encabezado que fija y
+suelta el panel, y se pinta encendido mientras esta fijo.
+
+Al fijarlo, la interfaz se hace a un lado sola: el panel de capas activas y el de descargas se
+recogen, y el visor entra en modo zen. Al soltarlo todo vuelve.
+
 ## [1.162.1] - 2026-09-02
 
 ### Corregido: el acoplado tapaba la interfaz, y ya se puede acoplar arriba

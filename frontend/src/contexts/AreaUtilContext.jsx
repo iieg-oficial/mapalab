@@ -18,10 +18,15 @@ export const AreaUtilProvider = ({ children }) => {
         });
     }, []);
 
-    const value = useMemo(() => ({ margenes, fijarMargenes }), [margenes, fijarMargenes]);
+    const acoplado = margenes.left > 0 || margenes.right > 0 || margenes.top > 0 || margenes.bottom > 0;
+
+    const value = useMemo(
+        () => ({ margenes, acoplado, fijarMargenes }),
+        [margenes, acoplado, fijarMargenes],
+    );
 
     return <AreaUtilContext.Provider value={value}>{children}</AreaUtilContext.Provider>;
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useAreaUtil = () => useContext(AreaUtilContext) || { margenes: SIN_MARGENES };
+export const useAreaUtil = () => useContext(AreaUtilContext) || { margenes: SIN_MARGENES, acoplado: false };
