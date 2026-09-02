@@ -3,8 +3,10 @@ import { useMapsContext } from '@hooks/useMaps';
 import { BASEMAPS } from '@pages/maps/helpers/basemaps';
 import ReportButton from '@components/ReportButton';
 import CatalogoEntryButton from './CatalogoEntryButton';
+import { useAreaUtil } from '@contexts/AreaUtilContext';
 
 const MapAttribution = ({ hideActions = false, extraRight = null }) => {
+    const { margenes } = useAreaUtil();
     const { baseMapId } = useMapsContext();
     const basemapConfig = BASEMAPS[baseMapId];
     const [open, setOpen] = useState(false);
@@ -12,7 +14,10 @@ const MapAttribution = ({ hideActions = false, extraRight = null }) => {
     if (!basemapConfig || basemapConfig.id === 'sin_mapalab') return null;
 
     return (
-        <div className="fixed bottom-4 right-4 md:bottom-2 md:right-2 z-10 flex items-center gap-2">
+        <div
+            className="fixed bottom-4 right-4 md:bottom-2 md:right-2 z-10 flex items-center gap-2"
+            style={{ marginRight: margenes.right, marginBottom: margenes.bottom }}
+        >
             {!hideActions && (
                 <>
                     <ReportButton variant="floating" label="Reportar problema o sugerencia" extraContext={{ source: 'map_attribution' }} />

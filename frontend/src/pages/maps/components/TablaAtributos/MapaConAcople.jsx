@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import MapView from '@mapsComponents/MapView';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
+import { useAreaUtil } from '@contexts/AreaUtilContext';
 import { useAcopleMapa } from '@hooksMaps/useAcopleMapa';
 import { margenesDelMapa } from '@pages/maps/helpers/tablaAcople';
 
@@ -11,6 +12,7 @@ const medidaVentana = () => ({
 
 const MapaConAcople = () => {
     const { activo, acople, minimizado } = useTablaAtributos();
+    const { fijarMargenes } = useAreaUtil();
     const [ventana, setVentana] = useState(medidaVentana);
 
     useEffect(() => {
@@ -21,6 +23,9 @@ const MapaConAcople = () => {
 
     const acopleVigente = activo && !minimizado ? acople : 'flotante';
     const margenes = margenesDelMapa(acopleVigente, ventana);
+
+    const { left, right, bottom } = margenes;
+    useEffect(() => { fijarMargenes({ left, right, bottom }); }, [fijarMargenes, left, right, bottom]);
 
     useAcopleMapa(acopleVigente);
 

@@ -21,6 +21,7 @@ import { SiderProvider } from '@contexts/SiderContext';
 import { ZenModeProvider } from './components/ZenMode';
 import { NumeraliaPanelProvider } from '@contexts/NumeraliaPanelContext';
 import { TablaAtributosProvider } from '@contexts/TablaAtributosContext';
+import { AreaUtilProvider } from '@contexts/AreaUtilContext';
 import TablaAtributos from './components/TablaAtributos/TablaAtributos';
 import DockPills from './components/DockPills';
 import useThemeColor from '@hooks/useThemeColor';
@@ -37,36 +38,38 @@ const Maps = () => {
         <SiderProvider>
             <ZenModeProvider>
                 <NumeraliaPanelProvider>
-                    <TablaAtributosProvider>
-                        <SEO
-                            title="Mapa Interactivo | Mapalab"
-                            description="Mapa interactivo de Jalisco con capas geoespaciales: temperatura, precipitación, recursos naturales, eventos y más. Herramienta oficial del IIEG para consulta y análisis territorial."
-                            schemaType="WebApplication"
-                            keywords="mapa interactivo Jalisco, capas geoespaciales Jalisco, mapa temperatura Jalisco, mapa precipitación Jalisco, mapa recursos naturales Jalisco, IIEG, GeoServer Jalisco"
-                        />
-                        <h1 className="sr-only">Mapa interactivo de Jalisco con capas geoespaciales — MapaLab IIEG</h1>
-                        <p className="sr-only">
-                        Herramienta oficial del Instituto de Información Estadística y Geográfica de Jalisco (IIEG) para visualizar el mapa de Jalisco con capas temáticas: temperatura, precipitación, recursos naturales, eventos, infraestructura y datos estadísticos del estado.
-                        </p>
-                        <div className="relative w-full h-dvh">
-                            <MapSider />
-                            <MapToolsPanel />
-                            <MunicipioActiveChip />
-                            <MapLayersPanels />
-                            <LayerDetailModal />
-                            <NumeraliaPanel />
-                            <InfoBox />
-                            <ScaleLineControl />
-                            <MapAttribution />
-                            <MapControls />
-                            {!isComparing && <MeasurementTools />}
-                            {isComparing ? <SwipeView /> : <MapaConAcople />}
-                            {isComparing && <SwipeSlotControls />}
-                            <LayerNotices />
-                            <DockPills />
-                            <TablaAtributos />
-                        </div>
-                    </TablaAtributosProvider>
+                    <AreaUtilProvider>
+                        <TablaAtributosProvider>
+                            <SEO
+                                title="Mapa Interactivo | Mapalab"
+                                description="Mapa interactivo de Jalisco con capas geoespaciales: temperatura, precipitación, recursos naturales, eventos y más. Herramienta oficial del IIEG para consulta y análisis territorial."
+                                schemaType="WebApplication"
+                                keywords="mapa interactivo Jalisco, capas geoespaciales Jalisco, mapa temperatura Jalisco, mapa precipitación Jalisco, mapa recursos naturales Jalisco, IIEG, GeoServer Jalisco"
+                            />
+                            <h1 className="sr-only">Mapa interactivo de Jalisco con capas geoespaciales — MapaLab IIEG</h1>
+                            <p className="sr-only">
+                            Herramienta oficial del Instituto de Información Estadística y Geográfica de Jalisco (IIEG) para visualizar el mapa de Jalisco con capas temáticas: temperatura, precipitación, recursos naturales, eventos, infraestructura y datos estadísticos del estado.
+                            </p>
+                            <div className="relative w-full h-dvh">
+                                <MapSider />
+                                <MapToolsPanel />
+                                <MunicipioActiveChip />
+                                <MapLayersPanels />
+                                <LayerDetailModal />
+                                <NumeraliaPanel />
+                                <InfoBox />
+                                <ScaleLineControl />
+                                <MapAttribution />
+                                <MapControls />
+                                {!isComparing && <MeasurementTools />}
+                                {isComparing ? <SwipeView /> : <MapaConAcople />}
+                                {isComparing && <SwipeSlotControls />}
+                                <LayerNotices />
+                                <DockPills />
+                                <TablaAtributos />
+                            </div>
+                        </TablaAtributosProvider>
+                    </AreaUtilProvider>
                 </NumeraliaPanelProvider>
             </ZenModeProvider>
         </SiderProvider>

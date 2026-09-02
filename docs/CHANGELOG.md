@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.162.0] - 2026-09-02
+
+### Agregado: el area util del mapa como fuente de verdad de los flotantes
+
+Con el panel acoplado, los elementos que viven encima del mapa seguian calculando su posicion contra
+el sider y quedaban debajo del panel. Ahora hay un contexto —`AreaUtilContext`— con lo que el mapa
+cede por cada lado, que publica el propio acople y consumen los flotantes: el dock de las pastillas,
+los controles de zoom, la barra de escala y la atribucion.
+
+Es la pieza que faltaba para que el acoplado se sienta como una ventana de escritorio y no como un
+panel encimado, y deja el camino para que lo mismo aplique a cualquier panel que se acople despues.
+
 ## [1.161.0] - 2026-09-02
 
 ### Agregado: el panel de la tabla se acopla a los bordes y el mapa le cede el espacio

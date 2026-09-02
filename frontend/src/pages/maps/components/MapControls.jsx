@@ -14,6 +14,7 @@ import { Fill, Stroke } from 'ol/style';
 import Icon from '@components/Icon';
 import { trackMapZoomLevel, trackGeolocate } from '@services/analyticsService';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
+import { useAreaUtil } from '@contexts/AreaUtilContext';
 
 
 const MapControls = () => {
@@ -21,6 +22,7 @@ const MapControls = () => {
     const [hoveredButton, setHoveredButton] = useState(null);
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 180 });
     const { width: siderWidth, isMobile } = useSider();
+    const { margenes } = useAreaUtil();
     const locationLayerRef = useRef(null);
     const isSwipe = !!compareMode?.active;
 
@@ -164,7 +166,11 @@ const MapControls = () => {
     return (
         <div
             className={`fixed bottom-15 z-10 flex items-end ${className}`}
-            style={style}
+            style={{
+                ...style,
+                left: `calc(${style?.left || '0px'} + ${margenes.left}px)`,
+                bottom: `calc(3.75rem + ${margenes.bottom}px)`,
+            }}
         >
             <div className="relative flex flex-col justify-center items-center rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
                 <button
