@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { zonaDeSnap } from '@pages/maps/helpers/tablaAcople';
 
 const limitar = (valor, minimo, maximo) => Math.min(Math.max(valor, minimo), maximo);
 
@@ -16,9 +17,11 @@ export const posicionCentrada = (indice = 0) => {
     };
 };
 
-export const useArrastreVentana = (inicial) => {
+export const useArrastreVentana = (inicial, onSoltarEnZona) => {
     const [posicion, setPosicion] = useState(inicial);
+    const [zona, setZona] = useState(null);
     const origenRef = useRef(null);
+    const zonaRef = useRef(null);
 
     const alMover = useCallback((evento) => {
         const origen = origenRef.current;
@@ -30,12 +33,23 @@ export const useArrastreVentana = (inicial) => {
             x: limitar(origen.x + evento.clientX - origen.clienteX, 0, Math.max(ancho - 220, 0)),
             y: limitar(origen.y + evento.clientY - origen.clienteY, 0, Math.max(alto - 120, 0)),
         });
+
+        const siguiente = zonaDeSnap({ x: evento.clientX, y: evento.clientY, ancho, alto });
+        if (siguiente !== zonaRef.current) {
+            zonaRef.current = siguiente;
+            setZona(siguiente);
+        }
     }, []);
 
     const alSoltar = useCallback((evento) => {
+        const arrastraba = Boolean(origenRef.current);
         origenRef.current = null;
         evento.currentTarget?.releasePointerCapture?.(evento.pointerId);
-    }, []);
+
+        if (arrastraba && zonaRef.current) onSoltarEnZona?.(zonaRef.current);
+        zonaRef.current = null;
+        setZona(null);
+    }, [onSoltarEnZona]);
 
     const alPresionar = useCallback((evento) => {
         if (evento.button !== 0) return;
@@ -52,6 +66,7 @@ export const useArrastreVentana = (inicial) => {
     return {
         posicion,
         setPosicion,
+        zona,
         manejadores: {
             onPointerDown: alPresionar,
             onPointerMove: alMover,

@@ -1,6 +1,6 @@
 import 'ol/ol.css';
 import SEO from '@components/SEO';
-import MapView from '@mapsComponents/MapView';
+import MapaConAcople from './components/TablaAtributos/MapaConAcople';
 import SwipeView from '@mapsComponents/SwipeView';
 import SwipeSlotControls from '@mapsComponents/SwipeSlotControls';
 import MapSider from '@mapsComponents/MapSider';
@@ -60,7 +60,7 @@ const Maps = () => {
                             <MapAttribution />
                             <MapControls />
                             {!isComparing && <MeasurementTools />}
-                            {isComparing ? <SwipeView /> : <MapView />}
+                            {isComparing ? <SwipeView /> : <MapaConAcople />}
                             {isComparing && <SwipeSlotControls />}
                             <LayerNotices />
                             <DockPills />

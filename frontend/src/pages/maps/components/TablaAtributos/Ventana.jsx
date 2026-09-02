@@ -5,6 +5,8 @@ import { useTablaAtributos } from '@contexts/TablaAtributosContext';
 import { useTablaDatos } from '@hooksMaps/useTablaDatos';
 import { useTablaSeleccion } from '@hooksMaps/useTablaSeleccion';
 import { posicionCentrada, useArrastreVentana } from '@hooksMaps/useArrastreVentana';
+import { estiloDelPanel } from '@pages/maps/helpers/tablaAcople';
+import VistaPreviaSnap from './VistaPreviaSnap';
 import { useCatalogoCampos } from '@hooksMaps/useStatsBuilder';
 import ChipsFiltro from './ChipsFiltro';
 import Encabezado from './Encabezado';
@@ -15,12 +17,12 @@ import PestanasTablas from './PestanasTablas';
 import VentanaBarra from './VentanaBarra';
 
 const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
-    const { activar, cerrarTodas, nombreDe, capaDe } = useTablaAtributos();
+    const { activar, cerrarTodas, nombreDe, capaDe, acople, acoplar } = useTablaAtributos();
     const { municipioMode } = useMapsContext();
     const datos = useTablaDatos(layerId, { minimizada });
     const catalogo = useCatalogoCampos(layerId, !minimizada);
     const seleccion = useTablaSeleccion(layerId, datos.layerDef, datos.filas, datos.tarjeta);
-    const { posicion, manejadores } = useArrastreVentana(() => posicionCentrada(indice));
+    const { posicion, manejadores, zona } = useArrastreVentana(() => posicionCentrada(indice), acoplar);
     const [verCql, setVerCql] = useState(false);
     const scrollRef = useRef(null);
     const desplazamientoRef = useRef(0);
@@ -59,6 +61,8 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
             verCql={verCql}
             onAlternarCql={() => setVerCql(valor => !valor)}
             onCerrar={cerrarTodas}
+            acople={acople}
+            onAcoplar={acoplar}
             arrastre={esMovil ? null : manejadores}
         />
     );
@@ -223,16 +227,30 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
         );
     }
 
+    const acoplado = acople !== 'flotante';
+    const estiloAcoplado = acoplado
+        ? estiloDelPanel(acople, { ancho: window.innerWidth, alto: window.innerHeight })
+        : null;
+
     return (
-        <div
-            role="dialog"
-            aria-label={`Tabla de atributos de ${nombre}`}
-            onPointerDown={() => activar(layerId)}
-            style={{ left: posicion.x, top: posicion.y, zIndex: activa ? 13 : 12 }}
-            className={`fixed w-[min(760px,92vw)] h-[min(420px,60vh)] flex flex-col rounded-[10px] bg-white shadow-[0_5px_20px_#1A26641A] border overflow-hidden transition-colors ${activa ? 'border-purple' : 'border-[#EAEFFA]'}`}
-        >
-            {cuerpoCompleto}
-        </div>
+        <>
+            <VistaPreviaSnap zona={zona} />
+            <div
+                role="dialog"
+                aria-label={`Tabla de atributos de ${nombre}`}
+                onPointerDown={() => activar(layerId)}
+                style={estiloAcoplado
+                    ? { ...estiloAcoplado, zIndex: activa ? 13 : 12 }
+                    : { left: posicion.x, top: posicion.y, zIndex: activa ? 13 : 12 }}
+                className={`
+                    fixed flex flex-col bg-white shadow-[0_5px_20px_#1A26641A] border overflow-hidden transition-colors
+                    ${acoplado ? 'rounded-none' : 'w-[min(760px,92vw)] h-[min(420px,60vh)] rounded-[10px]'}
+                    ${activa ? 'border-purple' : 'border-[#EAEFFA]'}
+                `}
+            >
+                {cuerpoCompleto}
+            </div>
+        </>
     );
 };
 

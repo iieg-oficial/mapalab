@@ -4,7 +4,7 @@ import ActionIconButton from '@components/ActionIconButton';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
 import SelectorColumnas from './SelectorColumnas';
 
-const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, layerId, datos, verCql, onAlternarCql, onCerrar, arrastre }) => {
+const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, layerId, datos, verCql, acople, onAcoplar, onAlternarCql, onCerrar, arrastre }) => {
     const { alternarMinimizado, alternarColumna, mostrarTodasLasColumnas } = useTablaAtributos();
     const { vista } = datos;
     const siguiendo = vista.vista === 'visible';
@@ -83,6 +83,17 @@ const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, layerId, datos, 
                 )}
 
                 <span className="w-px h-3 bg-[#DCE3F0] mx-0.5" />
+
+                {acople !== 'flotante' && (
+                    <ActionIconButton
+                        onClick={() => onAcoplar('flotante')}
+                        titulo="Soltar el panel: vuelve a ser una ventana que se mueve por encima del mapa"
+                        etiqueta="Soltar el panel"
+                        tamano="sm"
+                    >
+                        <Icon name="desacoplar" className="size-3.5" />
+                    </ActionIconButton>
+                )}
 
                 <ActionIconButton
                     onClick={alternarMinimizado}

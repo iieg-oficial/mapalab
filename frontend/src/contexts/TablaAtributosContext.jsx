@@ -22,6 +22,7 @@ export const TablaAtributosProvider = ({ children }) => {
     const [activo, setActivo] = useState(false);
     const [activaId, setActivaId] = useState(null);
     const [minimizado, setMinimizado] = useState(false);
+    const [acople, setAcople] = useState('flotante');
     const [porCapa, setPorCapa] = useState({});
 
     const tablas = useMemo(() => {
@@ -74,6 +75,11 @@ export const TablaAtributosProvider = ({ children }) => {
     }, []);
 
     const alternarMinimizado = useCallback(() => setMinimizado(valor => !valor), []);
+
+    const acoplar = useCallback((modo) => {
+        setAcople(modo || 'flotante');
+        if (modo && modo !== 'flotante') setMinimizado(false);
+    }, []);
 
     const estadoDe = useCallback((layerId) => porCapa[layerId] || ESTADO_CAPA, [porCapa]);
 
@@ -133,6 +139,8 @@ export const TablaAtributosProvider = ({ children }) => {
         tablas,
         activaId,
         minimizado,
+        acople,
+        acoplar,
         estaAbierta: (layerId) => tablas.some(capa => capa.id === layerId),
         nombreDe: (layerId) => tablas.find(capa => capa.id === layerId)?.nombre || 'Capa',
         capaDe: (layerId) => tablas.find(capa => capa.id === layerId) || null,
@@ -151,7 +159,7 @@ export const TablaAtributosProvider = ({ children }) => {
         alternarColumna,
         mostrarTodasLasColumnas,
     }), [
-        activo, tablas, activaId, minimizado, abrir, cerrarTodas, activar, alternarMinimizado,
+        activo, tablas, activaId, minimizado, acople, acoplar, abrir, cerrarTodas, activar, alternarMinimizado,
         estadoDe, ponerFiltro, quitarFiltro, limpiarFiltros, fijarExpresionPropia, fijarOrden,
         fijarVista, fijarConteo, alternarColumna, mostrarTodasLasColumnas,
     ]);

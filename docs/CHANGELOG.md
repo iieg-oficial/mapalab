@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.161.0] - 2026-09-02
+
+### Agregado: el panel de la tabla se acopla a los bordes y el mapa le cede el espacio
+
+Primera pasada del acoplado tipo ventanas de escritorio. Arrastrando el panel por su encabezado
+hacia un borde aparece la vista previa del area que va a ocupar; al soltar se acopla, y **el mapa se
+angosta** de verdad en vez de quedar tapado: su contenedor cede el ancho o el alto y OpenLayers
+recibe `updateSize()` mientras dura la transicion, para que no quede el lienzo viejo.
+
+- Izquierda y derecha toman el 42 % del ancho; abajo, el 40 % del alto.
+- El borde inferior gana en las esquinas, que es lo que se espera al arrastrar hacia abajo.
+- Un boton en el encabezado suelta el panel y lo devuelve a ventana flotante.
+- Minimizar la tabla devuelve el mapa a pantalla completa sin perder el acople.
+
+La geometria vive en `helpers/tablaAcople.js`, aparte y con tests, porque de ahi salen tanto el
+tamano del panel como lo que cede el mapa y tienen que coincidir exactamente.
+
 ## [1.160.2] - 2026-09-02
 
 ### Eliminado: la primera columna y la casilla ya no quedan ancladas
