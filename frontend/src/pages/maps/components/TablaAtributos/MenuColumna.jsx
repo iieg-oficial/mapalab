@@ -60,7 +60,7 @@ const MenuColumna = ({
     };
 
     return (
-        <div className="w-60 p-3 flex flex-col gap-2.5 rounded-[10px] bg-white shadow-[0_5px_20px_#1A26641A] border border-[#EAEFFA]">
+        <div className="w-full p-3 flex flex-col gap-2.5">
             <div className="flex items-center justify-between gap-2">
                 <span className="text-[12px] font-garet font-bold text-purple truncate">{columna}</span>
                 <button

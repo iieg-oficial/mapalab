@@ -180,11 +180,14 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         const ctx = municipioMode?.municipioContext;
         if (!municipio || !ctx?.active) return [];
         const nombres = ctx.nombres || [];
-        const etiqueta = nombres.length === 1
-            ? `Municipio: ${nombres[0]}`
-            : `${ctx.claves?.length || nombres.length} municipios`;
+        const cuantos = ctx.claves?.length || nombres.length;
+        const alcance = municipioMode?.scopeLabel;
+        let etiqueta;
+        if (alcance && cuantos > 1) etiqueta = alcance;
+        else if (nombres.length === 1) etiqueta = `Municipio: ${nombres[0]}`;
+        else etiqueta = alcance || `${cuantos} municipios`;
         return [{ columna: null, etiqueta, fijo: true }];
-    }, [municipio, municipioMode?.municipioContext]);
+    }, [municipio, municipioMode?.municipioContext, municipioMode?.scopeLabel]);
 
     const visibles = useMemo(() => columnas.filter(columna => columna.visible), [columnas]);
 

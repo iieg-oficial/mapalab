@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.158.2] - 2026-09-02
+
+### Cambiado: el filtro de cada columna se ve, se abre y dice donde estas parado
+
+- **Cada encabezado lleva su embudo**: gris cuando la columna no esta filtrada y naranja cuando si,
+  para que se note de un vistazo cuales recortan la tabla.
+- **El menu de la columna ya se ve.** Estaba dentro del contenedor con scroll, que recorta a sus
+  hijos absolutos, asi que se cortaba: no era z-index. Ahora sale por el componente `Panel`, que lo
+  saca con un portal y lo ancla al encabezado.
+- **El chip de municipio nombra el alcance.** Si la seleccion es la ZMG o una region, dice «ZMG» o
+  «Region Altos Norte» en vez de «9 municipios». Sale de `scopeLabel`, que el modo municipio ya
+  calculaba para su propio chip.
+
 ## [1.158.1] - 2026-09-01
 
 ### Corregido: el filtro de capas disparaba la firma de inyeccion SQL del WAF
