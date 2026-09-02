@@ -1,9 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import GeoJSON from 'ol/format/GeoJSON';
 import { getCenter } from 'ol/extent';
 import { toLonLat } from 'ol/proj';
 import { useMapsContext } from '@hooks/useMaps';
 import { centerOnResults } from '@pages/maps/helpers/featureGeometry';
+import { LLAVE_SELECCION, cqlDeIds } from '@pages/maps/helpers/tablaCqlBuilder';
+
+const MINIMO_MULTIPLE = 2;
 
 const formato = new GeoJSON();
 
@@ -27,8 +30,8 @@ const rango = (desde, hasta) => {
     return Array.from({ length: fin - inicio + 1 }, (_, i) => inicio + i);
 };
 
-export const useTablaSeleccion = (layerId, layerDef, filas) => {
-    const { mapRef, setSelectedFeatureInfo, clickPosition } = useMapsContext();
+export const useTablaSeleccion = (layerId, layerDef, filas, tarjeta) => {
+    const { mapRef, setSelectedFeatureInfo, clickPosition, applyFilter, clearFilter } = useMapsContext();
     const [ids, setIds] = useState([]);
     const anclaRef = useRef(null);
 
@@ -44,6 +47,7 @@ export const useTablaSeleccion = (layerId, layerDef, filas) => {
         const results = [{
             layerId,
             layerName: nombre,
+            littleCard: tarjeta || undefined,
             features: elegidas,
             cachedFeatures: elegidas,
             totalAvailable: elegidas.length,
@@ -67,13 +71,17 @@ export const useTablaSeleccion = (layerId, layerDef, filas) => {
         });
 
         centerOnResults({ activeMap: mapa, results });
-    }, [clickPosition, layerDef, layerId, mapRef, setSelectedFeatureInfo]);
+    }, [clickPosition, layerDef, layerId, mapRef, setSelectedFeatureInfo, tarjeta]);
 
     const aplicar = useCallback((siguientes) => {
         setIds(siguientes);
         const porId = new Map((filas || []).map(fila => [fila?.id, fila]));
         mostrar(siguientes.map(id => porId.get(id)).filter(Boolean));
-    }, [filas, mostrar]);
+
+        const cql = siguientes.length >= MINIMO_MULTIPLE ? cqlDeIds(siguientes) : null;
+        if (cql) applyFilter(layerId, LLAVE_SELECCION, cql);
+        else clearFilter(layerId, LLAVE_SELECCION);
+    }, [applyFilter, clearFilter, filas, layerId, mostrar]);
 
     const seleccionar = useCallback((feature, indice, modo = {}) => {
         const id = feature?.id;
@@ -104,7 +112,21 @@ export const useTablaSeleccion = (layerId, layerDef, filas) => {
         anclaRef.current = null;
         setIds([]);
         setSelectedFeatureInfo(null);
-    }, [setSelectedFeatureInfo]);
+        clearFilter(layerId, LLAVE_SELECCION);
+    }, [clearFilter, layerId, setSelectedFeatureInfo]);
 
-    return { seleccionadas, cuantas: ids.length, seleccionar, limpiar };
+    const todas = useCallback(() => {
+        aplicar((filas || []).map(fila => fila?.id).filter(Boolean));
+    }, [aplicar, filas]);
+
+    useEffect(() => () => clearFilter(layerId, LLAVE_SELECCION), [clearFilter, layerId]);
+
+    return {
+        seleccionadas,
+        cuantas: ids.length,
+        soloSeleccionados: ids.length >= MINIMO_MULTIPLE,
+        seleccionar,
+        limpiar,
+        todas,
+    };
 };

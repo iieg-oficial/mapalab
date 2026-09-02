@@ -75,6 +75,7 @@ export const construirBbox = (campoGeometria, extent, srs) => {
 };
 
 export const LLAVE_TABLA = 'tabla';
+export const LLAVE_SELECCION = 'seleccion';
 
 export const filtrosComunes = (filtrosPorCapa) => {
     const listas = (filtrosPorCapa || []).filter(Boolean);
@@ -90,7 +91,8 @@ export const filtrosComunes = (filtrosPorCapa) => {
 export const filtroHeredado = (filtrosDeCapa, timeEnabled) => {
     if (!filtrosDeCapa) return null;
     const entradas = Object.entries(filtrosDeCapa).filter(([llave, valor]) => {
-        if (!valor || llave.startsWith('_') || llave === LLAVE_TABLA) return false;
+        if (!valor || llave.startsWith('_')) return false;
+        if (llave === LLAVE_TABLA || llave === LLAVE_SELECCION) return false;
         return !(timeEnabled && llave === 'date');
     });
     return combinar(entradas.map(([, valor]) => valor));
@@ -139,4 +141,10 @@ export const familiaDeColumna = (columna, campos) => {
     if (campo.tipo === 'booleano') return 'booleano';
     if (Array.isArray(campo.valores) && campo.valores.length > 0) return 'lista';
     return 'texto';
+};
+
+export const cqlDeIds = (ids) => {
+    const validos = (ids || []).filter(Boolean);
+    if (validos.length === 0) return null;
+    return `IN (${validos.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',')})`;
 };

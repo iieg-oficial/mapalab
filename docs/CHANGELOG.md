@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.159.0] - 2026-09-02
+
+### Cambiado: la seleccion multiple recorta el mapa y la tarjeta vuelve a ser la de siempre
+
+- **Es la misma tarjeta del visor, ahora tambien en los grupos.** El `InfoBox` arma la tarjeta con
+  el `littleCard` de la capa, y un grupo no tiene: lo tienen sus hojas. Por eso al elegir un
+  registro de una tabla de grupo salia la version generica. La tabla ahora resuelve el `littleCard`
+  de la primera hoja que lo declare y lo manda en el resultado.
+- **La casilla selecciona sin teclado.** Tocar la casilla ya no dispara ademas el clic de la fila,
+  que reemplazaba la seleccion: cada casilla agrega o quita su registro por su cuenta. `Shift` y
+  `Ctrl` siguen sirviendo.
+- **Con dos o mas registros elegidos, el mapa deja de dibujar el resto.** Se escribe un filtro por
+  id de feature bajo la llave `seleccion`, que la tabla excluye de lo que hereda para no recortarse
+  a si misma. Al bajar de dos, el mapa vuelve a la capa completa.
+- **La columna de casillas tiene su propia casilla en el encabezado**: con algo seleccionado limpia
+  todo de un toque, y sin nada selecciona los registros ya cargados.
+
 ## [1.158.4] - 2026-09-02
 
 ### Cambiado: el recorte por pantalla se explica solo y se apaga de un toque

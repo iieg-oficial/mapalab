@@ -189,10 +189,16 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         return [{ columna: null, etiqueta, fijo: true }];
     }, [municipio, municipioMode?.municipioContext, municipioMode?.scopeLabel]);
 
+    const tarjeta = useMemo(() => {
+        if (layerDef?.littleCard) return layerDef.littleCard;
+        return (objetivo.capas || []).find(hoja => hoja.littleCard)?.littleCard || null;
+    }, [layerDef, objetivo.capas]);
+
     const visibles = useMemo(() => columnas.filter(columna => columna.visible), [columnas]);
 
     return {
         layerDef,
+        tarjeta,
         esGrupo: objetivo.esGrupo,
         hojasDelGrupo: objetivo.hojas || 0,
         disponible,

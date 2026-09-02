@@ -21,7 +21,11 @@ const Cuerpo = ({ columnas, plantilla, filas, seleccionadas, onSeleccionar }) =>
                     style={{ gridTemplateColumns: plantilla }}
                     className={`grid border-b border-[#EAEFFA] cursor-pointer select-none ${activa ? 'bg-[#FFF3E6]' : 'hover:bg-[#F9FBFF]'}`}
                 >
-                    <span className="flex items-center justify-center">
+                    <span
+                        className="flex items-center justify-center"
+                        onClick={evento => evento.stopPropagation()}
+                        role="presentation"
+                    >
                         <Checkbox
                             checked={activa}
                             onChange={() => onSeleccionar(feature, indice, { alternar: true })}

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     combinar,
+    cqlDeIds,
     construirBbox,
     construirCql,
     construirCqlColumna,
@@ -131,5 +132,27 @@ describe('filtrosComunes', () => {
     it('sin hojas devuelve nada', () => {
         expect(filtrosComunes([])).toEqual({});
         expect(filtrosComunes([undefined, null])).toEqual({});
+    });
+});
+
+describe('cqlDeIds', () => {
+    it('arma el filtro de ids que entiende GeoServer', () => {
+        expect(cqlDeIds(['escuelas.1', 'escuelas.2'])).toBe("IN ('escuelas.1','escuelas.2')");
+    });
+
+    it('escapa comillas y descarta vacios', () => {
+        expect(cqlDeIds(["a'b", null, ''])).toBe("IN ('a''b')");
+        expect(cqlDeIds([])).toBeNull();
+    });
+});
+
+describe('filtroHeredado con la llave de seleccion', () => {
+    it('no se hereda a si misma para no recortar la tabla', () => {
+        const heredado = filtroHeredado({
+            municipio: "cve = '014'",
+            seleccion: "IN ('a')",
+            tabla: 'x = 1',
+        }, false);
+        expect(heredado).toBe("cve = '014'");
     });
 });

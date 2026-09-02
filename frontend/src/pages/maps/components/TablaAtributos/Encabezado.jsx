@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import Icon from '@components/Icon';
+import Checkbox from '@components/Checkbox';
+import Tooltip from '@components/Tooltip';
 import Panel from '@components/Panel';
 import MenuColumna from './MenuColumna';
 
@@ -54,7 +56,7 @@ const ColumnaEncabezado = ({
     );
 };
 
-const Encabezado = ({ columnas, plantilla, campos, orden, filtros, municipiosDe, onAplicar, onLimpiar, onOrdenar }) => {
+const Encabezado = ({ columnas, plantilla, campos, orden, filtros, municipiosDe, seleccion, onAplicar, onLimpiar, onOrdenar }) => {
     const [abierta, setAbierta] = useState(null);
 
     return (
@@ -62,7 +64,21 @@ const Encabezado = ({ columnas, plantilla, campos, orden, filtros, municipiosDe,
             className="sticky top-0 z-2 grid bg-[#F9FBFF] border-b border-[#EAEFFA]"
             style={{ gridTemplateColumns: plantilla }}
         >
-            <span aria-hidden="true" />
+            <span className="flex items-center justify-center">
+                <Tooltip
+                    content={seleccion.cuantas > 0
+                        ? `Quitar la selección de ${seleccion.cuantas === 1 ? 'el registro' : `los ${seleccion.cuantas} registros`}`
+                        : 'Seleccionar todos los registros cargados'}
+                    placement="top"
+                    delay={300}
+                >
+                    <Checkbox
+                        checked={seleccion.cuantas > 0}
+                        onChange={seleccion.cuantas > 0 ? seleccion.limpiar : seleccion.todas}
+                        className="mr-0"
+                    />
+                </Tooltip>
+            </span>
             {columnas.map(columna => (
                 <ColumnaEncabezado
                     key={columna.nombre}

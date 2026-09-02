@@ -19,7 +19,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
     const { municipioMode } = useMapsContext();
     const datos = useTablaDatos(layerId, { minimizada });
     const catalogo = useCatalogoCampos(layerId, !minimizada);
-    const seleccion = useTablaSeleccion(layerId, datos.layerDef, datos.filas);
+    const seleccion = useTablaSeleccion(layerId, datos.layerDef, datos.filas, datos.tarjeta);
     const { posicion, manejadores } = useArrastreVentana(() => posicionCentrada(indice));
     const [verCql, setVerCql] = useState(false);
     const [pestana, setPestana] = useState('datos');
@@ -94,6 +94,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                         orden={datos.orden}
                         filtros={datos.filtros.filtros}
                         municipiosDe={municipiosDe}
+                        seleccion={seleccion}
                         onAplicar={datos.filtros.poner}
                         onLimpiar={datos.filtros.quitar}
                         onOrdenar={datos.alternarOrden}
@@ -135,7 +136,8 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                     onClick={seleccion.limpiar}
                     className="shrink-0 text-purple hover:underline cursor-pointer"
                 >
-                    {seleccion.cuantas === 1 ? '1 seleccionado' : `${seleccion.cuantas} seleccionados`} · limpiar
+                    {seleccion.cuantas === 1 ? '1 seleccionado' : `${seleccion.cuantas} seleccionados`}
+                    {seleccion.soloSeleccionados ? ' · solo estos en el mapa · limpiar' : ' · limpiar'}
                 </button>
             )}
             {datos.error && (
@@ -194,6 +196,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                                 orden={datos.orden}
                                 filtros={datos.filtros.filtros}
                                 municipiosDe={municipiosDe}
+                                seleccion={seleccion}
                                 onAplicar={datos.filtros.poner}
                                 onLimpiar={datos.filtros.quitar}
                                 onOrdenar={datos.alternarOrden}
