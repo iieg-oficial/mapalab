@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.160.0] - 2026-09-02
+
+### Agregado: elegir que columnas se ven, y la primera se queda fija
+
+Las dos atacan lo mismo: que hay mas columnas de las que caben y navegar a lo ancho es incomodo.
+
+- **Selector de columnas** en el encabezado del panel: apagas las que no te importan y la tabla se
+  angosta hasta caber sin desplazarse. El boton se pinta encendido y dice cuantas hay ocultas. La
+  eleccion es de la sesion y se apoya en la visibilidad que ya trae configurada la capa.
+- **La casilla y la primera columna se quedan pegadas** a la izquierda al desplazarse a lo ancho,
+  para no perder de vista de que registro es cada fila.
+- El badge `grupo · n` explica en su tooltip que la capa es un grupo cuyas capas comparten tabla, y
+  que ahi se ven los registros de todas juntas.
+
 ## [1.159.1] - 2026-09-02
 
 ### Corregido: aplicar un filtro ya no regresa la tabla a la primera columna

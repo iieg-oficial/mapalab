@@ -11,6 +11,7 @@ const ESTADO_CAPA = {
     expresionPropia: null,
     orden: null,
     vista: 'libre',
+    ocultas: [],
     bboxCongelado: null,
     conteo: null,
 };
@@ -111,6 +112,18 @@ export const TablaAtributosProvider = ({ children }) => {
         parchear(layerId, { vista, bboxCongelado: vista === 'congelada' ? bbox : null });
     }, [parchear]);
 
+    const alternarColumna = useCallback((layerId, columna) => {
+        parchear(layerId, actual => ({
+            ocultas: actual.ocultas.includes(columna)
+                ? actual.ocultas.filter(nombre => nombre !== columna)
+                : [...actual.ocultas, columna],
+        }));
+    }, [parchear]);
+
+    const mostrarTodasLasColumnas = useCallback((layerId) => {
+        parchear(layerId, { ocultas: [] });
+    }, [parchear]);
+
     const fijarConteo = useCallback((layerId, conteo) => {
         parchear(layerId, { conteo });
     }, [parchear]);
@@ -135,10 +148,12 @@ export const TablaAtributosProvider = ({ children }) => {
         fijarOrden,
         fijarVista,
         fijarConteo,
+        alternarColumna,
+        mostrarTodasLasColumnas,
     }), [
         activo, tablas, activaId, minimizado, abrir, cerrarTodas, activar, alternarMinimizado,
         estadoDe, ponerFiltro, quitarFiltro, limpiarFiltros, fijarExpresionPropia, fijarOrden,
-        fijarVista, fijarConteo,
+        fijarVista, fijarConteo, alternarColumna, mostrarTodasLasColumnas,
     ]);
 
     return (

@@ -52,6 +52,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
         <VentanaBarra
             nombre={nombre}
             oculta={oculta}
+            layerId={layerId}
             esGrupo={datos.esGrupo}
             hojasDelGrupo={datos.hojasDelGrupo}
             datos={datos}

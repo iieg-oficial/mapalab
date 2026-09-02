@@ -34,6 +34,13 @@ const icons = {
             <rect x="9" y="9" width="6" height="6" rx="1" />
         </svg>
     ),
+    columnas: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="4.5" height="16" rx="1" />
+            <rect x="9.75" y="4" width="4.5" height="16" rx="1" />
+            <rect x="16.5" y="4" width="4.5" height="16" rx="1" />
+        </svg>
+    ),
     filtro: (
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 5h16l-6 7v6l-4 2v-8z" />

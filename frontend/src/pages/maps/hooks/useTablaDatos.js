@@ -21,7 +21,7 @@ const RETARDO_CONSULTA = 300;
 export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
     const { allLayers, activeLayerIds, getLayerFilters, municipioMode } = useMapsContext();
     const { estadoDe, fijarConteo, fijarOrden } = useTablaAtributos();
-    const { orden } = estadoDe(layerId);
+    const { orden, ocultas } = estadoDe(layerId);
     const configuracion = useColumnasConfig(layerId);
     const filtros = useTablaFiltros(layerId);
     const vista = useTablaVista(layerId);
@@ -194,7 +194,10 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         return (objetivo.capas || []).find(hoja => hoja.littleCard)?.littleCard || null;
     }, [layerDef, objetivo.capas]);
 
-    const visibles = useMemo(() => columnas.filter(columna => columna.visible), [columnas]);
+    const visibles = useMemo(
+        () => columnas.filter(columna => columna.visible && !ocultas.includes(columna.nombre)),
+        [columnas, ocultas],
+    );
 
     return {
         layerDef,
@@ -205,6 +208,7 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         mensaje,
         columnas,
         visibles,
+        ocultas,
         filas,
         total,
         hayMas,

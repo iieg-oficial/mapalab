@@ -19,10 +19,10 @@ const Cuerpo = ({ columnas, plantilla, filas, seleccionadas, onSeleccionar }) =>
                     })}
                     onKeyDown={evento => { if (evento.key === 'Enter') onSeleccionar(feature, indice, {}); }}
                     style={{ gridTemplateColumns: plantilla }}
-                    className={`grid border-b border-[#EAEFFA] cursor-pointer select-none ${activa ? 'bg-[#FFF3E6]' : 'hover:bg-[#F9FBFF]'}`}
+                    className={`grid border-b border-[#EAEFFA] cursor-pointer select-none ${activa ? 'bg-[#FFF3E6]' : 'bg-white hover:bg-[#F9FBFF]'}`}
                 >
                     <span
-                        className="flex items-center justify-center"
+                        className="sticky left-0 z-1 flex items-center justify-center bg-inherit"
                         onClick={evento => evento.stopPropagation()}
                         role="presentation"
                     >
@@ -32,10 +32,10 @@ const Cuerpo = ({ columnas, plantilla, filas, seleccionadas, onSeleccionar }) =>
                             className="mr-0"
                         />
                     </span>
-                    {columnas.map(columna => (
+                    {columnas.map((columna, posicion) => (
                         <span
                             key={columna.nombre}
-                            className={`min-w-0 px-2 py-1 text-[13px]/[18px] font-garet truncate ${NUMERICOS.has(columna.formato) ? 'text-right tabular-nums' : ''} ${activa ? 'font-bold text-purple' : 'text-[#454545]'}`}
+                            className={`min-w-0 px-2 py-1 text-[13px]/[18px] font-garet truncate bg-inherit ${posicion === 0 ? 'sticky left-8 z-1' : ''} ${NUMERICOS.has(columna.formato) ? 'text-right tabular-nums' : ''} ${activa ? 'font-bold text-purple' : 'text-[#454545]'}`}
                             title={String(propiedades[columna.nombre] ?? '')}
                         >
                             {formatearValor(propiedades[columna.nombre], columna.formato)}

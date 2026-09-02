@@ -1,9 +1,11 @@
 import Icon from '@components/Icon';
+import Tooltip from '@components/Tooltip';
 import ActionIconButton from '@components/ActionIconButton';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
+import SelectorColumnas from './SelectorColumnas';
 
-const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, datos, verCql, onAlternarCql, onCerrar, arrastre }) => {
-    const { alternarMinimizado } = useTablaAtributos();
+const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, layerId, datos, verCql, onAlternarCql, onCerrar, arrastre }) => {
+    const { alternarMinimizado, alternarColumna, mostrarTodasLasColumnas } = useTablaAtributos();
     const { vista } = datos;
     const siguiendo = vista.vista === 'visible';
     const congelada = vista.vista === 'congelada';
@@ -22,18 +24,28 @@ const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, datos, verCql, o
                     {nombre}
                 </h3>
                 {esGrupo && hojasDelGrupo > 1 && (
-                    <span
-                        title={`Es un grupo: la tabla trae los datos de sus ${hojasDelGrupo} capas juntas`}
-                        className="shrink-0 h-5 px-1.5 flex items-center rounded-full bg-[#EAEFFA] text-[10px]/[13px] font-garet text-[#6B7585]"
+                    <Tooltip
+                        content={`Esta capa es un grupo de ${hojasDelGrupo} capas que comparten la misma tabla. Aquí ves los registros de todas juntas, sin el filtro que separa a cada una en el mapa`}
+                        placement="bottom"
+                        delay={300}
                     >
-                        grupo · {hojasDelGrupo}
-                    </span>
+                        <span className="shrink-0 h-5 px-1.5 flex items-center rounded-full bg-[#EAEFFA] text-[10px]/[13px] font-garet text-[#6B7585] cursor-help">
+                            grupo · {hojasDelGrupo}
+                        </span>
+                    </Tooltip>
                 )}
             </div>
 
             <div className="ml-auto flex items-center gap-1 shrink-0">
                 {datos.disponible && (
                     <>
+                        <SelectorColumnas
+                            columnas={datos.columnas}
+                            ocultas={datos.ocultas}
+                            onAlternar={columna => alternarColumna(layerId, columna)}
+                            onMostrarTodas={() => mostrarTodasLasColumnas(layerId)}
+                        />
+
                         <ActionIconButton
                             onClick={vista.alternarSeguimiento}
                             activo={siguiendo || congelada}
