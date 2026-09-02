@@ -5,6 +5,30 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.158.1] - 2026-09-01
+
+### Corregido: el filtro de capas disparaba la firma de inyeccion SQL del WAF
+
+El 2026-09-01 el FortiWeb **denego** una peticion legitima del visor: la firma `030000136` matcheo
+`OR (grupo = 'Asentamiento` dentro de `CQL_FILTER`, porque `OR <columna> = <valor>` es la forma
+canonica de una inyeccion SQL. El usuario perdia la capa.
+
+El `OR` no era arbitrario. Los sublayers se agrupan por `layerName|styles` —la misma capa fisica de
+GeoServer— y cada grupo de uso de suelo es una entrada del catalogo con su propio `cqlFilter`, asi
+que al activar varios se colapsan en una sola peticion WMS y sus filtros se unen para mostrar la
+union.
+
+`joinCQLFilters` reemplaza a los cuatro `join(' OR ')` repartidos por el codigo. Cuando **todos** los
+subfiltros son una igualdad simple sobre **el mismo campo**, emite `grupo IN ('Agricultura','Bosque')`
+en vez de `(grupo = 'Agricultura') OR (grupo = 'Bosque')`: mismo resultado en GeoServer, URL mas
+corta y sin el patron que dispara la firma. En cualquier otro caso —campos distintos, rangos de
+fecha, filtros compuestos— conserva el `OR` exactamente como estaba, incluidos los parentesis.
+
+**No sustituye a la excepcion del WAF.** Los filtros por periodo generan
+`(fecha >= 'x' AND fecha < 'y') OR (...)`, que no tiene equivalente con `IN` y va a seguir
+disparando firmas genericas. Esto solo reduce la frecuencia en el caso mas comun.
+
+
 ## [1.158.0] - 2026-09-01
 
 ### Agregado: seleccion multiple de registros y pestanas que mandan sobre las capas activas

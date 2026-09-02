@@ -1,5 +1,6 @@
 import { findLayerById } from './layers/utils/layerHelpers';
 import { buildLayerMunicipioCql, CQL_SIN_RESOLVER } from './municipioCqlBuilder';
+import { joinCQLFilters } from '@/utils/featureInfoUtils';
 
 export const RASTER_WORKSPACES = new Set(['raster', 'lluvia', 'temperatura']);
 
@@ -31,7 +32,7 @@ export const buildLayerCqlSegment = ({ subLayers, layers, getFilter, combineCQLF
         const hasDefaultDate = subLayers.some(sub => findLayerById(sub.id, layers)?.defaultDate);
         segment = hasDefaultDate ? '1=0' : 'INCLUDE';
     } else {
-        segment = subFilters.map(f => `(${f})`).join(' OR ');
+        segment = joinCQLFilters(subFilters);
     }
 
     if (!omitirMunicipio && segment !== '1=0') {

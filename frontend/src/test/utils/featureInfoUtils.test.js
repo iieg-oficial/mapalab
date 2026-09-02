@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     combineCQLFilters,
+    joinCQLFilters,
     getWmsUrl,
     getWfsUrl,
     filterValidLayers,
@@ -206,5 +207,44 @@ describe('parseResponse', () => {
     it('lanza error si response.ok es false', async () => {
         const response = makeResponse('error', 'application/json', false, 500);
         await expect(parseResponse(response)).rejects.toThrow('HTTP error! status: 500');
+    });
+});
+
+describe('joinCQLFilters', () => {
+    it('retorna null si no hay filtros', () => {
+        expect(joinCQLFilters([])).toBeNull();
+        expect(joinCQLFilters(null)).toBeNull();
+        expect(joinCQLFilters([null, '', '  '])).toBeNull();
+    });
+
+    it('envuelve en parentesis si es uno solo, como antes', () => {
+        expect(joinCQLFilters(["grupo = 'Bosque'"])).toBe("(grupo = 'Bosque')");
+    });
+
+    it('colapsa igualdades del mismo campo en un IN', () => {
+        expect(joinCQLFilters(["grupo = 'Bosque'", "grupo = 'Selva'"]))
+            .toBe("grupo IN ('Bosque','Selva')");
+    });
+
+    it('colapsa tambien valores numericos', () => {
+        expect(joinCQLFilters(['nivel = 3', 'nivel = 7'])).toBe('nivel IN (3,7)');
+    });
+
+    it('conserva el OR si los campos difieren', () => {
+        expect(joinCQLFilters(["grupo = 'a'", "tipo = 'b'"]))
+            .toBe("(grupo = 'a') OR (tipo = 'b')");
+    });
+
+    it('conserva el OR con filtros que no son igualdades simples', () => {
+        const rangos = [
+            "(fecha >= '2026-01-01' AND fecha < '2026-02-01')",
+            "(fecha >= '2026-03-01' AND fecha < '2026-04-01')"
+        ];
+        expect(joinCQLFilters(rangos)).toBe(`(${rangos[0]}) OR (${rangos[1]})`);
+    });
+
+    it('no colapsa si alguno mezcla igualdad con otra condicion', () => {
+        expect(joinCQLFilters(["grupo = 'a'", "grupo = 'b' AND anio = 2020"]))
+            .toBe("(grupo = 'a') OR (grupo = 'b' AND anio = 2020)");
     });
 });

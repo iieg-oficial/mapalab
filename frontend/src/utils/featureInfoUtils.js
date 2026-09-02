@@ -35,6 +35,21 @@ export const combineCQLFilters = (baseFilter, dynamicFilter) => {
     return `(${baseFilter}) AND (${dynamicFilter})`;
 };
 
+const IGUALDAD_SIMPLE = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*('(?:[^']|'')*'|-?\d+(?:\.\d+)?)$/;
+
+export const joinCQLFilters = (filters) => {
+    const limpios = (filters || []).map(f => String(f ?? '').trim()).filter(f => f);
+    if (limpios.length === 0) return null;
+    if (limpios.length === 1) return `(${limpios[0]})`;
+
+    const igualdades = limpios.map(f => IGUALDAD_SIMPLE.exec(f));
+    if (igualdades.every(Boolean) && new Set(igualdades.map(m => m[1])).size === 1) {
+        return `${igualdades[0][1]} IN (${igualdades.map(m => m[2]).join(',')})`;
+    }
+
+    return limpios.map(f => `(${f})`).join(' OR ');
+};
+
 const parseDescribeFeatureType = (text, baseUrl, typeNames) => {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(text, 'text/xml');

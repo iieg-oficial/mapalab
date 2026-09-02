@@ -52,7 +52,7 @@ describe('buildLayerCqlSegment', () => {
         expect(segment).toBe("((tipo = 'A') AND (anio = 2026))");
     });
 
-    it('une con OR los filtros de varias subcapas', () => {
+    it('colapsa en un IN las igualdades del mismo campo', () => {
         mockFindLayerById.mockReturnValue(null);
         const segment = build({
             subLayers: [
@@ -60,7 +60,18 @@ describe('buildLayerCqlSegment', () => {
                 { id: 'b', wmsConfig: { cqlFilter: "tipo = 'B'" } }
             ]
         });
-        expect(segment).toBe("(tipo = 'A') OR (tipo = 'B')");
+        expect(segment).toBe("tipo IN ('A','B')");
+    });
+
+    it('une con OR cuando los filtros no son igualdades del mismo campo', () => {
+        mockFindLayerById.mockReturnValue(null);
+        const segment = build({
+            subLayers: [
+                { id: 'a', wmsConfig: { cqlFilter: "tipo = 'A'" } },
+                { id: 'b', wmsConfig: { cqlFilter: 'anio >= 2020' } }
+            ]
+        });
+        expect(segment).toBe("(tipo = 'A') OR (anio >= 2020)");
     });
 
     it('reemplaza INCLUDE por el filtro de municipio', () => {

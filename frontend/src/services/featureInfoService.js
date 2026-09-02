@@ -1,5 +1,5 @@
 import { findWMSConfig } from '../pages/maps/helpers/wmsConfig';
-import { combineCQLFilters, fetchGeometryColumns, getWmsUrl, getWfsUrl, filterValidLayers, groupLayersByUrl, parseResponse } from '../utils/featureInfoUtils';
+import { combineCQLFilters, joinCQLFilters, fetchGeometryColumns, getWmsUrl, getWfsUrl, filterValidLayers, groupLayersByUrl, parseResponse } from '../utils/featureInfoUtils';
 
 export const FEATURE_COUNT_CAP = 50;
 export const FEATURE_COUNT_TOTAL = 2000;
@@ -53,7 +53,7 @@ const queryWMSGetFeatureInfo = async (baseUrl, layerGroups, map, coordinate, get
             }).filter(f => f);
 
             if (groupFilters.length > 0) {
-                cqlFilters.push(`(${groupFilters.join(') OR (')})`);
+                cqlFilters.push(`(${joinCQLFilters(groupFilters)})`);
             } else {
                 cqlFilters.push('INCLUDE');
             }
@@ -216,7 +216,7 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
                 const bboxFilter = `BBOX(${geomCol}, ${extent[0]}, ${extent[1]}, ${extent[2]}, ${extent[3]}, '${projectionCode}')`;
 
                 if (typeFilters.length > 0) {
-                    cqlFilters.push(`((${typeFilters.join(') OR (')})) AND ${bboxFilter}`);
+                    cqlFilters.push(`(${joinCQLFilters(typeFilters)}) AND ${bboxFilter}`);
                 } else {
                     cqlFilters.push(bboxFilter);
                 }
