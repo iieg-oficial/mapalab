@@ -36,9 +36,9 @@ const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, datos, verCql, o
                     <>
                         <ActionIconButton
                             onClick={vista.alternarSeguimiento}
-                            activo={siguiendo}
-                            titulo="Solo lo que abarca el mapa"
-                            etiqueta="Mostrar solo lo que abarca el mapa"
+                            activo={siguiendo || congelada}
+                            titulo="Solo lo que cabe en la pantalla: la tabla muestra únicamente los registros dentro de lo que abarca el mapa, y se vuelve a consultar cada vez que lo mueves o le haces zoom"
+                            etiqueta="Mostrar solo los registros que caben en la pantalla del mapa"
                             tamano="sm"
                         >
                             <Icon name="recorte" className="size-3.5" />
@@ -48,18 +48,20 @@ const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, datos, verCql, o
                             <ActionIconButton
                                 onClick={congelada ? vista.descongelar : vista.congelar}
                                 activo={congelada}
-                                titulo={congelada ? 'Descongelar el recorte' : 'Congelar el recorte actual'}
-                                etiqueta={congelada ? 'Descongelar el recorte' : 'Congelar el recorte actual'}
+                                titulo={congelada
+                                    ? 'Recorte fijo: la tabla dejó de seguir al mapa y conserva los registros del área que fijaste. Tócalo para volver a seguir al mapa'
+                                    : 'Fijar el área actual: la tabla deja de seguir al mapa, así puedes moverte y hacer zoom sin que cambien los registros de la lista'}
+                                etiqueta={congelada ? 'Volver a seguir al mapa' : 'Fijar el área actual'}
                                 tamano="sm"
                             >
-                                <Icon name={congelada ? 'play' : 'pause'} className="size-3.5" />
+                                <Icon name="pause" className="size-3.5" />
                             </ActionIconButton>
                         )}
 
                         <ActionIconButton
                             onClick={onAlternarCql}
                             activo={verCql}
-                            titulo="Ver la consulta como CQL"
+                            titulo="Ver y editar la consulta como expresión CQL, que es el filtro que se le manda al servicio"
                             etiqueta="Ver la consulta como CQL"
                             tamano="sm"
                         >

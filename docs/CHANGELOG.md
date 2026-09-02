@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.158.4] - 2026-09-02
+
+### Cambiado: el recorte por pantalla se explica solo y se apaga de un toque
+
+Es un poligono de seleccion, pero dibujado por lo que abarca la pantalla en vez de a mano, asi que
+las dos cosas que lo controlan quedaron como interruptores con estado en vez de pares de botones:
+
+- El boton de recorte se pinta encendido mientras el modo esta activo y lo apaga —descongelando de
+  paso— con un segundo toque.
+- Congelar dejo de alternar entre pausa y play: es un solo boton que se pinta encendido cuando el
+  area esta fija.
+- Los tooltips dicen que hace cada uno con todas sus letras, porque el comportamiento no se adivina
+  del icono.
+
+Sigue sin ser el comportamiento por defecto: una tabla recien abierta trae la capa completa.
+
 ## [1.158.3] - 2026-09-02
 
 ### Corregido: la tarjeta de un registro de la tabla sale al centro

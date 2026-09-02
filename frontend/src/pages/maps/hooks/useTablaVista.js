@@ -35,8 +35,8 @@ export const useTablaVista = (layerId) => {
     }, [mapRef, siguiendo]);
 
     const alternarSeguimiento = useCallback(() => {
-        fijarVista(layerId, siguiendo ? 'libre' : 'visible');
-    }, [fijarVista, layerId, siguiendo]);
+        fijarVista(layerId, vista === 'libre' ? 'visible' : 'libre');
+    }, [fijarVista, layerId, vista]);
 
     const congelar = useCallback(() => {
         const actual = extentDebounced || extentDelMapa(mapRef?.current);
