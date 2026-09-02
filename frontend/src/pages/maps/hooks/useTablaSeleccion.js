@@ -52,11 +52,12 @@ export const useTablaSeleccion = (layerId, layerDef, filas) => {
 
         const centro = centroDe(elegidas[0]);
         const mapa = mapRef?.current;
-        if (centro && mapa) {
-            const pixel = mapa.getPixelFromCoordinate(centro);
-            if (pixel) clickPosition?.updatePosition({ pixel });
-        }
         const [lng, lat] = centro ? toLonLat(centro) : [null, null];
+
+        clickPosition?.updatePosition({
+            clientX: window.innerWidth / 2,
+            clientY: window.innerHeight / 2,
+        });
 
         setSelectedFeatureInfo({
             lngLat: Number.isFinite(lng) ? { lng, lat } : null,
@@ -65,7 +66,7 @@ export const useTablaSeleccion = (layerId, layerDef, filas) => {
             queriedLayerId: layerId,
         });
 
-        centerOnResults({ activeMap: mapa, results, clickPosition });
+        centerOnResults({ activeMap: mapa, results });
     }, [clickPosition, layerDef, layerId, mapRef, setSelectedFeatureInfo]);
 
     const aplicar = useCallback((siguientes) => {

@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.158.3] - 2026-09-02
+
+### Corregido: la tarjeta de un registro de la tabla sale al centro
+
+Colocarla sobre el feature no bastaba: el pixel se calculaba antes de que el mapa terminara de
+moverse y podia quedar fuera de la pantalla, o en la esquina si la geometria no resolvia. Para las
+selecciones **de la tabla** la tarjeta va al centro del viewport, que es justo donde queda el
+registro despues de que el mapa se centra en el. Los clics sobre el mapa conservan su
+comportamiento: ahi la tarjeta sigue saliendo donde se toco.
+
 ## [1.158.2] - 2026-09-02
 
 ### Cambiado: el filtro de cada columna se ve, se abre y dice donde estas parado
