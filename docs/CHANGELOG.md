@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.160.1] - 2026-09-02
+
+### Cambiado: las listas de los menus de la tabla usan `ScrollContainer`
+
+La lista de columnas y la de valores de un filtro pasaron a `ScrollContainer`, asi que traen las
+flechas y el difuminado de los bordes que ya usa el resto del visor, con la barra de scroll del
+`index.css` en vez de la del navegador.
+
 ## [1.160.0] - 2026-09-02
 
 ### Agregado: elegir que columnas se ven, y la primera se queda fija

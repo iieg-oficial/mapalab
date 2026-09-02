@@ -3,6 +3,7 @@ import Icon from '@components/Icon';
 import Panel from '@components/Panel';
 import Checkbox from '@components/Checkbox';
 import ActionIconButton from '@components/ActionIconButton';
+import ScrollContainer from '@components/ScrollContainer';
 
 const SelectorColumnas = ({ columnas, ocultas, onAlternar, onMostrarTodas }) => {
     const anclaRef = useRef(null);
@@ -48,7 +49,11 @@ const SelectorColumnas = ({ columnas, ocultas, onAlternar, onMostrarTodas }) => 
                         )}
                     </div>
 
-                    <div className="max-h-64 overflow-auto scrollbar-thin scrollbar-thumb-gray-400 flex flex-col gap-1 pr-1">
+                    <ScrollContainer
+                        className="max-h-64 flex flex-col gap-1 pr-1 scrollbar-thin scrollbar-thumb-gray-400"
+                        hideScrollbar={false}
+                        itemCount={columnas.length}
+                    >
                         {columnas.map(columna => {
                             const visible = !ocultas.includes(columna.nombre);
                             return (
@@ -64,7 +69,7 @@ const SelectorColumnas = ({ columnas, ocultas, onAlternar, onMostrarTodas }) => 
                                 </button>
                             );
                         })}
-                    </div>
+                    </ScrollContainer>
                 </div>
             </Panel>
         </span>

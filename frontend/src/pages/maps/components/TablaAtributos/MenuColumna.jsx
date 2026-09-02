@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import Checkbox from '@components/Checkbox';
+import ScrollContainer from '@components/ScrollContainer';
 import { familiaDeColumna } from '@pages/maps/helpers/tablaCqlBuilder';
 
 const CLASE_CAMPO = 'w-full h-7 px-2 rounded border border-[#DCE3F0] text-[12px] font-garet text-graphite focus:outline-none focus:border-purple';
@@ -23,7 +24,11 @@ const ListaValores = ({ valores, seleccionados, onAlternar }) => {
                     className={CLASE_CAMPO}
                 />
             )}
-            <div className="max-h-44 overflow-auto scrollbar-thin flex flex-col gap-1 pr-1">
+            <ScrollContainer
+                className="max-h-44 flex flex-col gap-1 pr-1 scrollbar-thin scrollbar-thumb-gray-400"
+                hideScrollbar={false}
+                itemCount={filtrados.length}
+            >
                 {filtrados.map(valor => (
                     <button
                         key={valor}
@@ -38,7 +43,7 @@ const ListaValores = ({ valores, seleccionados, onAlternar }) => {
                 {filtrados.length === 0 && (
                     <span className="text-[11px] font-garet text-[#8A94A6]">Sin coincidencias</span>
                 )}
-            </div>
+            </ScrollContainer>
         </div>
     );
 };
