@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
-const SIN_MARGENES = { left: 0, right: 0, bottom: 0 };
+const SIN_MARGENES = { left: 0, right: 0, top: 0, bottom: 0 };
 
 const AreaUtilContext = createContext(SIN_MARGENES);
 
@@ -12,6 +12,7 @@ export const AreaUtilProvider = ({ children }) => {
             const nuevos = { ...SIN_MARGENES, ...siguientes };
             const igual = previos.left === nuevos.left
                 && previos.right === nuevos.right
+                && previos.top === nuevos.top
                 && previos.bottom === nuevos.bottom;
             return igual ? previos : nuevos;
         });

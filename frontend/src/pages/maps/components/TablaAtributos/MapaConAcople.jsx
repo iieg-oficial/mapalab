@@ -24,15 +24,15 @@ const MapaConAcople = () => {
     const acopleVigente = activo && !minimizado ? acople : 'flotante';
     const margenes = margenesDelMapa(acopleVigente, ventana);
 
-    const { left, right, bottom } = margenes;
-    useEffect(() => { fijarMargenes({ left, right, bottom }); }, [fijarMargenes, left, right, bottom]);
+    const { left, right, top, bottom } = margenes;
+    useEffect(() => { fijarMargenes({ left, right, top, bottom }); }, [fijarMargenes, left, right, top, bottom]);
 
     useAcopleMapa(acopleVigente);
 
     return (
         <div
             className="absolute inset-0 transition-[inset] duration-250"
-            style={{ left: margenes.left, right: margenes.right, bottom: margenes.bottom }}
+            style={{ left: margenes.left, right: margenes.right, top: margenes.top, bottom: margenes.bottom }}
         >
             <MapView />
         </div>

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
+import { useZenMode } from '@pages/maps/components/ZenMode';
 import { useActiveLayersLogic } from '@hooksMaps/useActiveLayersLogic';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
@@ -18,6 +19,7 @@ const ESTADO_CAPA = {
 
 export const TablaAtributosProvider = ({ children }) => {
     const { allLayers, activeLayerIds, hiddenLayerIds } = useMapsContext();
+    const { setIsZenMode } = useZenMode() || {};
     const { unifiedLayers } = useActiveLayersLogic(activeLayerIds || [], hiddenLayerIds || []);
     const [activo, setActivo] = useState(false);
     const [activaId, setActivaId] = useState(null);
@@ -63,11 +65,13 @@ export const TablaAtributosProvider = ({ children }) => {
     }, []);
 
     const cerrarTodas = useCallback(() => {
+        setAcople('flotante');
+        setIsZenMode?.(false);
         setActivo(false);
         setActivaId(null);
         setPorCapa({});
         setMinimizado(false);
-    }, []);
+    }, [setIsZenMode]);
 
     const activar = useCallback((layerId) => {
         setActivaId(layerId);
@@ -77,9 +81,11 @@ export const TablaAtributosProvider = ({ children }) => {
     const alternarMinimizado = useCallback(() => setMinimizado(valor => !valor), []);
 
     const acoplar = useCallback((modo) => {
-        setAcople(modo || 'flotante');
-        if (modo && modo !== 'flotante') setMinimizado(false);
-    }, []);
+        const siguiente = modo || 'flotante';
+        setAcople(siguiente);
+        if (siguiente !== 'flotante') setMinimizado(false);
+        setIsZenMode?.(siguiente !== 'flotante');
+    }, [setIsZenMode]);
 
     const estadoDe = useCallback((layerId) => porCapa[layerId] || ESTADO_CAPA, [porCapa]);
 

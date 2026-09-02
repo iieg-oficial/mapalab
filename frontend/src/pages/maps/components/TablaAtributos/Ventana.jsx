@@ -240,7 +240,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                 aria-label={`Tabla de atributos de ${nombre}`}
                 onPointerDown={() => activar(layerId)}
                 style={estiloAcoplado
-                    ? { ...estiloAcoplado, zIndex: activa ? 13 : 12 }
+                    ? { ...estiloAcoplado, zIndex: activa ? 9 : 8 }
                     : { left: posicion.x, top: posicion.y, zIndex: activa ? 13 : 12 }}
                 className={`
                     fixed flex flex-col bg-white shadow-[0_5px_20px_#1A26641A] border overflow-hidden transition-colors

@@ -10,6 +10,7 @@ const ventana = { ancho: 1000, alto: 800 };
 
 describe('zonaDeSnap', () => {
     it('detecta cada borde dentro del margen', () => {
+        expect(zonaDeSnap({ x: 500, y: 10, ...ventana })).toBe('arriba');
         expect(zonaDeSnap({ x: 10, y: 400, ...ventana })).toBe('izquierda');
         expect(zonaDeSnap({ x: 990, y: 400, ...ventana })).toBe('derecha');
         expect(zonaDeSnap({ x: 500, y: 790, ...ventana })).toBe('abajo');
@@ -37,12 +38,14 @@ describe('estiloDelPanel y margenesDelMapa', () => {
     it('el panel se pega a su borde', () => {
         expect(estiloDelPanel('derecha', ventana)).toEqual({ right: 0, top: 0, bottom: 0, width: 420 });
         expect(estiloDelPanel('abajo', ventana)).toEqual({ left: 0, right: 0, bottom: 0, height: 320 });
+        expect(estiloDelPanel('arriba', ventana)).toEqual({ left: 0, right: 0, top: 0, height: 320 });
         expect(estiloDelPanel('flotante', ventana)).toBeNull();
     });
 
     it('el mapa cede exactamente lo que ocupa el panel', () => {
-        expect(margenesDelMapa('izquierda', ventana)).toEqual({ left: 420, right: 0, bottom: 0 });
-        expect(margenesDelMapa('abajo', ventana)).toEqual({ left: 0, right: 0, bottom: 320 });
-        expect(margenesDelMapa('flotante', ventana)).toEqual({ left: 0, right: 0, bottom: 0 });
+        expect(margenesDelMapa('izquierda', ventana)).toEqual({ left: 420, right: 0, top: 0, bottom: 0 });
+        expect(margenesDelMapa('abajo', ventana)).toEqual({ left: 0, right: 0, top: 0, bottom: 320 });
+        expect(margenesDelMapa('arriba', ventana)).toEqual({ left: 0, right: 0, top: 320, bottom: 0 });
+        expect(margenesDelMapa('flotante', ventana)).toEqual({ left: 0, right: 0, top: 0, bottom: 0 });
     });
 });

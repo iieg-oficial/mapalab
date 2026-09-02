@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.162.1] - 2026-09-02
+
+### Corregido: el acoplado tapaba la interfaz, y ya se puede acoplar arriba
+
+- **Faltaba el borde superior.** `zonaDeSnap` solo miraba abajo y los lados; ahora tambien detecta
+  arriba, y el mapa cede alto por ese lado como lo hace por los demas.
+- **El panel acoplado tapaba los paneles de capas activas y de descargas**, que viven a la derecha
+  con `z-10` y `z-11` mientras el panel iba en `z-13`: por eso dejaban de responder. Acoplado baja a
+  `z-9`, debajo de toda la interfaz del visor, asi que el sider y los paneles siguen encima y se
+  pueden usar.
+- **Acoplar entra en modo zen** y soltar o cerrar la tabla lo apaga. Con el panel pegado a un borde
+  el sider pasa a su trato compacto y deja de pelear por el espacio.
+
 ## [1.162.0] - 2026-09-02
 
 ### Agregado: el area util del mapa como fuente de verdad de los flotantes
