@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import MobileSheet from '@components/MobileSheet';
 import { useMapsContext } from '@hooks/useMaps';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
@@ -22,7 +22,16 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
     const seleccion = useTablaSeleccion(layerId, datos.layerDef, datos.filas, datos.tarjeta);
     const { posicion, manejadores } = useArrastreVentana(() => posicionCentrada(indice));
     const [verCql, setVerCql] = useState(false);
+    const scrollRef = useRef(null);
+    const desplazamientoRef = useRef(0);
     const [pestana, setPestana] = useState('datos');
+
+    useEffect(() => {
+        const contenedor = scrollRef.current;
+        if (contenedor && desplazamientoRef.current) {
+            contenedor.scrollLeft = desplazamientoRef.current;
+        }
+    }, [datos.filas, datos.visibles]);
 
     const nombre = nombreDe(layerId);
     const oculta = capaDe(layerId)?.visible === false;
@@ -69,12 +78,17 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
     const plantilla = `32px repeat(${Math.max(datos.visibles.length, 1)}, minmax(150px, 1fr))`;
 
     const alScroll = (evento) => {
-        const { scrollTop, scrollHeight, clientHeight } = evento.currentTarget;
+        const { scrollTop, scrollHeight, clientHeight, scrollLeft } = evento.currentTarget;
+        desplazamientoRef.current = scrollLeft;
         if (scrollHeight - scrollTop - clientHeight < 160) datos.cargarMas();
     };
 
     const tabla = datos.disponible ? (
-        <div className="flex-1 min-h-0 overflow-auto scrollbar-thin scrollbar-thumb-gray-400" onScroll={alScroll}>
+        <div
+            ref={scrollRef}
+            className="flex-1 min-h-0 overflow-auto scrollbar-thin scrollbar-thumb-gray-400"
+            onScroll={alScroll}
+        >
             {esMovil ? (
                 datos.filas.map((feature, posicionFila) => (
                     <FilaTarjeta

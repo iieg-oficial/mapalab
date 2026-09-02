@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.159.1] - 2026-09-02
+
+### Corregido: aplicar un filtro ya no regresa la tabla a la primera columna
+
+Al recargar las filas, el contenedor perdia su desplazamiento horizontal y quedabas en la columna
+uno aunque estuvieras filtrando la penultima. Ahora se recuerda el desplazamiento y se restaura
+cuando llegan los datos nuevos.
+
 ## [1.159.0] - 2026-09-02
 
 ### Cambiado: la seleccion multiple recorta el mapa y la tarjeta vuelve a ser la de siempre
