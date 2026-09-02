@@ -4,7 +4,7 @@ import VectorSource from 'ol/source/Vector';
 import GeoJSON from 'ol/format/GeoJSON';
 import { useLayers } from '@hooks/useLayers';
 import { useLayerLoading } from '@hooks/useLayerLoading';
-import { joinCQLFilters } from '@/utils/featureInfoUtils';
+import { joinCQLFilters } from '@utils/featureInfoUtils';
 import { useDebounce } from '@hooks/useDebounce';
 import { findWMSConfig, findLayerDef } from '../helpers/wmsConfig';
 import { buildLayerCqlSegment, buildMunicipioCqlDeGrupo } from '../helpers/layerCqlSegment';

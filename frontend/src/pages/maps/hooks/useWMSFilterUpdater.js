@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { resolveTimeStyle } from '../helpers/wmsConfig';
 import { findLayerById } from '../helpers/layers/utils/layerHelpers';
 import { buildLayerMunicipioCql } from '../helpers/municipioCqlBuilder';
-import { joinCQLFilters } from '@/utils/featureInfoUtils';
+import { joinCQLFilters } from '@utils/featureInfoUtils';
 import { useLayers } from '@hooks/useLayers';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];

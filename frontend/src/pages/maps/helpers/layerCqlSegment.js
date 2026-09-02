@@ -1,6 +1,6 @@
 import { findLayerById } from './layers/utils/layerHelpers';
 import { buildLayerMunicipioCql, CQL_SIN_RESOLVER } from './municipioCqlBuilder';
-import { joinCQLFilters } from '@/utils/featureInfoUtils';
+import { joinCQLFilters } from '@utils/featureInfoUtils';
 
 export const RASTER_WORKSPACES = new Set(['raster', 'lluvia', 'temperatura']);
 
