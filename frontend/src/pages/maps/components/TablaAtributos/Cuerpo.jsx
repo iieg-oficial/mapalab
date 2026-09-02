@@ -22,7 +22,7 @@ const Cuerpo = ({ columnas, plantilla, filas, seleccionadas, onSeleccionar }) =>
                     className={`grid border-b border-[#EAEFFA] cursor-pointer select-none ${activa ? 'bg-[#FFF3E6]' : 'bg-white hover:bg-[#F9FBFF]'}`}
                 >
                     <span
-                        className="sticky left-0 z-1 flex items-center justify-center bg-inherit"
+                        className="flex items-center justify-center bg-inherit"
                         onClick={evento => evento.stopPropagation()}
                         role="presentation"
                     >
@@ -32,10 +32,10 @@ const Cuerpo = ({ columnas, plantilla, filas, seleccionadas, onSeleccionar }) =>
                             className="mr-0"
                         />
                     </span>
-                    {columnas.map((columna, posicion) => (
+                    {columnas.map(columna => (
                         <span
                             key={columna.nombre}
-                            className={`min-w-0 px-2 py-1 text-[13px]/[18px] font-garet truncate bg-inherit ${posicion === 0 ? 'sticky left-8 z-1' : ''} ${NUMERICOS.has(columna.formato) ? 'text-right tabular-nums' : ''} ${activa ? 'font-bold text-purple' : 'text-[#454545]'}`}
+                            className={`min-w-0 px-2 py-1 text-[13px]/[18px] font-garet truncate bg-inherit ${NUMERICOS.has(columna.formato) ? 'text-right tabular-nums' : ''} ${activa ? 'font-bold text-purple' : 'text-[#454545]'}`}
                             title={String(propiedades[columna.nombre] ?? '')}
                         >
                             {formatearValor(propiedades[columna.nombre], columna.formato)}

@@ -6,14 +6,14 @@ import Panel from '@components/Panel';
 import MenuColumna from './MenuColumna';
 
 const ColumnaEncabezado = ({
-    columna, fija, abierta, onAlternar, onCerrar, campos, municipios, descriptor, orden, onAplicar, onLimpiar, onOrdenar,
+    columna, abierta, onAlternar, onCerrar, campos, municipios, descriptor, orden, onAplicar, onLimpiar, onOrdenar,
 }) => {
     const anclaRef = useRef(null);
     const conFiltro = Boolean(descriptor);
     const esOrdenada = orden?.columna === columna.nombre;
 
     return (
-        <div className={`relative min-w-0 bg-[#F9FBFF] ${fija ? 'sticky left-8 z-3' : ''}`}>
+        <div className="relative min-w-0 bg-[#F9FBFF]">
             <button
                 ref={anclaRef}
                 type="button"
@@ -64,7 +64,7 @@ const Encabezado = ({ columnas, plantilla, campos, orden, filtros, municipiosDe,
             className="sticky top-0 z-2 grid bg-[#F9FBFF] border-b border-[#EAEFFA]"
             style={{ gridTemplateColumns: plantilla }}
         >
-            <span className="sticky left-0 z-3 flex items-center justify-center bg-[#F9FBFF]">
+            <span className="flex items-center justify-center bg-[#F9FBFF]">
                 <Tooltip
                     content={seleccion.cuantas > 0
                         ? `Quitar la selección de ${seleccion.cuantas === 1 ? 'el registro' : `los ${seleccion.cuantas} registros`}`
@@ -79,11 +79,10 @@ const Encabezado = ({ columnas, plantilla, campos, orden, filtros, municipiosDe,
                     />
                 </Tooltip>
             </span>
-            {columnas.map((columna, posicion) => (
+            {columnas.map(columna => (
                 <ColumnaEncabezado
                     key={columna.nombre}
                     columna={columna}
-                    fija={posicion === 0}
                     abierta={abierta === columna.nombre}
                     onAlternar={() => setAbierta(actual => (actual === columna.nombre ? null : columna.nombre))}
                     onCerrar={() => setAbierta(null)}
