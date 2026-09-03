@@ -4,7 +4,7 @@ set -e
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DESTINO="$REPO_ROOT/plugin/theme.qss"
 MARCA="${MARIACHI_MARCA:-iieg}"
-RUTA="identidad/$MARCA/artefactos/tokens.qss"
+RUTA="mel/$MARCA/artefactos/tokens.qss"
 
 if [ -n "$1" ]; then
     cp "$1" "$DESTINO"
@@ -24,7 +24,7 @@ curl -fsS -H "Authorization: Bearer $MARIACHI_TOKEN" \
     "$MARIACHI_URL/api/mariachi/$RUTA" -o "$TMP"
 
 if ! head -1 "$TMP" | grep -q 'Generado por mariachi'; then
-    echo "La respuesta no es el artefacto de identidad." >&2
+    echo "La respuesta no es el artefacto de MEL." >&2
     rm -f "$TMP"
     exit 1
 fi

@@ -18,8 +18,8 @@ plugin-zip: ## Empaquetar el plugin de QGIS para instalacion manual
 	rule
 	./scripts/build-plugin-zip.sh
 
-plugin-tokens: ## Traer el theme.qss del modulo Identidad de mariachi
+plugin-tokens: ## Traer el theme.qss del modulo MEL de mariachi
 	@$(LIB)
-	banner 'PLUGIN' 'tokens de identidad'
+	banner 'PLUGIN' 'tokens de MEL'
 	rule
 	./scripts/sync-plugin-tokens.sh $(ARCHIVO)
