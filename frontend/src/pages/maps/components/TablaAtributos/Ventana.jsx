@@ -6,6 +6,7 @@ import { useTablaDatos } from '@hooksMaps/useTablaDatos';
 import { useTablaSeleccion } from '@hooksMaps/useTablaSeleccion';
 import { posicionCentrada, useArrastreVentana } from '@hooksMaps/useArrastreVentana';
 import { estiloDelPanel } from '@pages/maps/helpers/tablaAcople';
+import { useAltoAcoplado } from '@hooksMaps/useAltoAcoplado';
 import VistaPreviaSnap from './VistaPreviaSnap';
 import { useCatalogoCampos } from '@hooksMaps/useStatsBuilder';
 import ChipsFiltro from './ChipsFiltro';
@@ -17,12 +18,15 @@ import PestanasTablas from './PestanasTablas';
 import VentanaBarra from './VentanaBarra';
 
 const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
-    const { activar, cerrarTodas, nombreDe, capaDe, acople, acoplar } = useTablaAtributos();
+    const {
+        activar, cerrarTodas, nombreDe, capaDe, acople, acoplar, altoAcople, fijarAltoAcople,
+    } = useTablaAtributos();
     const { municipioMode } = useMapsContext();
     const datos = useTablaDatos(layerId, { minimizada });
     const catalogo = useCatalogoCampos(layerId, !minimizada);
     const seleccion = useTablaSeleccion(layerId, datos.layerDef, datos.filas, datos.tarjeta);
     const { posicion, manejadores, zona } = useArrastreVentana(() => posicionCentrada(indice), acoplar);
+    const tirador = useAltoAcoplado(altoAcople, fijarAltoAcople);
     const [verCql, setVerCql] = useState(false);
     const scrollRef = useRef(null);
     const desplazamientoRef = useRef(0);
@@ -229,7 +233,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
 
     const acoplado = acople !== 'flotante';
     const estiloAcoplado = acoplado
-        ? estiloDelPanel(acople, { ancho: window.innerWidth, alto: window.innerHeight })
+        ? estiloDelPanel(acople, { ancho: window.innerWidth, alto: window.innerHeight }, altoAcople)
         : null;
 
     return (
@@ -248,6 +252,14 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                     ${activa ? 'border-purple' : 'border-[#EAEFFA]'}
                 `}
             >
+                {acoplado && (
+                    <div
+                        {...tirador}
+                        role="separator"
+                        aria-label="Ajustar el alto del panel"
+                        className="h-1.5 shrink-0 cursor-ns-resize touch-none bg-[#EAEFFA] hover:bg-purple-deep transition-colors"
+                    />
+                )}
                 {cuerpoCompleto}
             </div>
         </>

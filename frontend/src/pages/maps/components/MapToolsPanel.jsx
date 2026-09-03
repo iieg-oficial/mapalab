@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router';
 import Download from './MapExport/Download';
 import MunicipioFilterButton from './MapExport/MunicipioFilterButton';
@@ -42,7 +42,13 @@ const MapToolsPanel = () => {
     const isMobile = useIsMobile();
     const { acoplado } = useAreaUtil();
 
-    const isCollapsed = acoplado || resolveToolsCollapsed({ isMobile, esCompacto, preferencia });
+    const isCollapsed = resolveToolsCollapsed({ isMobile, esCompacto, preferencia });
+
+    useEffect(() => {
+        if (!acoplado) return;
+        guardarPreferenciaCompacta('1');
+        setPreferencia('1');
+    }, [acoplado]);
 
     const alternarCompacto = useCallback(() => {
         const siguiente = isCollapsed ? '0' : '1';

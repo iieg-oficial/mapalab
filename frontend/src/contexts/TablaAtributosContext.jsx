@@ -25,6 +25,7 @@ export const TablaAtributosProvider = ({ children }) => {
     const [activaId, setActivaId] = useState(null);
     const [minimizado, setMinimizado] = useState(false);
     const [acople, setAcople] = useState('flotante');
+    const [altoAcople, setAltoAcople] = useState(null);
     const [porCapa, setPorCapa] = useState({});
 
     const tablas = useMemo(() => {
@@ -147,6 +148,8 @@ export const TablaAtributosProvider = ({ children }) => {
         minimizado,
         acople,
         acoplar,
+        altoAcople,
+        fijarAltoAcople: setAltoAcople,
         estaAbierta: (layerId) => tablas.some(capa => capa.id === layerId),
         nombreDe: (layerId) => tablas.find(capa => capa.id === layerId)?.nombre || 'Capa',
         capaDe: (layerId) => tablas.find(capa => capa.id === layerId) || null,
@@ -165,7 +168,7 @@ export const TablaAtributosProvider = ({ children }) => {
         alternarColumna,
         mostrarTodasLasColumnas,
     }), [
-        activo, tablas, activaId, minimizado, acople, acoplar, abrir, cerrarTodas, activar, alternarMinimizado,
+        activo, tablas, activaId, minimizado, acople, acoplar, altoAcople, abrir, cerrarTodas, activar, alternarMinimizado,
         estadoDe, ponerFiltro, quitarFiltro, limpiarFiltros, fijarExpresionPropia, fijarOrden,
         fijarVista, fijarConteo, alternarColumna, mostrarTodasLasColumnas,
     ]);

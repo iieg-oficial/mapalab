@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import MapView from '@mapsComponents/MapView';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
 import { useAreaUtil } from '@contexts/AreaUtilContext';
 import { useAcopleMapa } from '@hooksMaps/useAcopleMapa';
@@ -10,8 +9,8 @@ const medidaVentana = () => ({
     alto: typeof window === 'undefined' ? 0 : window.innerHeight,
 });
 
-const MapaConAcople = () => {
-    const { activo, acople, minimizado } = useTablaAtributos();
+const MapaConAcople = ({ children }) => {
+    const { activo, acople, minimizado, altoAcople } = useTablaAtributos();
     const { fijarMargenes } = useAreaUtil();
     const [ventana, setVentana] = useState(medidaVentana);
 
@@ -22,7 +21,7 @@ const MapaConAcople = () => {
     }, []);
 
     const acopleVigente = activo && !minimizado ? acople : 'flotante';
-    const margenes = margenesDelMapa(acopleVigente, ventana);
+    const margenes = margenesDelMapa(acopleVigente, ventana, altoAcople);
 
     const { left, right, top, bottom } = margenes;
     useEffect(() => { fijarMargenes({ left, right, top, bottom }); }, [fijarMargenes, left, right, top, bottom]);
@@ -34,7 +33,7 @@ const MapaConAcople = () => {
             className="absolute inset-0 transition-[inset] duration-250"
             style={{ left: margenes.left, right: margenes.right, top: margenes.top, bottom: margenes.bottom }}
         >
-            <MapView />
+            {children}
         </div>
     );
 };

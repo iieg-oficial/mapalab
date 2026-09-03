@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.164.0] - 2026-09-03
+
+### Agregado: el panel fijado se puede redimensionar, y la interfaz solo se recoge
+
+- **Tirador en el borde superior** del panel fijado: se arrastra para darle mas o menos alto y el
+  mapa cede exactamente lo mismo. Con tope de 180 px abajo y del 80 % de la pantalla arriba, para
+  que nunca quede un panel inservible ni un mapa invisible.
+- **Recoger no es bloquear.** Los paneles de capas activas y de descargas se recogen al fijar la
+  tabla, pero se pueden volver a abrir: antes el de descargas se quedaba forzado mientras el panel
+  estuviera fijo. Recoger todo es lo unico que hace el modo, como debe ser.
+- **El modo comparar tambien cede el espacio**: el swipe vive dentro del mismo contenedor que el
+  mapa, asi que sus dos paneles se encogen igual y reciben `updateSize()`.
+
+Nota: el encuadre automatico no necesito cambios. Como el contenedor del mapa se encoge de verdad,
+`map.getSize()` ya llega reducido y `getFitPadding` sigue calculando bien sin saber del acople.
+
 ## [1.163.0] - 2026-09-02
 
 ### Cambiado: el acoplado se queda solo con el borde inferior
