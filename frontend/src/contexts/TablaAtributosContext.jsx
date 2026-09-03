@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
-import { useZenMode } from '@pages/maps/components/ZenMode';
+import { useSider } from '@contexts/SiderContext';
 import { useActiveLayersLogic } from '@hooksMaps/useActiveLayersLogic';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
@@ -13,13 +13,14 @@ const ESTADO_CAPA = {
     orden: null,
     vista: 'libre',
     ocultas: [],
+    seleccion: [],
     bboxCongelado: null,
     conteo: null,
 };
 
 export const TablaAtributosProvider = ({ children }) => {
     const { allLayers, activeLayerIds, hiddenLayerIds } = useMapsContext();
-    const { setIsZenMode } = useZenMode() || {};
+    const { closeSider } = useSider() || {};
     const { unifiedLayers } = useActiveLayersLogic(activeLayerIds || [], hiddenLayerIds || []);
     const [activo, setActivo] = useState(false);
     const [activaId, setActivaId] = useState(null);
@@ -41,12 +42,7 @@ export const TablaAtributosProvider = ({ children }) => {
     }, [allLayers, activo, unifiedLayers]);
 
     useEffect(() => {
-        if (!activo) return;
-        if (tablas.length === 0) {
-            setActivo(false);
-            setActivaId(null);
-            return;
-        }
+        if (!activo || tablas.length === 0) return;
         if (!activaId || !tablas.some(capa => capa.id === activaId)) setActivaId(tablas[0].id);
     }, [activaId, activo, tablas]);
 
@@ -67,12 +63,11 @@ export const TablaAtributosProvider = ({ children }) => {
 
     const cerrarTodas = useCallback(() => {
         setAcople('flotante');
-        setIsZenMode?.(false);
         setActivo(false);
         setActivaId(null);
         setPorCapa({});
         setMinimizado(false);
-    }, [setIsZenMode]);
+    }, []);
 
     const activar = useCallback((layerId) => {
         setActivaId(layerId);
@@ -84,9 +79,11 @@ export const TablaAtributosProvider = ({ children }) => {
     const acoplar = useCallback((modo) => {
         const siguiente = modo || 'flotante';
         setAcople(siguiente);
-        if (siguiente !== 'flotante') setMinimizado(false);
-        setIsZenMode?.(siguiente !== 'flotante');
-    }, [setIsZenMode]);
+        if (siguiente !== 'flotante') {
+            setMinimizado(false);
+            closeSider?.();
+        }
+    }, [closeSider]);
 
     const estadoDe = useCallback((layerId) => porCapa[layerId] || ESTADO_CAPA, [porCapa]);
 
@@ -137,6 +134,10 @@ export const TablaAtributosProvider = ({ children }) => {
         parchear(layerId, { ocultas: [] });
     }, [parchear]);
 
+    const fijarSeleccion = useCallback((layerId, ids) => {
+        parchear(layerId, { seleccion: ids });
+    }, [parchear]);
+
     const fijarConteo = useCallback((layerId, conteo) => {
         parchear(layerId, { conteo });
     }, [parchear]);
@@ -165,12 +166,13 @@ export const TablaAtributosProvider = ({ children }) => {
         fijarOrden,
         fijarVista,
         fijarConteo,
+        fijarSeleccion,
         alternarColumna,
         mostrarTodasLasColumnas,
     }), [
         activo, tablas, activaId, minimizado, acople, acoplar, altoAcople, abrir, cerrarTodas, activar, alternarMinimizado,
         estadoDe, ponerFiltro, quitarFiltro, limpiarFiltros, fijarExpresionPropia, fijarOrden,
-        fijarVista, fijarConteo, alternarColumna, mostrarTodasLasColumnas,
+        fijarVista, fijarConteo, fijarSeleccion, alternarColumna, mostrarTodasLasColumnas,
     ]);
 
     return (

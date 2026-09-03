@@ -5,6 +5,21 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.165.1] - 2026-09-03
+
+### Corregido: fijar la tabla ya no bloquea los paneles, y la seleccion no se pierde
+
+- **Fijar el panel dejo de encender el modo zen.** En zen el sider pasa a su trato movil y se cierra
+  solo en cuanto no hay menus abiertos (`MapSider.jsx:127`), asi que abrir un panel era imposible.
+  Fijar ahora hace exactamente lo que tiene que hacer: recoge el panel de capas activas, recoge el de
+  descargas y cierra el sider **una vez**. De ahi en adelante todo se abre normal. El modo zen se
+  queda para lo suyo, la vista previa de exportacion.
+- **La seleccion de registros vive en el contexto**, no dentro de la ventana: cualquier remontaje del
+  panel —cambiar de pestana, fijarlo, soltarlo— la conservaba a medias o la perdia. Ahora es estado
+  por capa, como los filtros y las columnas ocultas.
+- **La herramienta ya no se cierra sola** cuando la lista de tablas queda vacia un instante. Antes,
+  cualquier parpadeo del arbol de capas la apagaba entera.
+
 ## [1.165.0] - 2026-09-03
 
 ### Corregido: la tarjetita de un grupo ahora si llega a sus propiedades

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import GeoJSON from 'ol/format/GeoJSON';
 import { getCenter } from 'ol/extent';
 import { toLonLat } from 'ol/proj';
 import { useMapsContext } from '@hooks/useMaps';
+import { useTablaAtributos } from '@contexts/TablaAtributosContext';
 import { centerOnResults } from '@pages/maps/helpers/featureGeometry';
 import { LLAVE_SELECCION, cqlDeIds } from '@pages/maps/helpers/tablaCqlBuilder';
 
@@ -32,7 +33,8 @@ const rango = (desde, hasta) => {
 
 export const useTablaSeleccion = (layerId, layerDef, filas, tarjeta) => {
     const { mapRef, setSelectedFeatureInfo, clickPosition, applyFilter, clearFilter } = useMapsContext();
-    const [ids, setIds] = useState([]);
+    const { estadoDe, fijarSeleccion } = useTablaAtributos();
+    const ids = estadoDe(layerId).seleccion;
     const anclaRef = useRef(null);
 
     const seleccionadas = useMemo(() => new Set(ids), [ids]);
@@ -74,14 +76,14 @@ export const useTablaSeleccion = (layerId, layerDef, filas, tarjeta) => {
     }, [clickPosition, layerDef, layerId, mapRef, setSelectedFeatureInfo, tarjeta]);
 
     const aplicar = useCallback((siguientes) => {
-        setIds(siguientes);
+        fijarSeleccion(layerId, siguientes);
         const porId = new Map((filas || []).map(fila => [fila?.id, fila]));
         mostrar(siguientes.map(id => porId.get(id)).filter(Boolean));
 
         const cql = siguientes.length >= MINIMO_MULTIPLE ? cqlDeIds(siguientes) : null;
         if (cql) applyFilter(layerId, LLAVE_SELECCION, cql);
         else clearFilter(layerId, LLAVE_SELECCION);
-    }, [applyFilter, clearFilter, filas, layerId, mostrar]);
+    }, [applyFilter, clearFilter, fijarSeleccion, filas, layerId, mostrar]);
 
     const seleccionar = useCallback((feature, indice, modo = {}) => {
         const id = feature?.id;
@@ -110,10 +112,10 @@ export const useTablaSeleccion = (layerId, layerDef, filas, tarjeta) => {
 
     const limpiar = useCallback(() => {
         anclaRef.current = null;
-        setIds([]);
+        fijarSeleccion(layerId, []);
         setSelectedFeatureInfo(null);
         clearFilter(layerId, LLAVE_SELECCION);
-    }, [clearFilter, layerId, setSelectedFeatureInfo]);
+    }, [clearFilter, fijarSeleccion, layerId, setSelectedFeatureInfo]);
 
     const todas = useCallback(() => {
         aplicar((filas || []).map(fila => fila?.id).filter(Boolean));
