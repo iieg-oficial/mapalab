@@ -23,7 +23,7 @@ def _resolve_acervo_icon(raw: str | None) -> str | None:
     return f'/acervo/{raw.lstrip("/")}'
 
 
-_TREE_SCHEMA = '2'
+_TREE_SCHEMA = '3'
 _ETAG_PREFIX = f'W/"{_TREE_SCHEMA}-'
 
 _MEM_LOCK = threading.Lock()
@@ -206,6 +206,49 @@ def _inherit_municipio_meta(node: dict, inherited: Optional[dict] = None) -> Non
         _inherit_municipio_meta(child, next_inherited)
 
 
+def _inherit_little_card(nodes_by_id: dict[str, dict], layers: list[Layer]) -> None:
+    """Propaga `littleCard` desde el ancestro `group` mas cercano hacia quien no tenga propia.
+
+    Una propiedad —hoja hija de un grupo— es un filtro CQL sobre el mismo feature type, asi
+    que su tarjetita es la del grupo salvo que tenga una. Resolverlo aqui evita que el visor
+    recorra ancestros: `InfoBox` lee el `littleCard` de la capa del clic y nada mas, y ese
+    clic se resuelve por nombre de capa de GeoServer, que el grupo y sus propiedades comparten
+    —el resultado dependia de en que orden se encendieron.
+
+    **Espejo exacto de `_inherit_little_card` de `dataengine/jobs/run_refresh_layer_tree.py`.**
+    Los dos codigos construyen el mismo arbol; el job corre en el cron de las 04:00 y este
+    endpoint en `refresh-cache`. Si uno propaga y el otro no, la tarjetita de una propiedad
+    cambia segun quien reconstruyo el cache. `inheritedFrom` es la pista de origen y la lee
+    el editor de mariachi para decir de quien se hereda.
+    """
+    parent_of: dict[str, Optional[str]] = {layer.id: layer.parent_id for layer in layers}
+    type_of: dict[str, str] = {layer.id: layer.node_type for layer in layers}
+    own_card: dict[str, bool] = {layer.id: layer.infobox_config is not None for layer in layers}
+
+    def ancestro_con_tarjeta(layer_id: str) -> Optional[tuple[str, dict]]:
+        cur = parent_of.get(layer_id)
+        while cur is not None:
+            ancestro = nodes_by_id.get(cur)
+            if ancestro is None:
+                break
+            if type_of.get(cur) == 'group' and ancestro.get('littleCard') is not None:
+                return cur, ancestro['littleCard']
+            cur = parent_of.get(cur)
+        return None
+
+    for layer in layers:
+        if own_card.get(layer.id):
+            continue
+        if layer.node_type not in ('leaf', 'group'):
+            continue
+        encontrado = ancestro_con_tarjeta(layer.id)
+        if encontrado is None:
+            continue
+        ancestro_id, card = encontrado
+        nodes_by_id[layer.id]['littleCard'] = card
+        nodes_by_id[layer.id]['inheritedFrom'] = ancestro_id
+
+
 def _build_tree_from_rows(
     layers: list[Layer],
     workspace_map: dict[str, Workspace],
@@ -225,6 +268,8 @@ def _build_tree_from_rows(
             parent = nodes_by_id.get(layer.parent_id)
             if parent is not None:
                 parent['children'].append(node)
+
+    _inherit_little_card(nodes_by_id, layers)
 
     for root in roots:
         _inherit_municipio_meta(root)

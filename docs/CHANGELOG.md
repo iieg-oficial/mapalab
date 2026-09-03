@@ -5,6 +5,32 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.165.0] - 2026-09-03
+
+### Corregido: la tarjetita de un grupo ahora si llega a sus propiedades
+
+Una propiedad —hoja hija de un grupo— es un filtro CQL sobre el mismo feature type, asi que su
+tarjetita deberia ser la del grupo cuando no tiene una propia. **No lo era.** `InfoBox` lee el
+`littleCard` de la capa del clic y nada mas, sin recorrer ancestros, asi que una propiedad sin
+tarjetita caia en la que `generateDefaultConfig` inventa de las propiedades del feature.
+
+Y era peor que eso: el clic se resuelve por nombre de capa de GeoServer, que el grupo y sus
+propiedades **comparten**, y `layerMap[layerName] = group[0].layer` se queda con la primera
+activa. O sea que veias la del grupo o una inventada **segun el orden en que se encendieron las
+capas**. No era herencia, era azar.
+
+`_inherit_little_card` resuelve la propagacion **al construir el arbol**: quien no tiene tarjetita
+propia recibe la del grupo ancestro mas cercano, mas un `inheritedFrom` con el id de ese grupo. El
+visor no aprende ninguna regla nueva y el azar del `layerMap` deja de importar para la tarjeta.
+
+**Es un espejo exacto de `_inherit_little_card` de `dataengine/jobs/run_refresh_layer_tree.py`,
+que ya lo hacia.** Ahi estaba la divergencia: el cron de las 04:00 propagaba y el
+`refresh-cache` de este backend no, asi que la tarjetita de una propiedad cambiaba segun quien
+habia reconstruido el cache. Es justo el riesgo que `ecosistema/contratos.md` advierte sobre los
+dos serializadores del arbol.
+
+`_TREE_SCHEMA` sube a **3** para que los caches sin el campo se invaliden solos.
+
 ## [1.164.0] - 2026-09-03
 
 ### Agregado: el panel fijado se puede redimensionar, y la interfaz solo se recoge
