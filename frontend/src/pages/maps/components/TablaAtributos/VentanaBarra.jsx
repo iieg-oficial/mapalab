@@ -3,6 +3,7 @@ import Tooltip from '@components/Tooltip';
 import ActionIconButton from '@components/ActionIconButton';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
 import SelectorColumnas from './SelectorColumnas';
+import DescargaTabla from './DescargaTabla';
 
 const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, layerId, datos, verCql, acople, onAcoplar, onAlternarCql, onCerrar, arrastre }) => {
     const {
@@ -41,6 +42,15 @@ const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, layerId, datos, 
             <div className="ml-auto flex items-center gap-1 shrink-0">
                 {datos.disponible && (
                     <>
+                        <DescargaTabla
+                            wmsConfig={datos.wmsConfig}
+                            cql={datos.cql}
+                            columnas={datos.columnas}
+                            campoGeometria={datos.campoGeometria}
+                            nombreCapa={nombre}
+                            total={datos.total}
+                        />
+
                         <SelectorColumnas
                             columnas={datos.columnas}
                             ocultas={datos.ocultas}

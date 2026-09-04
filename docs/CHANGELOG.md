@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.168.0] - 2026-09-04
+
+### Agregado: descargar lo que muestra la tabla
+
+Un boton en la barra de acciones del panel baja **los registros con los filtros puestos**, no la capa
+completa: viaja el mismo CQL que arma la consulta —lo heredado, el municipio, los filtros por
+columna y el recorte por pantalla si esta encendido—.
+
+Dos formatos, a proposito: **CSV**, que es la tabla tal cual, y **GPKG**, que conserva tipos y
+geometria en un solo archivo para quien se la lleva a QGIS. Se dejo fuera SHP porque trunca los
+nombres de columna a diez caracteres y destroza los alias que se configuran desde mariachi.
+
+Las columnas ocultas no viajan, con una casilla para incluirlas. En GPKG la geometria siempre se
+suma aunque no sea una columna visible, porque sin ella el archivo no sirve; si no se pudo resolver
+cual es la columna de geometria, se bajan todas antes que entregar un archivo roto.
+
 ## [1.167.2] - 2026-09-04
 
 ### Cambiado: el panel fijado ya no lleva borde de color

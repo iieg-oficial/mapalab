@@ -100,7 +100,7 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
     }, [configuracion, wmsConfig]);
 
     useEffect(() => {
-        if (!disponible || vista.vista === 'libre') return;
+        if (!disponible) return;
         const typeName = wmsConfig.wfsLayerName || wmsConfig.layerName;
         const esInegi = (activeLayerIds || []).some(id => INEGI_LAYER_IDS.includes(id));
 
@@ -110,7 +110,7 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
                 setCampoGeometria(esInegi && campo === 'geom_iieg' ? 'geom_inegi' : campo);
             })
             .catch(() => setCampoGeometria(null));
-    }, [activeLayerIds, disponible, vista.vista, wmsConfig]);
+    }, [activeLayerIds, disponible, wmsConfig]);
 
     const pedirPagina = useCallback(async (pagina, controlador) => fetchPagina(wmsConfig, {
         cql: consulta.cql,
@@ -202,6 +202,9 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
     return {
         layerDef,
         tarjeta,
+        wmsConfig,
+        cql: cqlCompleto,
+        campoGeometria,
         esGrupo: objetivo.esGrupo,
         hojasDelGrupo: objetivo.hojas || 0,
         disponible,
