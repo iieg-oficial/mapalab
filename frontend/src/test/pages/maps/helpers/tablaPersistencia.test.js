@@ -24,6 +24,11 @@ describe('tablaPersistencia', () => {
         expect(leido.porCapa.escuelas.ocultas).toEqual(['cve']);
     });
 
+    it('recuerda el modo del sider previo al fijar', () => {
+        guardarEstado({ acople: 'abajo', modoPrevioSider: 'collapsed' });
+        expect(leerEstado().modoPrevioSider).toBe('collapsed');
+    });
+
     it('descarta lo guardado con otra version', () => {
         localStorage.setItem('mapalab.tabla.estado', JSON.stringify({ version: 99, estado: { acople: 'abajo' } }));
         expect(leerEstado()).toEqual(ESTADO_INICIAL);

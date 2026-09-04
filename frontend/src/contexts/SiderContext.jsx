@@ -30,17 +30,19 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
 
     useEffect(() => { guardarCandado(lockMode); }, [lockMode]);
 
+    const seAbreConClic = isMobile || lockMode === 'mobile';
+
     const toggleSider = useCallback(() => {
-        if (isMobile) {
+        if (seAbreConClic) {
             setIsOpen(prev => !prev);
         }
-    }, [isMobile]);
+    }, [seAbreConClic]);
 
     const closeSider = useCallback(() => {
-        if (isMobile) {
+        if (seAbreConClic) {
             setIsOpen(false);
         }
-    }, [isMobile]);
+    }, [seAbreConClic]);
 
     const toggleLock = useCallback(() => {
         setLockMode(prev => {

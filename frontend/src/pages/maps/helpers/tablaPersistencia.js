@@ -6,6 +6,7 @@ export const ESTADO_INICIAL = {
     activaId: null,
     acople: 'flotante',
     altoAcople: null,
+    modoPrevioSider: null,
     porCapa: {},
 };
 

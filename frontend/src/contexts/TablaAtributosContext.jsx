@@ -22,7 +22,7 @@ const ESTADO_CAPA = {
 export const TablaAtributosProvider = ({ children }) => {
     const { allLayers, activeLayerIds, hiddenLayerIds } = useMapsContext();
     const { setLockMode, lockMode } = useSider() || {};
-    const modoPrevioRef = useRef(null);
+    const [modoPrevioSider, setModoPrevioSider] = useState(guardado.modoPrevioSider);
     const guardado = useRef(leerEstado()).current;
     const { unifiedLayers } = useActiveLayersLogic(activeLayerIds || [], hiddenLayerIds || []);
     const [activo, setActivo] = useState(guardado.activo);
@@ -66,15 +66,13 @@ export const TablaAtributosProvider = ({ children }) => {
 
     const cerrarTodas = useCallback(() => {
         setAcople('flotante');
-        if (modoPrevioRef.current !== null) {
-            setLockMode?.(modoPrevioRef.current);
-            modoPrevioRef.current = null;
-        }
+        setLockMode?.(modoPrevioSider || 'auto');
+        setModoPrevioSider(null);
         setActivo(false);
         setActivaId(null);
         setPorCapa({});
         setMinimizado(false);
-    }, [setLockMode]);
+    }, [modoPrevioSider, setLockMode]);
 
     const activar = useCallback((layerId) => {
         setActivaId(layerId);
@@ -89,16 +87,14 @@ export const TablaAtributosProvider = ({ children }) => {
 
         if (siguiente !== 'flotante') {
             setMinimizado(false);
-            if (modoPrevioRef.current === null) modoPrevioRef.current = lockMode || 'auto';
+            if (modoPrevioSider === null && lockMode !== 'mobile') setModoPrevioSider(lockMode || 'auto');
             setLockMode?.('mobile');
             return;
         }
 
-        if (modoPrevioRef.current !== null) {
-            setLockMode?.(modoPrevioRef.current);
-            modoPrevioRef.current = null;
-        }
-    }, [lockMode, setLockMode]);
+        setLockMode?.(modoPrevioSider || 'auto');
+        setModoPrevioSider(null);
+    }, [lockMode, modoPrevioSider, setLockMode]);
 
     const estadoDe = useCallback((layerId) => porCapa[layerId] || ESTADO_CAPA, [porCapa]);
 
@@ -162,8 +158,8 @@ export const TablaAtributosProvider = ({ children }) => {
     }, [parchear]);
 
     useEffect(() => {
-        guardarEstado({ activo, activaId, acople, altoAcople, porCapa });
-    }, [activo, activaId, acople, altoAcople, porCapa]);
+        guardarEstado({ activo, activaId, acople, altoAcople, porCapa, modoPrevioSider });
+    }, [activo, activaId, acople, altoAcople, porCapa, modoPrevioSider]);
 
     const value = useMemo(() => ({
         activo,

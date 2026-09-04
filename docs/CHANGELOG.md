@@ -5,6 +5,17 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.168.2] - 2026-09-04
+
+### Corregido: el sider compacto no se abria con clic, y no volvia a su modo
+
+- **`toggleSider` y `closeSider` solo miraban si el dispositivo era movil**, no si el candado estaba
+  en `mobile`. Con la tabla fijada el sider se veia compacto pero el clic no hacia nada: ahora
+  cualquiera de las dos condiciones lo abre y lo cierra.
+- **El modo previo del sider se guarda con el resto del estado**, asi que soltar o cerrar la tabla lo
+  devuelve a como estaba aunque hayas recargado la pagina entre una cosa y otra. Antes vivia en una
+  referencia en memoria y un refresco lo perdia: el sider se quedaba compacto para siempre.
+
 ## [1.168.1] - 2026-09-04
 
 ### Cambiado: la descarga de la tabla usa el mismo menu que el resto del visor
