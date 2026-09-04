@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.168.4] - 2026-09-04
+
+### Corregido: `Cannot access 'c' before initialization` al entrar al visor
+
+`Icon` importaba `Tooltip` y `Tooltip` importaba `Icon`: un ciclo que estaba desde antes pero que no
+molestaba hasta que el reparto de chunks cambio y el bundle empezo a evaluar `Tooltip` primero. Ahi
+`Icon` queda a medio inicializar cuando se le llama, y la pantalla se cae entera con un
+`ReferenceError` en pleno render.
+
+El ciclo se rompe del lado barato: `Icon` ya no importa `Tooltip`. Su prop `tooltip` —que usaban tres
+lugares en todo el proyecto— se cambio por `title`, y esos tres se envuelven con `Tooltip` ellos
+mismos, que es como lo hace el resto del visor. **El proyecto queda sin ninguna dependencia
+circular.**
+
 ## [1.168.3] - 2026-09-04
 
 ### Cambiado: el panel de datos usa el `Loading` del visor

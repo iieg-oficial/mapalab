@@ -1,6 +1,5 @@
 import { cloneElement } from 'react';
 import { externalIcons } from '@assets/icons';
-import Tooltip from '@components/Tooltip';
 
 const colibriIcon = (
     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -252,7 +251,7 @@ const icons = {
     ),
 };
 
-const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visible = true, tooltip = null, onClick = null }) => {
+const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visible = true, title = null, onClick = null }) => {
     if (!visible) return null;
 
     const positioningClasses = ['absolute', 'fixed', 'relative', 'sticky', 'top-', 'bottom-', 'left-', 'right-', 'inset-', 'z-'];
@@ -282,7 +281,7 @@ const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visibl
 
     if (!iconElement) return null;
 
-    const needsWrapper = onClick || tooltip || wrapperClasses.length > 0 || classNameBG;
+    const needsWrapper = onClick || title || wrapperClasses.length > 0 || classNameBG;
 
     if (needsWrapper) {
         const finalWrapperClasses = [
@@ -291,13 +290,13 @@ const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visibl
             onClick ? 'cursor-pointer' : ''
         ].filter(Boolean).join(' ');
 
-        const content = tooltip ? <Tooltip content={tooltip}>{iconElement}</Tooltip> : iconElement;
+        const content = iconElement;
         iconElement = onClick ? (
-            <button type="button" onClick={onClick} className={finalWrapperClasses || undefined}>
+            <button type="button" onClick={onClick} title={title || undefined} className={finalWrapperClasses || undefined}>
                 {content}
             </button>
         ) : (
-            <span className={finalWrapperClasses || undefined}>
+            <span title={title || undefined} className={finalWrapperClasses || undefined}>
                 {content}
             </span>
         );

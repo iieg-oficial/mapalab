@@ -4,6 +4,7 @@ import Loading from '@components/Loading';
 import DateTreeSelector from './DateTreeSelector';
 import SimpleDateSelector from './SimpleDateSelector';
 import { PlayPauseButton, LoopIntervalButton, LoopDirectionButton } from './SimpleDateSelectorParts';
+import Tooltip from '@components/Tooltip';
 
 const PeriodicitySection = ({
     layerId,
@@ -61,7 +62,7 @@ const PeriodicitySection = ({
                         Periodicidad{label ? ` ${label}` : ''}
                     </button>
                     {isAdvancedMode && (
-                        <Icon name="info_warning" className="size-4 cursor-help" tooltip="Click simple: navegar opciones. Doble click: seleccionar fecha. Click en seleccionado: deseleccionar." />
+                        <Tooltip content="Click simple: navegar opciones. Doble click: seleccionar fecha. Click en seleccionado: deseleccionar."><Icon name="info_warning" className="size-4 cursor-help" /></Tooltip>
                     )}
                     {titleAction && <span className="ml-auto shrink-0">{titleAction}</span>}
                 </div>
@@ -75,7 +76,7 @@ const PeriodicitySection = ({
                     )}
                     {hasDateFilter && (
                         <button onClick={onClearDateFilter} className="ml-auto md:ml-0 inline-flex items-center justify-center h-[30px] leading-none align-middle">
-                            <Icon tooltip="Eliminar filtro" name="eliminar" state="hover" className="size-5 cursor-pointer block" />
+                            <Tooltip content="Eliminar filtro"><Icon name="eliminar" state="hover" className="size-5 cursor-pointer block" /></Tooltip>
                         </button>
                     )}
                     {trailingAction}
