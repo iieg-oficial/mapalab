@@ -121,6 +121,7 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
         toggleSider,
         closeSider,
         toggleLock,
+        setLockMode,
     };
 
     return (

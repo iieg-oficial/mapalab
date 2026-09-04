@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
+import { leerEstado, guardarEstado } from '@pages/maps/helpers/tablaPersistencia';
 import { useActiveLayersLogic } from '@hooksMaps/useActiveLayersLogic';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
@@ -20,14 +21,16 @@ const ESTADO_CAPA = {
 
 export const TablaAtributosProvider = ({ children }) => {
     const { allLayers, activeLayerIds, hiddenLayerIds } = useMapsContext();
-    const { closeSider } = useSider() || {};
+    const { setLockMode, lockMode } = useSider() || {};
+    const modoPrevioRef = useRef(null);
+    const guardado = useRef(leerEstado()).current;
     const { unifiedLayers } = useActiveLayersLogic(activeLayerIds || [], hiddenLayerIds || []);
-    const [activo, setActivo] = useState(false);
-    const [activaId, setActivaId] = useState(null);
+    const [activo, setActivo] = useState(guardado.activo);
+    const [activaId, setActivaId] = useState(guardado.activaId);
     const [minimizado, setMinimizado] = useState(false);
-    const [acople, setAcople] = useState('flotante');
-    const [altoAcople, setAltoAcople] = useState(null);
-    const [porCapa, setPorCapa] = useState({});
+    const [acople, setAcople] = useState(guardado.acople);
+    const [altoAcople, setAltoAcople] = useState(guardado.altoAcople);
+    const [porCapa, setPorCapa] = useState(guardado.porCapa);
 
     const tablas = useMemo(() => {
         if (!activo) return [];
@@ -63,11 +66,15 @@ export const TablaAtributosProvider = ({ children }) => {
 
     const cerrarTodas = useCallback(() => {
         setAcople('flotante');
+        if (modoPrevioRef.current !== null) {
+            setLockMode?.(modoPrevioRef.current);
+            modoPrevioRef.current = null;
+        }
         setActivo(false);
         setActivaId(null);
         setPorCapa({});
         setMinimizado(false);
-    }, []);
+    }, [setLockMode]);
 
     const activar = useCallback((layerId) => {
         setActivaId(layerId);
@@ -79,11 +86,19 @@ export const TablaAtributosProvider = ({ children }) => {
     const acoplar = useCallback((modo) => {
         const siguiente = modo || 'flotante';
         setAcople(siguiente);
+
         if (siguiente !== 'flotante') {
             setMinimizado(false);
-            closeSider?.();
+            if (modoPrevioRef.current === null) modoPrevioRef.current = lockMode || 'auto';
+            setLockMode?.('mobile');
+            return;
         }
-    }, [closeSider]);
+
+        if (modoPrevioRef.current !== null) {
+            setLockMode?.(modoPrevioRef.current);
+            modoPrevioRef.current = null;
+        }
+    }, [lockMode, setLockMode]);
 
     const estadoDe = useCallback((layerId) => porCapa[layerId] || ESTADO_CAPA, [porCapa]);
 
@@ -141,6 +156,10 @@ export const TablaAtributosProvider = ({ children }) => {
     const fijarConteo = useCallback((layerId, conteo) => {
         parchear(layerId, { conteo });
     }, [parchear]);
+
+    useEffect(() => {
+        guardarEstado({ activo, activaId, acople, altoAcople, porCapa });
+    }, [activo, activaId, acople, altoAcople, porCapa]);
 
     const value = useMemo(() => ({
         activo,

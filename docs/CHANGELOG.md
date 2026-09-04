@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.166.0] - 2026-09-04
+
+### Agregado: el sider se compacta al fijar la tabla, y la tabla recuerda su estado
+
+- **Fijar la tabla pone el sider en su trato movil** usando el candado que el propio sider ya tiene
+  (`lockMode = 'mobile'`, el cuarto estado de su boton). Al soltarla se restaura el modo que tenia
+  antes. Es lo que se buscaba con el modo zen, pero por la puerta correcta: sin apagar la interfaz
+  ni impedir que se abran los paneles.
+- **La tabla recuerda su estado entre sesiones**, en `localStorage` y con version para poder
+  invalidarlo: si estaba fijada y con que alto, cual pestana estaba viendose, y por capa sus
+  filtros, su orden, las columnas ocultas y los registros seleccionados.
+
 ## [1.165.1] - 2026-09-03
 
 ### Corregido: fijar la tabla ya no bloquea los paneles, y la seleccion no se pierde
