@@ -22,9 +22,9 @@ const ESTADO_CAPA = {
 export const TablaAtributosProvider = ({ children }) => {
     const { allLayers, activeLayerIds, hiddenLayerIds } = useMapsContext();
     const { setLockMode, lockMode } = useSider() || {};
-    const [modoPrevioSider, setModoPrevioSider] = useState(guardado.modoPrevioSider);
     const guardado = useRef(leerEstado()).current;
     const { unifiedLayers } = useActiveLayersLogic(activeLayerIds || [], hiddenLayerIds || []);
+    const [modoPrevioSider, setModoPrevioSider] = useState(guardado.modoPrevioSider);
     const [activo, setActivo] = useState(guardado.activo);
     const [activaId, setActivaId] = useState(guardado.activaId);
     const [minimizado, setMinimizado] = useState(false);

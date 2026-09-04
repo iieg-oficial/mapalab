@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.168.5] - 2026-09-04
+
+### Corregido: el visor se caia al entrar por una variable usada antes de declararse
+
+`TablaAtributosProvider` leia `guardado.modoPrevioSider` en un `useState` **una linea antes** de
+declarar `guardado`. Es el error que tumbaba la pantalla completa con
+`Cannot access 'c' before initialization`: como revienta durante el render del proveedor, se lleva
+al visor entero, y minificado no dice ni el archivo ni la variable.
+
+Lo encontro `eslint --rule no-use-before-define`, que no esta en la configuracion del proyecto.
+Vale la pena prenderla: hoy reporta quince casos mas, casi todos dentro de funciones —donde son
+inofensivos— pero es la unica red que atrapa este error antes de producirse.
+
 ## [1.168.4] - 2026-09-04
 
 ### Corregido: `Cannot access 'c' before initialization` al entrar al visor
