@@ -247,9 +247,10 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                     ? { ...estiloAcoplado, zIndex: activa ? 9 : 8 }
                     : { left: posicion.x, top: posicion.y, zIndex: activa ? 13 : 12 }}
                 className={`
-                    fixed flex flex-col bg-white shadow-[0_5px_20px_#1A26641A] border overflow-hidden transition-colors
-                    ${acoplado ? 'rounded-none' : 'w-[min(760px,92vw)] h-[min(420px,60vh)] rounded-[10px]'}
-                    ${activa ? 'border-purple' : 'border-[#EAEFFA]'}
+                    fixed flex flex-col bg-white shadow-[0_5px_20px_#1A26641A] overflow-hidden transition-colors
+                    ${acoplado
+            ? 'rounded-none border-0'
+            : `w-[min(760px,92vw)] h-[min(420px,60vh)] rounded-[10px] border ${activa ? 'border-purple' : 'border-[#EAEFFA]'}`}
                 `}
             >
                 {acoplado && (
@@ -257,7 +258,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                         {...tirador}
                         role="separator"
                         aria-label="Ajustar el alto del panel"
-                        className="h-1.5 shrink-0 cursor-ns-resize touch-none bg-[#EAEFFA] hover:bg-purple-deep transition-colors"
+                        className="h-1.5 shrink-0 cursor-ns-resize touch-none bg-[#F2F5FB] hover:bg-[#DCE3F0] transition-colors"
                     />
                 )}
                 {cuerpoCompleto}

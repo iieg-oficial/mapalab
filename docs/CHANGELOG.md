@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.167.2] - 2026-09-04
+
+### Cambiado: el panel fijado ya no lleva borde de color
+
+El borde morado marcaba la tabla activa cuando flota sobre el mapa, pero fijada al pie se leia como
+una linea que partia la pantalla. Fijada va sin borde: el unico separador es el tirador del alto,
+que ademas se atenuo para que se note al pasar el mouse y no antes.
+
 ## [1.167.1] - 2026-09-04
 
 ### Cambiado: los botones del selector de columnas se acortan cuando conviven
