@@ -1,99 +1,58 @@
-import { useRef, useState } from 'react';
+import { useMemo } from 'react';
 import Icon from '@components/Icon';
-import Panel from '@components/Panel';
-import Checkbox from '@components/Checkbox';
+import Loading from '@components/Loading';
 import ActionIconButton from '@components/ActionIconButton';
-import { FORMATOS_TABLA, construirDescarga } from '@services/tablaDescarga';
-import { findVectorFormat } from '@services/downloadUrls';
+import DownloadMenu from '@mapsComponents/LayerDetailModal/components/DownloadMenu';
+import { useMapsContext } from '@hooks/useMaps';
+import { useLayerDownload } from '@hooksMaps/useLayerDownload';
+import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
 
-const DescargaTabla = ({ wmsConfig, cql, columnas, campoGeometria, nombreCapa, total }) => {
-    const anclaRef = useRef(null);
-    const [abierto, setAbierto] = useState(false);
-    const [soloVisibles, setSoloVisibles] = useState(true);
+const DescargaTabla = ({ layerId, cql, columnas, campoGeometria }) => {
+    const { getFilter, getSpecificFilter, municipioMode } = useMapsContext();
+    const contexto = useMetadataContext(municipioMode);
+    const { metadata } = useLayerMetadata(layerId, contexto);
 
-    const descargar = (formatoId) => {
-        const descarga = construirDescarga({
-            wmsConfig, formatoId, cql, columnas, soloVisibles, campoGeometria, nombreCapa,
-        });
-        if (!descarga) return;
+    const propertyNames = useMemo(() => {
+        const visibles = (columnas || []).filter(columna => columna.visible).map(columna => columna.nombre);
+        if (visibles.length === 0 || visibles.length === (columnas || []).length) return null;
+        return campoGeometria ? [...visibles, campoGeometria] : visibles;
+    }, [campoGeometria, columnas]);
 
-        const enlace = document.createElement('a');
-        enlace.href = descarga.url;
-        enlace.download = descarga.archivo;
-        enlace.rel = 'noopener';
-        document.body.appendChild(enlace);
-        enlace.click();
-        enlace.remove();
-        setAbierto(false);
-    };
-
-    const ocultas = (columnas || []).filter(columna => !columna.visible).length;
+    const descarga = useLayerDownload(layerId, {
+        getFilter,
+        getSpecificFilter,
+        metadata,
+        cqlBase: cql || null,
+        propertyNames,
+    });
 
     return (
-        <span ref={anclaRef} className="flex">
+        <span ref={descarga.menuAnchorRef} className="flex">
             <ActionIconButton
-                onClick={() => setAbierto(valor => !valor)}
-                titulo="Descargar lo que muestra la tabla: baja los registros con los filtros puestos, no la capa completa"
-                etiqueta="Descargar los datos de la tabla"
+                onClick={descarga.downloading
+                    ? descarga.handleCancelDownload
+                    : () => descarga.setMenuOpen(previo => !previo)}
+                activo={descarga.downloading}
+                titulo={descarga.downloading
+                    ? 'Cancelar la descarga'
+                    : 'Descargar lo que muestra la tabla: los registros con los filtros puestos y las columnas visibles, no la capa completa'}
+                etiqueta={descarga.downloading ? 'Cancelar la descarga' : 'Descargar los datos de la tabla'}
                 tamano="sm"
             >
-                <Icon name="download" className="size-3.5" />
+                {descarga.downloading
+                    ? <Loading visible size="size-3.5" border="border-1" color="border-current" />
+                    : <Icon name="download" className="size-3.5" />}
             </ActionIconButton>
 
-            <Panel
-                open={abierto}
-                anchorRef={anclaRef}
-                onClose={() => setAbierto(false)}
-                placement="bottom-end"
-                width="w-64"
-                noPadding
-                hideHeader
-                className="z-50"
-            >
-                <div className="p-3 flex flex-col gap-2.5">
-                    <span className="text-[12px] font-garet font-bold text-purple">Descargar</span>
-
-                    <p className="text-[11px]/[15px] font-garet text-[#6B7585]">
-                        {Number.isFinite(total)
-                            ? `${total.toLocaleString('es-MX')} registros con los filtros puestos.`
-                            : 'Los registros con los filtros puestos.'}
-                    </p>
-
-                    {ocultas > 0 && (
-                        <div
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => setSoloVisibles(valor => !valor)}
-                            onKeyDown={evento => {
-                                if (evento.key === 'Enter' || evento.key === ' ') setSoloVisibles(valor => !valor);
-                            }}
-                            className="flex items-center text-[12px] font-garet text-graphite hover:text-purple cursor-pointer"
-                        >
-                            <Checkbox checked={soloVisibles} />
-                            <span>Solo las columnas visibles</span>
-                        </div>
-                    )}
-
-                    <div className="flex flex-col gap-1.5">
-                        {FORMATOS_TABLA.map(formatoId => {
-                            const formato = findVectorFormat(formatoId);
-                            return (
-                                <button
-                                    key={formatoId}
-                                    type="button"
-                                    onClick={() => descargar(formatoId)}
-                                    className="h-8 px-3 flex items-center justify-between rounded-full border border-[#EAEFFA] text-[12px] font-garet text-graphite hover:border-purple hover:text-purple cursor-pointer"
-                                >
-                                    <span>{formato.label}</span>
-                                    <span className="text-[10px] text-[#8A94A6]">
-                                        {formatoId === 'csv' ? 'la tabla tal cual' : 'con geometría, para QGIS'}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            </Panel>
+            <DownloadMenu
+                open={descarga.menuOpen}
+                anchorRef={descarga.menuAnchorRef}
+                onClose={() => descarga.setMenuOpen(false)}
+                isRaster={descarga.isRaster}
+                hasDateFilter={descarga.hasDateFilter}
+                availableMetadata={descarga.availableMetadata}
+                onDownload={descarga.handleMenuDownload}
+            />
         </span>
     );
 };

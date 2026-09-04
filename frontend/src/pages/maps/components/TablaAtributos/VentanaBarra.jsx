@@ -43,12 +43,10 @@ const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, layerId, datos, 
                 {datos.disponible && (
                     <>
                         <DescargaTabla
-                            wmsConfig={datos.wmsConfig}
+                            layerId={layerId}
                             cql={datos.cql}
                             columnas={datos.columnas}
                             campoGeometria={datos.campoGeometria}
-                            nombreCapa={nombre}
-                            total={datos.total}
                         />
 
                         <SelectorColumnas

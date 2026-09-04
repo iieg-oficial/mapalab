@@ -138,7 +138,7 @@ const extForFormat = (config, formatId) => {
     return findVectorFormat(formatId)?.extension || null;
 };
 
-const resolveLayerResponse = async (config, formatId, { signal, dateFrom, dateTo, dateCql, getFilter, layerId }) => {
+const resolveLayerResponse = async (config, formatId, { signal, dateFrom, dateTo, dateCql, getFilter, layerId, propertyNames = null }) => {
     const { wmsConfig, workspace, layerName, isRaster, hasFilter } = config;
 
     if (isRaster) {
@@ -149,10 +149,10 @@ const resolveLayerResponse = async (config, formatId, { signal, dateFrom, dateTo
     if (formatId === 'csv') {
         const csvFmt = findVectorFormat('csv');
         const wfsCsv = async () => {
-            const columns = await fetchNonGeometryColumns(wmsConfig, signal);
+            const columns = propertyNames || await fetchNonGeometryColumns(wmsConfig, signal);
             return openValidatedResponse(buildWFSUrl(wmsConfig, csvFmt, dateCql, columns), signal);
         };
-        const wfsOnly = hasFilter || (dateCql && !dateFrom);
+        const wfsOnly = hasFilter || propertyNames || (dateCql && !dateFrom);
         if (wfsOnly) return wfsCsv();
         try {
             return await openValidatedResponse(buildBackendCSVUrl(workspace, layerName, dateFrom, dateTo), signal);
@@ -163,7 +163,7 @@ const resolveLayerResponse = async (config, formatId, { signal, dateFrom, dateTo
 
     const fmt = findVectorFormat(formatId);
     if (!fmt) return null;
-    return openValidatedResponse(buildWFSUrl(wmsConfig, fmt, dateCql), signal);
+    return openValidatedResponse(buildWFSUrl(wmsConfig, fmt, dateCql, propertyNames), signal);
 };
 
 const fetchLayerBlob = async (config, formatId, options) => {
@@ -227,12 +227,17 @@ export const downloadSingleFormat = (layerId, formatId, options = {}) =>
 
 export const downloadWithMenu = (layerId, menuOptions = {}) =>
     wrapDownload(async () => {
-        const { formatId = 'csv', dateMode = 'all', metadataSelections = { txt: false, xlsx: false }, metadata, signal, onProgress, getFilter, getSpecificFilter } = menuOptions;
+        const {
+            formatId = 'csv', dateMode = 'all', metadataSelections = { txt: false, xlsx: false }, metadata,
+            signal, onProgress, getFilter, getSpecificFilter, cqlBase = null, propertyNames = null,
+        } = menuOptions;
         const config = getLayerConfig(layerId);
         if (!config) return { success: false, error: 'Capa no encontrada' };
 
         let dateFrom, dateTo, dateCql;
-        if (dateMode === 'active' && !config.isRaster) {
+        if (cqlBase) {
+            dateCql = cqlBase;
+        } else if (dateMode === 'active' && !config.isRaster) {
             dateCql = getSpecificFilter?.(layerId, 'date') || getFilter?.(layerId) || undefined;
             const range = cqlToDateRange(dateCql);
             if (range) {
@@ -244,7 +249,7 @@ export const downloadWithMenu = (layerId, menuOptions = {}) =>
         const hasMetadata = metadataSelections.txt || metadataSelections.xlsx;
         const metadatoList = hasMetadata ? getMetadataFiles(metadata) : [];
         if (!hasMetadata || metadatoList.length === 0) {
-            return downloadSingleFormat(layerId, formatId, { signal, onProgress, dateFrom, dateTo, dateCql, getFilter });
+            return downloadSingleFormat(layerId, formatId, { signal, onProgress, dateFrom, dateTo, dateCql, getFilter, propertyNames });
         }
 
         const { default: JSZip } = await import('jszip');
@@ -252,7 +257,7 @@ export const downloadWithMenu = (layerId, menuOptions = {}) =>
         signal?.throwIfAborted();
 
         const filter = downloadedFilter(config, layerId, { getFilter, dateCql });
-        const result = await fetchLayerBlob(config, formatId, { signal, onProgress, dateFrom, dateTo, dateCql, getFilter, layerId });
+        const result = await fetchLayerBlob(config, formatId, { signal, onProgress, dateFrom, dateTo, dateCql, getFilter, layerId, propertyNames });
         if (result) zip.file(layerFilename(layerId, result.ext, filter, config.layerName), result.blob);
 
         signal?.throwIfAborted();

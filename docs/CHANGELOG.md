@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.168.1] - 2026-09-04
+
+### Cambiado: la descarga de la tabla usa el mismo menu que el resto del visor
+
+Se cambio el menu propio de 1.168.0 por `DownloadMenu` y `useLayerDownload`, que ya estaban
+resueltos: los cinco formatos, los metadatos en TXT y XLSX, el guardado con el selector de archivos
+del navegador, el progreso en bytes y el boton que cancela a medio camino.
+
+Para que respete lo que muestra la tabla, el servicio de descarga aprendio dos opciones nuevas:
+`cqlBase`, que impone el filtro de la tabla sobre el que calcularia por su cuenta, y
+`propertyNames`, que recorta las columnas —en CSV las visibles, y sumando la geometria cuando el
+formato la necesita—. Ambas son opcionales, asi que la descarga de capas y la del catalogo siguen
+comportandose igual.
+
 ## [1.168.0] - 2026-09-04
 
 ### Agregado: descargar lo que muestra la tabla
