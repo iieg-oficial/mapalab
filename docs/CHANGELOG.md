@@ -5,6 +5,13 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.167.1] - 2026-09-04
+
+### Cambiado: los botones del selector de columnas se acortan cuando conviven
+
+Con columnas ocultas y visibles a la vez salen los dos botones, y ahi dicen «Mostrar» y «Quitar» a
+secas. Cuando solo cabe uno conservan su «todas», que es cuando la palabra aporta.
+
 ## [1.167.0] - 2026-09-04
 
 ### Agregado: el sider recuerda su candado, y la tabla afina sus menus

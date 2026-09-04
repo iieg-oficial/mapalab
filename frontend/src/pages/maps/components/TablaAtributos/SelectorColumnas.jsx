@@ -10,6 +10,9 @@ const SelectorColumnas = ({ columnas, ocultas, onAlternar, onMostrarTodas, onOcu
     const [abierto, setAbierto] = useState(false);
 
     const escondidas = ocultas.length;
+    const hayMostrar = escondidas > 0;
+    const hayQuitar = escondidas < columnas.length;
+    const ambos = hayMostrar && hayQuitar;
 
     return (
         <span ref={anclaRef} className="flex">
@@ -39,22 +42,22 @@ const SelectorColumnas = ({ columnas, ocultas, onAlternar, onMostrarTodas, onOcu
                     <div className="flex items-center justify-between gap-2">
                         <span className="text-[12px] font-garet font-bold text-purple">Columnas</span>
                         <span className="flex items-center gap-2">
-                            {escondidas > 0 && (
+                            {hayMostrar && (
                                 <button
                                     type="button"
                                     onClick={onMostrarTodas}
                                     className="text-[11px] font-garet text-[#8A94A6] hover:text-purple cursor-pointer"
                                 >
-                                    Mostrar todas
+                                    {ambos ? 'Mostrar' : 'Mostrar todas'}
                                 </button>
                             )}
-                            {escondidas < columnas.length && (
+                            {hayQuitar && (
                                 <button
                                     type="button"
                                     onClick={onOcultarTodas}
                                     className="text-[11px] font-garet text-[#8A94A6] hover:text-purple cursor-pointer"
                                 >
-                                    Quitar todas
+                                    {ambos ? 'Quitar' : 'Quitar todas'}
                                 </button>
                             )}
                         </span>
