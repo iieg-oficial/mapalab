@@ -5,7 +5,7 @@ import Checkbox from '@components/Checkbox';
 import ActionIconButton from '@components/ActionIconButton';
 import ScrollContainer from '@components/ScrollContainer';
 
-const SelectorColumnas = ({ columnas, ocultas, onAlternar, onMostrarTodas }) => {
+const SelectorColumnas = ({ columnas, ocultas, onAlternar, onMostrarTodas, onOcultarTodas }) => {
     const anclaRef = useRef(null);
     const [abierto, setAbierto] = useState(false);
 
@@ -38,15 +38,26 @@ const SelectorColumnas = ({ columnas, ocultas, onAlternar, onMostrarTodas }) => 
                 <div className="p-3 flex flex-col gap-2">
                     <div className="flex items-center justify-between gap-2">
                         <span className="text-[12px] font-garet font-bold text-purple">Columnas</span>
-                        {escondidas > 0 && (
-                            <button
-                                type="button"
-                                onClick={onMostrarTodas}
-                                className="text-[11px] font-garet text-[#8A94A6] hover:text-purple cursor-pointer"
-                            >
-                                Mostrar todas
-                            </button>
-                        )}
+                        <span className="flex items-center gap-2">
+                            {escondidas > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={onMostrarTodas}
+                                    className="text-[11px] font-garet text-[#8A94A6] hover:text-purple cursor-pointer"
+                                >
+                                    Mostrar todas
+                                </button>
+                            )}
+                            {escondidas < columnas.length && (
+                                <button
+                                    type="button"
+                                    onClick={onOcultarTodas}
+                                    className="text-[11px] font-garet text-[#8A94A6] hover:text-purple cursor-pointer"
+                                >
+                                    Quitar todas
+                                </button>
+                            )}
+                        </span>
                     </div>
 
                     <ScrollContainer
@@ -57,16 +68,20 @@ const SelectorColumnas = ({ columnas, ocultas, onAlternar, onMostrarTodas }) => 
                         {columnas.map(columna => {
                             const visible = !ocultas.includes(columna.nombre);
                             return (
-                                <button
+                                <div
                                     key={columna.nombre}
-                                    type="button"
+                                    role="button"
+                                    tabIndex={0}
                                     onClick={() => onAlternar(columna.nombre)}
+                                    onKeyDown={evento => {
+                                        if (evento.key === 'Enter' || evento.key === ' ') onAlternar(columna.nombre);
+                                    }}
                                     title={columna.nombre}
                                     className="flex items-center text-left text-[12px] font-garet text-graphite hover:text-purple cursor-pointer"
                                 >
-                                    <Checkbox checked={visible} onChange={() => onAlternar(columna.nombre)} />
+                                    <Checkbox checked={visible} />
                                     <span className="truncate">{columna.etiqueta}</span>
-                                </button>
+                                </div>
                             );
                         })}
                     </ScrollContainer>

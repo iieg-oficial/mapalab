@@ -30,15 +30,17 @@ const ListaValores = ({ valores, seleccionados, onAlternar }) => {
                 itemCount={filtrados.length}
             >
                 {filtrados.map(valor => (
-                    <button
+                    <div
                         key={valor}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => onAlternar(valor)}
+                        onKeyDown={evento => { if (evento.key === 'Enter' || evento.key === ' ') onAlternar(valor); }}
                         className="flex items-center text-left text-[12px] font-garet text-graphite hover:text-purple cursor-pointer"
                     >
-                        <Checkbox checked={seleccionados.includes(valor)} onChange={() => onAlternar(valor)} />
+                        <Checkbox checked={seleccionados.includes(valor)} />
                         <span className="truncate">{valor}</span>
-                    </button>
+                    </div>
                 ))}
                 {filtrados.length === 0 && (
                     <span className="text-[11px] font-garet text-[#8A94A6]">Sin coincidencias</span>

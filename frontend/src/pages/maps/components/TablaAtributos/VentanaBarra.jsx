@@ -5,7 +5,9 @@ import { useTablaAtributos } from '@contexts/TablaAtributosContext';
 import SelectorColumnas from './SelectorColumnas';
 
 const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, layerId, datos, verCql, acople, onAcoplar, onAlternarCql, onCerrar, arrastre }) => {
-    const { alternarMinimizado, alternarColumna, mostrarTodasLasColumnas } = useTablaAtributos();
+    const {
+        alternarMinimizado, alternarColumna, mostrarTodasLasColumnas, ocultarTodasLasColumnas,
+    } = useTablaAtributos();
     const { vista } = datos;
     const siguiendo = vista.vista === 'visible';
     const congelada = vista.vista === 'congelada';
@@ -44,6 +46,7 @@ const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, layerId, datos, 
                             ocultas={datos.ocultas}
                             onAlternar={columna => alternarColumna(layerId, columna)}
                             onMostrarTodas={() => mostrarTodasLasColumnas(layerId)}
+                            onOcultarTodas={() => ocultarTodasLasColumnas(layerId, datos.columnas.map(c => c.nombre))}
                         />
 
                         <ActionIconButton
@@ -55,20 +58,6 @@ const VentanaBarra = ({ nombre, oculta, esGrupo, hojasDelGrupo, layerId, datos, 
                         >
                             <Icon name="recorte" className="size-3.5" />
                         </ActionIconButton>
-
-                        {(siguiendo || congelada) && (
-                            <ActionIconButton
-                                onClick={congelada ? vista.descongelar : vista.congelar}
-                                activo={congelada}
-                                titulo={congelada
-                                    ? 'Recorte fijo: la tabla dejó de seguir al mapa y conserva los registros del área que fijaste. Tócalo para volver a seguir al mapa'
-                                    : 'Fijar el área actual: la tabla deja de seguir al mapa, así puedes moverte y hacer zoom sin que cambien los registros de la lista'}
-                                etiqueta={congelada ? 'Volver a seguir al mapa' : 'Fijar el área actual'}
-                                tamano="sm"
-                            >
-                                <Icon name="pause" className="size-3.5" />
-                            </ActionIconButton>
-                        )}
 
                         <ActionIconButton
                             onClick={onAlternarCql}

@@ -11,6 +11,7 @@ import {
     MOBILE_BREAKPOINT,
     SIDER_MOBILE_WIDTH,
 } from '@constants/sider';
+import { leerCandado, guardarCandado } from '@utils/siderPersistencia';
 
 export const SiderContext = createContext(null);
 
@@ -25,7 +26,9 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
     const [openMenusCount, setOpenMenusCount] = useState(0);
     const [isMobile, setIsMobile] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-    const [lockMode, setLockMode] = useState('auto');
+    const [lockMode, setLockMode] = useState(leerCandado);
+
+    useEffect(() => { guardarCandado(lockMode); }, [lockMode]);
 
     const toggleSider = useCallback(() => {
         if (isMobile) {

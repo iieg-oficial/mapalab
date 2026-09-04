@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.167.0] - 2026-09-04
+
+### Agregado: el sider recuerda su candado, y la tabla afina sus menus
+
+- **El candado del sider se guarda en el navegador.** Los cuatro modos de su boton —automatico,
+  expandido, contraido y movil— sobreviven al refresco. Ademas de ser util por si mismo, es lo que
+  hace que la tabla fijada conserve el sider compacto al recargar la pagina.
+- **Las casillas de los menus ya responden al clic.** Estaban dentro de un boton, y un boton dentro
+  de otro no recibe el clic: solo funcionaba la etiqueta. Ahora la fila entera alterna, casilla
+  incluida, y responde a Enter y espacio.
+- **«Quitar todas» junto a «Mostrar todas»** en el selector de columnas.
+- **Se fue el boton de pausa**: el boton principal del recorte por pantalla ya prende y apaga el
+  modo, asi que congelar dejo de tener boton propio.
+
 ## [1.166.0] - 2026-09-04
 
 ### Agregado: el sider se compacta al fijar la tabla, y la tabla recuerda su estado

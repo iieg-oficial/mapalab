@@ -149,6 +149,10 @@ export const TablaAtributosProvider = ({ children }) => {
         parchear(layerId, { ocultas: [] });
     }, [parchear]);
 
+    const ocultarTodasLasColumnas = useCallback((layerId, nombres) => {
+        parchear(layerId, { ocultas: [...nombres] });
+    }, [parchear]);
+
     const fijarSeleccion = useCallback((layerId, ids) => {
         parchear(layerId, { seleccion: ids });
     }, [parchear]);
@@ -188,10 +192,11 @@ export const TablaAtributosProvider = ({ children }) => {
         fijarSeleccion,
         alternarColumna,
         mostrarTodasLasColumnas,
+        ocultarTodasLasColumnas,
     }), [
         activo, tablas, activaId, minimizado, acople, acoplar, altoAcople, abrir, cerrarTodas, activar, alternarMinimizado,
         estadoDe, ponerFiltro, quitarFiltro, limpiarFiltros, fijarExpresionPropia, fijarOrden,
-        fijarVista, fijarConteo, fijarSeleccion, alternarColumna, mostrarTodasLasColumnas,
+        fijarVista, fijarConteo, fijarSeleccion, alternarColumna, mostrarTodasLasColumnas, ocultarTodasLasColumnas,
     ]);
 
     return (
