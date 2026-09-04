@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MobileSheet from '@components/MobileSheet';
+import Loading from '@components/Loading';
 import { useMapsContext } from '@hooks/useMaps';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
 import { useTablaDatos } from '@hooksMaps/useTablaDatos';
@@ -131,15 +132,22 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                     />
                 </div>
             )}
+            {datos.cargando && datos.filas.length === 0 && (
+                <div className="p-8 flex flex-col items-center gap-2">
+                    <Loading visible size="size-8" border="border-2" color="border-purple" />
+                    <span className="text-[11px] font-garet text-[#8A94A6]">Consultando los registros…</span>
+                </div>
+            )}
             {!datos.cargando && datos.filas.length === 0 && !datos.error && (
                 <p className="p-4 text-[12px] font-garet text-[#8A94A6]">
                     Ningún registro cumple con los filtros.
                 </p>
             )}
             {datos.cargandoMas && (
-                <p className="p-2 text-center text-[11px] font-garet text-[#8A94A6]">
+                <div className="p-2 flex items-center justify-center gap-2 text-[11px] font-garet text-[#8A94A6]">
+                    <Loading visible size="size-3.5" border="border-1" color="border-purple" />
                     Trayendo más registros…
-                </p>
+                </div>
             )}
         </div>
     ) : (
@@ -148,7 +156,8 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
 
     const pie = datos.disponible && (
         <div className="px-3 h-8 flex items-center gap-3 border-t border-[#EAEFFA] text-[11px] font-garet text-[#6B7585]">
-            <span className="tabular-nums shrink-0">
+            <span className="tabular-nums shrink-0 flex items-center gap-1.5">
+                <Loading visible={datos.cargando} size="size-3" border="border-1" color="border-purple" />
                 {datos.cargando
                     ? 'Consultando…'
                     : `${datos.filas.length.toLocaleString('es-MX')} de ${(datos.total ?? 0).toLocaleString('es-MX')} registros`}

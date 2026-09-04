@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.168.3] - 2026-09-04
+
+### Cambiado: el panel de datos usa el `Loading` del visor
+
+Tres momentos que antes solo se anunciaban con texto ahora traen el mismo girito del resto de la
+interfaz: la primera consulta —centrado, con la tabla todavia vacia—, el scroll que trae mas
+registros y el conteo del pie mientras se recalcula.
+
 ## [1.168.2] - 2026-09-04
 
 ### Corregido: el sider compacto no se abria con clic, y no volvia a su modo
