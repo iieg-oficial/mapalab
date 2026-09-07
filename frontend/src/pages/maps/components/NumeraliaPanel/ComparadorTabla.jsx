@@ -65,7 +65,7 @@ const Fila = ({ fila }) => (
     </>
 );
 
-const ComparadorTabla = ({ columnas, filas, onQuitar, onReordenar, picker, vacio, vistaGrafica, onVistaGrafica, children }) => {
+const ComparadorTabla = ({ columnas, filas, onQuitar, onReordenar, picker, vacio, vistaGrafica, onVistaGrafica, controlesGrafica, children }) => {
     const masRef = useRef(null);
     const [posicion, setPosicion] = useState(null);
 
@@ -119,20 +119,26 @@ const ComparadorTabla = ({ columnas, filas, onQuitar, onReordenar, picker, vacio
     const segmento = (
         <Segmented
             compact
+            className="h-7 border border-white"
             ariaLabel="Forma de ver la comparación"
             value={vistaGrafica ? 'grafica' : 'tabla'}
             onChange={(v) => onVistaGrafica(v === 'grafica')}
             options={[
                 { value: 'tabla', icon: 'tabla', tooltip: 'Ver como tabla' },
-                { value: 'grafica', icon: 'grafica', tooltip: 'Ver como gráfica' },
+                {
+                    value: 'grafica',
+                    icon: 'grafica',
+                    tooltip: 'Ver como gráfica de líneas. Se marcan el valor más alto y el más bajo del trazo; el resto sale al pasar el cursor por cada punto',
+                },
             ]}
         />
     );
 
     const controles = (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
             <span ref={masRef} className="flex shrink-0">{botonMas}</span>
             {segmento}
+            {vistaGrafica && controlesGrafica}
         </div>
     );
 

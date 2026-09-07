@@ -5,6 +5,31 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.169.0] - 2026-09-07
+
+### Agregado: la grafica del comparador se puede leer por municipio o por propiedad
+
+La grafica de perfiles trazaba una sola lectura: una propiedad a la vez, con los municipios en el
+eje. Servia para comparar municipios entre si, pero no para ver el perfil de uno solo.
+
+Ahora el eje se conmuta. **Municipio** deja los municipios en el eje y elige que propiedad trazar;
+**Propiedad** los invierte —las propiedades en el eje— y deja elegir **varias a la vez**, cada una
+con su tono, para superponer municipios sobre el mismo perfil.
+
+`DropdownPill` gana modo `multiple` para eso: casillas en las opciones, un resumen configurable en
+la pastilla y un minimo de una opcion elegida, que impide dejar la grafica sin series.
+
+La eleccion —vista, eje, municipios y propiedad por capa— **se guarda con el resto de la sesion del
+panel**, asi que volver a abrirlo no reinicia la lectura.
+
+El calculo de las series sale de los componentes a `comparadorSeries.js`, con pruebas propias: es
+donde vivian los porcentajes nulos y el reparto de colores.
+
+### Corregido: el boton de cerrar de una pastilla ya no exige tooltip
+
+`PillCloseButton` siempre envolvia su boton en un `Tooltip`. Sin `tooltip` el envoltorio quedaba
+vacio y seguia capturando el hover; ahora, si no hay texto, se renderiza el boton solo.
+
 ## [1.168.6] - 2026-09-07
 
 ### Cambiado: `docs/infobox.md` se pone al dia

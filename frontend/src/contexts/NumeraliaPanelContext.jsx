@@ -15,6 +15,10 @@ const INICIAL = {
     rankingPorcentaje: false,
     rankingPorCapa: {},
     borradorPorCapa: {},
+    vistaGrafica: false,
+    graficaEje: 'municipio',
+    graficaMunicipio: [],
+    graficaIndicadorPorCapa: {},
 };
 
 const leer = () => {
@@ -126,6 +130,22 @@ export const NumeraliaPanelProvider = ({ children }) => {
         aplicar(previo => ({ ...previo, rankingPorCapa: { ...previo.rankingPorCapa, [layerId]: indice } }));
     }, [aplicar]);
 
+    const fijarVistaGrafica = useCallback((valor) => aplicar({ vistaGrafica: Boolean(valor) }), [aplicar]);
+
+    const fijarGraficaEje = useCallback((eje) => aplicar({ graficaEje: eje }), [aplicar]);
+
+    const fijarGraficaMunicipio = useCallback((claves) => {
+        aplicar({ graficaMunicipio: (Array.isArray(claves) ? claves : [claves]).filter(Boolean).map(String) });
+    }, [aplicar]);
+
+    const fijarGraficaIndicador = useCallback((layerId, nombre) => {
+        if (!layerId) return;
+        aplicar(previo => ({
+            ...previo,
+            graficaIndicadorPorCapa: { ...previo.graficaIndicadorPorCapa, [layerId]: nombre },
+        }));
+    }, [aplicar]);
+
     const fijarBorrador = useCallback((layerId, definicion) => {
         if (!layerId) return;
         aplicar(previo => ({ ...previo, borradorPorCapa: { ...previo.borradorPorCapa, [layerId]: definicion } }));
@@ -170,17 +190,23 @@ export const NumeraliaPanelProvider = ({ children }) => {
         fijarRankingPorcentaje,
         fijarRankingIndice,
         fijarBorrador,
+        fijarVistaGrafica,
+        fijarGraficaEje,
+        fijarGraficaMunicipio,
+        fijarGraficaIndicador,
         agregarPersonalizada,
         quitarPersonalizada,
         rankingIndiceDe: (layerId) => estado.rankingPorCapa[layerId] ?? 0,
         borradorDe: (layerId) => estado.borradorPorCapa[layerId] || definicionVacia(),
         personalizadasDe: (layerId) => propiasPorCapa[layerId] || [],
+        graficaIndicadorDe: (layerId) => estado.graficaIndicadorPorCapa[layerId] || null,
     }), [
         estado, propiasPorCapa, detachedLayerId, highlight,
         detach, attach, seguir, alternarMinimizado, resaltar,
         abrirModo, cerrarModo,
         compararCon, quitarComparado, reordenarComparados,
         fijarRankingPorcentaje, fijarRankingIndice, fijarBorrador,
+        fijarVistaGrafica, fijarGraficaEje, fijarGraficaMunicipio, fijarGraficaIndicador,
         agregarPersonalizada, quitarPersonalizada,
     ]);
 

@@ -35,6 +35,28 @@ const PillCloseButton = ({
     const medidas = TAMANOS[size] || TAMANOS.md;
     const revelado = REVELADOS[reveal] || REVELADOS.overlay;
 
+    const boton = (
+        <button
+            type="button"
+            onClick={onClick}
+            onMouseEnter={() => setEncima(true)}
+            onMouseLeave={() => setEncima(false)}
+            className={[
+                medidas.boton,
+                reveal === 'inline' ? 'ml-1' : '',
+                'flex items-center justify-center rounded-full border transition-all cursor-pointer shrink-0',
+                encima ? 'bg-[#FF577D] border-[#FF577D]' : 'bg-[#FFE6EC] border-[#FFE6EC] hover:border-[#FF577D]',
+            ].join(' ')}
+            aria-label={ariaLabel}
+        >
+            <Icon name="cerrar" state={encima ? 'hover' : 'normal'} className={medidas.icono} />
+        </button>
+    );
+
+    if (!tooltip) {
+        return <span className={`${revelado} ${className}`}>{boton}</span>;
+    }
+
     return (
         <Tooltip
             content={tooltip}
@@ -42,21 +64,7 @@ const PillCloseButton = ({
             delay={300}
             triggerClassName={`${revelado} ${className}`}
         >
-            <button
-                type="button"
-                onClick={onClick}
-                onMouseEnter={() => setEncima(true)}
-                onMouseLeave={() => setEncima(false)}
-                className={[
-                    medidas.boton,
-                    reveal === 'inline' ? 'ml-1' : '',
-                    'flex items-center justify-center rounded-full border transition-all cursor-pointer shrink-0',
-                    encima ? 'bg-[#FF577D] border-[#FF577D]' : 'bg-[#FFE6EC] border-[#FFE6EC] hover:border-[#FF577D]',
-                ].join(' ')}
-                aria-label={ariaLabel}
-            >
-                <Icon name="cerrar" state={encima ? 'hover' : 'normal'} className={medidas.icono} />
-            </button>
+            {boton}
         </Tooltip>
     );
 };

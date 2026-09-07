@@ -1,22 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import PanelHeader from '@components/PanelHeader';
-import ActionIconButton from '@components/ActionIconButton';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
 import { useClearance } from '@hooks/useClearance';
+import { useAreaUtil } from '@contexts/AreaUtilContext';
 import { SIDER_TRANSITION_CLASSES } from '@constants/sider';
 import { PANEL_GAP, VIEWPORT_EDGE } from '@pages/maps/helpers/mapFit';
 import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
 import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
 import { useNumeraliaComparador, construirFilas } from '@hooksMaps/useNumeraliaComparador';
 import { useNumeraliaRanking, ordenarRanking } from '@hooksMaps/useNumeraliaRanking';
+import { useComparadorGrafica } from '@hooksMaps/useComparadorGrafica';
 import {
     MAX_PROPIAS, definicionVacia, useCatalogoCampos,
     usePersonalizadasCalculadas, useVistaPrevia,
 } from '@hooksMaps/useStatsBuilder';
 import ComparadorTabla from './NumeraliaPanel/ComparadorTabla';
 import ComparadorGrafica from './NumeraliaPanel/ComparadorGrafica';
+import ControlesGrafica from './NumeraliaPanel/ControlesGrafica';
+import AccionesPanel from './NumeraliaPanel/AccionesPanel';
 import RankingTabla from './NumeraliaPanel/RankingTabla';
 import Constructor from './NumeraliaPanel/Constructor';
 import TarjetasResumen from './NumeraliaPanel/TarjetasResumen';
@@ -43,16 +46,19 @@ const NumeraliaPanel = () => {
         rankingPorcentaje, fijarRankingPorcentaje, rankingIndiceDe, fijarRankingIndice,
         borradorDe, fijarBorrador,
         personalizadasDe, agregarPersonalizada, quitarPersonalizada,
+        vistaGrafica, fijarVistaGrafica,
+        graficaEje, graficaMunicipio, graficaIndicadorDe,
+        fijarGraficaEje, fijarGraficaMunicipio, fijarGraficaIndicador,
     } = useNumeraliaPanel();
     const { municipioMode, selectedLayer, selectedLayerForSymbology } = useMapsContext();
     const { width: siderWidth, isMobile } = useSider();
+    const { margenes } = useAreaUtil();
     const enFoco = selectedLayerForSymbology?.id || selectedLayer?.id || null;
     const layerId = abierto ? (enFoco || detachedLayerId) : null;
     const contexto = useMetadataContext(municipioMode);
     const { metadata } = useLayerMetadata(layerId, contexto);
     const [resaltado, setResaltado] = useState(false);
     const [eligiendo, setEligiendo] = useState(false);
-    const [vistaGrafica, setVistaGrafica] = useState(false);
     const panelRef = useRef(null);
 
     const indiceGuardado = rankingIndiceDe(layerId);
@@ -141,6 +147,22 @@ const NumeraliaPanel = () => {
         },
     }), [eligiendo, municipioMode?.allMunicipios, municipioMode?.listLoading, clavesComparadas, compararCon]);
 
+    const { grupos: gruposGrafica, municipios: municipioGrafica, indicadores: indicadorGrafica } =
+        useComparadorGrafica({ filas, clavesComparadas, layerId, graficaMunicipio, graficaIndicadorDe });
+
+    const controlesGrafica = (
+        <ControlesGrafica
+            grupos={gruposGrafica}
+            columnas={columnasConNombre}
+            eje={graficaEje}
+            onEje={fijarGraficaEje}
+            municipio={municipioGrafica}
+            onMunicipio={fijarGraficaMunicipio}
+            indicador={indicadorGrafica}
+            onIndicador={(v) => fijarGraficaIndicador(layerId, v)}
+        />
+    );
+
     const guardar = () => {
         agregarPersonalizada(layerId, borrador);
         fijarBorrador(layerId, definicionVacia());
@@ -163,37 +185,21 @@ const NumeraliaPanel = () => {
     );
 
     const acciones = (
-        <>
-            {MODOS.map(item => (
-                <ActionIconButton
-                    key={item.clave}
-                    onClick={() => abrirModo(item.clave)}
-                    activo={modo === item.clave}
-                    deshabilitado={!dinamica}
-                    titulo={dinamica
-                        ? (modo === item.clave ? 'Volver al resumen' : item.titulo)
-                        : 'Esta capa tiene estadísticas capturadas a mano, no calculadas contra la base'}
-                    etiqueta={item.etiqueta}
-                    tamano="sm"
-                >
-                    <Icon name={item.icono} className="size-3.5" />
-                </ActionIconButton>
-            ))}
-            <span className="w-px h-3 bg-[#DCE3F0] mx-0.5" />
-            <ActionIconButton onClick={alternarMinimizado} titulo="Minimizar estadísticas" etiqueta="Minimizar el panel de estadísticas" tamano="sm">
-                <span className="block w-2.5 h-[2px] bg-current rounded-full" />
-            </ActionIconButton>
-            <ActionIconButton onClick={attach} titulo="Cerrar estadísticas" etiqueta="Cerrar el panel de estadísticas" tamano="sm">
-                <Icon name="close" className="size-3.5" />
-            </ActionIconButton>
-        </>
+        <AccionesPanel
+            modos={MODOS}
+            modo={modo}
+            dinamica={dinamica}
+            onModo={abrirModo}
+            onMinimizar={alternarMinimizado}
+            onCerrar={attach}
+        />
     );
 
     return (
         <div
             className={`flex fixed z-11 justify-center pointer-events-none ${SIDER_TRANSITION_CLASSES}`}
             style={{
-                bottom: minimizado ? inferior : (isMobile ? 60 : 64),
+                bottom: (minimizado ? inferior : (isMobile ? 60 : 64)) + margenes.bottom,
                 left: isMobile ? VIEWPORT_EDGE : siderWidth + VIEWPORT_EDGE + PANEL_GAP,
                 right: VIEWPORT_EDGE + (isMobile ? 0 : PANEL_GAP),
             }}
@@ -262,10 +268,17 @@ const NumeraliaPanel = () => {
                             onReordenar={reordenarComparados}
                             picker={picker}
                             vistaGrafica={vistaGrafica}
-                            onVistaGrafica={setVistaGrafica}
+                            onVistaGrafica={fijarVistaGrafica}
+                            controlesGrafica={controlesGrafica}
                             vacio={cargando ? 'Calculando…' : 'Elige un municipio para comparar.'}
                         >
-                            <ComparadorGrafica columnas={columnasConNombre} filas={filas} />
+                            <ComparadorGrafica
+                                columnas={columnasConNombre}
+                                filas={filas}
+                                eje={graficaEje}
+                                municipio={municipioGrafica}
+                                indicador={indicadorGrafica}
+                            />
                         </ComparadorTabla>
                     )}
 
