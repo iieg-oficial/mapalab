@@ -5,29 +5,37 @@ Panel flotante que muestra informacion de features seleccionadas en el mapa. Es 
 ## Ubicacion
 
 ```
+frontend/src/utils/infoboxPlan.js  # Resolucion: config + properties -> plan. Copia canonica.
+
 frontend/src/pages/maps/components/InfoBox/
 ├── InfoBox.jsx                    # Componente raiz
 ├── hooks/
-│   └── useViewportContainment.js  # Ajuste de posicion para no salir del viewport
+│   ├── useViewportContainment.js  # Ajuste de posicion para no salir del viewport
+│   └── useDraggablePanel.js       # Arrastre del panel por su asa
 ├── utils/
-│   ├── renderCard.jsx             # Render de cada feature segun littleCard config
-│   ├── cardTemplates.js           # Templates TEEC / TDEMEC / TDEMECLU / etc.
+│   ├── renderCard.jsx             # Orquesta: pide el plan y lo manda a pintar
+│   ├── cardBlocks.jsx             # Pintores por tipo de bloque (PINTORES)
 │   └── downloadFeatures.js        # Export CSV desde el toolbar
 └── components/
     ├── InfoCard.jsx               # Wrapper compartido: shell + header adaptativo (desktop/mobile)
     ├── Header.jsx                 # Header desktop (bloque #EFF3FC) — usado por InfoCard
     ├── MobileFeatureHeader.jsx    # Header mobile (titulo + badge N/total) — usado por InfoCard
     ├── SummaryCard.jsx            # Resumen de seleccion por poligono (usa InfoCard)
-    ├── EmptySuggestions.jsx       # Estado vacio + capas alternativas con icono de simbologia (usa InfoCard)
+    ├── EmptySuggestions.jsx       # Estado vacio + capas alternativas (usa InfoCard)
     ├── InfoBoxTools.jsx           # Fila de herramientas (descargar, etc.) para header mobile
-    ├── SwipeToRemove.jsx          # Wrapper de swipe horizontal para eliminar card (mobile)
+    ├── DismissGesture.jsx         # Swipe horizontal para eliminar card (mobile)
     ├── ActionsToolbar.jsx         # Botones flotantes (cerrar / descargar) desktop multi-feature
-    ├── Label.jsx / LabelGroup.jsx # Badges de municipio, caracteristica
-    ├── List.jsx                   # Pares label/valor con formateo
-    ├── Cards.jsx                  # Grid de stats (valores + sufijos + labels)
+    ├── InfoBoxArrow.jsx           # Pico que apunta al punto cuando hay una sola feature
+    ├── SymbolIcon.jsx             # Icono de simbologia de la capa
+    ├── Label.jsx                  # Badges de municipio, caracteristica
+    ├── List.jsx                   # Pares label/valor
+    ├── Cards.jsx                  # Grid de cifras (valores + sufijos + labels)
     ├── Text.jsx                   # Parrafos libres
     └── IconText.jsx               # Icono + texto con href o action
 ```
+
+**Los componentes de `components/` ya no deciden nada.** Reciben valores listos —formateados,
+partidos, con su href armado— y solo los pintan. Todas las decisiones viven en `infoboxPlan.js`.
 
 ## Estado de entrada: `selectedFeatureInfo`
 
@@ -99,20 +107,61 @@ Jerarquia condicional dentro del panel (`InfoBox.jsx:124-205`):
 
 ### `renderCard()` (utils/renderCard.jsx)
 
-Render basado en la config `littleCard`. Reutilizable y completamente desacoplado del contenedor.
+Dos pasos, a proposito separados:
 
-Bloques soportados:
-- `headerField` — titulo del header
-- `labelGroups` — Labels con color y bg (municipio, caracteristica)
-- `dividers` / `labels` individuales
-- `cards` — grid de stats con sufijos e iconos (detecta genero)
-- `list` — pares label/valor con formateo de fechas/numeros
-- `iconText` — iconos con href (tel, maps) o action (`whats_new`)
-- `text` — parrafos
+1. **`buildCardPlan(properties, config, opciones)`** de `@utils/infoboxPlan` resuelve la
+   configuracion contra las propiedades de la feature y devuelve un *plan*: `{ title, blocks,
+   isEmpty }`, con cada bloque ya con sus valores finales.
+2. `renderCard` recorre `plan.blocks` y llama al pintor de `cardBlocks.jsx` que le toca.
 
-Los templates disponibles viven en `helpers/templates/` (referenciados en `context.md`): TEEC, TDEMEC, TDEMECLU, TDEMECLUEV, TEEMLXEV, `createMunicipioConfig`.
+Bloques del cuerpo, en este orden natural: `labelGroups`, `list`, `iconText`, `text`, `cards`.
+`blockOrder` lo reordena. `headerField` va siempre arriba y no participa del orden.
 
-La config puede ser funcion `fn(dateFilter) => config` para variar segun fecha activa.
+| Bloque | Que pinta |
+|---|---|
+| `headerField` | Titulo de la tarjeta. Acepta un nombre de columna o un `compose` |
+| `labelGroups` | Badges con color y fondo (municipio, caracteristica) |
+| `list` | Pares etiqueta/valor. `raw` no formatea, `split` parte multivalor |
+| `iconText` | Icono + valor, con href automatico (tel, maps, web) o `action` |
+| `text` | Parrafos, fijos o de un campo |
+| `cards` | Grid de cifras, con `suffix`, `decimals` y `cardsColumns` |
+
+**Varias instancias del mismo bloque.** Cualquiera de los cinco acepta la forma
+`[{ id, items: [...] }]` en lugar del arreglo plano, y entonces sus llaves en `blockOrder` son
+`list:a`, `list:b`. Sirve para poner etiquetas arriba y otras al final. **La forma plana sigue
+siendo valida y es la que se guarda mientras haya una sola instancia**; solo al duplicar se
+convierte, y al quedar una sola vuelve sola.
+
+**Campos compuestos (`compose`).** Sustituye a `field` en cualquier bloque y une varias columnas
+en un valor:
+
+```json
+{ "label": "Direccion",
+  "compose": ["calle", { "field": "numero_ext", "prefix": "#" }, "colonia"],
+  "sep": ", " }
+```
+
+Una parte vacia **se va con su `prefix` y su `suffix`**, que es lo que evita el `Calle Hidalgo #,`
+con el gancho colgando. `op: "sum"` suma las partes numericas en vez de unirlas; un valor unido
+nunca pasa por el formato de numeros, una suma si.
+
+**Columnas multivalor.** `split: true` en un renglon —o `splitValues` en un grupo de etiquetas—
+parte el valor por **`; `**, estricto y sin respaldo por coma. Contrato en
+`ecosistema/contratos.md`.
+
+Si la capa no trae configuracion, `generateDefaultConfig` infiere una de las propiedades del
+feature. La config puede ser funcion `fn(dateFilter) => config` para variar segun fecha activa.
+
+### `infoboxPlan.js` — copia canonica compartida
+
+El modulo es **puro**: sin React, sin estilos y sin un solo import. Ahi vive todo lo que decide
+—leer un campo sin distinguir mayusculas, unir columnas, sumar, partir por `; `, formatear numeros
+y fechas, armar el href de un icono, normalizar la forma vieja, ordenar las instancias—.
+
+**mariachi tiene una copia byte a byte** en `admin/src/shared/infoboxPlan.js`. Se edita aqui y se
+sincroniza con `mariachi/scripts/sync-infobox-plan.sh`; `--check` falla si divergieron. La razon
+esta en `ecosistema/contratos.md`: cuando el editor reimplementaba esta logica, los campos
+compuestos funcionaban en el visor y el preview del admin los ignoraba.
 
 ## Ciclo de vida e interaccion
 
@@ -224,11 +273,22 @@ Desktop queda idéntico al diseño previo (todos los consumidores por default us
 
 ## Piezas reutilizables
 
-`InfoBox/utils/*` (renderCard, templates de `littleCard`) y `InfoBox/components/*` (Label, List, Cards, Text, IconText, IconText) son agnosticos del contenedor y se reusan en ambas variantes via prop `variant`.
+`renderCard` y los componentes de `InfoBox/components/*` (Label, List, Cards, Text, IconText) son
+agnosticos del contenedor y se reusan en ambas variantes via prop `variant`. `infoboxPlan.js` va
+mas lejos: no sabe siquiera que existe React, y por eso lo consume tambien el editor de mariachi.
 
 ## Tests
 
-No hay tests automatizados para el InfoBox. Cualquier rediseno deberia acompanarse de cobertura basica en `test/`.
+| Archivo | Cubre |
+|---|---|
+| `test/pages/maps/components/InfoBox/utils/renderCard.helpers.test.js` | `applyHeaderTransform` y `resolveStaticValue` |
+| `test/pages/maps/components/InfoBox/utils/resolveFieldValue.test.js` | Resolucion de un campo, `compose`, `op: sum`, `splitMultivalue` |
+| `test/pages/maps/components/InfoBox/utils/renderCard.compose.test.jsx` | Render de campos compuestos, multivalor y columnas en mayusculas |
+| `test/pages/maps/components/InfoBox/utils/renderCard.instancias.test.jsx` | Varias instancias del mismo bloque y su orden |
+| `backend/test/test_layer_tree_inherit_card.py` | La herencia de grupo a propiedades |
+
+Los dos primeros importan de `@utils/infoboxPlan`, no del InfoBox: lo que prueban es la
+resolucion, no el pintado.
 
 ## Estado vacío con sugerencias (`EmptySuggestions`)
 
@@ -249,26 +309,46 @@ Cuando `queryFeatures` no encuentra resultados en la capa primaria pero sí en o
 
 Ver el inventario completo de caches en `docs/cache.md`.
 
-## Edicion desde mariachi (v1.7.0+)
+## Edicion desde mariachi
 
-El administrador puede configurar el InfoBox de cada capa desde el drawer en `/administrador/mapalab/layers`. Los presets disponibles son:
+La tarjetita se edita en la pestana **Tarjetita** del editor de capas, con tres modos:
 
-| Preset | Campos que renderiza |
+| Modo | Que es |
 |---|---|
-| `municipio` | header + badge municipio + fecha + text libre + cards de stats |
-| `punto` | header + badge caracteristica |
-| `punto_municipio` | header + badge municipio + badge caracteristica |
-| `punto_ubicacion` | header + badge municipio + N badges de caracteristicas + list + iconText |
-| `punto_completo` | idem `punto_ubicacion` + stats + text libre |
-| `custom` | JSON libre (compatible con la estructura que el renderer espera) |
+| **Lienzo** | La tarjeta *es* el editor: cada seccion se dibuja como se va a ver, se agrega con el **+** que sale entre secciones, se acomoda arrastrando y se edita tocandola. Es el modo por defecto |
+| **Lista** | El editor de bloques anterior, apilados en tarjetas. Se conserva como respaldo mientras el lienzo se ejercita; su retiro esta anotado en `repos/mariachi/pendientes.md` |
+| **JSON** | La configuracion cruda, para copiar y pegar entre entornos sin tocar la BD |
 
-Componentes en mariachi admin (`src/components/layersEditor/`):
+Lo que el editor trae y conviene conocer desde este lado:
 
-- `InfoBoxPresetForm.jsx` — formulario con los campos del preset seleccionado (`Select mode="tags"` para arrays de caracteristicas/list/iconTexts).
-- `InfoBoxJsonEditor.jsx` — textarea monospace con validacion JSON en vivo; usa `key={layer.id}` para evitar que el estado local persista entre capas distintas.
-- `InfoBoxPreview.jsx` — render visual con datos dummy (nombre, municipio, tipo, fecha, direccion, etc.) para que el editor vea en vivo como queda el InfoBox antes de guardar.
+- **Plantillas**: seis formas armadas con las columnas reales de la capa, y copiar la tarjetita de
+  otra capa. Con la tarjetita vacia es la unica cosa que se ofrece.
+- **Registros reales**: la vista previa pide diez features por
+  `GET /geoserver/workspaces/{alias}/layers/{layer}/sample-features` y se recorren con ◀ ▶. De ahi
+  salen tambien los valores de ejemplo de los selectores de campo.
+- **Deshacer** con `Ctrl+Z`, agrupando los cambios seguidos.
 
-La resolucion de params → `infobox_config` ocurre en mariachi API (`app/services/layer_service.py::resolve_infobox`). El frontend del visor consume el `infoboxConfig` ya resuelto (sin conocer el preset).
+Los presets viejos (`municipio`, `punto`, `punto_ubicacion`…) que resolvia
+`layer_service.py::resolve_infobox` **siguen en el codigo de mariachi pero el editor ya no los
+emite**: guarda `infobox_config` directo. El visor nunca los conocio.
+
+## Herencia de grupo a propiedades
+
+Una **propiedad** —hoja hija de un nodo `group`— es un filtro CQL sobre el mismo feature type, asi
+que muestra la tarjetita del grupo salvo que tenga una propia.
+
+**La herencia se resuelve al construir el arbol, no aqui.** `layer_tree_service._inherit_little_card`
+le pone a cada propiedad sin tarjetita la del grupo ancestro mas cercano, mas un `inheritedFrom` con
+el id de ese grupo. `InfoBox` lee el `littleCard` de la capa del clic y **no recorre ancestros**.
+
+Por que importa: el clic se resuelve por nombre de capa de GeoServer, que el grupo y sus propiedades
+**comparten**, y `layerMap[layerName]` se queda con la primera activa. Sin la propagacion en el
+arbol, la tarjeta que veias dependia del orden en que se encendieron las capas.
+
+**Ese codigo esta duplicado en `dataengine/jobs/run_refresh_layer_tree.py`** y las dos copias tienen
+que emitir lo mismo, o la tarjetita de una propiedad cambia segun quien reconstruyo el cache. Ver
+`ecosistema/contratos.md`. `_TREE_SCHEMA` sube cuando cambia la forma del nodo, para que los caches
+viejos se invaliden solos.
 
 ## Lazy load + total real (v1.11.0)
 
@@ -339,3 +419,5 @@ El titulo se centra respecto al **header completo**, sin importar el ancho del c
 - `docs/analytics.md` — evento `feature_click`
 - `docs/cache.md` — inventario de todos los caches del proyecto
 - `docs/layers.md` — arquitectura completa del sistema de capas
+- `ecosistema/contratos.md` — por que `infoboxPlan.js` y la propagacion viven duplicados, y el
+  separador `; ` de las columnas multivalor

@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.168.6] - 2026-09-07
+
+### Cambiado: `docs/infobox.md` se pone al dia
+
+Describia un InfoBox que ya no existe: `cardTemplates.js` y sus plantillas `TDEMEC*` —borradas—,
+`SwipeToRemove.jsx`, un `renderCard` que decidia el formato, y un editor de mariachi hecho de
+presets (`punto_ubicacion`, `punto_completo`) que el admin dejo de emitir.
+
+Ahora documenta lo que hay: el paso de configuracion a **plan** con `infoboxPlan.js` y su copia
+byte a byte en mariachi, los campos compuestos, las instancias multiples del mismo bloque, el
+separador `; ` de las columnas multivalor, los tres modos del editor —Lienzo, Lista, JSON— y la
+herencia de un grupo hacia sus propiedades, que se resuelve al construir el arbol y esta duplicada
+en el job de dataengine.
+
+Solo documentacion: no cambia una linea de codigo.
+
 ## [1.168.5] - 2026-09-04
 
 ### Corregido: el visor se caia al entrar por una variable usada antes de declararse
