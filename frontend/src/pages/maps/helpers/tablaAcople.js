@@ -1,5 +1,7 @@
 export const ACOPLES = ['flotante', 'abajo'];
 
+export const normalizarAcople = (modo) => (ACOPLES.includes(modo) ? modo : ACOPLES[0]);
+
 export const MARGEN_SNAP = 48;
 const ALTO_ACOPLADO = 0.4;
 export const ALTO_MINIMO = 180;

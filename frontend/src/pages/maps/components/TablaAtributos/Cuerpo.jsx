@@ -1,7 +1,6 @@
 import Checkbox from '@components/Checkbox';
 import { formatearValor } from '@pages/maps/helpers/tablaFormato';
-
-const NUMERICOS = new Set(['entero', 'decimal', 'moneda']);
+import { FORMATOS_NUMERICOS } from '@pages/maps/helpers/tablaCqlBuilder';
 
 const Cuerpo = ({ columnas, plantilla, filas, seleccionadas, onSeleccionar }) => (
     <div>
@@ -35,7 +34,7 @@ const Cuerpo = ({ columnas, plantilla, filas, seleccionadas, onSeleccionar }) =>
                     {columnas.map(columna => (
                         <span
                             key={columna.nombre}
-                            className={`min-w-0 px-2 py-1 text-[13px]/[18px] font-garet truncate bg-inherit ${NUMERICOS.has(columna.formato) ? 'text-right tabular-nums' : ''} ${activa ? 'font-bold text-purple' : 'text-[#454545]'}`}
+                            className={`min-w-0 px-2 py-1 text-[13px]/[18px] font-garet truncate bg-inherit ${FORMATOS_NUMERICOS.has(columna.formato) ? 'text-right tabular-nums' : ''} ${activa ? 'font-bold text-purple' : 'text-[#454545]'}`}
                             title={String(propiedades[columna.nombre] ?? '')}
                         >
                             {formatearValor(propiedades[columna.nombre], columna.formato)}

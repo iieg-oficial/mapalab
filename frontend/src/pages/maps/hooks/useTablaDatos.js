@@ -13,7 +13,7 @@ import { RASTER_WORKSPACES } from '@pages/maps/helpers/layerCqlSegment';
 import { combinar, construirBbox, filtroHeredado, filtrosComunes } from '@pages/maps/helpers/tablaCqlBuilder';
 import { fetchNonGeometryColumns } from '@services/downloadUrls';
 import { countVectorFeatures } from '@services/vectorLayerService';
-import { fetchPagina, ordenarColumnas } from '@services/tablaAtributosService';
+import { fetchPagina, ordenarColumnas, MAX_PAGINAS } from '@services/tablaAtributosService';
 import { fetchGeometryColumns, getWfsUrl } from '@utils/featureInfoUtils';
 
 const RETARDO_CONSULTA = 300;
@@ -155,7 +155,9 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         return () => controlador.abort();
     }, [columnasListas, consulta.cql, disponible, fijarConteo, layerId, minimizada, pedirPagina, wmsConfig]);
 
-    const hayMas = Number.isFinite(total) ? filas.length < total : false;
+    const hayMas = Number.isFinite(total)
+        ? filas.length < total && pagina + 1 < MAX_PAGINAS
+        : false;
 
     const cargarMas = useCallback(async () => {
         if (!hayMas || cargandoMas || cargando) return;

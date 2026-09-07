@@ -5,6 +5,37 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.169.1] - 2026-09-07
+
+### Corregido: dos guardas de la tabla de atributos existian pero nunca se aplicaban
+
+`MAX_PAGINAS` y `ACOPLES` estaban declaradas y ningun codigo las leia. Salieron a la luz porque el
+chequeo de codigo muerto bloqueo el push, y resultaron ser dos protecciones a medio cablear.
+
+**El tope de paginacion.** `cargarMas` en `useTablaDatos` pedia paginas mientras
+`filas.length < total`, sin limite. En una capa de cientos de miles de registros eso son cientos de
+peticiones acumulando filas en memoria hasta tumbar la pestaña. Ahora `hayMas` respeta
+`MAX_PAGINAS`: 200 paginas de 100 registros, veinte mil filas.
+
+**El modo de acople.** `acoplar()` aceptaba cualquier cadena, y peor: el valor restaurado de
+`localStorage` entraba directo a `useState` **sin pasar por ahi**, asi que un estado viejo o
+manipulado quedaba como acople activo. La validacion vive ahora en `normalizarAcople`, en el helper
+que ya tenia pruebas, y la usan los dos caminos.
+
+### Cambiado: el chequeo de codigo muerto deja de marcar lo que si se usa
+
+`knip.json` estrena `ignoreExportsUsedInFile`, que mariachi ya tenia: sin esa opcion, un export
+consumido dentro de su propio archivo se reportaba como muerto. Eran 20 hallazgos, de los cuales 17
+no eran codigo muerto.
+
+`src/utils/infoboxPlan.js` queda exento: es **byte a byte identico** al `src/shared/infoboxPlan.js`
+de mariachi, un modulo compartido por copia, y cada repo consume una mitad distinta de su API. Lo que
+aqui sobra —`referencedFields`— alla se usa en nueve lugares. Sin la exencion, cada repo empuja a
+borrar lo que el otro necesita.
+
+`Cuerpo.jsx` dejo de redeclarar `new Set(['entero', 'decimal', 'moneda'])` y usa
+`FORMATOS_NUMERICOS`, que ya existia para eso.
+
 ## [1.169.0] - 2026-09-07
 
 ### Agregado: la grafica del comparador se puede leer por municipio o por propiedad

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
 import { leerEstado, guardarEstado } from '@pages/maps/helpers/tablaPersistencia';
+import { normalizarAcople } from '@pages/maps/helpers/tablaAcople';
 import { useActiveLayersLogic } from '@hooksMaps/useActiveLayersLogic';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
@@ -28,7 +29,7 @@ export const TablaAtributosProvider = ({ children }) => {
     const [activo, setActivo] = useState(guardado.activo);
     const [activaId, setActivaId] = useState(guardado.activaId);
     const [minimizado, setMinimizado] = useState(false);
-    const [acople, setAcople] = useState(guardado.acople);
+    const [acople, setAcople] = useState(() => normalizarAcople(guardado.acople));
     const [altoAcople, setAltoAcople] = useState(guardado.altoAcople);
     const [porCapa, setPorCapa] = useState(guardado.porCapa);
 
@@ -82,7 +83,7 @@ export const TablaAtributosProvider = ({ children }) => {
     const alternarMinimizado = useCallback(() => setMinimizado(valor => !valor), []);
 
     const acoplar = useCallback((modo) => {
-        const siguiente = modo || 'flotante';
+        const siguiente = normalizarAcople(modo);
         setAcople(siguiente);
 
         if (siguiente !== 'flotante') {
