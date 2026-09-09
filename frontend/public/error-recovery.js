@@ -3,7 +3,12 @@
     var MAX_ATTEMPTS = 2;
     var BURST_MS = 2000;
     var RELOAD_FALLBACK_MS = 3000;
+    var RATE_LIMIT_STATUS = 429;
+    var BACKOFF_BASE_MS = 4000;
+    var BACKOFF_MAX_MS = 60000;
+    var MAX_WAIT_ROUNDS = 6;
     var lastHandledAt = 0;
+    var rateLimitReported = false;
 
     function readAttempts() {
         try {
@@ -59,6 +64,25 @@
         } catch (e) {}
     }
 
+    function probeStatus(url, onResult) {
+        if (!window.fetch || !url || url.indexOf('http') !== 0) {
+            onResult(0);
+            return;
+        }
+        try {
+            window.fetch(url, { method: 'HEAD', cache: 'reload' })
+                .then(function(response) { onResult(response.status); })
+                .catch(function() { onResult(0); });
+        } catch (e) {
+            onResult(0);
+        }
+    }
+
+    function backoffDelay(round) {
+        var ceiling = Math.min(BACKOFF_BASE_MS * Math.pow(2, round), BACKOFF_MAX_MS);
+        return Math.round(ceiling / 2 + Math.random() * ceiling / 2);
+    }
+
     function revalidateAndReload(failedUrl) {
         var reloaded = false;
 
@@ -88,22 +112,32 @@
         }
     }
 
-    function showFatal(failedUrl, detail) {
-        report('chunk_load_error_fatal', failedUrl, detail);
+    function renderMessage(title, body, buttonLabel) {
         var root = document.getElementById('root');
-        if (!root || root.childElementCount > 0) return;
+        if (!root || root.childElementCount > 0) return null;
         root.innerHTML = '<div style="min-height:100vh;display:flex;flex-direction:column;'
             + 'align-items:center;justify-content:center;text-align:center;padding:24px;'
             + 'font-family:system-ui,sans-serif;color:#2E4372;'
             + 'background:linear-gradient(180deg,#FFFFFF 0%,#F7F0FA 100%)">'
-            + '<h1 style="font-size:28px;font-weight:700;margin-bottom:16px">No pudimos cargar MapaLab</h1>'
-            + '<p style="font-size:16px;max-width:34rem;margin-bottom:24px">'
-            + 'Tu navegador guardó una versión anterior de la aplicación. '
-            + 'Recarga forzando la actualización con Ctrl+F5 (Cmd+Shift+R en Mac).</p>'
-            + '<button id="mapalab-hard-reload" style="padding:12px 40px;border-radius:30px;'
-            + 'background:#703089;color:#fff;border:none;font-weight:700;cursor:pointer">'
-            + 'Recargar ahora</button></div>';
-        var button = document.getElementById('mapalab-hard-reload');
+            + '<h1 style="font-size:28px;font-weight:700;margin-bottom:16px">' + title + '</h1>'
+            + '<p style="font-size:16px;max-width:34rem;margin-bottom:24px">' + body + '</p>'
+            + (buttonLabel
+                ? '<button id="mapalab-hard-reload" style="padding:12px 40px;border-radius:30px;'
+                    + 'background:#703089;color:#fff;border:none;font-weight:700;cursor:pointer">'
+                    + buttonLabel + '</button>'
+                : '')
+            + '</div>';
+        return document.getElementById('mapalab-hard-reload');
+    }
+
+    function showFatal(failedUrl, detail) {
+        report('chunk_load_error_fatal', failedUrl, detail);
+        var button = renderMessage(
+            'No pudimos cargar MapaLab',
+            'Tu navegador guardó una versión anterior de la aplicación. '
+                + 'Recarga forzando la actualización con Ctrl+F5 (Cmd+Shift+R en Mac).',
+            'Recargar ahora'
+        );
         if (button) {
             button.addEventListener('click', function() {
                 button.disabled = true;
@@ -112,6 +146,45 @@
                 revalidateAndReload(failedUrl);
             });
         }
+    }
+
+    function showSaturated(exhausted) {
+        var body = exhausted
+            ? 'El servicio sigue recibiendo más peticiones de las que puede atender. '
+                + 'Vuelve a intentarlo en unos minutos.'
+            : 'El servicio está recibiendo muchas peticiones. '
+                + 'Estamos reintentando solos, no hace falta que recargues.';
+        var button = renderMessage(
+            'MapaLab está saturado',
+            body,
+            exhausted ? 'Reintentar' : ''
+        );
+        if (button) {
+            button.addEventListener('click', function() {
+                button.disabled = true;
+                button.textContent = 'Reintentando…';
+                clearAttempts();
+                window.location.reload();
+            });
+        }
+    }
+
+    function waitForCapacity(failedUrl, round) {
+        if (round >= MAX_WAIT_ROUNDS) {
+            showSaturated(true);
+            return;
+        }
+        showSaturated(false);
+        window.setTimeout(function() {
+            probeStatus(failedUrl, function(status) {
+                if (status >= 200 && status < 400) {
+                    clearAttempts();
+                    window.location.reload();
+                    return;
+                }
+                waitForCapacity(failedUrl, round + 1);
+            });
+        }, backoffDelay(round));
     }
 
     function handleChunkError(info) {
@@ -129,14 +202,23 @@
             href: location.href
         });
 
-        if (attempts >= MAX_ATTEMPTS) {
-            showFatal(failedUrl, detail);
-            return;
-        }
-
-        report('chunk_load_error', failedUrl, detail);
-        writeAttempts(attempts + 1);
-        window.location.reload();
+        probeStatus(failedUrl, function(status) {
+            if (status === RATE_LIMIT_STATUS) {
+                if (!rateLimitReported) {
+                    rateLimitReported = true;
+                    report('chunk_load_rate_limited', failedUrl, detail);
+                }
+                waitForCapacity(failedUrl, 0);
+                return;
+            }
+            if (attempts >= MAX_ATTEMPTS) {
+                showFatal(failedUrl, detail);
+                return;
+            }
+            report('chunk_load_error', failedUrl, detail);
+            writeAttempts(attempts + 1);
+            window.location.reload();
+        });
     }
 
     window.addEventListener('load', function() {
