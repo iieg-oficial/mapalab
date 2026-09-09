@@ -2,7 +2,9 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 
 const SIN_MARGENES = { left: 0, right: 0, top: 0, bottom: 0 };
 
-const AreaUtilContext = createContext(SIN_MARGENES);
+const AREA_COMPLETA = { margenes: SIN_MARGENES, acoplado: false, fijarMargenes: () => {} };
+
+const AreaUtilContext = createContext(AREA_COMPLETA);
 
 export const AreaUtilProvider = ({ children }) => {
     const [margenes, setMargenes] = useState(SIN_MARGENES);
@@ -29,4 +31,4 @@ export const AreaUtilProvider = ({ children }) => {
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useAreaUtil = () => useContext(AreaUtilContext) || { margenes: SIN_MARGENES, acoplado: false };
+export const useAreaUtil = () => useContext(AreaUtilContext);

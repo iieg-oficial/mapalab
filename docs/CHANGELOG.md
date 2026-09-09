@@ -5,6 +5,37 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.169.2] - 2026-09-09
+
+### Corregido: el catalogo y el embed reventaban al renderizar los controles del mapa
+
+`Cannot read properties of undefined (reading 'left')` en cuanto se abria `/catalogo` o `/embed`: el
+error boundary de React Router atrapaba el fallo y la ruta terminaba en la pantalla de error.
+
+La causa es una linea de `AreaUtilContext`. El contexto se creaba con `SIN_MARGENES`
+—`{ left: 0, right: 0, top: 0, bottom: 0 }`— como valor por defecto, que es el objeto de **margenes**,
+no la forma del contexto. `AreaUtilProvider` solo envuelve a `Maps`, asi que en el catalogo y en el
+embed los consumidores recibian ese objeto, destructuraban `{ margenes }` y obtenian `undefined`.
+`MapControls` lee `margenes.left` para posicionarse, y ahi tronaba.
+
+El `|| { margenes: SIN_MARGENES, acoplado: false }` de `useAreaUtil` estaba puesto justo para eso,
+pero no podia funcionar nunca: `SIN_MARGENES` es truthy, asi que el fallback jamas se evaluaba. El
+valor por defecto ahora trae la forma completa y ese guardia sobra.
+
+`ScaleLineControl`, `MapAttribution` y `MapControls` se renderizan en las tres vistas —visor,
+catalogo y embed— y solo la primera tiene el provider. Con el arreglo, las otras dos leen margenes en
+cero, que es lo correcto: ahi no hay tabla acoplada que recorte el area util.
+
+### Cambiado: el smoke test tambien vigila lo que atrapa el error boundary
+
+Este fallo pasaba entero por debajo del smoke test, y por una razon que vale registrar: sus dos
+señales son `#root` vacio y excepciones **sin capturar**. Un error de render que el boundary atrapa no
+dispara ninguna: el boundary llena `#root` con la pantalla de error y la excepcion queda manejada.
+
+Ahora el script tambien escucha la consola y falla si aparece el log del boundary. No sirve mirar la
+pantalla de error en si: el smoke corre sin backend, donde esa misma pantalla es la respuesta legitima
+a que no carguen las capas.
+
 ## [1.169.1] - 2026-09-07
 
 ### Corregido: dos guardas de la tabla de atributos existian pero nunca se aplicaban

@@ -6,6 +6,7 @@ const RUTAS = ['', 'mapa', 'catalogo'];
 const ARRANQUE_MS = 60000;
 const MONTAJE_MS = 20000;
 const RUIDO_DE_RED = /failed to fetch|networkerror|load failed|err_connection|net::|status of 40|status of 50/i;
+const BOUNDARY = /Error capturado por React Router/i;
 
 const esperarUrl = (proceso) => new Promise((resolve, reject) => {
     const temporizador = setTimeout(
@@ -33,8 +34,12 @@ const revisarRuta = async (navegador, url) => {
     const contexto = await navegador.newContext();
     const pagina = await contexto.newPage();
     const excepciones = [];
+    const capturadas = [];
     pagina.on('pageerror', (error) => {
         if (!RUIDO_DE_RED.test(error.message)) excepciones.push(error.message);
+    });
+    pagina.on('console', (mensaje) => {
+        if (mensaje.type() === 'error' && BOUNDARY.test(mensaje.text())) capturadas.push(mensaje.text());
     });
 
     let montada = true;
@@ -57,6 +62,7 @@ const revisarRuta = async (navegador, url) => {
     if (!montada) fallos.push('#root se quedó sin contenido: la app no montó');
     if (pantallaFatal) fallos.push('se renderizó la pantalla de recuperación de error-recovery.js');
     if (excepciones.length) fallos.push(`excepciones sin capturar: ${excepciones.join(' | ')}`);
+    if (capturadas.length) fallos.push(`el error boundary atrapó un fallo de render: ${capturadas.join(' | ')}`);
     return { url, titulo, fallos };
 };
 
