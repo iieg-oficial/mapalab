@@ -11,7 +11,7 @@ import { useFunFactDestino } from '@hooksMaps/useFunFactDestino';
 import { FactPopover, MobileFactBanner, POPOVER_DATA_ATTR, POPOVER_MAX_WIDTH } from '@mapsComponents/EventoFunPopover';
 import { peekNextFact, pickNextFact } from '@pages/maps/helpers/funFactPicker';
 import { animacionDeDato } from '@pages/maps/helpers/eventoDiversion';
-import { trackEventoFunFact } from '@services/analyticsService';
+import { trackEventoFunFact, trackEventoFunVolver } from '@services/analyticsService';
 
 const MESSAGE_TTL_MS = 10000;
 const MAX_ACTIVE_VUELOS = 10;
@@ -149,6 +149,11 @@ const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DE
         }, vida);
     };
 
+    const regresarDelDestino = () => {
+        if (pin?.eventoId) trackEventoFunVolver(pin.eventoId);
+        volverDelDestino();
+    };
+
     const handleClick = () => {
         cerrarAviso();
         const rect = buttonRef.current?.getBoundingClientRect();
@@ -160,13 +165,14 @@ const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DE
         if (popoverTimerRef.current) clearTimeout(popoverTimerRef.current);
         if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
         setPopover(null);
-        if (evento?.id) trackEventoFunFact(evento.id);
 
         const symbol = fact.symbol || eventoSymbol;
         const tipo = ANIMACIONES[animacionDeDato(fact, evento)] ? animacionDeDato(fact, evento) : 'pelota';
         const sinMovimiento = movimientoReducido();
+        const origen = fact.eventoId ?? evento?.id;
+        if (origen) trackEventoFunFact(origen, { animacion: tipo, con_destino: tipo === 'aguilas' && Boolean(fact.destino) });
         if (tipo === 'aguilas' && fact.destino) {
-            const pantalla = viajarAlDestino(fact.destino, fact.text, sinMovimiento ? 0 : VIAJE_MS);
+            const pantalla = viajarAlDestino(fact.destino, fact.text, sinMovimiento ? 0 : VIAJE_MS, origen);
             if (pantalla) {
                 if (!sinMovimiento) lanzarVuelos(vuelosAlDestino(rect, pantalla, symbol), VIAJE_MS + 200);
                 return;
@@ -202,7 +208,7 @@ const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DE
                     <EventoBotonGlyph botonEstilo={evento?.botonEstilo} symbol={simboloBoton} iconSize={iconSize} />
                 </button>
             </Tooltip>
-            {pin && <EventoFunPin pin={pin} onVolver={volverDelDestino} onCerrar={cerrarPin} />}
+            {pin && <EventoFunPin pin={pin} onVolver={regresarDelDestino} onCerrar={cerrarPin} />}
 
             {createPortal(
                 <>

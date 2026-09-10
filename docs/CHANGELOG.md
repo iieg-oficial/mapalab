@@ -2192,6 +2192,19 @@ que esas URLs nunca coincidieron. Lo que sí se conserva es que los tiles del pl
 entre sí, que era el grueso del beneficio.
 
 La dirección del servidor se configura en el panel; no viaja en el código.
+## [1.116.12] - 2026-09-10
+
+### Agregado
+
+- `evento_fun_volver` al presionar «Volver» en el dato curioso pineado. Requiere mariachi 1.125.1:
+  con una versión anterior, el lote de telemetría que lo lleve se rechaza con 422.
+- `evento_fun_fact` suma `animacion` y `con_destino`.
+
+### Corregido
+
+- Los datos curiosos del botón del borde del sider se atribuían al id `sider-global-facts` en vez de
+  al evento de origen: los de eventos lite no quedaban a nombre de ningún evento.
+
 ## [1.116.11] - 2026-09-10
 
 ### Agregado: simulador de pantallas en la etiqueta `dev`
