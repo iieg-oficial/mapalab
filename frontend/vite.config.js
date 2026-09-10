@@ -49,12 +49,14 @@ function htmlMetaPlugin(env) {
     const basePath = (env.VITE_BASE_PATH || '/').replace(/\/$/, '');
     const fullUrl = basePath !== '/' ? `${siteUrl}${basePath}` : siteUrl;
     const acervoOrigin = (env.VITE_ACERVO_ORIGIN || '').trim();
+    const frameSelf = env.VITE_APP_ENV === 'dev' ? "'self' " : '';
     return {
         name: 'html-meta',
         transformIndexHtml(html) {
             return html
                 .replace(/__SITE_URL__/g, fullUrl)
-                .replace(/__ACERVO_ORIGIN__/g, acervoOrigin);
+                .replace(/__ACERVO_ORIGIN__/g, acervoOrigin)
+                .replace(/__FRAME_SELF__/g, frameSelf);
         }
     };
 }

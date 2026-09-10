@@ -5,6 +5,30 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.170.0] - 2026-09-10
+
+### Agregado: simulador de pantallas en la etiqueta `dev`
+
+El popover de la etiqueta `dev` suma «Simular pantalla», un segmented con Real, 390, 768, 1280 y
+1920: móvil, tablet, laptop y escritorio, uno dentro de cada rango de breakpoints del visor. Al
+elegir uno, la app se abre en un marco de ese ancho sobre un fondo gris, con el mismo segmented y
+una X arriba; Escape también sale.
+
+Es un marco y no una vista achicada a propósito: dentro del iframe, `window.innerWidth` y
+`matchMedia` miden el marco, así que cambian igual las clases `md:`/`lg:` de Tailwind que
+`MOBILE_BREAKPOINT` y `TOOLS_COMPACT_BREAKPOINT`. Si la pantalla no cabe, se reduce con `scale` y la
+barra dice a qué porcentaje; el ancho que ven las media queries no cambia. Cambiar de ancho no
+recarga el marco.
+
+La elección vive en `devToolsStore`, en `sessionStorage`, y sobrevive a recargar. Dentro del marco
+no se ofrece el simulador, para que no se anide. «Ver como producción» y «Panel de analítica» se
+sincronizan ahora entre ventanas del mismo origen con el evento `storage`, así que el switch del
+visor de afuera llega al de adentro.
+
+El CSP de `index.html` no admitía iframes del mismo origen. `frame-src` recibe `'self'` solo cuando
+`VITE_APP_ENV=dev`, a través del mismo plugin que ya reemplaza `__ACERVO_ORIGIN__`; beta y
+producción se construyen con el CSP de siempre.
+
 ## [1.169.3] - 2026-09-10
 
 ### Corregido: «Ver como producción» no ocultaba el servicio vectorial

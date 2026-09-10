@@ -1,8 +1,11 @@
 import { createPortal } from 'react-dom';
 import Switch from '@components/Switch';
+import Segmented from '@components/Segmented';
 import { devToolsStore } from '@services/devToolsStore';
-import { useIsPreviewingProd, useIsAnalyticsPanelOpen } from '@hooks/useDevTools';
+import { useIsPreviewingProd, useIsAnalyticsPanelOpen, usePantallaSimulada } from '@hooks/useDevTools';
 import { useHoverPopover } from '@hooks/useHoverPopover';
+import { OPCIONES_PANTALLA, PANTALLA_REAL } from '@constants/pantallas';
+import SimuladorPantalla from './SimuladorPantalla';
 
 const ENV_CONFIG = {
     dev: { label: 'dev', bg: 'bg-purple-500', text: 'text-white' },
@@ -20,6 +23,7 @@ const EnvBadge = () => {
     const env = import.meta.env.VITE_APP_ENV;
     const previewingProd = useIsPreviewingProd();
     const analyticsPanelOpen = useIsAnalyticsPanelOpen();
+    const pantalla = usePantallaSimulada();
     const { open, position, anchorRef, hoverProps } = useHoverPopover();
 
     const config = ENV_CONFIG[env];
@@ -58,6 +62,17 @@ const EnvBadge = () => {
                     Panel de analítica
                 </span>
             </div>
+            {!devToolsStore.isInFrame() && (
+                <div className="flex flex-col gap-1.5 pt-1">
+                    <span className={LABEL_CLASS}>Simular pantalla</span>
+                    <Segmented
+                        ariaLabel="Simular ancho de pantalla"
+                        options={OPCIONES_PANTALLA}
+                        value={pantalla ?? PANTALLA_REAL}
+                        onChange={(valor) => devToolsStore.setPantalla(valor === PANTALLA_REAL ? null : valor)}
+                    />
+                </div>
+            )}
         </div>
     );
 
@@ -78,6 +93,7 @@ const EnvBadge = () => {
                 {shown.label}
             </button>
             {open && createPortal(panel, document.body)}
+            {pantalla && <SimuladorPantalla clave={pantalla} />}
         </div>
     );
 };
