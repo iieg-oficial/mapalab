@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useSearchParams } from 'react-router';
 import Download from './MapExport/Download';
 import MunicipioFilterButton from './MapExport/MunicipioFilterButton';
 import ShareButton from './ShareButton';
@@ -34,9 +33,7 @@ const MapToolsPanel = () => {
     const [previewTitle, setPreviewTitle] = useState('');
     const [previewQuality, setPreviewQuality] = useState(null);
     const [previewSwipeOptions, setPreviewSwipeOptions] = useState(null);
-    const { isDirty, loadedShareId, markPending } = useShareDirtiness();
-    const inSyncWithShare = !!loadedShareId && !isDirty;
-    const isModifiedFromShare = !!loadedShareId && isDirty;
+    const { isDirty, loadedShareId, reset } = useShareDirtiness();
     const [preferencia, setPreferencia] = useState(leerPreferenciaCompacta);
     const esCompacto = useMediaQuery(TOOLS_COMPACT_MEDIA_QUERY);
     const isMobile = useIsMobile();
@@ -55,17 +52,6 @@ const MapToolsPanel = () => {
         guardarPreferenciaCompacta(siguiente);
         setPreferencia(siguiente);
     }, [isCollapsed]);
-
-    const handleRevert = useCallback(() => {
-        window.location.reload();
-    }, []);
-
-    const [searchParams, setSearchParams] = useSearchParams();
-    const handleClearShare = useCallback(() => {
-        const next = new URLSearchParams(searchParams);
-        next.delete('s');
-        setSearchParams(next, { replace: true });
-    }, [searchParams, setSearchParams]);
 
     const handleOpenPreview = (format, selectedLegends, title, quality, swipeOptions) => {
         setPreviewFormat(format || 'png');
@@ -89,28 +75,8 @@ const MapToolsPanel = () => {
     return (
         <>
             <div ref={toolsPanelRef} className={`fixed top-4 right-4 z-11 ${isAnyPanelOpen ? 'max-md:z-60' : 'max-md:z-21'} flex flex-row items-center`}>
-                {inSyncWithShare && (
-                    <ShareActiveChip loadedShareId={loadedShareId} onMarkPending={markPending} />
-                )}
-                {isModifiedFromShare && (
-                    <div className="hidden md:flex items-center gap-1.5 mr-2">
-                        <button
-                            type="button"
-                            onClick={handleRevert}
-                            className="h-9 flex items-center px-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-400 shadow-[0_5px_20px_#1A26641A] text-[11px]/[16px] font-garet whitespace-nowrap cursor-pointer transition-colors"
-                            title={`Volver al estado del enlace ${loadedShareId}`}
-                        >
-                            Regresar a: <span className="font-bold tabular-nums ml-1">{loadedShareId}</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleClearShare}
-                            className="size-9 flex items-center justify-center rounded-full bg-[#FFE6EC] hover:bg-[#FF577D] hover:text-white border border-transparent hover:border-[#FF577D] transition-all cursor-pointer shrink-0 shadow-[0_5px_20px_#1A26641A]"
-                            aria-label="Quitar enlace compartido"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                        </button>
-                    </div>
+                {loadedShareId && (
+                    <ShareActiveChip loadedShareId={loadedShareId} isDirty={isDirty} onRestaurado={reset} />
                 )}
                 <div className="hidden md:flex shrink-0 -mr-5 mt-2.5 z-12 relative">
                     <FloatingIconButton
@@ -141,7 +107,12 @@ const MapToolsPanel = () => {
                         onOpenChange={setIsMunicipioOpen} 
                         collapsed={isCollapsed} 
                     />
-                    <ShareButton onOpenChange={setIsShareOpen} />
+                    <ShareButton
+                        onOpenChange={setIsShareOpen}
+                        isDirty={isDirty}
+                        loadedShareId={loadedShareId}
+                        onCompartido={reset}
+                    />
                 </Panel>
             </div>
             {isPreviewOpen && (

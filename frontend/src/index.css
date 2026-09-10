@@ -166,3 +166,34 @@ html::-webkit-scrollbar-thumb:hover {
         animation-timing-function: ease-out;
     }
 }
+
+.evento-fun-eagle {
+    animation: evento-fun-flight 3400ms ease-in-out forwards;
+    will-change: transform, opacity;
+}
+
+.evento-fun-eagle .evento-fun-ala {
+    transform-box: view-box;
+    transform-origin: 32px 16px;
+    animation: evento-fun-flap 300ms ease-in-out infinite alternate;
+}
+
+@keyframes evento-fun-flight {
+    0%   { transform: translate(0, 0); opacity: 1; }
+    20%  { transform: translate(calc(var(--dx) * 0.2), calc(var(--dy) * 0.2 - 12px)); }
+    40%  { transform: translate(calc(var(--dx) * 0.4), calc(var(--dy) * 0.4 + 8px)); }
+    60%  { transform: translate(calc(var(--dx) * 0.6), calc(var(--dy) * 0.6 - 12px)); }
+    80%  { transform: translate(calc(var(--dx) * 0.8), calc(var(--dy) * 0.8 + 8px)); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+}
+
+@keyframes evento-fun-flap {
+    from { transform: scaleY(1); }
+    to   { transform: scaleY(-0.45); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .evento-fun-eagle {
+        display: none;
+    }
+}

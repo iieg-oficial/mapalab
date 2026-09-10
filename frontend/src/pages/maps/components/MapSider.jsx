@@ -13,6 +13,7 @@ import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useEventoContext } from '@hooks/useEvento';
 import { useAutoOpenEventoFromUrl } from '@pages/maps/hooks/useAutoOpenEventoFromUrl';
 import { aggregateFactsFromEventos } from '@pages/maps/helpers/funFactPicker';
+import { esEventoLite } from '@pages/maps/helpers/eventoDiversion';
 import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
 
 import { trackSiderLock, trackLogoClick, trackMeasurementPanelOpen } from '@services/analyticsService';
@@ -163,9 +164,18 @@ const MapSider = ({ className = '' }) => {
 
     const globalFactsEvento = useMemo(() => {
         const facts = aggregateFactsFromEventos(eventos);
-        const firstWithFacts = (eventos || []).find((e) => Array.isArray(e?.facts) && e.facts.length > 0);
-        return { id: 'sider-global-facts', facts, funIcon: firstWithFacts?.funIcon || null };
+        const lider = (eventos || []).find((e) => Array.isArray(e?.facts) && e.facts.length > 0);
+        return {
+            id: 'sider-global-facts',
+            slug: lider?.slug || null,
+            facts,
+            funIcon: lider?.funIcon || null,
+            animacion: lider?.animacion || null,
+            botonEstilo: lider?.botonEstilo || null,
+            avisoInicial: lider?.avisoInicial || null,
+        };
     }, [eventos]);
+    const eventosCompletos = useMemo(() => (eventos || []).filter((e) => !esEventoLite(e)), [eventos]);
     const showGlobalFunButton = !activeEvento && globalFactsEvento.facts.length > 0;
 
     const badgeSeenVersion = useBadgeSeen();
@@ -310,7 +320,7 @@ const MapSider = ({ className = '' }) => {
                 />
             </aside>
             {!isSwipe && (
-                <ExternalEventoWidget eventos={eventos} activeLayerIds={contextActiveLayerIds} onToggleLayer={onToggleLayer} treatAsMobile={treatAsMobile} isOpen={isOpen} toolsPanelVisible={toolsPanelVisible} siderWidth={width} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
+                <ExternalEventoWidget eventos={eventosCompletos} activeLayerIds={contextActiveLayerIds} onToggleLayer={onToggleLayer} treatAsMobile={treatAsMobile} isOpen={isOpen} toolsPanelVisible={toolsPanelVisible} siderWidth={width} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
             )}
         </>
     );

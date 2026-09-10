@@ -5,6 +5,7 @@ import { useLayers } from '@hooks/useLayers';
 import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
 import { initialCompareMode } from '@pages/maps/helpers/swipeMode';
 import { devToolsStore } from '@services/devToolsStore';
+import { marcarShareAplicado } from '@pages/maps/helpers/shareAplicacion';
 
 const VIEW_RETRY_INTERVAL_MS = 100;
 const VIEW_RETRY_MAX_ATTEMPTS = 60;
@@ -20,6 +21,7 @@ const scheduleViewApply = (mapRef, view) => {
         }
         if (typeof view.zoom === 'number') olView.setZoom(view.zoom);
         if (typeof view.rotation === 'number') olView.setRotation(view.rotation);
+        marcarShareAplicado();
         return true;
     };
     if (applyOnce()) return;
@@ -172,6 +174,7 @@ export const useShareDeserializer = () => {
             if (sharedMunicipios?.selected?.length > 0 && municipioMode?.enter) {
                 municipioMode.enter(sharedMunicipios.selected, { fromUrl: true });
             }
+            marcarShareAplicado();
             return true;
         }
 
@@ -245,6 +248,7 @@ export const useShareDeserializer = () => {
             municipioMode.enter(singleMunicipios.selected, { fromUrl: true });
         }
 
+        marcarShareAplicado();
         return true;
     }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, toggleHexbinFondo, asignarTono, setSoloSeleccionada, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, setLayerOpacity, setServiceMode, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode]);
 };

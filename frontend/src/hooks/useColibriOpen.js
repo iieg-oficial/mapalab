@@ -14,11 +14,11 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
 export const useColibriOpen = () => {
     const buildContext = useReportContext();
 
-    return useCallback((extraContext = null) => {
-        if (typeof window === 'undefined') return;
+    return useCallback((extraContext = null, opcionesPanel = {}) => {
+        if (typeof window === 'undefined') return false;
         if (!window.colibri || typeof window.colibri.openPanel !== 'function') {
             console.warn('Colibri widget no esta cargado todavia');
-            return;
+            return false;
         }
 
         try {
@@ -40,6 +40,8 @@ export const useColibriOpen = () => {
         window.colibri.openPanel({
             sourceApp: SOURCE_APP,
             apiKey: API_KEY,
+            ...opcionesPanel,
         });
+        return true;
     }, [buildContext]);
 };

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { pickNextFact } from '@pages/maps/helpers/funFactPicker';
+import { aggregateFactsFromEventos, peekNextFact, pickNextFact } from '@pages/maps/helpers/funFactPicker';
 
 describe('funFactPicker', () => {
     beforeEach(() => {
@@ -21,15 +21,15 @@ describe('funFactPicker', () => {
         expect(pickNextFact('e1', [{ text: '' }, { text: '   ' }])).toBeNull();
     });
 
-    it('normaliza strings legacy a objetos {text, symbol:null}', () => {
+    it('normaliza strings legacy a objetos {text, symbol:null, animacion:null}', () => {
         const result = pickNextFact('e1', ['un dato curioso']);
-        expect(result).toEqual({ text: 'un dato curioso', symbol: null });
+        expect(result).toEqual({ text: 'un dato curioso', symbol: null, animacion: null });
     });
 
     it('preserva symbol cuando viene en el objeto', () => {
         const symbol = { symbolId: 5, kind: 'emoji', value: '⭐' };
         const result = pickNextFact('e1', [{ text: 'hola', symbol }]);
-        expect(result).toEqual({ text: 'hola', symbol });
+        expect(result).toEqual({ text: 'hola', symbol, animacion: null });
     });
 
     it('trim del texto al normalizar', () => {
@@ -44,6 +44,26 @@ describe('funFactPicker', () => {
         picked.add(pickNextFact('e2', facts).text);
         picked.add(pickNextFact('e2', facts).text);
         expect(picked.size).toBe(3);
+    });
+
+    it('preserva la animación propia del dato', () => {
+        const result = pickNextFact('e3', [{ text: 'vuela', animacion: 'aguilas' }]);
+        expect(result.animacion).toBe('aguilas');
+    });
+
+    it('al juntar eventos, cada dato toma su animación o la de su evento', () => {
+        const facts = aggregateFactsFromEventos([
+            { animacion: 'aguilas', facts: [{ text: 'hereda' }, { text: 'propia', animacion: 'pelota' }] },
+            { facts: [{ text: 'sin nada' }] },
+        ]);
+        expect(facts.map((f) => f.animacion)).toEqual(['aguilas', 'pelota', 'pelota']);
+    });
+
+    it('peekNextFact muestra el siguiente sin sacarlo de la bolsa', () => {
+        const facts = ['uno', 'dos'];
+        const visto = peekNextFact('e4', facts);
+        expect(peekNextFact('e4', facts)).toEqual(visto);
+        expect(pickNextFact('e4', facts)).toEqual(visto);
     });
 
     it('bags independientes por eventoId', () => {
