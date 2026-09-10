@@ -8,8 +8,7 @@ import { cardTemplates } from './cardTemplates';
 import { isTextKey, mkTextKey, normalizeFinalConfig, resolveHref, textIdOf } from './infoBoxTextBlocks';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import { formatIsoAsMonthYear } from '@pages/maps/helpers/dateFilterHelpers';
-
-const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
+import { devToolsStore } from '@services/devToolsStore';
 
 export const applyHeaderTransform = (transform, value, featureId) => {
     if (!transform) return value;
@@ -158,7 +157,7 @@ const renderIconText = ({ finalConfig, properties, onAction, variant, body, getV
     const iconTextItems = Array.isArray(finalConfig.iconText) ? finalConfig.iconText : [finalConfig.iconText];
     const validItems = iconTextItems
         .filter(item => item && (item.label || properties[item.field] || item.value))
-        .filter(item => IS_NON_PROD || item.action !== 'report');
+        .filter(item => devToolsStore.isNonProd() || item.action !== 'report');
     validItems.forEach((item, idx) => {
         const fieldValue = properties[item.field];
         const displayValue = item.label || item.value || fieldValue;

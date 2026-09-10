@@ -10,6 +10,7 @@ import {
     SIDER_TRANSITION_CLASSES,
     MOBILE_BREAKPOINT,
     SIDER_MOBILE_WIDTH,
+    SIDER_LOCK_MODES,
 } from '@constants/sider';
 
 export const SiderContext = createContext(null);
@@ -25,6 +26,7 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
     const [isMobile, setIsMobile] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [lockMode, setLockMode] = useState('auto');
+    const [hoverLockCount, setHoverLockCount] = useState(0);
 
     const toggleSider = useCallback(() => {
         if (isMobile) {
@@ -38,22 +40,26 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
         }
     }, [isMobile]);
 
+    const setLock = useCallback((mode) => {
+        if (!SIDER_LOCK_MODES.includes(mode)) return;
+        setIsHovered(mode === 'expanded');
+        setLockMode(mode);
+    }, []);
+
     const toggleLock = useCallback(() => {
         setLockMode(prev => {
-            if (prev === 'auto') {
-                setIsHovered(true);
-                return 'expanded';
-            }
-            if (prev === 'expanded') {
-                setIsHovered(false);
-                return 'collapsed';
-            }
-            if (prev === 'collapsed') {
-                setIsHovered(false);
-                return 'mobile';
-            }
-            return 'auto';
+            const next = SIDER_LOCK_MODES[(SIDER_LOCK_MODES.indexOf(prev) + 1) % SIDER_LOCK_MODES.length];
+            setIsHovered(next === 'expanded');
+            return next;
         });
+    }, []);
+
+    const lockHover = useCallback(() => {
+        setHoverLockCount(prev => prev + 1);
+    }, []);
+
+    const unlockHover = useCallback(() => {
+        setHoverLockCount(prev => Math.max(0, prev - 1));
     }, []);
 
     const registerOpenMenu = useCallback(() => {
@@ -119,6 +125,10 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
         toggleSider,
         closeSider,
         toggleLock,
+        setLock,
+        hoverLocked: hoverLockCount > 0,
+        lockHover,
+        unlockHover,
     };
 
     return (
@@ -140,6 +150,7 @@ export const useSiderHover = ({
     setIsHovered,
     hasOpenMenus = false,
     hasVisibleTools = false,
+    hoverLocked = false,
     lockMode = 'auto'
 }) => {
     const enterTimeoutRef = useRef(null);
@@ -157,6 +168,7 @@ export const useSiderHover = ({
     };
 
     const handleMouseEnter = () => {
+        if (hoverLocked) return;
         if (lockMode === 'collapsed' || lockMode === 'mobile') return;
 
         clearTimers();
@@ -184,6 +196,10 @@ export const useSiderHover = ({
             setIsHovered(false);
         }, delay);
     };
+
+    useEffect(() => {
+        if (hoverLocked) clearTimers();
+    }, [hoverLocked]);
 
     useEffect(() => {
         return () => clearTimers();

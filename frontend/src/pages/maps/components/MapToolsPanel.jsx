@@ -10,11 +10,11 @@ import ExportPreview from './MapExport/ExportPreview';
 import { useShareDirtiness } from '@pages/maps/hooks/useShareDirtiness';
 import { useMapsContext } from '@hooks/useMaps';
 import { SIDER_EXPANDED_WIDTH } from '@constants/sider';
+import { useIsNonProd } from '@hooks/useDevTools';
 
 const COLLAPSE_KEY = 'mapalab.tools.collapsed';
-const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
-
 const MapToolsPanel = () => {
+    const isNonProd = useIsNonProd();
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [isMunicipioOpen, setIsMunicipioOpen] = useState(false);
@@ -61,7 +61,7 @@ const MapToolsPanel = () => {
     };
 
     const isAnyPanelOpen = isDownloadOpen || isPreviewOpen || isMunicipioOpen || isShareOpen;
-    const isDownloadExpanded = !IS_NON_PROD && !isCollapsed;
+    const isDownloadExpanded = !isNonProd && !isCollapsed;
     // const panelInlineStyle = isCollapsed ? undefined : { width: SIDER_EXPANDED_WIDTH };
     const collapseIconKey = isCollapsed ? 'left_arrow_fill_normal' : 'right_arrow_fill_normal';
     const collapseTooltip = isCollapsed ? 'Mostrar etiquetas' : 'Compactar barra';
@@ -104,7 +104,7 @@ const MapToolsPanel = () => {
                 <Panel
                     variant="floating"
                     position="static"
-                    width={isCollapsed || !IS_NON_PROD ? 'w-auto' : 'w-auto md:w-[373px]'}
+                    width={isCollapsed || !isNonProd ? 'w-auto' : 'w-auto md:w-[373px]'}
                     flexDirection="flex-row items-center"
                     className="rounded-[10px] shadow-[0_5px_20px_#1A26641A]"
                     contentClassName="gap-2 px-4 py-3"

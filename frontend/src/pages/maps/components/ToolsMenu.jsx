@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
-
-const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
+import { useIsNonProd } from '@hooks/useDevTools';
 
 const allTools = [
     {
@@ -30,12 +29,15 @@ const allTools = [
     },
 ];
 
-const tools = allTools.filter(tool => !tool.nonProdOnly || IS_NON_PROD);
-
 const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementToolsVisible, areAnnotationToolsVisible, toggleAnnotationTools }) => {
     const { compareMode, exitCompareMode, enterCompareMode } = useMapsContext();
     const { closeSider } = useSider();
     const [hoveredId, setHoveredId] = useState(null);
+    const isNonProd = useIsNonProd();
+    const tools = useMemo(
+        () => allTools.filter(tool => !tool.nonProdOnly || isNonProd),
+        [isNonProd],
+    );
 
     const startSwipe = () => {
         enterCompareMode();

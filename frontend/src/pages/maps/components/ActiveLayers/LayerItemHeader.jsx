@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
+import { useIsNonProd } from '@hooks/useDevTools';
 
 export const DragHandle = ({ dragHandleProps }) => {
     const [isMoveActive, setIsMoveActive] = useState(false);
@@ -51,8 +52,9 @@ const GEOMETRY_TYPES = {
 };
 
 export const GeometryTypeBadge = ({ type }) => {
+    const isNonProd = useIsNonProd();
     const geometry = GEOMETRY_TYPES[type];
-    if (!geometry) return null;
+    if (!isNonProd || !geometry) return null;
     return (
         <Tooltip content={geometry.label}>
             <span
