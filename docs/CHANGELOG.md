@@ -5,6 +5,44 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.117.0] - 2026-09-10
+
+### Agregado: el panel de compartir del visor trae QR descargable y redes sociales
+
+El QR con la marca que ya tenia el catalogo llega al visor: 200 px, centrado como pieza principal del
+panel, y al pasar el mouse —o tocarlo, en pantallas tactiles— muestra la descarga en PNG a 800 px.
+Salio de `CatalogoShare` a un componente comun, `BrandedQr`, que ahora usan los dos.
+
+Debajo van cinco redes que aceptan un enlace para compartir: WhatsApp, Facebook, X, LinkedIn y
+Telegram, con los iconos oficiales del Acervo (`iieg/iconos/redes sociales/`). WhatsApp y Telegram
+apuntan ya a `ico_wa.svg` e `ico_tg.svg`, y mientras no existan caen a un icono provisional del mismo
+estilo; al subirlos con esos nombres aparecen sin tocar codigo. Instagram y YouTube se descartaron:
+ninguna de las dos acepta un enlace compartido desde la web.
+
+«Insertar en otra pagina» sigue siendo beta y solo aparece en dev y beta. Su codigo se muestra a su
+altura completa, y «¿No tienes llave? Solicitala» abre Colibri acotado al tipo `solicitud`, con el
+correo obligatorio para poder responder con la llave y el `share_id` como contexto. Si el widget no
+cargo, el boton lo dice en pantalla en vez de fallar callado. `useColibriOpen` acepta ahora las
+opciones del panel y devuelve si pudo abrirlo.
+
+### Cambiado: compartir se abre con el mouse y el clic copia al instante
+
+El panel ya no depende de mantener presionado 450 ms, un gesto que nadie descubria. Dejar el mouse
+400 ms sobre el boton lo abre y genera el enlace en ese momento; un paso rapido por la barra no abre
+nada. El clic copia el enlace y deja el panel abierto; un segundo clic lo cierra. En tactil el toque
+hace lo del clic.
+
+El enlace se reutiliza mientras el mapa no cambie, asi que abrir el panel varias veces sobre el mismo
+estado crea uno solo. El logo animado de carga solo aparece si generar tarda mas de 300 ms, en un
+hueco ya reservado para que nada brinque.
+
+El input muestra solo el id del enlace y el completo en tooltip; al enfocarlo cambia al enlace
+completo y lo selecciona. El panel se limita al alto de la ventana con scroll interno: con el codigo
+de insertar desplegado llega a unos 800 px y antes solo se acotaba en movil.
+
+En movil, tocar compartir mientras se ve un mapa compartido ya no desliga el enlace: ahora copia y
+abre el panel. Desligar sigue en el boton «Quitar enlace compartido» de la barra.
+
 ## [1.116.7] - 2026-09-10
 
 ### Agregado: selector de modo del sider con los cuatro estados a la vista
