@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseEmbedParams, sanitizeColor, sanitizeIconUrl, sanitizeText } from './embedParams';
-import { buildEmbedMarker, EMBED_MARKER_COLOR } from '@pages/maps/helpers/markerDefinitions';
+import { buildEmbedMarker, EMBED_MARKER_ICON } from '@pages/maps/helpers/markerDefinitions';
+import { RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 
 const paramsOf = (query) => parseEmbedParams(new URLSearchParams(query));
 
@@ -38,10 +39,28 @@ describe('parametros del marcador del embed', () => {
 });
 
 describe('marcador del embed', () => {
-    it('usa el pin de MapaLab cuando no se pide icono', () => {
+    it('usa el pin de IIEG anclado en la punta cuando no se pide icono', () => {
+        const marker = buildEmbedMarker({ center: [-103.44, 20.68], color: '#ff8300' });
+        expect(marker.icon).toBe(EMBED_MARKER_ICON);
+        expect(marker.anchor).toEqual([0.5, 1]);
+        expect(marker.bgColor).toBeUndefined();
+    });
+
+    it('el pin de IIEG es el doble de grande en escritorio que en movil', () => {
+        const escritorio = buildEmbedMarker({ center: [-103.44, 20.68] });
+        const movil = buildEmbedMarker({ center: [-103.44, 20.68], isMobile: true });
+        expect(escritorio.scale).toBe(movil.scale * 2);
+        expect(buildEmbedMarker({ center: [-103.44, 20.68], icon: 'https://x.mx/pin.svg' }).scale).toBe(1);
+    });
+
+    it('dibuja el pin encima de las etiquetas, la mascara y el relieve', () => {
         const marker = buildEmbedMarker({ center: [-103.44, 20.68] });
-        expect(marker.bgColor).toBe(EMBED_MARKER_COLOR);
-        expect(marker.anchor).toEqual([0.5, 0.5]);
+        expect(marker.zIndex).toBeGreaterThan(RELIEF_OVERLAY_Z_INDEX);
+    });
+
+    it('pinta el circulo de color detras de un icono propio', () => {
+        const marker = buildEmbedMarker({ center: [-103.44, 20.68], icon: 'https://x.mx/pin.svg', color: '#ff8300' });
+        expect(marker.bgColor).toBe('#ff8300');
     });
 
     it('ancla el icono propio a su base y lo deja sin circulo', () => {

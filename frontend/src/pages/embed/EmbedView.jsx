@@ -49,7 +49,7 @@ const EmbedInner = ({ params, config }) => {
                 <LayerNotices enabled={noticesEnabled} />
                 <EmbedBrand params={params} />
                 <InfoBox forceDesktop />
-                <MapControls />
+                <MapControls hideLocate />
                 <ScaleLineControl />
                 <MapAttribution hideActions />
             </div>

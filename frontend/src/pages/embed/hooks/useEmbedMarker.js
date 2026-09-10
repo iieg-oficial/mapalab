@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { buildEmbedMarker } from '@pages/maps/helpers/markerDefinitions';
 
 const RETRY_MS = 200;
@@ -7,17 +8,18 @@ const MARKER_ID = 'embed_marker';
 
 export const useEmbedMarker = ({ marker, icon = null, color = null, title = null, description = null }) => {
     const { mapRef, showMarker, hideMarker } = useMapsContext();
-    const appliedRef = useRef(false);
+    const isMobile = useIsMobile();
+    const appliedRef = useRef(null);
 
     useEffect(() => {
-        if (!marker || appliedRef.current) return undefined;
+        if (!marker || appliedRef.current === isMobile) return undefined;
         const [lat, lng] = marker;
         let intervalId = null;
 
         const apply = () => {
             if (!mapRef?.current || typeof showMarker !== 'function') return false;
-            appliedRef.current = true;
-            showMarker(buildEmbedMarker({ center: [lng, lat], icon, color, title, description }));
+            appliedRef.current = isMobile;
+            showMarker(buildEmbedMarker({ center: [lng, lat], icon, color, title, description, isMobile }));
             return true;
         };
 
@@ -33,9 +35,9 @@ export const useEmbedMarker = ({ marker, icon = null, color = null, title = null
         return () => {
             if (intervalId) clearInterval(intervalId);
         };
-    }, [marker, icon, color, title, description, mapRef, showMarker]);
+    }, [marker, icon, color, title, description, isMobile, mapRef, showMarker]);
 
     useEffect(() => () => {
-        if (appliedRef.current) hideMarker?.(MARKER_ID);
+        if (appliedRef.current !== null) hideMarker?.(MARKER_ID);
     }, [hideMarker]);
 };

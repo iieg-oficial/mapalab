@@ -17,7 +17,7 @@ import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 
 const isTouchDevice = () => 'ontouchstart' in window;
 
-const MapControls = () => {
+const MapControls = ({ hideLocate = false }) => {
     const { mapRef, compareMode, paneMapRefs, isLocating, setIsLocating } = useMapsContext();
     const [hoveredButton, setHoveredButton] = useState(null);
     const [showFitExtent, setShowFitExtent] = useState(false);
@@ -207,21 +207,23 @@ const MapControls = () => {
                         className="w-6 h-6"
                     />
                 </button>
-                <button
-                    onClick={handleLocateMe}
-                    onMouseEnter={() => setHoveredButton('center')}
-                    onMouseLeave={() => setHoveredButton(null)}
-                    disabled={isLocating}
-                    className="p-2"
-                    title="Mi ubicación"
-                    aria-label="Ir a mi ubicación"
-                >
-                    <Icon
-                        name="center"
-                        state={isLocating || hoveredButton === 'center' ? 'hover' : 'normal'}
-                        className="w-6 h-6"
-                    />
-                </button>
+                {!hideLocate && (
+                    <button
+                        onClick={handleLocateMe}
+                        onMouseEnter={() => setHoveredButton('center')}
+                        onMouseLeave={() => setHoveredButton(null)}
+                        disabled={isLocating}
+                        className="p-2"
+                        title="Mi ubicación"
+                        aria-label="Ir a mi ubicación"
+                    >
+                        <Icon
+                            name="center"
+                            state={isLocating || hoveredButton === 'center' ? 'hover' : 'normal'}
+                            className="w-6 h-6"
+                        />
+                    </button>
+                )}
                 <button
                     onClick={handleZoomOut}
                     onMouseEnter={handleZoomOutEnter}

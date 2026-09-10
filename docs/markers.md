@@ -91,6 +91,6 @@ Los markers con `infoBox` se pueden clickear en el mapa para abrir su `littleCar
 - Los marcadores de capas solo se crean al activar **manualmente** (no desde URL)
 - Se eliminan automaticamente al desactivar la capa
 - `showMarker` directo (desde componentes) es independiente del ciclo de capas
-- Cada marcador tiene `zIndex: 999`, siempre visible sobre las capas WMS
+- Cada marcador tiene `zIndex: 999`, siempre visible sobre las capas WMS. `showMarker` acepta `zIndex`: el pin del embed usa `RELIEF_OVERLAY_Z_INDEX + 1` (10001) para quedar sobre las etiquetas del mapa base, la mascara de municipio y el relieve
 - `minZoom`/`maxZoom` controlan el rango de zoom en el que el marcador es visible
 - `openOnShow` dispara la apertura de la InfoBox como callback de la animacion de zoom para que el pixel calculado sea el final

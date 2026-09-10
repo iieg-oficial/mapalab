@@ -23,6 +23,16 @@
 |-----------|-------------------------------|----------------------------------------------------------------------------|
 | **10000** | Sombreado de relieve          | Overlay permanente sobre cualquier capa o mapa base. Visible salvo "Sin Mapa Base". Variante IIEG/INEGI segun el switch de capas de limites. No aparece en el panel de capas activas |
 
+### Marcadores y overlays sobre las capas
+
+| z-index      | Tipo de Capa                  | Descripcion                                                            |
+|--------------|-------------------------------|------------------------------------------------------------------------|
+| **10001**    | Pin del embed                 | `buildEmbedMarker`, por encima del relieve, la mascara y las etiquetas |
+| **9500**     | Mascara de municipio          | `useMunicipioMask`                                                     |
+| **9000 + n** | Capas fijadas arriba          | `PIN_Z_OFFSET` de `useAlwaysOnTopPinning`, una por capa fijada         |
+| **9000**     | Etiquetas del mapa base       | `*_only_labels` de CARTO, visibles desde `labelZoomThreshold`          |
+| **999**      | Marcadores del visor          | `useMapMarker`, sobre las capas WMS                                    |
+
 ### Capas vectoriales y de dibujo
 
 | z-index  | Tipo de Capa                    | Descripcion                                          |
