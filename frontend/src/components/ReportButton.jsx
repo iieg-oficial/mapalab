@@ -1,9 +1,7 @@
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { useColibriOpen } from '@hooks/useColibriOpen';
-
-const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
-
+import { useIsNonProd } from '@hooks/useDevTools';
 
 const ReportButton = ({
     variant = 'floating',
@@ -13,7 +11,8 @@ const ReportButton = ({
     onTrack,
 }) => {
     const open = useColibriOpen();
-    if (!IS_NON_PROD) return null;
+    const isNonProd = useIsNonProd();
+    if (!isNonProd) return null;
     const handleClick = (e) => {
         e?.stopPropagation?.();
         onTrack?.();

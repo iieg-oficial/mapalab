@@ -1,12 +1,12 @@
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import { useGoToCatalogo } from '@pages/catalogo/useGoToCatalogo';
+import { useIsNonProd } from '@hooks/useDevTools';
 
-const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
-
-const CatalogoSiderButton = () => {
+const CatalogoSiderButton = ({ tooltipPlacement = 'right' }) => {
     const goToCatalogo = useGoToCatalogo();
-    if (!IS_NON_PROD) return null;
+    const isNonProd = useIsNonProd();
+    if (!isNonProd) return null;
 
     const handleClick = (e) => {
         e.stopPropagation();
@@ -14,7 +14,7 @@ const CatalogoSiderButton = () => {
     };
 
     return (
-        <Tooltip content="Catálogo: explora y descarga capas sueltas" placement="right" delay={0}>
+        <Tooltip content="Catálogo: explora y descarga capas sueltas" placement={tooltipPlacement} delay={0}>
             <button
                 type="button"
                 onClick={handleClick}

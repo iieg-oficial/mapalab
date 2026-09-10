@@ -14,3 +14,10 @@ export const MOBILE_MEDIA_QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`;
 const TOOLS_COMPACT_BREAKPOINT = 1024;
 export const TOOLS_COMPACT_MEDIA_QUERY = `(max-width: ${TOOLS_COMPACT_BREAKPOINT - 1}px)`;
 export const SIDER_MOBILE_WIDTH = 88;
+export const SIDER_LOCK_MODES = ['auto', 'expanded', 'collapsed', 'mobile'];
+export const SIDER_LOCK_LABELS = {
+    auto: 'automatico',
+    expanded: 'expandido',
+    collapsed: 'colapsado',
+    mobile: 'mobile',
+};

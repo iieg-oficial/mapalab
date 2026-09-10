@@ -1,8 +1,7 @@
 import InfoCard from '../components/InfoCard';
 import { buildCardPlan } from '@utils/infoboxPlan';
 import { PINTORES } from './cardBlocks.jsx';
-
-const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
+import { devToolsStore } from '@services/devToolsStore';
 
 export const renderCard = (properties, config, onClose, layerId = null, featureId = null, onAction = null, variant = 'desktop', cardIndex = null, cardTotal = null, dateValue = null) => {
     const plan = buildCardPlan(properties, config, {
@@ -10,7 +9,7 @@ export const renderCard = (properties, config, onClose, layerId = null, featureI
         featureId,
         dateValue,
         variant,
-        allowActions: IS_NON_PROD,
+        allowActions: devToolsStore.isNonProd(),
     });
     if (!plan || plan.isEmpty) return null;
 

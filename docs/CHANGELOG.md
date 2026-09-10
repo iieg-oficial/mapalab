@@ -2155,6 +2155,42 @@ que esas URLs nunca coincidieron. Lo que sí se conserva es que los tiles del pl
 entre sí, que era el grueso del beneficio.
 
 La dirección del servidor se configura en el panel; no viaja en el código.
+## [1.116.7] - 2026-09-10
+
+### Agregado: selector de modo del sider con los cuatro estados a la vista
+
+Al pasar el mouse sobre el botón de modo del borde se despliega un segmento con Automático,
+Expandido, Colapsado y Mobile, en vez de tener que ciclar a ciegas. El seleccionado va en naranja
+institucional y el clic directo en el botón sigue ciclando como antes.
+
+En automático la flecha del botón sigue el estado vivo del sider: apunta a la derecha cerrado y a
+la izquierda cuando se abre por hover. Mientras el segmento está abierto el sider no se expande, y
+el mismo candado aplica al menú de la etiqueta `dev`.
+
+### Agregado: vista de producción desde la etiqueta `dev`
+
+En builds `dev`, al pasar el mouse sobre la etiqueta junto al logo aparecen dos switches:
+
+- **Ver como producción** — oculta en vivo todo lo que no sale a producción, sin reconstruir. La
+  etiqueta cambia a `prod` mientras está activa.
+- **Panel de analítica** — muestra el panel de depuración de eventos, que antes se pintaba solo.
+
+### Cambiado: el identificador de tipo de capa ya no sale en producción
+
+El badge de punto, línea, polígono o ráster de las capas activas queda solo fuera de producción.
+Cuando no se va a mostrar, tampoco se consulta el tipo de geometría al GeoServer.
+
+### Cambiado: los botones del borde van en fila con el sider mobile cerrado
+
+En modo mobile en escritorio, con el sider cerrado, los botones de modo, evento y catálogo van en
+fila sobre el borde inferior en lugar de en columna, para no salirse del sider.
+
+### Corregido: el panel de analítica no recibía eventos
+
+La emisión al panel dependía de `VITE_NODE_ENV`, una variable distinta de la `VITE_APP_ENV` que
+decide el entorno. En un build con `VITE_NODE_ENV=production` el panel quedaba vacío aunque el
+entorno fuera `dev`. Ahora ambas decisiones usan la misma.
+
 ## [1.116.6] - 2026-09-01
 
 ### Corregido: ante un 429 el recuperador de chunks amplificaba la saturacion

@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { debugStore } from '@services/analyticsDebugStore';
-
-const isDev = import.meta.env.VITE_NODE_ENV === 'development';
+import { useIsAnalyticsPanelOpen } from '@hooks/useDevTools';
 
 const AnalyticsDebugPanel = () => {
+    const isPanelOpen = useIsAnalyticsPanelOpen();
     const [events, setEvents] = useState(debugStore.getEvents());
     const [collapsed, setCollapsed] = useState(false);
     const [position, setPosition] = useState({ x: 16, y: window.innerHeight - 80 });
@@ -40,7 +40,7 @@ const AnalyticsDebugPanel = () => {
         };
     }, []);
 
-    if (!isDev || window.innerWidth < 768) return null;
+    if (!isPanelOpen || window.innerWidth < 768) return null;
 
     return (
         <div

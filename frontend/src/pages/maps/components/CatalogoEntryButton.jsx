@@ -2,12 +2,12 @@ import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import Badge from '@components/Badge';
 import { useGoToCatalogo } from '@pages/catalogo/useGoToCatalogo';
-
-const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
+import { useIsNonProd } from '@hooks/useDevTools';
 
 const CatalogoEntryButton = () => {
     const goToCatalogo = useGoToCatalogo();
-    if (!IS_NON_PROD) return null;
+    const isNonProd = useIsNonProd();
+    if (!isNonProd) return null;
 
     return (
         <Tooltip content="Catálogo: explora y descarga capas sueltas del IIEG" placement="top" delay={300}>

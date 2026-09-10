@@ -16,6 +16,11 @@ const variantStyles = {
         arrowColor: '#FFF1E3',
         arrowBorderColor: '#FF8300'
     },
+    soft: {
+        className: 'bg-white text-graphite border border-[#EAEFFA] shadow-[0_3px_24px_#00000029]',
+        arrowColor: '#ffffff',
+        arrowBorderColor: '#EAEFFA'
+    },
     error: {
         className: 'bg-red-600 text-white border-red-600',
         arrowColor: '#dc2626'
@@ -28,6 +33,7 @@ const variantStyles = {
 
 const variantIcons = {
     normal: null,
+    soft: null,
     info: 'info',
     warning: 'info_warning',
     error: 'alert',

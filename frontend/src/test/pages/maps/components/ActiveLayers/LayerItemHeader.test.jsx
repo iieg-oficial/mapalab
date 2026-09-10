@@ -1,6 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DragHandle, LayerTitle, PinBadge, EventoLayerIcon, GeometryTypeBadge } from '@pages/maps/components/ActiveLayers/LayerItemHeader';
+
+const { mockUseIsNonProd } = vi.hoisted(() => ({
+    mockUseIsNonProd: vi.fn(),
+}));
+
+vi.mock('@hooks/useDevTools', () => ({
+    useIsNonProd: mockUseIsNonProd,
+}));
 
 describe('LayerTitle', () => {
     it('renderiza el nombre como texto', () => {
@@ -55,6 +63,10 @@ describe('PinBadge', () => {
 });
 
 describe('GeometryTypeBadge', () => {
+    beforeEach(() => {
+        mockUseIsNonProd.mockReturnValue(true);
+    });
+
     it('no renderiza nada sin tipo', () => {
         const { container } = render(<GeometryTypeBadge type={null} />);
         expect(container).toBeEmptyDOMElement();
@@ -73,6 +85,23 @@ describe('GeometryTypeBadge', () => {
     ])('renderiza el icono de %s con su etiqueta', (type, label) => {
         render(<GeometryTypeBadge type={type} />);
         expect(screen.getByLabelText(label)).toBeInTheDocument();
+    });
+
+    it('renderiza la variante de hexágonos fuera de producción', () => {
+        render(<GeometryTypeBadge type="point" hexbin />);
+        expect(screen.getByLabelText('Agrupada en hexágonos')).toBeInTheDocument();
+    });
+
+    it('no renderiza el tipo de capa en producción', () => {
+        mockUseIsNonProd.mockReturnValue(false);
+        const { container } = render(<GeometryTypeBadge type="point" />);
+        expect(container).toBeEmptyDOMElement();
+    });
+
+    it('oculta también la variante de hexágonos en producción', () => {
+        mockUseIsNonProd.mockReturnValue(false);
+        const { container } = render(<GeometryTypeBadge type="point" hexbin />);
+        expect(container).toBeEmptyDOMElement();
     });
 });
 

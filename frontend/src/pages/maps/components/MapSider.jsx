@@ -8,7 +8,7 @@ import { useOutsideClick } from '@hooks/useOutsideClick';
 import { useScrollOverflow } from '@hooks/useScrollOverflow';
 import Logo from '@components/Logo';
 import { createMenuItems, BASE_ITEMS_COUNT } from '@pages/maps/helpers/menuItems';
-import { SIDER_TRANSITION_TIMING } from '@constants/sider';
+import { SIDER_TRANSITION_TIMING, SIDER_LOCK_LABELS } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useEventoContext } from '@hooks/useEvento';
 import { useAutoOpenEventoFromUrl } from '@pages/maps/hooks/useAutoOpenEventoFromUrl';
@@ -21,10 +21,8 @@ import { getDatabaseStats } from '@services/layerMetadataService';
 import { useBadgeSeen, isBadgeSeen } from '@pages/maps/helpers/badgeSeenStore';
 import { useZenMode } from './ZenMode';
 import MenuItem from './MenuItem';
-import SiderModeButton from './SiderModeButton';
-import CatalogoSiderButton from './CatalogoSiderButton';
+import SiderEdgeButtons from './SiderEdgeButtons';
 import EnvBadge from './EnvBadge';
-import EventoFunButton from './EventoFunButton';
 
 const SIDER_EVENTS_ENABLED = false;
 const EMPTY_EVENTOS = Object.freeze([]);
@@ -71,13 +69,20 @@ const MapSider = ({ className = '' }) => {
         toggleSider,
         closeSider,
         lockMode,
-        toggleLock
+        toggleLock,
+        setLock,
+        hoverLocked
     } = useSider();
     const handleToggleLock = useCallback(() => {
-        const labels = { auto: 'expandido', expanded: 'colapsado', collapsed: 'mobile', mobile: 'automatico' };
-        trackSiderLock(labels[lockMode] || 'automatico');
+        const nextByMode = { auto: 'expanded', expanded: 'collapsed', collapsed: 'mobile', mobile: 'auto' };
+        trackSiderLock(SIDER_LOCK_LABELS[nextByMode[lockMode]] || 'automatico');
         toggleLock();
     }, [lockMode, toggleLock]);
+
+    const handleSelectLock = useCallback((mode) => {
+        trackSiderLock(SIDER_LOCK_LABELS[mode] || mode);
+        setLock(mode);
+    }, [setLock]);
 
     const { shouldAutoOpenSearch, clearAutoOpen } = useSearch();
     const { isZenMode } = useZenMode();
@@ -120,6 +125,7 @@ const MapSider = ({ className = '' }) => {
         setIsHovered,
         hasOpenMenus: openMenusCount > 0,
         hasVisibleTools: areMeasurementToolsVisible,
+        hoverLocked,
         lockMode
     });
 
@@ -255,23 +261,14 @@ const MapSider = ({ className = '' }) => {
                     />
                     <EnvBadge />
                     {!isMobile && (
-                        <>
-                            <div data-sider-nohover className="absolute right-0 bottom-0 translate-x-1/2 translate-y-1/2 z-10">
-                                <SiderModeButton lockMode={lockMode} onToggle={handleToggleLock} />
-                            </div>
-                            {showGlobalFunButton && (
-                                <div className="absolute right-0 bottom-0 translate-x-1/2 translate-y-[calc(50%+20px)] z-10">
-                                    <EventoFunButton
-                                        evento={globalFactsEvento}
-                                        sizeClass="size-5"
-                                        iconSize={12}
-                                    />
-                                </div>
-                            )}
-                            <div data-sider-nohover className="absolute right-0 bottom-0 translate-x-1/2 translate-y-[calc(50%+30px)] z-10">
-                                <CatalogoSiderButton />
-                            </div>
-                        </>
+                        <SiderEdgeButtons
+                            layout={treatAsMobile && !isOpen ? 'row' : 'column'}
+                            lockMode={lockMode}
+                            isExpanded={isExpanded}
+                            onToggle={handleToggleLock}
+                            onSelect={handleSelectLock}
+                            funEvento={showGlobalFunButton ? globalFactsEvento : null}
+                        />
                     )}
                 </div>
                 {(!treatAsMobile || isOpen) && (
