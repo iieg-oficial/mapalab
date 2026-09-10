@@ -172,7 +172,13 @@ html::-webkit-scrollbar-thumb:hover {
     will-change: transform, opacity;
 }
 
-.evento-fun-eagle .evento-fun-ala {
+.evento-fun-eagle-land {
+    animation: evento-fun-land var(--dur) ease-in-out forwards;
+    will-change: transform, opacity;
+}
+
+.evento-fun-eagle .evento-fun-ala,
+.evento-fun-eagle-land .evento-fun-ala {
     transform-box: view-box;
     transform-origin: 32px 16px;
     animation: evento-fun-flap 300ms ease-in-out infinite alternate;
@@ -187,13 +193,22 @@ html::-webkit-scrollbar-thumb:hover {
     100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
 }
 
+@keyframes evento-fun-land {
+    0%   { transform: translate(0, 0); opacity: 1; }
+    30%  { transform: translate(calc(var(--dx) * 0.3), calc(var(--dy) * 0.3 - 60px)); }
+    62%  { transform: translate(calc(var(--dx) * 0.64), calc(var(--dy) * 0.64 - 44px)); }
+    88%  { transform: translate(var(--dx), var(--dy)); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0.6); opacity: 0; }
+}
+
 @keyframes evento-fun-flap {
     from { transform: scaleY(1); }
     to   { transform: scaleY(-0.45); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .evento-fun-eagle {
+    .evento-fun-eagle,
+    .evento-fun-eagle-land {
         display: none;
     }
 }

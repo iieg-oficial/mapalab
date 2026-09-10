@@ -13,11 +13,11 @@ const normalizeFact = (f) => {
     if (!f) return null;
     if (typeof f === 'string') {
         const text = f.trim();
-        return text ? { text, symbol: null, animacion: null } : null;
+        return text ? { text, symbol: null, animacion: null, destino: null } : null;
     }
     const text = typeof f.text === 'string' ? f.text.trim() : '';
     if (!text) return null;
-    return { text, symbol: f.symbol || null, animacion: f.animacion || null };
+    return { text, symbol: f.symbol || null, animacion: f.animacion || null, destino: f.destino || null };
 };
 
 export const aggregateFactsFromEventos = (eventos) => {

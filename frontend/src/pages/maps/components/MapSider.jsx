@@ -270,16 +270,15 @@ const MapSider = ({ className = '' }) => {
                         className="shrink-0 p-3 flex justify-center"
                     />
                     <EnvBadge />
-                    {!isMobile && (
-                        <SiderEdgeButtons
-                            layout={treatAsMobile && !isOpen ? 'row' : 'column'}
-                            lockMode={lockMode}
-                            isExpanded={isExpanded}
-                            onToggle={handleToggleLock}
-                            onSelect={handleSelectLock}
-                            funEvento={showGlobalFunButton ? globalFactsEvento : null}
-                        />
-                    )}
+                    <SiderEdgeButtons
+                        layout={treatAsMobile && !isOpen ? 'row' : 'column'}
+                        isMobile={isMobile}
+                        lockMode={lockMode}
+                        isExpanded={isExpanded}
+                        onToggle={handleToggleLock}
+                        onSelect={handleSelectLock}
+                        funEvento={showGlobalFunButton ? globalFactsEvento : null}
+                    />
                 </div>
                 {(!treatAsMobile || isOpen) && (
                     <div

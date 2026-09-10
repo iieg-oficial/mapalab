@@ -6,6 +6,8 @@ import { useFeatureSeen } from '@hooks/useFeatureSeen';
 import SymbolGlyph from '@mapsComponents/SymbolGlyph';
 import EventoBotonGlyph from '@mapsComponents/EventoBotonGlyph';
 import EventoFunAguila from '@mapsComponents/EventoFunAguila';
+import EventoFunPin from '@mapsComponents/EventoFunPin';
+import { useFunFactDestino } from '@hooksMaps/useFunFactDestino';
 import { FactPopover, MobileFactBanner, POPOVER_DATA_ATTR, POPOVER_MAX_WIDTH } from '@mapsComponents/EventoFunPopover';
 import { peekNextFact, pickNextFact } from '@pages/maps/helpers/funFactPicker';
 import { animacionDeDato } from '@pages/maps/helpers/eventoDiversion';
@@ -21,6 +23,8 @@ const ANIMACIONES = {
     pelota: { duracion: 5200, retrasoMensaje: 3700 },
     aguilas: { duracion: 3400 + (PARVADA - 1) * RETRASO_ENTRE_AGUILAS_MS, retrasoMensaje: 1900 },
 };
+const VIAJE_MS = 2800;
+const AGUILA_PX = { ancho: 46, alto: 26 };
 const DEFAULT_SIZE_CLASS = 'w-7 h-7 md:w-6 md:h-6';
 const DEFAULT_ICON_SIZE = 16;
 
@@ -59,6 +63,23 @@ const vuelosDeAguilas = (rect, symbol) => {
     return { vuelos, ancla: { x: rect.left + dx * 0.5, top: y, bottom: y, placement: 'bottom' } };
 };
 
+const vuelosAlDestino = (rect, pantalla, symbol) => Array.from({ length: PARVADA }, (_, i) => {
+    const retraso = i * RETRASO_ENTRE_AGUILAS_MS;
+    const top = rect.top - 6;
+    const left = rect.left - 12;
+    return {
+        id: nuevoId(),
+        tipo: 'aterrizaje',
+        top,
+        left,
+        dx: pantalla.x - left - AGUILA_PX.ancho / 2 + (i === 0 ? 0 : (i - 2) * 30),
+        dy: pantalla.y - top - AGUILA_PX.alto / 2 - 40 - (i === 0 ? 0 : 16),
+        retraso,
+        duracion: VIAJE_MS - retraso,
+        symbol: i === 0 ? symbol : null,
+    };
+});
+
 const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DEFAULT_ICON_SIZE, avisoPlacement = 'bottom' }) => {
     const buttonRef = useRef(null);
     const popoverTimerRef = useRef(null);
@@ -67,6 +88,7 @@ const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DE
     const [popover, setPopover] = useState(null);
     const [avisoCerrado, setAvisoCerrado] = useState(false);
     const { isMobile } = useSider();
+    const { pin, viajar: viajarAlDestino, volver: volverDelDestino, cerrar: cerrarPin } = useFunFactDestino();
 
     const facts = Array.isArray(evento?.facts) ? evento.facts : [];
     const eventoSymbol = evento?.funIcon || null;
@@ -116,6 +138,17 @@ const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DE
         }, retraso);
     };
 
+    const lanzarVuelos = (nuevos, vida) => {
+        const ids = new Set(nuevos.map((v) => v.id));
+        setVuelos((prev) => {
+            const next = [...prev, ...nuevos];
+            return next.length > MAX_ACTIVE_VUELOS ? next.slice(-MAX_ACTIVE_VUELOS) : next;
+        });
+        setTimeout(() => {
+            setVuelos((prev) => prev.filter((v) => !ids.has(v.id)));
+        }, vida);
+    };
+
     const handleClick = () => {
         cerrarAviso();
         const rect = buttonRef.current?.getBoundingClientRect();
@@ -130,21 +163,23 @@ const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DE
         if (evento?.id) trackEventoFunFact(evento.id);
 
         const symbol = fact.symbol || eventoSymbol;
-        if (movimientoReducido()) {
+        const tipo = ANIMACIONES[animacionDeDato(fact, evento)] ? animacionDeDato(fact, evento) : 'pelota';
+        const sinMovimiento = movimientoReducido();
+        if (tipo === 'aguilas' && fact.destino) {
+            const pantalla = viajarAlDestino(fact.destino, fact.text, sinMovimiento ? 0 : VIAJE_MS);
+            if (pantalla) {
+                if (!sinMovimiento) lanzarVuelos(vuelosAlDestino(rect, pantalla, symbol), VIAJE_MS + 200);
+                return;
+            }
+        }
+        cerrarPin();
+        if (sinMovimiento) {
             mostrarPopover(anclarPopover({ x: rect.left + rect.width / 2, top: rect.bottom, bottom: rect.bottom, placement: 'bottom' }, fact.text), 0);
             return;
         }
 
-        const tipo = ANIMACIONES[animacionDeDato(fact, evento)] ? animacionDeDato(fact, evento) : 'pelota';
         const { vuelos: nuevos, ancla } = tipo === 'aguilas' ? vuelosDeAguilas(rect, symbol) : vuelosDePelota(rect, symbol);
-        const ids = new Set(nuevos.map((v) => v.id));
-        setVuelos((prev) => {
-            const next = [...prev, ...nuevos];
-            return next.length > MAX_ACTIVE_VUELOS ? next.slice(-MAX_ACTIVE_VUELOS) : next;
-        });
-        setTimeout(() => {
-            setVuelos((prev) => prev.filter((v) => !ids.has(v.id)));
-        }, ANIMACIONES[tipo].duracion + 100);
+        lanzarVuelos(nuevos, ANIMACIONES[tipo].duracion + 100);
         mostrarPopover(anclarPopover(ancla, fact.text), ANIMACIONES[tipo].retrasoMensaje);
     };
 
@@ -167,14 +202,15 @@ const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DE
                     <EventoBotonGlyph botonEstilo={evento?.botonEstilo} symbol={simboloBoton} iconSize={iconSize} />
                 </button>
             </Tooltip>
+            {pin && <EventoFunPin pin={pin} onVolver={volverDelDestino} onCerrar={cerrarPin} />}
 
             {createPortal(
                 <>
-                    {vuelos.map((v) => (v.tipo === 'aguilas' ? (
+                    {vuelos.map((v) => (v.tipo !== 'pelota' ? (
                         <span
                             key={v.id}
-                            className="evento-fun-eagle pointer-events-none fixed z-60 select-none"
-                            style={{ top: `${v.top}px`, left: `${v.left}px`, '--dx': `${v.dx}px`, '--dy': `${v.dy}px`, animationDelay: `${v.retraso}ms`, animationFillMode: 'both' }}
+                            className={`${v.tipo === 'aterrizaje' ? 'evento-fun-eagle-land' : 'evento-fun-eagle'} pointer-events-none fixed z-60 select-none`}
+                            style={{ top: `${v.top}px`, left: `${v.left}px`, '--dx': `${v.dx}px`, '--dy': `${v.dy}px`, '--dur': `${v.duracion || 0}ms`, animationDelay: `${v.retraso}ms`, animationFillMode: 'both' }}
                             aria-hidden="true"
                         >
                             <EventoFunAguila carga={v.symbol} />
