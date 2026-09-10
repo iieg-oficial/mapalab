@@ -21,15 +21,15 @@ describe('funFactPicker', () => {
         expect(pickNextFact('e1', [{ text: '' }, { text: '   ' }])).toBeNull();
     });
 
-    it('normaliza strings legacy a objetos {text, symbol:null, animacion:null, destino:null}', () => {
+    it('normaliza strings legacy a objetos {text, symbol:null, animacion:null, destino:null, eventoId:null}', () => {
         const result = pickNextFact('e1', ['un dato curioso']);
-        expect(result).toEqual({ text: 'un dato curioso', symbol: null, animacion: null, destino: null });
+        expect(result).toEqual({ text: 'un dato curioso', symbol: null, animacion: null, destino: null, eventoId: null });
     });
 
     it('preserva symbol cuando viene en el objeto', () => {
         const symbol = { symbolId: 5, kind: 'emoji', value: '⭐' };
         const result = pickNextFact('e1', [{ text: 'hola', symbol }]);
-        expect(result).toEqual({ text: 'hola', symbol, animacion: null, destino: null });
+        expect(result).toEqual({ text: 'hola', symbol, animacion: null, destino: null, eventoId: null });
     });
 
     it('trim del texto al normalizar', () => {
@@ -71,6 +71,12 @@ describe('funFactPicker', () => {
         const facts = aggregateFactsFromEventos([{ animacion: 'aguilas', facts: [{ text: 'palacio', destino }, { text: 'sin lugar' }] }]);
         expect(facts.map((f) => f.destino)).toEqual([destino, null]);
         expect(pickNextFact('e5', [{ text: 'palacio', destino }]).destino).toEqual(destino);
+    });
+
+    it('conserva el evento de origen de cada dato', () => {
+        const facts = aggregateFactsFromEventos([{ id: 7, facts: [{ text: 'a' }] }, { id: 9, facts: [{ text: 'b' }] }]);
+        expect(facts.map((f) => f.eventoId)).toEqual([7, 9]);
+        expect(pickNextFact('e6', [facts[1]]).eventoId).toBe(9);
     });
 
     it('bags independientes por eventoId', () => {

@@ -71,8 +71,11 @@ export const trackEventoClose = (eventoId) =>
 export const trackEventoCenter = (eventoId) =>
     withMapInteraction('evento_center', { evento_id: eventoId });
 
-export const trackEventoFunFact = (eventoId) =>
-    withMapInteraction('evento_fun_fact', { evento_id: eventoId });
+export const trackEventoFunFact = (eventoId, detalle) =>
+    withMapInteraction('evento_fun_fact', { evento_id: eventoId, ...(detalle || {}) });
+
+export const trackEventoFunVolver = (eventoId) =>
+    withMapInteraction('evento_fun_volver', { evento_id: eventoId });
 
 export const trackEventoShare = (eventoId, status) =>
     withMapInteraction('evento_share', { evento_id: eventoId, status });

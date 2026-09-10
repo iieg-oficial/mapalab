@@ -17,7 +17,7 @@ export const useFunFactDestino = () => {
 
     const mapaActivo = useCallback(() => paneMapInstances?.[0] || mapRef?.current || null, [mapRef, paneMapInstances]);
 
-    const viajar = useCallback((destino, texto, duracion) => {
+    const viajar = useCallback((destino, texto, duracion, eventoId = null) => {
         const map = mapaActivo();
         const size = map?.getSize();
         const target = map?.getTargetElement();
@@ -38,7 +38,7 @@ export const useFunFactDestino = () => {
         view.cancelAnimations();
 
         const llegar = () => {
-            if (viajeRef.current === viaje) setPin({ id: viaje, lon: destino.lon, lat: destino.lat, texto });
+            if (viajeRef.current === viaje) setPin({ id: viaje, lon: destino.lon, lat: destino.lat, texto, eventoId });
         };
 
         if (duracion <= 0) {

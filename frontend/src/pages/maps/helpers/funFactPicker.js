@@ -13,11 +13,11 @@ const normalizeFact = (f) => {
     if (!f) return null;
     if (typeof f === 'string') {
         const text = f.trim();
-        return text ? { text, symbol: null, animacion: null, destino: null } : null;
+        return text ? { text, symbol: null, animacion: null, destino: null, eventoId: null } : null;
     }
     const text = typeof f.text === 'string' ? f.text.trim() : '';
     if (!text) return null;
-    return { text, symbol: f.symbol || null, animacion: f.animacion || null, destino: f.destino || null };
+    return { text, symbol: f.symbol || null, animacion: f.animacion || null, destino: f.destino || null, eventoId: f.eventoId ?? null };
 };
 
 export const aggregateFactsFromEventos = (eventos) => {
@@ -29,7 +29,7 @@ export const aggregateFactsFromEventos = (eventos) => {
             .map((f) => {
                 const norm = normalizeFact(f);
                 if (!norm) return null;
-                return { ...norm, symbol: norm.symbol || fallback, animacion: norm.animacion || e.animacion || 'pelota' };
+                return { ...norm, eventoId: e.id ?? null, symbol: norm.symbol || fallback, animacion: norm.animacion || e.animacion || 'pelota' };
             })
             .filter(Boolean);
     });
