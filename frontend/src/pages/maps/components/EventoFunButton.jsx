@@ -1,115 +1,78 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import Message from '@components/Message';
 import Tooltip from '@components/Tooltip';
 import { useSider } from '@contexts/SiderContext';
+import { useFeatureSeen } from '@hooks/useFeatureSeen';
 import SymbolGlyph from '@mapsComponents/SymbolGlyph';
-import { pickNextFact } from '@pages/maps/helpers/funFactPicker';
+import EventoBotonGlyph from '@mapsComponents/EventoBotonGlyph';
+import EventoFunAguila from '@mapsComponents/EventoFunAguila';
+import { FactPopover, MobileFactBanner, POPOVER_DATA_ATTR, POPOVER_MAX_WIDTH } from '@mapsComponents/EventoFunPopover';
+import { peekNextFact, pickNextFact } from '@pages/maps/helpers/funFactPicker';
+import { animacionDeDato } from '@pages/maps/helpers/eventoDiversion';
 import { trackEventoFunFact } from '@services/analyticsService';
 
-const ANIM_DURATION_MS = 5200;
-const BALL_STOP_DELAY_MS = 3700;
 const MESSAGE_TTL_MS = 10000;
-const MAX_ACTIVE_BALLS = 10;
+const MAX_ACTIVE_VUELOS = 10;
 const BALL_SIZE_PX = 28;
 const BOTTOM_PADDING_PX = 4;
-const POPOVER_MAX_WIDTH = 320;
-const POPOVER_GAP_PX = 14;
-const POPOVER_DATA_ATTR = 'data-evento-fun-popover';
-
-const FactPopover = ({ popover }) => {
-    const popoverRef = useRef(null);
-    const [resolvedTop, setResolvedTop] = useState(null);
-
-    useEffect(() => {
-        const el = popoverRef.current;
-        if (!el) return;
-        const height = el.getBoundingClientRect().height;
-        if (popover.placement === 'top') {
-            setResolvedTop(popover.anchorTop - POPOVER_GAP_PX - height);
-        } else {
-            setResolvedTop(popover.anchorBottom + POPOVER_GAP_PX);
-        }
-    }, [popover.placement, popover.anchorTop, popover.anchorBottom, popover.text]);
-
-    const isTop = popover.placement === 'top';
-
-    return (
-        <div
-            ref={popoverRef}
-            className="fixed z-60 pointer-events-auto"
-            style={{
-                top: resolvedTop !== null ? `${resolvedTop}px` : `${popover.anchorBottom + POPOVER_GAP_PX}px`,
-                left: `${popover.left}px`,
-                maxWidth: `${POPOVER_MAX_WIDTH}px`,
-                width: 'calc(100vw - 32px)',
-                opacity: resolvedTop !== null ? 1 : 0,
-                transition: 'opacity 120ms ease-out',
-            }}
-            {...{ [POPOVER_DATA_ATTR]: '' }}
-        >
-            <div
-                className="absolute w-0 h-0"
-                style={{
-                    left: `${popover.arrowLeft}px`,
-                    transform: 'translateX(-50%)',
-                    ...(isTop
-                        ? {
-                            bottom: '-8px',
-                            borderLeft: '8px solid transparent',
-                            borderRight: '8px solid transparent',
-                            borderTop: '8px solid white',
-                            filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.08))',
-                        }
-                        : {
-                            top: '-8px',
-                            borderLeft: '8px solid transparent',
-                            borderRight: '8px solid transparent',
-                            borderBottom: '8px solid white',
-                            filter: 'drop-shadow(0 -1px 1px rgba(0,0,0,0.06))',
-                        }),
-                }}
-                aria-hidden="true"
-            />
-            <Message
-                variant="info"
-                size="small"
-                icon=""
-                title={null}
-                description={popover.text}
-            />
-        </div>
-    );
+const PARVADA = 4;
+const RETRASO_ENTRE_AGUILAS_MS = 170;
+const ANIMACIONES = {
+    pelota: { duracion: 5200, retrasoMensaje: 3700 },
+    aguilas: { duracion: 3400 + (PARVADA - 1) * RETRASO_ENTRE_AGUILAS_MS, retrasoMensaje: 1900 },
 };
-
-const MobileFactBanner = ({ popover }) => (
-    <div
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-60 max-w-120 w-[calc(100%-32px)] pointer-events-auto"
-        {...{ [POPOVER_DATA_ATTR]: '' }}
-    >
-        <Message
-            variant="info"
-            size="medium"
-            icon=""
-            title={null}
-            description={popover.text}
-        />
-    </div>
-);
-
 const DEFAULT_SIZE_CLASS = 'w-7 h-7 md:w-6 md:h-6';
 const DEFAULT_ICON_SIZE = 16;
 
-const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DEFAULT_ICON_SIZE }) => {
+const movimientoReducido = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+const nuevoId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+const anclarPopover = ({ x, top, bottom, placement }, text) => {
+    const left = Math.max(16, Math.min(x - POPOVER_MAX_WIDTH / 2, window.innerWidth - POPOVER_MAX_WIDTH - 16));
+    return { id: nuevoId(), text, placement, anchorTop: top, anchorBottom: bottom, left, arrowLeft: x - left };
+};
+
+const vuelosDePelota = (rect, symbol) => {
+    const dx = (Math.random() - 0.5) * 240;
+    const ty = Math.max(80, window.innerHeight - rect.top - BALL_SIZE_PX - BOTTOM_PADDING_PX);
+    return {
+        vuelos: [{ id: nuevoId(), tipo: 'pelota', top: rect.top, left: rect.left, dx, ty, symbol }],
+        ancla: { x: rect.left + dx + BALL_SIZE_PX / 2, top: rect.top + ty, bottom: rect.top + ty + BALL_SIZE_PX, placement: 'top' },
+    };
+};
+
+const vuelosDeAguilas = (rect, symbol) => {
+    const dx = window.innerWidth - rect.left + 80;
+    const dy = -Math.min(120, Math.max(0, rect.top - 24));
+    const vuelos = Array.from({ length: PARVADA }, (_, i) => ({
+        id: nuevoId(),
+        tipo: 'aguilas',
+        top: rect.top - 6,
+        left: rect.left - 12,
+        dx,
+        dy: dy - i * 14,
+        retraso: i * RETRASO_ENTRE_AGUILAS_MS,
+        symbol: i === 0 ? symbol : null,
+    }));
+    const y = Math.max(24, rect.top + dy * 0.5 + 20);
+    return { vuelos, ancla: { x: rect.left + dx * 0.5, top: y, bottom: y, placement: 'bottom' } };
+};
+
+const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DEFAULT_ICON_SIZE, avisoPlacement = 'bottom' }) => {
     const buttonRef = useRef(null);
     const popoverTimerRef = useRef(null);
     const dismissTimerRef = useRef(null);
-    const [balls, setBalls] = useState([]);
+    const [vuelos, setVuelos] = useState([]);
     const [popover, setPopover] = useState(null);
+    const [avisoCerrado, setAvisoCerrado] = useState(false);
     const { isMobile } = useSider();
 
     const facts = Array.isArray(evento?.facts) ? evento.facts : [];
     const eventoSymbol = evento?.funIcon || null;
+    const aviso = evento?.avisoInicial?.trim() || '';
+    const [avisoVisto, marcarAvisoVisto] = useFeatureSeen(aviso ? `evento-aviso:${evento?.slug || evento?.id}` : null);
+    const mostrarAviso = Boolean(aviso) && !avisoVisto && !avisoCerrado;
 
     useEffect(() => {
         setPopover(null);
@@ -136,85 +99,96 @@ const EventoFunButton = ({ evento, sizeClass = DEFAULT_SIZE_CLASS, iconSize = DE
 
     if (facts.length === 0) return null;
 
+    const factsKey = evento?.id ?? 'global';
+    const simboloBoton = eventoSymbol || peekNextFact(factsKey, facts)?.symbol || null;
+    const conFondo = (evento?.botonEstilo?.fondo?.forma ?? 'solido') !== 'ninguno';
+
+    const cerrarAviso = () => {
+        if (!mostrarAviso) return;
+        setAvisoCerrado(true);
+        marcarAvisoVisto();
+    };
+
+    const mostrarPopover = (data, retraso) => {
+        popoverTimerRef.current = setTimeout(() => {
+            setPopover(data);
+            dismissTimerRef.current = setTimeout(() => setPopover(null), MESSAGE_TTL_MS);
+        }, retraso);
+    };
+
     const handleClick = () => {
+        cerrarAviso();
         const rect = buttonRef.current?.getBoundingClientRect();
         if (!rect) return;
 
-        const fact = pickNextFact(evento?.id ?? 'global', facts);
+        const fact = pickNextFact(factsKey, facts);
         if (!fact) return;
 
         if (popoverTimerRef.current) clearTimeout(popoverTimerRef.current);
         if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
         setPopover(null);
-
-        const ballSymbol = fact.symbol || eventoSymbol;
-        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-        const dx = (Math.random() - 0.5) * 240;
-        const ty = Math.max(80, window.innerHeight - rect.top - BALL_SIZE_PX - BOTTOM_PADDING_PX);
-
-        setBalls((prev) => {
-            const next = [...prev, { id, top: rect.top, left: rect.left, dx, ty, symbol: ballSymbol }];
-            return next.length > MAX_ACTIVE_BALLS ? next.slice(-MAX_ACTIVE_BALLS) : next;
-        });
-        setTimeout(() => {
-            setBalls((prev) => prev.filter((b) => b.id !== id));
-        }, ANIM_DURATION_MS + 100);
-
         if (evento?.id) trackEventoFunFact(evento.id);
 
-        const ballFinalTop = rect.top + ty;
-        const ballFinalLeft = rect.left + dx;
-        const ballCenter = ballFinalLeft + BALL_SIZE_PX / 2;
-        const popoverLeft = Math.max(16, Math.min(ballCenter - POPOVER_MAX_WIDTH / 2, window.innerWidth - POPOVER_MAX_WIDTH - 16));
-        const arrowLeft = ballCenter - popoverLeft;
-        const popoverData = {
-            id,
-            text: fact.text,
-            symbol: fact.symbol || null,
-            placement: 'top',
-            anchorTop: ballFinalTop,
-            anchorBottom: ballFinalTop + BALL_SIZE_PX,
-            left: popoverLeft,
-            arrowLeft,
-        };
+        const symbol = fact.symbol || eventoSymbol;
+        if (movimientoReducido()) {
+            mostrarPopover(anclarPopover({ x: rect.left + rect.width / 2, top: rect.bottom, bottom: rect.bottom, placement: 'bottom' }, fact.text), 0);
+            return;
+        }
 
-        popoverTimerRef.current = setTimeout(() => {
-            setPopover(popoverData);
-            dismissTimerRef.current = setTimeout(() => setPopover(null), MESSAGE_TTL_MS);
-        }, BALL_STOP_DELAY_MS);
+        const tipo = ANIMACIONES[animacionDeDato(fact, evento)] ? animacionDeDato(fact, evento) : 'pelota';
+        const { vuelos: nuevos, ancla } = tipo === 'aguilas' ? vuelosDeAguilas(rect, symbol) : vuelosDePelota(rect, symbol);
+        const ids = new Set(nuevos.map((v) => v.id));
+        setVuelos((prev) => {
+            const next = [...prev, ...nuevos];
+            return next.length > MAX_ACTIVE_VUELOS ? next.slice(-MAX_ACTIVE_VUELOS) : next;
+        });
+        setTimeout(() => {
+            setVuelos((prev) => prev.filter((v) => !ids.has(v.id)));
+        }, ANIMACIONES[tipo].duracion + 100);
+        mostrarPopover(anclarPopover(ancla, fact.text), ANIMACIONES[tipo].retrasoMensaje);
     };
 
     return (
         <>
-            <Tooltip content="Dato curioso" placement="bottom" delay={300}>
+            <Tooltip
+                content={mostrarAviso ? aviso : 'Dato curioso'}
+                placement={mostrarAviso ? avisoPlacement : 'bottom'}
+                forceVisible={mostrarAviso}
+                delay={200}
+            >
                 <button
                     ref={buttonRef}
                     type="button"
                     onClick={handleClick}
+                    onMouseEnter={cerrarAviso}
                     aria-label="Mostrar dato curioso del evento"
-                    className={`${sizeClass} rounded-full bg-white flex items-center justify-center shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] hover:scale-110 active:scale-95 transition-transform cursor-pointer`}
+                    className={`${sizeClass} rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer ${conFondo ? 'shadow-[0_5px_20px_#1A26641A]' : ''}`}
                 >
-                    <SymbolGlyph symbol={eventoSymbol} size={iconSize} />
+                    <EventoBotonGlyph botonEstilo={evento?.botonEstilo} symbol={simboloBoton} iconSize={iconSize} />
                 </button>
             </Tooltip>
 
             {createPortal(
                 <>
-                    {balls.map((b) => (
+                    {vuelos.map((v) => (v.tipo === 'aguilas' ? (
                         <span
-                            key={b.id}
-                            className="evento-fun-ball pointer-events-none fixed z-60 select-none"
-                            style={{
-                                top: `${b.top}px`,
-                                left: `${b.left}px`,
-                                '--dx': `${b.dx}px`,
-                                '--ty': `${b.ty}px`,
-                            }}
+                            key={v.id}
+                            className="evento-fun-eagle pointer-events-none fixed z-60 select-none"
+                            style={{ top: `${v.top}px`, left: `${v.left}px`, '--dx': `${v.dx}px`, '--dy': `${v.dy}px`, animationDelay: `${v.retraso}ms`, animationFillMode: 'both' }}
                             aria-hidden="true"
                         >
-                            <SymbolGlyph symbol={b.symbol} size={28} />
+                            <EventoFunAguila carga={v.symbol} />
                         </span>
-                    ))}
+                    ) : (
+                        <span
+                            key={v.id}
+                            className="evento-fun-ball pointer-events-none fixed z-60 select-none"
+                            style={{ top: `${v.top}px`, left: `${v.left}px`, '--dx': `${v.dx}px`, '--ty': `${v.ty}px` }}
+                            aria-hidden="true"
+                        >
+                            <SymbolGlyph symbol={v.symbol} size={BALL_SIZE_PX} />
+                        </span>
+                    )))}
                     {popover && (isMobile
                         ? <MobileFactBanner popover={popover} />
                         : <FactPopover popover={popover} />

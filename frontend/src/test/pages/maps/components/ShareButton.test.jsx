@@ -13,9 +13,6 @@ const { enlace } = vi.hoisted(() => ({
 }));
 
 vi.mock('@pages/maps/hooks/useShareLink', () => ({ useShareLink: () => enlace }));
-vi.mock('@pages/maps/hooks/useShareDirtiness', () => ({
-    useShareDirtiness: () => ({ isDirty: false, loadedShareId: null, reset: vi.fn() }),
-}));
 vi.mock('@components/Tooltip', () => ({ default: ({ children }) => children }));
 vi.mock('@components/Panel', () => ({
     default: ({ open, children }) => (open ? <div data-testid="panel">{children}</div> : null),

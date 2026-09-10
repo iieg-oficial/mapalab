@@ -3,13 +3,12 @@ import Panel from '@components/Panel';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import SharePanel from './SharePanel';
-import { useShareDirtiness } from '@pages/maps/hooks/useShareDirtiness';
 import { useShareLink } from '@pages/maps/hooks/useShareLink';
 
 const ABRIR_MS = 400;
 const CERRAR_MS = 280;
 
-const ShareButton = ({ onOpenChange }) => {
+const ShareButton = ({ onOpenChange, isDirty = false, loadedShareId = null, onCompartido }) => {
     const [open, setOpen] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const anchorRef = useRef(null);
@@ -17,8 +16,7 @@ const ShareButton = ({ onOpenChange }) => {
     const abrirTimer = useRef(null);
     const cerrarTimer = useRef(null);
 
-    const { isDirty, loadedShareId, reset } = useShareDirtiness();
-    const link = useShareLink({ onCreated: reset });
+    const link = useShareLink({ onCreated: onCompartido });
     const linkRef = useRef(link);
     linkRef.current = link;
     const { generating, copied, error } = link;

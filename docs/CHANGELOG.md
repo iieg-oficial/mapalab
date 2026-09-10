@@ -5,7 +5,31 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
-## [1.117.0] - 2026-09-10
+## [1.116.9] - 2026-09-10
+
+### Cambiado: la pill del enlace compartido avisa cuando la vista ya no coincide
+
+Al abrir un `/mapa?s=ID`, la pill verde «Compartido:» pasa a gris «Regresar a:» en cuanto el mapa se
+aparta del enlace: capas, filtros, opacidades, mapa base, capa seleccionada y ahora tambien zoom y
+ubicacion. Un clic la restaura sin recargar la pagina —vuelve a pedir el share y lo aplica— y regresa
+a verde. Antes eran dos pills separadas y restaurar recargaba todo.
+
+La X para quitar el enlace es la misma `PillCloseButton` de las demas pills: aparece con hover en
+escritorio y queda fija en movil, donde la pill antes ni se mostraba.
+
+El movimiento que hace el propio enlace al aplicarse no cuenta como cambio: `useShareDeserializer`
+marca el momento en que aplica y `useShareDirtiness` da su gracia desde ahi, no desde el montaje.
+Con eso un share que tarda en llegar ya no nace marcado como modificado.
+
+### Cambiado
+
+- El texto que acompana al enlace en redes es «Mapa personalizado de Jalisco en MapaLab, del IIEG».
+
+### Corregido
+
+- El telefono del icono provisional de WhatsApp queda centrado en su globo, no en el boton.
+
+## [1.116.8] - 2026-09-10
 
 ### Agregado: el panel de compartir del visor trae QR descargable y redes sociales
 

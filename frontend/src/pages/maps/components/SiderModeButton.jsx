@@ -77,7 +77,7 @@ const SiderModeButton = ({ lockMode, isExpanded = false, onToggle, onSelect }) =
                 type="button"
                 onClick={handleClick}
                 aria-label={`Modo del sider: ${current.label}`}
-                className={`${EDGE_BUTTON} text-purple`}
+                className={`${EDGE_BUTTON} text-orange`}
             >
                 <ModeGlyph mode={buttonGlyph(current, isExpanded)} />
             </button>

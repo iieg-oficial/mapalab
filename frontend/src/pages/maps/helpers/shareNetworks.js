@@ -5,11 +5,11 @@ const svgProvisional = (glifo) => `data:image/svg+xml;utf8,${encodeURIComponent(
 )}`;
 
 const GLIFO_WHATSAPP = '<path d="M25.5 13.5a12 12 0 0 0-10.4 18l-1.6 5.9 6.1-1.6a12 12 0 1 0 5.9-22.3z" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>'
-    + '<path d="M21.3 20.6c.4-.9 1-.9 1.4-.9h.9c.3 0 .6.1.8.6l1.1 2.6c.1.3.1.6-.1.9l-.7.9c-.2.2-.2.5 0 .8a8.6 8.6 0 0 0 3.9 3.4c.3.1.6.1.8-.1l.9-1.1c.2-.3.6-.3.9-.2l2.5 1.2c.4.2.5.4.5.7 0 .8-.4 1.9-1.7 2.4-1.3.6-3.1.3-5.6-1.1a15 15 0 0 1-4.9-4.9c-1.2-2.1-1.2-3.8-.5-5.2z" fill="#fff"/>';
+    + '<path d="M19.19 20.2c.4-.9 1-.9 1.4-.9h.9c.3 0 .6.1.8.6l1.1 2.6c.1.3.1.6-.1.9l-.7.9c-.2.2-.2.5 0 .8a8.6 8.6 0 0 0 3.9 3.4c.3.1.6.1.8-.1l.9-1.1c.2-.3.6-.3.9-.2l2.5 1.2c.4.2.5.4.5.7 0 .8-.4 1.9-1.7 2.4-1.3.6-3.1.3-5.6-1.1a15 15 0 0 1-4.9-4.9c-1.2-2.1-1.2-3.8-.5-5.2z" fill="#fff"/>';
 
 const GLIFO_TELEGRAM = '<path d="M12.8 24.6l22.7-8.8c1.1-.4 2 .3 1.7 1.9l-3.9 18.2c-.3 1.3-1.1 1.6-2.1 1l-5.8-4.3-2.8 2.7c-.3.3-.6.6-1.2.6l.4-5.9 10.8-9.8c.5-.4-.1-.7-.7-.3l-13.4 8.4-5.7-1.8c-1.2-.4-1.3-1.3.3-1.9z" fill="#fff"/>';
 
-export const TEXTO_COMPARTIR = 'Mapa de Jalisco en MapaLab, del IIEG';
+export const TEXTO_COMPARTIR = 'Mapa personalizado de Jalisco en MapaLab, del IIEG';
 
 export const REDES_COMPARTIR = [
     {

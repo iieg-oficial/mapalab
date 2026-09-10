@@ -21,7 +21,7 @@ const CatalogoSiderButton = ({ tooltipPlacement = 'right' }) => {
                 aria-label="Ir al catálogo de capas"
                 className="size-5 rounded-full bg-white flex items-center justify-center shadow-[0_5px_20px_#1A26641A] cursor-pointer"
             >
-                <Icon name="capa_activa" className="size-5" />
+                <Icon name="capa_activa" state="orange" className="size-5" />
             </button>
         </Tooltip>
     );
