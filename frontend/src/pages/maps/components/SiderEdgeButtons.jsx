@@ -2,7 +2,16 @@ import SiderModeButton from './SiderModeButton';
 import CatalogoSiderButton from './CatalogoSiderButton';
 import EventoFunButton from './EventoFunButton';
 
-const SiderEdgeButtons = ({ layout, lockMode, isExpanded, onToggle, onSelect, funEvento }) => {
+const SiderEdgeButtons = ({ layout, isMobile, lockMode, isExpanded, onToggle, onSelect, funEvento }) => {
+    if (isMobile) {
+        if (!funEvento) return null;
+        return (
+            <div data-sider-nohover className="absolute right-0 bottom-0 translate-x-3 translate-y-1/2 z-10">
+                <EventoFunButton evento={funEvento} sizeClass="size-6" iconSize={14} avisoPlacement="bottom" />
+            </div>
+        );
+    }
+
     const modeButton = <SiderModeButton lockMode={lockMode} isExpanded={isExpanded} onToggle={onToggle} onSelect={onSelect} />;
     const funButton = funEvento && (
         <EventoFunButton evento={funEvento} sizeClass="size-5" iconSize={12} avisoPlacement={layout === 'row' ? 'bottom' : 'right'} />
@@ -19,7 +28,7 @@ const SiderEdgeButtons = ({ layout, lockMode, isExpanded, onToggle, onSelect, fu
     }
 
     return (
-        <div data-sider-nohover className="absolute right-0 top-full translate-x-1/2 -translate-y-2.5 z-10 flex flex-col items-center gap-1">
+        <div data-sider-nohover className="absolute right-0 top-full translate-x-1/2 -translate-y-2.5 z-10 flex flex-col items-center gap-2.5">
             {modeButton}
             {funButton}
             <CatalogoSiderButton />

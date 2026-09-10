@@ -5,6 +5,39 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.10] - 2026-09-10
+
+### Agregado: eventos lite
+
+Un evento de mariachi con `modo: lite` no trae capas: no entra al sider ni a `?evento=` y solo
+enciende el botón de dato curioso en el borde del sider. Con dos eventos vigentes, el botón toma
+ícono, animación, estilo y aviso del primero por `orden`. Requiere mariachi 1.125.0.
+
+Parte del código entró con 1.116.9 —`EventoBotonGlyph`, `EventoFunAguila`, `EventoFunPopover`,
+`eventoDiversion` y los íconos naranjas de modo y catálogo en el borde—; esta entrada documenta la
+función completa.
+
+### Agregado: animaciones y botón personalizables
+
+- Cada dato curioso usa su animación, la del evento o la pelota. Se suman las águilas: una parvada
+  de cuatro que cruza la pantalla con el símbolo del dato.
+- El ícono del botón es dinámico por defecto —el símbolo del próximo dato— o fijo.
+- Fondo de la paleta y borde por tramos, según el `botonEstilo` del evento.
+- Aviso inicial en el tooltip normal, una vez por visitante; acompaña al sider mientras se anima.
+
+### Agregado: las águilas te llevan a un lugar
+
+Un dato con `destino` mueve el mapa mientras vuelan las águilas y las posa en el punto, centrado en
+la zona visible y no bajo el sider. El dato queda pineado ahí y se mueve con el mapa; «Volver»
+regresa a la vista de antes del primer viaje y la ✕ lo cierra. Con movimiento reducido, el mapa
+salta sin animación.
+
+### Cambiado
+
+- Los botones del borde del sider van en un solo contenedor, con más separación vertical; pasar el
+  mouse por el del evento ya no abre el sider.
+- En mobile, el botón de dato curioso ocupa la esquina del estado del sider; antes desaparecía.
+
 ## [1.116.9] - 2026-09-10
 
 ### Cambiado: la pill del enlace compartido avisa cuando la vista ya no coincide
