@@ -11,3 +11,6 @@ export const useIsPreviewingProd = () =>
 
 export const useIsAnalyticsPanelOpen = () =>
     useSyncExternalStore(subscribe, () => devToolsStore.isAnalyticsPanelOpen());
+
+export const usePantallaSimulada = () =>
+    useSyncExternalStore(subscribe, () => devToolsStore.getPantalla());
