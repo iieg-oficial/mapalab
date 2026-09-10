@@ -4,7 +4,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
 import { initialCompareMode } from '@pages/maps/helpers/swipeMode';
-import { VECTOR_SERVICE_ENABLED } from '@pages/maps/helpers/serviceMode';
+import { devToolsStore } from '@services/devToolsStore';
 
 const VIEW_RETRY_INTERVAL_MS = 100;
 const VIEW_RETRY_MAX_ATTEMPTS = 60;
@@ -122,7 +122,7 @@ export const useShareDeserializer = () => {
                 });
             }
 
-            if (typeof setServiceMode === 'function' && VECTOR_SERVICE_ENABLED) {
+            if (typeof setServiceMode === 'function' && devToolsStore.isNonProd()) {
                 [...paneAEntries, ...paneBEntries].forEach((entry) => {
                     if (!entry.service) return;
                     const layerId = resolveRefToId(entry.slug, layerTree);
@@ -210,7 +210,7 @@ export const useShareDeserializer = () => {
         if (typeof setLayerOpacity === 'function') {
             Object.entries(opacities).forEach(([id, op]) => setLayerOpacity(id, op));
         }
-        if (typeof setServiceMode === 'function' && VECTOR_SERVICE_ENABLED) {
+        if (typeof setServiceMode === 'function' && devToolsStore.isNonProd()) {
             services.forEach(([id, mode]) => setServiceMode(id, mode));
             if (sinFondo.length > 0) toggleHexbinFondo?.(sinFondo);
             tonos.forEach(([id, tono]) => asignarTono?.([id], tono));

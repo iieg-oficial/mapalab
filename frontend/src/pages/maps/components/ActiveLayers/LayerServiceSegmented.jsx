@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
+import { useIsNonProd } from '@hooks/useDevTools';
 import Segmented from '@components/Segmented';
 import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
-import { SERVICE_WMS, SERVICE_HEXBIN, VECTOR_SERVICE_ENABLED, resolveVectorTargets } from '@pages/maps/helpers/serviceMode';
+import { SERVICE_WMS, SERVICE_HEXBIN, resolveVectorTargets } from '@pages/maps/helpers/serviceMode';
 
 const OPTIONS = [
     { value: SERVICE_WMS, label: 'Puntos', icon: 'geom_point', tooltip: 'Ver los puntos' },
@@ -21,13 +22,14 @@ const rejectionMessage = (rejection) => {
 
 const LayerServiceSegmented = ({ layer, fallback = null, activo = false }) => {
     const { getServiceMode, setServiceMode, getVectorRejection, asignarTono, liberarTono, allLayers, activeLayerIds } = useMapsContext();
+    const isNonProd = useIsNonProd();
 
     const targetIds = useMemo(() => {
         const childIds = layer?.childIds?.length ? layer.childIds : [layer?.id].filter(Boolean);
         return resolveVectorTargets(childIds, allLayers, activeLayerIds, { pointsOnly: true });
     }, [layer, allLayers, activeLayerIds]);
 
-    if (!VECTOR_SERVICE_ENABLED || targetIds.length === 0 || !activo) return fallback;
+    if (!isNonProd || targetIds.length === 0 || !activo) return fallback;
 
     const message = rejectionMessage(getVectorRejection?.(targetIds[0]));
 

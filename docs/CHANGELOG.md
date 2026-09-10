@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.169.3] - 2026-09-10
+
+### Corregido: «Ver como producción» no ocultaba el servicio vectorial
+
+El switch de la etiqueta `dev` oculta en vivo todo lo que no sale a producción, pero el servicio
+vectorial se decidía con `VECTOR_SERVICE_ENABLED`, una constante que se evaluaba una sola vez al
+cargar el módulo. Con el switch encendido, el segmento de Puntos y Hexágonos seguía a la vista y un
+mapa compartido restauraba sus capas en hexágonos.
+
+Ahora `LayerServiceSegmented` lee el estado con `useIsNonProd`, y `useShareDeserializer` lo consulta
+al aplicar el mapa compartido, así que los dos siguen al switch. La constante desaparece de
+`serviceMode.js`.
+
 ## [1.169.2] - 2026-09-09
 
 ### Corregido: el catalogo y el embed reventaban al renderizar los controles del mapa

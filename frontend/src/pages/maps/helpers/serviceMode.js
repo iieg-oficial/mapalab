@@ -11,8 +11,6 @@ export const VECTOR_LAYER_FLAG = 'mapalabVectorService';
 
 export const VECTOR_FEATURE_LIMIT = 20000;
 
-export const VECTOR_SERVICE_ENABLED = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
-
 const VECTOR_GEOMETRY_TYPES = new Set(['point', 'line', 'polygon']);
 
 export const canUseVectorService = (layerDef) => {
