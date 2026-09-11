@@ -9,6 +9,7 @@ import { isTextKey, mkTextKey, normalizeFinalConfig, resolveHref, textIdOf } fro
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import { formatIsoAsMonthYear } from '@pages/maps/helpers/dateFilterHelpers';
 import { devToolsStore } from '@services/devToolsStore';
+import { aplicarFormato } from '@pages/maps/helpers/formatoCampo';
 
 export const applyHeaderTransform = (transform, value, featureId) => {
     if (!transform) return value;
@@ -84,7 +85,7 @@ const renderLabelGroups = ({ finalConfig, properties, variant, dateValue, body }
 
             fieldDefs.forEach((def, idx) => {
                 if (!def || !def.field) return;
-                const value = properties[def.field];
+                const value = aplicarFormato(properties[def.field], def.formato);
                 if (value === null || value === undefined || value === '') return;
 
                 const color = def.color || group.color;
@@ -135,8 +136,9 @@ const renderList = ({ finalConfig, properties, suffix, variant, body, getValue }
         .filter(row => shouldIncludeField(row.field, suffix))
         .map(row => ({
             label: row.label,
-            value: properties[row.field],
+            value: aplicarFormato(properties[row.field], row.formato),
             raw: row.raw,
+            formato: row.formato,
             href: resolveHref(row.href, getValue),
         }))
         .filter(row => row.value !== null && row.value !== undefined && row.value !== '');
@@ -159,7 +161,7 @@ const renderIconText = ({ finalConfig, properties, onAction, variant, body, getV
         .filter(item => item && (item.label || properties[item.field] || item.value))
         .filter(item => devToolsStore.isNonProd() || item.action !== 'report');
     validItems.forEach((item, idx) => {
-        const fieldValue = properties[item.field];
+        const fieldValue = aplicarFormato(properties[item.field], item.formato);
         const displayValue = item.label || item.value || fieldValue;
         const iconTextProps = {
             icon: item.icon,
@@ -178,7 +180,7 @@ const renderIconText = ({ finalConfig, properties, onAction, variant, body, getV
 const renderTextBlock = ({ block, getValue, variant, body }) => {
     if (!block?.items?.length) return;
     block.items.forEach((textItem, idx) => {
-        const value = textItem.field ? getValue(textItem.field) : null;
+        const value = textItem.field ? aplicarFormato(getValue(textItem.field), textItem.formato) : null;
         if (textItem.label || value) {
             body.push(
                 <Text

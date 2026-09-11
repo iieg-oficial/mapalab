@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.17] - 2026-09-11
+
+### Agregado: formato de año por campo en la tarjetita
+
+Un campo de la tarjetita acepta `formato: 'anio'` y entonces `2024-01-01` se pinta como `2024`.
+Vale en etiquetas, renglones de lista, íconos con texto y párrafos. Es **explícito a propósito**:
+no hay detección automática, así que ninguna capa cambia por sorpresa.
+
+Antes el año solo aparecía en renglones cuya etiqueta decía exactamente «Año de la información»,
+y en las etiquetas de un grupo nunca: un badge no tiene texto de etiqueta que revisar. «Año del
+cálculo», por ejemplo, salía con la fecha completa.
+
+La migración `0035a` de dataengine pone el formato en **77 capas**: los 43 renglones sobre `fecha`
+cuya etiqueta empieza con «Año» y las 34 etiquetas sobre `fecha` en capas anuales. Las mensuales se
+quedan con la fecha completa: ahí el año solo sería incorrecto.
+
+El año sale del texto ISO y no de `new Date(...).getFullYear()`: un `2024-01-01` se interpreta como
+medianoche UTC y en la zona de México cae en 2023. La regla vieja por etiqueta tiene ese problema y
+se queda una versión más como respaldo. Un renglón con formato tampoco pasa por el formato de
+números, que habría convertido `2026` en `2 026`.
+
 ## [1.116.16] - 2026-09-11
 
 ### Agregado: la tarjeta del marcador embebido la define el sitio que embebe (widget 1.5.0)
