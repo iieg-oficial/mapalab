@@ -5,8 +5,8 @@ const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
 const MARKER_TITLE_MAX = 120;
 const MARKER_DESCRIPTION_MAX = 400;
 
-export const CARD_BLOCKS = ['chips', 'rows', 'links', 'tiles'];
-export const CARD_ICONS = ['ubicacion', 'celular', 'web', 'mapas'];
+const CARD_BLOCKS = ['chips', 'rows', 'links', 'tiles'];
+const CARD_ICONS = ['ubicacion', 'celular', 'web', 'mapas'];
 export const VISOR_HREF = '@visor';
 const CARD_MAX_BYTES = 4096;
 const CARD_LIMITS = { chips: 6, rows: 6, links: 8, tiles: 6 };
