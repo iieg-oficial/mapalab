@@ -24,7 +24,8 @@ ARG VITE_BACKEND_API_HOST=/mapalab/api/
 ARG VITE_GEOSERVER_URL=/geoserver/
 ARG VITE_SITE_URL=
 ARG VITE_NODE_ENV=production
-ARG VITE_APP_ENV=beta
+ARG VITE_APP_ENV
+RUN test -n "$VITE_APP_ENV" || { echo "VITE_APP_ENV es obligatoria: dev, beta o production" >&2; exit 1; }
 ARG VITE_COLIBRI_SOURCE_APP=mapalab
 ARG VITE_COLIBRI_API_KEY=
 ARG VITE_ACERVO_ORIGIN=
