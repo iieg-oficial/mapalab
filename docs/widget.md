@@ -179,7 +179,7 @@ Sobre el mapa van tres cosas, todas heredadas del visor completo y ninguna confi
   el visitante siempre tiene a dónde ir por el mapa entero.
 - **Controles**, abajo a la izquierda: acercar y alejar; al alejar aparece además "centrar en
   Jalisco". Son los `MapControls` del visor sin "Mi ubicación", que se retiró del embed en
-  1.116.13. El widget todavía pone `allow="geolocation"` en el iframe, aunque ya nada lo usa.
+  1.116.13. Desde el widget 1.4.1 el iframe ya no pide permiso de geolocalización.
 - **Atribución**, abajo a la derecha. En pantallas anchas es una pastilla "Contribuciones ©" que se
   despliega al pasar el cursor; en angostas, un botón `©` que abre la lista. Cubre OpenStreetMap,
   CARTO, OpenLayers, GeoServer, PostGIS y la licencia del IIEG.
