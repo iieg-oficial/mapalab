@@ -46,7 +46,6 @@ Inventario centralizado de todos los mecanismos de cache del proyecto: memoria f
 | Cache | Ubicacion | Datos | Lifecycle | Invalidacion |
 |---|---|---|---|---|
 | `message_closed_*` | `components/Message.jsx:30` | Flag boolean: mensaje ya cerrado en esta sesion | Hasta cerrar pestana | Manual via click en cerrar |
-| `test-env-modal-dismissed` | `components/TestEnvModal.jsx:5` | Flag: modal beta rechazado | Hasta cerrar pestana | Checkbox "no mostrar de nuevo" |
 
 ## Frontend — persistencia (localStorage)
 

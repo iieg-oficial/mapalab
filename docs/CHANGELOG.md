@@ -2192,6 +2192,19 @@ que esas URLs nunca coincidieron. Lo que sí se conserva es que los tiles del pl
 entre sí, que era el grueso del beneficio.
 
 La dirección del servidor se configura en el panel; no viaja en el código.
+## [1.116.15] - 2026-09-11
+
+### Eliminado: el modal de «entorno de pruebas»
+
+- `TestEnvModal` avisaba a quien entraba con `VITE_APP_ENV=beta` que estaba en un entorno de
+  pruebas y lo mandaba a producción. Existía para la VM pública de GCP, retirada el 2026-08-28: sin
+  entorno público de pruebas no queda a quién avisar, y en el espejo interno solo estorba. `beta`
+  sigue existiendo —badge «test» y herramientas no-prod—; solo desaparece el modal y su bandera
+  `test-env-modal-dismissed` de `localStorage`.
+- Los dos `Dockerfile` (`frontend/`, `nginx/`) declaraban `ARG VITE_APP_ENV=beta`: un `docker build`
+  a mano sin el arg compilaba en `beta` sin avisar. El `ARG` queda sin default y un `RUN` aborta el
+  build si llega vacío. Por compose no cambia nada: ya lo pasaba con `${VITE_APP_ENV:?}`.
+
 ## [1.116.14] - 2026-09-11
 
 ### Eliminado: la geolocalización del iframe del widget (1.4.1)
