@@ -2192,6 +2192,14 @@ que esas URLs nunca coincidieron. Lo que sí se conserva es que los tiles del pl
 entre sí, que era el grueso del beneficio.
 
 La dirección del servidor se configura en el panel; no viaja en el código.
+## [1.116.14] - 2026-09-11
+
+### Eliminado: la geolocalización del iframe del widget (1.4.1)
+
+- `<iieg-mapalab>` monta el iframe con `allow="fullscreen"`. Pedía también `geolocation` para «Mi
+  ubicación», que el embebido ya no tiene desde 1.116.13: el sitio que lo inserta deja de delegar
+  ese permiso. El `package-lock.json` del widget, que seguía en 1.1.0, queda en 1.4.1.
+
 ## [1.116.13] - 2026-09-10
 
 ### Cambiado: logo y pin del embebido

@@ -278,7 +278,7 @@ export class IiegMapalab extends LitElement {
             <iframe
                 src=${src}
                 title=${this.title}
-                allow="geolocation; fullscreen"
+                allow="fullscreen"
                 referrerpolicy="strict-origin-when-cross-origin"
                 loading="lazy"
             ></iframe>
