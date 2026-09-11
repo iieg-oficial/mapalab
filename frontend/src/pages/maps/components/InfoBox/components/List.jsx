@@ -1,3 +1,5 @@
+import { renderInlineBold } from '../utils/inlineBold.jsx';
+
 const FeatureList = ({ rows, variant = 'desktop' }) => {
     if (!rows || rows.length === 0) return null;
 
@@ -9,7 +11,7 @@ const FeatureList = ({ rows, variant = 'desktop' }) => {
     return (
         <div className="space-y-1 mb-3">
             {validRows.map((row, idx) => {
-                const formatted = row.value;
+                const formatted = renderInlineBold(row.value);
                 const valueEl = row.values?.length ? (
                     <div className="flex flex-col gap-0.5 w-full">
                         {row.values.map((item, itemIdx) => (

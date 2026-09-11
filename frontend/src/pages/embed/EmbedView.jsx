@@ -1,5 +1,5 @@
 import 'ol/ol.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import MapView from '@mapsComponents/MapView';
 import MapAttribution from '@mapsComponents/MapAttribution';
 import MapControls from '@mapsComponents/MapControls';
@@ -17,17 +17,21 @@ import { useEmbedMarker } from '@pages/embed/hooks/useEmbedMarker';
 import { useEmbedTelemetry } from '@pages/embed/hooks/useEmbedTelemetry';
 import { useEmbedViewSync } from '@pages/embed/hooks/useEmbedViewSync';
 import { postError, postReady } from '@pages/embed/helpers/postMessage';
+import { buildViewerUrl } from '@pages/embed/helpers/viewerUrl';
 
 
 const EmbedInner = ({ params, config }) => {
     useEmbedActivation({ shareId: params.share, requestedLayers: params.layers });
     useEmbedFeatureRelay();
+    const visorHref = useMemo(() => buildViewerUrl(params), [params]);
     useEmbedMarker({
         marker: params.marker,
         icon: params.markerIcon,
         color: params.markerColor,
         title: params.markerTitle,
         description: params.markerDescription,
+        card: params.markerCard,
+        visorHref,
     });
     useEmbedViewSync();
     const { markReady } = useEmbedTelemetry({ apiKey: params.key, enabled: Boolean(params.key) });
@@ -48,7 +52,7 @@ const EmbedInner = ({ params, config }) => {
                 <MapView />
                 <LayerNotices enabled={noticesEnabled} />
                 <EmbedBrand params={params} />
-                <InfoBox forceDesktop />
+                <InfoBox forceDesktop embed />
                 <MapControls hideLocate />
                 <ScaleLineControl />
                 <MapAttribution hideActions />

@@ -6,7 +6,7 @@ import { buildEmbedMarker } from '@pages/maps/helpers/markerDefinitions';
 const RETRY_MS = 200;
 const MARKER_ID = 'embed_marker';
 
-export const useEmbedMarker = ({ marker, icon = null, color = null, title = null, description = null }) => {
+export const useEmbedMarker = ({ marker, icon = null, color = null, title = null, description = null, card = null, visorHref = null }) => {
     const { mapRef, showMarker, hideMarker } = useMapsContext();
     const isMobile = useIsMobile();
     const appliedRef = useRef(null);
@@ -19,7 +19,7 @@ export const useEmbedMarker = ({ marker, icon = null, color = null, title = null
         const apply = () => {
             if (!mapRef?.current || typeof showMarker !== 'function') return false;
             appliedRef.current = isMobile;
-            showMarker(buildEmbedMarker({ center: [lng, lat], icon, color, title, description, isMobile }));
+            showMarker(buildEmbedMarker({ center: [lng, lat], icon, color, title, description, card, visorHref, isMobile }));
             return true;
         };
 
@@ -35,7 +35,7 @@ export const useEmbedMarker = ({ marker, icon = null, color = null, title = null
         return () => {
             if (intervalId) clearInterval(intervalId);
         };
-    }, [marker, icon, color, title, description, isMobile, mapRef, showMarker]);
+    }, [marker, icon, color, title, description, card, visorHref, isMobile, mapRef, showMarker]);
 
     useEffect(() => () => {
         if (appliedRef.current !== null) hideMarker?.(MARKER_ID);

@@ -20,6 +20,7 @@ export class IiegMapalab extends LitElement {
         markerColor: { type: String, attribute: 'marker-color' },
         markerTitle: { type: String, attribute: 'marker-title' },
         markerDescription: { type: String, attribute: 'marker-description' },
+        markerCard: { type: String, attribute: 'marker-card' },
         height: { type: String, reflect: true },
         width: { type: String, reflect: true },
         baseUrl: { type: String, attribute: 'base-url' },
@@ -115,6 +116,7 @@ export class IiegMapalab extends LitElement {
         this.markerColor = '';
         this.markerTitle = '';
         this.markerDescription = '';
+        this.markerCard = '';
         this.height = '';
         this.width = '';
         this.baseUrl = '';
@@ -217,6 +219,7 @@ export class IiegMapalab extends LitElement {
         if (this.markerColor) params.set('markerColor', this.markerColor);
         if (this.markerTitle) params.set('markerTitle', this.markerTitle);
         if (this.markerDescription) params.set('markerDescription', this.markerDescription);
+        if (this.markerCard) params.set('markerCard', this.markerCard);
         if (this.basemap) params.set('basemap', this.basemap);
         if (this.controls) params.set('controls', this.controls);
         if (this.notices === 'false' || this.notices === false) params.set('notices', 'false');

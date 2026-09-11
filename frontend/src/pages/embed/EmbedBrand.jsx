@@ -1,20 +1,6 @@
 import { useMemo } from 'react';
 import mapalabLarge from '@logos/mapalab_large.svg';
-
-const buildViewerUrl = ({ share, layers, center, marker, zoom }) => {
-    const path = window.location.pathname.replace(/\/embed\/?$/, '/mapa');
-    const qs = new URLSearchParams();
-    if (share) {
-        qs.set('s', share);
-    } else {
-        if (layers?.length) qs.set('layers', layers.join(','));
-        if (center) qs.set('center', center.join(','));
-        if (marker) qs.set('marker', marker.join(','));
-    }
-    if (zoom) qs.set('zoom', String(zoom));
-    const search = qs.toString();
-    return search ? `${path}?${search}` : path;
-};
+import { buildViewerUrl } from '@pages/embed/helpers/viewerUrl';
 
 const EmbedBrand = ({ params }) => {
     const href = useMemo(() => buildViewerUrl(params), [params]);
