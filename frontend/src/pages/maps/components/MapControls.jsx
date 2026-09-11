@@ -17,7 +17,7 @@ import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 import { useAreaUtil } from '@contexts/AreaUtilContext';
 
 
-const MapControls = () => {
+const MapControls = ({ hideLocate = false }) => {
     const { mapRef, compareMode, paneMapRefs, isLocating, setIsLocating, municipioMode } = useMapsContext();
     const [hoveredButton, setHoveredButton] = useState(null);
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 180 });
@@ -187,21 +187,23 @@ const MapControls = () => {
                         className="w-6 h-6"
                     />
                 </button>
-                <button
-                    onClick={handleLocateMe}
-                    onMouseEnter={() => setHoveredButton('center')}
-                    onMouseLeave={() => setHoveredButton(null)}
-                    disabled={isLocating}
-                    className="p-2"
-                    title="Mi ubicación"
-                    aria-label="Ir a mi ubicación"
-                >
-                    <Icon
-                        name="center"
-                        state={isLocating || hoveredButton === 'center' ? 'hover' : 'normal'}
-                        className="w-6 h-6"
-                    />
-                </button>
+                {!hideLocate && (
+                    <button
+                        onClick={handleLocateMe}
+                        onMouseEnter={() => setHoveredButton('center')}
+                        onMouseLeave={() => setHoveredButton(null)}
+                        disabled={isLocating}
+                        className="p-2"
+                        title="Mi ubicación"
+                        aria-label="Ir a mi ubicación"
+                    >
+                        <Icon
+                            name="center"
+                            state={isLocating || hoveredButton === 'center' ? 'hover' : 'normal'}
+                            className="w-6 h-6"
+                        />
+                    </button>
+                )}
                 <button
                     onClick={handleEncuadrar}
                     onMouseEnter={() => setHoveredButton('fit_extent')}

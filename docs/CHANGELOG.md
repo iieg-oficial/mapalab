@@ -2192,6 +2192,25 @@ que esas URLs nunca coincidieron. Lo que sí se conserva es que los tiles del pl
 entre sí, que era el grueso del beneficio.
 
 La dirección del servidor se configura en el panel; no viaja en el código.
+## [1.116.13] - 2026-09-10
+
+### Cambiado: logo y pin del embebido
+
+- El logo de MapaLab baja a la esquina inferior derecha, 8 px sobre «Contribuciones» y con su mismo
+  margen. Pierde el fondo blanco y queda sobre un difuminado del mapa: en escritorio mide lo mismo de
+  ancho que «Contribuciones» cerrada y en móvil, la mitad que antes. Sigue abriendo el visor.
+- El marcador por defecto es el pin de IIEG, `/acervo/iieg/logos/ico_iieg_mapa.svg` con ruta
+  relativa, anclado en la punta: 128 px de ancho en escritorio y 64 en móvil, y se redibuja si el
+  marco cruza el breakpoint. `markerColor` solo pinta el círculo detrás de un `markerIcon` propio.
+- El pin se dibuja encima de las etiquetas y calles del mapa base (9000), la máscara de municipio
+  (9500) y el relieve (10000). Antes quedaba abajo, en 999; `showMarker` acepta `zIndex` y el
+  visor conserva el de siempre.
+
+### Eliminado
+
+- «Mi ubicación» en los controles del embebido (`MapControls hideLocate`). El visor y el catálogo lo
+  conservan.
+
 ## [1.116.12] - 2026-09-10
 
 ### Agregado
