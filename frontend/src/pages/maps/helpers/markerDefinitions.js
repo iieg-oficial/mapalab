@@ -70,8 +70,50 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) =
 export const EMBED_MARKER_ICON = '/acervo/iieg/logos/ico_iieg_mapa.svg';
 
 const EMBED_MARKER_SCALE = { movil: 0.2, escritorio: 0.4 };
+const CHIP_STYLES = {
+    solid: { color: '#FFFFFF', bg: '#5C2472' },
+    soft: { color: '#465055', bg: '#EFF3FC' }
+};
+const CARD_BLOCK_TYPES = { chips: 'labelGroups', rows: 'list', links: 'iconText', tiles: 'cards' };
+const VISOR_HREF = '@visor';
 
-export const buildEmbedMarker = ({ center, icon = null, color = null, title = null, description = null, isMobile = false } = {}) => {
+const buildCardInfoBox = ({ title, card, visorHref }) => {
+    const properties = { titulo: title };
+    const littleCard = { headerField: 'titulo', blockOrder: card.order.map((key) => CARD_BLOCK_TYPES[key]) };
+    if (card.chips.length) {
+        littleCard.labelGroups = [{
+            fields: card.chips.map((chip, i) => {
+                properties[`chip_${i}`] = chip.text;
+                return { field: `chip_${i}`, ...CHIP_STYLES[chip.style] };
+            })
+        }];
+    }
+    if (card.rows.length) {
+        littleCard.list = card.rows.map((row, i) => {
+            properties[`row_${i}`] = row.text;
+            return { label: row.label || '', field: `row_${i}`, raw: true };
+        });
+    }
+    if (card.links.length) {
+        littleCard.iconText = card.links.map((link, i) => {
+            properties[`link_${i}`] = link.text;
+            const item = { icon: link.icon, field: `link_${i}` };
+            const href = link.href === VISOR_HREF ? visorHref : link.href;
+            if (href) item.href = href;
+            return item;
+        });
+    }
+    if (card.tiles.length) {
+        littleCard.cards = card.tiles.map((tile, i) => {
+            properties[`tile_${i}`] = tile.value;
+            return { label: tile.label, field: `tile_${i}` };
+        });
+        littleCard.cardsColumns = 2;
+    }
+    return { layerName: title, properties, littleCard };
+};
+
+export const buildEmbedMarker = ({ center, icon = null, color = null, title = null, description = null, card = null, visorHref = null, isMobile = false } = {}) => {
     const marker = {
         id: 'embed_marker',
         center,
@@ -84,7 +126,10 @@ export const buildEmbedMarker = ({ center, icon = null, color = null, title = nu
         marker.bgColor = color;
         marker.bgRadius = 22;
     }
-    if (title) {
+    if (title && card) {
+        marker.infoBox = buildCardInfoBox({ title, card, visorHref });
+        marker.openOnShow = card.open;
+    } else if (title) {
         marker.infoBox = {
             layerName: title,
             properties: { titulo: title, descripcion: description || '' },

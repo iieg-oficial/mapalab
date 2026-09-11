@@ -26,7 +26,7 @@ import WhatsNewModal from '../WhatsNewModal';
 import { useColibriOpen } from '@hooks/useColibriOpen';
 import { useIsNonProd } from '@hooks/useDevTools';
 
-const InfoBox = ({ forceDesktop = false }) => {
+const InfoBox = ({ forceDesktop = false, embed = false }) => {
     useIsNonProd();
     const openColibri = useColibriOpen();
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers, mapRef, paneMapInstances, compareMode } = useContext(MapsContext);
@@ -192,9 +192,10 @@ const InfoBox = ({ forceDesktop = false }) => {
         }
     };
 
-    const showCenterButton = !hasNoResults;
-    const showMultiActions = showCenterButton && totalFeatures > 1;
-    const showToolbar = showCenterButton;
+    const showCenterButton = !hasNoResults && !embed;
+    const showMultiActions = !hasNoResults && totalFeatures > 1;
+    const showToolbar = showCenterButton || showMultiActions;
+    const cardHandleProps = embed ? { ...moveHandleProps, style: { touchAction: 'none' } } : {};
 
 
     let globalCardIdx = 0;
@@ -331,7 +332,7 @@ const InfoBox = ({ forceDesktop = false }) => {
                 className={`relative bg-transparent z-5 ${isSingleFeature ? '' : 'flex items-stretch gap-2'}`}
                 style={positionStyle}
             >
-                <div ref={cardRef} className="relative w-[239px]">
+                <div ref={cardRef} className={`relative w-[239px]${embed ? (isDragging ? ' cursor-grabbing' : ' cursor-grab') : ''}`} {...cardHandleProps}>
                     <EmptySuggestions
                         visible={showEmptySuggestions}
                         queriedLayerName={queriedLayerName}
@@ -391,10 +392,10 @@ const InfoBox = ({ forceDesktop = false }) => {
                     }>
                         <ActionsToolbar
                             onClear={showMultiActions ? handleClose : null}
-                            moveHandleProps={moveHandleProps}
+                            moveHandleProps={embed ? null : moveHandleProps}
                             isMoving={isDragging}
                             onDownload={showMultiActions ? handleDownload : null}
-                            onCenter={handleCenterGroup}
+                            onCenter={showCenterButton ? handleCenterGroup : null}
                             downloadCount={downloadDisplayCount}
                             downloadShowsPlus={downloadShowsPlus}
                             downloadTooltip={downloadTooltipText}

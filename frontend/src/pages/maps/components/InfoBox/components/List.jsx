@@ -1,4 +1,5 @@
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
+import { renderInlineBold } from '../utils/inlineBold.jsx';
 
 const FeatureList = ({ rows, variant = 'desktop' }) => {
     if (!rows || rows.length === 0) return null;
@@ -27,9 +28,9 @@ const FeatureList = ({ rows, variant = 'desktop' }) => {
     return (
         <div className="space-y-1 mb-3">
             {validRows.map((row, idx) => {
-                const formatted = row.raw
+                const formatted = renderInlineBold(row.raw
                     ? formatValue(row.label, row.value)
-                    : formatNumber(formatValue(row.label, row.value));
+                    : formatNumber(formatValue(row.label, row.value)));
                 const valueEl = row.href ? (
                     <a
                         href={row.href}

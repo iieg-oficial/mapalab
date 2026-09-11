@@ -42,6 +42,7 @@ El **panel administrativo** `/administrador/mapalab/api-keys` permite armar mapa
 | `marker-color` | string | — | Color hex del círculo detrás de un `marker-icon` propio. Sin este atributo el icono va sin círculo; sobre el pin de IIEG no aplica. |
 | `marker-title` | string | — | Encabezado de la tarjeta que abre el marcador al hacer clic. Sin este atributo el pin no tiene tarjeta. Máximo 120 caracteres. |
 | `marker-description` | string | — | Cuerpo de esa tarjeta. Se ignora si no hay `marker-title`. Máximo 400 caracteres. |
+| `marker-card` | JSON | — | Tarjeta completa del marcador: chips, filas, contacto y cifras, definida por el sitio que embebe. Reemplaza a `marker-description`; exige `marker-title`. Máximo 4 KB. Ver «Tarjeta completa». |
 | `zoom` | string | "" | Zoom inicial (1–20). |
 | `basemap` | string | `osm` | Identificador del basemap. |
 | `controls` | string | `zoom` | **Sin efecto todavía.** Viaja a la URL del embed pero nada lo lee: el visor embebido muestra siempre su barra de acercar / alejar. Se conserva para no romper a quien ya lo pasa. |
@@ -135,6 +136,68 @@ Con `marker-title` el pin deja de ser decorativo y abre la tarjeta del visor:
 Sin `marker-title` no hay tarjeta y el clic no hace nada; `marker-description` sola se ignora. Los
 dos son texto plano —se colapsan los espacios y se recortan a 120 y 400 caracteres— y se pintan
 escapados: no admiten HTML ni enlaces.
+
+### Tarjeta completa
+
+Cuando el marcador es «aquí estamos» de una institución, la tarjeta de título y descripción se
+queda corta. `marker-card` recibe la tarjeta entera en JSON y el visor la pinta con los mismos
+bloques que usa para sus capas; el sitio que embebe es dueño del contenido y lo cambia sin tocar
+MapaLab. **El visor no lee ningún dato propio para esta tarjeta**: todo lo que muestra viene del
+atributo.
+
+```html
+<iieg-mapalab
+    api-key="mk_pub_…"
+    marker="20.68443,-103.44669"
+    zoom="16"
+    height="400"
+    marker-title="IIEG Jalisco"
+    marker-card='{
+        "chips": [
+            { "text": "Sede · Zapopan", "style": "solid" },
+            { "text": "8 direcciones" },
+            { "text": "Organismo público descentralizado" }
+        ],
+        "rows": [
+            { "label": "Qué hace", "text": "**El Instituto de Información Estadística y Geográfica del Estado de Jalisco** es el organismo responsable de gestionar, procesar y difundir datos e información relevante de la entidad." }
+        ],
+        "links": [
+            { "icon": "ubicacion", "text": "Calz. de los Pirules #71, Cd. Granja, Zapopan" },
+            { "icon": "celular", "text": "(33) 3777 1770" },
+            { "icon": "mapas", "text": "Explorar Jalisco en MapaLab", "href": "@visor" }
+        ],
+        "tiles": [
+            { "value": 2013, "label": "año de creación" },
+            { "value": 53, "label": "personas en el instituto" },
+            { "value": 4917690, "label": "registros geográficos en MapaLab" },
+            { "value": 16994827, "label": "registros ingestados automáticamente" }
+        ],
+        "order": ["chips", "rows", "links", "tiles"],
+        "open": true
+    }'>
+</iieg-mapalab>
+```
+
+| Bloque | Campos | Tope |
+|---|---|---|
+| `chips` | `text` (60), `style`: `solid` (morado) o `soft` (gris, por omisión) | 6 |
+| `rows` | `label` (80, opcional), `text` (400). Admite `**negritas**` y nada más de markdown | 6 |
+| `links` | `icon`: `ubicacion`, `celular`, `web` o `mapas`; `text` (120); `href` opcional | 8 |
+| `tiles` | `value`: número o texto (40); `label` (80) | 6 |
+
+- `order` decide qué bloque va primero; por omisión `chips`, `rows`, `links`, `tiles`. `open`
+  abre la tarjeta al cargar el mapa (por omisión `true`); con `false` espera al clic en el pin.
+- Los números se pintan completos con separador de miles (`16994827` → 16 994 827). Un texto se
+  muestra tal cual.
+- Sin `href`, `ubicacion` enlaza a Google Maps con el texto, `celular` a `tel:` y `web` al sitio.
+  Con `href` se aceptan `https:`, `http:`, `tel:` y `mailto:`; cualquier otro esquema se descarta.
+  `"@visor"` es el único valor especial: el widget lo sustituye por el enlace al visor completo
+  centrado en el marcador.
+- Todo es texto plano escapado, sin HTML. Lo que no pase el saneado se omite en silencio; si el
+  JSON no se puede leer o pasa de 4 KB, se ignora entero y el pin se queda con la tarjeta de
+  `marker-title` y `marker-description`.
+- En el visor embebido la tarjeta se arrastra tomándola de cualquier parte, y no tiene el botón
+  de «centrar selección»: en un mapa de una sola sede no aporta.
 
 ## Identificar capas: formato `workspace:layer`
 
