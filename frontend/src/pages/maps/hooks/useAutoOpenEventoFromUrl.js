@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import { useEventoContext } from '@hooks/useEvento';
 import { slugifyTitulo } from '@pages/maps/helpers/eventoHelpers';
+import { esEventoLite } from '@pages/maps/helpers/eventoDiversion';
 
 export const useAutoOpenEventoFromUrl = ({ setAutoOpenMenuId, setIsHovered }) => {
     const [searchParams] = useSearchParams();
@@ -15,7 +16,7 @@ export const useAutoOpenEventoFromUrl = ({ setAutoOpenMenuId, setIsHovered }) =>
         if (!Array.isArray(eventos) || eventos.length === 0) return;
 
         const match = eventos.find((e) => {
-            if (!e) return false;
+            if (!e || esEventoLite(e)) return false;
             if (String(e.id) === target) return true;
             if (e.slug && e.slug === target) return true;
             return slugifyTitulo(e.titulo) === target;

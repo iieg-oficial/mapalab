@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLayers } from '@hooks/useLayers';
+import { useIsNonProd } from '@hooks/useDevTools';
 import { RASTER_WORKSPACES } from '@services/downloadUrls';
 import { fetchGeometryType } from '@utils/featureInfoUtils';
 import { findLayerById, collectLayersWithWMS } from '../helpers/layers/utils/layerHelpers';
@@ -17,10 +18,11 @@ const workspaceOf = (wmsConfig) =>
 
 export const useLayerGeometryType = (layerId) => {
     const { layers: allLayers } = useLayers();
+    const isNonProd = useIsNonProd();
     const [geometryType, setGeometryType] = useState(() => geometryTypeByLayerId.get(layerId) || null);
 
     useEffect(() => {
-        if (!layerId) {
+        if (!isNonProd || !layerId) {
             setGeometryType(null);
             return;
         }
@@ -55,7 +57,7 @@ export const useLayerGeometryType = (layerId) => {
             });
 
         return () => { cancelled = true; };
-    }, [layerId, allLayers]);
+    }, [layerId, allLayers, isNonProd]);
 
     return geometryType;
 };

@@ -5,6 +5,203 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.14] - 2026-09-11
+
+### Eliminado: la geolocalización del iframe del widget (1.4.1)
+
+- `<iieg-mapalab>` monta el iframe con `allow="fullscreen"`. Pedía también `geolocation` para «Mi
+  ubicación», que el embebido ya no tiene desde 1.116.13: el sitio que lo inserta deja de delegar
+  ese permiso. El `package-lock.json` del widget, que seguía en 1.1.0, queda en 1.4.1.
+
+## [1.116.13] - 2026-09-10
+
+### Cambiado: logo y pin del embebido
+
+- El logo de MapaLab baja a la esquina inferior derecha, 8 px sobre «Contribuciones» y con su mismo
+  margen. Pierde el fondo blanco y queda sobre un difuminado del mapa: en escritorio mide lo mismo de
+  ancho que «Contribuciones» cerrada y en móvil, la mitad que antes. Sigue abriendo el visor.
+- El marcador por defecto es el pin de IIEG, `/acervo/iieg/logos/ico_iieg_mapa.svg` con ruta
+  relativa, anclado en la punta: 128 px de ancho en escritorio y 64 en móvil, y se redibuja si el
+  marco cruza el breakpoint. `markerColor` solo pinta el círculo detrás de un `markerIcon` propio.
+- El pin se dibuja encima de las etiquetas y calles del mapa base (9000), la máscara de municipio
+  (9500) y el relieve (10000). Antes quedaba abajo, en 999; `showMarker` acepta `zIndex` y el
+  visor conserva el de siempre.
+
+### Eliminado
+
+- «Mi ubicación» en los controles del embebido (`MapControls hideLocate`). El visor y el catálogo lo
+  conservan.
+
+## [1.116.12] - 2026-09-10
+
+### Agregado
+
+- `evento_fun_volver` al presionar «Volver» en el dato curioso pineado. Requiere mariachi 1.125.1:
+  con una versión anterior, el lote de telemetría que lo lleve se rechaza con 422.
+- `evento_fun_fact` suma `animacion` y `con_destino`.
+
+### Corregido
+
+- Los datos curiosos del botón del borde del sider se atribuían al id `sider-global-facts` en vez de
+  al evento de origen: los de eventos lite no quedaban a nombre de ningún evento.
+
+## [1.116.11] - 2026-09-10
+
+### Agregado: simulador de pantallas en la etiqueta `dev`
+
+El popover de la etiqueta `dev` suma «Simular pantalla», un segmented con Real, 390, 768, 1280 y
+1920: móvil, tablet, laptop y escritorio, uno dentro de cada rango de breakpoints del visor. Al
+elegir uno, la app se abre en un marco de ese ancho sobre un fondo gris, con el mismo segmented y
+una X arriba; Escape también sale.
+
+Es un marco y no una vista achicada a propósito: dentro del iframe, `window.innerWidth` y
+`matchMedia` miden el marco, así que cambian igual las clases `md:`/`lg:` de Tailwind que
+`MOBILE_BREAKPOINT` y `TOOLS_COMPACT_BREAKPOINT`. Si la pantalla no cabe, se reduce con `scale` y la
+barra dice a qué porcentaje; el ancho que ven las media queries no cambia. Cambiar de ancho no
+recarga el marco.
+
+La elección vive en `devToolsStore`, en `sessionStorage`, y sobrevive a recargar. Dentro del marco
+no se ofrece el simulador, para que no se anide. «Ver como producción» y «Panel de analítica» se
+sincronizan ahora entre ventanas del mismo origen con el evento `storage`, así que el switch del
+visor de afuera llega al de adentro.
+
+El CSP de `index.html` no admitía iframes del mismo origen. `frame-src` recibe `'self'` solo cuando
+`VITE_APP_ENV=dev`, a través del mismo plugin que ya reemplaza `__ACERVO_ORIGIN__`; beta y
+producción se construyen con el CSP de siempre.
+
+Viene de tamal-rojo 1.170.0 y trae consigo `components/Segmented.jsx`, que en verde no existía.
+
+## [1.116.10] - 2026-09-10
+
+### Agregado: eventos lite
+
+Un evento de mariachi con `modo: lite` no trae capas: no entra al sider ni a `?evento=` y solo
+enciende el botón de dato curioso en el borde del sider. Con dos eventos vigentes, el botón toma
+ícono, animación, estilo y aviso del primero por `orden`. Requiere mariachi 1.125.0.
+
+Parte del código entró con 1.116.9 —`EventoBotonGlyph`, `EventoFunAguila`, `EventoFunPopover`,
+`eventoDiversion` y los íconos naranjas de modo y catálogo en el borde—; esta entrada documenta la
+función completa.
+
+### Agregado: animaciones y botón personalizables
+
+- Cada dato curioso usa su animación, la del evento o la pelota. Se suman las águilas: una parvada
+  de cuatro que cruza la pantalla con el símbolo del dato.
+- El ícono del botón es dinámico por defecto —el símbolo del próximo dato— o fijo.
+- Fondo de la paleta y borde por tramos, según el `botonEstilo` del evento.
+- Aviso inicial en el tooltip normal, una vez por visitante; acompaña al sider mientras se anima.
+
+### Agregado: las águilas te llevan a un lugar
+
+Un dato con `destino` mueve el mapa mientras vuelan las águilas y las posa en el punto, centrado en
+la zona visible y no bajo el sider. El dato queda pineado ahí y se mueve con el mapa; «Volver»
+regresa a la vista de antes del primer viaje y la ✕ lo cierra. Con movimiento reducido, el mapa
+salta sin animación.
+
+### Cambiado
+
+- Los botones del borde del sider van en un solo contenedor, con más separación vertical; pasar el
+  mouse por el del evento ya no abre el sider.
+- En mobile, el botón de dato curioso ocupa la esquina del estado del sider; antes desaparecía.
+
+## [1.116.9] - 2026-09-10
+
+### Cambiado: la pill del enlace compartido avisa cuando la vista ya no coincide
+
+Al abrir un `/mapa?s=ID`, la pill verde «Compartido:» pasa a gris «Regresar a:» en cuanto el mapa se
+aparta del enlace: capas, filtros, opacidades, mapa base, capa seleccionada y ahora tambien zoom y
+ubicacion. Un clic la restaura sin recargar la pagina —vuelve a pedir el share y lo aplica— y regresa
+a verde. Antes eran dos pills separadas y restaurar recargaba todo.
+
+La X para quitar el enlace es la misma `PillCloseButton` de las demas pills: aparece con hover en
+escritorio y queda fija en movil, donde la pill antes ni se mostraba.
+
+El movimiento que hace el propio enlace al aplicarse no cuenta como cambio: `useShareDeserializer`
+marca el momento en que aplica y `useShareDirtiness` da su gracia desde ahi, no desde el montaje.
+Con eso un share que tarda en llegar ya no nace marcado como modificado.
+
+### Cambiado
+
+- El texto que acompana al enlace en redes es «Mapa personalizado de Jalisco en MapaLab, del IIEG».
+
+### Corregido
+
+- El telefono del icono provisional de WhatsApp queda centrado en su globo, no en el boton.
+
+## [1.116.8] - 2026-09-10
+
+### Agregado: el panel de compartir del visor trae QR descargable y redes sociales
+
+El QR con la marca que ya tenia el catalogo llega al visor: 200 px, centrado como pieza principal del
+panel, y al pasar el mouse —o tocarlo, en pantallas tactiles— muestra la descarga en PNG a 800 px.
+Salio de `CatalogoShare` a un componente comun, `BrandedQr`, que ahora usan los dos.
+
+Debajo van cinco redes que aceptan un enlace para compartir: WhatsApp, Facebook, X, LinkedIn y
+Telegram, con los iconos oficiales del Acervo (`iieg/iconos/redes sociales/`). WhatsApp y Telegram
+apuntan ya a `ico_wa.svg` e `ico_tg.svg`, y mientras no existan caen a un icono provisional del mismo
+estilo; al subirlos con esos nombres aparecen sin tocar codigo. Instagram y YouTube se descartaron:
+ninguna de las dos acepta un enlace compartido desde la web.
+
+«Insertar en otra pagina» sigue siendo beta y solo aparece en dev y beta. Su codigo se muestra a su
+altura completa, y «¿No tienes llave? Solicitala» abre Colibri acotado al tipo `solicitud`, con el
+correo obligatorio para poder responder con la llave y el `share_id` como contexto. Si el widget no
+cargo, el boton lo dice en pantalla en vez de fallar callado. `useColibriOpen` acepta ahora las
+opciones del panel y devuelve si pudo abrirlo.
+
+### Cambiado: compartir se abre con el mouse y el clic copia al instante
+
+El panel ya no depende de mantener presionado 450 ms, un gesto que nadie descubria. Dejar el mouse
+400 ms sobre el boton lo abre y genera el enlace en ese momento; un paso rapido por la barra no abre
+nada. El clic copia el enlace y deja el panel abierto; un segundo clic lo cierra. En tactil el toque
+hace lo del clic.
+
+El enlace se reutiliza mientras el mapa no cambie, asi que abrir el panel varias veces sobre el mismo
+estado crea uno solo. El logo animado de carga solo aparece si generar tarda mas de 300 ms, en un
+hueco ya reservado para que nada brinque.
+
+El input muestra solo el id del enlace y el completo en tooltip; al enfocarlo cambia al enlace
+completo y lo selecciona. El panel se limita al alto de la ventana con scroll interno: con el codigo
+de insertar desplegado llega a unos 800 px y antes solo se acotaba en movil.
+
+En movil, tocar compartir mientras se ve un mapa compartido ya no desliga el enlace: ahora copia y
+abre el panel. Desligar sigue en el boton «Quitar enlace compartido» de la barra.
+
+## [1.116.7] - 2026-09-10
+
+### Agregado: selector de modo del sider con los cuatro estados a la vista
+
+Al pasar el mouse sobre el botón de modo del borde se despliega un segmento con Automático,
+Expandido, Colapsado y Mobile, en vez de tener que ciclar a ciegas. El seleccionado va en naranja
+institucional y el clic directo en el botón sigue ciclando como antes.
+
+En automático la flecha del botón sigue el estado vivo del sider: apunta a la derecha cerrado y a
+la izquierda cuando se abre por hover. Mientras el segmento está abierto el sider no se expande, y
+el mismo candado aplica al menú de la etiqueta `dev`.
+
+### Agregado: vista de producción desde la etiqueta `dev`
+
+En builds `dev`, al pasar el mouse sobre la etiqueta junto al logo aparecen dos switches:
+
+- **Ver como producción** — oculta en vivo todo lo que no sale a producción, sin reconstruir. La
+  etiqueta cambia a `prod` mientras está activa.
+- **Panel de analítica** — muestra el panel de depuración de eventos, que antes se pintaba solo.
+
+### Cambiado: el identificador de tipo de capa ya no sale en producción
+
+El badge de punto, línea, polígono o ráster de las capas activas queda solo fuera de producción.
+Cuando no se va a mostrar, tampoco se consulta el tipo de geometría al GeoServer.
+
+### Cambiado: los botones del borde van en fila con el sider mobile cerrado
+
+En modo mobile en escritorio, con el sider cerrado, los botones de modo, evento y catálogo van en
+fila sobre el borde inferior en lugar de en columna, para no salirse del sider.
+
+### Corregido: el panel de analítica no recibía eventos
+
+La emisión al panel dependía de `VITE_NODE_ENV`, una variable distinta de la `VITE_APP_ENV` que
+decide el entorno. En un build con `VITE_NODE_ENV=production` el panel quedaba vacío aunque el
+entorno fuera `dev`. Ahora ambas decisiones usan la misma.
+
 ## [1.116.6] - 2026-09-01
 
 ### Corregido: ante un 429 el recuperador de chunks amplificaba la saturacion

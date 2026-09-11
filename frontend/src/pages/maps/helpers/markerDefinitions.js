@@ -1,6 +1,7 @@
 import mapalabSquareIcon from '@logos/mapalab_square.svg';
 import { APP_VERSION, APP_LOC } from '@constants/app';
 import { collectCatalogUnits } from './layers/utils/layerHelpers';
+import { RELIEF_OVERLAY_Z_INDEX } from './basemaps';
 
 export const computeIiegStats = ({ allLayers = [] } = {}) => {
     const units = collectCatalogUnits({ children: allLayers });
@@ -66,20 +67,21 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) =
     }
 });
 
-export const EMBED_MARKER_COLOR = '#5c2472';
+export const EMBED_MARKER_ICON = '/acervo/iieg/logos/ico_iieg_mapa.svg';
 
-export const buildEmbedMarker = ({ center, icon = null, color = null, title = null, description = null } = {}) => {
-    const useDefaultIcon = !icon;
+const EMBED_MARKER_SCALE = { movil: 0.2, escritorio: 0.4 };
+
+export const buildEmbedMarker = ({ center, icon = null, color = null, title = null, description = null, isMobile = false } = {}) => {
     const marker = {
         id: 'embed_marker',
         center,
-        icon: icon || mapalabSquareIcon,
-        scale: useDefaultIcon ? 0.12 : 1,
-        anchor: useDefaultIcon ? [0.5, 0.5] : [0.5, 1]
+        icon: icon || EMBED_MARKER_ICON,
+        scale: icon ? 1 : EMBED_MARKER_SCALE[isMobile ? 'movil' : 'escritorio'],
+        anchor: [0.5, 1],
+        zIndex: RELIEF_OVERLAY_Z_INDEX + 1
     };
-    const bgColor = color || (useDefaultIcon ? EMBED_MARKER_COLOR : null);
-    if (bgColor) {
-        marker.bgColor = bgColor;
+    if (icon && color) {
+        marker.bgColor = color;
         marker.bgRadius = 22;
     }
     if (title) {

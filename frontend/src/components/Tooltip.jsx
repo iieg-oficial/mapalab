@@ -16,6 +16,11 @@ const variantStyles = {
         arrowColor: '#FFF1E3',
         arrowBorderColor: '#FF8300'
     },
+    soft: {
+        className: 'bg-white text-graphite border border-[#EAEFFA] shadow-[0_3px_24px_#00000029]',
+        arrowColor: '#ffffff',
+        arrowBorderColor: '#EAEFFA'
+    },
     error: {
         className: 'bg-red-600 text-white border-red-600',
         arrowColor: '#dc2626'
@@ -28,6 +33,7 @@ const variantStyles = {
 
 const variantIcons = {
     normal: null,
+    soft: null,
     info: 'info',
     warning: 'info_warning',
     error: 'alert',
@@ -138,12 +144,28 @@ const Tooltip = ({
         window.addEventListener('resize', handleUpdate);
         window.addEventListener('scroll', handleUpdate, true);
 
+        let frame = null;
+        if (forceVisible) {
+            let lastKey = '';
+            const follow = () => {
+                const rect = triggerRef.current?.getBoundingClientRect();
+                const key = rect ? `${rect.left},${rect.top}` : '';
+                if (key !== lastKey) {
+                    lastKey = key;
+                    updatePosition();
+                }
+                frame = requestAnimationFrame(follow);
+            };
+            frame = requestAnimationFrame(follow);
+        }
+
         return () => {
             window.removeEventListener('resize', handleUpdate);
             window.removeEventListener('scroll', handleUpdate, true);
+            if (frame) cancelAnimationFrame(frame);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shown, placement]);
+    }, [shown, placement, forceVisible]);
 
     const handleMouseEnter = () => {
         if (disabled || !content) return;

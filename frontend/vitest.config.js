@@ -15,6 +15,7 @@ export default defineConfig({
         globals: true,
         environment: 'happy-dom',
         setupFiles: './src/test/setup.js',
+        execArgv: ['--no-experimental-webstorage'],
         css: true,
         coverage: {
             provider: 'v8',

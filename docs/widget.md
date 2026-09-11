@@ -38,13 +38,13 @@ El **panel administrativo** `/administrador/mapalab/api-keys` permite armar mapa
 | `layers` | string | `""` | Lista separada por comas de capas en formato `workspace:layer` o por id interno. Ej: `economia:cultivos,salud:hospitales`. Sólo se usa si **no** se pasó `share`. |
 | `center` | string | "" | Coordenadas iniciales `lat,lng`. Si vacío, usa el centro default de Jalisco. |
 | `marker` | string | `""` | Coordenadas `lat,lng` de un marcador fijo. Si no se dio `center`, el mapa además se centra ahí. Funciona junto con `share` y con `layers`. |
-| `marker-icon` | string | — | URL de la imagen del marcador (`https:` o `data:image/…`). Si se omite, se usa el pin circular de MapaLab. |
-| `marker-color` | string | `#5c2472` | Color hex del círculo detrás del icono. Con `marker-icon` propio y sin este atributo, el icono se dibuja sin círculo. |
+| `marker-icon` | string | — | URL de la imagen del marcador (`https:` o `data:image/…`). Si se omite, se usa el pin de IIEG. |
+| `marker-color` | string | — | Color hex del círculo detrás de un `marker-icon` propio. Sin este atributo el icono va sin círculo; sobre el pin de IIEG no aplica. |
 | `marker-title` | string | — | Encabezado de la tarjeta que abre el marcador al hacer clic. Sin este atributo el pin no tiene tarjeta. Máximo 120 caracteres. |
 | `marker-description` | string | — | Cuerpo de esa tarjeta. Se ignora si no hay `marker-title`. Máximo 400 caracteres. |
 | `zoom` | string | "" | Zoom inicial (1–20). |
 | `basemap` | string | `osm` | Identificador del basemap. |
-| `controls` | string | `zoom` | **Sin efecto todavía.** Viaja a la URL del embed pero nada lo lee: el visor embebido muestra siempre su barra de acercar / mi ubicación / alejar. Se conserva para no romper a quien ya lo pasa. |
+| `controls` | string | `zoom` | **Sin efecto todavía.** Viaja a la URL del embed pero nada lo lee: el visor embebido muestra siempre su barra de acercar / alejar. Se conserva para no romper a quien ya lo pasa. |
 | `height` | string | — | Altura del componente. Acepta `500`, `100%`, `60vh`, etc. |
 | `width` | string | `100%` | Ancho del componente. |
 | `base-url` | string | `https://iieg.gob.mx` | Override del base URL — útil sólo para entornos locales. En producción **no lo uses**. |
@@ -109,8 +109,9 @@ El orden es `lat,lng`, igual que en `center` y que en Google Maps. Sin `zoom` el
 vista default de Jalisco, que para un punto individual queda demasiado lejos: para una dirección
 usa entre 15 y 17.
 
-El icono default es el cuadro de MapaLab sobre un círculo `#5c2472`, anclado al centro del punto.
-Un `marker-icon` propio se ancla a su base (`[0.5, 1]`), que es la convención de los pines en gota,
+El icono default es el pin de IIEG (`/acervo/iieg/logos/ico_iieg_mapa.svg`), anclado en la punta:
+128 px de ancho en pantallas anchas y 64 en angostas. Se dibuja encima de las etiquetas del mapa
+base, la máscara de municipio y el relieve. Un `marker-icon` propio se ancla a su base (`[0.5, 1]`), que es la convención de los pines en gota,
 y se dibuja a escala 1: la imagen debe venir ya al tamaño deseado.
 
 Solo se aceptan iconos por `https:`, `http:` o `data:image/…`, y colores en hexadecimal; cualquier
@@ -171,12 +172,14 @@ Para ver las capas disponibles, consulta `/mapalab/api/layers/tree` o usa el Pla
 
 Sobre el mapa van tres cosas, todas heredadas del visor completo y ninguna configurable:
 
-- **Logo de MapaLab**, arriba a la izquierda. Es un enlace: abre el visor completo en pestaña
+- **Logo de MapaLab**, abajo a la derecha, sobre la atribución y con su mismo margen. No lleva
+  fondo: el mapa se difumina detrás, y en pantallas anchas mide lo mismo que la pastilla
+  "Contribuciones ©" cerrada. Es un enlace: abre el visor completo en pestaña
   nueva con el mismo estado —`share` si lo hay, o `layers` + `center`/`marker` + `zoom`—, así que
   el visitante siempre tiene a dónde ir por el mapa entero.
-- **Controles**, abajo a la izquierda: acercar, mi ubicación y alejar; al alejar aparece además
-  "centrar en Jalisco". Son los mismos `MapControls` del visor. "Mi ubicación" necesita que el
-  iframe traiga `allow="geolocation"`, que el widget ya pone.
+- **Controles**, abajo a la izquierda: acercar y alejar; al alejar aparece además "centrar en
+  Jalisco". Son los `MapControls` del visor sin "Mi ubicación", que se retiró del embed en
+  1.116.13. Desde el widget 1.4.1 el iframe ya no pide permiso de geolocalización.
 - **Atribución**, abajo a la derecha. En pantallas anchas es una pastilla "Contribuciones ©" que se
   despliega al pasar el cursor; en angostas, un botón `©` que abre la lista. Cubre OpenStreetMap,
   CARTO, OpenLayers, GeoServer, PostGIS y la licencia del IIEG.

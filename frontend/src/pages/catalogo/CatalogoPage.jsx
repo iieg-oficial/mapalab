@@ -24,10 +24,10 @@ import {
 } from '@services/analyticsService';
 import { CATALOGO_RETURN_KEY } from './useGoToCatalogo';
 import { buildCatalogoPath, filterCapas, resolveCatalogoRoute } from './helpers/catalogoRoutes';
-
-const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
+import { useIsNonProd } from '@hooks/useDevTools';
 
 const CatalogoPage = () => {
+    const isNonProd = useIsNonProd();
     const { seg1, seg2 } = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -167,7 +167,7 @@ const CatalogoPage = () => {
                 >
                     <CatalogoMapView
                         capa={selectedCapa}
-                        onEditInfobox={IS_NON_PROD ? (feature) => handleEditInfobox(selectedCapa, feature) : null}
+                        onEditInfobox={isNonProd ? (feature) => handleEditInfobox(selectedCapa, feature) : null}
                     />
                     {selectedCapa && (
                         <CatalogoLegends
@@ -195,7 +195,7 @@ const CatalogoPage = () => {
                 onOpen={() => setSearchOpen(true)}
                 onClose={() => setSearchOpen(false)}
                 onSelect={handleSelect}
-                onEditInfobox={IS_NON_PROD ? (capa) => handleEditInfobox(capa) : null}
+                onEditInfobox={isNonProd ? (capa) => handleEditInfobox(capa) : null}
             />
             {capaEnEdicion && (
                 <CatalogoInfoBoxEditor

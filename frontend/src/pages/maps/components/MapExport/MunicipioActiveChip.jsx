@@ -3,15 +3,16 @@ import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { useMapsContext } from '@hooks/useMaps';
 import { SCOPE_TYPES } from '@pages/maps/hooks/useMunicipioMode';
-
-const IS_NON_PROD = ['dev', 'beta'].includes(import.meta.env.VITE_APP_ENV);
+import { useIsNonProd } from '@hooks/useDevTools';
 
 const MunicipioActiveChip = () => {
     const { municipioMode } = useMapsContext();
     const { active, scope, scopeLabel, exit, centerOnSelection } = municipioMode || {};
     const [closeHovered, setCloseHovered] = useState(false);
 
-    if (!IS_NON_PROD || !active || !scope?.type) return null;
+    const isNonProd = useIsNonProd();
+
+    if (!isNonProd || !active || !scope?.type) return null;
 
     const displayLabel = scope.type === SCOPE_TYPES.ZMG ? 'ZMG' : scopeLabel;
 

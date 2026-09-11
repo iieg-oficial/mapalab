@@ -67,7 +67,7 @@ export const useMapMarker = (mapRef, paneMapRefs, compareModeRef, { setSelectedF
         });
     }, [getActiveMap, setSelectedFeatureInfo, clickPosition]);
 
-    const showMarker = useCallback(async ({ id = '_default', center, zoom, icon, scale = 1, duration, anchor = [0.5, 1], minZoom, maxZoom, bgColor, bgRadius = 18, infoBox, openOnShow = false } = {}) => {
+    const showMarker = useCallback(async ({ id = '_default', center, zoom, icon, scale = 1, duration, anchor = [0.5, 1], minZoom, maxZoom, bgColor, bgRadius = 18, infoBox, openOnShow = false, zIndex = MARKER_Z_INDEX } = {}) => {
         const map = getActiveMap();
         if (!map || !center) return;
 
@@ -99,7 +99,7 @@ export const useMapMarker = (mapRef, paneMapRefs, compareModeRef, { setSelectedF
 
         const layerOptions = {
             source: new VectorSource({ features: [feature] }),
-            zIndex: MARKER_Z_INDEX
+            zIndex
         };
         if (minZoom != null) layerOptions.minZoom = minZoom;
         if (maxZoom != null) layerOptions.maxZoom = maxZoom;

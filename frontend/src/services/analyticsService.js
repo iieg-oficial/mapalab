@@ -1,11 +1,11 @@
 import { debugStore } from './analyticsDebugStore';
+import { devToolsStore } from './devToolsStore';
 import { enqueue as telemetryEnqueue } from './telemetryService';
 
-const isDev = import.meta.env.VITE_NODE_ENV === 'development';
 
 const trackEvent = (eventName, params = {}) => {
     window.dataLayer?.push({ event: eventName, ...params });
-    if (isDev) debugStore.emit({ event: eventName, params, time: new Date() });
+    if (devToolsStore.isToggleAvailable()) debugStore.emit({ event: eventName, params, time: new Date() });
     telemetryEnqueue(eventName, params);
 };
 
@@ -71,8 +71,11 @@ export const trackEventoClose = (eventoId) =>
 export const trackEventoCenter = (eventoId) =>
     withMapInteraction('evento_center', { evento_id: eventoId });
 
-export const trackEventoFunFact = (eventoId) =>
-    withMapInteraction('evento_fun_fact', { evento_id: eventoId });
+export const trackEventoFunFact = (eventoId, detalle) =>
+    withMapInteraction('evento_fun_fact', { evento_id: eventoId, ...(detalle || {}) });
+
+export const trackEventoFunVolver = (eventoId) =>
+    withMapInteraction('evento_fun_volver', { evento_id: eventoId });
 
 export const trackEventoShare = (eventoId, status) =>
     withMapInteraction('evento_share', { evento_id: eventoId, status });
