@@ -43,7 +43,7 @@ __pycache__/
 backend/mapalab_*_cache.json
 scripts/layers_export.json
 
-node_modules/
+node_modules
 dist/
 dist-ssr/
 coverage/

@@ -5,6 +5,89 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.19] - 2026-09-11
+
+### Cambiado: la tarjeta del embed espera al clic
+
+`marker-card` abría la tarjeta al cargar salvo que el sitio mandara `open: false`. Ahora es al
+revés: sin `open: true` la tarjeta aparece hasta que se toca el pin. En un teléfono la tarjeta
+(567 px) tapaba el pin en un mapa de 336.
+
+### Cambiado: pin grande y logo corto en pantallas chicas y táctiles
+
+El pin de IIEG mide 128 px en cualquier pantalla; el de 64 solo salía en iframes angostos. El logo
+pasa a la versión corta de la identidad («M» + «LAB») en cuanto Contribuciones se contrae (iframe
+de menos de 768 px) o en táctil, centrado con el botón ©. El largo queda para pantallas anchas que
+no son táctiles: se usa `not-pointer-coarse` y no `pointer-fine`, porque un navegador sin puntero
+no reporta ni uno ni otro.
+
+### Agregado: chip naranja y cifras en una o dos columnas
+
+Los chips de `marker-card` aceptan `style: 'accent'`, naranja institucional con texto oscuro:
+7.18:1 de contraste, contra 2.47:1 con texto blanco, que no pasa AA. `tilesColumns` acomoda las
+cifras en 1 columna (por omisión) o en 2.
+
+### Cambiado: separador de miles con coma
+
+`formatNumber` y la barra de escala del export usan coma para los miles y punto para el decimal,
+como pide la identidad. Antes era espacio duro.
+
+### Corregido
+
+- Al soltar la tarjeta del embed regresaba al borde izquierdo: el panel medía el ancho del mapa y
+  no el de la tarjeta. Además el × y los enlaces no recibían el clic.
+- Una cifra de texto («2013») se pintaba «2 013»: los mosaicos de texto van tal cual.
+- El enlace al visor de la tarjeta (`icon: 'mapas'`) salía sin icono.
+
+## [1.116.18] - 2026-09-11
+
+### Corregido: el editor ciudadano conserva el formato de año
+
+El borrador de la tarjetita del catálogo se armaba solo con `field` y `label`: una propuesta sobre
+una capa con `formato: 'anio'` lo perdía al aprobarse. Ahora los renglones de lista lo conservan.
+Requiere mariachi ≥ 1.126.0, que se despliega antes: su schema rechaza llaves desconocidas.
+
+## [1.116.17] - 2026-09-11
+
+### Agregado: formato de año por campo en la tarjetita
+
+Un campo de la tarjetita acepta `formato: 'anio'` y entonces `2024-01-01` se pinta como `2024`.
+Vale en etiquetas, renglones de lista, íconos con texto y párrafos. Es **explícito a propósito**:
+no hay detección automática, así que ninguna capa cambia por sorpresa.
+
+Antes el año solo aparecía en renglones cuya etiqueta decía exactamente «Año de la información»,
+y en las etiquetas de un grupo nunca: un badge no tiene texto de etiqueta que revisar. «Año del
+cálculo», por ejemplo, salía con la fecha completa.
+
+La migración `0035a` de dataengine pone el formato en **77 capas**: los 43 renglones sobre `fecha`
+cuya etiqueta empieza con «Año» y las 34 etiquetas sobre `fecha` en capas anuales. Las mensuales se
+quedan con la fecha completa: ahí el año solo sería incorrecto.
+
+El año sale del texto ISO y no de `new Date(...).getFullYear()`: un `2024-01-01` se interpreta como
+medianoche UTC y en la zona de México cae en 2023. La regla vieja por etiqueta tiene ese problema y
+se queda una versión más como respaldo. Un renglón con formato tampoco pasa por el formato de
+números, que habría convertido `2026` en `2 026`.
+
+## [1.116.16] - 2026-09-11
+
+### Agregado: la tarjeta del marcador embebido la define el sitio que embebe (widget 1.5.0)
+
+- `<iieg-mapalab>` gana `marker-card`: un JSON con chips, filas, contacto y cifras que el visor
+  pinta con los bloques del InfoBox (`labelGroups`, `list`, `iconText`, `cards`). El sitio es
+  dueño del contenido y lo cambia sin desplegar MapaLab; el visor no consulta ningún dato propio
+  para armarla. Saneado por campo: topes por bloque, textos recortados, iconos de una lista,
+  `href` solo `https:`, `http:`, `tel:` y `mailto:`, y `"@visor"` como único valor especial (el
+  enlace al visor completo, que ya armaba la marca del embed). Más de 4 KB o JSON ilegible se
+  ignora y el pin conserva la tarjeta de título y descripción. `order` fija el orden de los
+  bloques y `open` abre la tarjeta al cargar.
+- Las filas del InfoBox admiten `**negritas**`; ningún otro markdown.
+
+### Cambiado: el InfoBox embebido se arrastra desde la tarjeta y pierde «centrar selección»
+
+- En `/embed` la tarjeta se toma de cualquier parte para moverla (umbral de 4 px, así que los
+  enlaces siguen respondiendo al clic) y desaparece el botón de centrar, que en un mapa de una sola
+  sede no aporta. El visor completo no cambia.
+
 ## [1.116.15] - 2026-09-11
 
 ### Eliminado: el modal de «entorno de pruebas»

@@ -31,10 +31,10 @@ const scaleBar = (mapAreaWidth, extent) => {
     const barPixels = Math.round(distanceMeters / metersPerPixel);
 
     const unit = distanceMeters >= 1000 ? 'km' : 'm';
-    const NBSP = '\u00A0';
+    const THOUSANDS_SEPARATOR = ',';
     const fmtGrouped = (n) => {
         const s = String(n);
-        return s.length > 3 ? s.replace(/\B(?=(\d{3})+(?!\d))/g, NBSP) : s;
+        return s.length > 3 ? s.replace(/\B(?=(\d{3})+(?!\d))/g, THOUSANDS_SEPARATOR) : s;
     };
     const fmt = (m) => m >= 1000 ? fmtGrouped(m / 1000) : fmtGrouped(m);
     const halfVal = fmt(distanceMeters / 2);
