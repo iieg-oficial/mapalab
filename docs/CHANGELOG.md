@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.18] - 2026-09-11
+
+### Corregido: el editor ciudadano conserva el formato de año
+
+El borrador de la tarjetita del catálogo se armaba solo con `field` y `label`: una propuesta sobre
+una capa con `formato: 'anio'` lo perdía al aprobarse. Ahora los renglones de lista lo conservan.
+Requiere mariachi ≥ 1.126.0, que se despliega antes: su schema rechaza llaves desconocidas.
+
 ## [1.116.17] - 2026-09-11
 
 ### Agregado: formato de año por campo en la tarjetita

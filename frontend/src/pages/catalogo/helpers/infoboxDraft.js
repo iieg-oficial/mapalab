@@ -9,6 +9,8 @@ const humanize = (field) => {
 
 const emptyDraft = () => ({ headerField: null, list: [], cards: [] });
 
+const formatoDe = (row) => (row?.formato === 'anio' ? { formato: 'anio' } : {});
+
 export const draftFromConfig = (config) => {
     if (!config || typeof config !== 'object') return emptyDraft();
     return {
@@ -16,7 +18,7 @@ export const draftFromConfig = (config) => {
         list: (config.list || [])
             .filter((row) => row?.field)
             .slice(0, MAX_ROWS)
-            .map((row) => ({ field: row.field, label: row.label || humanize(row.field) })),
+            .map((row) => ({ field: row.field, label: row.label || humanize(row.field), ...formatoDe(row) })),
         cards: (config.cards || [])
             .filter((card) => card?.field)
             .slice(0, MAX_ROWS)
@@ -62,7 +64,7 @@ export const draftToConfig = (draft) => {
     const config = {};
     if (draft.headerField) config.headerField = draft.headerField;
     if (draft.list.length) {
-        config.list = draft.list.map((row) => ({ field: row.field, label: row.label.trim() }));
+        config.list = draft.list.map((row) => ({ field: row.field, label: row.label.trim(), ...formatoDe(row) }));
     }
     if (draft.cards.length) {
         config.cards = draft.cards.map((card) => ({ field: card.field, label: card.label.trim() }));
