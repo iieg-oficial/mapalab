@@ -8,7 +8,7 @@ const FONDOS = {
 
 const TRAMOS = { ninguno: 0, solido: 1, mitades: 2, tercios: 3 };
 
-export const ANIMACION_POR_DEFECTO = 'pelota';
+const ANIMACION_POR_DEFECTO = 'pelota';
 
 export const colorDeFondo = (id) => FONDOS[id] || FONDOS.blanco;
 
