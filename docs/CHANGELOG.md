@@ -2212,6 +2212,26 @@ que esas URLs nunca coincidieron. Lo que sí se conserva es que los tiles del pl
 entre sí, que era el grueso del beneficio.
 
 La dirección del servidor se configura en el panel; no viaja en el código.
+## [1.116.16] - 2026-09-11
+
+### Agregado: la tarjeta del marcador embebido la define el sitio que embebe (widget 1.5.0)
+
+- `<iieg-mapalab>` gana `marker-card`: un JSON con chips, filas, contacto y cifras que el visor
+  pinta con los bloques del InfoBox (`labelGroups`, `list`, `iconText`, `cards`). El sitio es
+  dueño del contenido y lo cambia sin desplegar MapaLab; el visor no consulta ningún dato propio
+  para armarla. Saneado por campo: topes por bloque, textos recortados, iconos de una lista,
+  `href` solo `https:`, `http:`, `tel:` y `mailto:`, y `"@visor"` como único valor especial (el
+  enlace al visor completo, que ya armaba la marca del embed). Más de 4 KB o JSON ilegible se
+  ignora y el pin conserva la tarjeta de título y descripción. `order` fija el orden de los
+  bloques y `open` abre la tarjeta al cargar.
+- Las filas del InfoBox admiten `**negritas**`; ningún otro markdown.
+
+### Cambiado: el InfoBox embebido se arrastra desde la tarjeta y pierde «centrar selección»
+
+- En `/embed` la tarjeta se toma de cualquier parte para moverla (umbral de 4 px, así que los
+  enlaces siguen respondiendo al clic) y desaparece el botón de centrar, que en un mapa de una sola
+  sede no aporta. El visor completo no cambia.
+
 ## [1.116.15] - 2026-09-11
 
 ### Eliminado: el modal de «entorno de pruebas»
