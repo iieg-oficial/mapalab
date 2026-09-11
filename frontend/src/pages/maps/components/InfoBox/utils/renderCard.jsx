@@ -212,7 +212,8 @@ const renderCards = ({ finalConfig, properties, suffix, variant, body }) => {
             return {
                 label: card.label,
                 value,
-                suffix: card.suffix || ''
+                suffix: card.suffix || '',
+                raw: !!card.raw
             };
         })
         .filter(card => card.value !== null && card.value !== undefined && card.value !== '');

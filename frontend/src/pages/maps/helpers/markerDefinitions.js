@@ -69,12 +69,14 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) =
 
 export const EMBED_MARKER_ICON = '/acervo/iieg/logos/ico_iieg_mapa.svg';
 
-const EMBED_MARKER_SCALE = { movil: 0.2, escritorio: 0.4 };
+const EMBED_MARKER_SCALE = 0.4;
 const CHIP_STYLES = {
     solid: { color: '#FFFFFF', bg: '#5C2472' },
+    accent: { color: '#111827', bg: '#FF8300' },
     soft: { color: '#465055', bg: '#EFF3FC' }
 };
 const CARD_BLOCK_TYPES = { chips: 'labelGroups', rows: 'list', links: 'iconText', tiles: 'cards' };
+const CARD_LINK_ICONS = { mapas: 'basemaps' };
 const VISOR_HREF = '@visor';
 
 const buildCardInfoBox = ({ title, card, visorHref }) => {
@@ -97,7 +99,7 @@ const buildCardInfoBox = ({ title, card, visorHref }) => {
     if (card.links.length) {
         littleCard.iconText = card.links.map((link, i) => {
             properties[`link_${i}`] = link.text;
-            const item = { icon: link.icon, field: `link_${i}` };
+            const item = { icon: CARD_LINK_ICONS[link.icon] || link.icon, field: `link_${i}` };
             const href = link.href === VISOR_HREF ? visorHref : link.href;
             if (href) item.href = href;
             return item;
@@ -106,19 +108,19 @@ const buildCardInfoBox = ({ title, card, visorHref }) => {
     if (card.tiles.length) {
         littleCard.cards = card.tiles.map((tile, i) => {
             properties[`tile_${i}`] = tile.value;
-            return { label: tile.label, field: `tile_${i}` };
+            return { label: tile.label, field: `tile_${i}`, raw: typeof tile.value === 'string' };
         });
-        littleCard.cardsColumns = 2;
+        littleCard.cardsColumns = card.tilesColumns;
     }
     return { layerName: title, properties, littleCard };
 };
 
-export const buildEmbedMarker = ({ center, icon = null, color = null, title = null, description = null, card = null, visorHref = null, isMobile = false } = {}) => {
+export const buildEmbedMarker = ({ center, icon = null, color = null, title = null, description = null, card = null, visorHref = null } = {}) => {
     const marker = {
         id: 'embed_marker',
         center,
         icon: icon || EMBED_MARKER_ICON,
-        scale: icon ? 1 : EMBED_MARKER_SCALE[isMobile ? 'movil' : 'escritorio'],
+        scale: icon ? 1 : EMBED_MARKER_SCALE,
         anchor: [0.5, 1],
         zIndex: RELIEF_OVERLAY_Z_INDEX + 1
     };

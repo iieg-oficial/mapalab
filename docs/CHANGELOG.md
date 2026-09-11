@@ -5,6 +5,40 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.19] - 2026-09-11
+
+### Cambiado: la tarjeta del embed espera al clic
+
+`marker-card` abría la tarjeta al cargar salvo que el sitio mandara `open: false`. Ahora es al
+revés: sin `open: true` la tarjeta aparece hasta que se toca el pin. En un teléfono la tarjeta
+(567 px) tapaba el pin en un mapa de 336.
+
+### Cambiado: pin grande y logo corto en pantallas chicas y táctiles
+
+El pin de IIEG mide 128 px en cualquier pantalla; el de 64 solo salía en iframes angostos. El logo
+pasa a la versión corta de la identidad («M» + «LAB») en cuanto Contribuciones se contrae (iframe
+de menos de 768 px) o en táctil, centrado con el botón ©. El largo queda para pantallas anchas que
+no son táctiles: se usa `not-pointer-coarse` y no `pointer-fine`, porque un navegador sin puntero
+no reporta ni uno ni otro.
+
+### Agregado: chip naranja y cifras en una o dos columnas
+
+Los chips de `marker-card` aceptan `style: 'accent'`, naranja institucional con texto oscuro:
+7.18:1 de contraste, contra 2.47:1 con texto blanco, que no pasa AA. `tilesColumns` acomoda las
+cifras en 1 columna (por omisión) o en 2.
+
+### Cambiado: separador de miles con coma
+
+`formatNumber` y la barra de escala del export usan coma para los miles y punto para el decimal,
+como pide la identidad. Antes era espacio duro.
+
+### Corregido
+
+- Al soltar la tarjeta del embed regresaba al borde izquierdo: el panel medía el ancho del mapa y
+  no el de la tarjeta. Además el × y los enlaces no recibían el clic.
+- Una cifra de texto («2013») se pintaba «2 013»: los mosaicos de texto van tal cual.
+- El enlace al visor de la tarjeta (`icon: 'mapas'`) salía sin icono.
+
 ## [1.116.18] - 2026-09-11
 
 ### Corregido: el editor ciudadano conserva el formato de año
