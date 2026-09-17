@@ -5,6 +5,17 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.20] - 2026-09-17
+
+### Corregido: el purgado del cache del gateway nunca purgó nada
+
+`purge_gateway_cache` borraba `/var/cache/nginx/mapalab_assets/`, y desde gateway-hub 1.46.0 ese
+cache vive en `/var/cache/nginx-data/`. Encima corre en el nodo de mapalab, y en producción el
+gateway está en otra VM: el `|| true` se tragaba el fallo y el deploy imprimía «cache purgado» sin
+haber purgado. Ahora borra las dos rutas, solo pinta verde si el reload respondió, y si el
+contenedor del gateway no vive en ese nodo lo dice en amarillo en vez de mentir. Se descubrió al
+desplegar a producción el 2026-09-14.
+
 ## [1.116.19] - 2026-09-11
 
 ### Cambiado: la tarjeta del embed espera al clic

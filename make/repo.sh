@@ -1,9 +1,16 @@
 BACKEND_HOST="${BACKEND_HOST:-http://localhost:8000}"
 
 purge_gateway_cache() {
-    docker exec gateway-hub-nginx-1 sh -c \
-        'rm -rf /var/cache/nginx/mapalab_assets/* 2>/dev/null; nginx -s reload' 2>/dev/null || true
-    row 'Gateway' 'cache purgado' "$C_GREEN"
+    if ! docker inspect gateway-hub-nginx-1 >/dev/null 2>&1; then
+        row 'Gateway' 'en otro nodo' "$C_YELLOW" 'purga su cache de mapalab_assets alla'
+        return 0
+    fi
+    if docker exec gateway-hub-nginx-1 sh -c \
+        'rm -rf /var/cache/nginx-data/mapalab_assets/* /var/cache/nginx/mapalab_assets/* 2>/dev/null; nginx -s reload' >/dev/null 2>&1; then
+        row 'Gateway' 'cache purgado' "$C_GREEN"
+    else
+        row 'Gateway' 'sin purgar' "$C_YELLOW" 'revisa el cache del gateway a mano'
+    fi
 }
 
 refresh_layer_tree() {
