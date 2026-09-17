@@ -111,7 +111,7 @@ vista default de Jalisco, que para un punto individual queda demasiado lejos: pa
 usa entre 15 y 17.
 
 El icono default es el pin de IIEG (`/acervo/iieg/logos/ico_iieg_mapa.svg`), anclado en la punta:
-128 px de ancho en pantallas anchas y 64 en angostas. Se dibuja encima de las etiquetas del mapa
+128 px de ancho en cualquier pantalla. Se dibuja encima de las etiquetas del mapa
 base, la máscara de municipio y el relieve. Un `marker-icon` propio se ancla a su base (`[0.5, 1]`), que es la convención de los pines en gota,
 y se dibuja a escala 1: la imagen debe venir ya al tamaño deseado.
 
@@ -159,7 +159,8 @@ atributo.
             { "text": "Organismo público descentralizado" }
         ],
         "rows": [
-            { "label": "Qué hace", "text": "**El Instituto de Información Estadística y Geográfica del Estado de Jalisco** es el organismo responsable de gestionar, procesar y difundir datos e información relevante de la entidad." }
+            { "label": "Organismo", "text": "Instituto de Información Estadística y Geográfica del Estado de Jalisco" },
+            { "label": "Qué hace", "text": "Es el organismo responsable de gestionar, procesar y difundir datos e información relevante de la entidad." }
         ],
         "links": [
             { "icon": "ubicacion", "text": "Calz. de los Pirules #71, Cd. Granja, Zapopan" },
@@ -167,28 +168,30 @@ atributo.
             { "icon": "mapas", "text": "Explorar Jalisco en MapaLab", "href": "@visor" }
         ],
         "tiles": [
-            { "value": 2013, "label": "año de creación" },
+            { "value": "2013", "label": "año de creación" },
             { "value": 53, "label": "personas en el instituto" },
             { "value": 4917690, "label": "registros geográficos en MapaLab" },
             { "value": 16994827, "label": "registros ingestados automáticamente" }
         ],
-        "order": ["chips", "rows", "links", "tiles"],
-        "open": true
+        "order": ["chips", "rows", "links", "tiles"]
     }'>
 </iieg-mapalab>
 ```
 
 | Bloque | Campos | Tope |
 |---|---|---|
-| `chips` | `text` (60), `style`: `solid` (morado) o `soft` (gris, por omisión) | 6 |
+| `chips` | `text` (60), `style`: `soft` (gris, por omisión), `solid` (morado) o `accent` (naranja institucional con texto oscuro, que es la combinación que pasa WCAG AA) | 6 |
 | `rows` | `label` (80, opcional), `text` (400). Admite `**negritas**` y nada más de markdown | 6 |
 | `links` | `icon`: `ubicacion`, `celular`, `web` o `mapas`; `text` (120); `href` opcional | 8 |
 | `tiles` | `value`: número o texto (40); `label` (80) | 6 |
 
 - `order` decide qué bloque va primero; por omisión `chips`, `rows`, `links`, `tiles`. `open`
-  abre la tarjeta al cargar el mapa (por omisión `true`); con `false` espera al clic en el pin.
-- Los números se pintan completos con separador de miles (`16994827` → 16 994 827). Un texto se
-  muestra tal cual.
+  en `true` abre la tarjeta al cargar el mapa; por omisión la tarjeta espera al clic en el pin.
+- `tilesColumns` acomoda las cifras en `1` columna (por omisión) o en `2`; cualquier otro valor
+  cae a 1.
+- Los números se pintan completos con coma de miles y punto decimal, como pide la identidad
+  visual (`16994827` → 16,994,827). Un texto se muestra tal cual: por eso un año va entre comillas
+  (`"2013"`), o saldría como 2,013.
 - Sin `href`, `ubicacion` enlaza a Google Maps con el texto, `celular` a `tel:` y `web` al sitio.
   Con `href` se aceptan `https:`, `http:`, `tel:` y `mailto:`; cualquier otro esquema se descarta.
   `"@visor"` es el único valor especial: el widget lo sustituye por el enlace al visor completo

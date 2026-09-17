@@ -27,7 +27,13 @@ const emptyDraft = () => ({ headerField: null, list: [], cards: [] });
 
 const rowFromConfig = (row, idx) => {
     if (row?.field) {
-        return { key: row.field, field: row.field, display: row.field, label: row.label || humanize(row.field) };
+        return {
+            key: row.field,
+            field: row.field,
+            display: row.field,
+            label: row.label || humanize(row.field),
+            ...(row.formato === 'anio' ? { formato: 'anio' } : {}),
+        };
     }
     const display = composeDisplay(row?.compose);
     if (!display) return null;
@@ -92,7 +98,7 @@ export const reorderZone = (draft, zone, from, to) => {
 
 const rowToConfig = (row) => {
     const label = row.label.trim();
-    if (row.field) return { field: row.field, label };
+    if (row.field) return { field: row.field, label, ...(row.formato === 'anio' ? { formato: 'anio' } : {}) };
     const config = { compose: row.compose };
     if (typeof row.sep === 'string') config.sep = row.sep;
     if (row.op) config.op = row.op;

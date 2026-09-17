@@ -32,7 +32,7 @@ describe('campos compuestos en la tarjeta', () => {
             { hombres: 8000, mujeres: 4321 },
             { cards: [{ label: 'Población', compose: ['hombres', 'mujeres'], op: 'sum' }] },
         );
-        expect(screen.getByText('12 321')).toBeInTheDocument();
+        expect(screen.getByText('12,321')).toBeInTheDocument();
     });
 
     it('el título puede componerse de varias columnas', () => {

@@ -1,4 +1,4 @@
-const NBSP = '\u00A0';
+const THOUSANDS_SEPARATOR = ',';
 
 export const formatNumber = (value) => {
     if (value === null || value === undefined || value === '') return value;
@@ -12,7 +12,7 @@ export const formatNumber = (value) => {
 
     if (digits.length <= 3 || !/^\d+$/.test(digits)) return str;
 
-    const formatted = digits.replace(/\B(?=(\d{3})+(?!\d))/g, NBSP);
+    const formatted = digits.replace(/\B(?=(\d{3})+(?!\d))/g, THOUSANDS_SEPARATOR);
     const result = isNegative ? `-${formatted}` : formatted;
 
     return parts.length > 1 ? `${result}.${parts[1]}` : result;

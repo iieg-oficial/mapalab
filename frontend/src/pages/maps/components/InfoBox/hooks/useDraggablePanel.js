@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 const DRAG_ACTIVATION_DISTANCE = 4;
+const INTERACTIVE_SELECTOR = 'a, button, input, select, textarea';
 
 export const useDraggablePanel = ({ panelRef, baseTransform = '' }) => {
     const [dragOffset, setDragOffset] = useState({ dx: 0, dy: 0 });
@@ -30,6 +31,8 @@ export const useDraggablePanel = ({ panelRef, baseTransform = '' }) => {
 
     const onPointerDown = useCallback((event) => {
         if (event.button !== undefined && event.button !== 0) return;
+        const interactive = event.target.closest?.(INTERACTIVE_SELECTOR);
+        if (interactive && interactive !== event.currentTarget && event.currentTarget.contains(interactive)) return;
         event.preventDefault();
         event.stopPropagation();
         startRef.current = {
@@ -41,11 +44,6 @@ export const useDraggablePanel = ({ panelRef, baseTransform = '' }) => {
             pointerId: event.pointerId,
             target: event.currentTarget,
         };
-        try {
-            event.currentTarget.setPointerCapture?.(event.pointerId);
-        } catch {
-            // ignore
-        }
     }, []);
 
     useEffect(() => {
@@ -57,6 +55,11 @@ export const useDraggablePanel = ({ panelRef, baseTransform = '' }) => {
             if (!start.activated) {
                 if (Math.hypot(deltaX, deltaY) < DRAG_ACTIVATION_DISTANCE) return;
                 start.activated = true;
+                try {
+                    start.target?.setPointerCapture?.(start.pointerId);
+                } catch {
+                    // ignore
+                }
                 setIsDragging(true);
             }
             applyTransformImmediate(start.baseDx + deltaX, start.baseDy + deltaY);

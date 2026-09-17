@@ -58,6 +58,23 @@ describe('draftFromConfig', () => {
         });
         expect(draft.list).toHaveLength(MAX_ROWS);
     });
+
+    it('conserva el formato de año hasta la propuesta y descarta otros', () => {
+        const draft = draftFromConfig({
+            list: [
+                { field: 'fecha', label: 'Año', formato: 'anio' },
+                { field: 'b', label: 'B', formato: 'mes', raw: true },
+            ],
+        });
+        expect(draft.list).toEqual([
+            { key: 'fecha', field: 'fecha', display: 'fecha', label: 'Año', formato: 'anio' },
+            { key: 'b', field: 'b', display: 'b', label: 'B' },
+        ]);
+        expect(draftToConfig(draft).list).toEqual([
+            { field: 'fecha', label: 'Año', formato: 'anio' },
+            { field: 'b', label: 'B' },
+        ]);
+    });
 });
 
 describe('edición del borrador', () => {

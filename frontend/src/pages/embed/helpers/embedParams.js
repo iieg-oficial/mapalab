@@ -7,6 +7,7 @@ const MARKER_DESCRIPTION_MAX = 400;
 
 const CARD_BLOCKS = ['chips', 'rows', 'links', 'tiles'];
 const CARD_ICONS = ['ubicacion', 'celular', 'web', 'mapas'];
+const CARD_CHIP_STYLES = ['soft', 'solid', 'accent'];
 export const VISOR_HREF = '@visor';
 const CARD_MAX_BYTES = 4096;
 const CARD_LIMITS = { chips: 6, rows: 6, links: 8, tiles: 6 };
@@ -88,7 +89,7 @@ export const sanitizeMarkerCard = (raw) => {
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
 
     const chips = cardItems(parsed.chips, CARD_LIMITS.chips)
-        .map((chip) => ({ text: sanitizeCardText(chip.text, CARD_TEXT_MAX.chip), style: chip.style === 'solid' ? 'solid' : 'soft' }))
+        .map((chip) => ({ text: sanitizeCardText(chip.text, CARD_TEXT_MAX.chip), style: CARD_CHIP_STYLES.includes(chip.style) ? chip.style : 'soft' }))
         .filter((chip) => chip.text);
     const rows = cardItems(parsed.rows, CARD_LIMITS.rows)
         .map((row) => ({ label: sanitizeCardText(row.label, CARD_TEXT_MAX.label), text: sanitizeCardText(row.text, CARD_TEXT_MAX.row) }))
@@ -104,7 +105,15 @@ export const sanitizeMarkerCard = (raw) => {
         : CARD_BLOCKS;
 
     if (!chips.length && !rows.length && !links.length && !tiles.length) return null;
-    return { chips, rows, links, tiles, order: order.length ? order : CARD_BLOCKS, open: parsed.open !== false };
+    return {
+        chips,
+        rows,
+        links,
+        tiles,
+        order: order.length ? order : CARD_BLOCKS,
+        open: parsed.open === true,
+        tilesColumns: parsed.tilesColumns === 2 ? 2 : 1,
+    };
 };
 
 

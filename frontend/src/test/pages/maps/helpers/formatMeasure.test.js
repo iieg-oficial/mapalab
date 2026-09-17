@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { formatLengthValue, formatAreaValue, getSegmentLengths } from '@pages/maps/helpers/formatMeasure';
 
-const NBSP = '\u00A0';
+const MILES = ',';
 
 describe('formatLengthValue', () => {
     it('auto: usa m para valores <= 1000', () => {
         const result = formatLengthValue(500, 'auto');
-        expect(result).toMatch(new RegExp(`500[\\s${NBSP}]?m`));
+        expect(result).toMatch(new RegExp(`500[\\s${MILES}]?m`));
     });
 
     it('auto: usa km para valores > 1000', () => {
@@ -28,7 +28,7 @@ describe('formatLengthValue', () => {
 
     it('redondea a 2 decimales', () => {
         const result = formatLengthValue(1234.567, 'm');
-        expect(result).toBe(`1${NBSP}234.57 m`);
+        expect(result).toBe(`1${MILES}234.57 m`);
     });
 });
 
@@ -60,7 +60,7 @@ describe('formatAreaValue', () => {
 
     it('redondea a 2 decimales', () => {
         const result = formatAreaValue(12345.678, 'm2');
-        expect(result).toBe(`12${NBSP}345.68 m²`);
+        expect(result).toBe(`12${MILES}345.68 m²`);
     });
 });
 

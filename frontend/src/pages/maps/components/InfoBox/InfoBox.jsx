@@ -328,7 +328,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
         <>
             <div
                 ref={panelRef}
-                className={`relative bg-transparent z-5 ${isSingleFeature ? '' : 'flex items-stretch gap-2'}`}
+                className={`relative w-fit bg-transparent z-5 ${isSingleFeature ? '' : 'flex items-stretch gap-2'}`}
                 style={positionStyle}
             >
                 <div ref={cardRef} className={`relative w-[239px]${embed ? (isDragging ? ' cursor-grabbing' : ' cursor-grab') : ''}`} {...cardHandleProps}>
