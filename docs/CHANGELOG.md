@@ -5,6 +5,24 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.171.1] - 2026-09-21
+
+### Corregido: un raster con TIME ya no depende de que alguien capture sus fechas
+
+El selector de fechas de una capa raster leia solo `raster_periodicity` del catalogo, una columna
+que el editor de mariachi no expone: las dos capas que la tienen la recibieron por seed. Una capa
+nueva publicada como ImageMosaic —`nddi`— salia sin selector aunque GeoServer anunciara sus doce
+meses en la dimension `TIME`.
+
+Al cargar el arbol, las capas con `timeEnabled` y sin periodicidad en el catalogo la toman de la
+GetCapabilities del workspace, con `getLayerTimePeriodicity`, que ya usaba la pagina de catalogo y
+cachea por workspace. Lo capturado en el catalogo sigue ganando. Corre despues del primer pintado,
+asi que no retrasa el arranque, y si GeoServer no responde el arbol queda como estaba. Las capas
+vectoriales quedan fuera aunque tengan `timeEnabled`.
+
+El detalle de capa recalcula la definicion cuando el arbol se completa; antes la congelaba al abrir
+y, si las fechas llegaban despues, el bloque de periodicidad no aparecia hasta reabrirlo.
+
 ## [1.171.0] - 2026-09-11
 
 ### Agregado: la tarjeta del marcador embebido la define el sitio que embebe (widget 1.5.0)

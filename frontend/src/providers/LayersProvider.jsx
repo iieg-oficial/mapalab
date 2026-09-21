@@ -8,6 +8,7 @@ import { setLayersForDownloadService } from '@services/downloadService';
 import { rebuildSearchConfig } from '@services/searchConfig';
 import { reportClientError } from '@services/clientErrorService';
 import { hydrateLayerTree } from '@pages/maps/helpers/wmsConfig';
+import { fillRasterPeriodicity } from '@pages/maps/helpers/layers/utils/rasterPeriodicityFallback';
 
 
 export const LayersProvider = ({ children }) => {
@@ -27,14 +28,23 @@ export const LayersProvider = ({ children }) => {
     useEffect(() => {
         let cancelled = false;
 
+        let hydrated = null;
+
         Promise.all([fetchLayerTree(), fetchInitialOrder()])
             .then(([{ tree }, order]) => {
-                if (cancelled) return;
-                const hydrated = hydrateLayerTree(tree);
+                if (cancelled) return null;
+                hydrated = hydrateLayerTree(tree);
                 setLayersForMetadataService(hydrated);
                 setLayersForDownloadService(hydrated);
                 rebuildSearchConfig(hydrated);
                 setState({ layers: hydrated, initialOrder: order, loading: false, error: null });
+                return fillRasterPeriodicity(hydrated).catch(() => hydrated);
+            })
+            .then((filled) => {
+                if (cancelled || !filled || filled === hydrated) return;
+                setLayersForMetadataService(filled);
+                setLayersForDownloadService(filled);
+                setState((s) => ({ ...s, layers: filled }));
             })
             .catch((err) => {
                 if (cancelled) return;

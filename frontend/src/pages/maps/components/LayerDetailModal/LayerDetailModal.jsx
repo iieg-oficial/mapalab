@@ -37,8 +37,7 @@ const LayerDetailModal = () => {
     const layerDef = useMemo(() => {
         if (!selectedLayer?.id) return null;
         return findLayerDef(selectedLayer.id, allLayers);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedLayer?.id]);
+    }, [selectedLayer?.id, allLayers]);
     const themeNode = useMemo(() => {
         if (!selectedLayer?.id) return null;
         return findLayerTheme(selectedLayer.id, allLayers);
