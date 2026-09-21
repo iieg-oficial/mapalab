@@ -11,19 +11,16 @@ const VISTAS = [
         value: 'viewport',
         label: 'Área',
         tooltip: 'Descarga el recuadro que ajustas sobre la vista actual',
-        nota: 'Recorta con el recuadro guía sobre la vista actual.',
     },
     {
         value: 'full-state',
         label: 'Jalisco',
         tooltip: 'Descarga todo el estado, sin importar el zoom',
-        nota: 'Todo el estado, automático.',
     },
     {
         value: 'seleccion',
-        label: 'Seleccionados',
+        label: 'Selección',
         tooltip: `Descarga solo el interior del último polígono que dibujaste con ${HERRAMIENTA}`,
-        nota: 'Solo el interior de tu último polígono; lo de afuera queda en blanco.',
     },
 ];
 
@@ -37,15 +34,7 @@ export const opcionesFormato = (isSwipe) => {
     ];
 };
 
-export const opcionesVista = ({ haySeleccion, isSwipe }) => VISTAS.map(({ value, label, tooltip }) => {
-    const v = { value, label, tooltip };
-    if (v.value !== 'seleccion') return v;
-    if (isSwipe) return { ...v, disabled: true, tooltip: 'No disponible en el comparador' };
-    if (!haySeleccion) return { ...v, disabled: true, tooltip: `Dibuja un polígono con ${HERRAMIENTA} para usar esta opción` };
-    return v;
-});
-
-export const notaVista = (viewType) => VISTAS.find(v => v.value === viewType)?.nota || '';
+export const opcionesVista = ({ haySeleccion, isSwipe }) => VISTAS.filter(v => v.value !== 'seleccion' || (haySeleccion && !isSwipe));
 
 export const textoBotonDescarga = (viewType, format) => (viewType === 'viewport' ? 'Ir a seleccionar área' : `Descargar ${format.toUpperCase()}`);
 

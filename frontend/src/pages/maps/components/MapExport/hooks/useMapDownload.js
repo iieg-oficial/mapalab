@@ -122,7 +122,8 @@ export const useMapDownload = () => {
                 mapHeight,
                 captureScale,
                 swipeOptions,
-                mascara: esSeleccion ? crearMascara(seleccion) : null
+                mascara: esSeleccion ? crearMascara(seleccion) : null,
+                onExtent: (capturado) => { targetExtent = capturado; }
             });
 
             if (!mapCanvas) throw new Error('Failed to capture map');

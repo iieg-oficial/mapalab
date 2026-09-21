@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.172.2] - 2026-09-21
+
+### Corregido: Seleccionados salía recortado y las coordenadas del borde, descentradas
+
+La vista del mapa redondea la resolución al zoom más cercano (`constrainResolution`), así que
+asignarle la resolución calculada podía acercar la imagen y cortar el polígono arriba y abajo.
+Seleccionados ahora encuadra con `view.fit(..., { nearest: false })`, que elige el zoom que deja
+entrar el polígono completo, y la composición usa el extent realmente capturado para las
+coordenadas, la escala y el minimapa.
+
+Las etiquetas de coordenadas se centraban en franjas de 10 y 40 px de alto y 8 px de ancho, cuando
+el margen alrededor del marco es de 27 px arriba y abajo y 23 px a los lados: las de arriba y la
+izquierda quedaban pegadas al borde de la imagen y las de abajo y la derecha, al marco. Cada franja
+mide ahora lo mismo que su margen, en todas las descargas.
+
+### Cambiado: la opción se llama Selección, se oculta sin polígono y sin nota bajo la vista
+
+Seleccionados pasa a **Selección** para que quepa en el Segmented, y se quita la línea de ayuda que
+iba debajo de la vista: cada opción se explica con su tooltip. Sin polígono, o en el comparador, la
+opción ya no aparece deshabilitada: se oculta.
+
 ## [1.172.1] - 2026-09-21
 
 ### Corregido: el respaldo de fechas de 1.171.1 nunca se activaba

@@ -120,7 +120,7 @@ export const useMapCapture = () => {
         return result;
     };
 
-    const getMapSnapshot = async ({ extent, viewType = 'viewport', mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT, captureScale = 1, swipeOptions = null, mascara = null }) => {
+    const getMapSnapshot = async ({ extent, viewType = 'viewport', mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT, captureScale = 1, swipeOptions = null, mascara = null, onExtent = null }) => {
         const target = isSwipe ? getSwipeComposite() : targetRef.current;
         const anchorRef = getActiveMapRef();
         if (!target || !anchorRef?.current) return null;
@@ -153,13 +153,16 @@ export const useMapCapture = () => {
 
             if (viewType === 'full-state') {
                 adjustViewToFullState();
+            } else if (extent && mascara) {
+                const view = anchorRef.current.getView();
+                view.fit(transformExtent(extent, 'EPSG:4326', 'EPSG:3857'), { size: [mapWidth, mapHeight], nearest: false });
+                onExtent?.(transformExtent(view.calculateExtent([mapWidth, mapHeight]), 'EPSG:3857', 'EPSG:4326'));
             } else if (extent) {
                 const extent3857 = transformExtent(extent, 'EPSG:4326', 'EPSG:3857');
                 const view = anchorRef.current.getView();
                 const extentW = extent3857[2] - extent3857[0];
                 const extentH = extent3857[3] - extent3857[1];
-                const ajustar = mascara ? Math.max : Math.min;
-                const resolution = ajustar(extentW / mapWidth, extentH / mapHeight);
+                const resolution = Math.min(extentW / mapWidth, extentH / mapHeight);
                 const center = [
                     (extent3857[0] + extent3857[2]) / 2,
                     (extent3857[1] + extent3857[3]) / 2

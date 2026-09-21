@@ -1,28 +1,25 @@
 import { describe, it, expect } from 'vitest';
-import { notaVista, opcionesFormato, opcionesVista, textoBotonDescarga } from '@pages/maps/components/MapExport/utils/opcionesDescarga';
+import { opcionesFormato, opcionesVista, textoBotonDescarga } from '@pages/maps/components/MapExport/utils/opcionesDescarga';
 
 const seleccionados = (opciones) => opciones.find(o => o.value === 'seleccion');
 
 describe('opcionesVista', () => {
-    it('Seleccionados se deshabilita sin polígono y explica cómo usarla', () => {
-        const opcion = seleccionados(opcionesVista({ haySeleccion: false, isSwipe: false }));
-        expect(opcion.disabled).toBe(true);
+    it('sin polígono la opción Selección no aparece', () => {
+        expect(seleccionados(opcionesVista({ haySeleccion: false, isSwipe: false }))).toBeUndefined();
+    });
+
+    it('con polígono aparece como Selección y explica qué descarga', () => {
+        const opcion = seleccionados(opcionesVista({ haySeleccion: true, isSwipe: false }));
+        expect(opcion.label).toBe('Selección');
         expect(opcion.tooltip).toMatch(/Medir área y seleccionar/);
     });
 
-    it('con polígono se puede elegir', () => {
-        expect(seleccionados(opcionesVista({ haySeleccion: true, isSwipe: false })).disabled).toBeUndefined();
+    it('en el comparador no aparece aunque haya polígono', () => {
+        expect(seleccionados(opcionesVista({ haySeleccion: true, isSwipe: true }))).toBeUndefined();
     });
 
-    it('en el comparador no está disponible aunque haya polígono', () => {
-        expect(seleccionados(opcionesVista({ haySeleccion: true, isSwipe: true })).disabled).toBe(true);
-    });
-
-    it('todas las vistas llevan tooltip y nota', () => {
-        opcionesVista({ haySeleccion: true, isSwipe: false }).forEach((o) => {
-            expect(o.tooltip).toBeTruthy();
-            expect(notaVista(o.value)).toBeTruthy();
-        });
+    it('todas las vistas llevan tooltip', () => {
+        opcionesVista({ haySeleccion: true, isSwipe: false }).forEach((o) => expect(o.tooltip).toBeTruthy());
     });
 });
 

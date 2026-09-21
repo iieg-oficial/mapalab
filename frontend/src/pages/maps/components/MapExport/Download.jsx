@@ -26,7 +26,7 @@ import PanelHoja from '@components/PanelHoja';
 import Segmented from '@components/Segmented';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { ultimaSeleccion } from './utils/seleccionDescarga';
-import { VISTA_ANALITICA, notaVista, opcionesFormato, opcionesVista, textoBotonDescarga, tooltipBotonDescarga } from './utils/opcionesDescarga';
+import { VISTA_ANALITICA, opcionesFormato, opcionesVista, textoBotonDescarga, tooltipBotonDescarga } from './utils/opcionesDescarga';
 
 const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = false }) => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -208,7 +208,6 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                         value={viewType}
                         onChange={setViewType}
                     />
-                    <p className="-mt-1 text-[12px]/[16px] font-garet text-graphite">{notaVista(viewType)}</p>
 
                     {!isSwipe && (
                         <QualitySelector
