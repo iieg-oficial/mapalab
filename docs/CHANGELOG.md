@@ -5,6 +5,15 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.172.1] - 2026-09-21
+
+### Corregido: el respaldo de fechas de 1.171.1 nunca se activaba
+
+Buscaba `timeEnabled` en el nodo del arbol, pero el backend lo entrega dentro de `wmsConfig`. La
+condicion salia falsa para toda capa y `nddi` seguia sin periodicidad. Las pruebas pasaban porque su
+dato ponia `timeEnabled` donde el arbol real no lo pone; ahora usan la forma real, y contra la
+GetCapabilities de GeoServer el respaldo devuelve los doce meses de 2025 de `nddi`.
+
 ## [1.172.0] - 2026-09-21
 
 ### Agregado: descargar solo lo seleccionado

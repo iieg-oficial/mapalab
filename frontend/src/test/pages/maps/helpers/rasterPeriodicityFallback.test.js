@@ -4,10 +4,10 @@ import {
     needsRasterPeriodicity,
 } from '@pages/maps/helpers/layers/utils/rasterPeriodicityFallback';
 
-const WMS = { baseUrl: 'https://x/sextante/raster/wms', layers: 'raster:nddi' };
+const WMS = { baseUrl: 'https://x/sextante/raster/wms', layerName: 'raster:nddi', timeEnabled: true };
 const PERIODICIDAD = { 2025: { 1: '2025-01-01', 2: '2025-02-01' } };
 
-const raster = (id, extra = {}) => ({ id, timeEnabled: true, wmsConfig: WMS, geometryType: 'raster', ...extra });
+const raster = (id, extra = {}) => ({ id, wmsConfig: WMS, geometryType: 'raster', ...extra });
 
 describe('needsRasterPeriodicity', () => {
     it('pide fechas a un raster con TIME y sin periodicidad en el catalogo', () => {
@@ -23,7 +23,11 @@ describe('needsRasterPeriodicity', () => {
     });
 
     it('no toca capas sin TIME', () => {
-        expect(needsRasterPeriodicity(raster('dem', { timeEnabled: false }))).toBe(false);
+        expect(needsRasterPeriodicity(raster('dem', { wmsConfig: { ...WMS, timeEnabled: false } }))).toBe(false);
+    });
+
+    it('lee timeEnabled dentro de wmsConfig, que es donde lo pone el arbol', () => {
+        expect(needsRasterPeriodicity({ id: 'nddi', timeEnabled: true, wmsConfig: { ...WMS, timeEnabled: false } })).toBe(false);
     });
 
     it('no toca vectoriales aunque tengan TIME', () => {
@@ -41,7 +45,7 @@ describe('fillRasterPeriodicity', () => {
     });
 
     it('devuelve el mismo arbol si no hay nada que completar', async () => {
-        const tree = [{ id: 'base', children: [raster('dem', { timeEnabled: false })] }];
+        const tree = [{ id: 'base', children: [raster('dem', { wmsConfig: { ...WMS, timeEnabled: false } })] }];
         const fetch = vi.fn();
         expect(await fillRasterPeriodicity(tree, fetch)).toBe(tree);
         expect(fetch).not.toHaveBeenCalled();

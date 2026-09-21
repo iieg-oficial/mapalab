@@ -3,9 +3,8 @@ import { getLayerTimePeriodicity } from '@services/wmsCapabilitiesService';
 const VECTOR_TYPES = ['point', 'line', 'polygon'];
 
 export const needsRasterPeriodicity = (node) => Boolean(
-    node?.timeEnabled
+    node?.wmsConfig?.timeEnabled
     && !node.rasterPeriodicity
-    && node.wmsConfig
     && !VECTOR_TYPES.includes(node.geometryType)
 );
 
