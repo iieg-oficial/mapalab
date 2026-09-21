@@ -12,6 +12,7 @@ import { transformExtent } from 'ol/proj';
 import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from '../utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
 import { useEventoContext } from '@hooks/useEvento';
+import { crearMascara, extentDeSeleccion } from '../utils/seleccionDescarga';
 
 export const useMapDownload = () => {
     const { targetRef } = useMapsContext();
@@ -89,7 +90,7 @@ export const useMapDownload = () => {
         return transformExtent([minX, minY, maxX, maxY], 'EPSG:3857', 'EPSG:4326');
     };
 
-    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa', forcedExtent = null, quality = QUALITY_PRESETS[1], swipeOptions = null) => {
+    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa', forcedExtent = null, quality = QUALITY_PRESETS[1], swipeOptions = null, seleccion = null) => {
         const isSwipe = !!compareMode?.active;
         const captureRoot = isSwipe ? document.querySelector('[data-swipe-composite="true"]') : targetRef.current;
         if (!captureRoot || !canDownload || isDownloading) return;
@@ -102,21 +103,26 @@ export const useMapDownload = () => {
         const { mapWidth, mapHeight, captureScale, composeScale } = quality;
 
         try {
-            const { url: minimapImageUrl, bounds: minimapBounds } = generateMinimapImage(viewType);
+            const esSeleccion = viewType === 'seleccion' && !!seleccion;
+            const vista = esSeleccion ? 'viewport' : viewType;
+            const { url: minimapImageUrl, bounds: minimapBounds } = generateMinimapImage(vista);
             let targetExtent = null;
-            if (viewType === 'full-state') {
+            if (vista === 'full-state') {
                 targetExtent = getViewportExtent();
+            } else if (esSeleccion) {
+                targetExtent = extentDeSeleccion(seleccion);
             } else {
                 targetExtent = forcedExtent || getGuideExtent();
             }
 
             const mapCanvas = await getMapSnapshot({
                 extent: targetExtent,
-                viewType,
+                viewType: vista,
                 mapWidth,
                 mapHeight,
                 captureScale,
-                swipeOptions
+                swipeOptions,
+                mascara: esSeleccion ? crearMascara(seleccion) : null
             });
 
             if (!mapCanvas) throw new Error('Failed to capture map');
@@ -136,8 +142,8 @@ export const useMapDownload = () => {
                 title,
                 selectedLegend: legendForPanel,
                 getLegendUrl,
-                viewType,
-                viewportExtent: viewType === 'viewport' ? targetExtent : null,
+                viewType: vista,
+                viewportExtent: vista === 'viewport' ? targetExtent : null,
                 minimapImageUrl,
                 minimapBounds,
                 source,

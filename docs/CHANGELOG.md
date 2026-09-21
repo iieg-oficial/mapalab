@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.172.0] - 2026-09-21
+
+### Agregado: descargar solo lo seleccionado
+
+Descargar mapa suma la vista **Seleccionados**. Toma el último polígono visible dibujado con «Medir
+área y seleccionar» y descarga solo su interior; lo de afuera queda en blanco. Lo encuadra completo
+aunque su forma no tenga la proporción de la imagen, y durante la captura pone una capa blanca con el
+polígono como hueco, encima de todo, así la escala del mapa no queda tapada. Sin polígono, o en el
+comparador, la opción aparece deshabilitada con un tooltip que explica por qué.
+
+### Cambiado: Descargar, Compartir y Vista por municipio, homologados
+
+Los tres paneles comparten contenedor y encabezado (`PanelHoja`) y pestañas (`Segmented` con
+`variant="panel"`, que además acepta opciones deshabilitadas). En Descargar, formato y vista pasan
+de botones a pestañas —primero formato, luego vista y después la calidad—, se quitan los títulos de
+sección y la leyenda va en tarjeta blanca. Todos los controles de los tres paneles llevan tooltip.
+
 ## [1.171.1] - 2026-09-21
 
 ### Corregido: un raster con TIME ya no depende de que alguien capture sus fechas

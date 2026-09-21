@@ -4,6 +4,11 @@ const { MAP_WIDTH, MAP_HEIGHT } = EXPORT_DIMENSIONS;
 import { transformExtent } from 'ol/proj';
 import { useMapView } from './useMapView';
 import { composeSwipeCanvas } from '../utils/swipeComposition';
+import { MASCARA_Z_INDEX } from '../utils/seleccionDescarga';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import Feature from 'ol/Feature';
+import { Fill, Style } from 'ol/style';
 
 export const useMapCapture = () => {
     const { targetRef, mapRef, compareMode, paneMapRefs } = useMapsContext();
@@ -115,7 +120,7 @@ export const useMapCapture = () => {
         return result;
     };
 
-    const getMapSnapshot = async ({ extent, viewType = 'viewport', mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT, captureScale = 1, swipeOptions = null }) => {
+    const getMapSnapshot = async ({ extent, viewType = 'viewport', mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT, captureScale = 1, swipeOptions = null, mascara = null }) => {
         const target = isSwipe ? getSwipeComposite() : targetRef.current;
         const anchorRef = getActiveMapRef();
         if (!target || !anchorRef?.current) return null;
@@ -125,6 +130,7 @@ export const useMapCapture = () => {
 
         let originalState = null;
         let layerResolutions = [];
+        let capaMascara = null;
         const targetsToResize = isSwipe
             ? [target, getPaneTarget(0), getPaneTarget(1)].filter(Boolean)
             : [target];
@@ -152,13 +158,23 @@ export const useMapCapture = () => {
                 const view = anchorRef.current.getView();
                 const extentW = extent3857[2] - extent3857[0];
                 const extentH = extent3857[3] - extent3857[1];
-                const resolution = Math.min(extentW / mapWidth, extentH / mapHeight);
+                const ajustar = mascara ? Math.max : Math.min;
+                const resolution = ajustar(extentW / mapWidth, extentH / mapHeight);
                 const center = [
                     (extent3857[0] + extent3857[2]) / 2,
                     (extent3857[1] + extent3857[3]) / 2
                 ];
                 view.setCenter(center);
                 view.setResolution(resolution);
+            }
+
+            if (mascara) {
+                capaMascara = new VectorLayer({
+                    source: new VectorSource({ features: [new Feature(mascara)] }),
+                    style: new Style({ fill: new Fill({ color: '#ffffff' }) }),
+                    zIndex: MASCARA_Z_INDEX,
+                });
+                anchorRef.current.addLayer(capaMascara);
             }
 
             await waitForTilesToLoad();
@@ -171,6 +187,7 @@ export const useMapCapture = () => {
             console.error('Error in getMapSnapshot:', error);
             throw error;
         } finally {
+            if (capaMascara) anchorRef.current.removeLayer(capaMascara);
             layerResolutions.forEach(({ layer, minResolution }) => layer.setMinResolution(minResolution));
 
             if (originalState) {

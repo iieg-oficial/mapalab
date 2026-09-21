@@ -2,13 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import ScrollContainer from '@components/ScrollContainer';
+import PanelHoja from '@components/PanelHoja';
+import Segmented from '@components/Segmented';
 import { useDebounce } from '@hooks/useDebounce';
 import { SCOPE_TYPES, ZMG_LABEL } from '@pages/maps/hooks/useMunicipioMode';
 
 const TABS = [
-    { id: SCOPE_TYPES.MUNICIPIO, label: 'Municipios', titulo: 'Vista por municipio' },
-    { id: SCOPE_TYPES.REGION, label: 'Regiones', titulo: 'Vista por región' },
-    { id: SCOPE_TYPES.ZMG, label: 'ZMG', titulo: 'Vista por zona metropolitana' },
+    { id: SCOPE_TYPES.MUNICIPIO, label: 'Municipios', titulo: 'Vista por municipio', tooltip: 'Enfoca el mapa en uno o varios municipios' },
+    { id: SCOPE_TYPES.REGION, label: 'Regiones', titulo: 'Vista por región', tooltip: 'Enfoca el mapa en una región del estado' },
+    { id: SCOPE_TYPES.ZMG, label: 'ZMG', titulo: 'Vista por zona metropolitana', tooltip: 'Enfoca el mapa en la Zona Metropolitana de Guadalajara' },
 ];
 
 const normalize = (str) => String(str || '')
@@ -121,23 +123,13 @@ const MunicipioFilterPanel = ({ municipioMode, onClose }) => {
     const buscable = tab !== SCOPE_TYPES.ZMG;
 
     return (
-        <div className="flex flex-1 flex-col min-h-0 pb-3 px-4 w-full bg-[#F9FBFF] rounded-[14px]">
-            <div className="shrink-0 bg-[#F9FBFF] pt-3 pb-3 rounded-t-[14px]">
-                <div className="flex items-center justify-between mb-3 gap-2">
-                    <h3 className="block text-[18px]/[24px] font-garet font-bold text-purple tracking-normal">
-                        {TABS.find(t => t.id === tab)?.titulo}
-                    </h3>
-                    {onClose && (
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="size-7 shrink-0 flex items-center justify-center rounded-full text-purple hover:bg-purple hover:text-white transition cursor-pointer"
-                            aria-label="Cerrar el selector"
-                        >
-                            <Icon name="close" className="size-4" />
-                        </button>
-                    )}
-                </div>
+        <PanelHoja
+            titulo={TABS.find(t => t.id === tab)?.titulo}
+            onCerrar={onClose}
+            etiquetaCerrar="Cerrar el selector"
+            className="flex-1 min-h-0"
+        >
+            <div className="shrink-0 pt-3 pb-3">
 
                 {buscable && (
                     <div className="relative mb-3">
@@ -165,23 +157,13 @@ const MunicipioFilterPanel = ({ municipioMode, onClose }) => {
                     </div>
                 )}
 
-                <div role="tablist" aria-label="Tipo de selección" className="flex gap-1 p-1 bg-[#EAEFFA] rounded-lg">
-                    {TABS.map(t => (
-                        <button
-                            key={t.id}
-                            type="button"
-                            role="tab"
-                            aria-selected={tab === t.id}
-                            onClick={() => setTab(t.id)}
-                            className={[
-                                'flex-1 py-1.5 rounded-md text-[12px]/[16px] font-garet font-bold transition cursor-pointer',
-                                tab === t.id ? 'bg-white text-purple shadow-sm' : 'text-[#6E7477] hover:text-purple',
-                            ].join(' ')}
-                        >
-                            {t.label}
-                        </button>
-                    ))}
-                </div>
+                <Segmented
+                    variant="panel"
+                    ariaLabel="Tipo de selección"
+                    options={TABS.map(t => ({ value: t.id, label: t.label, tooltip: t.tooltip }))}
+                    value={tab}
+                    onChange={setTab}
+                />
             </div>
 
             {error && (
@@ -224,7 +206,7 @@ const MunicipioFilterPanel = ({ municipioMode, onClose }) => {
                     </div>
                 </ScrollContainer>
             </div>
-        </div>
+        </PanelHoja>
     );
 };
 

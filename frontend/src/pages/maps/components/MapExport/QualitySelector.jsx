@@ -12,6 +12,13 @@ const QUALITY_WARNINGS = [
     { variant: 'warning', content: 'Algunas capas podrían no aparecer correctamente y puede afectar el rendimiento del navegador.' },
 ];
 
+const QUALITY_TIPS = [
+    'Rápida y ligera, para un vistazo',
+    'Buena nitidez; la recomendada',
+    'Más detalle en las capas; tarda más en generarse',
+    'El máximo detalle; puede tardar y cargar el navegador',
+];
+
 const QualitySelector = ({ value, onChange, isPanelOpen }) => {
     const [tooltipReady, setTooltipReady] = useState(false);
 
@@ -29,9 +36,6 @@ const QualitySelector = ({ value, onChange, isPanelOpen }) => {
 
     return (
         <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                Calidad
-            </div>
             <div className="relative">
                 <Bar
                     min={0}
@@ -63,14 +67,16 @@ const QualitySelector = ({ value, onChange, isPanelOpen }) => {
             </div>
             <div className="flex justify-between mt-1">
                 {QUALITY_PRESETS.map((p, i) => (
-                    <button
-                        type="button"
-                        key={i}
-                        onClick={() => onChange(i)}
-                        className={`text-xs cursor-pointer transition-colors ${i === value ? 'text-[#FF8300] font-bold' : 'text-gray-400'}`}
-                    >
-                        {p.label}
-                    </button>
+                    <Tooltip key={i} content={QUALITY_TIPS[i]} placement="bottom" delay={400}>
+                        <button
+                            type="button"
+                            onClick={() => onChange(i)}
+                            aria-label={`Calidad ${p.label.toLowerCase()}`}
+                            className={`text-xs cursor-pointer transition-colors ${i === value ? 'text-[#FF8300] font-bold' : 'text-gray-400'}`}
+                        >
+                            {p.label}
+                        </button>
+                    </Tooltip>
                 ))}
             </div>
         </div>
