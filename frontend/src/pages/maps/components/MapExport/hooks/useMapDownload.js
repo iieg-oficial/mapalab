@@ -13,6 +13,8 @@ import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from '../utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
 import { useEventoContext } from '@hooks/useEvento';
 import { crearMascara, extentDeSeleccion } from '../utils/seleccionDescarga';
+import { filasSeleccion, medidasDeSeleccion, MAX_CAPAS_SELECCION } from '../utils/estadisticasSeleccion';
+import { contarEnPoligono } from '@services/seleccionStatsService';
 
 export const useMapDownload = () => {
     const { targetRef } = useMapsContext();
@@ -22,7 +24,7 @@ export const useMapDownload = () => {
     const { prepareScaleControl, getMapSnapshot } = useMapCapture();
     const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
-    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode } = useContext(MapsContext);
+    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode, getFilter } = useContext(MapsContext);
     const { getAliasByLayerId } = useEventoContext();
     const [isDownloading, setIsDownloading] = useState(false);
 
@@ -130,6 +132,15 @@ export const useMapDownload = () => {
 
             const legendForPanel = selectedLegends.length > 0 ? selectedLegends[0] : currentSelectedLegend;
 
+            let seleccionFilas = null;
+            if (esSeleccion) {
+                const capas = (selectedLegends.length > 0 ? selectedLegends : [currentSelectedLegend])
+                    .filter(Boolean)
+                    .slice(0, MAX_CAPAS_SELECCION);
+                const conteos = await contarEnPoligono(capas, seleccion, { getFilter, allLayers }).catch(() => []);
+                seleccionFilas = filasSeleccion({ ...medidasDeSeleccion(seleccion), capas: conteos });
+            }
+
             const sourcesMap = await getLayersSources(activeLayerIds).catch(() => ({}));
             const source = Object.values(sourcesMap)
                 .filter(Boolean)
@@ -147,6 +158,7 @@ export const useMapDownload = () => {
                 viewportExtent: vista === 'viewport' ? targetExtent : null,
                 minimapImageUrl,
                 minimapBounds,
+                seleccion: seleccionFilas,
                 source,
                 scale: composeScale
             });

@@ -29,6 +29,7 @@ export const useImageComposition = () => {
         viewportExtent,
         minimapImageUrl,
         minimapBounds,
+        seleccion = null,
         source = 'Por definir',
         scale = 1
     }) => {
@@ -144,6 +145,7 @@ export const useImageComposition = () => {
             viewportExtent,
             minimapImageUrl,
             minimapBounds,
+            seleccion,
             source
         });
 

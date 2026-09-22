@@ -3,7 +3,7 @@
 Interfaz web para la creacion, gestion y visualizacion de mapas interactivos
 con datos geoespaciales del IIEG Jalisco.
 
-**Version:** 1.173.1
+**Version:** 1.174.0
 
 ## Requisitos
 

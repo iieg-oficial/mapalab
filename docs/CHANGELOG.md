@@ -5,6 +5,22 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.174.0] - 2026-09-22
+
+### Agregado: la imagen de la vista Selección trae estadísticas
+
+El panel lateral suma un bloque **Selección** con el área y el perímetro del polígono y, por cada
+capa cuya leyenda esté marcada, cuántos de sus elementos caen dentro y su densidad por km².
+
+El conteo se le pide a GeoServer con `resultType=hits`: una petición por capa que no descarga ni un
+elemento y que respeta el filtro activo de esa capa. El polígono viaja como
+`INTERSECTS(geom, SRID=3857;POLYGON(...))`: los datos están en EPSG:6368 y sin el SRID el filtro
+devuelve cero. Un polígono a mano alzada se simplifica hasta 120 vértices y la consulta va por POST,
+para no chocar con el límite de la URL.
+
+Las capas sin WFS, como los rásteres, salen con un guion. Si una consulta falla o tarda más de 8
+segundos, la descarga sigue sin el bloque: las estadísticas nunca detienen la imagen.
+
 ## [1.173.1] - 2026-09-22
 
 ### Cambiado: el botón 3D se queda visible y deshabilitado sin WebGL2
