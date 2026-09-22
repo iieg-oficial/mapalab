@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.173.1] - 2026-09-22
+
+### Cambiado: el botón 3D se queda visible y deshabilitado sin WebGL2
+
+Antes, un navegador sin WebGL2 no veía **nada**: ni el botón 3D ni el cubo de las tarjetas, sin
+explicación. Pasó en una máquina sin aceleración de gráficos y parecía que la función no se había
+desplegado. Ahora el botón se muestra deshabilitado con el motivo en el tooltip; el cubo sigue
+oculto, porque el botón ya lo explica una vez.
+
+El contexto distingue los dos casos con `present`: fuera del proveedor —el embed y el catálogo— no
+se dibuja nada, como antes.
+
 ## [1.173.0] - 2026-09-21
 
 ### Agregado: vista 3D del mapa

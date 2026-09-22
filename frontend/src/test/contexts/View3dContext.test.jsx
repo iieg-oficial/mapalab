@@ -100,9 +100,10 @@ describe('View3dContext', () => {
         expect(result.current.view.active).toBe(false);
     });
 
-    it('sin WebGL no entra', () => {
+    it('sin WebGL no entra, pero el control sigue presente para poder explicarlo', () => {
         mocks.webgl = false;
         const { result } = render('/mapa?vista=3d');
+        expect(result.current.view.present).toBe(true);
         expect(result.current.view.available).toBe(false);
         expect(result.current.view.active).toBe(false);
         let entered = true;
@@ -112,6 +113,7 @@ describe('View3dContext', () => {
 
     it('fuera del proveedor responde inactivo', () => {
         const { result } = renderHook(() => useView3d());
+        expect(result.current.present).toBe(false);
         expect(result.current.active).toBe(false);
         expect(result.current.available).toBe(false);
         expect(result.current.enter()).toBe(false);

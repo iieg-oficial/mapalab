@@ -28,6 +28,9 @@ const MapControls = ({ hideLocate = false }) => {
     const locationLayerRef = useRef(null);
     const isSwipe = !!compareMode?.active;
     const view3d = useView3d();
+    const view3dTitle = !view3d.available
+        ? 'Tu navegador no tiene WebGL2, necesario para la vista 3D'
+        : `Cambiar a vista ${view3d.active ? '2D' : '3D'}`;
     const get3d = useCallback(() => (view3d.active ? view3d.map3dRef.current : null), [view3d.active, view3d.map3dRef]);
 
     const getActiveMap = useCallback(() => {
@@ -228,14 +231,15 @@ const MapControls = ({ hideLocate = false }) => {
                         className="w-6 h-6"
                     />
                 </button>
-                {view3d.available && (
+                {view3d.present && (
                     <button
                         type="button"
                         onClick={view3d.toggle}
+                        disabled={!view3d.available}
                         aria-pressed={view3d.active}
-                        className={`mx-1.5 my-0.5 size-8 rounded-full text-xs font-semibold transition-colors cursor-pointer ${view3d.active ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6] text-[#5C2472] hover:bg-[#E2D3EA]'}`}
-                        title={view3d.active ? 'Cambiar a vista 2D' : 'Cambiar a vista 3D'}
-                        aria-label={view3d.active ? 'Cambiar a vista 2D' : 'Cambiar a vista 3D'}
+                        className={`mx-1.5 my-0.5 size-8 rounded-full text-xs font-semibold transition-colors ${view3d.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'} ${view3d.active ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6] text-[#5C2472]'} ${view3d.available && !view3d.active ? 'hover:bg-[#E2D3EA]' : ''}`}
+                        title={view3dTitle}
+                        aria-label={view3dTitle}
                     >
                         3D
                     </button>

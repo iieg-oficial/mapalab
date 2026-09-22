@@ -7,6 +7,7 @@ import { VIEW3D_DEFAULTS, clampExaggeration, clampPitch, webglAvailable } from '
 const View3dContext = createContext(null);
 
 const INACTIVE = {
+    present: false,
     available: false,
     active: false,
     pitch: VIEW3D_DEFAULTS.pitch,
@@ -122,7 +123,7 @@ export const View3dProvider = ({ children }) => {
     }, [active, roundedPitch, extrudedKey, searchParams, setSearchParams]);
 
     const value = useMemo(() => ({
-        available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef,
+        present: true, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef,
         enter, exit, toggle, setPitch, setBearing, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
     }), [
         available, active, pitch, bearing, exaggeration, extruded, extrusionStatus,
