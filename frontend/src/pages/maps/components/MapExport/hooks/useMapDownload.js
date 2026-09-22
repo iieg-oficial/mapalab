@@ -14,7 +14,7 @@ import { getLayersSources } from '@services/layerMetadataService';
 import { useEventoContext } from '@hooks/useEvento';
 import { crearMascara, extentDeSeleccion } from '../utils/seleccionDescarga';
 import { filasSeleccion, medidasDeSeleccion, MAX_CAPAS_SELECCION } from '../utils/estadisticasSeleccion';
-import { contarEnPoligono } from '@services/seleccionStatsService';
+import { agregarEnPoligono, contarEnPoligono } from '@services/seleccionStatsService';
 
 export const useMapDownload = () => {
     const { targetRef } = useMapsContext();
@@ -92,7 +92,7 @@ export const useMapDownload = () => {
         return transformExtent([minX, minY, maxX, maxY], 'EPSG:3857', 'EPSG:4326');
     };
 
-    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa', forcedExtent = null, quality = QUALITY_PRESETS[1], swipeOptions = null, seleccion = null) => {
+    const downloadMap = async (format = 'png', selectedLegends = [], viewType = 'viewport', title = 'Mapa', forcedExtent = null, quality = QUALITY_PRESETS[1], swipeOptions = null, seleccion = null, camposPorCapa = {}) => {
         const isSwipe = !!compareMode?.active;
         const captureRoot = isSwipe ? document.querySelector('[data-swipe-composite="true"]') : targetRef.current;
         if (!captureRoot || !canDownload || isDownloading) return;
@@ -138,7 +138,20 @@ export const useMapDownload = () => {
                     .filter(Boolean)
                     .slice(0, MAX_CAPAS_SELECCION);
                 const conteos = await contarEnPoligono(capas, seleccion, { getFilter, allLayers }).catch(() => []);
-                seleccionFilas = filasSeleccion({ ...medidasDeSeleccion(seleccion), capas: conteos });
+                const agregados = await Promise.all(capas
+                    .filter(capa => camposPorCapa?.[capa.id])
+                    .map(async (capa) => ({
+                        id: capa.id,
+                        etiqueta: camposPorCapa[capa.id].etiqueta,
+                        datos: await agregarEnPoligono({
+                            capa,
+                            campo: camposPorCapa[capa.id].nombre,
+                            poligono: seleccion,
+                            getFilter,
+                            allLayers,
+                        }),
+                    })));
+                seleccionFilas = filasSeleccion({ ...medidasDeSeleccion(seleccion), capas: conteos, agregados });
             }
 
             const sourcesMap = await getLayersSources(activeLayerIds).catch(() => ({}));

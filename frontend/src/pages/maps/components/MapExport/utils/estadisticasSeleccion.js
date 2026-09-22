@@ -10,12 +10,24 @@ export const medidasDeSeleccion = (geometria) => ({
     perimetroKm: getLength(geometria, { projection: 'EPSG:3857' }) / 1000,
 });
 
-export const filasSeleccion = ({ areaKm2 = 0, perimetroKm = 0, capas = [] }) => [
+const filasDeAgregado = (agregado) => {
+    if (!agregado?.datos) return [];
+    const { suma, promedio } = agregado.datos;
+    return [
+        suma == null ? null : { etiqueta: `${agregado.etiqueta}, suma`, valor: conDecimales(suma), sangria: true },
+        promedio == null ? null : { etiqueta: `${agregado.etiqueta}, promedio`, valor: conDecimales(promedio), sangria: true },
+    ].filter(Boolean);
+};
+
+export const filasSeleccion = ({ areaKm2 = 0, perimetroKm = 0, capas = [], agregados = [] }) => [
     { etiqueta: 'Área', valor: `${conDecimales(areaKm2)} km²` },
     { etiqueta: 'Perímetro', valor: `${conDecimales(perimetroKm)} km` },
-    ...capas.slice(0, MAX_CAPAS_SELECCION).map(({ etiqueta, conteo }) => ({
-        etiqueta,
-        valor: conteo == null ? '—' : formatNumber(conteo),
-        detalle: conteo == null || areaKm2 <= 0 ? null : `${conDecimales(conteo / areaKm2)} / km²`,
-    })),
+    ...capas.slice(0, MAX_CAPAS_SELECCION).flatMap(({ id, etiqueta, conteo }) => [
+        {
+            etiqueta,
+            valor: conteo == null ? '—' : formatNumber(conteo),
+            detalle: conteo == null || areaKm2 <= 0 ? null : `${conDecimales(conteo / areaKm2)} / km²`,
+        },
+        ...filasDeAgregado(agregados.find(a => a.id === id)),
+    ]),
 ];

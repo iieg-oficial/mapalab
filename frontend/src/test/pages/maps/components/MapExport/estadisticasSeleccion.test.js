@@ -23,3 +23,27 @@ describe('filasSeleccion', () => {
         expect(filasSeleccion({ areaKm2: 10, capas })).toHaveLength(MAX_CAPAS_SELECCION + 2);
     });
 });
+
+describe('filasSeleccion con agregados', () => {
+    it('cuelga la suma y el promedio debajo de su capa', () => {
+        const filas = filasSeleccion({
+            areaKm2: 5829.45,
+            capas: [{ id: 'brecha', etiqueta: 'Brecha salarial', conteo: 4200 }],
+            agregados: [{ id: 'brecha', etiqueta: 'Salario diario, mujeres', datos: { suma: 1267644.97, promedio: 301.82 } }],
+        });
+        expect(filas.slice(2)).toEqual([
+            { etiqueta: 'Brecha salarial', valor: '4,200', detalle: '0.72 / km²' },
+            { etiqueta: 'Salario diario, mujeres, suma', valor: '1,267,644.97', sangria: true },
+            { etiqueta: 'Salario diario, mujeres, promedio', valor: '301.82', sangria: true },
+        ]);
+    });
+
+    it('si el agregado no llegó, la capa queda con su conteo', () => {
+        const filas = filasSeleccion({
+            areaKm2: 100,
+            capas: [{ id: 'escuelas', etiqueta: 'Escuelas', conteo: 10 }],
+            agregados: [{ id: 'escuelas', etiqueta: 'Alumnos', datos: null }],
+        });
+        expect(filas).toHaveLength(3);
+    });
+});

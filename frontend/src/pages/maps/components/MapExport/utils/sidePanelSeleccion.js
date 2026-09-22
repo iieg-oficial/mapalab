@@ -1,17 +1,18 @@
 const TEXTO = '#465055';
 const MORADO = '#5C2472';
 
-const crearFila = ({ etiqueta, valor, detalle }) => {
+const crearFila = ({ etiqueta, valor, detalle, sangria = false }) => {
     const fila = document.createElement('div');
     Object.assign(fila.style, {
         display: 'flex',
         alignItems: 'baseline',
         justifyContent: 'space-between',
         gap: '16px',
-        marginTop: '10px',
+        marginTop: sangria ? '4px' : '10px',
+        paddingLeft: sangria ? '18px' : '0',
         fontFamily: 'Garet, system-ui, sans-serif',
-        fontSize: '15px',
-        color: TEXTO,
+        fontSize: sangria ? '13px' : '15px',
+        color: sangria ? '#6E7477' : TEXTO,
     });
 
     const nombre = document.createElement('span');

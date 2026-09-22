@@ -5,6 +5,26 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.178.0] - 2026-09-22
+
+### Agregado: suma y promedio de un campo dentro de la selección
+
+En el panel de descarga, con la vista Selección, cada leyenda marcada muestra debajo un selector con
+los campos numéricos de esa capa. Al elegir uno, la imagen agrega dos renglones bajo el conteo de esa
+capa: la suma y el promedio de ese campo dentro del polígono. Los nombres salen con el alias de la
+tabla de atributos.
+
+El cálculo lo hace GeoServer con `gs:Aggregate` contra su propio WFS, con el mismo filtro
+`INTERSECTS(..., SRID=3857;...)` del conteo. Medido con datos reales: 4 200 elementos en dos
+segundos, y su `Count` coincide con el conteo que ya mostrábamos. Mientras el selector diga «Sin
+estadística» no se consulta nada, así que no gasta del límite de ejecuciones de WPS.
+
+El motor de estadísticas del backend quedó fuera a propósito: saca el esquema y la tabla de la
+configuración de numeralia de cada capa, y hoy ninguna capa la tiene dinámica; usarlo exigiría
+capturar esa configuración capa por capa en el CMS.
+
+La lista de leyendas se movió a `LegendPicker`, que es donde vive el selector.
+
 ## [1.177.0] - 2026-09-22
 
 ### Agregado: sol, cielo, altura de columnas, terreno y órbita

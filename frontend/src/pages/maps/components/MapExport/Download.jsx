@@ -23,6 +23,7 @@ const licenciaContent = (
     </span>
 );
 import QualitySelector from './QualitySelector';
+import LegendPicker from './LegendPicker';
 import PanelHoja from '@components/PanelHoja';
 import Segmented from '@components/Segmented';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
@@ -38,6 +39,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
     const [format, setFormat] = useState('png');
     const [viewType, setViewType] = useState('viewport');
     const [qualityIndex, setQualityIndex] = useState(1);
+    const [camposPorCapa, setCamposPorCapa] = useState({});
 
     const {
         downloadMap, isDownloading, canDownload,
@@ -111,6 +113,8 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [format, layersWithLegends, selectedLayer, isPanelOpen]);
 
+    const elegirCampo = (layerId, campo) => setCamposPorCapa(prev => ({ ...prev, [layerId]: campo }));
+
     const handleSetIsPanelOpen = (isOpen) => {
         setIsPanelOpen(isOpen);
         if (onOpenChange) onOpenChange(isOpen);
@@ -132,7 +136,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                 onOpenPreview(format, selectedLegendLayers, title, quality, swipeOptions);
             }
         } else {
-            await downloadMap(format, selectedLegendLayers, viewType, title, null, quality, swipeOptions, seleccion);
+            await downloadMap(format, selectedLegendLayers, viewType, title, null, quality, swipeOptions, seleccion, camposPorCapa);
         }
     };
 
@@ -226,30 +230,16 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                     )}
 
                     {layersWithLegends.length > 0 && (
-                        <ScrollContainer className="max-h-40 bg-white rounded-[7px] p-2">
-                            {layersWithLegends.map(layer => {
-                                const isSelected = selectedLegendLayers.some(l => l.id === layer.id);
-                                return (
-                                    <Tooltip
-                                        key={layer.id}
-                                        content={format === 'pdf' ? 'Incluye la leyenda de esta capa en el PDF' : 'Usa la leyenda de esta capa en la imagen'}
-                                        placement="left"
-                                        delay={400}
-                                        triggerBlock
-                                    >
-                                        <SymbologyItem
-                                            layer={layer}
-                                            isExpanded={false}
-                                            onToggle={() => { }}
-                                            showDivider={true}
-                                            simple={true}
-                                            onClick={() => handleLayerSelect(layer)}
-                                            prefix={<Checkbox checked={isSelected} />}
-                                        />
-                                    </Tooltip>
-                                );
-                            })}
-                        </ScrollContainer>
+                        <LegendPicker
+                            layers={layersWithLegends}
+                            seleccionadas={selectedLegendLayers}
+                            onAlternar={handleLayerSelect}
+                            formato={format}
+                            campos={camposPorCapa}
+                            onCampo={elegirCampo}
+                            allLayers={allLayers}
+                            conEstadisticas={viewType === 'seleccion'}
+                        />
                     )}
 
                     {isSwipe && (

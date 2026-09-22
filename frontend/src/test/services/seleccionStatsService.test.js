@@ -11,7 +11,7 @@ vi.mock('@utils/featureInfoUtils', () => ({
     getWfsUrl: (url) => url.replace('/wms', '/wfs'),
 }));
 
-import { contarEnPoligono, filtroDePoligono, leerNumberMatched, wktDelPoligono, MAX_VERTICES } from '@services/seleccionStatsService';
+import { agregarEnPoligono, camposNumericos, construirAgregado, contarEnPoligono, esCampoNumerico, filtroDePoligono, leerAgregado, leerNumberMatched, wktDelPoligono, MAX_VERTICES } from '@services/seleccionStatsService';
 
 const cuadro = new Polygon([[[0, 0], [1000, 0], [1000, 1000], [0, 1000], [0, 0]]]);
 
@@ -83,5 +83,67 @@ describe('contarEnPoligono', () => {
     it('sin polígono o sin capas no consulta nada', async () => {
         expect(await contarEnPoligono([], cuadro, {})).toEqual([]);
         expect(await contarEnPoligono([{ id: 'escuelas' }], null, {})).toEqual([]);
+    });
+});
+
+describe('campos numéricos', () => {
+    beforeEach(() => { global.fetch = vi.fn(); });
+
+    it('deja solo los campos que se pueden sumar', () => {
+        expect(esCampoNumerico({ name: 'poblacion', type: 'xsd:number' })).toBe(true);
+        expect(esCampoNumerico({ name: 'nombre', type: 'xsd:string' })).toBe(false);
+        expect(esCampoNumerico({ name: 'geom', type: 'gml:MultiPolygon' })).toBe(false);
+    });
+
+    it('los lee de la descripción de la capa', async () => {
+        global.fetch.mockResolvedValue({
+            ok: true,
+            json: async () => ({ featureTypes: [{ properties: [
+                { name: 'geom', type: 'gml:Point' },
+                { name: 'nombre', type: 'xsd:string' },
+                { name: 'alumnos', type: 'xsd:number' },
+            ] }] }),
+        });
+        expect(await camposNumericos({ id: 'escuelas' }, [])).toEqual(['alumnos']);
+    });
+
+    it('una capa sin WFS no ofrece campos', async () => {
+        expect(await camposNumericos({ id: 'sin-wfs' }, [])).toEqual([]);
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+});
+
+describe('agregado con WPS', () => {
+    beforeEach(() => { global.fetch = vi.fn(); });
+
+    it('arma la petición con el campo y el filtro del polígono', () => {
+        const xml = construirAgregado({ typeName: 'educacion:escuelas', campo: 'alumnos', cql: 'INTERSECTS(geom, SRID=3857;POLYGON((0 0,1 0,1 1,0 0)))' });
+        expect(xml).toContain('<ows:Identifier>gs:Aggregate</ows:Identifier>');
+        expect(xml).toContain('<wps:LiteralData>alumnos</wps:LiteralData>');
+        expect(xml).toContain('typeName=educacion:escuelas');
+        expect(xml).toContain(encodeURIComponent('SRID=3857'));
+        ['Count', 'Sum', 'Average'].forEach(f => expect(xml).toContain(`<wps:LiteralData>${f}</wps:LiteralData>`));
+    });
+
+    it('lee el resultado sin depender del orden de las funciones', () => {
+        expect(leerAgregado({
+            AggregationFunctions: ['Average', 'Count', 'Sum'],
+            AggregationResults: [[301.82, 4200, 1267644.97]],
+        })).toEqual({ conteo: 4200, suma: 1267644.97, promedio: 301.82 });
+    });
+
+    it('un resultado vacío no inventa números', () => {
+        expect(leerAgregado({ AggregationFunctions: ['Sum'], AggregationResults: [[null]] })).toEqual({ conteo: null, suma: null, promedio: null });
+        expect(leerAgregado({})).toBeNull();
+    });
+
+    it('sin campo elegido no consulta', async () => {
+        expect(await agregarEnPoligono({ capa: { id: 'escuelas' }, campo: null, poligono: cuadro })).toBeNull();
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('si GeoServer falla, la capa se queda sin suma', async () => {
+        global.fetch.mockResolvedValue({ ok: false });
+        expect(await agregarEnPoligono({ capa: { id: 'escuelas' }, campo: 'alumnos', poligono: cuadro })).toBeNull();
     });
 });
