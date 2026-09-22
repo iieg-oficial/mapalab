@@ -5,6 +5,21 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.179.0] - 2026-09-22
+
+### Agregado: la barra del comparador nombra la capa que estás comparando
+
+Entre las dos píldoras de fecha aparece el nombre de la capa seleccionada, truncado a 220 px —110 en
+móvil— y con el mismo clic que las fechas: abre el detalle de capa. Antes la barra decía dos fechas
+sin decir de qué. El nombre sale **una vez** porque `selectedLayerForSymbology` es una sola capa
+compartida entre los dos lados; lo que difiere entre A y B es su fecha, no la capa.
+
+### Cambiado: las letras A y B del handle dejan de ser pastillas
+
+Pierden el fondo de color y pasan a ser la letra sola, en el color de su lado, con una sombra blanca
+de 1 px para leerse sobre cualquier mitad del mapa. Rellenas competían por atención con el propio
+handle naranja, que es lo que se arrastra.
+
 ## [1.178.0] - 2026-09-22
 
 ### Agregado: suma y promedio de un campo dentro de la selección

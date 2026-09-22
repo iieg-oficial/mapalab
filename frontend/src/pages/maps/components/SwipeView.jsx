@@ -17,7 +17,7 @@ import {
 } from '@pages/maps/helpers/swipeMode';
 
 const OVERLAY_LETTER = 'font-garet font-bold text-white text-[120px] leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]';
-const HANDLE_LABEL = 'flex h-6 min-w-6 items-center justify-center rounded-full px-2 font-garet text-[13px] font-bold leading-none text-white shadow-[0_2px_6px_rgba(0,0,0,0.25)]';
+const HANDLE_LABEL = 'flex items-center justify-center font-garet text-[13px] font-bold leading-none drop-shadow-[0_1px_3px_rgba(255,255,255,0.95)]';
 const FADE_DELAY_MS = Math.round(SWIPE_MINIMIZE_MS * 0.6);
 
 const SwipeView = () => {
@@ -174,7 +174,7 @@ const SwipeView = () => {
         transition: `transform ${SWIPE_MINIMIZE_MS}ms cubic-bezier(0.34, 0.8, 0.3, 1), opacity 180ms linear ${FADE_DELAY_MS}ms`,
     });
     const etiquetaStyle = (slot) => ({
-        backgroundColor: SLOT_COLORS[slot].fg,
+        color: SLOT_COLORS[slot].fg,
         opacity: !visibles || minimizando ? 1 : 0,
         transition: `opacity 200ms ease ${FADE_DELAY_MS}ms`,
     });

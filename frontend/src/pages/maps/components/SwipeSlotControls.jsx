@@ -43,6 +43,7 @@ const SwipeSlotControls = () => {
     }, [isMobileSider]);
 
     const layerId = selectedLayerForSymbology?.id || null;
+    const layerName = selectedLayerForSymbology?.name || selectedLayerForSymbology?.label || '';
     const layerDef = useMemo(() => (layerId ? findLayerDef(layerId, allLayers) : null), [layerId, allLayers]);
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
 
@@ -92,6 +93,18 @@ const SwipeSlotControls = () => {
             <div className="relative flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200">
                 {!isMobileSider && hintPhase !== 'hidden' && (
                     <ActionsHint visible={hintPhase === 'visible'} />
+                )}
+
+                {hasDates && layerName && (
+                    <Tooltip content="Ver detalles de capa" placement="bottom" delay={300}>
+                        <button
+                            type="button"
+                            onClick={handlePillClick}
+                            className="shrink min-w-0 max-w-[220px] max-md:max-w-[110px] px-1 font-garet font-bold text-[13px] text-[#465055] hover:text-[#703089] truncate transition-colors cursor-pointer"
+                        >
+                            {layerName}
+                        </button>
+                    </Tooltip>
                 )}
 
                 {showA && (
