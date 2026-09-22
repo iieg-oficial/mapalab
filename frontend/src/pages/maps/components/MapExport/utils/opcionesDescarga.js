@@ -34,7 +34,10 @@ export const opcionesFormato = (isSwipe) => {
     ];
 };
 
-export const opcionesVista = ({ haySeleccion, isSwipe }) => VISTAS.filter(v => v.value !== 'seleccion' || (haySeleccion && !isSwipe));
+export const opcionesVista = ({ haySeleccion, isSwipe, es3d }) => {
+    if (es3d) return VISTAS.filter(v => v.value === 'viewport');
+    return VISTAS.filter(v => v.value !== 'seleccion' || (haySeleccion && !isSwipe));
+};
 
 export const textoBotonDescarga = (viewType, format) => (viewType === 'viewport' ? 'Ir a seleccionar área' : `Descargar ${format.toUpperCase()}`);
 

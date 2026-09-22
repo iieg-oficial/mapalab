@@ -1,4 +1,5 @@
 import { useMapsContext } from '@hooks/useMaps';
+import { useView3d } from '@contexts/View3dContext';
 import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
 const { MAP_WIDTH, MAP_HEIGHT } = EXPORT_DIMENSIONS;
 import { transformExtent } from 'ol/proj';
@@ -12,6 +13,7 @@ import { Fill, Style } from 'ol/style';
 
 export const useMapCapture = () => {
     const { targetRef, mapRef, compareMode, paneMapRefs } = useMapsContext();
+    const { active: en3d, map3dRef } = useView3d();
     const { adjustViewToFullState, getActiveMapRef } = useMapView();
 
     const isSwipe = !!compareMode?.active;
@@ -45,12 +47,18 @@ export const useMapCapture = () => {
         scaleControl.style.transform = originalStyles.transform;
     };
 
+    const waitFor3d = () => {
+        const map3d = en3d ? map3dRef.current : null;
+        if (!map3d || map3d.loaded()) return Promise.resolve();
+        return new Promise(resolve => map3d.once('idle', resolve));
+    };
+
     const waitForTilesToLoad = () => {
         const refs = isSwipe
             ? [paneMapRefs?.current?.[0]?.current, paneMapRefs?.current?.[1]?.current].filter(Boolean)
             : [mapRef.current].filter(Boolean);
-        if (refs.length === 0) return Promise.resolve();
-        return Promise.all(refs.map(m => new Promise(resolve => m.once('rendercomplete', resolve))));
+        if (refs.length === 0) return waitFor3d();
+        return Promise.all([...refs.map(m => new Promise(resolve => m.once('rendercomplete', resolve))), waitFor3d()]);
     };
 
     const captureElement = async (element, options = {}) => {

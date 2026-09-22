@@ -237,7 +237,7 @@ const MapControls = ({ hideLocate = false }) => {
                         onClick={view3d.toggle}
                         disabled={!view3d.available}
                         aria-pressed={view3d.active}
-                        className={`mx-1.5 my-0.5 size-8 rounded-full text-xs font-semibold transition-colors ${view3d.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'} ${view3d.active ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6] text-[#5C2472]'} ${view3d.available && !view3d.active ? 'hover:bg-[#E2D3EA]' : ''}`}
+                        className={`mx-1.5 my-0.5 size-8 rounded-full text-[13px] font-bold transition-colors ${view3d.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'} ${view3d.active ? 'bg-[#5C2472] text-white' : 'text-[#465055] hover:text-[#70308A]'}`}
                         title={view3dTitle}
                         aria-label={view3dTitle}
                     >

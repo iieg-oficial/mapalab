@@ -45,7 +45,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
     } = useMapDownload();
     const { compareMode, selectedLayerForSymbology, allLayers, measurements } = useMapsContext();
     const isSwipe = !!compareMode?.active;
-    const { exit: exit3d } = useView3d();
+    const { active: en3d } = useView3d();
     const seleccion = useMemo(() => ultimaSeleccion(measurements), [measurements]);
     const haySeleccion = !!seleccion && !isSwipe;
     const [includeSwipeBar, setIncludeSwipeBar] = useState(true);
@@ -73,7 +73,8 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
 
     useEffect(() => {
         if (viewType === 'seleccion' && !haySeleccion) setViewType('viewport');
-    }, [viewType, haySeleccion]);
+        if (en3d && viewType !== 'viewport') setViewType('viewport');
+    }, [viewType, haySeleccion, en3d]);
 
     useEffect(() => {
         if (isSwipe) {
@@ -117,7 +118,6 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
 
     const handleDownloadClick = () => {
         if (!canDownload || isDownloading) return;
-        exit3d();
         handleSetIsPanelOpen(true);
     };
 
@@ -207,7 +207,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                     <Segmented
                         variant="panel"
                         ariaLabel="Vista"
-                        options={opcionesVista({ haySeleccion: !!seleccion, isSwipe })}
+                        options={opcionesVista({ haySeleccion: !!seleccion, isSwipe, es3d: en3d })}
                         value={viewType}
                         onChange={setViewType}
                     />

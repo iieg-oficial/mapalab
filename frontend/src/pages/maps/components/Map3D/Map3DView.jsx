@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useMapsContext } from '@hooks/useMaps';
 import { useView3d } from '@contexts/View3dContext';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
@@ -10,6 +11,7 @@ import {
     VIEW3D_PITCH_MAX, basemapLayers, basemapSources, buildBaseStyle, cameraToOlView, olViewToCamera, RELIEF_LAYER_ID,
 } from '@pages/maps/helpers/view3d';
 import { useMap3dPopup } from '@hooksMaps/useMap3dPopup';
+import { useMap3dMask } from '@hooksMaps/useMap3dMask';
 
 const TERRAIN_SOURCE = 'terreno';
 
@@ -99,15 +101,19 @@ const Map3DView = () => {
         if (map) applyBasemap(map, basemaps[baseMapId]);
     }, [map, basemaps, baseMapId]);
 
+    useMap3dMask(map);
     useMap3dLayers(map, mapRef);
     useMap3dVectors(map, mapRef, extruded);
     useMap3dExtrusions(map, mapRef, { extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion });
     useMap3dPopup(map);
 
-    return (
+    if (!mapRef.current) return null;
+
+    return createPortal(
         <div className="absolute inset-0 z-[1] bg-white" role="region" aria-label="Mapa en 3D">
             <div ref={containerRef} className="h-full w-full" />
-        </div>
+        </div>,
+        mapRef.current.getTargetElement(),
     );
 };
 

@@ -5,6 +5,28 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.175.0] - 2026-09-22
+
+### Cambiado: el 3D se descarga con la herramienta de siempre y su barra se simplifica
+
+La vista 3D ya no tiene su propio botón de descarga ni saca al usuario a 2D para exportar: el mapa
+de MapLibre se monta **dentro** del contenedor del mapa de OpenLayers, así que `Descargar` lo
+captura como a cualquier otra vista, con su título, leyendas y formatos. En 3D la única vista
+posible es **Área** —«Jalisco» y «Selección» dependen del extent de OpenLayers— y la captura espera
+al `idle` de MapLibre además del `rendercomplete` de OpenLayers.
+
+### Cambiado: el estado se lee como un bloque y los controles se homologan
+
+- **Contorno de Jalisco.** Todo lo que queda fuera del límite estatal se cubre con una máscara
+  sólida y el límite se dibuja con una línea blanca de 3 px. Antes el canto del terreno mostraba el
+  mapa base estirado sobre la pendiente y el borde se veía sucio. La máscara sale de
+  `general:limite_estatal` por WFS, una sola vez.
+- **Botón 3D.** Igual que zoom y encuadre: sin fondo, y con el fondo morado solo cuando está
+  activo.
+- **Inclinación y relieve** pasan a un popover detrás de un botón, como la opacidad del panel de
+  capas activas, en vez de ir siempre visibles.
+- **Brújula** aparte de la pastilla y más grande, con los estilos del botón de descarga.
+
 ## [1.174.0] - 2026-09-22
 
 ### Agregado: la imagen de la vista Selección trae estadísticas
