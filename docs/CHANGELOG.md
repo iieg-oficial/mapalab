@@ -5,6 +5,30 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.176.0] - 2026-09-22
+
+### Cambiado: las letras A y B del comparador se minimizan junto al handle
+
+Los paneles gigantes con la letra del lado ya no son un estado en el que el comparador se queda:
+aparecen al entrar, y cuando el resaltado termina la letra viaja hasta el handle y se queda ahí
+como una pastilla, dejando `A <> B` sobre la barra naranja. Así se sigue sabiendo qué lado es cuál
+sin tapar el mapa. La geometría del viaje vive en `minimizeTransform` y respeta la orientación y la
+posición del handle.
+
+### Corregido: el resaltado A|B se quedaba encendido al pasar una capa a los dos lados
+
+La píldora `<SlotBadge>` encendía el resaltado al hacer click y solo lo apagaba con el `mouseLeave`,
+pero el cambio de membresía remonta el botón, así que ese evento nunca llegaba y los dos paneles se
+quedaban tapando el mapa. El apagado automático pasa a `highlightSlots`, en el hook que es dueño del
+estado, donde ningún remonte lo cancela.
+
+### Corregido: el 3D ya no cierra la comparación por sorpresa
+
+El botón **3D** y el de levantar capa se dibujaban durante el comparador, y al pulsarlos entraban a
+3D llamando a `exitCompareMode`: la comparación se descartaba sin la confirmación que sí pide el
+botón de cerrar. Ambos se ocultan mientras el comparador está activo; el camino inverso, salir de 3D
+al entrar a comparar, ya estaba cubierto.
+
 ## [1.175.0] - 2026-09-22
 
 ### Cambiado: el 3D se descarga con la herramienta de siempre y su barra se simplifica

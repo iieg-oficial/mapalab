@@ -58,7 +58,7 @@ const LayerActionsBar = ({
         comparados > 1 && `${comparados} municipios en comparación`,
     ].filter(Boolean).join(' · ');
     const statsEnPanel = abierto && detachedLayerId === layerId;
-    const { setHighlightedSlots } = useMapsContext();
+    const { highlightSlots } = useMapsContext();
 
     const opacityPercent = Math.round(opacity * 100);
     const opacityCustom = opacityPercent !== 100;
@@ -197,8 +197,7 @@ const LayerActionsBar = ({
                     onChange={(next) => {
                         const target = next ? 'A' : 'B';
                         onSwitchSlot?.(target);
-                        setHighlightedSlots?.(target);
-                        setTimeout(() => setHighlightedSlots?.(null), 1500);
+                        highlightSlots?.(target, { temporal: true });
                     }}
                     onLabel="A"
                     offLabel="B"

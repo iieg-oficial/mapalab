@@ -54,8 +54,8 @@ Maps.jsx
     <div style={{ clipPath: inset(...) }}>
         <MapView paneIndex={1} />                                {/* paneB clipeado */}
     </div>
-    <Handle />                                                   {/* barra naranja draggable */}
-    <OverlayA /> <OverlayB />                                    {/* solo cuando highlightedSlots */}
+    <Handle />                                                   {/* barra naranja draggable, con las pastillas A <> B */}
+    <OverlayA /> <OverlayB />                                    {/* solo mientras dura el resaltado */}
 </div>
 ```
 
@@ -92,7 +92,7 @@ Crítico: **`mapRef.current` (live) es `null` en swipe** porque el `<MapView />`
 
 ## Pildora A|B (`<SlotBadge>`)
 
-Cicla membership por capa: `A → AB → B → A`. Implementado por `setLayerSlotMembership(layerId, target)` en `useSwipeMode`. Cada toggle actualiza `paneA.activeLayerIds` y/o `paneB.activeLayerIds`, copia opacities/filters del pane fuente, y extiende `globalOrder` si la capa entra por primera vez.
+Cicla membership por capa: `A → AB → B → A`. Implementado por `setLayerSlotMembership(layerId, target)` en `useSwipeMode`. El resaltado que dispara se pide con `highlightSlots(slots, { temporal })`: el hover lo enciende y lo apaga, el click lo enciende y el propio hook lo apaga a los `SWIPE_HIGHLIGHT_MS`. El apagado vive en el hook y no en el botón porque el cambio de membresía remonta la píldora y se llevaba el `mouseLeave` — con él, el resaltado se quedaba encendido para siempre. Cada toggle actualiza `paneA.activeLayerIds` y/o `paneB.activeLayerIds`, copia opacities/filters del pane fuente, y extiende `globalOrder` si la capa entra por primera vez.
 
 `useSymbology.stillActive` valida contra `paneA + paneB` (no solo el live state) para que el item no se deseleccione al pasar AB → B.
 
@@ -178,6 +178,7 @@ Al cargar un share con `annotations`, `useShareDeserializer` invoca `restoreAnno
 |---|---|---|
 | Dibujar mediciones nuevas en swipe | `useMapDrawing.startDrawing` opera sobre `mapRef` global (null en swipe). Decisión arquitectónica: una capa vector compartida entre paneles (recomendado, alinea con la persistencia global en shares), o una por slot. La medición es geográfica → globales tiene más sentido. *Pre-existentes vía share ya se ven*. |
 | ZenMode | No prioritario; mayoritariamente CSS para condicionar render de overlays del swipe |
+| Vista 3D | Son excluyentes: `View3dContext.enter()` llama `exitCompareMode()` y entrar a comparar apaga el 3D. Mientras el comparador está activo, el botón 3D de `<MapControls>` y el de levantar capa de `<LayerActionsBar>` no se dibujan, para que nadie descarte la comparación sin la confirmación del botón de cerrar |
 | Loop temporal | `useDateLoop` se cancela al entrar a swipe. Tres opciones: por slot activo (simple), sincronizado con offset fijo entre A y B (recomendado, da valor diferencial), o independiente por slot |
 
 ## Consumers de `mapRef` / `View` en swipe — referencia rápida
@@ -198,7 +199,8 @@ Al cargar un share con `annotations`, `useShareDeserializer` invoca `restoreAnno
 
 - Color asociado: A = morado IIEG (`#5C2472`), B = naranja (`#FF8300`, mismo del handle del swipe)
 - Handle naranja con knob blanco (`<svg>` con flechas según orientación)
-- Overlays "A"/"B" gigantes en `font-garet bold text-[120px]` cuando `highlightedSlots` está activo (al cambiar de slot por la pildora)
+- Overlays "A"/"B" gigantes en `font-garet bold text-[120px]` mientras dura el resaltado: al entrar al comparador (`SWIPE_INTRO_MS`) y cada vez que `highlightedSlots` se enciende. Al apagarse, la letra viaja hasta el handle y se desvanece sobre la pastilla que queda ahí (`minimizeTransform`, `SWIPE_MINIMIZE_MS`)
+- Pastillas `A` y `B` permanentes flanqueando el knob (`A <> B`), con los colores de cada slot. Son la única señal de qué lado es cuál una vez que los overlays se minimizan
 - `<SwipeSlotControls>`: barra inferior centrada `[A · orientación · B]` con `<DatePill autoWidth>`. `<CloseButton>` rosa arriba si hay periodicidad seleccionada o dentro de la barra si no la hay
 - Tooltips dinámicos: anexan `del lado A`/`del lado B` y, para acciones destructivas en `AB`, `(seguirá en el lado X)`
 
@@ -221,11 +223,16 @@ Al cargar un share con `annotations`, `useShareDeserializer` invoca `restoreAnno
 | `SWIPE_POS_THRESHOLD` | 0.005 | Threshold de cambio para persistir |
 | `SWIPE_POS_JITTER` | 0.1 | Threshold para sincronizar pos local con compareMode |
 | `SNAPSHOT_MAX_BYTES` | 100_000 | Límite del snapshot serializado en localStorage |
+| `SWIPE_INTRO_MS` | 1200 | Cuánto se ven los overlays al entrar al comparador |
+| `SWIPE_MINIMIZE_MS` | 450 | Duración del viaje de la letra hasta el handle |
+| `SWIPE_HIGHLIGHT_MS` | 1500 | Apagado automático del resaltado tras un click |
+| `SWIPE_MINIMIZE_SCALE` | 0.12 | Escala final de la letra (120 px → ~14 px) |
+| `SWIPE_LABEL_GAP` | 38 | Separación en px entre el centro del knob y cada pastilla |
 
 ## Accesibilidad
 
 - Handle del swipe: `role="slider"`, `aria-label`, `aria-orientation`, `aria-valuemin/max/now`. Acepta teclado (←/→/↑/↓ con paso de 5%, `Home`/`End` para extremos).
-- Overlays "A"/"B" gigantes son `aria-hidden="true"` (decorativos).
+- Overlays "A"/"B" gigantes y las pastillas del handle son `aria-hidden="true"` (decorativos); el `aria-label` del slider ya nombra la posición.
 - `<SlotBadge>` lleva `aria-label` con la oración completa de su tooltip.
 
 ## Performance

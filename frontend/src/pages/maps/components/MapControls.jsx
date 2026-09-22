@@ -231,7 +231,7 @@ const MapControls = ({ hideLocate = false }) => {
                         className="w-6 h-6"
                     />
                 </button>
-                {view3d.present && (
+                {view3d.present && !isSwipe && (
                     <button
                         type="button"
                         onClick={view3d.toggle}

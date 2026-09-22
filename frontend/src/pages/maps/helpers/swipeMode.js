@@ -9,6 +9,11 @@ export const SWIPE_KEYBOARD_STEP = 5;
 export const SWIPE_DEBOUNCE_MS = 200;
 export const SWIPE_POS_THRESHOLD = 0.005;
 export const SWIPE_POS_JITTER = 0.1;
+export const SWIPE_INTRO_MS = 1200;
+export const SWIPE_MINIMIZE_MS = 450;
+export const SWIPE_HIGHLIGHT_MS = 1500;
+export const SWIPE_MINIMIZE_SCALE = 0.12;
+export const SWIPE_LABEL_GAP = 38;
 export const SNAPSHOT_MAX_BYTES = 100_000;
 
 export const safeStructuredClone = (obj) => {
@@ -133,4 +138,14 @@ export const deserializeSnapshotFromStorage = (raw) => {
     } catch {
         return null;
     }
+};
+
+export const minimizeTransform = ({ slot, pos, isHorizontal, width, height }) => {
+    const size = isHorizontal ? height : width;
+    if (!size) return 'none';
+    const toHandle = slot === 'A' ? (size * pos) / 200 : (size * (pos - 100)) / 200;
+    const gap = slot === 'A' ? -SWIPE_LABEL_GAP : SWIPE_LABEL_GAP;
+    const shift = Math.round(toHandle + gap);
+    const axis = isHorizontal ? `0px, ${shift}px` : `${shift}px, 0px`;
+    return `translate(${axis}) scale(${SWIPE_MINIMIZE_SCALE})`;
 };

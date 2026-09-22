@@ -3,6 +3,7 @@ import {
     SWIPE_ORIGINAL_STORAGE_KEY,
     SWIPE_POS_MIN,
     SWIPE_POS_MAX,
+    SWIPE_HIGHLIGHT_MS,
     SNAPSHOT_MAX_BYTES,
     emptyPane,
     initialCompareMode,
@@ -20,7 +21,16 @@ import { trackSwipeEnter, trackSwipeExit } from '@services/analyticsService';
 export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs, mapRef }) => {
     const [compareMode, setCompareMode] = useState(initialCompareMode);
     const [highlightedSlots, setHighlightedSlots] = useState(null);
+    const highlightTimerRef = useRef(null);
     const enteredAtRef = useRef(null);
+
+    const highlightSlots = useCallback((slots, { temporal = false } = {}) => {
+        clearTimeout(highlightTimerRef.current);
+        setHighlightedSlots(slots);
+        if (slots && temporal) {
+            highlightTimerRef.current = setTimeout(() => setHighlightedSlots(null), SWIPE_HIGHLIGHT_MS);
+        }
+    }, []);
 
     const snapshotLive = useCallback((label) => snapshotFromLive(liveStateRef.current, label), [liveStateRef]);
 
@@ -260,6 +270,6 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs, m
         toggleSwipeOrientation,
         paneMapRefs,
         highlightedSlots,
-        setHighlightedSlots,
+        highlightSlots,
     };
 };

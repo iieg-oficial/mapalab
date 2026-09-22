@@ -5,7 +5,7 @@ import { trackSwipeSlotChange } from '@services/analyticsService';
 const NEXT_MEMBERSHIP = { A: 'AB', AB: 'B', B: 'A' };
 
 const SlotBadge = ({ membership, onCycle, layerId }) => {
-    const { setHighlightedSlots } = useMapsContext();
+    const { highlightSlots } = useMapsContext();
     const nextMembership = NEXT_MEMBERSHIP[membership];
     const tooltip = membership === 'AB'
         ? `Esta capa esta en los dos slots — click para mover solo a ${nextMembership}`
@@ -15,13 +15,13 @@ const SlotBadge = ({ membership, onCycle, layerId }) => {
         e.stopPropagation();
         trackSwipeSlotChange(layerId || null, membership, nextMembership);
         onCycle?.(nextMembership);
-        setHighlightedSlots?.(nextMembership);
+        highlightSlots?.(nextMembership, { temporal: true });
     };
     const handleMouseEnter = () => {
-        setHighlightedSlots?.(membership);
+        highlightSlots?.(membership);
     };
     const handleMouseLeave = () => {
-        setHighlightedSlots?.(null);
+        highlightSlots?.(null);
     };
 
     return (

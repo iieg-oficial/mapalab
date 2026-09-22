@@ -21,8 +21,8 @@ const tooltipFor = ({ active, on, status }) => {
 
 const ExtrudeButton = ({ layerId, baseClass }) => {
     const view3d = useView3d();
-    const { allLayers, getServiceMode } = useMapsContext();
-    if (!view3d.available || !layerId) return null;
+    const { allLayers, getServiceMode, compareMode } = useMapsContext();
+    if (!view3d.available || !layerId || compareMode?.active) return null;
     if (!canExtrudeLayer(findLayerDef(layerId, allLayers || []), getServiceMode?.(layerId))) return null;
 
     const on = view3d.active && view3d.isExtruded(layerId);
