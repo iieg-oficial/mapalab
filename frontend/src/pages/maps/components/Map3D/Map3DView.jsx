@@ -8,10 +8,11 @@ import { useMap3dVectors } from '@hooksMaps/useMap3dVectors';
 import { useMap3dExtrusions } from '@hooksMaps/useMap3dExtrusions';
 import { loadMaplibre } from '@pages/maps/helpers/maplibreLoader';
 import {
-    VIEW3D_PITCH_MAX, basemapLayers, basemapSources, buildBaseStyle, cameraToOlView, olViewToCamera, RELIEF_LAYER_ID,
+    CIELO_SPEC, VIEW3D_PITCH_MAX, basemapLayers, basemapSources, buildBaseStyle, cameraToOlView,
+    olViewToCamera, RELIEF_LAYER_ID,
 } from '@pages/maps/helpers/view3d';
 import { useMap3dPopup } from '@hooksMaps/useMap3dPopup';
-import { useMap3dMask } from '@hooksMaps/useMap3dMask';
+import { useMap3dContorno } from '@hooksMaps/useMap3dContorno';
 
 const TERRAIN_SOURCE = 'terreno';
 
@@ -40,9 +41,12 @@ const Map3DView = () => {
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, setPitch, setBearing, exit, reportExtrusion,
+        sol, alturaColumnas, cielo, terreno, orbita,
     } = useView3d();
     const { getLegendJson } = useWMSLegend();
     const [map, setMap] = useState(null);
+    const orbitaRef = useRef(false);
+    orbitaRef.current = orbita;
     const initialRef = useRef({ pitch, bearing, exaggeration, basemap: basemaps[baseMapId] });
 
     useEffect(() => {
@@ -72,6 +76,7 @@ const Map3DView = () => {
             });
             instance.on('pitchend', () => setPitch(instance.getPitch()));
             instance.on('rotateend', () => setBearing(instance.getBearing()));
+            instance.on('moveend', () => { if (!orbitaRef.current) writeBackToOl(instance, olMap); });
         }).catch((error) => {
             console.error('[mapa3d] no se pudo cargar MapLibre', error);
             exit();
@@ -87,24 +92,51 @@ const Map3DView = () => {
     }, [mapRef, map3dRef, setPitch, setBearing, exit]);
 
     useEffect(() => {
-        if (map) map.setTerrain({ source: TERRAIN_SOURCE, exaggeration });
-    }, [map, exaggeration]);
+        if (map) map.setTerrain(terreno ? { source: TERRAIN_SOURCE, exaggeration } : null);
+    }, [map, exaggeration, terreno]);
 
     useEffect(() => {
-        if (!map) return;
+        if (map) map.setSky(cielo ? CIELO_SPEC : undefined);
+    }, [map, cielo]);
+
+    useEffect(() => {
+        if (!map?.getLayer(RELIEF_LAYER_ID)) return;
+        map.setPaintProperty(RELIEF_LAYER_ID, 'hillshade-illumination-direction', sol);
+    }, [map, sol]);
+
+    useEffect(() => {
+        if (!map || !orbita) return undefined;
+        let frame = null;
+        const girar = () => {
+            map.setBearing(map.getBearing() + 0.12);
+            frame = requestAnimationFrame(girar);
+        };
+        frame = requestAnimationFrame(girar);
+        const reloj = setInterval(() => setBearing(map.getBearing()), 200);
+        return () => {
+            cancelAnimationFrame(frame);
+            clearInterval(reloj);
+            setBearing(map.getBearing());
+        };
+    }, [map, orbita, setBearing]);
+
+    useEffect(() => {
+        if (!map || orbita) return;
         const pitchDrift = Math.abs(map.getPitch() - pitch) > 0.5;
         const bearingDrift = Math.abs(map.getBearing() - bearing) > 0.5;
         if (pitchDrift || bearingDrift) map.easeTo({ pitch, bearing, duration: 300 });
-    }, [map, pitch, bearing]);
+    }, [map, pitch, bearing, orbita]);
 
     useEffect(() => {
         if (map) applyBasemap(map, basemaps[baseMapId]);
     }, [map, basemaps, baseMapId]);
 
-    useMap3dMask(map);
+    useMap3dContorno(map);
     useMap3dLayers(map, mapRef);
-    useMap3dVectors(map, mapRef, extruded);
-    useMap3dExtrusions(map, mapRef, { extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion });
+    useMap3dVectors(map, mapRef, extruded, alturaColumnas);
+    useMap3dExtrusions(map, mapRef, {
+        extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,
+    });
     useMap3dPopup(map);
 
     if (!mapRef.current) return null;

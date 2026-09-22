@@ -3,26 +3,26 @@ import { heightExpression } from './extrusionRules';
 
 const EXTRUSION_OPACITY = 0.92;
 
-const extrusionPaint = ({ property, maxValue, color }) => ({
+const extrusionPaint = ({ property, maxValue, color, escala = 1 }) => ({
     'fill-extrusion-color': color,
-    'fill-extrusion-height': heightExpression(property, maxValue, EXTRUSION_MAX_HEIGHT_M),
+    'fill-extrusion-height': heightExpression(property, maxValue, EXTRUSION_MAX_HEIGHT_M * escala),
     'fill-extrusion-base': 0,
     'fill-extrusion-opacity': EXTRUSION_OPACITY,
 });
 
 export const EXTRUSION_PROPERTY_KEY = 'mapalab:property';
 
-export const extrusionLayer = (id, source, style) => ({
+export const extrusionLayer = (id, source, style, escala = 1) => ({
     id,
     type: 'fill-extrusion',
     source,
     metadata: { [EXTRUSION_PROPERTY_KEY]: style.property },
-    paint: extrusionPaint(style),
+    paint: extrusionPaint({ ...style, escala }),
 });
 
-export const vectorLayerSpecs = (id, kind, { opacity = 1, extrusion = null } = {}) => {
+export const vectorLayerSpecs = (id, kind, { opacity = 1, extrusion = null, escala = 1 } = {}) => {
     if (kind === 'polygon' && extrusion) {
-        return [extrusionLayer(`${id}-ext`, id, extrusion)];
+        return [extrusionLayer(`${id}-ext`, id, extrusion, escala)];
     }
     if (kind === 'polygon') {
         return [

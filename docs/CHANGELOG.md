@@ -5,6 +5,40 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.177.0] - 2026-09-22
+
+### Agregado: sol, cielo, altura de columnas, terreno y órbita
+
+Cinco controles más para la vista 3D, junto a inclinación y relieve:
+
+- **Sol**: dirección de la luz del sombreado, en anillo con el rumbo (`N`, `NE`, `NO`…). Cambia
+  por completo cómo se leen las sierras.
+- **Altura de las columnas**: escala de ×0.5 a ×3 lo levantado, para comparar sin que la zona
+  metropolitana aplaste al resto. El anillo solo aparece cuando hay una capa levantada.
+- **Terreno**, **cielo y neblina** y **órbita**: interruptores detrás del botón de ajustes de la
+  pastilla. Sin terreno quedan las columnas sobre el plano; la órbita gira alrededor del centro
+  para presentaciones.
+
+### Cambiado: los controles del 3D, con el norte de la exportación y anillos de ajuste
+
+- **Norte independiente.** El `ico_n.svg` que ya lleva la imagen exportada, arriba de la pastilla de
+  zoom, sin fondo y centrado sobre ella. Gira con el rumbo del mapa y al hacer clic vuelve al norte.
+- **Pastilla del 3D.** Al lado del botón 3D y a su misma altura, con un anillo por ajuste: el borde
+  muestra cuánto está puesto y al hacer clic abre su deslizador, como la opacidad del panel de capas
+  activas. Ya no va la barra fija con los sliders siempre abiertos.
+- **El tooltip del botón 3D explica cómo mover el mapa**: arrastrar, rueda, clic derecho y
+  Ctrl+arrastrar, y abajo los gestos de celular.
+- **La barra de escala vuelve a salir en 3D.** La cámara de MapLibre se escribe en la vista de
+  OpenLayers en cada `moveend`, así que la escala, la sesión y el enlace compartido siguen al 3D. En
+  perspectiva el valor es el del centro de la cámara: aproximado por construcción.
+
+### Corregido: el borde de Jalisco ya no cuelga picos
+
+Fuera del estado el DEM venía sin datos y MapLibre lee un pixel transparente como 0 m, así que el
+borde dentado colgaba un fleco hasta el nivel del mar. El terreno ahora viene relleno desde sextante
+2.11.0 y encima se dibuja el límite estatal con una línea blanca de 3 px. **Se quitó la máscara
+sólida de 1.175.0**: tapaba el mapa base alrededor del estado, que sí se quiere ver.
+
 ## [1.176.0] - 2026-09-22
 
 ### Cambiado: las letras A y B del comparador se minimizan junto al handle

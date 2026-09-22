@@ -2,7 +2,19 @@ import { toLonLat, fromLonLat } from 'ol/proj';
 import { canUseVectorService, SERVICE_HEXBIN } from './serviceMode';
 import { JALISCO_BOUNDS } from './wmsConfig';
 
-export const VIEW3D_DEFAULTS = { pitch: 55, bearing: 0, exaggeration: 1.5 };
+export const VIEW3D_DEFAULTS = {
+    pitch: 55, bearing: 0, exaggeration: 1.5, sol: 315, alturaColumnas: 1, cielo: true, terreno: true,
+};
+export const VIEW3D_COLUMN_RANGE = [0.5, 3];
+export const CIELO_SPEC = {
+    'sky-color': '#a7c4e0',
+    'horizon-color': '#e7e2d8',
+    'fog-color': '#e9e6df',
+    'fog-ground-blend': 0.6,
+    'horizon-fog-blend': 0.5,
+    'sky-horizon-blend': 0.6,
+    'atmosphere-blend': 0.7,
+};
 export const VIEW3D_PITCH_MAX = 80;
 export const VIEW3D_EXAGGERATION_RANGE = [1, 5];
 export const EXTRUSION_MAX_HEIGHT_M = 45000;
@@ -22,6 +34,11 @@ const clamp = (value, [min, max]) => Math.min(max, Math.max(min, value));
 
 export const clampPitch = (pitch) => clamp(Number(pitch) || 0, [0, VIEW3D_PITCH_MAX]);
 export const clampExaggeration = (value) => clamp(Number(value) || 1, VIEW3D_EXAGGERATION_RANGE);
+export const clampColumnas = (value) => clamp(Number(value) || 1, VIEW3D_COLUMN_RANGE);
+export const clampSol = (value) => ((Math.round(Number(value) || 0) % 360) + 360) % 360;
+
+const RUMBOS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+export const rumboDeAngulo = (grados) => RUMBOS[Math.round(clampSol(grados) / 45) % 8];
 
 export const olViewToCamera = (view) => {
     const center = view?.getCenter?.();

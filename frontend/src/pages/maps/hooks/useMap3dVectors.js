@@ -23,7 +23,7 @@ const extrusionFor = (layer, collection, extrudedIds) => {
     return { property, maxValue: maxOf(collection.features, property), color: ['get', '_fill'] };
 };
 
-const syncVectors = (map, olMap, extrudedIds) => {
+const syncVectors = (map, olMap, extrudedIds, escala) => {
     const resolution = olMap.getView().getResolution();
     const layers = olMap.getLayers().getArray().filter(layer => isLocalVector(layer) && layer.getVisible());
     const wanted = new Set();
@@ -35,13 +35,13 @@ const syncVectors = (map, olMap, extrudedIds) => {
         const kind = geometryKind(collection);
         upsertGeojson(map, id, collection);
         const extrusion = kind === 'polygon' ? extrusionFor(layer, collection, extrudedIds) : null;
-        replaceLayers(map, id, vectorLayerSpecs(id, kind, { opacity: layer.getOpacity(), extrusion }), RELIEF_LAYER_ID);
+        replaceLayers(map, id, vectorLayerSpecs(id, kind, { opacity: layer.getOpacity(), extrusion, escala }), RELIEF_LAYER_ID);
     });
 
     managedIds(map, PREFIX).filter(id => !wanted.has(id)).forEach(id => removeGeojson(map, id));
 };
 
-export const useMap3dVectors = (map, olMapRef, extrudedIds) => {
+export const useMap3dVectors = (map, olMapRef, extrudedIds, escala = 1) => {
     useEffect(() => {
         const olMap = olMapRef.current;
         if (!map || !olMap) return undefined;
@@ -54,7 +54,7 @@ export const useMap3dVectors = (map, olMapRef, extrudedIds) => {
                 layer.on(['change:opacity', 'change:visible'], schedule),
                 layer.getSource().on('change', schedule),
             ]);
-            syncVectors(map, olMap, extrudedIds);
+            syncVectors(map, olMap, extrudedIds, escala);
         };
         function schedule() {
             if (frame !== null) return;
@@ -72,5 +72,5 @@ export const useMap3dVectors = (map, olMapRef, extrudedIds) => {
             unByKey(collectionKeys);
             unByKey(layerKeys);
         };
-    }, [map, olMapRef, extrudedIds]);
+    }, [map, olMapRef, extrudedIds, escala]);
 };

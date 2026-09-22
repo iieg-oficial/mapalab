@@ -37,7 +37,7 @@ const MapaPrincipal = ({ isComparing }) => {
     return (
         <>
             {!isComparing && !active && <MeasurementTools />}
-            {!active && <ScaleLineControl />}
+            <ScaleLineControl />
             <MapaConAcople>
                 {isComparing ? <SwipeView /> : <MapView />}
                 {active && !isComparing && <Suspense fallback={null}><Map3DView /></Suspense>}

@@ -42,7 +42,7 @@ export const loadExtrusion = async ({ wmsConfig, cqlFilter, signal, getLegendJso
     return { status: 'ready', collection, style: { ...style, maxValue: maxOf(collection.features, style.property) } };
 };
 
-export const useMap3dExtrusions = (map, olMapRef, { extrudedIds, allLayers, getServiceMode, getLegendJson, reportExtrusion }) => {
+export const useMap3dExtrusions = (map, olMapRef, { extrudedIds, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas = 1 }) => {
     const cacheRef = useRef(new Map());
     const [revision, setRevision] = useState(0);
 
@@ -89,7 +89,7 @@ export const useMap3dExtrusions = (map, olMapRef, { extrudedIds, allLayers, getS
                 reportExtrusion(layerId, result.status);
                 if (result.status !== 'ready') return;
                 upsertGeojson(map, sourceId, result.collection);
-                replaceLayers(map, sourceId, [extrusionLayer(`${sourceId}-ext`, sourceId, result.style)]);
+                replaceLayers(map, sourceId, [extrusionLayer(`${sourceId}-ext`, sourceId, result.style, alturaColumnas)]);
             } catch (error) {
                 if (controller.signal.aborted) return;
                 console.warn('[mapa3d] no se pudo extruir', layerId, error?.message || error);
@@ -98,5 +98,5 @@ export const useMap3dExtrusions = (map, olMapRef, { extrudedIds, allLayers, getS
         });
 
         return () => controller.abort();
-    }, [map, olMapRef, extrudedIds, allLayers, getServiceMode, getLegendJson, reportExtrusion, revision]);
+    }, [map, olMapRef, extrudedIds, allLayers, getServiceMode, getLegendJson, reportExtrusion, revision, alturaColumnas]);
 };

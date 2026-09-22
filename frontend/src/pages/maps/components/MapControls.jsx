@@ -2,7 +2,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { ZOOM_ANIMATION_MS } from '@pages/maps/helpers/defaultView';
 import { useSiderAdaptivePosition, useSider } from '@contexts/SiderContext';
 import { getFitPadding, ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
-import { useCallback, useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { transformExtent, fromLonLat } from 'ol/proj';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
@@ -17,6 +17,9 @@ import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 import { useAreaUtil } from '@contexts/AreaUtilContext';
 import { useView3d } from '@contexts/View3dContext';
 import Map3DBar from './Map3D/Map3DBar';
+import Map3DAyuda from './Map3D/Map3DAyuda';
+import Tooltip from '@components/Tooltip';
+import icoNorte from '@icons/ico_n.svg';
 
 
 const MapControls = ({ hideLocate = false }) => {
@@ -28,6 +31,13 @@ const MapControls = ({ hideLocate = false }) => {
     const locationLayerRef = useRef(null);
     const isSwipe = !!compareMode?.active;
     const view3d = useView3d();
+    const btn3dRef = useRef(null);
+    const [barraTop, setBarraTop] = useState(0);
+    useLayoutEffect(() => {
+        const boton = btn3dRef.current;
+        if (boton) setBarraTop(boton.offsetTop + boton.offsetHeight / 2);
+    }, [view3d.active, view3d.available, hideLocate]);
+
     const view3dTitle = !view3d.available
         ? 'Tu navegador no tiene WebGL2, necesario para la vista 3D'
         : `Cambiar a vista ${view3d.active ? '2D' : '3D'}`;
@@ -178,13 +188,30 @@ const MapControls = ({ hideLocate = false }) => {
 
     return (
         <div
-            className={`fixed bottom-15 z-10 flex items-end ${className}`}
+            className={`fixed bottom-15 z-10 flex flex-col items-start gap-2 ${className}`}
             style={{
                 ...style,
                 left: `calc(${style?.left || '0px'} + ${margenes.left}px)`,
                 bottom: `calc(3.75rem + ${margenes.bottom}px)`,
             }}
         >
+            {view3d.active && (
+                <Tooltip content="Orientar al norte">
+                    <button
+                        type="button"
+                        onClick={() => view3d.setBearing(0)}
+                        className="w-11 flex justify-center p-1 cursor-pointer"
+                        aria-label="Orientar al norte"
+                    >
+                        <img
+                            src={icoNorte}
+                            alt=""
+                            className="h-12 w-auto transition-transform duration-200"
+                            style={{ transform: `rotate(${-view3d.bearing}deg)` }}
+                        />
+                    </button>
+                </Tooltip>
+            )}
             <div className="relative flex flex-col justify-center items-center rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
                 <button
                     onClick={handleZoomIn}
@@ -232,17 +259,20 @@ const MapControls = ({ hideLocate = false }) => {
                     />
                 </button>
                 {view3d.present && !isSwipe && (
-                    <button
-                        type="button"
-                        onClick={view3d.toggle}
-                        disabled={!view3d.available}
-                        aria-pressed={view3d.active}
-                        className={`mx-1.5 my-0.5 size-8 rounded-full text-[13px] font-bold transition-colors ${view3d.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'} ${view3d.active ? 'bg-[#5C2472] text-white' : 'text-[#465055] hover:text-[#70308A]'}`}
-                        title={view3dTitle}
-                        aria-label={view3dTitle}
-                    >
+                    <Tooltip content={view3d.available ? <Map3DAyuda titulo={view3dTitle} /> : view3dTitle} placement="right" interactive>
+                        <button
+                            ref={btn3dRef}
+                            type="button"
+                            onClick={view3d.toggle}
+                            disabled={!view3d.available}
+                            aria-pressed={view3d.active}
+                            className={`mx-1.5 my-0.5 size-8 rounded-full text-[13px] font-bold transition-colors ${view3d.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'} ${view3d.active ? 'bg-[#5C2472] text-white' : 'text-[#465055] hover:text-[#70308A]'}`}
+                            title={view3dTitle}
+                            aria-label={view3dTitle}
+                        >
                         3D
-                    </button>
+                        </button>
+                    </Tooltip>
                 )}
                 <button
                     onClick={handleZoomOut}
@@ -258,8 +288,12 @@ const MapControls = ({ hideLocate = false }) => {
                         className="w-6 h-6"
                     />
                 </button>
+                {view3d.active && (
+                    <div className="absolute left-full" style={{ top: barraTop, transform: 'translateY(-50%)' }}>
+                        <Map3DBar />
+                    </div>
+                )}
             </div>
-            <Map3DBar />
         </div>
     );
 };

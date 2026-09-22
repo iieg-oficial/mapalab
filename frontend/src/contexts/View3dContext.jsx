@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useSearchParams } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
 import { trackView3d } from '@services/analyticsService';
-import { VIEW3D_DEFAULTS, clampExaggeration, clampPitch, webglAvailable } from '@pages/maps/helpers/view3d';
+import { VIEW3D_DEFAULTS, clampColumnas, clampExaggeration, clampPitch, clampSol, webglAvailable } from '@pages/maps/helpers/view3d';
 
 const View3dContext = createContext(null);
 
@@ -13,6 +13,10 @@ const INACTIVE = {
     pitch: VIEW3D_DEFAULTS.pitch,
     bearing: VIEW3D_DEFAULTS.bearing,
     exaggeration: VIEW3D_DEFAULTS.exaggeration,
+    sol: VIEW3D_DEFAULTS.sol,
+    alturaColumnas: VIEW3D_DEFAULTS.alturaColumnas,
+    cielo: VIEW3D_DEFAULTS.cielo,
+    terreno: VIEW3D_DEFAULTS.terreno,
     extruded: [],
     extrusionStatus: {},
     map3dRef: { current: null },
@@ -22,6 +26,12 @@ const INACTIVE = {
     setPitch: () => {},
     setBearing: () => {},
     setExaggeration: () => {},
+    setSol: () => {},
+    setAlturaColumnas: () => {},
+    setCielo: () => {},
+    setTerreno: () => {},
+    orbita: false,
+    setOrbita: () => {},
     toggleExtrusion: () => {},
     isExtruded: () => false,
     reportExtrusion: () => {},
@@ -59,6 +69,11 @@ export const View3dProvider = ({ children }) => {
     const [bearing, setBearing] = useState(VIEW3D_DEFAULTS.bearing);
     const [exaggeration, setExaggerationState] = useState(VIEW3D_DEFAULTS.exaggeration);
     const [extruded, setExtruded] = useState(initial.extruded);
+    const [sol, setSolState] = useState(VIEW3D_DEFAULTS.sol);
+    const [alturaColumnas, setAlturaState] = useState(VIEW3D_DEFAULTS.alturaColumnas);
+    const [cielo, setCielo] = useState(VIEW3D_DEFAULTS.cielo);
+    const [terreno, setTerreno] = useState(VIEW3D_DEFAULTS.terreno);
+    const [orbita, setOrbita] = useState(false);
     const [extrusionStatus, setExtrusionStatus] = useState({});
     const map3dRef = useRef(null);
     const enteredAtRef = useRef(null);
@@ -88,6 +103,8 @@ export const View3dProvider = ({ children }) => {
     const toggle = useCallback(() => (active ? exit() : enter()), [active, enter, exit]);
     const setPitch = useCallback((value) => setPitchState(clampPitch(value)), []);
     const setExaggeration = useCallback((value) => setExaggerationState(clampExaggeration(value)), []);
+    const setSol = useCallback((value) => setSolState(clampSol(value)), []);
+    const setAlturaColumnas = useCallback((value) => setAlturaState(clampColumnas(value)), []);
 
     const toggleExtrusion = useCallback((layerId) => {
         setExtruded(prev => {
@@ -124,10 +141,14 @@ export const View3dProvider = ({ children }) => {
 
     const value = useMemo(() => ({
         present: true, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef,
+        sol, alturaColumnas, cielo, terreno, orbita,
         enter, exit, toggle, setPitch, setBearing, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
+        setSol, setAlturaColumnas, setCielo, setTerreno, setOrbita,
     }), [
         available, active, pitch, bearing, exaggeration, extruded, extrusionStatus,
+        sol, alturaColumnas, cielo, terreno, orbita,
         enter, exit, toggle, setPitch, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
+        setSol, setAlturaColumnas,
     ]);
 
     return <View3dContext.Provider value={value}>{children}</View3dContext.Provider>;
