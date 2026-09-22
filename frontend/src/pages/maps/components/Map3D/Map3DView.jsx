@@ -15,6 +15,7 @@ import { useMap3dPopup } from '@hooksMaps/useMap3dPopup';
 import { useMap3dContorno } from '@hooksMaps/useMap3dContorno';
 
 const TERRAIN_SOURCE = 'terreno';
+const ORBITA_GRADOS_POR_SEGUNDO = 8;
 
 const applyBasemap = (map, basemap) => {
     ['etiquetas', 'base'].forEach((id) => {
@@ -41,7 +42,7 @@ const Map3DView = () => {
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, setPitch, setBearing, exit, reportExtrusion,
-        sol, alturaColumnas, cielo, terreno, orbita,
+        sol, alturaColumnas, orbita,
     } = useView3d();
     const { getLegendJson } = useWMSLegend();
     const [map, setMap] = useState(null);
@@ -72,6 +73,7 @@ const Map3DView = () => {
             map3dRef.current = instance;
             instance.on('load', () => {
                 instance.setTerrain({ source: TERRAIN_SOURCE, exaggeration: initial.exaggeration });
+                instance.setSky(CIELO_SPEC);
                 setMap(instance);
             });
             instance.on('pitchend', () => setPitch(instance.getPitch()));
@@ -92,12 +94,8 @@ const Map3DView = () => {
     }, [mapRef, map3dRef, setPitch, setBearing, exit]);
 
     useEffect(() => {
-        if (map) map.setTerrain(terreno ? { source: TERRAIN_SOURCE, exaggeration } : null);
-    }, [map, exaggeration, terreno]);
-
-    useEffect(() => {
-        if (map) map.setSky(cielo ? CIELO_SPEC : undefined);
-    }, [map, cielo]);
+        if (map) map.setTerrain({ source: TERRAIN_SOURCE, exaggeration });
+    }, [map, exaggeration]);
 
     useEffect(() => {
         if (!map?.getLayer(RELIEF_LAYER_ID)) return;
@@ -107,8 +105,10 @@ const Map3DView = () => {
     useEffect(() => {
         if (!map || !orbita) return undefined;
         let frame = null;
-        const girar = () => {
-            map.setBearing(map.getBearing() + 0.12);
+        let previo = performance.now();
+        const girar = (ahora) => {
+            map.setBearing(map.getBearing() + ((ahora - previo) / 1000) * ORBITA_GRADOS_POR_SEGUNDO);
+            previo = ahora;
             frame = requestAnimationFrame(girar);
         };
         frame = requestAnimationFrame(girar);

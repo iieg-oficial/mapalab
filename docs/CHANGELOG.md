@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.180.0] - 2026-09-22
+
+### Cambiado: la órbita es un play/pausa en la pastilla, y el terreno y el cielo van siempre puestos
+
+El panel de interruptores duró una versión. **Terreno** y **cielo y neblina** no eran decisiones que
+el usuario quisiera tomar —se quieren siempre— así que ahora se encienden solos y desaparecen de la
+interfaz. La **órbita** se queda, pero como botón de play/pausa en la propia pastilla, con los
+iconos y el tamaño del loop de periodicidad.
+
+La órbita gira 8° por segundo contados **por tiempo y no por cuadro**, así que va igual en una
+pantalla de 60 Hz que en una de 120.
+
 ## [1.179.0] - 2026-09-22
 
 ### Agregado: la barra del comparador nombra la capa que estás comparando

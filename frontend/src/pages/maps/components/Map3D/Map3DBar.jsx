@@ -5,21 +5,21 @@ import { useView3d } from '@contexts/View3dContext';
 import {
     rumboDeAngulo, VIEW3D_COLUMN_RANGE, VIEW3D_EXAGGERATION_RANGE, VIEW3D_PITCH_MAX,
 } from '@pages/maps/helpers/view3d';
+import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
 import Map3DRing from './Map3DRing';
 import Map3DSliderPopover from './Map3DSliderPopover';
-import Map3DAjustes from './Map3DAjustes';
 
 const [EXAG_MIN, EXAG_MAX] = VIEW3D_EXAGGERATION_RANGE;
 const [COL_MIN, COL_MAX] = VIEW3D_COLUMN_RANGE;
-const BOTON_AJUSTES = 'size-8 shrink-0 rounded-full grid place-items-center text-[#465055] hover:text-[#70308A] cursor-pointer';
+const BOTON_ORBITA = `flex items-center justify-center size-7 ${RADIUS_ICON} shrink-0 cursor-pointer transition-colors`;
 
 const Map3DBar = () => {
     const {
         active, pitch, exaggeration, sol, alturaColumnas, extruded,
-        setPitch, setExaggeration, setSol, setAlturaColumnas, orbita,
+        setPitch, setExaggeration, setSol, setAlturaColumnas, orbita, setOrbita,
     } = useView3d();
     const [abierto, setAbierto] = useState(null);
-    const refs = { pitch: useRef(null), exag: useRef(null), sol: useRef(null), altura: useRef(null), ajustes: useRef(null) };
+    const refs = { pitch: useRef(null), exag: useRef(null), sol: useRef(null), altura: useRef(null) };
     if (!active) return null;
 
     const alternar = (cual) => setAbierto(previo => (previo === cual ? null : cual));
@@ -51,22 +51,20 @@ const Map3DBar = () => {
                     />
                 </Tooltip>
             ))}
-            <Tooltip content="Terreno, cielo y órbita">
+            <Tooltip content={orbita ? 'Pausar la órbita' : 'Girar alrededor del centro'}>
                 <button
-                    ref={refs.ajustes}
                     type="button"
-                    className={`${BOTON_AJUSTES} ${orbita ? 'text-[#5C2472]' : ''}`}
-                    onClick={() => alternar('ajustes')}
-                    aria-expanded={abierto === 'ajustes'}
-                    aria-label="Terreno, cielo y órbita"
+                    className={`${BOTON_ORBITA} ${orbita ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6] text-[#5C2472] hover:bg-[#E2D3EA]'}`}
+                    onClick={() => setOrbita(!orbita)}
+                    aria-pressed={orbita}
+                    aria-label={orbita ? 'Pausar la órbita' : 'Girar alrededor del centro'}
                 >
-                    <Icon name="settings" className="size-5" />
+                    <Icon name={orbita ? 'pause' : 'play'} className="size-2.5 shrink-0" />
                 </button>
             </Tooltip>
             {deslizadores[abierto] && (
                 <Map3DSliderPopover anchorRef={refs[abierto]} {...deslizadores[abierto]} onClose={() => setAbierto(null)} />
             )}
-            {abierto === 'ajustes' && <Map3DAjustes anchorRef={refs.ajustes} onClose={() => setAbierto(null)} />}
         </div>
     );
 };

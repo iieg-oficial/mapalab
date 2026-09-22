@@ -15,8 +15,6 @@ const INACTIVE = {
     exaggeration: VIEW3D_DEFAULTS.exaggeration,
     sol: VIEW3D_DEFAULTS.sol,
     alturaColumnas: VIEW3D_DEFAULTS.alturaColumnas,
-    cielo: VIEW3D_DEFAULTS.cielo,
-    terreno: VIEW3D_DEFAULTS.terreno,
     extruded: [],
     extrusionStatus: {},
     map3dRef: { current: null },
@@ -28,8 +26,6 @@ const INACTIVE = {
     setExaggeration: () => {},
     setSol: () => {},
     setAlturaColumnas: () => {},
-    setCielo: () => {},
-    setTerreno: () => {},
     orbita: false,
     setOrbita: () => {},
     toggleExtrusion: () => {},
@@ -71,8 +67,6 @@ export const View3dProvider = ({ children }) => {
     const [extruded, setExtruded] = useState(initial.extruded);
     const [sol, setSolState] = useState(VIEW3D_DEFAULTS.sol);
     const [alturaColumnas, setAlturaState] = useState(VIEW3D_DEFAULTS.alturaColumnas);
-    const [cielo, setCielo] = useState(VIEW3D_DEFAULTS.cielo);
-    const [terreno, setTerreno] = useState(VIEW3D_DEFAULTS.terreno);
     const [orbita, setOrbita] = useState(false);
     const [extrusionStatus, setExtrusionStatus] = useState({});
     const map3dRef = useRef(null);
@@ -141,12 +135,12 @@ export const View3dProvider = ({ children }) => {
 
     const value = useMemo(() => ({
         present: true, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef,
-        sol, alturaColumnas, cielo, terreno, orbita,
+        sol, alturaColumnas, orbita,
         enter, exit, toggle, setPitch, setBearing, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
-        setSol, setAlturaColumnas, setCielo, setTerreno, setOrbita,
+        setSol, setAlturaColumnas, setOrbita,
     }), [
         available, active, pitch, bearing, exaggeration, extruded, extrusionStatus,
-        sol, alturaColumnas, cielo, terreno, orbita,
+        sol, alturaColumnas, orbita,
         enter, exit, toggle, setPitch, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
         setSol, setAlturaColumnas,
     ]);

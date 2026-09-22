@@ -3,7 +3,7 @@ import { canUseVectorService, SERVICE_HEXBIN } from './serviceMode';
 import { JALISCO_BOUNDS } from './wmsConfig';
 
 export const VIEW3D_DEFAULTS = {
-    pitch: 55, bearing: 0, exaggeration: 1.5, sol: 315, alturaColumnas: 1, cielo: true, terreno: true,
+    pitch: 55, bearing: 0, exaggeration: 1.5, sol: 315, alturaColumnas: 1,
 };
 export const VIEW3D_COLUMN_RANGE = [0.5, 3];
 export const CIELO_SPEC = {
