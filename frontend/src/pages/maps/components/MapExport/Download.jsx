@@ -4,6 +4,7 @@ import { useMapDownload } from './hooks/useMapDownload';
 import { QUALITY_PRESETS } from './utils/exportDimensions';
 import { useSider } from '@contexts/SiderContext';
 import { useMapsContext } from '@hooks/useMaps';
+import { useView3d } from '@contexts/View3dContext';
 import SymbologyItem from '../SymbologyItem';
 import Checkbox from '@components/Checkbox';
 import Icon from '@components/Icon';
@@ -44,6 +45,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
     } = useMapDownload();
     const { compareMode, selectedLayerForSymbology, allLayers, measurements } = useMapsContext();
     const isSwipe = !!compareMode?.active;
+    const { exit: exit3d } = useView3d();
     const seleccion = useMemo(() => ultimaSeleccion(measurements), [measurements]);
     const haySeleccion = !!seleccion && !isSwipe;
     const [includeSwipeBar, setIncludeSwipeBar] = useState(true);
@@ -115,6 +117,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
 
     const handleDownloadClick = () => {
         if (!canDownload || isDownloading) return;
+        exit3d();
         handleSetIsPanelOpen(true);
     };
 

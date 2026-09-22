@@ -95,6 +95,9 @@ export const trackSwipeEnter = (orientation) =>
 export const trackSwipeExit = (durationSec) =>
     withMapInteraction('swipe_exit', { duration_sec: durationSec });
 
+export const trackView3d = (action, params) =>
+    withMapInteraction('view3d', { action, ...(params || {}) });
+
 export const trackSwipeSlotChange = (layerId, from, to) =>
     withMapInteraction('swipe_slot_change', { layer_id: layerId, from, to });
 

@@ -4,6 +4,7 @@ import Tooltip from '@components/Tooltip';
 import Switch from '@components/Switch';
 import Loading from '@components/Loading';
 import LayerOpacityPopover from './LayerOpacityPopover';
+import ExtrudeButton from './ExtrudeButton';
 import { useLegendsVisibility } from './hooks/useLegendsVisibility';
 import { useStatsVisibility } from './hooks/useStatsVisibility';
 import Badge from '@components/Badge';
@@ -185,6 +186,8 @@ const LayerActionsBar = ({
                     </button>
                 </Tooltip>
             )}
+
+            <ExtrudeButton layerId={layerId} baseClass={BUTTON_BASE} />
 
             <div className="flex-1" />
 

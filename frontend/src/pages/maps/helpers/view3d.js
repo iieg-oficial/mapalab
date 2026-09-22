@@ -1,0 +1,142 @@
+import { toLonLat, fromLonLat } from 'ol/proj';
+import { canUseVectorService, SERVICE_HEXBIN } from './serviceMode';
+import { JALISCO_BOUNDS } from './wmsConfig';
+
+export const VIEW3D_DEFAULTS = { pitch: 55, bearing: 0, exaggeration: 1.5 };
+export const VIEW3D_PITCH_MAX = 80;
+export const VIEW3D_EXAGGERATION_RANGE = [1, 5];
+export const EXTRUSION_MAX_HEIGHT_M = 45000;
+const TERRAIN_LAYER = 'raster:elevacion_terreno_rgb';
+const TERRAIN_MAX_ZOOM = 12;
+
+const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
+const MAPLIBRE_ZOOM_OFFSET = 1;
+
+const absolute = (url) => {
+    if (!url) return '';
+    if (/^https?:\/\//i.test(url)) return url;
+    return `${window.location.origin}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
+const clamp = (value, [min, max]) => Math.min(max, Math.max(min, value));
+
+export const clampPitch = (pitch) => clamp(Number(pitch) || 0, [0, VIEW3D_PITCH_MAX]);
+export const clampExaggeration = (value) => clamp(Number(value) || 1, VIEW3D_EXAGGERATION_RANGE);
+
+export const olViewToCamera = (view) => {
+    const center = view?.getCenter?.();
+    if (!center) return { center: JALISCO_BOUNDS.center, zoom: JALISCO_BOUNDS.zoom - MAPLIBRE_ZOOM_OFFSET };
+    return {
+        center: toLonLat(center),
+        zoom: (view.getZoom() ?? JALISCO_BOUNDS.zoom) - MAPLIBRE_ZOOM_OFFSET,
+    };
+};
+
+export const cameraToOlView = ({ center, zoom }) => ({
+    center: fromLonLat(center),
+    zoom: zoom + MAPLIBRE_ZOOM_OFFSET,
+});
+
+const wmtsTileUrl = (layer) => {
+    const params = new URLSearchParams({
+        SERVICE: 'WMTS',
+        REQUEST: 'GetTile',
+        VERSION: '1.0.0',
+        LAYER: layer,
+        STYLE: '',
+        TILEMATRIXSET: 'EPSG:900913',
+        FORMAT: 'image/png',
+    });
+    return `${absolute(`${GEOSERVER_BASE}/gwc/service/wmts`)}?${params.toString()}&TILEMATRIX=EPSG:900913:{z}&TILEROW={y}&TILECOL={x}`;
+};
+
+export const terrainSourceSpec = () => ({
+    type: 'raster-dem',
+    tiles: [wmtsTileUrl(TERRAIN_LAYER)],
+    tileSize: 256,
+    maxzoom: TERRAIN_MAX_ZOOM,
+    bounds: JALISCO_BOUNDS.coords,
+    encoding: 'custom',
+    redFactor: 256,
+    greenFactor: 1,
+    blueFactor: 0,
+    baseShift: 0,
+});
+
+const basemapTileUrl = (template) => (template ? absolute(template.replace('{r}', '')) : null);
+
+export const RELIEF_LAYER_ID = 'sombreado';
+
+const rasterSource = (template) => ({ type: 'raster', tiles: [basemapTileUrl(template)], tileSize: 256 });
+
+export const basemapSources = (basemap) => ({
+    ...(basemap?.tiles ? { base: rasterSource(basemap.tiles) } : {}),
+    ...(basemap?.labelsTiles ? { etiquetas: rasterSource(basemap.labelsTiles) } : {}),
+});
+
+export const basemapLayers = (basemap) => [
+    ...(basemap?.tiles ? [{ id: 'base', type: 'raster', source: 'base' }] : []),
+    ...(basemap?.labelsTiles ? [{ id: 'etiquetas', type: 'raster', source: 'etiquetas', minzoom: 14 }] : []),
+];
+
+export const buildBaseStyle = (basemap) => ({
+    version: 8,
+    sources: { terreno: terrainSourceSpec(), sombreado: terrainSourceSpec(), ...basemapSources(basemap) },
+    layers: [
+        { id: 'fondo', type: 'background', paint: { 'background-color': '#ffffff' } },
+        ...basemapLayers(basemap).filter(layer => layer.id === 'base'),
+        {
+            id: RELIEF_LAYER_ID,
+            type: 'hillshade',
+            source: 'sombreado',
+            paint: {
+                'hillshade-exaggeration': 0.45,
+                'hillshade-shadow-color': '#3d3833',
+                'hillshade-highlight-color': 'rgba(255, 255, 255, 0.2)',
+                'hillshade-accent-color': '#5a5048',
+            },
+        },
+        ...basemapLayers(basemap).filter(layer => layer.id === 'etiquetas'),
+    ],
+});
+
+const SKIPPED_WMS_PARAMS = new Set(['WIDTH', 'HEIGHT', 'BBOX', 'SRS', 'CRS', 'REQUEST', 'SERVICE', 'TILED']);
+
+export const wmsTileUrl = (url, params) => {
+    if (!url) return null;
+    const query = new URLSearchParams({ SERVICE: 'WMS', REQUEST: 'GetMap', SRS: 'EPSG:3857', WIDTH: '256', HEIGHT: '256' });
+    Object.entries(params || {}).forEach(([key, value]) => {
+        if (value === undefined || value === null || SKIPPED_WMS_PARAMS.has(key.toUpperCase())) return;
+        query.set(key, String(value));
+    });
+    if (!query.has('VERSION')) query.set('VERSION', '1.1.1');
+    const version = query.get('VERSION');
+    if (version === '1.3.0') {
+        query.delete('SRS');
+        query.set('CRS', 'EPSG:3857');
+    }
+    return `${absolute(url)}?${query.toString()}&BBOX={bbox-epsg-3857}`;
+};
+
+export const canExtrudeLayer = (layerDef, serviceMode) => {
+    if (serviceMode === SERVICE_HEXBIN) return true;
+    return canUseVectorService(layerDef) && layerDef.geometryType === 'polygon';
+};
+
+export const cqlSegmentFor = (params, layerName) => {
+    const names = String(params?.LAYERS || '').split(',');
+    const filters = String(params?.CQL_FILTER || '').split(';');
+    const index = names.indexOf(layerName);
+    if (index < 0 || !params?.CQL_FILTER) return null;
+    const segment = (filters[index] ?? filters[0] ?? '').trim();
+    return segment && segment.toUpperCase() !== 'INCLUDE' ? segment : null;
+};
+
+export const webglAvailable = () => {
+    try {
+        const canvas = document.createElement('canvas');
+        return !!canvas.getContext('webgl2');
+    } catch {
+        return false;
+    }
+};

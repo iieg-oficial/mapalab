@@ -15,6 +15,8 @@ import Icon from '@components/Icon';
 import { trackMapZoomLevel, trackGeolocate } from '@services/analyticsService';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 import { useAreaUtil } from '@contexts/AreaUtilContext';
+import { useView3d } from '@contexts/View3dContext';
+import Map3DBar from './Map3D/Map3DBar';
 
 
 const MapControls = ({ hideLocate = false }) => {
@@ -25,6 +27,8 @@ const MapControls = ({ hideLocate = false }) => {
     const { margenes } = useAreaUtil();
     const locationLayerRef = useRef(null);
     const isSwipe = !!compareMode?.active;
+    const view3d = useView3d();
+    const get3d = useCallback(() => (view3d.active ? view3d.map3dRef.current : null), [view3d.active, view3d.map3dRef]);
 
     const getActiveMap = useCallback(() => {
         if (isSwipe) return paneMapRefs?.current?.[0]?.current ?? null;
@@ -32,6 +36,8 @@ const MapControls = ({ hideLocate = false }) => {
     }, [isSwipe, mapRef, paneMapRefs]);
 
     const handleZoomIn = useCallback(() => {
+        const map3d = get3d();
+        if (map3d) { map3d.zoomIn(); return; }
         const map = getActiveMap();
         if (!map) return;
 
@@ -43,9 +49,11 @@ const MapControls = ({ hideLocate = false }) => {
             view.animate({ zoom: currentZoom + 1, duration: ZOOM_ANIMATION_MS });
             trackMapZoomLevel(currentZoom + 1);
         }
-    }, [getActiveMap]);
+    }, [getActiveMap, get3d]);
 
     const handleZoomOut = useCallback(() => {
+        const map3d = get3d();
+        if (map3d) { map3d.zoomOut(); return; }
         const map = getActiveMap();
         if (!map) return;
 
@@ -58,11 +66,13 @@ const MapControls = ({ hideLocate = false }) => {
             trackMapZoomLevel(currentZoom - 1);
         }
 
-    }, [getActiveMap]);
+    }, [getActiveMap, get3d]);
 
     const enMunicipio = !!municipioMode?.active && !!municipioMode?.scope?.type;
 
     const handleEncuadrar = useCallback(() => {
+        const map3d = get3d();
+        if (map3d) { map3d.fitBounds(JALISCO_BOUNDS.coords, { padding: 60, pitch: map3d.getPitch(), bearing: map3d.getBearing() }); return; }
         if (municipioMode?.active && municipioMode.centerOnSelection?.()) return;
         const map = getActiveMap();
         if (!map) return;
@@ -70,7 +80,7 @@ const MapControls = ({ hideLocate = false }) => {
         const extent = transformExtent(JALISCO_BOUNDS.coords, 'EPSG:4326', 'EPSG:3857');
         const padding = getFitPadding({ mapSize: map.getSize(), siderWidth, isMobile, rightPanelWidth: ACTIVE_LAYERS_PANEL_WIDTH });
         view.fit(extent, { duration: 500, padding });
-    }, [getActiveMap, siderWidth, isMobile, municipioMode]);
+    }, [getActiveMap, siderWidth, isMobile, municipioMode, get3d]);
 
     const handleLocateMe = useCallback(() => {
         const primaryMap = getActiveMap();
@@ -187,7 +197,7 @@ const MapControls = ({ hideLocate = false }) => {
                         className="w-6 h-6"
                     />
                 </button>
-                {!hideLocate && (
+                {!hideLocate && !view3d.active && (
                     <button
                         onClick={handleLocateMe}
                         onMouseEnter={() => setHoveredButton('center')}
@@ -218,6 +228,18 @@ const MapControls = ({ hideLocate = false }) => {
                         className="w-6 h-6"
                     />
                 </button>
+                {view3d.available && (
+                    <button
+                        type="button"
+                        onClick={view3d.toggle}
+                        aria-pressed={view3d.active}
+                        className={`mx-1.5 my-0.5 size-8 rounded-full text-xs font-semibold transition-colors cursor-pointer ${view3d.active ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6] text-[#5C2472] hover:bg-[#E2D3EA]'}`}
+                        title={view3d.active ? 'Cambiar a vista 2D' : 'Cambiar a vista 3D'}
+                        aria-label={view3d.active ? 'Cambiar a vista 2D' : 'Cambiar a vista 3D'}
+                    >
+                        3D
+                    </button>
+                )}
                 <button
                     onClick={handleZoomOut}
                     onMouseEnter={() => setHoveredButton('zoomout')}
@@ -233,6 +255,7 @@ const MapControls = ({ hideLocate = false }) => {
                     />
                 </button>
             </div>
+            <Map3DBar />
         </div>
     );
 };

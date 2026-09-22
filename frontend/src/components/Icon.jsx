@@ -234,6 +234,8 @@ const icons = {
             <path d="M12 8.5 15.5 10.5v4L12 16.5 8.5 14.5v-4z" fill="currentColor" fillOpacity="0.55" stroke="none" />
         </svg>
     ),
+    cubo: (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+        <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z" /><path d="M4 7.5 12 12l8-4.5M12 12v9" /></svg>),
     geom_raster: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
             <rect x="4" y="4" width="16" height="16" rx="1.5" />

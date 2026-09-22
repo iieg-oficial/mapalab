@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
+import { useView3d } from '@contexts/View3dContext';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { canUseVectorService } from '@pages/maps/helpers/serviceMode';
@@ -72,12 +73,15 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
         abrirTabla(capaParaTabla());
     };
 
+    const { exit: exit3d } = useView3d();
+
     const startSwipe = () => {
         enterCompareMode();
         closeSider?.();
     };
 
     const handleClick = (id) => {
+        if (['mediciones', 'anotaciones', 'compare-swipe'].includes(id)) exit3d();
         if (id === 'mediciones') {
             toggleMeasurementTools?.();
         } else if (id === 'anotaciones') {

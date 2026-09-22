@@ -5,6 +5,36 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.173.0] - 2026-09-21
+
+### Agregado: vista 3D del mapa
+
+Botón **3D** en la pastilla de controles, entre encuadrar y alejar. Cambia el mapa a MapLibre GL
+con el relieve real de Jalisco y conserva centro, zoom, mapa base y capas activas; al volver a 2D la
+cámara regresa a OpenLayers. Solo aparece si el navegador tiene WebGL2.
+
+- **Terreno** del DEM de sextante (`raster:elevacion_terreno_rgb`, 15 m), servido por el WMTS de
+  GWC con la altura en RGB (`R*256+G`, `encoding: 'custom'`). El sombreado sale del mismo DEM.
+- **Las capas WMS se reflejan tal cual**: se leen del mapa OL (`mergedLayers` + `getParams()`), así
+  que filtros, `TIME`, `ENV`, opacidad y orden son los mismos que en 2D. Hexbin y capas vectoriales
+  se pasan con el color de su estilo.
+- **Barra 3D** junto a los controles: brújula, inclinación (0–80°), exageración del relieve (×1–×5)
+  y descarga de la imagen 3D. La escala se oculta en 3D.
+- **Cubo en la tarjeta de la capa** para levantarla en columnas. Aplica a polígonos con WFS y a
+  hexbin. La altura es proporcional al valor y el color sale de las reglas del SLD
+  (`GetLegendGraphic` en JSON); si no se pueden leer, por cuantiles. Con más de 20 000 elementos no
+  se levanta. En 2D, el cubo entra a 3D y levanta la capa de un clic.
+- **URL**: `vista=3d`, `inclinacion` y `extruir` se escriben al vuelo, así que un enlace copiado
+  abre igual.
+- Medir, anotar, comparar y descargar regresan a 2D antes de abrirse.
+
+MapLibre (6.10) va en su propio chunk y en carga diferida: la vista inicial no descarga nada nuevo.
+Su worker se empaqueta con `?worker&url` y se sirve del mismo origen, por eso la CSP de
+`index.html` pasa a `worker-src 'self' blob:`.
+
+**Requiere sextante 2.10.0** (la capa `raster:elevacion_terreno_rgb`). Sin ella el 3D abre sin
+relieve.
+
 ## [1.172.2] - 2026-09-21
 
 ### Corregido: Seleccionados salía recortado y las coordenadas del borde, descentradas
