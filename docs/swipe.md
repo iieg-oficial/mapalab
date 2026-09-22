@@ -200,8 +200,12 @@ Al cargar un share con `annotations`, `useShareDeserializer` invoca `restoreAnno
 - Color asociado: A = morado IIEG (`#5C2472`), B = naranja (`#FF8300`, mismo del handle del swipe)
 - Handle naranja con knob blanco (`<svg>` con flechas según orientación)
 - Overlays "A"/"B" gigantes en `font-garet bold text-[120px]` mientras dura el resaltado: al entrar al comparador (`SWIPE_INTRO_MS`) y cada vez que `highlightedSlots` se enciende. Al apagarse, la letra viaja hasta el handle y se desvanece sobre la pastilla que queda ahí (`minimizeTransform`, `SWIPE_MINIMIZE_MS`)
-- Pastillas `A` y `B` permanentes flanqueando el knob (`A <> B`), con los colores de cada slot. Son la única señal de qué lado es cuál una vez que los overlays se minimizan
-- `<SwipeSlotControls>`: barra inferior centrada `[A · orientación · B]` con `<DatePill autoWidth>`. `<CloseButton>` rosa arriba si hay periodicidad seleccionada o dentro de la barra si no la hay
+- Letras `A` y `B` permanentes flanqueando el knob (`A <> B`), sin fondo, en el color de cada slot y
+  con `drop-shadow` blanco para leerse sobre cualquier mitad. Son la única señal de qué lado es cuál
+  una vez que los overlays se minimizan; van sin caja para no competir con el handle, que es lo que se arrastra
+- `<SwipeSlotControls>`: barra inferior centrada `[nombre · A · orientación · B]` con `<DatePill autoWidth>`.
+  El nombre sale de `selectedLayerForSymbology`, que es **uno solo** para los dos lados: lo que difiere
+  entre A y B es la fecha de esa misma capa, no la capa. `<CloseButton>` rosa arriba si hay periodicidad seleccionada o dentro de la barra si no la hay
 - Tooltips dinámicos: anexan `del lado A`/`del lado B` y, para acciones destructivas en `AB`, `(seguirá en el lado X)`
 
 ## Invariantes
