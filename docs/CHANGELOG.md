@@ -5,6 +5,34 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.189.0] - 2026-09-23
+
+### Cambiado: los lados del comparador se llaman α y β
+
+Las letras A y B se sustituyen por **α** y **β** en todo lo que el usuario ve: las letras del handle,
+los overlays gigantes al resaltar, los botones de lado de las capas comparadas, los tooltips de las
+píldoras de fecha y los del loop. El modelo no cambia —`paneA`, `paneB` y `activeSlot` siguen
+llamándose igual—, sólo la etiqueta, que sale de `slotLabel()` en `swipeTheme`. Una A latina junto a
+una capa llamada «Agua» se leía como parte del nombre; α no se confunde con nada.
+
+### Cambiado: el panel de capas comparadas usa el mismo cascarón que capas activas
+
+Fondo `#F9FBFF`, esquinas de 10 px y el mismo `box-shadow`; el encabezado pasa a `<h3>` de 18 px en
+negrita con un icono de 32 px a la izquierda, igual que «Capas Activas». El icono es nuevo
+(`ico_capas_comparadas.svg`): la pila de capas de siempre partida por la línea naranja del divisor.
+
+### Cambiado: la barra del comparador se queda con dos botones
+
+Sólo el de lista y el de orientación. El nombre de la capa y las dos píldoras de fecha salen de la
+barra: las fechas ya viven en cada fila del panel, una por lado, y desde ahí abren su periodicidad.
+
+### Cambiado: el panel de periodicidad pierde la franja de color
+
+Se va el borde superior morado o naranja, y la X y el bote de basura suben a la esquina superior
+derecha del panel en vez de competir por la fila del título, donde se envolvían cuando el nombre era
+largo. Los dos reutilizan los iconos que ya existen (`cerrarModal`, `eliminar`) en vez de un SVG
+dibujado a mano.
+
 ## [1.188.1] - 2026-09-23
 
 ### Corregido: la animación de fechas regresaba al año por defecto
@@ -145,7 +173,8 @@ segundos, para no quedar encima de los modales.
 ### Eliminado
 
 `CatalogoInfoBoxZone.jsx` y `helpers/infoboxDraft.js`, reemplazados por `components/tarjeta/` y
-`helpers/tarjetaModelo.js`.
+`helpers/tarjetaModelo.js`. También el botón del catálogo en la orilla del sider
+(`CatalogoSiderButton.jsx`): con la tarjeta en Herramientas sobraba.
 
 ## [1.185.0] - 2026-09-23
 

@@ -6,7 +6,7 @@ const extrusionLayerIds = (map) => (map.getStyle()?.layers || [])
     .filter(layer => layer.type === 'fill-extrusion')
     .map(layer => layer.id);
 
-export const useMap3dClick = (map, olMapRef) => {
+export const useMap3dClick = (map, olMapRef, pausado = false) => {
     const { queryFeatures } = useFeatureInfo();
 
     useEffect(() => {
@@ -14,10 +14,11 @@ export const useMap3dClick = (map, olMapRef) => {
 
         const onClick = (event) => {
             const olMap = olMapRef.current;
-            if (!olMap) return;
+            if (!olMap || pausado) return;
             queryFeatures(olMap, fromLonLat(event.lngLat.toArray()), event);
         };
         const onMove = (event) => {
+            if (pausado) return;
             const layers = extrusionLayerIds(map);
             const hit = layers.length && map.queryRenderedFeatures(event.point, { layers }).length > 0;
             map.getCanvas().style.cursor = hit ? 'pointer' : '';
@@ -29,5 +30,5 @@ export const useMap3dClick = (map, olMapRef) => {
             map.off('click', onClick);
             map.off('mousemove', onMove);
         };
-    }, [map, olMapRef, queryFeatures]);
+    }, [map, olMapRef, queryFeatures, pausado]);
 };

@@ -15,8 +15,8 @@ const Map3DSliderPopover = ({ anchorRef, titulo, valor, texto, min, max, step, o
             const anchor = anchorRef?.current;
             if (!anchor) return;
             const rect = anchor.getBoundingClientRect();
-            const left = Math.min(window.innerWidth - POPOVER_WIDTH - VIEWPORT_MARGIN, rect.left - 12);
-            setPosition({ top: rect.top - 10, left: Math.max(VIEWPORT_MARGIN, left) });
+            const left = Math.min(window.innerWidth - POPOVER_WIDTH - VIEWPORT_MARGIN, rect.right + 12);
+            setPosition({ top: rect.top + rect.height / 2, left: Math.max(VIEWPORT_MARGIN, left) });
         };
         updatePosition();
         window.addEventListener('resize', updatePosition);
@@ -44,7 +44,7 @@ const Map3DSliderPopover = ({ anchorRef, titulo, valor, texto, min, max, step, o
         <div
             ref={ref}
             className="fixed z-[9999] bg-white rounded-[10px] shadow-[0px_3px_24px_#00000029] px-3 py-2.5 flex flex-col gap-2"
-            style={{ top: position.top, left: position.left, width: POPOVER_WIDTH, transform: 'translateY(-100%)' }}
+            style={{ top: position.top, left: position.left, width: POPOVER_WIDTH, transform: 'translateY(-50%)' }}
         >
             <label htmlFor={inputId} className="flex justify-between text-[12px] text-[#465055]">
                 {titulo}

@@ -92,7 +92,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     };
 
     const handleClick = (id) => {
-        if (['mediciones', 'anotaciones', 'compare-swipe'].includes(id)) exit3d();
+        if (['anotaciones', 'compare-swipe'].includes(id)) exit3d();
         if (id === 'mediciones') {
             toggleMeasurementTools?.();
         } else if (id === 'anotaciones') {

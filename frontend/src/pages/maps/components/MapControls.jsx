@@ -2,7 +2,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { ZOOM_ANIMATION_MS } from '@pages/maps/helpers/defaultView';
 import { useSiderAdaptivePosition, useSider } from '@contexts/SiderContext';
 import { getFitPadding, ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
-import { useCallback, useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { transformExtent, fromLonLat } from 'ol/proj';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
@@ -31,13 +31,6 @@ const MapControls = ({ hideLocate = false }) => {
     const locationLayerRef = useRef(null);
     const isSwipe = !!compareMode?.active;
     const view3d = useView3d();
-    const btn3dRef = useRef(null);
-    const [barraTop, setBarraTop] = useState(0);
-    useLayoutEffect(() => {
-        const boton = btn3dRef.current;
-        if (boton) setBarraTop(boton.offsetTop + boton.offsetHeight / 2);
-    }, [view3d.active, view3d.available, hideLocate]);
-
     const view3dTitle = !view3d.available
         ? 'Tu navegador no tiene WebGL2, necesario para la vista 3D'
         : `Cambiar a vista ${view3d.active ? '2D' : '3D'}`;
@@ -261,7 +254,6 @@ const MapControls = ({ hideLocate = false }) => {
                 {view3d.present && !isSwipe && (
                     <Tooltip content={view3d.available ? <Map3DAyuda titulo={view3dTitle} /> : view3dTitle} placement="right" interactive>
                         <button
-                            ref={btn3dRef}
                             type="button"
                             onClick={view3d.toggle}
                             disabled={!view3d.available}
@@ -289,7 +281,7 @@ const MapControls = ({ hideLocate = false }) => {
                     />
                 </button>
                 {view3d.active && (
-                    <div className="absolute left-full" style={{ top: barraTop, transform: 'translateY(-50%)' }}>
+                    <div className="absolute left-full bottom-0 ml-3">
                         <Map3DBar />
                     </div>
                 )}

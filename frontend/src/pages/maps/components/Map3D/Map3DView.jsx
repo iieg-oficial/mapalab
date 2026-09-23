@@ -14,6 +14,7 @@ import {
 import { useMap3dClick } from '@hooksMaps/useMap3dClick';
 import { useMap3dContorno } from '@hooksMaps/useMap3dContorno';
 import { useMap3dBillboards } from '@hooksMaps/useMap3dBillboards';
+import Medicion3D from './Medicion3D';
 
 const TERRAIN_SOURCE = 'terreno';
 const ORBITA_GRADOS_POR_SEGUNDO = 8;
@@ -40,7 +41,7 @@ const writeBackToOl = (map, olMap) => {
 
 const Map3DView = () => {
     const containerRef = useRef(null);
-    const { mapRef, baseMapId, basemaps, allLayers, getServiceMode } = useMapsContext();
+    const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, setPitch, setBearing, exit, reportExtrusion,
         sol, alturaColumnas, orbita,
@@ -143,15 +144,20 @@ const Map3DView = () => {
     useMap3dExtrusions(map, mapRef, {
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,
     });
-    useMap3dClick(map, mapRef);
+    useMap3dClick(map, mapRef, !!areMeasurementToolsVisible);
 
     if (!mapRef.current) return null;
 
-    return createPortal(
-        <div className="absolute inset-0 z-[1] bg-white" role="region" aria-label="Mapa en 3D">
-            <div ref={containerRef} className="h-full w-full" />
-        </div>,
-        mapRef.current.getTargetElement(),
+    return (
+        <>
+            {createPortal(
+                <div className="absolute inset-0 z-[1] bg-white" role="region" aria-label="Mapa en 3D">
+                    <div ref={containerRef} className="h-full w-full" />
+                </div>,
+                mapRef.current.getTargetElement(),
+            )}
+            {map && areMeasurementToolsVisible && <Medicion3D map={map} />}
+        </>
     );
 };
 
