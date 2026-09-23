@@ -308,6 +308,7 @@ export const useFeatureInfo = (overrides = null) => {
                         lngLat: { lng, lat },
                         results,
                         isPolygonSelection: true,
+                        polygonGeometry,
                         matched,
                         hasMore
                     });

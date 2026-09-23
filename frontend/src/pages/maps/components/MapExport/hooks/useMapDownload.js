@@ -12,7 +12,7 @@ import { transformExtent } from 'ol/proj';
 import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from '../utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
 import { useEventoContext } from '@hooks/useEvento';
-import { anchoParaSeleccion, crearMascara, extentDeSeleccion, featureDeSeleccion } from '../utils/seleccionDescarga';
+import { anchoParaSeleccion, crearMascara, extentDeSeleccion } from '../utils/seleccionDescarga';
 import Style from 'ol/style/Style';
 import { filasSeleccion, medidasDeSeleccion, MAX_CAPAS_SELECCION } from '../utils/estadisticasSeleccion';
 import { agregarEnPoligono, contarEnPoligono } from '@services/seleccionStatsService';
@@ -25,7 +25,7 @@ export const useMapDownload = () => {
     const { prepareScaleControl, getMapSnapshot } = useMapCapture();
     const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
-    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode, getFilter, measurements } = useContext(MapsContext);
+    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode, getFilter } = useContext(MapsContext);
     const { getAliasByLayerId } = useEventoContext();
     const [isDownloading, setIsDownloading] = useState(false);
 
@@ -104,11 +104,12 @@ export const useMapDownload = () => {
 
         const { SIDE_PANEL_WIDTH } = EXPORT_DIMENSIONS;
         const { mapHeight, captureScale, composeScale } = quality;
-        const esSeleccion = viewType === 'seleccion' && !!seleccion;
-        const mapWidth = esSeleccion ? anchoParaSeleccion(seleccion, quality) : quality.mapWidth;
-        const trazo = esSeleccion ? featureDeSeleccion(measurements, seleccion) : null;
-        const estiloTrazo = trazo?.getStyle() ?? null;
-        if (trazo) trazo.setStyle(new Style({}));
+        const poligono = seleccion?.geometria || null;
+        const esSeleccion = viewType === 'seleccion' && !!poligono;
+        const mapWidth = esSeleccion ? anchoParaSeleccion(poligono, quality) : quality.mapWidth;
+        const trazos = esSeleccion ? (seleccion.trazos || []) : [];
+        const estilos = trazos.map(trazo => trazo.getStyle() ?? null);
+        trazos.forEach(trazo => trazo.setStyle(new Style({})));
 
         try {
             const vista = esSeleccion ? 'viewport' : viewType;
@@ -117,7 +118,7 @@ export const useMapDownload = () => {
             if (vista === 'full-state') {
                 targetExtent = getViewportExtent();
             } else if (esSeleccion) {
-                targetExtent = extentDeSeleccion(seleccion);
+                targetExtent = extentDeSeleccion(poligono);
             } else {
                 targetExtent = forcedExtent || getGuideExtent();
             }
@@ -129,7 +130,7 @@ export const useMapDownload = () => {
                 mapHeight,
                 captureScale,
                 swipeOptions,
-                mascara: esSeleccion ? crearMascara(seleccion) : null,
+                mascara: esSeleccion ? crearMascara(poligono) : null,
                 onExtent: (capturado) => { targetExtent = capturado; }
             });
 
@@ -142,7 +143,7 @@ export const useMapDownload = () => {
                 const capas = (selectedLegends.length > 0 ? selectedLegends : [currentSelectedLegend])
                     .filter(Boolean)
                     .slice(0, MAX_CAPAS_SELECCION);
-                const conteos = await contarEnPoligono(capas, seleccion, { getFilter, allLayers }).catch(() => []);
+                const conteos = await contarEnPoligono(capas, poligono, { getFilter, allLayers }).catch(() => []);
                 const agregados = await Promise.all(capas
                     .filter(capa => camposPorCapa?.[capa.id])
                     .map(async (capa) => ({
@@ -152,12 +153,12 @@ export const useMapDownload = () => {
                             capa,
                             campo: camposPorCapa[capa.id].nombre,
                             porClase: camposPorCapa[capa.id].porClase,
-                            poligono: seleccion,
+                            poligono,
                             getFilter,
                             allLayers,
                         }),
                     })));
-                seleccionFilas = filasSeleccion({ ...medidasDeSeleccion(seleccion), capas: conteos, agregados });
+                seleccionFilas = filasSeleccion({ ...medidasDeSeleccion(poligono), capas: conteos, agregados });
             }
 
             const sourcesMap = await getLayersSources(activeLayerIds).catch(() => ({}));
@@ -197,7 +198,7 @@ export const useMapDownload = () => {
         } catch (error) {
             console.error('Error al descargar el mapa:', error);
         } finally {
-            if (trazo) trazo.setStyle(estiloTrazo);
+            trazos.forEach((trazo, indice) => trazo.setStyle(estilos[indice]));
             setIsDownloading(false);
         }
     };

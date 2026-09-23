@@ -5,19 +5,29 @@ export const MAX_VERTICES = 120;
 const TIEMPO_LIMITE_MS = 8000;
 const PROYECCION = 'EPSG:3857';
 
-export const wktDelPoligono = (geometria, maxVertices = MAX_VERTICES) => {
-    const [minX, minY, maxX, maxY] = geometria.getExtent();
+const anillosSimplificados = (poligono, maxVertices) => {
+    const [minX, minY, maxX, maxY] = poligono.getExtent();
     const paso = Math.max(maxX - minX, maxY - minY) / 500 || 1;
-    let anillo = geometria.getCoordinates()[0];
+    const vertices = (geometria) => geometria.getCoordinates().reduce((suma, anillo) => suma + anillo.length, 0);
+    let simplificado = poligono;
     let tolerancia = 0;
 
-    while (anillo.length > maxVertices && tolerancia < paso * 500) {
+    while (vertices(simplificado) > maxVertices && tolerancia < paso * 500) {
         tolerancia += paso;
-        anillo = geometria.simplify(tolerancia).getCoordinates()[0];
+        simplificado = poligono.simplify(tolerancia);
     }
+    return simplificado.getCoordinates()
+        .map(anillo => `(${anillo.map(([x, y]) => `${Math.round(x)} ${Math.round(y)}`).join(',')})`)
+        .join(',');
+};
 
-    const puntos = anillo.map(([x, y]) => `${Math.round(x)} ${Math.round(y)}`).join(',');
-    return `POLYGON((${puntos}))`;
+export const wktDelPoligono = (geometria, maxVertices = MAX_VERTICES) => {
+    if (geometria.getType() === 'MultiPolygon') {
+        const partes = geometria.getPolygons();
+        const porParte = Math.max(8, Math.floor(maxVertices / partes.length));
+        return `MULTIPOLYGON(${partes.map(parte => `(${anillosSimplificados(parte, porParte)})`).join(',')})`;
+    }
+    return `POLYGON(${anillosSimplificados(geometria, maxVertices)})`;
 };
 
 export const filtroDePoligono = (columna, wkt) => `INTERSECTS(${columna}, SRID=3857;${wkt})`;

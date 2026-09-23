@@ -77,7 +77,7 @@ const ActionsToolbar = ({
                     <button
                         type="button"
                         onClick={onDownloadMap}
-                        className="bg-white text-[#703089] hover:border-[#703089] flex items-center justify-center p-1 rounded-full border border-transparent transition-all shadow-[0px_6px_12px_#2F495C14] cursor-pointer"
+                        className="flex items-center justify-center p-1 rounded-full border border-transparent transition-all bg-[#EAEFFA] text-[#703089] hover:border-purple shadow-[0px_6px_12px_#2F495C14] cursor-pointer"
                         aria-label="Descargar el mapa de esta selección"
                     >
                         <Icon name="poligono" className="size-5" />

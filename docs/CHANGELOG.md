@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.191.0] - 2026-09-23
+
+### Agregado: elegir qué polígono descargar
+
+Con dos o más polígonos de selección, la vista Selección del panel de descarga muestra una lista:
+cada polígono con su área y la opción «Todos». Por defecto va el último dibujado, como antes. El
+atajo del InfoBox preselecciona el polígono de esa tarjeta: `useFeatureInfo` guarda la geometría en
+`polygonGeometry` y el aviso de `descargaSeleccion` la lleva al panel.
+
+«Todos» usa la unión real de los polígonos, con la dependencia nueva `polygon-clipping` (MIT). Antes
+la máscara llevaba un hueco por polígono y donde dos se encimaban la zona volvía a quedar en blanco;
+el área, además, contaba dos veces lo compartido. Los conteos y los agregados de GeoServer reciben
+la unión como `MULTIPOLYGON`, con sus huecos interiores.
+
+### Corregido
+
+- El botón del InfoBox para descargar el mapa de la selección tenía fondo blanco; ahora es igual a
+  los demás de esa barra.
+- «Mis mediciones»: el bote de borrar todo va en rojo y alineado con el engrane y la X, y el menú
+  del engrane usa el encabezado de `PanelHoja`, sin divisores y con el `Checkbox` de siempre.
+
 ## [1.190.0] - 2026-09-23
 
 ### Agregado: mediciones sobre el terreno en la vista 3D

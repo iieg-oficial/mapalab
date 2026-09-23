@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Polygon from 'ol/geom/Polygon';
+import MultiPolygon from 'ol/geom/MultiPolygon';
 
 vi.mock('@pages/maps/helpers/wmsConfig', () => ({
     findWMSConfig: (id) => (id === 'sin-wfs'
@@ -170,5 +171,12 @@ describe('conteo por clase', () => {
             otras: 14,
         });
         expect(leerAgregadoPorClase({})).toBeNull();
+    });
+});
+
+describe('wktDelPoligono con varios polígonos', () => {
+    it('los manda como MULTIPOLYGON', () => {
+        const junta = new MultiPolygon([cuadro.getCoordinates(), new Polygon([[[5000, 5000], [6000, 5000], [6000, 6000], [5000, 5000]]]).getCoordinates()]);
+        expect(wktDelPoligono(junta)).toBe('MULTIPOLYGON(((0 0,1000 0,1000 1000,0 1000,0 0)),((5000 5000,6000 5000,6000 6000,5000 5000)))');
     });
 });

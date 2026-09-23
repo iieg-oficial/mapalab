@@ -5,6 +5,6 @@ export const alPedirDescargaDeSeleccion = (escucha) => {
     return () => escuchas.delete(escucha);
 };
 
-export const pedirDescargaDeSeleccion = () => {
-    escuchas.forEach(escucha => escucha());
+export const pedirDescargaDeSeleccion = (geometria = null) => {
+    escuchas.forEach(escucha => escucha(geometria));
 };

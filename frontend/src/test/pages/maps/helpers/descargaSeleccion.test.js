@@ -14,6 +14,15 @@ describe('descargaSeleccion', () => {
         expect(panel).toHaveBeenCalledTimes(1);
     });
 
+    it('lleva el polígono que pidió la tarjeta', () => {
+        const panel = vi.fn();
+        const soltar = alPedirDescargaDeSeleccion(panel);
+        const poligono = { tipo: 'poligono' };
+        pedirDescargaDeSeleccion(poligono);
+        expect(panel).toHaveBeenCalledWith(poligono);
+        soltar();
+    });
+
     it('sin nadie escuchando no truena', () => {
         expect(() => pedirDescargaDeSeleccion()).not.toThrow();
     });

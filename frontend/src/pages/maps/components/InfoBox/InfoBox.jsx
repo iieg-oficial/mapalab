@@ -186,7 +186,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
         downloadFeaturesAsCSV(enriched, allLayers);
     };
 
-    const descargarMapaDeSeleccion = () => pedirDescargaDeSeleccion();
+    const descargarMapaDeSeleccion = () => pedirDescargaDeSeleccion(selectedFeatureInfo?.polygonGeometry);
 
     const handleCenterGroup = () => {
         const activeMap = compareMode?.active ? paneMapInstances?.[0] : mapRef?.current;

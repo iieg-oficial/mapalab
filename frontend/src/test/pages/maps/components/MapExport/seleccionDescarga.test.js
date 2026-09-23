@@ -3,25 +3,47 @@ import Polygon from 'ol/geom/Polygon';
 import LineString from 'ol/geom/LineString';
 import { containsExtent } from 'ol/extent';
 import { transformExtent } from 'ol/proj';
-import { anchoParaSeleccion, crearMascara, extentDeSeleccion, featureDeSeleccion, ultimaSeleccion } from '@pages/maps/components/MapExport/utils/seleccionDescarga';
+import { SELECCION_TODAS, anchoParaSeleccion, crearMascara, extentDeSeleccion, geometriaDeSeleccion, seleccionesDisponibles, trazosDeSeleccion } from '@pages/maps/components/MapExport/utils/seleccionDescarga';
 
 const cuadro = (x, y, lado = 1000) => new Polygon([[[x, y], [x + lado, y], [x + lado, y + lado], [x, y + lado], [x, y]]]);
 
-describe('ultimaSeleccion', () => {
-    it('toma el último polígono visible, sea Polygon o Select', () => {
-        const primero = cuadro(0, 0);
-        const ultimo = cuadro(5000, 5000);
-        expect(ultimaSeleccion([
-            { type: 'Polygon', geometry: primero, visible: true },
-            { type: 'Select', geometry: ultimo, visible: true },
-            { type: 'LineString', geometry: new LineString([[0, 0], [1, 1]]), visible: true },
-        ])).toBe(ultimo);
+describe('seleccionesDisponibles', () => {
+    it('numera los polígonos visibles en el orden en que se dibujaron', () => {
+        const disponibles = seleccionesDisponibles([
+            { id: 'a', type: 'Polygon', geometry: cuadro(0, 0), visible: true, feature: 'fa' },
+            { id: 'b', type: 'LineString', geometry: new LineString([[0, 0], [1, 1]]), visible: true },
+            { id: 'c', type: 'Select', geometry: cuadro(5000, 5000), visible: false },
+            { id: 'd', type: 'Select', geometry: cuadro(9000, 9000), visible: true, feature: 'fd' },
+        ]);
+        expect(disponibles.map(d => [d.id, d.numero, d.feature])).toEqual([['a', 1, 'fa'], ['d', 2, 'fd']]);
+        expect(seleccionesDisponibles(undefined)).toEqual([]);
+    });
+});
+
+describe('geometriaDeSeleccion', () => {
+    const disponibles = [
+        { id: 'a', numero: 1, geometry: cuadro(0, 0), feature: 'fa' },
+        { id: 'b', numero: 2, geometry: cuadro(5000, 5000), feature: 'fb' },
+    ];
+
+    it('sin elección toma el último, como antes', () => {
+        expect(geometriaDeSeleccion(disponibles, null)).toBe(disponibles[1].geometry);
+        expect(trazosDeSeleccion(disponibles, null)).toEqual(['fb']);
     });
 
-    it('ignora los ocultos y regresa null si no hay polígonos', () => {
-        expect(ultimaSeleccion([{ type: 'Polygon', geometry: cuadro(0, 0), visible: false }])).toBeNull();
-        expect(ultimaSeleccion([])).toBeNull();
-        expect(ultimaSeleccion(undefined)).toBeNull();
+    it('respeta el polígono elegido', () => {
+        expect(geometriaDeSeleccion(disponibles, 'a')).toBe(disponibles[0].geometry);
+    });
+
+    it('Todos junta los polígonos en uno solo y oculta todos los trazos', () => {
+        const junta = geometriaDeSeleccion(disponibles, SELECCION_TODAS);
+        expect(junta.getType()).toBe('MultiPolygon');
+        expect(junta.getPolygons()).toHaveLength(2);
+        expect(trazosDeSeleccion(disponibles, SELECCION_TODAS)).toEqual(['fa', 'fb']);
+    });
+
+    it('sin polígonos no hay selección', () => {
+        expect(geometriaDeSeleccion([], null)).toBeNull();
     });
 });
 
@@ -62,11 +84,53 @@ describe('anchoParaSeleccion', () => {
     });
 });
 
-describe('featureDeSeleccion', () => {
-    it('encuentra el trazo que dibujó la selección', () => {
-        const poligono = cuadro(0, 0);
-        const trazo = { id: 'trazo' };
-        expect(featureDeSeleccion([{ geometry: cuadro(9, 9), feature: {} }, { geometry: poligono, feature: trazo }], poligono)).toBe(trazo);
-        expect(featureDeSeleccion([], poligono)).toBeNull();
+describe('crearMascara con varios polígonos', () => {
+    it('deja un hueco por cada polígono', () => {
+        const junta = geometriaDeSeleccion([
+            { id: 'a', geometry: cuadro(0, 0) },
+            { id: 'b', geometry: cuadro(5000, 5000) },
+        ], SELECCION_TODAS);
+        const mascara = crearMascara(junta);
+        expect(mascara.getCoordinates()).toHaveLength(3);
+        expect(mascara.intersectsCoordinate([500, 500])).toBe(false);
+        expect(mascara.intersectsCoordinate([5500, 5500])).toBe(false);
+        expect(mascara.intersectsCoordinate([3000, 3000])).toBe(true);
+    });
+});
+
+describe('Todos con polígonos encimados', () => {
+    const encimados = [
+        { id: 'a', geometry: cuadro(0, 0, 2000) },
+        { id: 'b', geometry: cuadro(1000, 1000, 2000) },
+    ];
+
+    it('los une: un solo polígono con menos área que la suma', () => {
+        const union = geometriaDeSeleccion(encimados, SELECCION_TODAS);
+        expect(union.getType()).toBe('Polygon');
+        expect(union.getArea()).toBe(7_000_000);
+    });
+
+    it('la zona compartida no queda tapada por la máscara', () => {
+        const mascara = crearMascara(geometriaDeSeleccion(encimados, SELECCION_TODAS));
+        expect(mascara.intersectsCoordinate([1500, 1500])).toBe(false);
+        expect(mascara.intersectsCoordinate([500, 500])).toBe(false);
+        expect(mascara.intersectsCoordinate([2500, 2500])).toBe(false);
+        expect(mascara.intersectsCoordinate([3500, 500])).toBe(true);
+    });
+});
+
+describe('Todos cuando los polígonos rodean una zona', () => {
+    it('tapa el hueco que queda en medio', () => {
+        const marco = [
+            { id: 'abajo', geometry: cuadro(0, 0, 3000).clone() },
+        ];
+        const anillo = new Polygon([
+            [[0, 0], [3000, 0], [3000, 3000], [0, 3000], [0, 0]],
+            [[1000, 1000], [1000, 2000], [2000, 2000], [2000, 1000], [1000, 1000]],
+        ]);
+        marco[0].geometry = anillo;
+        const mascara = crearMascara(geometriaDeSeleccion([...marco, { id: 'lejos', geometry: cuadro(9000, 9000) }], SELECCION_TODAS));
+        expect(mascara.intersectsCoordinate([1500, 1500])).toBe(true);
+        expect(mascara.intersectsCoordinate([500, 500])).toBe(false);
     });
 });

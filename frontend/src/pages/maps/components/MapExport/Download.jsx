@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { trackMapExport } from '@services/analyticsService';
 import { useMapDownload } from './hooks/useMapDownload';
 import { QUALITY_PRESETS } from './utils/exportDimensions';
@@ -27,7 +27,8 @@ import LegendPicker from './LegendPicker';
 import PanelHoja from '@components/PanelHoja';
 import Segmented from '@components/Segmented';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
-import { ultimaSeleccion } from './utils/seleccionDescarga';
+import { useSeleccionDescarga } from './hooks/useSeleccionDescarga';
+import SelectorSeleccion from './SelectorSeleccion';
 import { alPedirDescargaDeSeleccion } from '@pages/maps/helpers/descargaSeleccion';
 import { VISTA_ANALITICA, opcionesFormato, opcionesVista, textoBotonDescarga, tooltipBotonDescarga } from './utils/opcionesDescarga';
 
@@ -49,7 +50,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
     const { compareMode, selectedLayerForSymbology, allLayers, measurements } = useMapsContext();
     const isSwipe = !!compareMode?.active;
     const { active: en3d } = useView3d();
-    const seleccion = useMemo(() => ultimaSeleccion(measurements), [measurements]);
+    const { disponibles, idElegida, setElegida, elegirPorGeometria, geometria: seleccion, trazos } = useSeleccionDescarga(measurements);
     const haySeleccion = !!seleccion && !isSwipe;
     const [includeSwipeBar, setIncludeSwipeBar] = useState(true);
     const [includeSwipePills, setIncludeSwipePills] = useState(true);
@@ -79,12 +80,13 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
         if (en3d && viewType !== 'viewport') setViewType('viewport');
     }, [viewType, haySeleccion, en3d]);
 
-    useEffect(() => alPedirDescargaDeSeleccion(() => {
+    useEffect(() => alPedirDescargaDeSeleccion((geometriaPedida) => {
         if (!haySeleccion || en3d) return;
+        if (geometriaPedida) elegirPorGeometria(geometriaPedida);
         setViewType('seleccion');
         setIsPanelOpen(true);
         onOpenChange?.(true);
-    }), [haySeleccion, en3d, onOpenChange]);
+    }), [haySeleccion, en3d, onOpenChange, elegirPorGeometria]);
 
     useEffect(() => {
         if (isSwipe) {
@@ -144,7 +146,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                 onOpenPreview(format, selectedLegendLayers, title, quality, swipeOptions);
             }
         } else {
-            await downloadMap(format, selectedLegendLayers, viewType, title, null, quality, swipeOptions, seleccion, camposPorCapa);
+            await downloadMap(format, selectedLegendLayers, viewType, title, null, quality, swipeOptions, { geometria: seleccion, trazos }, camposPorCapa);
         }
     };
 
@@ -223,6 +225,9 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                         value={viewType}
                         onChange={setViewType}
                     />
+                    {viewType === 'seleccion' && (
+                        <SelectorSeleccion disponibles={disponibles} elegida={idElegida} onElegir={setElegida} />
+                    )}
 
                     {!isSwipe && (
                         <QualitySelector
