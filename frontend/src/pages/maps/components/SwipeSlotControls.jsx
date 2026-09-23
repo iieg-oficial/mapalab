@@ -5,7 +5,6 @@ import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import CloseButton from '@components/CloseButton';
-import Switch from '@components/Switch';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import DatePill from './ActiveLayers/DatePill';
 import { computeLabel } from './ActiveLayers/datePillHelpers';
@@ -30,11 +29,21 @@ const ActionsHint = ({ visible }) => (
     </div>
 );
 
+const ListaIcon = ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+        <path d="M9 6.5h11M9 12h11M9 17.5h11" />
+        <circle cx="4.5" cy="6.5" r="1.2" fill="currentColor" stroke="none" />
+        <circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
+        <circle cx="4.5" cy="17.5" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+);
+
+const BOTON_BARRA = 'size-10 flex items-center justify-center rounded-full transition-all cursor-pointer shrink-0';
+
 const SwipeSlotControls = () => {
     const {
         compareMode, exitCompareMode, toggleSwipeOrientation,
         selectedLayerForSymbology, setSelectedLayerForSymbology, allLayers, dateLoops,
-        setActiveSlot, highlightSlots,
     } = useMapsContext();
     const { width: siderWidth, isOpen: isSiderOpen, isMobile: isMobileSider } = useSider();
     const siderShift = !isMobileSider && isSiderOpen ? siderWidth / 2 : 0;
@@ -78,7 +87,6 @@ const SwipeSlotControls = () => {
 
     if (!compareMode?.active) return null;
     const isHorizontal = compareMode.swipeOrientation === 'horizontal';
-    const activeSlot = compareMode.activeSlot === 'B' ? 'B' : 'A';
 
     const alternar = (destino) => setAbierto(previo => (previo === destino ? null : destino));
     const cerrar = () => setAbierto(null);
@@ -98,35 +106,13 @@ const SwipeSlotControls = () => {
     return (
         <div
             ref={containerRef}
-            className={`fixed z-20 flex flex-col items-center gap-2 ${isMobileSider ? 'bottom-16' : 'bottom-4'}`}
+            className={`fixed z-20 flex items-center gap-2 ${isMobileSider ? 'bottom-16' : 'bottom-4'}`}
             style={{ left: `calc(50% + ${siderShift}px)`, transform: 'translateX(-50%)' }}
         >
-            <CloseButton
-                onConfirm={exitCompareMode}
-                tooltip="Cerrar comparador"
-                tooltipPlacement="top"
-                confirmTitle="¿Cerrar la comparación?"
-                confirmDescription="Se descartará la comparación actual y volverás al estado original del mapa."
-                confirmText="Sí, cerrar comparador"
-                confirmPlacement="top"
-                confirmClassName="left-1/2 -translate-x-1/2"
-                size="size-10"
-                iconSize="size-8"
-                tone="herramienta"
-            />
-
             <div className="relative flex items-center justify-between gap-2 px-3 py-2 min-w-[520px] max-md:min-w-0 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200">
                 {!isMobileSider && hintPhase !== 'hidden' && (
                     <ActionsHint visible={hintPhase === 'visible'} />
                 )}
-
-                <button
-                    type="button"
-                    onClick={() => alternar('capas')}
-                    aria-expanded={abierto === 'capas'}
-                    aria-label="Ver las capas comparadas"
-                    className="absolute inset-0 rounded-full cursor-pointer"
-                />
 
                 {abierto === 'A' && <PanelPeriodicidad layerId={layerId} slot="A" onClose={cerrar} />}
                 {abierto === 'B' && <PanelPeriodicidad layerId={layerId} slot="B" onClose={cerrar} />}
@@ -138,35 +124,32 @@ const SwipeSlotControls = () => {
                     </div>
                 )}
 
-                <div className="relative z-[1] flex items-center gap-2 min-w-0 pointer-events-none">
+                <div className="relative z-[1] flex items-center gap-2 min-w-0">
                     {layerName && (
-                        <span className="flex items-center gap-1.5 min-w-0 h-8 px-3 font-garet font-bold text-[13px] text-[#465055]">
+                        <span className="min-w-0 h-8 px-3 flex items-center font-garet font-medium text-[14px] text-[#465055]">
                             <span className="truncate max-w-[220px] max-md:max-w-[110px]">{layerName}</span>
-                            <Icon name="chevron" className={`w-3 h-1.5 shrink-0 transition-transform duration-300 ${abierto === 'capas' ? 'rotate-0' : 'rotate-180'}`} />
                         </span>
                     )}
 
-                    <span className="shrink-0 pointer-events-auto">
-                        <Switch
-                            checked={activeSlot === 'A'}
-                            onChange={(next) => {
-                                const destino = next ? 'A' : 'B';
-                                setActiveSlot?.(destino);
-                                highlightSlots?.(destino, { temporal: true });
-                            }}
-                            onLabel="A"
-                            offLabel="B"
-                            onColor="#5C2472"
-                            offColor="#FF8300"
-                            tooltip={`Editando el lado ${activeSlot} — cambiar al ${activeSlot === 'A' ? 'B' : 'A'}`}
-                        />
-                    </span>
+                    <Tooltip content={abierto === 'capas' ? 'Cerrar las capas comparadas' : 'Ver las capas comparadas'} placement="bottom" delay={300}>
+                        <button
+                            type="button"
+                            onClick={() => alternar('capas')}
+                            aria-expanded={abierto === 'capas'}
+                            aria-label="Ver las capas comparadas"
+                            className={`${BOTON_BARRA} ${abierto === 'capas'
+                                ? 'bg-[#703089] text-white'
+                                : 'bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white'}`}
+                        >
+                            <ListaIcon className="w-5 h-5" />
+                        </button>
+                    </Tooltip>
 
                     <Tooltip content={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'} placement="bottom" delay={300}>
                         <button
                             type="button"
                             onClick={toggleSwipeOrientation}
-                            className="size-10 flex items-center justify-center rounded-full bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white transition-all cursor-pointer shrink-0 pointer-events-auto"
+                            className={`${BOTON_BARRA} bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white`}
                             aria-label={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'}
                         >
                             <Icon name="swipe_orientacion" className={`w-5 h-5 transition-transform ${isHorizontal ? '' : 'rotate-90'}`} />
@@ -180,6 +163,20 @@ const SwipeSlotControls = () => {
                     </div>
                 )}
             </div>
+
+            <CloseButton
+                onConfirm={exitCompareMode}
+                tooltip="Cerrar comparador"
+                tooltipPlacement="top"
+                confirmTitle="¿Cerrar la comparación?"
+                confirmDescription="Se descartará la comparación actual y volverás al estado original del mapa."
+                confirmText="Sí, cerrar comparador"
+                confirmPlacement="top"
+                confirmClassName="left-1/2 -translate-x-1/2"
+                size="size-10"
+                iconSize="size-8"
+                tone="herramienta"
+            />
         </div>
     );
 };

@@ -5,6 +5,31 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.185.0] - 2026-09-23
+
+### Cambiado: los controles de la barra del comparador
+
+- **Un botón de lista** a la izquierda del de orientación abre las capas comparadas. Antes el blanco
+  era la barra entera, que se comía el clic en cualquier hueco y no se veía como algo pulsable.
+- **Botones circulares A y B** en lugar de casillas para prender cada lado, con el color del slot
+  cuando están activos y el gris de `#EFF3FC` cuando no.
+- **El switch A/B sale de la barra.**
+- **La X de cerrar pasa al costado derecho de la barra.** Arriba quedaba justo donde se despliegan
+  los paneles: con las capas comparadas abiertas, `elementFromPoint` devolvía una fila y la X no se
+  podía pulsar.
+
+### Corregido: las filas del panel se alinean con el item de capas activas
+
+Verificado en el navegador contra el item real, no a ojo:
+
+| | Antes | Ahora |
+|---|---|---|
+| Alto | 48 px | 50 px, el del item colapsado |
+| Hover | borde `#70308A` | borde `#EAEFFA`, como el item |
+| Selección | `border-[#70308A]` | `border-transparent` + `ring-1 ring-[#70308A]` |
+
+La tipografía ya coincidía: 14 px, peso 500, `#465055` en Garet.
+
 ## [1.184.0] - 2026-09-23
 
 ### Agregado: atajo para descargar el mapa desde la selección
@@ -61,9 +86,7 @@ Pasa a 34 px, como los anillos de la pastilla.
 ### Cambiado: la barra del comparador se vuelve el control del comparador
 
 Las dos píldoras de fecha se van a las orillas de la barra, cada una del lado de su mitad del mapa,
-y el nombre de la capa queda al centro. La barra entera abre las **capas comparadas**, así que el
-blanco existe aunque el nombre sea corto o no haya píldoras; las píldoras y el botón de orientación
-quedan encima y conservan lo suyo.
+y el nombre de la capa queda al centro.
 
 - **La fecha de un lado** abre `PeriodicitySection` anclado a esa mitad, con el color del lado en el
   borde superior. Es el mismo componente que usa el catálogo en `CatalogoTimeBar`, y ya recibía

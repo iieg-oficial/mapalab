@@ -5,11 +5,28 @@ import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { computeLabel } from '@mapsComponents/ActiveLayers/datePillHelpers';
 import DatePill from '@mapsComponents/ActiveLayers/DatePill';
 import { SLOT_COLORS } from '@pages/maps/helpers/swipeTheme';
-import Checkbox from '@components/Checkbox';
 import Tooltip from '@components/Tooltip';
 import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
 
 const SIN_FECHA = '—';
+
+const BotonLado = ({ slot, activo, bloqueado, onClick }) => (
+    <Tooltip content={bloqueado ? 'Debe quedar en al menos un lado' : `${activo ? 'Quitar del' : 'Mostrar en el'} lado ${slot}`}>
+        <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); if (!bloqueado) onClick(); }}
+            aria-pressed={activo}
+            aria-disabled={bloqueado}
+            aria-label={`${activo ? 'Quitar del' : 'Mostrar en el'} lado ${slot}`}
+            style={activo ? { backgroundColor: SLOT_COLORS[slot].fg } : undefined}
+            className={`size-7 shrink-0 rounded-full flex items-center justify-center font-garet font-bold text-[12px] transition-colors ${activo
+                ? 'text-white'
+                : 'bg-[#EFF3FC] text-[#9AA3A8] hover:text-[#465055]'} ${bloqueado ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+        >
+            {slot}
+        </button>
+    </Tooltip>
+);
 
 const PanelCapas = ({ onClose, onElegirFecha }) => {
     const {
@@ -95,7 +112,7 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
                 </Tooltip>
             </div>
 
-            <div className="flex flex-col gap-1 px-2.5 pb-3">
+            <div className="flex flex-col gap-1 px-2 pb-2.5">
                 {capas.map((capa) => {
                     const elegida = capa.id === selectedLayerForSymbology?.id;
                     const solaEnA = capa.enA && !capa.enB;
@@ -103,16 +120,11 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
                     return (
                         <div
                             key={capa.id}
-                            className={`flex items-center px-2.5 py-2 rounded-xl border transition-colors ${elegida ? 'border-purple bg-purple-soft' : 'border-[#EDEFF1] hover:border-purple'}`}
+                            className={`flex items-center gap-2 min-h-[50px] px-2 py-2 rounded-[7px] border border-transparent transition-all hover:border-[#EAEFFA] hover:shadow-sm ${elegida
+                                ? 'bg-[#F7F0FA] ring-1 ring-[#70308A]'
+                                : 'bg-white'}`}
                         >
-                            <Tooltip content={solaEnA ? 'Debe quedar en al menos un lado' : `${capa.enA ? 'Quitar del' : 'Mostrar en el'} lado A`}>
-                                <Checkbox
-                                    checked={capa.enA}
-                                    disabled={solaEnA}
-                                    color={SLOT_COLORS.A.fg}
-                                    onChange={() => alternarLado(capa, 'A')}
-                                />
-                            </Tooltip>
+                            <BotonLado slot="A" activo={capa.enA} bloqueado={solaEnA} onClick={() => alternarLado(capa, 'A')} />
 
                             {celdaFecha(capa, 'A')}
 
@@ -121,22 +133,14 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
                                 onClick={() => { setSelectedLayerForSymbology?.({ id: capa.id, name: capa.name }); onClose?.(); }}
                                 aria-pressed={elegida}
                                 aria-label={`Comparar ${capa.name}`}
-                                className="flex-1 min-w-0 px-2 text-center font-garet font-bold text-[13px]/[16px] text-[#1F2328] truncate cursor-pointer hover:text-purple transition-colors"
+                                className="flex-1 min-w-0 text-center font-garet font-medium text-[14px] text-[#465055] truncate cursor-pointer hover:text-[#70308A] transition-colors"
                             >
                                 {capa.name}
                             </button>
 
                             {celdaFecha(capa, 'B')}
 
-                            <Tooltip content={solaEnB ? 'Debe quedar en al menos un lado' : `${capa.enB ? 'Quitar del' : 'Mostrar en el'} lado B`}>
-                                <Checkbox
-                                    checked={capa.enB}
-                                    disabled={solaEnB}
-                                    color={SLOT_COLORS.B.fg}
-                                    onChange={() => alternarLado(capa, 'B')}
-                                    className="ml-2"
-                                />
-                            </Tooltip>
+                            <BotonLado slot="B" activo={capa.enB} bloqueado={solaEnB} onClick={() => alternarLado(capa, 'B')} />
                         </div>
                     );
                 })}
