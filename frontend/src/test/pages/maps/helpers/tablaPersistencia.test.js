@@ -38,4 +38,10 @@ describe('tablaPersistencia', () => {
         localStorage.setItem('mapalab.tabla.estado', 'no soy json');
         expect(leerEstado()).toEqual(ESTADO_INICIAL);
     });
+
+    it('otra llave guarda un estado aparte, como el del catálogo', () => {
+        guardarEstado({ activo: true, activaId: 'catalogo:cuencas' }, 'mapalab.catalogo.tabla.estado');
+        expect(leerEstado().activaId).toBeNull();
+        expect(leerEstado('mapalab.catalogo.tabla.estado').activaId).toBe('catalogo:cuencas');
+    });
 });

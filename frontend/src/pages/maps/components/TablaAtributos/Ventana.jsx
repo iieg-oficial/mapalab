@@ -20,13 +20,13 @@ import VentanaBarra from './VentanaBarra';
 
 const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
     const {
-        activar, cerrarTodas, nombreDe, capaDe, acople, acoplar, altoAcople, fijarAltoAcople,
+        activar, cerrarTodas, nombreDe, capaDe, acople, acoplar, acoplable, altoAcople, fijarAltoAcople,
     } = useTablaAtributos();
     const { municipioMode } = useMapsContext();
     const datos = useTablaDatos(layerId, { minimizada });
     const catalogo = useCatalogoCampos(layerId, !minimizada);
     const seleccion = useTablaSeleccion(layerId, datos.layerDef, datos.filas, datos.tarjeta);
-    const { posicion, manejadores, zona } = useArrastreVentana(() => posicionCentrada(indice), acoplar);
+    const { posicion, manejadores, zona } = useArrastreVentana(() => posicionCentrada(indice), acoplable ? acoplar : null);
     const tirador = useAltoAcoplado(altoAcople, fijarAltoAcople);
     const [verCql, setVerCql] = useState(false);
     const scrollRef = useRef(null);
@@ -67,7 +67,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
             onAlternarCql={() => setVerCql(valor => !valor)}
             onCerrar={cerrarTodas}
             acople={acople}
-            onAcoplar={acoplar}
+            onAcoplar={acoplable ? acoplar : null}
             arrastre={esMovil ? null : manejadores}
         />
     );
@@ -247,7 +247,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
 
     return (
         <>
-            <VistaPreviaSnap zona={zona} />
+            <VistaPreviaSnap zona={acoplable ? zona : null} />
             <div
                 role="dialog"
                 aria-label={`Tabla de atributos de ${nombre}`}

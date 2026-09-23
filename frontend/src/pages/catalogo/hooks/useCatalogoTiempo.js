@@ -5,8 +5,10 @@ import { fetchGeometryType } from '@utils/featureInfoUtils';
 import { getLayerTimePeriodicity } from '@services/wmsCapabilitiesService';
 import { RASTER_WORKSPACES } from '@services/downloadUrls';
 import { fetchCapaPeriodicidad } from '@services/catalogoService';
+import { LLAVE_SELECCION, LLAVE_TABLA, combinar } from '@pages/maps/helpers/tablaCqlBuilder';
 
 const FILTER_NAME = 'date';
+const FILTROS_TABLA = new Set([LLAVE_TABLA, LLAVE_SELECCION]);
 
 const getYears = (fecha) => {
     if (!fecha || typeof fecha !== 'object') return [];
@@ -27,6 +29,7 @@ export const useCatalogoTiempo = (capa, wmsLayerRef, { initialFilter = null, onF
     const [loading, setLoading] = useState(false);
     const [geometria, setGeometria] = useState(null);
     const [filtro, setFiltro] = useState(null);
+    const [filtrosTabla, setFiltrosTabla] = useState({});
     const defaultAplicadoRef = useRef(null);
     const initialFilterRef = useRef(initialFilter);
     initialFilterRef.current = initialFilter;
@@ -40,6 +43,7 @@ export const useCatalogoTiempo = (capa, wmsLayerRef, { initialFilter = null, onF
         setPeriodicidad(null);
         setGeometria(null);
         setFiltro(null);
+        setFiltrosTabla({});
         defaultAplicadoRef.current = null;
         if (!capa) return undefined;
 
@@ -80,15 +84,39 @@ export const useCatalogoTiempo = (capa, wmsLayerRef, { initialFilter = null, onF
     const years = useMemo(() => getYears(periodicidad), [periodicidad]);
     const hasPeriodicidad = years.length > 0;
 
-    const applyFilter = useCallback((_layerId, _filterName, cqlFilter) => {
+    const applyFilter = useCallback((_layerId, filterName, cqlFilter) => {
+        if (FILTROS_TABLA.has(filterName)) {
+            setFiltrosTabla((previos) => ({ ...previos, [filterName]: cqlFilter || null }));
+            return;
+        }
         setFiltro(cqlFilter || null);
     }, []);
 
-    const clearFilter = useCallback(() => setFiltro(null), []);
+    const clearFilter = useCallback((_layerId, filterName) => {
+        if (FILTROS_TABLA.has(filterName)) {
+            setFiltrosTabla((previos) => {
+                if (!(filterName in previos)) return previos;
+                const siguientes = { ...previos };
+                delete siguientes[filterName];
+                return siguientes;
+            });
+            return;
+        }
+        setFiltro(null);
+    }, []);
 
     const getSpecificFilter = useCallback(
-        (_layerId, filterName) => (filterName === FILTER_NAME ? filtro : null),
-        [filtro],
+        (_layerId, filterName) => (filterName === FILTER_NAME ? filtro : filtrosTabla[filterName] || null),
+        [filtro, filtrosTabla],
+    );
+
+    const getLayerFilters = useCallback(() => Object.fromEntries(
+        Object.entries({ [FILTER_NAME]: isRaster ? null : filtro, ...filtrosTabla }).filter(([, cql]) => cql),
+    ), [filtro, filtrosTabla, isRaster]);
+
+    const filtroMapa = useMemo(
+        () => (isRaster ? null : combinar([filtro, ...Object.values(filtrosTabla)])),
+        [filtro, filtrosTabla, isRaster],
     );
 
     const getPeriodicity = useCallback(() => periodicidad, [periodicidad]);
@@ -121,10 +149,10 @@ export const useCatalogoTiempo = (capa, wmsLayerRef, { initialFilter = null, onF
             if ((params.TIME || null) === (filtro || null)) return;
             source.updateParams({ TIME: filtro || undefined });
         } else {
-            if ((params.CQL_FILTER || null) === (filtro || null)) return;
-            source.updateParams({ CQL_FILTER: filtro || undefined });
+            if ((params.CQL_FILTER || null) === (filtroMapa || null)) return;
+            source.updateParams({ CQL_FILTER: filtroMapa || undefined });
         }
-    }, [filtro, wmsLayerRef, capa, isRaster]);
+    }, [filtro, filtroMapa, wmsLayerRef, capa, isRaster]);
 
     return {
         layerId,
@@ -134,9 +162,11 @@ export const useCatalogoTiempo = (capa, wmsLayerRef, { initialFilter = null, onF
         isRaster,
         hasPeriodicidad,
         filtro,
+        filtroMapa,
         applyFilter,
         clearFilter,
         getSpecificFilter,
+        getLayerFilters,
         getPeriodicity,
     };
 };

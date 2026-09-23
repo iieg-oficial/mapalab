@@ -2,18 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDebounce } from '@hooks/useDebounce';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import ScrollContainer from '@components/ScrollContainer';
+import CatalogoSearchInput, { SearchIcon } from './CatalogoSearchInput';
 import CatalogoShare from './CatalogoShare';
 import CatalogoInstitucionesList from './CatalogoInstitucionesList';
 import { buildCatalogoShareUrl, filterCapas } from '../helpers/catalogoRoutes';
-import { PANEL_SHADOW, STACK_SPACING, TITLE_PILL, Z_CAPAS, Z_INPUT } from '../helpers/catalogoStyles';
+import { PANEL_SHADOW, STACK_SPACING, TITLE_PILL, Z_CAPAS } from '../helpers/catalogoStyles';
 import { trackCatalogoSearch, trackCatalogoShare } from '@services/analyticsService';
-
-const SearchIcon = ({ className }) => (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-        <circle cx="11" cy="11" r="7" />
-        <path d="M21 21l-4.3-4.3" />
-    </svg>
-);
 
 const CloseIcon = ({ className }) => (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -285,24 +279,14 @@ const CatalogoSearchModal = ({
                 {institucionActiva ? institucionActiva.nombre : 'Catálogo'}
             </button>
 
-            <div className={`${headerVisibility} ${Z_INPUT} ${PANEL_SHADOW} shrink-0 bg-white rounded-[10px] overflow-hidden`}>
-                <input
-                    ref={inputRef}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onFocus={onOpen}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Busca una capa para verla en el mapa"
-                    className="w-full py-4 pl-4 pr-15.5 bg-transparent text-[13px] text-purple font-garet placeholder:text-[#191919] placeholder:opacity-70 focus:outline-none"
-                />
-                <button
-                    onClick={onOpen}
-                    className="absolute right-0 top-0 h-full w-12.75 flex items-center justify-center text-purple hover:bg-purple-deep hover:text-white transition-colors"
-                    aria-label="Buscar"
-                >
-                    <SearchIcon className="w-5 h-5" />
-                </button>
-            </div>
+            <CatalogoSearchInput
+                visibility={headerVisibility}
+                inputRef={inputRef}
+                query={query}
+                onQuery={setQuery}
+                onOpen={onOpen}
+                onKeyDown={handleKeyDown}
+            />
         </div>
     );
 };

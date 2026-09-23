@@ -5,6 +5,60 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.186.0] - 2026-09-23
+
+Pide mariachi 2.97.0: sin él, las propuestas con título fijo o con párrafos de texto fijo se rechazan.
+Se despliega mariachi primero.
+
+### Agregado: el editor de tarjetas del catálogo es un lienzo
+
+El editor ciudadano (`/catalogo`, fuera de producción) deja de ser tres zonas de arrastrar y soltar y
+pasa a ser la tarjeta misma, como el de mariachi: se toca el título o un bloque y se edita al lado.
+
+- **Título** con cuatro modos: un campo, un texto fijo, campos combinados o sin título.
+- **Bloques** Cifras, Detalles y hasta tres de Texto, que se agregan, quitan y reordenan con ▲▼.
+  Cada fila elige campo, combinación de campos (con separador) o, en Texto, un párrafo fijo.
+- **Opciones por fila**: solo el año; en Cifras, unidad, decimales y sumar campos combinados.
+- **Deshacer, rehacer y Restaurar**, y hasta cinco registros de ejemplo para ver la tarjeta con datos
+  distintos.
+- Controles copiados de sieej (input de 40 px, botones píldora, chips con anillo naranja) y errores
+  como descripción junto al campo, sin cajas de aviso.
+
+Lo que el ciudadano no edita —etiquetas de color, íconos con texto, columnas de cifras,
+transformación del título y links— **se conserva**: la propuesta solo lleva título, Cifras, Detalles
+y Texto, y `helpers/tarjetaFusion.js` la fusiona sobre la tarjeta vigente igual que el backend, así
+que la vista previa es lo que quedará publicado. Los bloques fijos conservan su posición al
+reordenar. El texto libre no admite links, correos ni teléfonos, con la misma expresión que valida
+mariachi.
+
+### Agregado: tabla de datos en el catálogo
+
+Botón debajo de mediciones que abre la misma ventana flotante del visor para la capa del catálogo.
+`useCatalogoTabla` le da a la tabla el `MapsContext` que espera a partir de la capa seleccionada, y
+`useCatalogoTiempo` pasa a manejar varios filtros: la fecha más los de la tabla (`tabla` y
+`seleccion`), combinados con `AND` en el `CQL_FILTER` del WMS y en la consulta por polígono. El clic
+en una fila abre la tarjeta del catálogo. En el catálogo la ventana no se acopla, porque el mapa no
+cambia de tamaño, y guarda su estado aparte (`mapalab.catalogo.tabla.estado`).
+
+`TablaAtributosProvider` acepta `tablasFijas`, `llavePersistencia` y `acoplable`; en el visor nada
+cambia.
+
+### Agregado: el Catálogo en Herramientas
+
+Tarjeta BETA en el menú de herramientas del visor que lleva a `/catalogo`, fuera de producción como
+los otros accesos.
+
+### Cambiado: el botón de información del catálogo va junto a la lupa
+
+Sale de la atribución y entra a la barra de búsqueda. La barra pasa a `CatalogoSearchInput` para que
+`CatalogoSearchModal` baje de 300 líneas. El aviso de la primera visita se oculta solo a los ocho
+segundos, para no quedar encima de los modales.
+
+### Eliminado
+
+`CatalogoInfoBoxZone.jsx` y `helpers/infoboxDraft.js`, reemplazados por `components/tarjeta/` y
+`helpers/tarjetaModelo.js`.
+
 ## [1.185.0] - 2026-09-23
 
 ### Cambiado: los controles de la barra del comparador

@@ -9,6 +9,7 @@ import Badge from '@components/Badge';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { useIsNonProd } from '@hooks/useDevTools';
+import { useGoToCatalogo } from '@pages/catalogo/useGoToCatalogo';
 
 const allTools = [
     {
@@ -39,6 +40,15 @@ const allTools = [
         description: 'Texto, emojis, trazo libre',
         icon: 'emoji',
     },
+    {
+        id: 'catalogo',
+        label: 'Catálogo',
+        description: 'Explora y descarga capas sueltas',
+        beta: true,
+        nonProdOnly: true,
+        icon: 'capa_activa',
+        iconHover: 'orange',
+    },
 ];
 
 const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementToolsVisible, areAnnotationToolsVisible, toggleAnnotationTools }) => {
@@ -48,6 +58,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     } = useMapsContext();
     const { activo: tablaActiva, abrir: abrirTabla, cerrarTodas: cerrarTablas } = useTablaAtributos();
     const { closeSider } = useSider();
+    const goToCatalogo = useGoToCatalogo();
     const [hoveredId, setHoveredId] = useState(null);
     const isNonProd = useIsNonProd();
     const tools = useMemo(
@@ -88,6 +99,8 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
             toggleAnnotationTools?.();
         } else if (id === 'tabla') {
             alternarTabla();
+        } else if (id === 'catalogo') {
+            goToCatalogo();
         } else if (id === 'compare-swipe') {
             if (compareMode?.active) {
                 exitCompareMode();
@@ -125,7 +138,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                                 <span className="text-[11px] opacity-90">Compara dos mapas con barra divisora. Tus capas actuales van al lado A; el lado B empieza <span className="font-bold">vacío</span> para que agregues otra capa.</span>
                                 <span className="text-[11px] opacity-90">Agrega capas en cada slot (A o B) <span className="font-bold">una por una</span> para mejor rendimiento.</span>
                             </div>
-                        ) : tool.label;
+                        ) : tool.id === 'catalogo' ? tool.description : tool.label;
                         return (
                             <Tooltip key={tool.id} content={tooltipContent} placement="bottom" delay={300}>
                                 <button
@@ -148,7 +161,11 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                                         />
                                     )}
                                     <div className={`flex items-center justify-center ${active || hovered ? 'text-purple' : 'text-graphite'}`}>
-                                        <Icon name={tool.icon} className="w-12 h-12" />
+                                        <Icon
+                                            name={tool.icon}
+                                            state={tool.iconHover && (active || hovered) ? tool.iconHover : 'normal'}
+                                            className="w-12 h-12"
+                                        />
                                     </div>
                                     <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-purple' : 'font-medium text-graphite'}`}>
                                         {tool.label}

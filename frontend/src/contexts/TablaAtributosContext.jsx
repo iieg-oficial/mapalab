@@ -20,10 +20,10 @@ const ESTADO_CAPA = {
     conteo: null,
 };
 
-export const TablaAtributosProvider = ({ children }) => {
+export const TablaAtributosProvider = ({ children, tablasFijas = null, llavePersistencia, acoplable = true }) => {
     const { allLayers, activeLayerIds, hiddenLayerIds } = useMapsContext();
     const { setLockMode, lockMode } = useSider() || {};
-    const guardado = useRef(leerEstado()).current;
+    const guardado = useRef(leerEstado(llavePersistencia)).current;
     const { unifiedLayers } = useActiveLayersLogic(activeLayerIds || [], hiddenLayerIds || []);
     const [modoPrevioSider, setModoPrevioSider] = useState(guardado.modoPrevioSider);
     const [activo, setActivo] = useState(guardado.activo);
@@ -35,6 +35,7 @@ export const TablaAtributosProvider = ({ children }) => {
 
     const tablas = useMemo(() => {
         if (!activo) return [];
+        if (tablasFijas) return tablasFijas;
         return unifiedLayers
             .filter(capa => Boolean(resolverObjetivo(findLayerDef(capa.id, allLayers || [])).wmsConfig))
             .map(capa => ({
@@ -43,7 +44,7 @@ export const TablaAtributosProvider = ({ children }) => {
                 visible: capa.visible !== false,
                 childIds: capa.childIds || [capa.id],
             }));
-    }, [allLayers, activo, unifiedLayers]);
+    }, [allLayers, activo, tablasFijas, unifiedLayers]);
 
     useEffect(() => {
         if (!activo || tablas.length === 0) return;
@@ -83,6 +84,7 @@ export const TablaAtributosProvider = ({ children }) => {
     const alternarMinimizado = useCallback(() => setMinimizado(valor => !valor), []);
 
     const acoplar = useCallback((modo) => {
+        if (!acoplable) return;
         const siguiente = normalizarAcople(modo);
         setAcople(siguiente);
 
@@ -95,7 +97,7 @@ export const TablaAtributosProvider = ({ children }) => {
 
         setLockMode?.(modoPrevioSider || 'auto');
         setModoPrevioSider(null);
-    }, [lockMode, modoPrevioSider, setLockMode]);
+    }, [acoplable, lockMode, modoPrevioSider, setLockMode]);
 
     const estadoDe = useCallback((layerId) => porCapa[layerId] || ESTADO_CAPA, [porCapa]);
 
@@ -159,8 +161,8 @@ export const TablaAtributosProvider = ({ children }) => {
     }, [parchear]);
 
     useEffect(() => {
-        guardarEstado({ activo, activaId, acople, altoAcople, porCapa, modoPrevioSider });
-    }, [activo, activaId, acople, altoAcople, porCapa, modoPrevioSider]);
+        guardarEstado({ activo, activaId, acople, altoAcople, porCapa, modoPrevioSider }, llavePersistencia);
+    }, [activo, activaId, acople, altoAcople, porCapa, modoPrevioSider, llavePersistencia]);
 
     const value = useMemo(() => ({
         activo,
@@ -169,6 +171,7 @@ export const TablaAtributosProvider = ({ children }) => {
         minimizado,
         acople,
         acoplar,
+        acoplable,
         altoAcople,
         fijarAltoAcople: setAltoAcople,
         estaAbierta: (layerId) => tablas.some(capa => capa.id === layerId),
@@ -191,7 +194,7 @@ export const TablaAtributosProvider = ({ children }) => {
         mostrarTodasLasColumnas,
         ocultarTodasLasColumnas,
     }), [
-        activo, tablas, activaId, minimizado, acople, acoplar, altoAcople, abrir, cerrarTodas, activar, alternarMinimizado,
+        activo, tablas, activaId, minimizado, acople, acoplar, acoplable, altoAcople, abrir, cerrarTodas, activar, alternarMinimizado,
         estadoDe, ponerFiltro, quitarFiltro, limpiarFiltros, fijarExpresionPropia, fijarOrden,
         fijarVista, fijarConteo, fijarSeleccion, alternarColumna, mostrarTodasLasColumnas, ocultarTodasLasColumnas,
     ]);

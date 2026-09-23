@@ -9,16 +9,16 @@ import { fromLonLat, toLonLat, transformExtent } from 'ol/proj';
 import { defaults as defaultInteractions } from 'ol/interaction/defaults';
 import MouseWheelZoom from 'ol/interaction/MouseWheelZoom';
 import MapsContext from '@contexts/MapsContext';
-import { SiderContext } from '@contexts/SiderContext';
 import MapControls from '@pages/maps/components/MapControls';
 import MapAttribution from '@pages/maps/components/MapAttribution';
 import LottieSpinner from '@components/LottieSpinner';
-import CatalogoInfoButton from './CatalogoInfoButton';
 import CatalogoInfoBox from './CatalogoInfoBox';
 import CatalogoTools from './CatalogoTools';
+import CatalogoTablaProviders from './CatalogoTablaProviders';
 import CatalogoTimeBar from './CatalogoTimeBar';
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { useCatalogoPoligono } from '../hooks/useCatalogoPoligono';
+import { useCatalogoTabla } from '../hooks/useCatalogoTabla';
 import { buildWmsLayer, geojson, HIGHLIGHT_STYLE, HIGHLIGHT_Z } from '../helpers/catalogoMapLayer';
 import { BASEMAPS, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 import { JALISCO_BOUNDS, hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
@@ -31,16 +31,6 @@ import { trackCatalogoFeatureClick } from '@services/analyticsService';
 import { FEATURE_COUNT_CAP } from '@services/featureInfoService';
 
 const CATALOGO_ANNOTATIONS_KEY = 'mapalab.catalogo.annotations';
-
-const SIDER_STUB = {
-    siderRef: { current: null },
-    toolsButtonRef: { current: null },
-    width: 0,
-    collapsedWidth: 0,
-    expandedWidth: 0,
-    isMobile: false,
-    isOpen: false,
-};
 
 const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
     const { tiempo, loop, wmsLayerRef } = useCatalogoTiempoContext();
@@ -60,6 +50,8 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
         highlightSourceRef.current?.clear();
         limpiar();
     }, [limpiar]);
+
+    const tabla = useCatalogoTabla({ capa, tiempo, setInfo, clearInfo });
 
     const getMapInstance = useCallback(() => mapRef.current, []);
     useScaleLineControl(getMapInstance, scaleRef);
@@ -109,7 +101,8 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
         stopLoop: loop.stopLoop,
         ...drawing,
         ...editing,
-    }), [isLocating, drawing, editing, tiempo.getSpecificFilter, loop.getLoopState, loop.stopLoop]);
+        ...tabla.contexto,
+    }), [isLocating, drawing, editing, tabla.contexto, tiempo.getSpecificFilter, loop.getLoopState, loop.stopLoop]);
 
     useEffect(() => {
         if (!targetRef.current || mapRef.current) return;
@@ -256,11 +249,11 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
             <div ref={targetRef} className="absolute inset-0" />
 
             <MapsContext.Provider value={mapsContextValue}>
-                <SiderContext.Provider value={SIDER_STUB}>
+                <CatalogoTablaProviders tablasFijas={tabla.tablasFijas}>
                     <MapControls />
-                    <CatalogoTools />
-                </SiderContext.Provider>
-                <MapAttribution hideActions extraRight={<CatalogoInfoButton />} />
+                    <CatalogoTools tabla={tabla} hayCapa={Boolean(capa)} />
+                </CatalogoTablaProviders>
+                <MapAttribution hideActions />
                 {capa && <CatalogoTimeBar tiempo={tiempo} loop={loop} />}
             </MapsContext.Provider>
 

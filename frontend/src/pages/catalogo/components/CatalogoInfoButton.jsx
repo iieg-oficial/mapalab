@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Tooltip from '@components/Tooltip';
 import Modal from '@components/Modal';
 import { trackCatalogoInfoOpen } from '@services/analyticsService';
@@ -8,6 +8,12 @@ const CatalogoInfoButton = () => {
     const [infoOpen, setInfoOpen] = useState(false);
     const [hintSeen, markHintSeen] = useFeatureSeen('catalogo-info-hint');
     const [hintVisible, setHintVisible] = useState(!hintSeen);
+
+    useEffect(() => {
+        if (!hintVisible) return undefined;
+        const temporizador = setTimeout(() => setHintVisible(false), 8000);
+        return () => clearTimeout(temporizador);
+    }, [hintVisible]);
 
     const dismissHint = () => {
         if (!hintVisible) return;

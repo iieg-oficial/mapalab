@@ -9,6 +9,7 @@ import TextInlineEditor from '@mapsComponents/MeasurementTools/TextInlineEditor'
 import FeatureEditToolbar from '@mapsComponents/MeasurementTools/FeatureEditToolbar';
 import HistoryButton from '@mapsComponents/MeasurementTools/HistoryButton';
 import HistoryPanel from '@mapsComponents/MeasurementTools/HistoryPanel';
+import CatalogoTablaButton from './CatalogoTablaButton';
 
 const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo' };
 
@@ -28,7 +29,7 @@ const CloseIcon = ({ className }) => (
     </svg>
 );
 
-const CatalogoTools = () => {
+const CatalogoTools = ({ tabla, hayCapa }) => {
     const {
         isDrawing,
         isSketching,
@@ -142,9 +143,12 @@ const CatalogoTools = () => {
         </Tooltip>
     );
 
+    const tablaButton = <CatalogoTablaButton layerId={tabla.layerId} disponible={tabla.disponible} hayCapa={hayCapa} />;
+
     return (
         <div className="fixed left-4 top-29 z-20 flex flex-col gap-2 items-start">
             {!toolsOpen && toggleButton}
+            {!toolsOpen && tablaButton}
 
             {toolsOpen && (
                 <>
@@ -224,6 +228,7 @@ const CatalogoTools = () => {
                     )}
 
                     {toggleButton}
+                    {tablaButton}
                 </>
             )}
         </div>

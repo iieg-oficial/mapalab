@@ -1,10 +1,11 @@
-const FIELD = 'w-full text-[13px] text-[#454545] bg-[#F9FBFF] rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple/40';
-const LABEL = 'block text-[12px] font-bold text-purple mb-1';
-const BTN = 'px-5 py-2 rounded-[30px] text-[13px] font-bold transition-colors cursor-pointer';
+import { BOTON_CONTORNO, BOTON_PRIMARIO, ERROR, ETIQUETA, INPUT, TEXTAREA } from '../helpers/controles';
+import { IconoAlerta } from './tarjeta/iconos';
 
 const CatalogoInfoBoxPropuestaForm = ({
     comentario,
     onComentario,
+    email,
+    onEmail,
     website,
     onWebsite,
     enviando,
@@ -12,17 +13,33 @@ const CatalogoInfoBoxPropuestaForm = ({
     onEnviar,
     onRegresar,
 }) => (
-    <div className="max-w-lg">
-        <label className={LABEL} htmlFor="propuesta-comentario">¿Por qué propones este cambio?</label>
-        <textarea
-            id="propuesta-comentario"
-            value={comentario}
-            onChange={(e) => onComentario(e.target.value)}
-            maxLength={1000}
-            rows={4}
-            placeholder="Cuéntanos qué información falta o qué haría más útil esta tarjeta."
-            className={`${FIELD} mb-4`}
-        />
+    <div className="max-w-lg flex flex-col gap-4">
+        <div>
+            <label className={ETIQUETA} htmlFor="propuesta-comentario">¿Por qué propones este cambio?</label>
+            <textarea
+                id="propuesta-comentario"
+                value={comentario}
+                onChange={(e) => onComentario(e.target.value)}
+                maxLength={1000}
+                rows={4}
+                placeholder="Cuéntanos qué información falta o qué haría más útil esta tarjeta."
+                className={TEXTAREA}
+            />
+        </div>
+
+        <div>
+            <label className={ETIQUETA} htmlFor="propuesta-email">Correo para avisarte (opcional)</label>
+            <input
+                id="propuesta-email"
+                type="email"
+                value={email}
+                onChange={(e) => onEmail(e.target.value)}
+                maxLength={255}
+                autoComplete="email"
+                placeholder="tu@correo.mx"
+                className={INPUT}
+            />
+        </div>
 
         <input
             type="text"
@@ -34,24 +51,13 @@ const CatalogoInfoBoxPropuestaForm = ({
             className="absolute opacity-0 pointer-events-none size-0"
         />
 
-        {error && <p className="mt-3 text-[12px] text-[#B03A46]">{error}</p>}
+        {error && <p className={ERROR}><IconoAlerta className="size-3.5 shrink-0" />{error}</p>}
 
-        <div className="flex items-center gap-2 mt-6">
-            <button
-                type="button"
-                onClick={onEnviar}
-                disabled={enviando}
-                className={`${BTN} bg-purple-deep text-white hover:bg-purple disabled:opacity-50`}
-            >
+        <div className="flex items-center gap-2 mt-2">
+            <button type="button" onClick={onEnviar} disabled={enviando} className={BOTON_PRIMARIO}>
                 {enviando ? 'Enviando…' : 'Enviar propuesta'}
             </button>
-            <button
-                type="button"
-                onClick={onRegresar}
-                className={`${BTN} border border-purple-deep text-purple-deep hover:bg-purple-soft`}
-            >
-                Regresar
-            </button>
+            <button type="button" onClick={onRegresar} className={BOTON_CONTORNO}>Regresar</button>
         </div>
     </div>
 );

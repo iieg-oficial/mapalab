@@ -10,9 +10,9 @@ export const ESTADO_INICIAL = {
     porCapa: {},
 };
 
-export const leerEstado = () => {
+export const leerEstado = (llave = LLAVE) => {
     try {
-        const crudo = JSON.parse(localStorage.getItem(LLAVE) || 'null');
+        const crudo = JSON.parse(localStorage.getItem(llave) || 'null');
         if (!crudo || crudo.version !== VERSION) return { ...ESTADO_INICIAL };
         return {
             ...ESTADO_INICIAL,
@@ -26,9 +26,9 @@ export const leerEstado = () => {
     }
 };
 
-export const guardarEstado = (estado) => {
+export const guardarEstado = (estado, llave = LLAVE) => {
     try {
-        localStorage.setItem(LLAVE, JSON.stringify({ version: VERSION, estado }));
+        localStorage.setItem(llave, JSON.stringify({ version: VERSION, estado }));
     } catch {
         /* ignore */
     }

@@ -20,8 +20,8 @@ export const useCatalogoPoligono = ({ mapRef, capa, tiempo }) => {
     }, [capa, layerId]);
 
     const getFilter = useCallback(
-        () => (tiempo?.isRaster ? null : tiempo?.filtro || null),
-        [tiempo?.isRaster, tiempo?.filtro],
+        () => (tiempo?.isRaster ? null : tiempo?.filtroMapa || null),
+        [tiempo?.isRaster, tiempo?.filtroMapa],
     );
 
     const { queryPolygon, loadMorePage } = usePolygonSelection({ getFilter, pageRef });
