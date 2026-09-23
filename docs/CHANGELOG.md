@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.182.0] - 2026-09-23
+
+### Corregido: una capa teselada tumbaba la vista 3D entera
+
+`TileWMS` expone `getUrls()` en plural y `ImageWMS` `getUrl()` en singular. El reflejo de capas
+llamaba el singular para todas, así que al activar una capa con `tiled: true` —cultivos, por
+ejemplo— lanzaba `getUrl is not a function` dentro del render y React Router mostraba su pantalla
+de error. El síntoma parecía otro: «la capa no se ve». Afectaba a toda capa teselada. Cubierto por
+prueba en `map3dSync.test.js`.
+
+### Cambiado: el clic en 3D abre el InfoBox de siempre
+
+En 3D los clics se los quedaba MapLibre y nunca llegaban a OpenLayers, así que no salía la
+tarjeta. Ahora la coordenada del clic sale de MapLibre y la consulta la resuelve `queryFeatures`
+sobre el mapa de OpenLayers, igual que en 2D, con la tarjeta en el punto del clic. **Se retiró el
+popup propio de las columnas**: el InfoBox trae más información y es el que ya se conoce.
+
+### Corregido: el botón de órbita medía menos que los anillos
+
+Pasa a 34 px, como los anillos de la pastilla.
+
 ## [1.181.0] - 2026-09-23
 
 ### Cambiado: la barra del comparador se vuelve el control del comparador
