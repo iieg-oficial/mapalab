@@ -7,9 +7,8 @@ import DatePill from '@mapsComponents/ActiveLayers/DatePill';
 import { SLOT_COLORS, slotLabel } from '@pages/maps/helpers/swipeTheme';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
+import ActionIconButton from '@components/ActionIconButton';
 import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
-
-const SIN_FECHA = '—';
 
 const BotonLado = ({ slot, activo, bloqueado, onClick }) => (
     <Tooltip content={bloqueado ? 'Debe quedar en al menos un lado' : `${activo ? 'Quitar del' : 'Mostrar en el'} lado ${slotLabel(slot)}`}>
@@ -77,21 +76,16 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
     const celdaFecha = (capa, slot) => {
         const dentro = slot === 'A' ? capa.enA : capa.enB;
         const etiqueta = slot === 'A' ? capa.fechaA : capa.fechaB;
+        if (!dentro || !etiqueta.label) return null;
         return (
-            <div className={`w-[74px] shrink-0 flex ${slot === 'A' ? 'justify-end' : 'justify-start'}`}>
-                {dentro && etiqueta.label ? (
-                    <DatePill
-                        slot={slot}
-                        label={etiqueta.label}
-                        kind={etiqueta.kind}
-                        onClick={(e) => { e.stopPropagation(); onElegirFecha?.(capa, slot); }}
-                        size="sm"
-                        autoWidth
-                    />
-                ) : (
-                    <span className="font-garet text-[11px]/[14px] text-[#C4CACE]">{dentro ? SIN_FECHA : ''}</span>
-                )}
-            </div>
+            <DatePill
+                slot={slot}
+                label={etiqueta.label}
+                kind={etiqueta.kind}
+                onClick={(e) => { e.stopPropagation(); onElegirFecha?.(capa, slot); }}
+                size="sm"
+                autoWidth
+            />
         );
     };
 
@@ -99,19 +93,17 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
         <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-[min(460px,calc(100vw-2rem))] max-h-[60vh] overflow-y-auto px-4.5 pt-2 pb-4.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A]">
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
-                    <Icon name="capas_comparadas" className="size-8" />
+                    <Icon name="tool_swipe" className="size-8 text-purple" />
                     <h3 className="font-garet font-bold text-[18px]/[47px]">Capas comparadas</h3>
                 </div>
-                <Tooltip content="Cerrar el panel de capas" placement="bottom" delay={200}>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        aria-label="Cerrar el panel de capas"
-                        className={`size-7 shrink-0 ${RADIUS_ICON} flex items-center justify-center transition-colors cursor-pointer`}
-                    >
-                        <Icon name="cerrarModal" className="size-5" />
-                    </button>
-                </Tooltip>
+                <ActionIconButton
+                    onClick={onClose}
+                    titulo="Cerrar el panel de capas"
+                    etiqueta="Cerrar el panel de capas comparadas"
+                    tamano="sm"
+                >
+                    <Icon name="close" className="size-3.5" />
+                </ActionIconButton>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -130,15 +122,17 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
 
                             {celdaFecha(capa, 'A')}
 
-                            <button
-                                type="button"
-                                onClick={() => { setSelectedLayerForSymbology?.({ id: capa.id, name: capa.name }); onClose?.(); }}
-                                aria-pressed={elegida}
-                                aria-label={`Comparar ${capa.name}`}
-                                className="flex-1 min-w-0 text-center font-garet font-medium text-[14px] text-[#465055] truncate cursor-pointer hover:text-[#70308A] transition-colors"
-                            >
-                                {capa.name}
-                            </button>
+                            <Tooltip content={capa.name} placement="top" delay={400} triggerClassName="flex-1 min-w-0">
+                                <button
+                                    type="button"
+                                    onClick={() => { setSelectedLayerForSymbology?.({ id: capa.id, name: capa.name }); onClose?.(); }}
+                                    aria-pressed={elegida}
+                                    aria-label={`Comparar ${capa.name}`}
+                                    className="w-full text-center font-garet font-medium text-[14px]/[17px] text-[#465055] line-clamp-2 cursor-pointer hover:text-[#70308A] transition-colors"
+                                >
+                                    {capa.name}
+                                </button>
+                            </Tooltip>
 
                             {celdaFecha(capa, 'B')}
 

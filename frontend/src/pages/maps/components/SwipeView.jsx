@@ -17,7 +17,7 @@ import {
 } from '@pages/maps/helpers/swipeMode';
 
 const OVERLAY_LETTER = 'font-garet font-bold text-white text-[120px] leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]';
-const HANDLE_LABEL = 'flex items-center justify-center font-garet text-[13px] font-bold leading-none drop-shadow-[0_1px_3px_rgba(255,255,255,0.95)]';
+const HANDLE_LABEL = 'flex items-center justify-center font-garet text-[18px] font-bold leading-none drop-shadow-[0_1px_3px_rgba(255,255,255,0.95)]';
 const FADE_DELAY_MS = Math.round(SWIPE_MINIMIZE_MS * 0.6);
 
 const SwipeView = () => {

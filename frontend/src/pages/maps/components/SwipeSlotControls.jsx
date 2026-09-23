@@ -1,10 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
-import CloseButton from '@components/CloseButton';
+import PillCloseButton from '@components/PillCloseButton';
+import ConfirmDropdown from '@components/ConfirmDropdown';
+import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
+import DatePill from './ActiveLayers/DatePill';
+import { computeLabel } from './ActiveLayers/datePillHelpers';
 import PanelPeriodicidad from './SwipeBar/PanelPeriodicidad';
 import PanelCapas from './SwipeBar/PanelCapas';
 
@@ -35,17 +39,19 @@ const ListaIcon = ({ className }) => (
     </svg>
 );
 
-const BOTON_BARRA = 'size-10 flex items-center justify-center rounded-full transition-all cursor-pointer shrink-0';
+const PILDORA = 'h-10 flex items-center bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-[#EAEFFA]';
+const BOTON_BARRA = 'size-8 flex items-center justify-center rounded-full transition-all cursor-pointer shrink-0';
 
 const SwipeSlotControls = () => {
     const {
         compareMode, exitCompareMode, toggleSwipeOrientation,
-        selectedLayerForSymbology, setSelectedLayerForSymbology,
+        selectedLayerForSymbology, setSelectedLayerForSymbology, allLayers, dateLoops,
     } = useMapsContext();
     const { width: siderWidth, isOpen: isSiderOpen, isMobile: isMobileSider } = useSider();
     const siderShift = !isMobileSider && isSiderOpen ? siderWidth / 2 : 0;
     const [hintPhase, setHintPhase] = useState(isMobileSider ? 'hidden' : 'visible');
     const [abierto, setAbierto] = useState(null);
+    const [confirmando, setConfirmando] = useState(false);
     const containerRef = useRef(null);
     const objetivoRef = useRef(null);
 
@@ -59,6 +65,8 @@ const SwipeSlotControls = () => {
     }, [isMobileSider]);
 
     const layerId = selectedLayerForSymbology?.id || null;
+    const layerDef = useMemo(() => (layerId ? findLayerDef(layerId, allLayers) : null), [layerId, allLayers]);
+    const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
 
     useEffect(() => {
         if (objetivoRef.current) {
@@ -68,6 +76,17 @@ const SwipeSlotControls = () => {
         }
         setAbierto(null);
     }, [layerId]);
+
+    const inA = !!(layerId && compareMode?.paneA?.activeLayerIds?.includes(layerId));
+    const inB = !!(layerId && compareMode?.paneB?.activeLayerIds?.includes(layerId));
+    const labelA = useMemo(
+        () => computeLabel(compareMode?.paneA?.filters?.[layerId]?.date, rasterPeriodicity),
+        [compareMode?.paneA?.filters, layerId, rasterPeriodicity],
+    );
+    const labelB = useMemo(
+        () => computeLabel(compareMode?.paneB?.filters?.[layerId]?.date, rasterPeriodicity),
+        [compareMode?.paneB?.filters, layerId, rasterPeriodicity],
+    );
 
     if (!compareMode?.active) return null;
     const isHorizontal = compareMode.swipeOrientation === 'horizontal';
@@ -84,16 +103,51 @@ const SwipeSlotControls = () => {
         setSelectedLayerForSymbology?.({ id: capa.id, name: capa.name });
     };
 
+    const loop = layerId ? dateLoops?.[layerId] : null;
+    const pildoraFecha = (slot, dentro, etiqueta) => (dentro && etiqueta.label ? (
+        <div className={`${PILDORA} px-1.5 shrink-0`}>
+            <DatePill
+                slot={slot}
+                label={etiqueta.label}
+                kind={etiqueta.kind}
+                onClick={() => alternar(slot)}
+                isLooping={!!loop?.isPlaying && loop.slot === slot}
+                size="md"
+                autoWidth
+            />
+        </div>
+    ) : null);
+
     return (
         <div
             ref={containerRef}
             className={`fixed z-20 flex items-center gap-2 ${isMobileSider ? 'bottom-16' : 'bottom-4'}`}
             style={{ left: `calc(50% + ${siderShift}px)`, transform: 'translateX(-50%)' }}
         >
-            <div className="relative flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200">
+            {pildoraFecha('A', inA, labelA)}
+
+            <div className={`group relative ${PILDORA} gap-1.5 px-1.5`}>
                 {!isMobileSider && hintPhase !== 'hidden' && (
                     <ActionsHint visible={hintPhase === 'visible'} />
                 )}
+
+                <PillCloseButton
+                    onClick={() => setConfirmando(true)}
+                    tooltip="Cerrar comparador"
+                    ariaLabel="Cerrar comparador"
+                    placement="top"
+                    className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 z-[2]"
+                />
+                <ConfirmDropdown
+                    open={confirmando}
+                    onClose={() => setConfirmando(false)}
+                    onConfirm={exitCompareMode}
+                    title="¿Cerrar la comparación?"
+                    description="Se descartará la comparación actual y volverás al estado original del mapa."
+                    confirmText="Sí, cerrar comparador"
+                    placement="top"
+                    className="left-1/2 -translate-x-1/2"
+                />
 
                 {abierto === 'A' && <PanelPeriodicidad layerId={layerId} slot="A" onClose={cerrar} />}
                 {abierto === 'B' && <PanelPeriodicidad layerId={layerId} slot="B" onClose={cerrar} />}
@@ -109,7 +163,7 @@ const SwipeSlotControls = () => {
                             ? 'bg-[#703089] text-white'
                             : 'bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white'}`}
                     >
-                        <ListaIcon className="w-5 h-5" />
+                        <ListaIcon className="w-4.5 h-4.5" />
                     </button>
                 </Tooltip>
 
@@ -120,24 +174,12 @@ const SwipeSlotControls = () => {
                         className={`${BOTON_BARRA} bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white`}
                         aria-label={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'}
                     >
-                        <Icon name="swipe_orientacion" className={`w-5 h-5 transition-transform ${isHorizontal ? '' : 'rotate-90'}`} />
+                        <Icon name="swipe_orientacion" className={`w-4.5 h-4.5 transition-transform ${isHorizontal ? '' : 'rotate-90'}`} />
                     </button>
                 </Tooltip>
             </div>
 
-            <CloseButton
-                onConfirm={exitCompareMode}
-                tooltip="Cerrar comparador"
-                tooltipPlacement="top"
-                confirmTitle="¿Cerrar la comparación?"
-                confirmDescription="Se descartará la comparación actual y volverás al estado original del mapa."
-                confirmText="Sí, cerrar comparador"
-                confirmPlacement="top"
-                confirmClassName="left-1/2 -translate-x-1/2"
-                size="size-10"
-                iconSize="size-8"
-                tone="herramienta"
-            />
+            {pildoraFecha('B', inB, labelB)}
         </div>
     );
 };

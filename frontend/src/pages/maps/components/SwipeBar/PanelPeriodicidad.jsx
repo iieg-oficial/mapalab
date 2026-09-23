@@ -1,11 +1,8 @@
-import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
+import ActionIconButton from '@components/ActionIconButton';
 import PeriodicitySection from '@mapsComponents/LayerDetailModal/components/PeriodicitySection';
 import { useSlotPeriodicity } from '@hooksMaps/useSlotPeriodicity';
 import { slotLabel } from '@pages/maps/helpers/swipeTheme';
-import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
-
-const BOTON_ESQUINA = `size-7 shrink-0 ${RADIUS_ICON} flex items-center justify-center transition-colors cursor-pointer`;
 
 const PanelPeriodicidad = ({ layerId, slot, onClose }) => {
     const periodicidad = useSlotPeriodicity(layerId);
@@ -19,27 +16,23 @@ const PanelPeriodicidad = ({ layerId, slot, onClose }) => {
         >
             <div className="absolute top-2 right-2 z-[1] flex items-center gap-1">
                 {lado.hasFilter && (
-                    <Tooltip content="Quitar el filtro de fecha de este lado" placement="bottom" delay={200}>
-                        <button
-                            type="button"
-                            onClick={lado.clear}
-                            aria-label="Quitar el filtro de fecha de este lado"
-                            className={BOTON_ESQUINA}
-                        >
-                            <Icon name="eliminar" state="hover" className="size-5" />
-                        </button>
-                    </Tooltip>
-                )}
-                <Tooltip content="Cerrar el panel de fechas" placement="bottom" delay={200}>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        aria-label="Cerrar el panel de fechas"
-                        className={BOTON_ESQUINA}
+                    <ActionIconButton
+                        onClick={lado.clear}
+                        titulo="Quitar el filtro de fecha de este lado"
+                        etiqueta="Quitar el filtro de fecha de este lado"
+                        tamano="sm"
                     >
-                        <Icon name="cerrarModal" className="size-5" />
-                    </button>
-                </Tooltip>
+                        <Icon name="eliminar" state="hover" className="size-4" />
+                    </ActionIconButton>
+                )}
+                <ActionIconButton
+                    onClick={onClose}
+                    titulo="Cerrar el panel de fechas"
+                    etiqueta="Cerrar el panel de fechas"
+                    tamano="sm"
+                >
+                    <Icon name="close" className="size-3.5" />
+                </ActionIconButton>
             </div>
 
             <div className="px-4 pb-1">

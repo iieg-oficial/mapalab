@@ -5,6 +5,33 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.193.0] - 2026-09-23
+
+### Cambiado: la barra del comparador se homologa con la píldora de la tabla de datos
+
+- **Misma altura.** Los 56 px de la barra bajan a 40, los mismos de `<PillMinimizada>`. Medido en
+  las dos: 40 y 40.
+- **La X se comporta igual.** Pasa a ser `<PillCloseButton>` —el mismo componente de la píldora de
+  la tabla— encima de la barra y oculta hasta que el puntero entra, en vez de un botón siempre
+  visible al costado. Conserva la confirmación de cerrar con un `<ConfirmDropdown>` propio, porque
+  salir descarta la comparación.
+- **Las fechas vuelven, sueltas.** Cada lado tiene su propia píldora flotando junto a la principal,
+  α a la izquierda y β a la derecha, en vez de ir dentro. La principal se queda con sus dos botones.
+
+### Cambiado: el panel de capas comparadas deja de inventar
+
+- El icono del encabezado es `tool_swipe`, el mismo de la herramienta en el sider; el SVG propio que
+  había hecho (`ico_capas_comparadas.svg`) se elimina.
+- La X reutiliza `<ActionIconButton>` con el icono `close`, como la ventana de la tabla de datos.
+- **Los nombres largos ya no se cortan**: la fila les da todo el ancho libre, admiten dos renglones
+  y llevan tooltip con el nombre completo.
+- **Se va el guión** de las capas sin periodicidad. Ocupaba una columna fija de 74 px por lado para
+  no decir nada; ese espacio ahora es del nombre.
+
+### Cambiado: α y β del handle más grandes
+
+De 13 a 18 px. A ese tamaño las letras griegas se leían como manchas sobre el mapa.
+
 ## [1.192.0] - 2026-09-23
 
 ### Cambiado: «¿Qué es esta vista?» va a la izquierda del buscador del catálogo
