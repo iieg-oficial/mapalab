@@ -12,7 +12,8 @@ import { transformExtent } from 'ol/proj';
 import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from '../utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
 import { useEventoContext } from '@hooks/useEvento';
-import { crearMascara, extentDeSeleccion } from '../utils/seleccionDescarga';
+import { anchoParaSeleccion, crearMascara, extentDeSeleccion, featureDeSeleccion } from '../utils/seleccionDescarga';
+import Style from 'ol/style/Style';
 import { filasSeleccion, medidasDeSeleccion, MAX_CAPAS_SELECCION } from '../utils/estadisticasSeleccion';
 import { agregarEnPoligono, contarEnPoligono } from '@services/seleccionStatsService';
 
@@ -24,7 +25,7 @@ export const useMapDownload = () => {
     const { prepareScaleControl, getMapSnapshot } = useMapCapture();
     const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
-    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode, getFilter } = useContext(MapsContext);
+    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode, getFilter, measurements } = useContext(MapsContext);
     const { getAliasByLayerId } = useEventoContext();
     const [isDownloading, setIsDownloading] = useState(false);
 
@@ -102,10 +103,14 @@ export const useMapDownload = () => {
         prepareScaleControl(scaleControl);
 
         const { SIDE_PANEL_WIDTH } = EXPORT_DIMENSIONS;
-        const { mapWidth, mapHeight, captureScale, composeScale } = quality;
+        const { mapHeight, captureScale, composeScale } = quality;
+        const esSeleccion = viewType === 'seleccion' && !!seleccion;
+        const mapWidth = esSeleccion ? anchoParaSeleccion(seleccion, quality) : quality.mapWidth;
+        const trazo = esSeleccion ? featureDeSeleccion(measurements, seleccion) : null;
+        const estiloTrazo = trazo?.getStyle() ?? null;
+        if (trazo) trazo.setStyle(new Style({}));
 
         try {
-            const esSeleccion = viewType === 'seleccion' && !!seleccion;
             const vista = esSeleccion ? 'viewport' : viewType;
             const { url: minimapImageUrl, bounds: minimapBounds } = generateMinimapImage(vista);
             let targetExtent = null;
@@ -146,6 +151,7 @@ export const useMapDownload = () => {
                         datos: await agregarEnPoligono({
                             capa,
                             campo: camposPorCapa[capa.id].nombre,
+                            porClase: camposPorCapa[capa.id].porClase,
                             poligono: seleccion,
                             getFilter,
                             allLayers,
@@ -172,6 +178,7 @@ export const useMapDownload = () => {
                 minimapImageUrl,
                 minimapBounds,
                 seleccion: seleccionFilas,
+                sinReticula: esSeleccion,
                 source,
                 scale: composeScale
             });
@@ -190,6 +197,7 @@ export const useMapDownload = () => {
         } catch (error) {
             console.error('Error al descargar el mapa:', error);
         } finally {
+            if (trazo) trazo.setStyle(estiloTrazo);
             setIsDownloading(false);
         }
     };

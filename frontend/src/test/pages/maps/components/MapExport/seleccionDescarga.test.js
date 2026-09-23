@@ -3,7 +3,7 @@ import Polygon from 'ol/geom/Polygon';
 import LineString from 'ol/geom/LineString';
 import { containsExtent } from 'ol/extent';
 import { transformExtent } from 'ol/proj';
-import { crearMascara, extentDeSeleccion, ultimaSeleccion } from '@pages/maps/components/MapExport/utils/seleccionDescarga';
+import { anchoParaSeleccion, crearMascara, extentDeSeleccion, featureDeSeleccion, ultimaSeleccion } from '@pages/maps/components/MapExport/utils/seleccionDescarga';
 
 const cuadro = (x, y, lado = 1000) => new Polygon([[[x, y], [x + lado, y], [x + lado, y + lado], [x, y + lado], [x, y]]]);
 
@@ -43,5 +43,30 @@ describe('crearMascara', () => {
         expect(anillos[1]).toEqual(poligono.getCoordinates()[0]);
         expect(mascara.intersectsCoordinate([500, 500])).toBe(false);
         expect(mascara.intersectsCoordinate([50000, 50000])).toBe(true);
+    });
+});
+
+describe('anchoParaSeleccion', () => {
+    const calidad = { mapWidth: 2007, mapHeight: 1700 };
+
+    it('ajusta el ancho a la proporción del polígono y deja el alto', () => {
+        const ancho = new Polygon([[[0, 0], [1500, 0], [1500, 1000], [0, 1000], [0, 0]]]);
+        expect(anchoParaSeleccion(ancho, calidad)).toBe(2550);
+    });
+
+    it('no deja que un polígono muy delgado deforme la imagen', () => {
+        const delgado = new Polygon([[[0, 0], [100, 0], [100, 1000], [0, 1000], [0, 0]]]);
+        const larguisimo = new Polygon([[[0, 0], [10000, 0], [10000, 100], [0, 100], [0, 0]]]);
+        expect(anchoParaSeleccion(delgado, calidad)).toBe(1020);
+        expect(anchoParaSeleccion(larguisimo, calidad)).toBe(3740);
+    });
+});
+
+describe('featureDeSeleccion', () => {
+    it('encuentra el trazo que dibujó la selección', () => {
+        const poligono = cuadro(0, 0);
+        const trazo = { id: 'trazo' };
+        expect(featureDeSeleccion([{ geometry: cuadro(9, 9), feature: {} }, { geometry: poligono, feature: trazo }], poligono)).toBe(trazo);
+        expect(featureDeSeleccion([], poligono)).toBeNull();
     });
 });

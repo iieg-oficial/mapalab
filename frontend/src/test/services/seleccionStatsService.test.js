@@ -11,7 +11,7 @@ vi.mock('@utils/featureInfoUtils', () => ({
     getWfsUrl: (url) => url.replace('/wms', '/wfs'),
 }));
 
-import { agregarEnPoligono, camposNumericos, construirAgregado, contarEnPoligono, esCampoNumerico, filtroDePoligono, leerAgregado, leerNumberMatched, wktDelPoligono, MAX_VERTICES } from '@services/seleccionStatsService';
+import { agregarEnPoligono, camposDeCapa, construirAgregado, contarEnPoligono, esCampoDeClase, esCampoNumerico, filtroDePoligono, leerAgregado, leerAgregadoPorClase, leerNumberMatched, wktDelPoligono, MAX_VERTICES } from '@services/seleccionStatsService';
 
 const cuadro = new Polygon([[[0, 0], [1000, 0], [1000, 1000], [0, 1000], [0, 0]]]);
 
@@ -95,20 +95,27 @@ describe('campos numéricos', () => {
         expect(esCampoNumerico({ name: 'geom', type: 'gml:MultiPolygon' })).toBe(false);
     });
 
-    it('los lee de la descripción de la capa', async () => {
+    it('separa los campos que se suman de los que sirven para contar por clase', async () => {
         global.fetch.mockResolvedValue({
             ok: true,
             json: async () => ({ featureTypes: [{ properties: [
                 { name: 'geom', type: 'gml:Point' },
-                { name: 'nombre', type: 'xsd:string' },
+                { name: 'cultivo', type: 'xsd:string' },
+                { name: 'clave_municipio', type: 'xsd:string' },
                 { name: 'alumnos', type: 'xsd:number' },
             ] }] }),
         });
-        expect(await camposNumericos({ id: 'escuelas' }, [])).toEqual(['alumnos']);
+        expect(await camposDeCapa({ id: 'escuelas' }, [])).toEqual({ numericos: ['alumnos'], clases: ['cultivo'] });
+    });
+
+    it('las claves no cuentan como clase', () => {
+        expect(esCampoDeClase({ name: 'cultivo', type: 'xsd:string' })).toBe(true);
+        expect(esCampoDeClase({ name: 'cve_mun', type: 'xsd:string' })).toBe(false);
+        expect(esCampoDeClase({ name: 'poblacion', type: 'xsd:number' })).toBe(false);
     });
 
     it('una capa sin WFS no ofrece campos', async () => {
-        expect(await camposNumericos({ id: 'sin-wfs' }, [])).toEqual([]);
+        expect(await camposDeCapa({ id: 'sin-wfs' }, [])).toEqual({ numericos: [], clases: [] });
         expect(global.fetch).not.toHaveBeenCalled();
     });
 });
@@ -145,5 +152,23 @@ describe('agregado con WPS', () => {
     it('si GeoServer falla, la capa se queda sin suma', async () => {
         global.fetch.mockResolvedValue({ ok: false });
         expect(await agregarEnPoligono({ capa: { id: 'escuelas' }, campo: 'alumnos', poligono: cuadro })).toBeNull();
+    });
+});
+
+describe('conteo por clase', () => {
+    it('agrupa por el campo y solo cuenta', () => {
+        const xml = construirAgregado({ typeName: 'agro:cultivos', campo: 'cultivo', cql: 'INCLUDE', porClase: true });
+        expect(xml).toContain('<ows:Identifier>groupByAttributes</ows:Identifier><wps:Data><wps:LiteralData>cultivo</wps:LiteralData>');
+        expect(xml).toContain('<wps:LiteralData>Count</wps:LiteralData>');
+        expect(xml).not.toContain('<wps:LiteralData>Sum</wps:LiteralData>');
+    });
+
+    it('ordena las clases de mayor a menor y junta el resto en Otras', () => {
+        const datos = { AggregationResults: [['Mango', 3], ['Maíz grano', 142], ['Agave', 40], ['Citricos', 9], ['Otros', 12], ['Plátano', 2], [null, 5]] };
+        expect(leerAgregadoPorClase(datos, 3)).toEqual({
+            clases: [{ clase: 'Maíz grano', conteo: 142 }, { clase: 'Agave', conteo: 40 }, { clase: 'Otros', conteo: 12 }],
+            otras: 14,
+        });
+        expect(leerAgregadoPorClase({})).toBeNull();
     });
 });

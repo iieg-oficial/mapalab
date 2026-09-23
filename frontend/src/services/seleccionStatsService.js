@@ -52,11 +52,18 @@ const contarCapa = async ({ baseUrl, typeName, columna, filtroCapa, wkt }) => {
 const BASE_GEOSERVER = (import.meta.env.VITE_GEOSERVER_URL || '/sextante/').replace(/\/+$/, '');
 const TIPOS_NUMERICOS = ['xsd:number', 'xsd:decimal', 'xsd:double', 'xsd:int', 'xsd:integer', 'xsd:long', 'xsd:short', 'xsd:float'];
 
+const PREFIJOS_LLAVE = ['clave', 'cve', 'id', 'fid', 'gid', 'objectid'];
+export const MAX_CLASES = 5;
+
+export const esCampoDeClase = (propiedad) => propiedad?.type === 'xsd:string'
+    && !PREFIJOS_LLAVE.some(prefijo => propiedad.name?.toLowerCase().startsWith(prefijo));
+
 export const esCampoNumerico = (propiedad) => TIPOS_NUMERICOS.includes(propiedad?.localType ? `xsd:${propiedad.localType}` : propiedad?.type);
 
-export const camposNumericos = async (capa, allLayers = []) => {
+export const camposDeCapa = async (capa, allLayers = []) => {
     const wmsConfig = findWMSConfig(capa?.id, allLayers);
-    if (!wmsConfig || wmsConfig.wfsAvailable === false) return [];
+    const vacio = { numericos: [], clases: [] };
+    if (!wmsConfig || wmsConfig.wfsAvailable === false) return vacio;
 
     const url = new URL(getWfsUrl(wmsConfig.baseUrl), window.location.origin);
     url.searchParams.set('service', 'WFS');
@@ -67,21 +74,24 @@ export const camposNumericos = async (capa, allLayers = []) => {
 
     try {
         const respuesta = await fetch(url.toString(), { signal: AbortSignal.timeout(TIEMPO_LIMITE_MS) });
-        if (!respuesta.ok) return [];
+        if (!respuesta.ok) return vacio;
         const datos = await respuesta.json();
         const propiedades = datos?.featureTypes?.[0]?.properties || [];
-        return propiedades.filter(esCampoNumerico).map(({ name }) => name);
+        return {
+            numericos: propiedades.filter(esCampoNumerico).map(({ name }) => name),
+            clases: propiedades.filter(esCampoDeClase).map(({ name }) => name),
+        };
     } catch {
-        return [];
+        return vacio;
     }
 };
 
-export const construirAgregado = ({ typeName, campo, cql }) => {
+export const construirAgregado = ({ typeName, campo, cql, porClase = false }) => {
     const href = `http://geoserver/wfs?service=WFS&amp;version=1.0.0&amp;request=GetFeature`
         + `&amp;typeName=${typeName}&amp;CQL_FILTER=${encodeURIComponent(cql)}`;
-    const funciones = ['Count', 'Sum', 'Average']
-        .map(f => `<wps:Input><ows:Identifier>function</ows:Identifier><wps:Data><wps:LiteralData>${f}</wps:LiteralData></wps:Data></wps:Input>`)
-        .join('');
+    const literal = (clave, valor) => `<wps:Input><ows:Identifier>${clave}</ows:Identifier><wps:Data><wps:LiteralData>${valor}</wps:LiteralData></wps:Data></wps:Input>`;
+    const funciones = (porClase ? ['Count'] : ['Count', 'Sum', 'Average']).map(f => literal('function', f)).join('')
+        + (porClase ? literal('groupByAttributes', campo) : '');
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <wps:Execute version="1.0.0" service="WPS" xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -107,7 +117,18 @@ export const leerAgregado = (datos) => {
     return { conteo: dato('Count'), suma: dato('Sum'), promedio: dato('Average') };
 };
 
-export const agregarEnPoligono = async ({ capa, campo, poligono, getFilter = null, allLayers = [] }) => {
+export const leerAgregadoPorClase = (datos, maximo = MAX_CLASES) => {
+    const filas = datos?.AggregationResults;
+    if (!Array.isArray(filas)) return null;
+    const clases = filas
+        .filter(fila => Array.isArray(fila) && fila[0] != null && typeof fila[1] === 'number')
+        .map(([clase, conteo]) => ({ clase: String(clase), conteo }))
+        .sort((a, b) => b.conteo - a.conteo);
+    const otras = clases.slice(maximo).reduce((suma, { conteo }) => suma + conteo, 0);
+    return { clases: clases.slice(0, maximo), otras };
+};
+
+export const agregarEnPoligono = async ({ capa, campo, poligono, getFilter = null, allLayers = [], porClase = false }) => {
     const wmsConfig = findWMSConfig(capa?.id, allLayers);
     if (!campo || !poligono || !wmsConfig || wmsConfig.wfsAvailable === false) return null;
 
@@ -121,11 +142,12 @@ export const agregarEnPoligono = async ({ capa, campo, poligono, getFilter = nul
         const respuesta = await fetch(`${BASE_GEOSERVER}/ows`, {
             method: 'POST',
             headers: { 'Content-Type': 'text/xml' },
-            body: construirAgregado({ typeName, campo, cql: filtroCapa ? `(${filtroCapa}) AND ${espacial}` : espacial }),
+            body: construirAgregado({ typeName, campo, porClase, cql: filtroCapa ? `(${filtroCapa}) AND ${espacial}` : espacial }),
             signal: AbortSignal.timeout(TIEMPO_LIMITE_MS * 2),
         });
         if (!respuesta.ok) return null;
-        return leerAgregado(await respuesta.json());
+        const datos = await respuesta.json();
+        return porClase ? leerAgregadoPorClase(datos) : leerAgregado(datos);
     } catch {
         return null;
     }
@@ -138,7 +160,7 @@ export const contarEnPoligono = async (capas = [], poligono, { getFilter = null,
     return Promise.all(capas.map(async (capa) => {
         const fila = { id: capa.id, etiqueta: capa.label || capa.name || capa.id, conteo: null };
         const wmsConfig = findWMSConfig(capa.id, allLayers);
-        if (!wmsConfig || wmsConfig.wfsAvailable === false) return fila;
+        if (!wmsConfig || wmsConfig.wfsAvailable === false) return { ...fila, sinWfs: true };
 
         try {
             const baseUrl = getWfsUrl(wmsConfig.baseUrl);

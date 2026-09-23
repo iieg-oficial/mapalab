@@ -5,6 +5,41 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.187.0] - 2026-09-23
+
+### Corregido: la configuración de mediciones no se veía
+
+El panel se montaba en el `body` con `createPortal` y sin posición: sus clases solo daban fondo y
+sombra, y el `anchorRef` del botón solo servía para detectar clics afuera. Se abría al final del
+documento, fuera de la vista. Ahora usa `Panel`, anclado al botón.
+
+### Agregado: eliminar todas las mediciones
+
+«Mis mediciones» suma un botón para borrar todas las mediciones y anotaciones, con confirmación. La
+función (`clearDrawings`) ya existía, pero en el visor nadie la llamaba; solo el catálogo.
+
+### Cambiado: la imagen de Selección
+
+- El polígono que define la selección ya no se imprime: su relleno teñía los colores de la capa.
+- El ancho de la imagen sigue la proporción del polígono, entre 0.6 y 2.2 veces el alto, para no
+  dejar franjas blancas a los lados.
+- El conteo distingue «No aplica», para una capa sin WFS, de «Sin dato», cuando la consulta falla.
+- En Selección no se dibujan las cruces de la retícula, que quedaban sueltas sobre el blanco.
+- El bloque Selección sube junto a la leyenda; el espacio libre queda antes del mapa de ubicación.
+
+### Corregido: espacios dobles entre palabras en la imagen
+
+Las fuentes Garet usan `font-display: optional`: si no cargaban a tiempo, `html2canvas` medía las
+palabras con la fuente de respaldo y las pintaba con Garet. Ahora se cargan los cuatro pesos antes de
+capturar.
+
+### Agregado: contar por clase dentro de la selección
+
+El selector de cada leyenda suma «Contar por clase» con los campos de texto de la capa, sin las
+claves. La imagen muestra las cinco clases con más elementos dentro del polígono y junta el resto en
+«Otras». Lo calcula GeoServer con `gs:Aggregate` agrupando por el campo. Cuenta elementos, no
+superficie: `gs:Aggregate` no calcula áreas.
+
 ## [1.186.0] - 2026-09-23
 
 Pide mariachi 2.97.0: sin él, las propuestas con título fijo o con párrafos de texto fijo se rechazan.

@@ -4,6 +4,9 @@ import { transformExtent } from 'ol/proj';
 
 export const MASCARA_Z_INDEX = 2_000_000;
 
+const PROPORCION_MIN = 0.6;
+const PROPORCION_MAX = 2.2;
+
 const TIPOS_SELECCION = ['Polygon', 'Select'];
 const MARGEN = 0.05;
 const MUNDO = [-20037508.34, -20037508.34, 20037508.34, 20037508.34];
@@ -22,6 +25,17 @@ export const extentDeSeleccion = (geometria) => {
     const margen = Math.max(getWidth(extent), getHeight(extent)) * MARGEN;
     return transformExtent(buffer(extent, margen), 'EPSG:3857', 'EPSG:4326');
 };
+
+export const anchoParaSeleccion = (geometria, { mapWidth, mapHeight }) => {
+    const [minX, minY, maxX, maxY] = geometria.getExtent();
+    const alto = maxY - minY;
+    if (alto <= 0) return mapWidth;
+    const proporcion = Math.min(PROPORCION_MAX, Math.max(PROPORCION_MIN, (maxX - minX) / alto));
+    return Math.round(mapHeight * proporcion);
+};
+
+export const featureDeSeleccion = (measurements = [], geometria) =>
+    measurements.find(medicion => medicion?.geometry === geometria)?.feature || null;
 
 export const crearMascara = (geometria) => {
     const [x0, y0, x1, y1] = MUNDO;

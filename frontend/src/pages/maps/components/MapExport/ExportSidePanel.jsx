@@ -45,16 +45,23 @@ const createExportSidePanel = (options = {}) => {
 
     panel.appendChild(createSidePanelTitle(title, contentWidth, SECTION_MARGIN, SECTION_RADIUS));
 
-    panel.appendChild(createSidePanelLegend(
+    const leyenda = createSidePanelLegend(
         selectedLegend,
         getLegendUrl,
         SECTION_PADDING,
         SECTION_MARGIN,
         SECTION_RADIUS
-    ));
+    );
+    panel.appendChild(leyenda);
 
     const bloqueSeleccion = createSidePanelSeleccion(seleccion, contentWidth, SECTION_MARGIN, SECTION_RADIUS);
-    if (bloqueSeleccion) panel.appendChild(bloqueSeleccion);
+    if (bloqueSeleccion) {
+        leyenda.style.flex = '0 1 auto';
+        panel.appendChild(bloqueSeleccion);
+        const relleno = document.createElement('div');
+        relleno.style.flex = '1';
+        panel.appendChild(relleno);
+    }
 
     panel.appendChild(createSidePanelMinimap(
         minimapImageUrl,

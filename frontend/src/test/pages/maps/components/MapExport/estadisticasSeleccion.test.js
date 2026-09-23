@@ -13,9 +13,16 @@ describe('filasSeleccion', () => {
         expect(filas[2]).toEqual({ etiqueta: 'Escuelas', valor: '1,284', detalle: '0.22 / km²' });
     });
 
-    it('una capa sin conteo sale con guion y sin densidad', () => {
-        const [, , fila] = filasSeleccion({ areaKm2: 100, capas: [{ etiqueta: 'NDDI', conteo: null }] });
-        expect(fila).toEqual({ etiqueta: 'NDDI', valor: '—', detalle: null });
+    it('una capa sin WFS dice que no aplica y una consulta fallida dice que no hubo dato', () => {
+        const [, , raster, fallida] = filasSeleccion({
+            areaKm2: 100,
+            capas: [
+                { id: 'nddi', etiqueta: 'NDDI', conteo: null, sinWfs: true },
+                { id: 'escuelas', etiqueta: 'Escuelas', conteo: null },
+            ],
+        });
+        expect(raster).toEqual({ etiqueta: 'NDDI', valor: 'No aplica', detalle: null });
+        expect(fallida).toEqual({ etiqueta: 'Escuelas', valor: 'Sin dato', detalle: null });
     });
 
     it('no pinta más capas de las que caben', () => {
@@ -45,5 +52,20 @@ describe('filasSeleccion con agregados', () => {
             agregados: [{ id: 'escuelas', etiqueta: 'Alumnos', datos: null }],
         });
         expect(filas).toHaveLength(3);
+    });
+});
+
+describe('filasSeleccion por clase', () => {
+    it('cuelga las clases bajo su capa y agrega Otras', () => {
+        const filas = filasSeleccion({
+            areaKm2: 12.76,
+            capas: [{ id: 'cultivos', etiqueta: 'Clasificador de cultivos', conteo: 208 }],
+            agregados: [{ id: 'cultivos', etiqueta: 'Cultivo', datos: { clases: [{ clase: 'Maíz grano', conteo: 142 }, { clase: 'Agave', conteo: 40 }], otras: 26 } }],
+        });
+        expect(filas.slice(3)).toEqual([
+            { etiqueta: 'Maíz grano', valor: '142', sangria: true },
+            { etiqueta: 'Agave', valor: '40', sangria: true },
+            { etiqueta: 'Otras', valor: '26', sangria: true },
+        ]);
     });
 });

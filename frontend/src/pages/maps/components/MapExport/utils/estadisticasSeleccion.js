@@ -10,8 +10,14 @@ export const medidasDeSeleccion = (geometria) => ({
     perimetroKm: getLength(geometria, { projection: 'EPSG:3857' }) / 1000,
 });
 
+const filasDeClases = ({ clases, otras }) => [
+    ...clases.map(({ clase, conteo }) => ({ etiqueta: clase, valor: formatNumber(conteo), sangria: true })),
+    ...(otras > 0 ? [{ etiqueta: 'Otras', valor: formatNumber(otras), sangria: true }] : []),
+];
+
 const filasDeAgregado = (agregado) => {
     if (!agregado?.datos) return [];
+    if (Array.isArray(agregado.datos.clases)) return filasDeClases(agregado.datos);
     const { suma, promedio } = agregado.datos;
     return [
         suma == null ? null : { etiqueta: `${agregado.etiqueta}, suma`, valor: conDecimales(suma), sangria: true },
@@ -22,10 +28,10 @@ const filasDeAgregado = (agregado) => {
 export const filasSeleccion = ({ areaKm2 = 0, perimetroKm = 0, capas = [], agregados = [] }) => [
     { etiqueta: 'Área', valor: `${conDecimales(areaKm2)} km²` },
     { etiqueta: 'Perímetro', valor: `${conDecimales(perimetroKm)} km` },
-    ...capas.slice(0, MAX_CAPAS_SELECCION).flatMap(({ id, etiqueta, conteo }) => [
+    ...capas.slice(0, MAX_CAPAS_SELECCION).flatMap(({ id, etiqueta, conteo, sinWfs }) => [
         {
             etiqueta,
-            valor: conteo == null ? '—' : formatNumber(conteo),
+            valor: conteo == null ? (sinWfs ? 'No aplica' : 'Sin dato') : formatNumber(conteo),
             detalle: conteo == null || areaKm2 <= 0 ? null : `${conDecimales(conteo / areaKm2)} / km²`,
         },
         ...filasDeAgregado(agregados.find(a => a.id === id)),

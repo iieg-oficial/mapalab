@@ -3,7 +3,7 @@ import Checkbox from '@components/Checkbox';
 import ScrollContainer from '@components/ScrollContainer';
 import Tooltip from '@components/Tooltip';
 import SymbologyItem from '../SymbologyItem';
-import { camposNumericos } from '@services/seleccionStatsService';
+import { camposDeCapa } from '@services/seleccionStatsService';
 import { fetchConfigColumnas } from '@services/tablaAtributosService';
 
 const SIN_CAMPO = '';
@@ -20,11 +20,15 @@ const useCamposDeCapa = (layerId, activo, allLayers) => {
         }
         let vigente = true;
         (async () => {
-            const [nombres, columnas] = await Promise.all([
-                camposNumericos({ id: layerId }, allLayers),
+            const [{ numericos, clases }, columnas] = await Promise.all([
+                camposDeCapa({ id: layerId }, allLayers),
                 fetchConfigColumnas(layerId).catch(() => []),
             ]);
-            if (vigente) setCampos(nombres.map(nombre => ({ nombre, etiqueta: etiquetaDe(nombre, columnas) })));
+            if (!vigente) return;
+            setCampos([
+                ...numericos.map(nombre => ({ nombre, etiqueta: etiquetaDe(nombre, columnas), porClase: false })),
+                ...clases.map(nombre => ({ nombre, etiqueta: etiquetaDe(nombre, columnas), porClase: true })),
+            ]);
         })();
         return () => { vigente = false; };
     }, [layerId, activo, allLayers]);
@@ -39,8 +43,8 @@ const SelectorCampo = ({ layer, activo, allLayers, elegido, onElegir }) => {
     return (
         <Tooltip
             content={campos.length > 0
-                ? 'Suma y promedia este campo dentro del área seleccionada'
-                : 'Esta capa no tiene campos numéricos que sumar'}
+                ? 'Suma y promedia un campo numérico, o cuenta los elementos por clase, dentro del área seleccionada'
+                : 'Esta capa no tiene campos que resumir'}
             placement="left"
             delay={400}
             triggerBlock
@@ -53,7 +57,15 @@ const SelectorCampo = ({ layer, activo, allLayers, elegido, onElegir }) => {
                 className="w-full mt-1 appearance-none rounded-[7px] bg-[#EAEFFA] px-2.5 py-1.5 font-garet text-[12px] font-bold text-purple disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
                 <option value={SIN_CAMPO}>Sin estadística</option>
-                {campos.map(campo => <option key={campo.nombre} value={campo.nombre}>{campo.etiqueta}</option>)}
+                {[false, true].map(porClase => {
+                    const grupo = campos.filter(campo => campo.porClase === porClase);
+                    if (grupo.length === 0) return null;
+                    return (
+                        <optgroup key={String(porClase)} label={porClase ? 'Contar por clase' : 'Sumar y promediar'}>
+                            {grupo.map(campo => <option key={campo.nombre} value={campo.nombre}>{campo.etiqueta}</option>)}
+                        </optgroup>
+                    );
+                })}
             </select>
         </Tooltip>
     );
