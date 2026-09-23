@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useRef } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
+import Panel from '@components/Panel';
 import { BAR_SHELL, BAR_DIVIDER } from './StyleControls';
 
 const LENGTH_UNITS = [
@@ -45,64 +45,61 @@ const SegmentedSelector = ({ value, options, onChange, label }) => (
 
 const MeasurementSettings = ({ anchorRef, open, onClose }) => {
     const { measurementConfig, setMeasurementConfig } = useMapsContext();
-    const panelRef = useRef(null);
 
-    useEffect(() => {
-        if (!open) return;
-        const handleClickOutside = (e) => {
-            if (panelRef.current && !panelRef.current.contains(e.target) && anchorRef?.current && !anchorRef.current.contains(e.target)) {
-                onClose();
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [open, onClose, anchorRef]);
-
-    if (!open) return null;
-
-    const panel = (
-        <div
-            ref={panelRef}
-            className={`${BAR_SHELL} flex-col items-stretch gap-2 min-w-[180px]`}
+    return (
+        <Panel
+            open={open}
+            anchorRef={anchorRef}
+            onClose={onClose}
+            variant="solid"
+            width="w-60"
+            className="z-50 mt-2 shadow-none border-none rounded-[12px]"
+            placement="bottom-end"
+            mobileFullscreen={false}
+            hideHeader
+            noPadding
+            bg="bg-transparent"
         >
-            <div className="flex items-center justify-between">
-                <span className="font-garet font-bold text-[12px] text-graphite">Configuración</span>
-                <button type="button" onClick={onClose} className="flex items-center justify-center size-5 rounded-full hover:bg-[#EAEFFA]" aria-label="Cerrar configuración">
-                    <Icon name="cerrarModal" className="size-4" />
-                </button>
-            </div>
+            <div
+                className={`${BAR_SHELL} flex-col items-stretch gap-2 min-w-[180px]`}
+            >
+                <div className="flex items-center justify-between">
+                    <span className="font-garet font-bold text-[12px] text-graphite">Configuración</span>
+                    <button type="button" onClick={onClose} className="flex items-center justify-center size-5 rounded-full hover:bg-[#EAEFFA]" aria-label="Cerrar configuración">
+                        <Icon name="cerrarModal" className="size-4" />
+                    </button>
+                </div>
 
-            <div className={BAR_DIVIDER} style={{ width: '100%', height: 1, margin: 0 }} />
+                <div className={BAR_DIVIDER} style={{ width: '100%', height: 1, margin: 0 }} />
 
-            <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                    type="checkbox"
-                    checked={measurementConfig.showSegmentLengths}
-                    onChange={(e) => setMeasurementConfig(prev => ({ ...prev, showSegmentLengths: e.target.checked }))}
-                    className="size-3.5 accent-purple-deep cursor-pointer"
+                <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={measurementConfig.showSegmentLengths}
+                        onChange={(e) => setMeasurementConfig(prev => ({ ...prev, showSegmentLengths: e.target.checked }))}
+                        className="size-3.5 accent-purple-deep cursor-pointer"
+                    />
+                    <span className="text-[11px] font-garet text-graphite">Longitud por segmento</span>
+                </label>
+
+                <div className={BAR_DIVIDER} style={{ width: '100%', height: 1, margin: 0 }} />
+
+                <SegmentedSelector
+                    label="Distancia"
+                    value={measurementConfig.lengthUnit || 'auto'}
+                    options={LENGTH_UNITS}
+                    onChange={(unit) => setMeasurementConfig(prev => ({ ...prev, lengthUnit: unit }))}
                 />
-                <span className="text-[11px] font-garet text-graphite">Longitud por segmento</span>
-            </label>
 
-            <div className={BAR_DIVIDER} style={{ width: '100%', height: 1, margin: 0 }} />
-
-            <SegmentedSelector
-                label="Distancia"
-                value={measurementConfig.lengthUnit || 'auto'}
-                options={LENGTH_UNITS}
-                onChange={(unit) => setMeasurementConfig(prev => ({ ...prev, lengthUnit: unit }))}
-            />
-
-            <SegmentedSelector
-                label="Área"
-                value={measurementConfig.areaUnit || 'auto'}
-                options={AREA_UNITS}
-                onChange={(unit) => setMeasurementConfig(prev => ({ ...prev, areaUnit: unit }))}
-            />
-        </div>
+                <SegmentedSelector
+                    label="Área"
+                    value={measurementConfig.areaUnit || 'auto'}
+                    options={AREA_UNITS}
+                    onChange={(unit) => setMeasurementConfig(prev => ({ ...prev, areaUnit: unit }))}
+                />
+            </div>
+        </Panel>
     );
-
-    return createPortal(panel, document.body);
 };
 
 const MeasurementSettingsButton = () => {

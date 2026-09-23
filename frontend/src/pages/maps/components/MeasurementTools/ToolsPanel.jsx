@@ -41,6 +41,7 @@ const ToolsPanel = () => {
         updateStrokeColor: updateFeatureStrokeColor,
         updateStrokeWidth: updateFeatureStrokeWidth,
         deleteSelected: deleteSelectedFeature,
+        clearDrawings,
         deselectFeature,
         freehandColor,
         freehandWidth,
@@ -175,6 +176,7 @@ const ToolsPanel = () => {
                 onToggleVisibility={toggleMeasurementVisibility}
                 onClose={() => setIsMeasurementListOpen(false)}
                 onShowSelection={showSelectionByIndex}
+                onClearAll={clearDrawings}
             />
 
             {selectedFeature && (

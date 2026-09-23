@@ -1,9 +1,10 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
+import ConfirmDropdown from '@components/ConfirmDropdown';
 import MeasurementSettingsButton from './MeasurementSettings';
 
 const TYPE_ICONS = {
@@ -15,8 +16,9 @@ const TYPE_ICONS = {
     Point: 'punto'
 };
 
-const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClose, onShowSelection }) => {
+const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClose, onShowSelection, onClearAll = null }) => {
     const { className: positionClass } = useSiderAdaptivePosition({ anchorRef: 'listMeasurements' });
+    const [confirmarBorrado, setConfirmarBorrado] = useState(false);
 
     useEffect(() => {
         if (open && measurements.length === 0) {
@@ -37,7 +39,19 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                     Mis mediciones
                     <Badge count={measurements.length} />
                 </div>
-                <div className="flex items-center gap-0.5">
+                <div className="relative flex items-center gap-0.5">
+                    {onClearAll && (
+                        <Tooltip content="Eliminar todas las mediciones y anotaciones" delay={500}>
+                            <button
+                                type="button"
+                                onClick={() => setConfirmarBorrado(true)}
+                                className="flex items-center justify-center size-7 rounded-full border border-transparent hover:border-[#FF577D] transition-colors cursor-pointer"
+                                aria-label="Eliminar todas las mediciones"
+                            >
+                                <Icon name="eliminar" className="size-4" />
+                            </button>
+                        </Tooltip>
+                    )}
                     <MeasurementSettingsButton />
                     <button
                         type="button"
@@ -47,6 +61,15 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                     >
                         <Icon name="cerrarModal" className="size-7" />
                     </button>
+                    <ConfirmDropdown
+                        open={confirmarBorrado}
+                        onClose={() => setConfirmarBorrado(false)}
+                        onConfirm={onClearAll}
+                        title="¿Borrar todas tus mediciones y anotaciones?"
+                        description="Se quitan del mapa y de la lista; no se pueden recuperar"
+                        confirmText="Sí, borrar todo"
+                        className="right-0"
+                    />
                 </div>
             </div>
             
