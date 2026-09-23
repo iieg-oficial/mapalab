@@ -5,6 +5,44 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.181.0] - 2026-09-23
+
+### Cambiado: la barra del comparador se vuelve el control del comparador
+
+Las dos píldoras de fecha se van a las orillas de la barra, cada una del lado de su mitad del mapa,
+y el nombre de la capa queda al centro. La barra entera abre las **capas comparadas**, así que el
+blanco existe aunque el nombre sea corto o no haya píldoras; las píldoras y el botón de orientación
+quedan encima y conservan lo suyo.
+
+- **La fecha de un lado** abre `PeriodicitySection` anclado a esa mitad, con el color del lado en el
+  borde superior. Es el mismo componente que usa el catálogo en `CatalogoTimeBar`, y ya recibía
+  `slot` y `loopAppliesToSlot`: elegir un año o un mes afecta sólo a ese lado, y su animación
+  tampoco cruza.
+- **Las capas comparadas** son una fila por capa con la forma
+  `[casilla A] (fecha A) nombre (fecha B) [casilla B]`. Las casillas prenden y apagan la capa en cada
+  lado —lo que antes hacía la píldora A|B ciclando en tres pasos— y cada fecha lleva al panel de
+  periodicidad de su lado. La casilla del único lado que queda va deshabilitada: vaciar los dos
+  lados se sigue haciendo con eliminar, en el panel de capas activas.
+
+Antes las píldoras abrían el modal de detalle completo —descripción, fuentes, descargas y
+numeralia— para acabar cambiando un mes.
+
+### Cambiado: la X del comparador sale de la barra
+
+Deja de colarse dentro de la píldora cuando no había fechas y vive siempre afuera, sobre la barra,
+con el fondo blanco y el rosa en hover de las demás herramientas del mapa (`tone="herramienta"`).
+
+### Agregado: `useSlotPeriodicity`
+
+El cableado por slot que vivía suelto dentro de `LayerDetailModal` —aplicar y limpiar el filtro de
+un lado, resolver si su loop puede correr y arrancarlo en el slot correcto— pasa a un hook. La barra
+lo consume tal cual; el modal sigue con el suyo hasta que se le migre.
+
+### Cambiado: `Checkbox` y `CloseButton` aceptan variante
+
+`Checkbox` recibe `color` (morado por defecto) para poder pintarse con el color de su slot, y
+`CloseButton` recibe `tone`. Ambos siguen igual donde no se les pasa nada.
+
 ## [1.180.0] - 2026-09-22
 
 ### Cambiado: la órbita es un play/pausa en la pastilla, y el terreno y el cielo van siempre puestos
