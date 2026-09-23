@@ -8,7 +8,6 @@ import CatalogoInfoBoxEditor from './components/CatalogoInfoBoxEditor';
 import LottieSpinner from '@components/LottieSpinner';
 import { LayerLoadingProvider } from '@contexts/LayerLoadingContext';
 import { CatalogoTiempoProvider } from './hooks/CatalogoTiempoProvider';
-import { fechaParamToCql, cqlToFechaParam } from './helpers/catalogoRoutes';
 import {
     fetchCatalogoCapas,
     fetchCatalogoCapa,
@@ -31,7 +30,7 @@ const CatalogoPage = () => {
     const { seg1, seg2 } = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const initialFilterRef = useRef(fechaParamToCql(searchParams.get('fecha')));
+    const initialFechaRef = useRef(searchParams.get('fecha'));
     const [capas, setCapas] = useState([]);
     const [instituciones, setInstituciones] = useState([]);
     const [listasCargadas, setListasCargadas] = useState(false);
@@ -146,11 +145,11 @@ const CatalogoPage = () => {
         setCapaEnEdicion({ capa, feature });
     }, []);
 
-    const handleFilterChange = useCallback((cql) => {
-        initialFilterRef.current = null;
+    const handleFechaChange = useCallback((param) => {
+        initialFechaRef.current = null;
         setSearchParams((prev) => {
+            if ((prev.get('fecha') || null) === (param || null)) return prev;
             const next = new URLSearchParams(prev);
-            const param = cqlToFechaParam(cql);
             if (param) next.set('fecha', param);
             else next.delete('fecha');
             return next;
@@ -162,8 +161,8 @@ const CatalogoPage = () => {
             <LayerLoadingProvider>
                 <CatalogoTiempoProvider
                     capa={selectedCapa}
-                    initialFilter={initialFilterRef.current}
-                    onFilterChange={handleFilterChange}
+                    initialFecha={initialFechaRef.current}
+                    onFechaChange={handleFechaChange}
                 >
                     <CatalogoMapView
                         capa={selectedCapa}

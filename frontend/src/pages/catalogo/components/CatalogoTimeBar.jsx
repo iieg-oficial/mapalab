@@ -15,7 +15,7 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
     const containerRef = useRef(null);
     const isMobile = useIsMobile();
 
-    const { layerId, periodicidad, loading, isRaster, hasPeriodicidad, filtro, applyFilter, clearFilter, getSpecificFilter } = tiempo;
+    const { layerId, periodicidad, loading, isRaster, geometria, hasPeriodicidad, filtro, applyFilter, clearFilter, getSpecificFilter } = tiempo;
     const rasterPeriodicity = isRaster ? periodicidad : null;
     const {
         stopLoop, getLoopPrefs, setLoopIntervalMs, setLoopDirection,
@@ -27,6 +27,12 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
     useEffect(() => {
         setAbierto(false);
     }, [layerId]);
+
+    useEffect(() => {
+        if (!abierto) setExpandedYear?.(null);
+    }, [abierto, setExpandedYear]);
+
+    useEffect(() => () => setExpandedYear?.(null), [setExpandedYear]);
 
     if (!hasPeriodicidad && !loading) return null;
 
@@ -107,7 +113,7 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
                             onClearFilter={clearFilter}
                             onClearDateFilter={() => { stopLoop?.(layerId); clearFilter(); }}
                             onExpandedYearChange={setExpandedYear}
-                            singleSelectOnly={false}
+                            singleSelectOnly={geometria === 'polygon'}
                             hasDateFilter={!!filtro}
                             showLoopControls
                             canPlay={canPlay}
@@ -118,7 +124,6 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
                             onSetLoopDirection={(dir) => setLoopDirection(layerId, dir)}
                             onTogglePeriodicityLoop={onToggleLoop}
                             getSpecificFilterOverride={getSpecificFilter}
-                            loopAppliesToSlot
                             trailingAction={isMobile ? null : botonCerrar}
                             titleAction={isMobile ? botonCerrar : null}
                         />

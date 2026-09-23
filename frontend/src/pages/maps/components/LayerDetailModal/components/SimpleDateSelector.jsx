@@ -17,10 +17,9 @@ const dateBtnClass = ({ slot, isActive, isLoopTick }) => {
     return toneClasses(toneStateFor(slot, isActive).tone, { active: isActive });
 };
 
-const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, onExpandedYearChange, getSpecificFilterOverride, slot, loopAppliesToSlot = false }) => {
+const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, onExpandedYearChange, getSpecificFilterOverride, slot }) => {
     const { getSpecificFilter: getSpecificFilterCtx, stopLoop: contextStopLoop, getLoopState } = useContext(MapsContext);
     const getSpecificFilter = getSpecificFilterOverride || getSpecificFilterCtx;
-    const showLoopHighlight = !getSpecificFilterOverride || loopAppliesToSlot;
     const isRaster = !!rasterPeriodicity;
 
     const periodicityData = useMemo(() => {
@@ -43,7 +42,8 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
     const [expandedYear, setExpandedYear] = useState(initialState.year);
     const activeYearRef = useRef(null);
 
-    const loopState = showLoopHighlight ? getLoopState?.(layerId) : null;
+    const rawLoopState = getLoopState?.(layerId);
+    const loopState = (rawLoopState?.slot ?? null) === (slot ?? null) ? rawLoopState : null;
 
     const onFilterApplyRef = useRef(onFilterApply);
     const onClearFilterRef = useRef(onClearFilter);
@@ -144,7 +144,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
     }, [loopState?.currentKey, loopState?.isPlaying, loopState?.mode, loopState?.year]);
 
     const handleStopLoop = () => {
-        contextStopLoop?.(layerId);
+        if (loopState?.isPlaying) contextStopLoop?.(layerId);
     };
 
     const yearsCarousel = useCarouselOverflow();
@@ -174,7 +174,15 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
         }
 
         if (yearData && typeof yearData === 'object') {
-            const monthKeys = Object.keys(yearData).map(Number);
+            const monthKeys = Object.keys(yearData).map(Number).sort((a, b) => a - b);
+            if (isRaster) {
+                const previousMonth = [...selectedMonths][0];
+                const month = monthKeys.includes(previousMonth) ? previousMonth : monthKeys[monthKeys.length - 1];
+                setSelectedYear(year);
+                setSelectedMonths(new Set([month]));
+                setExpandedYear(year);
+                return;
+            }
             if (monthKeys.length === 1) {
                 setSelectedYear(year);
                 setSelectedMonths(new Set([monthKeys[0]]));
@@ -200,6 +208,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
     };
 
     const handleMonthToggle = (monthNum) => {
+        if (loopState?.mode === 'month') handleStopLoop();
         if (isRaster) {
             const isAlreadySelected = selectedMonths.has(monthNum);
             if (isAlreadySelected) {

@@ -5,6 +5,39 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.188.1] - 2026-09-23
+
+### Corregido: la animación de fechas regresaba al año por defecto
+
+- **El loop arranca desde la fecha seleccionada**, no desde el año más reciente. Sin fecha, aplica el
+  primer valor en el acto para que la píldora y el mapa coincidan.
+- **Reanudar ya no vuelve al año anterior**: si la fecha cambió durante la pausa, o la vista pide otro
+  año, el loop arranca de nuevo. Todo play pasa por `toggleLoop(layerId, vista, slot)`; el modal, la
+  barra del comparador y catálogo ya no deciden por su cuenta.
+- Clicar un mes detiene el loop mensual. En raster mensual, cambiar de año conserva el mes o toma
+  el último.
+- El play de la píldora aparece aunque la periodicidad llegue tarde.
+
+### Corregido: periodicidad en el comparador
+
+- El loop pertenece al lado donde arrancó y se puede iniciar en el lado inactivo. Salir del
+  comparador lo pausa.
+- La fecha por defecto de un raster se aplica en los dos lados (`useRasterDefaultDate`) y no se
+  reaplica al cambiar de lado.
+- Varias fechas aplicadas al lado activo en el mismo lote ya no se pisan.
+- «Limpiar fecha» detiene el loop y «volver a años» ya no pausa el loop del otro lado.
+- El año abierto en el modal cuenta por lado.
+- El enlace compartido guarda el loop con su velocidad, dirección, año y lado, y restaura velocidad
+  y dirección. Salir de un comparador abierto desde un enlace ya no restaura el estado de otra sesión.
+
+### Corregido: periodicidad en catálogo
+
+- `?fecha=` se aplica al abrir y los rasters se comparten con su fecha.
+- El loop raster manda TIME y espera a que cargue la imagen.
+- El año abierto se reinicia al cerrar el panel o cambiar de capa, y cambiar rápido de capa ya no
+  mezcla periodicidad ni geometría de la anterior.
+- La leyenda y la descarga usan el mismo filtro que el mapa, y los polígonos admiten un solo mes.
+
 ## [1.188.0] - 2026-09-23
 
 ### Agregado: las capas de puntos se dibujan de pie en 3D

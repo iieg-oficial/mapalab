@@ -29,6 +29,7 @@ import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { trackCatalogoFeatureClick } from '@services/analyticsService';
 import { FEATURE_COUNT_CAP } from '@services/featureInfoService';
+import { useLayerLoading } from '@hooks/useLayerLoading';
 
 const CATALOGO_ANNOTATIONS_KEY = 'mapalab.catalogo.annotations';
 
@@ -41,7 +42,8 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
     const clickSeqRef = useRef(0);
     const [isLocating, setIsLocating] = useState(false);
     const [info, setInfo] = useState(null);
-    const [layerLoading, setLayerLoading] = useState(false);
+    const { loadingLayers, setLayerLoading } = useLayerLoading();
+    const layerLoading = !!capa && loadingLayers.has(capa.slug);
 
     const { seleccion, consultar, cargarMas, limpiar, reposicionar } = useCatalogoPoligono({ mapRef, capa, tiempo });
 
@@ -200,25 +202,19 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
             map.removeLayer(wmsLayerRef.current);
             wmsLayerRef.current = null;
         }
-        if (!capa) {
-            setLayerLoading(false);
-            return;
-        }
-        const layer = buildWmsLayer(capa);
-        if (!layer) {
-            setLayerLoading(false);
-            return;
-        }
+        const layer = capa ? buildWmsLayer(capa) : null;
+        if (!layer) return;
         map.addLayer(layer);
         wmsLayerRef.current = layer;
 
+        const layerId = capa.slug;
         const source = layer.getSource();
-        const onLoadStart = () => setLayerLoading(true);
-        const onLoadEnd = () => setLayerLoading(false);
+        const onLoadStart = () => setLayerLoading(layerId, true);
+        const onLoadEnd = () => setLayerLoading(layerId, false);
         source.on('imageloadstart', onLoadStart);
         source.on('imageloadend', onLoadEnd);
         source.on('imageloaderror', onLoadEnd);
-        setLayerLoading(true);
+        onLoadStart();
 
         const cfg = hydrateWmsConfig({
             geoserverWorkspace: capa.geoserverWorkspace,
@@ -241,8 +237,9 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
             source.un('imageloadstart', onLoadStart);
             source.un('imageloadend', onLoadEnd);
             source.un('imageloaderror', onLoadEnd);
+            onLoadEnd();
         };
-    }, [capa, clearInfo, wmsLayerRef]);
+    }, [capa, clearInfo, wmsLayerRef, setLayerLoading]);
 
     return (
         <>

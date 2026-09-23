@@ -144,6 +144,8 @@ describe('useDateLoop — doTick usa prefs per-layer', () => {
 
         act(() => result.current.setLoopIntervalMs('capa-a', 1000));
         act(() => result.current.startLoop('capa-a', { mode: 'year', values: sampleValues }));
+        expect(props.applyFilter).toHaveBeenCalledWith('capa-a', 'date', '2024');
+        props.applyFilter.mockClear();
 
         act(() => { vi.advanceTimersByTime(999); });
         expect(props.applyFilter).not.toHaveBeenCalled();
@@ -179,6 +181,7 @@ describe('useDateLoop — doTick usa prefs per-layer', () => {
             result.current.startLoop('capa-a', { mode: 'year', values: sampleValues });
             result.current.startLoop('capa-b', { mode: 'year', values: sampleValues });
         });
+        props.applyFilter.mockClear();
 
         act(() => { vi.advanceTimersByTime(500); });
         const calledLayers = props.applyFilter.mock.calls.map(c => c[0]);

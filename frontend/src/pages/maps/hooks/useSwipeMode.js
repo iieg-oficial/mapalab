@@ -128,9 +128,10 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs, m
             const layerFilters = { ...(pane.filters[layerId] || {}), [filterName]: cqlExpression };
             const newFilters = { ...pane.filters, [layerId]: layerFilters };
             if (slot === prev.activeSlot) {
-                const live = liveStateRef.current;
-                const liveLayerFilters = { ...(live.filters[layerId] || {}), [filterName]: cqlExpression };
-                live.setFilters({ ...live.filters, [layerId]: liveLayerFilters });
+                liveStateRef.current.setFilters(live => ({
+                    ...live,
+                    [layerId]: { ...(live[layerId] || {}), [filterName]: cqlExpression },
+                }));
             }
             return { ...prev, [`pane${slot}`]: { ...pane, filters: newFilters } };
         });
@@ -147,13 +148,14 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs, m
             if (Object.keys(layerFilters).length === 0) delete newFilters[layerId];
             else newFilters[layerId] = layerFilters;
             if (slot === prev.activeSlot) {
-                const live = liveStateRef.current;
-                const liveLayerFilters = { ...(live.filters[layerId] || {}) };
-                delete liveLayerFilters[filterName];
-                const newLiveFilters = { ...live.filters };
-                if (Object.keys(liveLayerFilters).length === 0) delete newLiveFilters[layerId];
-                else newLiveFilters[layerId] = liveLayerFilters;
-                live.setFilters(newLiveFilters);
+                liveStateRef.current.setFilters(live => {
+                    const liveLayerFilters = { ...(live[layerId] || {}) };
+                    delete liveLayerFilters[filterName];
+                    const newLiveFilters = { ...live };
+                    if (Object.keys(liveLayerFilters).length === 0) delete newLiveFilters[layerId];
+                    else newLiveFilters[layerId] = liveLayerFilters;
+                    return newLiveFilters;
+                });
             }
             return { ...prev, [`pane${slot}`]: { ...pane, filters: newFilters } };
         });
@@ -206,6 +208,7 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs, m
     }, [collectAllIds, applySnapshotToLive, liveStateRef]);
 
     const exitCompareMode = useCallback(() => {
+        liveStateRef.current.pauseAllLoops();
         setCompareMode(prev => {
             if (!prev.active) return prev;
             let snapshotToRestore = prev.originalSnapshot;
@@ -222,7 +225,7 @@ export const useSwipeMode = ({ liveStateRef, getAllChildLayerIds, paneMapRefs, m
             trackSwipeExit(duration);
             return { ...initialCompareMode(), swipeOrientation: prev.swipeOrientation };
         });
-    }, [applySnapshotToLive]);
+    }, [applySnapshotToLive, liveStateRef]);
 
     const setSwipePosition = useCallback((pos) => {
         setCompareMode(prev => ({

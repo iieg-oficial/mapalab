@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDateLoop } from '@hooksMaps/useDateLoop';
 import { buildLoopValues } from '@pages/maps/helpers/dateLoopHelpers';
 
@@ -6,11 +6,16 @@ export const useCatalogoLoop = (tiempo) => {
     const { layerId, periodicidad, isRaster, hasPeriodicidad, applyFilter, clearFilter, getSpecificFilter, getPeriodicity } = tiempo;
     const [expandedYear, setExpandedYear] = useState(null);
 
-    const loopSource = isRaster
-        ? { rasterPeriodicity: periodicidad }
-        : { periodicity: periodicidad };
+    useEffect(() => {
+        setExpandedYear(null);
+    }, [layerId]);
 
     const activeLayerIds = useMemo(() => (layerId ? [layerId] : []), [layerId]);
+
+    const getRasterPeriodicity = useCallback(
+        (id) => (id === layerId && isRaster ? periodicidad : null),
+        [layerId, isRaster, periodicidad],
+    );
 
     const loop = useDateLoop({
         applyFilter,
@@ -18,19 +23,20 @@ export const useCatalogoLoop = (tiempo) => {
         activeLayerIds,
         getSpecificFilter,
         getPeriodicity,
+        getRasterPeriodicity,
     });
 
-    const { getLoopState, startLoop, toggleLoop, stopLoop, inferLoopConfig } = loop;
+    const { getLoopState, toggleLoop, inferLoopConfig } = loop;
 
     const viewLoopConfig = useCallback(() => {
         if (!layerId || !hasPeriodicidad) return null;
+        const loopSource = isRaster ? { rasterPeriodicity: periodicidad } : { periodicity: periodicidad };
         if (expandedYear != null) {
             const values = buildLoopValues({ mode: 'month', year: expandedYear, ...loopSource });
             return values.length >= 2 ? { mode: 'month', year: expandedYear, values } : null;
         }
         const values = buildLoopValues({ mode: 'year', ...loopSource });
         return values.length >= 2 ? { mode: 'year', values } : null;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [layerId, hasPeriodicidad, expandedYear, periodicidad, isRaster]);
 
     const loopState = layerId ? getLoopState?.(layerId) : null;
@@ -38,19 +44,8 @@ export const useCatalogoLoop = (tiempo) => {
 
     const onToggleLoop = useCallback(() => {
         if (!layerId) return;
-        if (loopState?.isPlaying) {
-            stopLoop?.(layerId);
-            return;
-        }
-        const desiredMode = expandedYear != null ? 'month' : 'year';
-        if (loopState && loopState.mode === desiredMode) {
-            toggleLoop?.(layerId);
-            return;
-        }
-        if (loopState) stopLoop?.(layerId);
-        const config = viewLoopConfig() || inferLoopConfig?.(layerId);
-        if (config) startLoop?.(layerId, config);
-    }, [layerId, loopState, expandedYear, viewLoopConfig, inferLoopConfig, startLoop, stopLoop, toggleLoop]);
+        toggleLoop?.(layerId, viewLoopConfig());
+    }, [layerId, viewLoopConfig, toggleLoop]);
 
     return {
         ...loop,

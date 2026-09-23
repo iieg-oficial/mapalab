@@ -155,12 +155,9 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         return own;
     }, [getLayerOpacity, layer.id, layer.childIds]);
 
-    const canPlayLoop = useMemo(() => {
-        if (isLooping) return true;
-        return inferLoopConfig?.(layer.id) != null;
-    }, [isLooping, inferLoopConfig, layer.id]);
+    const canPlayLoop = !!isLooping || inferLoopConfig?.(layer.id) != null;
 
-    const handlePlayClick = (e) => { e.stopPropagation(); toggleLoop?.(layer.id); };
+    const handlePlayClick = (e, slot) => { e.stopPropagation(); toggleLoop?.(layer.id, null, slot); };
 
     const handleIntervalClick = (e) => {
         e.stopPropagation();
@@ -244,6 +241,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 slotMembership={slotMembership}
                                 liveDateFilter={dateFilter}
                                 isLooping={isLooping}
+                                loopSlot={loopState?.slot ?? null}
                                 isLoading={isLoading}
                                 canPlayLoop={canPlayLoop}
                                 loopIntervalMs={loopIntervalMs}

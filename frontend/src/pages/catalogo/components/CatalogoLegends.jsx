@@ -5,7 +5,7 @@ import { downloadCatalogoCapa, RASTER_FORMATS } from '@services/downloadService'
 import { capaHasGeometry } from '@services/catalogoService';
 import LegendImage from '@components/LegendImage';
 import CatalogoShare from './CatalogoShare';
-import { buildCatalogoShareUrl, cqlToFechaParam } from '../helpers/catalogoRoutes';
+import { buildCatalogoShareUrl, filtroToFechaParam } from '../helpers/catalogoRoutes';
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { trackCatalogoDownload, trackCatalogoShare } from '@services/analyticsService';
 
@@ -15,7 +15,8 @@ const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
     const { tiempo } = useCatalogoTiempoContext();
     const filtro = tiempo?.filtro || null;
     const isRaster = !!tiempo?.isRaster;
-    const cqlFiltro = isRaster ? null : filtro;
+    const periodicidad = tiempo?.periodicidad || null;
+    const cqlFiltro = isRaster ? null : tiempo?.filtroMapa || null;
     const [minimized, setMinimized] = useState(false);
     const [showShp, setShowShp] = useState(true);
     const [showFormats, setShowFormats] = useState(false);
@@ -38,9 +39,9 @@ const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
 
     const shareUrl = useMemo(() => {
         const base = buildCatalogoShareUrl({ institucionSlug, capaSlug: capa.slug });
-        const fecha = cqlToFechaParam(cqlFiltro);
+        const fecha = filtroToFechaParam(filtro, { isRaster, periodicidad });
         return fecha ? `${base}?fecha=${encodeURIComponent(fecha)}` : base;
-    }, [institucionSlug, capa.slug, cqlFiltro]);
+    }, [institucionSlug, capa.slug, filtro, isRaster, periodicidad]);
 
     useEffect(() => {
         let active = true;
@@ -64,7 +65,7 @@ const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
         await downloadCatalogoCapa(capa, formatId, {
             cqlFilter: cqlFiltro,
             timeValue: isRaster ? filtro : null,
-            rasterPeriodicity: isRaster ? tiempo?.periodicidad || null : null,
+            rasterPeriodicity: isRaster ? periodicidad : null,
         });
         setDownloading(null);
     };

@@ -3,9 +3,9 @@ import { CatalogoTiempoContext } from './catalogoTiempoContext';
 import { useCatalogoTiempo } from './useCatalogoTiempo';
 import { useCatalogoLoop } from './useCatalogoLoop';
 
-export const CatalogoTiempoProvider = ({ capa, initialFilter = null, onFilterChange, children }) => {
+export const CatalogoTiempoProvider = ({ capa, initialFecha = null, onFechaChange, children }) => {
     const wmsLayerRef = useRef(null);
-    const tiempo = useCatalogoTiempo(capa, wmsLayerRef, { initialFilter, onFilterChange });
+    const tiempo = useCatalogoTiempo(capa, wmsLayerRef, { initialFecha, onFechaChange });
     const loop = useCatalogoLoop(tiempo);
 
     const value = useMemo(() => ({ tiempo, loop, wmsLayerRef }), [tiempo, loop]);

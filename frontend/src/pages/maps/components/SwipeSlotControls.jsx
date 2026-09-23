@@ -81,9 +81,9 @@ const SwipeSlotControls = () => {
     const filterB = compareMode?.paneB?.filters?.[layerId]?.date;
     const labelA = useMemo(() => computeLabel(filterA, rasterPeriodicity), [filterA, rasterPeriodicity]);
     const labelB = useMemo(() => computeLabel(filterB, rasterPeriodicity), [filterB, rasterPeriodicity]);
-    const isLooping = !!(layerId && dateLoops?.[layerId]?.isPlaying);
-    const isLoopingA = isLooping && compareMode?.activeSlot === 'A';
-    const isLoopingB = isLooping && compareMode?.activeSlot === 'B';
+    const loop = layerId ? dateLoops?.[layerId] : null;
+    const isLoopingA = !!loop?.isPlaying && loop.slot === 'A';
+    const isLoopingB = !!loop?.isPlaying && loop.slot === 'B';
 
     if (!compareMode?.active) return null;
     const isHorizontal = compareMode.swipeOrientation === 'horizontal';

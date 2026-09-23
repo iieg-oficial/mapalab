@@ -26,14 +26,16 @@ const serializeLoop = (dateLoops, loopPrefs, layerTree) => {
     const playing = Object.entries(dateLoops || {}).find(([, l]) => l && l.isPlaying);
     if (!playing) return null;
     const [layerId, state] = playing;
-    const slug = slugForLayer(layerId, layerTree);
+    const prefs = loopPrefs?.[layerId] || {};
     return {
-        layerSlug: slug,
+        layerSlug: slugForLayer(layerId, layerTree),
         mode: state.mode || 'year',
-        intervalMs: loopPrefs?.intervalMs || 1000,
-        direction: loopPrefs?.direction || 'ltr',
+        year: state.year ?? null,
+        slot: state.slot ?? null,
+        intervalMs: prefs.intervalMs || 1000,
+        direction: prefs.direction || 'ltr',
         playing: true,
-        currentValue: state.currentValue || null,
+        currentKey: state.currentKey ?? null,
     };
 };
 
@@ -167,6 +169,7 @@ export const useShareSerializer = () => {
                     layers: serializePaneLayers(paneB, layerTree, layerServiceModes, hexbinSinFondo, hexbinPalettes),
                 },
                 activeSlot,
+                loop: serializeLoop(dateLoops, loopPrefs, layerTree),
                 position: typeof extra.position === 'number' ? extra.position : (compareMode?.swipePosition ?? 0.5),
             };
             if (annotations) swipePayload.annotations = annotations;

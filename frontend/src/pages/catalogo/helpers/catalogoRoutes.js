@@ -33,6 +33,7 @@ export const resolveCatalogoRoute = (seg1, seg2, capas = [], instituciones = [])
 };
 
 import { generateCQLFilter, parseCQLToSelections } from '@pages/maps/helpers/dateFilterHelpers';
+import { describeDateFilter } from '@pages/maps/helpers/dateLoopHelpers';
 
 export const cqlToFechaParam = (cql) => {
     const selections = parseCQLToSelections(cql);
@@ -44,6 +45,32 @@ export const fechaParamToCql = (param) => {
     if (!param) return null;
     const selections = new Set(param.split(',').map((s) => s.trim()).filter(Boolean));
     return selections.size ? generateCQLFilter(selections) : null;
+};
+
+const rasterToFechaParam = (time, periodicidad) => {
+    const desc = describeDateFilter({ filter: time, rasterPeriodicity: periodicidad });
+    if (!desc) return null;
+    return desc.annual ? `${desc.year}` : `${desc.year}-${desc.months[0]}`;
+};
+
+const fechaParamToRaster = (param, periodicidad) => {
+    const [anio, mes] = param.split(',')[0].trim().split('-');
+    const yData = periodicidad?.[parseInt(anio, 10)];
+    if (typeof yData === 'string') return mes ? null : yData;
+    if (!yData || typeof yData !== 'object') return null;
+    if (mes) return yData[parseInt(mes, 10)] || null;
+    const meses = Object.keys(yData).map(Number).sort((a, b) => b - a);
+    return meses.length ? yData[meses[0]] : null;
+};
+
+export const filtroToFechaParam = (filtro, { isRaster = false, periodicidad = null } = {}) => {
+    if (!filtro) return null;
+    return isRaster ? rasterToFechaParam(filtro, periodicidad) : cqlToFechaParam(filtro);
+};
+
+export const fechaParamToFiltro = (param, { isRaster = false, periodicidad = null } = {}) => {
+    if (!param) return null;
+    return isRaster ? fechaParamToRaster(param, periodicidad) : fechaParamToCql(param);
 };
 
 export const filterCapas = (capas, { institucionSlug = null, query = '' } = {}) => {

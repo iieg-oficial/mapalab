@@ -34,7 +34,7 @@ const LoopControls = ({
     const playButton = (
         <Tooltip content={playTooltip} key="play">
             <button
-                onClick={onPlay}
+                onClick={(e) => onPlay?.(e, slot || undefined)}
                 disabled={disabled || !canPlayLoop}
                 className={`${LOOP_BUTTON_BASE} disabled:opacity-50 ${play.className}`}
             >
@@ -79,6 +79,7 @@ const LayerDateControls = ({
     slotMembership,
     liveDateFilter,
     isLooping,
+    loopSlot = null,
     isLoading,
     canPlayLoop,
     loopIntervalMs,
@@ -118,7 +119,8 @@ const LayerDateControls = ({
 
     if (!slotMembership) return null;
 
-    const isActiveA = compareMode.activeSlot === 'A';
+    const controlSlot = isLooping && loopSlot ? loopSlot : compareMode.activeSlot;
+    const isActiveA = controlSlot === 'A';
     const inactiveHint = `Cambia al lado ${isActiveA ? 'B' : 'A'} para controlar este loop`;
     const showA = (slotMembership === 'A' || slotMembership === 'AB') && slotALabel.label;
     const showB = (slotMembership === 'B' || slotMembership === 'AB') && slotBLabel.label;

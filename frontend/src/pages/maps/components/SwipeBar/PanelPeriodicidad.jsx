@@ -42,11 +42,11 @@ const PanelPeriodicidad = ({ layerId, slot, onClose }) => {
                     onFilterApply={lado.apply}
                     onClearFilter={lado.clear}
                     onClearDateFilter={lado.clear}
-                    onExpandedYearChange={periodicidad.setExpandedYear}
+                    onExpandedYearChange={lado.onExpandedYearChange}
                     singleSelectOnly={false}
                     hasDateFilter={lado.hasFilter}
                     showLoopControls
-                    canPlay={periodicidad.canPlay}
+                    canPlay={lado.canPlay}
                     isLoopPlaying={lado.isPlaying}
                     layerIntervalMs={periodicidad.intervalMs}
                     layerDirection={periodicidad.direction}
@@ -56,7 +56,6 @@ const PanelPeriodicidad = ({ layerId, slot, onClose }) => {
                     getSpecificFilterOverride={lado.getFilter}
                     loopDisabled={lado.loopDisabled}
                     loopDisabledHint={lado.loopDisabledHint}
-                    loopAppliesToSlot={lado.isPlaying}
                     trailingAction={botonCerrar}
                 />
             </div>

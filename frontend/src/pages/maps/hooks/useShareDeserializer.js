@@ -85,6 +85,8 @@ export const useShareDeserializer = () => {
         setCompareMode,
         restoreAnnotations,
         municipioMode,
+        setLoopIntervalMs,
+        setLoopDirection,
     } = useMapsContext();
     const { layers: layerTree } = useLayers();
 
@@ -92,6 +94,12 @@ export const useShareDeserializer = () => {
         if (!envelope || (envelope.version !== 1 && envelope.version !== 2)) return false;
         if (envelope.kind !== 'single' && envelope.kind !== 'swipe') return false;
         const isSwipe = envelope.kind === 'swipe';
+        const restoreLoopPrefs = (loop) => {
+            const layerId = loop?.layerSlug ? resolveRefToId(loop.layerSlug, layerTree) : null;
+            if (!layerId) return;
+            if (loop.intervalMs) setLoopIntervalMs?.(layerId, loop.intervalMs);
+            if (loop.direction) setLoopDirection?.(layerId, loop.direction);
+        };
 
         if (isSwipe) {
             const payload = envelope.payload || {};
@@ -165,11 +173,13 @@ export const useShareDeserializer = () => {
                     swipePosition,
                     globalOrder,
                     capturedView,
+                    originalSnapshot: { ...livePane, layerOpacities: new Map(livePane.layerOpacities) },
                 });
             }
             if (Array.isArray(payload.annotations) && typeof restoreAnnotations === 'function') {
                 restoreAnnotations(payload.annotations);
             }
+            restoreLoopPrefs(payload.loop);
             const sharedMunicipios = shared?.municipios;
             if (sharedMunicipios?.selected?.length > 0 && municipioMode?.enter) {
                 municipioMode.enter(sharedMunicipios.selected, { fromUrl: true });
@@ -243,6 +253,7 @@ export const useShareDeserializer = () => {
             restoreAnnotations(payload.annotations);
         }
 
+        restoreLoopPrefs(payload.loop);
         const singleMunicipios = payload.municipios;
         if (singleMunicipios?.selected?.length > 0 && municipioMode?.enter) {
             municipioMode.enter(singleMunicipios.selected, { fromUrl: true });
@@ -250,5 +261,5 @@ export const useShareDeserializer = () => {
 
         marcarShareAplicado();
         return true;
-    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, toggleHexbinFondo, asignarTono, setSoloSeleccionada, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, setLayerOpacity, setServiceMode, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode]);
+    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, toggleHexbinFondo, asignarTono, setSoloSeleccionada, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, setLayerOpacity, setServiceMode, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode, setLoopIntervalMs, setLoopDirection]);
 };
