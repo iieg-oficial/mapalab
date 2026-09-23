@@ -8,7 +8,7 @@ import { useMap3dVectors } from '@hooksMaps/useMap3dVectors';
 import { useMap3dExtrusions } from '@hooksMaps/useMap3dExtrusions';
 import { loadMaplibre } from '@pages/maps/helpers/maplibreLoader';
 import {
-    CIELO_SPEC, VIEW3D_PITCH_MAX, basemapLayers, basemapSources, buildBaseStyle, cameraToOlView,
+    cieloSpec, VIEW3D_PITCH_MAX, basemapLayers, basemapSources, buildBaseStyle, cameraToOlView,
     olViewToCamera, RELIEF_LAYER_ID,
 } from '@pages/maps/helpers/view3d';
 import { useMap3dClick } from '@hooksMaps/useMap3dClick';
@@ -44,10 +44,11 @@ const Map3DView = () => {
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, setPitch, setBearing, exit, reportExtrusion,
-        sol, alturaColumnas, orbita,
+        sol, alturaColumnas, orbita, terreno, cielo, niebla,
     } = useView3d();
     const { getLegendJson } = useWMSLegend();
     const [map, setMap] = useState(null);
+    const [midiendo, setMidiendo] = useState(false);
     const [dePie, setDePie] = useState(() => new Set());
     const alListarDePie = useCallback((ids) => {
         setDePie(previo => (previo.size === ids.size && [...ids].every(id => previo.has(id)) ? previo : ids));
@@ -78,8 +79,6 @@ const Map3DView = () => {
             });
             map3dRef.current = instance;
             instance.on('load', () => {
-                instance.setTerrain({ source: TERRAIN_SOURCE, exaggeration: initial.exaggeration });
-                instance.setSky(CIELO_SPEC);
                 setMap(instance);
             });
             instance.on('pitchend', () => setPitch(instance.getPitch()));
@@ -100,8 +99,12 @@ const Map3DView = () => {
     }, [mapRef, map3dRef, setPitch, setBearing, exit]);
 
     useEffect(() => {
-        if (map) map.setTerrain({ source: TERRAIN_SOURCE, exaggeration });
-    }, [map, exaggeration]);
+        if (map) map.setTerrain(terreno ? { source: TERRAIN_SOURCE, exaggeration } : null);
+    }, [map, exaggeration, terreno]);
+
+    useEffect(() => {
+        if (map) map.setSky(cieloSpec({ cielo, niebla }));
+    }, [map, cielo, niebla]);
 
     useEffect(() => {
         if (!map?.getLayer(RELIEF_LAYER_ID)) return;
@@ -144,7 +147,7 @@ const Map3DView = () => {
     useMap3dExtrusions(map, mapRef, {
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,
     });
-    useMap3dClick(map, mapRef, !!areMeasurementToolsVisible);
+    useMap3dClick(map, mapRef, midiendo);
 
     if (!mapRef.current) return null;
 
@@ -156,7 +159,7 @@ const Map3DView = () => {
                 </div>,
                 mapRef.current.getTargetElement(),
             )}
-            {map && areMeasurementToolsVisible && <Medicion3D map={map} />}
+            {map && areMeasurementToolsVisible && <Medicion3D map={map} onMidiendo={setMidiendo} />}
         </>
     );
 };

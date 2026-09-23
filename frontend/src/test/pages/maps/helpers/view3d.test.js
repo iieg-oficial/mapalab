@@ -5,6 +5,7 @@ import {
     buildBaseStyle,
     cameraToOlView,
     canExtrudeLayer,
+    cieloSpec,
     clampExaggeration,
     clampPitch,
     cqlSegmentFor,
@@ -122,5 +123,17 @@ describe('canExtrudeLayer', () => {
         expect(canExtrudeLayer(poligono({ wmsConfig: { workspace: 'raster', wfsAvailable: true } }), 'wms')).toBe(false);
         expect(canExtrudeLayer(poligono({ wmsConfig: { workspace: 'demografia', wfsAvailable: false } }), 'wms')).toBe(false);
         expect(canExtrudeLayer(null, 'wms')).toBe(false);
+    });
+});
+
+describe('cieloSpec', () => {
+    it('apaga la niebla sin tocar el cielo y blanquea el cielo sin tocar la niebla', () => {
+        const todo = cieloSpec({ cielo: true, niebla: true });
+        const sinNiebla = cieloSpec({ cielo: true, niebla: false });
+        const sinCielo = cieloSpec({ cielo: false, niebla: true });
+        expect(sinNiebla['fog-ground-blend']).toBe(1);
+        expect(sinNiebla['sky-color']).toBe(todo['sky-color']);
+        expect(sinCielo['atmosphere-blend']).toBe(0);
+        expect(sinCielo['fog-ground-blend']).toBe(todo['fog-ground-blend']);
     });
 });

@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { alturas } from '@pages/maps/helpers/elevacionDem';
-import {
-    areaPlana, areaSobreRelieve, densificar, largoPlano, perfilDesde, perimetro, rejillaSobre,
-} from '@pages/maps/helpers/medicion3d';
+import { calcularMedicion } from '@pages/maps/helpers/resultadoMedicion';
 
 const FUENTE = 'medicion-3d';
 const MORADO = '#5C2472';
@@ -28,26 +25,8 @@ export const geometriaMedicion = ({ modo, vertices, marcador }) => {
     return { type: 'FeatureCollection', features };
 };
 
-const calcular = async (modo, vertices) => {
-    if (modo === 'punto') {
-        if (!vertices.length) return null;
-        const [alt] = await alturas([vertices[0]]);
-        return { modo, alt };
-    }
-    if (modo === 'linea') {
-        if (vertices.length < 2) return null;
-        const muestras = densificar(vertices);
-        const perfil = perfilDesde(muestras, await alturas(muestras.map(m => m.lngLat)));
-        return { modo, plano: largoPlano(vertices), ...perfil };
-    }
-    if (vertices.length < 3) return null;
-    const rejilla = rejillaSobre(vertices);
-    const superficie = areaSobreRelieve(vertices, rejilla, await alturas(rejilla.nodos));
-    return { modo, plano: areaPlana(vertices), superficie, perimetro: perimetro(vertices) };
-};
-
 export const useMedicion3d = (map) => {
-    const [modo, setModoState] = useState('linea');
+    const [modo, setModoState] = useState(null);
     const [vertices, setVertices] = useState([]);
     const [resultado, setResultado] = useState(null);
     const [calculando, setCalculando] = useState(false);
@@ -62,6 +41,7 @@ export const useMedicion3d = (map) => {
     }, []);
     const deshacer = useCallback(() => { terminadoRef.current = false; setVertices(prev => prev.slice(0, -1)); }, []);
     const borrar = useCallback(() => { terminadoRef.current = false; setVertices([]); }, []);
+    const terminar = useCallback(() => { terminadoRef.current = true; }, []);
 
     useEffect(() => {
         if (!map) return undefined;
@@ -76,7 +56,7 @@ export const useMedicion3d = (map) => {
     }, [map]);
 
     useEffect(() => {
-        if (!map) return undefined;
+        if (!map || !modo) return undefined;
         map.doubleClickZoom.disable();
         map.getCanvas().style.cursor = 'crosshair';
 
@@ -93,7 +73,6 @@ export const useMedicion3d = (map) => {
             }
             setVertices(prev => [...prev, punto]);
         };
-        const terminar = () => { terminadoRef.current = true; };
         const alDobleClic = () => {
             if (modo !== 'punto') setVertices(prev => prev.slice(0, -1));
             terminar();
@@ -110,7 +89,7 @@ export const useMedicion3d = (map) => {
             map.doubleClickZoom.enable();
             map.getCanvas().style.cursor = '';
         };
-    }, [map, modo]);
+    }, [map, modo, terminar]);
 
     useEffect(() => {
         const fuente = map?.getSource(FUENTE);
@@ -121,11 +100,11 @@ export const useMedicion3d = (map) => {
         const turno = ++turnoRef.current;
         setMarcador(null);
         setCalculando(true);
-        calcular(modo, vertices)
+        calcularMedicion(modo, vertices)
             .then((valor) => { if (turno === turnoRef.current) setResultado(valor); })
             .catch(() => { if (turno === turnoRef.current) setResultado(null); })
             .finally(() => { if (turno === turnoRef.current) setCalculando(false); });
     }, [modo, vertices]);
 
-    return { modo, setModo, vertices, resultado, calculando, deshacer, borrar, setMarcador };
+    return { modo, setModo, vertices, resultado, calculando, deshacer, borrar, terminar, setMarcador };
 };

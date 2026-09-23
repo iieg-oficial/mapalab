@@ -28,6 +28,13 @@ const INACTIVE = {
     setAlturaColumnas: () => {},
     orbita: false,
     setOrbita: () => {},
+    terreno: VIEW3D_DEFAULTS.terreno,
+    cielo: VIEW3D_DEFAULTS.cielo,
+    niebla: VIEW3D_DEFAULTS.niebla,
+    setTerreno: () => {},
+    setCielo: () => {},
+    setNiebla: () => {},
+    restablecer: () => {},
     toggleExtrusion: () => {},
     isExtruded: () => false,
     reportExtrusion: () => {},
@@ -68,6 +75,9 @@ export const View3dProvider = ({ children }) => {
     const [sol, setSolState] = useState(VIEW3D_DEFAULTS.sol);
     const [alturaColumnas, setAlturaState] = useState(VIEW3D_DEFAULTS.alturaColumnas);
     const [orbita, setOrbita] = useState(false);
+    const [terreno, setTerreno] = useState(VIEW3D_DEFAULTS.terreno);
+    const [cielo, setCielo] = useState(VIEW3D_DEFAULTS.cielo);
+    const [niebla, setNiebla] = useState(VIEW3D_DEFAULTS.niebla);
     const [extrusionStatus, setExtrusionStatus] = useState({});
     const map3dRef = useRef(null);
     const enteredAtRef = useRef(null);
@@ -99,6 +109,18 @@ export const View3dProvider = ({ children }) => {
     const setExaggeration = useCallback((value) => setExaggerationState(clampExaggeration(value)), []);
     const setSol = useCallback((value) => setSolState(clampSol(value)), []);
     const setAlturaColumnas = useCallback((value) => setAlturaState(clampColumnas(value)), []);
+
+    const restablecer = useCallback(() => {
+        setPitchState(VIEW3D_DEFAULTS.pitch);
+        setBearing(VIEW3D_DEFAULTS.bearing);
+        setExaggerationState(VIEW3D_DEFAULTS.exaggeration);
+        setSolState(VIEW3D_DEFAULTS.sol);
+        setAlturaState(VIEW3D_DEFAULTS.alturaColumnas);
+        setTerreno(VIEW3D_DEFAULTS.terreno);
+        setCielo(VIEW3D_DEFAULTS.cielo);
+        setNiebla(VIEW3D_DEFAULTS.niebla);
+        setOrbita(false);
+    }, []);
 
     const toggleExtrusion = useCallback((layerId) => {
         setExtruded(prev => {
@@ -135,14 +157,14 @@ export const View3dProvider = ({ children }) => {
 
     const value = useMemo(() => ({
         present: true, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef,
-        sol, alturaColumnas, orbita,
+        sol, alturaColumnas, orbita, terreno, cielo, niebla,
         enter, exit, toggle, setPitch, setBearing, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
-        setSol, setAlturaColumnas, setOrbita,
+        setSol, setAlturaColumnas, setOrbita, setTerreno, setCielo, setNiebla, restablecer,
     }), [
         available, active, pitch, bearing, exaggeration, extruded, extrusionStatus,
-        sol, alturaColumnas, orbita,
+        sol, alturaColumnas, orbita, terreno, cielo, niebla,
         enter, exit, toggle, setPitch, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
-        setSol, setAlturaColumnas,
+        setSol, setAlturaColumnas, restablecer,
     ]);
 
     return <View3dContext.Provider value={value}>{children}</View3dContext.Provider>;

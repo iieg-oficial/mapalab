@@ -12,6 +12,7 @@ import { useView3d } from '@contexts/View3dContext';
 import Map3DBar from './Map3D/Map3DBar';
 import Map3DAyuda from './Map3D/Map3DAyuda';
 import Tooltip from '@components/Tooltip';
+import PillCloseButton from '@components/PillCloseButton';
 import BotonNorte from './BotonNorte';
 import { useMiUbicacion } from '@hooksMaps/useMiUbicacion';
 
@@ -139,7 +140,16 @@ const MapControls = ({ hideLocate = false }) => {
                         className="w-6 h-6"
                     />
                 </button>
-                {view3d.present && !isSwipe && (
+                {view3d.active && (
+                    <PillCloseButton
+                        onClick={view3d.exit}
+                        reveal="siempre"
+                        tooltip="Al dar clic se cierra la vista 3D"
+                        ariaLabel="Cerrar la vista 3D"
+                        className="m-0.5"
+                    />
+                )}
+                {view3d.present && !view3d.active && !isSwipe && (
                     <Tooltip content={view3d.available ? <Map3DAyuda titulo={view3dTitle} /> : view3dTitle} placement="right" interactive>
                         <button
                             type="button"

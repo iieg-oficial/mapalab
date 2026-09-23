@@ -3,7 +3,7 @@ import { canUseVectorService, SERVICE_HEXBIN } from './serviceMode';
 import { JALISCO_BOUNDS } from './wmsConfig';
 
 export const VIEW3D_DEFAULTS = {
-    pitch: 55, bearing: 0, exaggeration: 1.5, sol: 315, alturaColumnas: 1,
+    pitch: 55, bearing: 0, exaggeration: 1.5, sol: 315, alturaColumnas: 1, terreno: true, cielo: true, niebla: true,
 };
 export const VIEW3D_COLUMN_RANGE = [0.5, 3];
 export const CIELO_SPEC = {
@@ -15,6 +15,11 @@ export const CIELO_SPEC = {
     'sky-horizon-blend': 0.6,
     'atmosphere-blend': 0.7,
 };
+export const cieloSpec = ({ cielo, niebla }) => ({
+    ...CIELO_SPEC,
+    ...(cielo ? {} : { 'sky-color': '#ffffff', 'horizon-color': '#ffffff', 'atmosphere-blend': 0 }),
+    ...(niebla ? {} : { 'fog-ground-blend': 1, 'horizon-fog-blend': 0 }),
+});
 export const VIEW3D_PITCH_MAX = 80;
 export const VIEW3D_EXAGGERATION_RANGE = [1, 5];
 export const EXTRUSION_MAX_HEIGHT_M = 45000;

@@ -9,6 +9,8 @@ import EmojiPanel from './EmojiPanel';
 import TextInlineEditor from './TextInlineEditor';
 import HistoryPanel from './HistoryPanel';
 import FeatureEditToolbar from './FeatureEditToolbar';
+import PanelMedicion from './PanelMedicion';
+import { useResultadoMedicion } from '@hooksMaps/useResultadoMedicion';
 
 const ToolsPanel = () => {
     const {
@@ -58,6 +60,7 @@ const ToolsPanel = () => {
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [isMeasurementListOpen, setIsMeasurementListOpen] = useState(false);
     const emojiPickerButtonRef = useRef(null);
+    const medicion = useResultadoMedicion(measurements);
 
     const shouldRender = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0;
     const showTypeSwitcher = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing;
@@ -131,27 +134,38 @@ const ToolsPanel = () => {
                 />
             </div>
 
-            <ToolSelector
-                visible={showTypeSwitcher}
-                compact={compact}
-                isDrawing={isDrawing}
-                measureType={measureType}
-                isEmojiPickerOpen={isEmojiPickerOpen}
-                onSelect={handleMeasureTypeClick}
-                onTextToggle={handleTextButton}
-                onEmojiToggle={handleEmojiButton}
-                emojiButtonRef={emojiPickerButtonRef}
-                onUndo={undoLastPoint}
-                onFinish={finishCurrentSketch}
-                onCancel={cancelCurrentSketch}
-                canUndo={isSketching}
-                freehandColor={freehandColor}
-                freehandWidth={freehandWidth}
-                onFreehandColor={setFreehandColor}
-                onFreehandWidth={setFreehandWidth}
-                showMeasurements={areMeasurementToolsVisible}
-                showAnnotations={areAnnotationToolsVisible}
-            />
+            <div className="relative">
+                <ToolSelector
+                    visible={showTypeSwitcher}
+                    compact={compact}
+                    isDrawing={isDrawing}
+                    measureType={measureType}
+                    isEmojiPickerOpen={isEmojiPickerOpen}
+                    onSelect={handleMeasureTypeClick}
+                    onTextToggle={handleTextButton}
+                    onEmojiToggle={handleEmojiButton}
+                    emojiButtonRef={emojiPickerButtonRef}
+                    onUndo={undoLastPoint}
+                    onFinish={finishCurrentSketch}
+                    onCancel={cancelCurrentSketch}
+                    canUndo={isSketching}
+                    freehandColor={freehandColor}
+                    freehandWidth={freehandWidth}
+                    onFreehandColor={setFreehandColor}
+                    onFreehandWidth={setFreehandWidth}
+                    showMeasurements={areMeasurementToolsVisible}
+                    showAnnotations={areAnnotationToolsVisible}
+                />
+                {medicion.visible && areMeasurementToolsVisible && (
+                    <PanelMedicion
+                        modo={medicion.modo}
+                        resultado={medicion.resultado}
+                        calculando={medicion.calculando}
+                        onCerrar={medicion.cerrar}
+                        className="absolute left-full top-0 ml-32"
+                    />
+                )}
+            </div>
 
             <EmojiPanel
                 open={isEmojiPickerOpen}

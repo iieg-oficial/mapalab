@@ -118,4 +118,17 @@ describe('View3dContext', () => {
         expect(result.current.available).toBe(false);
         expect(result.current.enter()).toBe(false);
     });
+
+    it('restablecer regresa los ajustes y los interruptores a sus valores por defecto', () => {
+        const { result } = render('/mapa?vista=3d&inclinacion=20');
+        act(() => {
+            result.current.view.setExaggeration(4);
+            result.current.view.setSol(90);
+            result.current.view.setTerreno(false);
+            result.current.view.setNiebla(false);
+            result.current.view.setOrbita(true);
+        });
+        act(() => result.current.view.restablecer());
+        expect(result.current.view).toMatchObject({ pitch: 55, exaggeration: 1.5, sol: 315, terreno: true, cielo: true, niebla: true, orbita: false });
+    });
 });

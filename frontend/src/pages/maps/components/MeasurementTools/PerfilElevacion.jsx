@@ -52,11 +52,11 @@ const PerfilElevacion = ({ perfil, onRecorrer }) => {
                 {escala.ticksY.map(t => (
                     <g key={`y${t}`}>
                         <line x1={MARGEN.izq} x2={ANCHO - MARGEN.der} y1={escala.y(t)} y2={escala.y(t)} stroke="#EEEBF2" />
-                        <text x={MARGEN.izq - 6} y={escala.y(t) + 4} textAnchor="end" className="fill-[#7B8388] text-[9px]">{metros(t)}</text>
+                        <text x={MARGEN.izq - 6} y={escala.y(t) + 4} textAnchor="end" className="fill-[#7B8388] font-garet text-[9px]">{metros(t)}</text>
                     </g>
                 ))}
                 {escala.ticksX.filter((_, i, lista) => lista.length < 5 || i % 2 === 0).map(t => (
-                    <text key={`x${t}`} x={escala.x(t)} y={ALTO - 6} textAnchor="middle" className="fill-[#7B8388] text-[9px]">{formatLengthValue(t)}</text>
+                    <text key={`x${t}`} x={escala.x(t)} y={ALTO - 6} textAnchor="middle" className="fill-[#7B8388] font-garet text-[9px]">{formatLengthValue(t)}</text>
                 ))}
                 <path d={escala.area} fill="#5C2472" fillOpacity="0.12" />
                 <path d={escala.linea} fill="none" stroke="#5C2472" strokeWidth="2" strokeLinejoin="round" />
@@ -78,7 +78,7 @@ const PerfilElevacion = ({ perfil, onRecorrer }) => {
             </svg>
             {activo && (
                 <span
-                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-[120%] rounded-md bg-[#1F2326] px-2 py-1 text-[11px] text-white tabular-nums whitespace-nowrap"
+                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-[120%] rounded-md bg-[#1F2326] px-2 py-1 font-garet text-[11px] text-white tabular-nums whitespace-nowrap"
                     style={{ left: `${(escala.x(activo.metros) / ANCHO) * 100}%`, top: `${(escala.y(activo.alt) / ALTO) * 100}%` }}
                 >
                     {formatLengthValue(activo.metros)} · {metros(activo.alt)}

@@ -32,7 +32,7 @@ const BotonNorte = ({ getActiveMap }) => {
 
     return (
         <Tooltip content="Orientar al norte · clic derecho y arrastrar para girar">
-            <button type="button" onClick={orientar} className="w-10 flex justify-center p-1 cursor-pointer" aria-label="Orientar al norte">
+            <button type="button" onClick={orientar} className="w-11 flex justify-center p-1 cursor-pointer" aria-label="Orientar al norte">
                 <img src={icoNorte} alt="" className="h-12 w-auto transition-transform duration-200" style={{ transform: `rotate(${grados}deg)` }} />
             </button>
         </Tooltip>
