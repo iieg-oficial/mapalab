@@ -5,6 +5,26 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.188.0] - 2026-09-23
+
+### Agregado: las capas de puntos se dibujan de pie en 3D
+
+En la vista 3D los puntos ya no van pegados al terreno —donde la perspectiva los aplastaba y las
+laderas los deformaban—: cada icono se dibuja **de pie, al ras del terreno y de frente a la cámara**
+(`icon-anchor: bottom`, `icon-pitch-alignment` e `icon-rotation-alignment: viewport`).
+
+- **Los iconos son los que ya dibuja GeoServer.** Cada regla de la leyenda en JSON trae en
+  `Point.url` una imagen lista: el SVG original o un PNG que GeoServer renderiza para las marcas
+  (`/kml/icon/...`). Nada se redibuja en el cliente. La URL trae el host interno y se reescribe a la
+  ruta pública.
+- **Las reglas se traducen a un `match`** (`billboardRules.js`): en el catálogo son igualdades sobre
+  un campo, `IS NULL` o sin filtro.
+- **Una fuente por entrada fusionada del WMS**, con su filtro CQL combinado: las 33 subcapas de
+  unidades de salud se piden de una vez.
+- **La capa WMS drapeada se oculta** cuando todas sus subcapas ya están de pie, para no dibujar cada
+  punto dos veces.
+- Se extrajeron `fetchLayerData` y `useOlWmsRevision`, que ahora comparten columnas y puntos.
+
 ## [1.187.0] - 2026-09-23
 
 ### Corregido: la configuración de mediciones no se veía
