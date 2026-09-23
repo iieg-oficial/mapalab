@@ -5,6 +5,7 @@ import DatePill from './DatePill';
 import { computeLabel } from './datePillHelpers';
 import { DEFAULT_LOOP_INTERVAL_MS, DEFAULT_LOOP_DIRECTION } from '@hooksMaps/useDateLoop';
 import { RADIUS_ICON, toneButtonFor, toneTextClass } from '@pages/maps/helpers/periodicityTones';
+import { slotLabel as etiquetaSlot } from '@pages/maps/helpers/swipeTheme';
 
 const LOOP_BUTTON_BASE = `flex items-center justify-center size-6 ${RADIUS_ICON} shrink-0 disabled:cursor-not-allowed`;
 
@@ -22,7 +23,7 @@ const LoopControls = ({
     disabledHint = ''
 }) => {
     const slot = slotPalette === 'A' || slotPalette === 'B' ? slotPalette : null;
-    const slotLabel = slot ? ` (lado ${slot})` : '';
+    const slotLabel = slot ? ` (lado ${etiquetaSlot(slot)})` : '';
     const play = toneButtonFor(slot, isLooping, { disabled });
     const interval = toneButtonFor(slot, (loopIntervalMs ?? DEFAULT_LOOP_INTERVAL_MS) !== DEFAULT_LOOP_INTERVAL_MS, { disabled });
     const direction = toneButtonFor(slot, (loopDirection ?? DEFAULT_LOOP_DIRECTION) !== DEFAULT_LOOP_DIRECTION, { disabled });

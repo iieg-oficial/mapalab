@@ -33,6 +33,11 @@ derecha del panel en vez de competir por la fila del título, donde se envolvía
 largo. Los dos reutilizan los iconos que ya existen (`cerrarModal`, `eliminar`) en vez de un SVG
 dibujado a mano.
 
+### Eliminado: el acceso al catálogo en la orilla del sider
+
+`CatalogoSiderButton.jsx` sale de `SiderEdgeButtons`: el catálogo ya vive en Herramientas desde la
+1.186.0 y el botón de la atribución sigue. Entró en el commit `4d5cb57`.
+
 ## [1.188.1] - 2026-09-23
 
 ### Corregido: la animación de fechas regresaba al año por defecto
@@ -173,8 +178,7 @@ segundos, para no quedar encima de los modales.
 ### Eliminado
 
 `CatalogoInfoBoxZone.jsx` y `helpers/infoboxDraft.js`, reemplazados por `components/tarjeta/` y
-`helpers/tarjetaModelo.js`. También el botón del catálogo en la orilla del sider
-(`CatalogoSiderButton.jsx`): con la tarjeta en Herramientas sobraba.
+`helpers/tarjetaModelo.js`.
 
 ## [1.185.0] - 2026-09-23
 

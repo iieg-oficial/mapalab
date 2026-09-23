@@ -1,13 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import CloseButton from '@components/CloseButton';
-import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
-import DatePill from './ActiveLayers/DatePill';
-import { computeLabel } from './ActiveLayers/datePillHelpers';
 import PanelPeriodicidad from './SwipeBar/PanelPeriodicidad';
 import PanelCapas from './SwipeBar/PanelCapas';
 
@@ -43,7 +40,7 @@ const BOTON_BARRA = 'size-10 flex items-center justify-center rounded-full trans
 const SwipeSlotControls = () => {
     const {
         compareMode, exitCompareMode, toggleSwipeOrientation,
-        selectedLayerForSymbology, setSelectedLayerForSymbology, allLayers, dateLoops,
+        selectedLayerForSymbology, setSelectedLayerForSymbology,
     } = useMapsContext();
     const { width: siderWidth, isOpen: isSiderOpen, isMobile: isMobileSider } = useSider();
     const siderShift = !isMobileSider && isSiderOpen ? siderWidth / 2 : 0;
@@ -62,9 +59,6 @@ const SwipeSlotControls = () => {
     }, [isMobileSider]);
 
     const layerId = selectedLayerForSymbology?.id || null;
-    const layerName = selectedLayerForSymbology?.name || selectedLayerForSymbology?.label || '';
-    const layerDef = useMemo(() => (layerId ? findLayerDef(layerId, allLayers) : null), [layerId, allLayers]);
-    const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
 
     useEffect(() => {
         if (objetivoRef.current) {
@@ -74,16 +68,6 @@ const SwipeSlotControls = () => {
         }
         setAbierto(null);
     }, [layerId]);
-
-    const inA = !!(layerId && compareMode?.paneA?.activeLayerIds?.includes(layerId));
-    const inB = !!(layerId && compareMode?.paneB?.activeLayerIds?.includes(layerId));
-    const filterA = compareMode?.paneA?.filters?.[layerId]?.date;
-    const filterB = compareMode?.paneB?.filters?.[layerId]?.date;
-    const labelA = useMemo(() => computeLabel(filterA, rasterPeriodicity), [filterA, rasterPeriodicity]);
-    const labelB = useMemo(() => computeLabel(filterB, rasterPeriodicity), [filterB, rasterPeriodicity]);
-    const loop = layerId ? dateLoops?.[layerId] : null;
-    const isLoopingA = !!loop?.isPlaying && loop.slot === 'A';
-    const isLoopingB = !!loop?.isPlaying && loop.slot === 'B';
 
     if (!compareMode?.active) return null;
     const isHorizontal = compareMode.swipeOrientation === 'horizontal';
@@ -100,16 +84,13 @@ const SwipeSlotControls = () => {
         setSelectedLayerForSymbology?.({ id: capa.id, name: capa.name });
     };
 
-    const showA = inA && labelA.label;
-    const showB = inB && labelB.label;
-
     return (
         <div
             ref={containerRef}
             className={`fixed z-20 flex items-center gap-2 ${isMobileSider ? 'bottom-16' : 'bottom-4'}`}
             style={{ left: `calc(50% + ${siderShift}px)`, transform: 'translateX(-50%)' }}
         >
-            <div className="relative flex items-center justify-between gap-2 px-3 py-2 min-w-[520px] max-md:min-w-0 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200">
+            <div className="relative flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-[0_5px_20px_#1A26641A] border border-gray-200">
                 {!isMobileSider && hintPhase !== 'hidden' && (
                     <ActionsHint visible={hintPhase === 'visible'} />
                 )}
@@ -118,50 +99,30 @@ const SwipeSlotControls = () => {
                 {abierto === 'B' && <PanelPeriodicidad layerId={layerId} slot="B" onClose={cerrar} />}
                 {abierto === 'capas' && <PanelCapas onClose={cerrar} onElegirFecha={elegirFecha} />}
 
-                {showA && (
-                    <div className="relative z-[1]">
-                        <DatePill slot="A" label={labelA.label} kind={labelA.kind} onClick={() => alternar('A')} isLooping={isLoopingA} size="md" autoWidth />
-                    </div>
-                )}
+                <Tooltip content={abierto === 'capas' ? 'Cerrar las capas comparadas' : 'Ver las capas comparadas'} placement="bottom" delay={300}>
+                    <button
+                        type="button"
+                        onClick={() => alternar('capas')}
+                        aria-expanded={abierto === 'capas'}
+                        aria-label="Ver las capas comparadas"
+                        className={`${BOTON_BARRA} ${abierto === 'capas'
+                            ? 'bg-[#703089] text-white'
+                            : 'bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white'}`}
+                    >
+                        <ListaIcon className="w-5 h-5" />
+                    </button>
+                </Tooltip>
 
-                <div className="relative z-[1] flex items-center gap-2 min-w-0">
-                    {layerName && (
-                        <span className="min-w-0 h-8 px-3 flex items-center font-garet font-medium text-[14px] text-[#465055]">
-                            <span className="truncate max-w-[220px] max-md:max-w-[110px]">{layerName}</span>
-                        </span>
-                    )}
-
-                    <Tooltip content={abierto === 'capas' ? 'Cerrar las capas comparadas' : 'Ver las capas comparadas'} placement="bottom" delay={300}>
-                        <button
-                            type="button"
-                            onClick={() => alternar('capas')}
-                            aria-expanded={abierto === 'capas'}
-                            aria-label="Ver las capas comparadas"
-                            className={`${BOTON_BARRA} ${abierto === 'capas'
-                                ? 'bg-[#703089] text-white'
-                                : 'bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white'}`}
-                        >
-                            <ListaIcon className="w-5 h-5" />
-                        </button>
-                    </Tooltip>
-
-                    <Tooltip content={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'} placement="bottom" delay={300}>
-                        <button
-                            type="button"
-                            onClick={toggleSwipeOrientation}
-                            className={`${BOTON_BARRA} bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white`}
-                            aria-label={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'}
-                        >
-                            <Icon name="swipe_orientacion" className={`w-5 h-5 transition-transform ${isHorizontal ? '' : 'rotate-90'}`} />
-                        </button>
-                    </Tooltip>
-                </div>
-
-                {showB && (
-                    <div className="relative z-[1]">
-                        <DatePill slot="B" label={labelB.label} kind={labelB.kind} onClick={() => alternar('B')} isLooping={isLoopingB} size="md" autoWidth />
-                    </div>
-                )}
+                <Tooltip content={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'} placement="bottom" delay={300}>
+                    <button
+                        type="button"
+                        onClick={toggleSwipeOrientation}
+                        className={`${BOTON_BARRA} bg-[#EAEFFA] text-[#703089] hover:bg-[#703089] hover:text-white`}
+                        aria-label={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'}
+                    >
+                        <Icon name="swipe_orientacion" className={`w-5 h-5 transition-transform ${isHorizontal ? '' : 'rotate-90'}`} />
+                    </button>
+                </Tooltip>
             </div>
 
             <CloseButton

@@ -3,6 +3,7 @@ import MapsContext from '@contexts/MapsContext';
 import { useLayerPeriodicity } from './useLayerPeriodicity';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { buildLoopValues } from '@pages/maps/helpers/dateLoopHelpers';
+import { slotLabel } from '@pages/maps/helpers/swipeTheme';
 
 const slotKey = (slot) => slot || 'live';
 
@@ -76,7 +77,7 @@ export const useSlotPeriodicity = (layerId) => {
             canPlay: canPlayIn(slot),
             isPlaying: isLoopPlaying && ownsLoop,
             loopDisabled: isLoopPlaying && !ownsLoop,
-            loopDisabledHint: `Pausa la animación del lado ${otro} para iniciar acá`,
+            loopDisabledHint: `Pausa la animación del lado ${slotLabel(otro)} para iniciar acá`,
             toggleLoop: () => layerId && toggleLoop?.(layerId, viewLoopConfig(slot), slot),
             onExpandedYearChange: (year) => setExpandedYear(slot, year),
         };

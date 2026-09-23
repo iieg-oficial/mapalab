@@ -77,6 +77,7 @@ import sharedNormal from './ico_shared_normal.svg';
 import sharedHover from './ico_shared_hover.svg';
 
 import capaActivaNormal from './ico_capa_activa.svg';
+import capasComparadasNormal from './ico_capas_comparadas.svg';
 import capaActivaOrange from './ico_capa_activa_orange.svg';
 import simbologiaNormal from './ico_simbologia_normal.svg';
 import simbologiaGray from './ico_simbologia_gray.svg';
@@ -155,7 +156,7 @@ export const externalIcons = {
     zoomin_normal: zoominNormal, zoomin_hover: zoominHover, zoomout_normal: zoomoutNormal, zoomout_hover: zoomoutHover, copie_normal: copieNormal, copie_hover: copieHover, shared_click_normal: sharedClick, shared_click_hover: sharedClick,
     linea_normal: lineaNormal, linea_hover: lineaHover, poligono_normal: poligonoNormal, poligono_hover: poligonoHover, lista_normal: listaNormal, lista_hover: listaHover,
     emoji_normal: emojiNormal, emoji_hover: emojiHover, cerrar_normal: cerrarNormal, cerrar_hover: cerrarHover, punto_normal: puntoNormal, punto_hover: puntoHover,
-    info_normal: infoNormal, info_hover: infoHover, shared_normal: sharedNormal, shared_hover: sharedHover, capa_activa_normal: capaActivaNormal, capa_activa_orange: capaActivaOrange,
+    info_normal: infoNormal, info_hover: infoHover, shared_normal: sharedNormal, shared_hover: sharedHover, capa_activa_normal: capaActivaNormal, capas_comparadas_normal: capasComparadasNormal, capa_activa_orange: capaActivaOrange,
     visible_normal: visibleNormal, visible_hover: visibleHover, visible_gray: visibleGray, move_normal: moveNormal, move_hover: moveHover, simbologia_normal: simbologiaNormal, simbologia_gray: simbologiaGray,
     eliminar_normal: eliminarNormal, eliminar_hover: eliminarHover, big_card_normal: bigCardNormal, big_card_hover: bigCardHover, upArrow_normal: upArrowNormal,
     alert_normal: alertNormal, deshacer_normal: deshacerNormal, center_normal: centerNormal, center_hover: centerHover, aviso_privacidad_normal: avisoPrivacidadNormal,

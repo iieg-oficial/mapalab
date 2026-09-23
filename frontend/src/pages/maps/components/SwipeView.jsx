@@ -3,7 +3,7 @@ import MapView from './MapView';
 import Icon from '@components/Icon';
 import { useMapsContext } from '@hooks/useMaps';
 import { useViewSync } from '@pages/maps/hooks/useViewSync';
-import { SLOT_COLORS, SWIPE_HANDLE_COLOR } from '@pages/maps/helpers/swipeTheme';
+import { SLOT_COLORS, SWIPE_HANDLE_COLOR, slotLabel } from '@pages/maps/helpers/swipeTheme';
 import {
     SWIPE_HANDLE_MIN,
     SWIPE_HANDLE_MAX,
@@ -191,7 +191,7 @@ const SwipeView = () => {
                     className="absolute z-[1] flex items-center justify-center pointer-events-none"
                     style={panelStyle('A', overlayAStyle)}
                 >
-                    <span className={OVERLAY_LETTER} style={letraStyle('A')}>A</span>
+                    <span className={OVERLAY_LETTER} style={letraStyle('A')}>{slotLabel('A')}</span>
                 </div>
             )}
             {(visibles === 'B' || visibles === 'AB') && (
@@ -200,7 +200,7 @@ const SwipeView = () => {
                     className="absolute z-[1] flex items-center justify-center pointer-events-none"
                     style={panelStyle('B', overlayBStyle)}
                 >
-                    <span className={OVERLAY_LETTER} style={letraStyle('B')}>B</span>
+                    <span className={OVERLAY_LETTER} style={letraStyle('B')}>{slotLabel('B')}</span>
                 </div>
             )}
             <div
@@ -218,14 +218,14 @@ const SwipeView = () => {
             >
                 <div className={lineClass} style={{ backgroundColor: SWIPE_HANDLE_COLOR }} />
                 <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 ${isHorizontal ? 'flex-col' : ''}`}>
-                    <span aria-hidden="true" className={HANDLE_LABEL} style={etiquetaStyle('A')}>A</span>
+                    <span aria-hidden="true" className={HANDLE_LABEL} style={etiquetaStyle('A')}>{slotLabel('A')}</span>
                     <div
                         className="shrink-0 w-9 h-9 rounded-full shadow-lg flex items-center justify-center"
                         style={{ backgroundColor: SWIPE_HANDLE_COLOR }}
                     >
                         <Icon name={knobIconName} className="w-5 h-5" />
                     </div>
-                    <span aria-hidden="true" className={HANDLE_LABEL} style={etiquetaStyle('B')}>B</span>
+                    <span aria-hidden="true" className={HANDLE_LABEL} style={etiquetaStyle('B')}>{slotLabel('B')}</span>
                 </div>
             </div>
         </div>

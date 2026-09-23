@@ -4,26 +4,27 @@ import { useActiveLayersLogic } from '@hooksMaps/useActiveLayersLogic';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { computeLabel } from '@mapsComponents/ActiveLayers/datePillHelpers';
 import DatePill from '@mapsComponents/ActiveLayers/DatePill';
-import { SLOT_COLORS } from '@pages/maps/helpers/swipeTheme';
+import { SLOT_COLORS, slotLabel } from '@pages/maps/helpers/swipeTheme';
 import Tooltip from '@components/Tooltip';
+import Icon from '@components/Icon';
 import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
 
 const SIN_FECHA = '—';
 
 const BotonLado = ({ slot, activo, bloqueado, onClick }) => (
-    <Tooltip content={bloqueado ? 'Debe quedar en al menos un lado' : `${activo ? 'Quitar del' : 'Mostrar en el'} lado ${slot}`}>
+    <Tooltip content={bloqueado ? 'Debe quedar en al menos un lado' : `${activo ? 'Quitar del' : 'Mostrar en el'} lado ${slotLabel(slot)}`}>
         <button
             type="button"
             onClick={(e) => { e.stopPropagation(); if (!bloqueado) onClick(); }}
             aria-pressed={activo}
             aria-disabled={bloqueado}
-            aria-label={`${activo ? 'Quitar del' : 'Mostrar en el'} lado ${slot}`}
+            aria-label={`${activo ? 'Quitar del' : 'Mostrar en el'} lado ${slotLabel(slot)}`}
             style={activo ? { backgroundColor: SLOT_COLORS[slot].fg } : undefined}
             className={`size-7 shrink-0 rounded-full flex items-center justify-center font-garet font-bold text-[12px] transition-colors ${activo
                 ? 'text-white'
                 : 'bg-[#EFF3FC] text-[#9AA3A8] hover:text-[#465055]'} ${bloqueado ? 'cursor-not-allowed' : 'cursor-pointer'}`}
         >
-            {slot}
+            {slotLabel(slot)}
         </button>
     </Tooltip>
 );
@@ -95,24 +96,25 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
     };
 
     return (
-        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-[min(460px,calc(100vw-2rem))] max-h-[60vh] overflow-y-auto bg-white rounded-xl shadow-[0_5px_20px_#1A26641A]">
-            <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-                <span className="flex-1 font-garet font-bold text-[15px]/[18px] text-purple">Capas comparadas</span>
+        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-[min(460px,calc(100vw-2rem))] max-h-[60vh] overflow-y-auto px-4.5 pt-2 pb-4.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A]">
+            <div className="flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                    <Icon name="capas_comparadas" className="size-8" />
+                    <h3 className="font-garet font-bold text-[18px]/[47px]">Capas comparadas</h3>
+                </div>
                 <Tooltip content="Cerrar el panel de capas" placement="bottom" delay={200}>
                     <button
                         type="button"
                         onClick={onClose}
                         aria-label="Cerrar el panel de capas"
-                        className={`size-7 shrink-0 ${RADIUS_ICON} text-[#6E7477] hover:text-purple hover:bg-purple-soft flex items-center justify-center transition-colors cursor-pointer`}
+                        className={`size-7 shrink-0 ${RADIUS_ICON} flex items-center justify-center transition-colors cursor-pointer`}
                     >
-                        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
+                        <Icon name="cerrarModal" className="size-5" />
                     </button>
                 </Tooltip>
             </div>
 
-            <div className="flex flex-col gap-1 px-2 pb-2.5">
+            <div className="flex flex-col gap-1">
                 {capas.map((capa) => {
                     const elegida = capa.id === selectedLayerForSymbology?.id;
                     const solaEnA = capa.enA && !capa.enB;
