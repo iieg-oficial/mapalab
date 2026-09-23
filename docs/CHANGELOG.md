@@ -5,6 +5,41 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.194.0] - 2026-09-23
+
+### Agregado: engrane de ajustes en la vista 3D
+
+- La pastilla 3D queda con inclinación, relieve, sol, órbita y un **engrane**, y mide lo mismo que
+  el panel de zoom (44 × 204 px).
+- El engrane abre «Ajustes 3D»: los cuatro deslizadores —incluida la altura sobre los puntos, que
+  sale de la pastilla— y los interruptores de **terreno, cielo y niebla**, prendidos por defecto.
+  **Restablecer** regresa todo a los valores de fábrica.
+- Los anillos y el engrane comparten `<Map3DPopover>` y `<Map3DDeslizador>`.
+
+### Agregado: panel de resultados de medición, en 2D y 3D
+
+- `<PanelMedicion>` con encabezado (`<PanelHeader>`), X (`<PillCloseButton>`) y tipografía
+  `font-garet`: distancia en línea recta y siguiendo el terreno, subida, bajada, máximos y perfil de
+  elevación; en polígonos, área sobre el relieve y perímetro.
+- En 2D sale al terminar una línea o un polígono; el relieve se lee directo del DEM, sin 3D.
+
+### Agregado: girar el mapa 2D con clic derecho
+
+- Arrastrar con clic derecho gira el mapa cuando no hay mediciones, anotaciones ni dibujo abiertos.
+  La N gira con él y al hacer clic vuelve al norte.
+
+### Cambiado
+
+- **El norte es permanente**, en 2D y 3D, y queda centrado con el panel de zoom.
+- **Ubicarme funciona en 3D**: vuela a la posición sin cambiar inclinación ni rumbo.
+- **Con el 3D activo, el botón 3D se vuelve la X** de `<PillCloseButton>` para salir.
+- **Las mediciones 3D usan los componentes de 2D**: `<ToolSelector>` con deshacer, terminar y
+  cancelar, y `<CloseButton>`. En modo normal el clic abre el InfoBox.
+
+### Eliminado
+
+- La barra propia de mediciones 3D y su modo «altura de un punto».
+
 ## [1.193.0] - 2026-09-23
 
 ### Cambiado: la barra del comparador se homologa con la píldora de la tabla de datos
