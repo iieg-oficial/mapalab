@@ -48,7 +48,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                                 className="flex items-center justify-center size-7 rounded-full border border-transparent hover:border-[#FF577D] transition-colors cursor-pointer"
                                 aria-label="Eliminar todas las mediciones"
                             >
-                                <Icon name="eliminar" className="size-4" />
+                                <Icon name="eliminar" state="hover" className="size-5" />
                             </button>
                         </Tooltip>
                     )}
@@ -56,7 +56,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                     <button
                         type="button"
                         onClick={onClose}
-                        className="cursor-pointer"
+                        className="flex items-center justify-center size-7 cursor-pointer"
                         aria-label="Cerrar lista de mediciones y anotaciones"
                     >
                         <Icon name="cerrarModal" className="size-7" />

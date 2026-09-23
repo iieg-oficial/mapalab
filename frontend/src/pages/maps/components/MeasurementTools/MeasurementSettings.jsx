@@ -3,7 +3,8 @@ import { useMapsContext } from '@hooks/useMaps';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import Panel from '@components/Panel';
-import { BAR_SHELL, BAR_DIVIDER } from './StyleControls';
+import PanelHoja from '@components/PanelHoja';
+import Checkbox from '@components/Checkbox';
 
 const LENGTH_UNITS = [
     { value: 'auto', label: 'Auto' },
@@ -60,29 +61,19 @@ const MeasurementSettings = ({ anchorRef, open, onClose }) => {
             noPadding
             bg="bg-transparent"
         >
-            <div
-                className={`${BAR_SHELL} flex-col items-stretch gap-2 min-w-[180px]`}
+            <PanelHoja
+                titulo="Configuración"
+                onCerrar={onClose}
+                etiquetaCerrar="Cerrar configuración"
+                className="gap-3 shadow-[0_5px_20px_#1A26641A]"
             >
-                <div className="flex items-center justify-between">
-                    <span className="font-garet font-bold text-[12px] text-graphite">Configuración</span>
-                    <button type="button" onClick={onClose} className="flex items-center justify-center size-5 rounded-full hover:bg-[#EAEFFA]" aria-label="Cerrar configuración">
-                        <Icon name="cerrarModal" className="size-4" />
-                    </button>
-                </div>
-
-                <div className={BAR_DIVIDER} style={{ width: '100%', height: 1, margin: 0 }} />
-
                 <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                        type="checkbox"
+                    <Checkbox
                         checked={measurementConfig.showSegmentLengths}
-                        onChange={(e) => setMeasurementConfig(prev => ({ ...prev, showSegmentLengths: e.target.checked }))}
-                        className="size-3.5 accent-purple-deep cursor-pointer"
+                        onChange={() => setMeasurementConfig(prev => ({ ...prev, showSegmentLengths: !prev.showSegmentLengths }))}
                     />
-                    <span className="text-[11px] font-garet text-graphite">Longitud por segmento</span>
+                    <span className="text-[12px] font-garet text-graphite">Longitud por segmento</span>
                 </label>
-
-                <div className={BAR_DIVIDER} style={{ width: '100%', height: 1, margin: 0 }} />
 
                 <SegmentedSelector
                     label="Distancia"
@@ -97,7 +88,7 @@ const MeasurementSettings = ({ anchorRef, open, onClose }) => {
                     options={AREA_UNITS}
                     onChange={(unit) => setMeasurementConfig(prev => ({ ...prev, areaUnit: unit }))}
                 />
-            </div>
+            </PanelHoja>
         </Panel>
     );
 };
