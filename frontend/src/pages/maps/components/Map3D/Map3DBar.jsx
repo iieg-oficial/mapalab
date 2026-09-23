@@ -37,7 +37,7 @@ const Map3DBar = () => {
     };
 
     return (
-        <div className="flex flex-col items-center py-2 w-11 gap-2 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
+        <div className="flex flex-col items-center justify-evenly h-full w-11 py-1 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
             {anillos.map(({ clave, label, texto, pct, tono }) => (
                 <Tooltip key={clave} content={`${label}: ${deslizadores[clave].texto}`}>
                     <Map3DRing
