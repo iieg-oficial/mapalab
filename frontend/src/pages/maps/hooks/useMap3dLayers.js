@@ -13,9 +13,11 @@ const readOlLayers = (olMap) => olMap.getLayers().getArray().filter(isMirrored).
 
 const mirroredIds = (map) => (map.getStyle()?.layers || []).map(layer => layer.id).filter(id => id.startsWith(PREFIX));
 
+const sourceUrl = (source) => (source.getUrl ? source.getUrl() : source.getUrls?.()?.[0]) || null;
+
 const upsert = (map, id, layer) => {
     const source = layer.getSource();
-    const url = wmsTileUrl(source.getUrl(), source.getParams());
+    const url = wmsTileUrl(sourceUrl(source), source.getParams());
     if (!url) return;
     const existing = map.getSource(id);
     if (!existing) {

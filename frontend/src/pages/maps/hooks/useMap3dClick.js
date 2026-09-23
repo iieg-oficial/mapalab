@@ -1,0 +1,33 @@
+import { useEffect } from 'react';
+import { fromLonLat } from 'ol/proj';
+import { useFeatureInfo } from '@hooksMaps/useFeatureInfo';
+
+const extrusionLayerIds = (map) => (map.getStyle()?.layers || [])
+    .filter(layer => layer.type === 'fill-extrusion')
+    .map(layer => layer.id);
+
+export const useMap3dClick = (map, olMapRef) => {
+    const { queryFeatures } = useFeatureInfo();
+
+    useEffect(() => {
+        if (!map) return undefined;
+
+        const onClick = (event) => {
+            const olMap = olMapRef.current;
+            if (!olMap) return;
+            queryFeatures(olMap, fromLonLat(event.lngLat.toArray()), event);
+        };
+        const onMove = (event) => {
+            const layers = extrusionLayerIds(map);
+            const hit = layers.length && map.queryRenderedFeatures(event.point, { layers }).length > 0;
+            map.getCanvas().style.cursor = hit ? 'pointer' : '';
+        };
+
+        map.on('click', onClick);
+        map.on('mousemove', onMove);
+        return () => {
+            map.off('click', onClick);
+            map.off('mousemove', onMove);
+        };
+    }, [map, olMapRef, queryFeatures]);
+};

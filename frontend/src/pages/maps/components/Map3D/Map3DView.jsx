@@ -11,7 +11,7 @@ import {
     CIELO_SPEC, VIEW3D_PITCH_MAX, basemapLayers, basemapSources, buildBaseStyle, cameraToOlView,
     olViewToCamera, RELIEF_LAYER_ID,
 } from '@pages/maps/helpers/view3d';
-import { useMap3dPopup } from '@hooksMaps/useMap3dPopup';
+import { useMap3dClick } from '@hooksMaps/useMap3dClick';
 import { useMap3dContorno } from '@hooksMaps/useMap3dContorno';
 
 const TERRAIN_SOURCE = 'terreno';
@@ -137,7 +137,7 @@ const Map3DView = () => {
     useMap3dExtrusions(map, mapRef, {
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,
     });
-    useMap3dPopup(map);
+    useMap3dClick(map, mapRef);
 
     if (!mapRef.current) return null;
 

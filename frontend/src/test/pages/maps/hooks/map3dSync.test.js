@@ -11,14 +11,21 @@ vi.mock('@services/vectorLayerService', () => ({
 import { syncWmsLayers } from '@pages/maps/hooks/useMap3dLayers';
 import { loadExtrusion } from '@pages/maps/hooks/useMap3dExtrusions';
 
-const fakeOlLayer = ({ uid, zIndex, opacity = 1, visible = true, params }) => ({
-    ol_uid: uid,
-    get: (key) => (key === 'mergedLayers' ? [{}] : undefined),
-    getVisible: () => visible,
-    getZIndex: () => zIndex,
-    getOpacity: () => opacity,
-    getSource: () => ({ getUrl: () => 'https://iieg.test/sextante/demografia/wms', getParams: () => params }),
-});
+const URL_WMS = 'https://iieg.test/sextante/demografia/wms';
+
+const fakeOlLayer = ({ uid, zIndex, opacity = 1, visible = true, params, teselada = false }) => {
+    const source = teselada
+        ? { getUrls: () => [URL_WMS], getParams: () => params }
+        : { getUrl: () => URL_WMS, getParams: () => params };
+    return {
+        ol_uid: uid,
+        get: (key) => (key === 'mergedLayers' ? [{}] : undefined),
+        getVisible: () => visible,
+        getZIndex: () => zIndex,
+        getOpacity: () => opacity,
+        getSource: () => source,
+    };
+};
 
 const fakeOlMap = (layers) => ({ getLayers: () => ({ getArray: () => layers }) });
 
@@ -53,6 +60,15 @@ describe('syncWmsLayers', () => {
         expect(map.order).toEqual(['fondo', 'base', 'wms-1', 'wms-2', 'sombreado']);
         expect(map.addLayer.mock.calls.find(([spec]) => spec.id === 'wms-1')[0].paint['raster-opacity']).toBe(0.6);
         expect(map.sources.get('wms-1').tiles[0]).toContain('LAYERS=a%3Auno');
+    });
+
+    it('tambien refleja las capas teseladas, que exponen getUrls en plural', () => {
+        const map = fakeMaplibre();
+        const teselada = fakeOlLayer({ uid: 9, zIndex: 101, teselada: true, params: { LAYERS: 'economia:cultivos', TILED: true } });
+        syncWmsLayers(map, fakeOlMap([teselada]));
+        expect(map.order).toContain('wms-9');
+        expect(map.sources.get('wms-9').tiles[0]).toContain('LAYERS=economia%3Acultivos');
+        expect(map.sources.get('wms-9').tiles[0]).not.toContain('TILED');
     });
 
     it('actualiza el filtro sin recrear la fuente y quita las capas que salen', () => {

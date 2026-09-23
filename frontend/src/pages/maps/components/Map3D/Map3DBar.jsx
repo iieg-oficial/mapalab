@@ -11,7 +11,7 @@ import Map3DSliderPopover from './Map3DSliderPopover';
 
 const [EXAG_MIN, EXAG_MAX] = VIEW3D_EXAGGERATION_RANGE;
 const [COL_MIN, COL_MAX] = VIEW3D_COLUMN_RANGE;
-const BOTON_ORBITA = `flex items-center justify-center size-7 ${RADIUS_ICON} shrink-0 cursor-pointer transition-colors`;
+const BOTON_ORBITA = `flex items-center justify-center size-8.5 ${RADIUS_ICON} shrink-0 cursor-pointer transition-colors`;
 
 const Map3DBar = () => {
     const {
@@ -59,7 +59,7 @@ const Map3DBar = () => {
                     aria-pressed={orbita}
                     aria-label={orbita ? 'Pausar la órbita' : 'Girar alrededor del centro'}
                 >
-                    <Icon name={orbita ? 'pause' : 'play'} className="size-2.5 shrink-0" />
+                    <Icon name={orbita ? 'pause' : 'play'} className="size-3 shrink-0" />
                 </button>
             </Tooltip>
             {deslizadores[abierto] && (
