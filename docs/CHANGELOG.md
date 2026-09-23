@@ -5,6 +5,24 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.183.0] - 2026-09-23
+
+### Eliminado: los controles A/B salen del item de capa
+
+El item del panel de capas activas deja de llevar dos controles que decían cosas distintas con la
+misma letra. Los dos se fueron a la barra del comparador, donde los lados ya viven:
+
+- **La píldora `<SlotBadge>`** —que ciclaba `A → AB → B` en tres pasos, con el estado escondido en
+  el ciclo— la reemplazan las dos casillas de `<PanelCapas>`, una por lado. El componente se elimina.
+- **El `<Switch>` A/B** de la barra de acciones se repetía en cada capa con membresía `AB`, pero
+  `activeSlot` es uno solo para todo el comparador. Pasa a ser un único switch en la barra, que sigue
+  gobernando lo que se muta desde el sider —opacidad, visibilidad, filtros— y a qué lado entra una
+  capa nueva del catálogo.
+
+Con la píldora fuera, `<LayerDateControls>` se queda sólo con fechas y controles de animación, y
+`<ActiveLayerItem>` ya no calcula `hasAnyDateLabel`, que existía únicamente para decidir en qué fila
+montar la píldora.
+
 ## [1.182.0] - 2026-09-23
 
 ### Corregido: una capa teselada tumbaba la vista 3D entera

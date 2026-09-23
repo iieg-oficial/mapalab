@@ -5,6 +5,7 @@ import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import CloseButton from '@components/CloseButton';
+import Switch from '@components/Switch';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import DatePill from './ActiveLayers/DatePill';
 import { computeLabel } from './ActiveLayers/datePillHelpers';
@@ -33,6 +34,7 @@ const SwipeSlotControls = () => {
     const {
         compareMode, exitCompareMode, toggleSwipeOrientation,
         selectedLayerForSymbology, setSelectedLayerForSymbology, allLayers, dateLoops,
+        setActiveSlot, highlightSlots,
     } = useMapsContext();
     const { width: siderWidth, isOpen: isSiderOpen, isMobile: isMobileSider } = useSider();
     const siderShift = !isMobileSider && isSiderOpen ? siderWidth / 2 : 0;
@@ -76,6 +78,7 @@ const SwipeSlotControls = () => {
 
     if (!compareMode?.active) return null;
     const isHorizontal = compareMode.swipeOrientation === 'horizontal';
+    const activeSlot = compareMode.activeSlot === 'B' ? 'B' : 'A';
 
     const alternar = (destino) => setAbierto(previo => (previo === destino ? null : destino));
     const cerrar = () => setAbierto(null);
@@ -142,6 +145,22 @@ const SwipeSlotControls = () => {
                             <Icon name="chevron" className={`w-3 h-1.5 shrink-0 transition-transform duration-300 ${abierto === 'capas' ? 'rotate-0' : 'rotate-180'}`} />
                         </span>
                     )}
+
+                    <span className="shrink-0 pointer-events-auto">
+                        <Switch
+                            checked={activeSlot === 'A'}
+                            onChange={(next) => {
+                                const destino = next ? 'A' : 'B';
+                                setActiveSlot?.(destino);
+                                highlightSlots?.(destino, { temporal: true });
+                            }}
+                            onLabel="A"
+                            offLabel="B"
+                            onColor="#5C2472"
+                            offColor="#FF8300"
+                            tooltip={`Editando el lado ${activeSlot} — cambiar al ${activeSlot === 'A' ? 'B' : 'A'}`}
+                        />
+                    </span>
 
                     <Tooltip content={isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal'} placement="bottom" delay={300}>
                         <button

@@ -90,26 +90,24 @@ Consumers en swipe (`MapControls`, `useMapView.getActiveMapRef`, `useMapMarker`)
 
 Crítico: **`mapRef.current` (live) es `null` en swipe** porque el `<MapView />` live no se monta. Cualquier consumer que lea `mapRef.current` directo necesita un fallback. Ver tabla de consumers más abajo.
 
-## Pildora A|B (`<SlotBadge>`)
+## Quién vive en cada lado y cuál estás editando
 
-Cicla membership por capa: `A → AB → B → A`. Implementado por `setLayerSlotMembership(layerId, target)` en `useSwipeMode`. El resaltado que dispara se pide con `highlightSlots(slots, { temporal })`: el hover lo enciende y lo apaga, el click lo enciende y el propio hook lo apaga a los `SWIPE_HIGHLIGHT_MS`. El apagado vive en el hook y no en el botón porque el cambio de membresía remonta la píldora y se llevaba el `mouseLeave` — con él, el resaltado se quedaba encendido para siempre. Cada toggle actualiza `paneA.activeLayerIds` y/o `paneB.activeLayerIds`, copia opacities/filters del pane fuente, y extiende `globalOrder` si la capa entra por primera vez.
+Son dos cosas distintas y cada una tiene su control, los dos fuera del item de capa:
 
-`useSymbology.stillActive` valida contra `paneA + paneB` (no solo el live state) para que el item no se deseleccione al pasar AB → B.
+- **Dónde vive la capa** se decide con las dos casillas de `<PanelCapas>`, una por lado, en la barra
+  del comparador. La casilla del único lado que le queda va deshabilitada: `setLayerSlotMembership`
+  rechaza un destino vacío, así que vaciar los dos lados se sigue haciendo con eliminar. Sustituyó a
+  la píldora `<SlotBadge>`, que ciclaba `A → AB → B` en tres pasos con el estado escondido.
+- **Qué lado estás editando** es `compareMode.activeSlot`, y lo cambia un solo `<Switch>` A/B en la
+  barra del comparador. Gobierna todo lo que se muta desde el sider —opacidad, visibilidad, filtros
+  CQL— y a qué lado entra una capa nueva del catálogo. Antes había uno por cada item con membresía
+  `AB`, que repetía en cada renglón un estado que es global.
 
-**Botón Eliminar en swipe** quita la capa de **ambos** slots — para mover entre slots se usa la pildora.
+`useSymbology.stillActive` valida contra `paneA + paneB` (no solo el live state) para que el item no
+se deseleccione al sacar la capa de un lado.
 
-### Posición del `<SlotBadge>` en el item del panel de capas activas
-
-Depende de si la capa tiene fecha activa en algún slot:
-
-| Estado | `<LayerDateControls>` (fila 2) | `<SlotBadge>` |
-|---|---|---|
-| Capa con fecha (live, paneA o paneB) | Se renderiza con pildora de fecha + loop controls | En la fila 2, junto a las pildoras de fecha |
-| Capa sin fecha en ningún slot | Retorna `null` (la fila 2 desaparece) | A la derecha del `<LayerTitle>` (fila 1) |
-
-`<ActiveLayerItem>` deriva `hasAnyDateLabel` corriendo `computeLabel` sobre `dateFilter` live, `compareMode.paneA.filters[layer.id]?.date` y `compareMode.paneB.filters[layer.id]?.date`. Cuando `compareMode.active && slotMembership && !hasAnyDateLabel`, monta el `<SlotBadge>` en la fila 1 después del título.
-
-El `<Switch>` A/B de la fila 3 (`<LayerActionsBar>`) sigue mostrándose sólo cuando `slotMembership === 'AB'` y cambia el `activeSlot` global; es independiente del SlotBadge (que cicla *membership* de la capa, no *active slot*).
+**Botón Eliminar en swipe** quita la capa de **ambos** slots; para dejarla en uno solo se usan las
+casillas.
 
 ## Entrada y salida del swipe
 
@@ -212,7 +210,7 @@ Al cargar un share con `annotations`, `useShareDeserializer` invoca `restoreAnno
 
 - `globalOrder ⊆ paneA.activeLayerIds ∪ paneB.activeLayerIds` (los IDs huérfanos se filtran al recomputar).
 - El live state (`activeLayerIds`, `hiddenLayerIds`, `layerOpacities`, `filters`) **siempre espeja** a `compareMode[pane${activeSlot}]`.
-- "Eliminar" desde el panel de capas activas en swipe quita la capa de **ambos** slots — para mover entre slots se usa la pildora `<SlotBadge>`.
+- "Eliminar" desde el panel de capas activas en swipe quita la capa de **ambos** slots — para dejarla en uno solo se usan las casillas de `<PanelCapas>`.
 - `swipePosition` siempre cae en `[SWIPE_POS_MIN, SWIPE_POS_MAX]` = `[0.05, 0.95]`.
 - El `swipeOrientation` se persiste por usuario (`localStorage.mapalab.swipe.orientation`) y se restaura al entrar a swipe.
 
@@ -237,7 +235,7 @@ Al cargar un share con `annotations`, `useShareDeserializer` invoca `restoreAnno
 
 - Handle del swipe: `role="slider"`, `aria-label`, `aria-orientation`, `aria-valuemin/max/now`. Acepta teclado (←/→/↑/↓ con paso de 5%, `Home`/`End` para extremos).
 - Overlays "A"/"B" gigantes y las pastillas del handle son `aria-hidden="true"` (decorativos); el `aria-label` del slider ya nombra la posición.
-- `<SlotBadge>` lleva `aria-label` con la oración completa de su tooltip.
+- Las casillas de `<PanelCapas>` llevan tooltip con el lado y la acción; la del único lado que queda va deshabilitada y lo dice.
 
 ## Performance
 

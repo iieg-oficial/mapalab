@@ -20,8 +20,6 @@ import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
 import LayerDownloadProgress from './LayerDownloadProgress';
 import LayerStatsInline from './LayerStatsInline';
-import SlotBadge from './SlotBadge';
-import { computeLabel } from './datePillHelpers';
 import { ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
 import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
@@ -51,10 +49,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         compareMode,
         removeLayerFromSlot,
         toggleLayerVisibilityInSlot,
-        setLayerSlotMembership,
         getLayerOpacity,
         setLayerOpacity,
-        setActiveSlot,
         centerOnLayer,
         pulseLayer,
         getServiceMode,
@@ -146,15 +142,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
     const dateFilter = getSpecificFilter?.(layer.id, 'date') || null;
 
-    const hasAnyDateLabel = useMemo(() => {
-        const liveOk = computeLabel(dateFilter, rasterPeriodicity).label;
-        const aOk = computeLabel(compareMode?.paneA?.filters?.[layer.id]?.date, rasterPeriodicity).label;
-        const bOk = computeLabel(compareMode?.paneB?.filters?.[layer.id]?.date, rasterPeriodicity).label;
-        return !!(liveOk || aOk || bOk);
-    }, [dateFilter, rasterPeriodicity, compareMode?.paneA?.filters, compareMode?.paneB?.filters, layer.id]);
-
-    const showSlotBadgeInTitle = !!compareMode?.active && !!slotMembership && !hasAnyDateLabel;
-    const handleCycleSlot = (next) => setLayerSlotMembership?.(layer.id, next);
 
     const effectiveOpacity = useMemo(() => {
         const own = getLayerOpacity?.(layer.id) ?? 1;
@@ -245,9 +232,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                         {isLoading && !isLooping && (
                             <Loading visible={true} size="size-5" border="border-2" />
                         )}
-                        {showSlotBadgeInTitle && (
-                            <SlotBadge membership={slotMembership} onCycle={handleCycleSlot} layerId={layer.id} />
-                        )}
                     </div>
 
                     {isExpanded && (
@@ -268,7 +252,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 onPlay={handlePlayClick}
                                 onInterval={handleIntervalClick}
                                 onDirection={handleDirectionClick}
-                                onCycleSlot={handleCycleSlot}
                             />
                             <LayerActionsBar
                                 layerId={layer.id}
@@ -287,7 +270,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 hasLegend={layerHasLegend}
                                 slotMembership={slotMembership}
                                 activeSlot={compareMode?.activeSlot}
-                                onSwitchSlot={setActiveSlot}
                                 canDownload={canDownload} hasStats={Boolean(metadata?.numeralia?.some(s => s.nombre && s.valor))}
                                 isDownloading={download.downloading}
                                 onDownloadClick={handleDownloadClick}

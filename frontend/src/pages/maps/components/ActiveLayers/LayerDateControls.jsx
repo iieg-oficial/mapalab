@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import DatePill from './DatePill';
-import SlotBadge from './SlotBadge';
 import { computeLabel } from './datePillHelpers';
 import { DEFAULT_LOOP_INTERVAL_MS, DEFAULT_LOOP_DIRECTION } from '@hooksMaps/useDateLoop';
 import { RADIUS_ICON, toneButtonFor, toneTextClass } from '@pages/maps/helpers/periodicityTones';
@@ -87,8 +86,7 @@ const LayerDateControls = ({
     onPillClick,
     onPlay,
     onInterval,
-    onDirection,
-    onCycleSlot
+    onDirection
 }) => {
     const isSwipe = !!compareMode?.active;
 
@@ -133,8 +131,6 @@ const LayerDateControls = ({
                 <div className="flex items-center gap-1 w-full">
                     {showA && <DatePill slot="A" label={slotALabel.label} kind={slotALabel.kind} onClick={onPillClick} size="lg" />}
                     <div className="flex-1" />
-                    <SlotBadge membership="AB" onCycle={onCycleSlot} layerId={layerId} />
-                    <div className="flex-1" />
                     {showB && <DatePill slot="B" label={slotBLabel.label} kind={slotBLabel.kind} onClick={onPillClick} size="lg" />}
                 </div>
             );
@@ -155,7 +151,6 @@ const LayerDateControls = ({
                         slotPalette="A"
                     />
                     <div className="flex-1" />
-                    <SlotBadge membership="AB" onCycle={onCycleSlot} layerId={layerId} />
                     {showB && <DatePill slot="B" label={slotBLabel.label} kind={slotBLabel.kind} onClick={onPillClick} size="lg" />}
                 </div>
             );
@@ -163,7 +158,6 @@ const LayerDateControls = ({
         return (
             <div className="flex items-center gap-1 w-full">
                 {showA && <DatePill slot="A" label={slotALabel.label} kind={slotALabel.kind} onClick={onPillClick} size="lg" />}
-                <SlotBadge membership="AB" onCycle={onCycleSlot} layerId={layerId} />
                 <div className="flex-1" />
                 <LoopControls
                     isLooping={isLooping}
@@ -198,14 +192,12 @@ const LayerDateControls = ({
                     disabledHint={inactiveHint}
                 />
                 <div className="flex-1" />
-                <SlotBadge membership="A" onCycle={onCycleSlot} layerId={layerId} />
             </div>
         );
     }
 
     return (
         <div className="flex items-center gap-1 w-full">
-            <SlotBadge membership="B" onCycle={onCycleSlot} layerId={layerId} />
             <div className="flex-1" />
             <LoopControls
                 isLooping={!isActiveA && isLooping}

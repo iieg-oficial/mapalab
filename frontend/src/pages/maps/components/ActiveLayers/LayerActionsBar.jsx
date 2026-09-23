@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
-import Switch from '@components/Switch';
 import Loading from '@components/Loading';
 import LayerOpacityPopover from './LayerOpacityPopover';
 import ExtrudeButton from './ExtrudeButton';
@@ -9,7 +8,6 @@ import { useLegendsVisibility } from './hooks/useLegendsVisibility';
 import { useStatsVisibility } from './hooks/useStatsVisibility';
 import Badge from '@components/Badge';
 import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
-import { useMapsContext } from '@hooks/useMaps';
 
 const SIZE_BUTTON = 'size-5';
 const BUTTON_BASE = 'p-1.5 rounded-full transition-colors cursor-pointer border border-transparent bg-[#F9FBFF]';
@@ -30,7 +28,6 @@ const LayerActionsBar = ({
     hasLegend = false,
     slotMembership = null,
     activeSlot = null,
-    onSwitchSlot,
     canDownload = false,
     hasStats = false,
     isDownloading = false,
@@ -58,7 +55,6 @@ const LayerActionsBar = ({
         comparados > 1 && `${comparados} municipios en comparación`,
     ].filter(Boolean).join(' · ');
     const statsEnPanel = abierto && detachedLayerId === layerId;
-    const { highlightSlots } = useMapsContext();
 
     const opacityPercent = Math.round(opacity * 100);
     const opacityCustom = opacityPercent !== 100;
@@ -190,22 +186,6 @@ const LayerActionsBar = ({
             <ExtrudeButton layerId={layerId} baseClass={BUTTON_BASE} />
 
             <div className="flex-1" />
-
-            {slotMembership === 'AB' && (
-                <Switch
-                    checked={activeSlot === 'A'}
-                    onChange={(next) => {
-                        const target = next ? 'A' : 'B';
-                        onSwitchSlot?.(target);
-                        highlightSlots?.(target, { temporal: true });
-                    }}
-                    onLabel="A"
-                    offLabel="B"
-                    onColor="#5C2472"
-                    offColor="#FF8300"
-                    tooltip={`Editando lado ${activeSlot} — cambiar a ${activeSlot === 'A' ? 'B' : 'A'}`}
-                />
-            )}
 
             <Tooltip content="Eliminar capa">
                 <button
