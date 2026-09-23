@@ -5,6 +5,28 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.190.0] - 2026-09-23
+
+### Agregado: mediciones sobre el terreno en la vista 3D
+
+**Herramientas → Mediciones** ya no saca a 2D. En 3D el panel sale en el mismo lugar y con los mismos
+botones que el de 2D, y mide con clics sobre el relieve:
+
+- **Punto**: altura sobre el nivel del mar.
+- **Distancia**: en línea recta, como en 2D, y además **siguiendo el terreno**, con la subida y la
+  bajada acumuladas y las alturas máxima y mínima.
+- **Área**: vista desde arriba y **sobre el relieve**, más el perímetro.
+- **Perfil de elevación** de la línea: al recorrerlo, un punto se mueve sobre la ruta en el mapa.
+
+Las alturas se leen de los tiles de `raster:elevacion_terreno_rgb` a zoom 12 (unos 38 m por píxel)
+y no de `queryTerrainElevation`, que las da multiplicadas por la exageración y con la resolución del
+zoom en pantalla: así el resultado es el mismo desde cualquier ángulo. Las medidas planas salen de
+`ol/sphere` y se formatean con los helpers de 2D. Mientras se mide, el clic no abre el InfoBox.
+
+### Cambiado: la pastilla de ajustes del 3D va vertical, en paralelo con la de zoom
+
+Los deslizadores se abren a la derecha de cada anillo.
+
 ## [1.189.0] - 2026-09-23
 
 ### Cambiado: los lados del comparador se llaman α y β
