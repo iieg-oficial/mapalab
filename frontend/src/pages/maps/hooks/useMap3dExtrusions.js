@@ -1,22 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import { unByKey } from 'ol/Observable';
-import { countVectorFeatures, fetchVectorFeatures } from '@services/vectorLayerService';
+import { useEffect, useRef } from 'react';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
-import { isVectorService, VECTOR_FEATURE_LIMIT } from '@pages/maps/helpers/serviceMode';
+import { isVectorService } from '@pages/maps/helpers/serviceMode';
 import { cqlSegmentFor } from '@pages/maps/helpers/view3d';
 import { colorExpression, numericProperties, parseLegendRules, quantileClasses } from '@pages/maps/helpers/extrusionRules';
-import { toLonLatCollection } from '@pages/maps/helpers/olToGeojson';
+import { fetchLayerData, paramsFor } from '@pages/maps/helpers/map3dFeatures';
 import {
     extrusionLayer, managedIds, maxOf, removeGeojson, replaceLayers, upsertGeojson,
 } from '@pages/maps/helpers/map3dLayerSpecs';
+import { useOlWmsRevision } from './useOlWmsRevision';
 
 const PREFIX = 'ext-';
-
-const paramsFor = (olMap, layerId) => {
-    const layer = olMap.getLayers().getArray().find(candidate => (candidate.get('mergedLayers') || [])
-        .some(entry => entry.subLayers?.some(sub => sub.id === layerId)));
-    return layer ? layer.getSource().getParams() : null;
-};
 
 const resolveStyle = (collection, legendJson) => {
     const rules = parseLegendRules(legendJson);
@@ -29,38 +22,17 @@ const resolveStyle = (collection, legendJson) => {
     return { property, color: colorExpression(property, classes) };
 };
 
-export const loadExtrusion = async ({ wmsConfig, cqlFilter, signal, getLegendJson, layerId }) => {
-    const total = await countVectorFeatures(wmsConfig, cqlFilter, signal);
-    if (total !== null && total > VECTOR_FEATURE_LIMIT) return { status: 'too_large' };
-    const [json, legendJson] = await Promise.all([
-        fetchVectorFeatures(wmsConfig, cqlFilter, signal),
-        getLegendJson({ id: layerId }),
-    ]);
-    const collection = toLonLatCollection(json);
-    const style = resolveStyle(collection, legendJson);
+export const loadExtrusion = async (options) => {
+    const data = await fetchLayerData(options);
+    if (data.status !== 'ok') return data;
+    const style = resolveStyle(data.collection, data.legendJson);
     if (!style) return { status: 'no_value' };
-    return { status: 'ready', collection, style: { ...style, maxValue: maxOf(collection.features, style.property) } };
+    return { status: 'ready', collection: data.collection, style: { ...style, maxValue: maxOf(data.collection.features, style.property) } };
 };
 
 export const useMap3dExtrusions = (map, olMapRef, { extrudedIds, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas = 1 }) => {
     const cacheRef = useRef(new Map());
-    const [revision, setRevision] = useState(0);
-
-    useEffect(() => {
-        const olMap = olMapRef.current;
-        if (!map || !olMap) return undefined;
-        let keys = [];
-        const bump = () => setRevision(value => value + 1);
-        const watch = () => {
-            unByKey(keys);
-            keys = olMap.getLayers().getArray()
-                .filter(layer => layer.get('mergedLayers'))
-                .map(layer => layer.getSource().on('change', bump));
-        };
-        const collectionKeys = olMap.getLayers().on(['add', 'remove'], () => { watch(); bump(); });
-        watch();
-        return () => { unByKey(keys); unByKey(collectionKeys); };
-    }, [map, olMapRef]);
+    const revision = useOlWmsRevision(map, olMapRef);
 
     useEffect(() => {
         const olMap = olMapRef.current;

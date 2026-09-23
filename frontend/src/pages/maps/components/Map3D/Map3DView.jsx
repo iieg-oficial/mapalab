@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMapsContext } from '@hooks/useMaps';
 import { useView3d } from '@contexts/View3dContext';
@@ -13,6 +13,7 @@ import {
 } from '@pages/maps/helpers/view3d';
 import { useMap3dClick } from '@hooksMaps/useMap3dClick';
 import { useMap3dContorno } from '@hooksMaps/useMap3dContorno';
+import { useMap3dBillboards } from '@hooksMaps/useMap3dBillboards';
 
 const TERRAIN_SOURCE = 'terreno';
 const ORBITA_GRADOS_POR_SEGUNDO = 8;
@@ -46,6 +47,10 @@ const Map3DView = () => {
     } = useView3d();
     const { getLegendJson } = useWMSLegend();
     const [map, setMap] = useState(null);
+    const [dePie, setDePie] = useState(() => new Set());
+    const alListarDePie = useCallback((ids) => {
+        setDePie(previo => (previo.size === ids.size && [...ids].every(id => previo.has(id)) ? previo : ids));
+    }, []);
     const orbitaRef = useRef(false);
     orbitaRef.current = orbita;
     const initialRef = useRef({ pitch, bearing, exaggeration, basemap: basemaps[baseMapId] });
@@ -132,7 +137,8 @@ const Map3DView = () => {
     }, [map, basemaps, baseMapId]);
 
     useMap3dContorno(map);
-    useMap3dLayers(map, mapRef);
+    useMap3dLayers(map, mapRef, dePie);
+    useMap3dBillboards(map, mapRef, { allLayers, getServiceMode, getLegendJson, onReady: alListarDePie });
     useMap3dVectors(map, mapRef, extruded, alturaColumnas);
     useMap3dExtrusions(map, mapRef, {
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,

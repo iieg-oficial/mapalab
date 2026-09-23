@@ -71,6 +71,16 @@ describe('syncWmsLayers', () => {
         expect(map.sources.get('wms-9').tiles[0]).not.toContain('TILED');
     });
 
+    it('no drapea las capas que ya se dibujan de pie', () => {
+        const map = fakeMaplibre();
+        const conSubcapas = (uid, ids) => ({ ...fakeOlLayer({ uid, zIndex: 100 + uid, params: { LAYERS: `a:${uid}` } }), get: (key) => (key === 'mergedLayers' ? [{ subLayers: ids.map(id => ({ id })) }] : undefined) });
+        const salud = conSubcapas(1, ['unidades_salud']);
+        const mixta = conSubcapas(2, ['unidades_salud', 'municipios']);
+        syncWmsLayers(map, fakeOlMap([salud, mixta]), new Set(['unidades_salud']));
+        expect(map.order).not.toContain('wms-1');
+        expect(map.order).toContain('wms-2');
+    });
+
     it('actualiza el filtro sin recrear la fuente y quita las capas que salen', () => {
         const map = fakeMaplibre();
         const params = { LAYERS: 'a:uno', CQL_FILTER: "fecha='2024-01-01'" };
