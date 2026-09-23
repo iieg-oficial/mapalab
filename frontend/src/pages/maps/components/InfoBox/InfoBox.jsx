@@ -11,6 +11,7 @@ import InfoBoxArrow, { ARROW_TIP } from './components/InfoBoxArrow';
 import { useFeatureInfo } from '../../hooks/useFeatureInfo';
 import { renderCard } from './utils/renderCard.jsx';
 import { downloadFeaturesAsCSV } from './utils/downloadFeatures';
+import { pedirDescargaDeSeleccion } from '@pages/maps/helpers/descargaSeleccion';
 import { useInfoBoxLazyLoad } from '../../hooks/useInfoBoxLazyLoad';
 import { findLayerById } from '../../helpers/layers/utils/layerHelpers';
 import { centerOnResults } from '../../helpers/featureGeometry';
@@ -185,6 +186,8 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
         downloadFeaturesAsCSV(enriched, allLayers);
     };
 
+    const descargarMapaDeSeleccion = () => pedirDescargaDeSeleccion();
+
     const handleCenterGroup = () => {
         const activeMap = compareMode?.active ? paneMapInstances?.[0] : mapRef?.current;
         if (centerOnResults({ activeMap, results, clickPosition })) {
@@ -259,6 +262,13 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
             ),
             tooltip: <LicenseTooltipContent />,
             onClick: handleDownload
+        },
+        isPolygonSelection && {
+            id: 'descargar_mapa',
+            icon: 'poligono',
+            label: 'Descargar el mapa de esta selección',
+            tooltip: 'Descargar la imagen del mapa recortada a esta selección',
+            onClick: descargarMapaDeSeleccion
         }
     ];
 
@@ -393,6 +403,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                             moveHandleProps={embed ? null : moveHandleProps}
                             isMoving={isDragging}
                             onDownload={showMultiActions ? handleDownload : null}
+                            onDownloadMap={isPolygonSelection ? descargarMapaDeSeleccion : null}
                             onCenter={showCenterButton ? handleCenterGroup : null}
                             downloadCount={downloadDisplayCount}
                             downloadShowsPlus={downloadShowsPlus}

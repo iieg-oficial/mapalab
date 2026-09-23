@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.184.0] - 2026-09-23
+
+### Agregado: atajo para descargar el mapa desde la selección
+
+La tarjeta de una selección por polígono suma un botón debajo del de descarga de datos. Abre el panel
+de descarga con la vista **Selección** ya elegida, lista para bajar la imagen recortada a ese
+polígono. En móvil entra a la misma lista de acciones. Con el mapa en 3D no hace nada, porque ahí esa
+vista no aplica.
+
+El aviso entre la tarjeta y el panel va por `helpers/descargaSeleccion.js`, un emisor mínimo al que
+el panel se suscribe: no agrega estado al contexto del mapa.
+
 ## [1.183.0] - 2026-09-23
 
 ### Eliminado: los controles A/B salen del item de capa

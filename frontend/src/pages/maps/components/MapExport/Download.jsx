@@ -28,6 +28,7 @@ import PanelHoja from '@components/PanelHoja';
 import Segmented from '@components/Segmented';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { ultimaSeleccion } from './utils/seleccionDescarga';
+import { alPedirDescargaDeSeleccion } from '@pages/maps/helpers/descargaSeleccion';
 import { VISTA_ANALITICA, opcionesFormato, opcionesVista, textoBotonDescarga, tooltipBotonDescarga } from './utils/opcionesDescarga';
 
 const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = false }) => {
@@ -77,6 +78,13 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
         if (viewType === 'seleccion' && !haySeleccion) setViewType('viewport');
         if (en3d && viewType !== 'viewport') setViewType('viewport');
     }, [viewType, haySeleccion, en3d]);
+
+    useEffect(() => alPedirDescargaDeSeleccion(() => {
+        if (!haySeleccion || en3d) return;
+        setViewType('seleccion');
+        setIsPanelOpen(true);
+        onOpenChange?.(true);
+    }), [haySeleccion, en3d, onOpenChange]);
 
     useEffect(() => {
         if (isSwipe) {
