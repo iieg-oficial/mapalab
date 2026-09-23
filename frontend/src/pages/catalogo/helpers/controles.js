@@ -26,3 +26,5 @@ const CHIP = 'inline-flex items-center gap-1.5 h-8 px-4 rounded-[20px] font-gare
 export const chip = (activo) => `${CHIP} ${activo ? 'bg-[#FFE9CC] text-[#9E5200] ring ring-[#FF8300]' : 'bg-[#F8F8F8] text-[#465055] hover:bg-[#EFEFEF]'}`;
 
 export const ERROR = 'flex items-center gap-1.5 mt-1.5 font-garet text-[12px] text-[#B3261E]';
+
+export const CANCELAR = `${CHIP} bg-transparent text-[#B3261E] border border-[#FCDBDA] hover:bg-[#FCDBDA]`;

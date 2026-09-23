@@ -1,4 +1,4 @@
-import { BOTON_CONTORNO, BOTON_PRIMARIO, ERROR, ETIQUETA, INPUT, TEXTAREA } from '../helpers/controles';
+import { BOTON_PRIMARIO, ERROR, ETIQUETA, INPUT, TEXTAREA } from '../helpers/controles';
 import { IconoAlerta } from './tarjeta/iconos';
 
 const CatalogoInfoBoxPropuestaForm = ({
@@ -11,9 +11,8 @@ const CatalogoInfoBoxPropuestaForm = ({
     enviando,
     error,
     onEnviar,
-    onRegresar,
 }) => (
-    <div className="max-w-lg flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
         <div>
             <label className={ETIQUETA} htmlFor="propuesta-comentario">¿Por qué propones este cambio?</label>
             <textarea
@@ -53,11 +52,10 @@ const CatalogoInfoBoxPropuestaForm = ({
 
         {error && <p className={ERROR}><IconoAlerta className="size-3.5 shrink-0" />{error}</p>}
 
-        <div className="flex items-center gap-2 mt-2">
+        <div className="mt-2">
             <button type="button" onClick={onEnviar} disabled={enviando} className={BOTON_PRIMARIO}>
                 {enviando ? 'Enviando…' : 'Enviar propuesta'}
             </button>
-            <button type="button" onClick={onRegresar} className={BOTON_CONTORNO}>Regresar</button>
         </div>
     </div>
 );

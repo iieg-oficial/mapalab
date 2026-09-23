@@ -5,6 +5,29 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.192.0] - 2026-09-23
+
+### Cambiado: «¿Qué es esta vista?» va a la izquierda del buscador del catálogo
+
+El botón pasa al lado izquierdo del input y su modal se reescribe como una lista de una frase por
+función: buscar, consultar (clic o polígono), tiempo, descargar, compartir y medir y anotar. La tabla
+de datos y personalizar la tarjeta solo se listan fuera de producción, donde existen.
+
+### Cambiado: ajustes del editor de tarjetas
+
+- El nombre de la capa va junto al título del encabezado y se quita la descripción.
+- La X es `PillCloseButton`, que gana `reveal="siempre"` para quedar visible sin hover; antes el
+  valor vacío caía al modo oculto.
+- Las secciones del lienzo ya no dejan un espacio en blanco abajo: se anula el `mb-3` del último
+  hijo de cada bloque.
+- «Cancelar» de agregar bloque va en rojo, con el estilo de borrar de sieej (`CANCELAR`).
+- El paso de enviar la propuesta angosta el modal a sus campos y cambia «Regresar» por el «<» junto
+  al título, como en `PanelHeader`.
+
+### Cambiado: la tabla de datos del catálogo queda fuera de producción
+
+Como en el visor, donde la herramienta sigue en beta.
+
 ## [1.191.0] - 2026-09-23
 
 ### Agregado: elegir qué polígono descargar

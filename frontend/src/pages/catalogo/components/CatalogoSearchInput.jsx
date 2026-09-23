@@ -17,9 +17,9 @@ const CatalogoSearchInput = ({ visibility, inputRef, query, onQuery, onOpen, onK
             onFocus={onOpen}
             onKeyDown={onKeyDown}
             placeholder="Busca una capa para verla en el mapa"
-            className="w-full py-4 pl-4 pr-24 bg-transparent text-[13px] text-purple font-garet placeholder:text-[#191919] placeholder:opacity-70 focus:outline-none"
+            className="w-full py-4 pl-12 pr-15.5 bg-transparent text-[13px] text-purple font-garet placeholder:text-[#191919] placeholder:opacity-70 focus:outline-none"
         />
-        <div className="absolute right-12.75 top-0 h-full w-10 flex items-center justify-center">
+        <div className="absolute left-0 top-0 h-full w-12 flex items-center justify-center">
             <CatalogoInfoButton />
         </div>
         <button

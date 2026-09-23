@@ -15,6 +15,7 @@ const REVELADOS = {
         'md:group-hover:max-w-8 md:group-hover:opacity-100 md:group-hover:delay-0',
         'md:group-focus-within:max-w-8 md:group-focus-within:opacity-100 md:group-focus-within:delay-0',
     ].join(' '),
+    siempre: '',
 };
 
 const TAMANOS = {
@@ -33,7 +34,7 @@ const PillCloseButton = ({
 }) => {
     const [encima, setEncima] = useState(false);
     const medidas = TAMANOS[size] || TAMANOS.md;
-    const revelado = REVELADOS[reveal] || REVELADOS.overlay;
+    const revelado = reveal in REVELADOS ? REVELADOS[reveal] : REVELADOS.overlay;
 
     const boton = (
         <button

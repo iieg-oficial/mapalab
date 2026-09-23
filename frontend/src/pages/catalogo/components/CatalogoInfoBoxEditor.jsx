@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import Modal from '@components/Modal';
 import Tooltip from '@components/Tooltip';
+import Icon from '@components/Icon';
+import ActionIconButton from '@components/ActionIconButton';
+import PillCloseButton from '@components/PillCloseButton';
 import { buildCardPlan } from '@utils/infoboxPlan';
 import { hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
 import { fetchNonGeometryColumns } from '@services/downloadUrls';
@@ -10,7 +13,7 @@ import CatalogoInfoBoxPropuestaForm from './CatalogoInfoBoxPropuestaForm';
 import Lienzo from './tarjeta/Lienzo';
 import PanelTitulo from './tarjeta/PanelTitulo';
 import PanelBloque from './tarjeta/PanelBloque';
-import { IconoAbajo, IconoCerrar, IconoDeshacer, IconoRehacer } from './tarjeta/iconos';
+import { IconoAbajo, IconoDeshacer, IconoRehacer } from './tarjeta/iconos';
 import { useHistorial } from '../hooks/useHistorial';
 import { BOTON_CONTORNO, BOTON_ICONO, BOTON_PRIMARIO, ERROR } from '../helpers/controles';
 import { fusionarConfig, ordenFusionado } from '../helpers/tarjetaFusion';
@@ -110,10 +113,18 @@ const CatalogoInfoBoxEditor = ({ capa, featureMuestra = null, onClose }) => {
     const bloque = modelo.bloques[indiceBloque] || null;
 
     return (
-        <Modal isOpen onClose={onClose} showHeader={false} width="max-w-5xl">
+        <Modal isOpen onClose={onClose} showHeader={false} width={paso === 'editor' ? 'max-w-5xl' : 'max-w-lg'}>
             <div className="px-6 pt-5 pb-6 font-garet">
-                <div className="flex items-center gap-1 mb-1">
-                    <h3 className="flex-1 text-[20px] font-bold text-[#5C2472]">Personalizar la tarjeta</h3>
+                <div className="flex items-center gap-2 mb-5">
+                    {paso === 'formulario' && (
+                        <ActionIconButton onClick={() => setPaso('editor')} titulo="Volver a la tarjeta" etiqueta="Volver a la tarjeta">
+                            <Icon name="chevron" className="size-3.5 rotate-90" />
+                        </ActionIconButton>
+                    )}
+                    <div className="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                        <h3 className="text-[20px] font-bold text-[#5C2472]">Personalizar la tarjeta</h3>
+                        <span className="text-[13px] font-bold text-[#FF8300] truncate">{capa.nombre}</span>
+                    </div>
                     {paso === 'editor' && (
                         <>
                             <Tooltip content="Deshacer" placement="bottom" delay={200}>
@@ -124,12 +135,8 @@ const CatalogoInfoBoxEditor = ({ capa, featureMuestra = null, onClose }) => {
                             </Tooltip>
                         </>
                     )}
-                    <button type="button" onClick={onClose} aria-label="Cerrar" className={BOTON_ICONO}><IconoCerrar className="size-5" /></button>
+                    <PillCloseButton onClick={onClose} ariaLabel="Cerrar" size="sm" reveal="siempre" />
                 </div>
-                <p className="text-[13px] text-[#6E7477] mb-5">
-                    <span className="font-bold text-[#FF8300]">{capa.nombre}</span>
-                    {' · '}Toca una parte de la tarjeta para cambiarla. Tu propuesta pasa a revisión del IIEG antes de publicarse.
-                </p>
 
                 {paso === 'enviado' ? (
                     <div className="py-8 text-center">
@@ -148,7 +155,6 @@ const CatalogoInfoBoxEditor = ({ capa, featureMuestra = null, onClose }) => {
                         enviando={enviando}
                         error={error}
                         onEnviar={handleEnviar}
-                        onRegresar={() => setPaso('editor')}
                     />
                 ) : (
                     <>

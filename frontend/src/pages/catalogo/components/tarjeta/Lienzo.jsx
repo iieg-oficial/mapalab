@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Header from '@pages/maps/components/InfoBox/components/Header';
 import { PINTORES } from '@pages/maps/components/InfoBox/utils/cardBlocks.jsx';
-import { chip } from '../../helpers/controles';
+import { CANCELAR, chip } from '../../helpers/controles';
 import { esEditable } from '../../helpers/tarjetaFusion';
 import { NOMBRE_BLOQUE } from './constantes';
 import { IconoMas } from './iconos';
@@ -19,7 +19,7 @@ const Seccion = ({ activa, conProblema, etiqueta, onSeleccionar, children }) => 
                 onSeleccionar();
             }
         }}
-        className={`relative rounded-lg outline-2 outline-offset-2 cursor-pointer transition-colors ${activa
+        className={`relative rounded-lg outline-2 outline-offset-2 cursor-pointer transition-colors [&>*:last-child]:mb-0 ${activa
             ? 'outline-[#FF8300]'
             : conProblema
                 ? 'outline-[#EA4336]'
@@ -51,7 +51,7 @@ const Lienzo = ({ plan, orden, modelo, seleccion, problemas, onSeleccionar, onAg
                     <Header value={plan?.title || <span className="text-[#A8A2B0]">Sin título</span>} />
                 </Seccion>
 
-                <div className="flex flex-col gap-2 px-2.5 pt-2 pb-1">
+                <div className="flex flex-col gap-3 px-2.5 pt-3 pb-1.5">
                     {orden.map((key) => {
                         const pintado = bloquesPlan.get(key);
                         const cuerpo = pintado ? PINTORES[pintado.type]?.({ block: pintado, variant: 'desktop', onAction: null }) : null;
@@ -86,7 +86,7 @@ const Lienzo = ({ plan, orden, modelo, seleccion, problemas, onSeleccionar, onAg
                             {NOMBRE_BLOQUE[tipo]}
                         </button>
                     ))}
-                    <button type="button" onClick={() => setMenuAbierto(false)} className={chip(false)}>Cancelar</button>
+                    <button type="button" onClick={() => setMenuAbierto(false)} className={CANCELAR}>Cancelar</button>
                 </div>
             ) : (
                 <button type="button" onClick={() => setMenuAbierto(true)} className={chip(false)}>
