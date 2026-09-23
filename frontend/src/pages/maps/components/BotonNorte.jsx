@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import Tooltip from '@components/Tooltip';
 import { useView3d } from '@contexts/View3dContext';
+import { useMapsContext } from '@hooks/useMaps';
+import { useRotacionClicDerecho } from '@hooksMaps/useRotacionClicDerecho';
 import icoNorte from '@icons/ico_n.svg';
 
 const BotonNorte = ({ getActiveMap }) => {
     const view3d = useView3d();
     const [rotacion, setRotacion] = useState(0);
+    const { areMeasurementToolsVisible, areAnnotationToolsVisible, isDrawing } = useMapsContext();
     const map = getActiveMap();
+    useRotacionClicDerecho(map, !view3d.active && !areMeasurementToolsVisible && !areAnnotationToolsVisible && !isDrawing);
 
     useEffect(() => {
         const view = map?.getView();
@@ -27,7 +31,7 @@ const BotonNorte = ({ getActiveMap }) => {
     };
 
     return (
-        <Tooltip content="Orientar al norte">
+        <Tooltip content="Orientar al norte · clic derecho y arrastrar para girar">
             <button type="button" onClick={orientar} className="w-10 flex justify-center p-1 cursor-pointer" aria-label="Orientar al norte">
                 <img src={icoNorte} alt="" className="h-12 w-auto transition-transform duration-200" style={{ transform: `rotate(${grados}deg)` }} />
             </button>
