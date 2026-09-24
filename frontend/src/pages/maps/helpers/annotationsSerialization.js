@@ -5,7 +5,7 @@ const ANNOTATION_GEOJSON = new GeoJSON({
     dataProjection: 'EPSG:4326',
 });
 
-const ANNOTATION_TYPES = new Set(['LineString', 'Polygon', 'Freehand', 'Text', 'Emoji']);
+const ANNOTATION_TYPES = new Set(['LineString', 'Polygon', 'Select', 'Freehand', 'Text', 'Emoji']);
 
 export const serializeAnnotations = (measurements) => {
     if (!Array.isArray(measurements) || measurements.length === 0) return null;

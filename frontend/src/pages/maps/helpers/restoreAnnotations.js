@@ -1,6 +1,6 @@
 import GeoJSON from 'ol/format/GeoJSON';
 import { getLength } from 'ol/sphere';
-import { createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCacheStyle } from './drawingStyles';
+import { createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCacheStyle, computeStylesForFeature } from './drawingStyles';
 import { DEFAULT_TEXT_FILL, DEFAULT_TEXT_BG, DRAW_COLORS } from './drawingConstants';
 import { genId } from './genId';
 import { formatLength, formatArea, formatLengthValue } from './formatMeasure';
@@ -53,6 +53,16 @@ export const buildRestoredItems = ({ annotations, source, measurementConfig }) =
             feature.set('selectionCenter', center);
             extra = { geometry: geom, center };
             computeAndCacheStyle(feature, value, measurementConfig);
+        } else if (type === 'Select') {
+            const center = centerOf(geom);
+            feature.set('selectionGeometry', geom);
+            feature.set('selectionCenter', center);
+            extra = { geometry: geom, center };
+            if (!label) label = 'Selección';
+            feature.set('cachedStyle', computeStylesForFeature('Select', null, geom, {
+                showMeasurementLabels: false,
+                showFinalAngles: false,
+            }), true);
         } else if (type === 'Text') {
             const textLabel = item.textLabel || '';
             const fillColor = item.fillColor || DEFAULT_TEXT_FILL;
