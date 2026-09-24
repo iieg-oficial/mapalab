@@ -61,6 +61,8 @@ export const pedirConRitmo = async (hacerPeticion) => {
     }
 };
 
+export const urlWfsGet = (baseUrl, parametros) => `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}${parametros.toString()}`;
+
 const contarCapa = async ({ baseUrl, typeName, columna, filtroCapa, wkt, relacion }) => {
     const espacial = filtroDePoligono(columna, wkt, relacion);
     const cuerpo = new URLSearchParams({
@@ -73,10 +75,7 @@ const contarCapa = async ({ baseUrl, typeName, columna, filtroCapa, wkt, relacio
         CQL_FILTER: filtroCapa ? `(${filtroCapa}) AND ${espacial}` : espacial,
     });
 
-    const respuesta = await pedirConRitmo(() => fetch(baseUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: cuerpo.toString(),
+    const respuesta = await pedirConRitmo(() => fetch(urlWfsGet(baseUrl, cuerpo), {
         signal: AbortSignal.timeout(TIEMPO_LIMITE_MS),
     }));
     if (!respuesta.ok) return null;
@@ -267,10 +266,7 @@ export const sumarProporcional = async ({ capa, campo, poligono, getFilter = nul
             CQL_FILTER: filtroCapa ? `(${filtroCapa}) AND ${espacial}` : espacial,
         });
 
-        const respuesta = await fetch(baseUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: cuerpo.toString(),
+        const respuesta = await fetch(urlWfsGet(baseUrl, cuerpo), {
             signal: AbortSignal.timeout(TIEMPO_LIMITE_MS * 3),
         });
         if (!respuesta.ok) return null;

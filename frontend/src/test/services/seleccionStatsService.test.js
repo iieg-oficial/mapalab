@@ -74,17 +74,18 @@ describe('contarEnPoligono', () => {
         );
         expect(filas).toEqual([{ id: 'escuelas', etiqueta: 'Escuelas', conteo: 97 }]);
         const [url, opciones] = global.fetch.mock.calls[0];
-        expect(url).toBe('https://mapas.test/sextante/wfs');
-        expect(opciones.body).toContain('RESULTTYPE=hits');
-        const cql = decodeURIComponent(opciones.body.replace(/\+/g, ' '));
+        expect(url.startsWith('https://mapas.test/sextante/wfs?')).toBe(true);
+        expect(opciones.method).toBeUndefined();
+        expect(url).toContain('RESULTTYPE=hits');
+        const cql = decodeURIComponent(url.replace(/\+/g, ' '));
         expect(cql).toContain("(nivel='primaria') AND WITHIN(geom, SRID=3857;POLYGON");
         expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
     it('en polígonos cuenta solo lo que queda dentro y aparte lo que cruza el borde', async () => {
         geometria.tipo = 'polygon';
-        global.fetch.mockImplementation(async (_url, { body }) => {
-            const dentro = body.includes('WITHIN');
+        global.fetch.mockImplementation(async (url) => {
+            const dentro = url.includes('WITHIN');
             return { ok: true, text: async () => `<wfs:FeatureCollection numberMatched="${dentro ? 2 : 5}"/>` };
         });
         const filas = await contarEnPoligono([{ id: 'municipios', label: 'Municipios' }], cuadro, {});
