@@ -5,6 +5,29 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.211.1] - 2026-09-24
+
+### Corregido: los conteos y las sumas de la selección nunca pasaban el gateway
+
+Las rutas `/sextante/{ws}/wfs` y `/sextante/ows` del gateway rechazan todo POST con 403
+(`limit_except GET HEAD OPTIONS`), para que nadie mande transacciones WFS-T en el cuerpo. Los conteos
+`resultType=hits`, la suma proporcional y la agregación por `gs:Aggregate` iban por POST, así que
+nunca funcionaron detrás del gateway. El 403 se escondía detrás de los 429: nginx evalúa la tasa
+antes que el acceso. Es el «—» que salía en el bloque «Selección» de la imagen descargada.
+
+- Los conteos y la suma proporcional van por GET, como la consulta de elementos, con el mismo
+  polígono simplificado a 120 vértices (unos 3 KB de URL).
+- La suma, el promedio y el conteo por clase dejan el WPS: se piden por GET al WFS solo el campo, sin
+  geometría, y se calculan en el navegador. Con más de 10 000 elementos no se da una cifra parcial.
+- El MCP no cambia: su `layer_stats` llama al WPS desde el backend, sin pasar por el gateway.
+
+### Corregido: volvió la descarga de datos de la selección
+
+Con el resumen primero de 1.211.0 el botón de descargar CSV solo aparecía después de «Ver detalles».
+Vuelve desde el resumen, en escritorio y en móvil, y ahora descarga la selección completa hasta
+5000 elementos, pedida al momento, en vez de solo los que se hubieran cargado al desplazarse
+(`useDescargaDeInfoBox`).
+
 ## [1.211.0] - 2026-09-24
 
 ### Cambiado: la selección por polígono muestra conteos y pide los elementos al ver detalles
