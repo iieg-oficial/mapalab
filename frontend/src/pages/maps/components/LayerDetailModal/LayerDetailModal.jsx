@@ -10,6 +10,7 @@ import { useEventoContext } from '@hooks/useEvento';
 import { findLayerDef, findLayerTheme, findWMSConfig } from '../../helpers/wmsConfig';
 import { fetchGeometryType } from '../../../../utils/featureInfoUtils';
 import { formatDateString } from '../../helpers/dateFilterHelpers';
+import { slotLabel } from '../../helpers/swipeTheme';
 import { useSlotPeriodicity } from '../../hooks/useSlotPeriodicity';
 import PeriodicitySection from './components/PeriodicitySection';
 import OpacityControl from './components/OpacityControl';
@@ -172,7 +173,7 @@ const LayerDetailModal = () => {
                                         key={slot || 'live'}
                                         layerId={selectedLayer.id}
                                         slot={slot || undefined}
-                                        label={slot ? `Lado ${slot}` : null}
+                                        label={slot ? `Lado ${slotLabel(slot)}` : null}
                                         periodicity={periodicity}
                                         rasterPeriodicity={rasterPeriodicity}
                                         periodicityLoading={periodicityLoading}

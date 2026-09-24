@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.199.0] - 2026-09-24
+
+### Corregido: al modal de capa se le habían escapado los lados α y β
+
+`<LayerDetailModal>` rotulaba sus dos secciones de periodicidad como «Lado A» y «Lado B» con letra
+latina, mientras el resto del comparador ya usaba α y β. Se vio al abrir el modal de una capa con
+fechas dentro del comparador: decía «Periodicidad Lado A» junto a un mapa partido por α y β.
+
 ## [1.198.0] - 2026-09-24
 
 ### Cambiado: seleccionar una capa ya no encuadra el mapa
