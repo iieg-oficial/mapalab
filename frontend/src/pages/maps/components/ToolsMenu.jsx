@@ -53,7 +53,7 @@ const allTools = [
 
 const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementToolsVisible, areAnnotationToolsVisible, toggleAnnotationTools }) => {
     const {
-        compareMode, exitCompareMode, enterCompareMode,
+        compareMode, exitCompareMode, enterCompareMode, stopDrawing,
         selectedLayer, selectedLayerForSymbology, activeLayerIds, allLayers,
     } = useMapsContext();
     const { activo: tablaActiva, abrir: abrirTabla, cerrarTodas: cerrarTablas } = useTablaAtributos();
@@ -87,13 +87,16 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     const { exit: exit3d } = useView3d();
 
     const startSwipe = () => {
+        stopDrawing?.();
         enterCompareMode();
         closeSider?.();
     };
 
     const handleClick = (id) => {
         if (id === 'anotaciones' || (id === 'compare-swipe' && isMobile)) exit3d();
+        if (id === 'anotaciones' && compareMode?.active) exitCompareMode();
         if (id === 'mediciones') {
+            if (compareMode?.active) exitCompareMode();
             toggleMeasurementTools?.();
         } else if (id === 'anotaciones') {
             toggleAnnotationTools?.();

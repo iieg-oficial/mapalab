@@ -16,7 +16,7 @@ const TYPE_ICONS = {
     Point: 'punto'
 };
 
-const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClose, onShowSelection, onClearAll = null }) => {
+const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClose, onShowSelection, onShowMeasurement = null, onClearAll = null }) => {
     const { className: positionClass } = useSiderAdaptivePosition({ anchorRef: 'listMeasurements' });
     const [confirmarBorrado, setConfirmarBorrado] = useState(false);
 
@@ -74,7 +74,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
             </div>
             
             <div className="px-1.5 py-3 rounded-[7px] bg-white space-y-3 w-full">
-                {measurements.map((measurement, index) => (
+                {measurements.map((measurement) => (
                     <div
                         key={measurement.id}
                         className="flex items-center gap-2 transition group"
@@ -88,11 +88,25 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0">
+                                {measurement.type === 'LineString' && onShowMeasurement && (
+                                    <Tooltip content="Ver la distancia" placement="top" delay={500}>
+                                        <button
+                                            type="button"
+                                            onClick={() => onShowMeasurement(measurement.id)}
+                                            className={`
+                                                flex items-center justify-center size-6 border border-transparent rounded-full hover:border-purple-deep hover:bg-[#F9FBFF]
+                                            `}
+                                            aria-label={`Ver la distancia de ${measurement.label} `}
+                                        >
+                                            <Icon name="info" state="normal" className="size-4" />
+                                        </button>
+                                    </Tooltip>
+                                )}
                                 {measurement.type === 'Polygon' && (
                                     <Tooltip content="Ver tarjetas seleccionadas" placement="top" delay={500}>
                                         <button
                                             type="button"
-                                            onClick={() => onShowSelection?.(index)}
+                                            onClick={() => onShowSelection?.(measurement.id)}
                                             className={`
                                                 flex items-center justify-center size-6 border border-transparent rounded-full hover:border-purple-deep hover:bg-[#F9FBFF]
                                             `}
@@ -105,7 +119,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                                 <Tooltip content={measurement.visible === false ? 'Mostrar' : 'Ocultar'} placement="top" delay={500}>
                                     <button
                                         type="button"
-                                        onClick={() => onToggleVisibility?.(index)}
+                                        onClick={() => onToggleVisibility?.(measurement.id)}
                                         className={`
                                             flex items-center justify-center size-6 border border-transparent rounded-full hover:border-purple-deep hover:bg-[#F9FBFF]
                                         `}
@@ -117,7 +131,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                                 <Tooltip content="Eliminar" placement="top" delay={500}>
                                     <button
                                         type="button"
-                                        onClick={() => onDelete?.(index)}
+                                        onClick={() => onDelete?.(measurement.id)}
                                         className={`
                                             flex items-center justify-center size-6 border border-transparent rounded-full hover:border-[#FF577D] hover:bg-[#F9FBFF]
                                         `}

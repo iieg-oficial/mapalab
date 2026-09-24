@@ -25,7 +25,7 @@ export const useMapDownload = () => {
     const { prepareScaleControl, getMapSnapshot } = useMapCapture();
     const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
-    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode, getFilter } = useContext(MapsContext);
+    const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode, getFilter, measurementConfig } = useContext(MapsContext);
     const { getAliasByLayerId } = useEventoContext();
     const [isDownloading, setIsDownloading] = useState(false);
 
@@ -158,7 +158,12 @@ export const useMapDownload = () => {
                             allLayers,
                         }),
                     })));
-                seleccionFilas = filasSeleccion({ ...medidasDeSeleccion(poligono), capas: conteos, agregados });
+                seleccionFilas = filasSeleccion({
+                    ...medidasDeSeleccion(poligono),
+                    capas: conteos,
+                    agregados,
+                    unidades: measurementConfig,
+                });
             }
 
             const sourcesMap = await getLayersSources(activeLayerIds).catch(() => ({}));

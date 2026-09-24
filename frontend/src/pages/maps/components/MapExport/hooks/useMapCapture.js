@@ -10,10 +10,11 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import Feature from 'ol/Feature';
 import { Fill, Style } from 'ol/style';
+import { sinEtiquetasDeMedicion } from '@pages/maps/helpers/drawingStyles';
 
 export const useMapCapture = () => {
     const { targetRef, mapRef, compareMode, paneMapRefs } = useMapsContext();
-    const { active: en3d, map3dRef } = useView3d();
+    const { active: en3d, grupo3dRef } = useView3d();
     const { adjustViewToFullState, getActiveMapRef } = useMapView();
 
     const isSwipe = !!compareMode?.active;
@@ -48,9 +49,9 @@ export const useMapCapture = () => {
     };
 
     const waitFor3d = () => {
-        const map3d = en3d ? map3dRef.current : null;
-        if (!map3d || map3d.loaded()) return Promise.resolve();
-        return new Promise(resolve => map3d.once('idle', resolve));
+        if (!en3d) return Promise.resolve();
+        const pendientes = [...(grupo3dRef.current?.miembros || [])].filter(mapa => !mapa.loaded());
+        return Promise.all(pendientes.map(mapa => new Promise(resolve => mapa.once('idle', resolve))));
     };
 
     const waitForTilesToLoad = () => {
@@ -128,6 +129,18 @@ export const useMapCapture = () => {
         return result;
     };
 
+    const ocultarEtiquetasDeMedicion = (capas) => {
+        const conEstiloPropio = capas
+            .map(capa => ({ capa, original: capa.getStyle?.() }))
+            .filter(({ original }) => typeof original === 'function');
+
+        conEstiloPropio.forEach(({ capa, original }) => {
+            capa.setStyle((feature, resolucion) => sinEtiquetasDeMedicion(original(feature, resolucion)));
+        });
+
+        return () => conEstiloPropio.forEach(({ capa, original }) => capa.setStyle(original));
+    };
+
     const getMapSnapshot = async ({ extent, viewType = 'viewport', mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT, captureScale = 1, swipeOptions = null, mascara = null, onExtent = null }) => {
         const target = isSwipe ? getSwipeComposite() : targetRef.current;
         const anchorRef = getActiveMapRef();
@@ -139,6 +152,7 @@ export const useMapCapture = () => {
         let originalState = null;
         let layerResolutions = [];
         let capaMascara = null;
+        let restaurarEtiquetas = null;
         const targetsToResize = isSwipe
             ? [target, getPaneTarget(0), getPaneTarget(1)].filter(Boolean)
             : [target];
@@ -152,6 +166,7 @@ export const useMapCapture = () => {
             const allLayersFlat = allManagedRefs.flatMap(m => getAllLayers(m.getLayers()));
             layerResolutions = allLayersFlat.map(layer => ({ layer, minResolution: layer.getMinResolution() }));
             allLayersFlat.forEach(layer => layer.setMinResolution(0));
+            restaurarEtiquetas = ocultarEtiquetasDeMedicion(allLayersFlat);
 
             targetsToResize.forEach(el => {
                 el.style.width = `${mapWidth}px`;
@@ -199,6 +214,7 @@ export const useMapCapture = () => {
             throw error;
         } finally {
             if (capaMascara) anchorRef.current.removeLayer(capaMascara);
+            restaurarEtiquetas?.();
             layerResolutions.forEach(({ layer, minResolution }) => layer.setMinResolution(minResolution));
 
             if (originalState) {

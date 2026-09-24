@@ -46,6 +46,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     const isSketchingRef = useRef(false);
     const sketchFeatureRef = useRef(null);
     const geometryChangeListenerRef = useRef(null);
+    const seleccionPendienteRef = useRef(null);
     const lastSelectGeometryRef = useRef(null);
     const lastSelectCenterRef = useRef(null);
 
@@ -135,7 +136,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
 
     const startDrawing = useCallback((type) => {
         if (!mapRef.current) return;
-        if (!vectorSourceRef.current && !ensureVectorLayer()) return;
+        if (!ensureVectorLayer()) return;
 
         if (type === 'Emoji' && !emojiTemplateRef.current) {
             console.warn('Debes seleccionar un emoji antes de colocarlo en el mapa');
@@ -262,6 +263,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 });
                 feature.set('cachedStyle', selectStyle, true);
 
+                seleccionPendienteRef.current = measurementData.id;
                 setMeasurements(prev => [...prev, measurementData]);
 
                 if (onPolygonComplete && mapRef.current) {
@@ -311,6 +313,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 measurementData.geometry = geometry;
                 measurementData.center = center;
 
+                seleccionPendienteRef.current = measurementData.id;
                 if (onPolygonComplete && mapRef.current) {
                     onPolygonComplete(geometry, center, updateSelectionCount);
                 }
@@ -461,27 +464,31 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         textEditing.clearTextEditing();
     }, [textEditing]);
 
-    const deleteMeasurement = useCallback((index) => {
+    const deleteMeasurement = useCallback((id) => {
         setMeasurements(prev => {
+            const index = prev.findIndex(m => m.id === id);
+            if (index < 0) return prev;
             const newMeasurements = [...prev];
             const removed = newMeasurements.splice(index, 1)[0];
             if (removed?.feature && vectorSourceRef.current) {
                 vectorSourceRef.current.removeFeature(removed.feature);
             }
+            if (seleccionPendienteRef.current === id) seleccionPendienteRef.current = null;
             return newMeasurements;
         });
     }, []);
 
-    const toggleMeasurementVisibility = useCallback((index) => {
+    const toggleMeasurementVisibility = useCallback((id) => {
         setMeasurements(prev => {
+            const index = prev.findIndex(m => m.id === id);
+            if (index < 0) return prev;
+            const measurement = prev[index];
+            if (!measurement.feature) return prev;
+            const newVisibility = measurement.visible === false;
+            measurement.feature.set('visible', newVisibility, true);
+            measurement.feature.changed();
             const newMeasurements = [...prev];
-            const measurement = newMeasurements[index];
-            if (measurement?.feature) {
-                const newVisibility = measurement.visible === false ? true : false;
-                measurement.feature.set('visible', newVisibility, true);
-                measurement.feature.changed();
-                newMeasurements[index] = { ...measurement, visible: newVisibility };
-            }
+            newMeasurements[index] = { ...measurement, visible: newVisibility };
             return newMeasurements;
         });
     }, []);
@@ -552,8 +559,8 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         }
     }, [onPolygonComplete, mapRef]);
 
-    const showSelectionByIndex = useCallback((index) => {
-        const measurement = measurements[index];
+    const showSelection = useCallback((id) => {
+        const measurement = measurements.find(m => m.id === id);
         if (measurement && (measurement.type === 'Select' || measurement.type === 'Polygon') && measurement.geometry && measurement.center) {
             if (measurement.cachedResults && onShowCachedSelection) {
                 onShowCachedSelection(measurement.cachedResults, measurement.center);
@@ -564,8 +571,11 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     }, [measurements, onPolygonComplete, onShowCachedSelection, mapRef]);
 
     const updateSelectionCount = useCallback((featureCount, layerBreakdown = [], results = null) => {
+        const objetivo = seleccionPendienteRef.current;
         setMeasurements(prev => {
-            const lastIndex = prev.length - 1;
+            const lastIndex = objetivo
+                ? prev.findIndex(m => m.id === objetivo)
+                : prev.length - 1;
             if (lastIndex >= 0) {
                 const lastMeasurement = prev[lastIndex];
                 if (lastMeasurement.type === 'Select' || lastMeasurement.type === 'Polygon') {
@@ -623,6 +633,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
     return {
         vectorSourceRef,
         vectorLayerRef,
+        ensureVectorLayer,
         measureType,
         measurements,
         setMeasurements,
@@ -662,7 +673,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         setMeasurementConfig,
         finishCurrentSketch,
         restoreLastSelection,
-        showSelectionByIndex,
+        showSelection,
         updateSelectionCount,
         editingText: textEditing.editingText,
         startTextEdit: textEditing.startTextEdit,

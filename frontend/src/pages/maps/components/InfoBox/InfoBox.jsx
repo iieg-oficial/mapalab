@@ -81,7 +81,10 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
         loadMorePolygonFeatures,
     });
 
-    const baseTransform = lazyLoad.totalFeatures === 1 ? 'translate(-50%, -100%)' : '';
+    const centrado = !!selectedFeatureInfo?.centrado;
+    const baseTransform = centrado
+        ? 'translate(-50%, -50%)'
+        : (lazyLoad.totalFeatures === 1 ? 'translate(-50%, -100%)' : '');
     const { isDragging, handleProps: moveHandleProps, reset: resetDrag } = useDraggablePanel({ panelRef, baseTransform });
 
     useOutsideClick([panelRef], isMobile ? undefined : handleClose);
@@ -128,9 +131,11 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
     const showEmptySuggestions = hasNoResults && !isPolygonSelection && !soloMedicion && (queriedLayerName || hasAlternatives);
     const showNoLayerSelected = hasNoResults && !isPolygonSelection && !soloMedicion && !queriedLayerName && !hasAlternatives;
 
-    const positionStyle = clickPosition.getPositionStyle(
-        isSingleFeature ? { x: 0, y: -ARROW_TIP } : { x: ARROW_TIP, y: -24 }
-    );
+    const positionStyle = centrado
+        ? { position: 'fixed', left: `${window.innerWidth / 2}px`, top: `${window.innerHeight / 2}px` }
+        : clickPosition.getPositionStyle(
+            isSingleFeature ? { x: 0, y: -ARROW_TIP } : { x: ARROW_TIP, y: -24 }
+        );
 
     const handleRemoveFeature = (layerId, featureIndex) => {
         if (!results) return;

@@ -5,9 +5,15 @@ import { Vector as VectorLayer } from 'ol/layer';
 
 export const useVectorLayerSetup = (mapRef, getStyleForType, vectorSourceRef, vectorLayerRef) => {
     const ensureVectorLayer = useCallback(() => {
-        if (vectorSourceRef.current && vectorLayerRef.current) return true;
         const mapInstance = mapRef.current;
         if (!mapInstance) return false;
+
+        if (vectorSourceRef.current && vectorLayerRef.current) {
+            if (!mapInstance.getLayers().getArray().includes(vectorLayerRef.current)) {
+                mapInstance.addLayer(vectorLayerRef.current);
+            }
+            return true;
+        }
 
         const source = new VectorSource();
         const vector = new VectorLayer({

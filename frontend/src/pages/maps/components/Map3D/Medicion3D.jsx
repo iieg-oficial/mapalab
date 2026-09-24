@@ -8,7 +8,7 @@ import CloseButton from '@components/CloseButton';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useMapsContext } from '@hooks/useMaps';
 import { useMedicion3d } from '@hooksMaps/useMedicion3d';
-import { abrirInfoBoxDeLinea } from '@hooksMaps/useInfoBoxDeMedicion';
+import { abrirInfoBoxDeLinea, abrirInfoBoxDeMedicion } from '@hooksMaps/useInfoBoxDeMedicion';
 import ToolSelector from '../MeasurementTools/ToolSelector';
 import HistoryButton from '../MeasurementTools/HistoryButton';
 import HistoryPanel from '../MeasurementTools/HistoryPanel';
@@ -91,6 +91,11 @@ const Medicion3D = ({ map, onMidiendo }) => {
                 onDelete={deleteMeasurement}
                 onToggleVisibility={toggleMeasurementVisibility}
                 onClose={() => setListaAbierta(false)}
+                onShowMeasurement={(id) => abrirInfoBoxDeMedicion({
+                    medicion: measurements.find(m => m.id === id),
+                    setSelectedFeatureInfo,
+                    clickPosition,
+                })}
                 onClearAll={clearDrawings}
             />
         </div>

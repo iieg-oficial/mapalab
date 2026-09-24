@@ -100,6 +100,11 @@ const MapView = ({ paneIndex = null, className = 'absolute inset-0 w-full h-full
     useReliefOverlay(reliefOverlayRef, ctx.baseMapId, isInegiMode);
 
     useEffect(() => {
+        if (isCompare || !localMapInstance) return;
+        ctx.ensureVectorLayer?.();
+    }, [isCompare, localMapInstance, ctx]);
+
+    useEffect(() => {
         if (!isCompare || !setPaneMapInstance) return undefined;
         setPaneMapInstance(paneIndex, localMapInstance || null);
         return () => setPaneMapInstance(paneIndex, null);

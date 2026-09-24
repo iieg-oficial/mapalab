@@ -1,5 +1,6 @@
 import { getArea, getLength } from 'ol/sphere';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
+import { formatAreaValue, formatLengthValue } from '@pages/maps/helpers/formatMeasure';
 
 export const MAX_CAPAS_SELECCION = 6;
 
@@ -25,9 +26,9 @@ const filasDeAgregado = (agregado) => {
     ].filter(Boolean);
 };
 
-export const filasSeleccion = ({ areaKm2 = 0, perimetroKm = 0, capas = [], agregados = [] }) => [
-    { etiqueta: 'Área', valor: `${conDecimales(areaKm2)} km²` },
-    { etiqueta: 'Perímetro', valor: `${conDecimales(perimetroKm)} km` },
+export const filasSeleccion = ({ areaKm2 = 0, perimetroKm = 0, capas = [], agregados = [], unidades = {} }) => [
+    { etiqueta: 'Área', valor: formatAreaValue(areaKm2 * 1e6, unidades.areaUnit || 'km2') },
+    { etiqueta: 'Perímetro', valor: formatLengthValue(perimetroKm * 1000, unidades.lengthUnit || 'km') },
     ...capas.slice(0, MAX_CAPAS_SELECCION).flatMap(({ id, etiqueta, conteo, sinWfs }) => [
         {
             etiqueta,

@@ -10,6 +10,7 @@ import TextInlineEditor from '@mapsComponents/MeasurementTools/TextInlineEditor'
 import FeatureEditToolbar from '@mapsComponents/MeasurementTools/FeatureEditToolbar';
 import HistoryButton from '@mapsComponents/MeasurementTools/HistoryButton';
 import HistoryPanel from '@mapsComponents/MeasurementTools/HistoryPanel';
+import { abrirInfoBoxDeMedicion } from '@hooksMaps/useInfoBoxDeMedicion';
 import CatalogoTablaButton from './CatalogoTablaButton';
 
 const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo' };
@@ -45,7 +46,7 @@ const CatalogoTools = ({ tabla, hayCapa }) => {
         undoLastPoint,
         finishCurrentSketch,
         restoreLastSelection,
-        showSelectionByIndex,
+        showSelection,
         setEmojiTemplate,
         mapRef,
         selectedFeature,
@@ -66,7 +67,9 @@ const CatalogoTools = ({ tabla, hayCapa }) => {
         startTextEdit,
         updateEditingTextLabel,
         commitTextEdit,
-        cancelTextEdit
+        cancelTextEdit,
+        setSelectedFeatureInfo,
+        clickPosition
     } = useMapsContext();
 
     const isMobile = useIsMobile();
@@ -80,11 +83,16 @@ const CatalogoTools = ({ tabla, hayCapa }) => {
     const closeTools = () => {
         stopDrawing();
         deselectFeature?.();
-        clearDrawings();
         setIsEmojiPickerOpen(false);
         setIsListOpen(false);
         setToolsOpen(false);
     };
+
+    const mostrarMedicion = (id) => abrirInfoBoxDeMedicion({
+        medicion: measurements.find(m => m.id === id),
+        setSelectedFeatureInfo,
+        clickPosition,
+    });
 
     const togglePill = () => {
         trackCatalogoToolsToggle(!toolsOpen);
@@ -211,7 +219,9 @@ const CatalogoTools = ({ tabla, hayCapa }) => {
                         onDelete={deleteMeasurement}
                         onToggleVisibility={toggleMeasurementVisibility}
                         onClose={() => setIsListOpen(false)}
-                        onShowSelection={showSelectionByIndex}
+                        onShowSelection={showSelection}
+                        onShowMeasurement={mostrarMedicion}
+                        onClearAll={clearDrawings}
                     />
 
                     {selectedFeature && (

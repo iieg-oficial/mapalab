@@ -63,6 +63,7 @@ const writeUrlState = (searchParams, { active, pitch, extruded }) => {
 export const View3dProvider = ({ children }) => {
     const {
         hideMeasurementTools, hideAnnotationTools,
+        showMeasurementTools, areMeasurementToolsVisible,
         setSelectedFeatureInfo, activeLayerIds,
     } = useMapsContext();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -83,9 +84,11 @@ export const View3dProvider = ({ children }) => {
     const map3dRef = useRef(null);
     const grupo3dRef = useRef({ miembros: new Set(), fuente: null });
     const enteredAtRef = useRef(null);
+    const medicionesVisiblesRef = useRef(false);
 
     const enter = useCallback(() => {
         if (!available) return false;
+        medicionesVisiblesRef.current = !!areMeasurementToolsVisible;
         hideMeasurementTools?.();
         hideAnnotationTools?.();
         setSelectedFeatureInfo?.(null);
@@ -93,9 +96,10 @@ export const View3dProvider = ({ children }) => {
         setActive(true);
         trackView3d('enter');
         return true;
-    }, [available, hideMeasurementTools, hideAnnotationTools, setSelectedFeatureInfo]);
+    }, [available, areMeasurementToolsVisible, hideMeasurementTools, hideAnnotationTools, setSelectedFeatureInfo]);
 
     const exit = useCallback(() => {
+        if (medicionesVisiblesRef.current) showMeasurementTools?.();
         setActive(prev => {
             if (prev) {
                 const seconds = enteredAtRef.current ? Math.round((Date.now() - enteredAtRef.current) / 1000) : null;
@@ -103,7 +107,7 @@ export const View3dProvider = ({ children }) => {
             }
             return false;
         });
-    }, []);
+    }, [showMeasurementTools]);
 
     const toggle = useCallback(() => (active ? exit() : enter()), [active, enter, exit]);
     const setPitch = useCallback((value) => setPitchState(clampPitch(value)), []);

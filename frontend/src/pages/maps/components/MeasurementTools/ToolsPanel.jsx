@@ -9,7 +9,7 @@ import EmojiPanel from './EmojiPanel';
 import TextInlineEditor from './TextInlineEditor';
 import HistoryPanel from './HistoryPanel';
 import FeatureEditToolbar from './FeatureEditToolbar';
-import { useInfoBoxDeMedicion } from '@hooksMaps/useInfoBoxDeMedicion';
+import { abrirInfoBoxDeMedicion, useInfoBoxDeMedicion } from '@hooksMaps/useInfoBoxDeMedicion';
 
 const ToolsPanel = () => {
     const {
@@ -31,7 +31,7 @@ const ToolsPanel = () => {
         hideMeasurementTools,
         hideAnnotationTools,
         restoreLastSelection,
-        showSelectionByIndex,
+        showSelection,
         mapRef,
         selectedFeature,
         selectionTick,
@@ -62,6 +62,12 @@ const ToolsPanel = () => {
     const [isMeasurementListOpen, setIsMeasurementListOpen] = useState(false);
     const emojiPickerButtonRef = useRef(null);
     useInfoBoxDeMedicion({ measurements, mapRef, setSelectedFeatureInfo, clickPosition });
+
+    const mostrarMedicion = (id) => abrirInfoBoxDeMedicion({
+        medicion: measurements.find(m => m.id === id),
+        setSelectedFeatureInfo,
+        clickPosition,
+    });
 
     const shouldRender = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0;
     const showTypeSwitcher = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing;
@@ -179,7 +185,8 @@ const ToolsPanel = () => {
                 onDelete={deleteMeasurement}
                 onToggleVisibility={toggleMeasurementVisibility}
                 onClose={() => setIsMeasurementListOpen(false)}
-                onShowSelection={showSelectionByIndex}
+                onShowSelection={showSelection}
+                onShowMeasurement={mostrarMedicion}
                 onClearAll={clearDrawings}
             />
 

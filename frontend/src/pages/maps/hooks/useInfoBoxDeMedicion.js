@@ -1,10 +1,17 @@
 import { useEffect, useRef } from 'react';
 import { toLonLat } from 'ol/proj';
 
-export const abrirInfoBoxDeLinea = ({ geometria, pixel, setSelectedFeatureInfo, clickPosition }) => {
+export const abrirInfoBoxDeLinea = ({ geometria, pixel, setSelectedFeatureInfo, clickPosition, centrado = false }) => {
     const [lng, lat] = toLonLat(geometria.getLastCoordinate());
-    clickPosition?.updatePosition?.({ pixel });
-    setSelectedFeatureInfo?.({ lngLat: { lng, lat }, results: [], medicion: geometria });
+    if (centrado) clickPosition?.clearPosition?.();
+    else clickPosition?.updatePosition?.({ pixel });
+    setSelectedFeatureInfo?.({ lngLat: { lng, lat }, results: [], medicion: geometria, centrado });
+};
+
+export const abrirInfoBoxDeMedicion = ({ medicion, setSelectedFeatureInfo, clickPosition }) => {
+    const geometria = medicion?.feature?.getGeometry() || medicion?.geometry;
+    if (!geometria) return;
+    abrirInfoBoxDeLinea({ geometria, setSelectedFeatureInfo, clickPosition, centrado: true });
 };
 
 export const useInfoBoxDeMedicion = ({ measurements, mapRef, setSelectedFeatureInfo, clickPosition }) => {
