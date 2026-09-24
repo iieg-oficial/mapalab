@@ -18,6 +18,14 @@ MAX_MUNICIPIOS = 125
 MAX_PITCH_3D = 80
 EXAGERACION_3D = (1, 5)
 MAX_EXTRUIDAS_3D = 10
+MAX_CAPAS = 60
+MAX_FILTROS_POR_CAPA = 20
+MAX_REFERENCIA = 200
+MAX_TEXTO_ANOTACION = 200
+MAX_ETIQUETA_LADO = 60
+TEXTOS_ANOTACION = ("id", "label", "unit", "textLabel")
+RANGO_LAT = (10.0, 35.0)
+RANGO_LON = (-120.0, -84.0)
 
 
 def canonicalize(payload: Any) -> bytes:
@@ -74,14 +82,42 @@ def _validate_view(view: dict | None) -> None:
     zoom = view.get("zoom")
     if zoom is not None and not (isinstance(zoom, (int, float)) and 1 <= zoom <= 24):
         raise ValueError("view.zoom fuera de rango")
+    for campo, (minimo, maximo) in (("lat", RANGO_LAT), ("lon", RANGO_LON)):
+        valor = view.get(campo)
+        if valor is not None and not (_es_numero(valor) and minimo <= valor <= maximo):
+            raise ValueError(f"view.{campo} fuera de rango")
+    rotation = view.get("rotation")
+    if rotation is not None and not (_es_numero(rotation) and -360 <= rotation <= 360):
+        raise ValueError("view.rotation fuera de rango")
+
+
+def _validate_referencia(valor: Any, campo: str) -> None:
+    if valor is None:
+        return
+    if not isinstance(valor, str) or not valor.strip() or len(valor) > MAX_REFERENCIA:
+        raise ValueError(f"{campo} debe ser texto de hasta {MAX_REFERENCIA} caracteres")
+
+
+def _validate_filtros(filtros: Any, source: str) -> None:
+    if filtros is None:
+        return
+    if not isinstance(filtros, dict) or len(filtros) > MAX_FILTROS_POR_CAPA:
+        raise ValueError(f"{source}.filters debe ser objeto de hasta {MAX_FILTROS_POR_CAPA} filtros")
+    for nombre, valor in filtros.items():
+        if len(nombre) > 64 or not isinstance(valor, (str, int, float, bool)):
+            raise ValueError(f"{source}.filters.{nombre[:64]} invalido")
 
 
 def _validate_layer_entries(entries: Any, source: str) -> None:
     if not isinstance(entries, list):
         raise ValueError(f"{source}.layers debe ser lista")
+    if len(entries) > MAX_CAPAS:
+        raise ValueError(f"{source}.layers excede {MAX_CAPAS} capas")
     for entry in entries:
         if not isinstance(entry, dict) or "slug" not in entry:
             raise ValueError(f"{source}: cada layer debe tener slug")
+        _validate_referencia(entry["slug"], f"{source}.layers.slug")
+        _validate_filtros(entry.get("filters"), f"{source}.{entry['slug']}")
         opacity = entry.get("opacity", 1.0)
         if not (isinstance(opacity, (int, float)) and 0 <= opacity <= 1):
             raise ValueError(f"{source}: opacity fuera de rango en {entry.get('slug')}")
@@ -125,6 +161,10 @@ def _validate_annotations(annotations: Any, source: str) -> None:
         if atype not in ALLOWED_ANNOTATION_TYPES:
             raise ValueError(f"{prefix}.type debe ser uno de {sorted(ALLOWED_ANNOTATION_TYPES)}")
         _validate_geometry(item.get("geometry"), prefix)
+        for campo in TEXTOS_ANOTACION:
+            texto = item.get(campo)
+            if texto is not None and (not isinstance(texto, (str, int, float)) or len(str(texto)) > MAX_TEXTO_ANOTACION):
+                raise ValueError(f"{prefix}.{campo} debe ser texto de hasta {MAX_TEXTO_ANOTACION} caracteres")
         rotation = item.get("rotation")
         if rotation is not None and not isinstance(rotation, (int, float)):
             raise ValueError(f"{prefix}.rotation debe ser numero")
@@ -144,7 +184,7 @@ def _validate_municipios(municipios: Any, source: str) -> None:
     if len(selected) > MAX_MUNICIPIOS:
         raise ValueError(f"{source}.municipios.selected excede {MAX_MUNICIPIOS} claves")
     for clave in selected:
-        if not isinstance(clave, str) or not clave.strip():
+        if not isinstance(clave, str) or not clave.strip() or len(clave) > 10:
             raise ValueError(f"{source}.municipios.selected: cada clave debe ser string no vacio")
 
 
@@ -175,6 +215,8 @@ def _validate_vista3d(vista: Any, source: str) -> None:
 
 def _validate_single_payload(payload: dict) -> None:
     _validate_layer_entries(payload.get("layers"), "single.payload")
+    _validate_referencia(payload.get("basemap"), "single.payload.basemap")
+    _validate_referencia(payload.get("selected"), "single.payload.selected")
     _validate_view(payload.get("view"))
     _validate_annotations(payload.get("annotations"), "single.payload")
     _validate_municipios(payload.get("municipios"), "single.payload")
@@ -186,6 +228,8 @@ def _validate_swipe_payload(payload: dict) -> None:
     if not isinstance(shared, dict):
         raise ValueError("swipe.payload.shared requerido")
     _validate_view(shared.get("view"))
+    _validate_referencia(shared.get("basemap"), "swipe.payload.shared.basemap")
+    _validate_referencia(shared.get("selected"), "swipe.payload.shared.selected")
     _validate_municipios(shared.get("municipios"), "swipe.payload.shared")
     _validate_vista3d(shared.get("vista3d"), "swipe.payload.shared")
     for pane_key in ("paneA", "paneB"):
@@ -193,6 +237,9 @@ def _validate_swipe_payload(payload: dict) -> None:
         if not isinstance(pane, dict):
             raise ValueError(f"swipe.payload.{pane_key} requerido")
         _validate_layer_entries(pane.get("layers"), f"swipe.payload.{pane_key}")
+        label = pane.get("label")
+        if label is not None and (not isinstance(label, str) or len(label) > MAX_ETIQUETA_LADO):
+            raise ValueError(f"swipe.payload.{pane_key}.label debe ser texto de hasta {MAX_ETIQUETA_LADO} caracteres")
     active_slot = payload.get("activeSlot")
     if active_slot not in {"A", "B"}:
         raise ValueError("swipe.payload.activeSlot debe ser 'A' o 'B'")
@@ -200,3 +247,17 @@ def _validate_swipe_payload(payload: dict) -> None:
     if position is not None and not (isinstance(position, (int, float)) and 0 <= position <= 1):
         raise ValueError("swipe.payload.position fuera de rango [0,1]")
     _validate_annotations(payload.get("annotations"), "swipe.payload")
+
+
+def capas_del_payload(kind: str, payload: dict) -> set[str]:
+    if kind == "single":
+        grupos = [payload.get("layers") or []]
+    else:
+        grupos = [(payload.get(p) or {}).get("layers") or [] for p in ("paneA", "paneB")]
+    return {entry["slug"] for grupo in grupos for entry in grupo}
+
+
+def validar_capas_en_catalogo(kind: str, payload: dict, conocidas: set[str]) -> None:
+    desconocidas = sorted(s for s in capas_del_payload(kind, payload) if s not in conocidas and s.lower() not in conocidas)
+    if desconocidas:
+        raise ValueError(f"capas que no estan en el catalogo: {', '.join(desconocidas[:3])}")

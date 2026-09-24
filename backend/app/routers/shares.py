@@ -11,13 +11,16 @@ from app.config import settings
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.repositories.share_repository import ShareRepository
+from app.services.layer_tree_service import get_cached_state
 from app.services.share_service import (
     CURRENT_SCHEMA_VERSION,
     hash_id,
     hash_ip,
+    validar_capas_en_catalogo,
     validate_payload,
 )
 from app.utils.api_responses import api_responses
+from app.utils.logger import Logger
 
 
 router = APIRouter(prefix='/shares', tags=['Shares'])
@@ -34,7 +37,9 @@ def _require_internal_token(x_internal_token: Optional[str] = Header(default=Non
     if not x_internal_token or x_internal_token != expected:
         raise HTTPException(status_code=401, detail='Token interno inválido')
 RATE_WINDOW_SECONDS = 60.0
-RATE_MAX_REQUESTS = 10
+RATE_MAX_REQUESTS = 30
+RATE_DAY_SECONDS = 86400.0
+RATE_DAY_MAX_REQUESTS = 3000
 
 
 class _RateLimiter:
@@ -63,6 +68,7 @@ class _RateLimiter:
 
 
 _create_rate_limiter = _RateLimiter(RATE_MAX_REQUESTS, RATE_WINDOW_SECONDS)
+_create_daily_limiter = _RateLimiter(RATE_DAY_MAX_REQUESTS, RATE_DAY_SECONDS)
 
 
 def _get_session() -> Session:
@@ -71,12 +77,30 @@ def _get_session() -> Session:
 
 
 def _get_client_ip(request: Request) -> Optional[str]:
-    fwd = request.headers.get('x-forwarded-for')
-    if fwd:
-        return fwd.split(',')[0].strip()
+    real = request.headers.get('x-real-ip')
+    if real and real.strip():
+        return real.strip()
     if request.client:
         return request.client.host
     return None
+
+
+def _referencias_del_catalogo() -> set[str]:
+    try:
+        tree = get_cached_state().get('tree') or []
+    except Exception as exc:
+        Logger.warning(f'shares.catalogo_no_disponible {exc}')
+        return set()
+    referencias: set[str] = set()
+    pila = list(tree)
+    while pila:
+        nodo = pila.pop()
+        referencias.add(str(nodo.get('id')))
+        if nodo.get('slug'):
+            referencias.add(str(nodo['slug']).lower())
+        referencias.update(str(alias).lower() for alias in nodo.get('aliases') or [])
+        pila.extend(nodo.get('children') or [])
+    return referencias
 
 
 class ShareEnvelope(BaseModel):
@@ -113,20 +137,24 @@ class ShareReadResponse(BaseModel):
         "Crea un share (snapshot del estado del visor) con un `payload` validado según "
         "el `kind`. El `id` devuelto es determinístico (hash del payload + kind), así "
         "que crear dos veces el mismo estado hace upsert y no genera duplicados. "
-        "Rate limit de 10 shares/minuto por IP."
+        "Las capas deben existir en el catalogo del visor. Techo global de 30 shares por "
+        "minuto y 3000 al dia: el borde entrega todo el trafico con una sola IP."
     ),
 )
 def create_share(envelope: ShareEnvelope, request: Request):
     ip = _get_client_ip(request)
     ip_hash = hash_ip(ip)
 
-    if not _create_rate_limiter.hit(ip_hash or 'anon'):
-        raise HTTPException(status_code=429, detail='Demasiados shares por minuto. Espera un momento.')
-
     try:
         kind, payload = validate_payload(envelope.model_dump())
+        conocidas = _referencias_del_catalogo()
+        if conocidas:
+            validar_capas_en_catalogo(kind, payload, conocidas)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if not _create_rate_limiter.hit('sitio') or not _create_daily_limiter.hit('sitio'):
+        raise HTTPException(status_code=429, detail='Se alcanzó el límite de enlaces del sitio. Intenta en un minuto.')
 
     share_id = hash_id(payload, kind)
 

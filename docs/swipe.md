@@ -139,6 +139,18 @@ casillas.
 
 **`vista3d`** (opcional, desde 1.204.0): `{pitch, bearing, exaggeration, extruir: [slugs]}`. Solo se escribe cuando el mapa está en 3D; en un `single` vive en `payload`, en un swipe en `payload.shared`, porque la cámara 3D es una para los dos lados. Al abrir el enlace, el deserializador la deja pendiente en `helpers/vista3dCompartida.js` y `View3dProvider` la aplica (el cargador corre fuera de ese provider, así que no puede llamarlo directo). Sin WebGL el enlace abre en 2D. `validate_payload` acota `pitch` a 0–80, `bearing` a ±180, `exaggeration` a 1–5 y `extruir` a 10 capas.
 
+**Validación de `POST /shares`** (desde 1.205.0). Aplica igual a lo que crea el visor y a lo que crea el MCP:
+
+| Qué | Regla |
+|---|---|
+| Capas | hasta 60; cada `slug` debe ser `id`, `slug` o alias de un nodo del árbol (`layer_tree_cache`). Si el árbol no se puede leer, no se bloquea |
+| `filters` | objeto de hasta 20 entradas con valores simples; el largo lo acota el tope de 256 KB, porque la selección de la tabla arma CQL largos |
+| `view` | `lat` 10–35, `lon` −120 – −84 (el visor no ata el centro a Jalisco), `rotation` ±360 |
+| Textos | `id`, `label`, `unit`, `textLabel` de anotaciones hasta 200; etiquetas del comparador hasta 60 |
+| Volumen | techo **global** de 30 por minuto y 3000 al día, contado después de validar |
+
+El techo era de 10 por minuto «por IP», pero la IP salía del primer `X-Forwarded-For`, que manda el cliente: se evadía cambiando el encabezado, y sin él todo el sitio compartía la cuenta porque el borde entrega una sola IP. El hash de IP que se guarda sale ahora de `X-Real-IP`, que fija el nginx.
+
 ### sessionStorage
 
 `useSessionPersistence` serializa `kind: 'swipe'` con `position` para sobrevivir recargas dentro de la sesión. Si se entra con `?compare=swipe` sin sessionStorage, cae a modo single.

@@ -226,3 +226,33 @@ class TestVista3d:
         env = _envelope('single', {'layers': [], 'vista3d': {**self.VISTA, **cambio}})
         with pytest.raises(ValueError, match=mensaje):
             validate_payload(env)
+
+
+class TestLimitesDelPayload:
+    @pytest.mark.parametrize('payload,mensaje', [
+        ({'layers': [], 'view': {'zoom': 8, 'lat': 48.8, 'lon': 2.3}}, 'view.lat'),
+        ({'layers': [], 'view': {'zoom': 8, 'lat': 20.6, 'lon': -103.4, 'rotation': 'x'}}, 'rotation'),
+        ({'layers': [{'slug': f'c{i}'} for i in range(61)]}, 'excede 60'),
+        ({'layers': [{'slug': 'x' * 201}]}, 'slug'),
+        ({'layers': [{'slug': 'a', 'filters': {'date': {'$ne': 1}}}]}, 'filters'),
+        ({'layers': [{'slug': 'a', 'filters': {f'f{i}': 'x' for i in range(21)}}]}, 'filters'),
+        ({'layers': [], 'basemap': 'x' * 201}, 'basemap'),
+        ({'layers': [], 'municipios': {'selected': ['1' * 11]}}, 'municipios'),
+    ])
+    def test_rechaza_single_fuera_de_limites(self, payload, mensaje):
+        with pytest.raises(ValueError, match=mensaje):
+            validate_payload(_envelope('single', payload))
+
+    def test_rechaza_textos_largos_en_anotaciones(self):
+        anotacion = {'id': 'a', 'type': 'Text', 'geometry': {'type': 'Point', 'coordinates': [-103.4, 20.6]}, 'textLabel': 'x' * 201}
+        with pytest.raises(ValueError, match='textLabel'):
+            validate_payload(_envelope('single', {'layers': [], 'annotations': [anotacion]}))
+
+    def test_rechaza_etiquetas_largas_en_el_comparador(self):
+        env = _envelope('swipe', {'shared': {}, 'paneA': {'label': 'x' * 61, 'layers': []}, 'paneB': {'layers': []}, 'activeSlot': 'A'})
+        with pytest.raises(ValueError, match='label'):
+            validate_payload(env)
+
+    def test_acepta_filtros_cql_largos_como_los_de_la_seleccion(self):
+        cql = 'fid IN (' + ','.join(str(i) for i in range(3000)) + ')'
+        validate_payload(_envelope('single', {'layers': [{'slug': 'a', 'filters': {'_seleccion': cql, 'date': "fecha >= '2024-01-01'"}}]}))

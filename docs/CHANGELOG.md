@@ -5,6 +5,24 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.205.0] - 2026-09-24
+
+### Corregido: el techo de `POST /shares` se evadía y era global sin decirlo
+
+- Contaba por la primera IP de `X-Forwarded-For`, que manda el cliente: cambiar el encabezado lo
+  evadía, y sin él todo el sitio compartía los 10 por minuto porque el borde entrega una sola IP.
+  Ahora es un techo **global** de 30 por minuto y 3000 al día, contado después de validar, y el hash
+  de IP que se guarda sale de `X-Real-IP`.
+
+### Cambiado: `POST /shares` valida el payload
+
+- Las capas deben existir en el catálogo del visor (id, slug o alias); si el árbol no se puede leer,
+  no se bloquea. Hasta 60 capas y 20 filtros por capa con valores simples: los filtros se acotan, no
+  se descartan, porque el visor los necesita.
+- La vista se acota a lat 10–35 y lon −120 – −84; los textos de anotaciones a 200 caracteres y las
+  etiquetas del comparador a 60. Aplica igual a los enlaces que crea el MCP.
+- El visor muestra el `detail` del servidor cuando falla, en vez de `POST /shares 429: {...}`.
+
 ## [1.204.1] - 2026-09-24
 
 ### Corregido: la rotación con clic derecho rompía una regla de React al entrar al comparador
