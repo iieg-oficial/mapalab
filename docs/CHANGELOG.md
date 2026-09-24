@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.199.2] - 2026-09-24
+
+### Corregido: «Visible» mentía en el comparador
+
+El modo **Visible** de la tabla de datos filtra por el encuadre, y para eso `useTablaVista` leía
+`mapRef.current`. Dentro del comparador ese ref es `null` —el `<MapView>` live no se monta, es una
+invariante documentada—, así que el efecto salía temprano, nunca había extent y la tabla mostraba la
+capa **completa** mientras el botón seguía diciendo «Visible». Lo mismo le pasaba a «congelar», que
+se quedaba sin encuadre que congelar.
+
+Ahora cae a `paneMapInstances[0]`, como ya hacían `<MapControls>` y `useMapCapture`. Se usan las
+instancias reactivas y no `paneMapRefs` a propósito: los refs no disparan el efecto cuando el pane
+aparece, y en el comparador el pane se monta después. Los dos panes comparten la misma instancia de
+`View`, así que el encuadre del α vale para los dos.
+
+Va con cinco pruebas: el hook no tenía ninguna.
+
 ## [1.199.1] - 2026-09-24
 
 ### Corregido: cambiar de institución ya no quita la capa del catálogo
