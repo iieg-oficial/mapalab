@@ -3,6 +3,7 @@ import {
     areaPlana,
     areaSobreRelieve,
     densificar,
+    distribucionAlturas,
     distanciaMetros,
     largoPlano,
     perfilDesde,
@@ -121,6 +122,20 @@ describe('trazo en vivo', () => {
         expect(linea.features[0].properties.rol).toBe('vivo');
         const area = geometriaMedicion({ modo: 'poligono', vertices: [[0, 0], [1, 0]], marcador: null, puntero: [1, 1] });
         expect(area.features[0].properties.rol).toBe('area');
+    });
+});
+
+describe('distribucionAlturas', () => {
+    it('ordena de mayor a menor: al 0 % la altura maxima y al 100 % la minima', () => {
+        const d = 0.02;
+        const cuadro = [[-103, 20], [-103 + d, 20], [-103 + d, 20 + d], [-103, 20 + d]];
+        const rejilla = rejillaSobre(cuadro, 10);
+        const alturas = rejilla.nodos.map(([lng]) => 1500 + (lng + 103) * 10000);
+        const { max, min, curva } = distribucionAlturas(cuadro, rejilla, alturas, 10);
+        expect(curva[0]).toEqual({ x: 0, alt: max });
+        expect(curva.at(-1)).toEqual({ x: 100, alt: min });
+        expect(curva.every((p, i) => i === 0 || p.alt <= curva[i - 1].alt)).toBe(true);
+        expect(distribucionAlturas(cuadro, rejilla, alturas.map(() => null))).toBeNull();
     });
 });
 

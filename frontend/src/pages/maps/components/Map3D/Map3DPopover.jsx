@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 const VIEWPORT_MARGIN = 8;
 const TRANSFORMS = { centro: 'translateY(-50%)', abajo: 'translateY(-100%)' };
 
-const Map3DPopover = ({ anchorRef, onClose, width, alinear = 'centro', className = '', etiqueta, children }) => {
+const Map3DPopover = ({ anchorRef, bordeRef = null, onClose, width, alinear = 'centro', className = '', etiqueta, children }) => {
     const ref = useRef(null);
     const [position, setPosition] = useState({ top: 0, left: 0 });
 
@@ -13,14 +13,15 @@ const Map3DPopover = ({ anchorRef, onClose, width, alinear = 'centro', className
             const anchor = anchorRef?.current;
             if (!anchor) return;
             const rect = anchor.getBoundingClientRect();
-            const left = Math.min(window.innerWidth - width - VIEWPORT_MARGIN, rect.right + 12);
+            const borde = (bordeRef?.current || anchor).getBoundingClientRect().right;
+            const left = Math.min(window.innerWidth - width - VIEWPORT_MARGIN, borde + 12);
             const top = alinear === 'abajo' ? rect.bottom : rect.top + rect.height / 2;
             setPosition({ top, left: Math.max(VIEWPORT_MARGIN, left) });
         };
         updatePosition();
         window.addEventListener('resize', updatePosition);
         return () => window.removeEventListener('resize', updatePosition);
-    }, [anchorRef, width, alinear]);
+    }, [anchorRef, bordeRef, width, alinear]);
 
     useEffect(() => {
         const handleOutside = (event) => {

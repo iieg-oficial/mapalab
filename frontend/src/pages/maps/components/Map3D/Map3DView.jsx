@@ -40,7 +40,7 @@ const writeBackToOl = (map, olMap) => {
     view.setRotation(0);
 };
 
-const Map3DView = ({ consultar = null }) => {
+const Map3DView = ({ consultar = null, mediciones = true }) => {
     const containerRef = useRef(null);
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, measurements } = useMapsContext();
     const {
@@ -160,7 +160,7 @@ const Map3DView = ({ consultar = null }) => {
                 </div>,
                 mapRef.current.getTargetElement(),
             )}
-            {map && (areMeasurementToolsVisible || measurements?.length > 0) && <Medicion3D map={map} onMidiendo={setMidiendo} />}
+            {map && mediciones && (areMeasurementToolsVisible || measurements?.length > 0) && <Medicion3D map={map} onMidiendo={setMidiendo} />}
             {consultar
                 ? <Clic3dPropio map={map} mapRef={mapRef} pausado={midiendo} consultar={consultar} />
                 : <Clic3dVisor map={map} mapRef={mapRef} pausado={midiendo} />}

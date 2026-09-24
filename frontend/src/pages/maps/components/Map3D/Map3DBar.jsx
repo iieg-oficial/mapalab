@@ -16,7 +16,7 @@ const tonoBoton = (activo) => (activo ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6
 const Map3DBar = () => {
     const view3d = useView3d();
     const [abierto, setAbierto] = useState(null);
-    const refs = { pitch: useRef(null), exag: useRef(null), sol: useRef(null), ajustes: useRef(null) };
+    const refs = { pitch: useRef(null), exag: useRef(null), sol: useRef(null), ajustes: useRef(null), barra: useRef(null) };
     if (!view3d.active) return null;
 
     const { orbita, setOrbita } = view3d;
@@ -25,7 +25,7 @@ const Map3DBar = () => {
     const cerrar = () => setAbierto(null);
 
     return (
-        <div className="flex flex-col items-center justify-evenly h-full w-11 py-1 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
+        <div ref={refs.barra} className="flex flex-col items-center justify-evenly h-full w-11 py-1 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
             {ANILLOS.map((clave) => {
                 const { titulo, texto, corto, pct, tono } = deslizadores[clave];
                 return (
@@ -77,9 +77,9 @@ const Map3DBar = () => {
                 )}
             </div>
             {ANILLOS.includes(abierto) && (
-                <Map3DSliderPopover anchorRef={refs[abierto]} {...deslizadores[abierto]} onClose={cerrar} />
+                <Map3DSliderPopover anchorRef={refs[abierto]} bordeRef={refs.barra} {...deslizadores[abierto]} onClose={cerrar} />
             )}
-            {abierto === 'ajustes' && <Map3DAjustes anchorRef={refs.ajustes} onClose={cerrar} />}
+            {abierto === 'ajustes' && <Map3DAjustes anchorRef={refs.barra} onClose={cerrar} />}
         </div>
     );
 };

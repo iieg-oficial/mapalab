@@ -163,7 +163,6 @@ const ToolsPanel = () => {
                     <PanelMedicion
                         modo={medicion.modo}
                         resultado={medicion.resultado}
-                        calculando={medicion.calculando}
                         onCerrar={medicion.cerrar}
                         className="absolute left-full top-0 ml-32"
                     />

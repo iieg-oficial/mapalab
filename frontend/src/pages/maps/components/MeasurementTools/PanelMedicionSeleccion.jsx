@@ -8,7 +8,6 @@ const PanelMedicionSeleccion = ({ geometria, className = '' }) => {
         <PanelMedicion
             modo={medicion.modo}
             resultado={medicion.resultado}
-            calculando={medicion.calculando}
             onCerrar={medicion.cerrar}
             ancho="w-full"
             className={className}

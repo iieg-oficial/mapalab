@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import Polygon from 'ol/geom/Polygon';
+import { fromLonLat } from 'ol/proj';
+import { getCenter } from 'ol/extent';
+import { useFeatureInfo } from '@hooksMaps/useFeatureInfo';
 import CloseButton from '@components/CloseButton';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useMapsContext } from '@hooks/useMaps';
@@ -14,13 +18,21 @@ const MODO_A_TIPO = { linea: 'LineString', poligono: 'Polygon' };
 const Medicion3D = ({ map, onMidiendo }) => {
     const {
         areMeasurementToolsVisible, hideMeasurementTools, measurements, deleteMeasurement,
-        toggleMeasurementVisibility, clearDrawings, restoreAnnotations,
+        toggleMeasurementVisibility, clearDrawings, restoreAnnotations, mapRef, selectedFeatureInfo,
     } = useMapsContext();
+    const { queryFeaturesInPolygon } = useFeatureInfo();
+    const [geometriaEnInfo, setGeometriaEnInfo] = useState(null);
     const { style, className } = useSiderAdaptivePosition({ anchorRef: 'tools' });
     const [listaAbierta, setListaAbierta] = useState(false);
-    const guardar = useCallback((anotacion) => restoreAnnotations?.([anotacion], { showTools: false }), [restoreAnnotations]);
+    const guardar = useCallback((anotacion) => {
+        restoreAnnotations?.([anotacion], { showTools: false });
+        if (anotacion.type !== 'Polygon' || !mapRef?.current) return;
+        const geometria = new Polygon(anotacion.geometry.coordinates.map(anillo => anillo.map(c => fromLonLat(c))));
+        setGeometriaEnInfo(geometria);
+        queryFeaturesInPolygon(mapRef.current, geometria, getCenter(geometria.getExtent()));
+    }, [restoreAnnotations, mapRef, queryFeaturesInPolygon]);
     const {
-        modo, setModo, vertices, terminado, resultado, calculando, deshacer, borrar, terminar, setMarcador,
+        modo, setModo, vertices, terminado, resultado, deshacer, borrar, terminar, setMarcador,
     } = useMedicion3d(map, { onTerminar: guardar });
 
     useEffect(() => {
@@ -58,11 +70,10 @@ const Medicion3D = ({ map, onMidiendo }) => {
                             canUndo={vertices.length > 0 && !terminado}
                             showAnnotations={false}
                         />
-                        {modo && (
+                        {modo && !(terminado && selectedFeatureInfo?.isPolygonSelection && selectedFeatureInfo.polygonGeometry === geometriaEnInfo) && (
                             <PanelMedicion
                                 modo={modo}
                                 resultado={resultado}
-                                calculando={calculando}
                                 onCerrar={() => setModo(null)}
                                 onRecorrer={setMarcador}
                                 className="absolute left-full top-0 ml-32"

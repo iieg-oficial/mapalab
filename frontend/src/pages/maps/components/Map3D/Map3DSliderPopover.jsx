@@ -1,9 +1,10 @@
 import Map3DPopover from './Map3DPopover';
 import Map3DDeslizador from './Map3DDeslizador';
 
-const Map3DSliderPopover = ({ anchorRef, onClose, ...deslizador }) => (
+const Map3DSliderPopover = ({ anchorRef, bordeRef, onClose, ...deslizador }) => (
     <Map3DPopover
         anchorRef={anchorRef}
+        bordeRef={bordeRef}
         onClose={onClose}
         width={210}
         etiqueta={deslizador.titulo}

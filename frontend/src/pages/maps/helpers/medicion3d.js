@@ -113,17 +113,12 @@ export const areaSobreRelieve = (coords, { celdas, nodos }, alturas) => {
     return Math.max(area, areaPlana(coords));
 };
 
-export const distribucionAlturas = (coords, { nodos }, alturas, clases = 6) => {
-    const dentroDel = alturas.filter((alt, i) => Number.isFinite(alt) && dentro(nodos[i], coords));
+export const distribucionAlturas = (coords, { nodos }, alturas, muestras = 60) => {
+    const dentroDel = alturas.filter((alt, i) => Number.isFinite(alt) && dentro(nodos[i], coords)).sort((a, b) => b - a);
     if (!dentroDel.length) return null;
-    const min = Math.min(...dentroDel);
-    const max = Math.max(...dentroDel);
-    const paso = (max - min) / clases || 1;
-    const conteos = Array.from({ length: clases }, () => 0);
-    dentroDel.forEach((alt) => { conteos[Math.min(clases - 1, Math.floor((alt - min) / paso))] += 1; });
-    return {
-        min,
-        max,
-        franjas: conteos.map((n, i) => ({ desde: min + paso * i, hasta: min + paso * (i + 1), pct: (n / dentroDel.length) * 100 })),
-    };
+    const curva = Array.from({ length: muestras + 1 }, (_, k) => ({
+        x: (k / muestras) * 100,
+        alt: dentroDel[Math.round((k / muestras) * (dentroDel.length - 1))],
+    }));
+    return { max: dentroDel[0], min: dentroDel.at(-1), curva };
 };

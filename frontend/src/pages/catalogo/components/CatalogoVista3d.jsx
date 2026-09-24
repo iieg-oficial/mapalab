@@ -8,7 +8,7 @@ const CatalogoVista3d = ({ consultar }) => {
     if (!active) return null;
     return (
         <Suspense fallback={null}>
-            <Map3DView consultar={consultar} />
+            <Map3DView consultar={consultar} mediciones={false} />
         </Suspense>
     );
 };
