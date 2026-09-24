@@ -1,44 +1,47 @@
 import { useEffect, useRef, useState } from 'react';
 import { toLonLat } from 'ol/proj';
+import { getUid } from 'ol/util';
 import { calcularMedicion } from '@pages/maps/helpers/resultadoMedicion';
 
 const MODOS = { LineString: 'linea', Polygon: 'poligono' };
 
-export const verticesDeMedicion = (medicion) => {
-    const geometria = medicion?.feature?.getGeometry?.();
-    if (!geometria) return [];
-    if (medicion.type === 'LineString') return geometria.getCoordinates().map(c => toLonLat(c));
-    const anillo = geometria.getCoordinates()[0] || [];
-    return anillo.slice(0, -1).map(c => toLonLat(c));
+export const verticesDeGeometria = (geometria) => {
+    const tipo = geometria?.getType?.();
+    if (tipo === 'LineString') return geometria.getCoordinates().map(c => toLonLat(c));
+    if (tipo === 'Polygon') return (geometria.getCoordinates()[0] || []).slice(0, -1).map(c => toLonLat(c));
+    return [];
 };
 
-export const ultimaMedicion = (measurements) => [...measurements].reverse().find(m => MODOS[m.type] && m.visible !== false) || null;
+export const verticesDeMedicion = (medicion) => verticesDeGeometria(medicion?.feature?.getGeometry?.());
 
-export const useResultadoMedicion = (measurements) => {
-    const ultima = ultimaMedicion(measurements);
-    const id = ultima?.id ?? null;
-    const ultimaRef = useRef(ultima);
-    ultimaRef.current = ultima;
-    const [estado, setEstado] = useState({ id: null, resultado: null, calculando: false });
-    const [cerradoId, setCerradoId] = useState(null);
+export const ultimaMedicion = (measurements, tipos = Object.keys(MODOS)) => (
+    [...measurements].reverse().find(m => tipos.includes(m.type) && m.visible !== false) || null
+);
+
+export const useResultadoMedicion = (geometria) => {
+    const modo = MODOS[geometria?.getType?.()] || null;
+    const clave = modo ? `${getUid(geometria)}:${geometria.getRevision()}` : null;
+    const geometriaRef = useRef(geometria);
+    geometriaRef.current = geometria;
+    const [estado, setEstado] = useState({ clave: null, resultado: null, calculando: false });
+    const [cerradoClave, setCerradoClave] = useState(null);
 
     useEffect(() => {
-        const medicion = ultimaRef.current;
-        if (!medicion) return undefined;
+        if (!clave) return undefined;
+        const actual = geometriaRef.current;
         let vigente = true;
-        setEstado({ id: medicion.id, resultado: null, calculando: true });
-        calcularMedicion(MODOS[medicion.type], verticesDeMedicion(medicion))
-            .then((resultado) => { if (vigente) setEstado({ id: medicion.id, resultado, calculando: false }); })
-            .catch(() => { if (vigente) setEstado({ id: medicion.id, resultado: null, calculando: false }); });
+        setEstado({ clave, resultado: null, calculando: true });
+        calcularMedicion(MODOS[actual.getType()], verticesDeGeometria(actual))
+            .then((resultado) => { if (vigente) setEstado({ clave, resultado, calculando: false }); })
+            .catch(() => { if (vigente) setEstado({ clave, resultado: null, calculando: false }); });
         return () => { vigente = false; };
-    }, [id]);
+    }, [clave]);
 
-    const visible = !!ultima && cerradoId !== id && estado.id === id;
     return {
-        visible,
-        modo: ultima ? MODOS[ultima.type] : null,
+        visible: !!clave && cerradoClave !== clave && estado.clave === clave,
+        modo,
         resultado: estado.resultado,
         calculando: estado.calculando,
-        cerrar: () => setCerradoId(id),
+        cerrar: () => setCerradoClave(clave),
     };
 };

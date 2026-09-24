@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
+import PillCloseButton from '@components/PillCloseButton';
 import { useView3d } from '@contexts/View3dContext';
 import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
 import Map3DRing from './Map3DRing';
@@ -52,18 +53,29 @@ const Map3DBar = () => {
                     <Icon name={orbita ? 'pause' : 'play'} className="size-3 shrink-0" />
                 </button>
             </Tooltip>
-            <Tooltip content="Ajustes de la vista 3D">
-                <button
-                    ref={refs.ajustes}
-                    type="button"
-                    className={`${BOTON} ${tonoBoton(abierto === 'ajustes')}`}
-                    onClick={() => alternar('ajustes')}
-                    aria-expanded={abierto === 'ajustes'}
-                    aria-label="Ajustes de la vista 3D"
-                >
-                    <Icon name="settings" state={abierto === 'ajustes' ? 'hover' : 'normal'} className="size-4.5 shrink-0" />
-                </button>
-            </Tooltip>
+            <div ref={refs.ajustes}>
+                {abierto === 'ajustes' ? (
+                    <PillCloseButton
+                        onClick={cerrar}
+                        size="pastilla"
+                        reveal="siempre"
+                        tooltip="Al dar clic se cierran los ajustes"
+                        ariaLabel="Cerrar los ajustes de la vista 3D"
+                    />
+                ) : (
+                    <Tooltip content="Ajustes de la vista 3D">
+                        <button
+                            type="button"
+                            className="flex items-center justify-center size-8.5 cursor-pointer text-[#5C2472]"
+                            onClick={() => alternar('ajustes')}
+                            aria-expanded={false}
+                            aria-label="Ajustes de la vista 3D"
+                        >
+                            <Icon name="settings" className="size-5 shrink-0" />
+                        </button>
+                    </Tooltip>
+                )}
+            </div>
             {ANILLOS.includes(abierto) && (
                 <Map3DSliderPopover anchorRef={refs[abierto]} {...deslizadores[abierto]} onClose={cerrar} />
             )}

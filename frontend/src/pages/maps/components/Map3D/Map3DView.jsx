@@ -14,6 +14,7 @@ import {
 import { useMap3dClick } from '@hooksMaps/useMap3dClick';
 import { useMap3dContorno } from '@hooksMaps/useMap3dContorno';
 import { useMap3dBillboards } from '@hooksMaps/useMap3dBillboards';
+import { useMedicionesGuardadas3d } from '@hooksMaps/useMedicionesGuardadas3d';
 import Medicion3D from './Medicion3D';
 
 const TERRAIN_SOURCE = 'terreno';
@@ -41,7 +42,7 @@ const writeBackToOl = (map, olMap) => {
 
 const Map3DView = () => {
     const containerRef = useRef(null);
-    const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible } = useMapsContext();
+    const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, measurements } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, setPitch, setBearing, exit, reportExtrusion,
         sol, alturaColumnas, orbita, terreno, cielo, niebla,
@@ -147,6 +148,7 @@ const Map3DView = () => {
     useMap3dExtrusions(map, mapRef, {
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,
     });
+    useMedicionesGuardadas3d(map, measurements);
     useMap3dClick(map, mapRef, midiendo);
 
     if (!mapRef.current) return null;
@@ -159,7 +161,7 @@ const Map3DView = () => {
                 </div>,
                 mapRef.current.getTargetElement(),
             )}
-            {map && areMeasurementToolsVisible && <Medicion3D map={map} onMidiendo={setMidiendo} />}
+            {map && (areMeasurementToolsVisible || measurements?.length > 0) && <Medicion3D map={map} onMidiendo={setMidiendo} />}
         </>
     );
 };

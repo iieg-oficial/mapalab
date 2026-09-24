@@ -1,47 +1,45 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { calcularMedicion } from '@pages/maps/helpers/resultadoMedicion';
+import {
+    FUENTE_MEDICION_3D as FUENTE, anotacionDeMedicion, capasMedicion3d as capas, geometriaMedicion,
+} from '@pages/maps/helpers/medicion3dCapas';
 
-const FUENTE = 'medicion-3d';
-const MORADO = '#5C2472';
-
-const capas = [
-    { id: `${FUENTE}-relleno`, type: 'fill', source: FUENTE, filter: ['==', ['get', 'rol'], 'area'], paint: { 'fill-color': MORADO, 'fill-opacity': 0.15 } },
-    { id: `${FUENTE}-linea`, type: 'line', source: FUENTE, filter: ['==', ['get', 'rol'], 'traza'], layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': MORADO, 'line-width': 3 } },
-    { id: `${FUENTE}-vertices`, type: 'circle', source: FUENTE, filter: ['==', ['get', 'rol'], 'vertice'], paint: { 'circle-radius': 5, 'circle-color': '#FFFFFF', 'circle-stroke-color': MORADO, 'circle-stroke-width': 2, 'circle-pitch-alignment': 'viewport' } },
-    { id: `${FUENTE}-marcador`, type: 'circle', source: FUENTE, filter: ['==', ['get', 'rol'], 'marcador'], paint: { 'circle-radius': 6, 'circle-color': '#FF8300', 'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 2, 'circle-pitch-alignment': 'viewport' } },
-];
-
-const figura = (rol, geometry) => ({ type: 'Feature', properties: { rol }, geometry });
-
-export const geometriaMedicion = ({ modo, vertices, marcador }) => {
-    const features = vertices.map(v => figura('vertice', { type: 'Point', coordinates: v }));
-    if (modo === 'poligono' && vertices.length > 2) {
-        const anillo = [...vertices, vertices[0]];
-        features.unshift(figura('area', { type: 'Polygon', coordinates: [anillo] }), figura('traza', { type: 'LineString', coordinates: anillo }));
-    } else if (modo !== 'punto' && vertices.length > 1) {
-        features.unshift(figura('traza', { type: 'LineString', coordinates: vertices }));
-    }
-    if (marcador) features.push(figura('marcador', { type: 'Point', coordinates: marcador }));
-    return { type: 'FeatureCollection', features };
-};
-
-export const useMedicion3d = (map) => {
+export const useMedicion3d = (map, { onTerminar } = {}) => {
     const [modo, setModoState] = useState(null);
     const [vertices, setVertices] = useState([]);
+    const [puntero, setPuntero] = useState(null);
     const [resultado, setResultado] = useState(null);
     const [calculando, setCalculando] = useState(false);
     const [marcador, setMarcador] = useState(null);
+    const [terminado, setTerminado] = useState(false);
     const terminadoRef = useRef(false);
     const turnoRef = useRef(0);
+    const verticesRef = useRef([]);
+    verticesRef.current = vertices;
+    const onTerminarRef = useRef(onTerminar);
+    onTerminarRef.current = onTerminar;
 
+    const reiniciar = useCallback((lista = []) => {
+        terminadoRef.current = false;
+        setTerminado(false);
+        setVertices(lista);
+    }, []);
     const setModo = useCallback((siguiente) => {
         setModoState(siguiente);
-        setVertices([]);
-        terminadoRef.current = false;
-    }, []);
-    const deshacer = useCallback(() => { terminadoRef.current = false; setVertices(prev => prev.slice(0, -1)); }, []);
-    const borrar = useCallback(() => { terminadoRef.current = false; setVertices([]); }, []);
-    const terminar = useCallback(() => { terminadoRef.current = true; }, []);
+        setPuntero(null);
+        reiniciar();
+    }, [reiniciar]);
+    const deshacer = useCallback(() => reiniciar(verticesRef.current.slice(0, -1)), [reiniciar]);
+    const borrar = useCallback(() => { setPuntero(null); reiniciar(); }, [reiniciar]);
+    const terminar = useCallback((lista = verticesRef.current) => {
+        if (terminadoRef.current) return;
+        terminadoRef.current = true;
+        setTerminado(true);
+        setPuntero(null);
+        setVertices(lista);
+        const anotacion = anotacionDeMedicion(modo, lista);
+        if (anotacion) onTerminarRef.current?.(anotacion);
+    }, [modo]);
 
     useEffect(() => {
         if (!map) return undefined;
@@ -59,42 +57,44 @@ export const useMedicion3d = (map) => {
         if (!map || !modo) return undefined;
         map.doubleClickZoom.disable();
         map.getCanvas().style.cursor = 'crosshair';
+        let cuadro = null;
 
         const alClic = (event) => {
             const punto = event.lngLat.toArray();
-            if (modo === 'punto') {
-                setVertices([punto]);
-                return;
-            }
-            if (terminadoRef.current) {
-                terminadoRef.current = false;
-                setVertices([punto]);
+            if (modo === 'punto' || terminadoRef.current) {
+                reiniciar([punto]);
                 return;
             }
             setVertices(prev => [...prev, punto]);
         };
-        const alDobleClic = () => {
-            if (modo !== 'punto') setVertices(prev => prev.slice(0, -1));
-            terminar();
+        const alMover = (event) => {
+            if (terminadoRef.current || modo === 'punto' || !verticesRef.current.length) return;
+            const punto = event.lngLat.toArray();
+            cancelAnimationFrame(cuadro);
+            cuadro = requestAnimationFrame(() => setPuntero(punto));
         };
-        const alTeclear = (event) => { if (event.key === 'Escape' || event.key === 'Enter') terminar(); };
+        const alDobleClic = () => terminar(verticesRef.current.slice(0, -1));
+        const alTeclear = (event) => { if (event.key === 'Enter' || event.key === 'Escape') terminar(); };
 
         map.on('click', alClic);
+        map.on('mousemove', alMover);
         map.on('dblclick', alDobleClic);
         window.addEventListener('keydown', alTeclear);
         return () => {
+            cancelAnimationFrame(cuadro);
             map.off('click', alClic);
+            map.off('mousemove', alMover);
             map.off('dblclick', alDobleClic);
             window.removeEventListener('keydown', alTeclear);
             map.doubleClickZoom.enable();
             map.getCanvas().style.cursor = '';
         };
-    }, [map, modo, terminar]);
+    }, [map, modo, terminar, reiniciar]);
 
     useEffect(() => {
         const fuente = map?.getSource(FUENTE);
-        if (fuente) fuente.setData(geometriaMedicion({ modo, vertices, marcador }));
-    }, [map, modo, vertices, marcador]);
+        if (fuente) fuente.setData(geometriaMedicion({ modo, vertices, marcador, puntero }));
+    }, [map, modo, vertices, marcador, puntero]);
 
     useEffect(() => {
         const turno = ++turnoRef.current;
@@ -106,5 +106,5 @@ export const useMedicion3d = (map) => {
             .finally(() => { if (turno === turnoRef.current) setCalculando(false); });
     }, [modo, vertices]);
 
-    return { modo, setModo, vertices, resultado, calculando, deshacer, borrar, terminar, setMarcador };
+    return { modo, setModo, vertices, terminado, resultado, calculando, deshacer, borrar, terminar: () => terminar(), setMarcador };
 };

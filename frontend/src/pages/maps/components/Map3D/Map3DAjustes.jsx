@@ -1,11 +1,19 @@
 import Icon from '@components/Icon';
 import PanelHeader from '@components/PanelHeader';
-import PillCloseButton from '@components/PillCloseButton';
+import { MobileSheetCloseButton } from '@components/MobileSheet';
+import Tooltip from '@components/Tooltip';
 import Switch from '@components/Switch';
 import { useView3d } from '@contexts/View3dContext';
 import Map3DPopover from './Map3DPopover';
 import Map3DDeslizador from './Map3DDeslizador';
 import { deslizadores3d } from './deslizadores3d';
+
+const IconoRestablecer = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3 12a9 9 0 1 0 3-6.7" />
+        <polyline points="3 3 3 9 9 9" />
+    </svg>
+);
 
 const Interruptor = ({ titulo, activo, onChange }) => (
     <div className="flex items-center justify-between font-garet text-[12px] text-graphite">
@@ -30,7 +38,21 @@ const Map3DAjustes = ({ anchorRef, onClose }) => {
             <PanelHeader
                 icono={<Icon name="settings" className="size-4.5 shrink-0" />}
                 titulo="Ajustes 3D"
-                acciones={<PillCloseButton onClick={onClose} size="sm" reveal="siempre" tooltip="Cerrar ajustes" ariaLabel="Cerrar ajustes de la vista 3D" />}
+                acciones={(
+                    <>
+                        <Tooltip content="Restablecer los ajustes de fábrica">
+                            <button
+                                type="button"
+                                onClick={view3d.restablecer}
+                                className="flex items-center justify-center size-6 text-gray-500 hover:text-gray-800 cursor-pointer"
+                                aria-label="Restablecer los ajustes de la vista 3D"
+                            >
+                                <IconoRestablecer />
+                            </button>
+                        </Tooltip>
+                        <MobileSheetCloseButton onClick={onClose} />
+                    </>
+                )}
             />
             <div className="flex flex-col gap-3 rounded-[7px] bg-white p-3">
                 {Object.entries(deslizadores).map(([clave, deslizador]) => (
@@ -42,13 +64,6 @@ const Map3DAjustes = ({ anchorRef, onClose }) => {
                 <Interruptor titulo="Cielo" activo={view3d.cielo} onChange={view3d.setCielo} />
                 <Interruptor titulo="Niebla" activo={view3d.niebla} onChange={view3d.setNiebla} />
             </div>
-            <button
-                type="button"
-                onClick={view3d.restablecer}
-                className="self-center h-8 px-4 rounded-full border border-transparent bg-[#EAEFFA] font-garet font-bold text-[13px] text-purple-deep hover:border-purple transition-colors cursor-pointer"
-            >
-                Restablecer
-            </button>
         </Map3DPopover>
     );
 };

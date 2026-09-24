@@ -17,26 +17,35 @@ export class RotarConClicDerecho extends DragRotate {
     }
 }
 
-export const useRotacionClicDerecho = (map, habilitado) => {
-    const interaccionRef = useRef(null);
+export const useRotacionClicDerecho = (maps, habilitado) => {
+    const interaccionesRef = useRef([]);
+    const lista = (Array.isArray(maps) ? maps : [maps]).filter(Boolean);
+    const clave = lista.length;
 
     useEffect(() => {
-        if (!map) return undefined;
-        const interaccion = new RotarConClicDerecho();
-        interaccionRef.current = interaccion;
-        map.addInteraction(interaccion);
+        if (!lista.length) return undefined;
+        const montadas = lista.map((map) => {
+            const interaccion = new RotarConClicDerecho();
+            map.addInteraction(interaccion);
+            return { map, interaccion };
+        });
+        interaccionesRef.current = montadas;
         return () => {
-            map.removeInteraction(interaccion);
-            interaccionRef.current = null;
+            montadas.forEach(({ map, interaccion }) => map.removeInteraction(interaccion));
+            interaccionesRef.current = [];
         };
-    }, [map]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [clave, ...lista]);
 
     useEffect(() => {
-        interaccionRef.current?.setActive(habilitado);
-        const destino = map?.getTargetElement();
-        if (!destino || !habilitado) return undefined;
+        interaccionesRef.current.forEach(({ interaccion }) => interaccion.setActive(habilitado));
+        if (!habilitado) return undefined;
         const sinMenu = (event) => event.preventDefault();
-        destino.addEventListener('contextmenu', sinMenu);
-        return () => destino.removeEventListener('contextmenu', sinMenu);
-    }, [map, habilitado]);
+        const destinos = interaccionesRef.current
+            .map(({ map }) => map.getTargetElement())
+            .filter(Boolean);
+        destinos.forEach(destino => destino.addEventListener('contextmenu', sinMenu));
+        return () => destinos.forEach(destino => destino.removeEventListener('contextmenu', sinMenu));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [clave, habilitado, ...lista]);
 };

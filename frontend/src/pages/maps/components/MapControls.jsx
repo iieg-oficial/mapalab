@@ -146,7 +146,8 @@ const MapControls = ({ hideLocate = false }) => {
                         reveal="siempre"
                         tooltip="Al dar clic se cierra la vista 3D"
                         ariaLabel="Cerrar la vista 3D"
-                        className="m-0.5"
+                        size="pastilla"
+                        className="mx-1.5 my-0.5"
                     />
                 )}
                 {view3d.present && !view3d.active && !isSwipe && (

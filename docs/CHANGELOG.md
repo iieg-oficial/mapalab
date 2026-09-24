@@ -5,6 +5,28 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.195.0] - 2026-09-23
+
+### Corregido: el clic derecho para girar no funcionaba del lado β
+
+`<BotonNorte>` montaba la interacción de rotación sobre `getActiveMap()`, que en el comparador
+resuelve **siempre al pane α**: el lado β nunca la recibía. `useRotacionClicDerecho` ahora acepta
+varios mapas y en swipe se monta en los dos. Como comparten la misma instancia de `View`, girar
+desde cualquiera de los dos mueve ambos. Verificado arrastrando con el botón derecho sobre la mitad
+derecha: la rosa de los vientos pasa de 0° a 7.6°.
+
+### Agregado: pasar el puntero por un lado lo resalta en el mapa
+
+Los botones α y β de cada fila y las píldoras de fecha encienden el overlay gigante de su mitad
+mientras el puntero está encima, con el mismo `highlightSlots` que ya usaba la píldora que se
+retiró. Antes había que hacer clic para saber qué mitad tocabas.
+
+### Cambiado: detalles de la barra y del panel
+
+- **Las píldoras de fecha van sueltas**, sin el contenedor blanco que les había puesto.
+- **La X de cerrar queda por detrás** de las capas comparadas: al abrir el panel deja de asomar.
+- **La X del panel** es la misma de `<Panel>`, la del encabezado del catálogo de capas.
+
 ## [1.194.0] - 2026-09-23
 
 ### Agregado: engrane de ajustes en la vista 3D

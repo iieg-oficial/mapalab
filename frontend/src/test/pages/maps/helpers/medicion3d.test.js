@@ -10,7 +10,7 @@ import {
     rejillaSobre,
 } from '@pages/maps/helpers/medicion3d';
 import { alturaDesdeRgba, pixelDe } from '@pages/maps/helpers/elevacionDem';
-import { geometriaMedicion } from '@pages/maps/hooks/useMedicion3d';
+import { anotacionDeMedicion, geometriaMedicion } from '@pages/maps/helpers/medicion3dCapas';
 
 const GUZMAN = [-103.4613, 19.7045];
 const NEVADO = [-103.617, 19.563];
@@ -104,3 +104,23 @@ describe('geometriaMedicion', () => {
         expect(geometriaMedicion({ modo: 'punto', vertices: [[0, 0]], marcador: null }).features).toHaveLength(1);
     });
 });
+
+describe('anotacionDeMedicion', () => {
+    it('cierra el anillo del poligono y descarta trazos incompletos', () => {
+        const v = [[0, 0], [1, 0], [1, 1]];
+        expect(anotacionDeMedicion('poligono', v).geometry.coordinates[0].at(-1)).toEqual([0, 0]);
+        expect(anotacionDeMedicion('linea', v).type).toBe('LineString');
+        expect(anotacionDeMedicion('linea', [[0, 0]])).toBeNull();
+        expect(anotacionDeMedicion('poligono', v.slice(0, 2))).toBeNull();
+    });
+});
+
+describe('trazo en vivo', () => {
+    it('agrega el tramo hacia el puntero y previsualiza el poligono', () => {
+        const linea = geometriaMedicion({ modo: 'linea', vertices: [[0, 0]], marcador: null, puntero: [1, 1] });
+        expect(linea.features[0].properties.rol).toBe('vivo');
+        const area = geometriaMedicion({ modo: 'poligono', vertices: [[0, 0], [1, 0]], marcador: null, puntero: [1, 1] });
+        expect(area.features[0].properties.rol).toBe('area');
+    });
+});
+

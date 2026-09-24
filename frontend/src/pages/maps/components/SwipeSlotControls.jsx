@@ -45,7 +45,7 @@ const BOTON_BARRA = 'size-8 flex items-center justify-center rounded-full transi
 const SwipeSlotControls = () => {
     const {
         compareMode, exitCompareMode, toggleSwipeOrientation,
-        selectedLayerForSymbology, setSelectedLayerForSymbology, allLayers, dateLoops,
+        selectedLayerForSymbology, setSelectedLayerForSymbology, allLayers, dateLoops, highlightSlots,
     } = useMapsContext();
     const { width: siderWidth, isOpen: isSiderOpen, isMobile: isMobileSider } = useSider();
     const siderShift = !isMobileSider && isSiderOpen ? siderWidth / 2 : 0;
@@ -105,7 +105,11 @@ const SwipeSlotControls = () => {
 
     const loop = layerId ? dateLoops?.[layerId] : null;
     const pildoraFecha = (slot, dentro, etiqueta) => (dentro && etiqueta.label ? (
-        <div className={`${PILDORA} px-1.5 shrink-0`}>
+        <span
+            className="shrink-0"
+            onMouseEnter={() => highlightSlots?.(slot)}
+            onMouseLeave={() => highlightSlots?.(null)}
+        >
             <DatePill
                 slot={slot}
                 label={etiqueta.label}
@@ -115,7 +119,7 @@ const SwipeSlotControls = () => {
                 size="md"
                 autoWidth
             />
-        </div>
+        </span>
     ) : null);
 
     return (
@@ -136,7 +140,7 @@ const SwipeSlotControls = () => {
                     tooltip="Cerrar comparador"
                     ariaLabel="Cerrar comparador"
                     placement="top"
-                    className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 z-[2]"
+                    className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2"
                 />
                 <ConfirmDropdown
                     open={confirmando}

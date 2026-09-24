@@ -20,6 +20,7 @@ const REVELADOS = {
 
 const TAMANOS = {
     sm: { boton: 'size-6', icono: 'size-4.5' },
+    pastilla: { boton: 'size-8', icono: 'size-5' },
     md: { boton: 'size-10', icono: 'size-7' },
 };
 

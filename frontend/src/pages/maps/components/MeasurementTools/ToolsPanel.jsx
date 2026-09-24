@@ -10,7 +10,7 @@ import TextInlineEditor from './TextInlineEditor';
 import HistoryPanel from './HistoryPanel';
 import FeatureEditToolbar from './FeatureEditToolbar';
 import PanelMedicion from './PanelMedicion';
-import { useResultadoMedicion } from '@hooksMaps/useResultadoMedicion';
+import { ultimaMedicion, useResultadoMedicion } from '@hooksMaps/useResultadoMedicion';
 
 const ToolsPanel = () => {
     const {
@@ -53,14 +53,17 @@ const ToolsPanel = () => {
         startTextEdit,
         updateEditingTextLabel,
         commitTextEdit,
-        cancelTextEdit
+        cancelTextEdit,
+        selectedFeatureInfo
     } = useMapsContext();
     const { style, className } = useSiderAdaptivePosition({ anchorRef: 'tools' });
     const { isMobile } = useSider();
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [isMeasurementListOpen, setIsMeasurementListOpen] = useState(false);
     const emojiPickerButtonRef = useRef(null);
-    const medicion = useResultadoMedicion(measurements);
+    const geometriaMedida = ultimaMedicion(measurements)?.feature?.getGeometry();
+    const enInfoBox = !!selectedFeatureInfo?.isPolygonSelection && selectedFeatureInfo.polygonGeometry === geometriaMedida;
+    const medicion = useResultadoMedicion(enInfoBox ? null : geometriaMedida);
 
     const shouldRender = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0;
     const showTypeSwitcher = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing;

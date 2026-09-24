@@ -7,14 +7,15 @@ import DatePill from '@mapsComponents/ActiveLayers/DatePill';
 import { SLOT_COLORS, slotLabel } from '@pages/maps/helpers/swipeTheme';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
-import ActionIconButton from '@components/ActionIconButton';
 import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
 
-const BotonLado = ({ slot, activo, bloqueado, onClick }) => (
+const BotonLado = ({ slot, activo, bloqueado, onClick, onResaltar }) => (
     <Tooltip content={bloqueado ? 'Debe quedar en al menos un lado' : `${activo ? 'Quitar del' : 'Mostrar en el'} lado ${slotLabel(slot)}`}>
         <button
             type="button"
             onClick={(e) => { e.stopPropagation(); if (!bloqueado) onClick(); }}
+            onMouseEnter={() => onResaltar?.(slot)}
+            onMouseLeave={() => onResaltar?.(null)}
             aria-pressed={activo}
             aria-disabled={bloqueado}
             aria-label={`${activo ? 'Quitar del' : 'Mostrar en el'} lado ${slotLabel(slot)}`}
@@ -31,7 +32,7 @@ const BotonLado = ({ slot, activo, bloqueado, onClick }) => (
 const PanelCapas = ({ onClose, onElegirFecha }) => {
     const {
         compareMode, allLayers, selectedLayerForSymbology,
-        setSelectedLayerForSymbology, setLayerSlotMembership,
+        setSelectedLayerForSymbology, setLayerSlotMembership, highlightSlots,
     } = useMapsContext();
 
     const idsUnion = useMemo(() => {
@@ -78,14 +79,16 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
         const etiqueta = slot === 'A' ? capa.fechaA : capa.fechaB;
         if (!dentro || !etiqueta.label) return null;
         return (
-            <DatePill
-                slot={slot}
-                label={etiqueta.label}
-                kind={etiqueta.kind}
-                onClick={(e) => { e.stopPropagation(); onElegirFecha?.(capa, slot); }}
-                size="sm"
-                autoWidth
-            />
+            <span onMouseEnter={() => highlightSlots?.(slot)} onMouseLeave={() => highlightSlots?.(null)}>
+                <DatePill
+                    slot={slot}
+                    label={etiqueta.label}
+                    kind={etiqueta.kind}
+                    onClick={(e) => { e.stopPropagation(); onElegirFecha?.(capa, slot); }}
+                    size="sm"
+                    autoWidth
+                />
+            </span>
         );
     };
 
@@ -96,14 +99,16 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
                     <Icon name="tool_swipe" className="size-8 text-purple" />
                     <h3 className="font-garet font-bold text-[18px]/[47px]">Capas comparadas</h3>
                 </div>
-                <ActionIconButton
-                    onClick={onClose}
-                    titulo="Cerrar el panel de capas"
-                    etiqueta="Cerrar el panel de capas comparadas"
-                    tamano="sm"
-                >
-                    <Icon name="close" className="size-3.5" />
-                </ActionIconButton>
+                <Tooltip content="Cerrar capas comparadas" placement="left" delay={400}>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-gray-500 hover:text-gray-800 cursor-pointer"
+                        aria-label="Cerrar capas comparadas"
+                    >
+                        <Icon name="close" />
+                    </button>
+                </Tooltip>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -118,7 +123,7 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
                                 ? 'bg-[#F7F0FA] ring-1 ring-[#70308A]'
                                 : 'bg-white'}`}
                         >
-                            <BotonLado slot="A" activo={capa.enA} bloqueado={solaEnA} onClick={() => alternarLado(capa, 'A')} />
+                            <BotonLado slot="A" activo={capa.enA} bloqueado={solaEnA} onClick={() => alternarLado(capa, 'A')} onResaltar={highlightSlots} />
 
                             {celdaFecha(capa, 'A')}
 
@@ -136,7 +141,7 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
 
                             {celdaFecha(capa, 'B')}
 
-                            <BotonLado slot="B" activo={capa.enB} bloqueado={solaEnB} onClick={() => alternarLado(capa, 'B')} />
+                            <BotonLado slot="B" activo={capa.enB} bloqueado={solaEnB} onClick={() => alternarLado(capa, 'B')} onResaltar={highlightSlots} />
                         </div>
                     );
                 })}

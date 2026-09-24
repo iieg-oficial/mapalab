@@ -4,6 +4,7 @@ import PillCloseButton from '@components/PillCloseButton';
 import { formatAreaValue, formatLengthValue } from '@pages/maps/helpers/formatMeasure';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import PerfilElevacion from './PerfilElevacion';
+import DistribucionAlturas from './DistribucionAlturas';
 
 const ENCABEZADOS = {
     punto: { titulo: 'Altura del punto', icono: 'geom_point' },
@@ -44,17 +45,20 @@ const Filas = ({ resultado }) => {
             <Fila etiqueta="Área vista desde arriba" valor={formatAreaValue(resultado.plano)} />
             <Fila etiqueta="Área sobre el relieve" valor={formatAreaValue(resultado.superficie)} nueva />
             <Fila etiqueta="Perímetro" valor={formatLengthValue(resultado.perimetro)} />
+            {resultado.distribucion && (
+                <Fila etiqueta="Máx. / mín." valor={`${metros(resultado.max)} / ${metros(resultado.min)}`} nueva />
+            )}
         </>
     );
 };
 
-const PanelMedicion = ({ modo, resultado, calculando, onCerrar, onRecorrer, className = '' }) => {
+const PanelMedicion = ({ modo, resultado, calculando, onCerrar, onRecorrer, ancho = 'w-[300px]', className = '' }) => {
     const encabezado = ENCABEZADOS[resultado?.modo || modo];
     if (!encabezado) return null;
     const conPerfil = resultado?.modo === 'linea' && resultado.perfil.length > 1;
 
     return (
-        <section className={`flex w-[300px] max-md:max-w-[calc(100vw-5rem)] flex-col gap-2 rounded-[12px] bg-[#F9FBFF] px-4.5 pb-3 pt-2 shadow-[0_5px_20px_#1A26641A] ${className}`} aria-label={encabezado.titulo}>
+        <section className={`flex ${ancho} max-md:max-w-[calc(100vw-5rem)] flex-col gap-2 rounded-[12px] bg-[#F9FBFF] px-4.5 pb-3 pt-2 shadow-[0_5px_20px_#1A26641A] ${className}`} aria-label={encabezado.titulo}>
             <PanelHeader
                 icono={<Icon name={encabezado.icono} className="size-5 shrink-0" />}
                 titulo={encabezado.titulo}
@@ -70,6 +74,12 @@ const PanelMedicion = ({ modo, resultado, calculando, onCerrar, onRecorrer, clas
                     <div className="mt-2">
                         <span className="font-garet font-bold text-[12px] text-graphite">Perfil de elevación</span>
                         <PerfilElevacion perfil={resultado.perfil} onRecorrer={onRecorrer || (() => {})} />
+                    </div>
+                )}
+                {resultado?.distribucion && (
+                    <div className="mt-2 flex flex-col gap-1.5">
+                        <span className="font-garet font-bold text-[12px] text-graphite">Alturas dentro del área</span>
+                        <DistribucionAlturas distribucion={resultado.distribucion} />
                     </div>
                 )}
             </div>

@@ -8,9 +8,10 @@ import icoNorte from '@icons/ico_n.svg';
 const BotonNorte = ({ getActiveMap }) => {
     const view3d = useView3d();
     const [rotacion, setRotacion] = useState(0);
-    const { areMeasurementToolsVisible, areAnnotationToolsVisible, isDrawing } = useMapsContext();
+    const { areMeasurementToolsVisible, areAnnotationToolsVisible, isDrawing, compareMode, paneMapInstances } = useMapsContext();
     const map = getActiveMap();
-    useRotacionClicDerecho(map, !view3d.active && !areMeasurementToolsVisible && !areAnnotationToolsVisible && !isDrawing);
+    const mapas = compareMode?.active ? [paneMapInstances?.[0], paneMapInstances?.[1]] : [map];
+    useRotacionClicDerecho(mapas, !view3d.active && !areMeasurementToolsVisible && !areAnnotationToolsVisible && !isDrawing);
 
     useEffect(() => {
         const view = map?.getView();

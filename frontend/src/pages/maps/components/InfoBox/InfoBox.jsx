@@ -25,6 +25,7 @@ import InfoCard from './components/InfoCard';
 import DismissGesture from './components/DismissGesture';
 import WhatsNewModal from '../WhatsNewModal';
 import { useColibriOpen } from '@hooks/useColibriOpen';
+import PanelMedicionSeleccion from '../MeasurementTools/PanelMedicionSeleccion';
 import { useIsNonProd } from '@hooks/useDevTools';
 
 const InfoBox = ({ forceDesktop = false, embed = false }) => {
@@ -367,6 +368,8 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                         isLoadingExpand={isLoadingExpand}
                         onToggleExpand={handleToggleExpand}
                     />
+
+                    {isPolygonSelection && <PanelMedicionSeleccion geometria={selectedFeatureInfo?.polygonGeometry} className="mt-2" />}
 
                     {featuresList && (
                         totalFeatures <= 1 ? (
