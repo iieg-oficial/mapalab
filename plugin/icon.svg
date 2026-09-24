@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="MapaLab">
-    <rect width="64" height="64" rx="14" fill="#5C2472"/>
-    <path d="M10 46V19l14-6 16 6 14-6v27l-14 6-16-6-14 6z" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M24 13v27M40 19v27" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/>
-    <circle cx="32" cy="30" r="6" fill="#FF8300"/>
-    <circle cx="32" cy="30" r="2.2" fill="#5C2472"/>
-</svg>
