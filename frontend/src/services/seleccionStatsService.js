@@ -164,11 +164,26 @@ export const agregarEnPoligono = async ({ capa, campo, poligono, getFilter = nul
     }
 };
 
+export const CAPAS_SIMULTANEAS = 2;
+
+export const conLimite = async (elementos, limite, tarea) => {
+    const resultados = new Array(elementos.length);
+    let siguiente = 0;
+    const trabajador = async () => {
+        while (siguiente < elementos.length) {
+            const indice = siguiente++;
+            resultados[indice] = await tarea(elementos[indice]);
+        }
+    };
+    await Promise.all(Array.from({ length: Math.min(limite, elementos.length) }, trabajador));
+    return resultados;
+};
+
 export const contarEnPoligono = async (capas = [], poligono, { getFilter = null, allLayers = [] } = {}) => {
     if (!poligono || capas.length === 0) return [];
     const wkt = wktDelPoligono(poligono);
 
-    return Promise.all(capas.map(async (capa) => {
+    return conLimite(capas, CAPAS_SIMULTANEAS, async (capa) => {
         const fila = { id: capa.id, etiqueta: capa.label || capa.name || capa.id, conteo: null };
         const wmsConfig = findWMSConfig(capa.id, allLayers);
         if (!wmsConfig || wmsConfig.wfsAvailable === false) return { ...fila, sinWfs: true };
@@ -194,7 +209,7 @@ export const contarEnPoligono = async (capas = [], poligono, { getFilter = null,
         } catch {
             return fila;
         }
-    }));
+    });
 };
 
 export const contarBorde = (capas, poligono, opciones) => contarEnPoligono(

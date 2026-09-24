@@ -15,7 +15,7 @@ vi.mock('@utils/featureInfoUtils', () => ({
     getWfsUrl: (url) => url.replace('/wms', '/wfs'),
 }));
 
-import { agregarEnPoligono, camposDeCapa, construirAgregado, contarEnPoligono, esCampoDeClase, esCampoNumerico, filtroDePoligono, leerAgregado, leerAgregadoPorClase, leerNumberMatched, wktDelPoligono, MAX_VERTICES } from '@services/seleccionStatsService';
+import { CAPAS_SIMULTANEAS, MAX_VERTICES, agregarEnPoligono, camposDeCapa, conLimite, construirAgregado, contarEnPoligono, esCampoDeClase, esCampoNumerico, filtroDePoligono, leerAgregado, leerAgregadoPorClase, leerNumberMatched, wktDelPoligono } from '@services/seleccionStatsService';
 
 const cuadro = new Polygon([[[0, 0], [1000, 0], [1000, 1000], [0, 1000], [0, 0]]]);
 
@@ -208,5 +208,27 @@ describe('wktDelPoligono con varios polígonos', () => {
     it('los manda como MULTIPOLYGON', () => {
         const junta = new MultiPolygon([cuadro.getCoordinates(), new Polygon([[[5000, 5000], [6000, 5000], [6000, 6000], [5000, 5000]]]).getCoordinates()]);
         expect(wktDelPoligono(junta)).toBe('MULTIPOLYGON(((0 0,1000 0,1000 1000,0 1000,0 0)),((5000 5000,6000 5000,6000 6000,5000 5000)))');
+    });
+});
+
+describe('conLimite', () => {
+    it('no deja más tareas en vuelo que el límite y conserva el orden', async () => {
+        let enVuelo = 0;
+        let maximo = 0;
+        const tarea = async (n) => {
+            enVuelo += 1;
+            maximo = Math.max(maximo, enVuelo);
+            await new Promise(resolve => setTimeout(resolve, 5 - (n % 3)));
+            enVuelo -= 1;
+            return n * 10;
+        };
+        const resultado = await conLimite([1, 2, 3, 4, 5, 6, 7], CAPAS_SIMULTANEAS, tarea);
+
+        expect(maximo).toBe(CAPAS_SIMULTANEAS);
+        expect(resultado).toEqual([10, 20, 30, 40, 50, 60, 70]);
+    });
+
+    it('con una lista vacía no ejecuta nada', async () => {
+        expect(await conLimite([], 2, async () => 1)).toEqual([]);
     });
 });

@@ -33,13 +33,11 @@ export const useMedicion3d = (mapas, { onTerminar } = {}) => {
     const borrar = useCallback(() => { setPuntero(null); reiniciar(); }, [reiniciar]);
     const terminar = useCallback((lista = verticesRef.current) => {
         if (terminadoRef.current) return;
-        terminadoRef.current = true;
-        setTerminado(true);
-        setPuntero(null);
-        setVertices(lista);
         const anotacion = anotacionDeMedicion(modo, lista);
+        setPuntero(null);
+        reiniciar();
         if (anotacion) onTerminarRef.current?.(anotacion);
-    }, [modo]);
+    }, [modo, reiniciar]);
 
     useEffect(() => {
         mapas.forEach((map) => {
