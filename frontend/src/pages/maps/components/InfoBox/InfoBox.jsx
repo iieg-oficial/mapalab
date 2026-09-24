@@ -10,7 +10,7 @@ import { useDraggablePanel } from './hooks/useDraggablePanel';
 import InfoBoxArrow, { ARROW_TIP } from './components/InfoBoxArrow';
 import { useFeatureInfo } from '../../hooks/useFeatureInfo';
 import { renderCard } from './utils/renderCard.jsx';
-import { downloadFeaturesAsCSV } from './utils/downloadFeatures';
+import { useDescargaDeInfoBox } from './hooks/useDescargaDeInfoBox';
 import { pedirDescargaDeSeleccion } from '@pages/maps/helpers/descargaSeleccion';
 import { useInfoBoxLazyLoad } from '../../hooks/useInfoBoxLazyLoad';
 import { findLayerById } from '../../helpers/layers/utils/layerHelpers';
@@ -35,7 +35,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
     const { isMobile: siderIsMobile } = useSider();
     const isMobile = forceDesktop ? false : siderIsMobile;
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
-    const { selectAlternativeLayer, loadMoreFeatures, loadMorePolygonFeatures } = useFeatureInfo();
+    const { selectAlternativeLayer, loadMoreFeatures, loadMorePolygonFeatures, pedirParaDescarga } = useFeatureInfo();
     const panelRef = useRef(null);
     const cardRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -81,6 +81,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
         loadMoreFeatures,
         loadMorePolygonFeatures,
     });
+    const descarga = useDescargaDeInfoBox({ selectedFeatureInfo, lazyLoad, allLayers, pedirParaDescarga });
 
     const centrado = !!selectedFeatureInfo?.centrado;
     const baseTransform = centrado
@@ -123,7 +124,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
     if (!selectedFeatureInfo) return null;
 
     const { results, isPolygonSelection, queriedLayerName, queriedLayerId, alternativeLayers, enBorde = 0 } = selectedFeatureInfo;
-    const { sentinelRef: loadMoreSentinelRef, loadingMore, totalAvailable, totalFeatures, hasMore, downloadDisplayCount, downloadShowsPlus, downloadTooltipText, enrichResultsForDownload } = lazyLoad;
+    const { sentinelRef: loadMoreSentinelRef, loadingMore, totalAvailable, totalFeatures, hasMore } = lazyLoad;
     const isSingleFeature = totalFeatures === 1;
     const hasNoResults = !results || results.length === 0 || totalFeatures === 0;
     const hasAlternatives = alternativeLayers && alternativeLayers.length > 0;
@@ -187,12 +188,6 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
         const config = resultLittleCard || findLayerById(layerId, allLayers)?.littleCard;
         const dateValue = getSpecificFilter?.(layerId, 'date');
         return renderCard(feature.properties, config, onClose, layerId, feature.id, handleAction, isMobile ? 'mobile' : 'desktop', cardIndex, cardTotal, dateValue, ubicacionDeFeature(feature, selectedFeatureInfo?.lngLat));
-    };
-
-    const handleDownload = async () => {
-        if (!results || results.length === 0) return;
-        const enriched = await enrichResultsForDownload();
-        downloadFeaturesAsCSV(enriched, allLayers);
     };
 
     const descargarMapaDeSeleccion = () => pedirDescargaDeSeleccion(selectedFeatureInfo?.polygonGeometry);
@@ -261,16 +256,16 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
             tooltip: 'Centrar selección en el mapa',
             onClick: handleCenterGroup
         },
-        showMultiActions && {
+        descarga.onDownload && {
             id: 'download',
             icon: 'download',
             label: (
                 <>
-                    Descargar <span className="text-orange font-bold">{downloadDisplayCount}{downloadShowsPlus ? '+' : ''}</span> {downloadDisplayCount === 1 ? 'tarjeta' : 'tarjetas'}
+                    Descargar <span className="text-orange font-bold">{descarga.downloadCount}{descarga.downloadShowsPlus ? '+' : ''}</span> {descarga.downloadCount === 1 ? 'tarjeta' : 'tarjetas'}
                 </>
             ),
             tooltip: <LicenseTooltipContent />,
-            onClick: handleDownload
+            onClick: descarga.onDownload
         },
         isPolygonSelection && {
             id: 'descargar_mapa',
@@ -420,12 +415,12 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                             onClear={showMultiActions || soloMedicion ? handleClose : null}
                             moveHandleProps={embed ? null : moveHandleProps}
                             isMoving={isDragging}
-                            onDownload={showMultiActions ? handleDownload : null}
+                            onDownload={descarga.onDownload}
                             onDownloadMap={isPolygonSelection ? descargarMapaDeSeleccion : null}
                             onCenter={showCenterButton ? handleCenterGroup : null}
-                            downloadCount={downloadDisplayCount}
-                            downloadShowsPlus={downloadShowsPlus}
-                            downloadTooltip={downloadTooltipText}
+                            downloadCount={descarga.downloadCount}
+                            downloadShowsPlus={descarga.downloadShowsPlus}
+                            downloadTooltip={descarga.downloadTooltip}
                         />
                     </div>
                 )}

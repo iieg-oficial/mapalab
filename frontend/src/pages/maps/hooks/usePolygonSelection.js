@@ -91,9 +91,19 @@ export const usePolygonSelection = ({ getFilter = null, pageRef = null } = {}) =
         }
     }, [getFilter, polygonPageRef]);
 
+    const pedirParaDescarga = useCallback(async (count) => {
+        const state = polygonPageRef.current;
+        if (!state) return null;
+        return getFeaturesInPolygonForActiveLayers(
+            state.activeLayers, state.map, state.polygonGeometry, getFilter,
+            state.isInegiMode, state.allLayers,
+            { startIndex: 0, count }
+        );
+    }, [getFilter, polygonPageRef]);
+
     const clearPolygonPage = useCallback(() => {
         polygonPageRef.current = null;
     }, [polygonPageRef]);
 
-    return { polygonPageRef, queryPolygon, resumirPoligono, loadMorePage, clearPolygonPage };
+    return { polygonPageRef, queryPolygon, resumirPoligono, loadMorePage, pedirParaDescarga, clearPolygonPage };
 };

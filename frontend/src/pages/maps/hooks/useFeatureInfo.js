@@ -27,7 +27,7 @@ export const useFeatureInfo = (overrides = null) => {
     const [loading, setLoading] = useState(false);
     const localPolygonPageRef = useRef(null);
     const polygonPageRef = ctx.polygonPageRef || localPolygonPageRef;
-    const { resumirPoligono } = usePolygonSelection({ getFilter, pageRef: polygonPageRef });
+    const { resumirPoligono, pedirParaDescarga } = usePolygonSelection({ getFilter, pageRef: polygonPageRef });
 
     const getAllActiveLayers = useCallback(() => {
         const hiddenIdSet = new Set(hiddenLayerIds || []);
@@ -339,6 +339,7 @@ export const useFeatureInfo = (overrides = null) => {
         selectAlternativeLayer,
         loadMoreFeatures,
         loadMorePolygonFeatures,
+        pedirParaDescarga,
         loading
     };
 };
