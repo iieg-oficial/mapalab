@@ -121,7 +121,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
 
     if (!selectedFeatureInfo) return null;
 
-    const { results, isPolygonSelection, queriedLayerName, queriedLayerId, alternativeLayers } = selectedFeatureInfo;
+    const { results, isPolygonSelection, queriedLayerName, queriedLayerId, alternativeLayers, enBorde = 0 } = selectedFeatureInfo;
     const { sentinelRef: loadMoreSentinelRef, loadingMore, totalAvailable, totalFeatures, hasMore, downloadDisplayCount, downloadShowsPlus, downloadTooltipText, enrichResultsForDownload } = lazyLoad;
     const isSingleFeature = totalFeatures === 1;
     const hasNoResults = !results || results.length === 0 || totalFeatures === 0;
@@ -326,7 +326,8 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                             {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} onCerrar={handleClose} />}
 
                             <SummaryCard
-                                visible={isPolygonSelection && !hasNoResults}
+                                visible={isPolygonSelection && (!hasNoResults || enBorde > 0)}
+                                enBorde={enBorde}
                                 results={results || []}
                                 matched={selectedFeatureInfo?.matched || 0}
                                 isExpanded={isExpanded}
@@ -372,7 +373,8 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                     {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} onCerrar={handleClose} className="mb-2" />}
 
                     <SummaryCard
-                        visible={isPolygonSelection && !hasNoResults}
+                        visible={isPolygonSelection && (!hasNoResults || enBorde > 0)}
+                        enBorde={enBorde}
                         results={results || []}
                         matched={selectedFeatureInfo?.matched || 0}
                         isExpanded={isExpanded}

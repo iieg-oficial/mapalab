@@ -23,7 +23,7 @@ const LayerRow = ({ layerId, name, count, bodySize, badgeSize }) => {
     );
 };
 
-const SummaryCard = ({ visible = false, results = [], matched = 0, isExpanded, isLoadingExpand, onToggleExpand, variant = 'desktop' }) => {
+const SummaryCard = ({ visible = false, results = [], matched = 0, enBorde = 0, isExpanded, isLoadingExpand, onToggleExpand, variant = 'desktop' }) => {
     const [showWarning, setShowWarning] = useState(false);
 
     if (!visible) return null;
@@ -71,6 +71,11 @@ const SummaryCard = ({ visible = false, results = [], matched = 0, isExpanded, i
                         <div className={`font-garet font-medium ${bodySize} text-[#465055]`}>
                             <span className="font-bold">Total de elementos:</span> {formatNumber(totalEnArea)}
                         </div>
+                        {enBorde > 0 && (
+                            <div className={`font-garet ${bodySize} text-[#7e8a91] mt-0.5`}>
+                                Cruzan el borde, sin contar: {formatNumber(enBorde)}
+                            </div>
+                        )}
                         {totalEnArea > totalFeatures && (
                             <div className={`font-garet ${bodySize} text-[#7e8a91] mt-0.5`}>
                                 Se muestran los primeros {formatNumber(totalFeatures)}
@@ -102,7 +107,7 @@ const SummaryCard = ({ visible = false, results = [], matched = 0, isExpanded, i
                 </>
             )}
 
-            <div className={`${padX} ${isExpanded ? 'py-3' : 'pt-0 pb-4'} shrink-0`}>
+            {totalFeatures > 0 && <div className={`${padX} ${isExpanded ? 'py-3' : 'pt-0 pb-4'} shrink-0`}>
                 {showWarning && (
                     <div className="mb-3">
                         <Alert
@@ -133,7 +138,7 @@ const SummaryCard = ({ visible = false, results = [], matched = 0, isExpanded, i
                         </>
                     ) : isExpanded ? 'Ocultar detalles' : 'Ver detalles'}
                 </button>
-            </div>
+            </div>}
         </InfoCard>
     );
 };

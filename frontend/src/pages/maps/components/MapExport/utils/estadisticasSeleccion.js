@@ -19,10 +19,11 @@ const filasDeClases = ({ clases, otras }) => [
 const filasDeAgregado = (agregado) => {
     if (!agregado?.datos) return [];
     if (Array.isArray(agregado.datos.clases)) return filasDeClases(agregado.datos);
-    const { suma, promedio } = agregado.datos;
+    const { suma, promedio, proporcional } = agregado.datos;
     return [
         suma == null ? null : { etiqueta: `${agregado.etiqueta}, suma`, valor: conDecimales(suma), sangria: true },
         promedio == null ? null : { etiqueta: `${agregado.etiqueta}, promedio`, valor: conDecimales(promedio), sangria: true },
+        proporcional == null ? null : { etiqueta: `${agregado.etiqueta}, suma por área`, valor: conDecimales(proporcional), sangria: true },
     ].filter(Boolean);
 };
 

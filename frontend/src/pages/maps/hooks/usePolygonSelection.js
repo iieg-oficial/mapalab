@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { getFeaturesInPolygonForActiveLayers } from '@services/featureInfoService';
+import { contarBorde } from '@services/seleccionStatsService';
 
 export const usePolygonSelection = ({ getFilter = null, pageRef = null } = {}) => {
     const localPageRef = useRef(null);
@@ -11,9 +12,10 @@ export const usePolygonSelection = ({ getFilter = null, pageRef = null } = {}) =
             return null;
         }
 
-        const page = await getFeaturesInPolygonForActiveLayers(
-            activeLayers, map, polygonGeometry, getFilter, isInegiMode, allLayers
-        );
+        const [page, enBorde] = await Promise.all([
+            getFeaturesInPolygonForActiveLayers(activeLayers, map, polygonGeometry, getFilter, isInegiMode, allLayers),
+            contarBorde(activeLayers, polygonGeometry, { getFilter, allLayers }),
+        ]);
 
         polygonPageRef.current = {
             activeLayers,
@@ -26,7 +28,7 @@ export const usePolygonSelection = ({ getFilter = null, pageRef = null } = {}) =
             matched: page.matched
         };
 
-        return page;
+        return { ...page, enBorde };
     }, [getFilter, polygonPageRef]);
 
     const loadMorePage = useCallback(async () => {

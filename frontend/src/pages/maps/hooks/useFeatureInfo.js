@@ -284,7 +284,7 @@ export const useFeatureInfo = (overrides = null) => {
         try {
             const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
             const page = await queryPolygon({ map, polygonGeometry, activeLayers, allLayers, isInegiMode });
-            const { results, matched, hasMore } = page || { results: [], matched: 0, hasMore: false };
+            const { results, matched, hasMore, enBorde = 0 } = page || { results: [], matched: 0, hasMore: false };
             const [lng, lat] = toLonLat(centerCoordinate);
 
             if (results && results.length > 0) {
@@ -297,7 +297,7 @@ export const useFeatureInfo = (overrides = null) => {
                     }));
 
                 if (onFeatureCountUpdate) {
-                    onFeatureCountUpdate(Math.max(matched || 0, totalFeatures), layerBreakdown, results);
+                    onFeatureCountUpdate(Math.max(matched || 0, totalFeatures), layerBreakdown, results, enBorde);
                 }
 
                 setTimeout(() => {
@@ -310,14 +310,15 @@ export const useFeatureInfo = (overrides = null) => {
                         isPolygonSelection: true,
                         polygonGeometry,
                         matched,
-                        hasMore
+                        hasMore,
+                        enBorde
                     });
                 }, 100);
                 return results;
             } else {
-                onFeatureCountUpdate?.(0);
+                onFeatureCountUpdate?.(0, [], null, enBorde);
                 clickPosition.updatePosition({ pixel: map.getPixelFromCoordinate(centerCoordinate) });
-                setSelectedFeatureInfo({ lngLat: { lng, lat }, results: [], isPolygonSelection: true, polygonGeometry, matched: 0, hasMore: false });
+                setSelectedFeatureInfo({ lngLat: { lng, lat }, results: [], isPolygonSelection: true, polygonGeometry, matched: 0, hasMore: false, enBorde });
                 return null;
             }
         } catch {

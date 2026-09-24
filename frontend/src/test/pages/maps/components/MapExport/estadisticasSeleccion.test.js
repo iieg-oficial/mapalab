@@ -31,6 +31,15 @@ describe('filasSeleccion', () => {
         expect(filas[3]).toEqual({ etiqueta: 'Cruzan el borde, sin contar', valor: '3', sangria: true });
     });
 
+    it('con suma por área agrega su renglón aunque no haya suma de lo que queda dentro', () => {
+        const filas = filasSeleccion({
+            areaKm2: 10,
+            capas: [{ id: 'mun', etiqueta: 'Municipios', conteo: 0, enBorde: 1 }],
+            agregados: [{ id: 'mun', etiqueta: 'Población', datos: { proporcional: 1234.5 } }],
+        });
+        expect(filas.at(-1)).toEqual({ etiqueta: 'Población, suma por área', valor: '1,234.50', sangria: true });
+    });
+
     it('no pinta más capas de las que caben', () => {
         const capas = Array.from({ length: 10 }, (_, i) => ({ etiqueta: `Capa ${i}`, conteo: i }));
         expect(filasSeleccion({ areaKm2: 10, capas })).toHaveLength(MAX_CAPAS_SELECCION + 2);

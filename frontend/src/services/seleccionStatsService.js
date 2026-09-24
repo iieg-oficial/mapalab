@@ -1,5 +1,6 @@
 import { findWMSConfig } from '../pages/maps/helpers/wmsConfig';
 import { fetchGeometryColumns, fetchGeometryType, getWfsUrl } from '../utils/featureInfoUtils';
+import { sumaPorFraccion } from '../pages/maps/helpers/proporcionArea';
 
 export const MAX_VERTICES = 120;
 const TIEMPO_LIMITE_MS = 8000;
@@ -194,4 +195,51 @@ export const contarEnPoligono = async (capas = [], poligono, { getFilter = null,
             return fila;
         }
     }));
+};
+
+export const contarBorde = (capas, poligono, opciones) => contarEnPoligono(
+    capas.map(({ id, name, label }) => ({ id, label: label || name })),
+    poligono,
+    opciones,
+).then(filas => filas.reduce((suma, fila) => suma + (fila.enBorde || 0), 0)).catch(() => 0);
+
+export const MAX_ELEMENTOS_PROPORCION = 2000;
+
+export const sumarProporcional = async ({ capa, campo, poligono, getFilter = null, allLayers = [] }) => {
+    const wmsConfig = findWMSConfig(capa?.id, allLayers);
+    if (!campo || !poligono || !wmsConfig || wmsConfig.wfsAvailable === false) return null;
+
+    try {
+        const baseUrl = getWfsUrl(wmsConfig.baseUrl);
+        const typeName = wmsConfig.layerName;
+        const columnas = await fetchGeometryColumns(baseUrl, [typeName]);
+        if (await fetchGeometryType(baseUrl, typeName) !== 'polygon') return null;
+        const columna = columnas[typeName] || 'the_geom';
+        const espacial = filtroDePoligono(columna, wktDelPoligono(poligono));
+        const filtroCapa = getFilter ? getFilter(capa.id) : null;
+        const cuerpo = new URLSearchParams({
+            SERVICE: 'WFS',
+            VERSION: '2.0.0',
+            REQUEST: 'GetFeature',
+            TYPENAMES: typeName,
+            OUTPUTFORMAT: 'application/json',
+            SRSNAME: PROYECCION,
+            PROPERTYNAME: `${columna},${campo}`,
+            COUNT: String(MAX_ELEMENTOS_PROPORCION + 1),
+            CQL_FILTER: filtroCapa ? `(${filtroCapa}) AND ${espacial}` : espacial,
+        });
+
+        const respuesta = await fetch(baseUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: cuerpo.toString(),
+            signal: AbortSignal.timeout(TIEMPO_LIMITE_MS * 3),
+        });
+        if (!respuesta.ok) return null;
+        const { features = [] } = await respuesta.json();
+        if (features.length > MAX_ELEMENTOS_PROPORCION) return null;
+        return sumaPorFraccion(features, campo, poligono.getCoordinates());
+    } catch {
+        return null;
+    }
 };

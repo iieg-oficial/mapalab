@@ -1,5 +1,6 @@
 import { findWMSConfig } from '../pages/maps/helpers/wmsConfig';
 import { combineCQLFilters, joinCQLFilters, fetchGeometryColumns, getWmsUrl, getWfsUrl, filterValidLayers, groupLayersByUrl, parseResponse } from '../utils/featureInfoUtils';
+import { filtroDePoligono, wktDelPoligono } from './seleccionStatsService';
 
 export const FEATURE_COUNT_CAP = 50;
 export const FEATURE_COUNT_TOTAL = 2000;
@@ -196,7 +197,7 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
             const view = map.getView();
             const projection = view.getProjection?.();
             const projectionCode = projection?.getCode?.() || 'EPSG:3857';
-            const extent = polygonGeometry.getExtent();
+            const wkt = wktDelPoligono(polygonGeometry);
 
             uniqueTypeNames.forEach((typeName, index) => {
                 const localName = localTypeNames[index];
@@ -213,12 +214,12 @@ export const getFeaturesInPolygonForActiveLayers = async (activeLayers, map, pol
                     return combineCQLFilters(baseCqlFilter, dynamicFilter);
                 }).filter(f => f);
 
-                const bboxFilter = `BBOX(${geomCol}, ${extent[0]}, ${extent[1]}, ${extent[2]}, ${extent[3]}, '${projectionCode}')`;
+                const filtroEspacial = filtroDePoligono(geomCol, wkt, 'WITHIN');
 
                 if (typeFilters.length > 0) {
-                    cqlFilters.push(`(${joinCQLFilters(typeFilters)}) AND ${bboxFilter}`);
+                    cqlFilters.push(`(${joinCQLFilters(typeFilters)}) AND ${filtroEspacial}`);
                 } else {
-                    cqlFilters.push(bboxFilter);
+                    cqlFilters.push(filtroEspacial);
                 }
             });
 

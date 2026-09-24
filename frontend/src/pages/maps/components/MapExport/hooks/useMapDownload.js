@@ -15,7 +15,7 @@ import { useEventoContext } from '@hooks/useEvento';
 import { anchoParaSeleccion, crearMascara, extentDeSeleccion } from '../utils/seleccionDescarga';
 import Style from 'ol/style/Style';
 import { filasSeleccion, medidasDeSeleccion, MAX_CAPAS_SELECCION } from '../utils/estadisticasSeleccion';
-import { agregarEnPoligono, contarEnPoligono } from '@services/seleccionStatsService';
+import { agregarEnPoligono, contarEnPoligono, sumarProporcional } from '@services/seleccionStatsService';
 
 export const useMapDownload = () => {
     const { targetRef } = useMapsContext();
@@ -146,18 +146,16 @@ export const useMapDownload = () => {
                 const conteos = await contarEnPoligono(capas, poligono, { getFilter, allLayers }).catch(() => []);
                 const agregados = await Promise.all(capas
                     .filter(capa => camposPorCapa?.[capa.id])
-                    .map(async (capa) => ({
-                        id: capa.id,
-                        etiqueta: camposPorCapa[capa.id].etiqueta,
-                        datos: await agregarEnPoligono({
-                            capa,
-                            campo: camposPorCapa[capa.id].nombre,
-                            porClase: camposPorCapa[capa.id].porClase,
-                            poligono,
-                            getFilter,
-                            allLayers,
-                        }),
-                    })));
+                    .map(async (capa) => {
+                        const { nombre: campo, etiqueta, porClase } = camposPorCapa[capa.id];
+                        const consulta = { capa, campo, poligono, getFilter, allLayers };
+                        const [datos, proporcion] = await Promise.all([
+                            agregarEnPoligono({ ...consulta, porClase }),
+                            porClase ? null : sumarProporcional(consulta),
+                        ]);
+                        const proporcional = proporcion?.elementos ? proporcion.suma : null;
+                        return { id: capa.id, etiqueta, datos: proporcional != null ? { ...(datos || {}), proporcional } : datos };
+                    }));
                 seleccionFilas = filasSeleccion({
                     ...medidasDeSeleccion(poligono),
                     capas: conteos,

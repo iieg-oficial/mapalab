@@ -575,7 +575,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         }
     }, [measurements, onPolygonComplete, onShowCachedSelection, mapRef]);
 
-    const updateSelectionCount = useCallback((featureCount, layerBreakdown = [], results = null) => {
+    const updateSelectionCount = useCallback((featureCount, layerBreakdown = [], results = null, enBorde = 0) => {
         const objetivo = seleccionPendienteRef.current;
         setMeasurements(prev => {
             const lastIndex = objetivo
@@ -598,7 +598,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
 
                         updated[lastIndex] = {
                             ...updated[lastIndex],
-                            label,
+                            label: enBorde > 0 ? `${label} · ${enBorde} cruzan el borde` : label,
                             value: featureCount,
                             layerBreakdown,
                             cachedResults: results
