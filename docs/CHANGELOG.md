@@ -5,6 +5,27 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.203.0] - 2026-09-24
+
+### Agregado: `layer_table` en el MCP
+
+- Tabla de datos de una capa: filas con los alias de columna del visor (`atributos.columnas`), filtros
+  estructurados `{campo, op, valor}` (hasta 5), orden, páginas de hasta 50 filas y un punto
+  `{lat, lon}` por fila con `coordenadas`. Llega hasta la fila 5000.
+- Los campos se validan contra `DescribeFeatureType`, los textos se escapan y los números se
+  convierten: no hay CQL libre. Techo global de 60 consultas por minuto y 5000 al día.
+
+### Eliminado
+
+- `query_wfs`: su CQL crudo y sus 10 000 features por llamada no tenían cabida con el MCP abierto.
+  `layer_table` cubre la lectura y las coordenadas para anotar.
+
+### Corregido
+
+- `resolver_consulta` no aplicaba el `cqlFilter` base de la capa: `layer_stats` de `bachillerato`
+  contaba todos los centros educativos. También respeta `wfsLayerName` y rechaza las capas con
+  `wfsAvailable: false`, igual que el visor.
+
 ## [1.202.0] - 2026-09-24
 
 ### Eliminado: API key del MCP

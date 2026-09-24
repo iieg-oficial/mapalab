@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-import json
-import re
 from typing import Any
-from urllib.parse import urlencode
 
-import httpx
 from sqlalchemy import text
 
 from app.config import settings
@@ -24,27 +20,6 @@ from servers.resolve import (
     _YEAR_RE,
     resolve_municipios,
 )
-
-_POSTGIS_STATEMENT_TIMEOUT_MS = 5000
-_WFS_TIMEOUT = 120.0
-
-_CQL_BLOCKED = re.compile(
-    r"(?:;|--|/\*|\*/|\\x|UNION\b|SELECT\b|INSERT\b|UPDATE\b|DELETE\b|DROP\b"
-    r"|ALTER\b|CREATE\b|EXEC\b|EXECUTE\b|TRUNCATE\b|MERGE\b|REPLACE\b"
-    r"|GRANT\b|REVOKE\b|SCRIPT\b)",
-    re.IGNORECASE,
-)
-
-
-def _sanitize_cql(cql: str | None) -> str | None:
-    if not cql:
-        return None
-    stripped = cql.strip()
-    if not stripped:
-        return None
-    if _CQL_BLOCKED.search(stripped):
-        raise ValueError("CQL contiene patrones no permitidos")
-    return stripped
 
 
 def resolver_consulta(
@@ -66,6 +41,8 @@ def resolver_consulta(
             raise ValueError(f"No encontré la capa '{layer}'. Usa search_layers para ver ids válidos.")
 
     wms = node['wmsConfig']
+    if wms.get('wfsAvailable') is False:
+        raise ValueError(f"La capa '{layer}' no publica sus datos (es ráster o no tiene WFS).")
     ws_map = {w.get('alias'): w.get('geoserver_workspace') for w in state.get('workspaces', []) if w.get('alias')}
     gs_workspace = (
         ws_map.get(workspace) if workspace
@@ -74,11 +51,11 @@ def resolver_consulta(
     if not gs_workspace:
         raise ValueError(f"No se pudo resolver el workspace de la capa '{layer}'")
 
-    gs_layer = wms.get('layers') or wms.get('geoserverLayer') or layer
+    gs_layer = wms.get('wfsLayerName') or wms.get('layers') or wms.get('geoserverLayer') or layer
     if ':' not in gs_layer:
         gs_layer = f"{gs_workspace}:{gs_layer}"
 
-    parts: list[str] = []
+    parts: list[str] = [f"({wms['cqlFilter']})"] if wms.get('cqlFilter') else []
     if year:
         if not _YEAR_RE.fullmatch(str(year)):
             raise ValueError("'year' debe ser 4 digitos (ej. '2025')")
@@ -99,94 +76,6 @@ def resolver_consulta(
         parts.append(f"{muni_field} = '{value}'")
 
     return node, gs_workspace, gs_layer, parts
-
-
-def query_wfs(
-    layer: str,
-    cql_filter: str | None = None,
-    limit: int = 1000,
-    srs_name: str | None = None,
-    workspace: str | None = None,
-    municipio: str | None = None,
-    year: str | None = None,
-    month: int | None = None,
-) -> dict:
-    if cql_filter and (municipio or year or month):
-        raise ValueError("No combines 'cql_filter' con 'municipio'/'year'/'month'. Usa uno u otro.")
-
-    node, gs_workspace, gs_layer, parts = resolver_consulta(layer, workspace, municipio, year, month)
-
-    safe_cql = _sanitize_cql(cql_filter)
-    if safe_cql:
-        parts.insert(0, safe_cql)
-
-    combined_cql = ' AND '.join(parts) if parts else None
-
-    params = {
-        'service': 'WFS',
-        'version': '2.0.0',
-        'request': 'GetFeature',
-        'typeNames': gs_layer,
-        'outputFormat': 'application/json',
-        'count': str(max(1, min(limit, 10000))),
-    }
-    if combined_cql:
-        params['CQL_FILTER'] = combined_cql
-
-    base = settings.GEOSERVER_URL.rstrip('/')
-    url = f"{base}/{gs_workspace}/ows?{urlencode(params)}"
-    auth = None
-    if settings.GEOSERVER_USER and settings.GEOSERVER_PASSWORD:
-        auth = (settings.GEOSERVER_USER, settings.GEOSERVER_PASSWORD)
-
-    try:
-        with httpx.Client(timeout=_WFS_TIMEOUT, verify=settings.GEOSERVER_VERIFY_SSL) as client:
-            response = client.get(url, auth=auth)
-        response.raise_for_status()
-        geojson = response.json()
-    except httpx.HTTPStatusError as exc:
-        Logger.warning(f"query_wfs.geoserver_status status={exc.response.status_code} body={exc.response.text[:500]}")
-        raise ValueError(f"GeoServer respondió {exc.response.status_code}")
-    except httpx.RequestError as exc:
-        Logger.warning(f"query_wfs.geoserver_unreachable {exc}")
-        raise ValueError("No se pudo conectar a GeoServer")
-
-    if srs_name and srs_name.upper() != 'EPSG:6368':
-        geojson = _reproject_geojson(geojson, srs_name)
-
-    return geojson
-
-
-def _reproject_geojson(geojson: dict, target_srs: str) -> dict:
-    features = geojson.get('features', [])
-    indexed = [(i, f.get('geometry')) for i, f in enumerate(features) if f.get('geometry')]
-    if not indexed:
-        geojson['crs'] = {'type': 'name', 'properties': {'name': target_srs}}
-        return geojson
-
-    target_epsg = int(target_srs.upper().replace('EPSG:', ''))
-    geoms_json = json.dumps([geom for _, geom in indexed])
-    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
-    with conn.get_session() as session:
-        session.execute(text(f"SET LOCAL statement_timeout = {_POSTGIS_STATEMENT_TIMEOUT_MS}"))
-        rows = session.execute(
-            text(
-                "SELECT ord - 1 AS pos, ST_AsGeoJSON("
-                "ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(g.value), 6368), :tgt)"
-                ") AS geom "
-                "FROM jsonb_array_elements(CAST(:geoms AS jsonb)) "
-                "WITH ORDINALITY AS g(value, ord)"
-            ),
-            {'geoms': geoms_json, 'tgt': target_epsg},
-        ).fetchall()
-
-    transformed = {int(r.pos): r.geom for r in rows if r.geom}
-    for pos, (feat_idx, _) in enumerate(indexed):
-        geom = transformed.get(pos)
-        if geom:
-            features[feat_idx]['geometry'] = json.loads(geom)
-    geojson['crs'] = {'type': 'name', 'properties': {'name': target_srs}}
-    return geojson
 
 
 def _numeralia_from_values(raw: Any) -> list[dict]:

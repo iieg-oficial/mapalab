@@ -18,7 +18,7 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`m
 | Búsqueda (`search_layers`) | **sí** (lectura) | Punto de entrada: encuentra el `id` de la capa por texto/slug o lista por `theme` |
 | Retrato de capa (`describe_layer`) | **sí** (lectura) | Cualidades + metadata + numeralia + periodicidad de una capa en una sola llamada. Absorbió `get_metadata`, `get_layer_stats` y `get_periodicity` |
 | Municipios (`municipios`) | **sí** (lectura) | Lista los 125 o filtra por nombre/clave → claves INEGI para `create_map`/`create_swipe(municipio=...)` |
-| Features (`query_wfs`) | **sí** (lectura) | Features WFS reales de una capa (geometrías/valores) con filtros por municipio/año o CQL |
+| Tabla de datos (`layer_table`) | **sí** (lectura) | Filas de una capa con columnas legibles, filtros estructurados, orden y paginación |
 | Creación (`create_map`, `create_swipe`) | **sí** (2 writes) | Entregan el mapa: panel simple (`create_map`) o comparativo swipe (`create_swipe`). Idempotentes |
 | `get_layer_tree`, `get_initial_order`, `get_sources_batch` | **no** (removido en 1.82.0) | Sin rol en crear mapas; `search_layers`/`describe_layer` cubren lo necesario y el árbol completo es demasiado grande para un modelo chico |
 | `measure_geometry` | **no** (removido en 1.82.0) | Utilidad de análisis, no de creación de mapas; 0 uso en telemetría |
@@ -26,7 +26,7 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io/) dedicado (`m
 | `shares/{pin,unpin,pin-permanent}` | **no** | Writes administrativos con efectos sobre la BD, no encajan en el patrón del MCP público |
 | `metrics`, `health`, `ontoy` | **no** | Endpoints internos de operaciones, no útiles para un agente |
 
-> **Superficie de lectura de `query_wfs` (decisión de exposición).** A diferencia del resto de tools (metadata/árbol curados), `query_wfs` deja que el agente corra CQL arbitrario y baje hasta 10 000 features completos de **cualquier capa publicada en el árbol del visor**. Esto es intencional: el visor de MapaLab es público y esos features ya se sirven vía WMS/WFS al frontend. **Pre-requisito de seguridad:** ninguna capa con datos sensibles/internos debe estar publicada en el árbol del visor (`mapalab.layer_tree_cache`), porque sería alcanzable por aquí. El tool solo resuelve capas presentes en el árbol (`find_node` sobre el tree cache), así que la frontera de exposición es exactamente "lo que el visor ya muestra al público".
+> **Superficie de lectura de `layer_table` (decisión de exposición).** Con el MCP abierto, cualquiera puede leer filas de **cualquier capa publicada en el árbol del visor**, hasta 5000 por consulta filtrada y sin CQL libre. Es intencional: el visor es público y esos datos ya se sirven por WMS/WFS. **Pre-requisito de seguridad:** ninguna capa con datos sensibles o internos debe estar publicada en el árbol (`mapalab.layer_tree_cache`), porque sería alcanzable por aquí. La frontera de exposición es exactamente «lo que el visor ya muestra al público».
 
 ## Arquitectura (v1.35.0+)
 
@@ -67,12 +67,12 @@ Convencion: **todos los tools que reciben una capa usan el `id` del visor** (el 
 | `search_layers` | Lectura | punto de entrada: busca por texto/id/slug y/o por `theme`. Absorbe los antiguos `search_by_theme` y `resolve_layer_ref` |
 | `describe_layer` | Lectura | **retrato completo de una capa**: cualidades (`capabilities`) + metadata + numeralia + periodicidad (años/meses) en una sola llamada. Absorbe `get_metadata`, `get_layer_stats` y `get_periodicity`. Soporta ids difusos |
 | `municipios` | Lectura | lista los 125 o busca por nombre/clave. Absorbe `list_municipios` + `resolve_municipios` |
-| `query_wfs` | Lectura | features WFS de una capa con filtros por `municipio`/`year`/`month` o CQL |
+| `layer_table` | Lectura | **tabla de datos** de una capa: columnas con su alias del visor, filtros `{campo, op, valor}`, orden y páginas de hasta 50 filas. Con `coordenadas` agrega un punto lat/lon por fila |
 | `layer_stats` | Lectura | **cifras sin descargar elementos**: conteo, suma y promedio de un campo numérico, y reparto por clase. Filtros por `municipio`/`year`. Lo calcula GeoServer |
 | `create_map` | **Write** | crea un mapa de un panel y devuelve `{id, kind, url, embed_html, layer?}`. Modo `query`/`theme` (busca) o `layers` (explícito) + `municipio`/`year`/`annotations`. Absorbe `make_map` + `create_single_share`. Idempotente |
 | `create_swipe` | **Write** | crea un comparativo A\|B (swipe). Modo `layer`+`year_a`+`year_b` (una capa, dos años) o `pane_a_layers`+`pane_b_layers` (dos capas, con `year_a`/`year_b` por lado opcional, validados). Absorbe `create_swipe_share` + `compare_years`. Idempotente |
 
-**Diseño para modelos chicos:** el catálogo se recortó a lo esencial para crear mapas. `describe_layer` evita 3 llamadas (metadata + stats + periodicidad). `create_map`/`create_swipe` separan las dos formas de mapa (un panel vs comparación) con nombres claros, en vez de un god-tool con modos ambiguos. Todos soportan resolución difusa de ids (slug, alias, nombre parcial). Para capas que no soportan filtro por municipio, usá `cql_filter` en `query_wfs`. En `create_map`/`create_swipe` los `filters` que mande el cliente se descartan: la fecha va por `year` y el municipio por `municipio`.
+**Diseño para modelos chicos:** el catálogo se recortó a lo esencial para crear mapas. `describe_layer` evita 3 llamadas (metadata + stats + periodicidad). `create_map`/`create_swipe` separan las dos formas de mapa (un panel vs comparación) con nombres claros, en vez de un god-tool con modos ambiguos. Todos soportan resolución difusa de ids (slug, alias, nombre parcial). Para capas que no soportan filtro por municipio, usá `filtros` en `layer_table` sobre el campo que corresponda. En `create_map`/`create_swipe` los `filters` que mande el cliente se descartan: la fecha va por `year` y el municipio por `municipio`.
 
 **Consolidacion de tools:** de 18 → 15 → 6 tools. Histórico: `search_by_theme`/`resolve_layer_ref` → `search_layers`; `list_municipios`+`resolve_municipios` → `municipios`; `get_workspaces` → dentro de `get_layer_tree` (ya removido). En 1.82.0: `get_metadata`+`get_layer_stats`+`get_periodicity` → `describe_layer`; `make_map`+`create_single_share` → `create_map`; `create_swipe_share`+`compare_years` → `create_swipe`; y se eliminaron `get_layer_tree`, `get_initial_order`, `get_sources_batch` y `measure_geometry` por no aportar al objetivo de crear mapas. Identificadores homologados al `id` del visor.
 
@@ -138,14 +138,14 @@ El gateway-hub no necesita un `location` específico para `/mapalab/mcp/`: cae b
 
 ## Tools y su origen
 
-Los 7 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`, capa delgada de registro). La lógica vive dividida por dominio: `servers/resolve.py` (resolución de capas, periodicidad, fechas, búsqueda por tema, municipios), `servers/layers.py` (`describe_layer`, `get_layer_stats`, `query_wfs`) y `servers/shares.py` (`create_map`, `create_swipe` + internos). Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función en `mapalab.py`.
+Los 7 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`, capa delgada de registro). La lógica vive dividida por dominio: `servers/resolve.py` (resolución de capas, periodicidad, fechas, búsqueda por tema, municipios), `servers/layers.py` (`describe_layer`, `get_layer_stats`, `resolver_consulta`), `servers/tabla.py` (`layer_table`), `servers/estadisticas.py` (`layer_stats`) y `servers/shares.py` (`create_map`, `create_swipe` + internos). Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función en `mapalab.py`.
 
 | Tool | Origen del código | Qué hace |
 |---|---|---|
 | `search_layers` | `LayersRepository.search_layers` + `find_layer_by_slug_or_alias` + `resolve.search_by_theme` sobre el árbol | Busca por texto/id/slug (`query`) y/o lista un tema (`theme`). Devuelve `{id, label, slug, workspace, path}` |
 | `describe_layer` | `servers/layers.py::describe_layer` (metadata + `get_layer_stats` + `resolve._periodicity_summary` + `_capabilities_from_node`) | Retrato completo: `{id, label, path, capabilities, descripcion, fuentes, metodologia, frecuencia, fecha_ultima, metadato_archivos, numeralia, pie_numeralia, periodicidad:{años, meses}}`. Soporta ids difusos |
 | `municipios` | `resolve.list_municipios` (todos) o `resolve.resolve_municipios` (substring) | Lista los 125 municipios o filtra por nombre/clave. Devuelve `{items, count}` |
-| `query_wfs` | `servers/layers.py::query_wfs` (GeoServer WFS GetFeature) | Features de una capa con filtros por `municipio`/`year`/`month` o CQL. Workspace resuelto por `id`. Sanitiza SQLi, solo capas del árbol |
+| `layer_table` | `servers/tabla.py::layer_table` (WFS GetFeature con `propertyName`, `sortBy`, `startIndex`) | Filas de una capa. Campos validados contra `DescribeFeatureType`, alias de `atributos.columnas`, solo capas del árbol |
 | `layer_stats` | `servers/estadisticas.py::layer_stats` (WFS `resultType=hits` para el conteo; WPS `gs:Aggregate` para suma, promedio y agrupado) | Cifras de una capa: `{layer, filtros, conteo, campo?, suma?, promedio?, agrupado_por?, clases?, otras?}`. `field`/`group_by` se validan contra `DescribeFeatureType` |
 | `create_map` | `servers/shares.py::create_map` (modo `query`→`_pick_best_layer`, o `layers`; luego `create_single_share`) | Mapa de un panel. Valida `year` contra la periodicidad. Devuelve `{id, kind, url, embed_html, layer?}` |
 | `create_swipe` | `servers/shares.py::create_swipe` (una capa→`compare_years`, o dos capas→`_apply_year_filter` por panel + `create_swipe_share`) | Comparativo A\|B. Devuelve `{id, kind, url, embed_html}` |
@@ -156,14 +156,14 @@ Los 7 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`, capa delgada de
 
 Todos los tools que reciben una capa usan el `id` del visor (el que devuelve `search_layers`). El workspace se resuelve solo desde el árbol; nunca hace falta pasarlo.
 
-Los tools `describe_layer`, `query_wfs`, `create_map` (modo layers), `create_swipe` (ambos modos) aceptan **ids difusos**: slug, alias o nombre parcial (p. ej. `"homicidio"` resuelve a `homicidio_doloso`). La resolución (`resolve._resolve_layer_fuzzy`) intenta primero el id exacto; si no lo encuentra busca por slug/alias en la BD y por texto en `search_layers`.
+Los tools `describe_layer`, `layer_table`, `layer_stats`, `create_map` (modo layers), `create_swipe` (ambos modos) aceptan **ids difusos**: slug, alias o nombre parcial (p. ej. `"homicidio"` resuelve a `homicidio_doloso`). La resolución (`resolve._resolve_layer_fuzzy`) intenta primero el id exacto; si no lo encuentra busca por slug/alias en la BD y por texto en `search_layers`.
 
 ## Parámetros acotados (Literal types)
 
 Los parámetros con valores fijos usan `typing.Literal` para que Pydantic rechace valores inválidos de inmediato:
 
 - **Basemaps**: `'voyager'`, `'position'`, `'sin_mapalab'` (NO existe `'osm'`). Aplica en `create_map` y `create_swipe`.
-- **SRS de salida en `query_wfs`**: `'EPSG:4326'` (lat/lon) o `'EPSG:6368'` (CRS nativo, metros).
+- **Operadores de `layer_table`**: `=`, `!=`, `>`, `>=`, `<`, `<=`, `contiene`.
 - **Source en `municipios`**: `'iieg'` o `'inegi'` (validado en `_normalize_municipios`).
 
 Si el modelo manda un valor inválido (p. ej. `basemap="osm"`), Pydantic responde con un error claro: `Input should be 'voyager', 'position' or 'sin_mapalab'`.
@@ -175,15 +175,30 @@ Si el modelo manda un valor inválido (p. ej. `basemap="osm"`), Pydantic respond
 - Con `municipio` → calcula el bbox del municipio y encuadra automáticamente (zoom proporcional al tamaño).
 - Sin `municipio` → vista por defecto de Jalisco: `{zoom: 7.5, lat: 20.6, lon: -103.4}`.
 
-## Filtros estructurados en `query_wfs` (sin escribir CQL)
+## Tabla de datos (`layer_table`)
 
-`query_wfs` ahora acepta parámetros opcionales que construyen el CQL del lado servidor:
+Reemplazó a `query_wfs` en 1.203.0. Devuelve filas, no GeoJSON: el agente ve los datos como en la tabla de atributos del visor.
 
-- **`municipio`**: nombre o clave (ej. `"Guadalajara"`, `"14039"`). Resuelve con `municipios()`. Requiere que la capa tenga `searchMeta.hasMunicipio=true` configurado en el árbol; si no, devuelve error accionable. Usa `searchMeta.municipioField` y `searchMeta.municipioFieldType` (`clave` o `nombre`) para armar el filtro.
-- **`year`**: 4 dígitos (ej. `"2024"`). Filtra `(fecha >= 'YYYY-01-01' AND fecha < 'YYYY+1-01-01')`.
-- **`month`**: 1-12. Afina el filtro de fecha a un mes: `(fecha >= 'YYYY-MM-01' AND fecha < 'YYYY-MM+1-01')`.
+| Parámetro | Qué hace |
+|---|---|
+| `municipio`, `year`, `month` | igual que en el resto de tools; el servidor arma el CQL. `municipio` necesita `searchMeta.hasMunicipio` |
+| `filtros` | hasta 5 `{campo, op, valor}` con `op` en `=`, `!=`, `>`, `>=`, `<`, `<=`, `contiene`, unidos con AND |
+| `columnas` | campos a mostrar (máximo 20); vacío = las visibles de `atributos.columnas`, en su orden |
+| `orden`, `descendente` | `sortBy` de GeoServer |
+| `pagina`, `por_pagina` | 1–50 filas por página; la tabla llega hasta la fila 5000 |
+| `coordenadas` | agrega `{lat, lon}` del centro de cada elemento |
 
-Si pasás `cql_filter`, no combines con `municipio`/`year`/`month` (error explícito). El CQL sanitiza SQLi igual que antes.
+Respuesta: `{capa, nombre, total, pagina, paginas, columnas: [{campo, etiqueta}], filas, columnas_omitidas?, orden?}`. Las filas usan la `etiqueta` (el alias de `/metadata/columnas`) como llave; los filtros usan el `campo` crudo. El formato `anio` recorta la fecha al año, igual que la tarjetita.
+
+**Cómo se arma sin CQL libre.** `campo` se valida contra `DescribeFeatureType` (el error lista los válidos) y nunca contra texto del cliente; los valores de texto se escapan (`'` → `''`), los numéricos se convierten a `float`, y `contiene` solo aplica a texto. Ya no existe un parámetro de CQL crudo.
+
+**Gotchas que salieron al probarla contra sextante:**
+
+- GeoServer **no pagina sin orden** en tablas sin llave primaria (`Cannot do natural order without a primary key`). Sin `orden`, la consulta ordena por la primera columna: además la paginación queda estable.
+- Las capas tienen `numDecimals=0`: pedidas en EPSG:4326 salen redondeadas a grados enteros. Por eso las coordenadas se piden en EPSG:6368 y el centro se convierte en PostGIS, en una sola consulta.
+- `resolver_consulta` (compartido con `layer_stats`) aplica el `cqlFilter` base de la capa y prefiere `wfsLayerName`, igual que el visor. Antes de 1.203.0 no lo hacía: `bachillerato` contaba **todos** los centros educativos. Una capa con `wfsAvailable: false` se rechaza.
+
+Techo global de 60 consultas por minuto y 5000 al día (`techo_tabla`), y los campos de cada capa se guardan 10 minutos.
 
 ## Blindaje de la escritura (`create_map` / `create_swipe`)
 
@@ -274,9 +289,9 @@ El usuario ve un mapa interactivo embebido y puede guardar su propia copia desde
 
 ## Identificadores: solo el `id` del visor
 
-**Regla única:** todo tool que recibe una capa usa el `id` que devuelve `search_layers` (p. ej. `homicidio_doloso`). El agente nunca necesita el `geoserver_workspace`/`geoserver_layer` ni armar `ws:layer` — el MCP lo resuelve solo desde el árbol (`resolve._resolve_layer_fuzzy`). Esto simplifica el flujo `search_layers → describe_layer/query_wfs → create_map/create_swipe` y es clave para agentes pequeños (p. ej. un Qwen 3B self-host).
+**Regla única:** todo tool que recibe una capa usa el `id` que devuelve `search_layers` (p. ej. `homicidio_doloso`). El agente nunca necesita el `geoserver_workspace`/`geoserver_layer` ni armar `ws:layer` — el MCP lo resuelve solo desde el árbol (`resolve._resolve_layer_fuzzy`). Esto simplifica el flujo `search_layers → describe_layer/layer_table → create_map/create_swipe` y es clave para agentes pequeños (p. ej. un Qwen 3B self-host).
 
-`describe_layer` y `query_wfs` reciben solo `layer=<id>`; el workspace se deriva del árbol (con `workspace` opcional como override en `query_wfs`). `describe_layer.periodicidad` resume las fechas disponibles a `{años, meses}`.
+`describe_layer`, `layer_table` y `layer_stats` reciben solo `layer=<id>`; el workspace se deriva del árbol. `describe_layer.periodicidad` resume las fechas disponibles a `{años, meses}`.
 
 ## Cómo probar
 
@@ -716,7 +731,7 @@ Corta floods antes de que lleguen al pool chico del MCP (2 workers × 2 conexion
 ## Limitaciones conocidas
 
 - **`download` queda fuera**: no es trivial exponer un stream de CSV como tool MCP. Si se requiere, considerar un endpoint alternativo que devuelva una URL firmada (S3/Acervo) en lugar del stream directo.
-- **Timeout en queries PostGIS**: la reproyección WFS de `query_wfs` fija `SET LOCAL statement_timeout = 5000` y se hace en una sola query (no N+1). La numeralia de `describe_layer` es un `SELECT` plano sobre `mapalab.layer_stats` (sin PostGIS).
+- **Timeout en queries PostGIS**: la conversión de coordenadas de `layer_table` se hace en una sola query (no N+1). La numeralia de `describe_layer` es un `SELECT` plano sobre `mapalab.layer_stats` (sin PostGIS).
 - **`filters.date` (CQL) sin validar server-side** (pendiente, M2): el share persiste el CQL verbatim y el visor lo reenvía a GeoServer en `CQL_FILTER`. Validar contra la forma esperada (`parseCQLToSelections`/`generateCQLFilter`) en `servers/shares.py`.
 - **Techos aproximados por multiproceso**: en producción el MCP corre con `gunicorn --workers ${MCP_WORKERS}` (hoy **2**). Los `Techo` de `servers/blindaje.py` viven en memoria **por proceso**, así que el techo efectivo es ≈ `MCP_WORKERS ×` el configurado (60/min y 4000/día de compartidos con dos workers). Para un tope exacto hay que mover el contador a Redis.
 - **IP de `ips_permitidas` solo confiable en deploy directo**: el MCP toma el IP de `X-Real-IP` (lo fija el nginx inmediato, sobrescribiendo lo que mande el cliente; ya no se usa el primer `X-Forwarded-For` que era spoofeable). Detrás del gateway, `X-Real-IP` es la IP del gateway, no la del cliente final, así que el allowlist por IP de una key privada no discrimina por cliente en ese trayecto. Para keys de MCP, apóyate en el secreto de la key + cuota, no en `ips_permitidas`. Para habilitar allowlist por cliente detrás del gateway, mapalab-nginx debería propagar el `X-Real-IP` que ya calcula el gateway en vez de sobrescribirlo.
