@@ -5,6 +5,21 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.212.0] - 2026-09-24
+
+### Agregado: levantar en 3D las capas coropléticas del catálogo
+
+Junto al control de hexágonos aparece el botón del cubo cuando la capa es de polígonos. Entra al
+3D y levanta la capa con la misma extrusión del visor (`useMap3dExtrusions`), respetando fecha y
+municipio; un segundo clic la aplana. Queda en la URL como `extruir`. Solo fuera de producción.
+
+### Cambiado: las píldoras de arriba van juntas y con la X del visor
+
+Tabla minimizada, fechas y municipio forman una sola fila centrada, en ese orden; si falta una, las
+demás se recorren. Las tres quitan su filtro o cierran con `PillCloseButton`, que aparece debajo al
+pasar el mouse; el ícono de basura de fechas y municipio se va. `PillMinimizada` pone la X debajo
+cuando su dock lo pide con `data-cerrar-abajo`.
+
 ## [1.211.1] - 2026-09-24
 
 ### Corregido: los conteos y las sumas de la selección nunca pasaban el gateway

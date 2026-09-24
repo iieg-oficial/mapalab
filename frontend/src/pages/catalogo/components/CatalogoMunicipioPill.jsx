@@ -1,14 +1,15 @@
 import { useRef, useState } from 'react';
-import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
+import PillCloseButton from '@components/PillCloseButton';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import { SCOPE_TYPES } from '@pages/maps/hooks/useMunicipioMode';
 import MunicipioFilterPanel from '@mapsComponents/MapExport/MunicipioFilterPanel';
 import { trackMunicipioPanelOpen } from '@services/analyticsService';
-import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
 import { PANEL_SHADOW } from '../helpers/catalogoStyles';
 
 const SIN_FILTRO = 'Todo Jalisco';
+
+export const CERRAR_DEBAJO = 'absolute top-full mt-1.5 left-1/2 -translate-x-1/2';
 
 const CatalogoMunicipioPill = ({ municipio }) => {
     const [abierto, setAbierto] = useState(false);
@@ -24,8 +25,8 @@ const CatalogoMunicipioPill = ({ municipio }) => {
     };
 
     return (
-        <div ref={contenedorRef} className={`relative flex items-center gap-1.5 h-10 px-1.5 bg-white rounded-full ${PANEL_SHADOW}`}>
-            <Tooltip content="Ver un municipio, una región o la ZMG" placement="bottom" delay={300}>
+        <div ref={contenedorRef} className={`group relative flex items-center gap-1.5 h-10 px-1.5 bg-white rounded-full ${PANEL_SHADOW}`}>
+            <Tooltip content="Ver un municipio, una región o la ZMG" placement="right" delay={300}>
                 <button
                     type="button"
                     onClick={alternar}
@@ -39,17 +40,14 @@ const CatalogoMunicipioPill = ({ municipio }) => {
                 </button>
             </Tooltip>
 
-            {conFiltro && (
-                <Tooltip content="Quitar el filtro de municipio" placement="bottom" delay={200}>
-                    <button
-                        type="button"
-                        onClick={() => { setAbierto(false); exit(); }}
-                        aria-label="Quitar el filtro de municipio"
-                        className={`size-7 shrink-0 ${RADIUS_ICON} hover:bg-[#FFE6EC] flex items-center justify-center transition-colors cursor-pointer`}
-                    >
-                        <Icon name="eliminar" state="hover" className="size-4 shrink-0" />
-                    </button>
-                </Tooltip>
+            {conFiltro && !abierto && (
+                <PillCloseButton
+                    onClick={exit}
+                    tooltip="Quitar el filtro de municipio"
+                    ariaLabel="Quitar el filtro de municipio"
+                    placement="bottom"
+                    className={CERRAR_DEBAJO}
+                />
             )}
 
             {abierto && (

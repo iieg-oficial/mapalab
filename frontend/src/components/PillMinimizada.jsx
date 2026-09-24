@@ -33,6 +33,7 @@ const PillMinimizada = ({
 }) => {
     const medida = TAMANOS[tamano] || TAMANOS.normal;
     const dock = typeof document === 'undefined' ? null : document.getElementById('dock-pills');
+    const cerrarDebajo = !!dock?.hasAttribute('data-cerrar-abajo');
 
     const chrome = `rounded-full bg-white shadow-[0_5px_20px_#1A26641A] border transition-all ${activa ? 'border-purple' : 'border-[#EAEFFA] hover:border-purple'} ${anillo}`;
 
@@ -64,7 +65,8 @@ const PillMinimizada = ({
                     tooltip={tooltipCerrar}
                     ariaLabel={ariaCerrar}
                     size={tamano === 'compacta' ? 'sm' : 'md'}
-                    className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2"
+                    placement={cerrarDebajo ? 'bottom' : 'right'}
+                    className={`absolute left-1/2 -translate-x-1/2 ${cerrarDebajo ? 'top-full mt-1.5' : 'bottom-full mb-1.5'}`}
                 />
             )}
         </div>

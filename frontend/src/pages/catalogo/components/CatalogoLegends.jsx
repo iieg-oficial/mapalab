@@ -15,7 +15,7 @@ import { trackCatalogoDownload, trackCatalogoShare } from '@services/analyticsSe
 
 const ICON_BTN = 'size-7 rounded-full flex items-center justify-center transition-colors';
 
-const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, onVista = null, hexbin = null, onImagen = null, onClose }) => {
+const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, onVista = null, hexbin = null, extrusion = null, onImagen = null, onClose }) => {
     const { tiempo, municipio } = useCatalogoTiempoContext();
     const municipios = municipio?.municipio?.active ? municipio.municipio.selected.join(',') : '';
     const filtro = tiempo?.filtro || null;
@@ -117,11 +117,12 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
 
             {!minimized && (
                 <div className="px-3.5 pb-3">
-                    {conVista && (
+                    {(conVista || extrusion) && (
                         <CatalogoVistaSegmented
                             nombre={capa.nombre}
                             vista={vista}
-                            onVista={onVista}
+                            onVista={conVista ? onVista : null}
+                            extrusion={extrusion}
                             celdas={hexbin?.estado === 'listo' ? hexbin.stats?.cells ?? null : null}
                         />
                     )}
