@@ -2931,6 +2931,15 @@ que esas URLs nunca coincidieron. Lo que sí se conserva es que los tiles del pl
 entre sí, que era el grueso del beneficio.
 
 La dirección del servidor se configura en el panel; no viaja en el código.
+## [1.116.21] - 2026-09-24
+
+### Corregido: el widget viejo se quedaba un año en los celulares
+
+`/widget/v1/mapalab.js` se servía con `max-age=31536000, immutable` en una URL sin hash. Un navegador
+que lo bajó antes de agosto siguió usando el widget 1.1: pintaba el pie «Fuente: IIEG» y no le pasaba
+`marker-card` al iframe, así que la tarjeta del portal no salía. Ahora va con `no-cache`: se
+revalida contra el `ETag` y cada deploy del widget llega a todos.
+
 ## [1.116.20] - 2026-09-17
 
 ### Corregido: el purgado del cache del gateway nunca purgó nada
