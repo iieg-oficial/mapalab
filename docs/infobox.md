@@ -82,6 +82,9 @@ El panel usa `position: fixed` anclado al pixel del click.
 4. **Flechita decorativa** (`InfoBox.jsx:134-142`):
    - Single: triangulo blanco abajo-centro que apunta al feature
    - Multiples: triangulo `#EFF3FC` a la izquierda
+5. **Apertura centrada**: si `selectedFeatureInfo.centrado` es `true` el panel se centra en la
+   ventana (`translate(-50%, -50%)`) en vez de anclarse al click. Lo usa `abrirInfoBoxDeMedicion` al
+   abrir una medición desde «Mis mediciones», para que no quede detrás de los paneles.
 
 ### `useViewportContainment`
 
@@ -90,6 +93,11 @@ Hook en `InfoBox/hooks/useViewportContainment.js` que recorre el panel con `Resi
 - Desplaza `left` si toca borde horizontal
 - Desplaza `top` si toca borde vertical
 - Si excede arriba y abajo a la vez, aplica `maxHeight = viewportHeight - 20px`
+- El `ResizeObserver` se vuelve a enganchar cada vez que cambian las dependencias: el panel no existe
+  hasta que hay `selectedFeatureInfo`, y antes solo se intentaba al montar. Con eso se contiene lo que
+  crece después de abrir, como el perfil de alturas de una medición en 3D.
+- La tarjeta tiene `max-h-[calc(100dvh-20px)]` y `overflow-y-auto`: si el contenido no cabe, se
+  desplaza por dentro en vez de salirse.
 
 **Limitacion importante:** ajusta `left/top` pero no mueve el triangulito, asi que tras el reajuste la flecha puede dejar de apuntar al feature.
 

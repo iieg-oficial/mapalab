@@ -188,9 +188,8 @@ Al cargar un share con `annotations`, `useShareDeserializer` invoca `restoreAnno
 
 | Herramienta | Razón | Para retomar |
 |---|---|---|
-| Dibujar mediciones nuevas en swipe | `useMapDrawing.startDrawing` opera sobre `mapRef` global (null en swipe). Decisión arquitectónica: una capa vector compartida entre paneles (recomendado, alinea con la persistencia global en shares), o una por slot. La medición es geográfica → globales tiene más sentido. *Pre-existentes vía share ya se ven*. |
+| Dibujar mediciones nuevas en swipe 2D | `useMapDrawing.startDrawing` opera sobre `mapRef` global (null en swipe), así que en 2D pedir Mediciones sale del comparador. **En el comparador 3D sí se mide** (1.210.0): la herramienta escucha a los mapas α y β a la vez y la capa de dibujo existe sin mapa (ver `draw.md`). *Las pre-existentes vía share ya se ven*. |
 | ZenMode | No prioritario; mayoritariamente CSS para condicionar render de overlays del swipe |
-| Vista 3D | Son excluyentes: `View3dContext.enter()` llama `exitCompareMode()` y entrar a comparar apaga el 3D. Mientras el comparador está activo, el botón 3D de `<MapControls>` y el de levantar capa de `<LayerActionsBar>` no se dibujan, para que nadie descarte la comparación sin la confirmación del botón de cerrar |
 | Loop temporal | `useDateLoop` se cancela al entrar a swipe. Tres opciones: por slot activo (simple), sincronizado con offset fijo entre A y B (recomendado, da valor diferencial), o independiente por slot |
 
 ## Consumers de `mapRef` / `View` en swipe — referencia rápida

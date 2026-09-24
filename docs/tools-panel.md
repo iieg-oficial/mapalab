@@ -59,7 +59,7 @@ Estos valores se guardan en el feature y se serializan tanto en shares como en l
 
 ## Persistencia
 
-Mediciones y anotaciones se guardan en `localStorage` bajo la clave `mapalab.annotations` y se restauran al cargar el visor, por lo que sobreviven a un refresh de la página. El serializador es compartido (`helpers/annotationsSerialization.js`) entre los shares y la persistencia local.
+Mediciones y anotaciones se guardan en `localStorage` bajo la clave `mapalab.annotations` y se restauran al cargar el visor, por lo que sobreviven a un refresh de la página. El serializador es compartido (`helpers/annotationsSerialization.js`) entre los shares y la persistencia local. Las selecciones (`Select`) también se guardan: vuelven con su polígono y el conteo se vuelve a consultar. Si la página se abrió con un enlace compartido (`?s=`), no se escribe en `localStorage`, para no pisar las anotaciones propias con las del enlace.
 
 - Se escribe en cada cambio de `measurements`; al quedar vacío (o al cerrar con la X) se limpia el almacenamiento.
 - La hidratación inicial no muestra el palette de herramientas, solo el botón de lista + X (`restoreAnnotations(..., { showTools: false })`).

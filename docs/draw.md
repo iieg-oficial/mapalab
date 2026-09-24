@@ -68,7 +68,7 @@ Hook central en `hooks/useMapDrawing.js:10-675`.
 ```js
 {
     id: string,                 // id unico
-    type: 'LineString' | 'Polygon' | 'Freehand' | 'Select' | 'Text' | 'Emoji',
+    type: 'LineString' | 'Polygon' | 'Freehand' | 'Select' | 'Text' | 'Emoji' | 'Pin',
     label: string,              // texto mostrado en HistoryPanel
     value: number | string,     // medicion (largo/area) o contenido (text/emoji)
     feature: ol.Feature,        // referencia al feature en el vectorSource
@@ -89,8 +89,8 @@ const {
     startDrawing(type),         // activa modo de dibujo para el tipo dado
     stopDrawing(),              // desactiva modo de dibujo
     clearDrawings(),            // borra todo
-    deleteMeasurement(index),
-    toggleMeasurementVisibility(index),
+    deleteMeasurement(id),
+    toggleMeasurementVisibility(id),
     cancel(),
     undoLastPoint(),            // elimina ultimo vertice durante sketch
     isDrawing, isSketching,
@@ -102,10 +102,28 @@ const {
     measurementConfig, setMeasurementConfig,
     finishCurrentSketch(),
     restoreLastSelection(),
-    showSelectionByIndex(index),
-    updateSelectionCount(count, breakdown, results)
+    showSelection(id),
+    updateSelectionCount(count, breakdown, results),
+    ensureVectorLayer()
 } = useMapDrawing(mapRef, onPolygonComplete, onShowCachedSelection);
 ```
+
+Las mutaciones reciben el `id` de la medición, no su posición en la lista: `HistoryPanel` pasa
+`measurement.id`. `updateSelectionCount` escribe en la selección que disparó la consulta, guardada
+en `seleccionPendienteRef` al terminar el trazo, y no en la última de la lista: si la consulta tarda
+y mientras tanto se dibuja otra, el conteo no cae en la nueva.
+
+### Ciclo de vida de la capa de dibujo
+
+`ensureVectorLayer()` (`useVectorLayerSetup.js`) crea la fuente y la capa aunque todavía no haya
+mapa, y las engancha al mapa actual si no lo están. Eso cubre dos casos en que el mapa principal no
+existe o cambia:
+
+- **Comparador:** al entrar se desmonta el `<MapView>` principal y `mapRef.current` queda en `null`.
+  Al salir, el `<MapView>` nuevo llama a `ensureVectorLayer()` en cuanto tiene instancia, y las
+  mediciones vuelven a verse sin recargar.
+- **Guardar sin mapa:** `restoreAnnotations` ya no espera a `mapRef.current`; agrega las features a la
+  fuente y la capa se engancha después. Así se guardan las mediciones hechas en el comparador 3D.
 
 ## Renderizado de estilos — `getStyleForType`
 

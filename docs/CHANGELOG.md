@@ -5,6 +5,49 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.210.0] - 2026-09-24
+
+### Agregado: «Ver la distancia» en «Mis mediciones»
+
+Las líneas de la lista tienen un botón ⓘ que abre su panel de distancia. El InfoBox que se abre desde
+la lista sale **centrado en la ventana** (`selectedFeatureInfo.centrado`) en vez de anclarse al
+último vértice, para que no quede detrás de los paneles. Aplica en el visor, en 3D y en el catálogo.
+
+### Agregado: medir en el comparador 3D
+
+Pedir Mediciones con el comparador en 3D ya no lo cierra. La herramienta escucha a los mapas α y β a
+la vez con un solo trazo, y β pausa su consulta al clic mientras se mide. Lo medido se guarda aunque
+el mapa principal no exista durante la comparación. En el comparador 2D, Mediciones sigue saliendo
+del comparador: ahí no hay capa de dibujo.
+
+### Corregido: las mediciones sobreviven al comparador, al 3D y al catálogo
+
+- Al salir del comparador las mediciones volvían a la lista pero no al mapa, y no se podía medir
+  hasta recargar. La capa de dibujo existe sin mapa y se engancha al mapa nuevo (`ensureVectorLayer`).
+- Cerrar la píldora de herramientas del catálogo borraba todas las mediciones. Ahora solo cierra;
+  borrar todo queda en la lista, con confirmación.
+- Al salir de 3D volvían a ocultarse las herramientas de medición aunque estuvieran abiertas.
+- Entrar al comparador con el modo dibujo activo bloqueaba los clics de consulta en los dos lados.
+
+### Corregido: cifras y persistencia de las mediciones
+
+- El conteo de una selección se escribía en la última medición de la lista. Va atado al id de la
+  selección que lo pidió.
+- Borrar, ocultar y ver una medición van por `id`, no por su posición en la lista.
+- El bloque «Selección» de la imagen descargada respeta las unidades elegidas en los ajustes.
+- Las selecciones se guardan al recargar y viajan en el enlace compartido.
+- Abrir un enlace compartido (`?s=`) ya no pisa las anotaciones guardadas en el navegador.
+
+### Corregido: el InfoBox con el panel de medición
+
+- Se salía de la pantalla cuando crecía después de abrir, como con el perfil de alturas en 3D: el
+  `ResizeObserver` nunca se enganchaba porque el panel no existía al montar. Si no cabe, la tarjeta se
+  desplaza por dentro.
+- El panel de área y distancia se recortaba a 239 px: las filas saltan de línea y el encabezado usa
+  el margen compacto. Pierde su X; se cierra desde la columna de acciones.
+- La imagen descargada ya no lleva el letrero de área y perímetro dentro del mapa, que repetía el
+  bloque «Selección».
+
 ## [1.209.0] - 2026-09-24
 
 ### Agregado: estilo de los puntos en 3D
