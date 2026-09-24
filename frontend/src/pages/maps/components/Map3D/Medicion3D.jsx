@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LineString from 'ol/geom/LineString';
 import Polygon from 'ol/geom/Polygon';
 import { fromLonLat } from 'ol/proj';
@@ -8,23 +8,29 @@ import CloseButton from '@components/CloseButton';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useMapsContext } from '@hooks/useMaps';
 import { useMedicion3d } from '@hooksMaps/useMedicion3d';
+import { useEmoji3d } from '@hooksMaps/useEmoji3d';
 import { abrirInfoBoxDeLinea, abrirInfoBoxDeMedicion } from '@hooksMaps/useInfoBoxDeMedicion';
 import ToolSelector from '../MeasurementTools/ToolSelector';
 import HistoryButton from '../MeasurementTools/HistoryButton';
 import HistoryPanel from '../MeasurementTools/HistoryPanel';
+import EmojiPanel from '../MeasurementTools/EmojiPanel';
 
 const SIN_MAPAS = [];
 const TIPO_A_MODO = { LineString: 'linea', Polygon: 'poligono', Pin: 'punto' };
 const MODO_A_TIPO = { linea: 'LineString', poligono: 'Polygon', punto: 'Pin' };
+const SOLO_EN_2D = ['Text', 'Freehand'];
 
 const Medicion3D = ({ map, mapasExtra = SIN_MAPAS, mapa2dRef = null, onMidiendo }) => {
     const {
-        areMeasurementToolsVisible, hideMeasurementTools, measurements, deleteMeasurement,
+        areMeasurementToolsVisible, hideMeasurementTools, areAnnotationToolsVisible, hideAnnotationTools, measurements, deleteMeasurement,
         toggleMeasurementVisibility, clearDrawings, restoreAnnotations, mapRef, setSelectedFeatureInfo, clickPosition,
     } = useMapsContext();
     const { queryFeaturesInPolygon } = useFeatureInfo();
     const { style, className } = useSiderAdaptivePosition({ anchorRef: 'tools' });
     const [listaAbierta, setListaAbierta] = useState(false);
+    const [emojiAbierto, setEmojiAbierto] = useState(false);
+    const [simbolo, setSimbolo] = useState(null);
+    const emojiRef = useRef(null);
     const mapas = useMemo(() => [map, ...mapasExtra].filter(Boolean), [map, mapasExtra]);
     const guardar = useCallback((anotacion) => {
         restoreAnnotations?.([anotacion], { showTools: false });
@@ -43,10 +49,22 @@ const Medicion3D = ({ map, mapasExtra = SIN_MAPAS, mapa2dRef = null, onMidiendo 
         modo, setModo, vertices, terminado, deshacer, borrar, terminar,
     } = useMedicion3d(mapas, { onTerminar: guardar });
 
+    const colocarEmoji = useCallback((anotacion) => {
+        restoreAnnotations?.([anotacion], { showTools: false });
+        setSimbolo(null);
+    }, [restoreAnnotations]);
+    useEmoji3d(mapas, simbolo, colocarEmoji);
+
     useEffect(() => {
-        onMidiendo(!!modo);
+        onMidiendo(!!modo || !!simbolo);
         return () => onMidiendo(false);
-    }, [modo, onMidiendo]);
+    }, [modo, simbolo, onMidiendo]);
+
+    useEffect(() => {
+        if (areAnnotationToolsVisible) return;
+        setSimbolo(null);
+        setEmojiAbierto(false);
+    }, [areAnnotationToolsVisible]);
 
     useEffect(() => {
         if (!areMeasurementToolsVisible) setModo(null);
@@ -54,7 +72,17 @@ const Medicion3D = ({ map, mapasExtra = SIN_MAPAS, mapa2dRef = null, onMidiendo 
 
     const alElegir = (tipo) => {
         const siguiente = TIPO_A_MODO[tipo] || null;
+        setSimbolo(null);
         setModo(siguiente === modo ? null : siguiente);
+    };
+    const alElegirEmoji = (elegido) => {
+        setModo(null);
+        setEmojiAbierto(false);
+        setSimbolo(elegido);
+    };
+    const cerrarHerramientas = () => {
+        hideMeasurementTools?.();
+        hideAnnotationTools?.();
     };
 
     return (
@@ -65,22 +93,34 @@ const Medicion3D = ({ map, mapasExtra = SIN_MAPAS, mapa2dRef = null, onMidiendo 
                 isOpen={listaAbierta}
                 tooltip="Mis mediciones"
             />
-            {areMeasurementToolsVisible && (
+            {(areMeasurementToolsVisible || areAnnotationToolsVisible) && (
                 <>
                     <div className="relative">
                         <ToolSelector
-                            isDrawing={!!modo}
-                            measureType={MODO_A_TIPO[modo] || 'Point'}
+                            isDrawing={!!modo || !!simbolo}
+                            measureType={simbolo ? 'Emoji' : (MODO_A_TIPO[modo] || 'Point')}
+                            isEmojiPickerOpen={emojiAbierto}
                             onSelect={alElegir}
+                            onEmojiToggle={() => setEmojiAbierto(abierto => !abierto)}
+                            emojiButtonRef={emojiRef}
                             onUndo={deshacer}
                             onFinish={terminar}
                             onCancel={borrar}
                             canUndo={vertices.length > 0 && !terminado}
-                            showAnnotations={false}
+                            showMeasurements={areMeasurementToolsVisible}
+                            showAnnotations={areAnnotationToolsVisible}
+                            bloqueadas={SOLO_EN_2D}
                         />
                     </div>
+                    <EmojiPanel
+                        open={emojiAbierto}
+                        anchorRef={emojiRef}
+                        onSelect={alElegirEmoji}
+                        onClose={() => setEmojiAbierto(false)}
+                        placedCount={measurements.filter(m => m.type === 'Emoji').length}
+                    />
                     <CloseButton
-                        onConfirm={hideMeasurementTools}
+                        onConfirm={cerrarHerramientas}
                         tooltip="Cerrar herramientas de medición"
                         confirmTitle="¿Cerrar herramientas?"
                         confirmDescription="Se borra la medición en curso; las de «Mis mediciones» se quedan."

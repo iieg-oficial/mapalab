@@ -42,6 +42,8 @@ const annotationGroup = [
     },
 ];
 
+const SIN_BLOQUEOS = [];
+
 const ToolSelector = ({
     isDrawing,
     measureType,
@@ -60,6 +62,7 @@ const ToolSelector = ({
     onFreehandWidth,
     showAnnotations = true,
     showMeasurements = true,
+    bloqueadas = SIN_BLOQUEOS,
     compact = false,
     visible = true,
     buttonClass = 'size-12.5',
@@ -74,16 +77,20 @@ const ToolSelector = ({
 
     const renderButton = (type, props, isActive) => {
         const iconState = getIconState(type.id, isActive);
+        const bloqueada = bloqueadas.includes(type.id);
 
         return (
             <button
                 className={[
                     buttonClass,
                     'flex items-center justify-center transition-all rounded-full border border-transparent',
-                    isActive ? 'bg-purple-deep text-white' : 'bg-[#EAEFFA] text-purple-deep hover:border-purple'
+                    isActive ? 'bg-purple-deep text-white' : 'bg-[#EAEFFA] text-purple-deep',
+                    bloqueada ? 'opacity-40 cursor-not-allowed' : (isActive ? '' : 'hover:border-purple'),
                 ].join(' ')}
                 aria-pressed={isActive}
+                aria-disabled={bloqueada || undefined}
                 {...props}
+                onClick={bloqueada ? undefined : props.onClick}
             >
                 <Icon name={type.icon} state={iconState} className={iconClass} />
             </button>
@@ -116,7 +123,7 @@ const ToolSelector = ({
 
         return (
             <div key={type.id} className="relative">
-                <Tooltip content={type.description} placement="top" delay={400}>
+                <Tooltip content={bloqueadas.includes(type.id) ? 'Solo en 2D' : type.description} placement="top" delay={400}>
                     {renderButton(type, buttonProps, isActive)}
                 </Tooltip>
                 {showFreehandBar && (

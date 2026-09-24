@@ -45,7 +45,7 @@ const writeBackToOl = (map, olMap) => {
 
 const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, principal = true, mapasExtra = undefined, onMapa = null, onMidiendo = null, pausado = false }) => {
     const containerRef = useRef(null);
-    const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, measurements, municipioMode } = useMapsContext();
+    const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, areAnnotationToolsVisible, measurements, municipioMode } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, grupo3dRef, setPitch, setBearing, exit, reportExtrusion,
         sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos,
@@ -168,7 +168,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     });
     useMedicionesGuardadas3d(map, measurements);
     useMap3dMunicipio(map, municipioMode, principal);
-    useAnotacionesPuntuales3d(map, measurements);
+    useAnotacionesPuntuales3d(map, measurements, estiloPuntos);
 
     if (!olRef.current) return null;
 
@@ -180,7 +180,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
                 </div>,
                 olRef.current.getTargetElement(),
             )}
-            {map && mediciones && principal && (areMeasurementToolsVisible || measurements?.length > 0) && <Medicion3D map={map} mapasExtra={mapasExtra} mapa2dRef={olRef} onMidiendo={setMidiendo} />}
+            {map && mediciones && principal && (areMeasurementToolsVisible || areAnnotationToolsVisible || measurements?.length > 0) && <Medicion3D map={map} mapasExtra={mapasExtra} mapa2dRef={olRef} onMidiendo={setMidiendo} />}
             {consultar
                 ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo || pausado} consultar={consultar} />
                 : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo || pausado} />}

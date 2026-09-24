@@ -93,7 +93,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     };
 
     const handleClick = (id) => {
-        if (id === 'anotaciones' || (id === 'compare-swipe' && isMobile)) exit3d();
+        if (id === 'compare-swipe' && isMobile) exit3d();
         if (id === 'anotaciones' && compareMode?.active) exitCompareMode();
         if (id === 'mediciones') {
             if (compareMode?.active && !en3d) exitCompareMode();

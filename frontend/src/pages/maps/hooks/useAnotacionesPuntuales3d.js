@@ -14,7 +14,30 @@ const etiqueta = (texto) => {
     return span;
 };
 
-export const elementoDeAnotacion = (medicion) => {
+const soporte = (estilo) => {
+    const pie = document.createElement('div');
+    pie.style.pointerEvents = 'none';
+    if (estilo === 'poste') {
+        pie.style.cssText += ';display:flex;flex-direction:column;align-items:center';
+        const poste = document.createElement('div');
+        poste.style.cssText = 'width:2px;height:22px;background:#465055';
+        const base = document.createElement('div');
+        base.style.cssText = 'width:6px;height:6px;border-radius:50%;background:#465055';
+        pie.append(poste, base);
+    } else {
+        pie.style.cssText += ';width:22px;height:6px;border-radius:50%;background:rgba(26,38,100,.22);margin-top:2px';
+    }
+    return pie;
+};
+
+const deCuerpoEntero = (raiz, estilo) => {
+    if (estilo !== 'poste' && estilo !== 'sombra') return { elemento: raiz, anchor: 'center', offset: [0, 0] };
+    raiz.style.cssText += ';display:flex;flex-direction:column;align-items:center';
+    raiz.appendChild(soporte(estilo));
+    return { elemento: raiz, anchor: 'bottom', offset: [0, 0] };
+};
+
+export const elementoDeAnotacion = (medicion, estilo = 'frente') => {
     const feature = medicion.feature;
     const tipo = medicion.type;
     const raiz = document.createElement('div');
@@ -58,14 +81,14 @@ export const elementoDeAnotacion = (medicion) => {
         img.style.cssText = `width:${Math.round(32 * escala)}px;transform:rotate(${rotacion}deg)`;
         raiz.appendChild(img);
     }
-    return { elemento: raiz, anchor: 'center', offset: [0, 0] };
+    return deCuerpoEntero(raiz, estilo);
 };
 
 export const anotacionesPuntuales = (measurements = []) => measurements.filter(m => (
     TIPOS.has(m.type) && m.visible !== false && m.feature?.getGeometry?.()?.getType?.() === 'Point'
 ));
 
-export const useAnotacionesPuntuales3d = (map, measurements) => {
+export const useAnotacionesPuntuales3d = (map, measurements, estilo = 'frente') => {
     const marcadoresRef = useRef([]);
 
     useEffect(() => {
@@ -80,7 +103,7 @@ export const useAnotacionesPuntuales3d = (map, measurements) => {
             if (!vigente) return;
             quitar();
             marcadoresRef.current = anotacionesPuntuales(measurements).map((medicion) => {
-                const { elemento, anchor, offset } = elementoDeAnotacion(medicion);
+                const { elemento, anchor, offset } = elementoDeAnotacion(medicion, estilo);
                 return new maplibregl.Marker({ element: elemento, anchor, offset })
                     .setLngLat(toLonLat(medicion.feature.getGeometry().getCoordinates()))
                     .addTo(map);
@@ -91,5 +114,5 @@ export const useAnotacionesPuntuales3d = (map, measurements) => {
             vigente = false;
             quitar();
         };
-    }, [map, measurements]);
+    }, [map, measurements, estilo]);
 };
