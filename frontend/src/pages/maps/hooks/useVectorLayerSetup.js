@@ -5,26 +5,20 @@ import { Vector as VectorLayer } from 'ol/layer';
 
 export const useVectorLayerSetup = (mapRef, getStyleForType, vectorSourceRef, vectorLayerRef) => {
     const ensureVectorLayer = useCallback(() => {
-        const mapInstance = mapRef.current;
-        if (!mapInstance) return false;
-
-        if (vectorSourceRef.current && vectorLayerRef.current) {
-            if (!mapInstance.getLayers().getArray().includes(vectorLayerRef.current)) {
-                mapInstance.addLayer(vectorLayerRef.current);
-            }
-            return true;
+        if (!vectorSourceRef.current || !vectorLayerRef.current) {
+            const source = new VectorSource();
+            vectorLayerRef.current = new VectorLayer({
+                source,
+                style: getStyleForType,
+                zIndex: 1000,
+            });
+            vectorSourceRef.current = source;
         }
 
-        const source = new VectorSource();
-        const vector = new VectorLayer({
-            source,
-            style: getStyleForType,
-            zIndex: 1000,
-        });
-
-        mapInstance.addLayer(vector);
-        vectorSourceRef.current = source;
-        vectorLayerRef.current = vector;
+        const mapInstance = mapRef.current;
+        if (mapInstance && !mapInstance.getLayers().getArray().includes(vectorLayerRef.current)) {
+            mapInstance.addLayer(vectorLayerRef.current);
+        }
         return true;
     }, [mapRef, getStyleForType, vectorSourceRef, vectorLayerRef]);
 

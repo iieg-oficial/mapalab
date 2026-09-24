@@ -10,7 +10,7 @@ const Map3DSwipe = () => {
     const refB = useRefDelPane(paneMapInstances?.[1]);
     return (
         <>
-            {refA && <Map3DView key="A" olMapRef={refA} principal mediciones={false} />}
+            {refA && <Map3DView key="A" olMapRef={refA} principal />}
             {refB && <Map3DView key="B" olMapRef={refB} principal={false} mediciones={false} />}
         </>
     );

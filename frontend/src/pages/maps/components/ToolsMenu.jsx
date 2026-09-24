@@ -84,7 +84,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
         abrirTabla(capaParaTabla());
     };
 
-    const { exit: exit3d } = useView3d();
+    const { exit: exit3d, active: en3d } = useView3d();
 
     const startSwipe = () => {
         stopDrawing?.();
@@ -96,7 +96,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
         if (id === 'anotaciones' || (id === 'compare-swipe' && isMobile)) exit3d();
         if (id === 'anotaciones' && compareMode?.active) exitCompareMode();
         if (id === 'mediciones') {
-            if (compareMode?.active) exitCompareMode();
+            if (compareMode?.active && !en3d) exitCompareMode();
             toggleMeasurementTools?.();
         } else if (id === 'anotaciones') {
             toggleAnnotationTools?.();

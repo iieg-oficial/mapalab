@@ -622,7 +622,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         if (!annotations?.length) return;
         let attempts = 0;
         const tryApply = () => {
-            if (mapRef.current && ensureVectorLayer() && vectorSourceRef.current) {
+            if (ensureVectorLayer() && vectorSourceRef.current) {
                 const restored = buildRestoredItems({ annotations, source: vectorSourceRef.current, measurementConfig });
                 if (restored.length) {
                     setMeasurements(prev => [...prev, ...restored]);
@@ -631,7 +631,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             } else if (attempts++ < 50) setTimeout(tryApply, 100);
         };
         tryApply();
-    }, [mapRef, ensureVectorLayer, measurementConfig]);
+    }, [ensureVectorLayer, measurementConfig]);
 
     useAnnotationsPersistence({ measurements, restoreAnnotations, storageKey });
 

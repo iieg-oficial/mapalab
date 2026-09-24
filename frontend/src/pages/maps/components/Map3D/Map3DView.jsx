@@ -173,7 +173,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
                 </div>,
                 olRef.current.getTargetElement(),
             )}
-            {map && mediciones && principal && (areMeasurementToolsVisible || measurements?.length > 0) && <Medicion3D map={map} onMidiendo={setMidiendo} />}
+            {map && mediciones && principal && (areMeasurementToolsVisible || measurements?.length > 0) && <Medicion3D map={map} mapa2dRef={olRef} onMidiendo={setMidiendo} />}
             {consultar
                 ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo} consultar={consultar} />
                 : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo} />}

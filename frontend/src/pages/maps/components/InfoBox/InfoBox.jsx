@@ -323,7 +323,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                                 </InfoCard>
                             )}
 
-                            {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} onCerrar={handleClose} />}
+                            {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} />}
 
                             <SummaryCard
                                 visible={isPolygonSelection && (!hasNoResults || enBorde > 0)}
@@ -352,7 +352,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                 className={`relative w-fit bg-transparent z-5 ${isSingleFeature ? '' : 'flex items-stretch gap-2'}`}
                 style={positionStyle}
             >
-                <div ref={cardRef} className={`relative w-[239px]${embed ? (isDragging ? ' cursor-grabbing' : ' cursor-grab') : ''}`} {...cardHandleProps}>
+                <div ref={cardRef} className={`relative w-[239px] max-h-[calc(100dvh-20px)] overflow-y-auto overscroll-contain${embed ? (isDragging ? ' cursor-grabbing' : ' cursor-grab') : ''}`} {...cardHandleProps}>
                     <EmptySuggestions
                         visible={showEmptySuggestions}
                         queriedLayerName={queriedLayerName}
@@ -370,7 +370,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                         </InfoCard>
                     )}
 
-                    {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} onCerrar={handleClose} className="mb-2" />}
+                    {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} className="mb-2" />}
 
                     <SummaryCard
                         visible={isPolygonSelection && (!hasNoResults || enBorde > 0)}

@@ -16,7 +16,7 @@ import HistoryPanel from '../MeasurementTools/HistoryPanel';
 const TIPO_A_MODO = { LineString: 'linea', Polygon: 'poligono', Pin: 'punto' };
 const MODO_A_TIPO = { linea: 'LineString', poligono: 'Polygon', punto: 'Pin' };
 
-const Medicion3D = ({ map, onMidiendo }) => {
+const Medicion3D = ({ map, mapa2dRef = null, onMidiendo }) => {
     const {
         areMeasurementToolsVisible, hideMeasurementTools, measurements, deleteMeasurement,
         toggleMeasurementVisibility, clearDrawings, restoreAnnotations, mapRef, setSelectedFeatureInfo, clickPosition,
@@ -26,7 +26,8 @@ const Medicion3D = ({ map, onMidiendo }) => {
     const [listaAbierta, setListaAbierta] = useState(false);
     const guardar = useCallback((anotacion) => {
         restoreAnnotations?.([anotacion], { showTools: false });
-        if (!mapRef?.current || anotacion.type === 'Pin') return;
+        const mapa2d = mapa2dRef?.current || mapRef?.current;
+        if (!mapa2d || anotacion.type === 'Pin') return;
         if (anotacion.type === 'LineString') {
             const coords = anotacion.geometry.coordinates;
             const { x, y } = map.project(coords.at(-1));
@@ -34,8 +35,8 @@ const Medicion3D = ({ map, onMidiendo }) => {
             return;
         }
         const geometria = new Polygon(anotacion.geometry.coordinates.map(anillo => anillo.map(c => fromLonLat(c))));
-        queryFeaturesInPolygon(mapRef.current, geometria, getCenter(geometria.getExtent()));
-    }, [restoreAnnotations, mapRef, map, queryFeaturesInPolygon, setSelectedFeatureInfo, clickPosition]);
+        queryFeaturesInPolygon(mapa2d, geometria, getCenter(geometria.getExtent()));
+    }, [restoreAnnotations, mapa2dRef, mapRef, map, queryFeaturesInPolygon, setSelectedFeatureInfo, clickPosition]);
     const {
         modo, setModo, vertices, terminado, deshacer, borrar, terminar,
     } = useMedicion3d(map, { onTerminar: guardar });

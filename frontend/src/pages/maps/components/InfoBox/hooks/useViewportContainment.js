@@ -78,5 +78,5 @@ export const useViewportContainment = (ref, dependencies = [], margin = 10, paus
         return () => {
             resizeObserver.disconnect();
         };
-    }, [ref, adjustPosition]);
+    }, [ref, adjustPosition, ...dependencies]);
 };
