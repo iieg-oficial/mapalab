@@ -5,6 +5,38 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.196.0] - 2026-09-24
+
+### Agregado: resultados del área junto al InfoBox, con gráfica de alturas
+
+- Al cerrar un polígono en 2D, el panel de resultados sale **pegado debajo del resumen de la
+  selección** del InfoBox (`<PanelMedicionSeleccion>`). Si la consulta no encuentra elementos y el
+  InfoBox no abre, el panel sale junto a las herramientas.
+- **Alturas dentro del área** (`<DistribucionAlturas>`): barras con el porcentaje del área por franja
+  de altitud, con tooltip, más la altura máxima y mínima. Sale de la misma rejilla del DEM que ya
+  calculaba el área sobre el relieve.
+
+### Agregado: Mis mediciones en 3D
+
+- El 3D usa el mismo `<HistoryButton>` y `<HistoryPanel>` del 2D, sobre la misma lista: lo que se
+  termina en 3D entra ahí por `restoreAnnotations` y sigue al volver a 2D.
+- Las mediciones de la lista se pintan sobre el terreno en 3D (`useMedicionesGuardadas3d`).
+
+### Cambiado
+
+- **Trazo en vivo en 3D**: la línea y el relleno siguen al cursor, con los colores del 2D (morado para
+  líneas, naranja para áreas).
+- **Terminar en 3D** corta el trazo, guarda la medición y oculta la barra de deshacer, terminar y
+  cancelar, como en 2D. Esc también termina.
+- **Ajustes 3D**: la X es la de los paneles de subtemas y a su lado va una flecha para restablecer;
+  el pie queda limpio. El engrane va sin fondo y al abrirlo se vuelve la X.
+- **La X del panel de zoom en 3D** baja a 32 px (`size="pastilla"` de `<PillCloseButton>`).
+
+### Corregido
+
+- **El cursor de cruz al medir en 2D** no se veía: el resaltado al pasar sobre elementos lo
+  reescribía en cada movimiento. Ahora se detiene mientras se dibuja.
+
 ## [1.195.0] - 2026-09-23
 
 ### Corregido: el clic derecho para girar no funcionaba del lado β
