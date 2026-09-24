@@ -5,6 +5,15 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.21] - 2026-09-24
+
+### Corregido: el widget viejo se quedaba un año en los celulares
+
+`/widget/v1/mapalab.js` se servía con `max-age=31536000, immutable` en una URL sin hash. Un navegador
+que lo bajó antes de agosto siguió usando el widget 1.1: pintaba el pie «Fuente: IIEG» y no le pasaba
+`marker-card` al iframe, así que la tarjeta del portal no salía. Ahora va con `no-cache`: se
+revalida contra el `ETag` y cada deploy del widget llega a todos.
+
 ## [1.116.20] - 2026-09-17
 
 ### Corregido: el purgado del cache del gateway nunca purgó nada
