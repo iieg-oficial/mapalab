@@ -17,6 +17,12 @@ const TYPE_ICONS = {
     Pin: 'pin'
 };
 
+const InfoSinFondo = () => (
+    <svg viewBox="0 0 26.402 27.593" className="size-4" aria-hidden="true">
+        <path fill="#703088" d="M13.119 0a13.1 13.1 0 0 0-11.6 19.227L.741 24.9a2.37 2.37 0 0 0 .836 2.169A2.33 2.33 0 0 0 3 27.593a2.3 2.3 0 0 0 .751-.128l5.459-1.886A13.116 13.116 0 1 0 13.119 0m0 24.1a10.9 10.9 0 0 1-3.545-.6.98.98 0 0 0-.694 0l-5.8 2a.14.14 0 0 1-.156 0 .24.24 0 0 1-.085-.241l.837-6.059a1.1 1.1 0 0 0-.128-.667 10.988 10.988 0 1 1 9.571 5.573Zm2.481-4.957a1.08 1.08 0 0 1-1.063 1.063H11.7a1.064 1.064 0 0 1 0-2.127h.355V11.7H11.7a1.064 1.064 0 1 1 0-2.127h1.418a1.08 1.08 0 0 1 1.063 1.063v7.444h.355a1.08 1.08 0 0 1 1.064 1.063M11.347 7.09a1.418 1.418 0 1 1 1.417 1.418 1.42 1.42 0 0 1-1.417-1.418" />
+    </svg>
+);
+
 const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClose, onShowSelection, onShowMeasurement = null, onClearAll = null }) => {
     const { className: positionClass } = useSiderAdaptivePosition({ anchorRef: 'listMeasurements' });
     const [confirmarBorrado, setConfirmarBorrado] = useState(false);
@@ -99,7 +105,7 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                                             `}
                                             aria-label={`Ver la información de ${measurement.label} `}
                                         >
-                                            <Icon name="info" state="normal" className="size-4" />
+                                            <InfoSinFondo />
                                         </button>
                                     </Tooltip>
                                 )}

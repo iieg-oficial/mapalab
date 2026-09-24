@@ -21,7 +21,7 @@ export const elementoDeAnotacion = (medicion) => {
     raiz.style.pointerEvents = 'none';
 
     if (tipo === 'Pin') {
-        raiz.style.cssText += ';display:flex;align-items:flex-start;gap:4px';
+        raiz.style.cssText += ';display:flex;align-items:flex-start;gap:6px';
         const img = document.createElement('img');
         img.src = PIN_ICONO;
         img.width = 28;

@@ -14,7 +14,7 @@ import { trackCatalogoDownload, trackCatalogoShare } from '@services/analyticsSe
 
 const ICON_BTN = 'size-7 rounded-full flex items-center justify-center transition-colors';
 
-const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, onVista = null, hexbin = null, onClose }) => {
+const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, onVista = null, hexbin = null, onImagen = null, onClose }) => {
     const { tiempo } = useCatalogoTiempoContext();
     const filtro = tiempo?.filtro || null;
     const isRaster = !!tiempo?.isRaster;
@@ -79,7 +79,10 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
         setDownloading(null);
     };
 
-    const toggleMinimized = () => setMinimized((m) => !m);
+    const toggleMinimized = (e) => {
+        if (e?.target?.closest?.('[data-sin-minimizar]')) return;
+        setMinimized((m) => !m);
+    };
 
     const formats = isRaster
         ? RASTER_FORMATS.map((f) => ({ id: f.id, label: f.label }))
@@ -95,7 +98,12 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
                 role="button"
                 tabIndex={0}
                 onClick={toggleMinimized}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleMinimized(); } }}
+                onKeyDown={(e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    if (e.target.closest('[data-sin-minimizar]')) return;
+                    e.preventDefault();
+                    toggleMinimized(e);
+                }}
                 title={minimized ? 'Expandir' : 'Minimizar'}
                 className="flex items-center justify-between gap-2 min-h-10 px-3.5 py-1.5 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-purple/40"
             >
@@ -105,6 +113,11 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
                 >
                     {capa.nombre}
                 </h3>
+                {conVista && !minimized && (
+                    <span className="ml-auto" data-sin-minimizar>
+                        <CatalogoVistaSegmented nombre={capa.nombre} vista={vista} onVista={onVista} />
+                    </span>
+                )}
                 <span className={`${minimized ? 'hidden md:flex' : 'flex'} shrink-0 text-purple ${ICON_BTN}`}>
                     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                         {minimized ? <path d="M12 6v12M6 12h12" /> : <path d="M6 12h12" />}
@@ -114,7 +127,6 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
 
             {!minimized && (
                 <div className="px-3.5 pb-3">
-                    {conVista && <CatalogoVistaSegmented nombre={capa.nombre} vista={vista} onVista={onVista} />}
                     {hexbin ? <CatalogoHexbinLeyenda hexbin={hexbin} /> : legendUrl && (
                         <div className="relative w-full bg-white rounded-[13px] p-2 max-h-[52vh] overflow-y-auto">
                             <LegendImage src={legendUrl} alt={capa.nombre} />
@@ -152,6 +164,15 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
 
                     {showFormats && (
                         <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                            {onImagen && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowFormats(false); onImagen(); }}
+                                    className="text-[12px] font-garet px-3 py-1.5 rounded-[14px] border border-purple-deep text-purple-deep hover:bg-purple-deep hover:text-white transition-colors"
+                                >
+                                    Imagen
+                                </button>
+                            )}
                             {formats.map((f) => (
                                 <button
                                     key={f.id}

@@ -41,6 +41,7 @@ const CatalogoPage = () => {
     const [institucionSlug, setInstitucionSlug] = useState(null);
     const [searchOpen, setSearchOpen] = useState(false);
     const [hexbin, setHexbin] = useState(null);
+    const [imagenAbierta, setImagenAbierta] = useState(false);
     const [loadingCapa, setLoadingCapa] = useState(false);
     const [capaEnEdicion, setCapaEnEdicion] = useState(null);
     const openTrackedRef = useRef(false);
@@ -185,6 +186,8 @@ const CatalogoPage = () => {
                         capa={selectedCapa}
                         hexagonos={hexagonos}
                         onHexbin={setHexbin}
+                        imagenAbierta={imagenAbierta}
+                        onCerrarImagen={() => setImagenAbierta(false)}
                         onEditInfobox={isNonProd ? (feature) => handleEditInfobox(selectedCapa, feature) : null}
                     />
                     {selectedCapa && (
@@ -194,6 +197,7 @@ const CatalogoPage = () => {
                             vista={vista}
                             onVista={isNonProd ? cambiarVista : null}
                             hexbin={hexagonos ? hexbin : null}
+                            onImagen={() => setImagenAbierta(true)}
                             onClose={handleCloseCapa}
                         />
                     )}

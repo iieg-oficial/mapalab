@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDebounce } from '@hooks/useDebounce';
 import { useOutsideClick } from '@hooks/useOutsideClick';
-import ScrollContainer from '@components/ScrollContainer';
 import CatalogoSearchInput, { SearchIcon } from './CatalogoSearchInput';
 import CatalogoShare from './CatalogoShare';
 import CatalogoInstitucionesList from './CatalogoInstitucionesList';
+import CatalogoCapasLista from './CatalogoCapasLista';
 import { buildCatalogoShareUrl, filterCapas } from '../helpers/catalogoRoutes';
 import { PANEL_SHADOW, STACK_SPACING, TITLE_PILL, Z_CAPAS } from '../helpers/catalogoStyles';
 import { trackCatalogoSearch, trackCatalogoShare } from '@services/analyticsService';
@@ -89,11 +89,25 @@ const CatalogoSearchModal = ({
     };
 
     const headerVisibility = open ? 'flex' : 'hidden md:flex';
+    const paralelo = open && listaOpen;
+    const altoCapas = listaOpen
+        ? `max-h-[calc(30vh-70px)] ${paralelo ? 'md:max-h-[calc(60vh-70px)]' : ''}`
+        : 'max-h-[calc(80vh-140px)]';
+    const listaInstituciones = (maxHeight) => (
+        <CatalogoInstitucionesList
+            instituciones={instituciones}
+            institucionActiva={institucionActiva}
+            conteos={conteosPorInstitucion}
+            totalCapas={totalCapas}
+            maxHeight={maxHeight}
+            onSelect={handleSelectInstitucion}
+        />
+    );
 
     return (
         <div
             ref={containerRef}
-            className="fixed left-1/2 -translate-x-1/2 bottom-15 z-30 w-[min(460px,90vw)] max-h-[80vh] flex flex-col items-stretch"
+            className={`fixed left-1/2 -translate-x-1/2 bottom-15 z-30 w-[min(460px,90vw)] ${paralelo ? 'md:w-[min(780px,94vw)]' : ''} max-h-[80vh] flex flex-col items-stretch`}
         >
             <div className={`${headerVisibility} relative z-30 items-center justify-between gap-2 ${STACK_SPACING}`}>
                 <div className="min-w-0 flex items-center gap-2">
@@ -169,47 +183,24 @@ const CatalogoSearchModal = ({
                 )}
             </div>
 
-            <div className={`${Z_CAPAS} ${PANEL_SHADOW} grid transition-all duration-300 ease-out min-h-0 rounded-xl ${open ? `grid-rows-[1fr] opacity-100 ${STACK_SPACING}` : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
-                <div className="min-h-0 overflow-hidden rounded-xl">
-                    <ScrollContainer
-                        className={`${listaOpen ? 'max-h-[calc(30vh-70px)]' : 'max-h-[calc(80vh-140px)]'} bg-white rounded-xl`}
-                        overlayFade
-                        overlayColor="#FFFFFF"
-                        clickableArrows
-                        minItemsForClick={12}
-                        itemCount={results.length}
-                    >
-                        {results.length === 0 ? (
-                            <p className="px-3 py-4 text-center text-[16px] text-graphite font-garet">
-                                Sin resultados
-                            </p>
-                        ) : (
-                            results.map((c) => (
-                                <div key={c.slug} className="group/item relative flex items-center rounded-lg hover:bg-orange/10 transition-colors">
-                                    <button
-                                        onClick={() => onSelect(c.slug, { fromSearch: !!debounced.trim() })}
-                                        className="flex-1 min-w-0 text-left px-3 py-2.5 pr-9 text-[16px] font-medium text-[#454545] font-garet group-hover/item:text-purple transition-colors truncate cursor-pointer"
-                                    >
-                                        {c.nombre}
-                                    </button>
-                                    {onEditInfobox && (
-                                        <button
-                                            type="button"
-                                            onClick={() => onEditInfobox(c)}
-                                            aria-label={`Personalizar la tarjeta de ${c.nombre}`}
-                                            title="Personalizar la tarjeta de información"
-                                            className="absolute right-1.5 size-7 rounded-full flex items-center justify-center text-purple opacity-0 group-hover/item:opacity-100 focus-visible:opacity-100 hover:bg-purple-soft transition-opacity cursor-pointer"
-                                        >
-                                            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M12 20h9" />
-                                                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                                            </svg>
-                                        </button>
-                                    )}
-                                </div>
-                            ))
-                        )}
-                    </ScrollContainer>
+            <div className={paralelo ? 'md:flex md:items-end md:gap-3' : ''}>
+                {paralelo && (
+                    <div className="hidden md:block md:w-[280px] md:shrink-0">
+                        {listaInstituciones('max-h-[calc(60vh-70px)]')}
+                    </div>
+                )}
+                <div className="md:flex-1 md:min-w-0">
+                    <div className={`${Z_CAPAS} ${PANEL_SHADOW} grid transition-all duration-300 ease-out min-h-0 rounded-xl ${open ? `grid-rows-[1fr] opacity-100 ${STACK_SPACING}` : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
+                        <div className="min-h-0 overflow-hidden rounded-xl">
+                            <CatalogoCapasLista
+                                results={results}
+                                alto={altoCapas}
+                                fromSearch={!!debounced.trim()}
+                                onSelect={onSelect}
+                                onEditInfobox={onEditInfobox}
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -257,14 +248,9 @@ const CatalogoSearchModal = ({
                     </div>
 
                     {listaOpen && (
-                        <CatalogoInstitucionesList
-                            instituciones={instituciones}
-                            institucionActiva={institucionActiva}
-                            conteos={conteosPorInstitucion}
-                            totalCapas={totalCapas}
-                            maxHeight={open ? 'max-h-[calc(50vh-70px)]' : 'max-h-[45vh]'}
-                            onSelect={handleSelectInstitucion}
-                        />
+                        <div className={paralelo ? 'md:hidden' : ''}>
+                            {listaInstituciones(open ? 'max-h-[calc(50vh-70px)]' : 'max-h-[45vh]')}
+                        </div>
                     )}
                 </>
             )}

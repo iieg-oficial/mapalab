@@ -5,6 +5,39 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.207.0] - 2026-09-24
+
+### Agregado: descargar la capa del catálogo como imagen
+
+«Descargar» suma «Imagen», que abre `CatalogoDescargaImagen` con las opciones del visor: formato (PNG,
+JPEG, PDF), parte del mapa (Área, Jalisco o Selección si hay polígono), calidad, título y leyenda.
+Usa el mismo `useMapDownload`; «Área» descarga lo visible, sin el recuadro de la vista previa. Para
+que la leyenda se encuentre, el catálogo monta un `LayersContext` con su capa y completa en su
+`MapsContext` `targetRef`, `groupedActiveLayers` y `selectedLayer`. `useMapDownload` deja de exigir
+el `EventoProvider` del visor.
+
+### Agregado: el polígono del catálogo mide y resume
+
+La selección por polígono abre el panel «Área» (desde arriba, sobre el relieve, perímetro, máximo y
+mínimo, gráfica de alturas) y el «Resumen de selección»; las tarjetas salen con «Ver detalles». Un
+polígono sin elementos también muestra su medición. Las tarjetas del catálogo pasan a pintarse dentro
+de sus contextos: el resumen usa `useLayerSymbolIcon`, que sin `MapsContext` tumbaba la página.
+
+### Cambiado: el catálogo, más parecido al visor
+
+- **Listas en paralelo**: con el buscador abierto y la lista de instituciones desplegada, en escritorio
+  las instituciones van en una columna junto a las capas. La lista de capas sale a
+  `CatalogoCapasLista`.
+- **Hexágonos**: el control pasa a la cabecera del panel, junto a minimizar, con su texto como
+  tooltip; sus teclas ya no minimizan el panel.
+- **Compartir**: enlace con botón de copiar, QR con «Descargar PNG» y redes sociales, como en el
+  visor. Fijar, incluir mediciones e insertar no aplican: el enlace del catálogo es directo.
+
+### Cambiado: mediciones
+
+- La «i» de las filas de «Mis mediciones» ya no lleva círculo de fondo.
+- El texto del pin se separa 6 px del ícono (antes tapaba 4 px); en 3D, la separación sube a 6 px.
+
 ## [1.206.0] - 2026-09-24
 
 ### Agregado: capas de puntos del catálogo en hexágonos H3

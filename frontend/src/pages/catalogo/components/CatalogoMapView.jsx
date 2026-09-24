@@ -9,6 +9,7 @@ import { fromLonLat, transformExtent } from 'ol/proj';
 import { defaults as defaultInteractions } from 'ol/interaction/defaults';
 import MouseWheelZoom from 'ol/interaction/MouseWheelZoom';
 import MapsContext from '@contexts/MapsContext';
+import { LayersContext } from '@contexts/LayersContext';
 import { View3dProvider } from '@contexts/View3dContext';
 import MapControls from '@pages/maps/components/MapControls';
 import MapAttribution from '@pages/maps/components/MapAttribution';
@@ -19,6 +20,7 @@ import CatalogoTools from './CatalogoTools';
 import CatalogoTablaProviders from './CatalogoTablaProviders';
 import CatalogoTimeBar from './CatalogoTimeBar';
 import CatalogoVista3d from './CatalogoVista3d';
+import CatalogoDescargaImagen from './CatalogoDescargaImagen';
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { useCatalogoPoligono } from '../hooks/useCatalogoPoligono';
 import { useCatalogoTabla } from '../hooks/useCatalogoTabla';
@@ -37,7 +39,7 @@ import { useLayerLoading } from '@hooks/useLayerLoading';
 
 const CATALOGO_ANNOTATIONS_KEY = 'mapalab.catalogo.annotations';
 
-const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, onEditInfobox = null }) => {
+const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, imagenAbierta = false, onCerrarImagen, onEditInfobox = null }) => {
     const { tiempo, loop, wmsLayerRef } = useCatalogoTiempoContext();
     const targetRef = useRef(null);
     const scaleRef = useRef(null);
@@ -58,6 +60,10 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, onEditInfob
     }, [limpiar]);
 
     const tabla = useCatalogoTabla({ capa, tiempo, setInfo, clearInfo });
+    const capasContexto = useMemo(
+        () => ({ layers: tabla.contexto.allLayers, initialOrder: [], loading: false, error: null }),
+        [tabla.contexto.allLayers],
+    );
 
     const getMapInstance = useCallback(() => mapRef.current, []);
     useScaleLineControl(getMapInstance, scaleRef);
@@ -119,6 +125,7 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, onEditInfob
         ...editing,
         ...tabla.contexto,
         ...CONTEXTO_3D,
+        targetRef,
     }), [isLocating, drawing, editing, tabla.contexto, tiempo.getSpecificFilter, loop.getLoopState, loop.stopLoop]);
 
     useEffect(() => {
@@ -227,59 +234,63 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, onEditInfob
             <div ref={targetRef} className="absolute inset-0" />
 
             <MapsContext.Provider value={mapsContextValue}>
-                <View3dProvider>
-                    <CatalogoTablaProviders tablasFijas={tabla.tablasFijas}>
-                        <MapControls />
-                        <CatalogoTools tabla={tabla} hayCapa={Boolean(capa)} />
-                    </CatalogoTablaProviders>
-                    <MapAttribution hideActions />
-                    {capa && <CatalogoTimeBar tiempo={tiempo} loop={loop} />}
-                    <CatalogoVista3d consultar={consultar3d} />
-                </View3dProvider>
+                <LayersContext.Provider value={capasContexto}>
+                    <View3dProvider>
+                        <CatalogoTablaProviders tablasFijas={tabla.tablasFijas}>
+                            <MapControls />
+                            <CatalogoTools tabla={tabla} hayCapa={Boolean(capa)} />
+                        </CatalogoTablaProviders>
+                        <MapAttribution hideActions />
+                        {capa && <CatalogoTimeBar tiempo={tiempo} loop={loop} />}
+                        <CatalogoVista3d consultar={consultar3d} />
+                        {capa && <CatalogoDescargaImagen abierto={imagenAbierta} capa={capa} onCerrar={onCerrarImagen} />}
+                    </View3dProvider>
+
+                    <div ref={scaleRef} className="fixed left-4 bottom-1 z-10" />
+
+                    {layerLoading && !loop.isLoopPlaying && (
+                        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-20">
+                            <LottieSpinner loop autoplay className="w-32 h-32" />
+                        </div>
+                    )}
+
+                    {info?.medicion && (
+                        <div className="fixed left-1/2 top-1/2 z-20 w-[260px] -translate-x-1/2 -translate-y-1/2">
+                            <PanelMedicionSeleccion geometria={info.medicion} onCerrar={clearInfo} />
+                        </div>
+                    )}
+
+                    {info && !info.medicion && capa && (
+                        <CatalogoInfoBox
+                            capa={capa}
+                            features={info.features}
+                            pixel={info.pixel}
+                            lngLat={info.lngLat}
+                            mapInstance={mapRef.current}
+                            onReposition={(nextPixel) => setInfo((prev) => (prev ? { ...prev, pixel: nextPixel } : prev))}
+                            onEdit={onEditInfobox}
+                            onClose={clearInfo}
+                        />
+                    )}
+
+                    {seleccion && capa && (
+                        <CatalogoInfoBox
+                            capa={capa}
+                            features={seleccion.features}
+                            pixel={seleccion.pixel}
+                            lngLat={seleccion.lngLat}
+                            mapInstance={mapRef.current}
+                            onReposition={reposicionar}
+                            onEdit={onEditInfobox}
+                            onClose={clearInfo}
+                            hasMore={seleccion.hasMore}
+                            onLoadMore={cargarMas}
+                            matched={seleccion.matched}
+                            geometria={seleccion.geometria}
+                        />
+                    )}
+                </LayersContext.Provider>
             </MapsContext.Provider>
-
-            <div ref={scaleRef} className="fixed left-4 bottom-1 z-10" />
-
-            {layerLoading && !loop.isLoopPlaying && (
-                <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-20">
-                    <LottieSpinner loop autoplay className="w-32 h-32" />
-                </div>
-            )}
-
-            {info?.medicion && (
-                <div className="fixed left-1/2 top-1/2 z-20 w-[260px] -translate-x-1/2 -translate-y-1/2">
-                    <PanelMedicionSeleccion geometria={info.medicion} onCerrar={clearInfo} />
-                </div>
-            )}
-
-            {info && !info.medicion && capa && (
-                <CatalogoInfoBox
-                    capa={capa}
-                    features={info.features}
-                    pixel={info.pixel}
-                    lngLat={info.lngLat}
-                    mapInstance={mapRef.current}
-                    onReposition={(nextPixel) => setInfo((prev) => (prev ? { ...prev, pixel: nextPixel } : prev))}
-                    onEdit={onEditInfobox}
-                    onClose={clearInfo}
-                />
-            )}
-
-            {seleccion && capa && (
-                <CatalogoInfoBox
-                    capa={capa}
-                    features={seleccion.features}
-                    pixel={seleccion.pixel}
-                    lngLat={seleccion.lngLat}
-                    mapInstance={mapRef.current}
-                    onReposition={reposicionar}
-                    onEdit={onEditInfobox}
-                    onClose={clearInfo}
-                    hasMore={seleccion.hasMore}
-                    onLoadMore={cargarMas}
-                    matched={seleccion.matched}
-                />
-            )}
         </>
     );
 };

@@ -11,7 +11,7 @@ import { findLayerById, findParentGroup, resolveLayerDisplayName } from '../../.
 import { transformExtent } from 'ol/proj';
 import { EXPORT_DIMENSIONS, QUALITY_PRESETS } from '../utils/exportDimensions';
 import { getLayersSources } from '@services/layerMetadataService';
-import { useEventoContext } from '@hooks/useEvento';
+import EventoContext from '@contexts/EventoContext';
 import { anchoParaSeleccion, crearMascara, extentDeSeleccion } from '../utils/seleccionDescarga';
 import Style from 'ol/style/Style';
 import { filasSeleccion, medidasDeSeleccion, MAX_CAPAS_SELECCION } from '../utils/estadisticasSeleccion';
@@ -26,7 +26,7 @@ export const useMapDownload = () => {
     const { composeExportImage } = useImageComposition();
     const { exportToPdf, exportToImage } = usePdfExport();
     const { activeLayerIds, selectedLayer, groupedActiveLayers, allLayers, compareMode, getFilter, measurementConfig } = useContext(MapsContext);
-    const { getAliasByLayerId } = useEventoContext();
+    const getAliasByLayerId = useContext(EventoContext)?.getAliasByLayerId;
     const [isDownloading, setIsDownloading] = useState(false);
 
     const activeLayers = useMemo(() => activeLayerIds

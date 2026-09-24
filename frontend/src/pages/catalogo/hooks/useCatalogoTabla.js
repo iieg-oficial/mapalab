@@ -62,7 +62,9 @@ export const useCatalogoTabla = ({ capa, tiempo, setInfo, clearInfo }) => {
 
     const contexto = useMemo(() => ({
         allLayers: layerDef ? [layerDef] : [],
-        activeLayerIds: disponible ? [layerId] : [],
+        activeLayerIds: layerDef ? [layerId] : [],
+        groupedActiveLayers: layerDef ? [layerDef] : [],
+        selectedLayer: layerDef,
         hiddenLayerIds: [],
         municipioMode: null,
         applyFilter,
@@ -70,7 +72,7 @@ export const useCatalogoTabla = ({ capa, tiempo, setInfo, clearInfo }) => {
         getLayerFilters,
         getFilter,
         setSelectedFeatureInfo,
-    }), [applyFilter, clearFilter, disponible, getFilter, getLayerFilters, layerDef, layerId, setSelectedFeatureInfo]);
+    }), [applyFilter, clearFilter, getFilter, getLayerFilters, layerDef, layerId, setSelectedFeatureInfo]);
 
     return { layerId, disponible, tablasFijas, contexto };
 };

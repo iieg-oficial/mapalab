@@ -48,7 +48,7 @@ export const createPinStyle = (feature, selected = false) => {
                 text: texto,
                 font: FUENTE,
                 textAlign: 'left',
-                offsetX: 16,
+                offsetX: 26,
                 offsetY: -24,
                 fill: new Fill({ color: '#111827' }),
                 backgroundFill: new Fill({ color: 'rgba(255, 255, 255, 0.92)' }),

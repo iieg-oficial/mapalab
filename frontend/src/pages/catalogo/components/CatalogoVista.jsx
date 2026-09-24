@@ -14,21 +14,26 @@ const OPCIONES = [
 const NOTA = 'font-garet text-[11px]/[16px] text-[#6E7477] px-1';
 
 export const CatalogoVistaSegmented = ({ nombre, vista, onVista }) => (
-    <div className="flex items-center gap-2 mb-2.5">
-        <span className="font-garet text-[12px] text-[#6E7477]">Ver como</span>
-        <Tooltip content="Hexágonos agrupa los puntos en celdas y las colorea por cuántos caen en cada una." placement="bottom">
-            <span className="relative inline-flex">
-                <Segmented
-                    compact
-                    ariaLabel={`Forma de ver ${nombre}`}
-                    options={OPCIONES}
-                    value={vista}
-                    onChange={onVista}
-                />
-                <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-2 text-[8px] px-1.5" />
-            </span>
-        </Tooltip>
-    </div>
+    <Tooltip
+        content={(
+            <div className="flex flex-col gap-0.5 leading-tight max-w-[220px]">
+                <span className="font-semibold">Ver como puntos o hexágonos</span>
+                <span className="text-[11px] opacity-80">Hexágonos agrupa los puntos en celdas y las colorea por cuántos caen en cada una.</span>
+            </div>
+        )}
+        placement="bottom"
+    >
+        <span className="relative inline-flex shrink-0">
+            <Segmented
+                compact
+                ariaLabel={`Forma de ver ${nombre}`}
+                options={OPCIONES}
+                value={vista}
+                onChange={onVista}
+            />
+            <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-2 text-[8px] px-1.5" />
+        </span>
+    </Tooltip>
 );
 
 export const CatalogoHexbinLeyenda = ({ hexbin }) => {
