@@ -1,6 +1,7 @@
 import ScrollContainer from '@components/ScrollContainer';
+import logoMapalabShort from '@logos/mapalab_short.svg';
 
-const CatalogoCapasLista = ({ results, alto, fromSearch, onSelect, onEditInfobox }) => (
+const CatalogoCapasLista = ({ results, alto, fromSearch, onSelect, onEditInfobox, logoDe = null }) => (
     <ScrollContainer
         className={`${alto} bg-white rounded-xl`}
         overlayFade
@@ -18,9 +19,22 @@ const CatalogoCapasLista = ({ results, alto, fromSearch, onSelect, onEditInfobox
                 <div key={c.slug} className="group/item relative flex items-center rounded-lg hover:bg-orange/10 transition-colors">
                     <button
                         onClick={() => onSelect(c.slug, { fromSearch })}
-                        className="flex-1 min-w-0 text-left px-3 py-2.5 pr-9 text-[16px] font-medium text-[#454545] font-garet group-hover/item:text-purple transition-colors truncate cursor-pointer"
+                        className="flex-1 min-w-0 flex items-center gap-2.5 text-left px-3 py-2.5 pr-9 text-[16px] font-medium text-[#454545] font-garet group-hover/item:text-purple transition-colors cursor-pointer"
                     >
-                        {c.nombre}
+                        {logoDe && (
+                            <img
+                                src={logoDe(c) || logoMapalabShort}
+                                alt=""
+                                className="size-6 shrink-0 rounded object-contain"
+                                onError={(evento) => {
+                                    const img = evento.currentTarget;
+                                    if (img.dataset.respaldo) return;
+                                    img.dataset.respaldo = '1';
+                                    img.src = logoMapalabShort;
+                                }}
+                            />
+                        )}
+                        <span className="min-w-0 truncate">{c.nombre}</span>
                     </button>
                     {onEditInfobox && (
                         <button

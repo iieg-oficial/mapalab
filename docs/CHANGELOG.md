@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.207.3] - 2026-09-24
+
+### Cambiado: la lista de instituciones ya no abre por defecto
+
+Al entrar a `/catalogo` solo se ve la lista de capas con «Todas». Las instituciones se despliegan
+debajo de las píldoras con el chevron, y elegir una la cierra y abre sus capas. Se retira el
+acomodo en paralelo de la 1.207.0.
+
+### Agregado: logo de la institución en la lista «Todas»
+
+Cada capa lleva a su izquierda el logo de su institución; si no tiene o no carga, el de Mapalab.
+
+### Corregido: la línea abre su panel de distancia en el catálogo
+
+Al terminar una línea se abre el panel de distancia, como en el visor. Solo con las herramientas
+abiertas, para que las mediciones restauradas al recargar no lo abran solas.
+
 ## [1.207.2] - 2026-09-24
 
 ### Cambiado: el control de hexágonos vuelve a sus íconos, en su propia fila

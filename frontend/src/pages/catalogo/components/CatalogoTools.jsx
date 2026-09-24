@@ -10,7 +10,7 @@ import TextInlineEditor from '@mapsComponents/MeasurementTools/TextInlineEditor'
 import FeatureEditToolbar from '@mapsComponents/MeasurementTools/FeatureEditToolbar';
 import HistoryButton from '@mapsComponents/MeasurementTools/HistoryButton';
 import HistoryPanel from '@mapsComponents/MeasurementTools/HistoryPanel';
-import { abrirInfoBoxDeMedicion } from '@hooksMaps/useInfoBoxDeMedicion';
+import { abrirInfoBoxDeMedicion, useInfoBoxDeMedicion } from '@hooksMaps/useInfoBoxDeMedicion';
 import CatalogoTablaButton from './CatalogoTablaButton';
 
 const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo', Pin: 'Pin' };
@@ -30,6 +30,11 @@ const CloseIcon = ({ className }) => (
         <path d="M18 6L6 18M6 6l12 12" />
     </svg>
 );
+
+const PanelDeLineaNueva = ({ measurements, mapRef, setSelectedFeatureInfo, clickPosition }) => {
+    useInfoBoxDeMedicion({ measurements, mapRef, setSelectedFeatureInfo, clickPosition });
+    return null;
+};
 
 const CatalogoTools = ({ tabla, hayCapa }) => {
     const {
@@ -165,6 +170,13 @@ const CatalogoTools = ({ tabla, hayCapa }) => {
 
             {toolsOpen && (
                 <>
+                    <PanelDeLineaNueva
+                        measurements={measurements}
+                        mapRef={mapRef}
+                        setSelectedFeatureInfo={setSelectedFeatureInfo}
+                        clickPosition={clickPosition}
+                    />
+
                     <HistoryButton
                         count={measurements.length}
                         onClick={() => setIsListOpen((v) => !v)}

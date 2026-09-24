@@ -64,11 +64,8 @@ const CatalogoSearchModal = ({
         setShareOpen(false);
     }, [institucionActiva]);
 
-    useEffect(() => {
-        setListaOpen(open);
-    }, [open]);
-
     const handleSelectInstitucion = (slug) => {
+        setListaOpen(false);
         onOpen();
         onSelectInstitucion(slug);
     };
@@ -92,25 +89,13 @@ const CatalogoSearchModal = ({
     };
 
     const headerVisibility = open ? 'flex' : 'hidden md:flex';
-    const paralelo = open && listaOpen;
-    const altoCapas = listaOpen
-        ? `max-h-[calc(30vh-70px)] ${paralelo ? 'md:max-h-[calc(60vh-70px)]' : ''}`
-        : 'max-h-[calc(80vh-140px)]';
-    const listaInstituciones = (maxHeight) => (
-        <CatalogoInstitucionesList
-            instituciones={instituciones}
-            institucionActiva={institucionActiva}
-            conteos={conteosPorInstitucion}
-            totalCapas={totalCapas}
-            maxHeight={maxHeight}
-            onSelect={handleSelectInstitucion}
-        />
-    );
+    const altoCapas = listaOpen ? 'max-h-[calc(30vh-70px)]' : 'max-h-[calc(80vh-140px)]';
+    const logos = new Map(instituciones.map((i) => [i.slug, i.logoUrl || null]));
 
     return (
         <div
             ref={containerRef}
-            className={`fixed left-1/2 -translate-x-1/2 bottom-15 z-30 w-[min(460px,90vw)] ${paralelo ? 'md:w-[min(780px,94vw)]' : ''} max-h-[80vh] flex flex-col items-stretch`}
+            className="fixed left-1/2 -translate-x-1/2 bottom-15 z-30 w-[min(460px,90vw)] max-h-[80vh] flex flex-col items-stretch"
         >
             <div className={`${headerVisibility} relative z-30 items-center justify-between gap-2 ${STACK_SPACING}`}>
                 <div className="min-w-0 flex items-center gap-2">
@@ -186,24 +171,16 @@ const CatalogoSearchModal = ({
                 )}
             </div>
 
-            <div className={paralelo ? 'md:flex md:items-end md:gap-3' : ''}>
-                {paralelo && (
-                    <div className="hidden md:block md:w-[280px] md:shrink-0">
-                        {listaInstituciones('max-h-[calc(60vh-70px)]')}
-                    </div>
-                )}
-                <div className="md:flex-1 md:min-w-0">
-                    <div className={`${Z_CAPAS} ${PANEL_SHADOW} grid transition-all duration-300 ease-out min-h-0 rounded-xl ${open ? `grid-rows-[1fr] opacity-100 ${STACK_SPACING}` : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
-                        <div className="min-h-0 overflow-hidden rounded-xl">
-                            <CatalogoCapasLista
-                                results={results}
-                                alto={altoCapas}
-                                fromSearch={!!debounced.trim()}
-                                onSelect={onSelect}
-                                onEditInfobox={onEditInfobox}
-                            />
-                        </div>
-                    </div>
+            <div className={`${Z_CAPAS} ${PANEL_SHADOW} grid transition-all duration-300 ease-out min-h-0 rounded-xl ${open ? `grid-rows-[1fr] opacity-100 ${STACK_SPACING}` : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
+                <div className="min-h-0 overflow-hidden rounded-xl">
+                    <CatalogoCapasLista
+                        results={results}
+                        alto={altoCapas}
+                        fromSearch={!!debounced.trim()}
+                        onSelect={onSelect}
+                        onEditInfobox={onEditInfobox}
+                        logoDe={institucionActiva ? null : (capa) => logos.get(capa.institucion?.slug) || null}
+                    />
                 </div>
             </div>
 
@@ -251,9 +228,14 @@ const CatalogoSearchModal = ({
                     </div>
 
                     {listaOpen && (
-                        <div className={paralelo ? 'md:hidden' : ''}>
-                            {listaInstituciones(open ? 'max-h-[calc(50vh-70px)]' : 'max-h-[45vh]')}
-                        </div>
+                        <CatalogoInstitucionesList
+                            instituciones={instituciones}
+                            institucionActiva={institucionActiva}
+                            conteos={conteosPorInstitucion}
+                            totalCapas={totalCapas}
+                            maxHeight={open ? 'max-h-[calc(50vh-70px)]' : 'max-h-[45vh]'}
+                            onSelect={handleSelectInstitucion}
+                        />
                     )}
                 </>
             )}
