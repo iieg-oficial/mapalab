@@ -1,6 +1,8 @@
 import { useCallback, useRef } from 'react';
 import { getFeaturesInPolygonForActiveLayers } from '@services/featureInfoService';
-import { contarBorde } from '@services/seleccionStatsService';
+import { contarBorde, contarEnPoligono } from '@services/seleccionStatsService';
+import { filterValidLayers } from '@utils/featureInfoUtils';
+import { findWMSConfig } from '@pages/maps/helpers/wmsConfig';
 
 export const usePolygonSelection = ({ getFilter = null, pageRef = null } = {}) => {
     const localPageRef = useRef(null);
@@ -31,6 +33,41 @@ export const usePolygonSelection = ({ getFilter = null, pageRef = null } = {}) =
         return { ...page, enBorde };
     }, [getFilter, polygonPageRef]);
 
+    const resumirPoligono = useCallback(async ({ map, polygonGeometry, activeLayers, allLayers = [], isInegiMode = false }) => {
+        const capas = !map || !polygonGeometry || !activeLayers
+            ? []
+            : filterValidLayers(activeLayers, allLayers, findWMSConfig).map(({ layer }) => layer);
+        if (capas.length === 0) {
+            polygonPageRef.current = null;
+            return null;
+        }
+
+        const filas = await contarEnPoligono(
+            capas.map(({ id, name, label }) => ({ id, label: label || name })),
+            polygonGeometry,
+            { getFilter, allLayers },
+        );
+        const resumen = filas
+            .filter(fila => fila.conteo > 0 || (fila.conteo == null && !fila.sinWfs))
+            .map(({ id, etiqueta, conteo }) => ({ layerId: id, layerName: etiqueta, conteo: conteo ?? null }));
+        const matched = resumen.reduce((suma, fila) => suma + (fila.conteo || 0), 0);
+        const sinDato = resumen.some(fila => fila.conteo == null);
+        const enBorde = filas.reduce((suma, fila) => suma + (fila.enBorde || 0), 0);
+
+        polygonPageRef.current = {
+            activeLayers,
+            map,
+            polygonGeometry,
+            isInegiMode,
+            allLayers,
+            nextIndex: 0,
+            hasMore: matched > 0 || sinDato,
+            matched
+        };
+
+        return { resumen, matched, enBorde };
+    }, [getFilter, polygonPageRef]);
+
     const loadMorePage = useCallback(async () => {
         const state = polygonPageRef.current;
         if (!state || !state.hasMore || state.busy) return null;
@@ -58,5 +95,5 @@ export const usePolygonSelection = ({ getFilter = null, pageRef = null } = {}) =
         polygonPageRef.current = null;
     }, [polygonPageRef]);
 
-    return { polygonPageRef, queryPolygon, loadMorePage, clearPolygonPage };
+    return { polygonPageRef, queryPolygon, resumirPoligono, loadMorePage, clearPolygonPage };
 };

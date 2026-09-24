@@ -17,13 +17,13 @@ const LayerRow = ({ layerId, name, count, bodySize, badgeSize }) => {
                 <span className={`font-garet font-medium ${bodySize} text-[#465055] truncate`}>{name}</span>
             </span>
             <span className={`font-garet font-bold ${badgeSize} text-[#FF8300] bg-white px-2 py-0.5 rounded-full shrink-0 ml-2`}>
-                {formatNumber(count)}
+                {count == null ? 'Sin dato' : formatNumber(count)}
             </span>
         </div>
     );
 };
 
-const SummaryCard = ({ visible = false, results = [], matched = 0, enBorde = 0, isExpanded, isLoadingExpand, onToggleExpand, variant = 'desktop' }) => {
+const SummaryCard = ({ visible = false, results = [], resumen = null, matched = 0, enBorde = 0, isExpanded, isLoadingExpand, onToggleExpand, variant = 'desktop' }) => {
     const [showWarning, setShowWarning] = useState(false);
 
     if (!visible) return null;
@@ -35,15 +35,17 @@ const SummaryCard = ({ visible = false, results = [], matched = 0, enBorde = 0, 
 
     const totalFeatures = results.reduce((total, result) => total + result.features.length, 0);
     const totalEnArea = matched > totalFeatures ? matched : totalFeatures;
-    const hasMany = totalFeatures > 5000;
+    const hasMany = totalEnArea > 5000;
 
-    const layerBreakdown = results
-        .filter(result => result.features?.length > 0)
-        .map(result => ({
-            layerId: result.layerId,
-            name: result.layerName,
-            count: result.features.length
-        }));
+    const layerBreakdown = resumen?.length
+        ? resumen.map(fila => ({ layerId: fila.layerId, name: fila.layerName, count: fila.conteo }))
+        : results
+            .filter(result => result.features?.length > 0)
+            .map(result => ({
+                layerId: result.layerId,
+                name: result.layerName,
+                count: result.features.length
+            }));
 
     const handleToggle = () => {
         if (!isExpanded && hasMany && !showWarning) {
@@ -76,7 +78,7 @@ const SummaryCard = ({ visible = false, results = [], matched = 0, enBorde = 0, 
                                 Cruzan el borde, sin contar: {formatNumber(enBorde)}
                             </div>
                         )}
-                        {totalEnArea > totalFeatures && (
+                        {totalFeatures > 0 && totalEnArea > totalFeatures && (
                             <div className={`font-garet ${bodySize} text-[#7e8a91] mt-0.5`}>
                                 Se muestran los primeros {formatNumber(totalFeatures)}
                             </div>
@@ -107,13 +109,13 @@ const SummaryCard = ({ visible = false, results = [], matched = 0, enBorde = 0, 
                 </>
             )}
 
-            {totalFeatures > 0 && <div className={`${padX} ${isExpanded ? 'py-3' : 'pt-0 pb-4'} shrink-0`}>
+            {(totalEnArea > 0 || layerBreakdown.some(capa => capa.count == null)) && <div className={`${padX} ${isExpanded ? 'py-3' : 'pt-0 pb-4'} shrink-0`}>
                 {showWarning && (
                     <div className="mb-3">
                         <Alert
                             severity="warning"
                             title="Gran cantidad de elementos"
-                            message={`Has seleccionado ${formatNumber(totalFeatures)} elementos. Mostrar todos los detalles puede tardar un momento y hacer más lento tu navegador. ¿Deseas continuar?`}
+                            message={`Has seleccionado ${formatNumber(totalEnArea)} elementos. Mostrar todos los detalles puede tardar un momento y hacer más lento tu navegador. ¿Deseas continuar?`}
                             onClose={handleToggle}
                             closeButtonLabel="Sí, mostrar detalles"
                         />

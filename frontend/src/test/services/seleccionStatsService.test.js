@@ -15,7 +15,7 @@ vi.mock('@utils/featureInfoUtils', () => ({
     getWfsUrl: (url) => url.replace('/wms', '/wfs'),
 }));
 
-import { CAPAS_SIMULTANEAS, MAX_VERTICES, agregarEnPoligono, camposDeCapa, conLimite, construirAgregado, contarEnPoligono, esCampoDeClase, esCampoNumerico, filtroDePoligono, leerAgregado, leerAgregadoPorClase, leerNumberMatched, wktDelPoligono } from '@services/seleccionStatsService';
+import { CAPAS_SIMULTANEAS, CONTEOS_POR_SEGUNDO, MAX_VERTICES, REINTENTOS_TRAS_429, agregarEnPoligono, camposDeCapa, conLimite, construirAgregado, contarEnPoligono, esCampoDeClase, esCampoNumerico, filtroDePoligono, leerAgregado, leerAgregadoPorClase, leerNumberMatched, pedirConRitmo, wktDelPoligono } from '@services/seleccionStatsService';
 
 const cuadro = new Polygon([[[0, 0], [1000, 0], [1000, 1000], [0, 1000], [0, 0]]]);
 
@@ -230,5 +230,48 @@ describe('conLimite', () => {
 
     it('con una lista vacía no ejecuta nada', async () => {
         expect(await conLimite([], 2, async () => 1)).toEqual([]);
+    });
+});
+
+describe('pedirConRitmo', () => {
+    it('reintenta tras un 429 y devuelve la primera respuesta buena', async () => {
+        vi.useFakeTimers();
+        const peticion = vi.fn()
+            .mockResolvedValueOnce({ status: 429, ok: false })
+            .mockResolvedValueOnce({ status: 200, ok: true });
+
+        const promesa = pedirConRitmo(peticion);
+        await vi.runAllTimersAsync();
+        const respuesta = await promesa;
+        vi.useRealTimers();
+
+        expect(peticion).toHaveBeenCalledTimes(2);
+        expect(respuesta.status).toBe(200);
+    });
+
+    it('se rinde después de los reintentos y devuelve el 429', async () => {
+        vi.useFakeTimers();
+        const peticion = vi.fn().mockResolvedValue({ status: 429, ok: false });
+
+        const promesa = pedirConRitmo(peticion);
+        await vi.runAllTimersAsync();
+        const respuesta = await promesa;
+        vi.useRealTimers();
+
+        expect(peticion).toHaveBeenCalledTimes(REINTENTOS_TRAS_429 + 1);
+        expect(respuesta.status).toBe(429);
+    });
+
+    it('espacia las peticiones en vez de lanzarlas juntas', async () => {
+        vi.useFakeTimers();
+        const momentos = [];
+        const peticion = vi.fn(async () => { momentos.push(Date.now()); return { status: 200, ok: true }; });
+
+        const promesas = [pedirConRitmo(peticion), pedirConRitmo(peticion), pedirConRitmo(peticion)];
+        await vi.runAllTimersAsync();
+        await Promise.all(promesas);
+        vi.useRealTimers();
+
+        expect(momentos[2] - momentos[0]).toBeGreaterThanOrEqual(Math.floor(2 * 1000 / CONTEOS_POR_SEGUNDO));
     });
 });

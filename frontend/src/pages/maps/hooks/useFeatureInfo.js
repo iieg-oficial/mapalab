@@ -27,7 +27,7 @@ export const useFeatureInfo = (overrides = null) => {
     const [loading, setLoading] = useState(false);
     const localPolygonPageRef = useRef(null);
     const polygonPageRef = ctx.polygonPageRef || localPolygonPageRef;
-    const { queryPolygon } = usePolygonSelection({ getFilter, pageRef: polygonPageRef });
+    const { resumirPoligono } = usePolygonSelection({ getFilter, pageRef: polygonPageRef });
 
     const getAllActiveLayers = useCallback(() => {
         const hiddenIdSet = new Set(hiddenLayerIds || []);
@@ -283,22 +283,13 @@ export const useFeatureInfo = (overrides = null) => {
         setLayerLoading(FEATURE_INFO_LOADING_ID, true);
         try {
             const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
-            const page = await queryPolygon({ map, polygonGeometry, activeLayers, allLayers, isInegiMode });
-            const { results, matched, hasMore, enBorde = 0 } = page || { results: [], matched: 0, hasMore: false };
+            const resumenPoligono = await resumirPoligono({ map, polygonGeometry, activeLayers, allLayers, isInegiMode });
+            const { resumen = [], matched = 0, enBorde = 0 } = resumenPoligono || {};
             const [lng, lat] = toLonLat(centerCoordinate);
 
-            if (results && results.length > 0) {
-                const totalFeatures = results.reduce((sum, result) => sum + (result.features?.length || 0), 0);
-                const layerBreakdown = results
-                    .filter(result => result.features?.length > 0)
-                    .map(result => ({
-                        name: result.layerName,
-                        count: result.features.length
-                    }));
-
-                if (onFeatureCountUpdate) {
-                    onFeatureCountUpdate(Math.max(matched || 0, totalFeatures), layerBreakdown, results, enBorde);
-                }
+            if (resumen.length > 0) {
+                const layerBreakdown = resumen.filter(fila => fila.conteo > 0).map(fila => ({ name: fila.layerName, count: fila.conteo }));
+                onFeatureCountUpdate?.(matched, layerBreakdown, null, enBorde);
 
                 setTimeout(() => {
                     const pixel = map.getPixelFromCoordinate(centerCoordinate);
@@ -306,15 +297,16 @@ export const useFeatureInfo = (overrides = null) => {
 
                     setSelectedFeatureInfo({
                         lngLat: { lng, lat },
-                        results,
+                        results: [],
+                        resumen,
                         isPolygonSelection: true,
                         polygonGeometry,
                         matched,
-                        hasMore,
+                        hasMore: false,
                         enBorde
                     });
                 }, 100);
-                return results;
+                return resumen;
             } else {
                 onFeatureCountUpdate?.(0, [], null, enBorde);
                 clickPosition.updatePosition({ pixel: map.getPixelFromCoordinate(centerCoordinate) });
@@ -330,7 +322,7 @@ export const useFeatureInfo = (overrides = null) => {
             setLayerLoading(FEATURE_INFO_LOADING_ID, false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, setLayerLoading, queryPolygon]);
+    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, setLayerLoading, resumirPoligono]);
 
     const clearFeatureInfo = useCallback(() => {
         setSelectedFeatureInfo(null);

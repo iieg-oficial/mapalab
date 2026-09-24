@@ -38,6 +38,29 @@ export const leerNumberMatched = (xml) => {
     return encontrado ? Number(encontrado[1]) : null;
 };
 
+export const CONTEOS_POR_SEGUNDO = 15;
+export const REINTENTOS_TRAS_429 = 2;
+const ESPERA_TRAS_429_MS = 1000;
+let proximoTurno = 0;
+
+const pausa = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const esperarTurno = () => {
+    const ahora = Date.now();
+    const turno = Math.max(ahora, proximoTurno);
+    proximoTurno = turno + 1000 / CONTEOS_POR_SEGUNDO;
+    return turno > ahora ? pausa(turno - ahora) : Promise.resolve();
+};
+
+export const pedirConRitmo = async (hacerPeticion) => {
+    for (let intento = 0; ; intento += 1) {
+        await esperarTurno();
+        const respuesta = await hacerPeticion();
+        if (respuesta.status !== 429 || intento >= REINTENTOS_TRAS_429) return respuesta;
+        await pausa(ESPERA_TRAS_429_MS * (intento + 1));
+    }
+};
+
 const contarCapa = async ({ baseUrl, typeName, columna, filtroCapa, wkt, relacion }) => {
     const espacial = filtroDePoligono(columna, wkt, relacion);
     const cuerpo = new URLSearchParams({
@@ -50,12 +73,12 @@ const contarCapa = async ({ baseUrl, typeName, columna, filtroCapa, wkt, relacio
         CQL_FILTER: filtroCapa ? `(${filtroCapa}) AND ${espacial}` : espacial,
     });
 
-    const respuesta = await fetch(baseUrl, {
+    const respuesta = await pedirConRitmo(() => fetch(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: cuerpo.toString(),
         signal: AbortSignal.timeout(TIEMPO_LIMITE_MS),
-    });
+    }));
     if (!respuesta.ok) return null;
     return leerNumberMatched(await respuesta.text());
 };

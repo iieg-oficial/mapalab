@@ -54,10 +54,11 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
 
         if (!isExpanded) {
             setIsLoadingExpand(true);
-            setTimeout(() => {
+            const sinElementos = selectedFeatureInfo?.isPolygonSelection && !selectedFeatureInfo?.results?.length;
+            Promise.resolve(sinElementos ? loadMorePolygonFeatures() : null).catch(() => null).finally(() => setTimeout(() => {
                 setIsExpanded(true);
                 setIsLoadingExpand(false);
-            }, 50);
+            }, 50));
         } else {
             setIsExpanded(false);
         }
@@ -326,9 +327,10 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                             {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} />}
 
                             <SummaryCard
-                                visible={isPolygonSelection && (!hasNoResults || enBorde > 0)}
+                                visible={isPolygonSelection && (!hasNoResults || enBorde > 0 || !!selectedFeatureInfo?.resumen?.length)}
                                 enBorde={enBorde}
                                 results={results || []}
+                                resumen={selectedFeatureInfo?.resumen}
                                 matched={selectedFeatureInfo?.matched || 0}
                                 isExpanded={isExpanded}
                                 isLoadingExpand={isLoadingExpand}
@@ -373,9 +375,10 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                     {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} className="mb-2" />}
 
                     <SummaryCard
-                        visible={isPolygonSelection && (!hasNoResults || enBorde > 0)}
+                        visible={isPolygonSelection && (!hasNoResults || enBorde > 0 || !!selectedFeatureInfo?.resumen?.length)}
                         enBorde={enBorde}
                         results={results || []}
+                        resumen={selectedFeatureInfo?.resumen}
                         matched={selectedFeatureInfo?.matched || 0}
                         isExpanded={isExpanded}
                         isLoadingExpand={isLoadingExpand}
