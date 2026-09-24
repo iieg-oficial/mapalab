@@ -62,11 +62,10 @@ const CatalogoSearchModal = ({
 
     useEffect(() => {
         setShareOpen(false);
-        setListaOpen(false);
     }, [institucionActiva]);
 
     const handleSelectInstitucion = (slug) => {
-        setListaOpen(false);
+        onOpen();
         onSelectInstitucion(slug);
     };
 

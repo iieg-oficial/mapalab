@@ -1,6 +1,7 @@
 import Tooltip from '@components/Tooltip';
 
-const Switch = ({ checked, indeterminate, onChange, disabled, className = '', onLabel, offLabel, onColor, offColor, tooltip }) => {
+const Switch = ({ checked, indeterminate, onChange, disabled, className = '', onLabel, offLabel, onColor, offColor, tooltip, variant = 'default', ariaLabel }) => {
+    const neutro = variant === 'neutro';
     const hasLabels = onLabel || offLabel;
 
     const getTranslateClass = () => {
@@ -11,6 +12,7 @@ const Switch = ({ checked, indeterminate, onChange, disabled, className = '', on
     const getBackgroundColor = () => {
         if (disabled) return 'bg-gray-300';
         if (indeterminate) return 'bg-[#FF8300]';
+        if (neutro) return 'bg-white';
         return checked ? 'bg-[#5AD344]' : 'bg-white';
     };
 
@@ -58,6 +60,7 @@ const Switch = ({ checked, indeterminate, onChange, disabled, className = '', on
             type="button"
             role="switch"
             aria-checked={checked}
+            aria-label={ariaLabel}
             disabled={disabled}
             onClick={(e) => {
                 e.stopPropagation();
@@ -67,7 +70,7 @@ const Switch = ({ checked, indeterminate, onChange, disabled, className = '', on
             }}
             className={`
                 relative inline-flex h-5 w-7.5 shrink-0 items-center rounded-full
-                transition-colors duration-200 ease-in-out bg-[#E9EDF7]
+                transition-colors duration-200 ease-in-out ${neutro ? 'bg-[#C9CFD8]' : 'bg-[#E9EDF7]'}
                 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
                 ${className}
             `}

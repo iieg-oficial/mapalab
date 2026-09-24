@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.207.1] - 2026-09-24
+
+### Corregido: elegir una institución abre sus capas
+
+Tocar «Todas» o una institución, en las píldoras o en la lista, abre el buscador con las capas de esa
+institución y deja la lista de instituciones al lado. Antes la cerraba y, con el buscador cerrado, no
+se veía ninguna lista.
+
+### Cambiado: el control de hexágonos es un switch gris
+
+Punto blanco sobre fondo gris en los dos estados, entre los íconos de puntos y hexágonos, con el
+estado en el tooltip. `Switch` gana `variant="neutro"` para los casos en que ningún lado es
+«apagado», y `ariaLabel` en su versión sin etiquetas.
+
 ## [1.207.0] - 2026-09-24
 
 ### Agregado: descargar la capa del catálogo como imagen

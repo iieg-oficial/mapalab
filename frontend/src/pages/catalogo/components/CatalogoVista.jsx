@@ -1,4 +1,5 @@
-import Segmented from '@components/Segmented';
+import Switch from '@components/Switch';
+import Icon from '@components/Icon';
 import Badge from '@components/Badge';
 import Tooltip from '@components/Tooltip';
 import HexbinLegend from '@pages/maps/components/ActiveLayers/HexbinLegend';
@@ -6,35 +7,34 @@ import { legendEntries } from '@pages/maps/helpers/hexbinStyles';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import { VISTA_HEXAGONOS, VISTA_PUNTOS } from '../helpers/catalogoVista';
 
-const OPCIONES = [
-    { value: VISTA_PUNTOS, label: 'Puntos', icon: 'geom_point', tooltip: 'Ver los puntos' },
-    { value: VISTA_HEXAGONOS, label: 'Hexágonos', icon: 'geom_hexbin', tooltip: 'Agrupar en hexágonos' },
-];
-
 const NOTA = 'font-garet text-[11px]/[16px] text-[#6E7477] px-1';
 
-export const CatalogoVistaSegmented = ({ nombre, vista, onVista }) => (
-    <Tooltip
-        content={(
-            <div className="flex flex-col gap-0.5 leading-tight max-w-[220px]">
-                <span className="font-semibold">Ver como puntos o hexágonos</span>
-                <span className="text-[11px] opacity-80">Hexágonos agrupa los puntos en celdas y las colorea por cuántos caen en cada una.</span>
-            </div>
-        )}
-        placement="bottom"
-    >
-        <span className="relative inline-flex shrink-0">
-            <Segmented
-                compact
-                ariaLabel={`Forma de ver ${nombre}`}
-                options={OPCIONES}
-                value={vista}
-                onChange={onVista}
-            />
-            <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-2 text-[8px] px-1.5" />
-        </span>
-    </Tooltip>
-);
+export const CatalogoVistaSegmented = ({ nombre, vista, onVista }) => {
+    const hexagonos = vista === VISTA_HEXAGONOS;
+    return (
+        <Tooltip
+            content={(
+                <div className="flex flex-col gap-0.5 leading-tight max-w-[220px]">
+                    <span className="font-semibold">{hexagonos ? 'Viendo hexágonos' : 'Viendo puntos'}</span>
+                    <span className="text-[11px] opacity-80">Hexágonos agrupa los puntos en celdas y las colorea por cuántos caen en cada una.</span>
+                </div>
+            )}
+            placement="bottom"
+        >
+            <span className="relative inline-flex items-center gap-1 shrink-0">
+                <Icon name="geom_point" className={`size-3.5 ${hexagonos ? 'opacity-40' : ''}`} />
+                <Switch
+                    variant="neutro"
+                    checked={hexagonos}
+                    onChange={(activo) => onVista(activo ? VISTA_HEXAGONOS : VISTA_PUNTOS)}
+                    ariaLabel={`Ver ${nombre} en hexágonos`}
+                />
+                <Icon name="geom_hexbin" className={`size-3.5 ${hexagonos ? '' : 'opacity-40'}`} />
+                <Badge variant="pill" color="orange" text="BETA" className="absolute -top-3 -right-2 text-[8px] px-1.5" />
+            </span>
+        </Tooltip>
+    );
+};
 
 export const CatalogoHexbinLeyenda = ({ hexbin }) => {
     if (!hexbin || hexbin.estado === 'cargando') return <p className={NOTA}>Agrupando los puntos…</p>;
