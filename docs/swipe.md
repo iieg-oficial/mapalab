@@ -92,22 +92,23 @@ Crítico: **`mapRef.current` (live) es `null` en swipe** porque el `<MapView />`
 
 ## Quién vive en cada lado y cuál estás editando
 
-Son dos cosas distintas y cada una tiene su control, los dos fuera del item de capa:
+Son dos cosas distintas, y ninguna tiene control dentro del item de capa:
 
-- **Dónde vive la capa** se decide con las dos casillas de `<PanelCapas>`, una por lado, en la barra
-  del comparador. La casilla del único lado que le queda va deshabilitada: `setLayerSlotMembership`
+- **Dónde vive la capa** se decide con los dos botones circulares α y β de cada fila en «Capas
+  comparadas» (`<PanelCapas>`). El del único lado que le queda va bloqueado: `setLayerSlotMembership`
   rechaza un destino vacío, así que vaciar los dos lados se sigue haciendo con eliminar. Sustituyó a
   la píldora `<SlotBadge>`, que ciclaba `A → AB → B` en tres pasos con el estado escondido.
-- **Qué lado estás editando** es `compareMode.activeSlot`, y lo cambia un solo `<Switch>` A/B en la
-  barra del comparador. Gobierna todo lo que se muta desde el sider —opacidad, visibilidad, filtros
-  CQL— y a qué lado entra una capa nueva del catálogo. Antes había uno por cada item con membresía
-  `AB`, que repetía en cada renglón un estado que es global.
+- **Qué lado estás editando** es `compareMode.activeSlot`. Gobierna todo lo que se muta desde el
+  sider —opacidad, visibilidad, filtros CQL— y a qué lado entra una capa nueva del catálogo. **No
+  tiene control propio**: se quitaron el switch por capa y luego el de la barra, y hoy sólo se cambia
+  con clic en la mitad del mapa, que llama `setActiveSlot` en `<MapView>`. Pendiente de hacerlo
+  descubrible.
 
 `useSymbology.stillActive` valida contra `paneA + paneB` (no solo el live state) para que el item no
 se deseleccione al sacar la capa de un lado.
 
-**Botón Eliminar en swipe** quita la capa de **ambos** slots; para dejarla en uno solo se usan las
-casillas.
+**Botón Eliminar en swipe** quita la capa de **ambos** slots; para dejarla en uno solo se usan los
+botones α y β de «Capas comparadas».
 
 ## Entrada y salida del swipe
 
@@ -210,20 +211,28 @@ Al cargar un share con `annotations`, `useShareDeserializer` invoca `restoreAnno
 
 - Color asociado: A = morado IIEG (`#5C2472`), B = naranja (`#FF8300`, mismo del handle del swipe)
 - Handle naranja con knob blanco (`<svg>` con flechas según orientación)
-- Overlays "A"/"B" gigantes en `font-garet bold text-[120px]` mientras dura el resaltado: al entrar al comparador (`SWIPE_INTRO_MS`) y cada vez que `highlightedSlots` se enciende. Al apagarse, la letra viaja hasta el handle y se desvanece sobre la pastilla que queda ahí (`minimizeTransform`, `SWIPE_MINIMIZE_MS`)
-- Letras `A` y `B` permanentes flanqueando el knob (`A <> B`), sin fondo, en el color de cada slot y
-  con `drop-shadow` blanco para leerse sobre cualquier mitad. Son la única señal de qué lado es cuál
-  una vez que los overlays se minimizan; van sin caja para no competir con el handle, que es lo que se arrastra
-- `<SwipeSlotControls>`: barra inferior centrada `[nombre · A · orientación · B]` con `<DatePill autoWidth>`.
-  El nombre sale de `selectedLayerForSymbology`, que es **uno solo** para los dos lados: lo que difiere
-  entre A y B es la fecha de esa misma capa, no la capa. `<CloseButton>` rosa arriba si hay periodicidad seleccionada o dentro de la barra si no la hay
-- Tooltips dinámicos: anexan `del lado A`/`del lado B` y, para acciones destructivas en `AB`, `(seguirá en el lado X)`
+- Overlays α/β gigantes en `font-garet bold text-[120px]` mientras dura el resaltado: al entrar al comparador (`SWIPE_INTRO_MS`) y cada vez que `highlightedSlots` se enciende. Al apagarse, la letra viaja hasta el handle y se desvanece sobre la letra de 18 px que queda ahí (`minimizeTransform`, `SWIPE_MINIMIZE_MS`)
+- **Los lados se muestran como α y β.** El modelo sigue usando `'A'`/`'B'`; la etiqueta sale de
+  `slotLabel()` en `helpers/swipeTheme.js`, y la usan el handle, los overlays, los botones de lado, los
+  tooltips, `<LayerDetailModal>` y la imagen exportada.
+- Letras α y β permanentes de 18 px flanqueando el knob, sin fondo, en el color de cada slot y con
+  `drop-shadow` blanco para leerse sobre cualquier mitad. Son la única señal de qué lado es cuál una
+  vez que los overlays se minimizan; van sin caja para no competir con el handle, que es lo que se arrastra
+- `<SwipeSlotControls>`: la píldora principal lleva sólo dos botones —lista de capas comparadas y
+  orientación— y mide 40 px, como la píldora de la tabla de datos. La fecha de cada lado flota sola a
+  su costado, α a la izquierda y β a la derecha. Salir del comparador es un `<PillCloseButton>` que
+  aparece en hover arriba de la píldora, con `<ConfirmDropdown>` porque descarta la comparación
+- Los paneles que abre la barra —«Capas comparadas» y la periodicidad por lado— cierran con
+  `MobileSheetCloseButton`, la X estándar de paneles de mapalab. `PillCloseButton` queda sólo para
+  salir de un modo
+- Pasar el puntero por un botón de lado o por una fecha enciende el overlay gigante de esa mitad
+- Tooltips dinámicos: anexan `del lado α`/`del lado β` y, para acciones destructivas en `AB`, `(seguirá en el lado X)`
 
 ## Invariantes
 
 - `globalOrder ⊆ paneA.activeLayerIds ∪ paneB.activeLayerIds` (los IDs huérfanos se filtran al recomputar).
 - El live state (`activeLayerIds`, `hiddenLayerIds`, `layerOpacities`, `filters`) **siempre espeja** a `compareMode[pane${activeSlot}]`.
-- "Eliminar" desde el panel de capas activas en swipe quita la capa de **ambos** slots — para dejarla en uno solo se usan las casillas de `<PanelCapas>`.
+- "Eliminar" desde el panel de capas activas en swipe quita la capa de **ambos** slots — para dejarla en uno solo se usan los botones α y β de `<PanelCapas>`.
 - `swipePosition` siempre cae en `[SWIPE_POS_MIN, SWIPE_POS_MAX]` = `[0.05, 0.95]`.
 - El `swipeOrientation` se persiste por usuario (`localStorage.mapalab.swipe.orientation`) y se restaura al entrar a swipe.
 
@@ -247,8 +256,8 @@ Al cargar un share con `annotations`, `useShareDeserializer` invoca `restoreAnno
 ## Accesibilidad
 
 - Handle del swipe: `role="slider"`, `aria-label`, `aria-orientation`, `aria-valuemin/max/now`. Acepta teclado (←/→/↑/↓ con paso de 5%, `Home`/`End` para extremos).
-- Overlays "A"/"B" gigantes y las pastillas del handle son `aria-hidden="true"` (decorativos); el `aria-label` del slider ya nombra la posición.
-- Las casillas de `<PanelCapas>` llevan tooltip con el lado y la acción; la del único lado que queda va deshabilitada y lo dice.
+- Overlays α/β gigantes y las letras del handle son `aria-hidden="true"` (decorativos); el `aria-label` del slider ya nombra la posición.
+- Los botones α y β de `<PanelCapas>` llevan `aria-pressed`, `aria-label` y tooltip con el lado y la acción; el del único lado que queda va bloqueado (`aria-disabled`) y lo dice.
 
 ## Performance
 
