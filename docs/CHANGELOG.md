@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.202.0] - 2026-09-24
+
+### Eliminado: API key del MCP
+
+- `/mcp` ya no pide `Authorization: Bearer mk_...`: se conecta como conector personalizado de
+  claude.ai, cuya UI no tiene campo para una key estática. Se borró `servers/auth.py`
+  (`MCPAuthMiddleware` y el flush de cuota a mariachi).
+- La telemetría del MCP deja de aplicar la cuota por key y de registrar los `tools/call` en la
+  Auditoría de las llaves; queda la telemetría anónima.
+- Se retiraron `MCP_AUTH_ENABLED` y `MCP_QUOTA_FLUSH_INTERVAL_SECONDS` de la configuración.
+- La protección queda en el blindaje de 1.201.0, los techos globales y el `limit_req` del nginx.
+
 ## [1.201.0] - 2026-09-24
 
 ### Agregado: `layer_stats` en el MCP
