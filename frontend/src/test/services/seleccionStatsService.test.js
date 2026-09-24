@@ -15,7 +15,7 @@ vi.mock('@utils/featureInfoUtils', () => ({
     getWfsUrl: (url) => url.replace('/wms', '/wfs'),
 }));
 
-import { CAPAS_SIMULTANEAS, CONTEOS_POR_SEGUNDO, MAX_VERTICES, REINTENTOS_TRAS_429, agregarEnPoligono, camposDeCapa, conLimite, construirAgregado, contarEnPoligono, esCampoDeClase, esCampoNumerico, filtroDePoligono, leerAgregado, leerAgregadoPorClase, leerNumberMatched, pedirConRitmo, wktDelPoligono } from '@services/seleccionStatsService';
+import { CAPAS_SIMULTANEAS, CONTEOS_POR_SEGUNDO, MAX_ELEMENTOS_AGREGADO, MAX_VERTICES, REINTENTOS_TRAS_429, agregarEnPoligono, agregarValores, camposDeCapa, conLimite, contarEnPoligono, esCampoDeClase, esCampoNumerico, filtroDePoligono, leerAgregadoPorClase, leerNumberMatched, pedirConRitmo, wktDelPoligono } from '@services/seleccionStatsService';
 
 const cuadro = new Polygon([[[0, 0], [1000, 0], [1000, 1000], [0, 1000], [0, 0]]]);
 
@@ -152,28 +152,42 @@ describe('campos numéricos', () => {
     });
 });
 
-describe('agregado con WPS', () => {
+describe('agregado por WFS', () => {
     beforeEach(() => { global.fetch = vi.fn(); });
 
-    it('arma la petición con el campo y el filtro del polígono', () => {
-        const xml = construirAgregado({ typeName: 'educacion:escuelas', campo: 'alumnos', cql: 'INTERSECTS(geom, SRID=3857;POLYGON((0 0,1 0,1 1,0 0)))' });
-        expect(xml).toContain('<ows:Identifier>gs:Aggregate</ows:Identifier>');
-        expect(xml).toContain('<wps:LiteralData>alumnos</wps:LiteralData>');
-        expect(xml).toContain('typeName=educacion:escuelas');
-        expect(xml).toContain(encodeURIComponent('SRID=3857'));
-        ['Count', 'Sum', 'Average'].forEach(f => expect(xml).toContain(`<wps:LiteralData>${f}</wps:LiteralData>`));
+    it('suma, cuenta y promedia los valores numéricos', () => {
+        expect(agregarValores([10, '20', null, '', 'x', 30])).toEqual({ conteo: 3, suma: 60, promedio: 20 });
     });
 
-    it('lee el resultado sin depender del orden de las funciones', () => {
-        expect(leerAgregado({
-            AggregationFunctions: ['Average', 'Count', 'Sum'],
-            AggregationResults: [[301.82, 4200, 1267644.97]],
-        })).toEqual({ conteo: 4200, suma: 1267644.97, promedio: 301.82 });
+    it('sin valores no inventa números', () => {
+        expect(agregarValores([null, ''])).toEqual({ conteo: 0, suma: null, promedio: null });
     });
 
-    it('un resultado vacío no inventa números', () => {
-        expect(leerAgregado({ AggregationFunctions: ['Sum'], AggregationResults: [[null]] })).toEqual({ conteo: null, suma: null, promedio: null });
-        expect(leerAgregado({})).toBeNull();
+    it('por clase agrupa y ordena de mayor a menor', () => {
+        expect(agregarValores(['Agave', 'Mango', 'Agave', null], true)).toEqual({
+            clases: [{ clase: 'Agave', conteo: 2 }, { clase: 'Mango', conteo: 1 }],
+            otras: 0,
+        });
+    });
+
+    it('pide solo el campo por GET al WFS de la capa', async () => {
+        global.fetch.mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ features: [{ properties: { alumnos: 5 } }, { properties: { alumnos: 7 } }] }),
+        });
+        const datos = await agregarEnPoligono({ capa: { id: 'escuelas' }, campo: 'alumnos', poligono: cuadro, allLayers: [] });
+        expect(datos).toEqual({ conteo: 2, suma: 12, promedio: 6 });
+        const [url, opciones] = global.fetch.mock.calls.at(-1);
+        expect(url.startsWith('https://mapas.test/sextante/wfs?')).toBe(true);
+        expect(opciones.method).toBeUndefined();
+        expect(url).toContain('PROPERTYNAME=alumnos');
+    });
+
+    it('si hay más elementos que el tope no da una suma parcial', async () => {
+        const features = Array.from({ length: MAX_ELEMENTOS_AGREGADO + 1 }, () => ({ properties: { alumnos: 1 } }));
+        global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ features }) });
+        expect(await agregarEnPoligono({ capa: { id: 'escuelas' }, campo: 'alumnos', poligono: cuadro })).toBeNull();
     });
 
     it('sin campo elegido no consulta', async () => {
@@ -182,19 +196,12 @@ describe('agregado con WPS', () => {
     });
 
     it('si GeoServer falla, la capa se queda sin suma', async () => {
-        global.fetch.mockResolvedValue({ ok: false });
+        global.fetch.mockResolvedValue({ ok: false, status: 500 });
         expect(await agregarEnPoligono({ capa: { id: 'escuelas' }, campo: 'alumnos', poligono: cuadro })).toBeNull();
     });
 });
 
 describe('conteo por clase', () => {
-    it('agrupa por el campo y solo cuenta', () => {
-        const xml = construirAgregado({ typeName: 'agro:cultivos', campo: 'cultivo', cql: 'INCLUDE', porClase: true });
-        expect(xml).toContain('<ows:Identifier>groupByAttributes</ows:Identifier><wps:Data><wps:LiteralData>cultivo</wps:LiteralData>');
-        expect(xml).toContain('<wps:LiteralData>Count</wps:LiteralData>');
-        expect(xml).not.toContain('<wps:LiteralData>Sum</wps:LiteralData>');
-    });
-
     it('ordena las clases de mayor a menor y junta el resto en Otras', () => {
         const datos = { AggregationResults: [['Mango', 3], ['Maíz grano', 142], ['Agave', 40], ['Citricos', 9], ['Otros', 12], ['Plátano', 2], [null, 5]] };
         expect(leerAgregadoPorClase(datos, 3)).toEqual({

@@ -82,7 +82,6 @@ const contarCapa = async ({ baseUrl, typeName, columna, filtroCapa, wkt, relacio
     return leerNumberMatched(await respuesta.text());
 };
 
-const BASE_GEOSERVER = (import.meta.env.VITE_GEOSERVER_URL || '/sextante/').replace(/\/+$/, '');
 const TIPOS_NUMERICOS = ['xsd:number', 'xsd:decimal', 'xsd:double', 'xsd:int', 'xsd:integer', 'xsd:long', 'xsd:short', 'xsd:float'];
 
 const PREFIJOS_LLAVE = ['clave', 'cve', 'id', 'fid', 'gid', 'objectid'];
@@ -119,35 +118,22 @@ export const camposDeCapa = async (capa, allLayers = []) => {
     }
 };
 
-export const construirAgregado = ({ typeName, campo, cql, porClase = false }) => {
-    const href = `http://geoserver/wfs?service=WFS&amp;version=1.0.0&amp;request=GetFeature`
-        + `&amp;typeName=${typeName}&amp;CQL_FILTER=${encodeURIComponent(cql)}`;
-    const literal = (clave, valor) => `<wps:Input><ows:Identifier>${clave}</ows:Identifier><wps:Data><wps:LiteralData>${valor}</wps:LiteralData></wps:Data></wps:Input>`;
-    const funciones = (porClase ? ['Count'] : ['Count', 'Sum', 'Average']).map(f => literal('function', f)).join('')
-        + (porClase ? literal('groupByAttributes', campo) : '');
+export const MAX_ELEMENTOS_AGREGADO = 10000;
 
-    return `<?xml version="1.0" encoding="UTF-8"?>
-<wps:Execute version="1.0.0" service="WPS" xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink">
-<ows:Identifier>gs:Aggregate</ows:Identifier>
-<wps:DataInputs>
-<wps:Input><ows:Identifier>features</ows:Identifier><wps:Reference mimeType="text/xml; subtype=wfs-collection/1.0" xlink:href="${href}" method="GET"/></wps:Input>
-<wps:Input><ows:Identifier>aggregationAttribute</ows:Identifier><wps:Data><wps:LiteralData>${campo}</wps:LiteralData></wps:Data></wps:Input>
-${funciones}
-<wps:Input><ows:Identifier>singlePass</ows:Identifier><wps:Data><wps:LiteralData>true</wps:LiteralData></wps:Data></wps:Input>
-</wps:DataInputs>
-<wps:ResponseForm><wps:RawDataOutput mimeType="application/json"><ows:Identifier>result</ows:Identifier></wps:RawDataOutput></wps:ResponseForm>
-</wps:Execute>`;
-};
-
-export const leerAgregado = (datos) => {
-    const funciones = datos?.AggregationFunctions;
-    const valores = datos?.AggregationResults?.[0];
-    if (!Array.isArray(funciones) || !Array.isArray(valores)) return null;
-    const dato = (nombre) => {
-        const valor = valores[funciones.indexOf(nombre)];
-        return typeof valor === 'number' ? valor : null;
-    };
-    return { conteo: dato('Count'), suma: dato('Sum'), promedio: dato('Average') };
+export const agregarValores = (valores, porClase = false) => {
+    if (porClase) {
+        const cuentas = new Map();
+        valores.forEach((valor) => {
+            if (valor == null || valor === '') return;
+            const clase = String(valor);
+            cuentas.set(clase, (cuentas.get(clase) || 0) + 1);
+        });
+        return leerAgregadoPorClase({ AggregationResults: [...cuentas.entries()] });
+    }
+    const numeros = valores.filter(valor => valor != null && valor !== '').map(Number).filter(Number.isFinite);
+    if (numeros.length === 0) return { conteo: 0, suma: null, promedio: null };
+    const suma = numeros.reduce((total, valor) => total + valor, 0);
+    return { conteo: numeros.length, suma, promedio: suma / numeros.length };
 };
 
 export const leerAgregadoPorClase = (datos, maximo = MAX_CLASES) => {
@@ -172,15 +158,23 @@ export const agregarEnPoligono = async ({ capa, campo, poligono, getFilter = nul
         const espacial = filtroDePoligono(columnas[typeName] || 'the_geom', wktDelPoligono(poligono), 'WITHIN');
         const filtroCapa = getFilter ? getFilter(capa.id) : null;
 
-        const respuesta = await fetch(`${BASE_GEOSERVER}/ows`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/xml' },
-            body: construirAgregado({ typeName, campo, porClase, cql: filtroCapa ? `(${filtroCapa}) AND ${espacial}` : espacial }),
-            signal: AbortSignal.timeout(TIEMPO_LIMITE_MS * 2),
+        const parametros = new URLSearchParams({
+            SERVICE: 'WFS',
+            VERSION: '2.0.0',
+            REQUEST: 'GetFeature',
+            TYPENAMES: typeName,
+            OUTPUTFORMAT: 'application/json',
+            PROPERTYNAME: campo,
+            COUNT: String(MAX_ELEMENTOS_AGREGADO + 1),
+            CQL_FILTER: filtroCapa ? `(${filtroCapa}) AND ${espacial}` : espacial,
         });
+        const respuesta = await pedirConRitmo(() => fetch(urlWfsGet(baseUrl, parametros), {
+            signal: AbortSignal.timeout(TIEMPO_LIMITE_MS * 3),
+        }));
         if (!respuesta.ok) return null;
-        const datos = await respuesta.json();
-        return porClase ? leerAgregadoPorClase(datos) : leerAgregado(datos);
+        const { features = [] } = await respuesta.json();
+        if (features.length > MAX_ELEMENTOS_AGREGADO) return null;
+        return agregarValores(features.map(feature => feature.properties?.[campo]), porClase);
     } catch {
         return null;
     }
