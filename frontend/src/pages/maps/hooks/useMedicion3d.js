@@ -4,7 +4,7 @@ import {
     FUENTE_MEDICION_3D as FUENTE, anotacionDeMedicion, capasMedicion3d as capas, geometriaMedicion,
 } from '@pages/maps/helpers/medicion3dCapas';
 
-export const useMedicion3d = (map, { onTerminar } = {}) => {
+export const useMedicion3d = (mapas, { onTerminar } = {}) => {
     const [modo, setModoState] = useState(null);
     const [vertices, setVertices] = useState([]);
     const [puntero, setPuntero] = useState(null);
@@ -42,21 +42,19 @@ export const useMedicion3d = (map, { onTerminar } = {}) => {
     }, [modo]);
 
     useEffect(() => {
-        if (!map) return undefined;
-        if (!map.getSource(FUENTE)) {
+        mapas.forEach((map) => {
+            if (map.getSource(FUENTE)) return;
             map.addSource(FUENTE, { type: 'geojson', data: geometriaMedicion({ modo: 'linea', vertices: [], marcador: null }) });
             capas.forEach(capa => map.addLayer(capa));
-        }
-        return () => {
+        });
+        return () => mapas.filter(map => map.style).forEach((map) => {
             capas.forEach(capa => { if (map.getLayer(capa.id)) map.removeLayer(capa.id); });
             if (map.getSource(FUENTE)) map.removeSource(FUENTE);
-        };
-    }, [map]);
+        });
+    }, [mapas]);
 
     useEffect(() => {
-        if (!map || !modo) return undefined;
-        map.doubleClickZoom.disable();
-        map.getCanvas().style.cursor = 'crosshair';
+        if (!mapas.length || !modo) return undefined;
         let cuadro = null;
 
         const alClic = (event) => {
@@ -81,25 +79,31 @@ export const useMedicion3d = (map, { onTerminar } = {}) => {
         const alDobleClic = () => terminar(verticesRef.current.slice(0, -1));
         const alTeclear = (event) => { if (event.key === 'Enter' || event.key === 'Escape') terminar(); };
 
-        map.on('click', alClic);
-        map.on('mousemove', alMover);
-        map.on('dblclick', alDobleClic);
+        mapas.forEach((map) => {
+            map.doubleClickZoom.disable();
+            map.getCanvas().style.cursor = 'crosshair';
+            map.on('click', alClic);
+            map.on('mousemove', alMover);
+            map.on('dblclick', alDobleClic);
+        });
         window.addEventListener('keydown', alTeclear);
         return () => {
             cancelAnimationFrame(cuadro);
-            map.off('click', alClic);
-            map.off('mousemove', alMover);
-            map.off('dblclick', alDobleClic);
+            mapas.forEach((map) => {
+                map.off('click', alClic);
+                map.off('mousemove', alMover);
+                map.off('dblclick', alDobleClic);
+                map.doubleClickZoom.enable();
+                map.getCanvas().style.cursor = '';
+            });
             window.removeEventListener('keydown', alTeclear);
-            map.doubleClickZoom.enable();
-            map.getCanvas().style.cursor = '';
         };
-    }, [map, modo, terminar, reiniciar]);
+    }, [mapas, modo, terminar, reiniciar]);
 
     useEffect(() => {
-        const fuente = map?.getSource(FUENTE);
-        if (fuente) fuente.setData(geometriaMedicion({ modo, vertices, marcador, puntero }));
-    }, [map, modo, vertices, marcador, puntero]);
+        const datos = geometriaMedicion({ modo, vertices, marcador, puntero });
+        mapas.forEach(map => map.getSource(FUENTE)?.setData(datos));
+    }, [mapas, modo, vertices, marcador, puntero]);
 
     useEffect(() => {
         const turno = ++turnoRef.current;

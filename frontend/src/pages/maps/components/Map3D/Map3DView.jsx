@@ -42,7 +42,7 @@ const writeBackToOl = (map, olMap) => {
     view.setRotation(0);
 };
 
-const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, principal = true }) => {
+const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, principal = true, mapasExtra = undefined, onMapa = null, onMidiendo = null, pausado = false }) => {
     const containerRef = useRef(null);
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, measurements } = useMapsContext();
     const {
@@ -53,6 +53,11 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     const { getLegendJson } = useWMSLegend();
     const [map, setMap] = useState(null);
     const [midiendo, setMidiendo] = useState(false);
+    useEffect(() => {
+        onMapa?.(map);
+        return () => onMapa?.(null);
+    }, [map, onMapa]);
+    useEffect(() => { onMidiendo?.(midiendo); }, [midiendo, onMidiendo]);
     const [dePie, setDePie] = useState(() => new Set());
     const alListarDePie = useCallback((ids) => {
         setDePie(previo => (previo.size === ids.size && [...ids].every(id => previo.has(id)) ? previo : ids));
@@ -173,10 +178,10 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
                 </div>,
                 olRef.current.getTargetElement(),
             )}
-            {map && mediciones && principal && (areMeasurementToolsVisible || measurements?.length > 0) && <Medicion3D map={map} mapa2dRef={olRef} onMidiendo={setMidiendo} />}
+            {map && mediciones && principal && (areMeasurementToolsVisible || measurements?.length > 0) && <Medicion3D map={map} mapasExtra={mapasExtra} mapa2dRef={olRef} onMidiendo={setMidiendo} />}
             {consultar
-                ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo} consultar={consultar} />
-                : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo} />}
+                ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo || pausado} consultar={consultar} />
+                : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo || pausado} />}
         </>
     );
 };

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import LineString from 'ol/geom/LineString';
 import Polygon from 'ol/geom/Polygon';
 import { fromLonLat } from 'ol/proj';
@@ -13,10 +13,11 @@ import ToolSelector from '../MeasurementTools/ToolSelector';
 import HistoryButton from '../MeasurementTools/HistoryButton';
 import HistoryPanel from '../MeasurementTools/HistoryPanel';
 
+const SIN_MAPAS = [];
 const TIPO_A_MODO = { LineString: 'linea', Polygon: 'poligono', Pin: 'punto' };
 const MODO_A_TIPO = { linea: 'LineString', poligono: 'Polygon', punto: 'Pin' };
 
-const Medicion3D = ({ map, mapa2dRef = null, onMidiendo }) => {
+const Medicion3D = ({ map, mapasExtra = SIN_MAPAS, mapa2dRef = null, onMidiendo }) => {
     const {
         areMeasurementToolsVisible, hideMeasurementTools, measurements, deleteMeasurement,
         toggleMeasurementVisibility, clearDrawings, restoreAnnotations, mapRef, setSelectedFeatureInfo, clickPosition,
@@ -24,6 +25,7 @@ const Medicion3D = ({ map, mapa2dRef = null, onMidiendo }) => {
     const { queryFeaturesInPolygon } = useFeatureInfo();
     const { style, className } = useSiderAdaptivePosition({ anchorRef: 'tools' });
     const [listaAbierta, setListaAbierta] = useState(false);
+    const mapas = useMemo(() => [map, ...mapasExtra].filter(Boolean), [map, mapasExtra]);
     const guardar = useCallback((anotacion) => {
         restoreAnnotations?.([anotacion], { showTools: false });
         const mapa2d = mapa2dRef?.current || mapRef?.current;
@@ -39,7 +41,7 @@ const Medicion3D = ({ map, mapa2dRef = null, onMidiendo }) => {
     }, [restoreAnnotations, mapa2dRef, mapRef, map, queryFeaturesInPolygon, setSelectedFeatureInfo, clickPosition]);
     const {
         modo, setModo, vertices, terminado, deshacer, borrar, terminar,
-    } = useMedicion3d(map, { onTerminar: guardar });
+    } = useMedicion3d(mapas, { onTerminar: guardar });
 
     useEffect(() => {
         onMidiendo(!!modo);
