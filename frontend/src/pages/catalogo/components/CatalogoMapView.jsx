@@ -23,6 +23,7 @@ import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { useCatalogoPoligono } from '../hooks/useCatalogoPoligono';
 import { useCatalogoTabla } from '../hooks/useCatalogoTabla';
 import { useCatalogoConsulta } from '../hooks/useCatalogoConsulta';
+import { useCatalogoHexbin } from '../hooks/useCatalogoHexbin';
 import { CONTEXTO_3D } from '../helpers/catalogo3d';
 import { buildWmsLayer, HIGHLIGHT_STYLE, HIGHLIGHT_Z } from '../helpers/catalogoMapLayer';
 import { BASEMAPS, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
@@ -36,7 +37,7 @@ import { useLayerLoading } from '@hooks/useLayerLoading';
 
 const CATALOGO_ANNOTATIONS_KEY = 'mapalab.catalogo.annotations';
 
-const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
+const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, onEditInfobox = null }) => {
     const { tiempo, loop, wmsLayerRef } = useCatalogoTiempoContext();
     const targetRef = useRef(null);
     const scaleRef = useRef(null);
@@ -218,6 +219,8 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
             onLoadEnd();
         };
     }, [capa, clearInfo, wmsLayerRef, setLayerLoading]);
+
+    useCatalogoHexbin({ mapRef, wmsLayerRef, capa, tiempo, activo: hexagonos, onCambio: onHexbin });
 
     return (
         <>

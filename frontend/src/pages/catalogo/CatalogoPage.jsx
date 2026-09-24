@@ -23,6 +23,7 @@ import {
 } from '@services/analyticsService';
 import { CATALOGO_RETURN_KEY } from './useGoToCatalogo';
 import { buildCatalogoPath, filterCapas, resolveCatalogoRoute } from './helpers/catalogoRoutes';
+import { PARAM_VISTA, VISTA_HEXAGONOS, vistaDeParam } from './helpers/catalogoVista';
 import { useIsNonProd } from '@hooks/useDevTools';
 
 const CatalogoPage = () => {
@@ -39,6 +40,7 @@ const CatalogoPage = () => {
     capaVigenteRef.current = selectedCapa?.slug || null;
     const [institucionSlug, setInstitucionSlug] = useState(null);
     const [searchOpen, setSearchOpen] = useState(false);
+    const [hexbin, setHexbin] = useState(null);
     const [loadingCapa, setLoadingCapa] = useState(false);
     const [capaEnEdicion, setCapaEnEdicion] = useState(null);
     const openTrackedRef = useRef(false);
@@ -160,6 +162,17 @@ const CatalogoPage = () => {
         }, { replace: true });
     }, [setSearchParams]);
 
+    const vista = vistaDeParam(searchParams.get(PARAM_VISTA));
+    const hexagonos = isNonProd && vista === VISTA_HEXAGONOS;
+    const cambiarVista = useCallback((siguiente) => {
+        setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            if (siguiente === VISTA_HEXAGONOS) next.set(PARAM_VISTA, VISTA_HEXAGONOS);
+            else next.delete(PARAM_VISTA);
+            return next;
+        }, { replace: true });
+    }, [setSearchParams]);
+
     return (
         <div className="fixed inset-0 overflow-hidden bg-[#EAE7E0]">
             <LayerLoadingProvider>
@@ -170,12 +183,17 @@ const CatalogoPage = () => {
                 >
                     <CatalogoMapView
                         capa={selectedCapa}
+                        hexagonos={hexagonos}
+                        onHexbin={setHexbin}
                         onEditInfobox={isNonProd ? (feature) => handleEditInfobox(selectedCapa, feature) : null}
                     />
                     {selectedCapa && (
                         <CatalogoLegends
                             capa={selectedCapa}
                             institucionSlug={institucionSlug}
+                            vista={vista}
+                            onVista={isNonProd ? cambiarVista : null}
+                            hexbin={hexagonos ? hexbin : null}
                             onClose={handleCloseCapa}
                         />
                     )}

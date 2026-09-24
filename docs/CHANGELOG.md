@@ -5,6 +5,26 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.206.0] - 2026-09-24
+
+### Agregado: capas de puntos del catálogo en hexágonos H3
+
+El panel de la capa lleva «Ver como: Puntos | Hexágonos» con BETA, solo en capas de puntos y fuera de
+producción, como en el visor. `useCatalogoHexbin` oculta la WMS, dibuja con `createHexbinLayer` y
+reagrupa al hacer zoom con la tabla de `constants/hexbin.js`; la leyenda es `HexbinLegend`.
+
+- **Fuente**: si la capa tiene par en el visor (mismo `workspace + geoserver_layer`, único, sin CQL y
+  con conteos en `hexbin_counts`) y no hay filtro de fecha ni de tabla, se piden las celdas de
+  `mapalab:hexbin_agregado`. Si no, se cuentan los puntos y con 20 000 o menos se agrupan en el
+  navegador; si pasan, la leyenda pide filtrar por año.
+- **Backend**: `/catalogo/capas` expone `hexbinLayerKey` con un `LATERAL` en `catalogo_repository`.
+- **URL**: `?agrupar=hex`, también en Compartir. No se usa `vista` porque es del 3D, que lo borra
+  cuando está apagado.
+
+### Cambiado: el editor de tarjetas y el modal de información cierran con `MobileSheetCloseButton`
+
+La X estándar de los paneles.
+
 ## [1.205.0] - 2026-09-24
 
 ### Corregido: el techo de `POST /shares` se evadía y era global sin decirlo

@@ -3,6 +3,7 @@ import Modal from '@components/Modal';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import ActionIconButton from '@components/ActionIconButton';
+import { MobileSheetCloseButton } from '@components/MobileSheet';
 import { buildCardPlan } from '@utils/infoboxPlan';
 import { hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
 import { fetchNonGeometryColumns } from '@services/downloadUrls';
@@ -134,9 +135,7 @@ const CatalogoInfoBoxEditor = ({ capa, featureMuestra = null, onClose }) => {
                             </Tooltip>
                         </>
                     )}
-                    <ActionIconButton onClick={onClose} titulo="Cerrar" etiqueta="Cerrar" tamano="sm">
-                        <Icon name="close" className="size-3.5" />
-                    </ActionIconButton>
+                    <MobileSheetCloseButton onClick={onClose} />
                 </div>
 
                 {paso === 'enviado' ? (

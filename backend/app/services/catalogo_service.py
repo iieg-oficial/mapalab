@@ -27,6 +27,7 @@ def _serialize(row: dict) -> dict:
         'littleCard': row.get('infobox_config'),
         'littleCardPropia': bool(row.get('infobox_propia')),
         'institucion': institucion,
+        'hexbinLayerKey': row.get('hexbin_layer_key'),
     }
 
 

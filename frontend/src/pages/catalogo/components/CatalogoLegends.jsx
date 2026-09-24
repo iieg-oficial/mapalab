@@ -5,13 +5,16 @@ import { downloadCatalogoCapa, RASTER_FORMATS } from '@services/downloadService'
 import { capaHasGeometry } from '@services/catalogoService';
 import LegendImage from '@components/LegendImage';
 import CatalogoShare from './CatalogoShare';
+import { CatalogoHexbinLeyenda, CatalogoVistaSegmented } from './CatalogoVista';
+import { hexbinDisponible } from '../hooks/useCatalogoHexbin';
+import { PARAM_VISTA, VISTA_HEXAGONOS, VISTA_PUNTOS } from '../helpers/catalogoVista';
 import { buildCatalogoShareUrl, filtroToFechaParam } from '../helpers/catalogoRoutes';
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { trackCatalogoDownload, trackCatalogoShare } from '@services/analyticsService';
 
 const ICON_BTN = 'size-7 rounded-full flex items-center justify-center transition-colors';
 
-const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
+const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, onVista = null, hexbin = null, onClose }) => {
     const { tiempo } = useCatalogoTiempoContext();
     const filtro = tiempo?.filtro || null;
     const isRaster = !!tiempo?.isRaster;
@@ -37,11 +40,17 @@ const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
         [cfg, cqlFiltro],
     );
 
+    const conVista = !!onVista && hexbinDisponible(capa, tiempo);
+
     const shareUrl = useMemo(() => {
         const base = buildCatalogoShareUrl({ institucionSlug, capaSlug: capa.slug });
+        const params = new URLSearchParams();
         const fecha = filtroToFechaParam(filtro, { isRaster, periodicidad });
-        return fecha ? `${base}?fecha=${encodeURIComponent(fecha)}` : base;
-    }, [institucionSlug, capa.slug, filtro, isRaster, periodicidad]);
+        if (fecha) params.set('fecha', fecha);
+        if (conVista && vista === VISTA_HEXAGONOS) params.set(PARAM_VISTA, VISTA_HEXAGONOS);
+        const consulta = params.toString();
+        return consulta ? `${base}?${consulta}` : base;
+    }, [institucionSlug, capa.slug, filtro, isRaster, periodicidad, conVista, vista]);
 
     useEffect(() => {
         let active = true;
@@ -105,7 +114,8 @@ const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
 
             {!minimized && (
                 <div className="px-3.5 pb-3">
-                    {legendUrl && (
+                    {conVista && <CatalogoVistaSegmented nombre={capa.nombre} vista={vista} onVista={onVista} />}
+                    {hexbin ? <CatalogoHexbinLeyenda hexbin={hexbin} /> : legendUrl && (
                         <div className="relative w-full bg-white rounded-[13px] p-2 max-h-[52vh] overflow-y-auto">
                             <LegendImage src={legendUrl} alt={capa.nombre} />
                         </div>

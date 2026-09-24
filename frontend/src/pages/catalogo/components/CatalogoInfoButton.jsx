@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import Tooltip from '@components/Tooltip';
 import Modal from '@components/Modal';
-import Icon from '@components/Icon';
-import ActionIconButton from '@components/ActionIconButton';
+import { MobileSheetCloseButton } from '@components/MobileSheet';
 import { trackCatalogoInfoOpen } from '@services/analyticsService';
 import { useFeatureSeen } from '@hooks/useFeatureSeen';
 import { useIsNonProd } from '@hooks/useDevTools';
@@ -58,9 +57,7 @@ const CatalogoInfoButton = () => {
                 <div className="px-6 pt-5 pb-6 font-garet text-[#454545] text-[14px]/[22px]">
                     <div className="flex items-center justify-between gap-4 mb-2">
                         <h3 className="text-[20px] font-bold text-purple">¿Qué es el Catálogo?</h3>
-                        <ActionIconButton onClick={() => setInfoOpen(false)} titulo="Cerrar" etiqueta="Cerrar" tamano="sm">
-                            <Icon name="close" className="size-3.5" />
-                        </ActionIconButton>
+                        <MobileSheetCloseButton onClick={() => setInfoOpen(false)} />
                     </div>
                     <p className="mb-4">
                         Una vista simplificada para explorar las capas del IIEG <span className="font-bold text-purple">una por una</span>.
