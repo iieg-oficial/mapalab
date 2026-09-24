@@ -16,9 +16,9 @@ const ENCABEZADOS = {
 const metros = (valor) => (Number.isFinite(valor) ? `${formatNumber(Math.round(valor))} m` : 'Sin dato');
 
 const Fila = ({ etiqueta, valor, nueva }) => (
-    <div className="flex items-baseline justify-between gap-2 font-garet text-graphite">
-        <span className="whitespace-nowrap">{etiqueta}</span>
-        <strong className={`font-bold tabular-nums whitespace-nowrap ${nueva ? 'text-purple-deep' : 'text-graphite'}`}>{valor}</strong>
+    <div className="flex flex-wrap items-baseline justify-between gap-x-2 font-garet text-graphite">
+        <span className="min-w-0">{etiqueta}</span>
+        <strong className={`ml-auto font-bold tabular-nums whitespace-nowrap ${nueva ? 'text-purple-deep' : 'text-graphite'}`}>{valor}</strong>
     </div>
 );
 
@@ -102,6 +102,7 @@ const PanelMedicion = ({ modo, resultado, unidades, onCerrar, onRecorrer, ancho 
                     icono={<Icon name={encabezado.icono} className="size-5 shrink-0" />}
                     titulo={encabezado.titulo}
                     acciones={onCerrar && <MobileSheetCloseButton onClick={onCerrar} />}
+                    className={arrastrable ? '' : '-mx-3! px-3!'}
                 />
             </div>
             <div className={`flex flex-col gap-1.5 rounded-[7px] bg-white ${arrastrable ? 'p-3' : 'p-2.5'}`}>
