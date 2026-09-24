@@ -49,6 +49,10 @@ export const useCatalogoTabla = ({ capa, tiempo, setInfo, clearInfo }) => {
             clearInfo();
             return;
         }
+        if (seleccion.medicion) {
+            setInfo({ medicion: seleccion.medicion });
+            return;
+        }
         setInfo({
             features: seleccion.results?.[0]?.features || [],
             pixel: [window.innerWidth / 2, window.innerHeight / 2],

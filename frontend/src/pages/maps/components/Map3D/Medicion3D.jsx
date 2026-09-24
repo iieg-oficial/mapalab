@@ -13,8 +13,8 @@ import ToolSelector from '../MeasurementTools/ToolSelector';
 import HistoryButton from '../MeasurementTools/HistoryButton';
 import HistoryPanel from '../MeasurementTools/HistoryPanel';
 
-const TIPO_A_MODO = { LineString: 'linea', Polygon: 'poligono' };
-const MODO_A_TIPO = { linea: 'LineString', poligono: 'Polygon' };
+const TIPO_A_MODO = { LineString: 'linea', Polygon: 'poligono', Pin: 'punto' };
+const MODO_A_TIPO = { linea: 'LineString', poligono: 'Polygon', punto: 'Pin' };
 
 const Medicion3D = ({ map, onMidiendo }) => {
     const {
@@ -26,7 +26,7 @@ const Medicion3D = ({ map, onMidiendo }) => {
     const [listaAbierta, setListaAbierta] = useState(false);
     const guardar = useCallback((anotacion) => {
         restoreAnnotations?.([anotacion], { showTools: false });
-        if (!mapRef?.current) return;
+        if (!mapRef?.current || anotacion.type === 'Pin') return;
         if (anotacion.type === 'LineString') {
             const coords = anotacion.geometry.coordinates;
             const { x, y } = map.project(coords.at(-1));

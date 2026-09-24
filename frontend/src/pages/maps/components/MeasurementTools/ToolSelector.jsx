@@ -8,9 +8,9 @@ const WIDTH_MAX = 12;
 
 const measurementGroup = [
     {
-        id: 'Point',
-        description: 'Modo normal del mapa - click para obtener información de puntos',
-        icon: 'punto'
+        id: 'Pin',
+        description: 'Pin: marca un lugar y guarda sus coordenadas. Vuelve a tocarlo para salir.',
+        icon: 'pin'
     },
     {
         id: 'LineString',
@@ -95,15 +95,11 @@ const ToolSelector = ({
     const renderTool = (type) => {
         const isText = type.id === 'Text';
         const isEmoji = type.id === 'Emoji';
-        const isPoint = type.id === 'Point';
-
         const isActive = isText
             ? (measureType === 'Text' && isDrawing)
             : isEmoji
                 ? isEmojiPickerOpen || (measureType === 'Emoji' && isDrawing)
-                : isPoint
-                    ? !isDrawing
-                    : measureType === type.id && isDrawing;
+                : measureType === type.id && isDrawing;
 
         const buttonProps = {
             type: 'button',

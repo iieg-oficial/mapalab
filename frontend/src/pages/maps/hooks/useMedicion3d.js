@@ -61,7 +61,12 @@ export const useMedicion3d = (map, { onTerminar } = {}) => {
 
         const alClic = (event) => {
             const punto = event.lngLat.toArray();
-            if (modo === 'punto' || terminadoRef.current) {
+            if (modo === 'punto') {
+                reiniciar([punto]);
+                terminar([punto]);
+                return;
+            }
+            if (terminadoRef.current) {
                 reiniciar([punto]);
                 return;
             }

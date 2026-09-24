@@ -31,6 +31,7 @@ export const geometriaMedicion = ({ modo, vertices, marcador, puntero = null }) 
 };
 
 export const anotacionDeMedicion = (modo, vertices) => {
+    if (modo === 'punto' && vertices.length === 1) return { type: 'Pin', visible: true, geometry: { type: 'Point', coordinates: vertices[0] } };
     if (modo === 'linea' && vertices.length > 1) return { type: 'LineString', visible: true, geometry: { type: 'LineString', coordinates: vertices } };
     if (modo === 'poligono' && vertices.length > 2) return { type: 'Polygon', visible: true, geometry: { type: 'Polygon', coordinates: [[...vertices, vertices[0]]] } };
     return null;

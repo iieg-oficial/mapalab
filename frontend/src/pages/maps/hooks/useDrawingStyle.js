@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { createDefaultStyle, createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCacheStyle, computeStylesForFeature } from '../helpers/drawingStyles';
+import { createPinStyle } from '../helpers/pin';
 
 export const useDrawingStyle = (sketchFeatureRef, measurementConfig) => {
     return useCallback((feature) => {
@@ -26,6 +27,14 @@ export const useDrawingStyle = (sketchFeatureRef, measurementConfig) => {
             const symbol = feature.get('symbolPayload')
                 || { kind: 'emoji', value: feature.get('textLabel') };
             const style = createSymbolStyle(symbol, featureRotation, featureScale, featureSelected);
+            if (!isSketch) {
+                feature.set('cachedStyle', style, true);
+            }
+            return style;
+        }
+
+        if (annotationType === 'Pin') {
+            const style = createPinStyle(feature, featureSelected);
             if (!isSketch) {
                 feature.set('cachedStyle', style, true);
             }

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Collection } from 'ol';
 import Translate from 'ol/interaction/Translate';
+import { coordenadasDePin, etiquetaDePin } from '../helpers/pin';
 
-const EDITABLE_TYPES = new Set(['Emoji', 'Text', 'Freehand']);
+const EDITABLE_TYPES = new Set(['Emoji', 'Text', 'Freehand', 'Pin']);
 
 const getFeatureId = (feature) => feature.getId?.() ?? feature.ol_uid;
 
@@ -32,6 +33,16 @@ export const useMapEditing = ({
         if (!vectorSourceRef?.current || id == null) return null;
         return vectorSourceRef.current.getFeatures().find(f => getFeatureId(f) === id) || null;
     }, [vectorSourceRef]);
+
+    const refrescarPin = useCallback((feature) => {
+        if (feature?.get('annotationType') !== 'Pin') return;
+        const valor = coordenadasDePin(feature.getGeometry());
+        feature.set('measurementValue', valor);
+        invalidateStyle(feature, vectorLayerRef);
+        setMeasurements?.(prev => prev.map(m => (
+            m.feature === feature ? { ...m, value: valor, label: etiquetaDePin(feature) } : m
+        )));
+    }, [vectorLayerRef, setMeasurements]);
 
     const deselectFeature = useCallback(() => {
         const current = selectedFeatureRef.current;
@@ -114,7 +125,8 @@ export const useMapEditing = ({
 
         if (selectedFeatureId && !translateRef.current) {
             const translate = new Translate({ features: selectedCollectionRef.current });
-            translate.on('translateend', () => {
+            translate.on('translateend', (event) => {
+                event.features.forEach(refrescarPin);
                 setSelectionTick(t => t + 1);
             });
             map.addInteraction(translate);
@@ -130,11 +142,11 @@ export const useMapEditing = ({
                 translateRef.current = null;
             }
         };
-    }, [selectedFeatureId, mapRef]);
+    }, [selectedFeatureId, mapRef, refrescarPin]);
 
     useEffect(() => {
         if (!selectedFeatureId) return;
-        const isAnnotationMode = measureType === 'Emoji' || measureType === 'Text';
+        const isAnnotationMode = measureType === 'Emoji' || measureType === 'Text' || measureType === 'Pin';
         const isGeometryDraw = isDrawing && !isAnnotationMode;
         if (isGeometryDraw) {
             deselectFeature();
@@ -169,6 +181,14 @@ export const useMapEditing = ({
         invalidateStyle(feature, vectorLayerRef);
         setSelectionTick(t => t + 1);
     }, [vectorLayerRef]);
+
+    const updatePin = useCallback((props) => {
+        const feature = selectedFeatureRef.current;
+        if (!feature) return;
+        Object.entries(props).forEach(([clave, valor]) => feature.set(clave, valor));
+        refrescarPin(feature);
+        setSelectionTick(t => t + 1);
+    }, [refrescarPin]);
 
     const updateFillColor = useCallback((color) => updateProp('fillColor', color), [updateProp]);
     const updateBgColor = useCallback((color) => updateProp('bgColor', color), [updateProp]);
@@ -206,6 +226,7 @@ export const useMapEditing = ({
         updateBgColor,
         updateStrokeColor,
         updateStrokeWidth,
+        updatePin,
         deleteSelected
     };
 };

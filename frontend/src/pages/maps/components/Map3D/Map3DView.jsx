@@ -14,6 +14,7 @@ import {
 import { useMap3dContorno } from '@hooksMaps/useMap3dContorno';
 import { useMap3dBillboards } from '@hooksMaps/useMap3dBillboards';
 import { useMedicionesGuardadas3d } from '@hooksMaps/useMedicionesGuardadas3d';
+import { useAnotacionesPuntuales3d } from '@hooksMaps/useAnotacionesPuntuales3d';
 import { useCamara3dSincronizada } from '@hooksMaps/useCamara3dSincronizada';
 import Medicion3D from './Medicion3D';
 import { Clic3dPropio, Clic3dVisor } from './Clic3d';
@@ -152,6 +153,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,
     });
     useMedicionesGuardadas3d(map, measurements);
+    useAnotacionesPuntuales3d(map, measurements);
 
     if (!olRef.current) return null;
 

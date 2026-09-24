@@ -13,7 +13,8 @@ const TYPE_ICONS = {
     Freehand: 'pencil',
     Text: 'text',
     Emoji: 'emoji',
-    Point: 'punto'
+    Point: 'punto',
+    Pin: 'pin'
 };
 
 const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClose, onShowSelection, onShowMeasurement = null, onClearAll = null }) => {
@@ -88,15 +89,15 @@ const HistoryPanel = ({ open, measurements, onDelete, onToggleVisibility, onClos
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0">
-                                {measurement.type === 'LineString' && onShowMeasurement && (
-                                    <Tooltip content="Ver la distancia" placement="top" delay={500}>
+                                {(measurement.type === 'LineString' || measurement.type === 'Pin') && onShowMeasurement && (
+                                    <Tooltip content={measurement.type === 'Pin' ? 'Ver coordenadas y altura' : 'Ver la distancia'} placement="top" delay={500}>
                                         <button
                                             type="button"
                                             onClick={() => onShowMeasurement(measurement.id)}
                                             className={`
                                                 flex items-center justify-center size-6 border border-transparent rounded-full hover:border-purple-deep hover:bg-[#F9FBFF]
                                             `}
-                                            aria-label={`Ver la distancia de ${measurement.label} `}
+                                            aria-label={`Ver la información de ${measurement.label} `}
                                         >
                                             <Icon name="info" state="normal" className="size-4" />
                                         </button>

@@ -7,7 +7,7 @@ export const calcularMedicion = async (modo, vertices) => {
     if (modo === 'punto') {
         if (!vertices.length) return null;
         const [alt] = await alturas([vertices[0]]);
-        return { modo, alt };
+        return { modo, alt, lngLat: vertices[0] };
     }
     if (modo === 'linea') {
         if (vertices.length < 2) return null;

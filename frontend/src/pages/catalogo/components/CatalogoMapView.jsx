@@ -14,6 +14,7 @@ import MapControls from '@pages/maps/components/MapControls';
 import MapAttribution from '@pages/maps/components/MapAttribution';
 import LottieSpinner from '@components/LottieSpinner';
 import CatalogoInfoBox from './CatalogoInfoBox';
+import PanelMedicionSeleccion from '@mapsComponents/MeasurementTools/PanelMedicionSeleccion';
 import CatalogoTools from './CatalogoTools';
 import CatalogoTablaProviders from './CatalogoTablaProviders';
 import CatalogoTimeBar from './CatalogoTimeBar';
@@ -242,7 +243,13 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
                 </div>
             )}
 
-            {info && capa && (
+            {info?.medicion && (
+                <div className="fixed left-1/2 top-1/2 z-20 w-[260px] -translate-x-1/2 -translate-y-1/2">
+                    <PanelMedicionSeleccion geometria={info.medicion} onCerrar={clearInfo} />
+                </div>
+            )}
+
+            {info && !info.medicion && capa && (
                 <CatalogoInfoBox
                     capa={capa}
                     features={info.features}

@@ -13,7 +13,7 @@ import HistoryPanel from '@mapsComponents/MeasurementTools/HistoryPanel';
 import { abrirInfoBoxDeMedicion } from '@hooksMaps/useInfoBoxDeMedicion';
 import CatalogoTablaButton from './CatalogoTablaButton';
 
-const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo' };
+const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo', Pin: 'Pin' };
 
 const RulerIcon = ({ className }) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -68,6 +68,7 @@ const CatalogoTools = ({ tabla, hayCapa }) => {
         updateEditingTextLabel,
         commitTextEdit,
         cancelTextEdit,
+        updatePin,
         setSelectedFeatureInfo,
         clickPosition
     } = useMapsContext();
@@ -236,6 +237,7 @@ const CatalogoTools = ({ tabla, hayCapa }) => {
                             onStrokeColor={updateStrokeColor}
                             onStrokeWidth={updateStrokeWidth}
                             onEdit={startTextEdit}
+                            onPin={updatePin}
                             onDelete={deleteSelected}
                             onClose={deselectFeature}
                         />

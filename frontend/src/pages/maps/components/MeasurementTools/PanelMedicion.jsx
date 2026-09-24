@@ -8,7 +8,7 @@ import { useDraggablePanel } from '../InfoBox/hooks/useDraggablePanel';
 import GraficaAlturas from './GraficaAlturas';
 
 const ENCABEZADOS = {
-    punto: { titulo: 'Altura del punto', icono: 'geom_point' },
+    punto: { titulo: 'Pin', icono: 'pin' },
     linea: { titulo: 'Distancia', icono: 'linea' },
     poligono: { titulo: 'Área', icono: 'poligono' },
 };
@@ -22,13 +22,23 @@ const Fila = ({ etiqueta, valor, nueva }) => (
     </div>
 );
 
-const Filas = ({ resultado }) => {
-    if (resultado.modo === 'punto') return <Fila etiqueta="Altura sobre el nivel del mar" valor={metros(resultado.alt)} nueva />;
+const Filas = ({ resultado, unidades = {} }) => {
+    const largo = (valor) => formatLengthValue(valor, unidades.lengthUnit || 'auto');
+    const area = (valor) => formatAreaValue(valor, unidades.areaUnit || 'auto');
+    if (resultado.modo === 'punto') {
+        const [lng, lat] = resultado.lngLat || [];
+        return (
+            <>
+                {Number.isFinite(lat) && <Fila etiqueta="Latitud, longitud" valor={`${lat.toFixed(5)}, ${lng.toFixed(5)}`} />}
+                <Fila etiqueta="Altura sobre el nivel del mar" valor={metros(resultado.alt)} nueva />
+            </>
+        );
+    }
     if (resultado.modo === 'linea') {
         return (
             <>
-                <Fila etiqueta="En línea recta" valor={formatLengthValue(resultado.plano)} />
-                <Fila etiqueta="Por el terreno" valor={formatLengthValue(resultado.superficie)} nueva />
+                <Fila etiqueta="En línea recta" valor={largo(resultado.plano)} />
+                <Fila etiqueta="Por el terreno" valor={largo(resultado.superficie)} nueva />
                 <Fila etiqueta="Subida" valor={`+${metros(resultado.sube)}`} nueva />
                 <Fila etiqueta="Bajada" valor={`−${metros(resultado.baja)}`} nueva />
                 <Fila etiqueta="Máx. / mín." valor={`${metros(resultado.max)} / ${metros(resultado.min)}`} nueva />
@@ -37,9 +47,9 @@ const Filas = ({ resultado }) => {
     }
     return (
         <>
-            <Fila etiqueta="Desde arriba" valor={formatAreaValue(resultado.plano)} />
-            <Fila etiqueta="Sobre el relieve" valor={formatAreaValue(resultado.superficie)} nueva />
-            <Fila etiqueta="Perímetro" valor={formatLengthValue(resultado.perimetro)} />
+            <Fila etiqueta="Desde arriba" valor={area(resultado.plano)} />
+            <Fila etiqueta="Sobre el relieve" valor={area(resultado.superficie)} nueva />
+            <Fila etiqueta="Perímetro" valor={largo(resultado.perimetro)} />
             {resultado.distribucion && (
                 <Fila etiqueta="Máx. / mín." valor={`${metros(resultado.max)} / ${metros(resultado.min)}`} nueva />
             )}
@@ -74,7 +84,7 @@ const graficaDe = (resultado, onRecorrer) => {
     return null;
 };
 
-const PanelMedicion = ({ modo, resultado, onCerrar, onRecorrer, ancho = 'w-[300px]', arrastrable = true, className = '' }) => {
+const PanelMedicion = ({ modo, resultado, unidades, onCerrar, onRecorrer, ancho = 'w-[300px]', arrastrable = true, className = '' }) => {
     const panelRef = useRef(null);
     const { isDragging, handleProps } = useDraggablePanel({ panelRef });
     const encabezado = ENCABEZADOS[resultado?.modo || modo];
@@ -95,7 +105,7 @@ const PanelMedicion = ({ modo, resultado, onCerrar, onRecorrer, ancho = 'w-[300p
                 />
             </div>
             <div className={`flex flex-col gap-1.5 rounded-[7px] bg-white ${arrastrable ? 'p-3' : 'p-2.5'}`}>
-                <Filas resultado={resultado} />
+                <Filas resultado={resultado} unidades={unidades} />
                 {grafica && (
                     <div className="mt-2">
                         <span className="font-garet font-bold text-[12px] text-graphite">{grafica.titulo}</span>

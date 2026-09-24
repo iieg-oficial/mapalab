@@ -3,6 +3,7 @@ import { Draw } from 'ol/interaction';
 import { getLength } from 'ol/sphere';
 import { createFreehandStyle, createSymbolStyle, computeAndCacheStyle, computeStylesForFeature } from '../helpers/drawingStyles';
 import { useDrawingStyle } from './useDrawingStyle';
+import { PIN_ETIQUETA_INICIAL, cerrarPin } from '../helpers/pin';
 import { buildRestoredItems } from '../helpers/restoreAnnotations';
 import { genId } from '../helpers/genId';
 import { useAnnotationsPersistence } from './useAnnotationsPersistence';
@@ -170,7 +171,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
             source: vectorSourceRef.current,
             type: type === 'Freehand'
                 ? 'LineString'
-                : (type === 'Text' || type === 'Emoji' ? 'Point' : (type === 'Select' ? 'Polygon' : type)),
+                : (type === 'Text' || type === 'Emoji' || type === 'Pin' ? 'Point' : (type === 'Select' ? 'Polygon' : type)),
             style: getStyleForType
         };
 
@@ -183,6 +184,7 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
         draw.on('drawstart', (event) => {
             sketchFeatureRef.current = event.feature;
             event.feature.set('annotationType', type);
+            if (type === 'Pin') event.feature.set('pinEtiqueta', PIN_ETIQUETA_INICIAL);
             if (type === 'Freehand') {
                 event.feature.set('strokeColor', freehandColorRef.current);
                 event.feature.set('strokeWidth', freehandWidthRef.current);
@@ -317,6 +319,9 @@ export const useMapDrawing = (mapRef, onPolygonComplete = null, onShowCachedSele
                 if (onPolygonComplete && mapRef.current) {
                     onPolygonComplete(geometry, center, updateSelectionCount);
                 }
+            } else if (type === 'Pin') {
+                Object.assign(measurementData, cerrarPin(feature));
+                setLastPlacedAnnotation({ feature, placedAt: Date.now() });
             } else if (type === 'Freehand') {
                 measurementData.label = 'Trazo libre';
                 const style = createFreehandStyle(feature.get('strokeColor'), feature.get('strokeWidth'));

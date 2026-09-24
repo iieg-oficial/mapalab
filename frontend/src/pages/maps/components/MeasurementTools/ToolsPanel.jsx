@@ -53,6 +53,7 @@ const ToolsPanel = () => {
         updateEditingTextLabel,
         commitTextEdit,
         cancelTextEdit,
+        updatePin,
         setSelectedFeatureInfo,
         clickPosition
     } = useMapsContext();
@@ -73,7 +74,7 @@ const ToolsPanel = () => {
     const showTypeSwitcher = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing;
     const compact = isMobile && (isDrawing || isEmojiPickerOpen || !!editingText);
 
-    const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo' };
+    const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo', Pin: 'Pin' };
 
     const handleMeasureTypeClick = (typeId) => {
         if (typeId === 'Point') {
@@ -202,6 +203,7 @@ const ToolsPanel = () => {
                     onStrokeColor={updateFeatureStrokeColor}
                     onStrokeWidth={updateFeatureStrokeWidth}
                     onEdit={startTextEdit}
+                    onPin={updatePin}
                     onDelete={deleteSelectedFeature}
                     onClose={deselectFeature}
                 />

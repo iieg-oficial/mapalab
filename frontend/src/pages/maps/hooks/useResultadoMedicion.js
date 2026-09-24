@@ -3,10 +3,11 @@ import { toLonLat } from 'ol/proj';
 import { getUid } from 'ol/util';
 import { calcularMedicion } from '@pages/maps/helpers/resultadoMedicion';
 
-const MODOS = { LineString: 'linea', Polygon: 'poligono' };
+const MODOS = { LineString: 'linea', Polygon: 'poligono', Point: 'punto' };
 
 export const verticesDeGeometria = (geometria) => {
     const tipo = geometria?.getType?.();
+    if (tipo === 'Point') return [toLonLat(geometria.getCoordinates())];
     if (tipo === 'LineString') return geometria.getCoordinates().map(c => toLonLat(c));
     if (tipo === 'Polygon') return (geometria.getCoordinates()[0] || []).slice(0, -1).map(c => toLonLat(c));
     return [];
@@ -14,7 +15,7 @@ export const verticesDeGeometria = (geometria) => {
 
 export const verticesDeMedicion = (medicion) => verticesDeGeometria(medicion?.feature?.getGeometry?.());
 
-export const ultimaMedicion = (measurements, tipos = Object.keys(MODOS)) => (
+export const ultimaMedicion = (measurements, tipos = ['LineString', 'Polygon']) => (
     [...measurements].reverse().find(m => tipos.includes(m.type) && m.visible !== false) || null
 );
 

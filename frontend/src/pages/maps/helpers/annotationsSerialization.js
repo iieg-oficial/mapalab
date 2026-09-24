@@ -5,7 +5,7 @@ const ANNOTATION_GEOJSON = new GeoJSON({
     dataProjection: 'EPSG:4326',
 });
 
-const ANNOTATION_TYPES = new Set(['LineString', 'Polygon', 'Select', 'Freehand', 'Text', 'Emoji']);
+const ANNOTATION_TYPES = new Set(['LineString', 'Polygon', 'Select', 'Freehand', 'Text', 'Emoji', 'Pin']);
 
 export const serializeAnnotations = (measurements) => {
     if (!Array.isArray(measurements) || measurements.length === 0) return null;
@@ -44,6 +44,10 @@ export const serializeAnnotations = (measurements) => {
         if (m.type === 'Emoji') {
             const symbol = feature.get('symbolPayload');
             if (symbol) entry.symbol = symbol;
+        }
+        if (m.type === 'Pin') {
+            const pinEtiqueta = feature.get('pinEtiqueta');
+            if (pinEtiqueta) entry.pinEtiqueta = pinEtiqueta;
         }
         if (m.type === 'Freehand') {
             const strokeColor = feature.get('strokeColor');
