@@ -103,6 +103,14 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     }, [olRef, principal, map3dRef, setPitch, setBearing, exit]);
 
     useEffect(() => {
+        const destino = olMapRef?.current?.getTargetElement();
+        if (!destino) return undefined;
+        const previo = destino.style.isolation;
+        destino.style.isolation = 'isolate';
+        return () => { destino.style.isolation = previo; };
+    }, [olMapRef]);
+
+    useEffect(() => {
         if (map) map.setTerrain(terreno ? { source: TERRAIN_SOURCE, exaggeration } : null);
     }, [map, exaggeration, terreno]);
 
