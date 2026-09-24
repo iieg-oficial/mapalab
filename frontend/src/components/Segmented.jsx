@@ -10,6 +10,14 @@ const VARIANTES = {
         apagado: '',
         disparador: '',
     },
+    gris: {
+        contenedor: 'inline-flex items-center gap-0.5 rounded-full bg-[#E3E7ED] p-0.5 shrink-0',
+        boton: (compact, conIcono) => `${conIcono ? 'px-2 py-1' : (compact ? 'px-2 py-[3px] text-[9px]' : 'px-2.5 py-0.5 text-[11px]')} rounded-full`,
+        activo: 'bg-white text-[#70308A] shadow-[0px_1px_3px_#00000029]',
+        inactivo: 'text-[#7D8896] hover:text-[#70308A]',
+        apagado: '',
+        disparador: '',
+    },
     panel: {
         contenedor: 'flex w-full gap-1 p-1 bg-[#EAEFFA] rounded-lg',
         boton: () => 'flex-1 w-full py-1.5 rounded-md text-[12px]/[16px]',

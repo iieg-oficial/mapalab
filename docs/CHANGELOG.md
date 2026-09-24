@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.207.2] - 2026-09-24
+
+### Cambiado: el control de hexágonos vuelve a sus íconos, en su propia fila
+
+Regresa el segmento Puntos | Hexágonos con la variante nueva `gris` de `Segmented`: fondo gris y la
+opción activa en blanco. Baja a su fila, debajo del título, para no quitarle ancho, y con hexágonos
+activos muestra al lado el número de celdas; la leyenda pierde la línea «Puntos por hexágono». La
+variante `neutro` de `Switch`, de la 1.207.1, se quita porque quedó sin uso.
+
+### Cambiado: la lista de instituciones abre con el buscador
+
+Al entrar a `/catalogo` se ven de una vez las instituciones, con «Todas», junto a las capas. La lista
+se abre y se cierra con el buscador; el chevron sigue sirviendo a mano.
+
 ## [1.207.1] - 2026-09-24
 
 ### Corregido: elegir una institución abre sus capas

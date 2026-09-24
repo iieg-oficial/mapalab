@@ -79,10 +79,7 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
         setDownloading(null);
     };
 
-    const toggleMinimized = (e) => {
-        if (e?.target?.closest?.('[data-sin-minimizar]')) return;
-        setMinimized((m) => !m);
-    };
+    const toggleMinimized = () => setMinimized((m) => !m);
 
     const formats = isRaster
         ? RASTER_FORMATS.map((f) => ({ id: f.id, label: f.label }))
@@ -98,12 +95,7 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
                 role="button"
                 tabIndex={0}
                 onClick={toggleMinimized}
-                onKeyDown={(e) => {
-                    if (e.key !== 'Enter' && e.key !== ' ') return;
-                    if (e.target.closest('[data-sin-minimizar]')) return;
-                    e.preventDefault();
-                    toggleMinimized(e);
-                }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleMinimized(); } }}
                 title={minimized ? 'Expandir' : 'Minimizar'}
                 className="flex items-center justify-between gap-2 min-h-10 px-3.5 py-1.5 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-purple/40"
             >
@@ -113,11 +105,6 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
                 >
                     {capa.nombre}
                 </h3>
-                {conVista && !minimized && (
-                    <span className="ml-auto" data-sin-minimizar>
-                        <CatalogoVistaSegmented nombre={capa.nombre} vista={vista} onVista={onVista} />
-                    </span>
-                )}
                 <span className={`${minimized ? 'hidden md:flex' : 'flex'} shrink-0 text-purple ${ICON_BTN}`}>
                     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                         {minimized ? <path d="M12 6v12M6 12h12" /> : <path d="M6 12h12" />}
@@ -127,6 +114,14 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
 
             {!minimized && (
                 <div className="px-3.5 pb-3">
+                    {conVista && (
+                        <CatalogoVistaSegmented
+                            nombre={capa.nombre}
+                            vista={vista}
+                            onVista={onVista}
+                            celdas={hexbin?.estado === 'listo' ? hexbin.stats?.cells ?? null : null}
+                        />
+                    )}
                     {hexbin ? <CatalogoHexbinLeyenda hexbin={hexbin} /> : legendUrl && (
                         <div className="relative w-full bg-white rounded-[13px] p-2 max-h-[52vh] overflow-y-auto">
                             <LegendImage src={legendUrl} alt={capa.nombre} />
