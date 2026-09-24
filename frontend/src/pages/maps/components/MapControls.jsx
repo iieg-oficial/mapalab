@@ -150,7 +150,7 @@ const MapControls = ({ hideLocate = false }) => {
                         className="mx-1.5 my-0.5"
                     />
                 )}
-                {view3d.present && !view3d.active && !isSwipe && (
+                {view3d.present && !view3d.active && !(isSwipe && isMobile) && (
                     <Tooltip content={view3d.available ? <Map3DAyuda titulo={view3dTitle} /> : view3dTitle} placement="right" interactive>
                         <button
                             type="button"

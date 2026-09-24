@@ -47,13 +47,12 @@ describe('View3dContext', () => {
         expect(params(result).get('layers')).toBe('poblacion');
     });
 
-    it('al entrar sale del comparador, cierra herramientas y escribe la vista en la URL', () => {
+    it('al entrar conserva el comparador, cierra herramientas y escribe la vista en la URL', () => {
         mocks.ctx = makeCtx({ compareMode: { active: true } });
-        mocks.ctx.exitCompareMode = vi.fn(() => { mocks.ctx = { ...mocks.ctx, compareMode: { active: false } }; });
         const { result } = render();
         act(() => { result.current.view.enter(); });
         expect(result.current.view.active).toBe(true);
-        expect(mocks.ctx.exitCompareMode).toHaveBeenCalled();
+        expect(mocks.ctx.exitCompareMode).not.toHaveBeenCalled();
         expect(mocks.ctx.hideMeasurementTools).toHaveBeenCalled();
         expect(mocks.ctx.hideAnnotationTools).toHaveBeenCalled();
         expect(mocks.ctx.setSelectedFeatureInfo).toHaveBeenCalledWith(null);
@@ -93,11 +92,12 @@ describe('View3dContext', () => {
         expect(result.current.view.extruded).toEqual(['poblacion']);
     });
 
-    it('sale de 3D si se abre el comparador', () => {
+    it('sigue en 3D si se abre el comparador', () => {
         const { result, rerender } = render('/mapa?vista=3d');
         mocks.ctx = makeCtx({ compareMode: { active: true } });
         rerender();
-        expect(result.current.view.active).toBe(false);
+        expect(result.current.view.active).toBe(true);
+        expect(params(result).get('vista')).toBe('3d');
     });
 
     it('sin WebGL no entra, pero el control sigue presente para poder explicarlo', () => {

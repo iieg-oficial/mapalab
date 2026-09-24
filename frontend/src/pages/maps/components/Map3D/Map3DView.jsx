@@ -14,6 +14,7 @@ import {
 import { useMap3dContorno } from '@hooksMaps/useMap3dContorno';
 import { useMap3dBillboards } from '@hooksMaps/useMap3dBillboards';
 import { useMedicionesGuardadas3d } from '@hooksMaps/useMedicionesGuardadas3d';
+import { useCamara3dSincronizada } from '@hooksMaps/useCamara3dSincronizada';
 import Medicion3D from './Medicion3D';
 import { Clic3dPropio, Clic3dVisor } from './Clic3d';
 
@@ -40,13 +41,14 @@ const writeBackToOl = (map, olMap) => {
     view.setRotation(0);
 };
 
-const Map3DView = ({ consultar = null, mediciones = true }) => {
+const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, principal = true }) => {
     const containerRef = useRef(null);
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, measurements } = useMapsContext();
     const {
-        pitch, bearing, exaggeration, extruded, map3dRef, setPitch, setBearing, exit, reportExtrusion,
+        pitch, bearing, exaggeration, extruded, map3dRef, grupo3dRef, setPitch, setBearing, exit, reportExtrusion,
         sol, alturaColumnas, orbita, terreno, cielo, niebla,
     } = useView3d();
+    const olRef = olMapRef || mapRef;
     const { getLegendJson } = useWMSLegend();
     const [map, setMap] = useState(null);
     const [midiendo, setMidiendo] = useState(false);
@@ -61,7 +63,7 @@ const Map3DView = ({ consultar = null, mediciones = true }) => {
     useEffect(() => {
         let disposed = false;
         let instance = null;
-        const olMap = mapRef.current;
+        const olMap = olRef.current;
 
         loadMaplibre().then((maplibregl) => {
             if (disposed || !containerRef.current) return;
@@ -78,7 +80,7 @@ const Map3DView = ({ consultar = null, mediciones = true }) => {
                 attributionControl: false,
                 canvasContextAttributes: { antialias: true, preserveDrawingBuffer: true },
             });
-            map3dRef.current = instance;
+            if (principal) map3dRef.current = instance;
             instance.on('load', () => {
                 setMap(instance);
             });
@@ -95,9 +97,9 @@ const Map3DView = ({ consultar = null, mediciones = true }) => {
             if (!instance) return;
             writeBackToOl(instance, olMap);
             instance.remove();
-            map3dRef.current = null;
+            if (principal) map3dRef.current = null;
         };
-    }, [mapRef, map3dRef, setPitch, setBearing, exit]);
+    }, [olRef, principal, map3dRef, setPitch, setBearing, exit]);
 
     useEffect(() => {
         if (map) map.setTerrain(terreno ? { source: TERRAIN_SOURCE, exaggeration } : null);
@@ -113,7 +115,7 @@ const Map3DView = ({ consultar = null, mediciones = true }) => {
     }, [map, sol]);
 
     useEffect(() => {
-        if (!map || !orbita) return undefined;
+        if (!map || !orbita || !principal) return undefined;
         let frame = null;
         let previo = performance.now();
         const girar = (ahora) => {
@@ -128,29 +130,30 @@ const Map3DView = ({ consultar = null, mediciones = true }) => {
             clearInterval(reloj);
             setBearing(map.getBearing());
         };
-    }, [map, orbita, setBearing]);
+    }, [map, orbita, principal, setBearing]);
 
     useEffect(() => {
-        if (!map || orbita) return;
+        if (!map || orbita || !principal) return;
         const pitchDrift = Math.abs(map.getPitch() - pitch) > 0.5;
         const bearingDrift = Math.abs(map.getBearing() - bearing) > 0.5;
         if (pitchDrift || bearingDrift) map.easeTo({ pitch, bearing, duration: 300 });
-    }, [map, pitch, bearing, orbita]);
+    }, [map, pitch, bearing, orbita, principal]);
 
     useEffect(() => {
         if (map) applyBasemap(map, basemaps[baseMapId]);
     }, [map, basemaps, baseMapId]);
 
     useMap3dContorno(map);
-    useMap3dLayers(map, mapRef, dePie);
-    useMap3dBillboards(map, mapRef, { allLayers, getServiceMode, getLegendJson, onReady: alListarDePie });
-    useMap3dVectors(map, mapRef, extruded, alturaColumnas);
-    useMap3dExtrusions(map, mapRef, {
+    useCamara3dSincronizada(map, grupo3dRef);
+    useMap3dLayers(map, olRef, dePie);
+    useMap3dBillboards(map, olRef, { allLayers, getServiceMode, getLegendJson, onReady: alListarDePie });
+    useMap3dVectors(map, olRef, extruded, alturaColumnas);
+    useMap3dExtrusions(map, olRef, {
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,
     });
     useMedicionesGuardadas3d(map, measurements);
 
-    if (!mapRef.current) return null;
+    if (!olRef.current) return null;
 
     return (
         <>
@@ -158,12 +161,12 @@ const Map3DView = ({ consultar = null, mediciones = true }) => {
                 <div className="absolute inset-0 z-[1] bg-white" role="region" aria-label="Mapa en 3D">
                     <div ref={containerRef} className="h-full w-full" />
                 </div>,
-                mapRef.current.getTargetElement(),
+                olRef.current.getTargetElement(),
             )}
-            {map && mediciones && (areMeasurementToolsVisible || measurements?.length > 0) && <Medicion3D map={map} onMidiendo={setMidiendo} />}
+            {map && mediciones && principal && (areMeasurementToolsVisible || measurements?.length > 0) && <Medicion3D map={map} onMidiendo={setMidiendo} />}
             {consultar
-                ? <Clic3dPropio map={map} mapRef={mapRef} pausado={midiendo} consultar={consultar} />
-                : <Clic3dVisor map={map} mapRef={mapRef} pausado={midiendo} />}
+                ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo} consultar={consultar} />
+                : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo} />}
         </>
     );
 };

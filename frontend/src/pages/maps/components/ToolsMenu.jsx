@@ -57,7 +57,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
         selectedLayer, selectedLayerForSymbology, activeLayerIds, allLayers,
     } = useMapsContext();
     const { activo: tablaActiva, abrir: abrirTabla, cerrarTodas: cerrarTablas } = useTablaAtributos();
-    const { closeSider } = useSider();
+    const { closeSider, isMobile } = useSider();
     const goToCatalogo = useGoToCatalogo();
     const [hoveredId, setHoveredId] = useState(null);
     const isNonProd = useIsNonProd();
@@ -92,7 +92,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     };
 
     const handleClick = (id) => {
-        if (['anotaciones', 'compare-swipe'].includes(id)) exit3d();
+        if (id === 'anotaciones' || (id === 'compare-swipe' && isMobile)) exit3d();
         if (id === 'mediciones') {
             toggleMeasurementTools?.();
         } else if (id === 'anotaciones') {

@@ -31,6 +31,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { View3dProvider, useView3d } from '@contexts/View3dContext';
 
 const Map3DView = lazy(() => import('@mapsComponents/Map3D/Map3DView'));
+const Map3DSwipe = lazy(() => import('@mapsComponents/Map3D/Map3DSwipe'));
 
 const MapaPrincipal = ({ isComparing }) => {
     const { active } = useView3d();
@@ -40,7 +41,7 @@ const MapaPrincipal = ({ isComparing }) => {
             <ScaleLineControl />
             <MapaConAcople>
                 {isComparing ? <SwipeView /> : <MapView />}
-                {active && !isComparing && <Suspense fallback={null}><Map3DView /></Suspense>}
+                {active && <Suspense fallback={null}>{isComparing ? <Map3DSwipe /> : <Map3DView />}</Suspense>}
             </MapaConAcople>
         </>
     );

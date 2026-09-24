@@ -4,6 +4,7 @@ import Loading from '@components/Loading';
 import { useMapsContext } from '@hooks/useMaps';
 import { useView3d } from '@contexts/View3dContext';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
+import { useSider } from '@contexts/SiderContext';
 import { canExtrudeLayer } from '@pages/maps/helpers/view3d';
 
 const STATUS_TEXT = {
@@ -22,7 +23,8 @@ const tooltipFor = ({ active, on, status }) => {
 const ExtrudeButton = ({ layerId, baseClass }) => {
     const view3d = useView3d();
     const { allLayers, getServiceMode, compareMode } = useMapsContext();
-    if (!view3d.available || !layerId || compareMode?.active) return null;
+    const { isMobile } = useSider();
+    if (!view3d.available || !layerId || (compareMode?.active && isMobile)) return null;
     if (!canExtrudeLayer(findLayerDef(layerId, allLayers || []), getServiceMode?.(layerId))) return null;
 
     const on = view3d.active && view3d.isExtruded(layerId);

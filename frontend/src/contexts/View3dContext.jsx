@@ -18,6 +18,7 @@ const INACTIVE = {
     extruded: [],
     extrusionStatus: {},
     map3dRef: { current: null },
+    grupo3dRef: { current: { miembros: new Set(), fuente: null } },
     enter: () => false,
     exit: () => {},
     toggle: () => {},
@@ -61,7 +62,7 @@ const writeUrlState = (searchParams, { active, pitch, extruded }) => {
 
 export const View3dProvider = ({ children }) => {
     const {
-        compareMode, exitCompareMode, hideMeasurementTools, hideAnnotationTools,
+        hideMeasurementTools, hideAnnotationTools,
         setSelectedFeatureInfo, activeLayerIds,
     } = useMapsContext();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -80,11 +81,11 @@ export const View3dProvider = ({ children }) => {
     const [niebla, setNiebla] = useState(VIEW3D_DEFAULTS.niebla);
     const [extrusionStatus, setExtrusionStatus] = useState({});
     const map3dRef = useRef(null);
+    const grupo3dRef = useRef({ miembros: new Set(), fuente: null });
     const enteredAtRef = useRef(null);
 
     const enter = useCallback(() => {
         if (!available) return false;
-        if (compareMode?.active) exitCompareMode?.();
         hideMeasurementTools?.();
         hideAnnotationTools?.();
         setSelectedFeatureInfo?.(null);
@@ -92,7 +93,7 @@ export const View3dProvider = ({ children }) => {
         setActive(true);
         trackView3d('enter');
         return true;
-    }, [available, compareMode?.active, exitCompareMode, hideMeasurementTools, hideAnnotationTools, setSelectedFeatureInfo]);
+    }, [available, hideMeasurementTools, hideAnnotationTools, setSelectedFeatureInfo]);
 
     const exit = useCallback(() => {
         setActive(prev => {
@@ -144,10 +145,6 @@ export const View3dProvider = ({ children }) => {
         if (salieron.length) setExtruded(prev => prev.filter(id => !salieron.includes(id)));
     }, [activeLayerIds]);
 
-    useEffect(() => {
-        if (compareMode?.active && active) exit();
-    }, [compareMode?.active, active, exit]);
-
     const roundedPitch = Math.round(pitch);
     const extrudedKey = extruded.join(',');
     useEffect(() => {
@@ -156,7 +153,7 @@ export const View3dProvider = ({ children }) => {
     }, [active, roundedPitch, extrudedKey, searchParams, setSearchParams]);
 
     const value = useMemo(() => ({
-        present: true, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef,
+        present: true, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef, grupo3dRef,
         sol, alturaColumnas, orbita, terreno, cielo, niebla,
         enter, exit, toggle, setPitch, setBearing, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
         setSol, setAlturaColumnas, setOrbita, setTerreno, setCielo, setNiebla, restablecer,
