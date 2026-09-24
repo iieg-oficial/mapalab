@@ -10,7 +10,7 @@ CURRENT_SCHEMA_VERSION = 2
 ALLOWED_VERSIONS = {1, 2}
 ALLOWED_KINDS = {"single", "swipe"}
 MAX_PAYLOAD_BYTES = 256 * 1024
-ALLOWED_ANNOTATION_TYPES = {"LineString", "Polygon", "Freehand", "Text", "Emoji"}
+ALLOWED_ANNOTATION_TYPES = {"LineString", "Polygon", "Select", "Freehand", "Text", "Emoji", "Pin"}
 MAX_ANNOTATIONS = 200
 MAX_COORDINATES_PER_GEOMETRY = 2000
 ALLOWED_MUNICIPIO_SOURCES = {"iieg", "inegi"}
@@ -23,7 +23,7 @@ MAX_FILTROS_POR_CAPA = 20
 MAX_REFERENCIA = 200
 MAX_TEXTO_ANOTACION = 200
 MAX_ETIQUETA_LADO = 60
-TEXTOS_ANOTACION = ("id", "label", "unit", "textLabel")
+TEXTOS_ANOTACION = ("id", "label", "unit", "textLabel", "pinEtiqueta")
 RANGO_LAT = (10.0, 35.0)
 RANGO_LON = (-120.0, -84.0)
 

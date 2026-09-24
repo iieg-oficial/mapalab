@@ -165,6 +165,20 @@ class TestAnnotations:
         kind, _ = validate_payload(env)
         assert kind == 'single'
 
+    def test_acepta_pin_y_select(self):
+        env = _envelope('single', {'layers': [], 'annotations': [
+            self._annotation(type='Pin', geometry={'type': 'Point', 'coordinates': [-103.4, 20.6]}, pinEtiqueta='Presa'),
+            self._annotation(id='sel', type='Select'),
+        ]})
+        validate_payload(env)
+
+    def test_rechaza_pin_etiqueta_demasiado_larga(self):
+        env = _envelope('single', {'layers': [], 'annotations': [
+            self._annotation(type='Pin', geometry={'type': 'Point', 'coordinates': [-103.4, 20.6]}, pinEtiqueta='x' * 201),
+        ]})
+        with pytest.raises(ValueError, match='pinEtiqueta'):
+            validate_payload(env)
+
     def test_acepta_swipe_con_annotations(self):
         env = _envelope('swipe', {
             'shared': {}, 'paneA': {'layers': []}, 'paneB': {'layers': []},
