@@ -5,6 +5,41 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.209.0] - 2026-09-24
+
+### Agregado: estilo de los puntos en 3D
+
+- «Ajustes 3D» suma **Puntos**: Sombra (por defecto), Poste o Frente. Con sombra el ícono lleva una
+  elipse suave al pie y crece al acercarse; con poste va sobre un poste delgado con punto en la base.
+  El ícono se compone en un lienzo (`estilosDePuntos3d.js`) y aplica a todas las capas de puntos que
+  salen de pie. «Restablecer» regresa a Sombra.
+
+### Agregado: emojis y anotaciones en 3D
+
+- «Anotaciones» ya no saca del 3D. Emoji se coloca con un clic sobre el terreno y sigue el estilo de
+  Puntos; Texto y Trazo libre quedan deshabilitados con «Solo en 2D» (`ToolSelector` acepta
+  `bloqueadas`).
+
+### Agregado: municipio o región en 3D
+
+- La selección de municipio, región o ZMG se ve en 3D con el mismo velo y contorno del 2D, y la
+  cámara encuadra la selección conservando inclinación y rumbo (`useMap3dMunicipio`). Antes solo se
+  filtraban las capas: ni máscara ni encuadre.
+
+### Corregido
+
+- **Una capa de puntos con un dato imposible de reproyectar ya no se cae.** GeoServer cortaba el
+  WFS en 3857 a media respuesta («too close to a pole») y el JSON llegaba roto: en 3D la capa se
+  quedaba plana y en modo vector no cargaba. `fetchVectorFeatures` repite el pedido acotado con
+  `BBOX` a coordenadas válidas. Lo destapó `salud:unidades_salud` (el grupo completo de
+  establecimientos).
+- **Compartir fallaba en cuanto había un punto medido**: el backend solo aceptaba cinco tipos de
+  anotación. Acepta `Pin` y `Select` y valida `pinEtiqueta` como texto.
+- **En swipe 3D el lado α tapaba al β**: el `z-index` del 3D se salía de su pane. Cada pane aísla su
+  apilamiento y cada lado muestra solo sus capas.
+- **Swipe 3D**: cada lado conserva su MapLibre aunque cambie el registro de panes, y la descarga
+  espera a que cada 3D se redibuje al tamaño de la captura antes de fotografiarlo.
+
 ## [1.208.0] - 2026-09-24
 
 ### Agregado: filtro por municipio en el catálogo
