@@ -5,6 +5,8 @@ import time
 from collections import deque
 from typing import Any, Callable, Optional
 
+from pydantic import BaseModel, Field, ValidationError
+
 MAX_TEXTO_ANOTACION = 200
 MAX_ETIQUETA_LADO = 60
 MAX_SLUG = 200
@@ -19,6 +21,13 @@ RANGOS_VISTA = {
     'zoom': (1.0, 20.0),
     'rotation': (-360.0, 360.0),
 }
+
+
+class Vista3d(BaseModel):
+    inclinacion: int = Field(default=55, ge=0, le=80, description='Inclinacion de la camara en grados: 0 mira desde arriba, 80 casi al horizonte.')
+    rumbo: float = Field(default=0, ge=-180, le=180, description='Hacia donde mira la camara, en grados desde el norte.')
+    exageracion: float = Field(default=1.5, ge=1, le=5, description='Exageracion vertical del relieve.')
+    extruir: list[str] = Field(default_factory=list, max_length=10, description='Ids de capas del mapa que se levantan en columnas.')
 
 
 def _es_numero(valor: Any) -> bool:
@@ -119,3 +128,24 @@ class Techo:
 
 
 techo_compartidos = Techo(por_minuto=30, por_dia=2000)
+
+
+def vista3d_a_payload(vista: Any, capas_del_mapa: set[str], resolver: Callable[[str], Optional[dict]]) -> Optional[dict]:
+    if vista is None:
+        return None
+    try:
+        modelo = vista if isinstance(vista, Vista3d) else Vista3d.model_validate(vista)
+    except ValidationError as exc:
+        raise ValueError(f"vista_3d inválida: {exc.errors()[0]['msg']}")
+    extruir: list[str] = []
+    for crudo in modelo.extruir:
+        resuelta = resolver(crudo[:MAX_SLUG])
+        if not resuelta or resuelta['id'] not in capas_del_mapa:
+            raise ValueError(f"'{crudo}' en vista_3d.extruir debe ser una de las capas del mapa.")
+        extruir.append(resuelta['id'])
+    return {
+        'pitch': modelo.inclinacion,
+        'bearing': round(modelo.rumbo, 1),
+        'exaggeration': round(modelo.exageracion, 1),
+        'extruir': list(dict.fromkeys(extruir)),
+    }

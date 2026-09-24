@@ -69,7 +69,7 @@ Convencion: **todos los tools que reciben una capa usan el `id` del visor** (el 
 | `municipios` | Lectura | lista los 125 o busca por nombre/clave. Absorbe `list_municipios` + `resolve_municipios` |
 | `layer_table` | Lectura | **tabla de datos** de una capa: columnas con su alias del visor, filtros `{campo, op, valor}`, orden y páginas de hasta 50 filas. Con `coordenadas` agrega un punto lat/lon por fila |
 | `layer_stats` | Lectura | **cifras sin descargar elementos**: conteo, suma y promedio de un campo numérico, y reparto por clase. Filtros por `municipio`/`year`. Lo calcula GeoServer |
-| `create_map` | **Write** | crea un mapa de un panel y devuelve `{id, kind, url, embed_html, layer?}`. Modo `query`/`theme` (busca) o `layers` (explícito) + `municipio`/`year`/`annotations`. Absorbe `make_map` + `create_single_share`. Idempotente |
+| `create_map` | **Write** | crea un mapa de un panel y devuelve `{id, kind, url, embed_html, layer?}`. Modo `query`/`theme` (busca) o `layers` (explícito) + `municipio`/`year`/`annotations`/`vista_3d`. Absorbe `make_map` + `create_single_share`. Idempotente |
 | `create_swipe` | **Write** | crea un comparativo A\|B (swipe). Modo `layer`+`year_a`+`year_b` (una capa, dos años) o `pane_a_layers`+`pane_b_layers` (dos capas, con `year_a`/`year_b` por lado opcional, validados). Absorbe `create_swipe_share` + `compare_years`. Idempotente |
 
 **Diseño para modelos chicos:** el catálogo se recortó a lo esencial para crear mapas. `describe_layer` evita 3 llamadas (metadata + stats + periodicidad). `create_map`/`create_swipe` separan las dos formas de mapa (un panel vs comparación) con nombres claros, en vez de un god-tool con modos ambiguos. Todos soportan resolución difusa de ids (slug, alias, nombre parcial). Para capas que no soportan filtro por municipio, usá `filtros` en `layer_table` sobre el campo que corresponda. En `create_map`/`create_swipe` los `filters` que mande el cliente se descartan: la fecha va por `year` y el municipio por `municipio`.
@@ -248,6 +248,7 @@ create_map(
     basemap: str | None = None,
     selected: str | None = None,
     annotations: list | None = None, # GeoJSON EPSG:4326
+    vista_3d: dict | None = None,    # {inclinacion?, rumbo?, exageracion?, extruir?}
 ) -> {id, kind, url, embed_html, layer?}
 ```
 
@@ -270,10 +271,24 @@ create_swipe(
     position: float = 0.5,           # 0.05 .. 0.95
     view, basemap, label_a, label_b,
     annotations: list | None = None,
+    vista_3d: dict | None = None,
 ) -> {id, kind, url, embed_html}
 ```
 
 Crea un share `kind='swipe'` con separador arrastrable A\|B. Modo **una capa** (`layer`+`year_a`+`year_b`) para "antes vs después" de una misma capa; modo **dos capas** (`pane_a_layers`+`pane_b_layers`) para "compara robo vs homicidio", donde `year_a`/`year_b` opcionalmente filtran cada lado. En ambos modos el server arma y valida los filtros de fecha contra la periodicidad — el agente nunca escribe CQL.
+
+### `vista_3d`
+
+`create_map` y `create_swipe` aceptan `vista_3d` para que el `url` abra en la vista 3D con relieve:
+
+| Campo | Rango | Default |
+|---|---|---|
+| `inclinacion` | 0–80 grados | 55 |
+| `rumbo` | −180 a 180 grados desde el norte | 0 |
+| `exageracion` | 1–5 | 1.5 |
+| `extruir` | hasta 10 ids, **de capas del mapa** | `[]` |
+
+Se valida con el modelo `Vista3d` de `servers/blindaje.py` y se guarda como `payload.vista3d` (o `payload.shared.vista3d` en un swipe), el mismo campo que escribe el visor al compartir desde 3D; ver `docs/swipe.md §Share envelope`. El `embed_html` sigue abriendo en 2D: el widget no monta la vista 3D.
 
 ### Patron de uso desde un agente
 

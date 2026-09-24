@@ -40,6 +40,7 @@ from servers.resolve import (
     search_by_theme as _search_by_theme,
 )
 from servers.layers import describe_layer as _describe_layer
+from servers.blindaje import Vista3d
 from servers.tabla import FiltroTabla, layer_table as _layer_table
 from servers.estadisticas import layer_stats as _layer_stats
 from servers.shares import (
@@ -228,6 +229,7 @@ def create_map(
     basemap: Optional[Literal['voyager', 'position', 'sin_mapalab']] = Field(default=None, description="Basemap: 'voyager' (recomendado), 'position', 'sin_mapalab'. NO existe 'osm'."),
     selected: Optional[str] = Field(default=None, description='Id de la capa seleccionada para mostrar su simbologia.'),
     annotations: Optional[list] = Field(default=None, description="Anotaciones GeoJSON EPSG:4326. Cada item: {id, type ('LineString'|'Polygon'|'Text'|'Emoji'), geometry, label?, value?, unit?, textLabel?}."),
+    vista_3d: Optional[Vista3d] = Field(default=None, description="Abre el mapa en vista 3D con relieve. {inclinacion?, rumbo?, exageracion?, extruir?: [ids de capas del mapa]}."),
 ):
     """Crea un mapa (un panel) y devuelve {id, kind, url, embed_html, layer?}.
 
@@ -239,13 +241,15 @@ def create_map(
 
     Modificadores (aplican a cualquier modo): `municipio` (filtra + auto-encuadra),
     `year` (filtro de fecha validado contra la periodicidad; error accionable si
-    el anio no existe), `annotations`, `view`, `basemap`, `selected`.
+    el anio no existe), `annotations`, `view`, `basemap`, `selected`, `vista_3d`.
+    `vista_3d` solo aplica al abrir el `url`; el `embed_html` sigue en 2D.
 
     Ejemplos:
     1) Busqueda rapida:   create_map(query="homicidios en Guadalajara", municipio="Guadalajara", year="2024")
     2) Por tema:          create_map(theme="seguridad", municipio="Zapopan")
     3) Capas explicitas:  create_map(layers=["homicidio_doloso","poblacion"])
     4) Con anotacion:     create_map(layers=["homicidio_doloso"], annotations=[{"id":"a1","type":"Polygon","geometry":{...},"label":"Zona"}])
+    5) En 3D:             create_map(layers=["poblacion"], municipio="Zapopan", vista_3d={"inclinacion": 60, "extruir": ["poblacion"]})
     """
     try:
         return _create_map(
@@ -258,6 +262,7 @@ def create_map(
             basemap=basemap,
             selected=selected,
             annotations=annotations,
+            vista_3d=vista_3d,
         )
     except ValueError as exc:
         return {'error': str(exc)}
@@ -277,6 +282,7 @@ def create_swipe(
     label_a: str = Field(default='A', description='Etiqueta del lado A (modo libre).'),
     label_b: str = Field(default='B', description='Etiqueta del lado B (modo libre).'),
     annotations: Optional[list] = Field(default=None, description='Anotaciones globales (visibles en ambos lados). GeoJSON EPSG:4326.'),
+    vista_3d: Optional[Vista3d] = Field(default=None, description="Abre el comparador en vista 3D, con la camara igual en los dos lados. {inclinacion?, rumbo?, exageracion?, extruir?}."),
 ):
     """Crea un mapa comparativo A|B (swipe) y devuelve {id, kind, url, embed_html}.
 
@@ -313,6 +319,7 @@ def create_swipe(
             label_a=label_a,
             label_b=label_b,
             annotations=annotations,
+            vista_3d=vista_3d,
         )
     except ValueError as exc:
         return {'error': str(exc)}

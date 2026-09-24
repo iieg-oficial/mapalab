@@ -62,3 +62,29 @@ def test_el_techo_global_frena_la_escritura(mock_mapalab_db, monkeypatch):
     assert shares._persist_share(envelope)['url']
     with pytest.raises(ValueError, match='límite'):
         shares._persist_share(envelope)
+
+
+def test_create_map_abre_en_3d_con_capas_del_mapa(capturado):
+    shares.create_map(layers=['poblacion'], vista_3d={'inclinacion': 60, 'rumbo': -30.25, 'extruir': ['poblacion', 'poblacion']})
+    assert capturado['vista3d'] == {'pitch': 60, 'bearing': -30.2, 'exaggeration': 1.5, 'extruir': ['poblacion']}
+
+
+@pytest.mark.parametrize('vista,mensaje', [
+    ({'extruir': ['homicidio_doloso']}, 'capas del mapa'),
+    ({'extruir': ['tabla_secreta']}, 'capas del mapa'),
+    ({'inclinacion': 90}, 'vista_3d inválida'),
+    ({'exageracion': 0}, 'vista_3d inválida'),
+    ({'altura': 3}, None),
+])
+def test_create_map_valida_la_vista_3d(capturado, vista, mensaje):
+    if mensaje is None:
+        shares.create_map(layers=['poblacion'], vista_3d=vista)
+        assert 'altura' not in capturado['vista3d']
+        return
+    with pytest.raises(ValueError, match=mensaje):
+        shares.create_map(layers=['poblacion'], vista_3d=vista)
+
+
+def test_create_swipe_acepta_extruir_capas_de_cualquier_lado(capturado):
+    shares.create_swipe(pane_a_layers=['poblacion'], pane_b_layers=['homicidio_doloso'], vista_3d={'extruir': ['homicidio_doloso']})
+    assert capturado['vista3d']['extruir'] == ['homicidio_doloso']

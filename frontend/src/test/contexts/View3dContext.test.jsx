@@ -12,6 +12,7 @@ vi.mock('@pages/maps/helpers/view3d', async (importOriginal) => ({
 }));
 
 import { View3dProvider, useView3d } from '@contexts/View3dContext';
+import { pedirVista3d, tomarVista3d } from '@pages/maps/helpers/vista3dCompartida';
 
 const makeCtx = (overrides = {}) => ({
     compareMode: { active: false },
@@ -130,5 +131,23 @@ describe('View3dContext', () => {
         });
         act(() => result.current.view.restablecer());
         expect(result.current.view).toMatchObject({ pitch: 55, exaggeration: 1.5, sol: 315, terreno: true, cielo: true, niebla: true, orbita: false });
+    });
+    it('un enlace compartido en 3D entra con su camara y sus capas levantadas', () => {
+        const { result } = render();
+        act(() => { pedirVista3d({ pitch: 62, bearing: -40, exaggeration: 2.5, extruded: ['poblacion'] }); });
+        expect(result.current.view.active).toBe(true);
+        expect(result.current.view.pitch).toBe(62);
+        expect(result.current.view.bearing).toBe(-40);
+        expect(result.current.view.exaggeration).toBe(2.5);
+        expect(result.current.view.extruded).toEqual(['poblacion']);
+        expect(params(result).get('inclinacion')).toBe('62');
+    });
+
+    it('sin WebGL el enlace en 3D abre en 2D', () => {
+        mocks.webgl = false;
+        const { result } = render();
+        act(() => { pedirVista3d({ pitch: 62, bearing: 0, exaggeration: 1.5, extruded: [] }); });
+        expect(result.current.view.active).toBe(false);
+        expect(tomarVista3d()).toBeNull();
     });
 });

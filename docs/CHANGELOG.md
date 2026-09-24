@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.204.0] - 2026-09-24
+
+### Agregado: la vista 3D viaja en los enlaces compartidos
+
+- Compartir desde la vista 3D guarda inclinación, rumbo, exageración y capas levantadas en
+  `payload.vista3d` (en el comparador, `payload.shared.vista3d`). Abrir el enlace entra a la 3D con
+  esa cámara; sin WebGL abre en 2D.
+- El deserializador deja la vista en `helpers/vista3dCompartida.js` y `View3dProvider` la aplica,
+  porque el cargador de enlaces corre fuera de ese provider.
+- `validate_payload` acota `pitch` a 0–80, `bearing` a ±180, `exaggeration` a 1–5 y `extruir` a 10
+  capas.
+- MCP: `create_map` y `create_swipe` aceptan `vista_3d` (`inclinacion`, `rumbo`, `exageracion`,
+  `extruir`); las capas a levantar deben ser del mapa. El `embed_html` sigue en 2D.
+
 ## [1.203.0] - 2026-09-24
 
 ### Agregado: `layer_table` en el MCP

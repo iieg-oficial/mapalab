@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useSearchParams } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
 import { trackView3d } from '@services/analyticsService';
+import { suscribirVista3d, tomarVista3d } from '@pages/maps/helpers/vista3dCompartida';
 import { VIEW3D_DEFAULTS, clampColumnas, clampExaggeration, clampPitch, clampSol, webglAvailable } from '@pages/maps/helpers/view3d';
 
 const View3dContext = createContext(null);
@@ -140,6 +141,19 @@ export const View3dProvider = ({ children }) => {
     const reportExtrusion = useCallback((layerId, status) => {
         setExtrusionStatus(prev => (prev[layerId] === status ? prev : { ...prev, [layerId]: status }));
     }, []);
+
+    useEffect(() => {
+        const aplicar = () => {
+            const vista = tomarVista3d();
+            if (!vista || !enter()) return;
+            setPitchState(vista.pitch);
+            setBearing(vista.bearing);
+            setExaggerationState(vista.exaggeration);
+            setExtruded(vista.extruded);
+        };
+        aplicar();
+        return suscribirVista3d(aplicar);
+    }, [enter]);
 
     const previousActiveRef = useRef(new Set());
     useEffect(() => {

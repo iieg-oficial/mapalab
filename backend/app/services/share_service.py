@@ -15,6 +15,9 @@ MAX_ANNOTATIONS = 200
 MAX_COORDINATES_PER_GEOMETRY = 2000
 ALLOWED_MUNICIPIO_SOURCES = {"iieg", "inegi"}
 MAX_MUNICIPIOS = 125
+MAX_PITCH_3D = 80
+EXAGERACION_3D = (1, 5)
+MAX_EXTRUIDAS_3D = 10
 
 
 def canonicalize(payload: Any) -> bytes:
@@ -145,11 +148,37 @@ def _validate_municipios(municipios: Any, source: str) -> None:
             raise ValueError(f"{source}.municipios.selected: cada clave debe ser string no vacio")
 
 
+def _es_numero(valor: Any) -> bool:
+    return isinstance(valor, (int, float)) and not isinstance(valor, bool)
+
+
+def _validate_vista3d(vista: Any, source: str) -> None:
+    if vista is None:
+        return
+    if not isinstance(vista, dict):
+        raise ValueError(f"{source}.vista3d debe ser objeto")
+    pitch = vista.get("pitch")
+    if not (_es_numero(pitch) and 0 <= pitch <= MAX_PITCH_3D):
+        raise ValueError(f"{source}.vista3d.pitch fuera de rango [0,{MAX_PITCH_3D}]")
+    bearing = vista.get("bearing", 0)
+    if not (_es_numero(bearing) and -180 <= bearing <= 180):
+        raise ValueError(f"{source}.vista3d.bearing fuera de rango [-180,180]")
+    exaggeration = vista.get("exaggeration", 1)
+    if not (_es_numero(exaggeration) and EXAGERACION_3D[0] <= exaggeration <= EXAGERACION_3D[1]):
+        raise ValueError(f"{source}.vista3d.exaggeration fuera de rango {list(EXAGERACION_3D)}")
+    extruir = vista.get("extruir", [])
+    if not isinstance(extruir, list) or len(extruir) > MAX_EXTRUIDAS_3D:
+        raise ValueError(f"{source}.vista3d.extruir debe ser lista de hasta {MAX_EXTRUIDAS_3D} capas")
+    if not all(isinstance(slug, str) and slug.strip() for slug in extruir):
+        raise ValueError(f"{source}.vista3d.extruir: cada capa debe ser string no vacio")
+
+
 def _validate_single_payload(payload: dict) -> None:
     _validate_layer_entries(payload.get("layers"), "single.payload")
     _validate_view(payload.get("view"))
     _validate_annotations(payload.get("annotations"), "single.payload")
     _validate_municipios(payload.get("municipios"), "single.payload")
+    _validate_vista3d(payload.get("vista3d"), "single.payload")
 
 
 def _validate_swipe_payload(payload: dict) -> None:
@@ -158,6 +187,7 @@ def _validate_swipe_payload(payload: dict) -> None:
         raise ValueError("swipe.payload.shared requerido")
     _validate_view(shared.get("view"))
     _validate_municipios(shared.get("municipios"), "swipe.payload.shared")
+    _validate_vista3d(shared.get("vista3d"), "swipe.payload.shared")
     for pane_key in ("paneA", "paneB"):
         pane = payload.get(pane_key)
         if not isinstance(pane, dict):

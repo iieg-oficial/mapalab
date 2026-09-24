@@ -6,6 +6,7 @@ import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
 import { initialCompareMode } from '@pages/maps/helpers/swipeMode';
 import { devToolsStore } from '@services/devToolsStore';
 import { marcarShareAplicado } from '@pages/maps/helpers/shareAplicacion';
+import { leerVista3d, pedirVista3d } from '@pages/maps/helpers/vista3dCompartida';
 
 const VIEW_RETRY_INTERVAL_MS = 100;
 const VIEW_RETRY_MAX_ATTEMPTS = 60;
@@ -100,6 +101,10 @@ export const useShareDeserializer = () => {
             if (loop.intervalMs) setLoopIntervalMs?.(layerId, loop.intervalMs);
             if (loop.direction) setLoopDirection?.(layerId, loop.direction);
         };
+        const restoreVista3d = (crudo) => {
+            const vista = leerVista3d(crudo, slug => resolveRefToId(slug, layerTree));
+            if (vista) pedirVista3d(vista);
+        };
 
         if (isSwipe) {
             const payload = envelope.payload || {};
@@ -184,6 +189,7 @@ export const useShareDeserializer = () => {
             if (sharedMunicipios?.selected?.length > 0 && municipioMode?.enter) {
                 municipioMode.enter(sharedMunicipios.selected, { fromUrl: true });
             }
+            restoreVista3d(shared.vista3d);
             marcarShareAplicado();
             return true;
         }
@@ -258,6 +264,7 @@ export const useShareDeserializer = () => {
         if (singleMunicipios?.selected?.length > 0 && municipioMode?.enter) {
             municipioMode.enter(singleMunicipios.selected, { fromUrl: true });
         }
+        restoreVista3d(payload.vista3d);
 
         marcarShareAplicado();
         return true;

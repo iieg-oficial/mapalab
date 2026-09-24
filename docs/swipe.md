@@ -123,7 +123,7 @@ casillas.
     "version": 1,
     "kind": "swipe",
     "payload": {
-        "shared": { "view", "basemap", "selected" },
+        "shared": { "view", "basemap", "selected", "municipios", "vista3d" },
         "paneA": { "label", "layers": [...] },
         "paneB": { "label", "layers": [...] },
         "activeSlot": "A" | "B",
@@ -136,6 +136,8 @@ casillas.
 `useShareSerializer.js:118-149` y `useShareDeserializer.js:56,107` lo manejan. El slot activo se serializa con el live state; el slot opuesto, con su snapshot del `compareMode`. Solo `kind: 'single' | 'swipe'`, sin fallback legacy.
 
 **`annotations`** (opcional, desde mapalab 1.43.0): array de mediciones/anotaciones convertidas a GeoJSON `EPSG:4326`. Las anotaciones son globales del mapa (no por slot — la decisión documentada en §Pendientes), así que el campo vive a nivel de `payload`, no dentro de `paneA`/`paneB`. Ver §Annotations.
+
+**`vista3d`** (opcional, desde 1.204.0): `{pitch, bearing, exaggeration, extruir: [slugs]}`. Solo se escribe cuando el mapa está en 3D; en un `single` vive en `payload`, en un swipe en `payload.shared`, porque la cámara 3D es una para los dos lados. Al abrir el enlace, el deserializador la deja pendiente en `helpers/vista3dCompartida.js` y `View3dProvider` la aplica (el cargador corre fuera de ese provider, así que no puede llamarlo directo). Sin WebGL el enlace abre en 2D. `validate_payload` acota `pitch` a 0–80, `bearing` a ±180, `exaggeration` a 1–5 y `extruir` a 10 capas.
 
 ### sessionStorage
 

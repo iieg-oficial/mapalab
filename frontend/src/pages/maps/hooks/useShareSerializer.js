@@ -5,6 +5,7 @@ import { useLayers } from '@hooks/useLayers';
 import { findLayerDef, slugForLayer } from '@pages/maps/helpers/wmsConfig';
 import { serializeAnnotations } from '@pages/maps/helpers/annotationsSerialization';
 import { SERVICE_WMS } from '@pages/maps/helpers/serviceMode';
+import { serializarVista3d } from '@pages/maps/helpers/vista3dCompartida';
 
 const round = (value, decimals) => {
     if (value === null || value === undefined || Number.isNaN(value)) return value;
@@ -123,6 +124,7 @@ export const useShareSerializer = () => {
             .filter(Boolean);
 
         const selectedSlug = selectedLayerForSymbology?.id ? slugForLayer(selectedLayerForSymbology.id, layerTree) : null;
+        const vista3d = serializarVista3d(extra.view3d, id => slugForLayer(id, layerTree));
 
         const municipioPayload = (municipioMode?.active && Array.isArray(municipioMode.selected) && municipioMode.selected.length > 0)
             ? { source: municipioMode.sourceId || 'iieg', selected: [...municipioMode.selected] }
@@ -138,6 +140,7 @@ export const useShareSerializer = () => {
         if (soloSeleccionada) basePayload.soloSeleccionada = true;
         if (annotations) basePayload.annotations = annotations;
         if (municipioPayload) basePayload.municipios = municipioPayload;
+        if (vista3d) basePayload.vista3d = vista3d;
 
         if (kind === 'swipe') {
             const activeSlot = compareMode?.activeSlot || extra.activeSlot || 'A';
@@ -158,6 +161,7 @@ export const useShareSerializer = () => {
                 selected: selectedSlug,
             };
             if (municipioPayload) sharedPayload.municipios = municipioPayload;
+            if (vista3d) sharedPayload.vista3d = vista3d;
             const swipePayload = {
                 shared: sharedPayload,
                 paneA: {

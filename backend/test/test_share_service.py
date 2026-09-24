@@ -203,3 +203,26 @@ class TestAnnotations:
     def test_annotations_no_requeridas(self):
         kind, _ = validate_payload(_envelope('single', {'layers': []}))
         assert kind == 'single'
+
+
+class TestVista3d:
+    VISTA = {'pitch': 55, 'bearing': -20.5, 'exaggeration': 1.5, 'extruir': ['seguridad:homicidio_doloso']}
+
+    def test_acepta_single_y_swipe_con_vista3d(self):
+        validate_payload(_envelope('single', {'layers': [], 'vista3d': self.VISTA}))
+        validate_payload(_envelope('swipe', {
+            'shared': {'vista3d': self.VISTA}, 'paneA': {'layers': []}, 'paneB': {'layers': []}, 'activeSlot': 'A',
+        }))
+
+    @pytest.mark.parametrize('cambio,mensaje', [
+        ({'pitch': 90}, 'pitch'),
+        ({'pitch': True}, 'pitch'),
+        ({'bearing': 400}, 'bearing'),
+        ({'exaggeration': 9}, 'exaggeration'),
+        ({'extruir': [f'c{i}' for i in range(11)]}, 'extruir'),
+        ({'extruir': [3]}, 'extruir'),
+    ])
+    def test_rechaza_valores_fuera_de_rango(self, cambio, mensaje):
+        env = _envelope('single', {'layers': [], 'vista3d': {**self.VISTA, **cambio}})
+        with pytest.raises(ValueError, match=mensaje):
+            validate_payload(env)
