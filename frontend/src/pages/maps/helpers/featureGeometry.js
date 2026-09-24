@@ -1,5 +1,6 @@
 import GeoJSON from 'ol/format/GeoJSON';
 import { createEmpty, extend, isEmpty, getCenter } from 'ol/extent';
+import { toLonLat } from 'ol/proj';
 
 const geoJSONFormat = new GeoJSON();
 
@@ -71,3 +72,17 @@ export const centerOnResults = ({ activeMap, results, clickPosition }) => {
     return true;
 };
 
+const coordenadaDePunto = (geometry) => {
+    if (geometry?.type === 'Point') return geometry.coordinates;
+    if (geometry?.type === 'MultiPoint' && geometry.coordinates?.length === 1) return geometry.coordinates[0];
+    return null;
+};
+
+export const ubicacionDeFeature = (feature, lngLat = null) => {
+    const punto = coordenadaDePunto(feature?.geometry);
+    if (Array.isArray(punto) && punto.slice(0, 2).every(Number.isFinite)) {
+        const [lng, lat] = toLonLat(punto);
+        return { lat, lng };
+    }
+    return lngLat;
+};

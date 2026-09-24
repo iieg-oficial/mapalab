@@ -3,13 +3,14 @@ import { buildCardPlan } from '@utils/infoboxPlan';
 import { PINTORES } from './cardBlocks.jsx';
 import { devToolsStore } from '@services/devToolsStore';
 
-export const renderCard = (properties, config, onClose, layerId = null, featureId = null, onAction = null, variant = 'desktop', cardIndex = null, cardTotal = null, dateValue = null) => {
+export const renderCard = (properties, config, onClose, layerId = null, featureId = null, onAction = null, variant = 'desktop', cardIndex = null, cardTotal = null, dateValue = null, coords = null) => {
     const plan = buildCardPlan(properties, config, {
         layerId,
         featureId,
         dateValue,
         variant,
         allowActions: devToolsStore.isNonProd(),
+        coords,
     });
     if (!plan || plan.isEmpty) return null;
 

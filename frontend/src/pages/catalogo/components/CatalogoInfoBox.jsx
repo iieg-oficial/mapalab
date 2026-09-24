@@ -12,7 +12,7 @@ import InfoBoxTools from '@pages/maps/components/InfoBox/components/InfoBoxTools
 import { useViewportContainment } from '@pages/maps/components/InfoBox/hooks/useViewportContainment';
 import { useDraggablePanel } from '@pages/maps/components/InfoBox/hooks/useDraggablePanel';
 import { useInfoBoxLazyLoad } from '@hooksMaps/useInfoBoxLazyLoad';
-import { centerOnResults } from '@pages/maps/helpers/featureGeometry';
+import { centerOnResults, ubicacionDeFeature } from '@pages/maps/helpers/featureGeometry';
 import { trackCatalogoInfoBoxAction } from '@services/analyticsService';
 
 const featureKey = (feature, idx) => feature?.id ?? `feature-${idx}`;
@@ -101,8 +101,9 @@ const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposit
             idx + 1,
             totalEnArea,
             null,
+            ubicacionDeFeature(feature, lngLat),
         ),
-    })).filter((c) => c.node), [visibles, capa, layerId, isMobile, handleRemove, totalEnArea]);
+    })).filter((c) => c.node), [visibles, capa, layerId, isMobile, handleRemove, totalEnArea, lngLat]);
 
     if (cards.length === 0 || (!pixel && !isMobile)) return null;
 

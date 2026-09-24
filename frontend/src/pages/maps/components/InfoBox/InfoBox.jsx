@@ -14,7 +14,7 @@ import { downloadFeaturesAsCSV } from './utils/downloadFeatures';
 import { pedirDescargaDeSeleccion } from '@pages/maps/helpers/descargaSeleccion';
 import { useInfoBoxLazyLoad } from '../../hooks/useInfoBoxLazyLoad';
 import { findLayerById } from '../../helpers/layers/utils/layerHelpers';
-import { centerOnResults } from '../../helpers/featureGeometry';
+import { centerOnResults, ubicacionDeFeature } from '../../helpers/featureGeometry';
 import { trackInfoBoxAction } from '@services/analyticsService';
 import LicenseTooltipContent from '@components/LicenseTooltipContent';
 import SummaryCard from './components/SummaryCard';
@@ -178,7 +178,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
     const renderItem = (feature, layerId, onClose, resultLittleCard, cardIndex = null, cardTotal = null) => {
         const config = resultLittleCard || findLayerById(layerId, allLayers)?.littleCard;
         const dateValue = getSpecificFilter?.(layerId, 'date');
-        return renderCard(feature.properties, config, onClose, layerId, feature.id, handleAction, isMobile ? 'mobile' : 'desktop', cardIndex, cardTotal, dateValue);
+        return renderCard(feature.properties, config, onClose, layerId, feature.id, handleAction, isMobile ? 'mobile' : 'desktop', cardIndex, cardTotal, dateValue, ubicacionDeFeature(feature, selectedFeatureInfo?.lngLat));
     };
 
     const handleDownload = async () => {
