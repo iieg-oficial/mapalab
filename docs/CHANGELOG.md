@@ -5,6 +5,31 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.211.0] - 2026-09-24
+
+### Cambiado: la selección por polígono muestra conteos y pide los elementos al ver detalles
+
+Al cerrar un polígono se pedía de inmediato la primera página de elementos —hasta 200, con atributos
+y geometría— aunque la primera vista solo muestra el resumen, y el resumen contaba sobre esa página,
+así que se topaba en 200. Ahora `resumirPoligono` (`usePolygonSelection`) pide solo los conteos por
+capa con `resultType=hits`, que ya se hacían para el borde y se descartaban: el resumen sale exacto y
+sin la petición más pesada. «Ver detalles» pide la primera página y las siguientes se cargan al
+desplazarse, como antes. Aplica al visor, al 3D y a las celdas de hexágonos; el catálogo sigue con su
+flujo. Mientras no se abren los detalles, la columna de acciones solo ofrece cerrar y descargar mapa.
+
+### Corregido: los conteos de la selección saturaban el WFS
+
+El conteo lanzaba dos peticiones por capa, todas a la vez, contra una zona del gateway de 10 r/s con
+`nodelay` para todo el sitio: con una categoría grande llovían 429 y el resumen desaparecía. Ahora
+salen de dos capas en dos, a 15 por segundo como máximo, y reintentan dos veces tras un 429. Una capa
+que aun así no se pudo contar aparece como «Sin dato» en vez de tirar el resumen. El techo del gateway
+se subió aparte, en gateway-hub 1.54.0.
+
+### Corregido: el trazo de la medición 3D se quedaba al borrarla
+
+Al terminar una medición en 3D el trazo seguía dibujado en la capa de la herramienta, aparte de la
+copia guardada; al borrarla de «Mis mediciones» quedaba la marca. El trazo se limpia al guardarse.
+
 ## [1.210.1] - 2026-09-24
 
 ### Cambiado: los paneles del comparador cierran con la X estándar

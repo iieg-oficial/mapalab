@@ -107,7 +107,7 @@ Jerarquia condicional dentro del panel (`InfoBox.jsx:124-205`):
 
 | Condicion | Componente |
 |---|---|
-| `isPolygonSelection` | `SummaryCard` — total + desglose por capa + expandible |
+| `isPolygonSelection` | `SummaryCard` — total + desglose por capa + expandible. Desde 1.211.0 el total y el desglose salen de `resumen` (conteos `resultType=hits` por capa, `resumirPoligono`) y los elementos se piden hasta «Ver detalles» |
 | `showEmptySuggestions` (sin resultados pero hay `queriedLayerName` o `alternativeLayers`) | `EmptySuggestions` |
 | `showNoLayerSelected` (sin capas activas relevantes) | Mensaje "Selecciona una capa..." |
 | Otros | `results.map() → features.map()` con `renderCard()` |
@@ -178,7 +178,7 @@ compuestos funcionaban en el visor y el preview del admin los ignoraba.
 | Mount / cambio de `selectedFeatureInfo` | Reset de `interactive=false`, analytics `trackFeatureClick(layerId)`, `setTimeout 200ms → interactive=true` |
 | `handleClose` | `setSelectedFeatureInfo(null)` + `clearPosition()` + reset de estados locales |
 | `handleRemoveFeature` | Elimina un feature del array; si no quedan, cierra |
-| `handleToggleExpand` | Toggle de `isExpanded` con 50ms de loading (para `SummaryCard`) |
+| `handleToggleExpand` | Toggle de `isExpanded` con 50ms de loading (para `SummaryCard`). En una selección por polígono sin elementos cargados pide antes la primera página (`loadMorePolygonFeatures`) |
 | `handleSelectAlternative` | Llama `selectAlternativeLayer()` y cierra |
 | `handleAction('whats_new')` | Abre `WhatsNewModal` |
 | `handleDownload` | `downloadFeaturesAsCSV(results)` desde el toolbar |
