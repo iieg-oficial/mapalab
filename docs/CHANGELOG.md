@@ -5,6 +5,42 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.200.0] - 2026-09-24
+
+### Agregado: vista 3D dentro del comparador
+
+- Con el swipe abierto se puede entrar al 3D, y abrir el swipe ya no saca del 3D: hay un MapLibre por
+  lado, montado sobre el mapa de cada pane. El de β queda dentro del recorte de la barra, así que la
+  barra lo corta sin cambios en `SwipeView`.
+- **La cámara va sincronizada** (`useCamara3dSincronizada`): mover, inclinar o girar un lado mueve el
+  otro, con guarda contra el rebote. La órbita, la inclinación y el `map3dRef` los lleva el lado α; el
+  zoom y el encuadre del panel mueven los dos.
+- Se levantan las guardas que existían solo por la exclusión: el botón 3D en swipe y el botón de
+  levantar capa (`ExtrudeButton`) dentro del comparador.
+- En celular se conserva la exclusión (dos WebGL a la vez es demasiado) y las mediciones quedan
+  apagadas dentro del swipe en 3D.
+
+### Cambiado: la medición vive dentro del InfoBox
+
+- Al terminar una línea o un polígono, en 2D o 3D, se abre el InfoBox con la tarjeta de la medición
+  arriba, el «mostrar detalles» de la selección abajo y su columna de acciones al lado. Si el polígono
+  no tiene elementos, el InfoBox se abre igual, solo con la medición.
+- Se quitan los paneles laterales de resultados de 2D y 3D.
+- Dentro del InfoBox la tarjeta va compacta (12 px, etiquetas cortas) para caber en 239 px.
+
+### Cambiado: gráfica de alturas en áreas
+
+- La distribución de alturas pasa de barras a **curva de línea**: el porcentaje del área por encima
+  de cada altitud. Comparte `<GraficaAlturas>` con el perfil de las distancias.
+- El panel no aparece mientras no haya resultado, usa la X estándar de los paneles
+  (`MobileSheetCloseButton`) y fuera del InfoBox se arrastra desde el encabezado.
+- «Ajustes 3D» se separa 12 px de la pastilla y comparte su borde inferior.
+
+### Corregido
+
+- **El catálogo tronaba al medir en 3D**: montaba las mediciones del visor, que dependen del sider.
+  El catálogo monta su 3D sin ellas.
+
 ## [1.199.2] - 2026-09-24
 
 ### Corregido: «Visible» mentía en el comparador
