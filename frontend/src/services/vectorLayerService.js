@@ -45,7 +45,39 @@ export const countVectorFeatures = async (wmsConfig, cqlFilter, signal) => {
     }
 };
 
+const COORDENADAS_VALIDAS = "-179.9,-80,179.9,80,'EPSG:4326'";
+const ERROR_DE_REPROYECCION = /reprojecting|too close to a pole/i;
+
+export const acotarAGeometriasValidas = (cqlFilter, geometria) => {
+    const bbox = `BBOX(${geometria},${COORDENADAS_VALIDAS})`;
+    return cqlFilter ? `(${cqlFilter}) AND ${bbox}` : bbox;
+};
+
+const geometriaDe = async (wmsConfig, signal) => {
+    const params = new URLSearchParams({
+        service: 'WFS',
+        version: '2.0.0',
+        request: 'DescribeFeatureType',
+        typeNames: wmsConfig.wfsLayerName || wmsConfig.layerName,
+        outputFormat: 'application/json',
+    });
+    const response = await fetch(`${getWfsUrl(wmsConfig.baseUrl || '')}?${params.toString()}`, fetchOptions(signal));
+    if (!response.ok) return null;
+    const json = await response.json();
+    return (json?.featureTypes?.[0]?.properties || []).find(p => String(p.type).startsWith('gml:'))?.name || null;
+};
+
 export const fetchVectorFeatures = async (wmsConfig, cqlFilter, signal) => {
-    const url = buildVectorWFSUrl(wmsConfig, cqlFilter);
-    return parseResponse(await fetch(url, fetchOptions(signal)));
+    const response = await fetch(buildVectorWFSUrl(wmsConfig, cqlFilter), fetchOptions(signal));
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    if (!(response.headers.get('content-type') || '').includes('application/json')) return parseResponse(response);
+    const texto = await response.text();
+    try {
+        return JSON.parse(texto);
+    } catch (error) {
+        if (!ERROR_DE_REPROYECCION.test(texto)) throw error;
+        const geometria = await geometriaDe(wmsConfig, signal);
+        if (!geometria) throw error;
+        return parseResponse(await fetch(buildVectorWFSUrl(wmsConfig, acotarAGeometriasValidas(cqlFilter, geometria)), fetchOptions(signal)));
+    }
 };

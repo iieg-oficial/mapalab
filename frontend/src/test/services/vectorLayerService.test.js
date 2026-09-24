@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { buildVectorWFSUrl, countVectorFeatures } from '@services/vectorLayerService';
+import { acotarAGeometriasValidas, buildVectorWFSUrl, countVectorFeatures, fetchVectorFeatures } from '@services/vectorLayerService';
 
 const wmsConfig = {
     baseUrl: 'http://geo.test/geoserver/salud/wms',
@@ -82,3 +82,55 @@ describe('countVectorFeatures', () => {
         await expect(countVectorFeatures(wmsConfig, '')).rejects.toThrow('500');
     });
 });
+
+describe('fetchVectorFeatures', () => {
+    beforeEach(() => {
+        vi.stubGlobal('fetch', vi.fn());
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    const respuesta = (cuerpo, tipo = 'application/json') => ({
+        ok: true,
+        headers: { get: () => tipo },
+        text: async () => cuerpo,
+        json: async () => JSON.parse(cuerpo),
+    });
+
+    const ROTO = '{"type":"FeatureCollection","features":[{"type":"Feature","id":"u.1"<?xml version="1.0"?>'
+        + '<ows:ExceptionText>A transformation exception occurred while reprojecting data on the fly</ows:ExceptionText>';
+    const DESCRIBE = JSON.stringify({ featureTypes: [{ properties: [{ name: 'nombre', type: 'xsd:string' }, { name: 'geom', type: 'gml:Point' }] }] });
+    const BUENO = JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', id: 'u.1' }] });
+
+    it('devuelve el GeoJSON tal cual cuando es valido', async () => {
+        global.fetch.mockResolvedValueOnce(respuesta(BUENO));
+        const json = await fetchVectorFeatures(wmsConfig, '');
+        expect(json.features).toHaveLength(1);
+        expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('si GeoServer corta el flujo al reproyectar, repite acotado a coordenadas validas', async () => {
+        global.fetch
+            .mockResolvedValueOnce(respuesta(ROTO))
+            .mockResolvedValueOnce(respuesta(DESCRIBE))
+            .mockResolvedValueOnce(respuesta(BUENO));
+        const json = await fetchVectorFeatures(wmsConfig, "nivel = 'Primer nivel'");
+        expect(json.features).toHaveLength(1);
+        expect(global.fetch.mock.calls[1][0]).toContain('DescribeFeatureType');
+        const reintento = new URL(global.fetch.mock.calls[2][0]).searchParams.get('CQL_FILTER');
+        expect(reintento).toBe("(nivel = 'Primer nivel') AND BBOX(geom,-179.9,-80,179.9,80,'EPSG:4326')");
+    });
+
+    it('otros JSON rotos se propagan sin reintentar', async () => {
+        global.fetch.mockResolvedValueOnce(respuesta('{"type":"Feature'));
+        await expect(fetchVectorFeatures(wmsConfig, '')).rejects.toThrow();
+        expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('acota tambien sin filtro previo', () => {
+        expect(acotarAGeometriasValidas('', 'the_geom')).toBe("BBOX(the_geom,-179.9,-80,179.9,80,'EPSG:4326')");
+    });
+});
+
