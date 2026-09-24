@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import LineString from 'ol/geom/LineString';
 import Polygon from 'ol/geom/Polygon';
 import { fromLonLat } from 'ol/proj';
 import { getCenter } from 'ol/extent';
@@ -7,8 +8,8 @@ import CloseButton from '@components/CloseButton';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useMapsContext } from '@hooks/useMaps';
 import { useMedicion3d } from '@hooksMaps/useMedicion3d';
+import { abrirInfoBoxDeLinea } from '@hooksMaps/useInfoBoxDeMedicion';
 import ToolSelector from '../MeasurementTools/ToolSelector';
-import PanelMedicion from '../MeasurementTools/PanelMedicion';
 import HistoryButton from '../MeasurementTools/HistoryButton';
 import HistoryPanel from '../MeasurementTools/HistoryPanel';
 
@@ -18,21 +19,25 @@ const MODO_A_TIPO = { linea: 'LineString', poligono: 'Polygon' };
 const Medicion3D = ({ map, onMidiendo }) => {
     const {
         areMeasurementToolsVisible, hideMeasurementTools, measurements, deleteMeasurement,
-        toggleMeasurementVisibility, clearDrawings, restoreAnnotations, mapRef, selectedFeatureInfo,
+        toggleMeasurementVisibility, clearDrawings, restoreAnnotations, mapRef, setSelectedFeatureInfo, clickPosition,
     } = useMapsContext();
     const { queryFeaturesInPolygon } = useFeatureInfo();
-    const [geometriaEnInfo, setGeometriaEnInfo] = useState(null);
     const { style, className } = useSiderAdaptivePosition({ anchorRef: 'tools' });
     const [listaAbierta, setListaAbierta] = useState(false);
     const guardar = useCallback((anotacion) => {
         restoreAnnotations?.([anotacion], { showTools: false });
-        if (anotacion.type !== 'Polygon' || !mapRef?.current) return;
+        if (!mapRef?.current) return;
+        if (anotacion.type === 'LineString') {
+            const coords = anotacion.geometry.coordinates;
+            const { x, y } = map.project(coords.at(-1));
+            abrirInfoBoxDeLinea({ geometria: new LineString(coords.map(c => fromLonLat(c))), pixel: [x, y], setSelectedFeatureInfo, clickPosition });
+            return;
+        }
         const geometria = new Polygon(anotacion.geometry.coordinates.map(anillo => anillo.map(c => fromLonLat(c))));
-        setGeometriaEnInfo(geometria);
         queryFeaturesInPolygon(mapRef.current, geometria, getCenter(geometria.getExtent()));
-    }, [restoreAnnotations, mapRef, queryFeaturesInPolygon]);
+    }, [restoreAnnotations, mapRef, map, queryFeaturesInPolygon, setSelectedFeatureInfo, clickPosition]);
     const {
-        modo, setModo, vertices, terminado, resultado, deshacer, borrar, terminar, setMarcador,
+        modo, setModo, vertices, terminado, deshacer, borrar, terminar,
     } = useMedicion3d(map, { onTerminar: guardar });
 
     useEffect(() => {
@@ -70,15 +75,6 @@ const Medicion3D = ({ map, onMidiendo }) => {
                             canUndo={vertices.length > 0 && !terminado}
                             showAnnotations={false}
                         />
-                        {modo && !(terminado && selectedFeatureInfo?.isPolygonSelection && selectedFeatureInfo.polygonGeometry === geometriaEnInfo) && (
-                            <PanelMedicion
-                                modo={modo}
-                                resultado={resultado}
-                                onCerrar={() => setModo(null)}
-                                onRecorrer={setMarcador}
-                                className="absolute left-full top-0 ml-32"
-                            />
-                        )}
                     </div>
                     <CloseButton
                         onConfirm={hideMeasurementTools}

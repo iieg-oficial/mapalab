@@ -315,12 +315,9 @@ export const useFeatureInfo = (overrides = null) => {
                 }, 100);
                 return results;
             } else {
-                if (onFeatureCountUpdate) {
-                    onFeatureCountUpdate(0);
-                }
-
-                setSelectedFeatureInfo(null);
-                clickPosition.clearPosition();
+                onFeatureCountUpdate?.(0);
+                clickPosition.updatePosition({ pixel: map.getPixelFromCoordinate(centerCoordinate) });
+                setSelectedFeatureInfo({ lngLat: { lng, lat }, results: [], isPolygonSelection: true, polygonGeometry, matched: 0, hasMore: false });
                 return null;
             }
         } catch {

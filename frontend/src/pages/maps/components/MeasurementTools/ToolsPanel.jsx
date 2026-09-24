@@ -9,8 +9,7 @@ import EmojiPanel from './EmojiPanel';
 import TextInlineEditor from './TextInlineEditor';
 import HistoryPanel from './HistoryPanel';
 import FeatureEditToolbar from './FeatureEditToolbar';
-import PanelMedicion from './PanelMedicion';
-import { ultimaMedicion, useResultadoMedicion } from '@hooksMaps/useResultadoMedicion';
+import { useInfoBoxDeMedicion } from '@hooksMaps/useInfoBoxDeMedicion';
 
 const ToolsPanel = () => {
     const {
@@ -54,16 +53,15 @@ const ToolsPanel = () => {
         updateEditingTextLabel,
         commitTextEdit,
         cancelTextEdit,
-        selectedFeatureInfo
+        setSelectedFeatureInfo,
+        clickPosition
     } = useMapsContext();
     const { style, className } = useSiderAdaptivePosition({ anchorRef: 'tools' });
     const { isMobile } = useSider();
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [isMeasurementListOpen, setIsMeasurementListOpen] = useState(false);
     const emojiPickerButtonRef = useRef(null);
-    const geometriaMedida = ultimaMedicion(measurements)?.feature?.getGeometry();
-    const enInfoBox = !!selectedFeatureInfo?.isPolygonSelection && selectedFeatureInfo.polygonGeometry === geometriaMedida;
-    const medicion = useResultadoMedicion(enInfoBox ? null : geometriaMedida);
+    useInfoBoxDeMedicion({ measurements, mapRef, setSelectedFeatureInfo, clickPosition });
 
     const shouldRender = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0;
     const showTypeSwitcher = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing;
@@ -137,37 +135,27 @@ const ToolsPanel = () => {
                 />
             </div>
 
-            <div className="relative">
-                <ToolSelector
-                    visible={showTypeSwitcher}
-                    compact={compact}
-                    isDrawing={isDrawing}
-                    measureType={measureType}
-                    isEmojiPickerOpen={isEmojiPickerOpen}
-                    onSelect={handleMeasureTypeClick}
-                    onTextToggle={handleTextButton}
-                    onEmojiToggle={handleEmojiButton}
-                    emojiButtonRef={emojiPickerButtonRef}
-                    onUndo={undoLastPoint}
-                    onFinish={finishCurrentSketch}
-                    onCancel={cancelCurrentSketch}
-                    canUndo={isSketching}
-                    freehandColor={freehandColor}
-                    freehandWidth={freehandWidth}
-                    onFreehandColor={setFreehandColor}
-                    onFreehandWidth={setFreehandWidth}
-                    showMeasurements={areMeasurementToolsVisible}
-                    showAnnotations={areAnnotationToolsVisible}
-                />
-                {medicion.visible && areMeasurementToolsVisible && (
-                    <PanelMedicion
-                        modo={medicion.modo}
-                        resultado={medicion.resultado}
-                        onCerrar={medicion.cerrar}
-                        className="absolute left-full top-0 ml-32"
-                    />
-                )}
-            </div>
+            <ToolSelector
+                visible={showTypeSwitcher}
+                compact={compact}
+                isDrawing={isDrawing}
+                measureType={measureType}
+                isEmojiPickerOpen={isEmojiPickerOpen}
+                onSelect={handleMeasureTypeClick}
+                onTextToggle={handleTextButton}
+                onEmojiToggle={handleEmojiButton}
+                emojiButtonRef={emojiPickerButtonRef}
+                onUndo={undoLastPoint}
+                onFinish={finishCurrentSketch}
+                onCancel={cancelCurrentSketch}
+                canUndo={isSketching}
+                freehandColor={freehandColor}
+                freehandWidth={freehandWidth}
+                onFreehandColor={setFreehandColor}
+                onFreehandWidth={setFreehandWidth}
+                showMeasurements={areMeasurementToolsVisible}
+                showAnnotations={areAnnotationToolsVisible}
+            />
 
             <EmojiPanel
                 open={isEmojiPickerOpen}

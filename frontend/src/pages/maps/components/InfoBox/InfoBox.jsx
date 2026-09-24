@@ -123,8 +123,10 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
     const isSingleFeature = totalFeatures === 1;
     const hasNoResults = !results || results.length === 0 || totalFeatures === 0;
     const hasAlternatives = alternativeLayers && alternativeLayers.length > 0;
-    const showEmptySuggestions = hasNoResults && !isPolygonSelection && (queriedLayerName || hasAlternatives);
-    const showNoLayerSelected = hasNoResults && !isPolygonSelection && !queriedLayerName && !hasAlternatives;
+    const geometriaMedida = selectedFeatureInfo.medicion || (isPolygonSelection ? selectedFeatureInfo.polygonGeometry : null);
+    const soloMedicion = !!geometriaMedida && hasNoResults;
+    const showEmptySuggestions = hasNoResults && !isPolygonSelection && !soloMedicion && (queriedLayerName || hasAlternatives);
+    const showNoLayerSelected = hasNoResults && !isPolygonSelection && !soloMedicion && !queriedLayerName && !hasAlternatives;
 
     const positionStyle = clickPosition.getPositionStyle(
         isSingleFeature ? { x: 0, y: -ARROW_TIP } : { x: ARROW_TIP, y: -24 }
@@ -198,7 +200,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
 
     const showCenterButton = !hasNoResults && !embed;
     const showMultiActions = !hasNoResults && totalFeatures > 1;
-    const showToolbar = showCenterButton || showMultiActions;
+    const showToolbar = showCenterButton || showMultiActions || soloMedicion;
     const cardHandleProps = embed ? { ...moveHandleProps, style: { touchAction: 'none' } } : {};
 
 
@@ -316,8 +318,10 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                                 </InfoCard>
                             )}
 
+                            {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} onCerrar={handleClose} />}
+
                             <SummaryCard
-                                visible={isPolygonSelection}
+                                visible={isPolygonSelection && !hasNoResults}
                                 results={results || []}
                                 matched={selectedFeatureInfo?.matched || 0}
                                 isExpanded={isExpanded}
@@ -360,8 +364,10 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                         </InfoCard>
                     )}
 
+                    {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} onCerrar={handleClose} className="mb-2" />}
+
                     <SummaryCard
-                        visible={isPolygonSelection}
+                        visible={isPolygonSelection && !hasNoResults}
                         results={results || []}
                         matched={selectedFeatureInfo?.matched || 0}
                         isExpanded={isExpanded}
@@ -369,7 +375,6 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                         onToggleExpand={handleToggleExpand}
                     />
 
-                    {isPolygonSelection && <PanelMedicionSeleccion geometria={selectedFeatureInfo?.polygonGeometry} className="mt-2" />}
 
                     {featuresList && (
                         totalFeatures <= 1 ? (
@@ -402,7 +407,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                             : 'flex flex-col items-center justify-between pb-1'
                     }>
                         <ActionsToolbar
-                            onClear={showMultiActions ? handleClose : null}
+                            onClear={showMultiActions || soloMedicion ? handleClose : null}
                             moveHandleProps={embed ? null : moveHandleProps}
                             isMoving={isDragging}
                             onDownload={showMultiActions ? handleDownload : null}

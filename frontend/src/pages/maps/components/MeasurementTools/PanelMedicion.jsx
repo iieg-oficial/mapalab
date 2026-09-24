@@ -16,8 +16,8 @@ const ENCABEZADOS = {
 const metros = (valor) => (Number.isFinite(valor) ? `${formatNumber(Math.round(valor))} m` : 'Sin dato');
 
 const Fila = ({ etiqueta, valor, nueva }) => (
-    <div className="flex items-baseline justify-between gap-3 font-garet text-[13px]/[18px] text-graphite">
-        <span>{etiqueta}</span>
+    <div className="flex items-baseline justify-between gap-2 font-garet text-graphite">
+        <span className="whitespace-nowrap">{etiqueta}</span>
         <strong className={`font-bold tabular-nums whitespace-nowrap ${nueva ? 'text-purple-deep' : 'text-graphite'}`}>{valor}</strong>
     </div>
 );
@@ -28,16 +28,16 @@ const Filas = ({ resultado }) => {
         return (
             <>
                 <Fila etiqueta="En línea recta" valor={formatLengthValue(resultado.plano)} />
-                <Fila etiqueta="Siguiendo el terreno" valor={formatLengthValue(resultado.superficie)} nueva />
-                <Fila etiqueta="Subida acumulada" valor={`+${metros(resultado.sube)}`} nueva />
-                <Fila etiqueta="Bajada acumulada" valor={`−${metros(resultado.baja)}`} nueva />
+                <Fila etiqueta="Por el terreno" valor={formatLengthValue(resultado.superficie)} nueva />
+                <Fila etiqueta="Subida" valor={`+${metros(resultado.sube)}`} nueva />
+                <Fila etiqueta="Bajada" valor={`−${metros(resultado.baja)}`} nueva />
                 <Fila etiqueta="Máx. / mín." valor={`${metros(resultado.max)} / ${metros(resultado.min)}`} nueva />
             </>
         );
     }
     return (
         <>
-            <Fila etiqueta="Vista desde arriba" valor={formatAreaValue(resultado.plano)} />
+            <Fila etiqueta="Desde arriba" valor={formatAreaValue(resultado.plano)} />
             <Fila etiqueta="Sobre el relieve" valor={formatAreaValue(resultado.superficie)} nueva />
             <Fila etiqueta="Perímetro" valor={formatLengthValue(resultado.perimetro)} />
             {resultado.distribucion && (
@@ -74,7 +74,7 @@ const graficaDe = (resultado, onRecorrer) => {
     return null;
 };
 
-const PanelMedicion = ({ modo, resultado, onCerrar, onRecorrer, ancho = 'w-[300px]', className = '' }) => {
+const PanelMedicion = ({ modo, resultado, onCerrar, onRecorrer, ancho = 'w-[300px]', arrastrable = true, className = '' }) => {
     const panelRef = useRef(null);
     const { isDragging, handleProps } = useDraggablePanel({ panelRef });
     const encabezado = ENCABEZADOS[resultado?.modo || modo];
@@ -84,17 +84,17 @@ const PanelMedicion = ({ modo, resultado, onCerrar, onRecorrer, ancho = 'w-[300p
     return (
         <section
             ref={panelRef}
-            className={`flex ${ancho} max-md:max-w-[calc(100vw-5rem)] flex-col gap-2 rounded-[12px] bg-[#F9FBFF] px-4.5 pb-3 pt-2 shadow-[0_5px_20px_#1A26641A] ${className}`}
+            className={`flex ${ancho} max-md:max-w-[calc(100vw-5rem)] flex-col gap-2 overflow-hidden rounded-[12px] bg-[#F9FBFF] pb-3 pt-2 shadow-[0_5px_20px_#1A26641A] ${arrastrable ? 'px-4.5 text-[13px]/[18px]' : 'px-3 text-[12px]/[17px]'} ${className}`}
             aria-label={encabezado.titulo}
         >
-            <div {...handleProps} className={`touch-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}>
+            <div {...(arrastrable ? handleProps : {})} className={arrastrable ? `touch-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}` : ''}>
                 <PanelHeader
                     icono={<Icon name={encabezado.icono} className="size-5 shrink-0" />}
                     titulo={encabezado.titulo}
                     acciones={onCerrar && <MobileSheetCloseButton onClick={onCerrar} />}
                 />
             </div>
-            <div className="flex flex-col gap-1.5 rounded-[7px] bg-white p-3">
+            <div className={`flex flex-col gap-1.5 rounded-[7px] bg-white ${arrastrable ? 'p-3' : 'p-2.5'}`}>
                 <Filas resultado={resultado} />
                 {grafica && (
                     <div className="mt-2">
