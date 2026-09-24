@@ -1,6 +1,8 @@
 import Icon from '@components/Icon';
-import ActionIconButton from '@components/ActionIconButton';
-import PeriodicitySection from '@mapsComponents/LayerDetailModal/components/PeriodicitySection';
+import Tooltip from '@components/Tooltip';
+import Loading from '@components/Loading';
+import SimpleDateSelector from '@mapsComponents/LayerDetailModal/components/SimpleDateSelector';
+import { PlayPauseButton, LoopIntervalButton, LoopDirectionButton } from '@mapsComponents/LayerDetailModal/components/SimpleDateSelectorParts';
 import { useSlotPeriodicity } from '@hooksMaps/useSlotPeriodicity';
 import { slotLabel } from '@pages/maps/helpers/swipeTheme';
 
@@ -12,57 +14,79 @@ const PanelPeriodicidad = ({ layerId, slot, onClose }) => {
 
     return (
         <div
-            className={`absolute bottom-full mb-2 w-[min(430px,calc(100vw-2rem))] max-h-[60vh] overflow-y-auto bg-white rounded-xl shadow-[0_5px_20px_#1A26641A] ${slot === 'B' ? 'left-1/2 ml-10' : 'right-1/2 mr-10'}`}
+            className={`absolute bottom-full mb-2 w-[min(430px,calc(100vw-2rem))] max-h-[60vh] overflow-y-auto px-4 pb-4 rounded-xl bg-white shadow-[0_5px_20px_#1A26641A] ${slot === 'B' ? 'left-1/2 ml-10' : 'right-1/2 mr-10'}`}
         >
-            <div className="absolute top-2 right-2 z-[1] flex items-center gap-1">
+            <div className="sticky top-0 bg-white pt-3 pb-2 flex items-center gap-2">
+                <h3 className="flex-1 font-garet font-bold text-[15px]/[18px] text-purple">
+                    Periodicidad del lado {slotLabel(slot)}
+                </h3>
                 {lado.hasFilter && (
-                    <ActionIconButton
-                        onClick={lado.clear}
-                        titulo="Quitar el filtro de fecha de este lado"
-                        etiqueta="Quitar el filtro de fecha de este lado"
-                        tamano="sm"
-                    >
-                        <Icon name="eliminar" state="hover" className="size-4" />
-                    </ActionIconButton>
+                    <Tooltip content="Quitar el filtro de fecha de este lado" placement="left" delay={400}>
+                        <button
+                            type="button"
+                            onClick={lado.clear}
+                            aria-label="Quitar el filtro de fecha de este lado"
+                            className="cursor-pointer"
+                        >
+                            <Icon name="eliminar" state="hover" className="size-5" />
+                        </button>
+                    </Tooltip>
                 )}
-                <ActionIconButton
-                    onClick={onClose}
-                    titulo="Cerrar el panel de fechas"
-                    etiqueta="Cerrar el panel de fechas"
-                    tamano="sm"
-                >
-                    <Icon name="close" className="size-3.5" />
-                </ActionIconButton>
+                <Tooltip content="Cerrar el panel de fechas" placement="left" delay={400}>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Cerrar el panel de fechas"
+                        className="text-gray-500 hover:text-gray-800 cursor-pointer"
+                    >
+                        <Icon name="close" />
+                    </button>
+                </Tooltip>
             </div>
 
-            <div className="px-4 pb-1">
-                <PeriodicitySection
+            {lado.canPlay && (
+                <div className="flex items-center gap-2 pb-3">
+                    <LoopIntervalButton
+                        value={periodicidad.intervalMs}
+                        onChange={periodicidad.setLoopIntervalMs}
+                        slot={slot}
+                        disabled={lado.loopDisabled}
+                    />
+                    <LoopDirectionButton
+                        value={periodicidad.direction}
+                        onChange={periodicidad.setLoopDirection}
+                        slot={slot}
+                        disabled={lado.loopDisabled}
+                    />
+                    <PlayPauseButton
+                        isPlaying={lado.isPlaying}
+                        onToggle={lado.toggleLoop}
+                        slot={slot}
+                        disabled={lado.loopDisabled}
+                        disabledHint={lado.loopDisabledHint}
+                    />
+                </div>
+            )}
+
+            {periodicidad.loading ? (
+                <div className="flex items-center gap-2 py-4">
+                    <Loading visible size="size-5" border="border-2" color="border-[#703089]" />
+                    <span className="text-[12px] font-garet text-[#465055]">Cargando periodicidad...</span>
+                </div>
+            ) : (
+                <SimpleDateSelector
                     layerId={layerId}
-                    slot={slot}
-                    label={`del lado ${slotLabel(slot)}`}
                     periodicity={periodicidad.rasterPeriodicity ? null : periodicidad.periodicity}
                     rasterPeriodicity={periodicidad.rasterPeriodicity}
-                    periodicityLoading={periodicidad.loading}
-                    isAdvancedMode={false}
                     onFilterApply={lado.apply}
                     onClearFilter={lado.clear}
-                    onClearDateFilter={lado.clear}
-                    onExpandedYearChange={lado.onExpandedYearChange}
+                    filterName="date"
                     singleSelectOnly={false}
-                    hasDateFilter={false}
-                    showLoopControls
-                    canPlay={lado.canPlay}
-                    isLoopPlaying={lado.isPlaying}
-                    layerIntervalMs={periodicidad.intervalMs}
-                    layerDirection={periodicidad.direction}
-                    onSetLoopIntervalMs={periodicidad.setLoopIntervalMs}
-                    onSetLoopDirection={periodicidad.setLoopDirection}
-                    onTogglePeriodicityLoop={lado.toggleLoop}
+                    onExpandedYearChange={lado.onExpandedYearChange}
                     getSpecificFilterOverride={lado.getFilter}
-                    loopDisabled={lado.loopDisabled}
-                    loopDisabledHint={lado.loopDisabledHint}
+                    slot={slot}
                 />
-            </div>
+            )}
         </div>
     );
 };

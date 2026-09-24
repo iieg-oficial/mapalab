@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.197.0] - 2026-09-24
+
+### Cambiado: el panel de periodicidad del comparador gana encabezado propio
+
+El bote de basura y la X dejan de ser absolutos sobre la esquina y pasan a un encabezado de verdad,
+pegado arriba al hacer scroll, con el título a la izquierda. Los controles de animación —velocidad,
+sentido y play— bajan a su propia fila, y los años y los meses se quedan como estaban.
+
+Para lograrlo el panel deja de montar `<PeriodicitySection>` y compone directamente con las piezas
+que ese componente ya usaba: `<SimpleDateSelector>` y los botones de
+`SimpleDateSelectorParts`. `<PeriodicitySection>` resuelve el título y los controles en una sola
+fila con `flex-wrap`, que es justo lo que había que separar; el modal de capa y el catálogo lo
+siguen usando sin cambios.
+
 ## [1.196.0] - 2026-09-24
 
 ### Agregado: resultados del área junto al InfoBox, con gráfica de alturas
