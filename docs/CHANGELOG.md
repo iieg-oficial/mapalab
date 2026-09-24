@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.204.1] - 2026-09-24
+
+### Corregido: la rotación con clic derecho rompía una regla de React al entrar al comparador
+
+`useRotacionClicDerecho` usaba `[clave, ...lista]` como dependencias. Al entrar al comparador la
+lista pasa de un mapa a dos, el arreglo cambia de tamaño entre renders y React lo prohíbe; lo
+avisaba en consola como «The final argument passed to useEffect changed size between renders». La
+regla que lo habría atrapado estaba callada con un `eslint-disable`, que se retira.
+
+Ahora la lista llega memorizada desde `<BotonNorte>` y es la única dependencia. Van cinco pruebas del
+hook; una de ellas —pasar de uno a dos mapas sin el aviso— falla contra el código anterior.
+
+### Corregido: la imagen exportada del comparador rotulaba los lados con A y B
+
+`composeSwipeCanvas` pintaba la letra del slot tal cual en las píldoras de la imagen. Usa
+`slotLabel`, así que ahora dice α y β como el resto del comparador.
+
 ## [1.204.0] - 2026-09-24
 
 ### Agregado: la vista 3D viaja en los enlaces compartidos

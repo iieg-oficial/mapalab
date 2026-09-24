@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import DragRotate from 'ol/interaction/DragRotate';
 import { mouseOnly } from 'ol/events/condition';
 
@@ -19,8 +19,7 @@ export class RotarConClicDerecho extends DragRotate {
 
 export const useRotacionClicDerecho = (maps, habilitado) => {
     const interaccionesRef = useRef([]);
-    const lista = (Array.isArray(maps) ? maps : [maps]).filter(Boolean);
-    const clave = lista.length;
+    const lista = useMemo(() => (Array.isArray(maps) ? maps : [maps]).filter(Boolean), [maps]);
 
     useEffect(() => {
         if (!lista.length) return undefined;
@@ -34,18 +33,14 @@ export const useRotacionClicDerecho = (maps, habilitado) => {
             montadas.forEach(({ map, interaccion }) => map.removeInteraction(interaccion));
             interaccionesRef.current = [];
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [clave, ...lista]);
+    }, [lista]);
 
     useEffect(() => {
         interaccionesRef.current.forEach(({ interaccion }) => interaccion.setActive(habilitado));
         if (!habilitado) return undefined;
         const sinMenu = (event) => event.preventDefault();
-        const destinos = interaccionesRef.current
-            .map(({ map }) => map.getTargetElement())
-            .filter(Boolean);
+        const destinos = lista.map(map => map.getTargetElement()).filter(Boolean);
         destinos.forEach(destino => destino.addEventListener('contextmenu', sinMenu));
         return () => destinos.forEach(destino => destino.removeEventListener('contextmenu', sinMenu));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [clave, habilitado, ...lista]);
+    }, [lista, habilitado]);
 };

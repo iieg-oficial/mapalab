@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Tooltip from '@components/Tooltip';
 import { useView3d } from '@contexts/View3dContext';
 import { useMapsContext } from '@hooks/useMaps';
@@ -10,7 +10,10 @@ const BotonNorte = ({ getActiveMap }) => {
     const [rotacion, setRotacion] = useState(0);
     const { areMeasurementToolsVisible, areAnnotationToolsVisible, isDrawing, compareMode, paneMapInstances } = useMapsContext();
     const map = getActiveMap();
-    const mapas = compareMode?.active ? [paneMapInstances?.[0], paneMapInstances?.[1]] : [map];
+    const mapas = useMemo(
+        () => (compareMode?.active ? [paneMapInstances?.[0], paneMapInstances?.[1]] : [map]),
+        [compareMode?.active, paneMapInstances, map],
+    );
     useRotacionClicDerecho(mapas, !view3d.active && !areMeasurementToolsVisible && !areAnnotationToolsVisible && !isDrawing);
 
     useEffect(() => {
