@@ -47,7 +47,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, measurements } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, grupo3dRef, setPitch, setBearing, exit, reportExtrusion,
-        sol, alturaColumnas, orbita, terreno, cielo, niebla,
+        sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos,
     } = useView3d();
     const olRef = olMapRef || mapRef;
     const { getLegendJson } = useWMSLegend();
@@ -155,7 +155,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     useMap3dContorno(map);
     useCamara3dSincronizada(map, grupo3dRef);
     useMap3dLayers(map, olRef, dePie);
-    useMap3dBillboards(map, olRef, { allLayers, getServiceMode, getLegendJson, onReady: alListarDePie });
+    useMap3dBillboards(map, olRef, { allLayers, getServiceMode, getLegendJson, onReady: alListarDePie, estilo: estiloPuntos });
     useMap3dVectors(map, olRef, extruded, alturaColumnas);
     useMap3dExtrusions(map, olRef, {
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,

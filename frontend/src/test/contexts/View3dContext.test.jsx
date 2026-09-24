@@ -128,9 +128,10 @@ describe('View3dContext', () => {
             result.current.view.setTerreno(false);
             result.current.view.setNiebla(false);
             result.current.view.setOrbita(true);
+            result.current.view.setEstiloPuntos('sombra');
         });
         act(() => result.current.view.restablecer());
-        expect(result.current.view).toMatchObject({ pitch: 55, exaggeration: 1.5, sol: 315, terreno: true, cielo: true, niebla: true, orbita: false });
+        expect(result.current.view).toMatchObject({ pitch: 55, exaggeration: 1.5, sol: 315, terreno: true, cielo: true, niebla: true, orbita: false, estiloPuntos: 'poste' });
     });
     it('un enlace compartido en 3D entra con su camara y sus capas levantadas', () => {
         const { result } = render();

@@ -3,6 +3,7 @@ import PanelHeader from '@components/PanelHeader';
 import { MobileSheetCloseButton } from '@components/MobileSheet';
 import Tooltip from '@components/Tooltip';
 import Switch from '@components/Switch';
+import Segmented from '@components/Segmented';
 import { useView3d } from '@contexts/View3dContext';
 import Map3DPopover from './Map3DPopover';
 import Map3DDeslizador from './Map3DDeslizador';
@@ -14,6 +15,12 @@ const IconoRestablecer = () => (
         <polyline points="3 3 3 9 9 9" />
     </svg>
 );
+
+const OPCIONES_PUNTOS = [
+    { value: 'frente', label: 'Frente' },
+    { value: 'poste', label: 'Poste' },
+    { value: 'sombra', label: 'Sombra' },
+];
 
 const Interruptor = ({ titulo, activo, onChange }) => (
     <div className="flex items-center justify-between font-garet text-[12px] text-graphite">
@@ -63,6 +70,16 @@ const Map3DAjustes = ({ anchorRef, onClose }) => {
                 <Interruptor titulo="Terreno" activo={view3d.terreno} onChange={view3d.setTerreno} />
                 <Interruptor titulo="Cielo" activo={view3d.cielo} onChange={view3d.setCielo} />
                 <Interruptor titulo="Niebla" activo={view3d.niebla} onChange={view3d.setNiebla} />
+            </div>
+            <div className="flex flex-col gap-2 rounded-[7px] bg-white p-3">
+                <span className="font-garet text-[12px] text-graphite">Puntos</span>
+                <Segmented
+                    variant="panel"
+                    options={OPCIONES_PUNTOS}
+                    value={view3d.estiloPuntos}
+                    onChange={view3d.setEstiloPuntos}
+                    ariaLabel="Cómo se dibujan los puntos en 3D"
+                />
             </div>
         </Map3DPopover>
     );

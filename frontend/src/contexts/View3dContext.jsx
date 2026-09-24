@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
 import { trackView3d } from '@services/analyticsService';
 import { suscribirVista3d, tomarVista3d } from '@pages/maps/helpers/vista3dCompartida';
+import { ESTILO_PUNTOS_3D_DEFAULT } from '@pages/maps/helpers/estilosDePuntos3d';
 import { VIEW3D_DEFAULTS, clampColumnas, clampExaggeration, clampPitch, clampSol, webglAvailable } from '@pages/maps/helpers/view3d';
 
 const View3dContext = createContext(null);
@@ -36,6 +37,8 @@ const INACTIVE = {
     setTerreno: () => {},
     setCielo: () => {},
     setNiebla: () => {},
+    estiloPuntos: ESTILO_PUNTOS_3D_DEFAULT,
+    setEstiloPuntos: () => {},
     restablecer: () => {},
     toggleExtrusion: () => {},
     isExtruded: () => false,
@@ -81,6 +84,7 @@ export const View3dProvider = ({ children }) => {
     const [terreno, setTerreno] = useState(VIEW3D_DEFAULTS.terreno);
     const [cielo, setCielo] = useState(VIEW3D_DEFAULTS.cielo);
     const [niebla, setNiebla] = useState(VIEW3D_DEFAULTS.niebla);
+    const [estiloPuntos, setEstiloPuntos] = useState(ESTILO_PUNTOS_3D_DEFAULT);
     const [extrusionStatus, setExtrusionStatus] = useState({});
     const map3dRef = useRef(null);
     const grupo3dRef = useRef({ miembros: new Set(), fuente: null });
@@ -125,6 +129,7 @@ export const View3dProvider = ({ children }) => {
         setTerreno(VIEW3D_DEFAULTS.terreno);
         setCielo(VIEW3D_DEFAULTS.cielo);
         setNiebla(VIEW3D_DEFAULTS.niebla);
+        setEstiloPuntos(ESTILO_PUNTOS_3D_DEFAULT);
         setOrbita(false);
     }, []);
 
@@ -172,12 +177,12 @@ export const View3dProvider = ({ children }) => {
 
     const value = useMemo(() => ({
         present: true, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef, grupo3dRef,
-        sol, alturaColumnas, orbita, terreno, cielo, niebla,
+        sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos,
         enter, exit, toggle, setPitch, setBearing, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
-        setSol, setAlturaColumnas, setOrbita, setTerreno, setCielo, setNiebla, restablecer,
+        setSol, setAlturaColumnas, setOrbita, setTerreno, setCielo, setNiebla, setEstiloPuntos, restablecer,
     }), [
         available, active, pitch, bearing, exaggeration, extruded, extrusionStatus,
-        sol, alturaColumnas, orbita, terreno, cielo, niebla,
+        sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos,
         enter, exit, toggle, setPitch, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
         setSol, setAlturaColumnas, restablecer,
     ]);
