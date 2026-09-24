@@ -24,9 +24,9 @@ describe('estilos de puntos 3D', () => {
         expect(conSombra.stroke).not.toHaveBeenCalled();
     });
 
-    it('solo la sombra crece con el zoom y el poste es el recomendado', () => {
+    it('solo la sombra crece con el zoom y es la de por defecto', () => {
         expect(tamanoPorEstilo('poste')).toBe(1);
         expect(tamanoPorEstilo('sombra')[0]).toBe('interpolate');
-        expect(ESTILO_PUNTOS_3D_DEFAULT).toBe('poste');
+        expect(ESTILO_PUNTOS_3D_DEFAULT).toBe('sombra');
     });
 });
