@@ -11,11 +11,11 @@ import {
     cieloSpec, VIEW3D_PITCH_MAX, basemapLayers, basemapSources, buildBaseStyle, cameraToOlView,
     olViewToCamera, RELIEF_LAYER_ID,
 } from '@pages/maps/helpers/view3d';
-import { useMap3dClick } from '@hooksMaps/useMap3dClick';
 import { useMap3dContorno } from '@hooksMaps/useMap3dContorno';
 import { useMap3dBillboards } from '@hooksMaps/useMap3dBillboards';
 import { useMedicionesGuardadas3d } from '@hooksMaps/useMedicionesGuardadas3d';
 import Medicion3D from './Medicion3D';
+import { Clic3dPropio, Clic3dVisor } from './Clic3d';
 
 const TERRAIN_SOURCE = 'terreno';
 const ORBITA_GRADOS_POR_SEGUNDO = 8;
@@ -40,7 +40,7 @@ const writeBackToOl = (map, olMap) => {
     view.setRotation(0);
 };
 
-const Map3DView = () => {
+const Map3DView = ({ consultar = null }) => {
     const containerRef = useRef(null);
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, measurements } = useMapsContext();
     const {
@@ -149,7 +149,6 @@ const Map3DView = () => {
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,
     });
     useMedicionesGuardadas3d(map, measurements);
-    useMap3dClick(map, mapRef, midiendo);
 
     if (!mapRef.current) return null;
 
@@ -162,6 +161,9 @@ const Map3DView = () => {
                 mapRef.current.getTargetElement(),
             )}
             {map && (areMeasurementToolsVisible || measurements?.length > 0) && <Medicion3D map={map} onMidiendo={setMidiendo} />}
+            {consultar
+                ? <Clic3dPropio map={map} mapRef={mapRef} pausado={midiendo} consultar={consultar} />
+                : <Clic3dVisor map={map} mapRef={mapRef} pausado={midiendo} />}
         </>
     );
 };

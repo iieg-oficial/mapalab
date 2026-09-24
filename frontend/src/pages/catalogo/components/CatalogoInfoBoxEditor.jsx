@@ -3,7 +3,6 @@ import Modal from '@components/Modal';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import ActionIconButton from '@components/ActionIconButton';
-import PillCloseButton from '@components/PillCloseButton';
 import { buildCardPlan } from '@utils/infoboxPlan';
 import { hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
 import { fetchNonGeometryColumns } from '@services/downloadUrls';
@@ -135,7 +134,9 @@ const CatalogoInfoBoxEditor = ({ capa, featureMuestra = null, onClose }) => {
                             </Tooltip>
                         </>
                     )}
-                    <PillCloseButton onClick={onClose} ariaLabel="Cerrar" size="sm" reveal="siempre" />
+                    <ActionIconButton onClick={onClose} titulo="Cerrar" etiqueta="Cerrar" tamano="sm">
+                        <Icon name="close" className="size-3.5" />
+                    </ActionIconButton>
                 </div>
 
                 {paso === 'enviado' ? (

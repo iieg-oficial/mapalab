@@ -5,10 +5,11 @@ import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import { fromLonLat, toLonLat, transformExtent } from 'ol/proj';
+import { fromLonLat, transformExtent } from 'ol/proj';
 import { defaults as defaultInteractions } from 'ol/interaction/defaults';
 import MouseWheelZoom from 'ol/interaction/MouseWheelZoom';
 import MapsContext from '@contexts/MapsContext';
+import { View3dProvider } from '@contexts/View3dContext';
 import MapControls from '@pages/maps/components/MapControls';
 import MapAttribution from '@pages/maps/components/MapAttribution';
 import LottieSpinner from '@components/LottieSpinner';
@@ -16,10 +17,13 @@ import CatalogoInfoBox from './CatalogoInfoBox';
 import CatalogoTools from './CatalogoTools';
 import CatalogoTablaProviders from './CatalogoTablaProviders';
 import CatalogoTimeBar from './CatalogoTimeBar';
+import CatalogoVista3d from './CatalogoVista3d';
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { useCatalogoPoligono } from '../hooks/useCatalogoPoligono';
 import { useCatalogoTabla } from '../hooks/useCatalogoTabla';
-import { buildWmsLayer, geojson, HIGHLIGHT_STYLE, HIGHLIGHT_Z } from '../helpers/catalogoMapLayer';
+import { useCatalogoConsulta } from '../hooks/useCatalogoConsulta';
+import { CONTEXTO_3D } from '../helpers/catalogo3d';
+import { buildWmsLayer, HIGHLIGHT_STYLE, HIGHLIGHT_Z } from '../helpers/catalogoMapLayer';
 import { BASEMAPS, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 import { JALISCO_BOUNDS, hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
 import { getMinZoom, ZOOM_ANIMATION_MS } from '@pages/maps/helpers/defaultView';
@@ -27,8 +31,6 @@ import { useScaleLineControl } from '@hooksMaps/useScaleLineControl';
 import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
-import { trackCatalogoFeatureClick } from '@services/analyticsService';
-import { FEATURE_COUNT_CAP } from '@services/featureInfoService';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 
 const CATALOGO_ANNOTATIONS_KEY = 'mapalab.catalogo.annotations';
@@ -91,6 +93,16 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
         capaRef.current = capa;
     }, [capa]);
 
+    const consultarPunto = useCatalogoConsulta({ mapRef, wmsLayerRef, capaRef, clickSeqRef, highlightSourceRef, setInfo, clearInfo });
+    const consultarPuntoRef = useRef(null);
+    useEffect(() => {
+        consultarPuntoRef.current = consultarPunto;
+    }, [consultarPunto]);
+    const consultar3d = useCallback(
+        (_olMap, coordinate, evento) => consultarPunto(coordinate, evento?.point ? [evento.point.x, evento.point.y] : null),
+        [consultarPunto],
+    );
+
     const mapsContextValue = useMemo(() => ({
         mapRef,
         baseMapId: 'voyager',
@@ -104,6 +116,7 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
         ...drawing,
         ...editing,
         ...tabla.contexto,
+        ...CONTEXTO_3D,
     }), [isLocating, drawing, editing, tabla.contexto, tiempo.getSpecificFilter, loop.getLoopState, loop.stopLoop]);
 
     useEffect(() => {
@@ -146,44 +159,8 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
         highlightSourceRef.current = highlightSource;
         map.addLayer(new VectorLayer({ source: highlightSource, style: HIGHLIGHT_STYLE, zIndex: HIGHLIGHT_Z }));
 
-        const handleClick = async (evt) => {
-            if (isDrawingRef.current) return;
-            const layer = wmsLayerRef.current;
-            if (!layer) {
-                clearInfo();
-                return;
-            }
-            const view = map.getView();
-            const url = layer.getSource().getFeatureInfoUrl(
-                evt.coordinate,
-                view.getResolution(),
-                view.getProjection(),
-                { INFO_FORMAT: 'application/json', FEATURE_COUNT: FEATURE_COUNT_CAP },
-            );
-            if (!url) return;
-            const seq = ++clickSeqRef.current;
-            const pixel = evt.pixel;
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                if (seq !== clickSeqRef.current) return;
-                const features = data?.features || [];
-                trackCatalogoFeatureClick({ slug: capaRef.current?.slug || null, count: features.length });
-                const [lng, lat] = toLonLat(evt.coordinate);
-                setInfo({ features, pixel, lngLat: { lng, lat } });
-                highlightSourceRef.current?.clear();
-                if (features.length) {
-                    const parsed = features
-                        .filter((f) => f?.geometry)
-                        .map((f) => {
-                            try { return geojson.readFeature(f, { dataProjection: 'EPSG:3857', featureProjection: 'EPSG:3857' }); } catch { return null; }
-                        })
-                        .filter(Boolean);
-                    highlightSourceRef.current?.addFeatures(parsed);
-                }
-            } catch {
-                if (seq === clickSeqRef.current) clearInfo();
-            }
+        const handleClick = (evt) => {
+            if (!isDrawingRef.current) consultarPuntoRef.current?.(evt.coordinate, evt.pixel);
         };
         map.on('singleclick', handleClick);
 
@@ -246,12 +223,15 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
             <div ref={targetRef} className="absolute inset-0" />
 
             <MapsContext.Provider value={mapsContextValue}>
-                <CatalogoTablaProviders tablasFijas={tabla.tablasFijas}>
-                    <MapControls />
-                    <CatalogoTools tabla={tabla} hayCapa={Boolean(capa)} />
-                </CatalogoTablaProviders>
-                <MapAttribution hideActions />
-                {capa && <CatalogoTimeBar tiempo={tiempo} loop={loop} />}
+                <View3dProvider>
+                    <CatalogoTablaProviders tablasFijas={tabla.tablasFijas}>
+                        <MapControls />
+                        <CatalogoTools tabla={tabla} hayCapa={Boolean(capa)} />
+                    </CatalogoTablaProviders>
+                    <MapAttribution hideActions />
+                    {capa && <CatalogoTimeBar tiempo={tiempo} loop={loop} />}
+                    <CatalogoVista3d consultar={consultar3d} />
+                </View3dProvider>
             </MapsContext.Provider>
 
             <div ref={scaleRef} className="fixed left-4 bottom-1 z-10" />

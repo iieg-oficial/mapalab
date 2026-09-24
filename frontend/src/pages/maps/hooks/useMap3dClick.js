@@ -1,21 +1,18 @@
 import { useEffect } from 'react';
 import { fromLonLat } from 'ol/proj';
-import { useFeatureInfo } from '@hooksMaps/useFeatureInfo';
 
 const extrusionLayerIds = (map) => (map.getStyle()?.layers || [])
     .filter(layer => layer.type === 'fill-extrusion')
     .map(layer => layer.id);
 
-export const useMap3dClick = (map, olMapRef, pausado = false) => {
-    const { queryFeatures } = useFeatureInfo();
-
+export const useMap3dClick = (map, olMapRef, pausado, consultar) => {
     useEffect(() => {
         if (!map) return undefined;
 
         const onClick = (event) => {
             const olMap = olMapRef.current;
             if (!olMap || pausado) return;
-            queryFeatures(olMap, fromLonLat(event.lngLat.toArray()), event);
+            consultar(olMap, fromLonLat(event.lngLat.toArray()), event);
         };
         const onMove = (event) => {
             if (pausado) return;
@@ -30,5 +27,5 @@ export const useMap3dClick = (map, olMapRef, pausado = false) => {
             map.off('click', onClick);
             map.off('mousemove', onMove);
         };
-    }, [map, olMapRef, queryFeatures, pausado]);
+    }, [map, olMapRef, consultar, pausado]);
 };
