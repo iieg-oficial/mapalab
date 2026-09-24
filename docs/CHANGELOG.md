@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.199.1] - 2026-09-24
+
+### Corregido: cambiar de institución ya no quita la capa del catálogo
+
+Al elegir otra institución la ruta conserva la capa seleccionada y su `?fecha=`, así que el mapa no
+queda vacío mientras se recorre la lista; la capa se cambia solo al elegir otra. El buscador ya no se
+cierra en cada cambio de ruta, solo cuando cambia la capa.
+
 ## [1.199.0] - 2026-09-24
 
 ### Corregido: al modal de capa se le habían escapado los lados α y β
@@ -72,6 +80,16 @@ siguen usando sin cambios.
 
 - **El cursor de cruz al medir en 2D** no se veía: el resaltado al pasar sobre elementos lo
   reescribía en cada movimiento. Ahora se detiene mientras se dibuja.
+
+### Agregado: vista 3D en el catálogo
+
+El botón 3D del panel de zoom aparece también en `/catalogo`: `CatalogoMapView` monta
+`View3dProvider` y `Map3DView` en carga diferida, y la capa del catálogo lleva `mergedLayers` para que
+el 3D la copie con su fecha y los filtros de la tabla; las de puntos salen de pie. El clic en 3D abre
+la tarjeta del catálogo: `useMap3dClick` recibe la consulta como parámetro (`Clic3d.jsx`) y el visor
+sigue usando `useFeatureInfo`. La consulta del catálogo pasa a `useCatalogoConsulta`, compartida por
+el 2D y el 3D. El editor de tarjetas y el modal de información cierran con la X de la lista de capas.
+Entró en el commit `2978e74`.
 
 ## [1.195.0] - 2026-09-23
 

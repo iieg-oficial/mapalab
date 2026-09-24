@@ -35,6 +35,8 @@ const CatalogoPage = () => {
     const [instituciones, setInstituciones] = useState([]);
     const [listasCargadas, setListasCargadas] = useState(false);
     const [selectedCapa, setSelectedCapa] = useState(null);
+    const capaVigenteRef = useRef(null);
+    capaVigenteRef.current = selectedCapa?.slug || null;
     const [institucionSlug, setInstitucionSlug] = useState(null);
     const [searchOpen, setSearchOpen] = useState(false);
     const [loadingCapa, setLoadingCapa] = useState(false);
@@ -81,8 +83,8 @@ const CatalogoPage = () => {
 
         const local = capas.find((capa) => capa.slug === resolved.capaSlug);
         if (local) {
+            if (capaVigenteRef.current !== local.slug) setSearchOpen(false);
             setSelectedCapa(local);
-            setSearchOpen(false);
             return undefined;
         }
 
@@ -136,8 +138,10 @@ const CatalogoPage = () => {
     const handleSelectInstitucion = useCallback((slug) => {
         const total = slug ? filterCapas(capas, { institucionSlug: slug }).length : capas.length;
         trackCatalogoInstitucionSelect({ slug, capas: total });
-        navigate(buildCatalogoPath({ institucionSlug: slug }));
-    }, [capas, navigate]);
+        const ruta = buildCatalogoPath({ institucionSlug: slug, capaSlug: capaVigenteRef.current });
+        const consulta = capaVigenteRef.current ? searchParams.toString() : '';
+        navigate(consulta ? `${ruta}?${consulta}` : ruta);
+    }, [capas, navigate, searchParams]);
 
     const handleEditInfobox = useCallback((capa, feature = null) => {
         if (!capa) return;
