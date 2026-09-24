@@ -1,4 +1,3 @@
-export const ESTILOS_PUNTOS_3D = ['frente', 'poste', 'sombra'];
 export const ESTILO_PUNTOS_3D_DEFAULT = 'sombra';
 
 const POSTE = 22;
