@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.208.0] - 2026-09-24
+
+### Agregado: filtro por municipio en el catálogo
+
+Junto a la píldora de fechas aparece «Todo Jalisco» cuando la capa tiene campo de municipio. Abre
+el mismo panel del visor: municipios, regiones y ZMG. La capa se filtra, el resto del estado se
+oscurece y el mapa encuadra la selección; la tabla, el polígono, los hexágonos, la leyenda y las
+descargas respetan el recorte. Viaja en la URL como `?municipios=` —el mismo parámetro del visor—
+y en el enlace para compartir. Al cambiar a una capa sin campo el filtro se quita. Solo fuera de
+producción, como en el visor.
+
+`/catalogo/capas` expone `municipioField` y `municipioFieldType`, tomados del registro de la capa en
+`mapalab.layers`. Hoy los tienen 7 de las 13 capas; para sumar otra basta con registrar su campo.
+
 ## [1.207.4] - 2026-09-24
 
 ### Cambiado: las mediciones del catálogo se borran al salir

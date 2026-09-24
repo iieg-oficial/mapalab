@@ -9,6 +9,7 @@ import { LLAVE_SELECCION, LLAVE_TABLA, combinar } from '@pages/maps/helpers/tabl
 import { fechaParamToFiltro, filtroToFechaParam } from '../helpers/catalogoRoutes';
 
 const FILTER_NAME = 'date';
+const FILTRO_MUNICIPIO = 'municipio';
 const FILTROS_TABLA = new Set([LLAVE_TABLA, LLAVE_SELECCION]);
 
 const getYears = (fecha) => {
@@ -27,7 +28,7 @@ const latestRasterDate = (fecha) => {
 
 const esOtraCapa = (id, vigente) => id != null && id !== vigente;
 
-export const useCatalogoTiempo = (capa, wmsLayerRef, { initialFecha = null, onFechaChange } = {}) => {
+export const useCatalogoTiempo = (capa, wmsLayerRef, { initialFecha = null, onFechaChange, filtroMunicipio = null } = {}) => {
     const [periodicidad, setPeriodicidad] = useState(null);
     const [loading, setLoading] = useState(false);
     const [geometria, setGeometria] = useState(null);
@@ -136,12 +137,16 @@ export const useCatalogoTiempo = (capa, wmsLayerRef, { initialFecha = null, onFe
     );
 
     const getLayerFilters = useCallback(() => Object.fromEntries(
-        Object.entries({ [FILTER_NAME]: isRaster ? null : filtro, ...filtrosTabla }).filter(([, cql]) => cql),
-    ), [filtro, filtrosTabla, isRaster]);
+        Object.entries({
+            [FILTER_NAME]: isRaster ? null : filtro,
+            [FILTRO_MUNICIPIO]: isRaster ? null : filtroMunicipio,
+            ...filtrosTabla,
+        }).filter(([, cql]) => cql),
+    ), [filtro, filtroMunicipio, filtrosTabla, isRaster]);
 
     const filtroMapa = useMemo(
-        () => (isRaster ? null : combinar([filtro, ...Object.values(filtrosTabla)])),
-        [filtro, filtrosTabla, isRaster],
+        () => (isRaster ? null : combinar([filtro, filtroMunicipio, ...Object.values(filtrosTabla)])),
+        [filtro, filtroMunicipio, filtrosTabla, isRaster],
     );
 
     const getPeriodicity = useCallback(() => periodicidad, [periodicidad]);

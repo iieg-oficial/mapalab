@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useIsMobile } from '@hooks/useIsMobile';
+import { useIsNonProd } from '@hooks/useDevTools';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
@@ -7,6 +8,8 @@ import PeriodicitySection from '@pages/maps/components/LayerDetailModal/componen
 import { describeDateFilter, formatDateFilterPill } from '@pages/maps/helpers/dateLoopHelpers';
 import { RADIUS_ICON, toneButtonFor } from '@pages/maps/helpers/periodicityTones';
 import { PANEL_SHADOW } from '../helpers/catalogoStyles';
+import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
+import CatalogoMunicipioPill from './CatalogoMunicipioPill';
 
 const SIN_FILTRO = 'Todas las fechas';
 
@@ -14,6 +17,8 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
     const [abierto, setAbierto] = useState(false);
     const containerRef = useRef(null);
     const isMobile = useIsMobile();
+    const isNonProd = useIsNonProd();
+    const { municipio } = useCatalogoTiempoContext();
 
     const { layerId, periodicidad, loading, isRaster, geometria, hasPeriodicidad, filtro, applyFilter, clearFilter, getSpecificFilter } = tiempo;
     const rasterPeriodicity = isRaster ? periodicidad : null;
@@ -34,7 +39,9 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
 
     useEffect(() => () => setExpandedYear?.(null), [setExpandedYear]);
 
-    if (!hasPeriodicidad && !loading) return null;
+    const conFechas = hasPeriodicidad || loading;
+    const conMunicipio = isNonProd && municipio.disponible;
+    if (!conFechas && !conMunicipio) return null;
 
     const prefs = getLoopPrefs?.(layerId);
     const etiqueta = formatDateFilterPill(describeDateFilter({ filter: filtro, rasterPeriodicity })) || SIN_FILTRO;
@@ -60,44 +67,49 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
             ref={containerRef}
             className="fixed top-17 left-26 md:top-4 md:left-1/2 md:-translate-x-1/2 z-20 w-auto md:w-[min(560px,calc(100vw-26rem))] flex flex-col items-start md:items-center"
         >
-            <div className={`flex items-center gap-1.5 h-10 px-1.5 bg-white rounded-full ${PANEL_SHADOW}`}>
-                {canPlay && (
-                    <Tooltip content={isLoopPlaying ? 'Pausar animación' : 'Ver animación'} placement="bottom" delay={200}>
+            <div className="flex items-center gap-2">
+                {conFechas && (
+                    <div className={`flex items-center gap-1.5 h-10 px-1.5 bg-white rounded-full ${PANEL_SHADOW}`}>
+                        {canPlay && (
+                            <Tooltip content={isLoopPlaying ? 'Pausar animación' : 'Ver animación'} placement="bottom" delay={200}>
+                                <button
+                                    type="button"
+                                    onClick={onToggleLoop}
+                                    aria-label={isLoopPlaying ? 'Pausar animación' : 'Ver animación'}
+                                    className={`size-7 shrink-0 ${RADIUS_ICON} flex items-center justify-center cursor-pointer ${play.className}`}
+                                >
+                                    <Icon name={isLoopPlaying ? 'pause' : 'play'} className="size-3 shrink-0" />
+                                </button>
+                            </Tooltip>
+                        )}
+
                         <button
                             type="button"
-                            onClick={onToggleLoop}
-                            aria-label={isLoopPlaying ? 'Pausar animación' : 'Ver animación'}
-                            className={`size-7 shrink-0 ${RADIUS_ICON} flex items-center justify-center cursor-pointer ${play.className}`}
+                            onClick={() => setAbierto((v) => !v)}
+                            aria-expanded={abierto}
+                            className={`px-3 py-1 rounded-full text-[12px] font-garet font-bold tabular-nums transition-colors cursor-pointer ${abierto
+                                ? 'bg-purple-deep text-white'
+                                : 'text-purple hover:bg-purple-soft'} ${isLoopPlaying ? 'animate-pulse' : ''}`}
                         >
-                            <Icon name={isLoopPlaying ? 'pause' : 'play'} className="size-3 shrink-0" />
+                            {loading ? 'Cargando fechas…' : etiqueta}
                         </button>
-                    </Tooltip>
+
+                        {filtro && (!isMobile || !abierto) && (
+                            <Tooltip content="Quitar el filtro de fecha" placement="bottom" delay={200}>
+                                <button
+                                    type="button"
+                                    onClick={() => { stopLoop?.(layerId); clearFilter(); }}
+                                    aria-label="Quitar el filtro de fecha"
+                                    className={`size-7 shrink-0 ${RADIUS_ICON} hover:bg-[#FFE6EC] flex items-center justify-center transition-colors cursor-pointer`}
+                                >
+                                    <Icon name="eliminar" state="hover" className="size-4 shrink-0" />
+                                </button>
+                            </Tooltip>
+                        )}
+
+                    </div>
                 )}
-
-                <button
-                    type="button"
-                    onClick={() => setAbierto((v) => !v)}
-                    aria-expanded={abierto}
-                    className={`px-3 py-1 rounded-full text-[12px] font-garet font-bold tabular-nums transition-colors cursor-pointer ${abierto
-                        ? 'bg-purple-deep text-white'
-                        : 'text-purple hover:bg-purple-soft'} ${isLoopPlaying ? 'animate-pulse' : ''}`}
-                >
-                    {loading ? 'Cargando fechas…' : etiqueta}
-                </button>
-
-                {filtro && (!isMobile || !abierto) && (
-                    <Tooltip content="Quitar el filtro de fecha" placement="bottom" delay={200}>
-                        <button
-                            type="button"
-                            onClick={() => { stopLoop?.(layerId); clearFilter(); }}
-                            aria-label="Quitar el filtro de fecha"
-                            className={`size-7 shrink-0 ${RADIUS_ICON} hover:bg-[#FFE6EC] flex items-center justify-center transition-colors cursor-pointer`}
-                        >
-                            <Icon name="eliminar" state="hover" className="size-4 shrink-0" />
-                        </button>
-                    </Tooltip>
-                )}
-
+                {conMunicipio && <CatalogoMunicipioPill municipio={municipio.municipio} />}
             </div>
 
             {abierto && (

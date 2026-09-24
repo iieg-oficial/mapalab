@@ -28,6 +28,8 @@ def _serialize(row: dict) -> dict:
         'littleCardPropia': bool(row.get('infobox_propia')),
         'institucion': institucion,
         'hexbinLayerKey': row.get('hexbin_layer_key'),
+        'municipioField': row.get('municipio_field'),
+        'municipioFieldType': row.get('municipio_field_type') or ('clave' if row.get('municipio_field') else None),
     }
 
 

@@ -27,6 +27,7 @@ import { useCatalogoTabla } from '../hooks/useCatalogoTabla';
 import { useCatalogoConsulta } from '../hooks/useCatalogoConsulta';
 import { useCatalogoHexbin } from '../hooks/useCatalogoHexbin';
 import { useMedicionesDelCatalogo } from '../hooks/useMedicionesDelCatalogo';
+import { useCatalogoMunicipioMapa } from '../hooks/useCatalogoMunicipioMapa';
 import { CONTEXTO_3D } from '../helpers/catalogo3d';
 import { buildWmsLayer, HIGHLIGHT_STYLE, HIGHLIGHT_Z } from '../helpers/catalogoMapLayer';
 import { BASEMAPS, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
@@ -38,7 +39,7 @@ import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 
 const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, imagenAbierta = false, onCerrarImagen, onEditInfobox = null }) => {
-    const { tiempo, loop, wmsLayerRef } = useCatalogoTiempoContext();
+    const { tiempo, loop, wmsLayerRef, municipio } = useCatalogoTiempoContext();
     const targetRef = useRef(null);
     const scaleRef = useRef(null);
     const mapRef = useRef(null);
@@ -63,6 +64,7 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, imagenAbier
         [tabla.contexto.allLayers],
     );
 
+    const encuadrarMunicipio = useCatalogoMunicipioMapa({ mapRef, municipio: municipio.municipio });
     const getMapInstance = useCallback(() => mapRef.current, []);
     useScaleLineControl(getMapInstance, scaleRef);
 
@@ -123,8 +125,9 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, imagenAbier
         ...editing,
         ...tabla.contexto,
         ...CONTEXTO_3D,
+        municipioMode: municipio.municipio,
         targetRef,
-    }), [isLocating, drawing, editing, tabla.contexto, tiempo.getSpecificFilter, loop.getLoopState, loop.stopLoop]);
+    }), [isLocating, drawing, editing, tabla.contexto, tiempo.getSpecificFilter, loop.getLoopState, loop.stopLoop, municipio.municipio]);
 
     useEffect(() => {
         if (!targetRef.current || mapRef.current) return;
@@ -206,7 +209,7 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, imagenAbier
         });
         const jalisco = () => transformExtent(JALISCO_BOUNDS.coords, 'EPSG:4326', 'EPSG:3857');
         let cancelled = false;
-        getLayerExtent3857(cfg)
+        if (!encuadrarMunicipio()) getLayerExtent3857(cfg)
             .then((extent) => {
                 const view = mapRef.current?.getView();
                 if (cancelled || !view) return;
@@ -223,7 +226,7 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, imagenAbier
             source.un('imageloaderror', onLoadEnd);
             onLoadEnd();
         };
-    }, [capa, clearInfo, wmsLayerRef, setLayerLoading]);
+    }, [capa, clearInfo, wmsLayerRef, setLayerLoading, encuadrarMunicipio]);
 
     useCatalogoHexbin({ mapRef, wmsLayerRef, capa, tiempo, activo: hexagonos, onCambio: onHexbin });
 

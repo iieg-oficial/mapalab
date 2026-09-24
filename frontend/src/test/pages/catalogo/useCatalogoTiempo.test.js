@@ -73,4 +73,20 @@ describe('useCatalogoTiempo', () => {
         act(() => result.current.clearFilter());
         expect(result.current.filtro).toBe(null);
     });
+
+    it('el filtro de municipio se suma al de fecha y viaja en los filtros de la capa', async () => {
+        const municipio = "municipio IN ('Zapopan')";
+        const { result } = montar(VECTOR, { initialFecha: '2025', filtroMunicipio: municipio });
+        await waitFor(() => expect(result.current.filtro).toBe(generateCQLFilter(new Set(['2025']))));
+        expect(result.current.filtroMapa).toBe(`(${result.current.filtro}) AND (${municipio})`);
+        expect(result.current.getLayerFilters().municipio).toBe(municipio);
+    });
+
+    it('en raster el municipio no filtra', async () => {
+        getLayerTimePeriodicity.mockResolvedValue({ 2026: { 3: '2026-03-01' } });
+        const { result } = montar(RASTER, { filtroMunicipio: "municipio IN ('Zapopan')" });
+        await waitFor(() => expect(result.current.filtro).toBe('2026-03-01'));
+        expect(result.current.filtroMapa).toBeNull();
+        expect(result.current.getLayerFilters().municipio).toBeUndefined();
+    });
 });

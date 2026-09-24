@@ -24,6 +24,7 @@ import {
 import { CATALOGO_RETURN_KEY } from './useGoToCatalogo';
 import { buildCatalogoPath, filterCapas, resolveCatalogoRoute } from './helpers/catalogoRoutes';
 import { PARAM_VISTA, VISTA_HEXAGONOS, vistaDeParam } from './helpers/catalogoVista';
+import { PARAM_MUNICIPIOS } from './hooks/useCatalogoMunicipio';
 import { useIsNonProd } from '@hooks/useDevTools';
 
 const CatalogoPage = () => {
@@ -32,6 +33,7 @@ const CatalogoPage = () => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const initialFechaRef = useRef(searchParams.get('fecha'));
+    const initialMunicipiosRef = useRef(searchParams.get(PARAM_MUNICIPIOS));
     const [capas, setCapas] = useState([]);
     const [instituciones, setInstituciones] = useState([]);
     const [listasCargadas, setListasCargadas] = useState(false);
@@ -128,7 +130,9 @@ const CatalogoPage = () => {
     const handleSelect = (nextSlug, { fromSearch = false } = {}) => {
         trackCatalogoLayerSelect({ slug: nextSlug, fromSearch });
         setSearchOpen(false);
-        navigate(buildCatalogoPath({ institucionSlug, capaSlug: nextSlug }));
+        const ruta = buildCatalogoPath({ institucionSlug, capaSlug: nextSlug });
+        const municipios = searchParams.get(PARAM_MUNICIPIOS);
+        navigate(municipios ? `${ruta}?${PARAM_MUNICIPIOS}=${municipios}` : ruta);
     };
 
     const handleCloseCapa = () => {
@@ -163,6 +167,17 @@ const CatalogoPage = () => {
         }, { replace: true });
     }, [setSearchParams]);
 
+    const handleMunicipiosChange = useCallback((param) => {
+        initialMunicipiosRef.current = null;
+        setSearchParams((prev) => {
+            if ((prev.get(PARAM_MUNICIPIOS) || null) === (param || null)) return prev;
+            const next = new URLSearchParams(prev);
+            if (param) next.set(PARAM_MUNICIPIOS, param);
+            else next.delete(PARAM_MUNICIPIOS);
+            return next;
+        }, { replace: true });
+    }, [setSearchParams]);
+
     const vista = vistaDeParam(searchParams.get(PARAM_VISTA));
     const hexagonos = isNonProd && vista === VISTA_HEXAGONOS;
     const cambiarVista = useCallback((siguiente) => {
@@ -181,6 +196,8 @@ const CatalogoPage = () => {
                     capa={selectedCapa}
                     initialFecha={initialFechaRef.current}
                     onFechaChange={handleFechaChange}
+                    initialMunicipios={isNonProd ? initialMunicipiosRef.current : null}
+                    onMunicipiosChange={handleMunicipiosChange}
                 >
                     <CatalogoMapView
                         capa={selectedCapa}

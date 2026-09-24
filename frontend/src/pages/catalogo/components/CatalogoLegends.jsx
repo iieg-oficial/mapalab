@@ -9,13 +9,15 @@ import { CatalogoHexbinLeyenda, CatalogoVistaSegmented } from './CatalogoVista';
 import { hexbinDisponible } from '../hooks/useCatalogoHexbin';
 import { PARAM_VISTA, VISTA_HEXAGONOS, VISTA_PUNTOS } from '../helpers/catalogoVista';
 import { buildCatalogoShareUrl, filtroToFechaParam } from '../helpers/catalogoRoutes';
+import { PARAM_MUNICIPIOS } from '../hooks/useCatalogoMunicipio';
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { trackCatalogoDownload, trackCatalogoShare } from '@services/analyticsService';
 
 const ICON_BTN = 'size-7 rounded-full flex items-center justify-center transition-colors';
 
 const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, onVista = null, hexbin = null, onImagen = null, onClose }) => {
-    const { tiempo } = useCatalogoTiempoContext();
+    const { tiempo, municipio } = useCatalogoTiempoContext();
+    const municipios = municipio?.municipio?.active ? municipio.municipio.selected.join(',') : '';
     const filtro = tiempo?.filtro || null;
     const isRaster = !!tiempo?.isRaster;
     const periodicidad = tiempo?.periodicidad || null;
@@ -48,9 +50,10 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
         const fecha = filtroToFechaParam(filtro, { isRaster, periodicidad });
         if (fecha) params.set('fecha', fecha);
         if (conVista && vista === VISTA_HEXAGONOS) params.set(PARAM_VISTA, VISTA_HEXAGONOS);
+        if (municipios) params.set(PARAM_MUNICIPIOS, municipios);
         const consulta = params.toString();
         return consulta ? `${base}?${consulta}` : base;
-    }, [institucionSlug, capa.slug, filtro, isRaster, periodicidad, conVista, vista]);
+    }, [institucionSlug, capa.slug, filtro, isRaster, periodicidad, conVista, vista, municipios]);
 
     useEffect(() => {
         let active = true;
