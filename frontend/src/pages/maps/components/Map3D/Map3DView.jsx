@@ -16,6 +16,7 @@ import { useMap3dBillboards } from '@hooksMaps/useMap3dBillboards';
 import { useMedicionesGuardadas3d } from '@hooksMaps/useMedicionesGuardadas3d';
 import { useAnotacionesPuntuales3d } from '@hooksMaps/useAnotacionesPuntuales3d';
 import { useCamara3dSincronizada } from '@hooksMaps/useCamara3dSincronizada';
+import { useMap3dMunicipio } from '@hooksMaps/useMap3dMunicipio';
 import Medicion3D from './Medicion3D';
 import { Clic3dPropio, Clic3dVisor } from './Clic3d';
 
@@ -44,7 +45,7 @@ const writeBackToOl = (map, olMap) => {
 
 const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, principal = true, mapasExtra = undefined, onMapa = null, onMidiendo = null, pausado = false }) => {
     const containerRef = useRef(null);
-    const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, measurements } = useMapsContext();
+    const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, measurements, municipioMode } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, grupo3dRef, setPitch, setBearing, exit, reportExtrusion,
         sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos,
@@ -166,6 +167,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,
     });
     useMedicionesGuardadas3d(map, measurements);
+    useMap3dMunicipio(map, municipioMode, principal);
     useAnotacionesPuntuales3d(map, measurements);
 
     if (!olRef.current) return null;
