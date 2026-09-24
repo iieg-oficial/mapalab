@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.210.1] - 2026-09-24
+
+### Cambiado: los paneles del comparador cierran con la X estándar
+
+«Capas comparadas» y la periodicidad por lado dibujaban a mano un botón gris con el icono `close`,
+que es exactamente lo que ya hace `MobileSheetCloseButton`. Pasan a usarlo, como los paneles de
+subtemas, «Ajustes 3D» y el de resultados de medición. La salida del comparador sigue siendo un
+`PillCloseButton`, porque sale de un modo y no cierra un panel.
+
+### Agregado: helper para la tabla de diferencias del comparador
+
+`helpers/tablaDiferencias.js` une los dos lados por `clave_municipio`, `clave_geo` o `fid` —en ese
+orden, según los contratos de datos—, detecta qué columnas son comparables, calcula β−α, ordena por
+la diferencia y resume cuántas entidades subieron, bajaron o se quedaron sin par. Las que sólo
+existen de un lado nunca se esconden. Entró en `fd65ec0` sin entrada propia; todavía no lo usa
+ninguna pantalla. Va con 15 pruebas.
+
 ## [1.210.0] - 2026-09-24
 
 ### Agregado: «Ver la distancia» en «Mis mediciones»

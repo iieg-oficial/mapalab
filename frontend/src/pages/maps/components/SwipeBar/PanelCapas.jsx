@@ -7,6 +7,7 @@ import DatePill from '@mapsComponents/ActiveLayers/DatePill';
 import { SLOT_COLORS, slotLabel } from '@pages/maps/helpers/swipeTheme';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
+import { MobileSheetCloseButton } from '@components/MobileSheet';
 import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
 
 const BotonLado = ({ slot, activo, bloqueado, onClick, onResaltar }) => (
@@ -99,16 +100,7 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
                     <Icon name="tool_swipe" className="size-8 text-purple" />
                     <h3 className="font-garet font-bold text-[18px]/[47px]">Capas comparadas</h3>
                 </div>
-                <Tooltip content="Cerrar capas comparadas" placement="left" delay={400}>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-gray-500 hover:text-gray-800 cursor-pointer"
-                        aria-label="Cerrar capas comparadas"
-                    >
-                        <Icon name="close" />
-                    </button>
-                </Tooltip>
+                <MobileSheetCloseButton onClick={onClose} />
             </div>
 
             <div className="flex flex-col gap-1">

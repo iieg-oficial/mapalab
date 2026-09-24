@@ -1,4 +1,5 @@
 import Icon from '@components/Icon';
+import { MobileSheetCloseButton } from '@components/MobileSheet';
 import Tooltip from '@components/Tooltip';
 import Loading from '@components/Loading';
 import SimpleDateSelector from '@mapsComponents/LayerDetailModal/components/SimpleDateSelector';
@@ -32,16 +33,7 @@ const PanelPeriodicidad = ({ layerId, slot, onClose }) => {
                         </button>
                     </Tooltip>
                 )}
-                <Tooltip content="Cerrar el panel de fechas" placement="left" delay={400}>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        aria-label="Cerrar el panel de fechas"
-                        className="text-gray-500 hover:text-gray-800 cursor-pointer"
-                    >
-                        <Icon name="close" />
-                    </button>
-                </Tooltip>
+                <MobileSheetCloseButton onClick={onClose} />
             </div>
 
             {lado.canPlay && (
