@@ -20,7 +20,6 @@ import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
 import LayerDownloadProgress from './LayerDownloadProgress';
 import LayerStatsInline from './LayerStatsInline';
-import { ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
 import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
 import { useLayerDownload } from '@hooksMaps/useLayerDownload';
@@ -28,7 +27,7 @@ import DownloadMenu from '@mapsComponents/LayerDetailModal/components/DownloadMe
 
 const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const { loadingLayers } = useLayerLoading();
-    const { isMobile, width: siderWidth } = useSider();
+    const { isMobile } = useSider();
     const {
         selectedLayerForSymbology,
         setSelectedLayerForSymbology,
@@ -51,7 +50,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         toggleLayerVisibilityInSlot,
         getLayerOpacity,
         setLayerOpacity,
-        centerOnLayer,
         pulseLayer,
         getServiceMode,
         tieneFondo,
@@ -104,10 +102,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const handleClickOnLayer = () => {
         const wasSelected = selectedLayerForSymbology?.id === layer.id;
         setSelectedLayerForSymbology(layer);
-        if (!wasSelected) {
-            centerOnLayer?.(layer.id, { siderWidth, isMobile, rightPanelWidth: ACTIVE_LAYERS_PANEL_WIDTH });
-            pulseLayer?.(layer.id);
-        }
+        if (!wasSelected) pulseLayer?.(layer.id);
     };
 
     const targetSlot = slotMembership === 'AB' ? compareMode?.activeSlot : slotMembership;

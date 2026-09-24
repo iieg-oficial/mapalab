@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.198.0] - 2026-09-24
+
+### Cambiado: seleccionar una capa ya no encuadra el mapa
+
+Desde 1.60.0, seleccionar una capa en «Capas activas» llevaba el mapa al recuadro que GeoServer
+declara para ella, casi siempre todo Jalisco. Si estabas acercado revisando una zona, cada cambio de
+capa te sacaba de ahí; y seleccionar sirve sobre todo para otras cosas (la leyenda, qué consulta el
+InfoBox, el título de la descarga, qué compara el swipe). `ActiveLayerItem` ya no llama a
+`centerOnLayer`; conserva el pulso, que atenúa las otras capas sin mover la vista.
+
+Encuadrar queda manual: un clic en cualquier parte de la tarjeta de la leyenda, o Enter, como desde
+1.64.0. La tarjeta suma el tooltip «Encuadrar el mapa en esta capa», ahora que es la única vía. El
+`defaultZoom` al activar una capa no cambia.
+
 ## [1.197.0] - 2026-09-24
 
 ### Cambiado: el panel de periodicidad del comparador gana encabezado propio
