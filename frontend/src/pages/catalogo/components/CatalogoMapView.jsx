@@ -26,18 +26,16 @@ import { useCatalogoPoligono } from '../hooks/useCatalogoPoligono';
 import { useCatalogoTabla } from '../hooks/useCatalogoTabla';
 import { useCatalogoConsulta } from '../hooks/useCatalogoConsulta';
 import { useCatalogoHexbin } from '../hooks/useCatalogoHexbin';
+import { useMedicionesDelCatalogo } from '../hooks/useMedicionesDelCatalogo';
 import { CONTEXTO_3D } from '../helpers/catalogo3d';
 import { buildWmsLayer, HIGHLIGHT_STYLE, HIGHLIGHT_Z } from '../helpers/catalogoMapLayer';
 import { BASEMAPS, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 import { JALISCO_BOUNDS, hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
 import { getMinZoom, ZOOM_ANIMATION_MS } from '@pages/maps/helpers/defaultView';
 import { useScaleLineControl } from '@hooksMaps/useScaleLineControl';
-import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { useLayerLoading } from '@hooks/useLayerLoading';
-
-const CATALOGO_ANNOTATIONS_KEY = 'mapalab.catalogo.annotations';
 
 const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, imagenAbierta = false, onCerrarImagen, onEditInfobox = null }) => {
     const { tiempo, loop, wmsLayerRef } = useCatalogoTiempoContext();
@@ -79,7 +77,7 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, imagenAbier
         consultarRef.current?.(geometry, centerCoordinate, onFeatureCountUpdate);
     }, []);
 
-    const drawing = useMapDrawing(mapRef, handlePolygonComplete, null, { storageKey: CATALOGO_ANNOTATIONS_KEY });
+    const drawing = useMedicionesDelCatalogo(mapRef, handlePolygonComplete);
     const editing = useMapEditing({
         mapRef,
         vectorSourceRef: drawing.vectorSourceRef,

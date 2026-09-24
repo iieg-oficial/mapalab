@@ -5,6 +5,15 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.207.4] - 2026-09-24
+
+### Cambiado: las mediciones del catálogo se borran al salir
+
+Sobreviven a recargar la página, pero se borran al salir del catálogo o al cerrar la pestaña, en vez
+de quedarse en el `localStorage` para la siguiente visita. `useAnnotationsPersistence` acepta
+`storageType: 'session'`; el visor sigue en `localStorage`. Los trazos viejos del catálogo que
+quedaban en `localStorage` se descartan al entrar.
+
 ## [1.207.3] - 2026-09-24
 
 ### Cambiado: la lista de instituciones ya no abre por defecto

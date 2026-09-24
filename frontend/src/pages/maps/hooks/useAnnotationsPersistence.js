@@ -2,7 +2,9 @@ import { useEffect, useRef } from 'react';
 import { serializeAnnotations } from '../helpers/annotationsSerialization';
 import { ANNOTATIONS_STORAGE_KEY, ANNOTATIONS_MAX_BYTES } from '../helpers/drawingConstants';
 
-export const useAnnotationsPersistence = ({ measurements, restoreAnnotations, storageKey = ANNOTATIONS_STORAGE_KEY }) => {
+const almacen = (tipo) => (tipo === 'session' ? window.sessionStorage : window.localStorage);
+
+export const useAnnotationsPersistence = ({ measurements, restoreAnnotations, storageKey = ANNOTATIONS_STORAGE_KEY, storageType = 'local' }) => {
     const hydratedRef = useRef(false);
     const pendingHydrationRef = useRef(false);
     const compartidoRef = useRef(false);
@@ -15,7 +17,7 @@ export const useAnnotationsPersistence = ({ measurements, restoreAnnotations, st
         compartidoRef.current = hasShare;
         if (hasShare) return;
         let raw;
-        try { raw = localStorage.getItem(storageKey); } catch { raw = null; }
+        try { raw = almacen(storageType).getItem(storageKey); } catch { raw = null; }
         if (raw) {
             try {
                 const parsed = JSON.parse(raw);
@@ -37,11 +39,11 @@ export const useAnnotationsPersistence = ({ measurements, restoreAnnotations, st
             if (payload && payload.length) {
                 const str = JSON.stringify(payload);
                 if (str.length <= ANNOTATIONS_MAX_BYTES) {
-                    localStorage.setItem(storageKey, str);
+                    almacen(storageType).setItem(storageKey, str);
                 }
             } else {
-                localStorage.removeItem(storageKey);
+                almacen(storageType).removeItem(storageKey);
             }
         } catch { /* storage no disponible */ }
-    }, [measurements, storageKey]);
+    }, [measurements, storageKey, storageType]);
 };
