@@ -29,12 +29,13 @@ const filasDeAgregado = (agregado) => {
 export const filasSeleccion = ({ areaKm2 = 0, perimetroKm = 0, capas = [], agregados = [], unidades = {} }) => [
     { etiqueta: 'Área', valor: formatAreaValue(areaKm2 * 1e6, unidades.areaUnit || 'km2') },
     { etiqueta: 'Perímetro', valor: formatLengthValue(perimetroKm * 1000, unidades.lengthUnit || 'km') },
-    ...capas.slice(0, MAX_CAPAS_SELECCION).flatMap(({ id, etiqueta, conteo, sinWfs }) => [
+    ...capas.slice(0, MAX_CAPAS_SELECCION).flatMap(({ id, etiqueta, conteo, sinWfs, enBorde }) => [
         {
             etiqueta,
             valor: conteo == null ? (sinWfs ? 'No aplica' : 'Sin dato') : formatNumber(conteo),
             detalle: conteo == null || areaKm2 <= 0 ? null : `${conDecimales(conteo / areaKm2)} / km²`,
         },
+        ...(enBorde ? [{ etiqueta: 'Cruzan el borde, sin contar', valor: formatNumber(enBorde), sangria: true }] : []),
         ...filasDeAgregado(agregados.find(a => a.id === id)),
     ]),
 ];

@@ -7,8 +7,11 @@ vi.mock('@pages/maps/helpers/wmsConfig', () => ({
         ? { baseUrl: 'https://mapas.test/sextante/wms', layerName: 'raster:nddi', wfsAvailable: false }
         : { baseUrl: 'https://mapas.test/sextante/wms', layerName: 'educacion:escuelas' }),
 }));
+const geometria = { tipo: 'point' };
+
 vi.mock('@utils/featureInfoUtils', () => ({
     fetchGeometryColumns: async () => ({ 'educacion:escuelas': 'geom' }),
+    fetchGeometryType: async () => geometria.tipo,
     getWfsUrl: (url) => url.replace('/wms', '/wfs'),
 }));
 
@@ -41,6 +44,11 @@ describe('filtroDePoligono', () => {
         expect(filtroDePoligono('geom', 'POLYGON((0 0,1 0,1 1,0 0))'))
             .toBe('INTERSECTS(geom, SRID=3857;POLYGON((0 0,1 0,1 1,0 0)))');
     });
+
+    it('puede pedir solo lo que queda dentro', () => {
+        expect(filtroDePoligono('geom', 'POLYGON((0 0,1 0,1 1,0 0))', 'WITHIN'))
+            .toBe('WITHIN(geom, SRID=3857;POLYGON((0 0,1 0,1 1,0 0)))');
+    });
 });
 
 describe('leerNumberMatched', () => {
@@ -52,7 +60,10 @@ describe('leerNumberMatched', () => {
 });
 
 describe('contarEnPoligono', () => {
-    beforeEach(() => { global.fetch = vi.fn(); });
+    beforeEach(() => {
+        global.fetch = vi.fn();
+        geometria.tipo = 'point';
+    });
 
     it('cuenta sin descargar elementos y respeta el filtro de la capa', async () => {
         global.fetch.mockResolvedValue({ ok: true, text: async () => '<wfs:FeatureCollection numberMatched="97"/>' });
@@ -66,7 +77,26 @@ describe('contarEnPoligono', () => {
         expect(url).toBe('https://mapas.test/sextante/wfs');
         expect(opciones.body).toContain('RESULTTYPE=hits');
         const cql = decodeURIComponent(opciones.body.replace(/\+/g, ' '));
-        expect(cql).toContain("(nivel='primaria') AND INTERSECTS(geom, SRID=3857;POLYGON");
+        expect(cql).toContain("(nivel='primaria') AND WITHIN(geom, SRID=3857;POLYGON");
+        expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('en polígonos cuenta solo lo que queda dentro y aparte lo que cruza el borde', async () => {
+        geometria.tipo = 'polygon';
+        global.fetch.mockImplementation(async (_url, { body }) => {
+            const dentro = body.includes('WITHIN');
+            return { ok: true, text: async () => `<wfs:FeatureCollection numberMatched="${dentro ? 2 : 5}"/>` };
+        });
+        const filas = await contarEnPoligono([{ id: 'municipios', label: 'Municipios' }], cuadro, {});
+        expect(filas).toEqual([{ id: 'municipios', etiqueta: 'Municipios', conteo: 2, enBorde: 3 }]);
+        expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('si nada cruza el borde no agrega el renglón', async () => {
+        geometria.tipo = 'line';
+        global.fetch.mockResolvedValue({ ok: true, text: async () => '<wfs:FeatureCollection numberMatched="4"/>' });
+        const [fila] = await contarEnPoligono([{ id: 'carreteras', label: 'Carreteras' }], cuadro, {});
+        expect(fila).toEqual({ id: 'carreteras', etiqueta: 'Carreteras', conteo: 4 });
     });
 
     it('una capa sin WFS, como un ráster, queda sin conteo', async () => {

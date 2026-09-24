@@ -1,5 +1,5 @@
 import { findWMSConfig } from '../pages/maps/helpers/wmsConfig';
-import { fetchGeometryColumns, getWfsUrl } from '../utils/featureInfoUtils';
+import { fetchGeometryColumns, fetchGeometryType, getWfsUrl } from '../utils/featureInfoUtils';
 
 export const MAX_VERTICES = 120;
 const TIEMPO_LIMITE_MS = 8000;
@@ -30,15 +30,15 @@ export const wktDelPoligono = (geometria, maxVertices = MAX_VERTICES) => {
     return `POLYGON(${anillosSimplificados(geometria, maxVertices)})`;
 };
 
-export const filtroDePoligono = (columna, wkt) => `INTERSECTS(${columna}, SRID=3857;${wkt})`;
+export const filtroDePoligono = (columna, wkt, relacion = 'INTERSECTS') => `${relacion}(${columna}, SRID=3857;${wkt})`;
 
 export const leerNumberMatched = (xml) => {
     const encontrado = /numberMatched="(\d+)"/.exec(xml || '');
     return encontrado ? Number(encontrado[1]) : null;
 };
 
-const contarCapa = async ({ baseUrl, typeName, columna, filtroCapa, wkt }) => {
-    const espacial = filtroDePoligono(columna, wkt);
+const contarCapa = async ({ baseUrl, typeName, columna, filtroCapa, wkt, relacion }) => {
+    const espacial = filtroDePoligono(columna, wkt, relacion);
     const cuerpo = new URLSearchParams({
         SERVICE: 'WFS',
         VERSION: '2.0.0',
@@ -146,7 +146,7 @@ export const agregarEnPoligono = async ({ capa, campo, poligono, getFilter = nul
         const baseUrl = getWfsUrl(wmsConfig.baseUrl);
         const typeName = wmsConfig.layerName;
         const columnas = await fetchGeometryColumns(baseUrl, [typeName]);
-        const espacial = filtroDePoligono(columnas[typeName] || 'the_geom', wktDelPoligono(poligono));
+        const espacial = filtroDePoligono(columnas[typeName] || 'the_geom', wktDelPoligono(poligono), 'WITHIN');
         const filtroCapa = getFilter ? getFilter(capa.id) : null;
 
         const respuesta = await fetch(`${BASE_GEOSERVER}/ows`, {
@@ -176,14 +176,20 @@ export const contarEnPoligono = async (capas = [], poligono, { getFilter = null,
             const baseUrl = getWfsUrl(wmsConfig.baseUrl);
             const typeName = wmsConfig.layerName;
             const columnas = await fetchGeometryColumns(baseUrl, [typeName]);
-            const conteo = await contarCapa({
+            const consulta = {
                 baseUrl,
                 typeName,
                 columna: columnas[typeName] || 'the_geom',
                 filtroCapa: getFilter ? getFilter(capa.id) : null,
                 wkt,
-            });
-            return { ...fila, conteo };
+            };
+            const esPunto = await fetchGeometryType(baseUrl, typeName) === 'point';
+            const [conteo, tocan] = await Promise.all([
+                contarCapa({ ...consulta, relacion: 'WITHIN' }),
+                esPunto ? null : contarCapa({ ...consulta, relacion: 'INTERSECTS' }),
+            ]);
+            const enBorde = conteo != null && tocan != null && tocan > conteo ? tocan - conteo : 0;
+            return enBorde ? { ...fila, conteo, enBorde } : { ...fila, conteo };
         } catch {
             return fila;
         }

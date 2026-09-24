@@ -25,6 +25,12 @@ describe('filasSeleccion', () => {
         expect(fallida).toEqual({ etiqueta: 'Escuelas', valor: 'Sin dato', detalle: null });
     });
 
+    it('debajo de la capa dice cuántos elementos cruzan el borde y no se contaron', () => {
+        const filas = filasSeleccion({ areaKm2: 100, capas: [{ id: 'mun', etiqueta: 'Municipios', conteo: 2, enBorde: 3 }] });
+        expect(filas[2]).toEqual({ etiqueta: 'Municipios', valor: '2', detalle: '0.02 / km²' });
+        expect(filas[3]).toEqual({ etiqueta: 'Cruzan el borde, sin contar', valor: '3', sangria: true });
+    });
+
     it('no pinta más capas de las que caben', () => {
         const capas = Array.from({ length: 10 }, (_, i) => ({ etiqueta: `Capa ${i}`, conteo: i }));
         expect(filasSeleccion({ areaKm2: 10, capas })).toHaveLength(MAX_CAPAS_SELECCION + 2);
