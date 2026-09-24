@@ -5,6 +5,30 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.201.0] - 2026-09-24
+
+### Agregado: `layer_stats` en el MCP
+
+- Tool nuevo para cifras de una capa sin descargar elementos: conteo (WFS `resultType=hits`), suma y
+  promedio de un campo numérico y reparto por clase (WPS `gs:Aggregate` con `groupByAttributes`),
+  con filtros por `municipio` y `year`. Devuelve las `top` clases (máximo 25) y resume el resto en
+  `otras`.
+- `field` y `group_by` se validan contra `DescribeFeatureType`; el error lista los campos válidos.
+- Caché de 10 minutos y techo global de WPS de 20 por minuto y 500 al día, porque GeoServer limita
+  `wps.execute` a 1000 al día para todo el sitio.
+- `query_wfs` y `layer_stats` comparten `resolver_consulta` para armar capa y filtros.
+
+### Cambiado: blindaje de `create_map` y `create_swipe`
+
+- Las capas se resuelven contra el catálogo y una inexistente se rechaza; `selected` debe ser una de
+  las capas del mapa.
+- Los `filters` que manda el cliente se descartan: solo quedan los que arma el servidor por `year` y
+  `municipio`.
+- La vista se acota a Jalisco (`lat` 17–24.5, `lon` −107.5 – −99.5, `zoom` 1–20), las etiquetas del
+  comparador a 60 caracteres y las anotaciones a 200 elementos con campos conocidos.
+- Techo global de 30 compartidos por minuto y 2000 al día. Es global porque el borde entrega todo el
+  tráfico con una sola IP y el MCP no tiene sesión.
+
 ## [1.200.0] - 2026-09-24
 
 ### Agregado: vista 3D dentro del comparador

@@ -58,7 +58,7 @@ backend container (backend/app/server.py)
 
 El `mapalab-mcp` reutiliza los servicios y repositorios del backend (`app.services.*`, `app.repositories.*`) — el codigo de `backend/app` se copia al container del MCP en build time. Sin duplicacion de logica, ambos containers leen del mismo schema `mapalab` en DataEngine.
 
-### Tools expuestos (6)
+### Tools expuestos (7)
 
 Convencion: **todos los tools que reciben una capa usan el `id` del visor** (el que devuelve `search_layers`). El workspace se resuelve solo desde el arbol; no hay que pasarlo.
 
@@ -68,10 +68,11 @@ Convencion: **todos los tools que reciben una capa usan el `id` del visor** (el 
 | `describe_layer` | Lectura | **retrato completo de una capa**: cualidades (`capabilities`) + metadata + numeralia + periodicidad (años/meses) en una sola llamada. Absorbe `get_metadata`, `get_layer_stats` y `get_periodicity`. Soporta ids difusos |
 | `municipios` | Lectura | lista los 125 o busca por nombre/clave. Absorbe `list_municipios` + `resolve_municipios` |
 | `query_wfs` | Lectura | features WFS de una capa con filtros por `municipio`/`year`/`month` o CQL |
+| `layer_stats` | Lectura | **cifras sin descargar elementos**: conteo, suma y promedio de un campo numérico, y reparto por clase. Filtros por `municipio`/`year`. Lo calcula GeoServer |
 | `create_map` | **Write** | crea un mapa de un panel y devuelve `{id, kind, url, embed_html, layer?}`. Modo `query`/`theme` (busca) o `layers` (explícito) + `municipio`/`year`/`annotations`. Absorbe `make_map` + `create_single_share`. Idempotente |
 | `create_swipe` | **Write** | crea un comparativo A\|B (swipe). Modo `layer`+`year_a`+`year_b` (una capa, dos años) o `pane_a_layers`+`pane_b_layers` (dos capas, con `year_a`/`year_b` por lado opcional, validados). Absorbe `create_swipe_share` + `compare_years`. Idempotente |
 
-**Diseño para modelos chicos:** el catálogo se recortó a lo esencial para crear mapas. `describe_layer` evita 3 llamadas (metadata + stats + periodicidad). `create_map`/`create_swipe` separan las dos formas de mapa (un panel vs comparación) con nombres claros, en vez de un god-tool con modos ambiguos. Todos soportan resolución difusa de ids (slug, alias, nombre parcial). Para capas que no soportan filtro por municipio, usá `cql_filter` en `query_wfs` o `filters.date` en `create_map(layers=...)` como escape avanzado.
+**Diseño para modelos chicos:** el catálogo se recortó a lo esencial para crear mapas. `describe_layer` evita 3 llamadas (metadata + stats + periodicidad). `create_map`/`create_swipe` separan las dos formas de mapa (un panel vs comparación) con nombres claros, en vez de un god-tool con modos ambiguos. Todos soportan resolución difusa de ids (slug, alias, nombre parcial). Para capas que no soportan filtro por municipio, usá `cql_filter` en `query_wfs`. En `create_map`/`create_swipe` los `filters` que mande el cliente se descartan: la fecha va por `year` y el municipio por `municipio`.
 
 **Consolidacion de tools:** de 18 → 15 → 6 tools. Histórico: `search_by_theme`/`resolve_layer_ref` → `search_layers`; `list_municipios`+`resolve_municipios` → `municipios`; `get_workspaces` → dentro de `get_layer_tree` (ya removido). En 1.82.0: `get_metadata`+`get_layer_stats`+`get_periodicity` → `describe_layer`; `make_map`+`create_single_share` → `create_map`; `create_swipe_share`+`compare_years` → `create_swipe`; y se eliminaron `get_layer_tree`, `get_initial_order`, `get_sources_batch` y `measure_geometry` por no aportar al objetivo de crear mapas. Identificadores homologados al `id` del visor.
 
@@ -137,7 +138,7 @@ El gateway-hub no necesita un `location` específico para `/mapalab/mcp/`: cae b
 
 ## Tools y su origen
 
-Los 6 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`, capa delgada de registro). La lógica vive dividida por dominio: `servers/resolve.py` (resolución de capas, periodicidad, fechas, búsqueda por tema, municipios), `servers/layers.py` (`describe_layer`, `get_layer_stats`, `query_wfs`) y `servers/shares.py` (`create_map`, `create_swipe` + internos). Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función en `mapalab.py`.
+Los 7 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`, capa delgada de registro). La lógica vive dividida por dominio: `servers/resolve.py` (resolución de capas, periodicidad, fechas, búsqueda por tema, municipios), `servers/layers.py` (`describe_layer`, `get_layer_stats`, `query_wfs`) y `servers/shares.py` (`create_map`, `create_swipe` + internos). Para cambiar el nombre o el texto que ve un cliente MCP, basta editar la firma del decorador o el docstring de la función en `mapalab.py`.
 
 | Tool | Origen del código | Qué hace |
 |---|---|---|
@@ -145,6 +146,7 @@ Los 6 tools son manuales (`@mcp.tool()` en `servers/mapalab.py`, capa delgada de
 | `describe_layer` | `servers/layers.py::describe_layer` (metadata + `get_layer_stats` + `resolve._periodicity_summary` + `_capabilities_from_node`) | Retrato completo: `{id, label, path, capabilities, descripcion, fuentes, metodologia, frecuencia, fecha_ultima, metadato_archivos, numeralia, pie_numeralia, periodicidad:{años, meses}}`. Soporta ids difusos |
 | `municipios` | `resolve.list_municipios` (todos) o `resolve.resolve_municipios` (substring) | Lista los 125 municipios o filtra por nombre/clave. Devuelve `{items, count}` |
 | `query_wfs` | `servers/layers.py::query_wfs` (GeoServer WFS GetFeature) | Features de una capa con filtros por `municipio`/`year`/`month` o CQL. Workspace resuelto por `id`. Sanitiza SQLi, solo capas del árbol |
+| `layer_stats` | `servers/estadisticas.py::layer_stats` (WFS `resultType=hits` para el conteo; WPS `gs:Aggregate` para suma, promedio y agrupado) | Cifras de una capa: `{layer, filtros, conteo, campo?, suma?, promedio?, agrupado_por?, clases?, otras?}`. `field`/`group_by` se validan contra `DescribeFeatureType` |
 | `create_map` | `servers/shares.py::create_map` (modo `query`→`_pick_best_layer`, o `layers`; luego `create_single_share`) | Mapa de un panel. Valida `year` contra la periodicidad. Devuelve `{id, kind, url, embed_html, layer?}` |
 | `create_swipe` | `servers/shares.py::create_swipe` (una capa→`compare_years`, o dos capas→`_apply_year_filter` por panel + `create_swipe_share`) | Comparativo A\|B. Devuelve `{id, kind, url, embed_html}` |
 
@@ -182,6 +184,23 @@ Si el modelo manda un valor inválido (p. ej. `basemap="osm"`), Pydantic respond
 - **`month`**: 1-12. Afina el filtro de fecha a un mes: `(fecha >= 'YYYY-MM-01' AND fecha < 'YYYY-MM+1-01')`.
 
 Si pasás `cql_filter`, no combines con `municipio`/`year`/`month` (error explícito). El CQL sanitiza SQLi igual que antes.
+
+## Blindaje de la escritura (`create_map` / `create_swipe`)
+
+Son los únicos tools que escriben. Lo que entra se limpia en `servers/blindaje.py` antes de llegar a `validate_payload`:
+
+| Qué | Regla |
+|---|---|
+| Capas | se resuelven contra el catálogo con `_resolve_layer_fuzzy`; una que no existe se rechaza |
+| `filters` del cliente | se descartan; solo quedan los que arma el servidor (`year`, `municipio`) |
+| `selected` | debe ser una de las capas del mapa |
+| `view` | `lat` 17–24.5, `lon` −107.5 – −99.5, `zoom` 1–20, `rotation` ±360 |
+| Textos | `label_a`/`label_b` hasta 60 caracteres; `id`, `label`, `unit`, `textLabel` de cada anotación hasta 200. Las anotaciones pierden los campos desconocidos |
+| Volumen | techo **global** de 30 compartidos por minuto y 2000 al día (`techo_compartidos`) |
+
+El techo es global y no por persona: el borde entrega todo el tráfico con una sola IP y el MCP corre en modo `stateless_http`, sin sesión que distinguir. Los compartidos idénticos no se duplican: el id es un hash del contenido.
+
+`layer_stats` tiene su propio techo para WPS (`techo_wps`: 20 por minuto, 500 al día), porque GeoServer limita `wps.execute` a 1000 al día para todo el sitio, y guarda los resultados 10 minutos. El conteo simple va por WFS `hits` y no gasta ese techo.
 
 ## Nota para modelos LLM chicos (Qwen 3B self-host)
 

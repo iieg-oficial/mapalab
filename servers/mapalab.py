@@ -43,6 +43,7 @@ from servers.layers import (
     describe_layer as _describe_layer,
     query_wfs as _query_wfs,
 )
+from servers.estadisticas import layer_stats as _layer_stats
 from servers.shares import (
     create_map as _create_map,
     create_swipe as _create_swipe,
@@ -68,7 +69,8 @@ mcp = FastMCP(
 4. BASEMAPS: voyager, position, sin_mapalab. NO existe 'osm'.
 5. FILTROS DE FECHA en shares: usa create_swipe en modo anios (layer + year_a + year_b) o el parametro `year` de create_map. Los anios disponibles de una capa salen en describe_layer.periodicidad.
 6. COORDENADAS: no las inventes. Usa query_wfs (limit bajo) para obtener geometrias reales.
-7. Para modelos chicos: usa describe_layer para todo lo de una capa (cualidades + metadata + numeralia + periodicidad en una llamada) y create_map para entregas rapidas."""
+7. Para modelos chicos: usa describe_layer para todo lo de una capa (cualidades + metadata + numeralia + periodicidad en una llamada) y create_map para entregas rapidas.
+8. CIFRAS: para contar, sumar, promediar o repartir por clase usa layer_stats; no descargues elementos con query_wfs para calcular."""
 )
 
 
@@ -349,6 +351,32 @@ def describe_layer(
     3) Anios disponibles: describe_layer("homicidio_doloso")["periodicidad"]["años"]
     """
     return _describe_layer(layer=layer)
+
+
+@mcp.tool()
+def layer_stats(
+    layer: str = Field(description="Id de la capa (de search_layers). Ej: 'escuelas', 'homicidio_doloso'."),
+    field: Optional[str] = Field(default=None, description="Campo numerico para suma y promedio. Si la capa no lo tiene, el error lista los campos posibles."),
+    group_by: Optional[str] = Field(default=None, description="Campo de texto para contar por clase (ej. tipo de cultivo, nivel escolar). Con `field`, tambien suma y promedio por clase."),
+    municipio: Optional[str] = Field(default=None, description="Nombre del municipio para acotar. Ej: 'Zapopan'. La capa debe soportar filtro por municipio."),
+    year: Optional[str] = Field(default=None, description="Anio de 4 digitos para capas temporales. Ej: '2024'."),
+    top: int = Field(default=10, ge=1, le=25, description='Cuantas clases devolver con group_by; el resto se junta en `otras`.'),
+):
+    """Cifras de una capa sin descargar sus elementos: conteo, suma, promedio y reparto por clase.
+
+    Devuelve {layer, filtros, conteo, campo?, suma?, promedio?, agrupado_por?, clases?, otras?}.
+    Lo calcula GeoServer; los resultados se guardan 10 minutos.
+
+    Ejemplos:
+    1) Cuantos hay:          layer_stats(layer="escuelas", municipio="Zapopan")
+    2) Suma y promedio:      layer_stats(layer="brecha_salarial", field="salario_promedio_diario_mujeres")
+    3) Reparto por clase:    layer_stats(layer="cultivos", group_by="cultivo", top=5)
+    4) Por clase con suma:   layer_stats(layer="cultivos", group_by="cultivo", field="superficie")
+    """
+    try:
+        return _layer_stats(layer=layer, field=field, group_by=group_by, municipio=municipio, year=year, top=top)
+    except ValueError as exc:
+        return {'error': str(exc)}
 
 
 @asynccontextmanager

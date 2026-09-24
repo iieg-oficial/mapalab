@@ -47,19 +47,13 @@ def _sanitize_cql(cql: str | None) -> str | None:
     return stripped
 
 
-def query_wfs(
+def resolver_consulta(
     layer: str,
-    cql_filter: str | None = None,
-    limit: int = 1000,
-    srs_name: str | None = None,
     workspace: str | None = None,
     municipio: str | None = None,
     year: str | None = None,
     month: int | None = None,
-) -> dict:
-    if cql_filter and (municipio or year or month):
-        raise ValueError("No combines 'cql_filter' con 'municipio'/'year'/'month'. Usa uno u otro.")
-
+) -> tuple[dict, str, str, list[str]]:
     state = get_cached_state()
     tree = state['tree']
 
@@ -103,6 +97,24 @@ def query_wfs(
         else:
             value = items[0]['clave']
         parts.append(f"{muni_field} = '{value}'")
+
+    return node, gs_workspace, gs_layer, parts
+
+
+def query_wfs(
+    layer: str,
+    cql_filter: str | None = None,
+    limit: int = 1000,
+    srs_name: str | None = None,
+    workspace: str | None = None,
+    municipio: str | None = None,
+    year: str | None = None,
+    month: int | None = None,
+) -> dict:
+    if cql_filter and (municipio or year or month):
+        raise ValueError("No combines 'cql_filter' con 'municipio'/'year'/'month'. Usa uno u otro.")
+
+    node, gs_workspace, gs_layer, parts = resolver_consulta(layer, workspace, municipio, year, month)
 
     safe_cql = _sanitize_cql(cql_filter)
     if safe_cql:
