@@ -5,6 +5,7 @@ const { MAP_WIDTH, MAP_HEIGHT } = EXPORT_DIMENSIONS;
 import { transformExtent } from 'ol/proj';
 import { useMapView } from './useMapView';
 import { composeSwipeCanvas } from '../utils/swipeComposition';
+import { esperarRedibujo3d } from '../utils/esperarRedibujo3d';
 import { MASCARA_Z_INDEX } from '../utils/seleccionDescarga';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
@@ -50,8 +51,7 @@ export const useMapCapture = () => {
 
     const waitFor3d = () => {
         if (!en3d) return Promise.resolve();
-        const pendientes = [...(grupo3dRef.current?.miembros || [])].filter(mapa => !mapa.loaded());
-        return Promise.all(pendientes.map(mapa => new Promise(resolve => mapa.once('idle', resolve))));
+        return esperarRedibujo3d(grupo3dRef.current?.miembros || []);
     };
 
     const waitForTilesToLoad = () => {
