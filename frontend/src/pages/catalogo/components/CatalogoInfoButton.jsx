@@ -4,7 +4,6 @@ import Modal from '@components/Modal';
 import { MobileSheetCloseButton } from '@components/MobileSheet';
 import { trackCatalogoInfoOpen } from '@services/analyticsService';
 import { useFeatureSeen } from '@hooks/useFeatureSeen';
-import { useIsNonProd } from '@hooks/useDevTools';
 
 const FUNCIONES = [
     { titulo: 'Buscar', texto: 'Por nombre o etiqueta, o filtrando por institución.' },
@@ -13,16 +12,14 @@ const FUNCIONES = [
     { titulo: 'Descargar', texto: 'En GPKG, SHP o CSV; las capas de imagen, en ráster.' },
     { titulo: 'Compartir', texto: 'La capa o el catálogo de una institución, con enlace o código QR.' },
     { titulo: 'Medir y anotar', texto: 'Distancias, áreas, texto y trazos sobre el mapa.' },
-    { titulo: 'Tabla de datos', texto: 'Los registros de la capa, con filtros por columna.', soloBeta: true },
-    { titulo: 'Personalizar la tarjeta', texto: 'Propón qué datos muestra; el IIEG la revisa antes de publicarla.', soloBeta: true },
+    { titulo: 'Tabla de datos', texto: 'Los registros de la capa, con filtros por columna.' },
+    { titulo: 'Personalizar la tarjeta', texto: 'Propón qué datos muestra; el IIEG la revisa antes de publicarla.' },
 ];
 
 const CatalogoInfoButton = () => {
     const [infoOpen, setInfoOpen] = useState(false);
     const [hintSeen, markHintSeen] = useFeatureSeen('catalogo-info-hint');
     const [hintVisible, setHintVisible] = useState(!hintSeen);
-    const isNonProd = useIsNonProd();
-    const funciones = FUNCIONES.filter((f) => !f.soloBeta || isNonProd);
 
     useEffect(() => {
         if (!hintVisible) return undefined;
@@ -63,7 +60,7 @@ const CatalogoInfoButton = () => {
                         Una vista simplificada para explorar las capas del IIEG <span className="font-bold text-purple">una por una</span>.
                     </p>
                     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-[13px]/[19px]">
-                        {funciones.map((f) => (
+                        {FUNCIONES.map((f) => (
                             <div key={f.titulo} className="contents">
                                 <dt className="font-bold text-purple">{f.titulo}</dt>
                                 <dd>{f.texto}</dd>

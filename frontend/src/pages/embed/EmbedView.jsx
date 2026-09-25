@@ -55,7 +55,7 @@ const EmbedInner = ({ params, config }) => {
                 <InfoBox forceDesktop embed />
                 <MapControls hideLocate hideEncuadrar />
                 <ScaleLineControl />
-                <MapAttribution hideActions compact />
+                <MapAttribution hideCatalogo origenReporte="embed" compact />
             </div>
         </SiderProvider>
     );

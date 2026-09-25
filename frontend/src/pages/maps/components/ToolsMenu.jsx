@@ -23,7 +23,6 @@ const allTools = [
         label: 'Barra divisora',
         description: 'Swipe vertical',
         beta: true,
-        nonProdOnly: true,
         icon: 'tool_swipe',
     },
     {
@@ -31,7 +30,6 @@ const allTools = [
         label: 'Tabla de datos',
         description: 'Columnas, celdas y filtros',
         beta: true,
-        nonProdOnly: true,
         icon: 'tabla',
     },
     {
@@ -45,7 +43,6 @@ const allTools = [
         label: 'Catálogo',
         description: 'Explora y descarga capas sueltas',
         beta: true,
-        nonProdOnly: true,
         icon: 'capa_activa',
         iconHover: 'orange',
     },

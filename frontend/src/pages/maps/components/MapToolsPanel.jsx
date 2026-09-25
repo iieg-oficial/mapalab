@@ -18,10 +18,8 @@ import {
     guardarPreferenciaCompacta,
     resolveToolsCollapsed,
 } from '@pages/maps/helpers/toolsPanelCollapse';
-import { useIsNonProd } from '@hooks/useDevTools';
 
 const MapToolsPanel = () => {
-    const isNonProd = useIsNonProd();
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [isMunicipioOpen, setIsMunicipioOpen] = useState(false);
@@ -67,7 +65,6 @@ const MapToolsPanel = () => {
     };
 
     const isAnyPanelOpen = isDownloadOpen || isPreviewOpen || isMunicipioOpen || isShareOpen;
-    const isDownloadExpanded = !isNonProd && !isCollapsed;
     // const panelInlineStyle = isCollapsed ? undefined : { width: SIDER_EXPANDED_WIDTH };
     const collapseIconKey = isCollapsed ? 'left_arrow_fill_normal' : 'right_arrow_fill_normal';
     const collapseTooltip = isCollapsed ? 'Mostrar etiquetas' : 'Compactar barra';
@@ -90,7 +87,7 @@ const MapToolsPanel = () => {
                 <Panel
                     variant="floating"
                     position="static"
-                    width={isCollapsed || !isNonProd ? 'w-auto' : 'w-auto md:w-[373px]'}
+                    width={isCollapsed ? 'w-auto' : 'w-auto md:w-[373px]'}
                     flexDirection="flex-row items-center"
                     className="rounded-[10px] shadow-[0_5px_20px_#1A26641A]"
                     contentClassName="gap-2 px-4 py-3"
@@ -100,7 +97,7 @@ const MapToolsPanel = () => {
                         onOpenPreview={handleOpenPreview}
                         onOpenChange={setIsDownloadOpen}
                         collapsed={isCollapsed}
-                        expanded={isDownloadExpanded}
+                        expanded={false}
                     />
                     <MunicipioFilterButton 
                         municipioMode={municipioMode} 

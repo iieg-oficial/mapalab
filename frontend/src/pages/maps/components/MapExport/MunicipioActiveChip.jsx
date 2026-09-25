@@ -8,7 +8,6 @@ import { useClearance } from '@hooks/useClearance';
 import { trackMunicipioPanelOpen } from '@services/analyticsService';
 import { SCOPE_TYPES } from '@pages/maps/hooks/useMunicipioMode';
 import MunicipioFilterPanel from './MunicipioFilterPanel';
-import { useIsNonProd } from '@hooks/useDevTools';
 
 const MunicipioActiveChip = () => {
     const { municipioMode } = useMapsContext();
@@ -20,9 +19,8 @@ const MunicipioActiveChip = () => {
     const { toolsPanelRef } = useSider();
     const superior = useClearance(filaRef, { obstaculos: [toolsPanelRef], base: 16, activo: active && !!scope?.type });
 
-    const isNonProd = useIsNonProd();
 
-    if (!isNonProd || !active || !scope?.type) return null;
+    if (!active || !scope?.type) return null;
 
     const displayLabel = scope.type === SCOPE_TYPES.ZMG ? 'ZMG' : scopeLabel;
 

@@ -5,7 +5,6 @@ import { useSider } from '@contexts/SiderContext';
 import { trackMunicipioPanelOpen } from '@services/analyticsService';
 import { SCOPE_TYPES } from '@pages/maps/hooks/useMunicipioMode';
 import MunicipioFilterPanel from './MunicipioFilterPanel';
-import { useIsNonProd } from '@hooks/useDevTools';
 
 const buildLabel = (municipioMode) => {
     const { active, scope, scopeLabel } = municipioMode;
@@ -20,9 +19,8 @@ const MunicipioFilterButton = ({ municipioMode, onOpenChange, collapsed = false 
     const anchorRef = useRef(null);
     const { isMobile } = useSider();
 
-    const isNonProd = useIsNonProd();
 
-    if (!isNonProd || !municipioMode) return null;
+    if (!municipioMode) return null;
 
     const handleSetOpen = (open) => {
         setIsOpen(open);

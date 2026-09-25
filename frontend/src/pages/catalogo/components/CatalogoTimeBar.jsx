@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { useIsMobile } from '@hooks/useIsMobile';
-import { useIsNonProd } from '@hooks/useDevTools';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
@@ -19,7 +18,6 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
     const [abierto, setAbierto] = useState(false);
     const containerRef = useRef(null);
     const isMobile = useIsMobile();
-    const isNonProd = useIsNonProd();
     const { municipio } = useCatalogoTiempoContext();
 
     const { layerId, periodicidad, loading, isRaster, geometria, hasPeriodicidad, filtro, applyFilter, clearFilter, getSpecificFilter } = tiempo;
@@ -42,7 +40,7 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
     useEffect(() => () => setExpandedYear?.(null), [setExpandedYear]);
 
     const conFechas = hasPeriodicidad || loading;
-    const conMunicipio = isNonProd && municipio.disponible;
+    const conMunicipio = municipio.disponible;
 
     const prefs = getLoopPrefs?.(layerId);
     const etiqueta = formatDateFilterPill(describeDateFilter({ filter: filtro, rasterPeriodicity })) || SIN_FILTRO;

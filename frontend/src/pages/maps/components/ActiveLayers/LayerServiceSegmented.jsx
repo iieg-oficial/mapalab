@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
-import { useIsNonProd } from '@hooks/useDevTools';
 import Segmented from '@components/Segmented';
 import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
@@ -22,14 +21,13 @@ const rejectionMessage = (rejection) => {
 
 const LayerServiceSegmented = ({ layer, fallback = null, activo = false }) => {
     const { getServiceMode, setServiceMode, getVectorRejection, asignarTono, liberarTono, allLayers, activeLayerIds } = useMapsContext();
-    const isNonProd = useIsNonProd();
 
     const targetIds = useMemo(() => {
         const childIds = layer?.childIds?.length ? layer.childIds : [layer?.id].filter(Boolean);
         return resolveVectorTargets(childIds, allLayers, activeLayerIds, { pointsOnly: true });
     }, [layer, allLayers, activeLayerIds]);
 
-    if (!isNonProd || targetIds.length === 0 || !activo) return fallback;
+    if (targetIds.length === 0 || !activo) return fallback;
 
     const message = rejectionMessage(getVectorRejection?.(targetIds[0]));
 

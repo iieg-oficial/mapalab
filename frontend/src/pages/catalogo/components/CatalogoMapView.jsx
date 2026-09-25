@@ -241,7 +241,7 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, onExtrusion
                             <MapControls />
                             <CatalogoTools tabla={tabla} hayCapa={Boolean(capa)} />
                         </CatalogoTablaProviders>
-                        <MapAttribution hideActions />
+                        <MapAttribution hideCatalogo origenReporte="catalogo" />
                         {capa && <CatalogoTimeBar tiempo={tiempo} loop={loop} />}
                         <CatalogoVista3d consultar={consultar3d} onExtrusion={onExtrusion} />
                         {capa && <CatalogoDescargaImagen abierto={imagenAbierta} capa={capa} onCerrar={onCerrarImagen} />}

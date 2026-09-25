@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
-import { useIsNonProd } from '@hooks/useDevTools';
 
 export const DragHandle = ({ dragHandleProps }) => {
     const [isMoveActive, setIsMoveActive] = useState(false);
@@ -54,9 +53,8 @@ const GEOMETRY_TYPES = {
 const HEXBIN_BADGE = { icon: 'geom_hexbin', label: 'Agrupada en hexágonos' };
 
 export const GeometryTypeBadge = ({ type, hexbin = false }) => {
-    const isNonProd = useIsNonProd();
     const geometry = hexbin ? HEXBIN_BADGE : GEOMETRY_TYPES[type];
-    if (!isNonProd || !geometry) return null;
+    if (!geometry) return null;
     return (
         <Tooltip content={geometry.label}>
             <span

@@ -92,16 +92,16 @@ describe('GeometryTypeBadge', () => {
         expect(screen.getByLabelText('Agrupada en hexágonos')).toBeInTheDocument();
     });
 
-    it('no renderiza el tipo de capa en producción', () => {
+    it('renderiza el tipo de capa también en producción', () => {
         mockUseIsNonProd.mockReturnValue(false);
         const { container } = render(<GeometryTypeBadge type="point" />);
-        expect(container).toBeEmptyDOMElement();
+        expect(container).not.toBeEmptyDOMElement();
     });
 
-    it('oculta también la variante de hexágonos en producción', () => {
+    it('renderiza la variante de hexágonos también en producción', () => {
         mockUseIsNonProd.mockReturnValue(false);
         const { container } = render(<GeometryTypeBadge type="point" hexbin />);
-        expect(container).toBeEmptyDOMElement();
+        expect(container).not.toBeEmptyDOMElement();
     });
 });
 

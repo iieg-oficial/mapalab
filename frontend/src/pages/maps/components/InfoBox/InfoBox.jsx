@@ -26,10 +26,8 @@ import DismissGesture from './components/DismissGesture';
 import WhatsNewModal from '../WhatsNewModal';
 import { useColibriOpen } from '@hooks/useColibriOpen';
 import PanelMedicionSeleccion from '../MeasurementTools/PanelMedicionSeleccion';
-import { useIsNonProd } from '@hooks/useDevTools';
 
 const InfoBox = ({ forceDesktop = false, embed = false }) => {
-    useIsNonProd();
     const openColibri = useColibriOpen();
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers, mapRef, paneMapInstances, compareMode } = useContext(MapsContext);
     const { isMobile: siderIsMobile } = useSider();

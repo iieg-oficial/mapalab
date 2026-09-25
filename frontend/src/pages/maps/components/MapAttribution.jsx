@@ -19,7 +19,7 @@ const ENLACES = [
     { texto: 'Licencia IIEG 2026', href: 'https://iieg.gob.mx/ns/wp-content/uploads/2026/04/declaracion_de_licencia_de_uso_atribuciones_de_informacion_publica_del_IIEG_2026.pdf', copy: false },
 ];
 
-const MapAttribution = ({ hideActions = false, compact = false, extraRight = null }) => {
+const MapAttribution = ({ hideCatalogo = false, origenReporte = 'map_attribution', compact = false, extraRight = null }) => {
     const { margenes } = useAreaUtil();
     const { baseMapId } = useMapsContext();
     const basemapConfig = BASEMAPS[baseMapId];
@@ -32,12 +32,8 @@ const MapAttribution = ({ hideActions = false, compact = false, extraRight = nul
             className="fixed bottom-4 right-4 md:bottom-2 md:right-2 z-10 flex items-center gap-2"
             style={{ marginRight: margenes.right, marginBottom: margenes.bottom }}
         >
-            {!hideActions && (
-                <>
-                    <ReportButton variant="floating" label="Reportar problema o sugerencia" extraContext={{ source: 'map_attribution' }} />
-                    <CatalogoEntryButton />
-                </>
-            )}
+            <ReportButton variant="floating" label="Reportar problema o sugerencia" extraContext={{ source: origenReporte }} />
+            {!hideCatalogo && <CatalogoEntryButton />}
             <div className={`${compact ? 'hidden' : 'hidden md:flex'} justify-end rounded-[20px] bg-[#FFFFFF] px-3 py-1 font-[Garet,sans-serif] font-medium text-[12px] leading-[16px] tracking-[0px] shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] text-[#6E7477] whitespace-nowrap group transition-all duration-300 ease-in-out cursor-default overflow-hidden`}>
                 <span>Contribuciones ©</span>
                 <span className="max-w-0 opacity-0 group-hover:max-w-[1000px] group-hover:opacity-100 group-hover:ml-1 transition-all duration-300 ease-in-out inline-flex items-center">

@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useIsMobile } from '@hooks/useIsMobile';
-import { useIsNonProd } from '@hooks/useDevTools';
 import Tooltip from '@components/Tooltip';
 import { trackMeasurementTool, trackCatalogoToolsToggle } from '@services/analyticsService';
 import ToolSelector from '@mapsComponents/MeasurementTools/ToolSelector';
@@ -79,7 +78,6 @@ const CatalogoTools = ({ tabla, hayCapa }) => {
     } = useMapsContext();
 
     const isMobile = useIsMobile();
-    const isNonProd = useIsNonProd();
     const [toolsOpen, setToolsOpen] = useState(false);
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [isListOpen, setIsListOpen] = useState(false);
@@ -159,9 +157,7 @@ const CatalogoTools = ({ tabla, hayCapa }) => {
         </Tooltip>
     );
 
-    const tablaButton = isNonProd
-        ? <CatalogoTablaButton layerId={tabla.layerId} disponible={tabla.disponible} hayCapa={hayCapa} />
-        : null;
+    const tablaButton = <CatalogoTablaButton layerId={tabla.layerId} disponible={tabla.disponible} hayCapa={hayCapa} />;
 
     return (
         <div className="fixed left-4 top-29 z-20 flex flex-col gap-2 items-start">

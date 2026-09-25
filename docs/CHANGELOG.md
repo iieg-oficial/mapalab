@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.215.0] - 2026-09-25
+
+### Cambiado: lo que estaba en beta ya se ve en producción
+
+- Las funciones que solo salían en dev y beta ya salen también en producción, **con su badge
+  BETA**: catálogo y su acceso desde el visor, barra divisora, tabla de datos, insertar en otra
+  página, vista por municipio, hexágonos y extrusión del catálogo, editor de tarjeta, acciones de
+  la tarjeta, tipo de capa y selector de servicio.
+- Lo nuevo se sigue ocultando igual que antes: `nonProdOnly` en `ToolsMenu` o `useIsNonProd` en
+  el componente.
+
+### Agregado: reportar desde el catálogo y el embebido
+
+- El botón de Colibrí sale en la atribución del catálogo y del mapa embebido, igual que en el
+  visor. Cada reporte llega con su origen (`catalogo`, `embed` o `map_attribution`).
+- `MapAttribution` cambia `hideActions` por `hideCatalogo`, que solo oculta el acceso al catálogo.
+
 ## [1.214.0] - 2026-09-25
 
 ### Agregado: la fecha se elige desde el item seleccionado

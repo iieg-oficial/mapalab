@@ -25,10 +25,8 @@ import { CATALOGO_RETURN_KEY } from './useGoToCatalogo';
 import { buildCatalogoPath, filterCapas, resolveCatalogoRoute } from './helpers/catalogoRoutes';
 import { PARAM_VISTA, VISTA_HEXAGONOS, vistaDeParam } from './helpers/catalogoVista';
 import { PARAM_MUNICIPIOS } from './hooks/useCatalogoMunicipio';
-import { useIsNonProd } from '@hooks/useDevTools';
 
 const CatalogoPage = () => {
-    const isNonProd = useIsNonProd();
     const { seg1, seg2 } = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -180,7 +178,7 @@ const CatalogoPage = () => {
     }, [setSearchParams]);
 
     const vista = vistaDeParam(searchParams.get(PARAM_VISTA));
-    const hexagonos = isNonProd && vista === VISTA_HEXAGONOS;
+    const hexagonos = vista === VISTA_HEXAGONOS;
     const cambiarVista = useCallback((siguiente) => {
         setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
@@ -197,7 +195,7 @@ const CatalogoPage = () => {
                     capa={selectedCapa}
                     initialFecha={initialFechaRef.current}
                     onFechaChange={handleFechaChange}
-                    initialMunicipios={isNonProd ? initialMunicipiosRef.current : null}
+                    initialMunicipios={initialMunicipiosRef.current}
                     onMunicipiosChange={handleMunicipiosChange}
                 >
                     <CatalogoMapView
@@ -207,16 +205,16 @@ const CatalogoPage = () => {
                         onExtrusion={setExtrusion}
                         imagenAbierta={imagenAbierta}
                         onCerrarImagen={() => setImagenAbierta(false)}
-                        onEditInfobox={isNonProd ? (feature) => handleEditInfobox(selectedCapa, feature) : null}
+                        onEditInfobox={(feature) => handleEditInfobox(selectedCapa, feature)}
                     />
                     {selectedCapa && (
                         <CatalogoLegends
                             capa={selectedCapa}
                             institucionSlug={institucionSlug}
                             vista={vista}
-                            onVista={isNonProd ? cambiarVista : null}
+                            onVista={cambiarVista}
                             hexbin={hexagonos ? hexbin : null}
-                            extrusion={isNonProd ? extrusion : null}
+                            extrusion={extrusion}
                             onImagen={() => setImagenAbierta(true)}
                             onClose={handleCloseCapa}
                         />
@@ -240,7 +238,7 @@ const CatalogoPage = () => {
                 onOpen={() => setSearchOpen(true)}
                 onClose={() => setSearchOpen(false)}
                 onSelect={handleSelect}
-                onEditInfobox={isNonProd ? (capa) => handleEditInfobox(capa) : null}
+                onEditInfobox={(capa) => handleEditInfobox(capa)}
             />
             {capaEnEdicion && (
                 <CatalogoInfoBoxEditor
