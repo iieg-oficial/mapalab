@@ -5,6 +5,15 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.216.2] - 2026-09-25
+
+### Cambiado: la tarjeta de periodicidad del item, más limpia
+
+- Se colapsa con una flecha hacia arriba, el mismo botón de dirección del loop, en vez de la X.
+- La tarjeta pierde la sombra.
+- Los meses ocupan todo el ancho en 4 columnas. Es una opción de `SimpleDateSelector`
+  (`monthsFill`) que solo usa este componente; el modal, catálogo y el comparador no cambian.
+
 ## [1.216.1] - 2026-09-25
 
 ### Cambiado: la periodicidad del item va en su propia tarjeta

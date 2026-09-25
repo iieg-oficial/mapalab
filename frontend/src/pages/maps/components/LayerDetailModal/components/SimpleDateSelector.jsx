@@ -17,7 +17,7 @@ const dateBtnClass = ({ slot, isActive, isLoopTick }) => {
     return toneClasses(toneStateFor(slot, isActive).tone, { active: isActive });
 };
 
-const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, onExpandedYearChange, getSpecificFilterOverride, slot }) => {
+const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, onExpandedYearChange, getSpecificFilterOverride, slot, monthsFill = false }) => {
     const { getSpecificFilter: getSpecificFilterCtx, stopLoop: contextStopLoop, getLoopState } = useContext(MapsContext);
     const getSpecificFilter = getSpecificFilterOverride || getSpecificFilterCtx;
     const isRaster = !!rasterPeriodicity;
@@ -260,7 +260,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                     <YearBadge year={expandedYear} slot={slot} />
                 </div>
                 {!isSingleMonth && (
-                    <div className="flex flex-wrap gap-1">
+                    <div className={monthsFill ? 'grid grid-cols-4 gap-1' : 'flex flex-wrap gap-1'}>
                         {availableMonthNums.map((monthNum) => {
                             const monthObj = MONTHS.find(m => m.num === monthNum);
                             const abbr = monthObj ? monthObj.name.slice(0, 3).toUpperCase() : monthNum;
@@ -271,7 +271,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
                                 <button
                                     key={`${expandedYear}-${monthNum}`}
                                     onClick={() => handleMonthToggle(monthNum)}
-                                    className={`shrink-0 px-4 py-2 rounded-[9px] text-[12px]/[14px] font-medium font-garet ${dateBtnClass({ slot, isActive, isLoopTick })}`}
+                                    className={`${monthsFill ? 'w-full' : 'shrink-0 px-4'} py-2 rounded-[9px] text-[12px]/[14px] font-medium font-garet ${dateBtnClass({ slot, isActive, isLoopTick })}`}
                                 >
                                     {abbr}
                                 </button>

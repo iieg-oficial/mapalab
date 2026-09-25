@@ -1,11 +1,12 @@
 import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import Tooltip from '@components/Tooltip';
-import { MobileSheetCloseButton } from '@components/MobileSheet';
+import { RADIUS_ICON, toneButtonFor, toneTextClass } from '@pages/maps/helpers/periodicityTones';
 import SimpleDateSelector from '@mapsComponents/LayerDetailModal/components/SimpleDateSelector';
 import { useSeleccionUnicaDeFecha } from '@hooksMaps/useSeleccionUnicaDeFecha';
 
 const detener = (e) => e.stopPropagation();
+const colapsar = toneButtonFor(null, false);
 
 const LayerPeriodicityInline = ({ layerId, periodicidad, allLayers, onClose }) => {
     const lado = periodicidad.forSlot(null);
@@ -15,7 +16,7 @@ const LayerPeriodicityInline = ({ layerId, periodicidad, allLayers, onClose }) =
 
     return (
         <div
-            className="w-full px-3 pb-3 bg-white rounded-xl shadow-[0_5px_20px_#1A26641A] cursor-default"
+            className="w-full px-3 pb-3 bg-white rounded-xl cursor-default"
             role="presentation"
             onClick={detener}
             onKeyDown={detener}
@@ -29,7 +30,16 @@ const LayerPeriodicityInline = ({ layerId, periodicidad, allLayers, onClose }) =
                         </button>
                     </Tooltip>
                 )}
-                <MobileSheetCloseButton onClick={onClose} />
+                <Tooltip content="Ocultar fechas" placement="left" delay={400}>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Ocultar fechas"
+                        className={`flex items-center justify-center size-6 ${RADIUS_ICON} shrink-0 cursor-pointer ${colapsar.className}`}
+                    >
+                        <Icon name="chevron" className={`w-3 h-1.5 rotate-180 ${toneTextClass(colapsar.tone)}`} />
+                    </button>
+                </Tooltip>
             </div>
             {periodicidad.loading ? (
                 <div className="flex items-center gap-2 py-2">
@@ -46,6 +56,7 @@ const LayerPeriodicityInline = ({ layerId, periodicidad, allLayers, onClose }) =
                     filterName="date"
                     singleSelectOnly={singleSelectOnly}
                     onExpandedYearChange={lado.onExpandedYearChange}
+                    monthsFill
                 />
             )}
         </div>
