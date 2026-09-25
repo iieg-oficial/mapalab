@@ -35,6 +35,22 @@ services:
       - iieg-network
     restart: unless-stopped
 
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.5.0
+    container_name: mapalab-docker-socket-proxy
+    environment:
+      CONTAINERS: 1
+      EVENTS: 0
+      PING: 0
+      VERSION: 0
+      POST: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - docker-api
+    restart: unless-stopped
+    logging: *logging
+
   version-api:
     build: ./version-api
     container_name: mapalab-version-api
@@ -46,9 +62,11 @@ services:
       ONTOY_COMPOSE_PROJECT: mapalab
       ONTOY_DISK_PATH: ${ONTOY_DISK_PATH:?}
       ONTOY_UPSTREAM_URL: http://backend:${BACKEND_PORT:?}/ontoy
+      DOCKER_HOST: tcp://docker-socket-proxy:2375
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/os-release:/host/etc/os-release:ro
+    depends_on:
+      - docker-socket-proxy
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -59,6 +77,7 @@ services:
     networks:
       - default
       - iieg-network
+      - docker-api
     restart: unless-stopped
     logging: *logging
 
@@ -89,3 +108,6 @@ services:
 networks:
   iieg-network:
     external: true
+  docker-api:
+    name: mapalab-docker-api
+    internal: true

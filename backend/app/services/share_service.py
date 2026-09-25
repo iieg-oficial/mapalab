@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import hmac
 import json
 from typing import Any
+
+from app.config import settings
 
 
 CURRENT_SCHEMA_VERSION = 2
@@ -44,9 +47,10 @@ def hash_id(payload: Any, kind: str) -> str:
 
 
 def hash_ip(ip: str | None) -> str | None:
-    if not ip:
+    secret = settings.MAPALAB_SHARE_IP_HASH_SECRET
+    if not ip or not secret:
         return None
-    return hashlib.sha256(f"mapalab-share|{ip}".encode("utf-8")).hexdigest()
+    return hmac.new(secret.encode("utf-8"), f"mapalab-share|{ip}".encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 def validate_payload(envelope: dict) -> tuple[str, dict]:

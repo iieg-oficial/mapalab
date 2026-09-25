@@ -1,9 +1,8 @@
+import hmac
 from datetime import datetime, timedelta
 from typing import Optional
-from collections import deque
-from threading import Lock
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -20,7 +19,9 @@ from app.services.share_service import (
     validate_payload,
 )
 from app.utils.api_responses import api_responses
+from app.utils.client_ip import get_client_ip
 from app.utils.logger import Logger
+from app.utils.rate_limiter import RateLimiter
 
 
 router = APIRouter(prefix='/shares', tags=['Shares'])
@@ -34,55 +35,23 @@ def _require_internal_token(x_internal_token: Optional[str] = Header(default=Non
     expected = settings.MAPALAB_INTERNAL_TOKEN
     if not expected:
         raise HTTPException(status_code=503, detail='MAPALAB_INTERNAL_TOKEN no configurado')
-    if not x_internal_token or x_internal_token != expected:
+    if not x_internal_token or not hmac.compare_digest(x_internal_token, expected):
         raise HTTPException(status_code=401, detail='Token interno inválido')
+
+
 RATE_WINDOW_SECONDS = 60.0
 RATE_MAX_REQUESTS = 30
 RATE_DAY_SECONDS = 86400.0
 RATE_DAY_MAX_REQUESTS = 3000
 
 
-class _RateLimiter:
-    def __init__(self, max_requests: int, window_seconds: float):
-        self.max_requests = max_requests
-        self.window_seconds = window_seconds
-        self._buckets: dict[str, deque[float]] = {}
-        self._lock = Lock()
-
-    def hit(self, key: str) -> bool:
-        if not key:
-            return True
-        now = datetime.utcnow().timestamp()
-        with self._lock:
-            bucket = self._buckets.get(key)
-            if bucket is None:
-                bucket = deque()
-                self._buckets[key] = bucket
-            cutoff = now - self.window_seconds
-            while bucket and bucket[0] < cutoff:
-                bucket.popleft()
-            if len(bucket) >= self.max_requests:
-                return False
-            bucket.append(now)
-            return True
-
-
-_create_rate_limiter = _RateLimiter(RATE_MAX_REQUESTS, RATE_WINDOW_SECONDS)
-_create_daily_limiter = _RateLimiter(RATE_DAY_MAX_REQUESTS, RATE_DAY_SECONDS)
+_create_rate_limiter = RateLimiter(RATE_MAX_REQUESTS, RATE_WINDOW_SECONDS)
+_create_daily_limiter = RateLimiter(RATE_DAY_MAX_REQUESTS, RATE_DAY_SECONDS)
 
 
 def _get_session() -> Session:
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
     return conn.get_session()
-
-
-def _get_client_ip(request: Request) -> Optional[str]:
-    real = request.headers.get('x-real-ip')
-    if real and real.strip():
-        return real.strip()
-    if request.client:
-        return request.client.host
-    return None
 
 
 def _referencias_del_catalogo() -> set[str]:
@@ -137,12 +106,12 @@ class ShareReadResponse(BaseModel):
         "Crea un share (snapshot del estado del visor) con un `payload` validado según "
         "el `kind`. El `id` devuelto es determinístico (hash del payload + kind), así "
         "que crear dos veces el mismo estado hace upsert y no genera duplicados. "
-        "Las capas deben existir en el catalogo del visor. Techo global de 30 shares por "
-        "minuto y 3000 al dia: el borde entrega todo el trafico con una sola IP."
+        "Las capas deben existir en el catalogo del visor. Techo de 30 shares por minuto "
+        "por IP real (`X-Real-IP` del gateway) y 3000 al dia para todo el sitio."
     ),
 )
 def create_share(envelope: ShareEnvelope, request: Request):
-    ip = _get_client_ip(request)
+    ip = get_client_ip(request)
     ip_hash = hash_ip(ip)
 
     try:
@@ -153,7 +122,7 @@ def create_share(envelope: ShareEnvelope, request: Request):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    if not _create_rate_limiter.hit('sitio') or not _create_daily_limiter.hit('sitio'):
+    if not _create_rate_limiter.hit(ip or 'desconocida') or not _create_daily_limiter.hit('sitio'):
         raise HTTPException(status_code=429, detail='Se alcanzó el límite de enlaces del sitio. Intenta en un minuto.')
 
     share_id = hash_id(payload, kind)
@@ -224,6 +193,8 @@ def pin_share(share_id: str):
         share = ShareRepository.get(session, share_id)
         if share is None:
             raise HTTPException(status_code=404, detail='Share no existe o expiro')
+        if share.pinned_until is not None and share.pinned_until.year >= PERMANENT_SENTINEL.year:
+            return {'ok': True, 'pinnedUntil': PERMANENT_SENTINEL.isoformat() + 'Z', 'permanent': True}
         until = datetime.utcnow() + timedelta(days=PIN_DURATION_DAYS)
         ShareRepository.pin(session, share, until)
         session.commit()
@@ -235,23 +206,19 @@ def pin_share(share_id: str):
     '/{share_id}/pin',
     status_code=204,
     responses=api_responses(401, 404, 500),
+    dependencies=[Depends(_require_internal_token)],
     operation_id='unpin_share',
-    summary='Quita el pin de un share',
+    summary='Quita el pin de un share (token interno)',
     description=(
-        "Quita el pin de un share, devolviéndolo a su vigencia base. Si el share está "
-        "pineado de forma permanente requiere el header `X-Internal-Token` para "
-        "despinearlo; los pines de 365 días los puede quitar cualquiera."
+        "Quita el pin de un share, devolviéndolo a su vigencia base. Requiere "
+        "`X-Internal-Token`: solo mariachi despinea."
     ),
 )
-def unpin_share(share_id: str, x_internal_token: Optional[str] = Header(default=None, alias='X-Internal-Token')):
+def unpin_share(share_id: str):
     with _get_session() as session:
         share = ShareRepository.get(session, share_id)
         if share is None:
             raise HTTPException(status_code=404, detail='Share no existe o expiro')
-        if share.pinned_until == PERMANENT_SENTINEL:
-            expected = settings.MAPALAB_INTERNAL_TOKEN
-            if not expected or not x_internal_token or x_internal_token != expected:
-                raise HTTPException(status_code=401, detail='Share permanente requiere token interno para despinear')
         ShareRepository.unpin(session, share)
         session.commit()
         return None

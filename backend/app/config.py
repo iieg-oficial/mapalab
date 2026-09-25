@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     EMBED_ABUSE_WINDOW_MINUTES: int = Field(default=15)
     EMBED_ABUSE_WARN_COUNT: int = Field(default=30)
     MAPALAB_INTERNAL_TOKEN: Optional[str] = Field(default=None)
+    MAPALAB_SHARE_IP_HASH_SECRET: Optional[str] = Field(default=None)
     MARIACHI_BACKEND_URL: Optional[str] = Field(default=None)
     EMBED_KEY_CACHE_TTL_SECONDS: int = Field(default=300)
     MARIACHI_VERIFY_SSL: bool = Field(default=True)

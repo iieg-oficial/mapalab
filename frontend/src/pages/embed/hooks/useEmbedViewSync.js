@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import { useMapsContext } from '@hooks/useMaps';
-import { postViewChange } from '@pages/embed/helpers/postMessage';
+import { isMessageFromParent, postViewChange } from '@pages/embed/helpers/postMessage';
 
 
 const THROTTLE_MS = 200;
@@ -61,6 +61,7 @@ export const useEmbedViewSync = () => {
             emit(true);
 
             const onMessage = (event) => {
+                if (!isMessageFromParent(event)) return;
                 const data = event?.data;
                 if (!data || typeof data !== 'object' || data.type !== 'mapalab:setview') return;
                 suppressEmitRef.current = true;

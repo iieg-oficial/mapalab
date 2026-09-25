@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import threading
 import time
 from dataclasses import dataclass
@@ -12,6 +13,7 @@ from app.utils.logger import Logger
 
 _TIMEOUT_SECONDS = 4.0
 _CACHE_MAX_ENTRIES = 1024
+_DENIED_TTL_SECONDS = 30
 
 
 @dataclass
@@ -44,7 +46,8 @@ class _ValidatorCache:
             entry = self._store.get(cache_key)
         if entry is None:
             return None
-        if time.time() - entry.cached_at > settings.EMBED_KEY_CACHE_TTL_SECONDS:
+        ttl = settings.EMBED_KEY_CACHE_TTL_SECONDS if entry.valid else _DENIED_TTL_SECONDS
+        if time.time() - entry.cached_at > ttl:
             self.invalidate(cache_key)
             return None
         return entry
@@ -89,10 +92,17 @@ def _visible_prefix(plain_key: str) -> str:
     return plain_key[:12] if plain_key else ''
 
 
-def _build_cache_key(plain_key: str, origin: Optional[str], requested_layers: list[str]) -> tuple:
+def _build_cache_key(
+    plain_key: str,
+    origin: Optional[str],
+    ip: Optional[str],
+    requested_layers: list[str],
+) -> tuple:
     return (
         _visible_prefix(plain_key),
+        hashlib.sha256(plain_key.encode('utf-8')).hexdigest(),
         origin or '',
+        ip or '',
         tuple(sorted(requested_layers or [])),
     )
 
@@ -157,14 +167,13 @@ def validate_api_key(
     bypass_cache: bool = False,
 ) -> ValidationResult:
     requested = requested_layers or []
-    cache_key = _build_cache_key(plain_key, origin, requested)
+    cache_key = _build_cache_key(plain_key, origin, ip, requested)
     if not bypass_cache:
         cached = _cache.get(cache_key)
         if cached is not None:
             return cached
     result = _validate_remote(plain_key, origin, ip, requested)
-    if result.valid:
-        _cache.set(cache_key, result)
+    _cache.set(cache_key, result)
     return result
 
 

@@ -61,6 +61,7 @@ services:
       - acervo_access_key
       - acervo_secret_key
       - mapalab_internal_token
+      - mapalab_share_ip_hash_secret
     group_add:
       - "${SECRETS_GID:?}"
     networks:
@@ -111,3 +112,5 @@ secrets:
     file: ./secrets/acervo_secret_key
   mapalab_internal_token:
     file: ./secrets/mapalab_internal_token
+  mapalab_share_ip_hash_secret:
+    file: ./secrets/mapalab_share_ip_hash_secret

@@ -5,6 +5,72 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.213.0] - 2026-09-24
+
+### Corregido: la descarga CSV exportaba cualquier tabla legible por el rol
+
+`GET /download/{workspace}/{layer}` caía a `resolve_schema`, que devolvía el workspace desconocido tal
+cual: `/download/mapalab/map_shares` o `/download/pg_catalog/pg_roles` bajaban la tabla completa.
+Ahora solo se descargan capas de un workspace de `mapalab.workspaces` con fila en `layer_metadata`
+(por `geoserver_workspace:capa` o `db_schema:capa`) y `downloadable`; lo demás responde 404 y el
+visor cae al CSV por WFS, como ya hacía ante cualquier error. La caché se busca con la llave del
+metadato, así que las capas de `general` ya la aprovechan.
+
+### Agregado: tope de descargas simultáneas
+
+Tres descargas completas a la vez por contenedor, con candados de archivo que comparten los workers;
+la cuarta recibe 429 con `Retry-After`. Las servidas desde la caché de Acervo no cuentan.
+
+### Corregido: el proxy WMS del embed
+
+`/embed/wms-proxy` valida el workspace de `layers` y `query_layers` (`^[a-z0-9_]+$` y contra los
+workspaces del árbol), revisa `query_layers` contra las capas de la llave, rechaza parámetros
+repetidos con otra caja y ya no reenvía `sld` ni `sld_body`.
+
+### Cambiado: la caché de validación de llaves
+
+Se indexa por el hash de la llave completa, el origen y la IP, no por el prefijo visible. La IP sale
+de `X-Real-IP`, no del primer valor de `X-Forwarded-For`. Las denegaciones se cachean 30 s para no
+martillar mariachi. El nginx de mapalab conserva el `X-Real-IP` que pone el gateway en vez de
+reescribirlo con la IP del gateway.
+
+### Cambiado: shares y reportes de error
+
+- El hash de IP de los shares es HMAC-SHA256 con el secreto `mapalab_share_ip_hash_secret`; los
+  hashes viejos dejan de coincidir. Sin secreto no se guarda hash.
+- El techo de 30 shares por minuto es por IP real; el de 3000 al día sigue siendo del sitio.
+- Despinear un share exige `X-Internal-Token` (solo lo hace mariachi) y el pin público ya no rebaja un
+  pin permanente.
+- `/log/client-error` limita a 20 reportes por minuto por IP y cuenta una sola vez el mismo error de
+  la misma IP en 5 minutos.
+
+### Corregido: el embed y el widget aceptaban mensajes de cualquier origen
+
+El embed solo atiende `mapalab:setview` de la ventana padre y con su origen (`ancestorOrigins` o
+`document.referrer`), y le escribe a ese origen. El widget solo atiende mensajes de su propio iframe
+y del origen de `base-url`. Sin `key` el embed no carga capas, y `/embed` sin `key` va con
+`frame-ancestors 'self'`.
+
+### Corregido: headers de seguridad
+
+`/index.html`, los estáticos y `error-recovery.js` repiten `nosniff` (y `index.html` también
+`X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`), que se perdían al declarar su propio
+`add_header`.
+
+### Cambiado: dependencias del backend fijadas
+
+`backend/requirements.txt` fija las versiones que resolvía la imagen del 2026-09-24 y quita el
+`httpx` repetido.
+
+### Cambiado: el sidecar `version-api` sin `docker.sock` ni root
+
+En `compose.prod.yaml` el sidecar consulta los contenedores por `DOCKER_HOST=tcp://docker-socket-proxy:2375`
+(`tecnativa/docker-socket-proxy:v0.5.0` con `CONTAINERS=1` y lo demás en 0, en una red interna) y
+corre como uid 65534. `ontoy_server.py` se sincronizó con huachicol 2.18.0: 500 con texto fijo, tope
+de 8 hilos, timeout de 5 s, caché de 2 s y CPU sin sleep por petición; desaparece
+`ONTOY_CPU_SAMPLE_SECONDS`. Al desplegar, en `ONTOY_PEER_CHECKS` la arista a S4 pasa de `:6432` a
+`:5432`.
+
 ## [1.212.0] - 2026-09-24
 
 ### Agregado: levantar en 3D las capas coropléticas del catálogo
