@@ -262,7 +262,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 onInterval={handleIntervalClick}
                                 onDirection={handleDirectionClick}
                             />
-                            {mostrarFechas && <LayerPeriodicityInline layerId={layer.id} periodicidad={periodicidad} allLayers={allLayers} />}
+                            {mostrarFechas && <LayerPeriodicityInline layerId={layer.id} periodicidad={periodicidad} allLayers={allLayers} onClose={() => setFechasAbiertas(false)} />}
                             <LayerActionsBar
                                 layerId={layer.id}
                                 visible={layer.visible}

@@ -5,6 +5,15 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.216.1] - 2026-09-25
+
+### Cambiado: la periodicidad del item va en su propia tarjeta
+
+- Los años y meses que abre la píldora de fecha del item seleccionado van en una tarjeta blanca con
+  la sombra de los paneles, igual que el panel de periodicidad del comparador.
+- La tarjeta lleva encabezado «Periodicidad», quitar filtro cuando hay fecha y la X estándar para
+  colapsarla sin deseleccionar la capa.
+
 ## [1.216.0] - 2026-09-25
 
 ### Agregado: ajustes 3D propios, persistentes y compartibles
