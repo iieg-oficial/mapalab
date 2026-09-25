@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.213.3] - 2026-09-25
+
+### Corregido: licencias de las dependencias
+
+- **El aviso BSD de MapLibre no llegaba al usuario.** Su licencia pide conservar el copyright en lo
+  que se distribuye y el minificado lo borraba. `build.license` de Vite genera `licencias.txt` con
+  las licencias de las 36 dependencias empaquetadas, servido junto al visor.
+- «Contribuciones» acredita a **MapLibre** y enlaza a «Licencias de software». Los enlaces pasan a
+  una sola lista que usan la versión de escritorio y la de teléfono.
+
 ## [1.213.2] - 2026-09-25
 
 ### Corregido: la pill y el botón de municipio olvidaban la selección al recargar
