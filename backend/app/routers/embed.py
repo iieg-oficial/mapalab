@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import hmac
 from typing import Optional
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlencode
 
 import httpx
 from fastapi import APIRouter, Body, Header, HTTPException, Query, Request, Response, status
@@ -17,53 +18,24 @@ from app.services.api_key_validator import (
     invalidate_cache_for_prefix,
     validate_api_key,
 )
+from app.services.embed_wms_params import (
+    check_allowed,
+    clean_params,
+    known_workspaces,
+    resolve_workspace,
+    split_layers,
+)
 from app.services.layer_tree_service import get_cached_state
 from app.utils.api_responses import api_responses
+from app.utils.client_ip import get_client_ip, get_request_origin
 from app.utils.logger import Logger
 
 router = APIRouter(prefix='/embed', tags=['Embed'])
 
 _WMS_PROXY_TIMEOUT = 30.0
-_WMS_ALLOWED_PARAMS = {
-    'service', 'version', 'request', 'layers', 'styles', 'format',
-    'transparent', 'srs', 'crs', 'bbox', 'width', 'height', 'tiled',
-    'cql_filter', 'time', 'query_layers', 'info_format', 'feature_count',
-    'x', 'y', 'i', 'j', 'env', 'sld', 'sld_body', 'exceptions',
-}
-
-
-def _extract_request_origin(request: Request) -> Optional[str]:
-    origin = request.headers.get('origin')
-    if origin and origin.lower() != 'null':
-        return origin
-    referer = request.headers.get('referer')
-    if not referer:
-        return None
-    try:
-        parsed = urlparse(referer)
-        if parsed.scheme and parsed.netloc:
-            return f"{parsed.scheme}://{parsed.netloc}"
-    except Exception:
-        pass
-    return None
-
-
-def _extract_client_ip(request: Request) -> Optional[str]:
-    forwarded = request.headers.get('x-forwarded-for')
-    if forwarded:
-        return forwarded.split(',')[0].strip()
-    return request.client.host if request.client else None
 
 
 def _frame_ancestors_value(allowed_domains: Optional[list[str]]) -> str:
-    """Construye el header frame-ancestors a partir de la allowlist de la key.
-
-    Si la key no tiene allowlist (None) se cae a `*` para preservar compatibilidad.
-    Si tiene allowlist vacía o con valores válidos, se serializan; los wildcards
-    *.dependencia.gob.mx se traducen a https://*.dependencia.gob.mx para CSP.
-    También se incluye 'self' para que el visor pueda ser cargado desde su propio
-    host (página /mapa, admin de IIEG, etc.).
-    """
     if allowed_domains is None:
         return "frame-ancestors *"
     sources: list[str] = ["'self'"]
@@ -104,8 +76,8 @@ def _validate_or_403(
     requested_layers: Optional[list[str]] = None,
     record_quota: bool = True,
 ) -> ValidationResult:
-    origin = _extract_request_origin(request)
-    ip = _extract_client_ip(request)
+    origin = get_request_origin(request)
+    ip = get_client_ip(request)
     result = validate_api_key(key, origin=origin, ip=ip, requested_layers=requested_layers or [])
     prefix = key[:12] if key else ''
     access_logger = get_access_logger()
@@ -194,7 +166,7 @@ def get_embed_config(
     if layers_param:
         requested_layers = [s.strip() for s in layers_param.split(',') if s.strip()]
     result = _validate_or_403(request, key, 'config', requested_layers)
-    origin = _extract_request_origin(request)
+    origin = get_request_origin(request)
     _set_response_headers(response, origin, result.dominios_permitidos)
     return {
         'institucion': result.institucion_nombre,
@@ -218,12 +190,12 @@ def get_embed_tree(
     tree = state['tree']
     if result.capas_permitidas:
         tree = _filter_tree(tree, set(result.capas_permitidas))
-    origin = _extract_request_origin(request)
+    origin = get_request_origin(request)
     _set_response_headers(response, origin, result.dominios_permitidos)
     return {'tree': tree, 'etag': state['etag']}
 
 
-@router.get('/wms-proxy', responses=api_responses(403, 429, 500))
+@router.get('/wms-proxy', responses=api_responses(400, 403, 429, 500))
 def wms_proxy(
     request: Request,
     response: Response,
@@ -232,27 +204,13 @@ def wms_proxy(
     if not settings.GEOSERVER_URL:
         raise HTTPException(status_code=503, detail='El servicio de mapas no está disponible en este momento')
 
-    params = dict(request.query_params)
-    params.pop('key', None)
-
-    layers_param = params.get('layers') or params.get('LAYERS') or ''
-    requested = [s.strip() for s in layers_param.split(',') if s.strip()]
+    clean = clean_params(request.query_params.multi_items())
+    requested = split_layers(clean.get('layers'))
+    query_layers = split_layers(clean.get('query_layers'))
+    workspace = resolve_workspace(requested + query_layers, known_workspaces())
     result = _validate_or_403(request, key, 'wms', requested_layers=requested, record_quota=False)
+    check_allowed(requested + query_layers, result.capas_permitidas)
 
-    if result.capas_permitidas:
-        allowed = set(result.capas_permitidas)
-        for layer in requested:
-            if layer not in allowed:
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"La capa '{layer}' no está autorizada para esta llave",
-                )
-
-    clean = {k: v for k, v in params.items() if k.lower() in _WMS_ALLOWED_PARAMS}
-    workspace = ''
-    layer_first = (params.get('layers') or params.get('LAYERS') or '').split(',')[0].strip()
-    if ':' in layer_first:
-        workspace = layer_first.split(':', 1)[0]
     base = settings.GEOSERVER_URL.rstrip('/')
     target = f"{base}/{workspace}/wms?{urlencode(clean)}" if workspace else f"{base}/wms?{urlencode(clean)}"
 
@@ -270,7 +228,7 @@ def wms_proxy(
             bytes_out=len(upstream.content or b''),
         )
 
-    origin = _extract_request_origin(request)
+    origin = get_request_origin(request)
     headers = {
         'Cache-Control': 'public, max-age=300',
         'Content-Security-Policy': "frame-ancestors *",
@@ -310,7 +268,7 @@ def post_telemetry(
     payload: _TelemetryPayload = Body(...),
 ):
     result = _validate_or_403(request, key, 'telemetry', record_quota=False)
-    origin = _extract_request_origin(request)
+    origin = get_request_origin(request)
     _set_response_headers(response, origin, result.dominios_permitidos)
     prefix = key[:12] if key else ''
     for err in payload.errors[:5]:
@@ -327,7 +285,7 @@ def invalidate_cache(
     expected = settings.MAPALAB_INTERNAL_TOKEN
     if not expected:
         raise HTTPException(status_code=503, detail='MAPALAB_INTERNAL_TOKEN no configurado')
-    if not x_internal_token or x_internal_token != expected:
+    if not x_internal_token or not hmac.compare_digest(x_internal_token, expected):
         raise HTTPException(status_code=401, detail='Token interno inválido')
     removed = invalidate_cache_for_prefix(key_prefix)
     return {'ok': True, 'removed': removed}

@@ -5,6 +5,29 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.116.22] - 2026-09-24
+
+### Corregido: la descarga CSV exportaba cualquier tabla legible por el rol
+
+`GET /download/{workspace}/{layer}` caía a `resolve_schema`, que devolvía el workspace desconocido tal
+cual: `/download/mapalab/map_shares` o `/download/pg_catalog/pg_roles` bajaban la tabla completa.
+Ahora solo se descargan capas de un workspace de `mapalab.workspaces` con fila en `layer_metadata`
+(por `geoserver_workspace:capa` o `db_schema:capa`) y `downloadable`; lo demás responde 404 y el
+visor cae al CSV por WFS, como ya hacía ante cualquier error. La caché se busca con la llave del
+metadato. Portado de 1.213.0 sin el tope de descargas simultáneas.
+
+### Corregido: la caché de validación de llaves del embed
+
+Se indexa por el hash de la llave completa, el origen y la IP, no por el prefijo visible. La IP sale
+de `X-Real-IP`, no del primer valor de `X-Forwarded-For`. Las denegaciones se cachean 30 s. El nginx
+de mapalab conserva el `X-Real-IP` que pone el gateway en vez de reescribirlo con la IP del gateway.
+
+### Corregido: el proxy WMS del embed
+
+`/embed/wms-proxy` valida el workspace de `layers` y `query_layers` (`^[a-z0-9_]+$` y contra los
+workspaces del árbol), revisa `query_layers` contra las capas de la llave, rechaza parámetros
+repetidos con otra caja y ya no reenvía `sld` ni `sld_body`.
+
 ## [1.116.20] - 2026-09-17
 
 ### Corregido: el purgado del cache del gateway nunca purgó nada
