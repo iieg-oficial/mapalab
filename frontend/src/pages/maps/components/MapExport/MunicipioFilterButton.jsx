@@ -14,6 +14,14 @@ const buildLabel = (municipioMode) => {
     return scopeLabel || 'Jalisco';
 };
 
+const SIGLA_POR_SCOPE = {
+    [SCOPE_TYPES.MUNICIPIO]: 'MUN',
+    [SCOPE_TYPES.REGION]: 'REG',
+    [SCOPE_TYPES.ZMG]: 'ZMG',
+};
+
+const buildSigla = ({ active, scope }) => (active && SIGLA_POR_SCOPE[scope?.type]) || 'JAL';
+
 const MunicipioFilterButton = ({ municipioMode, onOpenChange, collapsed = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const anchorRef = useRef(null);
@@ -54,7 +62,7 @@ const MunicipioFilterButton = ({ municipioMode, onOpenChange, collapsed = false 
                     {showLabel ? (
                         <span className="truncate w-full text-center">{label}</span>
                     ) : (
-                        <span className="text-[10px] font-bold">JAL</span>
+                        <span className="text-[10px] font-bold">{buildSigla(municipioMode)}</span>
                     )}
                     <span
                         className={[

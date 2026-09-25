@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.215.1] - 2026-09-25
+
+### Cambiado: el botón de municipio compacto dice qué vista está activa
+
+Con el panel colapsado o en celular el botón decía siempre «JAL». Ahora muestra el tipo de vista:
+`JAL` sin filtro, `MUN`, `REG` o `ZMG`. El nombre completo sigue en la pill de arriba, así que no
+hacen falta abreviaciones para los 125 municipios y las 12 regiones.
+
 ## [1.215.0] - 2026-09-25
 
 ### Cambiado: lo que estaba en beta ya se ve en producción
