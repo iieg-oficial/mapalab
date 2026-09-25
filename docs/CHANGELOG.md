@@ -5,6 +5,15 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.213.4] - 2026-09-25
+
+### Cambiado: controles del embebido más compactos
+
+- «Contribuciones» en el embebido abre sus enlaces como en teléfono, en lista hacia arriba al dar
+  clic: la tira que se desplegaba de lado con los nueve enlaces ya no cabía en un iframe. La
+  pastilla se queda en escritorio y el © en teléfono.
+- El embebido deja fuera «Encuadrar Jalisco» del panel de zoom. El visor lo conserva.
+
 ## [1.213.3] - 2026-09-25
 
 ### Corregido: licencias de las dependencias

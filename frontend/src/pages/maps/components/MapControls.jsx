@@ -17,7 +17,7 @@ import BotonNorte from './BotonNorte';
 import { useMiUbicacion } from '@hooksMaps/useMiUbicacion';
 
 
-const MapControls = ({ hideLocate = false }) => {
+const MapControls = ({ hideLocate = false, hideEncuadrar = false }) => {
     const { mapRef, compareMode, paneMapRefs, isLocating, setIsLocating, municipioMode } = useMapsContext();
     const [hoveredButton, setHoveredButton] = useState(null);
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 180 });
@@ -126,20 +126,22 @@ const MapControls = ({ hideLocate = false }) => {
                         />
                     </button>
                 )}
-                <button
-                    onClick={handleEncuadrar}
-                    onMouseEnter={() => setHoveredButton('fit_extent')}
-                    onMouseLeave={() => setHoveredButton(null)}
-                    className="p-2"
-                    title={enMunicipio ? `Encuadrar ${municipioMode.scopeLabel}` : 'Encuadrar Jalisco'}
-                    aria-label={enMunicipio ? `Encuadrar la vista en ${municipioMode.scopeLabel}` : 'Encuadrar la vista en Jalisco'}
-                >
-                    <Icon
-                        name="fit_extent"
-                        state={hoveredButton === 'fit_extent' ? 'hover' : 'normal'}
-                        className="w-6 h-6"
-                    />
-                </button>
+                {!hideEncuadrar && (
+                    <button
+                        onClick={handleEncuadrar}
+                        onMouseEnter={() => setHoveredButton('fit_extent')}
+                        onMouseLeave={() => setHoveredButton(null)}
+                        className="p-2"
+                        title={enMunicipio ? `Encuadrar ${municipioMode.scopeLabel}` : 'Encuadrar Jalisco'}
+                        aria-label={enMunicipio ? `Encuadrar la vista en ${municipioMode.scopeLabel}` : 'Encuadrar la vista en Jalisco'}
+                    >
+                        <Icon
+                            name="fit_extent"
+                            state={hoveredButton === 'fit_extent' ? 'hover' : 'normal'}
+                            className="w-6 h-6"
+                        />
+                    </button>
+                )}
                 {view3d.active && (
                     <PillCloseButton
                         onClick={view3d.exit}
