@@ -24,7 +24,10 @@ export const VIEW3D_PITCH_MAX = 80;
 export const VIEW3D_EXAGGERATION_RANGE = [1, 5];
 export const EXTRUSION_MAX_HEIGHT_M = 45000;
 const TERRAIN_LAYER = 'raster:elevacion_terreno_rgb';
+const RELIEF_DEM_LAYER = 'raster:elevacion_jalisco_rgb';
 const TERRAIN_MAX_ZOOM = 12;
+const TERRAIN_BOUNDS = [-107.56, 17.14, -99.69, 24.45];
+const TERRAIN_REVISION = 'contexto-2';
 
 const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
 const MAPLIBRE_ZOOM_OFFSET = 1;
@@ -72,18 +75,22 @@ const wmtsTileUrl = (layer) => {
     return `${absolute(`${GEOSERVER_BASE}/gwc/service/wmts`)}?${params.toString()}&TILEMATRIX=EPSG:900913:{z}&TILEROW={y}&TILECOL={x}`;
 };
 
-export const terrainSourceSpec = () => ({
+const demSourceSpec = (tile, bounds) => ({
     type: 'raster-dem',
-    tiles: [wmtsTileUrl(TERRAIN_LAYER)],
+    tiles: [tile],
     tileSize: 256,
     maxzoom: TERRAIN_MAX_ZOOM,
-    bounds: JALISCO_BOUNDS.coords,
+    bounds,
     encoding: 'custom',
     redFactor: 256,
     greenFactor: 1,
     blueFactor: 0,
     baseShift: 0,
 });
+
+export const terrainSourceSpec = () => demSourceSpec(`${wmtsTileUrl(TERRAIN_LAYER)}&dem=${TERRAIN_REVISION}`, TERRAIN_BOUNDS);
+
+export const reliefSourceSpec = () => demSourceSpec(wmtsTileUrl(RELIEF_DEM_LAYER), JALISCO_BOUNDS.coords);
 
 const basemapTileUrl = (template) => (template ? absolute(template.replace('{r}', '')) : null);
 
@@ -103,7 +110,7 @@ export const basemapLayers = (basemap) => [
 
 export const buildBaseStyle = (basemap) => ({
     version: 8,
-    sources: { terreno: terrainSourceSpec(), sombreado: terrainSourceSpec(), ...basemapSources(basemap) },
+    sources: { terreno: terrainSourceSpec(), sombreado: reliefSourceSpec(), ...basemapSources(basemap) },
     layers: [
         { id: 'fondo', type: 'background', paint: { 'background-color': '#ffffff' } },
         ...basemapLayers(basemap).filter(layer => layer.id === 'base'),

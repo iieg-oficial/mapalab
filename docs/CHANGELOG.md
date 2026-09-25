@@ -5,6 +5,18 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.213.5] - 2026-09-25
+
+### Corregido: el 3D ya no dibuja estrías ni un canto alrededor de Jalisco
+
+El terreno y el sombreado salían del mismo DEM relleno, que fuera del estado era terreno inventado:
+estrías radiales hasta un canto a unos 37 km donde el suelo caía a 0 m. Ahora el terreno usa
+`raster:elevacion_terreno_rgb` con el relieve real de los vecinos (sextante 2.13.0, límites
+`-107.56, 17.14, -99.69, 24.45`) y el sombreado usa `raster:elevacion_jalisco_rgb`, solo Jalisco:
+fuera del estado el mapa se ve limpio y el relieve termina al ras del límite. La URL del terreno
+lleva `&dem=contexto-2` para no heredar los tiles viejos de la caché del gateway ni del navegador.
+Requiere sextante 2.13.0 desplegado antes.
+
 ## [1.213.4] - 2026-09-25
 
 ### Cambiado: controles del embebido más compactos

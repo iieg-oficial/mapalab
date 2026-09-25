@@ -11,6 +11,7 @@ import {
     cqlSegmentFor,
     olViewToCamera,
     RELIEF_LAYER_ID,
+    reliefSourceSpec,
     terrainSourceSpec,
     wmsTileUrl,
 } from '@pages/maps/helpers/view3d';
@@ -54,7 +55,16 @@ describe('fuente de terreno', () => {
         expect(spec).toMatchObject({ type: 'raster-dem', encoding: 'custom', redFactor: 256, greenFactor: 1, blueFactor: 0, baseShift: 0 });
         expect(spec.tiles[0]).toContain('LAYER=raster%3Aelevacion_terreno_rgb');
         expect(spec.tiles[0]).toContain('TILEMATRIX=EPSG:900913:{z}&TILEROW={y}&TILECOL={x}');
+        expect(spec.bounds).toEqual([-107.56, 17.14, -99.69, 24.45]);
+        expect(spec.tiles[0]).toMatch(/&dem=contexto-2$/);
+    });
+
+    it('sombrea solo con el DEM de Jalisco, así que fuera del estado no hay relieve dibujado', () => {
+        const spec = reliefSourceSpec();
+        expect(spec).toMatchObject({ type: 'raster-dem', encoding: 'custom', redFactor: 256, greenFactor: 1 });
+        expect(spec.tiles[0]).toContain('LAYER=raster%3Aelevacion_jalisco_rgb');
         expect(spec.bounds).toEqual([-105.70, 18.95, -101.47, 22.75]);
+        expect(buildBaseStyle(null).sources.sombreado.tiles[0]).toBe(spec.tiles[0]);
     });
 });
 
