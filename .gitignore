@@ -55,3 +55,7 @@ secrets/*
 !secrets/.gitkeep
 !secrets/*.example
 compose.local.yaml
+
+*.bak
+*.bak-*
+*.bak.*
