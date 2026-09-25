@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.213.1] - 2026-09-25
+
+### Corregido: los conteos de la selección ignoraban el filtro propio de la capa
+
+Varias capas del árbol son vistas filtradas de una misma tabla: Agave, Caña de Azúcar, Maíz y el
+resto de los cultivos son `cultivos` con su `cqlFilter`. La consulta de elementos combina ese filtro
+con el dinámico, pero los conteos, la suma proporcional y la agregación solo aplicaban el dinámico,
+así que cada cultivo contaba la tabla entera: el mismo número en todos y un total multiplicado por
+el número de capas. `filtroDeCapa` combina los dos, igual que `getFeaturesInPolygonForActiveLayers`.
+
 ## [1.213.0] - 2026-09-24
 
 ### Corregido: la descarga CSV exportaba cualquier tabla legible por el rol
