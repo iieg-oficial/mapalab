@@ -5,6 +5,23 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.213.2] - 2026-09-25
+
+### Corregido: la pill y el botón de municipio olvidaban la selección al recargar
+
+La sesión guardaba las claves pero no el alcance (municipio, región o ZMG), y `enter()` las
+restauraba como municipios sueltos: el mapa pintaba la máscara correcta, pero la pill decía
+«Municipios» y el botón y el panel no marcaban nada. `municipios.scope` viaja ahora en el payload
+de sesión y de compartir, y el backend lo valida. Sin `scope` (links viejos), nueve claves de la ZMG
+se reconocen como ZMG.
+
+### Cambiado: el link de ubicación del InfoBox manda coordenadas a Google Maps
+
+Con direcciones incompletas Google adivinaba y elegía la más cercana al usuario. Ahora el icono
+`ubicacion` abre `search/?api=1&query=lat,lng` con el punto de la feature, o con el clic si es
+polígono o línea. Sin coordenadas, como en la vista previa del editor de mariachi, sigue mandando
+el texto.
+
 ## [1.213.1] - 2026-09-25
 
 ### Corregido: los conteos de la selección ignoraban el filtro propio de la capa

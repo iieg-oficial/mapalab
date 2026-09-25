@@ -187,7 +187,7 @@ export const useShareDeserializer = () => {
             restoreLoopPrefs(payload.loop);
             const sharedMunicipios = shared?.municipios;
             if (sharedMunicipios?.selected?.length > 0 && municipioMode?.enter) {
-                municipioMode.enter(sharedMunicipios.selected, { fromUrl: true });
+                municipioMode.enter(sharedMunicipios.selected, { fromUrl: true, scope: sharedMunicipios.scope });
             }
             restoreVista3d(shared.vista3d);
             marcarShareAplicado();
@@ -262,7 +262,7 @@ export const useShareDeserializer = () => {
         restoreLoopPrefs(payload.loop);
         const singleMunicipios = payload.municipios;
         if (singleMunicipios?.selected?.length > 0 && municipioMode?.enter) {
-            municipioMode.enter(singleMunicipios.selected, { fromUrl: true });
+            municipioMode.enter(singleMunicipios.selected, { fromUrl: true, scope: singleMunicipios.scope });
         }
         restoreVista3d(payload.vista3d);
 

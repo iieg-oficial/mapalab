@@ -127,7 +127,11 @@ export const useShareSerializer = () => {
         const vista3d = serializarVista3d(extra.view3d, id => slugForLayer(id, layerTree));
 
         const municipioPayload = (municipioMode?.active && Array.isArray(municipioMode.selected) && municipioMode.selected.length > 0)
-            ? { source: municipioMode.sourceId || 'iieg', selected: [...municipioMode.selected] }
+            ? {
+                source: municipioMode.sourceId || 'iieg',
+                selected: [...municipioMode.selected],
+                ...(municipioMode.scope?.type ? { scope: { type: municipioMode.scope.type, value: municipioMode.scope.value ?? null } } : {}),
+            }
             : null;
 
         const basePayload = {

@@ -17,6 +17,8 @@ ALLOWED_ANNOTATION_TYPES = {"LineString", "Polygon", "Select", "Freehand", "Text
 MAX_ANNOTATIONS = 200
 MAX_COORDINATES_PER_GEOMETRY = 2000
 ALLOWED_MUNICIPIO_SOURCES = {"iieg", "inegi"}
+ALLOWED_MUNICIPIO_SCOPES = {"municipio", "region", "zmg"}
+MAX_SCOPE_VALUE = 80
 MAX_MUNICIPIOS = 125
 MAX_PITCH_3D = 80
 EXAGERACION_3D = (1, 5)
@@ -190,6 +192,17 @@ def _validate_municipios(municipios: Any, source: str) -> None:
     for clave in selected:
         if not isinstance(clave, str) or not clave.strip() or len(clave) > 10:
             raise ValueError(f"{source}.municipios.selected: cada clave debe ser string no vacio")
+    _validate_municipio_scope(municipios.get("scope"), source)
+
+
+def _validate_municipio_scope(scope: Any, source: str) -> None:
+    if scope is None:
+        return
+    if not isinstance(scope, dict) or scope.get("type") not in ALLOWED_MUNICIPIO_SCOPES:
+        raise ValueError(f"{source}.municipios.scope.type debe ser uno de {sorted(ALLOWED_MUNICIPIO_SCOPES)}")
+    value = scope.get("value")
+    if value is not None and (not isinstance(value, str) or len(value) > MAX_SCOPE_VALUE):
+        raise ValueError(f"{source}.municipios.scope.value debe ser texto de hasta {MAX_SCOPE_VALUE} caracteres")
 
 
 def _es_numero(valor: Any) -> bool:
