@@ -41,7 +41,7 @@ export const DRON_DEFAULT = {
     modelo: 'cuadri',
     color: '#6d2a8a',
     velocidad: 1,
-    seguir: true,
+    seguir: false,
     tercera: true,
     estela: true,
     luces: true,
@@ -54,7 +54,7 @@ export const normalizarDron = (valor) => {
     if (AERONAVES[valor.modelo]) base.modelo = valor.modelo;
     if (COLORES_DRON.some(([hex]) => hex === valor.color)) base.color = valor.color;
     if ([0, 1, 2].includes(valor.velocidad)) base.velocidad = valor.velocidad;
-    ['seguir', 'tercera', 'estela', 'luces', 'foco'].forEach((clave) => {
+    ['tercera', 'estela', 'luces', 'foco'].forEach((clave) => {
         if (typeof valor[clave] === 'boolean') base[clave] = valor[clave];
     });
     return base;

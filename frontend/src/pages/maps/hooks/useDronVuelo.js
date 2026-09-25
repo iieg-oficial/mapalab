@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useDron } from '@contexts/DronContext';
 import { useView3d } from '@contexts/View3dContext';
 import { loadMaplibre } from '@pages/maps/helpers/maplibreLoader';
-import { VIEW3D_PITCH_MAX } from '@pages/maps/helpers/view3d';
+import { VIEW3D_PITCH_MAX, cameraToOlView } from '@pages/maps/helpers/view3d';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 import {
     SIN_ENTRADA, aplicarMandos, amortiguar, anguloCorto, crearDron, desplazar, entradaGuiada, mirarCamara, pasoDron, rapidezKmh,
@@ -17,6 +17,15 @@ const CENTRO = [(OESTE + ESTE) / 2, (SUR + NORTE) / 2];
 const RADIO_AUTO = 180000;
 const MUESTRAS = 50;
 const MIRADA_POR_PX = 0.25;
+const SINCRONIA_2D_MS = 1500;
+
+const sincronizar2d = (map, olMap) => {
+    const view = olMap?.getView();
+    if (!view) return;
+    const { center, zoom } = cameraToOlView({ center: map.getCenter().toArray(), zoom: map.getZoom() });
+    view.setCenter(center);
+    view.setZoom(zoom);
+};
 
 const configurarMapa = (map, activo) => {
     INTERACCIONES.forEach(nombre => map[nombre]?.[activo ? 'disable' : 'enable']());
@@ -41,7 +50,7 @@ const relieveAdelante = (dron, sueloEn) => {
     return false;
 };
 
-export const useDronVuelo = (map, principal) => {
+export const useDronVuelo = (map, principal, olRef = null) => {
     const dron = useDron();
     const { exaggeration } = useView3d();
     const activo = dron.activo && principal && !!map;
@@ -62,6 +71,7 @@ export const useDronVuelo = (map, principal) => {
         let muestras = [];
         let camara = null;
         let alNorte = false;
+        let ultimaSincronia = 0;
         const sueloEn = lngLat => map.queryTerrainElevation(lngLat) ?? 0;
         const centro = map.getCenter().toArray();
         let estado = crearDron(centro, sueloEn(centro), map.getBearing());
@@ -136,6 +146,10 @@ export const useDronVuelo = (map, principal) => {
                 muestras,
                 alerta: n % 6 === 1 ? relieveAdelante(estado, sueloEn) : actual.telemetriaRef.current?.alerta,
             });
+            if (ahora - ultimaSincronia > SINCRONIA_2D_MS) {
+                ultimaSincronia = ahora;
+                sincronizar2d(map, olRef?.current);
+            }
             cuadro = requestAnimationFrame(volar);
         };
         cuadro = requestAnimationFrame(volar);
@@ -156,5 +170,5 @@ export const useDronVuelo = (map, principal) => {
                 return;
             }
         };
-    }, [activo, map]);
+    }, [activo, map, olRef]);
 };

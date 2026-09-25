@@ -167,7 +167,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     }, [map, basemaps, baseMapId]);
 
     useMap3dContorno(map, contorno);
-    useDronVuelo(map, principal);
+    useDronVuelo(map, principal, olRef);
     useCamara3dSincronizada(map, grupo3dRef);
     const sinTexto = useMap3dEtiquetas(map, olRef, { activo: estiloTextos === 'frente', escala: escalaSimbolos, dePie });
     useMap3dLayers(map, olRef, dePie, sinTexto);

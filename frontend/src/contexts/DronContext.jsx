@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useSider } from '@contexts/SiderContext';
 import { useView3d } from '@contexts/View3dContext';
+import { useMapsContext } from '@hooks/useMaps';
+import { useZenMode } from '@pages/maps/components/ZenMode';
 import { AERONAVES, DRON_DEFAULT, normalizarDron, siguienteColor } from '@pages/maps/helpers/dron/aeronaves';
 
 const LLAVE_DRON = 'mapalab.dron';
@@ -47,6 +49,8 @@ const INACTIVO = {
 export const DronProvider = ({ children }) => {
     const { active, setOrbita } = useView3d();
     const { forzarCandado } = useSider();
+    const { setIsZenMode } = useZenMode() || {};
+    const { setSelectedFeatureInfo } = useMapsContext();
     const [activo, setActivo] = useState(false);
     const [config, setConfig] = useState(leerDron);
     const [auto, setAuto] = useState(false);
@@ -61,8 +65,13 @@ export const DronProvider = ({ children }) => {
     useEffect(() => {
         if (!activo) return undefined;
         forzarCandado?.('mobile');
-        return () => forzarCandado?.(null);
-    }, [activo, forzarCandado]);
+        setIsZenMode?.(true);
+        setSelectedFeatureInfo?.(null);
+        return () => {
+            forzarCandado?.(null);
+            setIsZenMode?.(false);
+        };
+    }, [activo, forzarCandado, setIsZenMode, setSelectedFeatureInfo]);
 
     const entrar = useCallback(() => {
         setOrbita(false);

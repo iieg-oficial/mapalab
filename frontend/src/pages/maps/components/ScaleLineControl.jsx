@@ -3,7 +3,6 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useAreaUtil } from '@contexts/AreaUtilContext';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useScaleLineControl } from '@hooksMaps/useScaleLineControl';
-import { useDron } from '@contexts/DronContext';
 
 const ScaleLineControl = () => {
     const { mapRef, compareMode, paneMapInstances } = useMapsContext();
@@ -11,7 +10,6 @@ const ScaleLineControl = () => {
     const { margenes } = useAreaUtil();
     const containerRef = useRef(null);
     const isSwipe = !!compareMode?.active;
-    const { activo: enDron } = useDron();
 
     const getMapInstance = useCallback(() => {
         if (isSwipe) return paneMapInstances?.[0] ?? null;
@@ -23,7 +21,7 @@ const ScaleLineControl = () => {
     return (
         <div
             ref={containerRef}
-            className={`fixed bottom-1 z-10 ${className} ${enDron ? 'hidden' : ''}`}
+            className={`fixed bottom-1 z-10 ${className}`}
             style={{
                 ...style,
                 left: `calc(${style?.left || '0px'} + ${margenes.left}px)`,

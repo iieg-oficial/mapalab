@@ -25,6 +25,15 @@ describe('física del dron', () => {
         expect(Math.hypot(final.vEste, final.vNorte) * 3.6).toBeCloseTo(AERONAVES.cuadri.vel[1], 0);
     });
 
+    it('por default vuela a altitud fija aunque el terreno cambie abajo', () => {
+        expect(DRON_DEFAULT.seguir).toBe(false);
+        const loma = ([lng]) => 1500 + (lng + 103.35) * 20000;
+        const dron = { ...crearDron(GDL, 1500, 90), alt: 1900, agl: 400 };
+        const final = volar(dron, { ...SIN_ENTRADA, avance: 1 }, 6, { seguir: false, sueloEn: loma });
+        expect(final.alt).toBeCloseTo(1900, 0);
+        expect(final.agl).toBeLessThan(400);
+    });
+
     it('sigue el relieve y nunca baja del mínimo sobre el terreno', () => {
         const dron = { ...crearDron(GDL, 1500, 0), alt: 1520, agl: 20 };
         const final = volar(dron, { ...SIN_ENTRADA, sube: -1 }, 10);

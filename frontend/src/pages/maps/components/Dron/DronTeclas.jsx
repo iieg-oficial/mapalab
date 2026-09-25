@@ -34,7 +34,7 @@ const DronTeclas = ({ anchorRef, bordeRef, onClose }) => {
             anchorRef={anchorRef}
             bordeRef={bordeRef}
             onClose={onClose}
-            width={224}
+            width={252}
             alinear="abajo"
             etiqueta="Teclas del modo dron"
             className="rounded-[12px] bg-[#F9FBFF] px-3 pb-3 pt-2 shadow-[0_5px_20px_#1A26641A]"
