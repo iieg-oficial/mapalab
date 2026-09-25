@@ -47,6 +47,7 @@ const fakeMaplibre = () => {
             order.splice(before ? order.indexOf(before) : order.length, 0, id);
         },
         setPaintProperty: vi.fn(),
+        setLayerZoomRange: vi.fn(),
     };
 };
 
@@ -76,9 +77,13 @@ describe('syncWmsLayers', () => {
         const conSubcapas = (uid, ids) => ({ ...fakeOlLayer({ uid, zIndex: 100 + uid, params: { LAYERS: `a:${uid}` } }), get: (key) => (key === 'mergedLayers' ? [{ subLayers: ids.map(id => ({ id })) }] : undefined) });
         const salud = conSubcapas(1, ['unidades_salud']);
         const mixta = conSubcapas(2, ['unidades_salud', 'municipios']);
-        syncWmsLayers(map, fakeOlMap([salud, mixta]), new Set(['unidades_salud']));
+        const delitos = conSubcapas(3, ['lesiones_dolosas']);
+        syncWmsLayers(map, fakeOlMap([salud, mixta, delitos]), new Map([['unidades_salud', 0], ['lesiones_dolosas', 10]]));
         expect(map.order).not.toContain('wms-1');
         expect(map.order).toContain('wms-2');
+        const capaDe = (id) => map.addLayer.mock.calls.find(([spec]) => spec.id === id)[0];
+        expect(capaDe('wms-2').maxzoom).toBe(24);
+        expect(capaDe('wms-3').maxzoom).toBe(10);
     });
 
     it('actualiza el filtro sin recrear la fuente y quita las capas que salen', () => {

@@ -131,9 +131,9 @@ export const buildBaseStyle = (basemap) => ({
 
 const SKIPPED_WMS_PARAMS = new Set(['WIDTH', 'HEIGHT', 'BBOX', 'SRS', 'CRS', 'REQUEST', 'SERVICE', 'TILED']);
 
-export const wmsTileUrl = (url, params) => {
+export const wmsTileUrl = (url, params, tamano = 256) => {
     if (!url) return null;
-    const query = new URLSearchParams({ SERVICE: 'WMS', REQUEST: 'GetMap', SRS: 'EPSG:3857', WIDTH: '256', HEIGHT: '256' });
+    const query = new URLSearchParams({ SERVICE: 'WMS', REQUEST: 'GetMap', SRS: 'EPSG:3857', WIDTH: String(tamano), HEIGHT: String(tamano) });
     Object.entries(params || {}).forEach(([key, value]) => {
         if (value === undefined || value === null || SKIPPED_WMS_PARAMS.has(key.toUpperCase())) return;
         query.set(key, String(value));

@@ -6,6 +6,7 @@ import { fetchLayerData } from '@pages/maps/helpers/map3dFeatures';
 import { managedIds, removeGeojson, replaceLayers, upsertGeojson } from '@pages/maps/helpers/map3dLayerSpecs';
 import { dibujarIcono, medidasDeIcono, tamanoPorEstilo } from '@pages/maps/helpers/estilosDePuntos3d';
 import { OPCIONES_AGRUPAR, SIN_GRUPO, capaDeGrupos, registrarGrupos } from '@pages/maps/helpers/agrupamiento3d';
+import { DESDE_ZOOM_TESELAS, LAYOUT_TESELAS, ajustesDeTeselas, fuenteDeTeselas } from '@pages/maps/helpers/teselasDePuntos';
 import { useOlWmsRevision } from './useOlWmsRevision';
 
 const PREFIX = 'pt-';
@@ -44,6 +45,7 @@ export const entradasDePuntos = (olMap, allLayers, getServiceMode) => olMap.getL
         const segmentos = filtros ? filtros.split(';') : [];
         return layer.get('mergedLayers').map((entrada, indice) => ({
             clave: `${entrada.layerName}|${entrada.styles || ''}`,
+            nombre: entrada.layerName,
             wmsConfig: entrada.wmsConfig,
             ids: (entrada.subLayers || []).map(sub => sub.id),
             cql: (segmentos[indice] || '').trim().toUpperCase() === 'INCLUDE' ? null : (segmentos[indice] || '').trim() || null,
@@ -59,7 +61,7 @@ export const useMap3dBillboards = (map, olMapRef, {
     const revision = useOlWmsRevision(map, olMapRef);
     const cacheRef = useRef(new Map());
     const listosRef = useRef(new Map());
-    const agrupadasRef = useRef(new Map());
+    const modosRef = useRef(new Map());
 
     useEffect(() => (map ? registrarGrupos(map) : undefined), [map]);
 
@@ -69,39 +71,46 @@ export const useMap3dBillboards = (map, olMapRef, {
         const controller = new AbortController();
         const entradas = entradasDePuntos(olMap, allLayers, getServiceMode);
         const vigentes = new Set(entradas.map(({ clave }) => idDeFuente(clave)));
-        const avisar = () => onReady(new Set([...listosRef.current.values()].flat()));
+        const avisar = () => onReady(new Map([...listosRef.current.values()].flatMap(({ ids, desde }) => ids.map(id => [id, desde]))));
 
         managedIds(map, PREFIX).filter(id => !vigentes.has(id)).forEach(id => removeGeojson(map, id));
         [...listosRef.current.keys()].filter(id => !vigentes.has(id)).forEach(id => listosRef.current.delete(id));
         avisar();
 
-        entradas.forEach(async ({ clave, wmsConfig, ids, cql }) => {
+        entradas.forEach(async ({ clave, nombre, wmsConfig, ids, cql }) => {
             const sourceId = idDeFuente(clave);
             const cacheKey = `${clave}|${cql || ''}`;
             try {
                 let datos = cacheRef.current.get(cacheKey);
                 if (!datos) {
                     datos = await fetchLayerData({ wmsConfig, cqlFilter: cql, signal: controller.signal, getLegendJson, layerId: ids[0] });
-                    if (datos.status === 'ok') cacheRef.current.set(cacheKey, datos);
+                    if (datos.status === 'too_large') datos = { ...datos, legendJson: await getLegendJson({ id: ids[0] }) };
+                    cacheRef.current.set(cacheKey, datos);
                 }
-                if (controller.signal.aborted || datos.status !== 'ok') return;
+                if (controller.signal.aborted) return;
                 const reglas = parsePointRules(datos.legendJson);
                 if (!reglas) return;
                 const idDe = (indice) => `ico:${estilo}:${reglas.rules[indice].url}`;
                 const cargados = await Promise.all(reglas.rules.map((regla, i) => cargarIcono(map, idDe(i), regla.url, regla.size, estilo)));
                 if (controller.signal.aborted || !cargados.some(Boolean)) return;
-                if (map.getSource(sourceId) && agrupadasRef.current.get(sourceId) !== agrupar) removeGeojson(map, sourceId);
-                if (map.getSource(sourceId)) upsertGeojson(map, sourceId, datos.collection);
-                else map.addSource(sourceId, { type: 'geojson', data: datos.collection, ...(agrupar ? OPCIONES_AGRUPAR : {}) });
-                agrupadasRef.current.set(sourceId, agrupar);
+                const teselas = datos.status === 'too_large' ? fuenteDeTeselas(wmsConfig, nombre, cql) : null;
+                const agrupada = agrupar && !teselas;
+                const modo = teselas ? teselas.tiles[0] : agrupada;
+                if (map.getSource(sourceId) && modosRef.current.get(sourceId) !== modo) removeGeojson(map, sourceId);
+                if (teselas) {
+                    if (!map.getSource(sourceId)) map.addSource(sourceId, teselas);
+                } else if (map.getSource(sourceId)) upsertGeojson(map, sourceId, datos.collection);
+                else map.addSource(sourceId, { type: 'geojson', data: datos.collection, ...(agrupada ? OPCIONES_AGRUPAR : {}) });
+                modosRef.current.set(sourceId, modo);
                 replaceLayers(map, sourceId, [{
                     id: `${sourceId}-icono`,
                     type: 'symbol',
                     source: sourceId,
-                    ...(agrupar ? { filter: SIN_GRUPO } : {}),
-                    layout: { ...billboardLayout(iconExpression(reglas, idDe)), 'icon-size': tamanoPorEstilo(estilo, escala) },
-                }, ...(agrupar ? [capaDeGrupos(sourceId, escala)] : [])]);
-                listosRef.current.set(sourceId, ids);
+                    ...(teselas ? ajustesDeTeselas(nombre) : {}),
+                    ...(agrupada ? { filter: SIN_GRUPO } : {}),
+                    layout: { ...billboardLayout(iconExpression(reglas, idDe)), ...(teselas ? LAYOUT_TESELAS : {}), 'icon-size': tamanoPorEstilo(estilo, escala) },
+                }, ...(agrupada ? [capaDeGrupos(sourceId, escala)] : [])]);
+                listosRef.current.set(sourceId, { ids, desde: teselas ? DESDE_ZOOM_TESELAS : 0 });
                 avisar();
             } catch (error) {
                 if (!controller.signal.aborted) console.warn('[mapa3d] sin iconos de pie para', clave, error?.message || error);

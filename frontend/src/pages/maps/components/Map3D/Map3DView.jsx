@@ -59,9 +59,9 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
         return () => onMapa?.(null);
     }, [map, onMapa]);
     useEffect(() => { onMidiendo?.(midiendo); }, [midiendo, onMidiendo]);
-    const [dePie, setDePie] = useState(() => new Set());
+    const [dePie, setDePie] = useState(() => new Map());
     const alListarDePie = useCallback((ids) => {
-        setDePie(previo => (previo.size === ids.size && [...ids].every(id => previo.has(id)) ? previo : ids));
+        setDePie(previo => (previo.size === ids.size && [...ids].every(([id, desde]) => previo.get(id) === desde) ? previo : ids));
     }, []);
     const orbitaRef = useRef(false);
     orbitaRef.current = orbita;

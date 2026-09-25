@@ -7,12 +7,14 @@ const PREFIX = 'wms-';
 
 const subLayerIds = (layer) => (layer.get('mergedLayers') || []).flatMap(entry => (entry.subLayers || []).map(sub => sub.id));
 
-const cubiertaPorOtraVista = (layer, excluidos) => {
+const ZOOM_MAXIMO = 24;
+
+const hastaZoom = (layer, excluidos) => {
     const ids = subLayerIds(layer);
-    return ids.length > 0 && ids.every(id => excluidos.has(id));
+    return ids.length > 0 && ids.every(id => excluidos.has(id)) ? Math.max(...ids.map(id => excluidos.get(id))) : ZOOM_MAXIMO;
 };
 
-const isMirrored = (layer, excluidos) => !!layer.get('mergedLayers') && layer.getVisible() && !cubiertaPorOtraVista(layer, excluidos);
+const isMirrored = (layer, excluidos) => !!layer.get('mergedLayers') && layer.getVisible() && hastaZoom(layer, excluidos) > 0;
 
 const byZIndex = (a, b) => (a.getZIndex() ?? 0) - (b.getZIndex() ?? 0);
 
@@ -26,7 +28,7 @@ const paramsDe = (source, cuerpo) => (cuerpo
     ? { ...source.getParams(), LAYERS: undefined, STYLES: undefined, SLD_BODY: cuerpo }
     : source.getParams());
 
-const upsert = (map, id, layer, cuerpo) => {
+const upsert = (map, id, layer, cuerpo, hasta) => {
     const source = layer.getSource();
     const url = wmsTileUrl(sourceUrl(source), paramsDe(source, cuerpo));
     if (!url) return;
@@ -37,15 +39,17 @@ const upsert = (map, id, layer, cuerpo) => {
             id,
             type: 'raster',
             source: id,
+            maxzoom: hasta,
             paint: { 'raster-opacity': layer.getOpacity(), 'raster-fade-duration': 0 },
         }, map.getLayer(RELIEF_LAYER_ID) ? RELIEF_LAYER_ID : undefined);
         return;
     }
     if (existing.tiles?.[0] !== url) existing.setTiles([url]);
+    if (map.getLayer(id)?.maxzoom !== hasta) map.setLayerZoomRange(id, 0, hasta);
     map.setPaintProperty(id, 'raster-opacity', layer.getOpacity());
 };
 
-const SIN_EXCLUIDOS = new Set();
+const SIN_EXCLUIDOS = new Map();
 const SIN_CUERPOS = new Map();
 
 export const syncWmsLayers = (map, olMap, excluidos = SIN_EXCLUIDOS, cuerpos = SIN_CUERPOS) => {
@@ -58,7 +62,7 @@ export const syncWmsLayers = (map, olMap, excluidos = SIN_EXCLUIDOS, cuerpos = S
         if (map.getSource(id)) map.removeSource(id);
     });
 
-    wanted.forEach((layer, id) => upsert(map, id, layer, cuerpos.get(getUid(layer))));
+    wanted.forEach((layer, id) => upsert(map, id, layer, cuerpos.get(getUid(layer)), hastaZoom(layer, excluidos)));
 
     const before = map.getLayer(RELIEF_LAYER_ID) ? RELIEF_LAYER_ID : undefined;
     wanted.forEach((_, id) => map.moveLayer(id, before));
