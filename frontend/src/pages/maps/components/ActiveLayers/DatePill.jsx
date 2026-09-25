@@ -9,14 +9,15 @@ const SIZE_CLASSES = {
     lg: 'h-6 px-2 text-[10px] w-[64px]',
 };
 
-const DatePill = ({ slot, label, kind, onClick, isLoopingPulse, isLooping = false, size = 'sm', autoWidth = false }) => {
+const DatePill = ({ slot, label, kind, onClick, isLoopingPulse, isLooping = false, size = 'sm', autoWidth = false, tooltip, expanded }) => {
     const palette = SLOT_PILL[slot] || SLOT_PILL.none;
     const widthClass = (autoWidth || size === 'lg') ? '' : getLabelWidthClass(kind, isLooping);
     const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.sm;
     return (
-        <Tooltip content={slot === 'none' ? 'Ver detalles de capa' : `Fecha del lado ${slotLabel(slot)}${isLooping ? ' (en animación)' : ''}`}>
+        <Tooltip content={tooltip || (slot === 'none' ? 'Ver detalles de capa' : `Fecha del lado ${slotLabel(slot)}${isLooping ? ' (en animación)' : ''}`)}>
             <button
                 onClick={onClick}
+                aria-expanded={expanded}
                 className={`flex items-center justify-center gap-1 rounded-full border font-garet font-bold shrink-0 transition-all tabular-nums ${sizeClass} ${palette.bg} ${palette.border} ${palette.text} ${palette.hover} ${widthClass} ${isLoopingPulse ? 'animate-pulse' : ''}`}
             >
                 {isLooping && <Icon name="play" className="size-2.5 shrink-0" />}

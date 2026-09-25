@@ -7,8 +7,8 @@ import { useLayerDownload } from '../../hooks/useLayerDownload';
 import { useSider } from '@contexts/SiderContext';
 import MapsContext from '@contexts/MapsContext';
 import { useEventoContext } from '@hooks/useEvento';
-import { findLayerDef, findLayerTheme, findWMSConfig } from '../../helpers/wmsConfig';
-import { fetchGeometryType } from '../../../../utils/featureInfoUtils';
+import { findLayerDef, findLayerTheme } from '../../helpers/wmsConfig';
+import { useSeleccionUnicaDeFecha } from '../../hooks/useSeleccionUnicaDeFecha';
 import { formatDateString } from '../../helpers/dateFilterHelpers';
 import { slotLabel } from '../../helpers/swipeTheme';
 import { useSlotPeriodicity } from '../../hooks/useSlotPeriodicity';
@@ -49,21 +49,9 @@ const LayerDetailModal = () => {
     const themeName = themeNode?.label || metadata?.tema || 'General';
     const { periodicity, loading: periodicityLoading } = useLayerPeriodicity(selectedLayer?.id);
     const { isMobile } = useSider();
-    const [singleSelectOnly, setSingleSelectOnly] = useState(false);
+    const singleSelectOnly = useSeleccionUnicaDeFecha(selectedLayer?.id, allLayers, !!rasterPeriodicity);
 
     const download = useLayerDownload(selectedLayer?.id, { getFilter, getSpecificFilter, metadata });
-
-    useEffect(() => {
-        if (!selectedLayer?.id || rasterPeriodicity) return;
-        const wmsConfig = findWMSConfig(selectedLayer.id, allLayers);
-        if (!wmsConfig) return;
-        let cancelled = false;
-        fetchGeometryType(wmsConfig.baseUrl, wmsConfig.layerName).then(type => {
-            if (!cancelled) setSingleSelectOnly(type === 'polygon');
-        });
-        return () => { cancelled = true; };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedLayer?.id, rasterPeriodicity]);
 
     const hasPeriodicity = !hidePeriodicity && (periodicity != null || periodicityLoading || rasterPeriodicity != null);
 

@@ -20,6 +20,8 @@ import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
 import LayerDownloadProgress from './LayerDownloadProgress';
 import LayerStatsInline from './LayerStatsInline';
+import LayerPeriodicityInline from './LayerPeriodicityInline';
+import { useSlotPeriodicity } from '@hooksMaps/useSlotPeriodicity';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
 import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
 import { useLayerDownload } from '@hooksMaps/useLayerDownload';
@@ -126,6 +128,17 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
 
 
     const handleSetSelectedLayerClick = (e) => { e.stopPropagation(); setSelectedLayer(layer); };
+
+    const fechasEnItem = isExpanded && !compareMode?.active;
+    const periodicidad = useSlotPeriodicity(fechasEnItem ? layer.id : null);
+    const [fechasAbiertas, setFechasAbiertas] = useState(false);
+    const mostrarFechas = fechasEnItem && fechasAbiertas && periodicidad.hasPeriodicity;
+    useEffect(() => { if (!fechasEnItem) setFechasAbiertas(false); }, [fechasEnItem]);
+    const handlePillClick = (e) => {
+        if (!fechasEnItem || !periodicidad.hasPeriodicity) return handleSetSelectedLayerClick(e);
+        e.stopPropagation();
+        setFechasAbiertas(prev => !prev);
+    };
 
     const loopState = getLoopState?.(layer.id);
     const isLooping = loopState?.isPlaying;
@@ -241,11 +254,15 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 canPlayLoop={canPlayLoop}
                                 loopIntervalMs={loopIntervalMs}
                                 loopDirection={loopDirection}
-                                onPillClick={handleSetSelectedLayerClick}
+                                onPillClick={handlePillClick}
+                                emptyLabel={periodicidad.hasPeriodicity ? 'TODAS' : null}
+                                pillTooltip={fechasEnItem && periodicidad.hasPeriodicity ? (mostrarFechas ? 'Ocultar fechas' : 'Elegir fecha') : undefined}
+                                pillExpanded={fechasEnItem ? mostrarFechas : undefined}
                                 onPlay={handlePlayClick}
                                 onInterval={handleIntervalClick}
                                 onDirection={handleDirectionClick}
                             />
+                            {mostrarFechas && <LayerPeriodicityInline layerId={layer.id} periodicidad={periodicidad} allLayers={allLayers} />}
                             <LayerActionsBar
                                 layerId={layer.id}
                                 visible={layer.visible}

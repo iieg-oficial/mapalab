@@ -5,6 +5,19 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.214.0] - 2026-09-25
+
+### Agregado: la fecha se elige desde el item seleccionado
+
+- En el panel de capas activas, la píldora de fecha del item seleccionado **despliega años y meses
+  ahí mismo** en vez de abrir el detalle de capa. Otro clic los oculta. Los controles del loop
+  siguen junto a la píldora.
+- Las capas vectoriales con periodicidad y sin filtro muestran la píldora **TODAS** para poder
+  abrir el selector.
+- En el comparador la píldora sigue abriendo el detalle, que ya tiene un bloque por lado.
+- `LayerPeriodicityInline` reutiliza `SimpleDateSelector` y `useSlotPeriodicity`. La regla de un
+  solo mes en polígonos pasa a `useSeleccionUnicaDeFecha`, compartida con el modal.
+
 ## [1.213.5] - 2026-09-25
 
 ### Corregido: el 3D ya no dibuja estrías ni un canto alrededor de Jalisco

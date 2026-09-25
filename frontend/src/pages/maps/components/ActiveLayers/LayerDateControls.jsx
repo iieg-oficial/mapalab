@@ -86,6 +86,9 @@ const LayerDateControls = ({
     loopIntervalMs,
     loopDirection,
     onPillClick,
+    emptyLabel = null,
+    pillTooltip,
+    pillExpanded,
     onPlay,
     onInterval,
     onDirection
@@ -96,14 +99,12 @@ const LayerDateControls = ({
     const slotALabel = useMemo(() => computeLabel(compareMode?.paneA?.filters?.[layerId]?.date, rasterPeriodicity), [compareMode?.paneA?.filters, layerId, rasterPeriodicity]);
     const slotBLabel = useMemo(() => computeLabel(compareMode?.paneB?.filters?.[layerId]?.date, rasterPeriodicity), [compareMode?.paneB?.filters, layerId, rasterPeriodicity]);
 
-    const hasAnyLabel = !!(liveLabel.label || slotALabel.label || slotBLabel.label);
-    if (!hasAnyLabel) return null;
-
     if (!isSwipe) {
-        if (!liveLabel.label) return null;
+        const label = liveLabel.label || emptyLabel;
+        if (!label) return null;
         return (
             <div className="flex items-center gap-1 w-full">
-                <DatePill slot="none" label={liveLabel.label} kind={liveLabel.kind} onClick={onPillClick} isLoopingPulse={isLooping && isLoading} size="lg" />
+                <DatePill slot="none" label={label} kind={liveLabel.kind} onClick={onPillClick} isLoopingPulse={isLooping && isLoading} size="lg" tooltip={pillTooltip} expanded={pillExpanded} />
                 <LoopControls
                     isLooping={isLooping}
                     canPlayLoop={canPlayLoop}
@@ -118,7 +119,7 @@ const LayerDateControls = ({
         );
     }
 
-    if (!slotMembership) return null;
+    if (!(slotALabel.label || slotBLabel.label) || !slotMembership) return null;
 
     const controlSlot = isLooping && loopSlot ? loopSlot : compareMode.activeSlot;
     const isActiveA = controlSlot === 'A';
