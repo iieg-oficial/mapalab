@@ -5,8 +5,9 @@ import { loadMaplibre } from '@pages/maps/helpers/maplibreLoader';
 import { VIEW3D_PITCH_MAX } from '@pages/maps/helpers/view3d';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 import {
-    SIN_ENTRADA, amortiguar, anguloCorto, crearDron, desplazar, entradaGuiada, mirarCamara, pasoDron, rapidezKmh,
+    SIN_ENTRADA, aplicarMandos, amortiguar, anguloCorto, crearDron, desplazar, entradaGuiada, mirarCamara, pasoDron, rapidezKmh,
 } from '@pages/maps/helpers/dron/fisicaDron';
+import { mandosDe } from '@pages/maps/helpers/dron/aeronaves';
 import { metaTercera, opcionesPrimera, opcionesTercera, seguirCamara } from '@pages/maps/helpers/dron/camaraDron';
 import { entradaManual, hayEntradaManual, useDronTeclado } from './useDronTeclado';
 
@@ -107,8 +108,8 @@ export const useDronVuelo = (map, principal) => {
             const guiada = entradaGuiada(estado, { destino: actual.destinoRef.current, auto: actual.auto, t, centro: CENTRO, radio: RADIO_AUTO });
             if (guiada?.llego) actual.destinoRef.current = null;
             const entrada = guiada && !guiada.llego ? guiada.entrada : (guiada?.llego ? SIN_ENTRADA : entradaManual(controles));
-            estado = pasoDron(estado, entrada, {
-                perfil: actual.perfil, velocidad: actual.config.velocidad, seguir: actual.config.seguir, dt, sueloEn, auto: !!guiada,
+            estado = pasoDron(estado, aplicarMandos(entrada, mandosDe(actual.config.modelo)), {
+                perfil: actual.perfil, velocidad: actual.config.velocidad, seguir: actual.config.seguir, dt, sueloEn,
             });
             if (alNorte) {
                 const falta = anguloCorto(-estado.rumbo);
@@ -117,7 +118,7 @@ export const useDronVuelo = (map, principal) => {
             }
             if (actual.config.tercera) {
                 const lejania = map.getCanvas().clientWidth < 768 ? 1.8 : 1;
-                camara = seguirCamara(camara, metaTercera(estado, { globo: actual.perfil.tipo === 'globo', sueloEn, lejania }), dt);
+                camara = seguirCamara(camara, metaTercera(estado, { distancia: actual.perfil.distancia, sueloEn, lejania }), dt);
                 map.jumpTo(opcionesTercera(map, camara, estado));
             } else {
                 camara = null;

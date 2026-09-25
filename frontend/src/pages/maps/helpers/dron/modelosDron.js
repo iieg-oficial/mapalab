@@ -151,6 +151,37 @@ const CONSTRUCTORES = {
         g.add(led('#28d17c', 0.9, -0.1, -0.3));
         g.add(led('#ff3b5c', -0.9, -0.1, -0.3));
     },
+    jet(g, h, p, k) {
+        const fuselaje = malla(new THREE.CylinderGeometry(0.42, 0.62, 7, 20), p);
+        fuselaje.rotation.x = Math.PI / 2;
+        g.add(fuselaje);
+        const nariz = malla(new THREE.ConeGeometry(0.42, 2.2, 20), p, 0, 0, -4.6);
+        nariz.rotation.x = -Math.PI / 2;
+        g.add(nariz);
+        const cabina = malla(new THREE.SphereGeometry(0.45, 18, 12), mat('#2b3a55', { roughness: 0.1, metalness: 0.6 }), 0, 0.42, -2.4);
+        cabina.scale.set(0.8, 0.6, 2.2);
+        g.add(cabina);
+        const delta = new THREE.Shape();
+        delta.moveTo(0, -1.6); delta.lineTo(4.2, 2.2); delta.lineTo(3.9, 2.6); delta.lineTo(0, 2.3);
+        delta.lineTo(-3.9, 2.6); delta.lineTo(-4.2, 2.2); delta.closePath();
+        const alas = new THREE.Mesh(new THREE.ExtrudeGeometry(delta, { depth: 0.1, bevelEnabled: true, bevelSize: 0.04, bevelThickness: 0.04, bevelSegments: 1 }), k.claro);
+        alas.rotation.x = Math.PI / 2;
+        alas.position.set(0, -0.05, 0.2);
+        g.add(alas);
+        [-0.7, 0.7].forEach((x) => {
+            const deriva = malla(new THREE.BoxGeometry(0.08, 1.6, 1.3), p, x, 0.95, 2.6);
+            deriva.rotation.z = x * 0.35;
+            deriva.rotation.x = -0.3;
+            g.add(deriva);
+        });
+        g.add(malla(new THREE.CylinderGeometry(0.5, 0.45, 0.5, 20, 1, true), k.grafito, 0, 0, 3.7).rotateX(Math.PI / 2));
+        const llama = malla(new THREE.ConeGeometry(0.42, 2.4, 16), new THREE.MeshBasicMaterial({ color: '#ff8300', transparent: true, opacity: 0.75 }), 0, 0, 5.1);
+        llama.rotation.x = -Math.PI / 2;
+        g.add(llama);
+        h.push({ obj: llama, pulso: true });
+        g.add(led('#28d17c', 4.1, 0, 2.3));
+        g.add(led('#ff3b5c', -4.1, 0, 2.3));
+    },
     globo(g, h, p) {
         const lienzo = document.createElement('canvas');
         lienzo.width = 256;

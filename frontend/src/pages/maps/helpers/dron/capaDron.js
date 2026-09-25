@@ -115,7 +115,10 @@ export const crearCapaDron = (maplibregl, { leer, alPantalla }) => {
             const balanceo = perfil.tipo === 'globo' ? Math.sin(ahora / 900) * 0.04 : 0;
             aeronave.grupo.visible = config.tercera;
             aeronave.grupo.rotation.set(dron.cabeceo + balanceo, -dron.rumbo * RAD, dron.alabeo);
-            aeronave.helices.forEach((h) => { h.obj.rotation[h.eje] += dt * h.vel; });
+            aeronave.helices.forEach((h) => {
+                if (h.pulso) h.obj.scale.set(1, 0.8 + Math.random() * 0.45, 1);
+                else h.obj.rotation[h.eje] += dt * h.vel;
+            });
 
             const agl = dron.alt - (dron.piso ?? dron.alt);
             sombra.visible = config.tercera;

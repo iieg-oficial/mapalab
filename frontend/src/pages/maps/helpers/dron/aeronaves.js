@@ -5,7 +5,20 @@ export const AERONAVES = {
     vtol: { nombre: 'VTOL', tipo: 'ala', vel: [80, 220, 400], giro: 0.6, acel: 1.3, subida: 14, instr: 'horizonte' },
     fpv: { nombre: 'FPV de carreras', tipo: 'multi', vel: [80, 160, 240], giro: 1.9, acel: 3.5, subida: 28, instr: 'camara' },
     heli: { nombre: 'Helicóptero', tipo: 'multi', vel: [100, 220, 320], giro: 0.9, acel: 1.3, subida: 16, instr: 'horizonte' },
-    globo: { nombre: 'Globo', tipo: 'globo', vel: [5, 12, 25], giro: 0.15, acel: 0.35, subida: 4, instr: 'vario', viento: [2.2, 1.1] },
+    jet: { nombre: 'Jet', tipo: 'ala', vel: [400, 900, 1600], giro: 0.5, acel: 0.9, subida: 90, instr: 'horizonte', perdida: 220, techo: 9000, distancia: 95 },
+    globo: { nombre: 'Globo', tipo: 'globo', vel: [5, 12, 25], giro: 0.15, acel: 0.35, subida: 4, instr: 'vario', viento: [2.2, 1.1], distancia: 110 },
+};
+
+const MANDOS = {
+    multi: { lateral: 'desplaza', reversa: true, avance: true },
+    vtol: { lateral: 'desplaza', reversa: false, avance: true },
+    ala: { lateral: 'gira', reversa: false, avance: true },
+    globo: { lateral: null, reversa: false, avance: false },
+};
+
+export const mandosDe = (modelo) => {
+    if (modelo === 'vtol') return MANDOS.vtol;
+    return MANDOS[AERONAVES[modelo]?.tipo] || MANDOS.multi;
 };
 
 export const MODELOS_DRON = Object.keys(AERONAVES);

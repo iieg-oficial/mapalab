@@ -38,6 +38,15 @@ export const crearDron = (lngLat, suelo, rumbo) => ({
 
 export const SIN_ENTRADA = { avance: 0, lateral: 0, giro: 0, sube: 0, mira: 0 };
 
+export const aplicarMandos = (entrada, mandos) => {
+    const salida = { ...entrada };
+    if (!mandos.avance) salida.avance = 0;
+    else if (!mandos.reversa) salida.avance = acotar(0.55 + entrada.avance * 0.45, 0.1, 1);
+    if (mandos.lateral === 'gira') salida.giro = acotar(entrada.giro - entrada.lateral, -1, 1);
+    if (mandos.lateral !== 'desplaza') salida.lateral = 0;
+    return salida;
+};
+
 export const entradaGuiada = (dron, { destino, auto, t, centro, radio }) => {
     if (destino) {
         const { metros, rumbo } = distancia(dron.lngLat, destino);
@@ -56,9 +65,9 @@ export const entradaGuiada = (dron, { destino, auto, t, centro, radio }) => {
     return { entrada: { ...SIN_ENTRADA, avance: 0.6, giro }, llego: false };
 };
 
-export const pasoDron = (dron, entrada, { perfil, velocidad, seguir, dt, sueloEn, auto = false }) => {
+export const pasoDron = (dron, entrada, { perfil, velocidad, seguir, dt, sueloEn }) => {
     const vmax = perfil.vel[velocidad] / 3.6;
-    const avance = perfil.perdida && !auto ? Math.max(entrada.avance, perfil.perdida / perfil.vel[velocidad]) : entrada.avance;
+    const avance = perfil.perdida ? Math.max(entrada.avance, perfil.perdida / perfil.vel[velocidad]) : entrada.avance;
     const r = dron.rumbo * RAD;
     const [fe, fn] = [Math.sin(r), Math.cos(r)];
     const vEste = amortiguar(dron.vEste, (fe * avance + fn * entrada.lateral) * vmax, perfil.acel, dt);
@@ -70,11 +79,11 @@ export const pasoDron = (dron, entrada, { perfil, velocidad, seguir, dt, sueloEn
     const piso = sueloEn(lngLat);
     let { alt, agl, vVert } = dron;
     if (seguir) {
-        agl = acotar(agl + entrada.sube * perfil.subida * dt, AGL_MINIMO, AGL_MAXIMO);
+        agl = acotar(agl + entrada.sube * perfil.subida * dt, AGL_MINIMO, perfil.techo ?? AGL_MAXIMO);
         alt = amortiguar(alt, piso + agl, 2.2, dt);
     } else {
         vVert = amortiguar(vVert, entrada.sube * perfil.subida, 3, dt);
-        alt = Math.min(piso + AGL_MAXIMO, alt + vVert * dt);
+        alt = Math.min(piso + (perfil.techo ?? AGL_MAXIMO), alt + vVert * dt);
         agl = alt - piso;
     }
     if (alt < piso + AGL_MINIMO) {

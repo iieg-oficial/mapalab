@@ -2,13 +2,12 @@ import { acotar, amortiguar, desplazar } from './fisicaDron';
 
 const RAD = Math.PI / 180;
 export const DISTANCIA_TERCERA = 70;
-const DISTANCIA_GLOBO = 110;
 const ALTURA_MIRA = 4;
 
-export const metaTercera = (dron, { globo = false, sueloEn, lejania = 1 }) => {
+export const metaTercera = (dron, { distancia = DISTANCIA_TERCERA, sueloEn, lejania = 1 }) => {
     const r = dron.rumbo * RAD;
     const elevacion = acotar(12.6 - dron.camara * 0.9, 3, 77) * RAD;
-    const dist = (globo ? DISTANCIA_GLOBO : DISTANCIA_TERCERA) * lejania;
+    const dist = distancia * lejania;
     const horizontal = dist * Math.cos(elevacion);
     const lngLat = desplazar(dron.lngLat, -Math.sin(r) * horizontal, -Math.cos(r) * horizontal);
     const alt = Math.max(dron.alt + dist * Math.sin(elevacion), sueloEn(lngLat) + 6);

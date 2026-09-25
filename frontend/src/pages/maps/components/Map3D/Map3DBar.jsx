@@ -14,7 +14,7 @@ import Map3DAjustes from './Map3DAjustes';
 import { deslizadores3d } from './deslizadores3d';
 
 const ANILLOS = ['pitch', 'exag', 'sol'];
-const BOTON = `flex items-center justify-center size-8.5 ${RADIUS_ICON} shrink-0 cursor-pointer transition-colors`;
+const BOTON = `flex items-center justify-center size-7.5 ${RADIUS_ICON} shrink-0 cursor-pointer transition-colors`;
 const tonoBoton = (activo) => (activo ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6] text-[#5C2472] hover:bg-[#E2D3EA]');
 
 const Map3DBar = () => {
@@ -85,7 +85,7 @@ const Map3DBar = () => {
                     <Tooltip content="Ajustes de la vista 3D">
                         <button
                             type="button"
-                            className="flex items-center justify-center size-8.5 cursor-pointer text-[#5C2472]"
+                            className="flex items-center justify-center size-7.5 cursor-pointer text-[#5C2472]"
                             onClick={() => alternar('ajustes')}
                             aria-expanded={false}
                             aria-label="Ajustes de la vista 3D"

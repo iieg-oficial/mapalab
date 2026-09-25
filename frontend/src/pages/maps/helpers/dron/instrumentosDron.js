@@ -28,8 +28,8 @@ const redondeado = (ctx, x, y, w, h, r) => {
     else ctx.rect(x, y, w, h);
 };
 
-const cinta = (ctx, { agl, msnm }) => {
-    const y = 140 - (118 * Math.log1p(Math.max(0, agl))) / Math.log1p(3000);
+const cinta = (ctx, { agl, msnm, perfil }) => {
+    const y = 140 - (118 * Math.log1p(Math.max(0, agl))) / Math.log1p(perfil.techo ?? 3000);
     const tono = COLOR_TONO[tonoAltura(agl)];
     ctx.fillStyle = LILA;
     redondeado(ctx, 34, 18, 26, 124, 13);

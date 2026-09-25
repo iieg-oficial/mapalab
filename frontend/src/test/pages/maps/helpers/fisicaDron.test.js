@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
-    AGL_MINIMO, SIN_ENTRADA, anguloCorto, crearDron, desplazar, distancia, entradaGuiada, pasoDron,
+    AGL_MINIMO, SIN_ENTRADA, anguloCorto, aplicarMandos, crearDron, desplazar, distancia, entradaGuiada, pasoDron,
 } from '@pages/maps/helpers/dron/fisicaDron';
-import { AERONAVES, DRON_DEFAULT, normalizarDron, siguienteColor } from '@pages/maps/helpers/dron/aeronaves';
+import { AERONAVES, DRON_DEFAULT, mandosDe, normalizarDron, siguienteColor } from '@pages/maps/helpers/dron/aeronaves';
 import { metaTercera } from '@pages/maps/helpers/dron/camaraDron';
 
 const GDL = [-103.35, 20.67];
@@ -38,6 +38,13 @@ describe('física del dron', () => {
         expect(Math.hypot(final.vEste, final.vNorte) * 3.6).toBeGreaterThan(AERONAVES.ala.perdida - 1);
     });
 
+    it('el jet sube más allá del techo de los drones y no baja de su velocidad de pérdida', () => {
+        const dron = { ...crearDron(GDL, 1500, 0), alt: 4500, agl: 3000 };
+        const final = volar(dron, { ...SIN_ENTRADA, sube: 1 }, 20, { perfil: AERONAVES.jet });
+        expect(final.agl).toBeGreaterThan(4000);
+        expect(Math.hypot(final.vEste, final.vNorte) * 3.6).toBeGreaterThan(AERONAVES.jet.perdida - 5);
+    });
+
     it('el globo se va con el viento aunque no se toque', () => {
         const dron = { ...crearDron(GDL, 1500, 0), alt: 1800, agl: 300 };
         const final = volar(dron, SIN_ENTRADA, 10, { perfil: AERONAVES.globo });
@@ -48,6 +55,31 @@ describe('física del dron', () => {
     it('con Q gira a la izquierda y el rumbo baja', () => {
         const dron = { ...crearDron(GDL, 1500, 90), alt: 1800, agl: 300 };
         expect(volar(dron, { ...SIN_ENTRADA, giro: 1 }, 1).rumbo).toBeLessThan(90);
+    });
+});
+
+describe('mandos por aeronave', () => {
+    const entrada = { ...SIN_ENTRADA, avance: -1, lateral: 1 };
+
+    it('los drones y el helicóptero se desplazan de lado y van en reversa', () => {
+        expect(aplicarMandos(entrada, mandosDe('cuadri'))).toMatchObject({ avance: -1, lateral: 1, giro: 0 });
+        expect(aplicarMandos(entrada, mandosDe('heli')).lateral).toBe(1);
+    });
+
+    it('los aviones giran con A y D y la S solo frena', () => {
+        const jet = aplicarMandos(entrada, mandosDe('jet'));
+        expect(jet.lateral).toBe(0);
+        expect(jet.giro).toBe(-1);
+        expect(jet.avance).toBeGreaterThan(0);
+        expect(aplicarMandos(SIN_ENTRADA, mandosDe('ala')).avance).toBeCloseTo(0.55);
+    });
+
+    it('el VTOL se desplaza pero no va en reversa y el globo solo sube, baja y gira', () => {
+        const vtol = aplicarMandos(entrada, mandosDe('vtol'));
+        expect(vtol.lateral).toBe(1);
+        expect(vtol.avance).toBeCloseTo(0.1);
+        const globo = aplicarMandos({ ...entrada, sube: 1, giro: 1 }, mandosDe('globo'));
+        expect(globo).toMatchObject({ avance: 0, lateral: 0, sube: 1, giro: 1 });
     });
 });
 

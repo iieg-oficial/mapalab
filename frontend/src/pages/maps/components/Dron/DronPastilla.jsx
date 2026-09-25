@@ -1,26 +1,33 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Tooltip from '@components/Tooltip';
 import PillCloseButton from '@components/PillCloseButton';
 import { useDron } from '@contexts/DronContext';
+import { useSider } from '@contexts/SiderContext';
 import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
 import Map3DRing from '../Map3D/Map3DRing';
 import DronIcono from './DronIcono';
 import DronMenuAeronave from './DronMenuAeronave';
 import DronTeclas from './DronTeclas';
 
-const BOTON = `flex items-center justify-center size-8.5 ${RADIUS_ICON} shrink-0 cursor-pointer transition-colors`;
+const BOTON = `flex items-center justify-center size-7.5 ${RADIUS_ICON} shrink-0 cursor-pointer transition-colors`;
 const tono = activo => (activo ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6] text-[#5C2472] hover:bg-[#E2D3EA]');
 
 const DronPastilla = () => {
     const { config, perfil, setOpcion, alternar, salir } = useDron();
+    const { isMobile } = useSider();
     const [abierto, setAbierto] = useState(null);
+    useEffect(() => {
+        if (isMobile) return undefined;
+        const espera = setTimeout(() => setAbierto(previo => previo ?? 'teclas'), 650);
+        return () => clearTimeout(espera);
+    }, [isMobile]);
     const barraRef = useRef(null);
     const alternarPanel = cual => setAbierto(previo => (previo === cual ? null : cual));
     const cerrar = () => setAbierto(null);
     const kmh = perfil.vel[config.velocidad];
 
     return (
-        <div ref={barraRef} className="flex flex-col items-center justify-evenly gap-1.5 h-full w-11 py-1.5 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
+        <div ref={barraRef} className="flex flex-col items-center justify-evenly h-full w-11 py-1.5 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
             <Tooltip content={`Velocidad ${config.velocidad + 1}: ${kmh} km/h · teclas 1, 2 y 3`}>
                 <Map3DRing
                     label={`Velocidad ${config.velocidad + 1} de 3`}
