@@ -9,6 +9,7 @@ import { trackMapZoomLevel } from '@services/analyticsService';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 import { useAreaUtil } from '@contexts/AreaUtilContext';
 import { useView3d } from '@contexts/View3dContext';
+import { useDron } from '@contexts/DronContext';
 import Map3DBar from './Map3D/Map3DBar';
 import Map3DAyuda from './Map3D/Map3DAyuda';
 import Tooltip from '@components/Tooltip';
@@ -26,6 +27,8 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false }) => {
     const { margenes } = useAreaUtil();
     const isSwipe = !!compareMode?.active;
     const view3d = useView3d();
+    const dron = useDron();
+    const soloPastilla = dron.activo && isMobile;
     const view3dTitle = !view3d.available
         ? 'Tu navegador no tiene WebGL2, necesario para la vista 3D'
         : `Cambiar a vista ${view3d.active ? '2D' : '3D'}`;
@@ -91,11 +94,12 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false }) => {
             style={{
                 ...style,
                 left: `calc(${style?.left || '0px'} + ${margenes.left}px)`,
-                bottom: `calc(3.75rem + ${margenes.bottom}px)`,
+                bottom: soloPastilla ? `calc(11.5rem + ${margenes.bottom}px)` : `calc(3.75rem + ${margenes.bottom}px)`,
             }}
         >
-            <BotonNorte getActiveMap={getActiveMap} />
-            <div className="relative flex flex-col justify-center items-center rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
+            <BotonNorte getActiveMap={getActiveMap} ancho={view3d.active && !soloPastilla} />
+            {soloPastilla && <Map3DBar />}
+            <div className={`relative flex flex-col justify-center items-center rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A] ${soloPastilla ? 'hidden' : ''}`}>
                 <button
                     onClick={handleZoomIn}
                     onMouseEnter={() => setHoveredButton('zoomin')}
@@ -183,7 +187,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false }) => {
                         className="w-6 h-6"
                     />
                 </button>
-                {view3d.active && (
+                {view3d.active && !soloPastilla && (
                     <div className="absolute left-full top-0 bottom-0 ml-3">
                         <Map3DBar />
                     </div>

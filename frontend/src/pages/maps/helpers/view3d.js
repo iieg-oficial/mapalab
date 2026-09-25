@@ -92,7 +92,7 @@ export const terrainSourceSpec = () => demSourceSpec(`${wmtsTileUrl(TERRAIN_LAYE
 
 export const reliefSourceSpec = () => demSourceSpec(wmtsTileUrl(RELIEF_DEM_LAYER), JALISCO_BOUNDS.coords);
 
-const basemapTileUrl = (template) => (template ? absolute(template.replace('{r}', '')) : null);
+export const basemapTileUrl = (template) => (template ? absolute(template.replace('{r}', '')) : null);
 
 export const RELIEF_LAYER_ID = 'sombreado';
 
