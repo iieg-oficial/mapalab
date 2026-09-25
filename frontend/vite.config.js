@@ -111,6 +111,7 @@ export default defineConfig(({ mode }) => {
         ].filter(Boolean),
         build: {
             sourcemap: false,
+            license: { fileName: 'licencias.txt' },
             rolldownOptions: {
                 output: {
                     codeSplitting: {
