@@ -163,7 +163,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
 
     useMap3dContorno(map, contorno);
     useCamara3dSincronizada(map, grupo3dRef);
-    const sinTexto = useMap3dEtiquetas(map, olRef, { activo: estiloTextos === 'frente', escala: escalaSimbolos });
+    const sinTexto = useMap3dEtiquetas(map, olRef, { activo: estiloTextos === 'frente', escala: escalaSimbolos, dePie });
     useMap3dLayers(map, olRef, dePie, sinTexto);
     useMap3dBillboards(map, olRef, {
         allLayers, getServiceMode, getLegendJson, onReady: alListarDePie, estilo: estiloPuntos, escala: escalaSimbolos, agrupar: agruparPuntos,

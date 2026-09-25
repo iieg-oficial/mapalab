@@ -17,9 +17,13 @@ const filterOf = (raw) => {
 
 export const iconSize = (size) => Math.min(MAX_SIZE, Math.round((Number(size) || 16) * SCALE));
 
+const soloTexto = (rule) => Array.isArray(rule?.symbolizers) && rule.symbolizers.length > 0
+    && rule.symbolizers.every(symbolizer => Object.keys(symbolizer).every(tipo => tipo === 'Text'));
+
 export const parsePointRules = (legendJson) => {
-    const rules = legendJson?.Legend?.[0]?.rules;
-    if (!Array.isArray(rules) || rules.length === 0) return null;
+    const todas = legendJson?.Legend?.[0]?.rules;
+    const rules = Array.isArray(todas) ? todas.filter(rule => !soloTexto(rule)) : [];
+    if (rules.length === 0) return null;
     const parsed = rules.map((rule) => {
         const point = pointOf(rule);
         const filter = filterOf(rule?.filter);

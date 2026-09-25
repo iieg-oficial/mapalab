@@ -35,6 +35,13 @@ describe('parsePointRules', () => {
         expect(parsePointRules(leyenda({ filter: '', symbolizers: [{ Polygon: {} }] }))).toBeNull();
         expect(parsePointRules({})).toBeNull();
     });
+
+    it('ignora las reglas que solo llevan texto, como las etiquetas de Eventos', () => {
+        const texto = { symbolizers: [{ Text: { label: '[nombre]' } }] };
+        const parsed = parsePointRules(leyenda(regla('', ICONO('centro')), texto));
+        expect(parsed.rules).toHaveLength(1);
+        expect(parsePointRules(leyenda(texto))).toBeNull();
+    });
 });
 
 describe('iconExpression', () => {

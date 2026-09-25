@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import Polygon from 'ol/geom/Polygon';
 import MultiPolygon from 'ol/geom/MultiPolygon';
 import LineString from 'ol/geom/LineString';
-import { cuerpoSldSinTexto, parsearSld, textoDeEtiqueta, zoomsDeEscala } from '@pages/maps/helpers/etiquetasSld';
+import { anclaDeEtiqueta, cuerpoSldSinTexto, parsearSld, textoDeEtiqueta, zoomsDeEscala } from '@pages/maps/helpers/etiquetasSld';
 import { puntoDeEtiqueta } from '@pages/maps/helpers/etiquetasDibujo';
 
 const SLD = `<?xml version="1.0" encoding="UTF-8"?>
@@ -58,6 +58,13 @@ describe('etiquetas desde el SLD', () => {
         expect(cuerpo).toContain('<sld:NamedLayer><sld:Name>general:limite_iieg</sld:Name></sld:NamedLayer>');
         expect(cuerpo).toContain('<sld:NamedStyle><sld:Name>cabeceras</sld:Name></sld:NamedStyle>');
         expect(cuerpo).toContain('<sld:NamedLayer>x</sld:NamedLayer>');
+    });
+
+    it('sin LabelPlacement la etiqueta va centrada; con el de Eventos va a la derecha del icono', () => {
+        const [regla] = parsearSld(SLD).reglas;
+        expect(anclaDeEtiqueta(regla.ubicacion)).toEqual({ 'icon-anchor': 'center', 'icon-offset': [0, -0] });
+        const colocada = SLD.replace('<sld:Halo>', '<sld:LabelPlacement><sld:PointPlacement><sld:AnchorPoint><sld:AnchorPointX>0</sld:AnchorPointX><sld:AnchorPointY>0.5</sld:AnchorPointY></sld:AnchorPoint><sld:Displacement><sld:DisplacementX>30</sld:DisplacementX><sld:DisplacementY>4</sld:DisplacementY></sld:Displacement></sld:PointPlacement></sld:LabelPlacement><sld:Halo>');
+        expect(anclaDeEtiqueta(parsearSld(colocada).reglas[0].ubicacion)).toEqual({ 'icon-anchor': 'left', 'icon-offset': [30, -4] });
     });
 
     it('convierte las escalas de GeoServer a zooms de MapLibre', () => {

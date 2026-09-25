@@ -30,6 +30,26 @@ export const zoomsDeEscala = (minEscala, maxEscala) => ({
 
 const numero = (texto) => (texto ? Number(texto) : null);
 
+const par = (nodo, x, y, base) => [Number(hijo(nodo, x)?.textContent ?? base), Number(hijo(nodo, y)?.textContent ?? base)];
+
+const leerUbicacion = (texto) => {
+    const punto = hijo(hijo(texto, 'LabelPlacement'), 'PointPlacement');
+    return {
+        ancla: par(hijo(punto, 'AnchorPoint'), 'AnchorPointX', 'AnchorPointY', 0.5),
+        desplazamiento: par(hijo(punto, 'Displacement'), 'DisplacementX', 'DisplacementY', 0),
+    };
+};
+
+const lado = (valor, menor, mayor) => {
+    if (valor < 0.25) return menor;
+    return valor > 0.75 ? mayor : '';
+};
+
+export const anclaDeEtiqueta = ({ ancla: [x, y], desplazamiento: [dx, dy] }) => ({
+    'icon-anchor': [lado(y, 'bottom', 'top'), lado(x, 'left', 'right')].filter(Boolean).join('-') || 'center',
+    'icon-offset': [dx, -dy],
+});
+
 const leerRegla = (regla, texto) => {
     const fuente = parametros(hijo(texto, 'Font'));
     const halo = hijo(texto, 'Halo');
@@ -42,6 +62,7 @@ const leerRegla = (regla, texto) => {
         minEscala: numero(hijo(regla, 'MinScaleDenominator')?.textContent),
         maxEscala: numero(hijo(regla, 'MaxScaleDenominator')?.textContent),
         filtrada: !!hijo(regla, 'Filter'),
+        ubicacion: leerUbicacion(texto),
     };
 };
 

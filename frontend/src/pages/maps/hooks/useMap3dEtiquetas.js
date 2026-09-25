@@ -4,7 +4,7 @@ import { toLonLat } from 'ol/proj';
 import { getUid } from 'ol/util';
 import { countVectorFeatures, fetchVectorFeatures } from '@services/vectorLayerService';
 import { VECTOR_FEATURE_LIMIT } from '@pages/maps/helpers/serviceMode';
-import { cuerpoSldSinTexto, parsearSld, textoDeEtiqueta, zoomsDeEscala } from '@pages/maps/helpers/etiquetasSld';
+import { anclaDeEtiqueta, cuerpoSldSinTexto, parsearSld, textoDeEtiqueta, zoomsDeEscala } from '@pages/maps/helpers/etiquetasSld';
 import {
     asegurarImagenesDeEtiqueta, idDeEtiqueta, puntoDeEtiqueta, registrarEstiloDeEtiqueta, registrarEtiquetas,
 } from '@pages/maps/helpers/etiquetasDibujo';
@@ -13,7 +13,9 @@ import { useOlWmsRevision } from './useOlWmsRevision';
 
 const PREFIX = 'etq-';
 const MAX_ETIQUETAS_EMPALMADAS = 60;
+const MAX_CUERPO_SLD = 6000;
 const SIN_CUERPOS = new Map();
+const SIN_DE_PIE = new Map();
 const LECTOR = new GeoJSON();
 const slds = new Map();
 const entidades = new Map();
@@ -33,6 +35,7 @@ export const entradasWms = (olMap) => olMap.getLayers().getArray()
         const segmentos = filtros ? filtros.split(';') : [];
         return {
             uid: getUid(capa),
+            ids: capa.get('mergedLayers').flatMap(entrada => (entrada.subLayers || []).map(sub => sub.id)),
             entradas: capa.get('mergedLayers').map((entrada, i) => {
                 const cql = (segmentos[i] || '').trim();
                 return { nombre: entrada.layerName, estilo: entrada.styles || '', wmsConfig: entrada.wmsConfig, cql: !cql || cql.toUpperCase() === 'INCLUDE' ? null : cql };
@@ -40,7 +43,8 @@ export const entradasWms = (olMap) => olMap.getLayers().getArray()
         };
     });
 
-const idDeFuente = (nombre, regla) => `${PREFIX}${nombre.replace(/[^\w]+/g, '_')}-${regla}`;
+const limpio = (nombre) => nombre.replace(/[^\w]+/g, '_');
+const idDeFuente = (nombre, regla) => `${PREFIX}${limpio(nombre)}-${regla}`;
 
 const puntosDe = (json, partes) => ({
     type: 'FeatureCollection',
@@ -59,6 +63,7 @@ const capaDeEtiquetas = (sourceId, regla, clave, { planos, escala }, cuantas) =>
     layout: {
         'icon-image': idDeEtiqueta(clave),
         'icon-size': escala,
+        ...anclaDeEtiqueta(regla.ubicacion),
         'icon-allow-overlap': cuantas <= MAX_ETIQUETAS_EMPALMADAS,
         'icon-padding': 2,
         'icon-pitch-alignment': planos ? 'map' : 'viewport',
@@ -91,7 +96,9 @@ const dibujarEntrada = async (map, entrada, parsed, opciones, signal) => {
     });
 };
 
-export const useMap3dEtiquetas = (map, olMapRef, { activo = true, escala = 1 } = {}) => {
+const soloDePie = (ids, dePie) => ids.length > 0 && ids.every(id => dePie.get(id) === 0);
+
+export const useMap3dEtiquetas = (map, olMapRef, { activo = true, escala = 1, dePie = SIN_DE_PIE } = {}) => {
     const revision = useOlWmsRevision(map, olMapRef);
     const [cuerpos, setCuerpos] = useState(SIN_CUERPOS);
 
@@ -101,36 +108,34 @@ export const useMap3dEtiquetas = (map, olMapRef, { activo = true, escala = 1 } =
         const olMap = olMapRef.current;
         if (!map || !olMap) return undefined;
         const controller = new AbortController();
-        if (!activo) {
-            managedIds(map, PREFIX).forEach(id => removeGeojson(map, id));
-            setCuerpos(SIN_CUERPOS);
-            return () => controller.abort();
-        }
-        const capas = entradasWms(olMap);
-        Promise.all(capas.map(async ({ uid, entradas }) => {
+        const capas = entradasWms(olMap).filter(({ ids }) => activo || soloDePie(ids, dePie));
+        Promise.all(capas.map(async ({ uid, ids, entradas }) => {
             const resueltas = await Promise.all(entradas.map(e => pedirSld(e.wmsConfig, e.nombre)));
             if (controller.signal.aborted || resueltas.some(p => !p)) return null;
             const conTexto = entradas.map((entrada, i) => ({ entrada, parsed: resueltas[i] }))
                 .filter(({ entrada, parsed }) => parsed.reglas.length && (!entrada.estilo || entrada.estilo === parsed.estilo));
             if (!conTexto.length) return null;
             const sinTexto = new Set(conTexto.map(({ entrada }) => entrada.nombre));
-            conTexto.forEach(({ entrada, parsed }) => dibujarEntrada(map, entrada, parsed, { planos: false, escala }, controller.signal)
-                .catch(error => { if (!controller.signal.aborted) console.warn('[mapa3d] sin etiquetas para', entrada.nombre, error?.message || error); }));
-            return [uid, cuerpoSldSinTexto(entradas.map((entrada, i) => ({
+            const cuerpo = activo && !soloDePie(ids, dePie) ? cuerpoSldSinTexto(entradas.map((entrada, i) => ({
                 nombre: entrada.nombre,
                 estilo: entrada.estilo || resueltas[i].estilo,
                 capaSinTexto: sinTexto.has(entrada.nombre) ? resueltas[i].capaSinTexto : null,
-            })))];
-        })).then((pares) => {
+            }))) : null;
+            if (cuerpo && encodeURIComponent(cuerpo).length > MAX_CUERPO_SLD) return null;
+            conTexto.forEach(({ entrada, parsed }) => dibujarEntrada(map, entrada, parsed, { planos: !activo, escala }, controller.signal)
+                .catch(error => { if (!controller.signal.aborted) console.warn('[mapa3d] sin etiquetas para', entrada.nombre, error?.message || error); }));
+            return { uid, cuerpo, nombres: [...sinTexto].map(limpio) };
+        })).then((resultados) => {
             if (controller.signal.aborted) return;
-            const vigentes = pares.filter(Boolean);
-            const nombres = new Set(capas.flatMap(({ entradas }) => entradas.map(e => e.nombre.replace(/[^\w]+/g, '_'))));
+            const vigentes = resultados.filter(Boolean);
+            const nombres = new Set(vigentes.flatMap(r => r.nombres));
             managedIds(map, PREFIX).filter(id => !nombres.has(id.slice(PREFIX.length).replace(/-\d+$/, ''))).forEach(id => removeGeojson(map, id));
-            setCuerpos(vigentes.length ? new Map(vigentes) : SIN_CUERPOS);
+            const pares = vigentes.filter(r => r.cuerpo).map(r => [r.uid, r.cuerpo]);
+            setCuerpos(pares.length ? new Map(pares) : SIN_CUERPOS);
         });
 
         return () => controller.abort();
-    }, [map, olMapRef, activo, escala, revision]);
+    }, [map, olMapRef, activo, escala, dePie, revision]);
 
     return cuerpos;
 };
