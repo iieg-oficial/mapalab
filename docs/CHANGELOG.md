@@ -5,6 +5,15 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.216.4] - 2026-09-25
+
+### Cambiado: la X quita la fecha y los botones se quedan fijos
+
+- Quitar el filtro de fecha usa una X en vez del bote de basura, que se confundía con quitar la capa.
+- La X y la flecha se quedan fijas en la fila de la píldora, como los controles del loop. La flecha
+  apunta hacia abajo con la tarjeta cerrada y la abre, y hacia arriba con la tarjeta abierta y la
+  cierra. En el comparador no aparecen.
+
 ## [1.216.3] - 2026-09-25
 
 ### Cambiado: quitar fecha y contraer suben a la fila de la píldora

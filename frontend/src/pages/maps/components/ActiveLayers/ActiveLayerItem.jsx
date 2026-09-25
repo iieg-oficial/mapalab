@@ -258,7 +258,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 emptyLabel={periodicidad.hasPeriodicity ? 'TODAS' : null}
                                 pillTooltip={fechasEnItem && periodicidad.hasPeriodicity ? (mostrarFechas ? 'Ocultar fechas' : 'Elegir fecha') : undefined}
                                 pillExpanded={fechasEnItem ? mostrarFechas : undefined}
-                                trailing={mostrarFechas ? <PeriodicityRowActions hasFilter={!!dateFilter} onClear={periodicidad.forSlot(null).clear} onClose={() => setFechasAbiertas(false)} /> : null}
+                                trailing={fechasEnItem && periodicidad.hasPeriodicity ? <PeriodicityRowActions hasFilter={!!dateFilter} onClear={periodicidad.forSlot(null).clear} abierto={mostrarFechas} onToggle={() => setFechasAbiertas(v => !v)} /> : null}
                                 onPlay={handlePlayClick}
                                 onInterval={handleIntervalClick}
                                 onDirection={handleDirectionClick}

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import Tooltip from '@components/Tooltip';
@@ -10,8 +9,7 @@ const detener = (e) => e.stopPropagation();
 const tono = toneButtonFor(null, false);
 const BOTON = `flex items-center justify-center size-6 ${RADIUS_ICON} shrink-0 cursor-pointer ${tono.className}`;
 
-export const PeriodicityRowActions = ({ hasFilter, onClear, onClose }) => {
-    const [sobreBasura, setSobreBasura] = useState(false);
+export const PeriodicityRowActions = ({ hasFilter, onClear, abierto, onToggle }) => {
     const accion = (fn) => (e) => { e.stopPropagation(); fn(); };
     return (
         <>
@@ -20,18 +18,22 @@ export const PeriodicityRowActions = ({ hasFilter, onClear, onClose }) => {
                     <button
                         type="button"
                         onClick={accion(onClear)}
-                        onMouseEnter={() => setSobreBasura(true)}
-                        onMouseLeave={() => setSobreBasura(false)}
                         aria-label="Quitar el filtro de fecha"
                         className={BOTON}
                     >
-                        <Icon name="eliminar" state={sobreBasura ? 'hover' : 'normal'} className="size-3.5 shrink-0" />
+                        <Icon name="close" className="size-3.5 shrink-0" />
                     </button>
                 </Tooltip>
             )}
-            <Tooltip content="Ocultar fechas" delay={400}>
-                <button type="button" onClick={accion(onClose)} aria-label="Ocultar fechas" className={BOTON}>
-                    <Icon name="chevron" className={`w-3 h-1.5 rotate-180 ${toneTextClass(tono.tone)}`} />
+            <Tooltip content={abierto ? 'Ocultar fechas' : 'Elegir fecha'} delay={400}>
+                <button
+                    type="button"
+                    onClick={accion(onToggle)}
+                    aria-label={abierto ? 'Ocultar fechas' : 'Elegir fecha'}
+                    aria-expanded={abierto}
+                    className={BOTON}
+                >
+                    <Icon name="chevron" className={`w-3 h-1.5 transition-transform duration-300 ${abierto ? 'rotate-180' : ''} ${toneTextClass(tono.tone)}`} />
                 </button>
             </Tooltip>
         </>
