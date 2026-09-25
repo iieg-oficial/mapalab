@@ -18,6 +18,7 @@ const RADIO_AUTO = 180000;
 const MUESTRAS = 50;
 const MIRADA_POR_PX = 0.25;
 const SINCRONIA_2D_MS = 1500;
+const DURACION_CHOQUE_MS = 2600;
 
 const sincronizar2d = (map, olMap) => {
     const view = olMap?.getView();
@@ -75,7 +76,8 @@ export const useDronVuelo = (map, principal, olRef = null) => {
         const sueloEn = lngLat => map.queryTerrainElevation(lngLat) ?? 0;
         const centro = map.getCenter().toArray();
         let estado = crearDron(centro, sueloEn(centro), map.getBearing());
-        const leer = () => ({ dron: estado, config: vivo.current.config, perfil: vivo.current.perfil });
+        let choqueDesde = null;
+        const leer = () => ({ dron: estado, config: vivo.current.config, perfil: vivo.current.perfil, choqueDesde });
 
         configurarMapa(map, true);
         vivo.current.accionesRef.current = {
@@ -118,9 +120,22 @@ export const useDronVuelo = (map, principal, olRef = null) => {
             const guiada = entradaGuiada(estado, { destino: actual.destinoRef.current, auto: actual.auto, t, centro: CENTRO, radio: RADIO_AUTO });
             if (guiada?.llego) actual.destinoRef.current = null;
             const entrada = guiada && !guiada.llego ? guiada.entrada : (guiada?.llego ? SIN_ENTRADA : entradaManual(controles));
-            estado = pasoDron(estado, aplicarMandos(entrada, mandosDe(actual.config.modelo)), {
-                perfil: actual.perfil, velocidad: actual.config.velocidad, seguir: actual.config.seguir, dt, sueloEn,
-            });
+            if (choqueDesde !== null) {
+                if (ahora - choqueDesde > DURACION_CHOQUE_MS) {
+                    estado = { ...crearDron(estado.lngLat, sueloEn(estado.lngLat), estado.rumbo), camara: estado.camara };
+                    choqueDesde = null;
+                }
+            } else {
+                estado = pasoDron(estado, aplicarMandos(entrada, mandosDe(actual.config.modelo)), {
+                    perfil: actual.perfil, velocidad: actual.config.velocidad, seguir: actual.config.seguir, dt, sueloEn,
+                });
+                if (estado.choque) {
+                    choqueDesde = ahora;
+                    estado = { ...estado, vEste: 0, vNorte: 0, vVert: 0, giro: 0 };
+                    actual.destinoRef.current = null;
+                    if (actual.auto) actual.setAuto(false);
+                }
+            }
             if (alNorte) {
                 const falta = anguloCorto(-estado.rumbo);
                 estado = { ...estado, rumbo: (estado.rumbo + falta - amortiguar(falta, 0, 5, dt) + 360) % 360 };
@@ -144,6 +159,7 @@ export const useDronVuelo = (map, principal, olRef = null) => {
                 camaraGrados: estado.camara,
                 pantalla,
                 muestras,
+                choque: choqueDesde !== null,
                 alerta: n % 6 === 1 ? relieveAdelante(estado, sueloEn) : actual.telemetriaRef.current?.alerta,
             });
             if (ahora - ultimaSincronia > SINCRONIA_2D_MS) {

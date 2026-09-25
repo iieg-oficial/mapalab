@@ -32,7 +32,7 @@ const Joystick = ({ lado, etiqueta, alMover }) => {
             onPointerMove={e => e.pointerId === activoRef.current && mover(e)}
             onPointerUp={soltar}
             onPointerCancel={soltar}
-            className={`fixed bottom-16 z-20 size-26 touch-none rounded-full border border-[#5C24721F] bg-white/60 shadow-[0_5px_20px_#1A26641A] backdrop-blur-sm ${lado}`}
+            className={`fixed bottom-28 z-20 size-26 touch-none rounded-full border border-[#5C24721F] bg-white/60 shadow-[0_5px_20px_#1A26641A] backdrop-blur-sm ${lado}`}
         >
             <div ref={perillaRef} className="absolute left-1/2 top-1/2 -ml-5.5 -mt-5.5 size-11 rounded-full bg-[#5C2472]" />
         </div>

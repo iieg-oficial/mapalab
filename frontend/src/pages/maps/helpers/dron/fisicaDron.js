@@ -2,6 +2,9 @@ const M_POR_GRADO_LAT = 110574;
 const RAD = Math.PI / 180;
 export const AGL_MINIMO = 12;
 export const AGL_MAXIMO = 3000;
+const ATERRIZAJE = 1;
+const CHOQUE_KMH = 25;
+const CHOQUE_CAIDA = -6;
 const CAMARA_RANGO = [-75, 30];
 const GIRO_MAXIMO = 52;
 
@@ -24,6 +27,7 @@ export const distancia = ([lng1, lat1], [lng2, lat2]) => {
 export const crearDron = (lngLat, suelo, rumbo) => ({
     lngLat,
     alt: suelo + 300,
+    piso: suelo,
     agl: 300,
     rumbo,
     camara: -12,
@@ -86,9 +90,16 @@ export const pasoDron = (dron, entrada, { perfil, velocidad, seguir, dt, sueloEn
         alt = Math.min(piso + (perfil.techo ?? AGL_MAXIMO), alt + vVert * dt);
         agl = alt - piso;
     }
-    if (alt < piso + AGL_MINIMO) {
+    let choque = false;
+    if (seguir && alt < piso + AGL_MINIMO) {
         alt = piso + AGL_MINIMO;
         agl = Math.max(agl, AGL_MINIMO);
+    }
+    if (!seguir && alt < piso + ATERRIZAJE) {
+        choque = Math.hypot(vEste, vNorte) * 3.6 > CHOQUE_KMH || vVert < CHOQUE_CAIDA;
+        alt = piso + ATERRIZAJE;
+        vVert = Math.max(vVert, 0);
+        agl = ATERRIZAJE;
     }
     const adelante = (vEste * fe + vNorte * fn) / Math.max(vmax, 1);
     const derecha = (vEste * fn - vNorte * fe) / Math.max(vmax, 1);
@@ -109,6 +120,7 @@ export const pasoDron = (dron, entrada, { perfil, velocidad, seguir, dt, sueloEn
         cabeceo: amortiguar(dron.cabeceo, esGlobo || esAla ? 0 : -adelante * 0.28, 3, dt),
         vsReal: amortiguar(dron.vsReal, (alt - dron.alt) / Math.max(dt, 0.001), 3, dt),
         piso,
+        choque,
     };
 };
 

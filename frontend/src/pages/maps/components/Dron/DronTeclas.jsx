@@ -15,9 +15,9 @@ const LATERAL = { desplaza: 'Desplazarse', gira: 'Ladearse para girar', null: nu
 const teclasDe = (mandos, globo) => [
     [['W', 'S'], avanceDe(mandos)],
     [['A', 'D'], LATERAL[mandos.lateral]],
-    [['Q', 'E'], globo ? 'Girar la canasta' : 'Girar'],
-    [['R', 'F'], globo ? 'Quemador y válvula' : 'Subir y bajar'],
-    [['↑', '↓'], 'Cámara'],
+    [['Q', 'E', '←', '→'], globo ? 'Girar la canasta' : 'Girar'],
+    [['R', 'F', '↑', '↓'], globo ? 'Quemador y válvula' : 'Subir y bajar'],
+    [['T', 'G'], 'Inclinar la cámara'],
     [['1', '2', '3'], 'Velocidad'],
     [['V'], '1ª o 3ª persona'],
     [['P'], 'Piloto automático'],
@@ -37,7 +37,7 @@ const DronTeclas = ({ anchorRef, bordeRef, onClose }) => {
             width={252}
             alinear="abajo"
             etiqueta="Teclas del modo dron"
-            className="rounded-[12px] bg-[#F9FBFF] px-3 pb-3 pt-2 shadow-[0_5px_20px_#1A26641A]"
+            className="rounded-[12px] bg-[#F9FBFF] px-4.5 pb-3 pt-2 shadow-[0_5px_20px_#1A26641A]"
         >
             <PanelHeader
                 icono={<DronIcono nombre="teclas" className="size-4.5" />}

@@ -26,9 +26,11 @@ const DronSobre = () => {
     const opcionesRef = useRef(null);
     const temporizador = useRef(null);
     const [opciones, setOpciones] = useState(false);
+    const [choque, setChoque] = useState(false);
 
     useEffect(() => suscribir((t) => {
         if (!t || !autoRef.current || !opcionesRef.current) return;
+        setChoque(!!t.choque);
         const centro = window.innerHeight * 0.62;
         const { x, arriba, abajo } = t.pantalla || { x: window.innerWidth / 2, arriba: centro - 12, abajo: centro + 12 };
         autoRef.current.style.transform = `translate(${x}px, ${arriba}px) translate(-50%, -100%)`;
@@ -57,10 +59,10 @@ const DronSobre = () => {
                 onPointerUp={(e) => { if (e.pointerType === 'touch') { mostrar(); ocultar(TACTIL_MS); } }}
                 aria-pressed={auto}
                 title="Piloto automático (P)"
-                className={`fixed left-0 top-0 z-20 flex items-center gap-1.5 rounded-full border-0 px-2 py-1 font-garet text-[9.5px] font-extrabold tracking-[0.08em] text-white shadow-[0_2px_8px_#221A2E40] cursor-pointer ${auto ? 'bg-[#FF8300] motion-safe:animate-pulse' : 'bg-[#1F9D55]'}`}
+                className={`fixed left-0 top-0 z-20 flex items-center gap-1.5 rounded-full border-0 px-2 py-1 font-garet text-[9.5px] font-extrabold tracking-[0.08em] text-white shadow-[0_2px_8px_#221A2E40] cursor-pointer ${choque ? 'bg-[#D6336C]' : auto ? 'bg-[#FF8300] motion-safe:animate-pulse' : 'bg-[#1F9D55]'}`}
             >
                 <i className="size-1.5 rounded-full bg-white" />
-                {auto ? 'AUTO' : 'MANUAL'}
+                {choque ? 'CHOQUE' : auto ? 'AUTO' : 'MANUAL'}
             </button>
             <div
                 ref={opcionesRef}

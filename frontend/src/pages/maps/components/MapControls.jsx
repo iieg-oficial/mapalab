@@ -94,7 +94,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false }) => {
             style={{
                 ...style,
                 left: `calc(${style?.left || '0px'} + ${margenes.left}px)`,
-                bottom: soloPastilla ? `calc(11.5rem + ${margenes.bottom}px)` : `calc(3.75rem + ${margenes.bottom}px)`,
+                bottom: soloPastilla ? `calc(15.5rem + ${margenes.bottom}px)` : `calc(3.75rem + ${margenes.bottom}px)`,
             }}
         >
             <BotonNorte getActiveMap={getActiveMap} ancho={view3d.active && !soloPastilla} />

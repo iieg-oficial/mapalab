@@ -31,6 +31,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { View3dProvider, useView3d } from '@contexts/View3dContext';
 import { DronProvider } from '@contexts/DronContext';
 import DronOverlay from './components/Dron/DronOverlay';
+import OcultoEnDronMovil from './components/Dron/OcultoEnDronMovil';
 
 const Map3DView = lazy(() => import('@mapsComponents/Map3D/Map3DView'));
 const Map3DSwipe = lazy(() => import('@mapsComponents/Map3D/Map3DSwipe'));
@@ -77,9 +78,9 @@ const Maps = () => {
                                     </p>
                                     <div className="relative w-full h-dvh">
                                         <MapSider />
-                                        <MapToolsPanel />
+                                        <OcultoEnDronMovil><MapToolsPanel /></OcultoEnDronMovil>
                                         <MunicipioActiveChip />
-                                        <MapLayersPanels />
+                                        <OcultoEnDronMovil><MapLayersPanels /></OcultoEnDronMovil>
                                         <LayerDetailModal />
                                         <NumeraliaPanel />
                                         <InfoBox />

@@ -49,7 +49,7 @@ const DronInstrumentos = () => {
     const tercero = telemetria ? tercerDato(perfil, telemetria) : null;
 
     return (
-        <div className="fixed bottom-0 left-1/2 z-20 -translate-x-1/2 flex flex-col items-center">
+        <div className={`fixed left-1/2 z-20 -translate-x-1/2 flex flex-col items-center ${isMobile ? 'bottom-15' : 'bottom-0'}`}>
             {expandido ? (
                 <div className="flex items-stretch gap-2 rounded-t-[16px] border border-b-0 border-[#5C24721F] bg-white px-2.5 pb-2 pt-2 shadow-[0_5px_20px_#1A26641A]">
                     <Lienzo dibujar={instrumentos} etiqueta="Instrumentos de vuelo" activo={expandido} />
@@ -69,7 +69,7 @@ const DronInstrumentos = () => {
                 <button
                     type="button"
                     onClick={() => !isMobile && setAbierto(true)}
-                    className={`flex items-center gap-3 rounded-t-[14px] border border-b-0 border-[#5C24721F] bg-white px-3.5 py-2 shadow-[0_5px_20px_#1A26641A] ${isMobile ? 'cursor-default' : 'cursor-pointer hover:bg-[#FCFAFF]'}`}
+                    className={`flex items-center gap-3 border border-[#5C24721F] bg-white px-3.5 py-2 shadow-[0_5px_20px_#1A26641A] ${isMobile ? 'cursor-default rounded-full' : 'cursor-pointer rounded-t-[14px] border-b-0 hover:bg-[#FCFAFF]'}`}
                     aria-label={isMobile ? 'Lecturas del vuelo' : 'Mostrar los instrumentos'}
                 >
                     {telemetria && (

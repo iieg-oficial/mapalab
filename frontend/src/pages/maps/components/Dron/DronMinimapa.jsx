@@ -106,7 +106,7 @@ const DronMinimapa = () => {
             tabIndex={-1}
             aria-label="Minimapa: clic para volar a ese punto"
             title="Clic para volar a ese punto"
-            className={`fixed z-10 block rounded-[14px] cursor-crosshair [filter:drop-shadow(0_6px_14px_rgba(34,26,46,0.28))] ${isMobile ? 'top-44 right-4 size-28' : 'bottom-14 right-4 size-44'}`}
+            className={`fixed z-10 block rounded-[14px] cursor-crosshair [filter:drop-shadow(0_6px_14px_rgba(34,26,46,0.28))] ${isMobile ? 'top-4 right-4 size-28' : 'bottom-14 right-4 size-44'}`}
             style={isMobile ? undefined : { marginRight: margenes.right, marginBottom: margenes.bottom }}
         />
     );

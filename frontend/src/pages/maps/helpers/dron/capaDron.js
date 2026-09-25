@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { construirAeronave, liberar } from './modelosDron';
+import { crearExplosion } from './explosionDron';
 
 export const ID_CAPA_DRON = 'dron-3d';
 const RAD = Math.PI / 180;
@@ -52,6 +53,8 @@ export const crearCapaDron = (maplibregl, { leer, alPantalla }) => {
     const estela = new THREE.Line(estelaGeo, new THREE.LineBasicMaterial({ color: '#ff8300', transparent: true, opacity: 0.6 }));
     estela.frustumCulled = false;
     escenaRastro.add(estela);
+    const explosion = crearExplosion();
+    escenaRastro.add(explosion.grupo);
     const rotacionX = new THREE.Matrix4().makeRotationX(Math.PI / 2);
     const punto = new THREE.Vector4();
 
@@ -99,7 +102,7 @@ export const crearCapaDron = (maplibregl, { leer, alPantalla }) => {
             renderer.autoClear = false;
         },
         render(gl, args) {
-            const { dron, config, perfil } = leer();
+            const { dron, config, perfil, choqueDesde } = leer();
             if (!dron || !renderer) return;
             const ahora = performance.now();
             const dt = Math.min(0.05, (ahora - anterior) / 1000);
@@ -113,7 +116,8 @@ export const crearCapaDron = (maplibregl, { leer, alPantalla }) => {
             camDron.projectionMatrix = base.clone().multiply(rotacionX);
 
             const balanceo = perfil.tipo === 'globo' ? Math.sin(ahora / 900) * 0.04 : 0;
-            aeronave.grupo.visible = config.tercera;
+            const estallando = explosion.actualizar(choqueDesde ?? null);
+            aeronave.grupo.visible = config.tercera && !estallando;
             aeronave.grupo.rotation.set(dron.cabeceo + balanceo, -dron.rumbo * RAD, dron.alabeo);
             aeronave.helices.forEach((h) => {
                 if (h.pulso) h.obj.scale.set(1, 0.8 + Math.random() * 0.45, 1);
@@ -121,7 +125,7 @@ export const crearCapaDron = (maplibregl, { leer, alPantalla }) => {
             });
 
             const agl = dron.alt - (dron.piso ?? dron.alt);
-            sombra.visible = config.tercera;
+            sombra.visible = config.tercera && !estallando;
             sombra.position.set(0, 0, -agl + 0.4);
             sombra.scale.setScalar((perfil.tipo === 'ala' ? 36 : 22) * (1 + agl / 400));
             sombra.material.opacity = Math.max(0.08, Math.exp(-agl / 260));

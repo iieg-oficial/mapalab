@@ -20,7 +20,7 @@ const DronMenuAeronave = ({ anchorRef, bordeRef, onClose }) => {
             width={292}
             alinear="abajo"
             etiqueta="Elegir aeronave"
-            className="rounded-[12px] bg-[#F9FBFF] px-3 pb-3 pt-2 shadow-[0_5px_20px_#1A26641A]"
+            className="rounded-[12px] bg-[#F9FBFF] px-4.5 pb-3 pt-2 shadow-[0_5px_20px_#1A26641A]"
         >
             <PanelHeader
                 icono={<DronIcono nombre={config.modelo} className="size-4.5" />}

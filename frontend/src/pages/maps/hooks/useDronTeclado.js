@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 const MOVIMIENTO = new Set([
-    'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyR', 'KeyF',
+    'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyT', 'KeyG',
     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight',
 ]);
 
@@ -13,8 +13,8 @@ export const entradaManual = ({ teclas, joy }) => ({
     avance: eje(teclas, 'KeyW', 'KeyS') + joy.mz,
     lateral: eje(teclas, 'KeyD', 'KeyA') + joy.mx,
     giro: eje(teclas, 'KeyQ', 'KeyE') + eje(teclas, 'ArrowLeft', 'ArrowRight') + joy.giro,
-    sube: eje(teclas, 'KeyR', 'KeyF') + (teclas.has('Space') ? 1 : 0) - (teclas.has('ShiftLeft') || teclas.has('ShiftRight') ? 1 : 0) + joy.sube,
-    mira: eje(teclas, 'ArrowUp', 'ArrowDown'),
+    sube: eje(teclas, 'KeyR', 'KeyF') + eje(teclas, 'ArrowUp', 'ArrowDown') + (teclas.has('Space') ? 1 : 0) - (teclas.has('ShiftLeft') || teclas.has('ShiftRight') ? 1 : 0) + joy.sube,
+    mira: eje(teclas, 'KeyT', 'KeyG'),
 });
 
 export const hayEntradaManual = ({ teclas, joy }) => teclas.size > 0 || Object.values(joy).some(v => v !== 0);

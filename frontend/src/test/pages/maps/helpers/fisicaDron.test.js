@@ -34,6 +34,19 @@ describe('física del dron', () => {
         expect(final.agl).toBeLessThan(400);
     });
 
+    it('a altitud fija choca si entra al terreno rápido y aterriza si baja despacio', () => {
+        const pared = () => 2000;
+        const rapido = pasoDron({ ...crearDron(GDL, 1500, 0), alt: 1990, vNorte: 20 }, SIN_ENTRADA, {
+            perfil: AERONAVES.cuadri, velocidad: 1, seguir: false, dt: 0.05, sueloEn: pared,
+        });
+        expect(rapido.choque).toBe(true);
+        const suave = pasoDron({ ...crearDron(GDL, 1500, 0), alt: 1501.2, vVert: -1 }, SIN_ENTRADA, {
+            perfil: AERONAVES.cuadri, velocidad: 1, seguir: false, dt: 0.05, sueloEn: () => 1500.5,
+        });
+        expect(suave.choque).toBe(false);
+        expect(suave.alt).toBeCloseTo(1501.5, 1);
+    });
+
     it('sigue el relieve y nunca baja del mínimo sobre el terreno', () => {
         const dron = { ...crearDron(GDL, 1500, 0), alt: 1520, agl: 20 };
         const final = volar(dron, { ...SIN_ENTRADA, sube: -1 }, 10);
