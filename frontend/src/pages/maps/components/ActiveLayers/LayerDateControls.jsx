@@ -89,6 +89,7 @@ const LayerDateControls = ({
     emptyLabel = null,
     pillTooltip,
     pillExpanded,
+    trailing = null,
     onPlay,
     onInterval,
     onDirection
@@ -115,6 +116,8 @@ const LayerDateControls = ({
                     onDirection={onDirection}
                     slotPalette="none"
                 />
+                {trailing && <div className="flex-1" />}
+                {trailing}
             </div>
         );
     }

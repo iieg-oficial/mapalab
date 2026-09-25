@@ -20,7 +20,7 @@ import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
 import LayerDownloadProgress from './LayerDownloadProgress';
 import LayerStatsInline from './LayerStatsInline';
-import LayerPeriodicityInline from './LayerPeriodicityInline';
+import LayerPeriodicityInline, { PeriodicityRowActions } from './LayerPeriodicityInline';
 import { useSlotPeriodicity } from '@hooksMaps/useSlotPeriodicity';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
 import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
@@ -258,11 +258,12 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 emptyLabel={periodicidad.hasPeriodicity ? 'TODAS' : null}
                                 pillTooltip={fechasEnItem && periodicidad.hasPeriodicity ? (mostrarFechas ? 'Ocultar fechas' : 'Elegir fecha') : undefined}
                                 pillExpanded={fechasEnItem ? mostrarFechas : undefined}
+                                trailing={mostrarFechas ? <PeriodicityRowActions hasFilter={!!dateFilter} onClear={periodicidad.forSlot(null).clear} onClose={() => setFechasAbiertas(false)} /> : null}
                                 onPlay={handlePlayClick}
                                 onInterval={handleIntervalClick}
                                 onDirection={handleDirectionClick}
                             />
-                            {mostrarFechas && <LayerPeriodicityInline layerId={layer.id} periodicidad={periodicidad} allLayers={allLayers} onClose={() => setFechasAbiertas(false)} />}
+                            {mostrarFechas && <LayerPeriodicityInline layerId={layer.id} periodicidad={periodicidad} allLayers={allLayers} />}
                             <LayerActionsBar
                                 layerId={layer.id}
                                 visible={layer.visible}
