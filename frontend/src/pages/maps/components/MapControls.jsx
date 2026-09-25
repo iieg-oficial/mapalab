@@ -13,6 +13,7 @@ import Map3DBar from './Map3D/Map3DBar';
 import Map3DAyuda from './Map3D/Map3DAyuda';
 import Tooltip from '@components/Tooltip';
 import PillCloseButton from '@components/PillCloseButton';
+import Badge from '@components/Badge';
 import BotonNorte from './BotonNorte';
 import { useMiUbicacion } from '@hooksMaps/useMiUbicacion';
 
@@ -159,11 +160,12 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false }) => {
                             onClick={view3d.toggle}
                             disabled={!view3d.available}
                             aria-pressed={view3d.active}
-                            className={`mx-1.5 my-0.5 size-8 rounded-full text-[13px] font-bold transition-colors ${view3d.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'} ${view3d.active ? 'bg-[#5C2472] text-white' : 'text-[#465055] hover:text-[#70308A]'}`}
+                            className={`relative mx-1.5 my-0.5 size-8 rounded-full text-[13px] font-bold transition-colors ${view3d.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'} ${view3d.active ? 'bg-[#5C2472] text-white' : 'text-[#465055] hover:text-[#70308A]'}`}
                             title={view3dTitle}
                             aria-label={view3dTitle}
                         >
                         3D
+                            <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-3 text-[8px] px-1.5 pointer-events-none" />
                         </button>
                     </Tooltip>
                 )}
