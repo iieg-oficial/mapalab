@@ -3,8 +3,9 @@ import { useSearchParams } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
 import { trackView3d } from '@services/analyticsService';
 import { suscribirVista3d, tomarVista3d } from '@pages/maps/helpers/vista3dCompartida';
-import { ESTILO_PUNTOS_3D_DEFAULT } from '@pages/maps/helpers/estilosDePuntos3d';
-import { VIEW3D_DEFAULTS, clampColumnas, clampExaggeration, clampPitch, clampSol, webglAvailable } from '@pages/maps/helpers/view3d';
+import { AJUSTES_3D_DEFAULT, LLAVE_AJUSTES_3D } from '@pages/maps/helpers/ajustes3d';
+import { useAjustes3d } from '@pages/maps/hooks/useAjustes3d';
+import { VIEW3D_DEFAULTS, clampExaggeration, clampPitch, webglAvailable } from '@pages/maps/helpers/view3d';
 
 const View3dContext = createContext(null);
 
@@ -15,8 +16,9 @@ const INACTIVE = {
     pitch: VIEW3D_DEFAULTS.pitch,
     bearing: VIEW3D_DEFAULTS.bearing,
     exaggeration: VIEW3D_DEFAULTS.exaggeration,
-    sol: VIEW3D_DEFAULTS.sol,
-    alturaColumnas: VIEW3D_DEFAULTS.alturaColumnas,
+    ...AJUSTES_3D_DEFAULT,
+    ajustes: AJUSTES_3D_DEFAULT,
+    setAjuste: () => {},
     extruded: [],
     extrusionStatus: {},
     map3dRef: { current: null },
@@ -31,13 +33,9 @@ const INACTIVE = {
     setAlturaColumnas: () => {},
     orbita: false,
     setOrbita: () => {},
-    terreno: VIEW3D_DEFAULTS.terreno,
-    cielo: VIEW3D_DEFAULTS.cielo,
-    niebla: VIEW3D_DEFAULTS.niebla,
     setTerreno: () => {},
     setCielo: () => {},
     setNiebla: () => {},
-    estiloPuntos: ESTILO_PUNTOS_3D_DEFAULT,
     setEstiloPuntos: () => {},
     restablecer: () => {},
     toggleExtrusion: () => {},
@@ -64,7 +62,7 @@ const writeUrlState = (searchParams, { active, pitch, extruded }) => {
     return next;
 };
 
-export const View3dProvider = ({ children }) => {
+export const View3dProvider = ({ children, llaveAjustes = LLAVE_AJUSTES_3D }) => {
     const {
         hideMeasurementTools, hideAnnotationTools,
         showMeasurementTools, areMeasurementToolsVisible,
@@ -78,13 +76,8 @@ export const View3dProvider = ({ children }) => {
     const [bearing, setBearing] = useState(VIEW3D_DEFAULTS.bearing);
     const [exaggeration, setExaggerationState] = useState(VIEW3D_DEFAULTS.exaggeration);
     const [extruded, setExtruded] = useState(initial.extruded);
-    const [sol, setSolState] = useState(VIEW3D_DEFAULTS.sol);
-    const [alturaColumnas, setAlturaState] = useState(VIEW3D_DEFAULTS.alturaColumnas);
     const [orbita, setOrbita] = useState(false);
-    const [terreno, setTerreno] = useState(VIEW3D_DEFAULTS.terreno);
-    const [cielo, setCielo] = useState(VIEW3D_DEFAULTS.cielo);
-    const [niebla, setNiebla] = useState(VIEW3D_DEFAULTS.niebla);
-    const [estiloPuntos, setEstiloPuntos] = useState(ESTILO_PUNTOS_3D_DEFAULT);
+    const { ajustes, setAjuste, reemplazarAjustes, restablecerAjustes } = useAjustes3d(llaveAjustes);
     const [extrusionStatus, setExtrusionStatus] = useState({});
     const map3dRef = useRef(null);
     const grupo3dRef = useRef({ miembros: new Set(), fuente: null });
@@ -117,21 +110,22 @@ export const View3dProvider = ({ children }) => {
     const toggle = useCallback(() => (active ? exit() : enter()), [active, enter, exit]);
     const setPitch = useCallback((value) => setPitchState(clampPitch(value)), []);
     const setExaggeration = useCallback((value) => setExaggerationState(clampExaggeration(value)), []);
-    const setSol = useCallback((value) => setSolState(clampSol(value)), []);
-    const setAlturaColumnas = useCallback((value) => setAlturaState(clampColumnas(value)), []);
+    const setters = useMemo(() => ({
+        setSol: valor => setAjuste('sol', valor),
+        setAlturaColumnas: valor => setAjuste('alturaColumnas', valor),
+        setTerreno: valor => setAjuste('terreno', valor),
+        setCielo: valor => setAjuste('cielo', valor),
+        setNiebla: valor => setAjuste('niebla', valor),
+        setEstiloPuntos: valor => setAjuste('estiloPuntos', valor),
+    }), [setAjuste]);
 
     const restablecer = useCallback(() => {
         setPitchState(VIEW3D_DEFAULTS.pitch);
         setBearing(VIEW3D_DEFAULTS.bearing);
         setExaggerationState(VIEW3D_DEFAULTS.exaggeration);
-        setSolState(VIEW3D_DEFAULTS.sol);
-        setAlturaState(VIEW3D_DEFAULTS.alturaColumnas);
-        setTerreno(VIEW3D_DEFAULTS.terreno);
-        setCielo(VIEW3D_DEFAULTS.cielo);
-        setNiebla(VIEW3D_DEFAULTS.niebla);
-        setEstiloPuntos(ESTILO_PUNTOS_3D_DEFAULT);
+        restablecerAjustes();
         setOrbita(false);
-    }, []);
+    }, [restablecerAjustes]);
 
     const toggleExtrusion = useCallback((layerId) => {
         setExtruded(prev => {
@@ -155,10 +149,11 @@ export const View3dProvider = ({ children }) => {
             setBearing(vista.bearing);
             setExaggerationState(vista.exaggeration);
             setExtruded(vista.extruded);
+            if (vista.ajustes) reemplazarAjustes(vista.ajustes);
         };
         aplicar();
         return suscribirVista3d(aplicar);
-    }, [enter]);
+    }, [enter, reemplazarAjustes]);
 
     const previousActiveRef = useRef(new Set());
     useEffect(() => {
@@ -177,14 +172,14 @@ export const View3dProvider = ({ children }) => {
 
     const value = useMemo(() => ({
         present: true, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef, grupo3dRef,
-        sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos,
+        ...ajustes, ajustes, setAjuste, ...setters, orbita,
         enter, exit, toggle, setPitch, setBearing, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
-        setSol, setAlturaColumnas, setOrbita, setTerreno, setCielo, setNiebla, setEstiloPuntos, restablecer,
+        setOrbita, restablecer,
     }), [
         available, active, pitch, bearing, exaggeration, extruded, extrusionStatus,
-        sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos,
+        ajustes, setAjuste, setters, orbita,
         enter, exit, toggle, setPitch, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
-        setSol, setAlturaColumnas, restablecer,
+        restablecer,
     ]);
 
     return <View3dContext.Provider value={value}>{children}</View3dContext.Provider>;

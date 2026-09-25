@@ -16,8 +16,20 @@ describe('vista3dCompartida', () => {
 
     it('lee una vista compartida, acota valores y descarta capas que ya no existen', () => {
         const vista = leerVista3d({ pitch: 200, bearing: 30, exaggeration: 0, extruir: ['ws:a', 'ws:x'] }, slug => (slug === 'ws:a' ? 'a' : null));
-        expect(vista).toEqual({ pitch: 80, bearing: 30, exaggeration: 1, extruded: ['a'] });
+        expect(vista).toEqual({ pitch: 80, bearing: 30, exaggeration: 1, extruded: ['a'], ajustes: null });
         expect(leerVista3d(null, () => null)).toBeNull();
+    });
+
+    it('comparte solo los ajustes distintos a los de fabrica y los normaliza al leer', () => {
+        const view3d = { active: true, pitch: 55, bearing: 0, exaggeration: 1.5, extruded: [], ajustes: { estiloPuntos: 'poste', escalaSimbolos: 1.2, terreno: true } };
+        const vista = serializarVista3d(view3d, id => id);
+        expect(vista.ajustes).toEqual({ estiloPuntos: 'poste', escalaSimbolos: 1.2 });
+        const leida = leerVista3d({ ...vista, ajustes: { ...vista.ajustes, velocidadOrbita: 99, estiloTextos: 'raro' } }, id => id);
+        expect(leida.ajustes).toMatchObject({ estiloPuntos: 'poste', escalaSimbolos: 1.2, velocidadOrbita: 20, estiloTextos: 'frente', terreno: true });
+    });
+
+    it('sin ajustes cambiados el enlace no los lleva', () => {
+        expect(serializarVista3d({ active: true, pitch: 55, bearing: 0, exaggeration: 1.5, extruded: [], ajustes: {} }, id => id)).not.toHaveProperty('ajustes');
     });
 
     it('entrega la vista pendiente una sola vez y avisa a los suscritos', () => {

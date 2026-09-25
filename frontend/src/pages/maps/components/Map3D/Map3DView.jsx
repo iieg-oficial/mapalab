@@ -21,7 +21,6 @@ import Medicion3D from './Medicion3D';
 import { Clic3dPropio, Clic3dVisor } from './Clic3d';
 
 const TERRAIN_SOURCE = 'terreno';
-const ORBITA_GRADOS_POR_SEGUNDO = 8;
 
 const applyBasemap = (map, basemap) => {
     ['etiquetas', 'base'].forEach((id) => {
@@ -48,7 +47,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, areAnnotationToolsVisible, measurements, municipioMode } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, grupo3dRef, setPitch, setBearing, exit, reportExtrusion,
-        sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos,
+        sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos, escalaSimbolos, agruparPuntos, contorno, velocidadOrbita,
     } = useView3d();
     const olRef = olMapRef || mapRef;
     const { getLegendJson } = useWMSLegend();
@@ -65,6 +64,8 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     }, []);
     const orbitaRef = useRef(false);
     orbitaRef.current = orbita;
+    const velocidadRef = useRef(velocidadOrbita);
+    velocidadRef.current = velocidadOrbita;
     const initialRef = useRef({ pitch, bearing, exaggeration, basemap: basemaps[baseMapId] });
 
     useEffect(() => {
@@ -132,9 +133,10 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     useEffect(() => {
         if (!map || !orbita || !principal) return undefined;
         let frame = null;
+        const velocidad = () => velocidadRef.current;
         let previo = performance.now();
         const girar = (ahora) => {
-            map.setBearing(map.getBearing() + ((ahora - previo) / 1000) * ORBITA_GRADOS_POR_SEGUNDO);
+            map.setBearing(map.getBearing() + ((ahora - previo) / 1000) * velocidad());
             previo = ahora;
             frame = requestAnimationFrame(girar);
         };
@@ -158,17 +160,19 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
         if (map) applyBasemap(map, basemaps[baseMapId]);
     }, [map, basemaps, baseMapId]);
 
-    useMap3dContorno(map);
+    useMap3dContorno(map, contorno);
     useCamara3dSincronizada(map, grupo3dRef);
     useMap3dLayers(map, olRef, dePie);
-    useMap3dBillboards(map, olRef, { allLayers, getServiceMode, getLegendJson, onReady: alListarDePie, estilo: estiloPuntos });
+    useMap3dBillboards(map, olRef, {
+        allLayers, getServiceMode, getLegendJson, onReady: alListarDePie, estilo: estiloPuntos, escala: escalaSimbolos, agrupar: agruparPuntos,
+    });
     useMap3dVectors(map, olRef, extruded, alturaColumnas);
     useMap3dExtrusions(map, olRef, {
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,
     });
     useMedicionesGuardadas3d(map, measurements);
     useMap3dMunicipio(map, municipioMode, principal);
-    useAnotacionesPuntuales3d(map, measurements, estiloPuntos);
+    useAnotacionesPuntuales3d(map, measurements, estiloPuntos, escalaSimbolos);
 
     if (!olRef.current) return null;
 

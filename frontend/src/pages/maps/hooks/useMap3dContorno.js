@@ -1,10 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { loadLimiteEstatal } from '@pages/maps/helpers/limiteEstatal';
 
 const SOURCE_ID = 'limite-estatal';
 const OUTLINE_LAYER = 'limite-estatal-linea';
 
-export const useMap3dContorno = (map) => {
+export const useMap3dContorno = (map, visible = true) => {
+    const visibleRef = useRef(visible);
+    visibleRef.current = visible;
+
     useEffect(() => {
         if (!map) return undefined;
         let cancelled = false;
@@ -16,7 +19,7 @@ export const useMap3dContorno = (map) => {
                 id: OUTLINE_LAYER,
                 type: 'line',
                 source: SOURCE_ID,
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                layout: { 'line-join': 'round', 'line-cap': 'round', visibility: visibleRef.current ? 'visible' : 'none' },
                 paint: { 'line-color': '#FFFFFF', 'line-width': 3, 'line-opacity': 0.95 },
             });
         }).catch((error) => {
@@ -25,4 +28,8 @@ export const useMap3dContorno = (map) => {
 
         return () => { cancelled = true; };
     }, [map]);
+
+    useEffect(() => {
+        if (map?.getLayer(OUTLINE_LAYER)) map.setLayoutProperty(OUTLINE_LAYER, 'visibility', visible ? 'visible' : 'none');
+    }, [map, visible]);
 };

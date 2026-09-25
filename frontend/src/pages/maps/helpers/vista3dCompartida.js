@@ -1,4 +1,5 @@
 import { clampExaggeration, clampPitch } from './view3d';
+import { ajustesDistintos, normalizarAjustes3d } from './ajustes3d';
 
 const MAX_EXTRUIDAS = 10;
 
@@ -18,11 +19,13 @@ const rumbo = (valor) => {
 
 export const serializarVista3d = (view3d, slugDe) => {
     if (!view3d?.active) return null;
+    const ajustes = ajustesDistintos(view3d.ajustes);
     return {
         pitch: Math.round(clampPitch(view3d.pitch)),
         bearing: rumbo(view3d.bearing),
         exaggeration: redondear(clampExaggeration(view3d.exaggeration), 1),
         extruir: (view3d.extruded || []).map(slugDe).filter(Boolean).slice(0, MAX_EXTRUIDAS),
+        ...(Object.keys(ajustes).length ? { ajustes } : {}),
     };
 };
 
@@ -34,6 +37,7 @@ export const leerVista3d = (crudo, idDe) => {
         bearing: rumbo(crudo.bearing),
         exaggeration: clampExaggeration(crudo.exaggeration),
         extruded: extruir.slice(0, MAX_EXTRUIDAS).map(idDe).filter(Boolean),
+        ajustes: crudo.ajustes && typeof crudo.ajustes === 'object' ? normalizarAjustes3d(crudo.ajustes) : null,
     };
 };
 

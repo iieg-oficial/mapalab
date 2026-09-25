@@ -1,3 +1,4 @@
+export const ESTILOS_PUNTOS_3D = ['frente', 'poste', 'sombra'];
 export const ESTILO_PUNTOS_3D_DEFAULT = 'sombra';
 
 const POSTE = 22;
@@ -37,6 +38,6 @@ export const dibujarIcono = (ctx, imagen, ancho, alto, estilo, ratio = 1) => {
     return lienzo;
 };
 
-export const tamanoPorEstilo = (estilo) => (estilo === 'sombra'
-    ? ['interpolate', ['linear'], ['zoom'], 6, 0.9, 13, 1.5]
-    : 1);
+export const tamanoPorEstilo = (estilo, escala = 1) => (estilo === 'sombra'
+    ? ['interpolate', ['linear'], ['zoom'], 6, Number((0.9 * escala).toFixed(3)), 13, Number((1.5 * escala).toFixed(3))]
+    : escala);

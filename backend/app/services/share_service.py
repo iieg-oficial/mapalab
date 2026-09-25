@@ -23,6 +23,9 @@ MAX_MUNICIPIOS = 125
 MAX_PITCH_3D = 80
 EXAGERACION_3D = (1, 5)
 MAX_EXTRUIDAS_3D = 10
+AJUSTES_3D_LOGICOS = {"terreno", "cielo", "niebla", "contorno", "agruparPuntos"}
+AJUSTES_3D_NUMERICOS = {"sol": (0, 359), "alturaColumnas": (0.5, 3), "escalaSimbolos": (0.75, 1.5), "velocidadOrbita": (2, 20)}
+AJUSTES_3D_OPCIONES = {"estiloPuntos": {"frente", "poste", "sombra"}, "estiloTextos": {"frente", "planos"}}
 MAX_CAPAS = 60
 MAX_FILTROS_POR_CAPA = 20
 MAX_REFERENCIA = 200
@@ -228,6 +231,27 @@ def _validate_vista3d(vista: Any, source: str) -> None:
         raise ValueError(f"{source}.vista3d.extruir debe ser lista de hasta {MAX_EXTRUIDAS_3D} capas")
     if not all(isinstance(slug, str) and slug.strip() for slug in extruir):
         raise ValueError(f"{source}.vista3d.extruir: cada capa debe ser string no vacio")
+    _validate_ajustes_3d(vista.get("ajustes"), f"{source}.vista3d.ajustes")
+
+
+def _validate_ajustes_3d(ajustes: Any, source: str) -> None:
+    if ajustes is None:
+        return
+    if not isinstance(ajustes, dict):
+        raise ValueError(f"{source} debe ser objeto")
+    for clave, valor in ajustes.items():
+        if clave in AJUSTES_3D_LOGICOS:
+            if not isinstance(valor, bool):
+                raise ValueError(f"{source}.{clave} debe ser booleano")
+        elif clave in AJUSTES_3D_NUMERICOS:
+            minimo, maximo = AJUSTES_3D_NUMERICOS[clave]
+            if not (_es_numero(valor) and minimo <= valor <= maximo):
+                raise ValueError(f"{source}.{clave} fuera de rango [{minimo},{maximo}]")
+        elif clave in AJUSTES_3D_OPCIONES:
+            if valor not in AJUSTES_3D_OPCIONES[clave]:
+                raise ValueError(f"{source}.{clave} debe ser uno de {sorted(AJUSTES_3D_OPCIONES[clave])}")
+        else:
+            raise ValueError(f"{source}.{clave} no es un ajuste conocido")
 
 
 def _validate_single_payload(payload: dict) -> None:

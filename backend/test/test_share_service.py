@@ -228,6 +228,10 @@ class TestVista3d:
             'shared': {'vista3d': self.VISTA}, 'paneA': {'layers': []}, 'paneB': {'layers': []}, 'activeSlot': 'A',
         }))
 
+    def test_acepta_ajustes_validos(self):
+        ajustes = {'estiloPuntos': 'poste', 'estiloTextos': 'planos', 'agruparPuntos': True, 'escalaSimbolos': 1.2, 'velocidadOrbita': 12}
+        validate_payload(_envelope('single', {'layers': [], 'vista3d': {**self.VISTA, 'ajustes': ajustes}}))
+
     @pytest.mark.parametrize('cambio,mensaje', [
         ({'pitch': 90}, 'pitch'),
         ({'pitch': True}, 'pitch'),
@@ -235,6 +239,11 @@ class TestVista3d:
         ({'exaggeration': 9}, 'exaggeration'),
         ({'extruir': [f'c{i}' for i in range(11)]}, 'extruir'),
         ({'extruir': [3]}, 'extruir'),
+        ({'ajustes': 'x'}, 'ajustes'),
+        ({'ajustes': {'terreno': 'si'}}, 'terreno'),
+        ({'ajustes': {'escalaSimbolos': 3}}, 'escalaSimbolos'),
+        ({'ajustes': {'estiloPuntos': 'globo'}}, 'estiloPuntos'),
+        ({'ajustes': {'color': 'rojo'}}, 'color'),
     ])
     def test_rechaza_valores_fuera_de_rango(self, cambio, mensaje):
         env = _envelope('single', {'layers': [], 'vista3d': {**self.VISTA, **cambio}})

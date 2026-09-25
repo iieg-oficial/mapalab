@@ -5,6 +5,7 @@ import { billboardLayout, iconExpression, parsePointRules, publicIconUrl } from 
 import { fetchLayerData } from '@pages/maps/helpers/map3dFeatures';
 import { managedIds, removeGeojson, replaceLayers, upsertGeojson } from '@pages/maps/helpers/map3dLayerSpecs';
 import { dibujarIcono, medidasDeIcono, tamanoPorEstilo } from '@pages/maps/helpers/estilosDePuntos3d';
+import { OPCIONES_AGRUPAR, SIN_GRUPO, capaDeGrupos, registrarGrupos } from '@pages/maps/helpers/agrupamiento3d';
 import { useOlWmsRevision } from './useOlWmsRevision';
 
 const PREFIX = 'pt-';
@@ -52,10 +53,15 @@ export const entradasDePuntos = (olMap, allLayers, getServiceMode) => olMap.getL
 
 const idDeFuente = (clave) => `${PREFIX}${clave.replace(/[^\w]+/g, '_')}`;
 
-export const useMap3dBillboards = (map, olMapRef, { allLayers, getServiceMode, getLegendJson, onReady, estilo = 'frente' }) => {
+export const useMap3dBillboards = (map, olMapRef, {
+    allLayers, getServiceMode, getLegendJson, onReady, estilo = 'frente', escala = 1, agrupar = false,
+}) => {
     const revision = useOlWmsRevision(map, olMapRef);
     const cacheRef = useRef(new Map());
     const listosRef = useRef(new Map());
+    const agrupadasRef = useRef(new Map());
+
+    useEffect(() => (map ? registrarGrupos(map) : undefined), [map]);
 
     useEffect(() => {
         const olMap = olMapRef.current;
@@ -84,13 +90,17 @@ export const useMap3dBillboards = (map, olMapRef, { allLayers, getServiceMode, g
                 const idDe = (indice) => `ico:${estilo}:${reglas.rules[indice].url}`;
                 const cargados = await Promise.all(reglas.rules.map((regla, i) => cargarIcono(map, idDe(i), regla.url, regla.size, estilo)));
                 if (controller.signal.aborted || !cargados.some(Boolean)) return;
-                upsertGeojson(map, sourceId, datos.collection);
+                if (map.getSource(sourceId) && agrupadasRef.current.get(sourceId) !== agrupar) removeGeojson(map, sourceId);
+                if (map.getSource(sourceId)) upsertGeojson(map, sourceId, datos.collection);
+                else map.addSource(sourceId, { type: 'geojson', data: datos.collection, ...(agrupar ? OPCIONES_AGRUPAR : {}) });
+                agrupadasRef.current.set(sourceId, agrupar);
                 replaceLayers(map, sourceId, [{
                     id: `${sourceId}-icono`,
                     type: 'symbol',
                     source: sourceId,
-                    layout: { ...billboardLayout(iconExpression(reglas, idDe)), 'icon-size': tamanoPorEstilo(estilo) },
-                }]);
+                    ...(agrupar ? { filter: SIN_GRUPO } : {}),
+                    layout: { ...billboardLayout(iconExpression(reglas, idDe)), 'icon-size': tamanoPorEstilo(estilo, escala) },
+                }, ...(agrupar ? [capaDeGrupos(sourceId, escala)] : [])]);
                 listosRef.current.set(sourceId, ids);
                 avisar();
             } catch (error) {
@@ -99,5 +109,5 @@ export const useMap3dBillboards = (map, olMapRef, { allLayers, getServiceMode, g
         });
 
         return () => controller.abort();
-    }, [map, olMapRef, allLayers, getServiceMode, getLegendJson, onReady, revision, estilo]);
+    }, [map, olMapRef, allLayers, getServiceMode, getLegendJson, onReady, revision, estilo, escala, agrupar]);
 };

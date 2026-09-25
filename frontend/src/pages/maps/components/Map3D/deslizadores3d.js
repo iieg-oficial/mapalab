@@ -1,11 +1,14 @@
 import {
     rumboDeAngulo, VIEW3D_COLUMN_RANGE, VIEW3D_EXAGGERATION_RANGE, VIEW3D_PITCH_MAX,
 } from '@pages/maps/helpers/view3d';
+import { ESCALA_SIMBOLOS_3D, VELOCIDAD_ORBITA_3D } from '@pages/maps/helpers/ajustes3d';
 
 const [EXAG_MIN, EXAG_MAX] = VIEW3D_EXAGGERATION_RANGE;
 const [COL_MIN, COL_MAX] = VIEW3D_COLUMN_RANGE;
 
-export const deslizadores3d = ({ pitch, exaggeration, sol, alturaColumnas, setPitch, setExaggeration, setSol, setAlturaColumnas }) => ({
+export const deslizadores3d = ({
+    pitch, exaggeration, sol, alturaColumnas, escalaSimbolos, velocidadOrbita, setPitch, setExaggeration, setSol, setAlturaColumnas, setAjuste,
+}) => ({
     pitch: {
         titulo: 'Inclinación', valor: Math.round(pitch), texto: `${Math.round(pitch)}°`, corto: `${Math.round(pitch)}°`,
         min: 0, max: VIEW3D_PITCH_MAX, step: 1, onChange: setPitch, pct: (pitch / VIEW3D_PITCH_MAX) * 100, tono: '#5C2472',
@@ -21,5 +24,13 @@ export const deslizadores3d = ({ pitch, exaggeration, sol, alturaColumnas, setPi
     altura: {
         titulo: 'Altura sobre los puntos', valor: alturaColumnas, texto: `×${alturaColumnas}`, corto: `×${alturaColumnas}`,
         min: COL_MIN, max: COL_MAX, step: 0.5, onChange: setAlturaColumnas, pct: ((alturaColumnas - COL_MIN) / (COL_MAX - COL_MIN)) * 100, tono: '#0072B2',
+    },
+    escala: {
+        titulo: 'Tamaño de íconos y textos', valor: escalaSimbolos, texto: `×${escalaSimbolos}`, corto: `×${escalaSimbolos}`,
+        min: ESCALA_SIMBOLOS_3D[0], max: ESCALA_SIMBOLOS_3D[1], step: 0.05, onChange: valor => setAjuste('escalaSimbolos', valor),
+    },
+    orbita: {
+        titulo: 'Velocidad de órbita', valor: velocidadOrbita, texto: `${velocidadOrbita}°/s`, corto: `${velocidadOrbita}°/s`,
+        min: VELOCIDAD_ORBITA_3D[0], max: VELOCIDAD_ORBITA_3D[1], step: 1, onChange: valor => setAjuste('velocidadOrbita', valor),
     },
 });

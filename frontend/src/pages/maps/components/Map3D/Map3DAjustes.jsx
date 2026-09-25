@@ -17,10 +17,17 @@ const IconoRestablecer = () => (
 );
 
 const OPCIONES_PUNTOS = [
-    { value: 'frente', label: 'Frente' },
-    { value: 'poste', label: 'Poste' },
     { value: 'sombra', label: 'Sombra' },
+    { value: 'poste', label: 'Poste' },
+    { value: 'frente', label: 'Frente' },
 ];
+
+const OPCIONES_TEXTOS = [
+    { value: 'frente', label: 'De frente' },
+    { value: 'planos', label: 'Planos' },
+];
+
+const DESLIZADORES = ['escala', 'altura', 'orbita'];
 
 const Interruptor = ({ titulo, activo, onChange }) => (
     <div className="flex items-center justify-between font-garet text-[12px] text-graphite">
@@ -29,9 +36,17 @@ const Interruptor = ({ titulo, activo, onChange }) => (
     </div>
 );
 
+const Selector = ({ titulo, opciones, valor, onChange, etiqueta }) => (
+    <div className="flex flex-col gap-2">
+        <span className="font-garet text-[12px] text-graphite">{titulo}</span>
+        <Segmented variant="panel" options={opciones} value={valor} onChange={onChange} ariaLabel={etiqueta} />
+    </div>
+);
+
 const Map3DAjustes = ({ anchorRef, onClose }) => {
     const view3d = useView3d();
     const deslizadores = deslizadores3d(view3d);
+    const cambiar = clave => valor => view3d.setAjuste(clave, valor);
 
     return (
         <Map3DPopover
@@ -40,7 +55,7 @@ const Map3DAjustes = ({ anchorRef, onClose }) => {
             width={280}
             alinear="abajo"
             etiqueta="Ajustes de la vista 3D"
-            className="rounded-[12px] bg-[#F9FBFF] px-4.5 pb-3 pt-2 shadow-[0_5px_20px_#1A26641A]"
+            className="max-h-[calc(100dvh-24px)] overflow-y-auto rounded-[12px] bg-[#F9FBFF] px-4.5 pb-3 pt-2 shadow-[0_5px_20px_#1A26641A]"
         >
             <PanelHeader
                 icono={<Icon name="settings" className="size-4.5 shrink-0" />}
@@ -62,24 +77,18 @@ const Map3DAjustes = ({ anchorRef, onClose }) => {
                 )}
             />
             <div className="flex flex-col gap-3 rounded-[7px] bg-white p-3">
-                {Object.entries(deslizadores).map(([clave, deslizador]) => (
-                    <Map3DDeslizador key={clave} {...deslizador} />
-                ))}
+                <Selector titulo="Puntos" opciones={OPCIONES_PUNTOS} valor={view3d.estiloPuntos} onChange={view3d.setEstiloPuntos} etiqueta="Cómo se dibujan los puntos en 3D" />
+                <Selector titulo="Textos" opciones={OPCIONES_TEXTOS} valor={view3d.estiloTextos} onChange={cambiar('estiloTextos')} etiqueta="Cómo se dibujan los textos en 3D" />
+            </div>
+            <div className="flex flex-col gap-3 rounded-[7px] bg-white p-3">
+                {DESLIZADORES.map(clave => <Map3DDeslizador key={clave} {...deslizadores[clave]} />)}
             </div>
             <div className="flex flex-col gap-2.5 rounded-[7px] bg-white p-3">
+                <Interruptor titulo="Agrupar puntos cercanos" activo={view3d.agruparPuntos} onChange={cambiar('agruparPuntos')} />
                 <Interruptor titulo="Terreno" activo={view3d.terreno} onChange={view3d.setTerreno} />
                 <Interruptor titulo="Cielo" activo={view3d.cielo} onChange={view3d.setCielo} />
                 <Interruptor titulo="Niebla" activo={view3d.niebla} onChange={view3d.setNiebla} />
-            </div>
-            <div className="flex flex-col gap-2 rounded-[7px] bg-white p-3">
-                <span className="font-garet text-[12px] text-graphite">Puntos</span>
-                <Segmented
-                    variant="panel"
-                    options={OPCIONES_PUNTOS}
-                    value={view3d.estiloPuntos}
-                    onChange={view3d.setEstiloPuntos}
-                    ariaLabel="Cómo se dibujan los puntos en 3D"
-                />
+                <Interruptor titulo="Contorno del estado" activo={view3d.contorno} onChange={cambiar('contorno')} />
             </div>
         </Map3DPopover>
     );

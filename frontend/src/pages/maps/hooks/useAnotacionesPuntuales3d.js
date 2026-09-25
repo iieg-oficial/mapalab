@@ -37,6 +37,21 @@ const deCuerpoEntero = (raiz, estilo) => {
     return { elemento: raiz, anchor: 'bottom', offset: [0, 0] };
 };
 
+const ORIGENES = { center: 'center', bottom: 'bottom center', 'bottom-left': 'bottom left' };
+
+export const escalarMarcador = ({ elemento, anchor, offset }, escala = 1) => {
+    if (escala === 1) return { elemento, anchor, offset };
+    const cuerpo = document.createElement('div');
+    cuerpo.style.cssText = `pointer-events:none;transform:scale(${escala});transform-origin:${ORIGENES[anchor] || 'center'}`;
+    cuerpo.append(...elemento.childNodes);
+    cuerpo.style.display = elemento.style.display;
+    cuerpo.style.flexDirection = elemento.style.flexDirection;
+    cuerpo.style.alignItems = elemento.style.alignItems;
+    cuerpo.style.gap = elemento.style.gap;
+    elemento.replaceChildren(cuerpo);
+    return { elemento, anchor, offset };
+};
+
 export const elementoDeAnotacion = (medicion, estilo = 'frente') => {
     const feature = medicion.feature;
     const tipo = medicion.type;
@@ -88,7 +103,7 @@ export const anotacionesPuntuales = (measurements = []) => measurements.filter(m
     TIPOS.has(m.type) && m.visible !== false && m.feature?.getGeometry?.()?.getType?.() === 'Point'
 ));
 
-export const useAnotacionesPuntuales3d = (map, measurements, estilo = 'frente') => {
+export const useAnotacionesPuntuales3d = (map, measurements, estilo = 'frente', escala = 1) => {
     const marcadoresRef = useRef([]);
 
     useEffect(() => {
@@ -103,7 +118,7 @@ export const useAnotacionesPuntuales3d = (map, measurements, estilo = 'frente') 
             if (!vigente) return;
             quitar();
             marcadoresRef.current = anotacionesPuntuales(measurements).map((medicion) => {
-                const { elemento, anchor, offset } = elementoDeAnotacion(medicion, estilo);
+                const { elemento, anchor, offset } = escalarMarcador(elementoDeAnotacion(medicion, estilo), escala);
                 return new maplibregl.Marker({ element: elemento, anchor, offset })
                     .setLngLat(toLonLat(medicion.feature.getGeometry().getCoordinates()))
                     .addTo(map);
@@ -114,5 +129,5 @@ export const useAnotacionesPuntuales3d = (map, measurements, estilo = 'frente') 
             vigente = false;
             quitar();
         };
-    }, [map, measurements, estilo]);
+    }, [map, measurements, estilo, escala]);
 };
