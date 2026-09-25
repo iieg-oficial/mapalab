@@ -3,9 +3,11 @@ import Polygon from 'ol/geom/Polygon';
 import MultiPolygon from 'ol/geom/MultiPolygon';
 
 vi.mock('@pages/maps/helpers/wmsConfig', () => ({
-    findWMSConfig: (id) => (id === 'sin-wfs'
-        ? { baseUrl: 'https://mapas.test/sextante/wms', layerName: 'raster:nddi', wfsAvailable: false }
-        : { baseUrl: 'https://mapas.test/sextante/wms', layerName: 'educacion:escuelas' }),
+    findWMSConfig: (id) => {
+        if (id === 'sin-wfs') return { baseUrl: 'https://mapas.test/sextante/wms', layerName: 'raster:nddi', wfsAvailable: false };
+        if (id === 'agave') return { baseUrl: 'https://mapas.test/sextante/wms', layerName: 'educacion:escuelas', cqlFilter: "cultivo = 'Agave'" };
+        return { baseUrl: 'https://mapas.test/sextante/wms', layerName: 'educacion:escuelas' };
+    },
 }));
 const geometria = { tipo: 'point' };
 
@@ -13,6 +15,12 @@ vi.mock('@utils/featureInfoUtils', () => ({
     fetchGeometryColumns: async () => ({ 'educacion:escuelas': 'geom' }),
     fetchGeometryType: async () => geometria.tipo,
     getWfsUrl: (url) => url.replace('/wms', '/wfs'),
+    combineCQLFilters: (base, dinamico) => {
+        if (!base && !dinamico) return null;
+        if (!base) return dinamico;
+        if (!dinamico) return base;
+        return `(${base}) AND (${dinamico})`;
+    },
 }));
 
 import { CAPAS_SIMULTANEAS, CONTEOS_POR_SEGUNDO, MAX_ELEMENTOS_AGREGADO, MAX_VERTICES, REINTENTOS_TRAS_429, agregarEnPoligono, agregarValores, camposDeCapa, conLimite, contarEnPoligono, esCampoDeClase, esCampoNumerico, filtroDePoligono, leerAgregadoPorClase, leerNumberMatched, pedirConRitmo, wktDelPoligono } from '@services/seleccionStatsService';
@@ -80,6 +88,13 @@ describe('contarEnPoligono', () => {
         const cql = decodeURIComponent(url.replace(/\+/g, ' '));
         expect(cql).toContain("(nivel='primaria') AND WITHIN(geom, SRID=3857;POLYGON");
         expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('aplica el filtro propio de la capa, que distingue vistas de una misma tabla', async () => {
+        global.fetch.mockResolvedValue({ ok: true, status: 200, text: async () => '<wfs:FeatureCollection numberMatched="12"/>' });
+        await contarEnPoligono([{ id: 'agave', label: 'Agave' }], cuadro, { getFilter: () => 'anio = 2024' });
+        const cql = decodeURIComponent(global.fetch.mock.calls[0][0].replace(/\+/g, ' '));
+        expect(cql).toContain("((cultivo = 'Agave') AND (anio = 2024)) AND WITHIN(");
     });
 
     it('en polígonos cuenta solo lo que queda dentro y aparte lo que cruza el borde', async () => {

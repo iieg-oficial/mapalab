@@ -1,5 +1,5 @@
 import { findWMSConfig } from '../pages/maps/helpers/wmsConfig';
-import { fetchGeometryColumns, fetchGeometryType, getWfsUrl } from '../utils/featureInfoUtils';
+import { combineCQLFilters, fetchGeometryColumns, fetchGeometryType, getWfsUrl } from '../utils/featureInfoUtils';
 import { sumaPorFraccion } from '../pages/maps/helpers/proporcionArea';
 
 export const MAX_VERTICES = 120;
@@ -62,6 +62,11 @@ export const pedirConRitmo = async (hacerPeticion) => {
 };
 
 export const urlWfsGet = (baseUrl, parametros) => `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}${parametros.toString()}`;
+
+export const filtroDeCapa = (wmsConfig, getFilter, capaId) => combineCQLFilters(
+    wmsConfig?.cqlFilter || null,
+    getFilter ? getFilter(capaId) : null,
+);
 
 const contarCapa = async ({ baseUrl, typeName, columna, filtroCapa, wkt, relacion }) => {
     const espacial = filtroDePoligono(columna, wkt, relacion);
@@ -156,7 +161,7 @@ export const agregarEnPoligono = async ({ capa, campo, poligono, getFilter = nul
         const typeName = wmsConfig.layerName;
         const columnas = await fetchGeometryColumns(baseUrl, [typeName]);
         const espacial = filtroDePoligono(columnas[typeName] || 'the_geom', wktDelPoligono(poligono), 'WITHIN');
-        const filtroCapa = getFilter ? getFilter(capa.id) : null;
+        const filtroCapa = filtroDeCapa(wmsConfig, getFilter, capa.id);
 
         const parametros = new URLSearchParams({
             SERVICE: 'WFS',
@@ -212,7 +217,7 @@ export const contarEnPoligono = async (capas = [], poligono, { getFilter = null,
                 baseUrl,
                 typeName,
                 columna: columnas[typeName] || 'the_geom',
-                filtroCapa: getFilter ? getFilter(capa.id) : null,
+                filtroCapa: filtroDeCapa(wmsConfig, getFilter, capa.id),
                 wkt,
             };
             const esPunto = await fetchGeometryType(baseUrl, typeName) === 'point';
@@ -247,7 +252,7 @@ export const sumarProporcional = async ({ capa, campo, poligono, getFilter = nul
         if (await fetchGeometryType(baseUrl, typeName) !== 'polygon') return null;
         const columna = columnas[typeName] || 'the_geom';
         const espacial = filtroDePoligono(columna, wktDelPoligono(poligono));
-        const filtroCapa = getFilter ? getFilter(capa.id) : null;
+        const filtroCapa = filtroDeCapa(wmsConfig, getFilter, capa.id);
         const cuerpo = new URLSearchParams({
             SERVICE: 'WFS',
             VERSION: '2.0.0',
