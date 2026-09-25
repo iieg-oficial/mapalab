@@ -22,9 +22,13 @@ const mirroredIds = (map) => (map.getStyle()?.layers || []).map(layer => layer.i
 
 const sourceUrl = (source) => (source.getUrl ? source.getUrl() : source.getUrls?.()?.[0]) || null;
 
-const upsert = (map, id, layer) => {
+const paramsDe = (source, cuerpo) => (cuerpo
+    ? { ...source.getParams(), LAYERS: undefined, STYLES: undefined, SLD_BODY: cuerpo }
+    : source.getParams());
+
+const upsert = (map, id, layer, cuerpo) => {
     const source = layer.getSource();
-    const url = wmsTileUrl(sourceUrl(source), source.getParams());
+    const url = wmsTileUrl(sourceUrl(source), paramsDe(source, cuerpo));
     if (!url) return;
     const existing = map.getSource(id);
     if (!existing) {
@@ -42,8 +46,9 @@ const upsert = (map, id, layer) => {
 };
 
 const SIN_EXCLUIDOS = new Set();
+const SIN_CUERPOS = new Map();
 
-export const syncWmsLayers = (map, olMap, excluidos = SIN_EXCLUIDOS) => {
+export const syncWmsLayers = (map, olMap, excluidos = SIN_EXCLUIDOS, cuerpos = SIN_CUERPOS) => {
     const olLayers = readOlLayers(olMap, excluidos);
     const wanted = new Map(olLayers.map(layer => [`${PREFIX}${getUid(layer)}`, layer]));
 
@@ -53,13 +58,13 @@ export const syncWmsLayers = (map, olMap, excluidos = SIN_EXCLUIDOS) => {
         if (map.getSource(id)) map.removeSource(id);
     });
 
-    wanted.forEach((layer, id) => upsert(map, id, layer));
+    wanted.forEach((layer, id) => upsert(map, id, layer, cuerpos.get(getUid(layer))));
 
     const before = map.getLayer(RELIEF_LAYER_ID) ? RELIEF_LAYER_ID : undefined;
     wanted.forEach((_, id) => map.moveLayer(id, before));
 };
 
-export const useMap3dLayers = (map, olMapRef, excluidos = SIN_EXCLUIDOS) => {
+export const useMap3dLayers = (map, olMapRef, excluidos = SIN_EXCLUIDOS, cuerpos = SIN_CUERPOS) => {
     useEffect(() => {
         const olMap = olMapRef.current;
         if (!map || !olMap) return undefined;
@@ -71,7 +76,7 @@ export const useMap3dLayers = (map, olMapRef, excluidos = SIN_EXCLUIDOS) => {
             frame = requestAnimationFrame(() => {
                 frame = null;
                 watchLayers();
-                syncWmsLayers(map, olMap, excluidos);
+                syncWmsLayers(map, olMap, excluidos, cuerpos);
             });
         };
         const watchLayers = () => {
@@ -86,12 +91,12 @@ export const useMap3dLayers = (map, olMapRef, excluidos = SIN_EXCLUIDOS) => {
 
         const collectionKeys = olMap.getLayers().on(['add', 'remove'], schedule);
         watchLayers();
-        syncWmsLayers(map, olMap, excluidos);
+        syncWmsLayers(map, olMap, excluidos, cuerpos);
 
         return () => {
             if (frame !== null) cancelAnimationFrame(frame);
             unByKey(collectionKeys);
             unByKey(layerKeys);
         };
-    }, [map, olMapRef, excluidos]);
+    }, [map, olMapRef, excluidos, cuerpos]);
 };

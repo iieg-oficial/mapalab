@@ -17,6 +17,7 @@ import { useMedicionesGuardadas3d } from '@hooksMaps/useMedicionesGuardadas3d';
 import { useAnotacionesPuntuales3d } from '@hooksMaps/useAnotacionesPuntuales3d';
 import { useCamara3dSincronizada } from '@hooksMaps/useCamara3dSincronizada';
 import { useMap3dMunicipio } from '@hooksMaps/useMap3dMunicipio';
+import { useMap3dEtiquetas } from '@hooksMaps/useMap3dEtiquetas';
 import Medicion3D from './Medicion3D';
 import { Clic3dPropio, Clic3dVisor } from './Clic3d';
 
@@ -47,7 +48,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, areAnnotationToolsVisible, measurements, municipioMode } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, grupo3dRef, setPitch, setBearing, exit, reportExtrusion,
-        sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos, escalaSimbolos, agruparPuntos, contorno, velocidadOrbita,
+        sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos, escalaSimbolos, agruparPuntos, contorno, velocidadOrbita, estiloTextos,
     } = useView3d();
     const olRef = olMapRef || mapRef;
     const { getLegendJson } = useWMSLegend();
@@ -162,7 +163,8 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
 
     useMap3dContorno(map, contorno);
     useCamara3dSincronizada(map, grupo3dRef);
-    useMap3dLayers(map, olRef, dePie);
+    const sinTexto = useMap3dEtiquetas(map, olRef, { activo: estiloTextos === 'frente', escala: escalaSimbolos });
+    useMap3dLayers(map, olRef, dePie, sinTexto);
     useMap3dBillboards(map, olRef, {
         allLayers, getServiceMode, getLegendJson, onReady: alListarDePie, estilo: estiloPuntos, escala: escalaSimbolos, agrupar: agruparPuntos,
     });
