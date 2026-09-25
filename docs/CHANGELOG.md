@@ -5,6 +5,31 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.216.0] - 2026-09-25
+
+### Agregado: ajustes 3D propios, persistentes y compartibles
+
+El panel de ajustes ya no repite las barras de la píldora. Trae estilo de puntos (sombra, poste o
+frente), textos de frente o planos, tamaño de los símbolos, velocidad de órbita, agrupar puntos
+cercanos, terreno, cielo, niebla y contorno del estado. Se guardan por herramienta y viajan en el
+enlace compartido solo si difieren del default.
+
+### Agregado: textos de las capas como billboards
+
+Las etiquetas del SLD (regiones, municipios, Eventos) se dibujan de frente a la cámara con su
+fuente, halo y escala, y se quitan del WMS con `SLD_BODY`. Con «Planos» vuelven al suelo. Si el
+estilo es tan grande que no cabe en la URL, la capa conserva su texto del WMS.
+
+### Agregado: billboards en capas de puntos grandes
+
+Las capas de más de 20 mil puntos, como los delitos de fiscalía, se piden como teselas vectoriales
+a GeoServer y salen de pie desde zoom 10; abajo de eso sigue el WMS plano.
+
+### Corregido: capas de Eventos sin iconos en 3D
+
+La regla de solo texto de su leyenda descartaba la capa completa. Ahora salen de pie con el
+nombre a la derecha del icono, como en 2D.
+
 ## [1.215.1] - 2026-09-25
 
 ### Cambiado: el botón de municipio compacto dice qué vista está activa
