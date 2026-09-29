@@ -1,4 +1,5 @@
 import Icon from '@components/Icon';
+import Badge from '@components/Badge';
 import Tooltip from '@components/Tooltip';
 import { useColibriOpen } from '@hooks/useColibriOpen';
 
@@ -35,9 +36,10 @@ const ReportButton = ({
                 type="button"
                 onClick={handleClick}
                 aria-label={label}
-                className={`w-7 h-7 md:w-6 md:h-6 rounded-full bg-white flex items-center justify-center text-purple hover:text-purple-deep shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] transition-colors ${className}`}
+                className={`relative w-7 h-7 md:w-6 md:h-6 rounded-full bg-white flex items-center justify-center text-purple hover:text-purple-deep shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] transition-colors ${className}`}
             >
                 <Icon name="bug" className="w-3.5 h-3.5 md:w-3 md:h-3" />
+                <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 left-1/2 -translate-x-1/2 text-[8px] px-1.5 pointer-events-none" />
             </button>
         </Tooltip>
     );

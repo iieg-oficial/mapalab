@@ -8,6 +8,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+### Agregado
+
+- El botón de Colibrí para reportar lleva el badge BETA, centrado encima del círculo para no
+  encimarse con el botón del Catálogo. Sale en el visor, el catálogo, el embebido y el inicio.
+
 ### Cambiado
 
 - El minimapa traza los límites estatal y municipal al doble de grosor cuando está de cerca (zoom 12
