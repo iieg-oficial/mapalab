@@ -5,6 +5,17 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.223.0] - 2026-09-29
+
+### Cambiado: íconos del panel de Herramientas homologados
+
+- Los seis íconos comparten caja de 48 px, grosor de trazo, forma morada y un detalle naranja
+  (`IconoHerramienta.jsx`, con los tokens `--color-purple` y `--color-orange`). Ya no cambian de color
+  con el cursor ni al activarse: el estado lo marca el marco.
+- Mediciones pierde el fondo gris: regla morada y triángulo naranja.
+- Las etiquetas van en negro, 13 px y peso medio; la activa en negritas.
+- Minimapa lleva la insignia BETA.
+
 ## [1.222.0] - 2026-09-29
 
 ### Cambiado: el minimapa pasa junto al zoom y viene apagado

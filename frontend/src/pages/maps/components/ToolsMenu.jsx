@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useView3d } from '@contexts/View3dContext';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
@@ -6,10 +6,10 @@ import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { canUseVectorService } from '@pages/maps/helpers/serviceMode';
 import { useSider } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
-import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { useIsNonProd } from '@hooks/useDevTools';
 import { useGoToCatalogo } from '@pages/catalogo/useGoToCatalogo';
+import IconoHerramienta from './IconoHerramienta';
 import { useMinimapaEncendido } from '@pages/maps/hooks/useMinimapaEncendido';
 import { trackMinimapa } from '@services/analyticsService';
 
@@ -18,41 +18,35 @@ const allTools = [
         id: 'mediciones',
         label: 'Mediciones',
         description: 'Punto, linea, poligono',
-        icon: 'medicion',
     },
     {
         id: 'compare-swipe',
         label: 'Barra divisora',
         description: 'Swipe vertical',
         beta: true,
-        icon: 'tool_swipe',
     },
     {
         id: 'tabla',
         label: 'Tabla de datos',
         description: 'Columnas, celdas y filtros',
         beta: true,
-        icon: 'tabla',
     },
     {
         id: 'anotaciones',
         label: 'Anotaciones',
         description: 'Texto, emojis, trazo libre',
-        icon: 'emoji',
     },
     {
         id: 'catalogo',
         label: 'Catálogo',
         description: 'Explora y descarga capas sueltas',
         beta: true,
-        icon: 'capa_activa',
-        iconHover: 'orange',
     },
     {
         id: 'minimapa',
         label: 'Minimapa',
         description: 'Muestra dónde estás en Jalisco al acercarte',
-        icon: 'ubicacion',
+        beta: true,
     },
 ];
 
@@ -65,7 +59,6 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     const { closeSider, isMobile } = useSider();
     const goToCatalogo = useGoToCatalogo();
     const [minimapaEncendido, alternarMinimapa] = useMinimapaEncendido();
-    const [hoveredId, setHoveredId] = useState(null);
     const isNonProd = useIsNonProd();
     const tools = useMemo(
         () => allTools.filter(tool => !tool.nonProdOnly || isNonProd),
@@ -144,7 +137,6 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                 <div className="grid grid-cols-2 gap-4">
                     {tools.map(tool => {
                         const active = isActive(tool.id);
-                        const hovered = hoveredId === tool.id;
                         const tooltipContent = tool.id === 'compare-swipe' ? (
                             <div className="flex flex-col gap-1.5 max-w-[240px]">
                                 <span className="font-bold">{tool.label}</span>
@@ -157,8 +149,6 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                                 <button
                                     type="button"
                                     onClick={() => handleClick(tool.id)}
-                                    onMouseEnter={() => setHoveredId(tool.id)}
-                                    onMouseLeave={() => setHoveredId(null)}
                                     className={`
                                     relative flex flex-col items-center justify-center gap-2 cursor-pointer
                                     w-[138px] h-[142px] p-3 rounded-[9px] bg-transparent border
@@ -173,14 +163,8 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                                             className="absolute top-2 right-2"
                                         />
                                     )}
-                                    <div className={`flex items-center justify-center ${active || hovered ? 'text-purple' : 'text-graphite'}`}>
-                                        <Icon
-                                            name={tool.icon}
-                                            state={tool.iconHover && (active || hovered) ? tool.iconHover : 'normal'}
-                                            className="w-12 h-12"
-                                        />
-                                    </div>
-                                    <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-purple' : 'font-medium text-graphite'}`}>
+                                    <IconoHerramienta id={tool.id} className="w-12 h-12" />
+                                    <span className={`text-[13px]/[18px] font-garet text-center text-black ${active ? 'font-bold' : 'font-medium'}`}>
                                         {tool.label}
                                     </span>
                                 </button>
