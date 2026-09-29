@@ -61,6 +61,7 @@ const dentro = (inicio, fin, lado) => {
 const dibujarVista = (ctx, extensionVista, aPx, lado) => {
     const [x0, y1] = aPx([extensionVista[0], extensionVista[1]]);
     const [x1, y0] = aPx([extensionVista[2], extensionVista[3]]);
+    if (x0 <= 0 && y0 <= 0 && x1 >= lado && y1 >= lado) return;
     const centroX = (x0 + x1) / 2;
     const centroY = (y0 + y1) / 2;
     const ancho = Math.max(x1 - x0, MINIMO_RECTANGULO);
@@ -118,7 +119,7 @@ export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extension
         }
         if (vista?.modo === 'cerca') {
             ctx.strokeStyle = COLORES.contornoDeCerca;
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 2;
             ctx.stroke();
         } else {
             conHalo(ctx, sinFondo ? COLORES.contorno : COLORES.borde, 1.5);
@@ -136,6 +137,7 @@ export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extension
         conHalo(ctx, COLORES.municipioBorde, grosor);
     }
 
-    if (extensionVista) dibujarVista(ctx, extensionVista, aPx, lado);
+    const sinMunicipioDeCerca = vista?.modo === 'cerca' && !municipio?.geometry;
+    if (extensionVista && !sinMunicipioDeCerca) dibujarVista(ctx, extensionVista, aPx, lado);
     if (municipio?.nombre && municipio.geometry) dibujarNombre(ctx, municipio, aPx, lado);
 };

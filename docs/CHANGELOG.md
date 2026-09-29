@@ -32,6 +32,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   Guadalajara.
 - El rectángulo de la vista del minimapa se acota al borde del lienzo: ya no se corta cuando la vista
   sale del cuadro.
+- En modo municipio el límite estatal va a 2 px, y el rectángulo se quita cuando no hay municipio bajo
+  la vista o cuando la vista cubre todo el cuadro.
 
 ## [2.1.0] - 2026-09-29
 

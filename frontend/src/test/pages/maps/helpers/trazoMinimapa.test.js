@@ -33,10 +33,10 @@ describe('dibujarMinimapa', () => {
         expect(anchos).not.toContain(3);
     });
 
-    it('de cerca el municipio va al doble y el estado queda de fondo a 1', () => {
+    it('de cerca el municipio y el estado van a 2', () => {
         const { ctx, anchos } = lienzoFalso();
         dibujarMinimapa(ctx, { ...base, vista: { modo: 'cerca', centro: [50, 50], resolucion: 1 } });
-        expect(anchos).toEqual(expect.arrayContaining([1, 2]));
+        expect(anchos.filter(a => a === 2).length).toBeGreaterThanOrEqual(2);
         expect(anchos).not.toContain(1.5);
         expect(anchos).not.toContain(3);
     });
@@ -54,12 +54,22 @@ describe('dibujarMinimapa', () => {
     it('el rectángulo de la vista se acota al lienzo aunque la vista se salga', () => {
         const { ctx, rects } = lienzoFalso();
         const vista = { modo: 'cerca', centro: [50, 50], resolucion: 1 };
-        dibujarMinimapa(ctx, { ...base, municipio: null, vista, extensionVista: [120, -40, 240, 60] });
+        dibujarMinimapa(ctx, { ...base, municipio: { geometry: cuadro }, vista, extensionVista: [120, -40, 240, 60] });
         const [x, y, w, h] = rects[0];
         expect(x).toBeGreaterThanOrEqual(1.25);
         expect(y).toBeGreaterThanOrEqual(1.25);
         expect(x + w).toBeLessThanOrEqual(176 - 1.25);
         expect(y + h).toBeLessThanOrEqual(176 - 1.25);
         expect(w).toBeGreaterThan(0);
+    });
+
+    it('sin municipio de cerca, o con una vista que cubre todo el cuadro, no hay rectángulo', () => {
+        const vista = { modo: 'cerca', centro: [50, 50], resolucion: 1 };
+        const sinMunicipio = lienzoFalso();
+        dibujarMinimapa(sinMunicipio.ctx, { ...base, municipio: null, vista, extensionVista: [40, 40, 60, 60] });
+        expect(sinMunicipio.rects).toHaveLength(0);
+        const cubreTodo = lienzoFalso();
+        dibujarMinimapa(cubreTodo.ctx, { ...base, vista, extensionVista: [-500, -500, 500, 500] });
+        expect(cubreTodo.rects).toHaveLength(0);
     });
 });
