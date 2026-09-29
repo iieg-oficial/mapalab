@@ -46,7 +46,7 @@ describe('Minimapa', () => {
         act(() => fijarMinimapaEncendido(true));
     });
 
-    it('viene apagado de fábrica', () => {
+    it('apagado no aparece aunque haya zoom', () => {
         act(() => fijarMinimapaEncendido(false));
         montar(MinimapaEscritorio, 12);
         expect(lienzo()).toBeNull();
@@ -83,7 +83,7 @@ describe('Minimapa', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }));
         expect(lienzo()).toBeNull();
         expect(mocks.track).toHaveBeenCalledWith('apagar');
-        expect(localStorage.getItem('mapalab.minimapa')).toBeNull();
+        expect(localStorage.getItem('mapalab.minimapa')).toBe('apagado');
     });
 
     it('en la vista 3D no se monta', () => {

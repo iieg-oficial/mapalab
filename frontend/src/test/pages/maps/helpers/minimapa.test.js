@@ -23,22 +23,22 @@ describe('minimapa', () => {
         expect(cerca).toEqual({ modo: 'cerca', centro: [5, 7], resolucion: resolucionDeZoom(ZOOM_CERCA - 3) });
     });
 
-    it('de cerca no se acerca tanto que el municipio deje de caber con su borde', () => {
+    it('de cerca encuadra el municipio completo y no sigue a la vista', () => {
         const municipio = [-11520000, 2380000, -11480000, 2420000];
-        const centro = [-11500000, 2400000];
-        const vista = vistaDelMinimapa({ centro, zoom: 16, extensionEstado: JALISCO, extensionMunicipio: municipio, lado: 176 });
-        expect(vista.modo).toBe('cerca');
-        expect(vista.resolucion).toBeGreaterThan(resolucionDeZoom(12));
-        const [x0, y0] = aPixel(vista, 176, [municipio[0], municipio[3]]);
-        const [x1, y1] = aPixel(vista, 176, [municipio[2], municipio[1]]);
-        expect(Math.min(x0, y0)).toBeGreaterThanOrEqual(0);
-        expect(Math.max(x1, y1)).toBeLessThanOrEqual(176);
+        const aqui = vistaDelMinimapa({ centro: [-11500000, 2400000], zoom: 16, extensionEstado: JALISCO, extensionMunicipio: municipio, lado: 176 });
+        const orilla = vistaDelMinimapa({ centro: [-11519000, 2381000], zoom: 16, extensionEstado: JALISCO, extensionMunicipio: municipio, lado: 176 });
+        expect(orilla).toEqual(aqui);
+        expect(aqui.centro).toEqual([-11500000, 2400000]);
+        const [x0] = aPixel(aqui, 176, [municipio[0], municipio[3]]);
+        const [x1] = aPixel(aqui, 176, [municipio[2], municipio[1]]);
+        expect(x1 - x0).toBeGreaterThan(176 * 0.85);
+        expect(x0).toBeGreaterThanOrEqual(0);
+        expect(x1).toBeLessThanOrEqual(176);
     });
 
-    it('si el municipio ya cabe, se queda cuatro niveles atrás de la vista', () => {
-        const chico = [-11500500, 2399500, -11499500, 2400500];
-        const vista = vistaDelMinimapa({ centro: [-11500000, 2400000], zoom: 14, extensionEstado: JALISCO, extensionMunicipio: chico, lado: 176 });
-        expect(vista.resolucion).toBe(resolucionDeZoom(10));
+    it('sin municipio bajo la vista, de cerca la sigue cuatro niveles atrás', () => {
+        const vista = vistaDelMinimapa({ centro: [5, 7], zoom: 14, extensionEstado: JALISCO, lado: 176 });
+        expect(vista).toEqual({ modo: 'cerca', centro: [5, 7], resolucion: resolucionDeZoom(10) });
     });
 
     it('convierte de ida y vuelta entre coordenadas y pixeles del lienzo', () => {

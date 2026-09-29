@@ -4,16 +4,16 @@ import { fijarMinimapaEncendido, useMinimapaEncendido } from '@pages/maps/hooks/
 
 describe('useMinimapaEncendido', () => {
     beforeEach(() => {
-        act(() => fijarMinimapaEncendido(false));
+        act(() => fijarMinimapaEncendido(true));
     });
 
-    it('arranca apagado y encenderlo se recuerda en el navegador', () => {
+    it('viene encendido y apagarlo se recuerda en el navegador', () => {
         const { result } = renderHook(() => useMinimapaEncendido());
-        expect(result.current[0]).toBe(false);
+        expect(result.current[0]).toBe(true);
         expect(localStorage.getItem('mapalab.minimapa')).toBeNull();
         act(() => result.current[1]());
-        expect(result.current[0]).toBe(true);
-        expect(localStorage.getItem('mapalab.minimapa')).toBe('encendido');
+        expect(result.current[0]).toBe(false);
+        expect(localStorage.getItem('mapalab.minimapa')).toBe('apagado');
         act(() => result.current[1]());
         expect(localStorage.getItem('mapalab.minimapa')).toBeNull();
     });
@@ -22,6 +22,6 @@ describe('useMinimapaEncendido', () => {
         const uno = renderHook(() => useMinimapaEncendido());
         const otro = renderHook(() => useMinimapaEncendido());
         act(() => uno.result.current[1]());
-        expect(otro.result.current[0]).toBe(true);
+        expect(otro.result.current[0]).toBe(false);
     });
 });

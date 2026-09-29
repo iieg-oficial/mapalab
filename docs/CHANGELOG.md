@@ -17,6 +17,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   borde: dentro de un municipio grande se veía como un cuadro lila liso.
 - El nombre del municipio va escrito sobre el propio municipio en el minimapa, en vez de la píldora de
   abajo. De cerca, el límite estatal queda de fondo en 1 px gris.
+- De cerca, el minimapa encuadra el municipio completo y se queda fijo sobre él: al moverse hacia sus
+  orillas solo se desplaza el rectángulo naranja, aunque salga del cuadro.
+- La silueta del minimapa lleva un velo blanco al 85 %: sobre el mapa base real el contorno solo se
+  perdía entre las líneas del mapa.
+- El minimapa viene encendido; la × lo apaga y se recuerda (`mapalab.minimapa = apagado`).
 
 ## [2.1.0] - 2026-09-29
 

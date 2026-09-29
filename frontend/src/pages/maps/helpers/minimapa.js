@@ -6,7 +6,7 @@ export const TAMANO_MINIMAPA = 176;
 
 const RESOLUCION_ZOOM_0 = 156543.03392804097;
 const MARGEN_JALISCO = 0.08;
-const MARGEN_MUNICIPIO = 0.1;
+const MARGEN_MUNICIPIO = 0.06;
 
 export const resolucionDeZoom = zoom => RESOLUCION_ZOOM_0 / 2 ** zoom;
 
@@ -15,24 +15,17 @@ export const sigueVisible = (visible, zoom) => {
     return visible ? zoom >= ZOOM_OCULTAR : zoom >= ZOOM_MOSTRAR;
 };
 
-const resolucionParaVer = (centro, [minX, minY, maxX, maxY], lado) => {
-    const mitad = Math.max(centro[0] - minX, maxX - centro[0], centro[1] - minY, maxY - centro[1]);
-    return (2 * mitad) / (lado * (1 - MARGEN_MUNICIPIO * 2));
-};
+const encuadrar = ([minX, minY, maxX, maxY], lado, margen) => ({
+    centro: [(minX + maxX) / 2, (minY + maxY) / 2],
+    resolucion: (Math.max(maxX - minX, maxY - minY) * (1 + margen * 2)) / lado,
+});
 
 export const vistaDelMinimapa = ({ centro, zoom, extensionEstado, extensionMunicipio, lado }) => {
     if (zoom >= ZOOM_CERCA || !extensionEstado) {
-        const cercana = resolucionDeZoom(zoom - NIVELES_ATRAS);
-        const resolucion = extensionMunicipio ? Math.max(cercana, resolucionParaVer(centro, extensionMunicipio, lado)) : cercana;
-        return { modo: 'cerca', centro, resolucion };
+        if (extensionMunicipio) return { modo: 'cerca', ...encuadrar(extensionMunicipio, lado, MARGEN_MUNICIPIO) };
+        return { modo: 'cerca', centro, resolucion: resolucionDeZoom(zoom - NIVELES_ATRAS) };
     }
-    const [minX, minY, maxX, maxY] = extensionEstado;
-    const mayor = Math.max(maxX - minX, maxY - minY);
-    return {
-        modo: 'estado',
-        centro: [(minX + maxX) / 2, (minY + maxY) / 2],
-        resolucion: (mayor * (1 + MARGEN_JALISCO * 2)) / lado,
-    };
+    return { modo: 'estado', ...encuadrar(extensionEstado, lado, MARGEN_JALISCO) };
 };
 
 export const aPixel = ({ centro, resolucion }, lado, [x, y]) => [

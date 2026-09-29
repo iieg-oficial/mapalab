@@ -5,9 +5,9 @@ const oyentes = new Set();
 
 const leer = () => {
     try {
-        return localStorage.getItem(LLAVE) === 'encendido';
+        return localStorage.getItem(LLAVE) !== 'apagado';
     } catch {
-        return false;
+        return true;
     }
 };
 
@@ -15,8 +15,8 @@ let encendido = leer();
 
 const guardar = (valor) => {
     try {
-        if (valor) localStorage.setItem(LLAVE, 'encendido');
-        else localStorage.removeItem(LLAVE);
+        if (valor) localStorage.removeItem(LLAVE);
+        else localStorage.setItem(LLAVE, 'apagado');
         return true;
     } catch {
         return false;
