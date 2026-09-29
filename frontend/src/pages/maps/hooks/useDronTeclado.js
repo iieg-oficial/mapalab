@@ -26,7 +26,7 @@ export const useDronTeclado = (activo, dron) => {
         if (!activo) return undefined;
         const teclas = controlesRef.current.teclas;
         const alBajar = (e) => {
-            if (escribiendo(e.target)) return;
+            if (escribiendo(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
             if (MOVIMIENTO.has(e.code)) {
                 if (e.target?.closest?.('button') && (e.code === 'Space')) return;
                 teclas.add(e.code);
@@ -41,7 +41,7 @@ export const useDronTeclado = (activo, dron) => {
                 KeyV: () => alternar('tercera'),
                 KeyP: () => setAuto(previo => !previo),
                 KeyH: () => accionesRef.current.nivelar?.(),
-                Escape: salir,
+                Escape: () => { if (!document.querySelector('[role="dialog"]')) salir(); },
             };
             acciones[e.code]?.();
         };

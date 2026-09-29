@@ -34,7 +34,7 @@ const INACTIVE = {
     setAlturaColumnas: () => {},
     orbita: false,
     setOrbita: () => {},
-    inundacion: { nivel: 0, lloviendo: false, referencia: null, centro: null, modo: 'general', punto: null, radio: 1500, eligiendo: false },
+    inundacion: SIN_INUNDACION,
     setInundacion: () => {},
     setTerreno: () => {},
     setCielo: () => {},

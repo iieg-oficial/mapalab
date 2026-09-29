@@ -4,6 +4,7 @@ import Tooltip from '@components/Tooltip';
 import PillCloseButton from '@components/PillCloseButton';
 import { useView3d } from '@contexts/View3dContext';
 import { useDron } from '@contexts/DronContext';
+import { useMapsContext } from '@hooks/useMaps';
 import Badge from '@components/Badge';
 import DronPastilla from '../Dron/DronPastilla';
 import DronIcono from '../Dron/DronIcono';
@@ -22,18 +23,21 @@ const tonoBoton = (activo) => (activo ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6
 const Map3DBar = () => {
     const view3d = useView3d();
     const dron = useDron();
+    const { compareMode } = useMapsContext();
     const [abierto, setAbierto] = useState(null);
     const refs = { lluvia: useRef(null), exag: useRef(null), sol: useRef(null), ajustes: useRef(null), barra: useRef(null) };
     if (!view3d.active) return null;
     if (dron.activo) return <DronPastilla />;
 
     const { inundacion } = view3d;
+    const conDron = dron.presente && !compareMode?.active;
     const deslizadores = deslizadores3d(view3d);
     const alternar = (cual) => setAbierto(previo => (previo === cual ? null : cual));
     const cerrar = () => setAbierto(null);
 
     return (
-        <div ref={refs.barra} className="grid grid-rows-5 place-items-center h-full min-h-[196px] w-11 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
+        <div ref={refs.barra} className="grid place-items-center h-full min-h-[196px] w-11 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]"
+            style={{ gridTemplateRows: `repeat(${conDron ? 5 : 4}, minmax(0, 1fr))` }}>
             <div className="relative">
                 <Tooltip content={inundacion.nivel > 0 ? `Inundación: +${textoNivel(inundacion.nivel)} m` : 'Simular lluvia e inundación'}>
                     <Map3DRing
@@ -64,7 +68,7 @@ const Map3DBar = () => {
                     </Tooltip>
                 );
             })}
-            {dron.presente && (
+            {conDron && (
                 <Tooltip content="Volar como dron">
                     <button
                         type="button"

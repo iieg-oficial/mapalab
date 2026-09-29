@@ -151,6 +151,7 @@ export const crearCapaDron = (maplibregl, { leer, alPantalla }) => {
             liberar(escenaRastro);
             aeronave = null;
             clave = '';
+            renderer?.dispose();
             renderer = null;
         },
     };

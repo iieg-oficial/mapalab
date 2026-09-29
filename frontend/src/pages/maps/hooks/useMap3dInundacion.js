@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useView3d } from '@contexts/View3dContext';
 import { loadMaplibre } from '@pages/maps/helpers/maplibreLoader';
-import { INTENSIDADES, INTENSIDAD_DEFAULT, elevacionMinima } from '@pages/maps/helpers/inundacion';
+import { INTENSIDADES, INTENSIDAD_DEFAULT, dentroDe, elevacionMinima, extensionDe } from '@pages/maps/helpers/inundacion';
+import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
+
+const JALISCO = extensionDe(JALISCO_BOUNDS.coords);
 
 const MUESTRAS = 14;
 
@@ -12,7 +15,7 @@ const referenciaVisible = (map) => {
     for (let i = 0; i < MUESTRAS; i += 1) {
         for (let j = 0; j < MUESTRAS; j += 1) {
             const punto = map.unproject([(ancho * (i + 0.5)) / MUESTRAS, alto * (0.35 + (0.65 * (j + 0.5)) / MUESTRAS)]);
-            alturas.push(map.queryTerrainElevation(punto));
+            if (dentroDe(JALISCO_BOUNDS.coords, punto.toArray())) alturas.push(map.queryTerrainElevation(punto));
         }
     }
     return elevacionMinima(alturas);
@@ -36,7 +39,7 @@ export const useMap3dInundacion = (map, principal) => {
                 espera = setTimeout(intentar, 300);
                 return;
             }
-            setInundacion({ referencia: minima / (exaggeration || 1), centro: local ? punto : map.getCenter().toArray() });
+            setInundacion({ referencia: minima / (exaggeration || 1), centro: local ? punto : JALISCO.centro });
         };
         intentar();
         return () => clearTimeout(espera);
@@ -63,7 +66,7 @@ export const useMap3dInundacion = (map, principal) => {
             const actual = vivo.current;
             const lluvia = { activa: actual.lloviendo, densidad: (INTENSIDADES[actual.intensidad] || INTENSIDADES[INTENSIDAD_DEFAULT]).gotas };
             if (actual.referencia === null) return { centro: null, altura: null, lluvia };
-            return { centro: actual.centro, altura: (actual.referencia + actual.nivel) * (actual.exaggeration || 1), lluvia, radio: actual.local ? actual.radio : null };
+            return { centro: actual.centro, altura: (actual.referencia + actual.nivel) * (actual.exaggeration || 1), lluvia, radio: actual.local ? actual.radio : null, extension: [JALISCO.ancho, JALISCO.alto] };
         };
         Promise.all([loadMaplibre(), import('@pages/maps/helpers/capaInundacion')]).then(([maplibregl, { crearCapaInundacion }]) => {
             if (cancelado) return;
@@ -79,6 +82,10 @@ export const useMap3dInundacion = (map, principal) => {
             }
         };
     }, [activa, map]);
+
+    useEffect(() => {
+        if (activa) map.triggerRepaint();
+    }, [activa, map, nivel, referencia, radio, local]);
 
     useEffect(() => {
         if (!lloviendo || !principal) return undefined;

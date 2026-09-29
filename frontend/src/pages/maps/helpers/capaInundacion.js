@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { crearLluvia, volumenDeLluvia } from './lluviaParticulas';
 
 export const ID_CAPA_INUNDACION = 'inundacion-3d';
-const LADO_M = 420000;
 
 const orillaSuave = () => {
     const lienzo = document.createElement('canvas');
@@ -24,11 +23,11 @@ export const crearCapaInundacion = (maplibregl, { leer }) => {
     const escena = new THREE.Scene();
     const camara = new THREE.Camera();
     const agua = new THREE.Mesh(
-        new THREE.PlaneGeometry(LADO_M, LADO_M),
+        new THREE.PlaneGeometry(1, 1),
         new THREE.MeshBasicMaterial({ color: '#2f78b7', transparent: true, opacity: 0.58, depthWrite: false }),
     );
     const brillo = new THREE.Mesh(
-        new THREE.PlaneGeometry(LADO_M, LADO_M),
+        new THREE.PlaneGeometry(1, 1),
         new THREE.MeshBasicMaterial({ color: '#bfe3ff', transparent: true, opacity: 0.08, depthWrite: false }),
     );
     brillo.position.z = 0.5;
@@ -58,13 +57,15 @@ export const crearCapaInundacion = (maplibregl, { leer }) => {
             renderer.autoClear = false;
         },
         render(gl, args) {
-            const { centro, altura, lluvia: estadoLluvia, radio = null } = leer();
+            const { centro, altura, lluvia: estadoLluvia, radio = null, extension = [1, 1] } = leer();
             if (!renderer) return;
             const principal = new THREE.Matrix4().fromArray(args.defaultProjectionData.mainMatrix);
             renderer.resetState();
             if (centro && altura !== null) {
                 camara.projectionMatrix = matrizEn(principal, centro, altura);
-                brillo.material.opacity = 0.06 + Math.sin(performance.now() / 700) * 0.03;
+                agua.scale.set(extension[0], extension[1], 1);
+                brillo.scale.set(extension[0], extension[1], 1);
+                brillo.material.opacity = estadoLluvia.activa ? 0.06 + Math.sin(performance.now() / 700) * 0.03 : 0.06;
                 agua.visible = radio === null;
                 brillo.visible = radio === null;
                 disco.visible = radio !== null;
@@ -77,7 +78,7 @@ export const crearCapaInundacion = (maplibregl, { leer }) => {
                 lluvia.actualizar({ ...estadoLluvia, ancho: volumen.ancho, alto: volumen.alto });
                 renderer.render(escenaLluvia, camaraLluvia);
             }
-            map.triggerRepaint();
+            if (estadoLluvia.activa) map.triggerRepaint();
         },
         onRemove() {
             agua.geometry.dispose();
@@ -88,6 +89,7 @@ export const crearCapaInundacion = (maplibregl, { leer }) => {
             disco.geometry.dispose();
             disco.material.alphaMap?.dispose();
             disco.material.dispose();
+            renderer?.dispose();
             renderer = null;
         },
     };

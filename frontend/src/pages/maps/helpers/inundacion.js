@@ -10,6 +10,17 @@ export const INTENSIDADES = {
 
 export const INTENSIDAD_DEFAULT = 'moderada';
 
+export const dentroDe = ([oeste, sur, este, norte], [lng, lat]) => lng >= oeste && lng <= este && lat >= sur && lat <= norte;
+
+export const extensionDe = ([oeste, sur, este, norte]) => {
+    const lat = (sur + norte) / 2;
+    return {
+        centro: [(oeste + este) / 2, lat],
+        ancho: (este - oeste) * 111320 * Math.cos((lat * Math.PI) / 180),
+        alto: (norte - sur) * 110574,
+    };
+};
+
 export const nivelDeDeslizador = valor => Number((NIVEL_MAXIMO * (valor / 100) ** CURVA).toFixed(1));
 
 export const deslizadorDeNivel = nivel => Math.round(100 * (Math.max(0, nivel) / NIVEL_MAXIMO) ** (1 / CURVA));
@@ -17,6 +28,6 @@ export const deslizadorDeNivel = nivel => Math.round(100 * (Math.max(0, nivel) /
 export const textoNivel = nivel => (nivel < 10 ? nivel.toFixed(1) : String(Math.round(nivel)));
 
 export const elevacionMinima = (alturas) => {
-    const validas = alturas.filter(h => Number.isFinite(h));
+    const validas = alturas.filter(h => Number.isFinite(h) && h > 0);
     return validas.length ? Math.min(...validas) : null;
 };

@@ -51,10 +51,12 @@ const INACTIVO = {
 };
 
 export const DronProvider = ({ children }) => {
-    const { active, setOrbita } = useView3d();
+    const { active, setOrbita, setInundacion } = useView3d();
     const { forzarCandado } = useSider();
-    const { setIsZenMode } = useZenMode() || {};
-    const { setSelectedFeatureInfo } = useMapsContext();
+    const { isZenMode, setIsZenMode } = useZenMode() || {};
+    const { setSelectedFeatureInfo, compareMode } = useMapsContext();
+    const zenRef = useRef(false);
+    zenRef.current = !!isZenMode;
     const [activo, setActivo] = useState(false);
     const [config, setConfig] = useState(leerDron);
     const [auto, setAuto] = useState(false);
@@ -66,23 +68,30 @@ export const DronProvider = ({ children }) => {
     const oyentesRef = useRef(new Set());
 
     useEffect(() => { guardarDron(config); }, [config]);
-    useEffect(() => { if (!active) setActivo(false); }, [active]);
+    useEffect(() => { if (!active || compareMode?.active) setActivo(false); }, [active, compareMode?.active]);
     useEffect(() => {
         if (!activo) return undefined;
+        const zenPrevio = zenRef.current;
+        const mandos = controlesRef.current;
         forzarCandado?.('mobile');
         setIsZenMode?.(true);
         setSelectedFeatureInfo?.(null);
         return () => {
             forzarCandado?.(null);
-            setIsZenMode?.(false);
+            setIsZenMode?.(zenPrevio);
+            Object.keys(mandos.joy).forEach((eje) => { mandos.joy[eje] = 0; });
+            mandos.teclas.clear();
+            rutaRef.current = SIN_RUTA;
+            setRuta(SIN_RUTA);
         };
     }, [activo, forzarCandado, setIsZenMode, setSelectedFeatureInfo]);
 
     const entrar = useCallback(() => {
         setOrbita(false);
         setAuto(false);
+        setInundacion({ eligiendo: false });
         setActivo(true);
-    }, [setOrbita]);
+    }, [setOrbita, setInundacion]);
 
     const cambiarRuta = useCallback((cambio) => {
         const nueva = typeof cambio === 'function' ? cambio(rutaRef.current) : { ...rutaRef.current, ...cambio };
@@ -92,7 +101,7 @@ export const DronProvider = ({ children }) => {
 
     const avanzarRuta = useCallback(() => cambiarRuta(({ puntos, ciclo, pausada }) => {
         const [llegado, ...resto] = puntos;
-        return { puntos: ciclo && llegado ? [...resto, llegado] : resto, ciclo, pausada };
+        return { puntos: ciclo && llegado && resto.length ? [...resto, llegado] : resto, ciclo, pausada };
     }), [cambiarRuta]);
 
     const salir = useCallback(() => {

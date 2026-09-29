@@ -196,8 +196,8 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
             )}
             {map && mediciones && principal && (areMeasurementToolsVisible || areAnnotationToolsVisible || measurements?.length > 0) && <Medicion3D map={map} mapasExtra={mapasExtra} mapa2dRef={olRef} onMidiendo={setMidiendo} />}
             {consultar
-                ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo || pausado || inundacion.eligiendo} consultar={consultar} />
-                : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo || pausado || inundacion.eligiendo} />}
+                ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo || pausado || inundacion.eligiendo || (enDron && principal)} consultar={consultar} />
+                : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo || pausado || inundacion.eligiendo || (enDron && principal)} />}
         </>
     );
 };

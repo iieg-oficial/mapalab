@@ -108,6 +108,7 @@ export const useDronVuelo = (map, principal, olRef = null) => {
         contenedor.addEventListener('pointerdown', alPresionar);
         window.addEventListener('pointermove', alMover);
         window.addEventListener('pointerup', alSoltar);
+        window.addEventListener('pointercancel', alSoltar);
 
         const volar = (ahora) => {
             const dt = Math.min(0.05, (ahora - anterior) / 1000);
@@ -182,6 +183,7 @@ export const useDronVuelo = (map, principal, olRef = null) => {
             contenedor.removeEventListener('pointerdown', alPresionar);
             window.removeEventListener('pointermove', alMover);
             window.removeEventListener('pointerup', alSoltar);
+            window.removeEventListener('pointercancel', alSoltar);
             vivo.current.accionesRef.current = {};
             vivo.current.publicar(null);
             try {
