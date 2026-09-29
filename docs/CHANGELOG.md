@@ -47,6 +47,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   el centro del mapa, que es el que elige el municipio. `MapControls` decide pantalla chica con
   `useIsMobile`: con `useSider` el catálogo, sin `SiderProvider`, montaba el minimapa de escritorio en
   celular.
+- En celular ya no hay minimapa ni su tarjeta en Herramientas: la píldora bajo el logo no aportaba y
+  chocaba con Eventos.
 
 ## [2.2.0] - 2026-09-29
 

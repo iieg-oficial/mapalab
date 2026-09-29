@@ -1,9 +1,6 @@
 import { aPixel } from './minimapa';
 
 const COLORES = {
-    fondo: '#EEF1F4',
-    tierra: '#FFFFFF',
-    borde: '#B9AEC6',
     contorno: '#6E5A82',
     contornoDeCerca: '#A3A7AB',
     halo: 'rgba(255, 255, 255, 0.9)',
@@ -118,7 +115,7 @@ const dibujarEnEspera = (ctx, estado, aPx) => {
     ctx.globalAlpha = 1;
 };
 
-export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extensionVista, sinFondo = false, atenuado = false }) => {
+export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extensionVista, atenuado = false }) => {
     const aPx = coordenada => aPixel(vista, lado, coordenada);
     const grosor = vista?.modo === 'cerca' ? GROSOR_DE_CERCA : 1;
     const municipioEnVista = vista?.modo === 'cerca' && contiene(extensionVista, municipio?.geometry?.getExtent());
@@ -127,29 +124,21 @@ export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extension
         dibujarEnEspera(ctx, estado, aPx);
         return;
     }
-    if (!sinFondo) {
-        ctx.fillStyle = COLORES.fondo;
-        ctx.fillRect(0, 0, lado, lado);
-    }
 
     if (estado) {
         trazarGeometria(ctx, estado, aPx);
-        if (!sinFondo) {
-            ctx.fillStyle = COLORES.tierra;
-            ctx.fill('evenodd');
-        }
         if (vista?.modo === 'cerca') {
             ctx.strokeStyle = COLORES.contornoDeCerca;
             ctx.lineWidth = 2;
             ctx.stroke();
         } else {
-            conHalo(ctx, sinFondo ? COLORES.contorno : COLORES.borde, 1.5);
+            conHalo(ctx, COLORES.contorno, 1.5);
         }
     }
 
     if (municipio?.geometry) {
         trazarGeometria(ctx, municipio.geometry, aPx);
-        if (sinFondo && vista?.modo === 'cerca') {
+        if (vista?.modo === 'cerca') {
             ctx.fillStyle = COLORES.velo;
             ctx.fill('evenodd');
         }

@@ -53,7 +53,7 @@ const MinimapaEscritorio = () => {
             style={{ width: lado }}
         >
             <div className="relative">
-                <LienzoMinimapa lado={lado} sinFondo atenuado={!visible} {...lienzo} />
+                <LienzoMinimapa lado={lado} atenuado={!visible} {...lienzo} />
                 {enModoMunicipio && <PuntoDeReferencia map={lienzo.map} />}
                 <div className="absolute right-0 top-0 flex rounded-full bg-white p-0.5 opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
                     <Tooltip content="Quitar el minimapa. Vuelve desde Herramientas" placement="top" delay={300}>

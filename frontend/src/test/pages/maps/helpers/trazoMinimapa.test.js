@@ -25,7 +25,7 @@ const lienzoFalso = () => {
 };
 
 const cuadro = new Polygon([[[0, 0], [100, 0], [100, 100], [0, 100], [0, 0]]]);
-const base = { lado: 176, estado: cuadro, municipio: { geometry: cuadro }, sinFondo: true };
+const base = { lado: 176, estado: cuadro, municipio: { geometry: cuadro } };
 
 describe('dibujarMinimapa', () => {
     it('de lejos traza el estado a 1.5 y el municipio a 1', () => {

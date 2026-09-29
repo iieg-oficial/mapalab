@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 
-const mocks = vi.hoisted(() => ({ ctx: null, en3d: false, movil: false, track: vi.fn() }));
+const mocks = vi.hoisted(() => ({ ctx: null, en3d: false, track: vi.fn() }));
 
 vi.mock('@hooks/useMaps', () => ({ useMapsContext: () => mocks.ctx }));
-vi.mock('@hooks/useIsMobile', () => ({ useIsMobile: () => mocks.movil }));
 vi.mock('@contexts/View3dContext', () => ({ useView3d: () => ({ active: mocks.en3d }) }));
 vi.mock('@components/Tooltip', () => ({ default: ({ children }) => children }));
 vi.mock('@services/analyticsService', () => ({ trackMinimapa: mocks.track }));
@@ -14,7 +13,6 @@ vi.mock('@services/municipioService', async () => {
     return { fetchSiluetas: () => Promise.resolve({ estado: null, municipios: [{ clave: '120', nombre: 'Zapopan', geometry: zapopan }] }) };
 });
 
-import Minimapa from '@pages/maps/components/Minimapa/Minimapa';
 import MinimapaEscritorio from '@pages/maps/components/Minimapa/MinimapaEscritorio';
 import { fijarMinimapaEncendido } from '@pages/maps/hooks/useMinimapaEncendido';
 
@@ -46,7 +44,6 @@ const tocar = (elemento) => {
 describe('Minimapa', () => {
     beforeEach(() => {
         mocks.en3d = false;
-        mocks.movil = false;
         mocks.track.mockClear();
         act(() => fijarMinimapaEncendido(true));
     });
@@ -95,22 +92,6 @@ describe('Minimapa', () => {
     it('en la vista 3D no se monta', () => {
         mocks.en3d = true;
         montar(MinimapaEscritorio, 12);
-        expect(lienzo()).toBeNull();
-    });
-
-    it('en escritorio el montaje de Maps no dibuja nada: vive junto al zoom', () => {
-        montar(Minimapa, 12);
-        expect(lienzo()).toBeNull();
-    });
-
-    it('en celular es una píldora que abre el minimapa grande y lo cierra al moverse', () => {
-        mocks.movil = true;
-        const animate = montar(Minimapa, 11);
-        expect(lienzo()).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: /Ver dónde estás en Jalisco/ }));
-        expect(mocks.track).toHaveBeenCalledWith('abrir');
-        tocar(lienzo());
-        expect(animate).toHaveBeenCalled();
         expect(lienzo()).toBeNull();
     });
 

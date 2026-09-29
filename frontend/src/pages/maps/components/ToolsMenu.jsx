@@ -61,8 +61,8 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     const [minimapaEncendido, alternarMinimapa] = useMinimapaEncendido();
     const isNonProd = useIsNonProd();
     const tools = useMemo(
-        () => allTools.filter(tool => !tool.nonProdOnly || isNonProd),
-        [isNonProd],
+        () => allTools.filter(tool => (!tool.nonProdOnly || isNonProd) && !(tool.id === 'minimapa' && isMobile)),
+        [isNonProd, isMobile],
     );
 
     const capaParaTabla = () => {

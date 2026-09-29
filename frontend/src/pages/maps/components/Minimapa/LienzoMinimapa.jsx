@@ -6,7 +6,7 @@ import { dibujarMinimapa } from '@pages/maps/helpers/trazoMinimapa';
 const DURACION_MS = 350;
 const ARRASTRE_PX = 4;
 
-const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, onIr, sinFondo = false, atenuado = false }) => {
+const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, atenuado = false }) => {
     const lienzoRef = useRef(null);
     const inicioRef = useRef(null);
     const vistaMiniRef = useRef(null);
@@ -27,8 +27,8 @@ const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, onIr
             lienzo.height = pixeles;
         }
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-        dibujarMinimapa(ctx, { lado, vista: vistaMini, estado: siluetas?.estado, municipio, extensionVista: vista.extension, sinFondo, atenuado });
-    }, [lado, vista, siluetas, municipio, extensionEstado, extensionMunicipio, sinFondo, atenuado]);
+        dibujarMinimapa(ctx, { lado, vista: vistaMini, estado: siluetas?.estado, municipio, extensionVista: vista.extension, atenuado });
+    }, [lado, vista, siluetas, municipio, extensionEstado, extensionMunicipio, atenuado]);
 
     const irA = (evento) => {
         const inicio = inicioRef.current;
@@ -38,7 +38,6 @@ const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, onIr
         const destino = dePixel(vistaMiniRef.current, lado, [evento.clientX - caja.left, evento.clientY - caja.top]);
         map?.getView()?.animate({ center: destino, duration: DURACION_MS });
         trackMinimapa('ir');
-        onIr?.();
     };
 
     return (
@@ -49,7 +48,7 @@ const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, onIr
             aria-label="Minimapa de Jalisco: clic para mover el mapa a ese punto"
             title={bloqueado ? 'Termina el trazo para usar el minimapa' : 'Clic para mover el mapa a ese punto'}
             style={{ width: lado, height: lado }}
-            className={`block ${sinFondo ? '' : 'rounded-[14px] shadow-[0_6px_14px_rgba(34,26,46,0.28)]'} ${bloqueado ? 'cursor-default' : 'cursor-crosshair'}`}
+            className={`block ${bloqueado ? 'cursor-default' : 'cursor-crosshair'}`}
         />
     );
 };
