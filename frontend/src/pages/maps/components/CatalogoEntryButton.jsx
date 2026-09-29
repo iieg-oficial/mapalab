@@ -12,7 +12,7 @@ const CatalogoEntryButton = () => {
                 type="button"
                 onClick={goToCatalogo}
                 aria-label="Ir al catálogo de capas"
-                className="relative flex items-center justify-center size-7 rounded-full md:size-auto md:justify-start md:gap-1.5 md:rounded-[20px] md:px-3 md:py-1 bg-white shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] font-[Garet,sans-serif] font-medium text-[12px] leading-4 text-purple hover:bg-purple-soft transition-colors cursor-pointer"
+                className="relative flex items-center justify-center size-7 rounded-full md:size-auto md:justify-start md:gap-1.5 md:rounded-[20px] md:px-3 md:py-1 bg-white shadow-[0px_2px_4px_0px_rgba(0,0,0,0.10)] font-[Garet,sans-serif] font-medium text-[12px] leading-4 text-[#6E7477] hover:bg-purple-soft transition-colors cursor-pointer"
             >
                 <IconoHerramienta id="catalogo" className="size-5" />
                 <span className="hidden md:inline">Catálogo</span>

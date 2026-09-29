@@ -23,6 +23,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   entre las líneas del mapa. La silueta del estado sigue sin fondo.
 - El minimapa viene encendido; la × lo apaga y se recuerda (`mapalab.minimapa = apagado`).
 - La vista de municipio del minimapa entra un nivel antes: desde zoom 12, no 13.
+- El minimapa mide lo mismo que la píldora de zoom y va alineado con ella; sigue su alto cuando la
+  píldora gana o pierde botones.
+- La píldora del Catálogo lleva el título en el gris de «Contribuciones».
+- El colibrí de reportar va en morado con el pico naranja (también en el menú del marcador), y el
+  botón redondo de Contribuciones es un © morado con la C naranja.
 
 ## [2.1.0] - 2026-09-29
 

@@ -70,9 +70,13 @@ const MapAttribution = ({ hideCatalogo = false, origenReporte = 'map_attribution
                 <button
                     onClick={() => setOpen(prev => !prev)}
                     aria-expanded={open}
-                    className={`${compact ? 'md:hidden ' : ''}w-7 h-7 rounded-full bg-[#FFFFFF] flex items-center justify-center font-[Garet,sans-serif] font-medium text-[16px] text-[#6E7477] shadow-sm`}
+                    aria-label="Contribuciones"
+                    className={`${compact ? 'md:hidden ' : ''}w-7 h-7 rounded-full bg-[#FFFFFF] flex items-center justify-center shadow-sm`}
                 >
-                    ©
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" stroke="var(--color-purple)" />
+                        <path d="M14.8 9.4a4 4 0 1 0 0 5.2" stroke="var(--color-orange)" />
+                    </svg>
                 </button>
             </div>
 
