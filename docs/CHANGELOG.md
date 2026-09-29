@@ -10,7 +10,7 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Cambiado
 
-- El minimapa traza los límites estatal y municipal al doble de grosor cuando está de cerca (zoom 13
+- El minimapa traza los límites estatal y municipal al doble de grosor cuando está de cerca (zoom 12
   o más), los dos con halo blanco, para que no se pierdan sobre el mapa. También en el minimapa grande
   de celular.
 - De cerca, el minimapa no se acerca más de lo necesario para que el municipio quepa completo con su
@@ -22,6 +22,7 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - De cerca, el municipio del minimapa lleva un velo blanco al 85 %: sobre el mapa base real se perdía
   entre las líneas del mapa. La silueta del estado sigue sin fondo.
 - El minimapa viene encendido; la × lo apaga y se recuerda (`mapalab.minimapa = apagado`).
+- La vista de municipio del minimapa entra un nivel antes: desde zoom 12, no 13.
 
 ## [2.1.0] - 2026-09-29
 

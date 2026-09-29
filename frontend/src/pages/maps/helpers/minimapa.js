@@ -1,6 +1,6 @@
 const ZOOM_MOSTRAR = 10;
 const ZOOM_OCULTAR = 9.6;
-export const ZOOM_CERCA = 13;
+export const ZOOM_CERCA = 12;
 const NIVELES_ATRAS = 4;
 export const TAMANO_MINIMAPA = 176;
 
