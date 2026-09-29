@@ -1,4 +1,4 @@
-const RING_SIZE = 'size-8.5';
+const RING_SIZE = 'size-7.5';
 
 const Map3DRing = ({ label, texto, porcentaje, tono, abierto, onToggle, botonRef }) => (
     <button
@@ -14,11 +14,11 @@ const Map3DRing = ({ label, texto, porcentaje, tono, abierto, onToggle, botonRef
             className="absolute inset-0 rounded-full"
             style={{
                 background: `conic-gradient(${tono} ${porcentaje}%, #E6E2EC 0)`,
-                mask: 'radial-gradient(circle, transparent 12px, #000 13px)',
-                WebkitMask: 'radial-gradient(circle, transparent 12px, #000 13px)',
+                mask: 'radial-gradient(circle, transparent 10.5px, #000 11.5px)',
+                WebkitMask: 'radial-gradient(circle, transparent 10.5px, #000 11.5px)',
             }}
         />
-        <span className="relative font-garet text-[10px] font-bold tabular-nums leading-none text-[#2b2f33]">{texto}</span>
+        <span className="relative font-garet text-[9px] font-bold tabular-nums leading-none text-[#2b2f33]">{texto}</span>
     </button>
 );
 

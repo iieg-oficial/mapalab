@@ -5,6 +5,26 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.217.0] - 2026-09-29
+
+### Agregado
+
+- **Modo dron en la vista 3D (BETA).** Botón en la pastilla del 3D. Vuelo en primera o tercera persona con un modelo 3D (three.js en carga diferida) sobre el terreno y todas las capas del visor.
+  - Ocho aeronaves con velocidad, mandos e instrumento propios: cuadricóptero, hexacóptero, ala fija, VTOL, FPV, helicóptero, jet y globo.
+  - Piloto automático; altitud fija o siguiendo el relieve; choque con explosión y reaparición.
+  - Instrumentos (altura, velocímetro y horizonte, cámara o variómetro) y perfil del terreno adelante.
+  - Minimapa expandible con rutas de varios puntos, ciclo, rastro del vuelo, tiempo estimado y descarga de la imagen del recorrido.
+  - En celular: joysticks, instrumentos compactos y paneles ocultos. El sider pasa a modo móvil y el visor a modo zen mientras se vuela.
+- **Lluvia e inundación en la vista 3D (BETA).** Primer botón de la pastilla 3D.
+  - Un plano de agua sube desde lo más bajo que se ve o desde un punto elegido dentro de un radio.
+  - Intensidades de ligera a torrencial y gotas en partículas 3D.
+  - Es una simulación por elevación, no hidrológica.
+
+### Cambiado
+
+- La órbita y la inclinación pasan de la pastilla 3D al panel de Ajustes 3D. La pastilla queda con cinco botones, a la altura de la de zoom.
+- El ícono del norte se agranda en 3D al ancho de las dos pastillas.
+
 ## [1.216.6] - 2026-09-29
 
 ### Corregido

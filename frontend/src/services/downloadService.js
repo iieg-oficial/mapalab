@@ -71,7 +71,7 @@ export const getLayerConfig = (layerId) => {
     };
 };
 
-const triggerDownload = (blob, filename) => {
+export const triggerDownload = (blob, filename) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
