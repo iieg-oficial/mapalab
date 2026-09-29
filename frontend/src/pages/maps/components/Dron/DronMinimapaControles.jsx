@@ -12,6 +12,7 @@ const TRAZOS = {
     ciclo: <path d="M4 12a8 8 0 0114-5.3M20 12a8 8 0 01-14 5.3M18 3v4h-4M6 21v-4h4" />,
     deshacer: <path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" />,
     borrar: <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />,
+    descargar: <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />,
 };
 
 export const BotonMini = ({ icono, titulo, onClick, activo = false, disabled = false }) => (

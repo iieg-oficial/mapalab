@@ -45,3 +45,14 @@ describe('minimapa del dron', () => {
         expect(urlTesela('https://t/{z}/{x}/{y}.png', 10, 1, 2)).toBe('https://t/10/1/2.png');
     });
 });
+
+describe('imagen del recorrido', () => {
+    it('encuadra todo el recorrido y aleja el zoom cuando es más largo', async () => {
+        const { encuadrarRecorrido } = await import('@pages/maps/helpers/dron/exportarRecorrido');
+        const corto = encuadrarRecorrido([GDL, [-103.34, 20.68]]);
+        const largo = encuadrarRecorrido([GDL, [-102.5, 21.4]]);
+        expect(largo.zoom).toBeLessThan(corto.zoom);
+        expect(largo.centro[0]).toBeGreaterThan(GDL[0]);
+        expect(largo.centro[0]).toBeLessThan(-102.5);
+    });
+});

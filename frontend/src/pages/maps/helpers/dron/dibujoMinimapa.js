@@ -4,7 +4,7 @@ const MORADO = '#5C2472';
 const NARANJA = '#FF8300';
 const GRIS = '#8A8298';
 
-const flecha = (ctx, x, y, grados) => {
+export const flecha = (ctx, x, y, grados) => {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate((grados * Math.PI) / 180);
@@ -37,7 +37,7 @@ const teselasDeFondo = (ctx, { centro, ancho, alto, zoom, plantilla, cache }) =>
     });
 };
 
-const linea = (ctx, puntos, color, ancho, guiones = []) => {
+export const linea = (ctx, puntos, color, ancho, guiones = []) => {
     if (puntos.length < 2) return;
     ctx.strokeStyle = color;
     ctx.lineWidth = ancho;
@@ -46,6 +46,30 @@ const linea = (ctx, puntos, color, ancho, guiones = []) => {
     puntos.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
     ctx.stroke();
     ctx.setLineDash([]);
+};
+
+export const dibujarRecorrido = (ctx, { inicio, ruta, rastro, aPx, giro = 0, escala = 1 }) => {
+    linea(ctx, rastro.map(aPx), 'rgba(92, 36, 114, 0.6)', 2 * escala);
+    const color = ruta.pausada ? GRIS : NARANJA;
+    const camino = [inicio, ...ruta.puntos, ...(ruta.ciclo && ruta.puntos.length > 1 ? [ruta.puntos[0]] : [])].map(aPx);
+    linea(ctx, camino, color, 2.5 * escala, [6 * escala, 5 * escala]);
+    ruta.puntos.forEach((p, i) => {
+        const [x, y] = aPx(p);
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate((giro * Math.PI) / 180);
+        ctx.scale(escala, escala);
+        ctx.fillStyle = color;
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = '800 9px Garet, Figtree, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(i + 1), 0, 0.5);
+        ctx.restore();
+    });
 };
 
 export const dibujarMinimapa = (ctx, v) => {
@@ -60,26 +84,7 @@ export const dibujarMinimapa = (ctx, v) => {
         ctx.translate(-ancho / 2, -alto / 2);
     }
     if (plantilla) teselasDeFondo(ctx, { centro, ancho, alto, zoom, plantilla, cache });
-    linea(ctx, rastro.map(aPx), 'rgba(92, 36, 114, 0.55)', 2);
-    const color = ruta.pausada ? GRIS : NARANJA;
-    const camino = [centro, ...ruta.puntos, ...(ruta.ciclo && ruta.puntos.length > 1 ? [ruta.puntos[0]] : [])].map(aPx);
-    linea(ctx, camino, color, 2.5, [6, 5]);
-    ruta.puntos.forEach((p, i) => {
-        const [x, y] = aPx(p);
-        ctx.save();
-        ctx.translate(x, y);
-        if (rumboArriba) ctx.rotate((rumbo * Math.PI) / 180);
-        ctx.fillStyle = color;
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#fff';
-        ctx.font = '800 9px Garet, Figtree, system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(String(i + 1), 0, 0.5);
-        ctx.restore();
-    });
+    dibujarRecorrido(ctx, { inicio: centro, ruta, rastro, aPx, giro: rumboArriba ? rumbo : 0 });
     ctx.restore();
     flecha(ctx, ancho / 2, alto / 2, rumboArriba ? 0 : rumbo);
 };
