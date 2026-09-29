@@ -59,9 +59,6 @@ export const trackSiderLock = (mode) =>
 export const trackShareMap = (status) =>
     withMapInteraction('share_map', { status });
 
-export const trackInfoOpen = () =>
-    withMapInteraction('info_open', {});
-
 export const trackEventoOpen = (eventoId, titulo) =>
     withMapInteraction('evento_open', { evento_id: eventoId, titulo });
 
@@ -97,6 +94,30 @@ export const trackSwipeExit = (durationSec) =>
 
 export const trackView3d = (action, params) =>
     withMapInteraction('view3d', { action, ...(params || {}) });
+
+export const trackNorthReset = (modo) =>
+    withMapInteraction('north_reset', { modo });
+
+export const trackTablaOpen = (layerId) =>
+    withMapInteraction('tabla_open', { layer_id: layerId });
+
+export const trackTablaFilter = (layerId, action, columna) =>
+    withMapInteraction('tabla_filter', { layer_id: layerId, action, columna });
+
+export const trackTablaDownload = (layerId, format) =>
+    withMapInteraction('tabla_download', { layer_id: layerId, format });
+
+export const trackStatsOpen = (modo) =>
+    withMapInteraction('stats_open', { modo });
+
+export const trackStatsCustomCreate = (layerId, operation, filtros) =>
+    withMapInteraction('stats_custom_create', { layer_id: layerId, operation, filtros });
+
+export const trackStatsDetach = (layerId) =>
+    withMapInteraction('stats_detach', { layer_id: layerId });
+
+export const trackColibriOpen = (motivo, tipo) =>
+    trackEvent('colibri_open', { motivo, tipo });
 
 export const trackMinimapa = (accion) =>
     trackEvent('map_interaction', { action: `minimapa_${accion}` });

@@ -6,6 +6,7 @@ import DownloadMenu from '@mapsComponents/LayerDetailModal/components/DownloadMe
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayerDownload } from '@hooksMaps/useLayerDownload';
 import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
+import { trackTablaDownload } from '@services/analyticsService';
 
 const DescargaTabla = ({ layerId, cql, columnas, campoGeometria }) => {
     const { getFilter, getSpecificFilter, municipioMode } = useMapsContext();
@@ -51,7 +52,10 @@ const DescargaTabla = ({ layerId, cql, columnas, campoGeometria }) => {
                 isRaster={descarga.isRaster}
                 hasDateFilter={descarga.hasDateFilter}
                 availableMetadata={descarga.availableMetadata}
-                onDownload={descarga.handleMenuDownload}
+                onDownload={(opciones) => {
+                    trackTablaDownload(layerId, opciones?.formatId);
+                    descarga.handleMenuDownload(opciones);
+                }}
             />
         </span>
     );

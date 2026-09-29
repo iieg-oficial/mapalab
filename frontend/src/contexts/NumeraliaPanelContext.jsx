@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { definicionVacia, MAX_PROPIAS } from '@hooksMaps/useStatsBuilder';
+import { trackStatsCustomCreate, trackStatsDetach, trackStatsOpen } from '@services/analyticsService';
 
 const NumeraliaPanelContext = createContext(null);
 
@@ -79,6 +80,7 @@ export const NumeraliaPanelProvider = ({ children }) => {
     }, []);
 
     const detach = useCallback((layerId) => {
+        trackStatsDetach(layerId || null);
         aplicar({ abierto: true });
         if (layerId) setDetachedLayerId(layerId);
     }, [aplicar]);
@@ -98,8 +100,9 @@ export const NumeraliaPanelProvider = ({ children }) => {
     }, [aplicar]);
 
     const abrirModo = useCallback((siguiente) => {
+        if (estado.modo !== siguiente) trackStatsOpen(siguiente);
         aplicar(previo => ({ ...previo, modo: previo.modo === siguiente ? 'resumen' : siguiente }));
-    }, [aplicar]);
+    }, [aplicar, estado.modo]);
 
     const cerrarModo = useCallback(() => aplicar({ modo: 'resumen' }), [aplicar]);
 
@@ -153,6 +156,7 @@ export const NumeraliaPanelProvider = ({ children }) => {
 
     const agregarPersonalizada = useCallback((layerId, definicion) => {
         if (!layerId) return;
+        trackStatsCustomCreate(layerId, definicion?.operation, definicion?.filters?.length || 0);
         setPropiasPorCapa(previas => {
             const actuales = previas[layerId] || [];
             const siguientes = { ...previas, [layerId]: [...actuales, definicion].slice(-MAX_PROPIAS) };

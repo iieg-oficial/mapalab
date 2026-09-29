@@ -6,7 +6,7 @@ const PANTALLA_KEY = 'devtools-pantalla';
 
 const APP_ENV = import.meta.env.VITE_APP_ENV;
 const BUILD_IS_NON_PROD = ['dev', 'beta'].includes(APP_ENV);
-const TOGGLE_AVAILABLE = APP_ENV === 'dev';
+const TOGGLE_AVAILABLE = BUILD_IS_NON_PROD;
 
 const detectarMarco = () => {
     try {

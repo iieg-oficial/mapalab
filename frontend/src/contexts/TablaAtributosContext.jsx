@@ -6,6 +6,7 @@ import { normalizarAcople } from '@pages/maps/helpers/tablaAcople';
 import { useActiveLayersLogic } from '@hooksMaps/useActiveLayersLogic';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
+import { trackTablaFilter, trackTablaOpen } from '@services/analyticsService';
 
 const TablaAtributosContext = createContext(null);
 
@@ -60,11 +61,12 @@ export const TablaAtributosProvider = ({ children, tablasFijas = null, llavePers
     }, []);
 
     const abrir = useCallback((layerId) => {
+        if (!activo) trackTablaOpen(layerId || null);
         setActivo(true);
         setMinimizado(false);
         if (!layerId) return;
         setActivaId(layerId);
-    }, []);
+    }, [activo]);
 
     const cerrarTodas = useCallback(() => {
         setAcople('flotante');
@@ -102,27 +104,31 @@ export const TablaAtributosProvider = ({ children, tablasFijas = null, llavePers
     const estadoDe = useCallback((layerId) => porCapa[layerId] || ESTADO_CAPA, [porCapa]);
 
     const ponerFiltro = useCallback((layerId, columna, descriptor) => {
+        if (!porCapa[layerId]?.filtros?.[columna]) trackTablaFilter(layerId, 'poner', columna);
         parchear(layerId, actual => ({
             filtros: { ...actual.filtros, [columna]: descriptor },
             expresionPropia: null,
         }));
-    }, [parchear]);
+    }, [parchear, porCapa]);
 
     const quitarFiltro = useCallback((layerId, columna) => {
+        if (porCapa[layerId]?.filtros?.[columna]) trackTablaFilter(layerId, 'quitar', columna);
         parchear(layerId, actual => {
             const filtros = { ...actual.filtros };
             delete filtros[columna];
             return { filtros };
         });
-    }, [parchear]);
+    }, [parchear, porCapa]);
 
     const limpiarFiltros = useCallback((layerId) => {
+        trackTablaFilter(layerId, 'limpiar');
         parchear(layerId, { filtros: {}, expresionPropia: null });
     }, [parchear]);
 
     const fijarExpresionPropia = useCallback((layerId, expresion) => {
+        if (expresion && !porCapa[layerId]?.expresionPropia) trackTablaFilter(layerId, 'expresion');
         parchear(layerId, { expresionPropia: expresion || null });
-    }, [parchear]);
+    }, [parchear, porCapa]);
 
     const fijarOrden = useCallback((layerId, columna) => {
         parchear(layerId, actual => {

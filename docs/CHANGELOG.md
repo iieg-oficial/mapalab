@@ -5,6 +5,26 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.218.0] - 2026-09-29
+
+### Agregado
+
+- Telemetría de las herramientas nuevas: `north_reset` (botón del norte, 2D o 3D), `tabla_open`, `tabla_filter` (solo al poner o quitar el filtro de una columna, no en cada tecla) y `tabla_download` en la tabla de datos, `stats_open`, `stats_custom_create` y `stats_detach` en el panel de estadísticas, y `colibri_open` al abrir Colibrí. Requiere mariachi 2.104.0.
+- Pestaña **Telemetría** en el panel de depuración, junto a la de GTM: por evento cuenta lo encolado, aceptado, pendiente y rechazado o perdido; lista los últimos lotes con su estado HTTP y los nombres que rechazó el collector, y trae «Enviar ahora».
+
+### Cambiado
+
+- Las herramientas de desarrollo de `EnvBadge` (ver como producción, panel de depuración, simular pantalla) se abren también en builds `beta`, no solo en `dev`.
+
+### Corregido
+
+- Un 422 del collector ya no tira el lote entero: el visor lee el índice de cada evento rechazado, lo descarta y reencola el resto. Desde 1.173.0 cada lote con `view3d` se perdía completo, con los `layer_toggle` y `map_interaction` que iban con él. Un 4xx tampoco se reintenta ya tres veces.
+- El panel de depuración ya no se sale por abajo de la ventana al crecer.
+
+### Eliminado
+
+- `trackInfoOpen`: nadie la llamaba desde que se borró el InfoModal; «Acerca de Mapa Lab» ya se mide como `logo_click`.
+
 ## [1.217.0] - 2026-09-29
 
 ### Agregado: minimapa de Jalisco al acercarse

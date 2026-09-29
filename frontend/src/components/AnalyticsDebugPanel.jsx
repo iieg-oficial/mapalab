@@ -1,16 +1,29 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { debugStore } from '@services/analyticsDebugStore';
 import { useIsAnalyticsPanelOpen } from '@hooks/useDevTools';
+import TelemetriaDebugTab from './TelemetriaDebugTab';
+
+const PESTANAS = [{ clave: 'gtm', texto: 'GTM' }, { clave: 'telemetria', texto: 'Telemetría' }];
 
 const AnalyticsDebugPanel = () => {
     const isPanelOpen = useIsAnalyticsPanelOpen();
     const [events, setEvents] = useState(debugStore.getEvents());
     const [collapsed, setCollapsed] = useState(false);
+    const [pestana, setPestana] = useState('gtm');
+    const [alto, setAlto] = useState(0);
     const [position, setPosition] = useState({ x: 16, y: window.innerHeight - 80 });
     const dragRef = useRef(null);
     const panelRef = useRef(null);
 
     useEffect(() => debugStore.subscribe(setEvents), []);
+
+    useEffect(() => {
+        const nodo = panelRef.current;
+        if (!nodo || typeof ResizeObserver === 'undefined') return undefined;
+        const observador = new ResizeObserver(() => setAlto(nodo.offsetHeight));
+        observador.observe(nodo);
+        return () => observador.disconnect();
+    }, [isPanelOpen]);
 
     const handlePointerDown = useCallback((e) => {
         if (e.target.closest('button') || e.target.closest('a')) return;
@@ -47,22 +60,33 @@ const AnalyticsDebugPanel = () => {
             ref={panelRef}
             onPointerDown={handlePointerDown}
             className="fixed z-[9999] font-mono text-xs select-none cursor-grab active:cursor-grabbing"
-            style={{ left: position.x, top: position.y }}
+            style={{ left: position.x, top: Math.max(8, Math.min(position.y, window.innerHeight - alto - 8)) }}
         >
-            <div className="bg-gray-900 text-white rounded-xl shadow-2xl w-72">
+            <div className="bg-gray-900 text-white rounded-xl shadow-2xl w-80">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700 rounded-t-xl">
                     <div className="flex items-center gap-2">
                         <span className="text-white text-[10px] cursor-grab active:cursor-grabbing">⠿</span>
-                        <span className="font-bold text-green-400">Analytics Debug</span>
+                        <span className="font-bold text-green-400">Debug</span>
+                        {PESTANAS.map(({ clave, texto }) => (
+                            <button
+                                key={clave}
+                                type="button"
+                                onClick={() => setPestana(clave)}
+                                className={`px-2 py-0.5 rounded-full cursor-pointer ${pestana === clave ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                {texto}
+                            </button>
+                        ))}
                     </div>
                     <button
                         onClick={() => setCollapsed(p => !p)}
                         className="text-gray-400 hover:text-white transition-colors px-1"
                     >
-                        {events.length} eventos {collapsed ? '▲' : '▼'}
+                        {pestana === 'gtm' ? `${events.length} ` : ''}{collapsed ? '▲' : '▼'}
                     </button>
                 </div>
-                {!collapsed && (
+                {!collapsed && pestana === 'telemetria' && <TelemetriaDebugTab />}
+                {!collapsed && pestana === 'gtm' && (
                     <div className="max-h-64 overflow-y-auto rounded-b-xl">
                         {events.length === 0 ? (
                             <p className="text-gray-500 px-3 py-3 text-center">Sin eventos aún</p>

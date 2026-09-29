@@ -4,6 +4,7 @@ import { useView3d } from '@contexts/View3dContext';
 import { useMapsContext } from '@hooks/useMaps';
 import { useRotacionClicDerecho } from '@hooksMaps/useRotacionClicDerecho';
 import icoNorte from '@icons/ico_n.svg';
+import { trackNorthReset } from '@services/analyticsService';
 
 const BotonNorte = ({ getActiveMap }) => {
     const view3d = useView3d();
@@ -27,6 +28,7 @@ const BotonNorte = ({ getActiveMap }) => {
 
     const grados = view3d.active ? -view3d.bearing : (rotacion * 180) / Math.PI;
     const orientar = () => {
+        trackNorthReset(view3d.active ? '3d' : '2d');
         if (view3d.active) {
             view3d.setBearing(0);
             return;

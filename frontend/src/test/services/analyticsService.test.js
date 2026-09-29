@@ -13,8 +13,7 @@ import {
     trackGeolocate,
     trackPeriodicityAdvanced,
     trackSiderLock,
-    trackShareMap,
-    trackInfoOpen
+    trackShareMap
 } from '@/services/analyticsService';
 
 beforeEach(() => {
@@ -149,13 +148,6 @@ describe('analyticsService', () => {
         it('pushea share_map con status', () => {
             trackShareMap('copied');
             expect(getEvents()).toContainEqual({ event: 'share_map', status: 'copied' });
-        });
-    });
-
-    describe('trackInfoOpen', () => {
-        it('pushea info_open', () => {
-            trackInfoOpen();
-            expect(getEvents()).toContainEqual({ event: 'info_open' });
         });
     });
 });
