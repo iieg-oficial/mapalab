@@ -82,6 +82,9 @@ const puntoInterior = (geometria) => {
     return mayor.getInteriorPoint().getCoordinates();
 };
 
+const contiene = (fuera, dentroDe) => !!fuera && !!dentroDe
+    && fuera[0] <= dentroDe[0] && fuera[1] <= dentroDe[1] && fuera[2] >= dentroDe[2] && fuera[3] >= dentroDe[3];
+
 const acotar = (valor, minimo, maximo) => Math.min(Math.max(valor, minimo), maximo);
 
 const dibujarNombre = (ctx, municipio, aPx, lado) => {
@@ -118,6 +121,7 @@ const dibujarEnEspera = (ctx, estado, aPx) => {
 export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extensionVista, sinFondo = false, atenuado = false }) => {
     const aPx = coordenada => aPixel(vista, lado, coordenada);
     const grosor = vista?.modo === 'cerca' ? GROSOR_DE_CERCA : 1;
+    const municipioEnVista = vista?.modo === 'cerca' && contiene(extensionVista, municipio?.geometry?.getExtent());
     ctx.clearRect(0, 0, lado, lado);
     if (atenuado) {
         dibujarEnEspera(ctx, estado, aPx);
@@ -151,10 +155,10 @@ export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extension
         }
         ctx.fillStyle = COLORES.municipio;
         ctx.fill('evenodd');
-        conHalo(ctx, COLORES.municipioBorde, grosor);
+        conHalo(ctx, municipioEnVista ? COLORES.vista : COLORES.municipioBorde, grosor);
     }
 
     const sinMunicipioDeCerca = vista?.modo === 'cerca' && !municipio?.geometry;
-    if (extensionVista && !sinMunicipioDeCerca) dibujarVista(ctx, extensionVista, aPx, lado);
+    if (extensionVista && !sinMunicipioDeCerca && !municipioEnVista) dibujarVista(ctx, extensionVista, aPx, lado);
     if (municipio?.nombre && municipio.geometry) dibujarNombre(ctx, municipio, aPx, lado);
 };

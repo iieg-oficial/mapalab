@@ -6,10 +6,12 @@ const lienzoFalso = () => {
     const anchos = [];
     const textos = [];
     const rects = [];
+    const trazos = [];
     const propios = {
         measureText: texto => ({ width: texto.length * 6 }),
         fillText: (texto, x, y) => textos.push({ texto, x, y }),
         strokeRect: (x, y, w, h) => rects.push([x, y, w, h]),
+        stroke: () => trazos.push(propios.strokeStyle),
     };
     const ctx = new Proxy(propios, {
         get: (destino, llave) => (llave in destino ? destino[llave] : () => {}),
@@ -19,7 +21,7 @@ const lienzoFalso = () => {
             return true;
         },
     });
-    return { ctx, anchos, textos, rects };
+    return { ctx, anchos, textos, rects, trazos };
 };
 
 const cuadro = new Polygon([[[0, 0], [100, 0], [100, 100], [0, 100], [0, 0]]]);
@@ -80,5 +82,21 @@ describe('dibujarMinimapa', () => {
         expect(anchos).toEqual([1.5]);
         expect(textos).toHaveLength(0);
         expect(rects).toHaveLength(0);
+    });
+
+    it('si la vista abarca todo el municipio, su contorno va en naranja y no hay rectángulo', () => {
+        const { ctx, rects, trazos } = lienzoFalso();
+        const vista = { modo: 'cerca', centro: [50, 50], resolucion: 1 };
+        dibujarMinimapa(ctx, { ...base, vista, extensionVista: [-20, -20, 120, 120] });
+        expect(rects).toHaveLength(0);
+        expect(trazos).toContain('#FF8300');
+    });
+
+    it('si la vista es más chica que el municipio, el contorno sigue morado y hay rectángulo', () => {
+        const { ctx, rects, trazos } = lienzoFalso();
+        const vista = { modo: 'cerca', centro: [50, 50], resolucion: 1 };
+        dibujarMinimapa(ctx, { ...base, vista, extensionVista: [40, 40, 60, 60] });
+        expect(rects).toHaveLength(1);
+        expect(trazos).not.toContain('#FF8300');
     });
 });
