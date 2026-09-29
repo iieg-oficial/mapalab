@@ -59,7 +59,7 @@ const EnvBadge = () => {
                     onChange={(value) => devToolsStore.setAnalyticsPanelOpen(value)}
                 />
                 <span className={previewingProd ? `${LABEL_CLASS} opacity-40` : LABEL_CLASS}>
-                    Panel de depuración · GTM, telemetría, almacenamiento
+                    Panel de depuración
                 </span>
             </div>
             {!devToolsStore.isInFrame() && (
