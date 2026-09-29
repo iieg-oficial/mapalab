@@ -116,9 +116,15 @@ export const useDronVuelo = (map, principal, olRef = null) => {
             n += 1;
             const actual = vivo.current;
             const controles = actual.controlesRef.current;
-            if (hayEntradaManual(controles) && actual.auto) actual.setAuto(false);
-            const guiada = entradaGuiada(estado, { destino: actual.destinoRef.current, auto: actual.auto, t, centro: CENTRO, radio: RADIO_AUTO });
-            if (guiada?.llego) actual.destinoRef.current = null;
+            const ruta = actual.rutaRef.current;
+            if (hayEntradaManual(controles)) {
+                if (actual.auto) actual.setAuto(false);
+                if (ruta.puntos.length && !ruta.pausada) actual.cambiarRuta({ pausada: true });
+            }
+            const destino = ruta.pausada ? null : ruta.puntos[0];
+            const llegada = Math.max(120, (actual.perfil.vel[actual.config.velocidad] / 3.6) * 2);
+            const guiada = entradaGuiada(estado, { destino, auto: actual.auto, t, centro: CENTRO, radio: RADIO_AUTO, llegada });
+            if (guiada?.llego) actual.avanzarRuta();
             const entrada = guiada && !guiada.llego ? guiada.entrada : (guiada?.llego ? SIN_ENTRADA : entradaManual(controles));
             if (choqueDesde !== null) {
                 if (ahora - choqueDesde > DURACION_CHOQUE_MS) {
@@ -132,7 +138,7 @@ export const useDronVuelo = (map, principal, olRef = null) => {
                 if (estado.choque) {
                     choqueDesde = ahora;
                     estado = { ...estado, vEste: 0, vNorte: 0, vVert: 0, giro: 0 };
-                    actual.destinoRef.current = null;
+                    if (actual.rutaRef.current.puntos.length) actual.cambiarRuta({ pausada: true });
                     if (actual.auto) actual.setAuto(false);
                 }
             }

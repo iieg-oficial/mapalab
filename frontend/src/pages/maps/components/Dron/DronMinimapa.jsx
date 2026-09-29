@@ -1,114 +1,136 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useDron } from '@contexts/DronContext';
 import { useSider } from '@contexts/SiderContext';
 import { useAreaUtil } from '@contexts/AreaUtilContext';
 import { basemapTileUrl } from '@pages/maps/helpers/view3d';
-import {
-    ZOOM_MINIMAPA, aMinimapa, deMinimapa, teselasVisibles, urlTesela,
-} from '@pages/maps/helpers/dron/minimapaDron';
+import { ZOOM_MINIMAPA, ZOOM_MINIMAPA_RANGO, largoDeRuta } from '@pages/maps/helpers/dron/minimapaDron';
+import { dibujarMinimapa, puntoDelClic } from '@pages/maps/helpers/dron/dibujoMinimapa';
+import { BotonMini, ResumenRuta } from './DronMinimapaControles';
 
 const INTERVALO_MS = 90;
+const RASTRO_MS = 1000;
+const RASTRO_MAXIMO = 900;
+const [ZOOM_MIN, ZOOM_MAX] = ZOOM_MINIMAPA_RANGO;
 
-const flecha = (ctx, x, y, rumbo, escala) => {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate((rumbo * Math.PI) / 180);
-    ctx.scale(escala, escala);
-    const brillo = ctx.createRadialGradient(0, 0, 0, 0, 0, 40);
-    brillo.addColorStop(0, 'rgba(255, 131, 0, 0.35)');
-    brillo.addColorStop(1, 'rgba(255, 131, 0, 0)');
-    ctx.fillStyle = brillo;
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 40, -Math.PI / 2 - 0.55, -Math.PI / 2 + 0.55); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#5C2472';
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(6, 6); ctx.lineTo(0, 3); ctx.lineTo(-6, 6); ctx.closePath();
-    ctx.stroke(); ctx.fill();
-    ctx.restore();
+const tamano = (grande, isMobile) => {
+    if (isMobile) return grande ? 'top-4 right-4 w-[calc(100vw-2rem)] h-72' : 'top-4 right-4 size-28';
+    return grande ? 'bottom-14 right-4 w-[460px] h-[340px]' : 'bottom-14 right-4 size-44';
 };
 
 const DronMinimapa = () => {
     const { basemaps, baseMapId } = useMapsContext();
-    const { suscribir, destinoRef, setAuto, telemetriaRef } = useDron();
+    const { suscribir, setAuto, telemetriaRef, ruta, rutaRef, cambiarRuta, perfil, config } = useDron();
     const { isMobile } = useSider();
     const { margenes } = useAreaUtil();
     const lienzoRef = useRef(null);
-    const teselasRef = useRef(new Map());
+    const cacheRef = useRef(new Map());
+    const rastroRef = useRef([]);
+    const vistaRef = useRef(null);
+    const [grande, setGrande] = useState(false);
+    const [zoom, setZoom] = useState(ZOOM_MINIMAPA);
+    const [rumboArriba, setRumboArriba] = useState(false);
+    const [posicion, setPosicion] = useState(null);
     const plantilla = basemapTileUrl(basemaps[baseMapId]?.tiles);
 
     useEffect(() => {
         const lienzo = lienzoRef.current;
         const ctx = lienzo?.getContext('2d');
         if (!ctx) return undefined;
-        const teselas = teselasRef.current;
         let ultimo = 0;
+        let ultimoRastro = 0;
+        let ultimaPosicion = 0;
         const dibujar = (t) => {
             const ratio = window.devicePixelRatio || 1;
             const [ancho, alto] = [lienzo.clientWidth, lienzo.clientHeight];
-            if (lienzo.width !== ancho * ratio) {
-                lienzo.width = ancho * ratio;
-                lienzo.height = alto * ratio;
+            if (lienzo.width !== Math.round(ancho * ratio) || lienzo.height !== Math.round(alto * ratio)) {
+                lienzo.width = Math.round(ancho * ratio);
+                lienzo.height = Math.round(alto * ratio);
             }
             ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-            ctx.fillStyle = '#EEF1F4';
-            ctx.fillRect(0, 0, ancho, alto);
-            const centro = t.dron.lngLat;
-            if (plantilla) {
-                teselasVisibles(centro, ancho, alto, ZOOM_MINIMAPA).forEach(({ tx, ty, x, y }) => {
-                    const url = urlTesela(plantilla, ZOOM_MINIMAPA, tx, ty);
-                    let img = teselas.get(url);
-                    if (!img) {
-                        img = new Image();
-                        img.crossOrigin = 'anonymous';
-                        img.src = url;
-                        teselas.set(url, img);
-                    }
-                    if (img.complete && img.naturalWidth) ctx.drawImage(img, x, y, 256, 256);
-                });
-            }
-            const destino = destinoRef.current;
-            if (destino) {
-                const [dx, dy] = aMinimapa(centro, destino, ancho, alto, ZOOM_MINIMAPA);
-                ctx.strokeStyle = '#FF8300';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 4]);
-                ctx.beginPath(); ctx.moveTo(ancho / 2, alto / 2); ctx.lineTo(dx, dy); ctx.stroke();
-                ctx.setLineDash([]);
-                ctx.fillStyle = '#FF8300';
-                ctx.beginPath(); ctx.arc(dx, dy, 4, 0, Math.PI * 2); ctx.fill();
-            }
-            flecha(ctx, ancho / 2, alto / 2, t.dron.rumbo, 1);
+            const vista = { ancho, alto, zoom, centro: t.dron.lngLat, rumbo: t.dron.rumbo, rumboArriba };
+            vistaRef.current = vista;
+            dibujarMinimapa(ctx, { ...vista, plantilla, cache: cacheRef.current, ruta: rutaRef.current, rastro: rastroRef.current });
         };
         if (telemetriaRef.current) dibujar(telemetriaRef.current);
         return suscribir((t) => {
             const ahora = performance.now();
-            if (!t || ahora - ultimo < INTERVALO_MS) return;
+            if (!t) return;
+            if (ahora - ultimoRastro > RASTRO_MS) {
+                ultimoRastro = ahora;
+                rastroRef.current.push(t.dron.lngLat);
+                if (rastroRef.current.length > RASTRO_MAXIMO) rastroRef.current.shift();
+            }
+            if (ahora - ultimaPosicion > 1000) {
+                ultimaPosicion = ahora;
+                setPosicion(t.dron.lngLat);
+            }
+            if (ahora - ultimo < INTERVALO_MS) return;
             ultimo = ahora;
             dibujar(t);
         });
-    }, [suscribir, destinoRef, telemetriaRef, plantilla]);
+    }, [suscribir, telemetriaRef, rutaRef, plantilla, zoom, rumboArriba, grande]);
 
-    const volarA = (e) => {
-        const t = telemetriaRef.current;
-        if (!t) return;
+    const agregarPunto = (e) => {
+        const vista = vistaRef.current;
+        if (!vista) return;
         const caja = lienzoRef.current.getBoundingClientRect();
-        destinoRef.current = deMinimapa(t.dron.lngLat, [e.clientX - caja.left, e.clientY - caja.top], caja.width, caja.height, ZOOM_MINIMAPA);
+        const punto = puntoDelClic(vista, [e.clientX - caja.left, e.clientY - caja.top]);
+        cambiarRuta(previa => ({ ...previa, puntos: [...previa.puntos, punto], pausada: false }));
         setAuto(false);
     };
+    const acercar = paso => setZoom(z => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z + paso)));
+    const alternarGrande = () => {
+        setGrande(g => !g);
+        setZoom(z => (grande ? Math.max(z, ZOOM_MINIMAPA) : Math.min(z, ZOOM_MINIMAPA - 1)));
+    };
+    const metros = posicion ? largoDeRuta(posicion, ruta.puntos, ruta.ciclo) : 0;
 
     return (
-        <canvas
-            ref={lienzoRef}
-            onClick={volarA}
-            onKeyDown={(e) => { if (e.key === 'Escape') destinoRef.current = null; }}
-            role="button"
-            tabIndex={-1}
-            aria-label="Minimapa: clic para volar a ese punto"
-            title="Clic para volar a ese punto"
-            className={`fixed z-10 block rounded-[14px] cursor-crosshair [filter:drop-shadow(0_6px_14px_rgba(34,26,46,0.28))] ${isMobile ? 'top-4 right-4 size-28' : 'bottom-14 right-4 size-44'}`}
+        <div
+            className={`fixed transition-[width,height] duration-300 ${grande ? 'z-[21]' : 'z-10'} ${tamano(grande, isMobile)}`}
             style={isMobile ? undefined : { marginRight: margenes.right, marginBottom: margenes.bottom }}
-        />
+        >
+            <canvas
+                ref={lienzoRef}
+                onClick={agregarPunto}
+                onWheel={e => acercar(e.deltaY > 0 ? -1 : 1)}
+                onKeyDown={(e) => { if (e.key === 'Backspace') cambiarRuta(previa => ({ ...previa, puntos: previa.puntos.slice(0, -1) })); }}
+                role="button"
+                tabIndex={0}
+                aria-label="Minimapa: clic para agregar un punto a la ruta"
+                title="Clic para agregar un punto a la ruta"
+                className="block size-full rounded-[14px] cursor-crosshair [filter:drop-shadow(0_6px_14px_rgba(34,26,46,0.28))]"
+            />
+            <div className="absolute right-1.5 top-1.5 flex flex-col gap-1.5">
+                <BotonMini icono={grande ? 'contraer' : 'expandir'} titulo={grande ? 'Reducir el minimapa' : 'Expandir el minimapa'} onClick={alternarGrande} />
+                {grande && (
+                    <>
+                        <BotonMini icono="mas" titulo="Acercar" onClick={() => acercar(1)} disabled={zoom >= ZOOM_MAX} />
+                        <BotonMini icono="menos" titulo="Alejar" onClick={() => acercar(-1)} disabled={zoom <= ZOOM_MIN} />
+                        <BotonMini
+                            icono={rumboArriba ? 'rumbo' : 'norte'}
+                            titulo={rumboArriba ? 'Poner el norte arriba' : 'Girar con el rumbo del dron'}
+                            onClick={() => setRumboArriba(r => !r)}
+                            activo={rumboArriba}
+                        />
+                    </>
+                )}
+            </div>
+            {grande && ruta.puntos.length > 0 && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
+                    <ResumenRuta
+                        ruta={ruta}
+                        metros={metros}
+                        kmh={perfil.vel[config.velocidad]}
+                        onPausar={() => cambiarRuta({ pausada: !ruta.pausada })}
+                        onCiclo={() => cambiarRuta({ ciclo: !ruta.ciclo })}
+                        onDeshacer={() => cambiarRuta(previa => ({ ...previa, puntos: previa.puntos.slice(0, -1) }))}
+                        onBorrar={() => cambiarRuta({ puntos: [], pausada: false })}
+                    />
+                </div>
+            )}
+        </div>
     );
 };
 

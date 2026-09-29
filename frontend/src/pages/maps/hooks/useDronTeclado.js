@@ -20,7 +20,7 @@ export const entradaManual = ({ teclas, joy }) => ({
 export const hayEntradaManual = ({ teclas, joy }) => teclas.size > 0 || Object.values(joy).some(v => v !== 0);
 
 export const useDronTeclado = (activo, dron) => {
-    const { controlesRef, setOpcion, alternar, setAuto, salir, accionesRef, destinoRef } = dron;
+    const { controlesRef, setOpcion, alternar, setAuto, salir, accionesRef } = dron;
 
     useEffect(() => {
         if (!activo) return undefined;
@@ -30,7 +30,6 @@ export const useDronTeclado = (activo, dron) => {
             if (MOVIMIENTO.has(e.code)) {
                 if (e.target?.closest?.('button') && (e.code === 'Space')) return;
                 teclas.add(e.code);
-                destinoRef.current = null;
                 setAuto(false);
                 e.preventDefault();
                 return;
@@ -57,5 +56,5 @@ export const useDronTeclado = (activo, dron) => {
             window.removeEventListener('blur', alPerder);
             teclas.clear();
         };
-    }, [activo, controlesRef, setOpcion, alternar, setAuto, salir, accionesRef, destinoRef]);
+    }, [activo, controlesRef, setOpcion, alternar, setAuto, salir, accionesRef]);
 };

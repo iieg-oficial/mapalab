@@ -38,3 +38,22 @@ export const aMinimapa = (centro, punto, ancho, alto, zoom) => {
     const [x, y] = aMundo(punto, zoom);
     return [x - cx + ancho / 2, y - cy + alto / 2];
 };
+
+export const ZOOM_MINIMAPA_RANGO = [6, 13];
+
+export const girar = ([x, y], grados) => {
+    const r = (grados * Math.PI) / 180;
+    return [x * Math.cos(r) - y * Math.sin(r), x * Math.sin(r) + y * Math.cos(r)];
+};
+
+const M_POR_GRADO_LAT = 110574;
+const tramo = ([lng1, lat1], [lng2, lat2]) => Math.hypot(
+    (lng2 - lng1) * 111320 * Math.cos((((lat1 + lat2) / 2) * Math.PI) / 180),
+    (lat2 - lat1) * M_POR_GRADO_LAT,
+);
+
+export const largoDeRuta = (desde, puntos, ciclo = false) => {
+    if (!puntos.length) return 0;
+    const camino = [desde, ...puntos, ...(ciclo && puntos.length > 1 ? [puntos[0]] : [])];
+    return camino.slice(1).reduce((total, punto, i) => total + tramo(camino[i], punto), 0);
+};

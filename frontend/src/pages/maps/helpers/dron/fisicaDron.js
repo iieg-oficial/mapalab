@@ -51,10 +51,10 @@ export const aplicarMandos = (entrada, mandos) => {
     return salida;
 };
 
-export const entradaGuiada = (dron, { destino, auto, t, centro, radio }) => {
+export const entradaGuiada = (dron, { destino, auto, t, centro, radio, llegada = 120 }) => {
     if (destino) {
         const { metros, rumbo } = distancia(dron.lngLat, destino);
-        if (metros < 120) return { entrada: SIN_ENTRADA, llego: true };
+        if (metros < llegada) return { entrada: SIN_ENTRADA, llego: true };
         const dif = anguloCorto(rumbo - dron.rumbo);
         return {
             entrada: { ...SIN_ENTRADA, giro: acotar(-dif / 25, -1, 1), avance: Math.abs(dif) < 35 ? Math.min(1, metros / 1500) : 0.12 },

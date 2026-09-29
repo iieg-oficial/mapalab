@@ -40,11 +40,10 @@ const Joystick = ({ lado, etiqueta, alMover }) => {
 };
 
 const DronJoysticks = () => {
-    const { controlesRef, destinoRef, setAuto } = useDron();
+    const { controlesRef, setAuto } = useDron();
     const joy = controlesRef.current.joy;
     const tomar = (x, y) => {
         if (x || y) {
-            destinoRef.current = null;
             setAuto(false);
         }
     };

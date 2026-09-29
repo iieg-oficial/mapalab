@@ -24,6 +24,7 @@ const guardarDron = (config) => {
 };
 
 const DronContext = createContext(null);
+const SIN_RUTA = { puntos: [], ciclo: false, pausada: false };
 
 const NADA = () => {};
 const INACTIVO = {
@@ -39,7 +40,10 @@ const INACTIVO = {
     cambiarColor: NADA,
     setAuto: NADA,
     controlesRef: { current: null },
-    destinoRef: { current: null },
+    ruta: SIN_RUTA,
+    rutaRef: { current: SIN_RUTA },
+    cambiarRuta: NADA,
+    avanzarRuta: NADA,
     accionesRef: { current: {} },
     telemetriaRef: { current: null },
     publicar: NADA,
@@ -55,7 +59,8 @@ export const DronProvider = ({ children }) => {
     const [config, setConfig] = useState(leerDron);
     const [auto, setAuto] = useState(false);
     const controlesRef = useRef({ teclas: new Set(), joy: { mx: 0, mz: 0, giro: 0, sube: 0 } });
-    const destinoRef = useRef(null);
+    const [ruta, setRuta] = useState(SIN_RUTA);
+    const rutaRef = useRef(SIN_RUTA);
     const accionesRef = useRef({});
     const telemetriaRef = useRef(null);
     const oyentesRef = useRef(new Set());
@@ -76,14 +81,24 @@ export const DronProvider = ({ children }) => {
     const entrar = useCallback(() => {
         setOrbita(false);
         setAuto(false);
-        destinoRef.current = null;
         setActivo(true);
     }, [setOrbita]);
 
-    const salir = useCallback(() => {
-        destinoRef.current = null;
-        setActivo(false);
+    const cambiarRuta = useCallback((cambio) => {
+        const nueva = typeof cambio === 'function' ? cambio(rutaRef.current) : { ...rutaRef.current, ...cambio };
+        rutaRef.current = nueva;
+        setRuta(nueva);
     }, []);
+
+    const avanzarRuta = useCallback(() => cambiarRuta(({ puntos, ciclo, pausada }) => {
+        const [llegado, ...resto] = puntos;
+        return { puntos: ciclo && llegado ? [...resto, llegado] : resto, ciclo, pausada };
+    }), [cambiarRuta]);
+
+    const salir = useCallback(() => {
+        cambiarRuta(SIN_RUTA);
+        setActivo(false);
+    }, [cambiarRuta]);
 
     const setOpcion = useCallback((clave, valor) => setConfig(prev => ({ ...prev, [clave]: valor })), []);
     const alternar = useCallback(clave => setConfig(prev => ({ ...prev, [clave]: !prev[clave] })), []);
@@ -112,12 +127,15 @@ export const DronProvider = ({ children }) => {
         cambiarColor,
         setAuto,
         controlesRef,
-        destinoRef,
+        ruta,
+        rutaRef,
+        cambiarRuta,
+        avanzarRuta,
         accionesRef,
         telemetriaRef,
         publicar,
         suscribir,
-    }), [activo, config, auto, entrar, salir, setOpcion, alternar, cambiarColor, publicar, suscribir]);
+    }), [activo, config, auto, entrar, salir, setOpcion, alternar, cambiarColor, publicar, suscribir, ruta, cambiarRuta, avanzarRuta]);
 
     return <DronContext.Provider value={value}>{children}</DronContext.Provider>;
 };
