@@ -52,8 +52,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   `useIsMobile`: con `useSider` el catálogo, sin `SiderProvider`, montaba el minimapa de escritorio en
   celular.
 - En celular el minimapa es un botón redondo arriba de la píldora de zoom, del mismo ancho, que abre
-  una hoja con el minimapa grande y el nombre del municipio; tocar un punto mueve el mapa y cierra la
-  hoja. Las siluetas se piden al abrirla. La píldora bajo el logo se retiró porque chocaba con Eventos,
+  una hoja con el minimapa a todo lo ancho (medido al vuelo, sin pasar del 70 % del alto) y el nombre
+  del municipio y la × encima, en las esquinas; tocar un punto mueve el mapa y cierra la hoja. Las siluetas se piden al abrirla. La píldora bajo el logo se retiró porque chocaba con Eventos,
   y la tarjeta de Herramientas sigue solo en escritorio.
 
 ## [2.2.0] - 2026-09-29

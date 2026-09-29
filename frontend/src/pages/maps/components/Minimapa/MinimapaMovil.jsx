@@ -1,25 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MobileSheet, { MobileSheetCloseButton } from '@components/MobileSheet';
 import { trackMinimapa } from '@services/analyticsService';
 import { useMinimapa } from '@pages/maps/hooks/useMinimapa';
 import IconoHerramienta from '../IconoHerramienta';
 import LienzoMinimapa from './LienzoMinimapa';
 
-const LADO_MAXIMO = 360;
-const GUTTER = 32;
+const ALTO_MAXIMO = 0.7;
+
+const useLado = (ref) => {
+    const [lado, setLado] = useState(0);
+    useEffect(() => {
+        const nodo = ref.current;
+        if (!nodo) return undefined;
+        const medir = () => setLado(Math.floor(Math.min(nodo.clientWidth || window.innerWidth, window.innerHeight * ALTO_MAXIMO)));
+        medir();
+        if (typeof ResizeObserver === 'undefined') return undefined;
+        const observador = new ResizeObserver(medir);
+        observador.observe(nodo);
+        return () => observador.disconnect();
+    }, [ref]);
+    return lado;
+};
 
 const HojaMinimapa = ({ cerrar }) => {
     const { visible, lienzo } = useMinimapa(true);
-    const lado = Math.min(window.innerWidth - GUTTER, LADO_MAXIMO);
+    const cajaRef = useRef(null);
+    const lado = useLado(cajaRef);
     return (
-        <div data-minimapa className="flex flex-col items-center gap-3 px-4 pt-4 pb-6">
-            <div className="flex w-full items-center gap-2">
-                <span className="truncate font-garet text-[16px]/[22px] font-bold text-purple">
-                    {lienzo.municipio?.nombre || 'Jalisco'}
-                </span>
+        <div ref={cajaRef} data-minimapa className="relative flex w-full justify-center">
+            {lado > 0 && <LienzoMinimapa lado={lado} atenuado={!visible} onIr={cerrar} {...lienzo} />}
+            <span className="absolute left-4 top-3 max-w-[70%] truncate font-garet text-[16px]/[22px] font-bold text-purple">
+                {lienzo.municipio?.nombre || 'Jalisco'}
+            </span>
+            <div className="absolute right-3 top-3 flex">
                 <MobileSheetCloseButton onClick={cerrar} />
             </div>
-            <LienzoMinimapa lado={lado} atenuado={!visible} onIr={cerrar} {...lienzo} />
         </div>
     );
 };
