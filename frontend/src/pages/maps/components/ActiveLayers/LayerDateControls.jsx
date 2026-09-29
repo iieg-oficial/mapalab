@@ -89,7 +89,7 @@ const LayerDateControls = ({
     emptyLabel = null,
     pillTooltip,
     pillExpanded,
-    trailing = null,
+    onPillClear,
     onPlay,
     onInterval,
     onDirection
@@ -105,7 +105,7 @@ const LayerDateControls = ({
         if (!label) return null;
         return (
             <div className="flex items-center gap-1 w-full">
-                <DatePill slot="none" label={label} kind={liveLabel.kind} onClick={onPillClick} isLoopingPulse={isLooping && isLoading} size="lg" tooltip={pillTooltip} expanded={pillExpanded} />
+                <DatePill slot="none" label={label} kind={liveLabel.kind} onClick={onPillClick} isLoopingPulse={isLooping && isLoading} size="lg" tooltip={pillTooltip} expanded={pillExpanded} onClear={liveLabel.label ? onPillClear : undefined} />
                 <LoopControls
                     isLooping={isLooping}
                     canPlayLoop={canPlayLoop}
@@ -116,8 +116,6 @@ const LayerDateControls = ({
                     onDirection={onDirection}
                     slotPalette="none"
                 />
-                {trailing && <div className="flex-1" />}
-                {trailing}
             </div>
         );
     }

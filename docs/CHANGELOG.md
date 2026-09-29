@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.223.2] - 2026-09-29
+
+### Cambiado: la X de la fecha va dentro de la píldora
+
+- En el panel de capas activas, con una fecha elegida la píldora queda como `DIC 2025 ×`, con la X
+  en el color de la píldora. Quita el filtro sin deseleccionar la capa; sin fecha la píldora dice
+  TODAS y no lleva X.
+- Se quita la flecha para abrir y cerrar las fechas: la píldora ya lo hace.
+- En el comparador las píldoras no cambian.
+
 ## [1.223.1] - 2026-09-29
 
 ### Corregido
