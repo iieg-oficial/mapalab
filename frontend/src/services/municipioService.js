@@ -67,7 +67,30 @@ export const fetchMunicipiosGeometries = async (sourceId = 'iieg', claves = [], 
     return result;
 };
 
+let siluetasCache = null;
+
+export const fetchSiluetas = () => {
+    if (siluetasCache) return siluetasCache;
+    siluetasCache = fetch(`${API_HOST}/municipios/siluetas`)
+        .then((res) => {
+            if (!res.ok) throw new Error(`Backend responde ${res.status} al pedir las siluetas`);
+            return res.json();
+        })
+        .then(data => ({
+            estado: data?.estado ? geoJsonFormat.readGeometry(data.estado) : null,
+            municipios: (data?.municipios || [])
+                .filter(item => item?.geometry)
+                .map(item => ({ clave: String(item.clave), nombre: String(item.nombre), geometry: geoJsonFormat.readGeometry(item.geometry) })),
+        }))
+        .catch((error) => {
+            siluetasCache = null;
+            throw error;
+        });
+    return siluetasCache;
+};
+
 export const clearMunicipioCache = () => {
     listCache.clear();
     geomCache.clear();
+    siluetasCache = null;
 };

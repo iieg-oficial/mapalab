@@ -215,6 +215,7 @@ const NumeraliaPanel = () => {
             ) : (
                 <section
                     ref={panelRef}
+                    data-panel-numeralia
                     className={`relative pointer-events-auto max-w-full max-h-[60vh] overflow-auto scrollbar-thin px-4.5 pt-2 pb-4.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] transition-shadow font-garet ${anillo}`}
                     aria-label={`Estadísticas de ${nombreCapa}`}
                     aria-live="polite"

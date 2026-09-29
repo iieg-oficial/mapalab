@@ -29,6 +29,7 @@ const MapAttribution = ({ hideCatalogo = false, origenReporte = 'map_attribution
 
     return (
         <div
+            data-atribucion
             className="fixed bottom-4 right-4 md:bottom-2 md:right-2 z-10 flex items-center gap-2"
             style={{ marginRight: margenes.right, marginBottom: margenes.bottom }}
         >

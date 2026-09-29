@@ -15,6 +15,10 @@ def _resolve_geom_column(source: str) -> str:
     return _GEOM_COLUMN.get((source or '').lower(), 'geom_iieg')
 
 
+def _leer_geojson(geometria: object) -> Optional[dict]:
+    return json.loads(geometria) if isinstance(geometria, str) else geometria
+
+
 class MunicipiosRepository:
 
     @staticmethod
@@ -98,3 +102,29 @@ class MunicipiosRepository:
         if not row or row[0] is None:
             return None
         return [float(row[0]), float(row[1]), float(row[2]), float(row[3])]
+
+    @staticmethod
+    def get_siluetas(session: Session, source: str = 'iieg', tolerancia_m: float = 300) -> dict:
+        geom_col = _resolve_geom_column(source)
+        filas = session.execute(
+            text(
+                f'SELECT clave_geo, nombre, '
+                f'ST_AsGeoJSON(ST_SimplifyPreserveTopology(ST_Transform({geom_col}, 3857), :tol), 0)::json AS geometry '
+                f'FROM mapalab.municipios WHERE {geom_col} IS NOT NULL'
+            ),
+            {'tol': tolerancia_m},
+        ).fetchall()
+        estado = session.execute(
+            text(
+                f'SELECT ST_AsGeoJSON(ST_SimplifyPreserveTopology(ST_Union(ST_Transform({geom_col}, 3857)), :tol), 0)::json '
+                f'FROM mapalab.municipios WHERE {geom_col} IS NOT NULL'
+            ),
+            {'tol': tolerancia_m * 2},
+        ).scalar()
+        return {
+            'estado': _leer_geojson(estado),
+            'municipios': [
+                {'clave': fila.clave_geo, 'nombre': fila.nombre, 'geometry': _leer_geojson(fila.geometry)}
+                for fila in filas
+            ],
+        }

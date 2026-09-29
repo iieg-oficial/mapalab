@@ -16,6 +16,7 @@ import MapControls from './components/MapControls';
 import MeasurementTools from './components/MeasurementTools/ToolsPanel';
 import ScaleLineControl from './components/ScaleLineControl';
 import MapAttribution from './components/MapAttribution';
+import Minimapa from './components/Minimapa';
 import LayerNotices from './components/LayerNotices/LayerNotices';
 import { useInitializeFromUrl } from './hooks/useInitializeFromUrl';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
@@ -80,6 +81,7 @@ const Maps = () => {
                                     <NumeraliaPanel />
                                     <InfoBox />
                                     <MapAttribution />
+                                    <Minimapa />
                                     <MapControls />
                                     <MapaPrincipal isComparing={isComparing} />
                                     {isComparing && <SwipeSlotControls />}

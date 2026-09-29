@@ -5,6 +5,21 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.217.0] - 2026-09-29
+
+### Agregado: minimapa de Jalisco al acercarse
+
+- Al pasar de zoom 10 aparece en la esquina inferior derecha Jalisco completo con el rectángulo naranja
+  de la vista; desde zoom 13 se acerca y sigue la vista cuatro niveles más lejos. Resalta y nombra el
+  municipio bajo el centro. Un clic mueve el mapa ahí, salvo con una herramienta de dibujo activa.
+- Esquiva la atribución, la numeralia, la tabla acoplada y los paneles abiertos: primero sube por
+  encima; si no cabe, se corre a la izquierda de los paneles, y si tampoco, se esconde. No aparece en
+  3D ni en pantallas de menos de 768 × 560.
+- La × lo quita y se recuerda en el navegador; vuelve desde la tarjeta «Minimapa» de Herramientas.
+- `GET /municipios/siluetas`: contorno del estado y los 125 municipios simplificados a 300 m en
+  EPSG:3857 (227 KB contra 9.3 MB de `/geometries`), 6 h en memoria del backend y con ETag.
+- Telemetría como `map_interaction` con acción `minimapa_*`, sin evento nuevo en mariachi.
+
 ## [1.216.6] - 2026-09-29
 
 ### Corregido

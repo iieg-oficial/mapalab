@@ -98,6 +98,9 @@ export const trackSwipeExit = (durationSec) =>
 export const trackView3d = (action, params) =>
     withMapInteraction('view3d', { action, ...(params || {}) });
 
+export const trackMinimapa = (accion) =>
+    trackEvent('map_interaction', { action: `minimapa_${accion}` });
+
 export const trackInfoBoxAction = (action, layerId) =>
     withMapInteraction('infobox_action', { action, layer_id: layerId });
 

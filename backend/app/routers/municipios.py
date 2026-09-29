@@ -1,5 +1,6 @@
 import hashlib
 import json
+import time
 from typing import Optional
 
 from fastapi import APIRouter, Header, HTTPException, Query, Response
@@ -13,6 +14,8 @@ from app.utils.api_responses import api_responses
 router = APIRouter(prefix='/municipios', tags=['Municipios'])
 
 _VALID_SOURCES = {'iieg', 'inegi'}
+SILUETAS_TTL_S = 6 * 3600
+_siluetas_cache: dict[str, tuple[float, dict, str]] = {}
 
 
 def _get_session() -> Session:
@@ -94,3 +97,36 @@ def get_geometries(
         'features': features,
         'unionBbox': union_bbox,
     }
+
+
+@router.get(
+    '/siluetas',
+    responses=api_responses(500),
+    operation_id='get_municipios_siluetas',
+    summary='Contorno de Jalisco y municipios simplificados para el minimapa',
+    description=(
+        "Devuelve el contorno del estado y los 125 municipios en EPSG:3857, simplificados a "
+        "unos 300 m y con coordenadas en metros enteros: ~200 KB contra los ~9 MB de "
+        "`/geometries`. Sirve para dibujar el minimapa y nombrar el municipio bajo la vista, no "
+        "para filtrar. Se guarda 6 h en memoria porque la vista materializada cambia una vez al "
+        "mes. Soporta `If-None-Match` con ETag."
+    ),
+)
+def get_siluetas(
+    response: Response,
+    source: str = Query(default='iieg', description='Fuente: iieg | inegi'),
+    if_none_match: Optional[str] = Header(default=None),
+):
+    src = _normalize_source(source)
+    guardado = _siluetas_cache.get(src)
+    if not guardado or time.monotonic() - guardado[0] > SILUETAS_TTL_S:
+        with _get_session() as session:
+            payload = MunicipiosRepository.get_siluetas(session, src)
+        guardado = (time.monotonic(), payload, _hash_payload(payload))
+        _siluetas_cache[src] = guardado
+    _, payload, etag = guardado
+    response.headers['ETag'] = etag
+    response.headers['Cache-Control'] = 'public, max-age=21600'
+    if if_none_match and if_none_match == etag:
+        return Response(status_code=304, headers={'ETag': etag})
+    return payload

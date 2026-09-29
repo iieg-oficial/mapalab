@@ -10,6 +10,8 @@ import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { useIsNonProd } from '@hooks/useDevTools';
 import { useGoToCatalogo } from '@pages/catalogo/useGoToCatalogo';
+import { useMinimapaEncendido } from '@pages/maps/hooks/useMinimapaEncendido';
+import { trackMinimapa } from '@services/analyticsService';
 
 const allTools = [
     {
@@ -46,6 +48,12 @@ const allTools = [
         icon: 'capa_activa',
         iconHover: 'orange',
     },
+    {
+        id: 'minimapa',
+        label: 'Minimapa',
+        description: 'Muestra dónde estás en Jalisco al acercarte',
+        icon: 'ubicacion',
+    },
 ];
 
 const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementToolsVisible, areAnnotationToolsVisible, toggleAnnotationTools }) => {
@@ -56,6 +64,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     const { activo: tablaActiva, abrir: abrirTabla, cerrarTodas: cerrarTablas } = useTablaAtributos();
     const { closeSider, isMobile } = useSider();
     const goToCatalogo = useGoToCatalogo();
+    const [minimapaEncendido, alternarMinimapa] = useMinimapaEncendido();
     const [hoveredId, setHoveredId] = useState(null);
     const isNonProd = useIsNonProd();
     const tools = useMemo(
@@ -101,6 +110,9 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
             alternarTabla();
         } else if (id === 'catalogo') {
             goToCatalogo();
+        } else if (id === 'minimapa') {
+            trackMinimapa(minimapaEncendido ? 'apagar' : 'encender');
+            alternarMinimapa();
         } else if (id === 'compare-swipe') {
             if (compareMode?.active) {
                 exitCompareMode();
@@ -116,6 +128,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
         if (id === 'anotaciones') return !!areAnnotationToolsVisible;
         if (id === 'tabla') return tablaActiva;
         if (id === 'compare-swipe') return !!compareMode?.active;
+        if (id === 'minimapa') return minimapaEncendido;
         return false;
     };
 
@@ -138,7 +151,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                                 <span className="text-[11px] opacity-90">Compara dos mapas con barra divisora. Tus capas actuales van al lado α; el lado β empieza <span className="font-bold">vacío</span> para que agregues otra capa.</span>
                                 <span className="text-[11px] opacity-90">Agrega capas en cada slot (A o B) <span className="font-bold">una por una</span> para mejor rendimiento.</span>
                             </div>
-                        ) : tool.id === 'catalogo' ? tool.description : tool.label;
+                        ) : tool.id === 'catalogo' || tool.id === 'minimapa' ? tool.description : tool.label;
                         return (
                             <Tooltip key={tool.id} content={tooltipContent} placement="bottom" delay={300}>
                                 <button
