@@ -5,6 +5,13 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.216.6] - 2026-09-29
+
+### Corregido
+
+- El proxy del socket de Docker del sidecar `/ontoy` deja de ser `tecnativa/docker-socket-proxy`: con `CONTAINERS=1` también dejaba pedir `/containers/{id}/json` (el entorno, con secretos), `logs` y `archive` de cualquier contenedor del host. Ahora es `nginx:1.30.4-alpine` sin root, de solo lectura y sin capacidades, con `version-api/docker-proxy.conf`, que solo deja pasar `GET /containers/json` (con o sin prefijo `/vX.Y/`) y responde 403 a todo lo demás. Pide `DOCKER_GID` en el `.env`.
+- `.env.example` declara `ONTOY_NODE`, `ONTOY_NODE_REPORTER` y `ONTOY_PEER_CHECKS`, que `compose.prod.yaml` exige, y ya no lista `MAPALAB_SHARE_IP_HASH_SECRET`, que va por `secrets/`.
+
 ## [1.216.5] - 2026-09-29
 
 ### Corregido
