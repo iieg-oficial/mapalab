@@ -20,25 +20,40 @@ const referenciaVisible = (map) => {
 
 export const useMap3dInundacion = (map, principal) => {
     const { inundacion, setInundacion, exaggeration } = useView3d();
-    const { nivel, lloviendo, referencia, intensidad = INTENSIDAD_DEFAULT } = inundacion;
-    const activa = principal && !!map && (nivel > 0 || lloviendo);
+    const { nivel, lloviendo, referencia, intensidad = INTENSIDAD_DEFAULT, modo = 'general', punto, radio, eligiendo } = inundacion;
+    const local = modo === 'local';
+    const activa = principal && !!map && (nivel > 0 || lloviendo) && (!local || !!punto);
     const vivo = useRef({});
-    vivo.current = { nivel, referencia, exaggeration, centro: inundacion.centro, lloviendo, intensidad };
+    vivo.current = { nivel, referencia, exaggeration, centro: inundacion.centro, lloviendo, intensidad, local, radio };
 
     useEffect(() => {
         if (!activa || referencia !== null) return undefined;
         let espera = null;
         const intentar = () => {
-            const minima = map.getTerrain() ? referenciaVisible(map) : 0;
-            if (minima === null) {
+            const base = local ? map.queryTerrainElevation(punto) : referenciaVisible(map);
+            const minima = map.getTerrain() ? base : 0;
+            if (minima === null || minima === undefined) {
                 espera = setTimeout(intentar, 300);
                 return;
             }
-            setInundacion({ referencia: minima / (exaggeration || 1), centro: map.getCenter().toArray() });
+            setInundacion({ referencia: minima / (exaggeration || 1), centro: local ? punto : map.getCenter().toArray() });
         };
         intentar();
         return () => clearTimeout(espera);
-    }, [activa, referencia, map, exaggeration, setInundacion]);
+    }, [activa, referencia, map, exaggeration, setInundacion, local, punto]);
+
+    useEffect(() => {
+        if (!eligiendo || !map || !principal) return undefined;
+        const lienzo = map.getCanvas();
+        const cursor = lienzo.style.cursor;
+        lienzo.style.cursor = 'crosshair';
+        const elegir = e => setInundacion({ punto: e.lngLat.toArray(), eligiendo: false, referencia: null, centro: null });
+        map.once('click', elegir);
+        return () => {
+            map.off('click', elegir);
+            lienzo.style.cursor = cursor;
+        };
+    }, [eligiendo, map, principal, setInundacion]);
 
     useEffect(() => {
         if (!activa) return undefined;
@@ -48,7 +63,7 @@ export const useMap3dInundacion = (map, principal) => {
             const actual = vivo.current;
             const lluvia = { activa: actual.lloviendo, densidad: (INTENSIDADES[actual.intensidad] || INTENSIDADES[INTENSIDAD_DEFAULT]).gotas };
             if (actual.referencia === null) return { centro: null, altura: null, lluvia };
-            return { centro: actual.centro, altura: (actual.referencia + actual.nivel) * (actual.exaggeration || 1), lluvia };
+            return { centro: actual.centro, altura: (actual.referencia + actual.nivel) * (actual.exaggeration || 1), lluvia, radio: actual.local ? actual.radio : null };
         };
         Promise.all([loadMaplibre(), import('@pages/maps/helpers/capaInundacion')]).then(([maplibregl, { crearCapaInundacion }]) => {
             if (cancelado) return;

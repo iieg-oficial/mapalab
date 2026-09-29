@@ -51,7 +51,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, areAnnotationToolsVisible, measurements, municipioMode } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, grupo3dRef, setPitch, setBearing, exit, reportExtrusion,
-        sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos, escalaSimbolos, agruparPuntos, contorno, velocidadOrbita, estiloTextos,
+        inundacion, sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos, escalaSimbolos, agruparPuntos, contorno, velocidadOrbita, estiloTextos,
     } = useView3d();
     const olRef = olMapRef || mapRef;
     const { activo: enDron } = useDron();
@@ -196,8 +196,8 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
             )}
             {map && mediciones && principal && (areMeasurementToolsVisible || areAnnotationToolsVisible || measurements?.length > 0) && <Medicion3D map={map} mapasExtra={mapasExtra} mapa2dRef={olRef} onMidiendo={setMidiendo} />}
             {consultar
-                ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo || pausado} consultar={consultar} />
-                : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo || pausado} />}
+                ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo || pausado || inundacion.eligiendo} consultar={consultar} />
+                : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo || pausado || inundacion.eligiendo} />}
         </>
     );
 };

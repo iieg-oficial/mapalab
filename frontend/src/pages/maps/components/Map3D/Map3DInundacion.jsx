@@ -20,11 +20,18 @@ export const IconoGota = ({ className = 'size-4.5' }) => (
 );
 
 const SIN_AGUA = { nivel: 0, lloviendo: false, referencia: null, centro: null };
+const ALCANCES = [
+    { value: 'general', label: 'Toda la vista', tooltip: 'El agua sube desde lo más bajo que se ve' },
+    { value: 'local', label: 'Un punto', tooltip: 'El agua sube desde el lugar que elijas, solo alrededor' },
+];
+const formatoKm = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 1 });
 const OPCIONES = Object.entries(INTENSIDADES).map(([value, { nombre, detalle }]) => ({ value, label: nombre, tooltip: detalle }));
 
 const Map3DInundacion = ({ anchorRef, bordeRef, onClose }) => {
     const { inundacion, setInundacion } = useView3d();
-    const { nivel, lloviendo, referencia, intensidad = INTENSIDAD_DEFAULT } = inundacion;
+    const { nivel, lloviendo, referencia, intensidad = INTENSIDAD_DEFAULT, modo = 'general', punto, radio = 1500, eligiendo } = inundacion;
+    const local = modo === 'local';
+    const cambiarAlcance = valor => setInundacion({ modo: valor, referencia: null, centro: null, eligiendo: valor === 'local' && !punto });
     const msnm = referencia === null ? null : referencia + nivel;
     const { tope } = INTENSIDADES[intensidad];
 
@@ -45,6 +52,31 @@ const Map3DInundacion = ({ anchorRef, bordeRef, onClose }) => {
             />
             <div className="flex flex-col gap-3 rounded-[7px] bg-white p-3">
                 <div className="flex flex-col gap-2">
+                    <span className="font-garet text-[12px] text-graphite">Alcance</span>
+                    <Segmented variant="panel" options={ALCANCES} value={modo} onChange={cambiarAlcance} ariaLabel="Alcance de la inundación" />
+                </div>
+                {local && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={() => setInundacion({ eligiendo: !eligiendo })}
+                            aria-pressed={!!eligiendo}
+                            className={`rounded-full px-3 py-1.5 font-garet text-[12px] font-bold cursor-pointer transition-colors ${eligiendo ? 'bg-[#FF8300] text-white' : 'bg-[#E4F0FA] text-[#1F6FA8] hover:bg-[#D2E6F6]'}`}
+                        >
+                            {eligiendo ? 'Da clic en el mapa…' : (punto ? 'Cambiar el punto' : 'Elegir el punto en el mapa')}
+                        </button>
+                        <Map3DDeslizador
+                            titulo="Radio"
+                            valor={radio}
+                            texto={radio < 1000 ? `${radio} m` : `${formatoKm.format(radio / 1000)} km`}
+                            min={300}
+                            max={5000}
+                            step={100}
+                            onChange={valor => setInundacion({ radio: valor })}
+                        />
+                    </>
+                )}
+                <div className="flex flex-col gap-2">
                     <span className="font-garet text-[12px] text-graphite">Intensidad de la lluvia</span>
                     <Segmented
                         variant="panel"
@@ -64,14 +96,14 @@ const Map3DInundacion = ({ anchorRef, bordeRef, onClose }) => {
                     onChange={valor => setInundacion({ nivel: nivelDeDeslizador(valor), lloviendo: false })}
                 />
                 <p className="font-garet text-[11px] leading-snug text-[#6A6180]">
-                    El agua sube desde lo más bajo que se ve en pantalla.
+                    {local ? 'El agua sube desde el punto elegido, solo dentro del radio.' : 'El agua sube desde lo más bajo que se ve en pantalla.'}
                 </p>
                 <div className="flex items-center gap-2">
                     <Tooltip content={lloviendo ? 'Detener la lluvia' : `Hacer llover hasta +${textoNivel(tope)} m`}>
                         <button
                             type="button"
                             onClick={() => setInundacion({ lloviendo: !lloviendo })}
-                            disabled={!lloviendo && nivel >= tope}
+                            disabled={(!lloviendo && nivel >= tope) || (local && !punto)}
                             aria-pressed={lloviendo}
                             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 font-garet text-[12px] font-bold cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${lloviendo ? 'bg-[#1F6FA8] text-white' : 'bg-[#E4F0FA] text-[#1F6FA8] hover:bg-[#D2E6F6]'}`}
                         >

@@ -8,7 +8,7 @@ import { useAjustes3d } from '@pages/maps/hooks/useAjustes3d';
 import { VIEW3D_DEFAULTS, clampExaggeration, clampPitch, webglAvailable } from '@pages/maps/helpers/view3d';
 
 const View3dContext = createContext(null);
-const SIN_INUNDACION = { nivel: 0, lloviendo: false, referencia: null, centro: null };
+const SIN_INUNDACION = { nivel: 0, lloviendo: false, referencia: null, centro: null, modo: 'general', punto: null, radio: 1500, eligiendo: false };
 
 const INACTIVE = {
     present: false,
@@ -34,7 +34,7 @@ const INACTIVE = {
     setAlturaColumnas: () => {},
     orbita: false,
     setOrbita: () => {},
-    inundacion: { nivel: 0, lloviendo: false, referencia: null, centro: null },
+    inundacion: { nivel: 0, lloviendo: false, referencia: null, centro: null, modo: 'general', punto: null, radio: 1500, eligiendo: false },
     setInundacion: () => {},
     setTerreno: () => {},
     setCielo: () => {},
