@@ -5,6 +5,12 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.216.5] - 2026-09-29
+
+### Corregido
+
+- El check `containers` de `/ontoy` ya no marca degradado un contenedor de un solo uso que terminó con código 0, y el sidecar deja de contar su propia salud, que lo dejaba en `unhealthy` en cada arranque.
+
 ## [1.216.4] - 2026-09-25
 
 ### Cambiado: la X quita la fecha y los botones se quedan fijos
