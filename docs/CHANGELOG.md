@@ -13,6 +13,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - El minimapa traza los límites estatal y municipal al doble de grosor cuando está de cerca (zoom 13
   o más), los dos con halo blanco, para que no se pierdan sobre el mapa. También en el minimapa grande
   de celular.
+- De cerca, el minimapa no se acerca más de lo necesario para que el municipio quepa completo con su
+  borde: dentro de un municipio grande se veía como un cuadro lila liso.
 
 ## [2.1.0] - 2026-09-29
 

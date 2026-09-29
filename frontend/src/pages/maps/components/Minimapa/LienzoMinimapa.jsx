@@ -11,10 +11,11 @@ const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, onIr
     const inicioRef = useRef(null);
     const vistaMiniRef = useRef(null);
     const extensionEstado = siluetas?.estado?.getExtent() ?? null;
+    const extensionMunicipio = municipio?.geometry?.getExtent() ?? null;
 
     useEffect(() => {
         if (!vista) return;
-        const vistaMini = vistaDelMinimapa({ centro: vista.centro, zoom: vista.zoom, extensionEstado, lado });
+        const vistaMini = vistaDelMinimapa({ centro: vista.centro, zoom: vista.zoom, extensionEstado, extensionMunicipio, lado });
         vistaMiniRef.current = vistaMini;
         const lienzo = lienzoRef.current;
         const ctx = lienzo?.getContext('2d');
@@ -27,7 +28,7 @@ const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, onIr
         }
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
         dibujarMinimapa(ctx, { lado, vista: vistaMini, estado: siluetas?.estado, municipio, extensionVista: vista.extension, sinFondo });
-    }, [lado, vista, siluetas, municipio, extensionEstado, sinFondo]);
+    }, [lado, vista, siluetas, municipio, extensionEstado, extensionMunicipio, sinFondo]);
 
     const irA = (evento) => {
         const inicio = inicioRef.current;
