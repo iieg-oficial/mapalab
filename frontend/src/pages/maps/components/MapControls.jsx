@@ -18,6 +18,7 @@ import Badge from '@components/Badge';
 import BotonNorte from './BotonNorte';
 import { useMiUbicacion } from '@hooksMaps/useMiUbicacion';
 import MinimapaEscritorio from './Minimapa/MinimapaEscritorio';
+import MinimapaMovil from './Minimapa/MinimapaMovil';
 import { useIsMobile } from '@hooks/useIsMobile';
 
 
@@ -102,6 +103,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = 
         >
             <BotonNorte getActiveMap={getActiveMap} ancho={view3d.active && !soloPastilla} />
             {soloPastilla && <Map3DBar />}
+            {conMinimapa && pantallaChica && !view3d.active && !soloPastilla && <MinimapaMovil />}
             <div className={`relative flex flex-col justify-center items-center rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A] ${soloPastilla ? 'hidden' : ''}`}>
                 <button
                     onClick={handleZoomIn}

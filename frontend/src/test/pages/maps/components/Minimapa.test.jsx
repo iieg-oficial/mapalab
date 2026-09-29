@@ -14,6 +14,7 @@ vi.mock('@services/municipioService', async () => {
 });
 
 import MinimapaEscritorio from '@pages/maps/components/Minimapa/MinimapaEscritorio';
+import MinimapaMovil from '@pages/maps/components/Minimapa/MinimapaMovil';
 import { fijarMinimapaEncendido } from '@pages/maps/hooks/useMinimapaEncendido';
 
 const mapaFalso = (zoom) => {
@@ -108,5 +109,17 @@ describe('Minimapa', () => {
         montar(MinimapaEscritorio, 11);
         await act(async () => {});
         expect(document.querySelector('[data-punto-minimapa]')).toBeNull();
+    });
+    it('en celular es un botón que abre la hoja, aunque se haya quitado en escritorio', async () => {
+        act(() => fijarMinimapaEncendido(false));
+        const animate = montar(MinimapaMovil, 13);
+        expect(lienzo()).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Ver dónde estás en Jalisco' }));
+        await act(async () => {});
+        expect(mocks.track).toHaveBeenCalledWith('abrir');
+        expect(screen.getByText('Zapopan')).not.toBeNull();
+        tocar(lienzo());
+        expect(animate).toHaveBeenCalled();
+        expect(lienzo()).toBeNull();
     });
 });

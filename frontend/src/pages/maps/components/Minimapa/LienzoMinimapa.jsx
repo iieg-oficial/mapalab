@@ -6,7 +6,7 @@ import { dibujarMinimapa } from '@pages/maps/helpers/trazoMinimapa';
 const DURACION_MS = 350;
 const ARRASTRE_PX = 4;
 
-const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, atenuado = false }) => {
+const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, onIr, atenuado = false }) => {
     const lienzoRef = useRef(null);
     const inicioRef = useRef(null);
     const vistaMiniRef = useRef(null);
@@ -38,6 +38,7 @@ const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, aten
         const destino = dePixel(vistaMiniRef.current, lado, [evento.clientX - caja.left, evento.clientY - caja.top]);
         map?.getView()?.animate({ center: destino, duration: DURACION_MS });
         trackMinimapa('ir');
+        onIr?.();
     };
 
     return (

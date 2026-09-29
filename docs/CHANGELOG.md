@@ -51,8 +51,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   el centro del mapa, que es el que elige el municipio. `MapControls` decide pantalla chica con
   `useIsMobile`: con `useSider` el catálogo, sin `SiderProvider`, montaba el minimapa de escritorio en
   celular.
-- En celular ya no hay minimapa ni su tarjeta en Herramientas: la píldora bajo el logo no aportaba y
-  chocaba con Eventos.
+- En celular el minimapa es un botón redondo arriba de la píldora de zoom, del mismo ancho, que abre
+  una hoja con el minimapa grande y el nombre del municipio; tocar un punto mueve el mapa y cierra la
+  hoja. Las siluetas se piden al abrirla. La píldora bajo el logo se retiró porque chocaba con Eventos,
+  y la tarjeta de Herramientas sigue solo en escritorio.
 
 ## [2.2.0] - 2026-09-29
 
