@@ -5,9 +5,11 @@ import { dibujarMinimapa } from '@pages/maps/helpers/trazoMinimapa';
 const lienzoFalso = () => {
     const anchos = [];
     const textos = [];
+    const rects = [];
     const propios = {
         measureText: texto => ({ width: texto.length * 6 }),
         fillText: (texto, x, y) => textos.push({ texto, x, y }),
+        strokeRect: (x, y, w, h) => rects.push([x, y, w, h]),
     };
     const ctx = new Proxy(propios, {
         get: (destino, llave) => (llave in destino ? destino[llave] : () => {}),
@@ -17,7 +19,7 @@ const lienzoFalso = () => {
             return true;
         },
     });
-    return { ctx, anchos, textos };
+    return { ctx, anchos, textos, rects };
 };
 
 const cuadro = new Polygon([[[0, 0], [100, 0], [100, 100], [0, 100], [0, 0]]]);
@@ -47,5 +49,17 @@ describe('dibujarMinimapa', () => {
         expect(textos[0].texto).toBe('Zapopan');
         expect(textos[0].x).toBeGreaterThan(0);
         expect(textos[0].x).toBeLessThan(176);
+    });
+
+    it('el rectángulo de la vista se acota al lienzo aunque la vista se salga', () => {
+        const { ctx, rects } = lienzoFalso();
+        const vista = { modo: 'cerca', centro: [50, 50], resolucion: 1 };
+        dibujarMinimapa(ctx, { ...base, municipio: null, vista, extensionVista: [120, -40, 240, 60] });
+        const [x, y, w, h] = rects[0];
+        expect(x).toBeGreaterThanOrEqual(1.25);
+        expect(y).toBeGreaterThanOrEqual(1.25);
+        expect(x + w).toBeLessThanOrEqual(176 - 1.25);
+        expect(y + h).toBeLessThanOrEqual(176 - 1.25);
+        expect(w).toBeGreaterThan(0);
     });
 });

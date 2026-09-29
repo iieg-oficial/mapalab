@@ -28,6 +28,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - La píldora del Catálogo lleva el título en el gris de «Contribuciones».
 - El colibrí de reportar va en morado con el pico naranja (también en el menú del marcador), y el
   botón redondo de Contribuciones es un © morado con la C naranja.
+- El ícono de Minimapa en Herramientas usa la silueta real de Jalisco, con el rectángulo sobre
+  Guadalajara.
+- El rectángulo de la vista del minimapa se acota al borde del lienzo: ya no se corta cuando la vista
+  sale del cuadro.
 
 ## [2.1.0] - 2026-09-29
 

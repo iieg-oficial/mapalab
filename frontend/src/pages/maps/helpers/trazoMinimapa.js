@@ -49,18 +49,29 @@ const conHalo = (ctx, color, ancho) => {
     ctx.stroke();
 };
 
-const dibujarVista = (ctx, extensionVista, aPx) => {
+const TRAZO_VISTA = 2.5;
+
+const dentro = (inicio, fin, lado) => {
+    const margen = TRAZO_VISTA / 2;
+    const a = Math.min(Math.max(inicio, margen), lado - margen - MINIMO_RECTANGULO);
+    const b = Math.max(Math.min(fin, lado - margen), a + MINIMO_RECTANGULO);
+    return [a, b];
+};
+
+const dibujarVista = (ctx, extensionVista, aPx, lado) => {
     const [x0, y1] = aPx([extensionVista[0], extensionVista[1]]);
     const [x1, y0] = aPx([extensionVista[2], extensionVista[3]]);
+    const centroX = (x0 + x1) / 2;
+    const centroY = (y0 + y1) / 2;
     const ancho = Math.max(x1 - x0, MINIMO_RECTANGULO);
     const alto = Math.max(y1 - y0, MINIMO_RECTANGULO);
-    const izquierda = (x0 + x1) / 2 - ancho / 2;
-    const arriba = (y0 + y1) / 2 - alto / 2;
+    const [izquierda, derecha] = dentro(centroX - ancho / 2, centroX + ancho / 2, lado);
+    const [arriba, abajo] = dentro(centroY - alto / 2, centroY + alto / 2, lado);
     ctx.fillStyle = COLORES.vistaRelleno;
-    ctx.fillRect(izquierda, arriba, ancho, alto);
+    ctx.fillRect(izquierda, arriba, derecha - izquierda, abajo - arriba);
     ctx.strokeStyle = COLORES.vista;
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(izquierda, arriba, ancho, alto);
+    ctx.lineWidth = TRAZO_VISTA;
+    ctx.strokeRect(izquierda, arriba, derecha - izquierda, abajo - arriba);
 };
 
 const puntoInterior = (geometria) => {
@@ -125,6 +136,6 @@ export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extension
         conHalo(ctx, COLORES.municipioBorde, grosor);
     }
 
-    if (extensionVista) dibujarVista(ctx, extensionVista, aPx);
+    if (extensionVista) dibujarVista(ctx, extensionVista, aPx, lado);
     if (municipio?.nombre && municipio.geometry) dibujarNombre(ctx, municipio, aPx, lado);
 };

@@ -3,7 +3,7 @@ const NARANJA = 'var(--color-orange)';
 
 const trazo = { fill: 'none', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' };
 
-const JALISCO = 'M6.0 28.2 L9.8 26.2 L12.4 23.8 L15.8 22.3 L17.5 18.6 L18.8 15.5 L17.5 12.6 L20.1 9.3 L22.7 6.5 L25.2 8.4 L24.0 12.4 L26.1 15.5 L29.5 14.0 L31.7 13.0 L36.0 10.7 L39.0 13.5 L42.0 15.8 L41.0 19.5 L37.3 22.3 L34.7 26.2 L32.4 30.8 L29.1 33.5 L27.2 36.9 L25.0 39.7 L22.4 41.5 L17.9 39.9 L14.5 38.7 L11.5 35.9 L8.9 32.3 L6.8 30.1 Z';
+const JALISCO = 'M16.5 39.9 L15.5 41.5 L10.9 39.4 L4.0 28.6 L7.6 27.6 L9.2 23.8 L12.1 22.4 L17.3 25.8 L17.8 20.8 L20.3 18.8 L18.0 17.2 L18.5 14.4 L16.5 11.9 L17.0 10.1 L20.8 8.3 L20.1 4.8 L22.4 5.1 L21.5 10.8 L22.6 6.6 L23.9 7.1 L23.1 11.4 L25.2 11.5 L26.2 7.2 L29.1 9.8 L28.2 12.9 L25.5 13.6 L24.5 17.0 L22.8 17.3 L22.0 20.7 L28.8 22.0 L28.9 19.9 L32.8 18.9 L32.3 15.0 L36.6 16.1 L40.3 12.1 L44.0 13.6 L42.2 17.1 L43.2 19.2 L38.3 24.5 L39.4 26.7 L38.0 28.8 L32.3 30.7 L31.5 29.5 L25.6 29.9 L30.2 31.0 L29.0 32.9 L31.6 33.1 L32.0 37.7 L34.3 38.2 L32.7 40.6 L24.8 43.2 L23.7 37.8 Z';
 
 const DIBUJOS = {
     mediciones: (
@@ -45,7 +45,7 @@ const DIBUJOS = {
     minimapa: (
         <>
             <path d={JALISCO} stroke={MORADO} {...trazo} strokeWidth="2" />
-            <rect x="21" y="21.5" width="10" height="8" rx="1" stroke={NARANJA} {...trazo} />
+            <rect x="22.2" y="23.0" width="8" height="6" rx="1" stroke={NARANJA} {...trazo} />
         </>
     ),
 };
