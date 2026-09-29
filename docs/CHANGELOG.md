@@ -6,6 +6,14 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [No publicado]
+
+### Cambiado
+
+- El minimapa traza los límites estatal y municipal al doble de grosor cuando está de cerca (zoom 13
+  o más), los dos con halo blanco, para que no se pierdan sobre el mapa. También en el minimapa grande
+  de celular.
+
 ## [2.1.0] - 2026-09-29
 
 ### Agregado
