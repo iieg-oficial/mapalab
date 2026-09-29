@@ -101,8 +101,8 @@ export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extension
 
     if (estado) {
         trazarGeometria(ctx, estado, aPx);
-        if (!sinFondo || vista?.modo !== 'cerca') {
-            ctx.fillStyle = sinFondo ? COLORES.velo : COLORES.tierra;
+        if (!sinFondo) {
+            ctx.fillStyle = COLORES.tierra;
             ctx.fill('evenodd');
         }
         if (vista?.modo === 'cerca') {
