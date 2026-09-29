@@ -5,6 +5,12 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.223.1] - 2026-09-29
+
+### Corregido
+
+- El interruptor del badge DEV/TEST se llama «Panel de depuración · GTM, telemetría, almacenamiento»: decía «Panel de analítica» y no dejaba ver que ahí están la telemetría y el almacenamiento.
+
 ## [1.223.0] - 2026-09-29
 
 ### Cambiado: íconos del panel de Herramientas homologados
