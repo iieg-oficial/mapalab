@@ -27,7 +27,7 @@ const OPCIONES_TEXTOS = [
     { value: 'planos', label: 'Planos' },
 ];
 
-const DESLIZADORES = ['escala', 'altura', 'orbita'];
+const DESLIZADORES = ['pitch', 'escala', 'altura', 'orbita'];
 
 const Interruptor = ({ titulo, activo, onChange }) => (
     <div className="flex items-center justify-between font-garet text-[12px] text-graphite">
@@ -62,6 +62,17 @@ const Map3DAjustes = ({ anchorRef, onClose }) => {
                 titulo="Ajustes 3D"
                 acciones={(
                     <>
+                        <Tooltip content={view3d.orbita ? 'Pausar la órbita' : 'Girar alrededor del centro'}>
+                            <button
+                                type="button"
+                                onClick={() => view3d.setOrbita(!view3d.orbita)}
+                                className={`flex items-center justify-center size-6 rounded-full cursor-pointer transition-colors ${view3d.orbita ? 'bg-[#5C2472] text-white' : 'text-gray-500 hover:text-gray-800'}`}
+                                aria-pressed={view3d.orbita}
+                                aria-label={view3d.orbita ? 'Pausar la órbita' : 'Girar alrededor del centro'}
+                            >
+                                <Icon name={view3d.orbita ? 'pause' : 'play'} className="size-3 shrink-0" />
+                            </button>
+                        </Tooltip>
                         <Tooltip content="Restablecer los ajustes de fábrica">
                             <button
                                 type="button"

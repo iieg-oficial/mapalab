@@ -8,6 +8,7 @@ import { useAjustes3d } from '@pages/maps/hooks/useAjustes3d';
 import { VIEW3D_DEFAULTS, clampExaggeration, clampPitch, webglAvailable } from '@pages/maps/helpers/view3d';
 
 const View3dContext = createContext(null);
+const SIN_INUNDACION = { nivel: 0, lloviendo: false, referencia: null, centro: null, modo: 'general', punto: null, radio: 1500, eligiendo: false };
 
 const INACTIVE = {
     present: false,
@@ -33,6 +34,8 @@ const INACTIVE = {
     setAlturaColumnas: () => {},
     orbita: false,
     setOrbita: () => {},
+    inundacion: SIN_INUNDACION,
+    setInundacion: () => {},
     setTerreno: () => {},
     setCielo: () => {},
     setNiebla: () => {},
@@ -77,6 +80,8 @@ export const View3dProvider = ({ children, llaveAjustes = LLAVE_AJUSTES_3D }) =>
     const [exaggeration, setExaggerationState] = useState(VIEW3D_DEFAULTS.exaggeration);
     const [extruded, setExtruded] = useState(initial.extruded);
     const [orbita, setOrbita] = useState(false);
+    const [inundacion, setInundacionState] = useState(SIN_INUNDACION);
+    const setInundacion = useCallback(cambios => setInundacionState(prev => ({ ...prev, ...cambios })), []);
     const { ajustes, setAjuste, reemplazarAjustes, restablecerAjustes } = useAjustes3d(llaveAjustes);
     const [extrusionStatus, setExtrusionStatus] = useState({});
     const map3dRef = useRef(null);
@@ -98,6 +103,7 @@ export const View3dProvider = ({ children, llaveAjustes = LLAVE_AJUSTES_3D }) =>
 
     const exit = useCallback(() => {
         if (medicionesVisiblesRef.current) showMeasurementTools?.();
+        setInundacionState(SIN_INUNDACION);
         setActive(prev => {
             if (prev) {
                 const seconds = enteredAtRef.current ? Math.round((Date.now() - enteredAtRef.current) / 1000) : null;
@@ -172,12 +178,12 @@ export const View3dProvider = ({ children, llaveAjustes = LLAVE_AJUSTES_3D }) =>
 
     const value = useMemo(() => ({
         present: true, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef, grupo3dRef,
-        ...ajustes, ajustes, setAjuste, ...setters, orbita,
+        ...ajustes, ajustes, setAjuste, ...setters, orbita, inundacion, setInundacion,
         enter, exit, toggle, setPitch, setBearing, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
         setOrbita, restablecer,
     }), [
         available, active, pitch, bearing, exaggeration, extruded, extrusionStatus,
-        ajustes, setAjuste, setters, orbita,
+        ajustes, setAjuste, setters, orbita, inundacion, setInundacion,
         enter, exit, toggle, setPitch, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
         restablecer,
     ]);

@@ -20,7 +20,11 @@ const Map3DPopover = ({ anchorRef, bordeRef = null, onClose, width, alinear = 'c
         };
         updatePosition();
         window.addEventListener('resize', updatePosition);
-        return () => window.removeEventListener('resize', updatePosition);
+        document.addEventListener('transitionend', updatePosition);
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            document.removeEventListener('transitionend', updatePosition);
+        };
     }, [anchorRef, bordeRef, width, alinear]);
 
     useEffect(() => {

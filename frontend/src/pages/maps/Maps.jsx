@@ -30,6 +30,9 @@ import DockPills from './components/DockPills';
 import useThemeColor from '@hooks/useThemeColor';
 import { useMapsContext } from '@hooks/useMaps';
 import { View3dProvider, useView3d } from '@contexts/View3dContext';
+import { DronProvider } from '@contexts/DronContext';
+import DronOverlay from './components/Dron/DronOverlay';
+import OcultoEnDronMovil from './components/Dron/OcultoEnDronMovil';
 
 const Map3DView = lazy(() => import('@mapsComponents/Map3D/Map3DView'));
 const Map3DSwipe = lazy(() => import('@mapsComponents/Map3D/Map3DSwipe'));
@@ -44,6 +47,7 @@ const MapaPrincipal = ({ isComparing }) => {
                 {isComparing ? <SwipeView /> : <MapView />}
                 {active && <Suspense fallback={null}>{isComparing ? <Map3DSwipe /> : <Map3DView />}</Suspense>}
             </MapaConAcople>
+            {active && !isComparing && <DronOverlay />}
         </>
     );
 };
@@ -62,33 +66,35 @@ const Maps = () => {
                     <AreaUtilProvider>
                         <TablaAtributosProvider>
                             <View3dProvider>
-                                <SEO
-                                    title="Mapa Interactivo | Mapalab"
-                                    description="Mapa interactivo de Jalisco con capas geoespaciales: temperatura, precipitación, recursos naturales, eventos y más. Herramienta oficial del IIEG para consulta y análisis territorial."
-                                    schemaType="WebApplication"
-                                    keywords="mapa interactivo Jalisco, capas geoespaciales Jalisco, mapa temperatura Jalisco, mapa precipitación Jalisco, mapa recursos naturales Jalisco, IIEG, GeoServer Jalisco"
-                                />
-                                <h1 className="sr-only">Mapa interactivo de Jalisco con capas geoespaciales — MapaLab IIEG</h1>
-                                <p className="sr-only">
-                                Herramienta oficial del Instituto de Información Estadística y Geográfica de Jalisco (IIEG) para visualizar el mapa de Jalisco con capas temáticas: temperatura, precipitación, recursos naturales, eventos, infraestructura y datos estadísticos del estado.
-                                </p>
-                                <div className="relative w-full h-dvh">
-                                    <MapSider />
-                                    <MapToolsPanel />
-                                    <MunicipioActiveChip />
-                                    <MapLayersPanels />
-                                    <LayerDetailModal />
-                                    <NumeraliaPanel />
-                                    <InfoBox />
-                                    <MapAttribution />
-                                    <Minimapa />
-                                    <MapControls />
-                                    <MapaPrincipal isComparing={isComparing} />
-                                    {isComparing && <SwipeSlotControls />}
-                                    <LayerNotices />
-                                    <DockPills />
-                                    <TablaAtributos />
-                                </div>
+                                <DronProvider>
+                                    <SEO
+                                        title="Mapa Interactivo | Mapalab"
+                                        description="Mapa interactivo de Jalisco con capas geoespaciales: temperatura, precipitación, recursos naturales, eventos y más. Herramienta oficial del IIEG para consulta y análisis territorial."
+                                        schemaType="WebApplication"
+                                        keywords="mapa interactivo Jalisco, capas geoespaciales Jalisco, mapa temperatura Jalisco, mapa precipitación Jalisco, mapa recursos naturales Jalisco, IIEG, GeoServer Jalisco"
+                                    />
+                                    <h1 className="sr-only">Mapa interactivo de Jalisco con capas geoespaciales — MapaLab IIEG</h1>
+                                    <p className="sr-only">
+                                    Herramienta oficial del Instituto de Información Estadística y Geográfica de Jalisco (IIEG) para visualizar el mapa de Jalisco con capas temáticas: temperatura, precipitación, recursos naturales, eventos, infraestructura y datos estadísticos del estado.
+                                    </p>
+                                    <div className="relative w-full h-dvh">
+                                        <MapSider />
+                                        <OcultoEnDronMovil><MapToolsPanel /></OcultoEnDronMovil>
+                                        <MunicipioActiveChip />
+                                        <OcultoEnDronMovil><MapLayersPanels /></OcultoEnDronMovil>
+                                        <LayerDetailModal />
+                                        <NumeraliaPanel />
+                                        <InfoBox />
+                                        <MapAttribution />
+                                        <Minimapa />
+                                        <MapControls />
+                                        <MapaPrincipal isComparing={isComparing} />
+                                        {isComparing && <SwipeSlotControls />}
+                                        <LayerNotices />
+                                        <DockPills />
+                                        <TablaAtributos />
+                                    </div>
+                                </DronProvider>
                             </View3dProvider>
                         </TablaAtributosProvider>
                     </AreaUtilProvider>

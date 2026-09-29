@@ -29,10 +29,12 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
     const [isOpen, setIsOpen] = useState(false);
     const [lockMode, setLockMode] = useState(leerCandado);
     const [hoverLockCount, setHoverLockCount] = useState(0);
+    const [candadoForzado, forzarCandado] = useState(null);
+    const candado = candadoForzado || lockMode;
 
     useEffect(() => { guardarCandado(lockMode); }, [lockMode]);
 
-    const seAbreConClic = isMobile || lockMode === 'mobile';
+    const seAbreConClic = isMobile || candado === 'mobile';
 
     const toggleSider = useCallback(() => {
         if (seAbreConClic) {
@@ -128,7 +130,8 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
         unregisterOpenMenu,
         isMobile,
         isOpen,
-        lockMode,
+        lockMode: candado,
+        forzarCandado,
         toggleSider,
         closeSider,
         toggleLock,

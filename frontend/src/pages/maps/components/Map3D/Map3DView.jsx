@@ -18,6 +18,9 @@ import { useAnotacionesPuntuales3d } from '@hooksMaps/useAnotacionesPuntuales3d'
 import { useCamara3dSincronizada } from '@hooksMaps/useCamara3dSincronizada';
 import { useMap3dMunicipio } from '@hooksMaps/useMap3dMunicipio';
 import { useMap3dEtiquetas } from '@hooksMaps/useMap3dEtiquetas';
+import { useDronVuelo } from '@hooksMaps/useDronVuelo';
+import { useMap3dInundacion } from '@hooksMaps/useMap3dInundacion';
+import { useDron } from '@contexts/DronContext';
 import Medicion3D from './Medicion3D';
 import { Clic3dPropio, Clic3dVisor } from './Clic3d';
 
@@ -48,9 +51,12 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, areAnnotationToolsVisible, measurements, municipioMode } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, grupo3dRef, setPitch, setBearing, exit, reportExtrusion,
-        sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos, escalaSimbolos, agruparPuntos, contorno, velocidadOrbita, estiloTextos,
+        inundacion, sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos, escalaSimbolos, agruparPuntos, contorno, velocidadOrbita, estiloTextos,
     } = useView3d();
     const olRef = olMapRef || mapRef;
+    const { activo: enDron } = useDron();
+    const dronRef = useRef(false);
+    dronRef.current = enDron && principal;
     const { getLegendJson } = useWMSLegend();
     const [map, setMap] = useState(null);
     const [midiendo, setMidiendo] = useState(false);
@@ -93,9 +99,9 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
             instance.on('load', () => {
                 setMap(instance);
             });
-            instance.on('pitchend', () => setPitch(instance.getPitch()));
-            instance.on('rotateend', () => setBearing(instance.getBearing()));
-            instance.on('moveend', () => { if (!orbitaRef.current) writeBackToOl(instance, olMap); });
+            instance.on('pitchend', () => { if (!dronRef.current) setPitch(instance.getPitch()); });
+            instance.on('rotateend', () => { if (!dronRef.current) setBearing(instance.getBearing()); });
+            instance.on('moveend', () => { if (!orbitaRef.current && !dronRef.current) writeBackToOl(instance, olMap); });
         }).catch((error) => {
             console.error('[mapa3d] no se pudo cargar MapLibre', error);
             exit();
@@ -151,17 +157,19 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     }, [map, orbita, principal, setBearing]);
 
     useEffect(() => {
-        if (!map || orbita || !principal) return;
+        if (!map || orbita || !principal || enDron) return;
         const pitchDrift = Math.abs(map.getPitch() - pitch) > 0.5;
         const bearingDrift = Math.abs(map.getBearing() - bearing) > 0.5;
         if (pitchDrift || bearingDrift) map.easeTo({ pitch, bearing, duration: 300 });
-    }, [map, pitch, bearing, orbita, principal]);
+    }, [map, pitch, bearing, orbita, principal, enDron]);
 
     useEffect(() => {
         if (map) applyBasemap(map, basemaps[baseMapId]);
     }, [map, basemaps, baseMapId]);
 
     useMap3dContorno(map, contorno);
+    useDronVuelo(map, principal, olRef);
+    useMap3dInundacion(map, principal);
     useCamara3dSincronizada(map, grupo3dRef);
     const sinTexto = useMap3dEtiquetas(map, olRef, { activo: estiloTextos === 'frente', escala: escalaSimbolos, dePie });
     useMap3dLayers(map, olRef, dePie, sinTexto);
@@ -188,8 +196,8 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
             )}
             {map && mediciones && principal && (areMeasurementToolsVisible || areAnnotationToolsVisible || measurements?.length > 0) && <Medicion3D map={map} mapasExtra={mapasExtra} mapa2dRef={olRef} onMidiendo={setMidiendo} />}
             {consultar
-                ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo || pausado} consultar={consultar} />
-                : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo || pausado} />}
+                ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo || pausado || inundacion.eligiendo || (enDron && principal)} consultar={consultar} />
+                : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo || pausado || inundacion.eligiendo || (enDron && principal)} />}
         </>
     );
 };
