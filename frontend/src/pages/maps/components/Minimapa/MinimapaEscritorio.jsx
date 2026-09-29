@@ -28,12 +28,12 @@ const useAlto = (ref, activo) => {
 };
 
 const MinimapaEscritorio = () => {
-    const { visible, lienzo } = useMinimapa();
+    const { visible, activo, lienzo } = useMinimapa();
     const cajaRef = useRef(null);
-    const tapado = useTapado(cajaRef, OBSTACULOS, visible);
-    const lado = useAlto(cajaRef, visible);
+    const tapado = useTapado(cajaRef, OBSTACULOS, activo);
+    const lado = useAlto(cajaRef, activo);
 
-    if (!visible) return null;
+    if (!activo) return null;
 
     const apagar = () => {
         fijarMinimapaEncendido(false);
@@ -45,11 +45,12 @@ const MinimapaEscritorio = () => {
             ref={cajaRef}
             data-minimapa
             aria-hidden={tapado}
+            data-atenuado={!visible || undefined}
             className={`group absolute left-full top-0 bottom-0 ml-3 transition-opacity duration-200 ${tapado ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
             style={{ width: lado }}
         >
             <div className="relative">
-                <LienzoMinimapa lado={lado} sinFondo {...lienzo} />
+                <LienzoMinimapa lado={lado} sinFondo atenuado={!visible} {...lienzo} />
                 <div className="absolute right-0 top-0 flex rounded-full bg-white p-0.5 opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
                     <Tooltip content="Quitar el minimapa. Vuelve desde Herramientas" placement="top" delay={300}>
                         <MobileSheetCloseButton onClick={apagar} />

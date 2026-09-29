@@ -52,9 +52,10 @@ describe('Minimapa', () => {
         expect(lienzo()).toBeNull();
     });
 
-    it('no aparece mientras Jalisco se ve casi entero', () => {
+    it('con Jalisco casi entero se queda atenuado, en espera de que te acerques', () => {
         montar(MinimapaEscritorio, 8);
-        expect(lienzo()).toBeNull();
+        expect(lienzo()).not.toBeNull();
+        expect(document.querySelector('[data-minimapa]').dataset.atenuado).toBe('true');
     });
 
     it('al acercarse muestra el contorno sin píldora debajo, y un clic mueve el mapa', () => {

@@ -102,10 +102,27 @@ const dibujarNombre = (ctx, municipio, aPx, lado) => {
     ctx.fillText(municipio.nombre, x, y);
 };
 
-export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extensionVista, sinFondo = false }) => {
+const OPACIDAD_EN_ESPERA = 0.4;
+
+const dibujarEnEspera = (ctx, estado, aPx) => {
+    if (!estado) return;
+    trazarGeometria(ctx, estado, aPx);
+    ctx.globalAlpha = OPACIDAD_EN_ESPERA;
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = COLORES.contornoDeCerca;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+};
+
+export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extensionVista, sinFondo = false, atenuado = false }) => {
     const aPx = coordenada => aPixel(vista, lado, coordenada);
     const grosor = vista?.modo === 'cerca' ? GROSOR_DE_CERCA : 1;
     ctx.clearRect(0, 0, lado, lado);
+    if (atenuado) {
+        dibujarEnEspera(ctx, estado, aPx);
+        return;
+    }
     if (!sinFondo) {
         ctx.fillStyle = COLORES.fondo;
         ctx.fillRect(0, 0, lado, lado);

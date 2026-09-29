@@ -8,7 +8,7 @@ export const useMinimapa = (habilitado = true) => {
     const { mapRef, paneMapInstances, isDrawing } = useMapsContext();
     const { active: en3d } = useView3d();
     const [encendido] = useMinimapaEncendido();
-    const { vista, visible, siluetas, map } = useVistaParaMinimapa(mapRef, paneMapInstances, habilitado && encendido && !en3d);
+    const { vista, visible, activo, siluetas, map } = useVistaParaMinimapa(mapRef, paneMapInstances, habilitado && encendido && !en3d);
     const municipio = visible ? municipioEn(siluetas?.municipios, vista?.centro) : null;
-    return { visible, lienzo: { vista, siluetas, municipio, map, bloqueado: isDrawing } };
+    return { visible, activo, lienzo: { vista, siluetas, municipio, map, bloqueado: isDrawing } };
 };

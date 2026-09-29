@@ -72,4 +72,13 @@ describe('dibujarMinimapa', () => {
         dibujarMinimapa(cubreTodo.ctx, { ...base, vista, extensionVista: [-500, -500, 500, 500] });
         expect(cubreTodo.rects).toHaveLength(0);
     });
+
+    it('en espera solo traza el contorno del estado, sin rectángulo ni nombre', () => {
+        const { ctx, anchos, textos, rects } = lienzoFalso();
+        const vista = { modo: 'estado', centro: [50, 50], resolucion: 1 };
+        dibujarMinimapa(ctx, { ...base, municipio: { nombre: 'Zapopan', geometry: cuadro }, vista, extensionVista: [40, 40, 60, 60], atenuado: true });
+        expect(anchos).toEqual([1.5]);
+        expect(textos).toHaveLength(0);
+        expect(rects).toHaveLength(0);
+    });
 });

@@ -50,13 +50,13 @@ export const useVistaParaMinimapa = (mapRef, paneMapInstances, activo) => {
     }, [map, activo]);
 
     useEffect(() => {
-        if (!activo || !visible || siluetas) return undefined;
+        if (!activo || siluetas) return undefined;
         let vigente = true;
         fetchSiluetas()
             .then((datos) => { if (vigente) setSiluetas(datos); })
             .catch(() => { if (vigente) setSiluetas(null); });
         return () => { vigente = false; };
-    }, [activo, visible, siluetas]);
+    }, [activo, siluetas]);
 
-    return { vista, visible: activo && visible, siluetas, map };
+    return { vista, visible: activo && visible, activo, siluetas, map };
 };

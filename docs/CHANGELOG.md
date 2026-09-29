@@ -34,6 +34,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   sale del cuadro.
 - En modo municipio el límite estatal va a 2 px, y el rectángulo se quita cuando no hay municipio bajo
   la vista o cuando la vista cubre todo el cuadro.
+- Con todo Jalisco (menos de zoom 10) el minimapa de escritorio ya no se oculta: queda el contorno del
+  estado en gris claro, para que se note que está encendido. Las siluetas se piden al montarse.
 
 ## [2.2.0] - 2026-09-29
 
