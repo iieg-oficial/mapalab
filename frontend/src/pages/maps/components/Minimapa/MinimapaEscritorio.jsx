@@ -27,7 +27,7 @@ const MinimapaEscritorio = () => {
             ref={cajaRef}
             data-minimapa
             aria-hidden={tapado}
-            className={`group absolute left-full bottom-0 ml-3 flex flex-col items-center gap-1.5 transition-opacity duration-200 ${tapado ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            className={`group absolute left-full bottom-0 ml-3 transition-opacity duration-200 ${tapado ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
             style={{ width: TAMANO_MINIMAPA }}
         >
             <div className="relative">
@@ -38,9 +38,6 @@ const MinimapaEscritorio = () => {
                     </Tooltip>
                 </div>
             </div>
-            <span className="pointer-events-none max-w-full truncate rounded-full bg-white px-2.5 py-0.5 font-garet text-[11px]/[16px] font-bold text-purple shadow-md">
-                {lienzo.municipio?.nombre || 'Jalisco'}
-            </span>
         </div>
     );
 };

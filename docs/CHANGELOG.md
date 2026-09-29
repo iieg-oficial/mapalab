@@ -15,6 +15,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   de celular.
 - De cerca, el minimapa no se acerca más de lo necesario para que el municipio quepa completo con su
   borde: dentro de un municipio grande se veía como un cuadro lila liso.
+- El nombre del municipio va escrito sobre el propio municipio en el minimapa, en vez de la píldora de
+  abajo. De cerca, el límite estatal queda de fondo en 1 px gris.
 
 ## [2.1.0] - 2026-09-29
 

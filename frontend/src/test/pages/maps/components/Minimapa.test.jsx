@@ -57,9 +57,9 @@ describe('Minimapa', () => {
         expect(lienzo()).toBeNull();
     });
 
-    it('al acercarse muestra el contorno con la píldora debajo, y un clic mueve el mapa', () => {
+    it('al acercarse muestra el contorno sin píldora debajo, y un clic mueve el mapa', () => {
         const animate = montar(MinimapaEscritorio, 11);
-        expect(screen.getByText('Jalisco')).toBeTruthy();
+        expect(screen.queryByText('Jalisco')).toBeNull();
         tocar(lienzo());
         expect(animate).toHaveBeenCalledWith(expect.objectContaining({ center: expect.any(Array) }));
         expect(mocks.track).toHaveBeenCalledWith('ir');
