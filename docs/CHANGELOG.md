@@ -10,8 +10,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
-- El botón de Colibrí para reportar lleva el badge BETA, centrado encima del círculo para no
-  encimarse con el botón del Catálogo. Sale en el visor, el catálogo, el embebido y el inicio.
+- El botón de Colibrí para reportar lleva el badge BETA en la esquina superior derecha. Sale en el
+  visor, el catálogo, el embebido y el inicio.
+- Los badges BETA de Colibrí y del Catálogo van en la misma posición, en pill y en icono. En celular
+  son más compactos para que no se junten.
+- Al pasar el cursor, el botón de Colibrí se pinta de lila igual que la pill del Catálogo; antes solo
+  oscurecía el icono y casi no se notaba.
 
 ### Cambiado
 

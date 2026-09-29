@@ -16,7 +16,7 @@ const CatalogoEntryButton = () => {
             >
                 <IconoHerramienta id="catalogo" className="size-5" />
                 <span className="hidden md:inline">Catálogo</span>
-                <Badge variant="pill" color="orange" text="BETA" className="absolute -top-1 -right-2 text-[8px] px-1.5" />
+                <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-1 md:-right-3 z-10 text-[7px] md:text-[8px] px-1.5 max-md:px-1! pointer-events-none" />
             </button>
         </Tooltip>
     );
