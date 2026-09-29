@@ -19,6 +19,7 @@ import { useCamara3dSincronizada } from '@hooksMaps/useCamara3dSincronizada';
 import { useMap3dMunicipio } from '@hooksMaps/useMap3dMunicipio';
 import { useMap3dEtiquetas } from '@hooksMaps/useMap3dEtiquetas';
 import { useDronVuelo } from '@hooksMaps/useDronVuelo';
+import { useMap3dInundacion } from '@hooksMaps/useMap3dInundacion';
 import { useDron } from '@contexts/DronContext';
 import Medicion3D from './Medicion3D';
 import { Clic3dPropio, Clic3dVisor } from './Clic3d';
@@ -168,6 +169,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
 
     useMap3dContorno(map, contorno);
     useDronVuelo(map, principal, olRef);
+    useMap3dInundacion(map, principal);
     useCamara3dSincronizada(map, grupo3dRef);
     const sinTexto = useMap3dEtiquetas(map, olRef, { activo: estiloTextos === 'frente', escala: escalaSimbolos, dePie });
     useMap3dLayers(map, olRef, dePie, sinTexto);

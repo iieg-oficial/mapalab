@@ -11,9 +11,11 @@ import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
 import Map3DRing from './Map3DRing';
 import Map3DSliderPopover from './Map3DSliderPopover';
 import Map3DAjustes from './Map3DAjustes';
+import Map3DInundacion from './Map3DInundacion';
+import { NIVEL_MAXIMO } from '@hooksMaps/useMap3dInundacion';
 import { deslizadores3d } from './deslizadores3d';
 
-const ANILLOS = ['pitch', 'exag', 'sol'];
+const ANILLOS = ['exag', 'sol'];
 const BOTON = `flex items-center justify-center size-7.5 ${RADIUS_ICON} shrink-0 cursor-pointer transition-colors`;
 const tonoBoton = (activo) => (activo ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6] text-[#5C2472] hover:bg-[#E2D3EA]');
 
@@ -21,17 +23,28 @@ const Map3DBar = () => {
     const view3d = useView3d();
     const dron = useDron();
     const [abierto, setAbierto] = useState(null);
-    const refs = { pitch: useRef(null), exag: useRef(null), sol: useRef(null), ajustes: useRef(null), barra: useRef(null) };
+    const refs = { lluvia: useRef(null), exag: useRef(null), sol: useRef(null), ajustes: useRef(null), barra: useRef(null) };
     if (!view3d.active) return null;
     if (dron.activo) return <DronPastilla />;
 
-    const { orbita, setOrbita } = view3d;
+    const { inundacion } = view3d;
     const deslizadores = deslizadores3d(view3d);
     const alternar = (cual) => setAbierto(previo => (previo === cual ? null : cual));
     const cerrar = () => setAbierto(null);
 
     return (
         <div ref={refs.barra} className="flex flex-col items-center justify-evenly h-full w-11 py-1 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
+            <Tooltip content={inundacion.nivel > 0 ? `Inundación: +${Math.round(inundacion.nivel)} m` : 'Simular lluvia e inundación'}>
+                <Map3DRing
+                    botonRef={refs.lluvia}
+                    label="Lluvia e inundación"
+                    texto={inundacion.nivel > 0 ? `${Math.round(inundacion.nivel)}m` : 'H₂O'}
+                    porcentaje={(inundacion.nivel / NIVEL_MAXIMO) * 100}
+                    tono="#1F6FA8"
+                    abierto={abierto === 'lluvia'}
+                    onToggle={() => alternar('lluvia')}
+                />
+            </Tooltip>
             {ANILLOS.map((clave) => {
                 const { titulo, texto, corto, pct, tono } = deslizadores[clave];
                 return (
@@ -48,17 +61,6 @@ const Map3DBar = () => {
                     </Tooltip>
                 );
             })}
-            <Tooltip content={orbita ? 'Pausar la órbita' : 'Girar alrededor del centro'}>
-                <button
-                    type="button"
-                    className={`${BOTON} ${tonoBoton(orbita)}`}
-                    onClick={() => setOrbita(!orbita)}
-                    aria-pressed={orbita}
-                    aria-label={orbita ? 'Pausar la órbita' : 'Girar alrededor del centro'}
-                >
-                    <Icon name={orbita ? 'pause' : 'play'} className="size-3 shrink-0" />
-                </button>
-            </Tooltip>
             {dron.presente && (
                 <Tooltip content="Volar como dron">
                     <button
@@ -99,6 +101,7 @@ const Map3DBar = () => {
                 <Map3DSliderPopover anchorRef={refs[abierto]} bordeRef={refs.barra} {...deslizadores[abierto]} onClose={cerrar} />
             )}
             {abierto === 'ajustes' && <Map3DAjustes anchorRef={refs.barra} onClose={cerrar} />}
+            {abierto === 'lluvia' && <Map3DInundacion anchorRef={refs.barra} bordeRef={refs.barra} onClose={cerrar} />}
         </div>
     );
 };
