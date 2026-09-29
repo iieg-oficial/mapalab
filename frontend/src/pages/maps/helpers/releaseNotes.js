@@ -12,6 +12,21 @@ export const RELEASE_TAGS = {
 
 const FALLBACK_NOTES = [
     {
+        version: '2.0.0',
+        items: [
+            { text: 'Vista 3D del mapa: el relieve de Jalisco con tus capas encima, los puntos de pie y los municipios levantados. Funciona también con la barra divisora y en el Catálogo, y los enlaces que compartes se abren en 3D.', tag: 'added' },
+            { text: 'Modo dron (BETA): recorre Jalisco desde el aire en ocho aeronaves distintas y descarga la imagen de tu recorrido. También puedes simular lluvia e inundación.', tag: 'added' },
+            { text: 'Tabla de datos: consulta los registros de una capa, fíltralos por columna, selecciona varios y descarga lo que estás viendo.', tag: 'added' },
+            { text: 'Panel de estadísticas con comparador de municipios, ranking estatal, gráficas y estadísticas armadas por ti.', tag: 'added' },
+            { text: 'Las capas de puntos se pueden ver agrupadas en hexágonos.', tag: 'added' },
+            { text: 'Al seleccionar un área ves cuántos elementos hay, sumas, promedios y el reparto por clase, y puedes descargar solo lo seleccionado.', tag: 'added' },
+            { text: 'Mediciones sobre el terreno en 3D, con perfil de alturas.', tag: 'added' },
+            { text: 'Minimapa (BETA): actívalo en Herramientas para ver en qué parte de Jalisco estás cuando te acercas.', tag: 'added' },
+            { text: 'Ahora puedes girar el mapa con clic derecho y volver al norte con la brújula.', tag: 'added' },
+            { text: 'El panel de Herramientas estrena íconos.', tag: 'changed' },
+        ],
+    },
+    {
         version: '1.96.0',
         items: [
             { text: 'En el Catálogo ya puedes proponer cómo se ve la tarjeta de información de una capa: eliges qué datos aparecen y en qué orden, con vista previa en vivo. Tu propuesta pasa a revisión del IIEG antes de publicarse.', tag: 'added' },
