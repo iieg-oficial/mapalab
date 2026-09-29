@@ -17,9 +17,10 @@ import PillCloseButton from '@components/PillCloseButton';
 import Badge from '@components/Badge';
 import BotonNorte from './BotonNorte';
 import { useMiUbicacion } from '@hooksMaps/useMiUbicacion';
+import MinimapaEscritorio from './Minimapa/MinimapaEscritorio';
 
 
-const MapControls = ({ hideLocate = false, hideEncuadrar = false }) => {
+const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = false }) => {
     const { mapRef, compareMode, paneMapRefs, isLocating, setIsLocating, municipioMode } = useMapsContext();
     const [hoveredButton, setHoveredButton] = useState(null);
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 180 });
@@ -192,6 +193,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false }) => {
                         <Map3DBar />
                     </div>
                 )}
+                {conMinimapa && !view3d.active && !isMobile && <MinimapaEscritorio />}
             </div>
         </div>
     );

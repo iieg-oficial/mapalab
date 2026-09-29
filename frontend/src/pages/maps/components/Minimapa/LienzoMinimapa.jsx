@@ -4,9 +4,11 @@ import { dePixel, vistaDelMinimapa } from '@pages/maps/helpers/minimapa';
 import { dibujarMinimapa } from '@pages/maps/helpers/trazoMinimapa';
 
 const DURACION_MS = 350;
+const ARRASTRE_PX = 4;
 
-const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, onIr }) => {
+const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, onIr, sinFondo = false }) => {
     const lienzoRef = useRef(null);
+    const inicioRef = useRef(null);
     const vistaMiniRef = useRef(null);
     const extensionEstado = siluetas?.estado?.getExtent() ?? null;
 
@@ -24,11 +26,13 @@ const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, onIr
             lienzo.height = pixeles;
         }
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-        dibujarMinimapa(ctx, { lado, vista: vistaMini, estado: siluetas?.estado, municipio, extensionVista: vista.extension });
-    }, [lado, vista, siluetas, municipio, extensionEstado]);
+        dibujarMinimapa(ctx, { lado, vista: vistaMini, estado: siluetas?.estado, municipio, extensionVista: vista.extension, sinFondo });
+    }, [lado, vista, siluetas, municipio, extensionEstado, sinFondo]);
 
     const irA = (evento) => {
-        if (bloqueado || !vistaMiniRef.current) return;
+        const inicio = inicioRef.current;
+        const arrastro = inicio && Math.hypot(evento.clientX - inicio[0], evento.clientY - inicio[1]) > ARRASTRE_PX;
+        if (arrastro || bloqueado || !vistaMiniRef.current) return;
         const caja = evento.currentTarget.getBoundingClientRect();
         const destino = dePixel(vistaMiniRef.current, lado, [evento.clientX - caja.left, evento.clientY - caja.top]);
         map?.getView()?.animate({ center: destino, duration: DURACION_MS });
@@ -39,11 +43,12 @@ const LienzoMinimapa = ({ lado, vista, siluetas, municipio, map, bloqueado, onIr
     return (
         <canvas
             ref={lienzoRef}
+            onPointerDown={(evento) => { inicioRef.current = [evento.clientX, evento.clientY]; }}
             onClick={irA}
             aria-label="Minimapa de Jalisco: clic para mover el mapa a ese punto"
             title={bloqueado ? 'Termina el trazo para usar el minimapa' : 'Clic para mover el mapa a ese punto'}
             style={{ width: lado, height: lado }}
-            className={`block rounded-[14px] shadow-[0_6px_14px_rgba(34,26,46,0.28)] ${bloqueado ? 'cursor-default' : 'cursor-crosshair'}`}
+            className={`block ${sinFondo ? '' : 'rounded-[14px] shadow-[0_6px_14px_rgba(34,26,46,0.28)]'} ${bloqueado ? 'cursor-default' : 'cursor-crosshair'}`}
         />
     );
 };

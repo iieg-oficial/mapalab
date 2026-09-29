@@ -87,7 +87,7 @@ const Maps = () => {
                                         <InfoBox />
                                         <MapAttribution />
                                         <Minimapa />
-                                        <MapControls />
+                                        <MapControls conMinimapa />
                                         <MapaPrincipal isComparing={isComparing} />
                                         {isComparing && <SwipeSlotControls />}
                                         <LayerNotices />

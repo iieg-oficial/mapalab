@@ -4,6 +4,8 @@ const COLORES = {
     fondo: '#EEF1F4',
     tierra: '#FFFFFF',
     borde: '#B9AEC6',
+    contorno: '#6E5A82',
+    halo: 'rgba(255, 255, 255, 0.9)',
     municipio: 'rgba(92, 36, 114, 0.14)',
     municipioBorde: '#5C2472',
     vista: '#FF8300',
@@ -32,12 +34,27 @@ const trazarGeometria = (ctx, geometria, aPx) => {
     }));
 };
 
-export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extensionVista }) => {
-    const aPx = coordenada => aPixel(vista, lado, coordenada);
-    ctx.fillStyle = COLORES.fondo;
-    ctx.fillRect(0, 0, lado, lado);
+const soloContorno = (ctx, estado, aPx) => {
+    trazarGeometria(ctx, estado, aPx);
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = COLORES.halo;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.strokeStyle = COLORES.contorno;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+};
 
-    if (estado) {
+export const dibujarMinimapa = (ctx, { lado, vista, estado, municipio, extensionVista, sinFondo = false }) => {
+    const aPx = coordenada => aPixel(vista, lado, coordenada);
+    ctx.clearRect(0, 0, lado, lado);
+    if (!sinFondo) {
+        ctx.fillStyle = COLORES.fondo;
+        ctx.fillRect(0, 0, lado, lado);
+    }
+
+    if (estado && sinFondo) soloContorno(ctx, estado, aPx);
+    else if (estado) {
         trazarGeometria(ctx, estado, aPx);
         ctx.fillStyle = COLORES.tierra;
         ctx.fill('evenodd');

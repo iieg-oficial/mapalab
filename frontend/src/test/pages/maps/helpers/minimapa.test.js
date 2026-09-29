@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import Polygon from 'ol/geom/Polygon';
 import {
-    ZOOM_CERCA, aPixel, dePixel, municipioEn, resolucionDeZoom, sigueVisible, ubicarMinimapa, vistaDelMinimapa,
+    ZOOM_CERCA, aPixel, dePixel, municipioEn, resolucionDeZoom, sigueVisible, vistaDelMinimapa,
 } from '@pages/maps/helpers/minimapa';
 
-const caja = (left, top, right, bottom) => ({ left, top, right, bottom });
 const JALISCO = [-11766000, 2148000, -11295000, 2600000];
 
 describe('minimapa', () => {
@@ -14,30 +13,6 @@ describe('minimapa', () => {
         expect(sigueVisible(true, 9.7)).toBe(true);
         expect(sigueVisible(true, 9.5)).toBe(false);
         expect(sigueVisible(true, undefined)).toBe(false);
-    });
-
-    it('sin obstáculos va en la esquina y no aparece en pantallas chicas', () => {
-        expect(ubicarMinimapa({ ancho: 1920, alto: 950 })).toEqual({ abajo: 16, derecha: 16 });
-        expect(ubicarMinimapa({ ancho: 390, alto: 760 })).toBeNull();
-        expect(ubicarMinimapa({ ancho: 1366, alto: 540 })).toBeNull();
-    });
-
-    it('sube por encima de la atribución y de la numeralia', () => {
-        const atribucion = caja(1180, 910, 1904, 942);
-        const numeralia = caja(400, 700, 1904, 886);
-        expect(ubicarMinimapa({ ancho: 1920, alto: 950, cajas: [atribucion] })).toEqual({ abajo: 52, derecha: 16 });
-        expect(ubicarMinimapa({ ancho: 1920, alto: 950, cajas: [atribucion, numeralia] })).toEqual({ abajo: 262, derecha: 16 });
-    });
-
-    it('si arriba no cabe, se corre a la izquierda del panel de capas', () => {
-        const capas = caja(1051, 108, 1350, 600);
-        const atribucion = caja(1180, 610, 1350, 642);
-        expect(ubicarMinimapa({ ancho: 1366, alto: 650, cajas: [capas, atribucion] })).toEqual({ abajo: 16, derecha: 327 });
-    });
-
-    it('si tampoco cabe a la izquierda, se esconde', () => {
-        const franja = caja(0, 150, 1366, 650);
-        expect(ubicarMinimapa({ ancho: 1366, alto: 650, cajas: [franja] })).toBeNull();
     });
 
     it('con zoom medio encuadra todo Jalisco y con zoom alto sigue la vista cuatro niveles atrás', () => {

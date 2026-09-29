@@ -5,6 +5,20 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.222.0] - 2026-09-29
+
+### Cambiado: el minimapa pasa junto al zoom y viene apagado
+
+- Se enciende desde la tarjeta «Minimapa» de Herramientas; de fábrica está apagado.
+- En escritorio vive a la derecha de la píldora de zoom y la sigue con la barra lateral. En 3D ese
+  lugar es de la barra 3D y el minimapa no se monta.
+- Se ve solo el contorno de Jalisco, con el municipio resaltado y el rectángulo de la vista; la
+  píldora con el nombre va debajo del contorno y la × aparece al pasar el cursor.
+- Si un panel lo tapa (numeralia, tabla acoplada o un panel abierto) se desvanece; ya no esquiva
+  hacia arriba ni a la izquierda.
+- Un arrastre que empieza encima del minimapa ya no mueve el mapa al soltar.
+- Solo el visor lo monta (`MapControls conMinimapa`); el catálogo y el embed no.
+
 ## [1.221.0] - 2026-09-29
 
 Integra la rama `investigacion/modo-dron` (PR #188). Allá salió como 1.217.0; en tamal-rojo ese número ya
