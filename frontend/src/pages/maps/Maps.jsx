@@ -16,7 +16,7 @@ import MapControls from './components/MapControls';
 import MeasurementTools from './components/MeasurementTools/ToolsPanel';
 import ScaleLineControl from './components/ScaleLineControl';
 import MapAttribution from './components/MapAttribution';
-import Minimapa from './components/Minimapa';
+import Minimapa from './components/Minimapa/Minimapa';
 import LayerNotices from './components/LayerNotices/LayerNotices';
 import { useInitializeFromUrl } from './hooks/useInitializeFromUrl';
 import { useSessionPersistence } from './hooks/useSessionPersistence';

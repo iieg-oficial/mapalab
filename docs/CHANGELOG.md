@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.220.0] - 2026-09-29
+
+### Agregado: el minimapa en celular
+
+- En pantallas de celular no hay minimapa flotante: una píldora debajo del logo nombra el municipio bajo
+  el centro y, al tocarla, abre el minimapa grande (hasta 360 px) por encima del zoom y la brújula. Un
+  toque en él mueve el mapa y lo cierra. Se apaga igual, desde la tarjeta de Herramientas.
+- El lienzo lo comparten escritorio y celular (`Minimapa/LienzoMinimapa.jsx`); el componente pasa a
+  `components/Minimapa/`.
+
 ## [1.219.0] - 2026-09-29
 
 ### Agregado
