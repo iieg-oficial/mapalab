@@ -151,4 +151,14 @@ describe('View3dContext', () => {
         expect(result.current.view.active).toBe(false);
         expect(tomarVista3d()).toBeNull();
     });
+
+    it('mide la lluvia y la inundación una vez al encenderse, no en cada paso del nivel', async () => {
+        const { trackView3d } = await import('@services/analyticsService');
+        trackView3d.mockClear();
+        const { result } = render();
+        act(() => { result.current.view.setInundacion({ lloviendo: true }); });
+        act(() => { result.current.view.setInundacion({ nivel: 1 }); });
+        act(() => { result.current.view.setInundacion({ nivel: 2 }); });
+        expect(trackView3d.mock.calls).toEqual([['lluvia'], ['inundacion', { modo: 'general' }]]);
+    });
 });

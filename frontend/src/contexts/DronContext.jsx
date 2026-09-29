@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useSider } from '@contexts/SiderContext';
 import { useView3d } from '@contexts/View3dContext';
 import { useMapsContext } from '@hooks/useMaps';
+import { trackView3d } from '@services/analyticsService';
 import { useZenMode } from '@pages/maps/components/ZenMode';
 import { AERONAVES, DRON_DEFAULT, normalizarDron, siguienteColor } from '@pages/maps/helpers/dron/aeronaves';
 
@@ -85,6 +86,18 @@ export const DronProvider = ({ children }) => {
             setRuta(SIN_RUTA);
         };
     }, [activo, forzarCandado, setIsZenMode, setSelectedFeatureInfo]);
+
+    const modeloRef = useRef(config.modelo);
+    useEffect(() => {
+        modeloRef.current = config.modelo;
+    }, [config.modelo]);
+
+    useEffect(() => {
+        if (!activo) return undefined;
+        const inicio = Date.now();
+        trackView3d('dron_start', { aeronave: modeloRef.current });
+        return () => trackView3d('dron_end', { aeronave: modeloRef.current, duration_sec: Math.round((Date.now() - inicio) / 1000) });
+    }, [activo]);
 
     const entrar = useCallback(() => {
         setOrbita(false);

@@ -82,6 +82,15 @@ export const View3dProvider = ({ children, llaveAjustes = LLAVE_AJUSTES_3D }) =>
     const [orbita, setOrbita] = useState(false);
     const [inundacion, setInundacionState] = useState(SIN_INUNDACION);
     const setInundacion = useCallback(cambios => setInundacionState(prev => ({ ...prev, ...cambios })), []);
+    const lloviendo = inundacion.lloviendo;
+    const inundado = inundacion.nivel > 0;
+    const modoInundacion = inundacion.modo;
+    useEffect(() => {
+        if (lloviendo) trackView3d('lluvia');
+    }, [lloviendo]);
+    useEffect(() => {
+        if (inundado) trackView3d('inundacion', { modo: modoInundacion });
+    }, [inundado, modoInundacion]);
     const { ajustes, setAjuste, reemplazarAjustes, restablecerAjustes } = useAjustes3d(llaveAjustes);
     const [extrusionStatus, setExtrusionStatus] = useState({});
     const map3dRef = useRef(null);

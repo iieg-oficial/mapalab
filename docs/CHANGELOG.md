@@ -6,6 +6,12 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.1.0] - 2026-09-29
+
+### Agregado
+
+- Telemetría del modo dron y de la simulación de agua, como acciones de `view3d` (mariachi ya las acepta desde 2.104.0): `dron_start` con la aeronave, `dron_end` con la aeronave y la duración, `lluvia` al empezar a llover e `inundacion` con su modo cuando el nivel pasa de 0. El deslizador del nivel no genera un evento por paso.
+
 ## [2.0.0] - 2026-09-29
 
 Abre la línea 2.x con lo construido en el ciclo tamal-rojo: de `1.117.0` (2026-08-10) a `1.223.4`
