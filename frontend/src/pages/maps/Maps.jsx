@@ -31,7 +31,6 @@ import { useMapsContext } from '@hooks/useMaps';
 import { View3dProvider, useView3d } from '@contexts/View3dContext';
 import { DronProvider } from '@contexts/DronContext';
 import DronOverlay from './components/Dron/DronOverlay';
-import Map3DLluvia from './components/Map3D/Map3DLluvia';
 import OcultoEnDronMovil from './components/Dron/OcultoEnDronMovil';
 
 const Map3DView = lazy(() => import('@mapsComponents/Map3D/Map3DView'));
@@ -48,7 +47,6 @@ const MapaPrincipal = ({ isComparing }) => {
                 {active && <Suspense fallback={null}>{isComparing ? <Map3DSwipe /> : <Map3DView />}</Suspense>}
             </MapaConAcople>
             {active && !isComparing && <DronOverlay />}
-            <Map3DLluvia />
         </>
     );
 };

@@ -15,7 +15,7 @@ const referenciaVisible = (map) => {
             alturas.push(map.queryTerrainElevation(punto));
         }
     }
-    return elevacionMinima(alturas) ?? map.queryTerrainElevation(map.getCenter()) ?? 0;
+    return elevacionMinima(alturas);
 };
 
 export const useMap3dInundacion = (map, principal) => {
@@ -23,12 +23,21 @@ export const useMap3dInundacion = (map, principal) => {
     const { nivel, lloviendo, referencia, intensidad = INTENSIDAD_DEFAULT } = inundacion;
     const activa = principal && !!map && (nivel > 0 || lloviendo);
     const vivo = useRef({});
-    vivo.current = { nivel, referencia, exaggeration, centro: inundacion.centro };
+    vivo.current = { nivel, referencia, exaggeration, centro: inundacion.centro, lloviendo, intensidad };
 
     useEffect(() => {
-        if (!activa || referencia !== null) return;
-        const centro = map.getCenter();
-        setInundacion({ referencia: referenciaVisible(map) / (exaggeration || 1), centro: centro.toArray() });
+        if (!activa || referencia !== null) return undefined;
+        let espera = null;
+        const intentar = () => {
+            const minima = map.getTerrain() ? referenciaVisible(map) : 0;
+            if (minima === null) {
+                espera = setTimeout(intentar, 300);
+                return;
+            }
+            setInundacion({ referencia: minima / (exaggeration || 1), centro: map.getCenter().toArray() });
+        };
+        intentar();
+        return () => clearTimeout(espera);
     }, [activa, referencia, map, exaggeration, setInundacion]);
 
     useEffect(() => {
@@ -37,8 +46,9 @@ export const useMap3dInundacion = (map, principal) => {
         let cancelado = false;
         const leer = () => {
             const actual = vivo.current;
-            if (actual.referencia === null) return { centro: null, altura: null };
-            return { centro: actual.centro, altura: (actual.referencia + actual.nivel) * (actual.exaggeration || 1) };
+            const lluvia = { activa: actual.lloviendo, densidad: (INTENSIDADES[actual.intensidad] || INTENSIDADES[INTENSIDAD_DEFAULT]).gotas };
+            if (actual.referencia === null) return { centro: null, altura: null, lluvia };
+            return { centro: actual.centro, altura: (actual.referencia + actual.nivel) * (actual.exaggeration || 1), lluvia };
         };
         Promise.all([loadMaplibre(), import('@pages/maps/helpers/capaInundacion')]).then(([maplibregl, { crearCapaInundacion }]) => {
             if (cancelado) return;
