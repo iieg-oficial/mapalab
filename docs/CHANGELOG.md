@@ -5,6 +5,16 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.219.0] - 2026-09-29
+
+### Agregado
+
+- Pestaña **Almacenamiento** en el panel de depuración (builds `dev` y `beta`): lista las llaves de `localStorage` y `sessionStorage` por tamaño, abre su JSON formateado, copia el valor y borra una llave. «Solo mapalab» filtra por los prefijos `mapalab` y `devtools-`; «Borrar lo de mapalab y recargar» respeta las `devtools-` para que el panel siga abierto.
+
+### Cambiado
+
+- El panel de depuración es más ancho para las tres pestañas, y arrastrarlo ya no bloquea los campos de texto ni la selección del JSON.
+
 ## [1.218.0] - 2026-09-29
 
 ### Agregado

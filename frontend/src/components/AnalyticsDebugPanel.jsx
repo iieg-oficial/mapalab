@@ -2,8 +2,15 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { debugStore } from '@services/analyticsDebugStore';
 import { useIsAnalyticsPanelOpen } from '@hooks/useDevTools';
 import TelemetriaDebugTab from './TelemetriaDebugTab';
+import AlmacenamientoDebugTab from './AlmacenamientoDebugTab';
 
-const PESTANAS = [{ clave: 'gtm', texto: 'GTM' }, { clave: 'telemetria', texto: 'Telemetría' }];
+const PESTANAS = [
+    { clave: 'gtm', texto: 'GTM' },
+    { clave: 'telemetria', texto: 'Telemetría' },
+    { clave: 'almacenamiento', texto: 'Almacenamiento' },
+];
+
+const SIN_ARRASTRE = 'button, a, input, label, pre';
 
 const AnalyticsDebugPanel = () => {
     const isPanelOpen = useIsAnalyticsPanelOpen();
@@ -26,7 +33,7 @@ const AnalyticsDebugPanel = () => {
     }, [isPanelOpen]);
 
     const handlePointerDown = useCallback((e) => {
-        if (e.target.closest('button') || e.target.closest('a')) return;
+        if (e.target.closest(SIN_ARRASTRE)) return;
         e.preventDefault();
         const rect = panelRef.current.getBoundingClientRect();
         dragRef.current = { offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
@@ -62,7 +69,7 @@ const AnalyticsDebugPanel = () => {
             className="fixed z-[9999] font-mono text-xs select-none cursor-grab active:cursor-grabbing"
             style={{ left: position.x, top: Math.max(8, Math.min(position.y, window.innerHeight - alto - 8)) }}
         >
-            <div className="bg-gray-900 text-white rounded-xl shadow-2xl w-80">
+            <div className="bg-gray-900 text-white rounded-xl shadow-2xl w-96">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700 rounded-t-xl">
                     <div className="flex items-center gap-2">
                         <span className="text-white text-[10px] cursor-grab active:cursor-grabbing">⠿</span>
@@ -86,6 +93,7 @@ const AnalyticsDebugPanel = () => {
                     </button>
                 </div>
                 {!collapsed && pestana === 'telemetria' && <TelemetriaDebugTab />}
+                {!collapsed && pestana === 'almacenamiento' && <AlmacenamientoDebugTab />}
                 {!collapsed && pestana === 'gtm' && (
                     <div className="max-h-64 overflow-y-auto rounded-b-xl">
                         {events.length === 0 ? (
