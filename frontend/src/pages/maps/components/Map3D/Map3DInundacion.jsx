@@ -3,7 +3,10 @@ import PanelHeader from '@components/PanelHeader';
 import Tooltip from '@components/Tooltip';
 import { MobileSheetCloseButton } from '@components/MobileSheet';
 import { useView3d } from '@contexts/View3dContext';
-import { NIVEL_MAXIMO } from '@hooksMaps/useMap3dInundacion';
+import Segmented from '@components/Segmented';
+import {
+    INTENSIDADES, INTENSIDAD_DEFAULT, deslizadorDeNivel, nivelDeDeslizador, textoNivel,
+} from '@pages/maps/helpers/inundacion';
 import Map3DPopover from './Map3DPopover';
 import Map3DDeslizador from './Map3DDeslizador';
 
@@ -17,18 +20,20 @@ export const IconoGota = ({ className = 'size-4.5' }) => (
 );
 
 const SIN_AGUA = { nivel: 0, lloviendo: false, referencia: null, centro: null };
+const OPCIONES = Object.entries(INTENSIDADES).map(([value, { nombre, detalle }]) => ({ value, label: nombre, tooltip: detalle }));
 
 const Map3DInundacion = ({ anchorRef, bordeRef, onClose }) => {
     const { inundacion, setInundacion } = useView3d();
-    const { nivel, lloviendo, referencia } = inundacion;
+    const { nivel, lloviendo, referencia, intensidad = INTENSIDAD_DEFAULT } = inundacion;
     const msnm = referencia === null ? null : referencia + nivel;
+    const { tope } = INTENSIDADES[intensidad];
 
     return (
         <Map3DPopover
             anchorRef={anchorRef}
             bordeRef={bordeRef}
             onClose={onClose}
-            width={264}
+            width={320}
             alinear="abajo"
             etiqueta="Simulación de inundación"
             className="rounded-[12px] bg-[#F9FBFF] px-4.5 pb-3 pt-2 shadow-[0_5px_20px_#1A26641A]"
@@ -39,24 +44,34 @@ const Map3DInundacion = ({ anchorRef, bordeRef, onClose }) => {
                 acciones={<MobileSheetCloseButton onClick={onClose} />}
             />
             <div className="flex flex-col gap-3 rounded-[7px] bg-white p-3">
+                <div className="flex flex-col gap-2">
+                    <span className="font-garet text-[12px] text-graphite">Intensidad de la lluvia</span>
+                    <Segmented
+                        variant="panel"
+                        options={OPCIONES}
+                        value={intensidad}
+                        onChange={valor => setInundacion({ intensidad: valor })}
+                        ariaLabel="Intensidad de la lluvia"
+                    />
+                </div>
                 <Map3DDeslizador
                     titulo="Nivel del agua"
-                    valor={Math.round(nivel)}
-                    texto={msnm === null ? `+${formato.format(nivel)} m` : `${formato.format(msnm)} msnm`}
+                    valor={deslizadorDeNivel(nivel)}
+                    texto={msnm === null ? `+${textoNivel(nivel)} m` : `+${textoNivel(nivel)} m · ${formato.format(msnm)} msnm`}
                     min={0}
-                    max={NIVEL_MAXIMO}
+                    max={100}
                     step={1}
-                    onChange={valor => setInundacion({ nivel: valor, lloviendo: false })}
+                    onChange={valor => setInundacion({ nivel: nivelDeDeslizador(valor), lloviendo: false })}
                 />
                 <p className="font-garet text-[11px] leading-snug text-[#6A6180]">
-                    El agua sube desde el terreno del centro de la vista y cubre todo lo que queda por debajo.
+                    El agua sube desde lo más bajo que se ve en pantalla.
                 </p>
                 <div className="flex items-center gap-2">
-                    <Tooltip content={lloviendo ? 'Detener la lluvia' : 'Hacer llover: el agua sube poco a poco'}>
+                    <Tooltip content={lloviendo ? 'Detener la lluvia' : `Hacer llover hasta +${textoNivel(tope)} m`}>
                         <button
                             type="button"
                             onClick={() => setInundacion({ lloviendo: !lloviendo })}
-                            disabled={!lloviendo && nivel >= NIVEL_MAXIMO}
+                            disabled={!lloviendo && nivel >= tope}
                             aria-pressed={lloviendo}
                             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 font-garet text-[12px] font-bold cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${lloviendo ? 'bg-[#1F6FA8] text-white' : 'bg-[#E4F0FA] text-[#1F6FA8] hover:bg-[#D2E6F6]'}`}
                         >

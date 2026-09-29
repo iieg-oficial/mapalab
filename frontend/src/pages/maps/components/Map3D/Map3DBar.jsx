@@ -12,7 +12,7 @@ import Map3DRing from './Map3DRing';
 import Map3DSliderPopover from './Map3DSliderPopover';
 import Map3DAjustes from './Map3DAjustes';
 import Map3DInundacion from './Map3DInundacion';
-import { NIVEL_MAXIMO } from '@hooksMaps/useMap3dInundacion';
+import { deslizadorDeNivel, textoNivel } from '@pages/maps/helpers/inundacion';
 import { deslizadores3d } from './deslizadores3d';
 
 const ANILLOS = ['exag', 'sol'];
@@ -33,13 +33,13 @@ const Map3DBar = () => {
     const cerrar = () => setAbierto(null);
 
     return (
-        <div ref={refs.barra} className="flex flex-col items-center justify-evenly h-full w-11 py-1 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
-            <Tooltip content={inundacion.nivel > 0 ? `Inundación: +${Math.round(inundacion.nivel)} m` : 'Simular lluvia e inundación'}>
+        <div ref={refs.barra} className="grid grid-rows-5 place-items-center h-full min-h-[196px] w-11 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
+            <Tooltip content={inundacion.nivel > 0 ? `Inundación: +${textoNivel(inundacion.nivel)} m` : 'Simular lluvia e inundación'}>
                 <Map3DRing
                     botonRef={refs.lluvia}
                     label="Lluvia e inundación"
-                    texto={inundacion.nivel > 0 ? `${Math.round(inundacion.nivel)}m` : 'H₂O'}
-                    porcentaje={(inundacion.nivel / NIVEL_MAXIMO) * 100}
+                    texto={inundacion.nivel > 0 ? `${textoNivel(inundacion.nivel)}m` : 'H₂O'}
+                    porcentaje={deslizadorDeNivel(inundacion.nivel)}
                     tono="#1F6FA8"
                     abierto={abierto === 'lluvia'}
                     onToggle={() => alternar('lluvia')}

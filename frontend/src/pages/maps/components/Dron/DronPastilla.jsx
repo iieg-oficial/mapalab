@@ -27,7 +27,7 @@ const DronPastilla = () => {
     const kmh = perfil.vel[config.velocidad];
 
     return (
-        <div ref={barraRef} className="flex flex-col items-center justify-evenly h-full w-11 py-1.5 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
+        <div ref={barraRef} className="grid grid-rows-5 place-items-center h-full min-h-[196px] w-11 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
             <Tooltip content={`Velocidad ${config.velocidad + 1}: ${kmh} km/h · teclas 1, 2 y 3`}>
                 <Map3DRing
                     label={`Velocidad ${config.velocidad + 1} de 3`}
