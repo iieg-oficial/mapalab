@@ -35,6 +35,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - En modo municipio el límite estatal va a 2 px, y el rectángulo se quita cuando no hay municipio bajo
   la vista o cuando la vista cubre todo el cuadro.
 
+## [2.2.0] - 2026-09-29
+
+### Agregado
+
+- El minimapa tiene evento propio, `minimapa` con `action: encender|apagar|abrir|ir`, y sigue sumando a `map_interaction`. Antes solo llegaba como `map_interaction` con `action: minimapa_*`, que ningún rollup lee, y no aparecía en el tablero. Requiere mariachi 2.114.0.
+
 ## [2.1.0] - 2026-09-29
 
 ### Agregado

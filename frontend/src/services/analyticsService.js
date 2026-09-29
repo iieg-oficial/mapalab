@@ -120,7 +120,7 @@ export const trackColibriOpen = (motivo, tipo) =>
     trackEvent('colibri_open', { motivo, tipo });
 
 export const trackMinimapa = (accion) =>
-    trackEvent('map_interaction', { action: `minimapa_${accion}` });
+    withMapInteraction('minimapa', { action: accion });
 
 export const trackInfoBoxAction = (action, layerId) =>
     withMapInteraction('infobox_action', { action, layer_id: layerId });

@@ -13,7 +13,8 @@ import {
     trackGeolocate,
     trackPeriodicityAdvanced,
     trackSiderLock,
-    trackShareMap
+    trackShareMap,
+    trackMinimapa
 } from '@/services/analyticsService';
 
 beforeEach(() => {
@@ -134,6 +135,14 @@ describe('analyticsService', () => {
         it('pushea periodicity_advanced con layer_id', () => {
             trackPeriodicityAdvanced('capa-raster');
             expect(getEvents()).toContainEqual({ event: 'periodicity_advanced', layer_id: 'capa-raster' });
+        });
+    });
+
+    describe('trackMinimapa', () => {
+        it('pushea minimapa con su acción y suma a map_interaction', () => {
+            trackMinimapa('ir');
+            expect(getEvents()).toContainEqual({ event: 'minimapa', action: 'ir' });
+            expect(getEvents()).toContainEqual({ event: 'map_interaction', action: 'minimapa' });
         });
     });
 
