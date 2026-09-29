@@ -43,6 +43,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   estado en gris claro, para que se note que está encendido. Las siluetas se piden al montarse.
 - En modo municipio, si la vista abarca el municipio completo, su contorno va en naranja en lugar de
   dibujar un rectángulo enorme.
+- El minimapa también sale en el catálogo (escritorio). En modo municipio marca con un punto discreto
+  el centro del mapa, que es el que elige el municipio. `MapControls` decide pantalla chica con
+  `useIsMobile`: con `useSider` el catálogo, sin `SiderProvider`, montaba el minimapa de escritorio en
+  celular.
 
 ## [2.2.0] - 2026-09-29
 

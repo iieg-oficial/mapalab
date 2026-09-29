@@ -5,8 +5,9 @@ import { trackMinimapa } from '@services/analyticsService';
 import { useMinimapa } from '@pages/maps/hooks/useMinimapa';
 import { useTapado } from '@pages/maps/hooks/useTapado';
 import { fijarMinimapaEncendido } from '@pages/maps/hooks/useMinimapaEncendido';
-import { TAMANO_MINIMAPA } from '@pages/maps/helpers/minimapa';
+import { TAMANO_MINIMAPA, ZOOM_CERCA } from '@pages/maps/helpers/minimapa';
 import LienzoMinimapa from './LienzoMinimapa';
+import PuntoDeReferencia from './PuntoDeReferencia';
 
 const OBSTACULOS = ['[data-panel-numeralia]', '[data-barra-tabla]', '[role="dialog"]', '[role="menu"]'];
 
@@ -35,6 +36,8 @@ const MinimapaEscritorio = () => {
 
     if (!activo) return null;
 
+    const enModoMunicipio = visible && lienzo.vista?.zoom >= ZOOM_CERCA && !!lienzo.municipio;
+
     const apagar = () => {
         fijarMinimapaEncendido(false);
         trackMinimapa('apagar');
@@ -51,6 +54,7 @@ const MinimapaEscritorio = () => {
         >
             <div className="relative">
                 <LienzoMinimapa lado={lado} sinFondo atenuado={!visible} {...lienzo} />
+                {enModoMunicipio && <PuntoDeReferencia map={lienzo.map} />}
                 <div className="absolute right-0 top-0 flex rounded-full bg-white p-0.5 opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
                     <Tooltip content="Quitar el minimapa. Vuelve desde Herramientas" placement="top" delay={300}>
                         <MobileSheetCloseButton onClick={apagar} />

@@ -18,6 +18,7 @@ import Badge from '@components/Badge';
 import BotonNorte from './BotonNorte';
 import { useMiUbicacion } from '@hooksMaps/useMiUbicacion';
 import MinimapaEscritorio from './Minimapa/MinimapaEscritorio';
+import { useIsMobile } from '@hooks/useIsMobile';
 
 
 const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = false }) => {
@@ -25,6 +26,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = 
     const [hoveredButton, setHoveredButton] = useState(null);
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 180 });
     const { width: siderWidth, isMobile } = useSider();
+    const pantallaChica = useIsMobile();
     const { margenes } = useAreaUtil();
     const isSwipe = !!compareMode?.active;
     const view3d = useView3d();
@@ -193,7 +195,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = 
                         <Map3DBar />
                     </div>
                 )}
-                {conMinimapa && !view3d.active && !isMobile && <MinimapaEscritorio />}
+                {conMinimapa && !view3d.active && !pantallaChica && <MinimapaEscritorio />}
             </div>
         </div>
     );

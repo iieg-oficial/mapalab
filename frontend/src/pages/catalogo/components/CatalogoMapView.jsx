@@ -238,7 +238,7 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, onExtrusion
                 <LayersContext.Provider value={capasContexto}>
                     <View3dProvider>
                         <CatalogoTablaProviders tablasFijas={tabla.tablasFijas}>
-                            <MapControls />
+                            <MapControls conMinimapa />
                             <CatalogoTools tabla={tabla} hayCapa={Boolean(capa)} />
                         </CatalogoTablaProviders>
                         <MapAttribution hideCatalogo origenReporte="catalogo" />

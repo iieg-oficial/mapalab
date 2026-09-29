@@ -8,7 +8,11 @@ vi.mock('@hooks/useIsMobile', () => ({ useIsMobile: () => mocks.movil }));
 vi.mock('@contexts/View3dContext', () => ({ useView3d: () => ({ active: mocks.en3d }) }));
 vi.mock('@components/Tooltip', () => ({ default: ({ children }) => children }));
 vi.mock('@services/analyticsService', () => ({ trackMinimapa: mocks.track }));
-vi.mock('@services/municipioService', () => ({ fetchSiluetas: () => Promise.resolve({ estado: null, municipios: [] }) }));
+vi.mock('@services/municipioService', async () => {
+    const { default: Polygon } = await import('ol/geom/Polygon');
+    const zapopan = new Polygon([[[-11520000, 2380000], [-11480000, 2380000], [-11480000, 2420000], [-11520000, 2420000], [-11520000, 2380000]]]);
+    return { fetchSiluetas: () => Promise.resolve({ estado: null, municipios: [{ clave: '120', nombre: 'Zapopan', geometry: zapopan }] }) };
+});
 
 import Minimapa from '@pages/maps/components/Minimapa/Minimapa';
 import MinimapaEscritorio from '@pages/maps/components/Minimapa/MinimapaEscritorio';
@@ -22,7 +26,8 @@ const mapaFalso = (zoom) => {
         calculateExtent: () => [-11510000, 2390000, -11490000, 2410000],
         animate,
     };
-    return { animate, map: { getView: () => vista, getSize: () => [1024, 768], on: vi.fn(), un: vi.fn() } };
+    const lienzoDelMapa = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 1024, height: 768 }) };
+    return { animate, map: { getView: () => vista, getSize: () => [1024, 768], getTargetElement: () => lienzoDelMapa, on: vi.fn(), un: vi.fn() } };
 };
 
 const montar = (Componente, zoom, extra = {}) => {
@@ -107,5 +112,20 @@ describe('Minimapa', () => {
         tocar(lienzo());
         expect(animate).toHaveBeenCalled();
         expect(lienzo()).toBeNull();
+    });
+
+    it('en modo municipio marca con un punto discreto el centro que elige el municipio', async () => {
+        montar(MinimapaEscritorio, 13);
+        await act(async () => {});
+        const punto = document.querySelector('[data-punto-minimapa]');
+        expect(punto).not.toBeNull();
+        expect(punto.style.left).toBe('512px');
+        expect(punto.style.top).toBe('384px');
+    });
+
+    it('fuera del modo municipio no hay punto', async () => {
+        montar(MinimapaEscritorio, 11);
+        await act(async () => {});
+        expect(document.querySelector('[data-punto-minimapa]')).toBeNull();
     });
 });
