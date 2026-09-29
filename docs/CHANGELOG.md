@@ -5,6 +5,14 @@ Todos los cambios notables del proyecto se documentan en este archivo.
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [1.223.3] - 2026-09-29
+
+### Corregido
+
+- El ícono de Tabla de datos lleva la línea morada bajo el encabezado naranja.
+- Catálogo vuelve a su ícono de dos capas encimadas, con la de arriba en naranja; la píldora del
+  catálogo junto a la atribución usa el mismo ícono.
+
 ## [1.223.2] - 2026-09-29
 
 ### Cambiado: la X de la fecha va dentro de la píldora

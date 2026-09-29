@@ -25,7 +25,7 @@ const DIBUJOS = {
         <>
             <path d="M9 9h30a3 3 0 0 1 3 3v5H6v-5a3 3 0 0 1 3-3z" fill={NARANJA} stroke={NARANJA} strokeWidth="2.5" strokeLinejoin="round" />
             <rect x="6" y="9" width="36" height="30" rx="3" stroke={MORADO} {...trazo} />
-            <path d="M6 28h36M18 17v22M30 17v22" stroke={MORADO} {...trazo} />
+            <path d="M6 17h36M6 28h36M18 17v22M30 17v22" stroke={MORADO} {...trazo} />
         </>
     ),
     anotaciones: (
@@ -38,8 +38,8 @@ const DIBUJOS = {
     ),
     catalogo: (
         <>
-            <path d="M8 24l16 8 16-8M8 32l16 8 16-8" stroke={MORADO} {...trazo} />
-            <path d="M24 8l16 8-16 8-16-8z" stroke={NARANJA} {...trazo} />
+            <path d="M24 17.5l16 10.5-16 10.5L8 28z" stroke={MORADO} {...trazo} />
+            <path d="M24 7l16 10.5L24 28 8 17.5z" stroke={NARANJA} {...trazo} />
         </>
     ),
     minimapa: (
