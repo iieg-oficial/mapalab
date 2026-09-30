@@ -15,7 +15,7 @@ const FALLBACK_NOTES = [
         version: '2.0.0',
         items: [
             { text: 'Vista 3D del mapa: el relieve de Jalisco con tus capas encima, los puntos de pie y los municipios levantados. Funciona también con la barra divisora y en el Catálogo, y los enlaces que compartes se abren en 3D.', tag: 'added' },
-            { text: 'Modo dron (BETA): recorre Jalisco desde el aire en ocho aeronaves distintas y descarga la imagen de tu recorrido. También puedes simular lluvia e inundación.', tag: 'added' },
+            { text: 'Modo dron (BETA): recorre Jalisco desde el aire en ocho aeronaves distintas y descarga la imagen de tu recorrido.', tag: 'added' },
             { text: 'Tabla de datos: consulta los registros de una capa, fíltralos por columna, selecciona varios y descarga lo que estás viendo.', tag: 'added' },
             { text: 'Panel de estadísticas con comparador de municipios, ranking estatal, gráficas y estadísticas armadas por ti.', tag: 'added' },
             { text: 'Las capas de puntos se pueden ver agrupadas en hexágonos.', tag: 'added' },

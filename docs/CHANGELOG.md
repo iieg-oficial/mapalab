@@ -19,6 +19,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Cambiado
 
+- La simulación de lluvia e inundación de la vista 3D solo sale en `dev` y `beta`; en producción el botón
+  no aparece y la pastilla queda en tres o cuatro filas. Es un plano de agua que no inunda calles y puede
+  leerse como información de riesgo: vuelve cuando exista el ráster HAND por cuencas. Se quitó la mención
+  de las notas de la versión 2.0.0.
 - El minimapa traza los límites estatal y municipal al doble de grosor cuando está de cerca (zoom 12
   o más), los dos con halo blanco, para que no se pierdan sobre el mapa. También en el minimapa grande
   de celular.

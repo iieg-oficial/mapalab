@@ -5,6 +5,7 @@ import PillCloseButton from '@components/PillCloseButton';
 import { useView3d } from '@contexts/View3dContext';
 import { useDron } from '@contexts/DronContext';
 import { useMapsContext } from '@hooks/useMaps';
+import { useIsNonProd } from '@hooks/useDevTools';
 import Badge from '@components/Badge';
 import DronPastilla from '../Dron/DronPastilla';
 import DronIcono from '../Dron/DronIcono';
@@ -24,6 +25,7 @@ const Map3DBar = () => {
     const view3d = useView3d();
     const dron = useDron();
     const { compareMode } = useMapsContext();
+    const conLluvia = useIsNonProd();
     const [abierto, setAbierto] = useState(null);
     const refs = { lluvia: useRef(null), exag: useRef(null), sol: useRef(null), ajustes: useRef(null), barra: useRef(null) };
     if (!view3d.active) return null;
@@ -37,21 +39,23 @@ const Map3DBar = () => {
 
     return (
         <div ref={refs.barra} className="grid place-items-center h-full min-h-[196px] w-11 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]"
-            style={{ gridTemplateRows: `repeat(${conDron ? 5 : 4}, minmax(0, 1fr))` }}>
-            <div className="relative">
-                <Tooltip content={inundacion.nivel > 0 ? `Inundación: +${textoNivel(inundacion.nivel)} m` : 'Simular lluvia e inundación'}>
-                    <Map3DRing
-                        botonRef={refs.lluvia}
-                        label="Lluvia e inundación"
-                        texto={inundacion.nivel > 0 ? `${textoNivel(inundacion.nivel)}m` : 'H₂O'}
-                        porcentaje={deslizadorDeNivel(inundacion.nivel)}
-                        tono="#1F6FA8"
-                        abierto={abierto === 'lluvia'}
-                        onToggle={() => alternar('lluvia')}
-                    />
-                </Tooltip>
-                <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-3 text-[8px] px-1.5 pointer-events-none" />
-            </div>
+            style={{ gridTemplateRows: `repeat(${3 + (conLluvia ? 1 : 0) + (conDron ? 1 : 0)}, minmax(0, 1fr))` }}>
+            {conLluvia && (
+                <div className="relative">
+                    <Tooltip content={inundacion.nivel > 0 ? `Inundación: +${textoNivel(inundacion.nivel)} m` : 'Simular lluvia e inundación'}>
+                        <Map3DRing
+                            botonRef={refs.lluvia}
+                            label="Lluvia e inundación"
+                            texto={inundacion.nivel > 0 ? `${textoNivel(inundacion.nivel)}m` : 'H₂O'}
+                            porcentaje={deslizadorDeNivel(inundacion.nivel)}
+                            tono="#1F6FA8"
+                            abierto={abierto === 'lluvia'}
+                            onToggle={() => alternar('lluvia')}
+                        />
+                    </Tooltip>
+                    <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-3 text-[8px] px-1.5 pointer-events-none" />
+                </div>
+            )}
             {ANILLOS.map((clave) => {
                 const { titulo, texto, corto, pct, tono } = deslizadores[clave];
                 return (
@@ -108,7 +112,7 @@ const Map3DBar = () => {
                 <Map3DSliderPopover anchorRef={refs[abierto]} bordeRef={refs.barra} {...deslizadores[abierto]} onClose={cerrar} />
             )}
             {abierto === 'ajustes' && <Map3DAjustes anchorRef={refs.barra} onClose={cerrar} />}
-            {abierto === 'lluvia' && <Map3DInundacion anchorRef={refs.barra} bordeRef={refs.barra} onClose={cerrar} />}
+            {conLluvia && abierto === 'lluvia' && <Map3DInundacion anchorRef={refs.barra} bordeRef={refs.barra} onClose={cerrar} />}
         </div>
     );
 };
