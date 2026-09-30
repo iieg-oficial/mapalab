@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
+import { detectParentOrigin } from '@pages/embed/helpers/postMessage';
 
 
 const FLUSH_DEBOUNCE_MS = 1500;
@@ -9,7 +10,9 @@ const MAX_ERRORS_PER_FLUSH = 5;
 
 const buildUrl = (key) => {
     const base = (import.meta.env.VITE_BACKEND_API_HOST || '/api/').replace(/\/+$/, '');
-    return `${base}/embed/telemetry?key=${encodeURIComponent(key)}`;
+    const parent = detectParentOrigin();
+    const conPadre = parent ? `&parent=${encodeURIComponent(parent)}` : '';
+    return `${base}/embed/telemetry?key=${encodeURIComponent(key)}${conPadre}`;
 };
 
 

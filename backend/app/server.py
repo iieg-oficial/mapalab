@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from sqlalchemy import text
-from app.routers import (metadata, periodicity, download, layers, shares, embed, municipios, client_errors, catalogo)
+from app.routers import (metadata, periodicity, download, layers, shares, embed, embed_marco, municipios, client_errors, catalogo)
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.access_logger import access_flush_loop, get_logger as get_access_logger, _flush_sync as _flush_accesos
 from app.services.api_key_quota import flush_to_mariachi
@@ -125,6 +125,7 @@ app.include_router(download.router)
 app.include_router(layers.router)
 app.include_router(shares.router)
 app.include_router(embed.router)
+app.include_router(embed_marco.router)
 app.include_router(municipios.router)
 app.include_router(client_errors.router)
 app.include_router(catalogo.router)

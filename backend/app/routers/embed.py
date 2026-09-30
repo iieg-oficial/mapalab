@@ -18,6 +18,7 @@ from app.services.api_key_validator import (
     invalidate_cache_for_prefix,
     validate_api_key,
 )
+from app.services.embed_origen import origen_para_llave, politica_de_marco
 from app.services.embed_wms_params import (
     check_allowed,
     clean_params,
@@ -35,27 +36,6 @@ router = APIRouter(prefix='/embed', tags=['Embed'])
 _WMS_PROXY_TIMEOUT = 30.0
 
 
-def _frame_ancestors_value(allowed_domains: Optional[list[str]]) -> str:
-    if allowed_domains is None:
-        return "frame-ancestors *"
-    sources: list[str] = ["'self'"]
-    for raw in allowed_domains:
-        if not raw:
-            continue
-        domain = raw.strip()
-        if not domain:
-            continue
-        if domain == '*':
-            return "frame-ancestors *"
-        if '://' not in domain:
-            if domain.startswith('*.'):
-                domain = f"https://{domain}"
-            else:
-                domain = f"https://{domain}"
-        sources.append(domain.rstrip('/'))
-    return f"frame-ancestors {' '.join(sources)}"
-
-
 def _set_response_headers(
     response: Response,
     origin: Optional[str],
@@ -65,7 +45,7 @@ def _set_response_headers(
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Vary'] = 'Origin'
         response.headers['Access-Control-Allow-Credentials'] = 'true'
-    response.headers['Content-Security-Policy'] = _frame_ancestors_value(allowed_domains)
+    response.headers['Content-Security-Policy'] = politica_de_marco(allowed_domains)
     response.headers['Cache-Control'] = 'no-store'
 
 
@@ -76,7 +56,7 @@ def _validate_or_403(
     requested_layers: Optional[list[str]] = None,
     record_quota: bool = True,
 ) -> ValidationResult:
-    origin = get_request_origin(request)
+    origin = origen_para_llave(request)
     ip = get_client_ip(request)
     result = validate_api_key(key, origin=origin, ip=ip, requested_layers=requested_layers or [])
     prefix = key[:12] if key else ''

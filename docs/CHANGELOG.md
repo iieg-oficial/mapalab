@@ -60,6 +60,17 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   del municipio y la × encima, en las esquinas; tocar un punto mueve el mapa y cierra la hoja. Las siluetas se piden al abrirla. La píldora bajo el logo se retiró porque chocaba con Eventos,
   y la tarjeta de Herramientas sigue solo en escritorio.
 
+### Corregido
+
+- **Los dominios permitidos de una llave del embed no restringían nada.** La llave se validaba en la
+  petición a `/embed/config` que hace el propio iframe, y el origen de esa petición es siempre el de
+  mapalab: había que poner `iieg.jalisco.gob.mx` en la lista y, con eso, la llave servía en cualquier
+  sitio. Ahora el HTML de `/embed` sale con `frame-ancestors` armado con los dominios de la llave
+  (nginx lo pide a `GET /embed/marco` con `auth_request`), así que el navegador no deja incrustarlo
+  en otro sitio, y la API del iframe compara la llave contra el sitio que lo contiene (`parent`, que
+  solo cuenta cuando la petición sale del propio mapalab). Las llaves ya no necesitan
+  `iieg.jalisco.gob.mx` salvo que se usen en páginas del instituto.
+
 ## [2.2.0] - 2026-09-29
 
 ### Agregado
