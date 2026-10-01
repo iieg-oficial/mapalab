@@ -10,6 +10,14 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
+- **Grabar una vuelta de la vista 3D (BETA).** En 3D, Descargar suma el formato Animación, también
+  en «Descargar imagen» del catálogo: video MP4 de una vuelta completa (hasta 30 s, 720p o 1080p; WebM
+  donde no hay H.264) o GIF cuadrado de 480 px en loop de 3 o 5 s. Se graba cuadro por cuadro esperando
+  a que el mapa termine de cargar, con barra de avance y Cancelar. Cada cuadro lleva el logo largo de
+  MapaLab, la flecha del norte, el minimapa de ubicación, un recuadro traslúcido con el nombre de la
+  capa (y el número de capas activas si hay más de una), rumbo, inclinación y zoom, los logos de IIEG
+  y Jalisco y la atribución del mapa base. En el comparador queda apagado. mediabunny y gifenc se
+  cargan solo al grabar.
 - El botón de Colibrí para reportar lleva el badge BETA en la esquina superior derecha. Sale en el
   visor, el catálogo, el embebido y el inicio.
 - Los badges BETA de Colibrí y del Catálogo van en la misma posición, en pill y en icono. En celular

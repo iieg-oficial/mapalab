@@ -11,6 +11,7 @@ import QualitySelector from '@mapsComponents/MapExport/QualitySelector';
 import { QUALITY_PRESETS } from '@mapsComponents/MapExport/utils/exportDimensions';
 import { VISTA_ANALITICA, opcionesFormato, opcionesVista } from '@mapsComponents/MapExport/utils/opcionesDescarga';
 import { trackMapExport } from '@services/analyticsService';
+import PanelAnimacion from '@mapsComponents/MapExport/PanelAnimacion';
 import { BOTON_PRIMARIO, ETIQUETA, INPUT } from '../helpers/controles';
 
 const TOOLTIP_AREA = 'Descarga lo que ves en el mapa';
@@ -40,6 +41,10 @@ const CatalogoDescargaImagen = ({ abierto, capa, onCerrar }) => {
         if (!vistas.some((v) => v.value === vista)) setVista('viewport');
     }, [vistas, vista]);
 
+    useEffect(() => {
+        if (!en3d && formato === 'animacion') setFormato('png');
+    }, [en3d, formato]);
+
     const descargar = async () => {
         const preset = QUALITY_PRESETS[calidad];
         const leyendas = conLeyenda ? layersWithLegends.slice(0, 1) : [];
@@ -58,44 +63,50 @@ const CatalogoDescargaImagen = ({ abierto, capa, onCerrar }) => {
 
                 <div>
                     <span className={ETIQUETA}>Formato</span>
-                    <Segmented options={opcionesFormato(false)} value={formato} onChange={setFormato} ariaLabel="Formato de la imagen" />
+                    <Segmented options={opcionesFormato(false, en3d)} value={formato} onChange={setFormato} ariaLabel="Formato de la imagen" />
                 </div>
 
-                <div>
-                    <span className={ETIQUETA}>Qué parte del mapa</span>
-                    <Segmented options={vistas} value={vista} onChange={setVista} ariaLabel="Parte del mapa" />
-                </div>
+                {formato === 'animacion' ? (
+                    <PanelAnimacion titulo={titulo.trim() || capa?.nombre} claseEtiqueta={ETIQUETA} claseBoton={`${BOTON_PRIMARIO} self-start`} />
+                ) : (
+                    <>
+                        <div>
+                            <span className={ETIQUETA}>Qué parte del mapa</span>
+                            <Segmented options={vistas} value={vista} onChange={setVista} ariaLabel="Parte del mapa" />
+                        </div>
 
-                <div>
-                    <span className={ETIQUETA}>Calidad</span>
-                    <QualitySelector value={calidad} onChange={setCalidad} isPanelOpen={abierto} />
-                </div>
+                        <div>
+                            <span className={ETIQUETA}>Calidad</span>
+                            <QualitySelector value={calidad} onChange={setCalidad} isPanelOpen={abierto} />
+                        </div>
 
-                <div>
-                    <label className={ETIQUETA} htmlFor="catalogo-imagen-titulo">Título</label>
-                    <input
-                        id="catalogo-imagen-titulo"
-                        value={titulo}
-                        onChange={(e) => setTitulo(e.target.value.slice(0, 120))}
-                        className={INPUT}
-                    />
-                </div>
+                        <div>
+                            <label className={ETIQUETA} htmlFor="catalogo-imagen-titulo">Título</label>
+                            <input
+                                id="catalogo-imagen-titulo"
+                                value={titulo}
+                                onChange={(e) => setTitulo(e.target.value.slice(0, 120))}
+                                className={INPUT}
+                            />
+                        </div>
 
-                {layersWithLegends.length > 0 && (
-                    <span className="inline-flex items-center gap-2 font-garet text-[13px] text-[#465055]">
-                        <Checkbox checked={conLeyenda} onChange={() => setConLeyenda((v) => !v)} />
-                        Incluir la leyenda
-                    </span>
+                        {layersWithLegends.length > 0 && (
+                            <span className="inline-flex items-center gap-2 font-garet text-[13px] text-[#465055]">
+                                <Checkbox checked={conLeyenda} onChange={() => setConLeyenda((v) => !v)} />
+                            Incluir la leyenda
+                            </span>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={descargar}
+                            disabled={!canDownload || isDownloading}
+                            className={`${BOTON_PRIMARIO} self-start`}
+                        >
+                            {isDownloading ? 'Generando…' : `Descargar ${formato.toUpperCase()}`}
+                        </button>
+                    </>
                 )}
-
-                <button
-                    type="button"
-                    onClick={descargar}
-                    disabled={!canDownload || isDownloading}
-                    className={`${BOTON_PRIMARIO} self-start`}
-                >
-                    {isDownloading ? 'Generando…' : `Descargar ${formato.toUpperCase()}`}
-                </button>
             </div>
         </Modal>
     );

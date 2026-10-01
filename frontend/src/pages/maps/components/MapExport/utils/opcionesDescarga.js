@@ -26,11 +26,14 @@ const VISTAS = [
 
 export const VISTA_ANALITICA = { viewport: 'vista_actual', 'full-state': 'estado_completo', seleccion: 'seleccion' };
 
-export const opcionesFormato = (isSwipe) => {
-    if (!isSwipe) return FORMATOS;
+const ANIMACION = { value: 'animacion', label: 'Animación', tooltip: 'BETA · Graba una vuelta de la vista 3D en video o GIF' };
+const ANIMACION_COMPARADOR = { ...ANIMACION, disabled: true, tooltip: 'En el comparador no se puede grabar: hay dos mapas a la vez' };
+
+export const opcionesFormato = (isSwipe, es3d = false) => {
+    if (!isSwipe) return es3d ? [...FORMATOS, ANIMACION] : FORMATOS;
     return [
         ...FORMATOS.map(f => (f.value === 'png' ? f : { ...f, disabled: true, tooltip: 'En el comparador solo se descarga PNG' })),
-        { value: 'gif', label: 'GIF', disabled: true, tooltip: 'Próximamente: animación del comparador' },
+        es3d ? ANIMACION_COMPARADOR : { value: 'gif', label: 'GIF', disabled: true, tooltip: 'Próximamente: animación del comparador' },
     ];
 };
 

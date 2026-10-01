@@ -29,6 +29,7 @@ import Segmented from '@components/Segmented';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useSeleccionDescarga } from './hooks/useSeleccionDescarga';
 import SelectorSeleccion from './SelectorSeleccion';
+import PanelAnimacion from './PanelAnimacion';
 import { alPedirDescargaDeSeleccion } from '@pages/maps/helpers/descargaSeleccion';
 import { VISTA_ANALITICA, opcionesFormato, opcionesVista, textoBotonDescarga, tooltipBotonDescarga } from './utils/opcionesDescarga';
 
@@ -78,7 +79,8 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
     useEffect(() => {
         if (viewType === 'seleccion' && !haySeleccion) setViewType('viewport');
         if (en3d && viewType !== 'viewport') setViewType('viewport');
-    }, [viewType, haySeleccion, en3d]);
+        if (!en3d && format === 'animacion') setFormat('png');
+    }, [viewType, haySeleccion, en3d, format]);
 
     useEffect(() => alPedirDescargaDeSeleccion((geometriaPedida) => {
         if (!haySeleccion || en3d) return;
@@ -214,73 +216,79 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                     <Segmented
                         variant="panel"
                         ariaLabel="Formato"
-                        options={opcionesFormato(isSwipe)}
+                        options={opcionesFormato(isSwipe, en3d)}
                         value={format}
                         onChange={setFormat}
                     />
-                    <Segmented
-                        variant="panel"
-                        ariaLabel="Vista"
-                        options={opcionesVista({ haySeleccion: !!seleccion, isSwipe, es3d: en3d })}
-                        value={viewType}
-                        onChange={setViewType}
-                    />
-                    {viewType === 'seleccion' && (
-                        <SelectorSeleccion disponibles={disponibles} elegida={idElegida} onElegir={setElegida} />
-                    )}
+                    {format === 'animacion' ? (
+                        <PanelAnimacion titulo={title} totalCapas={layersWithLegends.length} />
+                    ) : (
+                        <>
+                            <Segmented
+                                variant="panel"
+                                ariaLabel="Vista"
+                                options={opcionesVista({ haySeleccion: !!seleccion, isSwipe, es3d: en3d })}
+                                value={viewType}
+                                onChange={setViewType}
+                            />
+                            {viewType === 'seleccion' && (
+                                <SelectorSeleccion disponibles={disponibles} elegida={idElegida} onElegir={setElegida} />
+                            )}
 
-                    {!isSwipe && (
-                        <QualitySelector
-                            value={qualityIndex}
-                            onChange={setQualityIndex}
-                            isPanelOpen={isPanelOpen}
-                        />
-                    )}
-                    {isSwipe && (
-                        <div className="text-[11px] text-gray-500">
-                            Calidad: <span className="font-bold">Normal</span>. Otras calidades quedan habilitadas en mapa simple.
-                        </div>
-                    )}
+                            {!isSwipe && (
+                                <QualitySelector
+                                    value={qualityIndex}
+                                    onChange={setQualityIndex}
+                                    isPanelOpen={isPanelOpen}
+                                />
+                            )}
+                            {isSwipe && (
+                                <div className="text-[11px] text-gray-500">
+                                Calidad: <span className="font-bold">Normal</span>. Otras calidades quedan habilitadas en mapa simple.
+                                </div>
+                            )}
 
-                    {layersWithLegends.length > 0 && (
-                        <LegendPicker
-                            layers={layersWithLegends}
-                            seleccionadas={selectedLegendLayers}
-                            onAlternar={handleLayerSelect}
-                            formato={format}
-                            campos={camposPorCapa}
-                            onCampo={elegirCampo}
-                            allLayers={allLayers}
-                            conEstadisticas={viewType === 'seleccion'}
-                        />
-                    )}
+                            {layersWithLegends.length > 0 && (
+                                <LegendPicker
+                                    layers={layersWithLegends}
+                                    seleccionadas={selectedLegendLayers}
+                                    onAlternar={handleLayerSelect}
+                                    formato={format}
+                                    campos={camposPorCapa}
+                                    onCampo={elegirCampo}
+                                    allLayers={allLayers}
+                                    conEstadisticas={viewType === 'seleccion'}
+                                />
+                            )}
 
-                    {isSwipe && (
-                        <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
-                            <Tooltip content="Dibuja la línea que separa los dos mapas" placement="left" delay={400} triggerBlock>
-                                <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-                                    <Checkbox checked={includeSwipeBar} onChange={() => setIncludeSwipeBar(p => !p)} />
-                                    Incluir barra divisora
-                                </label>
+                            {isSwipe && (
+                                <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+                                    <Tooltip content="Dibuja la línea que separa los dos mapas" placement="left" delay={400} triggerBlock>
+                                        <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                                            <Checkbox checked={includeSwipeBar} onChange={() => setIncludeSwipeBar(p => !p)} />
+                                        Incluir barra divisora
+                                        </label>
+                                    </Tooltip>
+                                    <Tooltip content="Pone la etiqueta A o B y la fecha de cada lado" placement="left" delay={400} triggerBlock>
+                                        <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+                                            <Checkbox checked={includeSwipePills} onChange={() => setIncludeSwipePills(p => !p)} />
+                                        Incluir etiquetas A / B con fecha
+                                        </label>
+                                    </Tooltip>
+                                </div>
+                            )}
+
+                            <Tooltip content={tooltipBotonDescarga(viewType)} placement="top" delay={400} triggerBlock>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmDownload}
+                                    className="w-full h-12.5 bg-[#703089] text-white rounded-[30px] hover:bg-[#5C2472] hover:shadow-[0_6px_6px_#5C247234] transition font-garet font-bold text-[14px] cursor-pointer"
+                                >
+                                    {textoBotonDescarga(viewType, format)}
+                                </button>
                             </Tooltip>
-                            <Tooltip content="Pone la etiqueta A o B y la fecha de cada lado" placement="left" delay={400} triggerBlock>
-                                <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-                                    <Checkbox checked={includeSwipePills} onChange={() => setIncludeSwipePills(p => !p)} />
-                                    Incluir etiquetas A / B con fecha
-                                </label>
-                            </Tooltip>
-                        </div>
+                        </>
                     )}
-
-                    <Tooltip content={tooltipBotonDescarga(viewType)} placement="top" delay={400} triggerBlock>
-                        <button
-                            type="button"
-                            onClick={handleConfirmDownload}
-                            className="w-full h-12.5 bg-[#703089] text-white rounded-[30px] hover:bg-[#5C2472] hover:shadow-[0_6px_6px_#5C247234] transition font-garet font-bold text-[14px] cursor-pointer"
-                        >
-                            {textoBotonDescarga(viewType, format)}
-                        </button>
-                    </Tooltip>
                 </PanelHoja>
             </Panel>
         </div>
