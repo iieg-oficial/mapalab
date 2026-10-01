@@ -9,8 +9,7 @@ describe('formatos de la grabación', () => {
         expect(opciones[1].disabled).toBe(false);
     });
 
-    it('la ruta suma PNG y el REC del dron no lleva GIF', () => {
-        expect(opcionesDeArchivo({ mp4: true, webm: true }, { png: true }).map(o => o.value)).toEqual(['png', 'mp4', 'webm', 'gif']);
+    it('el REC del dron no lleva GIF', () => {
         expect(opcionesDeArchivo({ mp4: true, webm: true }, { gif: false }).map(o => o.value)).toEqual(['mp4', 'webm']);
     });
 

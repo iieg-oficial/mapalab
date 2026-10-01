@@ -14,7 +14,7 @@ const ZOOM_UBICACION = 13;
 const AVISO_MS = 250;
 const SIN_VIDEO = 'Tu navegador no puede grabar video. Prueba con Chrome, Edge o Safari.';
 
-const cuadroDeVuelo = (ctx, { map, recursos, telemetria, perfil, camara, segundos, titulo, totalCapas }) => {
+const cuadroDeVuelo = (ctx, { map, recursos, telemetria, perfil, camara, segundos, titulo, totalCapas, minimapa }) => {
     const { dron, kmh, agl } = telemetria;
     const coord = fromLonLat(dron.lngLat);
     const [ancho, alto] = TAMANO_VUELO;
@@ -24,7 +24,7 @@ const cuadroDeVuelo = (ctx, { map, recursos, telemetria, perfil, camara, segundo
         mapa: map.getCanvas(),
         recursos,
         rumbo: map.getBearing(),
-        ubicacion: { centro: coord, zoom: ZOOM_UBICACION, extension: null, marcador: { coord, rumbo: dron.rumbo } },
+        ubicacion: { centro: coord, zoom: ZOOM_UBICACION, extension: null, marcador: { coord, rumbo: dron.rumbo }, teselas: minimapa && { ...minimapa, centro: dron.lngLat, rumbo: dron.rumbo } },
         titulo,
         totalCapas,
         tiempo: reloj(segundos),
@@ -32,7 +32,7 @@ const cuadroDeVuelo = (ctx, { map, recursos, telemetria, perfil, camara, segundo
     });
 };
 
-export const useGrabarVuelo = ({ titulo, totalCapas }) => {
+export const useGrabarVuelo = ({ titulo, totalCapas, leerMinimapa }) => {
     const dron = useDron();
     const { map3dRef } = useView3d();
     const { isMobile } = useSider();
@@ -40,7 +40,7 @@ export const useGrabarVuelo = ({ titulo, totalCapas }) => {
     const [error, setError] = useState(null);
     const sesionRef = useRef(null);
     const vivo = useRef({});
-    vivo.current = { dron, titulo, totalCapas };
+    vivo.current = { dron, titulo, totalCapas, leerMinimapa };
     const tope = topeDeVuelo(isMobile);
 
     const detener = useCallback(() => { sesionRef.current?.detener(); }, []);
@@ -115,7 +115,7 @@ export const useGrabarVuelo = ({ titulo, totalCapas }) => {
                 ultimo = transcurrido;
                 ocupado = true;
                 const { dron: actual } = vivo.current;
-                cuadroDeVuelo(ctx, { map, recursos, telemetria, perfil: actual.perfil, camara, segundos: transcurrido, titulo: vivo.current.titulo, totalCapas: vivo.current.totalCapas });
+                cuadroDeVuelo(ctx, { map, recursos, telemetria, perfil: actual.perfil, camara, segundos: transcurrido, titulo: vivo.current.titulo, totalCapas: vivo.current.totalCapas, minimapa: vivo.current.leerMinimapa?.() });
                 pendiente = codificador.agregar(transcurrido).finally(() => { ocupado = false; });
             }
             if (ahora - ultimoAviso > AVISO_MS) {

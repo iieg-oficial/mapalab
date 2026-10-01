@@ -9,7 +9,7 @@ import { useMapDownload } from '@mapsComponents/MapExport/hooks/useMapDownload';
 import { useSeleccionDescarga } from '@mapsComponents/MapExport/hooks/useSeleccionDescarga';
 import QualitySelector from '@mapsComponents/MapExport/QualitySelector';
 import { QUALITY_PRESETS } from '@mapsComponents/MapExport/utils/exportDimensions';
-import { VISTA_ANALITICA, opcionesFormato, opcionesVista } from '@mapsComponents/MapExport/utils/opcionesDescarga';
+import { VISTA_ANALITICA, opcionesFormato, opcionesTipo, opcionesVista } from '@mapsComponents/MapExport/utils/opcionesDescarga';
 import { trackMapExport } from '@services/analyticsService';
 import PanelAnimacion from '@mapsComponents/MapExport/PanelAnimacion';
 import { BOTON_PRIMARIO, ETIQUETA, INPUT } from '../helpers/controles';
@@ -22,6 +22,7 @@ const CatalogoDescargaImagen = ({ abierto, capa, onCerrar }) => {
     const { downloadMap, isDownloading, canDownload, layersWithLegends } = useMapDownload();
     const { geometria: seleccion, trazos } = useSeleccionDescarga(measurements || []);
     const [formato, setFormato] = useState('png');
+    const [tipo, setTipo] = useState('imagen');
     const [vista, setVista] = useState('viewport');
     const [calidad, setCalidad] = useState(1);
     const [titulo, setTitulo] = useState(capa?.nombre || 'Mapa');
@@ -41,10 +42,6 @@ const CatalogoDescargaImagen = ({ abierto, capa, onCerrar }) => {
         if (!vistas.some((v) => v.value === vista)) setVista('viewport');
     }, [vistas, vista]);
 
-    useEffect(() => {
-        if (!en3d && formato === 'animacion') setFormato('png');
-    }, [en3d, formato]);
-
     const descargar = async () => {
         const preset = QUALITY_PRESETS[calidad];
         const leyendas = conLeyenda ? layersWithLegends.slice(0, 1) : [];
@@ -62,14 +59,19 @@ const CatalogoDescargaImagen = ({ abierto, capa, onCerrar }) => {
                 </div>
 
                 <div>
-                    <span className={ETIQUETA}>Formato</span>
-                    <Segmented options={opcionesFormato(false, en3d)} value={formato} onChange={setFormato} ariaLabel="Formato de la imagen" />
+                    <span className={ETIQUETA}>Qué descargar</span>
+                    <Segmented options={opcionesTipo(false)} value={tipo} onChange={setTipo} ariaLabel="Qué descargar" />
                 </div>
 
-                {formato === 'animacion' ? (
+                {tipo === 'animacion' ? (
                     <PanelAnimacion titulo={titulo.trim() || capa?.nombre} claseEtiqueta={ETIQUETA} claseBoton={`${BOTON_PRIMARIO} self-start`} />
                 ) : (
                     <>
+                        <div>
+                            <span className={ETIQUETA}>Formato</span>
+                            <Segmented options={opcionesFormato(false)} value={formato} onChange={setFormato} ariaLabel="Formato de la imagen" />
+                        </div>
+
                         <div>
                             <span className={ETIQUETA}>Qué parte del mapa</span>
                             <Segmented options={vistas} value={vista} onChange={setVista} ariaLabel="Parte del mapa" />

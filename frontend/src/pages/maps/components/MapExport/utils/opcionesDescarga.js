@@ -26,15 +26,16 @@ const VISTAS = [
 
 export const VISTA_ANALITICA = { viewport: 'vista_actual', 'full-state': 'estado_completo', seleccion: 'seleccion' };
 
-const ANIMACION = { value: 'animacion', label: 'Animación', tooltip: 'BETA · Graba una vuelta de la vista 3D en video o GIF' };
-const ANIMACION_COMPARADOR = { ...ANIMACION, disabled: true, tooltip: 'En el comparador no se puede grabar: hay dos mapas a la vez' };
+export const opcionesTipo = isSwipe => [
+    { value: 'imagen', label: 'Imagen', tooltip: 'PNG, JPEG o PDF del mapa' },
+    isSwipe
+        ? { value: 'animacion', label: 'Animación', disabled: true, tooltip: 'En el comparador no se puede grabar: hay dos mapas a la vez' }
+        : { value: 'animacion', label: 'Animación', tooltip: 'BETA · Video o GIF de una vuelta en 3D o de una ruta en dron' },
+];
 
-export const opcionesFormato = (isSwipe, es3d = false) => {
-    if (!isSwipe) return es3d ? [...FORMATOS, ANIMACION] : FORMATOS;
-    return [
-        ...FORMATOS.map(f => (f.value === 'png' ? f : { ...f, disabled: true, tooltip: 'En el comparador solo se descarga PNG' })),
-        es3d ? ANIMACION_COMPARADOR : { value: 'gif', label: 'GIF', disabled: true, tooltip: 'Próximamente: animación del comparador' },
-    ];
+export const opcionesFormato = (isSwipe) => {
+    if (!isSwipe) return FORMATOS;
+    return FORMATOS.map(f => (f.value === 'png' ? f : { ...f, disabled: true, tooltip: 'En el comparador solo se descarga PNG' }));
 };
 
 export const opcionesVista = ({ haySeleccion, isSwipe, es3d }) => {

@@ -24,10 +24,10 @@ describe('opcionesVista', () => {
 });
 
 describe('opcionesFormato', () => {
-    it('en el comparador solo deja PNG y anuncia GIF', () => {
+    it('en el comparador solo deja PNG', () => {
         const opciones = opcionesFormato(true);
         expect(opciones.filter(o => !o.disabled).map(o => o.value)).toEqual(['png']);
-        expect(opciones.at(-1)).toMatchObject({ value: 'gif', disabled: true });
+        expect(opciones.map(o => o.value)).toEqual(['png', 'jpeg', 'pdf']);
     });
 });
 

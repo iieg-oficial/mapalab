@@ -6,7 +6,6 @@ import { useSider } from '@contexts/SiderContext';
 import { useMapsContext } from '@hooks/useMaps';
 import { useView3d } from '@contexts/View3dContext';
 import SymbologyItem from '../SymbologyItem';
-import Checkbox from '@components/Checkbox';
 import Icon from '@components/Icon';
 import Panel from '@components/Panel';
 import Tooltip from '@components/Tooltip';
@@ -30,8 +29,9 @@ import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useSeleccionDescarga } from './hooks/useSeleccionDescarga';
 import SelectorSeleccion from './SelectorSeleccion';
 import PanelAnimacion from './PanelAnimacion';
+import OpcionesComparador from './OpcionesComparador';
 import { alPedirDescargaDeSeleccion } from '@pages/maps/helpers/descargaSeleccion';
-import { VISTA_ANALITICA, opcionesFormato, opcionesVista, textoBotonDescarga, tooltipBotonDescarga } from './utils/opcionesDescarga';
+import { VISTA_ANALITICA, opcionesFormato, opcionesTipo, opcionesVista, textoBotonDescarga, tooltipBotonDescarga } from './utils/opcionesDescarga';
 
 const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = false }) => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -40,6 +40,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
     const { isMobile } = useSider();
     const anchorRef = useRef(null);
     const [format, setFormat] = useState('png');
+    const [tipoDescarga, setTipoDescarga] = useState('imagen');
     const [viewType, setViewType] = useState('viewport');
     const [qualityIndex, setQualityIndex] = useState(1);
     const [camposPorCapa, setCamposPorCapa] = useState({});
@@ -79,8 +80,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
     useEffect(() => {
         if (viewType === 'seleccion' && !haySeleccion) setViewType('viewport');
         if (en3d && viewType !== 'viewport') setViewType('viewport');
-        if (!en3d && format === 'animacion') setFormat('png');
-    }, [viewType, haySeleccion, en3d, format]);
+    }, [viewType, haySeleccion, en3d]);
 
     useEffect(() => alPedirDescargaDeSeleccion((geometriaPedida) => {
         if (!haySeleccion || en3d) return;
@@ -93,9 +93,10 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
     useEffect(() => {
         if (isSwipe) {
             if (format !== 'png') setFormat('png');
+            if (tipoDescarga !== 'imagen') setTipoDescarga('imagen');
             if (qualityIndex !== 1) setQualityIndex(1);
         }
-    }, [isSwipe, format, qualityIndex]);
+    }, [isSwipe, format, qualityIndex, tipoDescarga]);
 
     useEffect(() => {
         const layer = selectedLayer || layersWithLegends[0];
@@ -213,17 +214,12 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                     onCerrar={() => handleSetIsPanelOpen(false)}
                     className={`gap-3 min-h-0 overflow-y-auto ${HIDDEN_SCROLLBAR}`}
                 >
-                    <Segmented
-                        variant="panel"
-                        ariaLabel="Formato"
-                        options={opcionesFormato(isSwipe, en3d)}
-                        value={format}
-                        onChange={setFormat}
-                    />
-                    {format === 'animacion' ? (
-                        <PanelAnimacion titulo={title} totalCapas={layersWithLegends.length} />
+                    <Segmented variant="panel" ariaLabel="Qué descargar" options={opcionesTipo(isSwipe)} value={tipoDescarga} onChange={setTipoDescarga} />
+                    {tipoDescarga === 'animacion' ? (
+                        <PanelAnimacion titulo={title} totalCapas={layersWithLegends.length} onListo={() => handleSetIsPanelOpen(false)} />
                     ) : (
                         <>
+                            <Segmented variant="panel" ariaLabel="Formato" options={opcionesFormato(isSwipe)} value={format} onChange={setFormat} />
                             <Segmented
                                 variant="panel"
                                 ariaLabel="Vista"
@@ -262,20 +258,12 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                             )}
 
                             {isSwipe && (
-                                <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
-                                    <Tooltip content="Dibuja la línea que separa los dos mapas" placement="left" delay={400} triggerBlock>
-                                        <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-                                            <Checkbox checked={includeSwipeBar} onChange={() => setIncludeSwipeBar(p => !p)} />
-                                        Incluir barra divisora
-                                        </label>
-                                    </Tooltip>
-                                    <Tooltip content="Pone la etiqueta A o B y la fecha de cada lado" placement="left" delay={400} triggerBlock>
-                                        <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-                                            <Checkbox checked={includeSwipePills} onChange={() => setIncludeSwipePills(p => !p)} />
-                                        Incluir etiquetas A / B con fecha
-                                        </label>
-                                    </Tooltip>
-                                </div>
+                                <OpcionesComparador
+                                    conBarra={includeSwipeBar}
+                                    conEtiquetas={includeSwipePills}
+                                    onBarra={() => setIncludeSwipeBar(p => !p)}
+                                    onEtiquetas={() => setIncludeSwipePills(p => !p)}
+                                />
                             )}
 
                             <Tooltip content={tooltipBotonDescarga(viewType)} placement="top" delay={400} triggerBlock>

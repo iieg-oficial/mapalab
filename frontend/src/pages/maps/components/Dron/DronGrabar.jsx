@@ -18,7 +18,7 @@ export const ContadorRec = ({ segundos, tope }) => (
     </span>
 );
 
-export const TarjetaGrabar = ({ tope, error, onGrabar, onCerrar }) => {
+export const TarjetaGrabar = ({ tope, error, onGrabar, onPng, onCerrar }) => {
     const soporte = useFormatosVideo();
     const opciones = opcionesDeArchivo(soporte, { gif: false, video: 'El vuelo en tiempo real' });
     const [camara, setCamara] = useState('tercera');
@@ -41,6 +41,9 @@ export const TarjetaGrabar = ({ tope, error, onGrabar, onCerrar }) => {
                 className="h-9 w-full rounded-[30px] bg-[#D6336C] font-garet text-[13px] font-bold text-white hover:shadow-[0_6px_6px_#D6336C34] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
                 Grabar hasta {reloj(tope)}
+            </button>
+            <button type="button" onClick={onPng} className="self-center font-garet text-[12px] font-bold text-[#5C2472] underline cursor-pointer">
+                Descargar la imagen PNG del recorrido
             </button>
             {error && <p className="font-garet text-[11.5px] text-[#D6336C]">{error}</p>}
         </div>

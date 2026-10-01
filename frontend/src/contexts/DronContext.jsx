@@ -48,6 +48,8 @@ const INACTIVO = {
     accionesRef: { current: {} },
     telemetriaRef: { current: null },
     camaraForzadaRef: { current: null },
+    minimapaPedido: 0,
+    pedirMinimapa: NADA,
     publicar: NADA,
     suscribir: () => NADA,
 };
@@ -68,6 +70,8 @@ export const DronProvider = ({ children }) => {
     const accionesRef = useRef({});
     const telemetriaRef = useRef(null);
     const camaraForzadaRef = useRef(null);
+    const [minimapaPedido, setMinimapaPedido] = useState(0);
+    const pedirMinimapa = useCallback(() => setMinimapaPedido(n => n + 1), []);
     const oyentesRef = useRef(new Set());
 
     useEffect(() => { guardarDron(config); }, [config]);
@@ -158,9 +162,11 @@ export const DronProvider = ({ children }) => {
         accionesRef,
         telemetriaRef,
         camaraForzadaRef,
+        minimapaPedido,
+        pedirMinimapa,
         publicar,
         suscribir,
-    }), [activo, config, auto, entrar, salir, setOpcion, alternar, cambiarColor, publicar, suscribir, ruta, cambiarRuta, avanzarRuta]);
+    }), [activo, config, auto, entrar, salir, setOpcion, alternar, cambiarColor, publicar, suscribir, ruta, cambiarRuta, avanzarRuta, minimapaPedido, pedirMinimapa]);
 
     return <DronContext.Provider value={value}>{children}</DronContext.Provider>;
 };

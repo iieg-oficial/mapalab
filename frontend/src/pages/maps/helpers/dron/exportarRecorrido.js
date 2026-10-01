@@ -21,7 +21,7 @@ export const encuadrarRecorrido = (puntos, ancho = ANCHO, alto = ALTO - CABECERA
     return { zoom: 3, centro: puntos[0] };
 };
 
-export const cargarTesela = url => new Promise((resolver) => {
+const cargarTesela = url => new Promise((resolver) => {
     const img = new Image();
     const espera = setTimeout(() => resolver(null), ESPERA_TESELA_MS);
     img.crossOrigin = 'anonymous';

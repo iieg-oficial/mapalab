@@ -5,6 +5,7 @@ import icoNorte from '@icons/ico_n.svg';
 import { fetchSiluetas } from '@services/municipioService';
 import { aPixel, municipioEn, vistaDelMinimapa } from '@pages/maps/helpers/minimapa';
 import { dibujarMinimapa } from '@pages/maps/helpers/trazoMinimapa';
+import { dibujarMinimapa as dibujarMinimapaDron } from '@pages/maps/helpers/dron/dibujoMinimapa';
 import { dibujarIndicadores } from './indicadores';
 
 const FUENTE = 'Garet, Figtree, system-ui, sans-serif';
@@ -102,7 +103,37 @@ const dibujarMarcador = (ctx, [x, y], rumbo, lado) => {
     ctx.restore();
 };
 
+const dibujarConTeselas = (ctx, { x, y, lado, teselas }) => {
+    const lienzo = document.createElement('canvas');
+    lienzo.width = Math.round(lado);
+    lienzo.height = Math.round(lado);
+    dibujarMinimapaDron(lienzo.getContext('2d'), { ...teselas, ancho: lienzo.width, alto: lienzo.height, rumboArriba: false, ruta: teselas.ruta || { puntos: [] }, rastro: teselas.rastro || [] });
+    const radio = lado * 0.08;
+    ctx.save();
+    ctx.shadowColor = 'rgba(34, 26, 46, 0.35)';
+    ctx.shadowBlur = lado * 0.06;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.roundRect(x, y, lado, lado, radio);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.clip();
+    ctx.drawImage(lienzo, x, y, lado, lado);
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = Math.max(1.5, lado * 0.012);
+    ctx.beginPath();
+    ctx.roundRect(x, y, lado, lado, radio);
+    ctx.stroke();
+    ctx.restore();
+};
+
 const dibujarUbicacion = (ctx, siluetas, { x, y, lado, ubicacion }) => {
+    if (ubicacion?.teselas?.plantilla) {
+        dibujarConTeselas(ctx, { x, y, lado, teselas: ubicacion.teselas });
+        return;
+    }
     if (!siluetas?.estado || !ubicacion) return;
     const lienzo = document.createElement('canvas');
     lienzo.width = Math.round(lado);

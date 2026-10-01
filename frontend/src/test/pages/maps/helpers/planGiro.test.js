@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { indicadoresDeGiro, nombreDeArchivo, planDeGiro, rumboDelCuadro } from '@pages/maps/helpers/grabacion/planGiro';
-import { opcionesFormato } from '@mapsComponents/MapExport/utils/opcionesDescarga';
+import { opcionesFormato, opcionesTipo } from '@mapsComponents/MapExport/utils/opcionesDescarga';
 
 describe('plan de la vuelta grabada', () => {
     it('el GIF dura 3 o 5 s a 15 cuadros por segundo y sale cuadrado', () => {
@@ -30,10 +30,11 @@ describe('plan de la vuelta grabada', () => {
     });
 });
 
-describe('formato Animación', () => {
-    it('solo aparece en 3D y en el comparador queda apagado', () => {
+describe('qué descargar', () => {
+    it('Imagen o Animación, y en el comparador la animación queda apagada', () => {
+        expect(opcionesTipo(false).map(o => o.value)).toEqual(['imagen', 'animacion']);
+        expect(opcionesTipo(false)[1].disabled).toBeUndefined();
+        expect(opcionesTipo(true)[1].disabled).toBe(true);
         expect(opcionesFormato(false).some(o => o.value === 'animacion')).toBe(false);
-        expect(opcionesFormato(false, true).find(o => o.value === 'animacion').disabled).toBeUndefined();
-        expect(opcionesFormato(true, true).find(o => o.value === 'animacion').disabled).toBe(true);
     });
 });

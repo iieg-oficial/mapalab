@@ -37,6 +37,31 @@ const teselasDeFondo = (ctx, { centro, ancho, alto, zoom, plantilla, cache }) =>
     });
 };
 
+const ESPERA_TESELA_MS = 6000;
+
+export const precargarTeselas = ({ centro, ancho, alto, zoom, plantilla, cache }) => {
+    if (!plantilla) return Promise.resolve();
+    const lado = Math.ceil(Math.hypot(ancho, alto));
+    return Promise.all(teselasVisibles(centro, lado, lado, zoom).map(({ tx, ty }) => new Promise((resolver) => {
+        const url = urlTesela(plantilla, zoom, tx, ty);
+        let img = cache.get(url);
+        if (!img) {
+            img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = url;
+            cache.set(url, img);
+        }
+        if (img.complete) {
+            resolver();
+            return;
+        }
+        const limite = setTimeout(resolver, ESPERA_TESELA_MS);
+        const listo = () => { clearTimeout(limite); resolver(); };
+        img.addEventListener('load', listo, { once: true });
+        img.addEventListener('error', listo, { once: true });
+    })));
+};
+
 export const linea = (ctx, puntos, color, ancho, guiones = []) => {
     if (puntos.length < 2) return;
     ctx.strokeStyle = color;

@@ -5,9 +5,10 @@ import { useSider } from '@contexts/SiderContext';
 import { useAreaUtil } from '@contexts/AreaUtilContext';
 import { basemapTileUrl } from '@pages/maps/helpers/view3d';
 import { ZOOM_MINIMAPA, ZOOM_MINIMAPA_RANGO, largoDeRuta } from '@pages/maps/helpers/dron/minimapaDron';
+import { exportarRecorrido } from '@pages/maps/helpers/dron/exportarRecorrido';
+import { triggerDownload } from '@services/downloadService';
 import { dibujarMinimapa, puntoDelClic } from '@pages/maps/helpers/dron/dibujoMinimapa';
 import { BotonMini, ResumenRuta } from './DronMinimapaControles';
-import DronDescargaRecorrido from './DronDescargaRecorrido';
 import { ContadorRec, TarjetaGrabar } from './DronGrabar';
 import { useGrabarVuelo } from '@hooksMaps/useGrabarVuelo';
 import { useMapDownload } from '@mapsComponents/MapExport/hooks/useMapDownload';
@@ -24,7 +25,7 @@ const tamano = (grande, isMobile) => {
 
 const DronMinimapa = () => {
     const { basemaps, baseMapId } = useMapsContext();
-    const { suscribir, setAuto, telemetriaRef, ruta, rutaRef, cambiarRuta, perfil, config } = useDron();
+    const { suscribir, setAuto, telemetriaRef, ruta, rutaRef, cambiarRuta, perfil, config, minimapaPedido } = useDron();
     const { isMobile } = useSider();
     const { margenes } = useAreaUtil();
     const lienzoRef = useRef(null);
@@ -38,8 +39,13 @@ const DronMinimapa = () => {
     const [menu, setMenu] = useState(null);
     const { layersWithLegends, selectedLayer } = useMapDownload();
     const capa = selectedLayer || layersWithLegends[0];
-    const grabacion = useGrabarVuelo({ titulo: capa?.label || capa?.name || 'Vuelo en dron', totalCapas: layersWithLegends.length });
     const plantilla = basemapTileUrl(basemaps[baseMapId]?.tiles);
+    const zoomRef = useRef(zoom);
+    zoomRef.current = zoom;
+    const leerMinimapa = () => ({ zoom: zoomRef.current, plantilla, cache: cacheRef.current, ruta: rutaRef.current, rastro: rastroRef.current });
+    const grabacion = useGrabarVuelo({ titulo: capa?.label || capa?.name || 'Vuelo en dron', totalCapas: layersWithLegends.length, leerMinimapa });
+
+    useEffect(() => { if (minimapaPedido) setGrande(true); }, [minimapaPedido]);
 
     useEffect(() => {
         const lienzo = lienzoRef.current;
@@ -92,6 +98,13 @@ const DronMinimapa = () => {
         setGrande(g => !g);
         setZoom(z => (grande ? Math.max(z, ZOOM_MINIMAPA) : Math.min(z, ZOOM_MINIMAPA - 1)));
     };
+    const descargarPng = async () => {
+        const datos = leerDatos();
+        if (!datos) return;
+        const imagen = await exportarRecorrido({ ...datos, plantilla }).catch(() => exportarRecorrido({ ...datos, plantilla: null }));
+        if (imagen) triggerDownload(imagen, `recorrido-dron-${new Date().toISOString().slice(0, 10)}.png`);
+        setMenu(null);
+    };
     const alternarMenu = cual => setMenu(previo => (previo === cual ? null : cual));
     const acciones = `transition-opacity duration-150 ${menu || grabacion.grabando ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100'}`;
     const leerDatos = () => {
@@ -126,7 +139,6 @@ const DronMinimapa = () => {
                         activo={rumboArriba}
                     />
                 )}
-                <BotonMini icono="descargar" titulo="Descargar el recorrido en imagen, video o GIF" onClick={() => alternarMenu('descarga')} activo={menu === 'descarga'} />
                 <BotonMini
                     icono="grabar"
                     titulo={grabacion.grabando ? 'Detener y descargar el video' : 'Grabar el vuelo en video'}
@@ -140,19 +152,12 @@ const DronMinimapa = () => {
                 <BotonMini icono="menos" titulo="Alejar" onClick={() => acercar(-1)} disabled={zoom <= ZOOM_MIN} />
             </div>
             {grabacion.grabando && <ContadorRec segundos={grabacion.segundos} tope={grabacion.tope} />}
-            {menu === 'descarga' && (
-                <DronDescargaRecorrido
-                    leerDatos={leerDatos}
-                    plantilla={plantilla}
-                    kmh={perfil.vel[config.velocidad]}
-                    onCerrar={() => setMenu(null)}
-                />
-            )}
             {menu === 'grabar' && !grabacion.grabando && (
                 <TarjetaGrabar
                     tope={grabacion.tope}
                     error={grabacion.error}
                     onGrabar={(camara, contenedor) => { setMenu(null); grabacion.grabar(camara, contenedor); }}
+                    onPng={descargarPng}
                     onCerrar={() => setMenu(null)}
                 />
             )}
