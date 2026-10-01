@@ -1,10 +1,7 @@
-import { huellaCono } from '@pages/maps/helpers/dron/camaraDron';
-
 export const TOPE_ESCRITORIO_S = 60;
 export const TOPE_CELULAR_S = 30;
 export const CUADROS_POR_SEGUNDO = 30;
 export const TAMANO_VUELO = [1280, 720];
-const ALTURA_DE_ESCALA_M = 300;
 
 export const topeDeVuelo = celular => (celular ? TOPE_CELULAR_S : TOPE_ESCRITORIO_S);
 
@@ -13,10 +10,18 @@ export const reloj = (segundos) => {
     return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 };
 
-export const indicadoresDeVuelo = ({ kmh, maximoKmh, agl, rumbo, cono }) => {
-    const velocidad = { tipo: 'dial', fraccion: kmh / Math.max(1, maximoKmh), valor: String(Math.round(kmh)), unidad: 'km/h', etiqueta: 'VELOCIDAD' };
-    const altura = { tipo: 'dial', fraccion: agl / ALTURA_DE_ESCALA_M, valor: String(Math.round(agl)), unidad: 'm del suelo', etiqueta: 'ALTURA' };
-    if (!cono) return [velocidad, altura, { tipo: 'brujula', rumbo, etiqueta: 'RUMBO' }];
-    const { largo, ancho } = huellaCono(agl);
-    return [velocidad, altura, { tipo: 'dial', fraccion: agl / ALTURA_DE_ESCALA_M, valor: `${largo}×${ancho}`, unidad: 'm de huella', etiqueta: 'CONO' }];
+export const ACELERACION_MAXIMA = 20;
+const HOLGURA = 1.5;
+const MARGEN_S = 15;
+
+export const planDeRuta = ({ estimadoS, tope }) => {
+    if (!estimadoS || estimadoS <= 0) return { aceleracion: 1, ritmo: 1, limite: tope, mostrado: tope };
+    const aceleracion = Math.max(1, Math.min(ACELERACION_MAXIMA, Math.ceil(estimadoS / tope)));
+    const duracionReal = estimadoS / aceleracion;
+    return {
+        aceleracion,
+        ritmo: Math.max(1, duracionReal / tope),
+        limite: duracionReal * HOLGURA + MARGEN_S,
+        mostrado: Math.ceil(duracionReal),
+    };
 };

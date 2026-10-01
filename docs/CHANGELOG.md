@@ -13,29 +13,56 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - **Grabar una vuelta de la vista 3D (BETA).** Descargar elige primero qué bajar, Imagen o Animación,
   también en «Descargar imagen» del catálogo y también fuera de 3D. Animación ofrece Vuelta 3D (entra a
   3D si hace falta y graba) o Ruta en dron (abre el modo dron con el minimapa grande para trazar la ruta
-  y grabarla con REC; solo en el visor). En el comparador la animación queda apagada. La vuelta: video MP4 o WebM a elegir de una vuelta completa (hasta 30 s,
-  720p o 1080p; el formato que el navegador no pueda generar sale apagado) o GIF cuadrado de 480 px en loop de 3 o 5 s. Se graba cuadro por cuadro esperando
-  a que el mapa termine de cargar, con barra de avance y Cancelar. Cada cuadro lleva el logo largo de
-  MapaLab, la flecha del norte, el minimapa de ubicación, un recuadro traslúcido con el nombre de la
-  capa (y el número de capas activas si hay más de una), rumbo, inclinación y zoom, los logos de IIEG
-  y Jalisco y la atribución del mapa base. En el comparador queda apagado. mediabunny y gifenc se
-  cargan solo al grabar.
+  y grabarla con REC; solo en el visor). En el comparador la animación queda apagada. La vuelta se graba
+  en tiempo real con la órbita del botón de play, a la velocidad de Ajustes 3D: el video (MP4 o WebM,
+  720p o 1080p) dura lo que la vuelta, y el GIF cuadrado de 480 px toma cuadros a lo largo de ella y
+  dura 3 o 5 s en loop. El formato que el navegador no pueda generar sale apagado. Barra de avance y
+  Cancelar. Cada cuadro lleva el logo largo de MapaLab, la flecha del norte, el minimapa del visor con
+  los logos de IIEG y Jalisco encima, la capa con rumbo, inclinación y zoom, y la atribución del mapa
+  base. mediabunny y gifenc se cargan solo al grabar.
 - **Grabar el vuelo del dron (BETA).** Botón REC en las acciones del minimapa del dron: se elige la
   cámara (1ª persona, 3ª persona o la del cono) y graba video en tiempo real hasta 1 min (30 s en
   celular), con el contador sobre el minimapa. REC otra vez detiene y descarga; ocultar la pestaña o salir del dron también.
   La cámara del cono pone la vista desde el dron hacia el suelo con la inclinación del cono, como un
   dron de mapeo, y el recuadro muestra la huella en el suelo. El minimapa marca el dron con su rumbo.
-- Las acciones del minimapa del dron (expandir, rumbo y grabar arriba a la derecha; acercar y alejar
-  abajo a la izquierda) aparecen al pasar el cursor, también con el minimapa contraído; en pantallas
-  táctiles quedan visibles.
+- Las acciones del minimapa del dron (expandir y rumbo arriba a la derecha; acercar y alejar abajo a la
+  izquierda) aparecen al pasar el cursor con el minimapa contraído y quedan fijas con el minimapa grande;
+  en pantallas táctiles quedan visibles.
 - En las grabaciones el logo de MapaLab va a la mitad del tamaño, la flecha del norte queda a una
   distancia del borde que la deja girar sin salirse, y el recuadro, el minimapa y la atribución bajan
   al mismo margen que los demás elementos (4 % del lado corto).
-- **El minimapa de las grabaciones es el del dron:** mapa base con la ruta trazada, el rastro y la
-  flecha con el rumbo, en un recuadro redondeado; se lee mejor que la silueta de Jalisco. En la vuelta 3D
-  se centra en la vista dos niveles más lejos y precarga sus teselas antes de grabar. La ruta ya no se
-  descarga aparte: se vuela y se graba con REC, y el PNG del recorrido quedó como enlace en la tarjeta
-  de grabar.
+- En el video del dron van, sin fondo, los mismos instrumentos que el dron en pantalla (altura,
+  velocidad y el tercer instrumento de cada aeronave) bajo el nombre de la capa y su contador, y debajo
+  el perfil del terreno. Los logos largos de IIEG y Jalisco van arriba del minimapa, que vuelve a ser el
+  del visor (silueta con el municipio), más chico. Sin tiempo en el cuadro: el reproductor ya lo muestra.
+  La flecha del norte es más chica. El minimapa contraído del dron es un poco más grande.
+- La pastilla MANUAL/AUTO del dron va siempre arriba de los instrumentos, con sus opciones encima al
+  pasar el cursor, en vez de flotar sobre el dron.
+- La pastilla del dron cambia: botones sin fondo, en el gris y tamaño de los de zoom, que se pintan de
+  morado al activarse; el primero abre y minimiza los instrumentos (el panel ya no tiene botón propio:
+  contraído se abre con un clic y muestra si la altura está fija y la velocidad) y el segundo abre junto
+  a la pastilla la tarjeta de grabar (cámara, formato y el PNG del recorrido). La velocidad se cambia con
+  un clic en el velocímetro (1, 2, 3 y de vuelta) y la altura sobre el terreno se fija con un clic en el
+  altímetro, que muestra un candado. En la pastilla 3D, el botón del dron y el engrane también van sin
+  fondo y en gris. Las pastillas de zoom, 3D y dron comparten medidas: cada botón ocupa 40 px de alto,
+  sin separación extra, y el fondo del seleccionado es un círculo de 28 px.
+- Elegir el centro de la vuelta 3D: la vista actual o un punto que se marca con un clic en el mapa. Una
+  pastilla arriba del mapa dice qué está pasando (eligiendo el centro, preparando, grabando con su
+  avance, guardando) y deja cancelar; antes no se veía nada mientras arrancaba. La vuelta ya no lleva
+  diales: solo la capa.
+- Grabar una ruta la recorre completa: el dron vuela hasta 20 veces más rápido mientras graba y, si aún
+  no cabe en un minuto, se toman menos cuadros. El minimapa del video dibuja el trazo que ya voló.
+- La pastilla de trazos del minimapa va pegada a la derecha: primero la información, en su pastilla, y
+  luego sus botones sueltos, con uno nuevo para grabar el trazo. Con el minimapa grande sus botones se
+  ven siempre; contraído, al pasar el cursor. El minimapa del dron tiene una sombra más suave, como la
+  de los instrumentos.
+- El contador REC sobre el minimapa también detiene y descarga al darle clic. La grabación ya no tiene
+  botón en el minimapa: se abre desde la pastilla, desde la pastilla de trazos o desde Descargar.
+- Descargar → Animación → Ruta en dron ofrece «Grabar esta ruta» si ya hay una trazada, o «Crear la ruta
+  y grabar»: abre el minimapa con la tarjeta de grabar lista y resaltada en naranja unos segundos, el
+  dron vuela la ruta y el video se detiene al llegar al último punto.
+- La ruta ya no se descarga aparte: se vuela y se graba con REC, y el PNG del recorrido quedó como
+  enlace en la tarjeta de grabar.
 - El botón de Colibrí para reportar lleva el badge BETA en la esquina superior derecha. Sale en el
   visor, el catálogo, el embebido y el inicio.
 - Los badges BETA de Colibrí y del Catálogo van en la misma posición, en pill y en icono. En celular
@@ -45,6 +72,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Cambiado
 
+- El minimapa del visor ya no se oculta en 3D ni en el dron: se recorre a la derecha de la pastilla 3D
+  (o de la del dron). En 3D un clic en él mueve el mapa 3D; en el dron no responde al clic, porque la
+  posición la lleva el vuelo.
 - La simulación de lluvia e inundación de la vista 3D solo sale en `dev` y `beta`; en producción el botón
   no aparece y la pastilla queda en tres o cuatro filas. Es un plano de agua que no inunda calles y puede
   leerse como información de riesgo: vuelve cuando exista el ráster HAND por cuencas. Se quitó la mención

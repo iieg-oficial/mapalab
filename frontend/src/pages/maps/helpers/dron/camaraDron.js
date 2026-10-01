@@ -37,7 +37,6 @@ export const opcionesPrimera = (map, dron) => map.calculateCameraOptionsFromCame
 );
 
 const INCLINACION_CONO = 20;
-const APERTURA_CONO = 19.1;
 
 export const opcionesCono = (map, dron) => map.calculateCameraOptionsFromCameraLngLatAltRotation(
     dron.lngLat,
@@ -46,12 +45,3 @@ export const opcionesCono = (map, dron) => map.calculateCameraOptionsFromCameraL
     INCLINACION_CONO,
     0,
 );
-
-export const huellaCono = (agl) => {
-    const tan = grados => Math.tan(grados * RAD);
-    const alto = Math.max(0, agl);
-    return {
-        largo: Math.round(alto * (tan(INCLINACION_CONO + APERTURA_CONO) - tan(INCLINACION_CONO - APERTURA_CONO))),
-        ancho: Math.round(2 * alto * tan(APERTURA_CONO) / Math.cos(INCLINACION_CONO * RAD)),
-    };
-};

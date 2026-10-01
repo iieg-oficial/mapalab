@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { toLonLat } from 'ol/proj';
+import { useView3d } from '@contexts/View3dContext';
+import { useDron } from '@contexts/DronContext';
 import Tooltip from '@components/Tooltip';
 import { MobileSheetCloseButton } from '@components/MobileSheet';
 import { trackMinimapa } from '@services/analyticsService';
@@ -30,6 +33,9 @@ const useAlto = (ref, activo) => {
 
 const MinimapaEscritorio = () => {
     const { visible, activo, lienzo } = useMinimapa();
+    const { active: en3d, map3dRef } = useView3d();
+    const { activo: enDron } = useDron();
+    const irEn3d = (destino, duracion) => map3dRef.current?.easeTo({ center: toLonLat(destino), duration: duracion });
     const cajaRef = useRef(null);
     const tapado = useTapado(cajaRef, OBSTACULOS, activo);
     const lado = useAlto(cajaRef, activo);
@@ -49,11 +55,11 @@ const MinimapaEscritorio = () => {
             data-minimapa
             aria-hidden={tapado}
             data-atenuado={!visible || undefined}
-            className={`group absolute left-full top-0 bottom-0 ml-3 transition-opacity duration-200 ${tapado ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            className={`group absolute left-full top-0 bottom-0 ${en3d ? 'ml-[68px]' : 'ml-3'} transition-opacity duration-200 ${tapado ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
             style={{ width: lado }}
         >
             <div className="relative">
-                <LienzoMinimapa lado={lado} atenuado={!visible} {...lienzo} />
+                <LienzoMinimapa lado={lado} atenuado={!visible} {...lienzo} bloqueado={lienzo.bloqueado || enDron} alIr={en3d ? irEn3d : undefined} />
                 {enModoMunicipio && <PuntoDeReferencia map={lienzo.map} />}
                 <div className="absolute right-0 top-0 flex rounded-full bg-white p-0.5 opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
                     <Tooltip content="Quitar el minimapa. Vuelve desde Herramientas" placement="top" delay={300}>

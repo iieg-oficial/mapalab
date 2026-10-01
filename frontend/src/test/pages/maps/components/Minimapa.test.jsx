@@ -90,10 +90,11 @@ describe('Minimapa', () => {
         expect(localStorage.getItem('mapalab.minimapa')).toBe('apagado');
     });
 
-    it('en la vista 3D no se monta', () => {
+    it('en la vista 3D se queda, recorrido a la derecha de la pastilla 3D', () => {
         mocks.en3d = true;
         montar(MinimapaEscritorio, 12);
-        expect(lienzo()).toBeNull();
+        expect(lienzo()).not.toBeNull();
+        expect(document.querySelector('[data-minimapa]').className).toContain('ml-[68px]');
     });
 
     it('en modo municipio marca con un punto discreto el centro que elige el municipio', async () => {

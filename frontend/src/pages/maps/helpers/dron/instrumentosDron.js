@@ -28,6 +28,19 @@ const redondeado = (ctx, x, y, w, h, r) => {
     else ctx.rect(x, y, w, h);
 };
 
+const candado = (ctx, x, y) => {
+    ctx.save();
+    ctx.strokeStyle = MORADO;
+    ctx.fillStyle = MORADO;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(x, y - 4, 5, Math.PI, 0);
+    ctx.stroke();
+    redondeado(ctx, x - 7.5, y - 4, 15, 11, 2.5);
+    ctx.fill();
+    ctx.restore();
+};
+
 const cinta = (ctx, { agl, msnm, perfil }) => {
     const y = 140 - (118 * Math.log1p(Math.max(0, agl))) / Math.log1p(perfil.techo ?? 3000);
     const tono = COLOR_TONO[tonoAltura(agl)];
@@ -131,6 +144,7 @@ const TERCERO = { horizonte, vario: variometro, camara };
 export const dibujarInstrumentos = (ctx, datos) => {
     ctx.clearRect(0, 0, ANCHO_INSTRUMENTO, ALTO_INSTRUMENTO);
     cinta(ctx, datos);
+    if (datos.seguir) candado(ctx, 47, 9);
     velocimetro(ctx, datos);
     TERCERO[datos.perfil.instr](ctx, 345, 82, datos);
 };
@@ -189,4 +203,11 @@ export const dibujarPerfil = (ctx, { muestras, msnm, agl, kmh, velocidad, camara
     }
     texto(ctx, `${formato.format(kmh)} km/h`, 388, 48, 15, 800, TINTA, 'right');
     texto(ctx, `${formato.format(msnm)} msnm`, 14, 20, 13, 700, TINTA_2, 'left');
+};
+
+export const ZONAS_INSTRUMENTO = { altimetro: [0, 130], velocimetro: [130, 280] };
+
+export const zonaDelInstrumento = (x) => {
+    const encontrada = Object.entries(ZONAS_INSTRUMENTO).find(([, [desde, hasta]]) => x >= desde && x < hasta);
+    return encontrada ? encontrada[0] : null;
 };

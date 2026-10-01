@@ -9,7 +9,6 @@ import { useIsNonProd } from '@hooks/useDevTools';
 import Badge from '@components/Badge';
 import DronPastilla from '../Dron/DronPastilla';
 import DronIcono from '../Dron/DronIcono';
-import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
 import Map3DRing from './Map3DRing';
 import Map3DSliderPopover from './Map3DSliderPopover';
 import Map3DAjustes from './Map3DAjustes';
@@ -18,8 +17,6 @@ import { deslizadorDeNivel, textoNivel } from '@pages/maps/helpers/inundacion';
 import { deslizadores3d } from './deslizadores3d';
 
 const ANILLOS = ['exag', 'sol'];
-const BOTON = `flex items-center justify-center size-7.5 ${RADIUS_ICON} shrink-0 cursor-pointer transition-colors`;
-const tonoBoton = (activo) => (activo ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6] text-[#5C2472] hover:bg-[#E2D3EA]');
 
 const Map3DBar = () => {
     const view3d = useView3d();
@@ -38,8 +35,7 @@ const Map3DBar = () => {
     const cerrar = () => setAbierto(null);
 
     return (
-        <div ref={refs.barra} className="grid place-items-center h-full min-h-[196px] w-11 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]"
-            style={{ gridTemplateRows: `repeat(${3 + (conLluvia ? 1 : 0) + (conDron ? 1 : 0)}, minmax(0, 1fr))` }}>
+        <div ref={refs.barra} className="flex flex-col items-center w-11 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A] [&>*]:h-10 [&>*]:flex [&>*]:items-center [&>*]:justify-center">
             {conLluvia && (
                 <div className="relative">
                     <Tooltip content={inundacion.nivel > 0 ? `Inundación: +${textoNivel(inundacion.nivel)} m` : 'Simular lluvia e inundación'}>
@@ -76,11 +72,11 @@ const Map3DBar = () => {
                 <Tooltip content="Volar como dron">
                     <button
                         type="button"
-                        className={`relative ${BOTON} ${tonoBoton(false)}`}
+                        className="relative flex items-center justify-center size-7 rounded-full shrink-0 cursor-pointer text-[#7C8BAD] hover:text-[#5C2472] transition-colors"
                         onClick={() => { cerrar(); dron.entrar(); }}
                         aria-label="Volar como dron"
                     >
-                        <DronIcono nombre="cuadri" className="size-5" />
+                        <DronIcono nombre="cuadri" className="size-6" />
                         <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-3 text-[8px] px-1.5 pointer-events-none" />
                     </button>
                 </Tooltip>
@@ -98,12 +94,12 @@ const Map3DBar = () => {
                     <Tooltip content="Ajustes de la vista 3D">
                         <button
                             type="button"
-                            className="flex items-center justify-center size-7.5 cursor-pointer text-[#5C2472]"
+                            className="flex items-center justify-center size-7 cursor-pointer text-[#7C8BAD] hover:text-[#5C2472] transition-colors"
                             onClick={() => alternar('ajustes')}
                             aria-expanded={false}
                             aria-label="Ajustes de la vista 3D"
                         >
-                            <Icon name="settings" className="size-5 shrink-0" />
+                            <Icon name="settings" className="size-6 shrink-0" />
                         </button>
                     </Tooltip>
                 )}

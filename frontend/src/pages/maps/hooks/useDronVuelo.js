@@ -8,6 +8,7 @@ import {
     SIN_ENTRADA, aplicarMandos, amortiguar, anguloCorto, crearDron, desplazar, entradaGuiada, mirarCamara, pasoDron, rapidezKmh,
 } from '@pages/maps/helpers/dron/fisicaDron';
 import { mandosDe } from '@pages/maps/helpers/dron/aeronaves';
+import { ACELERACION_MAXIMA } from '@pages/maps/helpers/grabacion/planVuelo';
 import { metaTercera, opcionesCono, opcionesPrimera, opcionesTercera, seguirCamara } from '@pages/maps/helpers/dron/camaraDron';
 import { entradaManual, hayEntradaManual, useDronTeclado } from './useDronTeclado';
 
@@ -113,34 +114,37 @@ export const useDronVuelo = (map, principal, olRef = null) => {
         const volar = (ahora) => {
             const dt = Math.min(0.05, (ahora - anterior) / 1000);
             anterior = ahora;
-            t += dt;
             n += 1;
             const actual = vivo.current;
-            const controles = actual.controlesRef.current;
-            const ruta = actual.rutaRef.current;
-            if (hayEntradaManual(controles)) {
-                if (actual.auto) actual.setAuto(false);
-                if (ruta.puntos.length && !ruta.pausada) actual.cambiarRuta({ pausada: true });
-            }
-            const destino = ruta.pausada ? null : ruta.puntos[0];
-            const llegada = Math.max(120, (actual.perfil.vel[actual.config.velocidad] / 3.6) * 2);
-            const guiada = entradaGuiada(estado, { destino, auto: actual.auto, t, centro: CENTRO, radio: RADIO_AUTO, llegada });
-            if (guiada?.llego) actual.avanzarRuta();
-            const entrada = guiada && !guiada.llego ? guiada.entrada : (guiada?.llego ? SIN_ENTRADA : entradaManual(controles));
-            if (choqueDesde !== null) {
-                if (ahora - choqueDesde > DURACION_CHOQUE_MS) {
-                    estado = { ...crearDron(estado.lngLat, sueloEn(estado.lngLat), estado.rumbo), camara: estado.camara };
-                    choqueDesde = null;
-                }
-            } else {
-                estado = pasoDron(estado, aplicarMandos(entrada, mandosDe(actual.config.modelo)), {
-                    perfil: actual.perfil, velocidad: actual.config.velocidad, seguir: actual.config.seguir, dt, sueloEn,
-                });
-                if (estado.choque) {
-                    choqueDesde = ahora;
-                    estado = { ...estado, vEste: 0, vNorte: 0, vVert: 0, giro: 0 };
-                    if (actual.rutaRef.current.puntos.length) actual.cambiarRuta({ pausada: true });
+            const pasos = Math.max(1, Math.min(ACELERACION_MAXIMA, Math.round(actual.aceleracionRef?.current || 1)));
+            for (let paso = 0; paso < pasos; paso += 1) {
+                t += dt;
+                const controles = actual.controlesRef.current;
+                const ruta = actual.rutaRef.current;
+                if (hayEntradaManual(controles)) {
                     if (actual.auto) actual.setAuto(false);
+                    if (ruta.puntos.length && !ruta.pausada) actual.cambiarRuta({ pausada: true });
+                }
+                const destino = ruta.pausada ? null : ruta.puntos[0];
+                const llegada = Math.max(120, (actual.perfil.vel[actual.config.velocidad] / 3.6) * 2);
+                const guiada = entradaGuiada(estado, { destino, auto: actual.auto, t, centro: CENTRO, radio: RADIO_AUTO, llegada });
+                if (guiada?.llego) actual.avanzarRuta();
+                const entrada = guiada && !guiada.llego ? guiada.entrada : (guiada?.llego ? SIN_ENTRADA : entradaManual(controles));
+                if (choqueDesde !== null) {
+                    if (ahora - choqueDesde > DURACION_CHOQUE_MS) {
+                        estado = { ...crearDron(estado.lngLat, sueloEn(estado.lngLat), estado.rumbo), camara: estado.camara };
+                        choqueDesde = null;
+                    }
+                } else {
+                    estado = pasoDron(estado, aplicarMandos(entrada, mandosDe(actual.config.modelo)), {
+                        perfil: actual.perfil, velocidad: actual.config.velocidad, seguir: actual.config.seguir, dt, sueloEn,
+                    });
+                    if (estado.choque) {
+                        choqueDesde = ahora;
+                        estado = { ...estado, vEste: 0, vNorte: 0, vVert: 0, giro: 0 };
+                        if (actual.rutaRef.current.puntos.length) actual.cambiarRuta({ pausada: true });
+                        if (actual.auto) actual.setAuto(false);
+                    }
                 }
             }
             if (alNorte) {
@@ -153,7 +157,7 @@ export const useDronVuelo = (map, principal, olRef = null) => {
                 map.jumpTo(opcionesCono(map, estado));
             } else if (actual.config.tercera) {
                 const lejania = map.getCanvas().clientWidth < 768 ? 1.8 : 1;
-                camara = seguirCamara(camara, metaTercera(estado, { distancia: actual.perfil.distancia, sueloEn, lejania }), dt);
+                camara = seguirCamara(camara, metaTercera(estado, { distancia: actual.perfil.distancia, sueloEn, lejania }), dt * pasos);
                 map.jumpTo(opcionesTercera(map, camara, estado));
             } else {
                 camara = null;

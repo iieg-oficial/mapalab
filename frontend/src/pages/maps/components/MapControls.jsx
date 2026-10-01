@@ -159,7 +159,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = 
                         tooltip="Al dar clic se cierra la vista 3D"
                         ariaLabel="Cerrar la vista 3D"
                         size="pastilla"
-                        className="mx-1.5 my-0.5"
+                        className="mx-1.5 my-1"
                     />
                 )}
                 {view3d.present && !view3d.active && !(isSwipe && isMobile) && (
@@ -169,7 +169,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = 
                             onClick={view3d.toggle}
                             disabled={!view3d.available}
                             aria-pressed={view3d.active}
-                            className={`relative mx-1.5 my-0.5 size-8 rounded-full text-[13px] font-bold transition-colors ${view3d.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'} ${view3d.active ? 'bg-[#5C2472] text-white' : 'text-[#465055] hover:text-[#70308A]'}`}
+                            className={`relative mx-1.5 my-1 size-8 rounded-full text-[13px] font-bold transition-colors ${view3d.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'} ${view3d.active ? 'bg-[#5C2472] text-white' : 'text-[#465055] hover:text-[#70308A]'}`}
                             title={view3dTitle}
                             aria-label={view3dTitle}
                         >
@@ -197,7 +197,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = 
                         <Map3DBar />
                     </div>
                 )}
-                {conMinimapa && !view3d.active && !pantallaChica && <MinimapaEscritorio />}
+                {conMinimapa && !pantallaChica && <MinimapaEscritorio />}
             </div>
         </div>
     );

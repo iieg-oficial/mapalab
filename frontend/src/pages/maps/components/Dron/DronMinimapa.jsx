@@ -5,13 +5,10 @@ import { useSider } from '@contexts/SiderContext';
 import { useAreaUtil } from '@contexts/AreaUtilContext';
 import { basemapTileUrl } from '@pages/maps/helpers/view3d';
 import { ZOOM_MINIMAPA, ZOOM_MINIMAPA_RANGO, largoDeRuta } from '@pages/maps/helpers/dron/minimapaDron';
-import { exportarRecorrido } from '@pages/maps/helpers/dron/exportarRecorrido';
-import { triggerDownload } from '@services/downloadService';
 import { dibujarMinimapa, puntoDelClic } from '@pages/maps/helpers/dron/dibujoMinimapa';
 import { BotonMini, ResumenRuta } from './DronMinimapaControles';
-import { ContadorRec, TarjetaGrabar } from './DronGrabar';
-import { useGrabarVuelo } from '@hooksMaps/useGrabarVuelo';
-import { useMapDownload } from '@mapsComponents/MapExport/hooks/useMapDownload';
+import { ContadorRec } from './DronGrabar';
+import { useGrabacionDron } from '@contexts/GrabacionDronContext';
 
 const INTERVALO_MS = 90;
 const RASTRO_MS = 1000;
@@ -19,31 +16,24 @@ const RASTRO_MAXIMO = 900;
 const [ZOOM_MIN, ZOOM_MAX] = ZOOM_MINIMAPA_RANGO;
 
 const tamano = (grande, isMobile) => {
-    if (isMobile) return grande ? 'top-4 right-4 w-[calc(100vw-2rem)] h-72' : 'top-4 right-4 size-28';
-    return grande ? 'bottom-14 right-4 w-[460px] h-[340px]' : 'bottom-14 right-4 size-44';
+    if (isMobile) return grande ? 'top-4 right-4 w-[calc(100vw-2rem)] h-72' : 'top-4 right-4 size-32';
+    return grande ? 'bottom-14 right-4 w-[460px] h-[340px]' : 'bottom-14 right-4 size-52';
 };
 
 const DronMinimapa = () => {
     const { basemaps, baseMapId } = useMapsContext();
-    const { suscribir, setAuto, telemetriaRef, ruta, rutaRef, cambiarRuta, perfil, config, minimapaPedido } = useDron();
+    const { suscribir, setAuto, telemetriaRef, ruta, rutaRef, cambiarRuta, perfil, config, minimapaPedido, rastroRef } = useDron();
+    const grabacion = useGrabacionDron();
     const { isMobile } = useSider();
     const { margenes } = useAreaUtil();
     const lienzoRef = useRef(null);
     const cacheRef = useRef(new Map());
-    const rastroRef = useRef([]);
     const vistaRef = useRef(null);
     const [grande, setGrande] = useState(false);
     const [zoom, setZoom] = useState(ZOOM_MINIMAPA);
     const [rumboArriba, setRumboArriba] = useState(false);
     const [posicion, setPosicion] = useState(null);
-    const [menu, setMenu] = useState(null);
-    const { layersWithLegends, selectedLayer } = useMapDownload();
-    const capa = selectedLayer || layersWithLegends[0];
     const plantilla = basemapTileUrl(basemaps[baseMapId]?.tiles);
-    const zoomRef = useRef(zoom);
-    zoomRef.current = zoom;
-    const leerMinimapa = () => ({ zoom: zoomRef.current, plantilla, cache: cacheRef.current, ruta: rutaRef.current, rastro: rastroRef.current });
-    const grabacion = useGrabarVuelo({ titulo: capa?.label || capa?.name || 'Vuelo en dron', totalCapas: layersWithLegends.length, leerMinimapa });
 
     useEffect(() => { if (minimapaPedido) setGrande(true); }, [minimapaPedido]);
 
@@ -83,7 +73,7 @@ const DronMinimapa = () => {
             ultimo = ahora;
             dibujar(t);
         });
-    }, [suscribir, telemetriaRef, rutaRef, plantilla, zoom, rumboArriba, grande]);
+    }, [suscribir, telemetriaRef, rutaRef, rastroRef, plantilla, zoom, rumboArriba, grande]);
 
     const agregarPunto = (e) => {
         const vista = vistaRef.current;
@@ -98,19 +88,7 @@ const DronMinimapa = () => {
         setGrande(g => !g);
         setZoom(z => (grande ? Math.max(z, ZOOM_MINIMAPA) : Math.min(z, ZOOM_MINIMAPA - 1)));
     };
-    const descargarPng = async () => {
-        const datos = leerDatos();
-        if (!datos) return;
-        const imagen = await exportarRecorrido({ ...datos, plantilla }).catch(() => exportarRecorrido({ ...datos, plantilla: null }));
-        if (imagen) triggerDownload(imagen, `recorrido-dron-${new Date().toISOString().slice(0, 10)}.png`);
-        setMenu(null);
-    };
-    const alternarMenu = cual => setMenu(previo => (previo === cual ? null : cual));
-    const acciones = `transition-opacity duration-150 ${menu || grabacion.grabando ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100'}`;
-    const leerDatos = () => {
-        const t = telemetriaRef.current;
-        return t ? { dron: t.dron, ruta: rutaRef.current, rastro: [...rastroRef.current], aeronave: perfil.nombre } : null;
-    };
+    const acciones = grande ? '' : `transition-opacity duration-150 ${grabacion.grabando ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100'}`;
     const metros = posicion ? largoDeRuta(posicion, ruta.puntos, ruta.ciclo) : 0;
 
     return (
@@ -127,7 +105,7 @@ const DronMinimapa = () => {
                 tabIndex={0}
                 aria-label="Minimapa: clic para agregar un punto a la ruta"
                 title="Clic para agregar un punto a la ruta"
-                className="block size-full rounded-[14px] cursor-crosshair [filter:drop-shadow(0_6px_14px_rgba(34,26,46,0.28))]"
+                className="block size-full rounded-[14px] cursor-crosshair [filter:drop-shadow(0_5px_20px_#1A26641A)]"
             />
             <div className={`absolute right-1.5 top-1.5 flex flex-col gap-1.5 ${acciones}`}>
                 <BotonMini icono={grande ? 'contraer' : 'expandir'} titulo={grande ? 'Reducir el minimapa' : 'Expandir el minimapa'} onClick={alternarGrande} />
@@ -139,34 +117,20 @@ const DronMinimapa = () => {
                         activo={rumboArriba}
                     />
                 )}
-                <BotonMini
-                    icono="grabar"
-                    titulo={grabacion.grabando ? 'Detener y descargar el video' : 'Grabar el vuelo en video'}
-                    onClick={grabacion.grabando ? grabacion.detener : () => alternarMenu('grabar')}
-                    activo={menu === 'grabar'}
-                    alerta={grabacion.grabando}
-                />
             </div>
             <div className={`absolute bottom-1.5 left-1.5 flex flex-col gap-1.5 ${acciones}`}>
                 <BotonMini icono="mas" titulo="Acercar" onClick={() => acercar(1)} disabled={zoom >= ZOOM_MAX} />
                 <BotonMini icono="menos" titulo="Alejar" onClick={() => acercar(-1)} disabled={zoom <= ZOOM_MIN} />
             </div>
-            {grabacion.grabando && <ContadorRec segundos={grabacion.segundos} tope={grabacion.tope} />}
-            {menu === 'grabar' && !grabacion.grabando && (
-                <TarjetaGrabar
-                    tope={grabacion.tope}
-                    error={grabacion.error}
-                    onGrabar={(camara, contenedor) => { setMenu(null); grabacion.grabar(camara, contenedor); }}
-                    onPng={descargarPng}
-                    onCerrar={() => setMenu(null)}
-                />
-            )}
+            {grabacion.grabando && <ContadorRec segundos={grabacion.segundos} tope={grabacion.topeActual} onDetener={grabacion.detener} />}
             {grande && ruta.puntos.length > 0 && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
+                <div className="pointer-events-none absolute bottom-2 right-2 flex justify-end">
                     <ResumenRuta
                         ruta={ruta}
                         metros={metros}
                         kmh={perfil.vel[config.velocidad]}
+                        grabando={grabacion.grabando}
+                        onGrabar={grabacion.grabando ? grabacion.detener : () => grabacion.abrirTarjeta(true)}
                         onPausar={() => cambiarRuta({ pausada: !ruta.pausada })}
                         onCiclo={() => cambiarRuta({ ciclo: !ruta.ciclo })}
                         onDeshacer={() => cambiarRuta(previa => ({ ...previa, puntos: previa.puntos.slice(0, -1) }))}

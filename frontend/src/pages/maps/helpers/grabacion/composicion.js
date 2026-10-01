@@ -1,12 +1,11 @@
 import logoMapalab from '@assets/logos/mapalab_large.svg';
-import logoIieg from '@assets/logos/iieg_short.svg';
+import logoIieg from '@assets/logos/iieg_large.svg';
 import logoJalisco from '@assets/logos/jalisco_large_dark.svg';
 import icoNorte from '@icons/ico_n.svg';
+import { fromLonLat } from 'ol/proj';
 import { fetchSiluetas } from '@services/municipioService';
 import { aPixel, municipioEn, vistaDelMinimapa } from '@pages/maps/helpers/minimapa';
 import { dibujarMinimapa } from '@pages/maps/helpers/trazoMinimapa';
-import { dibujarMinimapa as dibujarMinimapaDron } from '@pages/maps/helpers/dron/dibujoMinimapa';
-import { dibujarIndicadores } from './indicadores';
 
 const FUENTE = 'Garet, Figtree, system-ui, sans-serif';
 const ATRIBUCION = '© IIEG · © CARTO · © OpenStreetMap';
@@ -72,13 +71,25 @@ const recortar = (ctx, texto, maximo) => {
 
 const dibujarNorte = (ctx, norte, { ancho, alto, margen, rumbo }) => {
     if (!norte) return;
-    const h = alto * 0.1;
+    const h = alto * 0.07;
     const w = h * proporcion(norte);
     conHalo(ctx, h * 0.08, () => {
         ctx.translate(ancho - margen - h / 2, margen + h / 2);
         ctx.rotate((-rumbo * Math.PI) / 180);
         ctx.drawImage(norte, -w / 2, -h / 2, w, h);
     });
+};
+
+const dibujarRastro = (ctx, puntos, lado) => {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(92, 36, 114, 0.85)';
+    ctx.lineWidth = Math.max(1.5, lado * 0.018);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    puntos.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    ctx.stroke();
+    ctx.restore();
 };
 
 const dibujarMarcador = (ctx, [x, y], rumbo, lado) => {
@@ -103,37 +114,7 @@ const dibujarMarcador = (ctx, [x, y], rumbo, lado) => {
     ctx.restore();
 };
 
-const dibujarConTeselas = (ctx, { x, y, lado, teselas }) => {
-    const lienzo = document.createElement('canvas');
-    lienzo.width = Math.round(lado);
-    lienzo.height = Math.round(lado);
-    dibujarMinimapaDron(lienzo.getContext('2d'), { ...teselas, ancho: lienzo.width, alto: lienzo.height, rumboArriba: false, ruta: teselas.ruta || { puntos: [] }, rastro: teselas.rastro || [] });
-    const radio = lado * 0.08;
-    ctx.save();
-    ctx.shadowColor = 'rgba(34, 26, 46, 0.35)';
-    ctx.shadowBlur = lado * 0.06;
-    ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    ctx.roundRect(x, y, lado, lado, radio);
-    ctx.fill();
-    ctx.shadowColor = 'transparent';
-    ctx.clip();
-    ctx.drawImage(lienzo, x, y, lado, lado);
-    ctx.restore();
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.lineWidth = Math.max(1.5, lado * 0.012);
-    ctx.beginPath();
-    ctx.roundRect(x, y, lado, lado, radio);
-    ctx.stroke();
-    ctx.restore();
-};
-
 const dibujarUbicacion = (ctx, siluetas, { x, y, lado, ubicacion }) => {
-    if (ubicacion?.teselas?.plantilla) {
-        dibujarConTeselas(ctx, { x, y, lado, teselas: ubicacion.teselas });
-        return;
-    }
     if (!siluetas?.estado || !ubicacion) return;
     const lienzo = document.createElement('canvas');
     lienzo.width = Math.round(lado);
@@ -150,40 +131,34 @@ const dibujarUbicacion = (ctx, siluetas, { x, y, lado, ubicacion }) => {
         lado: lienzo.width,
     });
     dibujarMinimapa(mini, { lado: lienzo.width, vista, estado: siluetas.estado, municipio, extensionVista: extension, atenuado: !cerca });
+    if (ubicacion.rastro?.length > 1) dibujarRastro(mini, ubicacion.rastro.map(p => aPixel(vista, lienzo.width, fromLonLat(p))), lienzo.width);
     if (ubicacion.marcador) dibujarMarcador(mini, aPixel(vista, lienzo.width, ubicacion.marcador.coord), ubicacion.marcador.rumbo, lienzo.width);
     conHalo(ctx, lado * 0.02, () => ctx.drawImage(lienzo, x, y, lado, lado));
 };
 
-const dibujarCaja = (ctx, recursos, { x, yBase, ancho, alto, titulo, totalCapas, indicadores, tiempo }) => {
-    const relleno = ancho * 0.035;
+const medidasDatos = ({ ancho, alto, panel, perfil }) => {
     const letra = Math.max(11, alto * 0.026);
-    const altoIndicadores = indicadores?.length ? (ancho - relleno * 2) / 3.4 : 0;
-    const altoLogo = Math.max(10, alto * 0.022);
-    const altoCaja = relleno + letra * 1.3 + (altoIndicadores ? altoIndicadores + relleno * 0.4 : relleno * 0.4) + altoLogo + relleno;
-    const y = yBase - altoCaja;
-    ctx.save();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(x, y, ancho, altoCaja, Math.min(14, ancho * 0.04));
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
+    const altoIndicadores = panel ? ancho * (panel.height / panel.width) : 0;
+    const altoPerfil = perfil ? ancho * (perfil.height / perfil.width) * 0.8 : 0;
+    const separacion = letra * 0.7;
+    return { letra, altoIndicadores, altoPerfil, separacion, altoTotal: letra * 1.25 + altoIndicadores + (altoPerfil ? separacion + altoPerfil : 0) };
+};
 
-    const base = y + relleno + letra;
+const dibujarDatos = (ctx, { x, yBase, ancho, titulo, totalCapas, panel, perfil, medidas }) => {
+    const { letra, altoIndicadores, altoPerfil, separacion, altoTotal } = medidas;
+    const y = yBase - altoTotal;
+    const base = y + letra;
+    const radio = letra * 0.55;
     ctx.save();
     ctx.font = `700 ${letra}px ${FUENTE}`;
     ctx.textBaseline = 'alphabetic';
-    const reservado = (totalCapas > 1 ? letra * 1.6 : 0) + (tiempo ? letra * 3.6 : 0);
-    const texto = recortar(ctx, titulo || 'Mapa', ancho - relleno * 2 - reservado);
-    conHalo(ctx, letra * 0.3, () => {
+    const texto = recortar(ctx, titulo || 'Mapa', ancho - (totalCapas > 1 ? radio * 3 : 0));
+    conHalo(ctx, letra * 0.35, () => {
         ctx.fillStyle = NARANJA;
-        ctx.fillText(texto, x + relleno, base);
+        ctx.fillText(texto, x, base);
     });
     if (totalCapas > 1) {
-        const radio = letra * 0.55;
-        const cx = x + relleno + ctx.measureText(texto).width + radio + letra * 0.35;
+        const cx = x + ctx.measureText(texto).width + radio + letra * 0.35;
         const cy = base - letra * 0.35;
         ctx.fillStyle = NARANJA;
         ctx.beginPath();
@@ -194,31 +169,24 @@ const dibujarCaja = (ctx, recursos, { x, yBase, ancho, alto, titulo, totalCapas,
         ctx.textAlign = 'center';
         ctx.fillText(String(totalCapas), cx, cy + letra * 0.24);
     }
-    if (tiempo) {
-        ctx.textAlign = 'right';
-        ctx.font = `700 ${letra * 0.8}px ui-monospace, Menlo, monospace`;
-        conHalo(ctx, letra * 0.3, () => {
-            ctx.fillStyle = '#221A2E';
-            ctx.fillText(tiempo, x + ancho - relleno, base);
-        });
-    }
     ctx.restore();
+    const yIndicadores = y + letra * 1.25;
+    if (panel) conHalo(ctx, letra * 0.3, () => ctx.drawImage(panel, x, yIndicadores, ancho, altoIndicadores));
+    if (perfil && altoPerfil) ctx.drawImage(perfil, x, yIndicadores + altoIndicadores + separacion, ancho, altoPerfil);
+};
 
-    if (altoIndicadores) {
-        dibujarIndicadores(ctx, { x: x + relleno, y: base + relleno * 0.4, ancho: ancho - relleno * 2, alto: altoIndicadores, lista: indicadores });
-    }
-    const yLogo = y + altoCaja - relleno - altoLogo;
-    if (recursos.iieg) conHalo(ctx, altoLogo * 0.2, () => ctx.drawImage(recursos.iieg, x + relleno, yLogo, altoLogo * proporcion(recursos.iieg), altoLogo));
-    if (recursos.jalisco) {
-        const w = altoLogo * proporcion(recursos.jalisco);
-        conHalo(ctx, altoLogo * 0.2, () => ctx.drawImage(recursos.jalisco, x + ancho - relleno - w, yLogo, w, altoLogo));
-    }
+const dibujarLogos = (ctx, recursos, { x, ancho, base, alto }) => {
+    const anchos = [recursos.iieg, recursos.jalisco].map(logo => (logo ? proporcion(logo) : 0));
+    const altoLogo = Math.min(Math.max(10, alto * 0.026), (ancho * 0.92) / Math.max(1, anchos[0] + anchos[1]));
+    if (recursos.iieg) conHalo(ctx, altoLogo * 0.2, () => ctx.drawImage(recursos.iieg, x, base - altoLogo, altoLogo * anchos[0], altoLogo));
+    if (recursos.jalisco) conHalo(ctx, altoLogo * 0.2, () => ctx.drawImage(recursos.jalisco, x + ancho - altoLogo * anchos[1], base - altoLogo, altoLogo * anchos[1], altoLogo));
 };
 
 export const componerCuadro = (ctx, opciones) => {
-    const { ancho, alto, mapa, recursos, rumbo = 0, ubicacion, titulo, totalCapas = 1, indicadores, compacto = false, tiempo } = opciones;
+    const { ancho, alto, mapa, recursos, rumbo = 0, ubicacion, titulo, totalCapas = 1, compacto = false, instrumentos, perfil } = opciones;
     const margen = Math.round(Math.min(ancho, alto) * 0.04);
     const piso = alto - margen;
+    const letraAtribucion = Math.max(9, alto * 0.016);
     ctx.save();
     ctx.clearRect(0, 0, ancho, alto);
     if (mapa) cubrir(ctx, mapa, ancho, alto);
@@ -227,24 +195,19 @@ export const componerCuadro = (ctx, opciones) => {
         conHalo(ctx, h * 0.15, () => ctx.drawImage(recursos.mapalab, margen, margen, h * proporcion(recursos.mapalab), h));
     }
     dibujarNorte(ctx, recursos.norte, { ancho, alto, margen, rumbo });
-    const lado = ancho * (compacto ? 0.26 : 0.17);
+    const lado = ancho * (compacto ? 0.22 : 0.12);
     dibujarUbicacion(ctx, recursos.siluetas, { x: ancho - margen - lado, y: piso - lado, lado, ubicacion });
-    dibujarCaja(ctx, recursos, {
-        x: margen,
-        yBase: piso,
-        ancho: ancho * (compacto ? 0.46 : 0.3),
-        alto,
-        titulo,
-        totalCapas,
-        indicadores: compacto ? null : indicadores,
-        tiempo: compacto ? null : tiempo,
-    });
-    const letra = Math.max(9, alto * 0.016);
-    ctx.font = `600 ${letra}px ${FUENTE}`;
+    dibujarLogos(ctx, recursos, { x: ancho - margen - lado, ancho: lado, base: piso - lado - margen * 0.4, alto });
+    const anchoDatos = ancho * (compacto ? 0.46 : 0.26);
+    const panel = compacto ? null : instrumentos;
+    const perfilVisible = compacto ? null : perfil;
+    const medidas = medidasDatos({ ancho: anchoDatos, alto, panel, perfil: perfilVisible });
+    dibujarDatos(ctx, { x: margen, yBase: piso, ancho: anchoDatos, titulo, totalCapas, panel, perfil: perfilVisible, medidas });
+    ctx.font = `600 ${letraAtribucion}px ${FUENTE}`;
     ctx.textAlign = 'center';
     ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-    ctx.shadowBlur = letra * 0.4;
+    ctx.shadowBlur = letraAtribucion * 0.4;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillText(ATRIBUCION, ancho / 2, compacto ? margen + letra : alto - margen);
+    ctx.fillText(ATRIBUCION, ancho / 2, compacto ? margen + letraAtribucion : alto - margen);
     ctx.restore();
 };

@@ -64,7 +64,7 @@ const CatalogoDescargaImagen = ({ abierto, capa, onCerrar }) => {
                 </div>
 
                 {tipo === 'animacion' ? (
-                    <PanelAnimacion titulo={titulo.trim() || capa?.nombre} claseEtiqueta={ETIQUETA} claseBoton={`${BOTON_PRIMARIO} self-start`} />
+                    <PanelAnimacion titulo={titulo.trim() || capa?.nombre} onListo={onCerrar} claseEtiqueta={ETIQUETA} claseBoton={`${BOTON_PRIMARIO} self-start`} />
                 ) : (
                     <>
                         <div>

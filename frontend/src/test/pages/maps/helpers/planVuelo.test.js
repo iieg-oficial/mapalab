@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { huellaCono } from '@pages/maps/helpers/dron/camaraDron';
-import { indicadoresDeVuelo, reloj, topeDeVuelo } from '@pages/maps/helpers/grabacion/planVuelo';
+import { planDeRuta, reloj, topeDeVuelo } from '@pages/maps/helpers/grabacion/planVuelo';
 
 describe('grabación del vuelo', () => {
     it('el tope es 60 s en escritorio y 30 s en celular', () => {
@@ -13,17 +12,22 @@ describe('grabación del vuelo', () => {
         expect(reloj(23.7)).toBe('00:23');
         expect(reloj(60)).toBe('01:00');
     });
+});
 
-    it('la huella del cono crece con la altura sobre el terreno', () => {
-        expect(huellaCono(120)).toEqual({ largo: 96, ancho: 88 });
-        expect(huellaCono(240).largo).toBe(191);
-        expect(huellaCono(-5)).toEqual({ largo: 0, ancho: 0 });
+describe('grabar una ruta', () => {
+    it('sin ruta graba en tiempo real hasta el tope', () => {
+        expect(planDeRuta({ estimadoS: null, tope: 60 })).toEqual({ aceleracion: 1, ritmo: 1, limite: 60, mostrado: 60 });
     });
 
-    it('con el cono el tercer indicador es la huella y si no, el rumbo', () => {
-        const base = { kmh: 82, maximoKmh: 120, agl: 120, rumbo: 47 };
-        expect(indicadoresDeVuelo(base)[2]).toMatchObject({ tipo: 'brujula', rumbo: 47 });
-        expect(indicadoresDeVuelo({ ...base, cono: true })[2]).toMatchObject({ etiqueta: 'CONO', valor: '96×88' });
-        expect(indicadoresDeVuelo(base)[0]).toMatchObject({ valor: '82', unidad: 'km/h' });
+    it('una ruta corta se vuela a velocidad normal', () => {
+        expect(planDeRuta({ estimadoS: 40, tope: 60 })).toMatchObject({ aceleracion: 1, ritmo: 1, mostrado: 40 });
+    });
+
+    it('una ruta larga acelera el dron hasta 20× y comprime cuadros si aún no cabe en el tope', () => {
+        expect(planDeRuta({ estimadoS: 300, tope: 60 })).toMatchObject({ aceleracion: 5, ritmo: 1, mostrado: 60 });
+        const larga = planDeRuta({ estimadoS: 2790, tope: 60 });
+        expect(larga.aceleracion).toBe(20);
+        expect(larga.mostrado).toBe(140);
+        expect(larga.ritmo).toBeCloseTo(2.325, 2);
     });
 });

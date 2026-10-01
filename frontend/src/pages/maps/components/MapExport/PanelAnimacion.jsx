@@ -3,6 +3,8 @@ import Segmented from '@components/Segmented';
 import { useDron } from '@contexts/DronContext';
 import { useView3d } from '@contexts/View3dContext';
 import { useGrabarGiro } from '@hooksMaps/useGrabarGiro';
+import { useEstadoGiro } from '@hooksMaps/useEstadoGiro';
+import PildoraGrabacionGiro from './PildoraGrabacionGiro';
 import { useFormatosVideo } from '@hooksMaps/useFormatosVideo';
 import { elegible, opcionesDeArchivo } from '@pages/maps/helpers/grabacion/opcionesArchivo';
 import AnimacionRuta from './AnimacionRuta';
@@ -18,50 +20,58 @@ const opcionesQue = conDron => [
     { value: 'ruta', label: 'Ruta en dron', disabled: !conDron, tooltip: conDron ? 'Vuela una ruta trazada en el minimapa y grábala' : 'Solo en el visor' },
 ];
 
-const AnimacionVuelta = ({ titulo, totalCapas, claseEtiqueta, claseBoton }) => {
+const CENTROS = [
+    { value: 'actual', label: 'Vista actual', tooltip: 'Gira alrededor del centro de lo que ves' },
+    { value: 'punto', label: 'Elegir en el mapa', tooltip: 'Haz clic en el mapa para elegir el centro de la vuelta' },
+];
+
+const AnimacionVuelta = ({ titulo, totalCapas, claseEtiqueta, claseBoton, onListo }) => {
     const soporte = useFormatosVideo();
-    const opciones = opcionesDeArchivo(soporte, { video: 'Una vuelta completa, hasta 30 s' });
+    const opciones = opcionesDeArchivo(soporte, { video: 'Una vuelta completa a la velocidad de la órbita' });
     const [elegido, setTipo] = useState('mp4');
     const tipo = elegible(opciones, elegido);
     const [segundosGif, setSegundosGif] = useState(3);
     const [calidad, setCalidad] = useState('720');
-    const { grabando, progreso, error, grabar, cancelar } = useGrabarGiro();
+    const [centro, setCentro] = useState('actual');
+    const { grabar } = useGrabarGiro();
+    const { fase, error } = useEstadoGiro();
     const { active } = useView3d();
-    const porcentaje = Math.round((progreso || 0) * 100);
+    const ocupado = fase !== null;
+
+    const empezar = () => {
+        grabar({ tipo, segundosGif, calidad, titulo, totalCapas, centro });
+        if (centro === 'punto') onListo?.();
+    };
 
     return (
         <div className="flex flex-col gap-3">
             <div>
                 <span className={claseEtiqueta}>Archivo</span>
-                <Segmented variant="panel" ariaLabel="Archivo" options={opciones} value={tipo} onChange={setTipo} disabled={grabando} />
+                <Segmented variant="panel" ariaLabel="Archivo" options={opciones} value={tipo} onChange={setTipo} disabled={ocupado} />
             </div>
             {tipo === 'gif' ? (
                 <div>
                     <span className={claseEtiqueta}>Duración de la vuelta</span>
-                    <Segmented variant="panel" ariaLabel="Duración" options={DURACIONES} value={segundosGif} onChange={setSegundosGif} disabled={grabando} />
+                    <Segmented variant="panel" ariaLabel="Duración" options={DURACIONES} value={segundosGif} onChange={setSegundosGif} disabled={ocupado} />
                 </div>
             ) : (
                 <div>
                     <span className={claseEtiqueta}>Tamaño</span>
-                    <Segmented variant="panel" ariaLabel="Tamaño" options={CALIDADES} value={calidad} onChange={setCalidad} disabled={grabando} />
+                    <Segmented variant="panel" ariaLabel="Tamaño" options={CALIDADES} value={calidad} onChange={setCalidad} disabled={ocupado} />
                 </div>
             )}
-            {grabando ? (
-                <div className="flex flex-col gap-2" role="status" aria-live="polite">
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-[#F0E6F6]">
-                        <div className="h-full rounded-full bg-[#FF8300] transition-[width] duration-200" style={{ width: `${porcentaje}%` }} />
-                    </div>
-                    <div className="flex items-center justify-between font-garet text-[12px] text-[#465055]">
-                        <span>Grabando la vuelta… {porcentaje} %</span>
-                        <button type="button" onClick={cancelar} className="font-bold text-[#5C2472] underline cursor-pointer">Cancelar</button>
-                    </div>
-                </div>
+            <div>
+                <span className={claseEtiqueta}>Centro de la vuelta</span>
+                <Segmented variant="panel" ariaLabel="Centro de la vuelta" options={CENTROS} value={centro} onChange={setCentro} disabled={ocupado} />
+            </div>
+            {ocupado ? (
+                <PildoraGrabacionGiro enLinea />
             ) : (
-                <button type="button" onClick={() => grabar({ tipo, segundosGif, calidad, titulo, totalCapas })} className={claseBoton}>
-                    {!active ? 'Entrar a 3D y grabar' : (tipo === 'gif' ? 'Grabar GIF' : 'Grabar video')}
+                <button type="button" onClick={empezar} className={claseBoton}>
+                    {centro === 'punto' ? 'Elegir el centro y grabar' : (!active ? 'Entrar a 3D y grabar' : (tipo === 'gif' ? 'Grabar GIF' : 'Grabar video'))}
                 </button>
             )}
-            {error && <p className="font-garet text-[12px] text-[#D6336C]">{error}</p>}
+            {error && !ocupado && <p className="font-garet text-[12px] text-[#D6336C]">{error}</p>}
         </div>
     );
 };
@@ -79,7 +89,7 @@ const PanelAnimacion = ({ titulo, totalCapas = 1, claseEtiqueta = ETIQUETA, clas
             </div>
             {que === 'ruta'
                 ? <AnimacionRuta claseBoton={claseBoton} onListo={onListo} />
-                : <AnimacionVuelta titulo={titulo} totalCapas={totalCapas} claseEtiqueta={claseEtiqueta} claseBoton={claseBoton} />}
+                : <AnimacionVuelta titulo={titulo} totalCapas={totalCapas} claseEtiqueta={claseEtiqueta} claseBoton={claseBoton} onListo={onListo} />}
         </div>
     );
 };

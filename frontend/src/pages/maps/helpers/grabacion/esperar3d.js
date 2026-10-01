@@ -6,7 +6,7 @@ export const esperarMapa3d = (map3dRef, limiteMs = LIMITE_MS) => new Promise((re
     const inicio = performance.now();
     const revisar = () => {
         const map = map3dRef?.current;
-        if (map?.loaded?.()) {
+        if (map?.isStyleLoaded?.()) {
             const listo = setTimeout(() => resolver(map), QUIETO_MS);
             map.once('idle', () => {
                 clearTimeout(listo);

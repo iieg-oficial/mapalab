@@ -23,6 +23,8 @@ import { useMap3dInundacion } from '@hooksMaps/useMap3dInundacion';
 import { useDron } from '@contexts/DronContext';
 import Medicion3D from './Medicion3D';
 import { Clic3dPropio, Clic3dVisor } from './Clic3d';
+import { useEstadoGiro } from '@hooksMaps/useEstadoGiro';
+import PildoraGrabacionGiro from '../MapExport/PildoraGrabacionGiro';
 
 const TERRAIN_SOURCE = 'terreno';
 
@@ -183,8 +185,10 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     useMedicionesGuardadas3d(map, measurements);
     useMap3dMunicipio(map, municipioMode, principal);
     useAnotacionesPuntuales3d(map, measurements, estiloPuntos, escalaSimbolos);
+    const { fase: faseGiro } = useEstadoGiro();
 
     if (!olRef.current) return null;
+    const pausaClic = midiendo || pausado || inundacion.eligiendo || (enDron && principal) || faseGiro === 'eligiendo';
 
     return (
         <>
@@ -196,8 +200,9 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
             )}
             {map && mediciones && principal && (areMeasurementToolsVisible || areAnnotationToolsVisible || measurements?.length > 0) && <Medicion3D map={map} mapasExtra={mapasExtra} mapa2dRef={olRef} onMidiendo={setMidiendo} />}
             {consultar
-                ? <Clic3dPropio map={map} mapRef={olRef} pausado={midiendo || pausado || inundacion.eligiendo || (enDron && principal)} consultar={consultar} />
-                : <Clic3dVisor map={map} mapRef={olRef} pausado={midiendo || pausado || inundacion.eligiendo || (enDron && principal)} />}
+                ? <Clic3dPropio map={map} mapRef={olRef} pausado={pausaClic} consultar={consultar} />
+                : <Clic3dVisor map={map} mapRef={olRef} pausado={pausaClic} />}
+            {principal && <PildoraGrabacionGiro />}
         </>
     );
 };

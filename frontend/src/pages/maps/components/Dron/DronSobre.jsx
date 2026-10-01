@@ -22,20 +22,11 @@ const Pildora = ({ activo, onClick, titulo, children, color = null }) => (
 
 const DronSobre = () => {
     const { auto, setAuto, config, alternar, cambiarColor, suscribir } = useDron();
-    const autoRef = useRef(null);
-    const opcionesRef = useRef(null);
     const temporizador = useRef(null);
     const [opciones, setOpciones] = useState(false);
     const [choque, setChoque] = useState(false);
 
-    useEffect(() => suscribir((t) => {
-        if (!t || !autoRef.current || !opcionesRef.current) return;
-        setChoque(!!t.choque);
-        const centro = window.innerHeight * 0.62;
-        const { x, arriba, abajo } = t.pantalla || { x: window.innerWidth / 2, arriba: centro - 12, abajo: centro + 12 };
-        autoRef.current.style.transform = `translate(${x}px, ${arriba}px) translate(-50%, -100%)`;
-        opcionesRef.current.style.transform = `translate(${x}px, ${abajo}px) translate(-50%, 0)`;
-    }), [suscribir]);
+    useEffect(() => suscribir((t) => { if (t) setChoque(!!t.choque); }), [suscribir]);
 
     useEffect(() => () => clearTimeout(temporizador.current), []);
 
@@ -49,38 +40,28 @@ const DronSobre = () => {
     };
 
     return (
-        <>
+        <div className="relative mb-2 flex items-center" onPointerEnter={e => e.pointerType !== 'touch' && mostrar()} onPointerLeave={e => e.pointerType !== 'touch' && ocultar()}>
             <button
-                ref={autoRef}
                 type="button"
                 onClick={() => setAuto(!auto)}
-                onPointerEnter={e => e.pointerType !== 'touch' && mostrar()}
-                onPointerLeave={e => e.pointerType !== 'touch' && ocultar()}
                 onPointerUp={(e) => { if (e.pointerType === 'touch') { mostrar(); ocultar(TACTIL_MS); } }}
                 aria-pressed={auto}
                 title="Piloto automático (P)"
-                className={`fixed left-0 top-0 z-20 flex items-center gap-1.5 rounded-full border-0 px-2 py-1 font-garet text-[9.5px] font-extrabold tracking-[0.08em] text-white shadow-[0_2px_8px_#221A2E40] cursor-pointer ${choque ? 'bg-[#D6336C]' : auto ? 'bg-[#FF8300] motion-safe:animate-pulse' : 'bg-[#1F9D55]'}`}
+                className={`flex items-center gap-1.5 rounded-full border-0 px-2 py-1 font-garet text-[9.5px] font-extrabold tracking-[0.08em] text-white shadow-[0_2px_8px_#221A2E40] cursor-pointer ${choque ? 'bg-[#D6336C]' : auto ? 'bg-[#FF8300] motion-safe:animate-pulse' : 'bg-[#1F9D55]'}`}
             >
                 <i className="size-1.5 rounded-full bg-white" />
                 {choque ? 'CHOQUE' : auto ? 'AUTO' : 'MANUAL'}
             </button>
-            <div
-                ref={opcionesRef}
-                onPointerEnter={mostrar}
-                onPointerLeave={() => ocultar()}
-                className={`fixed left-0 top-0 z-20 pt-1.5 transition-opacity duration-200 ${opciones ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-            >
-                <div className="flex gap-1">
-                    <Pildora activo={config.tercera} onClick={() => alternar('tercera')} titulo="Primera o tercera persona (V)">
-                        {config.tercera ? '3ª PERSONA' : '1ª PERSONA'}
-                    </Pildora>
-                    <Pildora color={config.color} onClick={cambiarColor} titulo="Cambiar color">COLOR</Pildora>
-                    <Pildora activo={config.estela} onClick={() => alternar('estela')} titulo="Estela del recorrido">ESTELA</Pildora>
-                    <Pildora activo={config.luces} onClick={() => alternar('luces')} titulo="Luces de navegación">LUCES</Pildora>
-                    <Pildora activo={config.foco} onClick={() => alternar('foco')} titulo="Cono de la cámara">CONO</Pildora>
-                </div>
+            <div className={`absolute bottom-full left-1/2 mb-1.5 flex -translate-x-1/2 gap-1 pb-0.5 transition-opacity duration-200 ${opciones ? 'opacity-100' : 'pointer-events-none opacity-0'}`}>
+                <Pildora activo={config.tercera} onClick={() => alternar('tercera')} titulo="Primera o tercera persona (V)">
+                    {config.tercera ? '3ª PERSONA' : '1ª PERSONA'}
+                </Pildora>
+                <Pildora color={config.color} onClick={cambiarColor} titulo="Cambiar color">COLOR</Pildora>
+                <Pildora activo={config.estela} onClick={() => alternar('estela')} titulo="Estela del recorrido">ESTELA</Pildora>
+                <Pildora activo={config.luces} onClick={() => alternar('luces')} titulo="Luces de navegación">LUCES</Pildora>
+                <Pildora activo={config.foco} onClick={() => alternar('foco')} titulo="Cono de la cámara">CONO</Pildora>
             </div>
-        </>
+        </div>
     );
 };
 

@@ -42,11 +42,12 @@ const tiempo = (minutos) => {
     return `${Math.floor(minutos / 60)} h ${Math.round(minutos % 60)} min`;
 };
 
-export const ResumenRuta = ({ ruta, metros, kmh, onPausar, onCiclo, onDeshacer, onBorrar }) => (
-    <div className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-white/95 py-1 pl-3 pr-1 shadow-[0_2px_8px_#221A2E26]">
-        <span className="font-garet text-[11px] font-bold tabular-nums text-graphite whitespace-nowrap">
+export const ResumenRuta = ({ ruta, metros, kmh, grabando = false, onGrabar, onPausar, onCiclo, onDeshacer, onBorrar }) => (
+    <div className="pointer-events-auto flex flex-row-reverse items-center gap-1.5">
+        <span className="rounded-full bg-white/95 px-3 py-1.5 font-garet text-[11px] font-bold tabular-nums text-graphite whitespace-nowrap shadow-[0_2px_8px_#221A2E26]">
             {ruta.puntos.length} {ruta.puntos.length === 1 ? 'punto' : 'puntos'} · {formato.format(metros / 1000)} km · {tiempo((metros / 1000 / kmh) * 60)}
         </span>
+        <BotonMini icono="grabar" titulo={grabando ? 'Detener y descargar el video' : 'Grabar el trazo'} onClick={onGrabar} alerta={grabando} />
         <BotonMini icono={ruta.pausada ? 'seguir' : 'pausa'} titulo={ruta.pausada ? 'Seguir la ruta' : 'Pausar la ruta'} onClick={onPausar} />
         <BotonMini icono="ciclo" titulo={ruta.ciclo ? 'Recorrer una sola vez' : 'Repetir la ruta en ciclo'} onClick={onCiclo} activo={ruta.ciclo} />
         <BotonMini icono="deshacer" titulo="Quitar el último punto" onClick={onDeshacer} />

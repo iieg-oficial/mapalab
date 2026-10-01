@@ -3,17 +3,32 @@ import Tooltip from '@components/Tooltip';
 import PillCloseButton from '@components/PillCloseButton';
 import { useDron } from '@contexts/DronContext';
 import { useSider } from '@contexts/SiderContext';
-import { RADIUS_ICON } from '@pages/maps/helpers/periodicityTones';
-import Map3DRing from '../Map3D/Map3DRing';
 import DronIcono from './DronIcono';
 import DronMenuAeronave from './DronMenuAeronave';
 import DronTeclas from './DronTeclas';
+import { TarjetaGrabar } from './DronGrabar';
+import Map3DPopover from '../Map3D/Map3DPopover';
+import { useGrabacionDron } from '@contexts/GrabacionDronContext';
 
-const BOTON = `flex items-center justify-center size-7.5 ${RADIUS_ICON} shrink-0 cursor-pointer transition-colors`;
-const tono = activo => (activo ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6] text-[#5C2472] hover:bg-[#E2D3EA]');
+const BOTON = 'flex items-center justify-center size-7 rounded-full shrink-0 cursor-pointer transition-colors';
+const tono = activo => (activo ? 'bg-[#5C2472] text-white' : 'text-[#7C8BAD] hover:text-[#5C2472]');
+
+const Flecha = ({ abierto }) => (
+    <svg viewBox="0 0 24 24" className={`size-6 transition-transform ${abierto ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" />
+    </svg>
+);
+
+const Rec = () => (
+    <svg viewBox="0 0 20 20" className="size-6" aria-hidden="true">
+        <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" strokeWidth="2" />
+        <circle cx="10" cy="10" r="4.5" fill="#D6336C" />
+    </svg>
+);
 
 const DronPastilla = () => {
-    const { config, perfil, setOpcion, alternar, salir } = useDron();
+    const { perfil, config, salir, instrumentosAbiertos, setInstrumentosAbiertos } = useDron();
+    const grabacion = useGrabacionDron();
     const { isMobile } = useSider();
     const [abierto, setAbierto] = useState(null);
     useEffect(() => {
@@ -22,31 +37,34 @@ const DronPastilla = () => {
         return () => clearTimeout(espera);
     }, [isMobile]);
     const barraRef = useRef(null);
-    const alternarPanel = cual => setAbierto(previo => (previo === cual ? null : cual));
+    const alternarPanel = (cual) => {
+        grabacion.cerrarTarjeta();
+        setAbierto(previo => (previo === cual ? null : cual));
+    };
     const cerrar = () => setAbierto(null);
-    const kmh = perfil.vel[config.velocidad];
 
     return (
-        <div ref={barraRef} className="grid grid-rows-5 place-items-center h-full min-h-[196px] w-11 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
-            <Tooltip content={`Velocidad ${config.velocidad + 1}: ${kmh} km/h · teclas 1, 2 y 3`}>
-                <Map3DRing
-                    label={`Velocidad ${config.velocidad + 1} de 3`}
-                    texto={String(config.velocidad + 1)}
-                    porcentaje={((config.velocidad + 1) / 3) * 100}
-                    tono="#5C2472"
-                    abierto={false}
-                    onToggle={() => setOpcion('velocidad', (config.velocidad + 1) % 3)}
-                />
-            </Tooltip>
-            <Tooltip content={config.seguir ? 'Sigue el relieve: mantiene la altura sobre el terreno' : 'Altura fija sobre el nivel del mar'}>
+        <div ref={barraRef} className="flex flex-col items-center w-11 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A] [&>*]:h-10 [&>*]:flex [&>*]:items-center [&>*]:justify-center">
+            <Tooltip content={instrumentosAbiertos ? 'Minimizar los instrumentos' : 'Mostrar los instrumentos'}>
                 <button
                     type="button"
-                    className={`${BOTON} ${tono(config.seguir)}`}
-                    onClick={() => alternar('seguir')}
-                    aria-pressed={config.seguir}
-                    aria-label="Seguir el relieve"
+                    className={`${BOTON} ${tono(instrumentosAbiertos && !isMobile)} ${isMobile ? 'opacity-40 cursor-not-allowed' : ''}`}
+                    onClick={() => !isMobile && setInstrumentosAbiertos(v => !v)}
+                    aria-pressed={instrumentosAbiertos}
+                    aria-label={instrumentosAbiertos ? 'Minimizar los instrumentos' : 'Mostrar los instrumentos'}
                 >
-                    <DronIcono nombre="relieve" className="size-4.5" />
+                    <Flecha abierto={instrumentosAbiertos} />
+                </button>
+            </Tooltip>
+            <Tooltip content={grabacion.grabando ? 'Detener y descargar el video' : 'Grabar el vuelo o una ruta'}>
+                <button
+                    type="button"
+                    className={`${BOTON} ${tono(grabacion.tarjeta.abierta)} ${grabacion.grabando ? 'motion-safe:animate-pulse' : ''}`}
+                    onClick={grabacion.grabando ? grabacion.detener : () => (grabacion.tarjeta.abierta ? grabacion.cerrarTarjeta() : grabacion.abrirTarjeta())}
+                    aria-pressed={grabacion.tarjeta.abierta}
+                    aria-label={grabacion.grabando ? 'Detener y descargar el video' : 'Grabar el vuelo o una ruta'}
+                >
+                    <Rec />
                 </button>
             </Tooltip>
             <Tooltip content={`Aeronave: ${perfil.nombre}`}>
@@ -58,7 +76,7 @@ const DronPastilla = () => {
                     aria-expanded={abierto === 'aeronave'}
                     aria-label={`Cambiar aeronave, ahora ${perfil.nombre}`}
                 >
-                    <DronIcono nombre={config.modelo} className="size-5" />
+                    <DronIcono nombre={config.modelo} className="size-6" />
                 </button>
             </Tooltip>
             <Tooltip content="Teclas del modo dron">
@@ -70,7 +88,7 @@ const DronPastilla = () => {
                     aria-expanded={abierto === 'teclas'}
                     aria-label="Teclas del modo dron"
                 >
-                    <DronIcono nombre="teclas" className="size-5" />
+                    <DronIcono nombre="teclas" className="size-6" />
                 </button>
             </Tooltip>
             <PillCloseButton
@@ -82,6 +100,27 @@ const DronPastilla = () => {
             />
             {abierto === 'aeronave' && <DronMenuAeronave anchorRef={barraRef} bordeRef={barraRef} onClose={cerrar} />}
             {abierto === 'teclas' && <DronTeclas anchorRef={barraRef} bordeRef={barraRef} onClose={cerrar} />}
+            {grabacion.tarjeta.abierta && !grabacion.grabando && (
+                <Map3DPopover
+                    anchorRef={barraRef}
+                    bordeRef={barraRef}
+                    onClose={grabacion.cerrarTarjeta}
+                    width={320}
+                    alinear="abajo"
+                    etiqueta="Grabar el vuelo"
+                    className="rounded-[12px] bg-[#F9FBFF] p-3 shadow-[0_5px_20px_#1A26641A]"
+                >
+                    <TarjetaGrabar
+                        tope={grabacion.tope}
+                        puntos={grabacion.puntos}
+                        resaltar={grabacion.tarjeta.resaltar}
+                        error={grabacion.error}
+                        onGrabar={grabacion.grabar}
+                        onPng={grabacion.descargarPng}
+                        onCerrar={grabacion.cerrarTarjeta}
+                    />
+                </Map3DPopover>
+            )}
         </div>
     );
 };

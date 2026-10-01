@@ -48,6 +48,10 @@ const INACTIVO = {
     accionesRef: { current: {} },
     telemetriaRef: { current: null },
     camaraForzadaRef: { current: null },
+    aceleracionRef: { current: 1 },
+    instrumentosAbiertos: true,
+    setInstrumentosAbiertos: NADA,
+    rastroRef: { current: [] },
     minimapaPedido: 0,
     pedirMinimapa: NADA,
     publicar: NADA,
@@ -70,6 +74,9 @@ export const DronProvider = ({ children }) => {
     const accionesRef = useRef({});
     const telemetriaRef = useRef(null);
     const camaraForzadaRef = useRef(null);
+    const aceleracionRef = useRef(1);
+    const [instrumentosAbiertos, setInstrumentosAbiertos] = useState(true);
+    const rastroRef = useRef([]);
     const [minimapaPedido, setMinimapaPedido] = useState(0);
     const pedirMinimapa = useCallback(() => setMinimapaPedido(n => n + 1), []);
     const oyentesRef = useRef(new Set());
@@ -162,11 +169,15 @@ export const DronProvider = ({ children }) => {
         accionesRef,
         telemetriaRef,
         camaraForzadaRef,
+        aceleracionRef,
+        instrumentosAbiertos,
+        setInstrumentosAbiertos,
+        rastroRef,
         minimapaPedido,
         pedirMinimapa,
         publicar,
         suscribir,
-    }), [activo, config, auto, entrar, salir, setOpcion, alternar, cambiarColor, publicar, suscribir, ruta, cambiarRuta, avanzarRuta, minimapaPedido, pedirMinimapa]);
+    }), [activo, config, auto, entrar, salir, setOpcion, alternar, cambiarColor, publicar, suscribir, ruta, cambiarRuta, avanzarRuta, minimapaPedido, pedirMinimapa, instrumentosAbiertos]);
 
     return <DronContext.Provider value={value}>{children}</DronContext.Provider>;
 };
