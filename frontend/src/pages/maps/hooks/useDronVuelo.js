@@ -8,7 +8,7 @@ import {
     SIN_ENTRADA, aplicarMandos, amortiguar, anguloCorto, crearDron, desplazar, entradaGuiada, mirarCamara, pasoDron, rapidezKmh,
 } from '@pages/maps/helpers/dron/fisicaDron';
 import { mandosDe } from '@pages/maps/helpers/dron/aeronaves';
-import { metaTercera, opcionesPrimera, opcionesTercera, seguirCamara } from '@pages/maps/helpers/dron/camaraDron';
+import { metaTercera, opcionesCono, opcionesPrimera, opcionesTercera, seguirCamara } from '@pages/maps/helpers/dron/camaraDron';
 import { entradaManual, hayEntradaManual, useDronTeclado } from './useDronTeclado';
 
 const INTERACCIONES = ['dragPan', 'dragRotate', 'scrollZoom', 'touchZoomRotate', 'touchPitch', 'keyboard', 'doubleClickZoom', 'boxZoom'];
@@ -148,7 +148,10 @@ export const useDronVuelo = (map, principal, olRef = null) => {
                 estado = { ...estado, rumbo: (estado.rumbo + falta - amortiguar(falta, 0, 5, dt) + 360) % 360 };
                 alNorte = Math.abs(falta) > 0.5;
             }
-            if (actual.config.tercera) {
+            if (actual.camaraForzadaRef?.current === 'cono') {
+                camara = null;
+                map.jumpTo(opcionesCono(map, estado));
+            } else if (actual.config.tercera) {
                 const lejania = map.getCanvas().clientWidth < 768 ? 1.8 : 1;
                 camara = seguirCamara(camara, metaTercera(estado, { distancia: actual.perfil.distancia, sueloEn, lejania }), dt);
                 map.jumpTo(opcionesTercera(map, camara, estado));

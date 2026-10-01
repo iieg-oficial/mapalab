@@ -21,7 +21,7 @@ export const encuadrarRecorrido = (puntos, ancho = ANCHO, alto = ALTO - CABECERA
     return { zoom: 3, centro: puntos[0] };
 };
 
-const cargar = url => new Promise((resolver) => {
+export const cargarTesela = url => new Promise((resolver) => {
     const img = new Image();
     const espera = setTimeout(() => resolver(null), ESPERA_TESELA_MS);
     img.crossOrigin = 'anonymous';
@@ -50,7 +50,7 @@ export const exportarRecorrido = async ({ plantilla, dron, ruta, rastro, aeronav
     ctx.fillRect(0, 0, ANCHO, ALTO);
     if (plantilla) {
         const teselas = teselasVisibles(centro, ANCHO, alto, zoom);
-        const imagenes = await Promise.all(teselas.map(({ tx, ty }) => cargar(urlTesela(plantilla, zoom, tx, ty))));
+        const imagenes = await Promise.all(teselas.map(({ tx, ty }) => cargarTesela(urlTesela(plantilla, zoom, tx, ty))));
         teselas.forEach(({ x, y }, i) => { if (imagenes[i]) ctx.drawImage(imagenes[i], x, y + CABECERA, 256, 256); });
     }
     const aPx = (p) => {

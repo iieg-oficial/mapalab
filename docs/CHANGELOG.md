@@ -18,6 +18,14 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   capa (y el número de capas activas si hay más de una), rumbo, inclinación y zoom, los logos de IIEG
   y Jalisco y la atribución del mapa base. En el comparador queda apagado. mediabunny y gifenc se
   cargan solo al grabar.
+- **Grabar el vuelo del dron (BETA).** Botón REC en la pastilla del dron: se elige la cámara (1ª
+  persona, 3ª persona o la del cono) y graba video en tiempo real hasta 1 min (30 s en celular), con el
+  contador junto al botón. REC otra vez detiene y descarga; ocultar la pestaña o salir del dron también.
+  La cámara del cono pone la vista desde el dron hacia el suelo con la inclinación del cono, como un
+  dron de mapeo, y el recuadro muestra la huella en el suelo. El minimapa marca el dron con su rumbo.
+- **Animar la ruta del minimapa del dron.** La descarga del minimapa ofrece PNG, video o GIF de 3 o
+  5 s: la ruta trazada se dibuja tramo a tramo con el dron avanzando (sin ruta, el rastro del vuelo),
+  con avance, distancia y tiempo en el recuadro.
 - El botón de Colibrí para reportar lleva el badge BETA en la esquina superior derecha. Sale en el
   visor, el catálogo, el embebido y el inicio.
 - Los badges BETA de Colibrí y del Catálogo van en la misma posición, en pill y en icono. En celular

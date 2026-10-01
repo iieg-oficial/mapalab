@@ -8,6 +8,7 @@ import Map3DRing from '../Map3D/Map3DRing';
 import DronIcono from './DronIcono';
 import DronMenuAeronave from './DronMenuAeronave';
 import DronTeclas from './DronTeclas';
+import DronGrabar from './DronGrabar';
 
 const BOTON = `flex items-center justify-center size-7.5 ${RADIUS_ICON} shrink-0 cursor-pointer transition-colors`;
 const tono = activo => (activo ? 'bg-[#5C2472] text-white' : 'bg-[#F0E6F6] text-[#5C2472] hover:bg-[#E2D3EA]');
@@ -27,7 +28,7 @@ const DronPastilla = () => {
     const kmh = perfil.vel[config.velocidad];
 
     return (
-        <div ref={barraRef} className="grid grid-rows-5 place-items-center h-full min-h-[196px] w-11 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
+        <div ref={barraRef} className="grid grid-rows-6 place-items-center h-full min-h-[232px] w-11 rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A]">
             <Tooltip content={`Velocidad ${config.velocidad + 1}: ${kmh} km/h · teclas 1, 2 y 3`}>
                 <Map3DRing
                     label={`Velocidad ${config.velocidad + 1} de 3`}
@@ -73,6 +74,7 @@ const DronPastilla = () => {
                     <DronIcono nombre="teclas" className="size-5" />
                 </button>
             </Tooltip>
+            <DronGrabar anchorRef={barraRef} abierto={abierto === 'grabar'} onAlternar={() => alternarPanel('grabar')} onCerrar={cerrar} />
             <PillCloseButton
                 onClick={salir}
                 size="pastilla"

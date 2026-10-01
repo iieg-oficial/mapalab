@@ -13,7 +13,7 @@ const textos = (ctx, cx, cy, r, valor, unidad, etiqueta) => {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = TINTA;
-    ctx.font = `800 ${Math.round(r * 0.42)}px ${FUENTE}`;
+    ctx.font = `800 ${Math.round(r * 0.42 * Math.min(1, 4 / Math.max(4, String(valor).length)))}px ${FUENTE}`;
     ctx.fillText(valor, cx, cy + r * 0.62);
     ctx.fillStyle = SUAVE;
     ctx.font = `600 ${Math.round(r * 0.26)}px ${FUENTE}`;

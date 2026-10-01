@@ -47,6 +47,7 @@ const INACTIVO = {
     avanzarRuta: NADA,
     accionesRef: { current: {} },
     telemetriaRef: { current: null },
+    camaraForzadaRef: { current: null },
     publicar: NADA,
     suscribir: () => NADA,
 };
@@ -66,6 +67,7 @@ export const DronProvider = ({ children }) => {
     const rutaRef = useRef(SIN_RUTA);
     const accionesRef = useRef({});
     const telemetriaRef = useRef(null);
+    const camaraForzadaRef = useRef(null);
     const oyentesRef = useRef(new Set());
 
     useEffect(() => { guardarDron(config); }, [config]);
@@ -155,6 +157,7 @@ export const DronProvider = ({ children }) => {
         avanzarRuta,
         accionesRef,
         telemetriaRef,
+        camaraForzadaRef,
         publicar,
         suscribir,
     }), [activo, config, auto, entrar, salir, setOpcion, alternar, cambiarColor, publicar, suscribir, ruta, cambiarRuta, avanzarRuta]);

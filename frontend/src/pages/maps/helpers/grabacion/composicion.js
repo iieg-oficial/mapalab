@@ -3,7 +3,7 @@ import logoIieg from '@assets/logos/iieg_short.svg';
 import logoJalisco from '@assets/logos/jalisco_large_dark.svg';
 import icoNorte from '@icons/ico_n.svg';
 import { fetchSiluetas } from '@services/municipioService';
-import { municipioEn, vistaDelMinimapa } from '@pages/maps/helpers/minimapa';
+import { aPixel, municipioEn, vistaDelMinimapa } from '@pages/maps/helpers/minimapa';
 import { dibujarMinimapa } from '@pages/maps/helpers/trazoMinimapa';
 import { dibujarIndicadores } from './indicadores';
 
@@ -11,7 +11,7 @@ const FUENTE = 'Garet, Figtree, system-ui, sans-serif';
 const ATRIBUCION = '© IIEG · © CARTO · © OpenStreetMap';
 const NARANJA = '#FF8300';
 const HALO = 'rgba(255, 255, 255, 0.95)';
-const ZOOM_MUNICIPIO = 10;
+const ZOOM_MUNICIPIO = 12;
 
 const cargarImagen = src => new Promise((resolver) => {
     const imagen = new Image();
@@ -80,6 +80,28 @@ const dibujarNorte = (ctx, norte, { ancho, alto, margen, rumbo }) => {
     });
 };
 
+const dibujarMarcador = (ctx, [x, y], rumbo, lado) => {
+    const r = lado * 0.05;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate((rumbo * Math.PI) / 180);
+    ctx.fillStyle = 'rgba(255, 131, 0, 0.35)';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-r * 1.6, -r * 4);
+    ctx.lineTo(r * 1.6, -r * 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#5C2472';
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = r * 0.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+};
+
 const dibujarUbicacion = (ctx, siluetas, { x, y, lado, ubicacion }) => {
     if (!siluetas?.estado || !ubicacion) return;
     const lienzo = document.createElement('canvas');
@@ -97,6 +119,7 @@ const dibujarUbicacion = (ctx, siluetas, { x, y, lado, ubicacion }) => {
         lado: lienzo.width,
     });
     dibujarMinimapa(mini, { lado: lienzo.width, vista, estado: siluetas.estado, municipio, extensionVista: extension, atenuado: !cerca });
+    if (ubicacion.marcador) dibujarMarcador(mini, aPixel(vista, lienzo.width, ubicacion.marcador.coord), ubicacion.marcador.rumbo, lienzo.width);
     conHalo(ctx, lado * 0.02, () => ctx.drawImage(lienzo, x, y, lado, lado));
 };
 

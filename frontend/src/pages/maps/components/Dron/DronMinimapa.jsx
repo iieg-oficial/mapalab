@@ -6,9 +6,8 @@ import { useAreaUtil } from '@contexts/AreaUtilContext';
 import { basemapTileUrl } from '@pages/maps/helpers/view3d';
 import { ZOOM_MINIMAPA, ZOOM_MINIMAPA_RANGO, largoDeRuta } from '@pages/maps/helpers/dron/minimapaDron';
 import { dibujarMinimapa, puntoDelClic } from '@pages/maps/helpers/dron/dibujoMinimapa';
-import { exportarRecorrido } from '@pages/maps/helpers/dron/exportarRecorrido';
-import { triggerDownload } from '@services/downloadService';
 import { BotonMini, ResumenRuta } from './DronMinimapaControles';
+import DronDescargaRecorrido from './DronDescargaRecorrido';
 
 const INTERVALO_MS = 90;
 const RASTRO_MS = 1000;
@@ -33,7 +32,7 @@ const DronMinimapa = () => {
     const [zoom, setZoom] = useState(ZOOM_MINIMAPA);
     const [rumboArriba, setRumboArriba] = useState(false);
     const [posicion, setPosicion] = useState(null);
-    const [descargando, setDescargando] = useState(false);
+    const [menuDescarga, setMenuDescarga] = useState(false);
     const plantilla = basemapTileUrl(basemaps[baseMapId]?.tiles);
 
     useEffect(() => {
@@ -87,22 +86,9 @@ const DronMinimapa = () => {
         setGrande(g => !g);
         setZoom(z => (grande ? Math.max(z, ZOOM_MINIMAPA) : Math.min(z, ZOOM_MINIMAPA - 1)));
     };
-    const descargar = async () => {
+    const leerDatos = () => {
         const t = telemetriaRef.current;
-        if (!t || descargando) return;
-        setDescargando(true);
-        const datos = { dron: t.dron, ruta: rutaRef.current, rastro: [...rastroRef.current], aeronave: perfil.nombre };
-        try {
-            let imagen;
-            try {
-                imagen = await exportarRecorrido({ ...datos, plantilla });
-            } catch {
-                imagen = await exportarRecorrido({ ...datos, plantilla: null });
-            }
-            if (imagen) triggerDownload(imagen, `recorrido-dron-${new Date().toISOString().slice(0, 10)}.png`);
-        } finally {
-            setDescargando(false);
-        }
+        return t ? { dron: t.dron, ruta: rutaRef.current, rastro: [...rastroRef.current], aeronave: perfil.nombre } : null;
     };
     const metros = posicion ? largoDeRuta(posicion, ruta.puntos, ruta.ciclo) : 0;
 
@@ -134,10 +120,18 @@ const DronMinimapa = () => {
                             onClick={() => setRumboArriba(r => !r)}
                             activo={rumboArriba}
                         />
-                        <BotonMini icono="descargar" titulo={descargando ? 'Generando la imagen…' : 'Descargar la imagen del recorrido'} onClick={descargar} disabled={descargando} />
+                        <BotonMini icono="descargar" titulo="Descargar el recorrido en imagen, video o GIF" onClick={() => setMenuDescarga(m => !m)} activo={menuDescarga} />
                     </>
                 )}
             </div>
+            {grande && menuDescarga && (
+                <DronDescargaRecorrido
+                    leerDatos={leerDatos}
+                    plantilla={plantilla}
+                    kmh={perfil.vel[config.velocidad]}
+                    onCerrar={() => setMenuDescarga(false)}
+                />
+            )}
             {grande && ruta.puntos.length > 0 && (
                 <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
                     <ResumenRuta
