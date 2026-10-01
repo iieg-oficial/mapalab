@@ -112,8 +112,9 @@ const indicadoresDeRecorrido = ({ fraccion, km, minutos }) => [
 export const grabarRecorrido = async ({ tipo, segundos, plantilla, datos, kmh, alAvanzar }) => {
     const camino = caminoDelRecorrido(datos);
     if (camino.puntos.length < 2) throw new Error('Traza una ruta en el minimapa o vuela un poco antes de grabar.');
-    const [ancho, alto] = TAMANOS[tipo];
-    const fps = FPS[tipo];
+    const clave = tipo === 'gif' ? 'gif' : 'video';
+    const [ancho, alto] = TAMANOS[clave];
+    const fps = FPS[clave];
     const { zoom, centro } = encuadrarRecorrido(camino.puntos, ancho, alto);
     const pixeles = camino.puntos.map(p => aMinimapa(centro, p, ancho, alto, zoom));
     const largos = acumulados(pixeles);

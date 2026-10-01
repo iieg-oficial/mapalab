@@ -45,7 +45,7 @@ export const useGrabarVuelo = ({ titulo, totalCapas }) => {
 
     const detener = useCallback(() => { sesionRef.current?.detener(); }, []);
 
-    const grabar = useCallback(async (camara) => {
+    const grabar = useCallback(async (camara, contenedor = 'mp4') => {
         const map = map3dRef?.current;
         if (!map || sesionRef.current) return;
         const { setOpcion, config, camaraForzadaRef, telemetriaRef } = vivo.current.dron;
@@ -64,7 +64,7 @@ export const useGrabarVuelo = ({ titulo, totalCapas }) => {
         const lienzo = document.createElement('canvas');
         [lienzo.width, lienzo.height] = TAMANO_VUELO;
         const ctx = lienzo.getContext('2d');
-        const [recursos, codificador] = await Promise.all([cargarRecursos(), crearCodificador('video', lienzo, CUADROS_POR_SEGUNDO)]);
+        const [recursos, codificador] = await Promise.all([cargarRecursos(), crearCodificador(contenedor, lienzo, CUADROS_POR_SEGUNDO)]);
         if (!codificador) {
             setError(SIN_VIDEO);
             restaurar();
@@ -89,7 +89,7 @@ export const useGrabarVuelo = ({ titulo, totalCapas }) => {
                 if (duracion > 0) {
                     const archivo = await codificador.terminar();
                     triggerDownload(archivo, `${nombreDeArchivo(vivo.current.titulo)}_dron${codificador.extension}`);
-                    trackView3d('grabar_vuelo', { camara, segundos: Math.round(duracion) });
+                    trackView3d('grabar_vuelo', { camara, formato: contenedor, segundos: Math.round(duracion) });
                 } else {
                     codificador.cancelar();
                 }

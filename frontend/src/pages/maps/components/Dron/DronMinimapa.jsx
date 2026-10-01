@@ -8,6 +8,9 @@ import { ZOOM_MINIMAPA, ZOOM_MINIMAPA_RANGO, largoDeRuta } from '@pages/maps/hel
 import { dibujarMinimapa, puntoDelClic } from '@pages/maps/helpers/dron/dibujoMinimapa';
 import { BotonMini, ResumenRuta } from './DronMinimapaControles';
 import DronDescargaRecorrido from './DronDescargaRecorrido';
+import { ContadorRec, TarjetaGrabar } from './DronGrabar';
+import { useGrabarVuelo } from '@hooksMaps/useGrabarVuelo';
+import { useMapDownload } from '@mapsComponents/MapExport/hooks/useMapDownload';
 
 const INTERVALO_MS = 90;
 const RASTRO_MS = 1000;
@@ -32,7 +35,10 @@ const DronMinimapa = () => {
     const [zoom, setZoom] = useState(ZOOM_MINIMAPA);
     const [rumboArriba, setRumboArriba] = useState(false);
     const [posicion, setPosicion] = useState(null);
-    const [menuDescarga, setMenuDescarga] = useState(false);
+    const [menu, setMenu] = useState(null);
+    const { layersWithLegends, selectedLayer } = useMapDownload();
+    const capa = selectedLayer || layersWithLegends[0];
+    const grabacion = useGrabarVuelo({ titulo: capa?.label || capa?.name || 'Vuelo en dron', totalCapas: layersWithLegends.length });
     const plantilla = basemapTileUrl(basemaps[baseMapId]?.tiles);
 
     useEffect(() => {
@@ -86,6 +92,8 @@ const DronMinimapa = () => {
         setGrande(g => !g);
         setZoom(z => (grande ? Math.max(z, ZOOM_MINIMAPA) : Math.min(z, ZOOM_MINIMAPA - 1)));
     };
+    const alternarMenu = cual => setMenu(previo => (previo === cual ? null : cual));
+    const acciones = `transition-opacity duration-150 ${menu || grabacion.grabando ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100'}`;
     const leerDatos = () => {
         const t = telemetriaRef.current;
         return t ? { dron: t.dron, ruta: rutaRef.current, rastro: [...rastroRef.current], aeronave: perfil.nombre } : null;
@@ -94,7 +102,7 @@ const DronMinimapa = () => {
 
     return (
         <div
-            className={`fixed transition-[width,height] duration-300 ${grande ? 'z-[21]' : 'z-10'} ${tamano(grande, isMobile)}`}
+            className={`group fixed transition-[width,height] duration-300 ${grande ? 'z-[21]' : 'z-10'} ${tamano(grande, isMobile)}`}
             style={isMobile ? undefined : { marginRight: margenes.right, marginBottom: margenes.bottom }}
         >
             <canvas
@@ -108,28 +116,44 @@ const DronMinimapa = () => {
                 title="Clic para agregar un punto a la ruta"
                 className="block size-full rounded-[14px] cursor-crosshair [filter:drop-shadow(0_6px_14px_rgba(34,26,46,0.28))]"
             />
-            <div className="absolute right-1.5 top-1.5 flex flex-col gap-1.5">
+            <div className={`absolute right-1.5 top-1.5 flex flex-col gap-1.5 ${acciones}`}>
                 <BotonMini icono={grande ? 'contraer' : 'expandir'} titulo={grande ? 'Reducir el minimapa' : 'Expandir el minimapa'} onClick={alternarGrande} />
-                {grande && (
-                    <>
-                        <BotonMini icono="mas" titulo="Acercar" onClick={() => acercar(1)} disabled={zoom >= ZOOM_MAX} />
-                        <BotonMini icono="menos" titulo="Alejar" onClick={() => acercar(-1)} disabled={zoom <= ZOOM_MIN} />
-                        <BotonMini
-                            icono={rumboArriba ? 'rumbo' : 'norte'}
-                            titulo={rumboArriba ? 'Poner el norte arriba' : 'Girar con el rumbo del dron'}
-                            onClick={() => setRumboArriba(r => !r)}
-                            activo={rumboArriba}
-                        />
-                        <BotonMini icono="descargar" titulo="Descargar el recorrido en imagen, video o GIF" onClick={() => setMenuDescarga(m => !m)} activo={menuDescarga} />
-                    </>
+                {(grande || !isMobile) && (
+                    <BotonMini
+                        icono={rumboArriba ? 'rumbo' : 'norte'}
+                        titulo={rumboArriba ? 'Poner el norte arriba' : 'Girar con el rumbo del dron'}
+                        onClick={() => setRumboArriba(r => !r)}
+                        activo={rumboArriba}
+                    />
                 )}
+                <BotonMini icono="descargar" titulo="Descargar el recorrido en imagen, video o GIF" onClick={() => alternarMenu('descarga')} activo={menu === 'descarga'} />
+                <BotonMini
+                    icono="grabar"
+                    titulo={grabacion.grabando ? 'Detener y descargar el video' : 'Grabar el vuelo en video'}
+                    onClick={grabacion.grabando ? grabacion.detener : () => alternarMenu('grabar')}
+                    activo={menu === 'grabar'}
+                    alerta={grabacion.grabando}
+                />
             </div>
-            {grande && menuDescarga && (
+            <div className={`absolute bottom-1.5 left-1.5 flex flex-col gap-1.5 ${acciones}`}>
+                <BotonMini icono="mas" titulo="Acercar" onClick={() => acercar(1)} disabled={zoom >= ZOOM_MAX} />
+                <BotonMini icono="menos" titulo="Alejar" onClick={() => acercar(-1)} disabled={zoom <= ZOOM_MIN} />
+            </div>
+            {grabacion.grabando && <ContadorRec segundos={grabacion.segundos} tope={grabacion.tope} />}
+            {menu === 'descarga' && (
                 <DronDescargaRecorrido
                     leerDatos={leerDatos}
                     plantilla={plantilla}
                     kmh={perfil.vel[config.velocidad]}
-                    onCerrar={() => setMenuDescarga(false)}
+                    onCerrar={() => setMenu(null)}
+                />
+            )}
+            {menu === 'grabar' && !grabacion.grabando && (
+                <TarjetaGrabar
+                    tope={grabacion.tope}
+                    error={grabacion.error}
+                    onGrabar={(camara, contenedor) => { setMenu(null); grabacion.grabar(camara, contenedor); }}
+                    onCerrar={() => setMenu(null)}
                 />
             )}
             {grande && ruta.puntos.length > 0 && (

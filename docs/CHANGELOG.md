@@ -11,20 +11,26 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 ### Agregado
 
 - **Grabar una vuelta de la vista 3D (BETA).** En 3D, Descargar suma el formato Animación, también
-  en «Descargar imagen» del catálogo: video MP4 de una vuelta completa (hasta 30 s, 720p o 1080p; WebM
-  donde no hay H.264) o GIF cuadrado de 480 px en loop de 3 o 5 s. Se graba cuadro por cuadro esperando
+  en «Descargar imagen» del catálogo: video MP4 o WebM a elegir de una vuelta completa (hasta 30 s,
+  720p o 1080p; el formato que el navegador no pueda generar sale apagado) o GIF cuadrado de 480 px en loop de 3 o 5 s. Se graba cuadro por cuadro esperando
   a que el mapa termine de cargar, con barra de avance y Cancelar. Cada cuadro lleva el logo largo de
   MapaLab, la flecha del norte, el minimapa de ubicación, un recuadro traslúcido con el nombre de la
   capa (y el número de capas activas si hay más de una), rumbo, inclinación y zoom, los logos de IIEG
   y Jalisco y la atribución del mapa base. En el comparador queda apagado. mediabunny y gifenc se
   cargan solo al grabar.
-- **Grabar el vuelo del dron (BETA).** Botón REC en la pastilla del dron: se elige la cámara (1ª
-  persona, 3ª persona o la del cono) y graba video en tiempo real hasta 1 min (30 s en celular), con el
-  contador junto al botón. REC otra vez detiene y descarga; ocultar la pestaña o salir del dron también.
+- **Grabar el vuelo del dron (BETA).** Botón REC en las acciones del minimapa del dron: se elige la
+  cámara (1ª persona, 3ª persona o la del cono) y graba video en tiempo real hasta 1 min (30 s en
+  celular), con el contador sobre el minimapa. REC otra vez detiene y descarga; ocultar la pestaña o salir del dron también.
   La cámara del cono pone la vista desde el dron hacia el suelo con la inclinación del cono, como un
   dron de mapeo, y el recuadro muestra la huella en el suelo. El minimapa marca el dron con su rumbo.
-- **Animar la ruta del minimapa del dron.** La descarga del minimapa ofrece PNG, video o GIF de 3 o
-  5 s: la ruta trazada se dibuja tramo a tramo con el dron avanzando (sin ruta, el rastro del vuelo),
+- Las acciones del minimapa del dron (expandir, rumbo, descargar y grabar arriba a la derecha; acercar
+  y alejar abajo a la izquierda) aparecen al pasar el cursor, también con el minimapa contraído; en
+  pantallas táctiles quedan visibles. La descarga del recorrido ya no exige el minimapa grande.
+- En las grabaciones el logo de MapaLab va a la mitad del tamaño, la flecha del norte queda a una
+  distancia del borde que la deja girar sin salirse, y el recuadro, el minimapa y la atribución bajan
+  al mismo margen que los demás elementos (4 % del lado corto).
+- **Animar la ruta del minimapa del dron.** La descarga del minimapa ofrece PNG, MP4, WebM o GIF de
+  3 o 5 s: la ruta trazada se dibuja tramo a tramo con el dron avanzando (sin ruta, el rastro del vuelo),
   con avance, distancia y tiempo en el recuadro.
 - El botón de Colibrí para reportar lleva el badge BETA en la esquina superior derecha. Sale en el
   visor, el catálogo, el embebido y el inicio.

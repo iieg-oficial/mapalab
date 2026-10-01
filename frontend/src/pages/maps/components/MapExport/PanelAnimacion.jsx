@@ -1,21 +1,20 @@
 import { useState } from 'react';
 import Segmented from '@components/Segmented';
 import { useGrabarGiro } from '@hooksMaps/useGrabarGiro';
-import { puedeGrabarVideo } from '@pages/maps/helpers/grabacion/codificador';
+import { useFormatosVideo } from '@hooksMaps/useFormatosVideo';
+import { elegible, opcionesDeArchivo } from '@pages/maps/helpers/grabacion/opcionesArchivo';
 
 const ETIQUETA = 'block mb-1 font-garet text-[12px] font-bold text-[#465055]';
 const BOTON = 'w-full h-12.5 bg-[#703089] text-white rounded-[30px] hover:bg-[#5C2472] hover:shadow-[0_6px_6px_#5C247234] transition font-garet font-bold text-[14px] cursor-pointer';
 
-const opcionesArchivo = conVideo => [
-    { value: 'video', label: 'Video', disabled: !conVideo, tooltip: conVideo ? 'Una vuelta completa, hasta 30 s' : 'Tu navegador no puede grabar video' },
-    { value: 'gif', label: 'GIF', tooltip: 'Animación ligera en loop, cuadrada' },
-];
 const DURACIONES = [{ value: 3, label: '3 s' }, { value: 5, label: '5 s' }];
 const CALIDADES = [{ value: '720', label: '720p' }, { value: '1080', label: '1080p' }];
 
 const PanelAnimacion = ({ titulo, totalCapas = 1, claseEtiqueta = ETIQUETA, claseBoton = BOTON }) => {
-    const [conVideo] = useState(puedeGrabarVideo);
-    const [tipo, setTipo] = useState(() => (puedeGrabarVideo() ? 'video' : 'gif'));
+    const soporte = useFormatosVideo();
+    const opciones = opcionesDeArchivo(soporte, { video: 'Una vuelta completa, hasta 30 s' });
+    const [elegido, setTipo] = useState('mp4');
+    const tipo = elegible(opciones, elegido);
     const [segundosGif, setSegundosGif] = useState(3);
     const [calidad, setCalidad] = useState('720');
     const { grabando, progreso, error, grabar, cancelar } = useGrabarGiro();
@@ -25,7 +24,7 @@ const PanelAnimacion = ({ titulo, totalCapas = 1, claseEtiqueta = ETIQUETA, clas
         <div className="flex flex-col gap-3">
             <div>
                 <span className={claseEtiqueta}>Archivo</span>
-                <Segmented variant="panel" ariaLabel="Archivo" options={opcionesArchivo(conVideo)} value={tipo} onChange={setTipo} disabled={grabando} />
+                <Segmented variant="panel" ariaLabel="Archivo" options={opciones} value={tipo} onChange={setTipo} disabled={grabando} />
             </div>
             {tipo === 'gif' ? (
                 <div>

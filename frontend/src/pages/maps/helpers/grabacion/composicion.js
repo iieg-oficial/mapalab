@@ -71,10 +71,10 @@ const recortar = (ctx, texto, maximo) => {
 
 const dibujarNorte = (ctx, norte, { ancho, alto, margen, rumbo }) => {
     if (!norte) return;
-    const h = alto * 0.13;
+    const h = alto * 0.1;
     const w = h * proporcion(norte);
     conHalo(ctx, h * 0.08, () => {
-        ctx.translate(ancho - margen - w / 2, margen + h / 2);
+        ctx.translate(ancho - margen - h / 2, margen + h / 2);
         ctx.rotate((-rumbo * Math.PI) / 180);
         ctx.drawImage(norte, -w / 2, -h / 2, w, h);
     });
@@ -186,13 +186,13 @@ const dibujarCaja = (ctx, recursos, { x, yBase, ancho, alto, titulo, totalCapas,
 
 export const componerCuadro = (ctx, opciones) => {
     const { ancho, alto, mapa, recursos, rumbo = 0, ubicacion, titulo, totalCapas = 1, indicadores, compacto = false, tiempo } = opciones;
-    const margen = Math.min(ancho, alto) * (compacto ? 0.04 : 0.035);
-    const piso = alto - alto * 0.07;
+    const margen = Math.round(Math.min(ancho, alto) * 0.04);
+    const piso = alto - margen;
     ctx.save();
     ctx.clearRect(0, 0, ancho, alto);
     if (mapa) cubrir(ctx, mapa, ancho, alto);
     if (recursos.mapalab) {
-        const h = alto * (compacto ? 0.07 : 0.09);
+        const h = alto * (compacto ? 0.035 : 0.045);
         conHalo(ctx, h * 0.15, () => ctx.drawImage(recursos.mapalab, margen, margen, h * proporcion(recursos.mapalab), h));
     }
     dibujarNorte(ctx, recursos.norte, { ancho, alto, margen, rumbo });
@@ -214,6 +214,6 @@ export const componerCuadro = (ctx, opciones) => {
     ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
     ctx.shadowBlur = letra * 0.4;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillText(ATRIBUCION, ancho / 2, alto - letra * 0.9);
+    ctx.fillText(ATRIBUCION, ancho / 2, compacto ? margen + letra : alto - margen);
     ctx.restore();
 };

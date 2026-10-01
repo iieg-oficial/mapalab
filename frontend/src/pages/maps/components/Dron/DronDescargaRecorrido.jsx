@@ -5,16 +5,11 @@ import { triggerDownload } from '@services/downloadService';
 import { trackView3d } from '@services/analyticsService';
 import { exportarRecorrido } from '@pages/maps/helpers/dron/exportarRecorrido';
 import { grabarRecorrido } from '@pages/maps/helpers/grabacion/animarRecorrido';
-import { puedeGrabarVideo } from '@pages/maps/helpers/grabacion/codificador';
+import { useFormatosVideo } from '@hooksMaps/useFormatosVideo';
+import { elegible, opcionesDeArchivo } from '@pages/maps/helpers/grabacion/opcionesArchivo';
 import { nombreDeArchivo } from '@pages/maps/helpers/grabacion/planGiro';
 
 const DURACIONES = [{ value: 3, label: '3 s' }, { value: 5, label: '5 s' }];
-const opcionesFormato = conVideo => [
-    { value: 'png', label: 'PNG', tooltip: 'Imagen del recorrido completo' },
-    { value: 'video', label: 'Video', disabled: !conVideo, tooltip: conVideo ? 'La ruta se dibuja tramo a tramo' : 'Tu navegador no puede grabar video' },
-    { value: 'gif', label: 'GIF', tooltip: 'Animación ligera en loop, cuadrada' },
-];
-
 const imagenDelRecorrido = async (datos, plantilla) => {
     try {
         return await exportarRecorrido({ ...datos, plantilla });
@@ -24,7 +19,10 @@ const imagenDelRecorrido = async (datos, plantilla) => {
 };
 
 const DronDescargaRecorrido = ({ leerDatos, plantilla, kmh, onCerrar }) => {
-    const [formato, setFormato] = useState('png');
+    const soporte = useFormatosVideo();
+    const opciones = opcionesDeArchivo(soporte, { png: true, video: 'La ruta se dibuja tramo a tramo' });
+    const [elegido, setFormato] = useState('png');
+    const formato = elegible(opciones, elegido);
     const [segundos, setSegundos] = useState(3);
     const [progreso, setProgreso] = useState(null);
     const [error, setError] = useState(null);
@@ -54,12 +52,12 @@ const DronDescargaRecorrido = ({ leerDatos, plantilla, kmh, onCerrar }) => {
     };
 
     return (
-        <div className="absolute right-10 top-1.5 z-10 flex w-[248px] flex-col gap-2.5 rounded-[12px] bg-[#F9FBFF] p-3 shadow-[0_5px_20px_#1A26641A]" role="dialog" aria-label="Descargar el recorrido">
+        <div className="absolute right-10 top-1.5 z-10 flex w-[280px] flex-col gap-2.5 rounded-[12px] bg-[#F9FBFF] p-3 shadow-[0_5px_20px_#1A26641A]" role="dialog" aria-label="Descargar el recorrido">
             <div className="flex items-center justify-between">
                 <span className="font-garet text-[13px] font-bold text-[#5C2472]">Descargar recorrido</span>
                 <MobileSheetCloseButton onClick={onCerrar} />
             </div>
-            <Segmented variant="panel" ariaLabel="Formato" options={opcionesFormato(puedeGrabarVideo())} value={formato} onChange={setFormato} disabled={ocupado} />
+            <Segmented variant="panel" ariaLabel="Formato" options={opciones} value={formato} onChange={setFormato} disabled={ocupado} />
             {formato !== 'png' && (
                 <Segmented variant="panel" ariaLabel="Duración" options={DURACIONES} value={segundos} onChange={setSegundos} disabled={ocupado} />
             )}
