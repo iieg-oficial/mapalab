@@ -106,6 +106,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Cambiado
 
+- **El dominio se escribe una vez en el `.env`.** `DOMINIO`, `DOMINIO_MINERVA` y `SITIO` arriba del archivo;
+  las URLs públicas, de acervo y de minerva se arman con ellas. El manifiesto de minerva ya no lleva hosts:
+  `scripts/manifiesto-minerva.sh <env>` lo rellena con `DOMINIO` antes de importarlo
 - El minimapa del visor ya no se oculta en 3D ni en el dron: se recorre a la derecha de la pastilla 3D
   (o de la del dron). En 3D un clic en él mueve el mapa 3D; en el dron no responde al clic, porque la
   posición la lleva el vuelo.
