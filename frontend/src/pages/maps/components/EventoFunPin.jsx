@@ -4,6 +4,7 @@ import Message from '@components/Message';
 import AnchoredNotice from '@mapsComponents/LayerNotices/AnchoredNotice';
 import { MobileFactBanner } from '@mapsComponents/EventoFunPopover';
 import { useRecorridoBatalla } from '@hooksMaps/useRecorridoBatalla';
+import { trackEventoFunRecorrido } from '@services/analyticsService';
 
 const detener = (e) => e.stopPropagation();
 
@@ -12,6 +13,11 @@ const EventoFunPin = ({ pin, onVolver, onCerrar }) => {
     const { disponible, recorriendo, recorrer } = useRecorridoBatalla();
     const vertices = Array.isArray(pin.vertices) ? pin.vertices : [];
     const conRecorrido = disponible && vertices.length > 1;
+
+    const verRecorrido = () => {
+        if (pin.eventoId) trackEventoFunRecorrido(pin.eventoId, vertices.length);
+        recorrer(vertices);
+    };
 
     useEffect(() => {
         const el = ref.current;
@@ -37,7 +43,7 @@ const EventoFunPin = ({ pin, onVolver, onCerrar }) => {
                                 {conRecorrido && (
                                     <button
                                         type="button"
-                                        onClick={() => recorrer(vertices)}
+                                        onClick={verRecorrido}
                                         disabled={recorriendo}
                                         className="text-[12px] font-bold text-purple hover:underline cursor-pointer disabled:opacity-60 disabled:cursor-default"
                                     >

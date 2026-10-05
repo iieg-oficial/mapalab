@@ -10,6 +10,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
+- **Telemetría del recorrido en 3D.** Pedirlo manda `evento_fun_recorrido` con el evento y el
+  número de puntos del trazo. Necesita mariachi 2.139.0 desplegado antes.
 - **Recorrido de batalla en 3D.** Un dato curioso pineado que trae ruta ofrece «Ver el recorrido en
   3D»: entra a la vista 3D si está apagada, pone la cámara a 68° mirando el rumbo del recorrido y
   vuela sobre el relieve real siguiendo la línea, hasta terminar encuadrando todo el trazo. Mientras
