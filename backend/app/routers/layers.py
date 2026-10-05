@@ -137,6 +137,16 @@ def invalidate_cache_endpoint():
 
 
 @router.get(
+    '/tree/completo',
+    include_in_schema=False,
+    dependencies=[Depends(require_internal_token)],
+)
+def get_layer_tree_completo(response: Response):
+    response.headers['Cache-Control'] = 'private, no-store'
+    return arbol_privado.arbol_completo_marcado()
+
+
+@router.get(
     '/search',
     responses=api_responses(500),
     operation_id='search_layers',

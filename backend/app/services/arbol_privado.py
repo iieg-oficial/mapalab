@@ -118,3 +118,23 @@ def privadas_no_visibles(referencias: list[str], usuario_id: Optional[int]) -> i
                 por_referencia[str(ref).lower()] = fid
     encontradas = {por_referencia[r.lower()] for r in referencias if r and r.lower() in por_referencia}
     return sum(1 for fid in encontradas if fid not in visibles)
+
+
+def _marcar(nodes: list[dict], privadas: dict[str, tuple[str, ...]]) -> list[dict]:
+    return [
+        {**n, **({'privada': True} if n['id'] in privadas else {}), 'children': _marcar(n.get('children') or [], privadas)}
+        for n in nodes
+    ]
+
+
+def arbol_completo_marcado() -> list[dict]:
+    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+    with conn.get_session() as session:
+        ws_map = {w.alias: w for w in LayersRepository.get_all_workspaces(session)}
+        arbol = _build_tree_from_rows(
+            LayersRepository.get_all_layers(session),
+            ws_map,
+            LayersRepository.get_aliases_by_layer(session),
+            incluir_privadas=True,
+        )
+    return _marcar(arbol, acceso_capas.compuertas())

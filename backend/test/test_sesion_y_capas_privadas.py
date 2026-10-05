@@ -219,3 +219,16 @@ class TestPendientes:
         assert arbol_privado.privadas_no_visibles(['capa', 'secreta', 'publica', 'nada'], None) == 2
         assert arbol_privado.privadas_no_visibles(['capa', 'secreta'], 1) == 1
         assert arbol_privado.privadas_no_visibles(['CAPA'], 2) == 0
+
+
+class TestArbolCompletoParaElAdmin:
+    def test_marca_las_privadas(self):
+        arbol = [{'id': 't', 'children': [{'id': 'p', 'children': [{'id': 'h', 'children': []}]}, {'id': 'x', 'children': []}]}]
+        marcado = arbol_privado._marcar(arbol, {'p': ('p',), 'h': ('p',)})
+        assert 'privada' not in marcado[0]
+        assert marcado[0]['children'][0]['privada'] is True
+        assert marcado[0]['children'][0]['children'][0]['privada'] is True
+        assert 'privada' not in marcado[0]['children'][1]
+
+    def test_pide_token(self, client):
+        assert client.get('/layers/tree/completo').status_code in (401, 503)
