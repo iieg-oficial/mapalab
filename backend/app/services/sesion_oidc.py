@@ -57,11 +57,11 @@ def nuevo_pkce() -> tuple[str, str]:
     return verificador, reto
 
 
-def redirect_uri() -> str:
-    return f"{(settings.MAPALAB_PUBLIC_BASE_URL or '').rstrip('/')}/mapalab/api/sesion/callback"
+def redirect_uri(base: str) -> str:
+    return f"{base.rstrip('/')}/mapalab/api/sesion/callback"
 
 
-def url_de_autorizacion(estado: str, reto: str) -> str:
+def url_de_autorizacion(estado: str, reto: str, redirect: str) -> str:
     endpoint = _descubrir()['authorization_endpoint']
     publico = (settings.MINERVA_PUBLIC_BASE or '').rstrip('/')
     if publico and publico != _issuer():
@@ -69,7 +69,7 @@ def url_de_autorizacion(estado: str, reto: str) -> str:
     query = httpx.QueryParams({
         'response_type': 'code',
         'client_id': settings.MINERVA_CLIENT_ID,
-        'redirect_uri': redirect_uri(),
+        'redirect_uri': redirect,
         'scope': settings.MINERVA_SCOPES,
         'state': estado,
         'code_challenge': reto,
@@ -78,11 +78,11 @@ def url_de_autorizacion(estado: str, reto: str) -> str:
     return f'{endpoint}?{query}'
 
 
-def canjear(codigo: str, verificador: str) -> dict[str, Any]:
+def canjear(codigo: str, verificador: str, redirect: str) -> dict[str, Any]:
     datos = {
         'grant_type': 'authorization_code',
         'code': codigo,
-        'redirect_uri': redirect_uri(),
+        'redirect_uri': redirect,
         'client_id': settings.MINERVA_CLIENT_ID,
         'client_secret': settings.MINERVA_CLIENT_SECRET,
         'code_verifier': verificador,

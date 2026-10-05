@@ -1,0 +1,17 @@
+application:
+  code: mapalab
+  name: MapaLab
+  description: Visor de mapas del IIEG. Iniciar sesion permite ver las capas privadas compartidas con la persona o su grupo
+  homepage_url: http://localhost:3006/mapalab/
+  redirect_uris:
+    - http://localhost:3006/mapalab/api/sesion/callback
+
+permissions:
+  - key: mapalab.sesion.view
+    name: Iniciar sesion en el visor de MapaLab
+
+roles:
+  - name: Usuario del visor
+    description: Puede iniciar sesion en MapaLab. Que capas privadas ve se decide en mariachi
+    permissions:
+      - mapalab.sesion.view

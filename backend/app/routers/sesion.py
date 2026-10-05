@@ -30,6 +30,14 @@ def _segura(request: Request) -> bool:
     return proto == 'https'
 
 
+def _base_publica(request: Request) -> str:
+    proto = request.headers.get('x-forwarded-proto') or request.url.scheme
+    host = request.headers.get('x-forwarded-host') or request.headers.get('host') or ''
+    if not host or any(c in host for c in '/\\@ '):
+        return (settings.MAPALAB_PUBLIC_BASE_URL or '').rstrip('/')
+    return f'{proto}://{host.split(",")[0].strip()}'
+
+
 def _siguiente_seguro(valor: Optional[str]) -> str:
     if not valor or not valor.startswith('/mapalab') or valor.startswith('//') or '\\' in valor:
         return '/mapalab/'
@@ -66,9 +74,10 @@ def entrar(request: Request, modo: str = Query('popup', pattern='^(popup|pagina)
     _requiere_sesion_habilitada()
     estado_oidc = sesion_oidc.nuevo_estado()
     verificador, reto = sesion_oidc.nuevo_pkce()
-    destino = sesion_oidc.url_de_autorizacion(estado_oidc, reto)
+    vuelta = sesion_oidc.redirect_uri(_base_publica(request))
+    destino = sesion_oidc.url_de_autorizacion(estado_oidc, reto, vuelta)
     redirect = RedirectResponse(url=destino, status_code=302)
-    tx = firmar('tx', {'estado': estado_oidc, 'verificador': verificador, 'modo': modo, 'siguiente': _siguiente_seguro(siguiente)}, _TX_SEGUNDOS)
+    tx = firmar('tx', {'estado': estado_oidc, 'verificador': verificador, 'modo': modo, 'siguiente': _siguiente_seguro(siguiente), 'vuelta': vuelta}, _TX_SEGUNDOS)
     redirect.set_cookie(COOKIE_TX, tx, max_age=_TX_SEGUNDOS, path=_RUTA_TX, httponly=True, samesite='lax', secure=_segura(request))
     return redirect
 
@@ -108,7 +117,8 @@ async def callback(request: Request, code: str = '', state: str = '', error: str
     if not code or not state or state != tx.get('estado'):
         return _terminar(tx, {'ok': False, 'error': 'expirado'})
     try:
-        claims = await run_in_threadpool(sesion_oidc.canjear, code, tx['verificador'])
+        vuelta = tx.get('vuelta') or sesion_oidc.redirect_uri(_base_publica(request))
+        claims = await run_in_threadpool(sesion_oidc.canjear, code, tx['verificador'], vuelta)
         usuario = await run_in_threadpool(acceso_capas.registrar_login, claims['sub'], claims['email'], claims.get('name'))
     except sesion_oidc.OidcError as exc:
         Logger.warning(f'sesion.login.canje_fallido {exc}')

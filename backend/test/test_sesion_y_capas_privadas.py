@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from app.config import settings
 from app.routers import privado, sesion
-from app.services import acceso_capas, arbol_privado, sesion_firma
+from app.services import acceso_capas, arbol_privado, sesion_firma, sesion_oidc
 from app.services.layer_tree_service import _build_tree_from_rows
 
 
@@ -232,3 +232,24 @@ class TestArbolCompletoParaElAdmin:
 
     def test_pide_token(self, client):
         assert client.get('/layers/tree/completo').status_code in (401, 503)
+
+
+class TestBasePublica:
+    def _req(self, headers, scheme='http'):
+        return SimpleNamespace(headers=headers, url=SimpleNamespace(scheme=scheme))
+
+    def test_usa_el_host_y_el_protocolo_del_gateway(self):
+        req = self._req({'x-forwarded-proto': 'https', 'host': 'canario.iieg'})
+        assert sesion._base_publica(req) == 'https://canario.iieg'
+
+    def test_prefiere_x_forwarded_host(self):
+        req = self._req({'x-forwarded-proto': 'https', 'x-forwarded-host': 'iieg.jalisco.gob.mx', 'host': 'backend:8000'})
+        assert sesion._base_publica(req) == 'https://iieg.jalisco.gob.mx'
+
+    def test_un_host_raro_cae_en_la_url_configurada(self, monkeypatch):
+        monkeypatch.setattr(settings, 'MAPALAB_PUBLIC_BASE_URL', 'https://iieg.jalisco.gob.mx/')
+        req = self._req({'host': 'evil.com/x@'})
+        assert sesion._base_publica(req) == 'https://iieg.jalisco.gob.mx'
+
+    def test_el_redirect_lleva_la_ruta_del_callback(self):
+        assert sesion_oidc.redirect_uri('https://canario.iieg') == 'https://canario.iieg/mapalab/api/sesion/callback'

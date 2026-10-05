@@ -152,6 +152,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Corregido
 
+- **La vuelta de minerva usa el host y el protocolo de la petición.** El `redirect_uri` salía de
+  `MAPALAB_PUBLIC_BASE_URL` y el nginx pisaba `X-Forwarded-Proto` con `http`: quien entraba por otro
+  nombre volvía a otro host y la cookie salía sin `Secure`. Se agrega `manifest.minerva.yml` para dar de
+  alta la app `mapalab` en minerva
 - **Las leyendas nuevas ya aparecen tras «Vaciar cachés» en mariachi.** El gateway guarda cada `GetLegendGraphic` seis horas, así que una leyenda recién subida no salía. El `wmsConfig` de cada capa trae ahora `legendVersion` (de `mapalab.workspaces.legend_version`, dataengine 1.48.0) y el visor la agrega a la URL de la leyenda como `&lv=`; GeoServer ignora el parámetro, pero la URL nueva no está en la caché del gateway. El ETag del árbol incluye esas versiones y `_TREE_SCHEMA` pasa a 5: sin eso, subir la versión no cambiaba el ETag y el navegador seguía con el árbol viejo por un 304. El catálogo arma su leyenda desde su propia API y no lo cubre.
 - **Los dominios permitidos de una llave del embed no restringían nada.** La llave se validaba en la
   petición a `/embed/config` que hace el propio iframe, y el origen de esa petición es siempre el de
