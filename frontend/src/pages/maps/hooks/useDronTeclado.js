@@ -41,7 +41,7 @@ export const useDronTeclado = (activo, dron) => {
                 KeyV: () => alternar('tercera'),
                 KeyP: () => setAuto(previo => !previo),
                 KeyH: () => accionesRef.current.nivelar?.(),
-                Escape: () => { if (!document.querySelector('[role="dialog"]')) salir(); },
+                Escape: () => { if (!document.querySelector('[role="dialog"][aria-modal="true"]')) salir(); },
             };
             acciones[e.code]?.();
         };
