@@ -20,7 +20,7 @@ const INACTIVO = {
 };
 
 export const CaminarProvider = ({ children }) => {
-    const { active, setOrbita, setInundacion } = useView3d();
+    const { active, enter, setOrbita, setInundacion } = useView3d();
     const { forzarCandado } = useSider();
     const { isZenMode, setIsZenMode } = useZenMode() || {};
     const { setSelectedFeatureInfo, compareMode } = useMapsContext();
@@ -28,10 +28,16 @@ export const CaminarProvider = ({ children }) => {
     zenRef.current = !!isZenMode;
     const [activo, setActivo] = useState(false);
     const [tercera, setTercera] = useState(true);
+    const [pendiente, setPendiente] = useState(false);
     const teclasRef = useRef(new Set());
     const oyentesRef = useRef(new Set());
 
     useEffect(() => { if (!active || compareMode?.active) setActivo(false); }, [active, compareMode?.active]);
+    useEffect(() => {
+        if (!active || !pendiente) return;
+        setPendiente(false);
+        setActivo(true);
+    }, [active, pendiente]);
     useEffect(() => {
         if (!activo) return undefined;
         const zenPrevio = zenRef.current;
@@ -52,8 +58,9 @@ export const CaminarProvider = ({ children }) => {
     const entrar = useCallback(() => {
         setOrbita(false);
         setInundacion({ eligiendo: false });
-        setActivo(true);
-    }, [setOrbita, setInundacion]);
+        if (active) setActivo(true);
+        else if (enter()) setPendiente(true);
+    }, [active, enter, setOrbita, setInundacion]);
 
     const salir = useCallback(() => setActivo(false), []);
     const alternarVista = useCallback(() => setTercera(v => !v), []);

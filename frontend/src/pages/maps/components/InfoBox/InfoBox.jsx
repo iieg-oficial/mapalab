@@ -3,6 +3,7 @@ import MapsContext from '@contexts/MapsContext';
 import { trackFeatureClick } from '@services/analyticsService';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import { useSider } from '@contexts/SiderContext';
+import { useCaminar } from '@contexts/CaminarContext';
 import MobileSheet, { MobileSheetCloseButton } from '@components/MobileSheet';
 import ScrollContainer from '@components/ScrollContainer';
 import { useViewportContainment } from './hooks/useViewportContainment';
@@ -29,6 +30,7 @@ import PanelMedicionSeleccion from '../MeasurementTools/PanelMedicionSeleccion';
 
 const InfoBox = ({ forceDesktop = false, embed = false }) => {
     const openColibri = useColibriOpen();
+    const { entrar: entrarCaminata } = useCaminar();
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers, mapRef, paneMapInstances, compareMode } = useContext(MapsContext);
     const { isMobile: siderIsMobile } = useSider();
     const isMobile = forceDesktop ? false : siderIsMobile;
@@ -70,7 +72,8 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
     const handleAction = useCallback((action) => {
         if (action === 'whats_new') setWhatsNewOpen(true);
         if (action === 'report') openColibri({ source: 'iieg_marker' });
-    }, [openColibri]);
+        if (action === 'caminar') entrarCaminata();
+    }, [openColibri, entrarCaminata]);
 
     const lazyLoad = useInfoBoxLazyLoad({
         results: selectedFeatureInfo?.results,

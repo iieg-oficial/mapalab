@@ -10,8 +10,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
-- **Caminar el instituto (BETA, fuera de producción).** Desde la vista 3D, el botón con la persona
-  carga el edificio del IIEG desde `GET /instituto/edificio` (schema `instituto` de dataengine) y lo
+- **La marca del IIEG es permanente** y lleva el pin del mapa incrustado (`ico_iieg_mapa.svg`, el de
+  portalito) en lugar del cuadro morado: se ve siempre desde el zoom 15, sin tener que tocar el logo. El
+  logo sigue volando a ella y abriendo su tarjeta
+- **Caminar el instituto (BETA, fuera de producción).** «Caminar el instituto» en la tarjeta de la marca del
+  IIEG (enciende la vista 3D si está apagada) carga el edificio del IIEG desde `GET /instituto/edificio` (schema `instituto` de dataengine) y lo
   dibuja con three.js sobre el relieve: muros, techos, la planta alta sobre Dirección General, la
   azotea con pretil y la escalera de dos tramos con descanso. Se camina en primera o tercera persona
   con un avatar genérico (W A S D o flechas, Q E para girar, Shift para correr, arrastrar para mirar,

@@ -1,4 +1,3 @@
-import mapalabSquareIcon from '@logos/mapalab_square.svg';
 import { APP_VERSION, APP_LOC } from '@constants/app';
 import { MULTIVALOR_SEPARADOR } from '@utils/infoboxPlan';
 import { collectCatalogUnits } from './layers/utils/layerHelpers';
@@ -13,17 +12,19 @@ export const computeIiegStats = ({ allLayers = [] } = {}) => {
 
 const formatCount = (n) => (typeof n === 'number' ? n.toLocaleString('es-MX') : '—');
 
-export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) => ({
+export const EMBED_MARKER_ICON = '/acervo/iieg/logos/ico_iieg_mapa.svg';
+const EMBED_MARKER_SCALE = 0.4;
+const ACCION_CAMINAR = { icon: 'caminar', value: 'Caminar el instituto', action: 'caminar' };
+
+export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null, permanente = false, conCaminar = false } = {}) => ({
     id: 'iieg_hq',
     center: [-103.44669185275052, 20.68443473644039],
-    zoom: 16,
-    icon: mapalabSquareIcon,
-    scale: 0.25,
-    anchor: [0.5, 0.5],
+    zoom: permanente ? undefined : 16,
+    icon: EMBED_MARKER_ICON,
+    scale: EMBED_MARKER_SCALE,
+    anchor: [0.5, 1],
     minZoom: 15,
-    bgColor: '#5c2472',
-    bgRadius: 45,
-    openOnShow: true,
+    openOnShow: !permanente,
     infoBox: {
         layerName: 'MapaLab — IIEG Jalisco',
         properties: {
@@ -58,6 +59,7 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) =
             ],
             cardsColumns: 1,
             iconText: [
+                ...(conCaminar ? [ACCION_CAMINAR] : []),
                 { icon: 'ubicacion', field: 'direccion' },
                 { icon: 'celular', field: 'telefono' },
                 { icon: 'web', value: 'iieg.gob.mx', href: 'https://iieg.gob.mx/ns/' },
@@ -68,9 +70,6 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) =
     }
 });
 
-export const EMBED_MARKER_ICON = '/acervo/iieg/logos/ico_iieg_mapa.svg';
-
-const EMBED_MARKER_SCALE = 0.4;
 const CHIP_STYLES = {
     solid: { color: '#FFFFFF', bg: '#5C2472' },
     accent: { color: '#111827', bg: '#FF8300' },

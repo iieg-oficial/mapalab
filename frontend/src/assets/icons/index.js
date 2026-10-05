@@ -142,6 +142,7 @@ import fitExtentHover from './ico_fit_extent_hover.svg';
 
 import webNormal from './ico_web.svg';
 import novedadesNormal from './ico_novedades.svg';
+import caminarNormal from './ico_caminar.svg';
 
 import medicionNormal from './ico_medicion.svg';
 import hideNormal from './ico_hide_normal.svg';
@@ -170,6 +171,6 @@ export const externalIcons = {
     right_arrow_fill_normal: rightArrowFillNormal, right_arrow_fill_hover: rightArrowFillHover,
     down_arrow_fill_normal: downArrowFillNormal, down_arrow_fill_hover: downArrowFillHover,
     fit_extent_normal: fitExtentNormal, fit_extent_hover: fitExtentHover,
-    web_normal: webNormal, novedades_normal: novedadesNormal,
+    web_normal: webNormal, novedades_normal: novedadesNormal, caminar_normal: caminarNormal,
     medicion_normal: medicionNormal, hide_normal: hideNormal,
 };
