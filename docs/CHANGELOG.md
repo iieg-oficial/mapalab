@@ -30,14 +30,6 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   Pide en el `.env` `MINERVA_ISSUER_URL`, `MINERVA_PUBLIC_BASE`, `MINERVA_CLIENT_ID` y
   `MAPALAB_SESSION_HOURS`, y los secretos `minerva_client_secret` y `mapalab_session_secret`.
   Necesita dataengine 1.47.0 y mariachi con la pestaña de acceso desplegados antes
-- **Telemetría del recorrido en 3D.** Pedirlo manda `evento_fun_recorrido` con el evento y el
-  número de puntos del trazo. Necesita mariachi 2.139.0 desplegado antes.
-- **Recorrido de batalla en 3D.** Un dato curioso pineado que trae ruta ofrece «Ver el recorrido en
-  3D»: entra a la vista 3D si está apagada, pone la cámara a 68° mirando el rumbo del recorrido y
-  vuela sobre el relieve real siguiendo la línea, hasta terminar encuadrando todo el trazo. Mientras
-  vuela, el texto del dato queda en una tarjeta fija sobre el mapa. Con movimiento reducido solo
-  encuadra. El ángulo y el rumbo se dejan en manos del estado de la vista 3D, para no pelear con la
-  corrección de cámara que endereza el mapa cuando se desvía.
 - **Las águilas pueden seguir una ruta.** Un dato curioso cuyo destino trae puntos de avance encuadra
   el recorrido completo en vez de centrar el punto final, y el visor dibuja la línea de avance sobre el
   mapa, con guiones en movimiento y un vértice por punto. El dato queda pineado en el último punto y la
