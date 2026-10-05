@@ -1,3 +1,5 @@
+import { detectSource } from './telemetryService';
+
 const API_BASE = import.meta.env.VITE_BACKEND_API_HOST || '/api/';
 
 const buildUrl = (path) => {
@@ -6,6 +8,7 @@ const buildUrl = (path) => {
 };
 
 export const reportClientError = ({ type, message = '', url = '' }) => {
+    if (detectSource() === 'embed') return;
     try {
         const body = JSON.stringify({
             type,

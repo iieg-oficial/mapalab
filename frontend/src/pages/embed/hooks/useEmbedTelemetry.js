@@ -32,6 +32,7 @@ export const useEmbedTelemetry = ({ apiKey, enabled = true }) => {
     const flushTimer = useRef(null);
     const sentReady = useRef(false);
     const readyAt = useRef(null);
+    const scheduleRef = useRef(null);
 
     useEffect(() => {
         if (!enabled || !apiKey) return undefined;
@@ -63,6 +64,8 @@ export const useEmbedTelemetry = ({ apiKey, enabled = true }) => {
             if (flushTimer.current) clearTimeout(flushTimer.current);
             flushTimer.current = setTimeout(flush, FLUSH_DEBOUNCE_MS);
         };
+        scheduleRef.current = scheduleFlush;
+        if (buffer.current.vitals.length) scheduleFlush();
 
         const recordVital = (metric) => {
             buffer.current.vitals.push({ name: metric.name, value: metric.value });
@@ -109,6 +112,7 @@ export const useEmbedTelemetry = ({ apiKey, enabled = true }) => {
             window.removeEventListener('unhandledrejection', onRejection);
             window.removeEventListener('pagehide', onUnload);
             window.removeEventListener('beforeunload', onUnload);
+            scheduleRef.current = null;
             if (flushTimer.current) clearTimeout(flushTimer.current);
             flush();
         };
@@ -121,6 +125,7 @@ export const useEmbedTelemetry = ({ apiKey, enabled = true }) => {
         try {
             buffer.current.vitals.push({ name: 'IFRAME_READY', value: Math.round(readyAt.current) });
         } catch { /* */ }
+        scheduleRef.current?.();
     };
 
     return { markReady };

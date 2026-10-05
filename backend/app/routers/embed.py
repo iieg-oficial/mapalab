@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import hmac
+import time
 from typing import Optional
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, Body, Header, HTTPException, Query, Request, Response, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, status
 
 from app.config import settings
 from app.services import embed_abuse_tracker
-from app.services.client_error_tracker import record as record_client_error
 from app.services.access_logger import get_logger as get_access_logger
 from app.services.api_key_quota import get_tracker
 from app.services.api_key_validator import (
@@ -18,7 +17,8 @@ from app.services.api_key_validator import (
     invalidate_cache_for_prefix,
     validate_api_key,
 )
-from app.services.embed_origen import origen_para_llave, politica_de_marco
+from app.services.embed_origen import origen_para_llave, origen_valido, politica_de_marco
+from app.services.embed_telemetria import get_agregador
 from app.services.embed_wms_params import (
     check_allowed,
     clean_params,
@@ -34,6 +34,27 @@ from app.utils.logger import Logger
 router = APIRouter(prefix='/embed', tags=['Embed'])
 
 _WMS_PROXY_TIMEOUT = 30.0
+
+
+_PREFIJOS_LLAVE = ('mk_priv_', 'mk_pub_')
+_CARACTERES_VISIBLES = 4
+
+
+def prefijo_visible(key: str) -> str:
+    if not key:
+        return ''
+    for prefijo in _PREFIJOS_LLAVE:
+        if key.startswith(prefijo):
+            return key[:len(prefijo) + _CARACTERES_VISIBLES]
+    return key[:12]
+
+
+def origen_de_telemetria(request: Request) -> str:
+    return origen_valido(origen_para_llave(request)) or ''
+
+
+def _milisegundos(desde: float) -> float:
+    return (time.perf_counter() - desde) * 1000
 
 
 def _set_response_headers(
@@ -59,7 +80,7 @@ def _validate_or_403(
     origin = origen_para_llave(request)
     ip = get_client_ip(request)
     result = validate_api_key(key, origin=origin, ip=ip, requested_layers=requested_layers or [])
-    prefix = key[:12] if key else ''
+    prefix = prefijo_visible(key)
     access_logger = get_access_logger()
     request_id = request.headers.get('x-request-id')
     if not result.valid:
@@ -76,7 +97,10 @@ def _validate_or_403(
             ip=ip,
             layers=requested_layers,
             request_id=request_id,
+            key_prefix=prefix,
         )
+        if result.key_id is not None:
+            get_agregador().sumar(result.key_id, origen_valido(origin) or '', 'denegados')
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"La llave no es válida o no está autorizada para este sitio ({result.reason or 'motivo no especificado'})",
@@ -96,6 +120,7 @@ def _validate_or_403(
             ip=ip,
             layers=requested_layers,
             request_id=request_id,
+            key_prefix=prefix,
         )
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -111,6 +136,7 @@ def _validate_or_403(
         ip=ip,
         layers=requested_layers,
         request_id=request_id,
+        key_prefix=prefix,
     )
     return result
 
@@ -141,6 +167,7 @@ def get_embed_config(
     response: Response,
     key: str = Query(min_length=8, max_length=120),
 ):
+    inicio = time.perf_counter()
     requested_layers: list[str] = []
     layers_param = request.query_params.get('layers')
     if layers_param:
@@ -148,7 +175,7 @@ def get_embed_config(
     result = _validate_or_403(request, key, 'config', requested_layers)
     origin = get_request_origin(request)
     _set_response_headers(response, origin, result.dominios_permitidos)
-    return {
+    cuerpo = {
         'institucion': result.institucion_nombre,
         'visibility': result.visibility,
         'capasPermitidas': result.capas_permitidas,
@@ -157,6 +184,12 @@ def get_embed_config(
         'cuotaMensual': result.cuota_mensual,
         'requestedLayers': requested_layers,
     }
+    if result.key_id is not None:
+        sitio = origen_de_telemetria(request)
+        agregador = get_agregador()
+        agregador.sumar(result.key_id, sitio, 'cargas')
+        agregador.registrar_metrica(result.key_id, sitio, 'SERVIDOR_CONFIG', _milisegundos(inicio))
+    return cuerpo
 
 
 @router.get('/layers/tree', responses=api_responses(403, 429, 500))
@@ -195,13 +228,16 @@ def wms_proxy(
     target = f"{base}/{workspace}/wms?{urlencode(clean)}" if workspace else f"{base}/wms?{urlencode(clean)}"
 
     try:
+        inicio = time.perf_counter()
         with httpx.Client(timeout=_WMS_PROXY_TIMEOUT) as client:
             upstream = client.get(target)
+        latencia = _milisegundos(inicio)
     except httpx.RequestError as exc:
         Logger.error(f"embed.wms_proxy.upstream_error {exc}")
         raise HTTPException(status_code=502, detail='El servidor de mapas no respondió. Intenta de nuevo en unos segundos.')
 
     if result.key_id is not None:
+        get_agregador().registrar_metrica(result.key_id, origen_de_telemetria(request), 'SERVIDOR_WMS', latencia)
         get_tracker().record(
             result.key_id,
             error=upstream.status_code >= 400,
@@ -223,38 +259,6 @@ def wms_proxy(
         media_type=content_type,
         headers=headers,
     )
-
-
-class _TelemetryVital(BaseModel):
-    name: str = Field(..., max_length=20)
-    value: float = Field(..., ge=0, le=600000)
-
-
-class _TelemetryError(BaseModel):
-    message: str = Field(..., max_length=400)
-    source: str | None = Field(default=None, max_length=200)
-
-
-class _TelemetryPayload(BaseModel):
-    vitals: list[_TelemetryVital] = Field(default_factory=list)
-    errors: list[_TelemetryError] = Field(default_factory=list)
-
-
-@router.post('/telemetry', responses=api_responses(403, 429, 500))
-def post_telemetry(
-    request: Request,
-    response: Response,
-    key: str = Query(min_length=8, max_length=120),
-    payload: _TelemetryPayload = Body(...),
-):
-    result = _validate_or_403(request, key, 'telemetry', record_quota=False)
-    origin = get_request_origin(request)
-    _set_response_headers(response, origin, result.dominios_permitidos)
-    prefix = key[:12] if key else ''
-    for err in payload.errors[:5]:
-        record_client_error('embed_js')
-        Logger.warning(f"embed.telemetry.js_error prefix={prefix} msg={(err.message or '')[:120]}")
-    return {'ok': True}
 
 
 @router.post('/cache/invalidate', responses=api_responses(403, 500))

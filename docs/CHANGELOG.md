@@ -10,6 +10,16 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
+- **Telemetría del mapa incrustado.** El backend agrega por llave y sitio los Web Vitals y el tiempo
+  hasta listo que manda el iframe (antes se tiraban), la latencia de `/embed/config` y del proxy WMS, y
+  las cargas, errores JS, timeouts y denegados, y los manda cada 60 s a mariachi
+  (`/internal/mapalab/keys/rendimiento` y `/sitios`), que los muestra en la pestaña Uso de la llave. El
+  iframe manda el «listo» en cuanto ocurre, y el widget avisa desde el sitio anfitrión cuando se cansa de
+  esperar o recibe un error, con `sendBeacon` en texto plano para no pedir preflight. Las denegaciones de
+  llaves inexistentes ya dejan fila en la auditoría con el prefijo visible de la llave, y el registro de
+  accesos deja de escribir una fila por cada tesela WMS y cada envío de telemetría. Dentro del embed los
+  errores ya no se reportan también a `/log/client-error`, para no contar doble. Requiere mariachi
+  2.136.0 desplegado antes.
 - **Grabar una vuelta de la vista 3D (BETA).** Descargar elige primero qué bajar, Imagen o Animación,
   también en «Descargar imagen» del catálogo y también fuera de 3D. Animación ofrece Vuelta 3D (entra a
   3D si hace falta y graba) o Ruta en dron (abre el modo dron con el minimapa grande para trazar la ruta

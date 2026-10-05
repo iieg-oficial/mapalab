@@ -6,6 +6,31 @@ const DEFAULT_BASE_URL = 'https://mapalab.iieg.gob.mx';
 const DEFAULT_READY_TIMEOUT_MS = 8000;
 
 
+const enviarBeacon = (url, body) => {
+    try {
+        return Boolean(navigator.sendBeacon?.(url, new Blob([body], { type: 'text/plain' })));
+    } catch {
+        return false;
+    }
+};
+
+
+const enviarFetch = (url, body) => {
+    try {
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            credentials: 'omit',
+            keepalive: true,
+            headers: { 'Content-Type': 'text/plain' },
+            body,
+        }).catch(() => null);
+    } catch {
+        return;
+    }
+};
+
+
 export class IiegMapalab extends LitElement {
     static properties = {
         apiKey: { type: String, attribute: 'api-key' },
@@ -60,6 +85,7 @@ export class IiegMapalab extends LitElement {
         this._error = null;
         this._reloadKey = 0;
         this._timeoutId = null;
+        this._reportados = new Set();
         this._messageHandler = this._onMessage.bind(this);
     }
 
@@ -101,6 +127,7 @@ export class IiegMapalab extends LitElement {
                 this.dispatchEvent(new CustomEvent('mapalab:timeout', {
                     detail: { ms, reason: 'no_ready_received' },
                 }));
+                this._reportar('timeout');
             }
         }, ms);
     }
@@ -116,6 +143,7 @@ export class IiegMapalab extends LitElement {
         this._error = null;
         this._timedOut = false;
         this._ready = false;
+        this._reportados = new Set();
         this._reloadKey += 1;
         this.requestUpdate();
         this._scheduleTimeout();
@@ -160,6 +188,19 @@ export class IiegMapalab extends LitElement {
         return `${base}/embed?${params.toString()}`;
     }
 
+    _telemetryUrl() {
+        const base = (this.baseUrl || DEFAULT_BASE_URL).replace(/\/$/, '');
+        return `${base}/api/embed/telemetry?key=${encodeURIComponent(this.apiKey)}`;
+    }
+
+    _reportar(tipo) {
+        if (!this.apiKey || this._reportados.has(tipo)) return;
+        this._reportados.add(tipo);
+        const url = this._telemetryUrl();
+        const body = JSON.stringify({ eventos: [{ tipo }] });
+        if (!enviarBeacon(url, body)) enviarFetch(url, body);
+    }
+
     _embedOrigin() {
         try {
             return new URL(this.baseUrl || DEFAULT_BASE_URL, window.location.href).origin;
@@ -188,6 +229,7 @@ export class IiegMapalab extends LitElement {
             this._error = data.payload || { message: 'Error desconocido' };
             this._clearTimeout();
             this.dispatchEvent(new CustomEvent('mapalab:error', { detail: data.payload || {} }));
+            this._reportar('error');
         } else if (data.type === 'mapalab:feature-click') {
             this.dispatchEvent(new CustomEvent('mapalab:feature-click', { detail: data.payload || {} }));
         }

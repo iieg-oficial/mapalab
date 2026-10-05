@@ -51,7 +51,7 @@ const writeSession = (data) => {
     }
 };
 
-const detectSource = () => {
+export const detectSource = () => {
     if (typeof window === 'undefined') return 'visor';
     const path = window.location.pathname || '';
     if (path.endsWith('/embed') || path.includes('/embed/')) return 'embed';
