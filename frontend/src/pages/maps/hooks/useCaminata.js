@@ -4,7 +4,7 @@ import { loadMaplibre } from '@pages/maps/helpers/maplibreLoader';
 import { VIEW3D_PITCH_MAX } from '@pages/maps/helpers/view3d';
 import { desplazar } from '@pages/maps/helpers/dron/fisicaDron';
 import { espacioEn, prepararEdificio } from '@pages/maps/helpers/caminar/geometriaEdificio';
-import { crearCaminante, mirar, pasoCaminante, pisoActual } from '@pages/maps/helpers/caminar/fisicaCaminar';
+import { crearCaminante, mirar, pasoCaminante, pisoActual, rumboMasLibre } from '@pages/maps/helpers/caminar/fisicaCaminar';
 import { camaraPrimera, camaraTercera } from '@pages/maps/helpers/caminar/camaraCaminar';
 import { fetchEdificioInstituto } from '@services/institutoService';
 import { entradaCaminar, useCaminarTeclado } from './useCaminarTeclado';
@@ -58,7 +58,7 @@ export const useCaminata = (map, principal) => {
                 if (cancelado) return;
                 edificio = prepararEdificio(datos);
                 const [x, y] = puntoInicial(edificio);
-                c = crearCaminante(x, y, edificio.base.nivel, map.getBearing());
+                c = crearCaminante(x, y, edificio.base.nivel, rumboMasLibre(edificio, x, y));
                 map.jumpTo({ center: edificio.origen, zoom: 19, pitch: 60 });
                 capa = crearCapaEdificio(maplibregl, edificio, { leer });
                 if (!map.getLayer(capa.id)) map.addLayer(capa);

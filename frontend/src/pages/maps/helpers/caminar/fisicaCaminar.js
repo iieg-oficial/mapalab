@@ -1,4 +1,4 @@
-import { enAlguno, enCaja, localEnRectangulo } from './geometriaEdificio';
+import { corteRayo, enAlguno, enCaja, localEnRectangulo } from './geometriaEdificio';
 
 const RAD = Math.PI / 180;
 export const RADIO = 0.25;
@@ -88,4 +88,14 @@ export const pasoCaminante = (c, entrada, edificio, dt, exterior) => {
     const z = sueloEn(edificio, x, y, c.z, exterior);
     if (Math.abs(z - c.z) > PASO_MAX) return { ...c, rumbo, moviendo: false };
     return { ...c, x, y, z, rumbo, moviendo: true, paso: c.paso + Math.hypot(x - c.x, y - c.y) };
+};
+
+export const rumboMasLibre = (edificio, x, y, alcance = 15) => {
+    let mejor = { rumbo: 0, libre: -1 };
+    for (let rumbo = 0; rumbo < 360; rumbo += 22.5) {
+        const r = rumbo * RAD;
+        const t = edificio.segmentosBase.reduce((min, s) => Math.min(min, corteRayo(x, y, Math.sin(r) * alcance, Math.cos(r) * alcance, s)), 1);
+        if (t > mejor.libre) mejor = { rumbo, libre: t };
+    }
+    return mejor.rumbo;
 };

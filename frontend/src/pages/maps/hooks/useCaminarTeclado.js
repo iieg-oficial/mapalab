@@ -28,7 +28,7 @@ export const useCaminarTeclado = (activo, { teclasRef, alternarVista, salir }) =
                 return;
             }
             if (e.code === 'KeyV') alternarVista();
-            if (e.code === 'Escape' && !document.querySelector('[role="dialog"]')) salir();
+            if (e.code === 'Escape' && !document.querySelector('[role="dialog"][aria-modal="true"]')) salir();
         };
         const alSubir = e => teclas.delete(e.code);
         const alPerder = () => teclas.clear();

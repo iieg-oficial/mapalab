@@ -1,5 +1,5 @@
 import { desplazar } from '@pages/maps/helpers/dron/fisicaDron';
-import { enCaja } from './geometriaEdificio';
+import { corteRayo, enCaja } from './geometriaEdificio';
 import { OJOS, pisoActual, segmentosActivos } from './fisicaCaminar';
 
 const RAD = Math.PI / 180;
@@ -9,18 +9,8 @@ const SOBRE_CABEZA = 0.6;
 const HOLGURA = 0.3;
 const DETRAS_MIN = 0.5;
 
-const corte = (px, py, dx, dy, [ax, ay, bx, by]) => {
-    const ex = bx - ax;
-    const ey = by - ay;
-    const d = dx * ey - dy * ex;
-    if (Math.abs(d) < 1e-9) return Infinity;
-    const t = ((ax - px) * ey - (ay - py) * ex) / d;
-    const u = ((ax - px) * dy - (ay - py) * dx) / d;
-    return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? t : Infinity;
-};
-
 const distanciaLibre = (segmentos, c, dx, dy) => {
-    const t = segmentos.reduce((min, s) => Math.min(min, corte(c.x, c.y, dx * DETRAS, dy * DETRAS, s)), Infinity);
+    const t = segmentos.reduce((min, s) => Math.min(min, corteRayo(c.x, c.y, dx * DETRAS, dy * DETRAS, s)), Infinity);
     return t === Infinity ? DETRAS : Math.max(DETRAS_MIN, t * DETRAS - HOLGURA);
 };
 

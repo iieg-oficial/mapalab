@@ -136,3 +136,13 @@ export const prepararEdificio = (datos) => {
 export const enCaja = ([x0, y0, x1, y1], x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
 
 export const espacioEn = (edificio, x, y) => edificio.espacios.find(e => enAlguno(e.poligonos, x, y)) || null;
+
+export const corteRayo = (px, py, dx, dy, [ax, ay, bx, by]) => {
+    const ex = bx - ax;
+    const ey = by - ay;
+    const d = dx * ey - dy * ex;
+    if (Math.abs(d) < 1e-9) return Infinity;
+    const t = ((ax - px) * ey - (ay - py) * ex) / d;
+    const u = ((ax - px) * dy - (ay - py) * dx) / d;
+    return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? t : Infinity;
+};
