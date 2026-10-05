@@ -23,7 +23,7 @@ def _resolve_acervo_icon(raw: str | None) -> str | None:
     return f'/acervo/{raw.lstrip("/")}'
 
 
-_TREE_SCHEMA = '4'
+_TREE_SCHEMA = '5'
 _ETAG_PREFIX = f'W/"{_TREE_SCHEMA}-'
 
 _MEM_LOCK = threading.Lock()
@@ -77,6 +77,7 @@ def _layer_to_wms_config(layer: Layer, workspace_map: dict[str, Workspace]) -> O
         'timeEnabled': layer.time_enabled,
         'timeStylePattern': layer.time_style_pattern,
         'metadataLayer': layer.metadata_layer,
+        'legendVersion': ws.legend_version,
     }
 
 
@@ -289,9 +290,13 @@ def ids_del_arbol(nodes: list[dict]) -> set[str]:
     return ids
 
 
-def _compute_etag(max_updated_at: Optional[datetime], count: int) -> str:
+def _legend_signature(workspaces: list[Workspace]) -> str:
+    return ','.join(f'{w.alias}:{w.legend_version}' for w in sorted(workspaces, key=lambda w: w.alias))
+
+
+def _compute_etag(max_updated_at: Optional[datetime], count: int, legend_signature: str = '') -> str:
     ts = max_updated_at.isoformat() if max_updated_at else 'empty'
-    raw = f'{ts}|{count}'
+    raw = f'{ts}|{count}|{legend_signature}'
     digest = hashlib.md5(raw.encode()).hexdigest()[:16]
     return f'{_ETAG_PREFIX}{digest}"'
 
@@ -314,7 +319,7 @@ def refresh_cache() -> dict[str, Any]:
         publicas = ids_del_arbol(tree)
         initial_order = [i for i in LayersRepository.get_initial_order(session) if i in publicas]
         ws_list = [_workspace_to_dict(w) for w in workspaces]
-        etag = _compute_etag(max_updated_at, count)
+        etag = _compute_etag(max_updated_at, count, _legend_signature(workspaces))
 
         stmt = insert(LayerTreeCache).values(
             id=1,
