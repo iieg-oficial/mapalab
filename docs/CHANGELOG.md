@@ -10,6 +10,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
+- **Las águilas pueden seguir una ruta.** Un dato curioso cuyo destino trae puntos de avance encuadra
+  el recorrido completo en vez de centrar el punto final, y el visor dibuja la línea de avance sobre el
+  mapa, con guiones en movimiento y un vértice por punto. El dato queda pineado en el último punto y la
+  línea se quita al cerrarlo o al regresar. Con movimiento reducido la línea se dibuja quieta.
 - **Telemetría del mapa incrustado.** El backend agrega por llave y sitio los Web Vitals y el tiempo
   hasta listo que manda el iframe (antes se tiraban), la latencia de `/embed/config` y del proxy WMS, y
   las cargas, errores JS, timeouts y denegados, y los manda cada 60 s a mariachi
