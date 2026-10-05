@@ -5,7 +5,7 @@ import { IconoPersona } from './SesionIconos';
 import { iniciales } from '@pages/maps/helpers/sesion/iniciales';
 import SesionPopover from './SesionPopover';
 
-const BASE = 'relative rounded-full flex items-center justify-center shadow-[0_5px_20px_#1A26641A] cursor-pointer';
+const BASE = 'relative rounded-full bg-white text-orange flex items-center justify-center shadow-[0_5px_20px_#1A26641A] cursor-pointer';
 
 const SesionBoton = ({ sizeClass = 'size-5', placement = 'right-start' }) => {
     const sesion = useSesion();
@@ -41,7 +41,7 @@ const SesionBoton = ({ sizeClass = 'size-5', placement = 'right-start' }) => {
                     onClick={alternar}
                     aria-label={etiqueta}
                     aria-expanded={abierto}
-                    className={[BASE, sizeClass, usuario ? 'bg-purple text-white' : 'bg-white text-[#7c8bad] hover:text-purple'].join(' ')}
+                    className={[BASE, sizeClass].join(' ')}
                 >
                     {usuario
                         ? <span className="font-garet text-[8px] font-bold leading-none">{iniciales(usuario.nombre)}</span>

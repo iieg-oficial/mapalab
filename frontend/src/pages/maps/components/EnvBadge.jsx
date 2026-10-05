@@ -15,7 +15,7 @@ const ENV_CONFIG = {
 const PREVIEW_CONFIG = { label: 'prod', bg: 'bg-gray-700', text: 'text-white' };
 
 const BADGE_CLASS = 'px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase leading-none shadow-sm select-none';
-const WRAPPER_CLASS = 'absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10';
+const WRAPPER_CLASS = 'absolute right-0 top-1/3 -translate-y-1/2 translate-x-1/2 z-10';
 const ROW_CLASS = 'flex items-center gap-2 whitespace-nowrap';
 const LABEL_CLASS = 'font-garet text-[12px] leading-none text-graphite';
 
