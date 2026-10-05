@@ -11,8 +11,6 @@ const MIRADA = [-14, 0];
 
 export const descansoDe = rect => Math.min(1, rect.largo * 0.25);
 
-export const SIN_ENTRADA = { avance: 0, lateral: 0, giro: 0, correr: false };
-
 const acotar = (v, min, max) => Math.min(max, Math.max(min, v));
 
 export const crearCaminante = (x, y, z, rumbo) => ({ x, y, z, rumbo, mirada: -4, paso: 0, moviendo: false });
