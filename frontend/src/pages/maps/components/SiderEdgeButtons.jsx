@@ -29,9 +29,11 @@ const SiderEdgeButtons = ({ layout, isMobile, lockMode, isExpanded, onToggle, on
 
     return (
         <div data-sider-nohover className="absolute right-0 top-full translate-x-1/2 -translate-y-2.5 z-10 flex flex-col items-center gap-2.5">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 flex">
+                <SesionBoton placement="right-start" />
+            </div>
             {modeButton}
             {funButton}
-            <SesionBoton placement="right-start" />
         </div>
     );
 };

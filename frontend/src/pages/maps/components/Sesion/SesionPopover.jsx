@@ -5,16 +5,6 @@ import { IconoCandado } from './SesionIconos';
 
 const PILL = 'h-8 px-4 rounded-full font-garet text-[12px] font-bold transition-colors cursor-pointer';
 
-const SinSesion = ({ entrando, onEntrar }) => (
-    <>
-        <p className="font-garet font-bold text-[14px] text-purple">Personal del IIEG</p>
-        <p className="text-[12px] leading-snug text-gray-600">Entra con tu cuenta del instituto para ver las capas privadas que te compartieron.</p>
-        <button type="button" onClick={onEntrar} disabled={entrando} className={`${PILL} self-start bg-purple text-white hover:bg-purple-deep disabled:opacity-60`}>
-            {entrando ? 'Esperando a minerva…' : 'Entrar con cuenta IIEG'}
-        </button>
-    </>
-);
-
 const ConSesion = ({ usuario, capasPrivadas, onSalir }) => (
     <>
         <div className="min-w-0">
@@ -50,7 +40,7 @@ const SesionPopover = ({ open, anchorRef, placement, sesion, onClose }) => {
         };
     }, [open, onClose, anchorRef]);
 
-    if (!open) return null;
+    if (!open || (!sesion.usuario && !sesion.error)) return null;
 
     return createPortal(
         <div
@@ -60,9 +50,7 @@ const SesionPopover = ({ open, anchorRef, placement, sesion, onClose }) => {
             data-sider-nohover
             className="fixed z-[9999] w-[min(18rem,calc(100vw-32px))] flex flex-col gap-3 rounded-[14px] bg-white p-4 shadow-[0_5px_20px_#1A26641A]"
         >
-            {sesion.usuario
-                ? <ConSesion usuario={sesion.usuario} capasPrivadas={sesion.capasPrivadas} onSalir={() => { onClose(); sesion.salir(); }} />
-                : <SinSesion entrando={sesion.entrando} onEntrar={sesion.entrar} />}
+            {sesion.usuario && <ConSesion usuario={sesion.usuario} capasPrivadas={sesion.capasPrivadas} onSalir={() => { onClose(); sesion.salir(); }} />}
             {sesion.error && <p className="text-[12px] leading-snug text-orange">{sesion.error}</p>}
         </div>,
         document.body,

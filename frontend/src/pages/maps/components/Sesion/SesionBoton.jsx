@@ -23,6 +23,11 @@ const SesionBoton = ({ sizeClass = 'size-5', placement = 'right-start' }) => {
     const etiqueta = usuario ? `Cuenta: ${usuario.nombre}` : 'Iniciar sesión';
     const alternar = (e) => {
         e.stopPropagation();
+        if (!usuario) {
+            setAbierto(false);
+            if (!entrando) sesion.entrar();
+            return;
+        }
         if (abierto) sesion.limpiarError();
         setAbierto((v) => !v);
     };

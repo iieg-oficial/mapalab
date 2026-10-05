@@ -12,7 +12,7 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 - **Inicio de sesión y capas privadas.** El visor entra con minerva (app propia `mapalab`, en una
   ventana emergente; si el navegador la bloquea, por redirect completo). El botón vive en el borde del
-  sider, también en móvil: sin sesión abre «Entrar con cuenta IIEG»; con sesión muestra iniciales,
+  sider, arriba del botón de estado (también en móvil): sin sesión entra directo; con sesión muestra iniciales,
   correo, cuántas capas privadas hay y Salir. El árbol público deja fuera los nodos `privada` y sus
   descendientes (esquema del caché 4); `GET /sesion/capas` entrega por usuario el complemento que le
   toca, y el frontend lo cuelga de su padre. Las capas privadas pasan por `/privado/{workspace}/wms`
