@@ -30,6 +30,7 @@ import useThemeColor from '@hooks/useThemeColor';
 import { useMapsContext } from '@hooks/useMaps';
 import { View3dProvider, useView3d } from '@contexts/View3dContext';
 import { DronProvider } from '@contexts/DronContext';
+import AvisoCapasPrivadas from '@mapsComponents/Sesion/AvisoCapasPrivadas';
 import { GrabacionDronProvider } from '@contexts/GrabacionDronContext';
 import DronOverlay from './components/Dron/DronOverlay';
 import OcultoEnDronMovil from './components/Dron/OcultoEnDronMovil';
@@ -91,6 +92,7 @@ const Maps = () => {
                                             <MapaPrincipal isComparing={isComparing} />
                                             {isComparing && <SwipeSlotControls />}
                                             <LayerNotices />
+                                            <AvisoCapasPrivadas />
                                             <DockPills />
                                             <TablaAtributos />
                                         </div>

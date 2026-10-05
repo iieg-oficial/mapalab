@@ -9,6 +9,7 @@ import ErrorPage from '@pages/ErrorPage';
 import MainProvider from '@providers/MainProvider';
 import MapsProvider from '@providers/MapsProvider';
 import { LayersProvider } from '@providers/LayersProvider';
+import { SesionProvider } from '@providers/SesionProvider';
 import { LayerLoadingProvider } from '@contexts/LayerLoadingContext';
 import Loading from '@components/Loading';
 import RootErrorBoundary from '@components/RootErrorBoundary';
@@ -34,7 +35,7 @@ const router = createBrowserRouter([
         errorElement: <ErrorPage />,
         children: [
             { index: true, element: <Home /> },
-            { path: 'mapa', element: <LayersProvider><LayerLoadingProvider><MapsProvider><Maps /></MapsProvider></LayerLoadingProvider></LayersProvider> },
+            { path: 'mapa', element: <SesionProvider><LayersProvider><LayerLoadingProvider><MapsProvider><Maps /></MapsProvider></LayerLoadingProvider></LayersProvider></SesionProvider> },
             { path: 'embed', element: <EmbedRoot /> },
             { path: 'catalogo', element: <CatalogoPage /> },
             { path: 'catalogo/:seg1', element: <CatalogoPage /> },

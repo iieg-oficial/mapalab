@@ -10,6 +10,7 @@ from app.config import settings
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.repositories.share_repository import ShareRepository
+from app.services import arbol_privado
 from app.services.layer_tree_service import get_cached_state
 from app.services.share_service import (
     CURRENT_SCHEMA_VERSION,
@@ -56,7 +57,7 @@ def _get_session() -> Session:
 
 def _referencias_del_catalogo() -> set[str]:
     try:
-        tree = get_cached_state().get('tree') or []
+        tree = (get_cached_state().get('tree') or []) + arbol_privado.nodos_privados()
     except Exception as exc:
         Logger.warning(f'shares.catalogo_no_disponible {exc}')
         return set()

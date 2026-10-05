@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
 import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
+import { registrarPendiente } from '@pages/maps/helpers/sesion/pendientes';
 import { useShareDeserializer } from '@pages/maps/hooks/useShareDeserializer';
 import { fetchShare } from '@services/shareService';
 import { trackShareMap } from '@services/analyticsService';
@@ -81,6 +82,7 @@ export const useInitializeFromUrl = () => {
 
         if (layerSingleParam) {
             const resolved = resolveRef(layerSingleParam);
+            if (!resolved) registrarPendiente(layerSingleParam);
             if (resolved) {
                 const allIds = [resolved];
                 getAllChildLayerIds(resolved).forEach(childId => {
@@ -111,7 +113,9 @@ export const useInitializeFromUrl = () => {
                         ref = ref.slice(1);
                         isSelected = true;
                     }
-                    const resolved = resolveRef(ref) || ref;
+                    const encontrado = resolveRef(ref);
+                    if (!encontrado) registrarPendiente(ref);
+                    const resolved = encontrado || ref;
                     if (isSelected) selectedId = resolved;
                     return resolved;
                 });

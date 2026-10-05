@@ -6,6 +6,7 @@ import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
 import { initialCompareMode } from '@pages/maps/helpers/swipeMode';
 import { marcarShareAplicado } from '@pages/maps/helpers/shareAplicacion';
 import { leerVista3d, pedirVista3d } from '@pages/maps/helpers/vista3dCompartida';
+import { registrarPendiente } from '@pages/maps/helpers/sesion/pendientes';
 
 const VIEW_RETRY_INTERVAL_MS = 100;
 const VIEW_RETRY_MAX_ATTEMPTS = 60;
@@ -42,7 +43,10 @@ const buildPaneFromEntries = (paneEntries, layerTree, getAllChildLayerIds) => {
 
     paneEntries.forEach((entry) => {
         const layerId = resolveRefToId(entry.slug, layerTree);
-        if (!layerId) return;
+        if (!layerId) {
+            registrarPendiente(entry.slug);
+            return;
+        }
         if (!activeLayerIds.includes(layerId)) {
             activeLayerIds.push(layerId);
             getAllChildLayerIds(layerId).forEach((childId) => {
@@ -205,7 +209,10 @@ export const useShareDeserializer = () => {
 
         layers.forEach((entry) => {
             const layerId = resolveRefToId(entry.slug, layerTree);
-            if (!layerId) return;
+            if (!layerId) {
+                registrarPendiente(entry.slug);
+                return;
+            }
             if (!resolvedIds.includes(layerId)) {
                 resolvedIds.push(layerId);
                 getAllChildLayerIds(layerId).forEach((childId) => {

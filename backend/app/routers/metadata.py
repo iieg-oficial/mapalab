@@ -2,10 +2,11 @@ import re
 from time import monotonic
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
+from app.auth.capa_visible import claves_visibles, exigir_capa_visible
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.schemas import (MetadataResponse, LayerSourceResponse)
@@ -58,9 +59,10 @@ def _acervo_base() -> str:
     ),
 )
 def get_sources_batch(
+    request: Request,
     layers: str = Query(description="Capas separadas por coma en formato workspace:layer"),
 ):
-    layer_keys = list(dict.fromkeys(l.strip() for l in layers.split(",") if l.strip()))
+    layer_keys = claves_visibles(request, list(dict.fromkeys(l.strip() for l in layers.split(",") if l.strip())))
     try:
         modern = layer_metadata_service.get_sources_batch(layer_keys)
         return [LayerSourceResponse(**r) for r in modern]
@@ -83,6 +85,7 @@ def get_sources_batch(
     ),
 )
 def get_metadata(
+    request: Request,
     workspace: str = Query(description="Alias del workspace (p. ej. seguridad)"),
     layer: str = Query(description="Nombre de la capa dentro del workspace"),
     municipio: Optional[str] = Query(
@@ -92,6 +95,7 @@ def get_metadata(
     fecha_inicio: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
     fecha_fin: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
 ):
+    exigir_capa_visible(request, workspace, layer)
     claves = _parse_claves(municipio)
     _validate_fecha(fecha_inicio, "fecha_inicio")
     _validate_fecha(fecha_fin, "fecha_fin")
@@ -139,9 +143,11 @@ class DefinicionPersonalizada(BaseModel):
     ),
 )
 def get_layer_fields(
+    request: Request,
     workspace: str = Query(description="Alias del workspace (p. ej. educacion)"),
     layer: str = Query(description="Nombre de la capa dentro del workspace"),
 ):
+    exigir_capa_visible(request, workspace, layer)
     catalogo = layer_metadata_service.get_catalogo_response(workspace, layer)
     if not catalogo:
         raise HTTPException(status_code=404, detail="La capa no tiene estadisticas dinamicas")
@@ -162,9 +168,11 @@ def get_layer_fields(
     ),
 )
 def get_layer_columns_config(
+    request: Request,
     workspace: str = Query(description="Alias del workspace (p. ej. educacion)"),
     layer: str = Query(description="Nombre de la capa dentro del workspace"),
 ):
+    exigir_capa_visible(request, workspace, layer)
     configuracion = columnas_service.get_columnas_response(workspace, layer)
     if configuracion is None:
         raise HTTPException(status_code=404, detail="La capa no existe")
@@ -185,6 +193,7 @@ def get_layer_columns_config(
     ),
 )
 def compute_custom_stat(
+    request: Request,
     definicion: DefinicionPersonalizada,
     workspace: str = Query(description="Alias del workspace (p. ej. educacion)"),
     layer: str = Query(description="Nombre de la capa dentro del workspace"),
@@ -192,6 +201,7 @@ def compute_custom_stat(
     fecha_inicio: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
     fecha_fin: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
 ):
+    exigir_capa_visible(request, workspace, layer)
     claves = _parse_claves(municipio)
     _validate_fecha(fecha_inicio, "fecha_inicio")
     _validate_fecha(fecha_fin, "fecha_fin")
@@ -226,11 +236,13 @@ def compute_custom_stat(
     ),
 )
 def get_layer_ranking(
+    request: Request,
     workspace: str = Query(description="Alias del workspace (p. ej. educacion)"),
     layer: str = Query(description="Nombre de la capa dentro del workspace"),
     fecha_inicio: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
     fecha_fin: Optional[str] = Query(default=None, description="YYYY-MM-DD"),
 ):
+    exigir_capa_visible(request, workspace, layer)
     _validate_fecha(fecha_inicio, "fecha_inicio")
     _validate_fecha(fecha_fin, "fecha_fin")
 

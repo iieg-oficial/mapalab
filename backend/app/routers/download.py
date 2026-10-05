@@ -2,10 +2,11 @@ import asyncio
 import re
 from typing import Any, AsyncIterator, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from starlette.background import BackgroundTask
 
+from app.auth.capa_visible import capa_visible
 from app.config import settings
 from app.consts.databases import DatabaseType
 from app.databases.async_pool import get_pool
@@ -80,6 +81,7 @@ def _csv_headers(filename: str) -> dict[str, str]:
     responses=api_responses(400, 404, 429, 500),
 )
 async def download_layer(
+    request: Request,
     workspace: str,
     layer: str,
     date_from: Optional[str] = Query(default=None, description='Fecha inicio (YYYY-MM-DD)'),
@@ -91,6 +93,9 @@ async def download_layer(
         raise BadRequestException('date_from debe tener formato YYYY-MM-DD')
     if date_to and not _DATE_PATTERN.match(date_to):
         raise BadRequestException('date_to debe tener formato YYYY-MM-DD')
+
+    if not await asyncio.to_thread(capa_visible, request, workspace, layer):
+        raise NotFoundException(f'Capa {workspace}:{layer} no encontrada')
 
     has_date_filter = bool(date_from or date_to)
     kind, filename, first, second = await asyncio.to_thread(

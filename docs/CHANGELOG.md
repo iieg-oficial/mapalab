@@ -10,6 +10,18 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
+- **Inicio de sesión y capas privadas.** El visor entra con minerva (app propia `mapalab`, en una
+  ventana emergente; si el navegador la bloquea, por redirect completo). El botón vive en el borde del
+  sider, también en móvil: sin sesión abre «Entrar con cuenta IIEG»; con sesión muestra iniciales,
+  correo, cuántas capas privadas hay y Salir. El árbol público deja fuera los nodos `privada` y sus
+  descendientes (esquema del caché 4); `GET /sesion/capas` entrega por usuario el complemento que le
+  toca, y el frontend lo cuelga de su padre. Las capas privadas pasan por `/privado/{workspace}/wms`
+  y `/wfs`, que validan la cookie y el acceso y reenvían a GeoServer con la credencial de servicio.
+  Resolver, metadatos, periodicidad, estadísticas, descarga y catálogo responden 404 a quien no la
+  puede ver. Un enlace con capas privadas que no puedes ver avisa con una pastilla y ofrece entrar.
+  Pide en el `.env` `MINERVA_ISSUER_URL`, `MINERVA_PUBLIC_BASE`, `MINERVA_CLIENT_ID` y
+  `MAPALAB_SESSION_HOURS`, y los secretos `minerva_client_secret` y `mapalab_session_secret`.
+  Necesita dataengine 1.47.0 y mariachi con la pestaña de acceso desplegados antes
 - **Telemetría del recorrido en 3D.** Pedirlo manda `evento_fun_recorrido` con el evento y el
   número de puntos del trazo. Necesita mariachi 2.139.0 desplegado antes.
 - **Recorrido de batalla en 3D.** Un dato curioso pineado que trae ruta ofrece «Ver el recorrido en

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LottieSpinner from '@components/LottieSpinner';
 import { LayersContext } from '@contexts/LayersContext';
 import ErrorPage from '@pages/ErrorPage';
@@ -8,11 +8,16 @@ import { setLayersForDownloadService } from '@services/downloadService';
 import { rebuildSearchConfig } from '@services/searchConfig';
 import { reportClientError } from '@services/clientErrorService';
 import { hydrateLayerTree } from '@pages/maps/helpers/wmsConfig';
+import { fusionarPrivadas } from '@pages/maps/helpers/sesion/fusionarPrivadas';
+import { fetchCapasPrivadas } from '@services/sesionService';
+import { useSesion } from '@contexts/SesionContext';
 import { fillRasterPeriodicity } from '@pages/maps/helpers/layers/utils/rasterPeriodicityFallback';
 
 
 export const LayersProvider = ({ children }) => {
     const [attempt, setAttempt] = useState(0);
+    const { revision } = useSesion();
+    const publicoRef = useRef(null);
     const [state, setState] = useState({
         layers: [],
         initialOrder: [],
@@ -30,10 +35,11 @@ export const LayersProvider = ({ children }) => {
 
         let hydrated = null;
 
-        Promise.all([fetchLayerTree(), fetchInitialOrder()])
-            .then(([{ tree }, order]) => {
+        Promise.all([fetchLayerTree(), fetchInitialOrder(), fetchCapasPrivadas()])
+            .then(([{ tree }, order, privadas]) => {
                 if (cancelled) return null;
-                hydrated = hydrateLayerTree(tree);
+                publicoRef.current = tree;
+                hydrated = hydrateLayerTree(fusionarPrivadas(tree, privadas));
                 setLayersForMetadataService(hydrated);
                 setLayersForDownloadService(hydrated);
                 rebuildSearchConfig(hydrated);
@@ -60,6 +66,30 @@ export const LayersProvider = ({ children }) => {
             cancelled = true;
         };
     }, [attempt]);
+
+    useEffect(() => {
+        if (revision === 0) return undefined;
+        let cancelled = false;
+        fetchCapasPrivadas().then((privadas) => {
+            if (cancelled || !publicoRef.current) return;
+            const hidratado = hydrateLayerTree(fusionarPrivadas(publicoRef.current, privadas));
+            setLayersForMetadataService(hidratado);
+            setLayersForDownloadService(hidratado);
+            rebuildSearchConfig(hidratado);
+            setState((s) => ({ ...s, layers: hidratado }));
+            fillRasterPeriodicity(hidratado)
+                .then((lleno) => {
+                    if (cancelled || lleno === hidratado) return;
+                    setLayersForMetadataService(lleno);
+                    setLayersForDownloadService(lleno);
+                    setState((s) => ({ ...s, layers: lleno }));
+                })
+                .catch(() => {});
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [revision]);
 
     const value = useMemo(() => state, [state]);
 

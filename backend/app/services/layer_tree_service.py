@@ -23,7 +23,7 @@ def _resolve_acervo_icon(raw: str | None) -> str | None:
     return f'/acervo/{raw.lstrip("/")}'
 
 
-_TREE_SCHEMA = '3'
+_TREE_SCHEMA = '4'
 _ETAG_PREFIX = f'W/"{_TREE_SCHEMA}-'
 
 _MEM_LOCK = threading.Lock()
@@ -253,9 +253,13 @@ def _build_tree_from_rows(
     layers: list[Layer],
     workspace_map: dict[str, Workspace],
     aliases_map: dict[str, list[str]],
+    incluir_privadas: bool = False,
 ) -> list[dict]:
     nodes_by_id: dict[str, dict] = {}
     roots: list[dict] = []
+
+    if not incluir_privadas:
+        layers = [layer for layer in layers if not layer.privada]
 
     for layer in layers:
         nodes_by_id[layer.id] = _layer_to_dict(layer, workspace_map, aliases_map)
@@ -275,6 +279,14 @@ def _build_tree_from_rows(
         _inherit_municipio_meta(root)
 
     return roots
+
+
+def ids_del_arbol(nodes: list[dict]) -> set[str]:
+    ids: set[str] = set()
+    for node in nodes:
+        ids.add(node['id'])
+        ids |= ids_del_arbol(node.get('children') or [])
+    return ids
 
 
 def _compute_etag(max_updated_at: Optional[datetime], count: int) -> str:
@@ -299,7 +311,8 @@ def refresh_cache() -> dict[str, Any]:
         count = len(layers)
 
         tree = _build_tree_from_rows(layers, ws_map, aliases_map)
-        initial_order = LayersRepository.get_initial_order(session)
+        publicas = ids_del_arbol(tree)
+        initial_order = [i for i in LayersRepository.get_initial_order(session) if i in publicas]
         ws_list = [_workspace_to_dict(w) for w in workspaces]
         etag = _compute_etag(max_updated_at, count)
 
