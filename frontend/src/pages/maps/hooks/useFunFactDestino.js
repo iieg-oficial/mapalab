@@ -102,7 +102,7 @@ export const useFunFactDestino = () => {
         else quitarRuta();
 
         const llegar = () => {
-            if (viajeRef.current === viaje) setPin({ id: viaje, lon: destino.lon, lat: destino.lat, texto, eventoId });
+            if (viajeRef.current === viaje) setPin({ id: viaje, lon: destino.lon, lat: destino.lat, texto, eventoId, vertices });
         };
 
         if (coordenadas.length > 1) {
