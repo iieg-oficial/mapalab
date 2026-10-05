@@ -10,6 +10,14 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
+- **Caminar el instituto (BETA, fuera de producción).** Desde la vista 3D, el botón con la persona
+  carga el edificio del IIEG desde `GET /instituto/edificio` (schema `instituto` de dataengine) y lo
+  dibuja con three.js sobre el relieve: muros, techos, la planta alta sobre Dirección General, la
+  azotea con pretil y la escalera de dos tramos con descanso. Se camina en primera o tercera persona
+  con un avatar genérico (W A S D o flechas, Q E para girar, Shift para correr, arrastrar para mirar,
+  V cambia la vista, Esc sale), con colisión contra muros y un tope de 60 cm de desnivel por paso. Una
+  pastilla arriba dice en qué piso y espacio se está. Es la prueba de viabilidad del frente 19
+  (recorridos 3D). Necesita dataengine 1.49.0 y la carga del edificio aplicada antes
 - **Inicio de sesión y capas privadas.** El visor entra con minerva (app propia `mapalab`, en una
   ventana emergente; si el navegador la bloquea, por redirect completo). El botón vive en el borde del
   sider, arriba del botón de estado (también en móvil): sin sesión entra directo; con sesión muestra iniciales,

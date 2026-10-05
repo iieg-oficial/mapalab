@@ -19,6 +19,8 @@ import { useCamara3dSincronizada } from '@hooksMaps/useCamara3dSincronizada';
 import { useMap3dMunicipio } from '@hooksMaps/useMap3dMunicipio';
 import { useMap3dEtiquetas } from '@hooksMaps/useMap3dEtiquetas';
 import { useDronVuelo } from '@hooksMaps/useDronVuelo';
+import { useCaminata } from '@hooksMaps/useCaminata';
+import { useCaminar } from '@contexts/CaminarContext';
 import { useMap3dInundacion } from '@hooksMaps/useMap3dInundacion';
 import { useDron } from '@contexts/DronContext';
 import Medicion3D from './Medicion3D';
@@ -57,6 +59,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     } = useView3d();
     const olRef = olMapRef || mapRef;
     const { activo: enDron } = useDron();
+    const { activo: caminando } = useCaminar();
     const dronRef = useRef(false);
     dronRef.current = enDron && principal;
     const { getLegendJson } = useWMSLegend();
@@ -159,11 +162,11 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     }, [map, orbita, principal, setBearing]);
 
     useEffect(() => {
-        if (!map || orbita || !principal || enDron) return;
+        if (!map || orbita || !principal || enDron || caminando) return;
         const pitchDrift = Math.abs(map.getPitch() - pitch) > 0.5;
         const bearingDrift = Math.abs(map.getBearing() - bearing) > 0.5;
         if (pitchDrift || bearingDrift) map.easeTo({ pitch, bearing, duration: 300 });
-    }, [map, pitch, bearing, orbita, principal, enDron]);
+    }, [map, pitch, bearing, orbita, principal, enDron, caminando]);
 
     useEffect(() => {
         if (map) applyBasemap(map, basemaps[baseMapId]);
@@ -171,6 +174,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
 
     useMap3dContorno(map, contorno);
     useDronVuelo(map, principal, olRef);
+    useCaminata(map, principal);
     useMap3dInundacion(map, principal);
     useCamara3dSincronizada(map, grupo3dRef);
     const sinTexto = useMap3dEtiquetas(map, olRef, { activo: estiloTextos === 'frente', escala: escalaSimbolos, dePie });
@@ -188,7 +192,7 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     const { fase: faseGiro } = useEstadoGiro();
 
     if (!olRef.current) return null;
-    const pausaClic = midiendo || pausado || inundacion.eligiendo || (enDron && principal) || faseGiro === 'eligiendo';
+    const pausaClic = midiendo || pausado || inundacion.eligiendo || ((enDron || caminando) && principal) || faseGiro === 'eligiendo';
 
     return (
         <>

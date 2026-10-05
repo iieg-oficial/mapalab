@@ -4,11 +4,14 @@ import Tooltip from '@components/Tooltip';
 import PillCloseButton from '@components/PillCloseButton';
 import { useView3d } from '@contexts/View3dContext';
 import { useDron } from '@contexts/DronContext';
+import { useCaminar } from '@contexts/CaminarContext';
 import { useMapsContext } from '@hooks/useMaps';
 import { useIsNonProd } from '@hooks/useDevTools';
 import Badge from '@components/Badge';
 import DronPastilla from '../Dron/DronPastilla';
 import DronIcono from '../Dron/DronIcono';
+import CaminarPastilla from '../Caminar/CaminarPastilla';
+import CaminarIcono from '../Caminar/CaminarIcono';
 import Map3DRing from './Map3DRing';
 import Map3DSliderPopover from './Map3DSliderPopover';
 import Map3DAjustes from './Map3DAjustes';
@@ -21,12 +24,14 @@ const ANILLOS = ['exag', 'sol'];
 const Map3DBar = () => {
     const view3d = useView3d();
     const dron = useDron();
+    const caminar = useCaminar();
     const { compareMode } = useMapsContext();
     const conLluvia = useIsNonProd();
     const [abierto, setAbierto] = useState(null);
     const refs = { lluvia: useRef(null), exag: useRef(null), sol: useRef(null), ajustes: useRef(null), barra: useRef(null) };
     if (!view3d.active) return null;
     if (dron.activo) return <DronPastilla />;
+    if (caminar.activo) return <CaminarPastilla />;
 
     const { inundacion } = view3d;
     const conDron = dron.presente && !compareMode?.active;
@@ -77,6 +82,19 @@ const Map3DBar = () => {
                         aria-label="Volar como dron"
                     >
                         <DronIcono nombre="cuadri" className="size-6" />
+                        <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-3 text-[8px] px-1.5 pointer-events-none" />
+                    </button>
+                </Tooltip>
+            )}
+            {conLluvia && caminar.presente && !compareMode?.active && (
+                <Tooltip content="Caminar el instituto">
+                    <button
+                        type="button"
+                        className="relative flex items-center justify-center size-7 rounded-full shrink-0 cursor-pointer text-[#7C8BAD] hover:text-[#5C2472] transition-colors"
+                        onClick={() => { cerrar(); caminar.entrar(); }}
+                        aria-label="Caminar el instituto"
+                    >
+                        <CaminarIcono nombre="caminar" />
                         <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-3 text-[8px] px-1.5 pointer-events-none" />
                     </button>
                 </Tooltip>

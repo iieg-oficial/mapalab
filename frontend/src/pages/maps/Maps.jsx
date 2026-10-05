@@ -30,6 +30,7 @@ import useThemeColor from '@hooks/useThemeColor';
 import { useMapsContext } from '@hooks/useMaps';
 import { View3dProvider, useView3d } from '@contexts/View3dContext';
 import { DronProvider } from '@contexts/DronContext';
+import { CaminarProvider } from '@contexts/CaminarContext';
 import AvisoCapasPrivadas from '@mapsComponents/Sesion/AvisoCapasPrivadas';
 import { GrabacionDronProvider } from '@contexts/GrabacionDronContext';
 import DronOverlay from './components/Dron/DronOverlay';
@@ -68,35 +69,37 @@ const Maps = () => {
                         <TablaAtributosProvider>
                             <View3dProvider>
                                 <DronProvider>
-                                    <GrabacionDronProvider>
-                                        <SEO
-                                            title="Mapa Interactivo | Mapalab"
-                                            description="Mapa interactivo de Jalisco con capas geoespaciales: temperatura, precipitación, recursos naturales, eventos y más. Herramienta oficial del IIEG para consulta y análisis territorial."
-                                            schemaType="WebApplication"
-                                            keywords="mapa interactivo Jalisco, capas geoespaciales Jalisco, mapa temperatura Jalisco, mapa precipitación Jalisco, mapa recursos naturales Jalisco, IIEG, GeoServer Jalisco"
-                                        />
-                                        <h1 className="sr-only">Mapa interactivo de Jalisco con capas geoespaciales — MapaLab IIEG</h1>
-                                        <p className="sr-only">
+                                    <CaminarProvider>
+                                        <GrabacionDronProvider>
+                                            <SEO
+                                                title="Mapa Interactivo | Mapalab"
+                                                description="Mapa interactivo de Jalisco con capas geoespaciales: temperatura, precipitación, recursos naturales, eventos y más. Herramienta oficial del IIEG para consulta y análisis territorial."
+                                                schemaType="WebApplication"
+                                                keywords="mapa interactivo Jalisco, capas geoespaciales Jalisco, mapa temperatura Jalisco, mapa precipitación Jalisco, mapa recursos naturales Jalisco, IIEG, GeoServer Jalisco"
+                                            />
+                                            <h1 className="sr-only">Mapa interactivo de Jalisco con capas geoespaciales — MapaLab IIEG</h1>
+                                            <p className="sr-only">
                                     Herramienta oficial del Instituto de Información Estadística y Geográfica de Jalisco (IIEG) para visualizar el mapa de Jalisco con capas temáticas: temperatura, precipitación, recursos naturales, eventos, infraestructura y datos estadísticos del estado.
-                                        </p>
-                                        <div className="relative w-full h-dvh">
-                                            <MapSider />
-                                            <OcultoEnDronMovil><MapToolsPanel /></OcultoEnDronMovil>
-                                            <MunicipioActiveChip />
-                                            <OcultoEnDronMovil><MapLayersPanels /></OcultoEnDronMovil>
-                                            <LayerDetailModal />
-                                            <NumeraliaPanel />
-                                            <InfoBox />
-                                            <MapAttribution />
-                                            <MapControls conMinimapa />
-                                            <MapaPrincipal isComparing={isComparing} />
-                                            {isComparing && <SwipeSlotControls />}
-                                            <LayerNotices />
-                                            <AvisoCapasPrivadas />
-                                            <DockPills />
-                                            <TablaAtributos />
-                                        </div>
-                                    </GrabacionDronProvider>
+                                            </p>
+                                            <div className="relative w-full h-dvh">
+                                                <MapSider />
+                                                <OcultoEnDronMovil><MapToolsPanel /></OcultoEnDronMovil>
+                                                <MunicipioActiveChip />
+                                                <OcultoEnDronMovil><MapLayersPanels /></OcultoEnDronMovil>
+                                                <LayerDetailModal />
+                                                <NumeraliaPanel />
+                                                <InfoBox />
+                                                <MapAttribution />
+                                                <MapControls conMinimapa />
+                                                <MapaPrincipal isComparing={isComparing} />
+                                                {isComparing && <SwipeSlotControls />}
+                                                <LayerNotices />
+                                                <AvisoCapasPrivadas />
+                                                <DockPills />
+                                                <TablaAtributos />
+                                            </div>
+                                        </GrabacionDronProvider>
+                                    </CaminarProvider>
                                 </DronProvider>
                             </View3dProvider>
                         </TablaAtributosProvider>
