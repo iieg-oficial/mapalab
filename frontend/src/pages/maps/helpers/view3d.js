@@ -156,6 +156,10 @@ export const canExtrudeLayer = (layerDef, serviceMode) => {
     return canUseVectorService(layerDef) && layerDef.geometryType === 'polygon';
 };
 
+export const grupoEnHexagonos = (hijos, getServiceMode) => (hijos || []).some(id => getServiceMode?.(id) === SERVICE_HEXBIN);
+
+export const conDescendientes = (ids, getAllChildLayerIds) => [...new Set(ids.flatMap(id => [id, ...(getAllChildLayerIds?.(id) || [])]))];
+
 export const cqlSegmentFor = (params, layerName) => {
     const names = String(params?.LAYERS || '').split(',');
     const filters = String(params?.CQL_FILTER || '').split(';');

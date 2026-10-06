@@ -3,9 +3,9 @@ import { heightExpression } from './extrusionRules';
 
 const EXTRUSION_OPACITY = 0.92;
 
-const extrusionPaint = ({ property, maxValue, color, escala = 1 }) => ({
+const extrusionPaint = ({ property, maxValue, color, escala = 1, logaritmica = false }) => ({
     'fill-extrusion-color': color,
-    'fill-extrusion-height': heightExpression(property, maxValue, EXTRUSION_MAX_HEIGHT_M * escala),
+    'fill-extrusion-height': heightExpression(property, maxValue, EXTRUSION_MAX_HEIGHT_M * escala, { logaritmica }),
     'fill-extrusion-base': 0,
     'fill-extrusion-opacity': EXTRUSION_OPACITY,
 });

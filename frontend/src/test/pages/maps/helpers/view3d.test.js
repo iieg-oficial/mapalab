@@ -3,6 +3,8 @@ import View from 'ol/View';
 import { fromLonLat } from 'ol/proj';
 import {
     buildBaseStyle,
+    conDescendientes,
+    grupoEnHexagonos,
     cameraToOlView,
     canExtrudeLayer,
     cieloSpec,
@@ -145,5 +147,20 @@ describe('cieloSpec', () => {
         expect(sinNiebla['sky-color']).toBe(todo['sky-color']);
         expect(sinCielo['atmosphere-blend']).toBe(0);
         expect(sinCielo['fog-ground-blend']).toBe(todo['fog-ground-blend']);
+    });
+});
+
+describe('levantar grupos en hexágonos', () => {
+    it('un grupo se levanta si alguna hoja está en hexágonos', () => {
+        const modos = { a: 'wms', b: 'hexbin' };
+        expect(grupoEnHexagonos(['a', 'b'], id => modos[id])).toBe(true);
+        expect(grupoEnHexagonos(['a'], id => modos[id])).toBe(false);
+        expect(grupoEnHexagonos(undefined, id => modos[id])).toBe(false);
+    });
+
+    it('las capas levantadas incluyen las hojas de cada grupo', () => {
+        const hijos = { grupo: ['n1', 'hoja'], suelta: [] };
+        expect(conDescendientes(['grupo', 'suelta'], id => hijos[id])).toEqual(['grupo', 'n1', 'hoja', 'suelta']);
+        expect(conDescendientes(['x'], undefined)).toEqual(['x']);
     });
 });

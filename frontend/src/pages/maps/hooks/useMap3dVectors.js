@@ -18,9 +18,10 @@ const layerIdsOf = (layer) => [layer.get('layerId'), ...(layer.get('memberIds') 
 
 const extrusionFor = (layer, collection, extrudedIds) => {
     if (!layerIdsOf(layer).some(id => extrudedIds.includes(id))) return null;
-    const property = layer.get(HEXBIN_LAYER_FLAG) ? 'count' : numericProperties(collection.features)[0];
+    const hexbin = !!layer.get(HEXBIN_LAYER_FLAG);
+    const property = hexbin ? 'count' : numericProperties(collection.features)[0];
     if (!property) return null;
-    return { property, maxValue: maxOf(collection.features, property), color: ['get', '_fill'] };
+    return { property, maxValue: maxOf(collection.features, property), color: ['get', '_fill'], logaritmica: hexbin };
 };
 
 const syncVectors = (map, olMap, extrudedIds, escala) => {

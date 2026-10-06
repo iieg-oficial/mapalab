@@ -67,10 +67,11 @@ export const colorExpression = (property, classes, fallback = '#cccccc') => {
     return ['case', ['==', ['typeof', ['get', property]], 'null'], fallback, step];
 };
 
-export const heightExpression = (property, maxValue, maxHeightMeters) => {
+export const heightExpression = (property, maxValue, maxHeightMeters, { logaritmica = false } = {}) => {
     if (!(maxValue > 0)) return 0;
-    const ratio = maxHeightMeters / maxValue;
-    return ['*', ['max', 0, ['to-number', ['get', property], 0]], ratio];
+    const value = ['max', 0, ['to-number', ['get', property], 0]];
+    if (logaritmica) return ['*', ['ln', ['+', 1, value]], maxHeightMeters / Math.log1p(maxValue)];
+    return ['*', value, maxHeightMeters / maxValue];
 };
 
 const ID_LIKE = /^(fid|id|gid|objectid|cve_|clave|clave_|codigo|cvegeo|anio|año|fecha|year)/i;

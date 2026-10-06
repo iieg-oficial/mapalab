@@ -77,6 +77,10 @@ describe('expresiones de MapLibre', () => {
     it('escala la altura contra el maximo', () => {
         expect(heightExpression('v', 100, 50000)).toEqual(['*', ['max', 0, ['to-number', ['get', 'v'], 0]], 500]);
         expect(heightExpression('v', 0, 50000)).toBe(0);
+        const log = heightExpression('v', Math.E - 1, 1000, { logaritmica: true });
+        expect(log[0]).toBe('*');
+        expect(log[1]).toEqual(['ln', ['+', 1, ['max', 0, ['to-number', ['get', 'v'], 0]]]]);
+        expect(log[2]).toBeCloseTo(1000);
     });
 });
 

@@ -5,7 +5,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useView3d } from '@contexts/View3dContext';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { useSider } from '@contexts/SiderContext';
-import { canExtrudeLayer } from '@pages/maps/helpers/view3d';
+import { canExtrudeLayer, grupoEnHexagonos } from '@pages/maps/helpers/view3d';
 
 const STATUS_TEXT = {
     loading: 'Levantando la capa…',
@@ -22,10 +22,12 @@ const tooltipFor = ({ active, on, status }) => {
 
 const ExtrudeButton = ({ layerId, baseClass }) => {
     const view3d = useView3d();
-    const { allLayers, getServiceMode, compareMode } = useMapsContext();
+    const { allLayers, getServiceMode, getAllChildLayerIds, compareMode } = useMapsContext();
     const { isMobile } = useSider();
     if (!view3d.available || !layerId || (compareMode?.active && isMobile)) return null;
-    if (!canExtrudeLayer(findLayerDef(layerId, allLayers || []), getServiceMode?.(layerId))) return null;
+    const extruible = canExtrudeLayer(findLayerDef(layerId, allLayers || []), getServiceMode?.(layerId))
+        || grupoEnHexagonos(getAllChildLayerIds?.(layerId), getServiceMode);
+    if (!extruible) return null;
 
     const on = view3d.active && view3d.isExtruded(layerId);
     const status = view3d.extrusionStatus[layerId];

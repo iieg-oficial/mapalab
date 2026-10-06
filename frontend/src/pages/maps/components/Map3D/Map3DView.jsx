@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMapsContext } from '@hooks/useMaps';
 import { useView3d } from '@contexts/View3dContext';
@@ -9,7 +9,7 @@ import { useMap3dExtrusions } from '@hooksMaps/useMap3dExtrusions';
 import { loadMaplibre } from '@pages/maps/helpers/maplibreLoader';
 import {
     cieloSpec, VIEW3D_PITCH_MAX, basemapLayers, basemapSources, buildBaseStyle, cameraToOlView,
-    olViewToCamera, RELIEF_LAYER_ID,
+    olViewToCamera, RELIEF_LAYER_ID, conDescendientes,
 } from '@pages/maps/helpers/view3d';
 import { useMap3dContorno } from '@hooksMaps/useMap3dContorno';
 import { useMap3dBillboards } from '@hooksMaps/useMap3dBillboards';
@@ -53,7 +53,7 @@ const writeBackToOl = (map, olMap) => {
 
 const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, principal = true, mapasExtra = undefined, onMapa = null, onMidiendo = null, pausado = false }) => {
     const containerRef = useRef(null);
-    const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, areMeasurementToolsVisible, areAnnotationToolsVisible, measurements, municipioMode } = useMapsContext();
+    const { mapRef, baseMapId, basemaps, allLayers, getServiceMode, getAllChildLayerIds, areMeasurementToolsVisible, areAnnotationToolsVisible, measurements, municipioMode } = useMapsContext();
     const {
         pitch, bearing, exaggeration, extruded, map3dRef, grupo3dRef, setPitch, setBearing, exit, reportExtrusion,
         inundacion, sol, alturaColumnas, orbita, terreno, cielo, niebla, estiloPuntos, escalaSimbolos, agruparPuntos, contorno, velocidadOrbita, estiloTextos,
@@ -184,7 +184,8 @@ const Map3DView = ({ consultar = null, mediciones = true, olMapRef = null, princ
     useMap3dBillboards(map, olRef, {
         allLayers, getServiceMode, getLegendJson, onReady: alListarDePie, estilo: estiloPuntos, escala: escalaSimbolos, agrupar: agruparPuntos,
     });
-    useMap3dVectors(map, olRef, extruded, alturaColumnas);
+    const extruidasConHojas = useMemo(() => conDescendientes(extruded, getAllChildLayerIds), [extruded, getAllChildLayerIds]);
+    useMap3dVectors(map, olRef, extruidasConHojas, alturaColumnas);
     useMap3dExtrusions(map, olRef, {
         extrudedIds: extruded, allLayers, getServiceMode, getLegendJson, reportExtrusion, alturaColumnas,
     });
