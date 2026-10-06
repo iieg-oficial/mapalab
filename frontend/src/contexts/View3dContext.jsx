@@ -5,7 +5,7 @@ import { trackView3d } from '@services/analyticsService';
 import { suscribirVista3d, tomarVista3d } from '@pages/maps/helpers/vista3dCompartida';
 import { AJUSTES_3D_DEFAULT, LLAVE_AJUSTES_3D } from '@pages/maps/helpers/ajustes3d';
 import { useAjustes3d } from '@pages/maps/hooks/useAjustes3d';
-import { VIEW3D_DEFAULTS, clampExaggeration, clampPitch, webglAvailable } from '@pages/maps/helpers/view3d';
+import { CAPAS_OCULTAS_EN_3D, VIEW3D_DEFAULTS, clampExaggeration, clampPitch, webglAvailable } from '@pages/maps/helpers/view3d';
 
 const View3dContext = createContext(null);
 const SIN_INUNDACION = { nivel: 0, lloviendo: false, referencia: null, centro: null, modo: 'general', punto: null, radio: 1500, eligiendo: false };
@@ -69,7 +69,7 @@ export const View3dProvider = ({ children, llaveAjustes = LLAVE_AJUSTES_3D }) =>
     const {
         hideMeasurementTools, hideAnnotationTools,
         showMeasurementTools, areMeasurementToolsVisible,
-        setSelectedFeatureInfo, activeLayerIds,
+        setSelectedFeatureInfo, activeLayerIds, setHiddenLayerIds,
     } = useMapsContext();
     const [searchParams, setSearchParams] = useSearchParams();
     const [initial] = useState(() => readUrlState(searchParams));
@@ -169,6 +169,21 @@ export const View3dProvider = ({ children, llaveAjustes = LLAVE_AJUSTES_3D }) =>
         aplicar();
         return suscribirVista3d(aplicar);
     }, [enter, reemplazarAjustes]);
+
+    const ocultadasRef = useRef(new Set());
+    useEffect(() => {
+        if (!setHiddenLayerIds) return;
+        if (!active) {
+            const restaurar = [...ocultadasRef.current];
+            ocultadasRef.current = new Set();
+            if (restaurar.length) setHiddenLayerIds(prev => prev.filter(id => !restaurar.includes(id)));
+            return;
+        }
+        const nuevas = CAPAS_OCULTAS_EN_3D.filter(id => (activeLayerIds || []).includes(id) && !ocultadasRef.current.has(id));
+        if (!nuevas.length) return;
+        nuevas.forEach(id => ocultadasRef.current.add(id));
+        setHiddenLayerIds(prev => [...new Set([...prev, ...nuevas])]);
+    }, [active, activeLayerIds, setHiddenLayerIds]);
 
     const previousActiveRef = useRef(new Set());
     useEffect(() => {

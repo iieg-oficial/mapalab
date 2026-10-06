@@ -119,6 +119,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Cambiado
 
+- **Al entrar a la vista 3D se apagan cuerpos de agua y curvas de nivel.** Siguen en Capas activas con el ojo
+  apagado para volver a prenderlas; no aportan al relieve y alentaban el arranque. Al volver a 2D se encienden
+  las que se apagaron así (`CAPAS_OCULTAS_EN_3D` en `helpers/view3d.js`)
+
 - **El dominio se escribe una vez en el `.env`.** `DOMINIO`, `DOMINIO_MINERVA` y `SITIO` arriba del archivo;
   las URLs públicas, de acervo y de minerva se arman con ellas. El manifiesto de minerva ya no lleva hosts:
   `scripts/manifiesto-minerva.sh <env>` lo rellena con `DOMINIO` antes de importarlo
@@ -167,6 +171,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   y la tarjeta de Herramientas sigue solo en escritorio.
 
 ### Corregido
+
+- **El logo del IIEG en la vista 3D** movía el mapa 2D escondido y la cámara 3D se quedaba donde estaba. Ahora
+  la cámara vuela a la marca conservando inclinación y rumbo, y la marca se dibuja también en 3D desde el zoom 15
 
 - **La vuelta de minerva usa el host y el protocolo de la petición.** El `redirect_uri` salía de
   `MAPALAB_PUBLIC_BASE_URL` y el nginx pisaba `X-Forwarded-Proto` con `http`: quien entraba por otro

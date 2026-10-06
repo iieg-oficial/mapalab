@@ -32,6 +32,10 @@ const TERRAIN_REVISION = 'contexto-2';
 const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
 const MAPLIBRE_ZOOM_OFFSET = 1;
 
+export const zoom3dDeOl = zoom => zoom - MAPLIBRE_ZOOM_OFFSET;
+
+export const CAPAS_OCULTAS_EN_3D = ['cuerpos_de_agua_50k', 'curvas_de_nivel'];
+
 const absolute = (url) => {
     if (!url) return '';
     if (/^https?:\/\//i.test(url)) return url;
