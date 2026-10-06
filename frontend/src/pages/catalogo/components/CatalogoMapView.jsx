@@ -28,7 +28,7 @@ import { useCatalogoConsulta } from '../hooks/useCatalogoConsulta';
 import { useCatalogoHexbin } from '../hooks/useCatalogoHexbin';
 import { useMedicionesDelCatalogo } from '../hooks/useMedicionesDelCatalogo';
 import { useCatalogoMunicipioMapa } from '../hooks/useCatalogoMunicipioMapa';
-import { CONTEXTO_3D } from '../helpers/catalogo3d';
+import { contexto3d } from '../helpers/catalogo3d';
 import { buildWmsLayer, HIGHLIGHT_STYLE, HIGHLIGHT_Z } from '../helpers/catalogoMapLayer';
 import { BASEMAPS, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 import { JALISCO_BOUNDS, hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
@@ -124,10 +124,10 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, onExtrusion
         ...drawing,
         ...editing,
         ...tabla.contexto,
-        ...CONTEXTO_3D,
+        ...contexto3d(hexagonos && tiempo.geometria === 'point'),
         municipioMode: municipio.municipio,
         targetRef,
-    }), [isLocating, drawing, editing, tabla.contexto, tiempo.getSpecificFilter, loop.getLoopState, loop.stopLoop, municipio.municipio]);
+    }), [isLocating, drawing, editing, tabla.contexto, tiempo.getSpecificFilter, loop.getLoopState, loop.stopLoop, municipio.municipio, hexagonos, tiempo.geometria]);
 
     useEffect(() => {
         if (!targetRef.current || mapRef.current) return;

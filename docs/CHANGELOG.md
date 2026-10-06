@@ -180,6 +180,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - **El logo del IIEG en la vista 3D** movía el mapa 2D escondido y la cámara 3D se quedaba donde estaba. Ahora
   la cámara vuela a la marca conservando inclinación y rumbo, y la marca se dibuja también en 3D desde el zoom 15
 
+- **En el catálogo una capa de puntos en hexágonos no se podía levantar en 3D.** El cubo preguntaba siempre por
+  el modo puntos; ahora sigue al selector Puntos/Hexágonos y los hexágonos suben por su conteo, como en el visor
+
 - **La vuelta de minerva usa el host y el protocolo de la petición.** El `redirect_uri` salía de
   `MAPALAB_PUBLIC_BASE_URL` y el nginx pisaba `X-Forwarded-Proto` con `http`: quien entraba por otro
   nombre volvía a otro host y la cookie salía sin `Secure`. Se agrega `manifest.minerva.yml` para dar de

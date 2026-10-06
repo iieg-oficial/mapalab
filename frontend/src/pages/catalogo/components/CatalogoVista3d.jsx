@@ -2,16 +2,15 @@ import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
 import { useView3d } from '@contexts/View3dContext';
 import { useMapsContext } from '@hooks/useMaps';
 import { canExtrudeLayer } from '@pages/maps/helpers/view3d';
-import { SERVICE_WMS } from '@pages/maps/helpers/serviceMode';
 
 const Map3DView = lazy(() => import('@mapsComponents/Map3D/Map3DView'));
 
 const useExtrusionDeLaCapa = (onExtrusion) => {
     const view3d = useView3d();
-    const { allLayers } = useMapsContext();
+    const { allLayers, getServiceMode } = useMapsContext();
     const capa = allLayers?.[0] || null;
     const id = capa?.id || null;
-    const extruible = !!capa && view3d.available && canExtrudeLayer(capa, SERVICE_WMS);
+    const extruible = !!capa && view3d.available && canExtrudeLayer(capa, getServiceMode?.(id));
     const on = extruible && view3d.active && view3d.isExtruded(id);
     const status = on ? view3d.extrusionStatus[id] || null : null;
     const viewRef = useRef(view3d);
