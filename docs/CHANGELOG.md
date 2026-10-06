@@ -173,6 +173,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Corregido
 
+- **`make refresh-layer-tree` ya regenera el árbol.** Hacía el `POST /layers/refresh-cache` desde el host a
+  `localhost:8000` sin `X-Internal-Token` y siempre respondía 401; en producción ese puerto ni está publicado.
+  Ahora corre dentro del contenedor del backend del entorno levantado, con el token de su propia configuración
+
 - **El logo del IIEG en la vista 3D** movía el mapa 2D escondido y la cámara 3D se quedaba donde estaba. Ahora
   la cámara vuela a la marca conservando inclinación y rumbo, y la marca se dibuja también en 3D desde el zoom 15
 
