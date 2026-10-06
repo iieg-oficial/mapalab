@@ -35,7 +35,7 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null, permanen
             direccion: 'Calz. de los Pirules #71, Ciudad Granja, 45010 Zapopan, Jal.',
             telefono: '(33) 3777 1770',
             correo: 'iieg@jalisco.gob.mx',
-            sitio_web: 'iieg.gob.mx',
+            sitio_web: 'iieg.jalisco.gob.mx',
             tecnologias: ['React', 'OpenLayers', 'FastAPI', 'GeoServer', 'PostGIS'].join(MULTIVALOR_SEPARADOR),
             capas_disponibles: formatCount(totalLayers),
             registros_geograficos: formatCount(totalRecords),
@@ -61,7 +61,7 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null, permanen
             iconText: [
                 { icon: 'ubicacion', field: 'direccion' },
                 { icon: 'celular', field: 'telefono' },
-                { icon: 'web', value: 'iieg.gob.mx', href: 'https://iieg.gob.mx/ns/' },
+                { icon: 'web', value: 'iieg.jalisco.gob.mx', href: 'https://iieg.jalisco.gob.mx/' },
                 { icon: 'novedades', value: `Novedades v${APP_VERSION}`, action: 'whats_new' },
                 { icon: 'bug', value: 'Reportar problema o sugerencia', action: 'report' }
             ]

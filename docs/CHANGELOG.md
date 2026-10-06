@@ -179,6 +179,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Corregido
 
+- Los enlaces a la página del IIEG (footer, logo de la portada y tarjeta del IIEG en el mapa) apuntan a
+  `https://iieg.jalisco.gob.mx/`. El PDF de la licencia sigue en `iieg.gob.mx`, el único que lo sirve
 - **`make refresh-layer-tree` ya regenera el árbol.** Hacía el `POST /layers/refresh-cache` desde el host a
   `localhost:8000` sin `X-Internal-Token` y siempre respondía 401; en producción ese puerto ni está publicado.
   Ahora corre dentro del contenedor del backend del entorno levantado, con el token de su propia configuración
