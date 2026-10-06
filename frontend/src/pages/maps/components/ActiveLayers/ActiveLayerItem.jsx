@@ -23,6 +23,7 @@ import LayerStatsInline from './LayerStatsInline';
 import LayerPeriodicityInline from './LayerPeriodicityInline';
 import { useSlotPeriodicity } from '@hooksMaps/useSlotPeriodicity';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
+import { useHoverResaltado } from '@hooksMaps/useHoverResaltado';
 import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
 import { useLayerDownload } from '@hooksMaps/useLayerDownload';
 import DownloadMenu from '@mapsComponents/LayerDetailModal/components/DownloadMenu';
@@ -81,6 +82,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
 
     const itemRef = useRef(null);
     const [isHovered, setIsHovered] = useState(false);
+    const hover = useHoverResaltado(layer.id, !isMobile, setIsHovered);
     const isSelected = selectedLayerForSymbology?.id === layer.id;
     const isExpanded = isSelected;
     const showHandle = !isPinned && (isSelected || (!isMobile && isHovered));
@@ -201,8 +203,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
             `}
             onClick={handleClickOnLayer}
             onKeyDown={handleKeyActivate(handleClickOnLayer)}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseEnter={hover.entrar}
+            onMouseLeave={hover.salir}
         >
             <Tooltip
                 content={isSelected ? warningContent : null} variant="warning" placement={isMobile ? 'top' : 'left'}

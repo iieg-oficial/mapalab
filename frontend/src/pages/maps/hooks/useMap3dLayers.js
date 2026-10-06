@@ -14,7 +14,9 @@ const hastaZoom = (layer, excluidos) => {
     return ids.length > 0 && ids.every(id => excluidos.has(id)) ? Math.max(...ids.map(id => excluidos.get(id))) : ZOOM_MAXIMO;
 };
 
-const isMirrored = (layer, excluidos) => !!layer.get('mergedLayers') && layer.getVisible() && hastaZoom(layer, excluidos) > 0;
+const espejable = (layer) => !!layer.get('mergedLayers') || !!layer.get('resaltado');
+
+const isMirrored = (layer, excluidos) => espejable(layer) && layer.getVisible() && hastaZoom(layer, excluidos) > 0;
 
 const byZIndex = (a, b) => (a.getZIndex() ?? 0) - (b.getZIndex() ?? 0);
 
@@ -86,7 +88,7 @@ export const useMap3dLayers = (map, olMapRef, excluidos = SIN_EXCLUIDOS, cuerpos
         const watchLayers = () => {
             unByKey(layerKeys);
             layerKeys = olMap.getLayers().getArray()
-                .filter(layer => layer.get('mergedLayers'))
+                .filter(espejable)
                 .flatMap(layer => [
                     layer.on(['change:opacity', 'change:visible', 'change:zIndex'], schedule),
                     layer.getSource().on('change', schedule),

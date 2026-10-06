@@ -10,6 +10,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
+- **Resaltar la capa al pasar el mouse en Capas activas.** Las demás capas visibles bajan al 20 % de su
+  opacidad en 150 ms y vuelven al salir; también en el comparador y en la vista 3D, que copia esas
+  opacidades. Si la capa comparte imagen WMS con otras de su workspace, tras 200 ms se pide una imagen
+  solo con ella (cancelada si el puntero sale antes, reutilizada si el mapa no se movió) y la compartida
+  se atenúa cuando llega. Las funciones de aislar una capa salen del pulso de selección a
+  `helpers/layers/aislarCapa.js`
 - **La marca del IIEG es permanente** y lleva el pin del mapa incrustado (`ico_iieg_mapa.svg`, el de
   portalito) en lugar del cuadro morado: se ve siempre desde el zoom 15, sin tener que tocar el logo. El
   logo sigue volando a ella y abriendo su tarjeta

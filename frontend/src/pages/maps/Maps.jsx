@@ -31,6 +31,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { View3dProvider, useView3d } from '@contexts/View3dContext';
 import { DronProvider } from '@contexts/DronContext';
 import { CaminarProvider } from '@contexts/CaminarContext';
+import ResaltadoDeCapas from '@mapsComponents/ActiveLayers/ResaltadoDeCapas';
 import AvisoCapasPrivadas from '@mapsComponents/Sesion/AvisoCapasPrivadas';
 import { GrabacionDronProvider } from '@contexts/GrabacionDronContext';
 import DronOverlay from './components/Dron/DronOverlay';
@@ -95,6 +96,7 @@ const Maps = () => {
                                                 {isComparing && <SwipeSlotControls />}
                                                 <LayerNotices />
                                                 <AvisoCapasPrivadas />
+                                                <ResaltadoDeCapas />
                                                 <DockPills />
                                                 <TablaAtributos />
                                             </div>
