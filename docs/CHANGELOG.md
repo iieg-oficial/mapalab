@@ -19,6 +19,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   Hovers seguidos no acumulan atenuado: el regreso pendiente se completa antes del siguiente.
   Las capas H3 agrupadas (varias capas del visor en una sola capa vectorial) se reconocen por sus
   `memberIds`: la capa con el puntero ya no atenúa sus propios hexágonos.
+  Si las capas cambian durante el hover (el switch H3 rechazado por exceso de elementos regresa la capa
+  a WMS), el resaltado restaura y se vuelve a aplicar sobre las capas nuevas.
 - **La marca del IIEG es permanente** y lleva el pin del mapa incrustado (`ico_iieg_mapa.svg`, el de
   portalito) en lugar del cuadro morado: se ve siempre desde el zoom 15, sin tener que tocar el logo. El
   logo sigue volando a ella y abriendo su tarjeta

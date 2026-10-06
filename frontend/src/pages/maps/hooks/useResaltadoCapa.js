@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { unByKey } from 'ol/Observable';
 import { getUid } from 'ol/util';
 import { buildTargetOverlay, classifyLayer, resolveTargetIds } from '@pages/maps/helpers/layers/aislarCapa';
 import { suscribirCapaResaltada } from '@pages/maps/helpers/layers/capaResaltada';
@@ -19,7 +20,7 @@ export const useResaltadoCapa = ({ mapRef, paneMapInstances, compareMode, allLay
     vivo.current = { mapRef, paneMapInstances, compareMode, allLayers, cancelPulse };
 
     useEffect(() => {
-        const estado = { id: null, originales: new Map(), regreso: new Map(), overlays: [], timer: null, cuadro: null };
+        const estado = { id: null, originales: new Map(), regreso: new Map(), overlays: [], timer: null, cuadro: null, escuchas: [], recalculo: null };
         const cache = new Map();
 
         const animar = (capas, destino, alTerminar) => {
@@ -40,7 +41,15 @@ export const useResaltadoCapa = ({ mapRef, paneMapInstances, compareMode, allLay
             return estado.originales.get(capa) * FACTOR;
         };
 
+        const dejarDeVigilar = () => {
+            unByKey(estado.escuchas);
+            estado.escuchas = [];
+            cancelAnimationFrame(estado.recalculo);
+            estado.recalculo = null;
+        };
+
         const soltar = (inmediato) => {
+            dejarDeVigilar();
             clearTimeout(estado.timer);
             cancelAnimationFrame(estado.cuadro);
             estado.overlays.forEach(({ map, overlay }) => map.removeLayer(overlay));
@@ -103,6 +112,26 @@ export const useResaltadoCapa = ({ mapRef, paneMapInstances, compareMode, allLay
             }));
             animar(otras, atenuar);
             if (mixtas.length) estado.timer = setTimeout(() => aislarMixtas(mixtas, id), ESPERA_MS);
+            vigilar(mapas, id);
+        };
+
+        const vigilar = (mapas, id) => {
+            const recalcular = (evento) => {
+                if (evento?.element?.get?.('resaltado')) return;
+                if (evento?.key && evento.key !== 'mergedLayers' && evento.key !== 'memberIds') return;
+                if (estado.recalculo) return;
+                estado.recalculo = requestAnimationFrame(() => {
+                    estado.recalculo = null;
+                    if (estado.id === id) aplicar(id);
+                });
+            };
+            mapas.forEach((map) => {
+                const coleccion = map.getLayers();
+                estado.escuchas.push(coleccion.on(['add', 'remove'], recalcular));
+                coleccion.forEach((capa) => {
+                    if (!capa.get('resaltado')) estado.escuchas.push(capa.on('propertychange', recalcular));
+                });
+            });
         };
 
         const desuscribir = suscribirCapaResaltada((id) => (id ? aplicar(id) : soltar(false)));

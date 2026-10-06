@@ -4,9 +4,14 @@ import { useResaltadoCapa } from '@pages/maps/hooks/useResaltadoCapa';
 import { fijarCapaResaltada, soltarCapaResaltada } from '@pages/maps/helpers/layers/capaResaltada';
 import * as aislar from '@pages/maps/helpers/layers/aislarCapa';
 
+const llave = (lista, fn) => ({ target: { removeEventListener: () => { lista.delete(fn); } }, type: 'x', listener: fn });
+
 const capaOl = (subIds, { opacidad = 1, visible = true } = {}) => {
     const props = { mergedLayers: [{ subLayers: subIds.map(id => ({ id })) }] };
+    const oyentes = new Set();
     const ol = {
+        on: (_, fn) => { oyentes.add(fn); return llave(oyentes, fn); },
+        cambiar: (k, v) => { props[k] = v; oyentes.forEach(fn => fn({ key: k })); },
         _o: opacidad,
         getOpacity: () => ol._o,
         setOpacity: vi.fn((o) => { ol._o = o; }),
@@ -19,7 +24,7 @@ const capaOl = (subIds, { opacidad = 1, visible = true } = {}) => {
 };
 
 const mapa = (capas) => ({
-    getLayers: () => ({ forEach: (cb) => capas.forEach(cb) }),
+    getLayers: () => ({ forEach: (cb) => capas.forEach(cb), on: (_, fn) => llave(new Set([fn]), fn) }),
     getView: () => ({ getCenter: () => [0, 0], getResolution: () => 1 }),
     getSize: () => [800, 600],
     addLayer: vi.fn(),
@@ -81,6 +86,19 @@ describe('useResaltadoCapa', () => {
         expect(a.getOpacity()).toBeCloseTo(1);
         expect(b.getOpacity()).toBeCloseTo(0.8);
         expect(c.getOpacity()).toBeCloseTo(0.5);
+    });
+
+    it('si una capa cambia de grupo durante el hover se recalcula sin dejar atenuada la del puntero', () => {
+        const a = capaOl(['a']);
+        const b = capaOl(['b']);
+        montar(mapa([a, b]));
+        act(() => { fijarCapaResaltada('a'); vi.advanceTimersByTime(400); });
+        expect(b.getOpacity()).toBeCloseTo(0.2);
+        act(() => { b.cambiar('mergedLayers', [{ subLayers: [{ id: 'a' }] }]); vi.advanceTimersByTime(400); });
+        expect(b.getOpacity()).toBeCloseTo(1);
+        act(() => { soltarCapaResaltada('a'); vi.advanceTimersByTime(400); });
+        expect(a.getOpacity()).toBeCloseTo(1);
+        expect(b.getOpacity()).toBeCloseTo(1);
     });
 
     it('no toca capas ocultas', () => {
