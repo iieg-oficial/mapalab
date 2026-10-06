@@ -1,5 +1,9 @@
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
+import CaminarIcono from '../../Caminar/CaminarIcono';
+
+const BOTON = 'flex items-center justify-center p-1 rounded-full border border-transparent transition-all shadow-[0px_6px_12px_#2F495C14]';
+const SIN_WEBGL2 = 'Tu navegador no tiene WebGL2, necesario para caminar el instituto';
 
 const formatCount = (n) => {
     if (n >= 1000) return `${(n / 1000).toFixed(1)}k`.replace('.0k', 'k');
@@ -12,6 +16,8 @@ const ActionsToolbar = ({
     onDownloadMap = null,
     onCenter,
     onEdit = null,
+    onCaminar = null,
+    caminarDisponible = true,
     moveHandleProps = null,
     isMoving = false,
     visible = true,
@@ -25,7 +31,7 @@ const ActionsToolbar = ({
 }) => {
     if (!visible) return null;
 
-    const hasAction = onClear || onDownload || onDownloadMap || onCenter || onEdit || moveHandleProps;
+    const hasAction = onClear || onDownload || onDownloadMap || onCenter || onEdit || onCaminar || moveHandleProps;
     if (!hasAction) return null;
 
     return (
@@ -93,6 +99,20 @@ const ActionsToolbar = ({
                         className="flex items-center justify-center p-1 rounded-full border border-transparent transition-all bg-[#EAEFFA] text-[#703089] hover:border-purple shadow-[0px_6px_12px_#2F495C14]"
                     >
                         <Icon name="center_group" className="size-5" />
+                    </button>
+                </Tooltip>
+            )}
+
+            {onCaminar && (
+                <Tooltip content={caminarDisponible ? 'Caminar el instituto' : SIN_WEBGL2} placement="left" delay={300}>
+                    <button
+                        type="button"
+                        onClick={caminarDisponible ? onCaminar : undefined}
+                        aria-disabled={!caminarDisponible}
+                        aria-label={caminarDisponible ? 'Caminar el instituto' : SIN_WEBGL2}
+                        className={`${BOTON} ${caminarDisponible ? 'bg-[#EAEFFA] text-[#703089] hover:border-purple cursor-pointer' : 'bg-[#F1F1F3] text-[#B5B9C2] cursor-not-allowed'}`}
+                    >
+                        <CaminarIcono nombre="caminar" className="size-5" />
                     </button>
                 </Tooltip>
             )}

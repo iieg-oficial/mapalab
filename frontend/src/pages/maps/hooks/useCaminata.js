@@ -13,6 +13,20 @@ const INTERACCIONES = ['dragPan', 'dragRotate', 'scrollZoom', 'touchZoomRotate',
 const MIRADA_POR_PX = 0.2;
 const ESPACIO_INICIAL = 'Vestíbulo';
 const AJUSTE_SUELO_MS = 3000;
+const SE_QUEDAN = new Set(['fondo', 'base']);
+
+const ocultarCapas = (map, ocultas) => (map.getStyle()?.layers ?? [])
+    .filter(l => !SE_QUEDAN.has(l.id) && l.type !== 'custom' && map.getLayoutProperty(l.id, 'visibility') !== 'none')
+    .forEach((l) => {
+        ocultas.add(l.id);
+        map.setLayoutProperty(l.id, 'visibility', 'none');
+    });
+
+const mostrarCapas = (map, ids) => ids.forEach((id) => {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
+});
+
+const claveCamara = (c, suelo, tercera) => [c.x, c.y, c.z, c.rumbo, c.mirada].map(v => v.toFixed(3)).join('|') + `|${suelo.toFixed(2)}|${tercera}`;
 
 const configurarMapa = (map, activo) => {
     INTERACCIONES.forEach(nombre => map[nombre]?.[activo ? 'disable' : 'enable']());
@@ -51,6 +65,12 @@ export const useCaminata = (map, principal) => {
         const sueloExterior = (x, y) => (map.queryTerrainElevation(desplazar(edificio.origen, x, y)) ?? base) - base;
 
         configurarMapa(map, true);
+        const ocultas = new Set();
+        const alCambiarEstilo = () => ocultarCapas(map, ocultas);
+        alCambiarEstilo();
+        map.on('styledata', alCambiarEstilo);
+        let ultimaCamara = '';
+        let seMovia = false;
         vivo.current.publicar({ cargando: true });
 
         Promise.all([loadMaplibre(), import('@pages/maps/helpers/caminar/capaEdificio'), fetchEdificioInstituto()])
@@ -91,7 +111,14 @@ export const useCaminata = (map, principal) => {
             if (ahora - inicio < AJUSTE_SUELO_MS || base === null) base = map.queryTerrainElevation(edificio.origen) ?? (map.getTerrain() ? null : 0);
             const suelo = base ?? 0;
             c = pasoCaminante(c, entradaCaminar(vivo.current.teclasRef.current), edificio, dt, (x, y) => (base === null ? 0 : sueloExterior(x, y)));
-            map.jumpTo(vivo.current.tercera ? camaraTercera(map, edificio, c, suelo) : camaraPrimera(map, edificio.origen, c, suelo));
+            const camara = claveCamara(c, suelo, vivo.current.tercera);
+            if (camara !== ultimaCamara) {
+                ultimaCamara = camara;
+                map.jumpTo(vivo.current.tercera ? camaraTercera(map, edificio, c, suelo) : camaraPrimera(map, edificio.origen, c, suelo));
+            } else if (c.moviendo !== seMovia) {
+                map.triggerRepaint();
+            }
+            seMovia = c.moviendo;
             const piso = pisoActual(edificio, c.z).nombre;
             const espacio = c.z < edificio.base.nivel + 1.5 ? espacioEn(edificio, c.x, c.y)?.nombre ?? null : null;
             const clave = `${piso}|${espacio}`;
@@ -111,6 +138,8 @@ export const useCaminata = (map, principal) => {
             vivo.current.publicar(null);
             try {
                 if (capa && map.getLayer(capa.id)) map.removeLayer(capa.id);
+                map.off('styledata', alCambiarEstilo);
+                mostrarCapas(map, ocultas);
                 configurarMapa(map, false);
                 map.jumpTo({ ...salida, roll: 0 });
             } catch {

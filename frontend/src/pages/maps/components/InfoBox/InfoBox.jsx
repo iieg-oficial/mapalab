@@ -4,6 +4,7 @@ import { trackFeatureClick } from '@services/analyticsService';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import { useSider } from '@contexts/SiderContext';
 import { useCaminar } from '@contexts/CaminarContext';
+import { useView3d } from '@contexts/View3dContext';
 import MobileSheet, { MobileSheetCloseButton } from '@components/MobileSheet';
 import ScrollContainer from '@components/ScrollContainer';
 import { useViewportContainment } from './hooks/useViewportContainment';
@@ -31,6 +32,7 @@ import PanelMedicionSeleccion from '../MeasurementTools/PanelMedicionSeleccion';
 const InfoBox = ({ forceDesktop = false, embed = false }) => {
     const openColibri = useColibriOpen();
     const { entrar: entrarCaminata } = useCaminar();
+    const { available: con3d } = useView3d();
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers, mapRef, paneMapInstances, compareMode } = useContext(MapsContext);
     const { isMobile: siderIsMobile } = useSider();
     const isMobile = forceDesktop ? false : siderIsMobile;
@@ -72,8 +74,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
     const handleAction = useCallback((action) => {
         if (action === 'whats_new') setWhatsNewOpen(true);
         if (action === 'report') openColibri({ source: 'iieg_marker' });
-        if (action === 'caminar') entrarCaminata();
-    }, [openColibri, entrarCaminata]);
+    }, [openColibri]);
 
     const lazyLoad = useInfoBoxLazyLoad({
         results: selectedFeatureInfo?.results,
@@ -419,6 +420,8 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                             onDownload={descarga.onDownload}
                             onDownloadMap={isPolygonSelection ? descargarMapaDeSeleccion : null}
                             onCenter={showCenterButton ? handleCenterGroup : null}
+                            onCaminar={selectedFeatureInfo?.acciones?.includes('caminar') ? entrarCaminata : null}
+                            caminarDisponible={con3d}
                             downloadCount={descarga.downloadCount}
                             downloadShowsPlus={descarga.downloadShowsPlus}
                             downloadTooltip={descarga.downloadTooltip}

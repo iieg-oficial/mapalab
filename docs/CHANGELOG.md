@@ -13,13 +13,16 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - **La marca del IIEG es permanente** y lleva el pin del mapa incrustado (`ico_iieg_mapa.svg`, el de
   portalito) en lugar del cuadro morado: se ve siempre desde el zoom 15, sin tener que tocar el logo. El
   logo sigue volando a ella y abriendo su tarjeta
-- **Caminar el instituto (BETA, fuera de producción).** «Caminar el instituto» en la tarjeta de la marca del
-  IIEG (enciende la vista 3D si está apagada) carga el edificio del IIEG desde `GET /instituto/edificio` (schema `instituto` de dataengine) y lo
+- **Caminar el instituto (BETA, fuera de producción).** El botón con la persona en la columna de acciones de
+  la tarjeta de la marca del IIEG (gris y con el motivo en el tooltip si el navegador no tiene WebGL2; enciende la
+  vista 3D si está apagada) carga el edificio del IIEG desde `GET /instituto/edificio` (schema `instituto` de dataengine) y lo
   dibuja con three.js sobre el relieve: muros, techos, la planta alta sobre Dirección General, la
   azotea con pretil y la escalera de dos tramos con descanso. Se camina en primera o tercera persona
   con un avatar genérico (W A S D o flechas, Q E para girar, Shift para correr, arrastrar para mirar,
   V cambia la vista, Esc sale), con colisión contra muros y un tope de 60 cm de desnivel por paso. Una
-  pastilla arriba dice en qué piso y espacio se está. Es la prueba de viabilidad del frente 19
+  pastilla arriba dice en qué piso y espacio se está. Mientras se camina se apagan las capas temáticas, las
+  etiquetas y el sombreado (vuelven al salir) y el mapa solo se repinta cuando algo cambia: a la altura de una
+  persona y mirando al horizonte pedían cientos de mosaicos y redibujaban todo en cada cuadro. Es la prueba de viabilidad del frente 19
   (recorridos 3D). Necesita dataengine 1.49.0 y la carga del edificio aplicada antes
 - **Inicio de sesión y capas privadas.** El visor entra con minerva (app propia `mapalab`, en una
   ventana emergente; si el navegador la bloquea, por redirect completo). El botón vive en el borde del

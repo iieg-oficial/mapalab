@@ -14,7 +14,6 @@ const formatCount = (n) => (typeof n === 'number' ? n.toLocaleString('es-MX') : 
 
 export const EMBED_MARKER_ICON = '/acervo/iieg/logos/ico_iieg_mapa.svg';
 const EMBED_MARKER_SCALE = 0.4;
-const ACCION_CAMINAR = { icon: 'caminar', value: 'Caminar el instituto', action: 'caminar' };
 
 export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null, permanente = false, conCaminar = false } = {}) => ({
     id: 'iieg_hq',
@@ -27,6 +26,7 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null, permanen
     openOnShow: !permanente,
     infoBox: {
         layerName: 'MapaLab — IIEG Jalisco',
+        acciones: conCaminar ? ['caminar'] : [],
         properties: {
             nombre: 'MapaLab',
             version: `v${APP_VERSION}`,
@@ -59,7 +59,6 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null, permanen
             ],
             cardsColumns: 1,
             iconText: [
-                ...(conCaminar ? [ACCION_CAMINAR] : []),
                 { icon: 'ubicacion', field: 'direccion' },
                 { icon: 'celular', field: 'telefono' },
                 { icon: 'web', value: 'iieg.gob.mx', href: 'https://iieg.gob.mx/ns/' },

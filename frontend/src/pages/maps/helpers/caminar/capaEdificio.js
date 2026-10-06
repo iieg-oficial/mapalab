@@ -16,7 +16,6 @@ const escenaConLuz = () => {
 
 export const crearCapaEdificio = (maplibregl, edificio, { leer }) => {
     let renderer = null;
-    let map = null;
     const escena = escenaConLuz();
     const modelo = construirEdificio(edificio);
     const avatar = crearAvatarGenerico();
@@ -28,7 +27,6 @@ export const crearCapaEdificio = (maplibregl, edificio, { leer }) => {
         type: 'custom',
         renderingMode: '3d',
         onAdd(mapa, gl) {
-            map = mapa;
             renderer = new THREE.WebGLRenderer({ canvas: mapa.getCanvas(), context: gl, antialias: true });
             renderer.autoClear = false;
         },
@@ -48,7 +46,6 @@ export const crearCapaEdificio = (maplibregl, edificio, { leer }) => {
             }
             renderer.resetState();
             renderer.render(escena, camara);
-            map.triggerRepaint();
         },
         onRemove() {
             liberarGrupo(escena);

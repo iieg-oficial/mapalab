@@ -1,4 +1,12 @@
 const TRAZOS = {
+    caminar: (
+        <>
+            <circle cx="13" cy="4" r="2" />
+            <path d="M9.5 21l2.5-6 2.5 2.5V21" />
+            <path d="M12 15l1-6 3 3h3" />
+            <path d="M13 9l-4 1.5-1.5 3.5" />
+        </>
+    ),
     primera: (
         <>
             <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" />

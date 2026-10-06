@@ -19,4 +19,19 @@ describe('ActionsToolbar', () => {
         render(<ActionsToolbar onDownload={() => {}} />);
         expect(screen.queryByRole('button', { name: 'Descargar el mapa de esta selección' })).toBeNull();
     });
+    it('caminar el instituto entra al recorrido', () => {
+        const alCaminar = vi.fn();
+        render(<ActionsToolbar onCaminar={alCaminar} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Caminar el instituto' }));
+        expect(alCaminar).toHaveBeenCalledTimes(1);
+    });
+
+    it('sin WebGL2 el botón de caminar queda gris, dice por qué y no hace nada', () => {
+        const alCaminar = vi.fn();
+        render(<ActionsToolbar onCaminar={alCaminar} caminarDisponible={false} />);
+        const boton = screen.getByRole('button', { name: 'Tu navegador no tiene WebGL2, necesario para caminar el instituto' });
+        expect(boton).toHaveAttribute('aria-disabled', 'true');
+        fireEvent.click(boton);
+        expect(alCaminar).not.toHaveBeenCalled();
+    });
 });
