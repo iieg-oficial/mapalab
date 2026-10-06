@@ -23,6 +23,9 @@ export const classifyLayer = (olLayer, targetIdSet) => {
         return { role: 'mixed', targetIdxs };
     }
 
+    const memberIds = olLayer.get('memberIds');
+    if (Array.isArray(memberIds) && memberIds.some(id => targetIdSet.has(id))) return { role: 'target' };
+
     const layerId = olLayer.get('layerId');
     if (layerId) return targetIdSet.has(layerId) ? { role: 'target' } : { role: 'other' };
 
@@ -63,5 +66,5 @@ export const buildTargetOverlay = (hostLayer, targetIdxs) => {
 
 export const resolveTargetIds = (layerId, allLayers) => {
     const nodes = collectWMSNodes(layerId, allLayers);
-    return new Set(nodes.map(n => n.id));
+    return nodes.length ? new Set([layerId, ...nodes.map(n => n.id)]) : new Set();
 };

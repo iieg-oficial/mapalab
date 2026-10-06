@@ -17,6 +17,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   se atenúa cuando llega. Las funciones de aislar una capa salen del pulso de selección a
   `helpers/layers/aislarCapa.js`
   Hovers seguidos no acumulan atenuado: el regreso pendiente se completa antes del siguiente.
+  Las capas H3 agrupadas (varias capas del visor en una sola capa vectorial) se reconocen por sus
+  `memberIds`: la capa con el puntero ya no atenúa sus propios hexágonos.
 - **La marca del IIEG es permanente** y lleva el pin del mapa incrustado (`ico_iieg_mapa.svg`, el de
   portalito) en lugar del cuadro morado: se ve siempre desde el zoom 15, sin tener que tocar el logo. El
   logo sigue volando a ella y abriendo su tarjeta
