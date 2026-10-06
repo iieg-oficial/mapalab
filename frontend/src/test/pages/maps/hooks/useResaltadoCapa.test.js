@@ -65,6 +65,24 @@ describe('useResaltadoCapa', () => {
         expect(b.getOpacity()).toBeCloseTo(0.8);
     });
 
+    it('hovers seguidos no acumulan atenuado aunque el regreso no haya terminado', () => {
+        const a = capaOl(['a']);
+        const b = capaOl(['b'], { opacidad: 0.8 });
+        const c = capaOl(['c'], { opacidad: 0.5 });
+        montar(mapa([a, b, c]));
+        for (let i = 0; i < 5; i++) {
+            act(() => { fijarCapaResaltada('a'); vi.advanceTimersByTime(400); });
+            act(() => { soltarCapaResaltada('a'); vi.advanceTimersByTime(40); });
+            act(() => { fijarCapaResaltada('b'); vi.advanceTimersByTime(400); });
+            expect(c.getOpacity()).toBeCloseTo(0.1);
+            act(() => { soltarCapaResaltada('b'); vi.advanceTimersByTime(40); });
+        }
+        act(() => { vi.advanceTimersByTime(400); });
+        expect(a.getOpacity()).toBeCloseTo(1);
+        expect(b.getOpacity()).toBeCloseTo(0.8);
+        expect(c.getOpacity()).toBeCloseTo(0.5);
+    });
+
     it('no toca capas ocultas', () => {
         const a = capaOl(['a']);
         const b = capaOl(['b'], { visible: false });

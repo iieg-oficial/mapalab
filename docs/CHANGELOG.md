@@ -16,6 +16,7 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   solo con ella (cancelada si el puntero sale antes, reutilizada si el mapa no se movió) y la compartida
   se atenúa cuando llega. Las funciones de aislar una capa salen del pulso de selección a
   `helpers/layers/aislarCapa.js`
+  Hovers seguidos no acumulan atenuado: el regreso pendiente se completa antes del siguiente.
 - **La marca del IIEG es permanente** y lleva el pin del mapa incrustado (`ico_iieg_mapa.svg`, el de
   portalito) en lugar del cuadro morado: se ve siempre desde el zoom 15, sin tener que tocar el logo. El
   logo sigue volando a ella y abriendo su tarjeta

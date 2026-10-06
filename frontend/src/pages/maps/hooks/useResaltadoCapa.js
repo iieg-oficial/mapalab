@@ -19,10 +19,10 @@ export const useResaltadoCapa = ({ mapRef, paneMapInstances, compareMode, allLay
     vivo.current = { mapRef, paneMapInstances, compareMode, allLayers, cancelPulse };
 
     useEffect(() => {
-        const estado = { id: null, originales: new Map(), overlays: [], timer: null, cuadro: null };
+        const estado = { id: null, originales: new Map(), regreso: new Map(), overlays: [], timer: null, cuadro: null };
         const cache = new Map();
 
-        const animar = (capas, destino) => {
+        const animar = (capas, destino, alTerminar) => {
             cancelAnimationFrame(estado.cuadro);
             const desde = capas.map(capa => [capa, capa.getOpacity(), destino(capa)]);
             const inicio = performance.now();
@@ -30,6 +30,7 @@ export const useResaltadoCapa = ({ mapRef, paneMapInstances, compareMode, allLay
                 const t = Math.min(1, (ahora - inicio) / DESVANECER_MS);
                 desde.forEach(([capa, a, b]) => capa.setOpacity(a + (b - a) * t));
                 if (t < 1) estado.cuadro = requestAnimationFrame(paso);
+                else alTerminar?.();
             };
             estado.cuadro = requestAnimationFrame(paso);
         };
@@ -43,9 +44,14 @@ export const useResaltadoCapa = ({ mapRef, paneMapInstances, compareMode, allLay
             clearTimeout(estado.timer);
             cancelAnimationFrame(estado.cuadro);
             estado.overlays.forEach(({ map, overlay }) => map.removeLayer(overlay));
-            const originales = estado.originales;
-            if (inmediato) originales.forEach((opacidad, capa) => capa.setOpacity(opacidad));
-            else animar([...originales.keys()], capa => originales.get(capa));
+            const destino = new Map([...estado.regreso, ...estado.originales]);
+            if (inmediato) {
+                destino.forEach((opacidad, capa) => capa.setOpacity(opacidad));
+                estado.regreso = new Map();
+            } else {
+                estado.regreso = destino;
+                animar([...destino.keys()], capa => destino.get(capa), () => { estado.regreso = new Map(); });
+            }
             estado.id = null;
             estado.originales = new Map();
             estado.overlays = [];
