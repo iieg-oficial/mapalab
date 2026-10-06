@@ -26,8 +26,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   azotea con pretil y la escalera de dos tramos con descanso. Se camina en primera o tercera persona
   con un avatar genérico (W A S D o flechas, Q E para girar, Shift para correr, arrastrar para mirar,
   V cambia la vista, Esc sale), con colisión contra muros y un tope de 60 cm de desnivel por paso. Una
-  pastilla arriba dice en qué piso y espacio se está. Mientras se camina se apagan las capas temáticas, las
-  etiquetas y el sombreado (vuelven al salir) y el mapa solo se repinta cuando algo cambia: a la altura de una
+  pastilla arriba dice en qué piso y espacio se está. Mientras se camina se apagan el relieve, las capas
+  temáticas, las etiquetas y el sombreado (vuelven al salir; con el relieve de 15 m exagerado la cámara
+  quedaba sobre el techo) y el mapa solo se repinta cuando algo cambia: a la altura de una
   persona y mirando al horizonte pedían cientos de mosaicos y redibujaban todo en cada cuadro. Es la prueba de viabilidad del frente 19
   (recorridos 3D). Necesita dataengine 1.49.0 y la carga del edificio aplicada antes
 - **Inicio de sesión y capas privadas.** El visor entra con minerva (app propia `mapalab`, en una

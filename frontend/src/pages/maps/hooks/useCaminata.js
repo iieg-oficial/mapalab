@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { useCaminar } from '@contexts/CaminarContext';
 import { loadMaplibre } from '@pages/maps/helpers/maplibreLoader';
 import { VIEW3D_PITCH_MAX } from '@pages/maps/helpers/view3d';
-import { desplazar } from '@pages/maps/helpers/dron/fisicaDron';
 import { espacioEn, prepararEdificio } from '@pages/maps/helpers/caminar/geometriaEdificio';
 import { crearCaminante, mirar, pasoCaminante, pisoActual, rumboMasLibre } from '@pages/maps/helpers/caminar/fisicaCaminar';
 import { camaraPrimera, camaraTercera } from '@pages/maps/helpers/caminar/camaraCaminar';
@@ -12,7 +11,6 @@ import { entradaCaminar, useCaminarTeclado } from './useCaminarTeclado';
 const INTERACCIONES = ['dragPan', 'dragRotate', 'scrollZoom', 'touchZoomRotate', 'touchPitch', 'keyboard', 'doubleClickZoom', 'boxZoom'];
 const MIRADA_POR_PX = 0.2;
 const ESPACIO_INICIAL = 'Vestíbulo';
-const AJUSTE_SUELO_MS = 3000;
 const SE_QUEDAN = new Set(['fondo', 'base']);
 
 const ocultarCapas = (map, ocultas) => (map.getStyle()?.layers ?? [])
@@ -56,14 +54,13 @@ export const useCaminata = (map, principal) => {
         let capa = null;
         let edificio = null;
         let c = null;
-        let base = null;
         let anterior = performance.now();
-        const inicio = anterior;
         let ultimo = '';
         const salida = { center: map.getCenter().toArray(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
-        const leer = () => ({ caminante: c, alturaBase: base ?? 0, tercera: vivo.current.tercera });
-        const sueloExterior = (x, y) => (map.queryTerrainElevation(desplazar(edificio.origen, x, y)) ?? base) - base;
+        const leer = () => ({ caminante: c, alturaBase: 0, tercera: vivo.current.tercera });
 
+        const terrenoPrevio = map.getTerrain();
+        map.setTerrain(null);
         configurarMapa(map, true);
         const ocultas = new Set();
         const alCambiarEstilo = () => ocultarCapas(map, ocultas);
@@ -108,9 +105,8 @@ export const useCaminata = (map, principal) => {
         const andar = (ahora) => {
             const dt = Math.min(0.05, (ahora - anterior) / 1000);
             anterior = ahora;
-            if (ahora - inicio < AJUSTE_SUELO_MS || base === null) base = map.queryTerrainElevation(edificio.origen) ?? (map.getTerrain() ? null : 0);
-            const suelo = base ?? 0;
-            c = pasoCaminante(c, entradaCaminar(vivo.current.teclasRef.current), edificio, dt, (x, y) => (base === null ? 0 : sueloExterior(x, y)));
+            const suelo = 0;
+            c = pasoCaminante(c, entradaCaminar(vivo.current.teclasRef.current), edificio, dt, () => 0);
             const camara = claveCamara(c, suelo, vivo.current.tercera);
             if (camara !== ultimaCamara) {
                 ultimaCamara = camara;
@@ -140,6 +136,7 @@ export const useCaminata = (map, principal) => {
                 if (capa && map.getLayer(capa.id)) map.removeLayer(capa.id);
                 map.off('styledata', alCambiarEstilo);
                 mostrarCapas(map, ocultas);
+                if (terrenoPrevio) map.setTerrain(terrenoPrevio);
                 configurarMapa(map, false);
                 map.jumpTo({ ...salida, roll: 0 });
             } catch {
