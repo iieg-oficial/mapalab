@@ -2,7 +2,7 @@ import { LitElement, html } from 'lit';
 import { widgetStyles } from './styles.js';
 
 
-const DEFAULT_BASE_URL = 'https://mapalab.iieg.gob.mx';
+const DEFAULT_BASE_URL = 'https://iieg.jalisco.gob.mx/mapalab';
 const DEFAULT_READY_TIMEOUT_MS = 8000;
 
 
