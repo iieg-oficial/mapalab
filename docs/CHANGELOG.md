@@ -8,6 +8,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [2.3.0] - 2026-10-06
+
 ### Agregado
 
 - **Resaltar la capa al pasar el mouse en Capas activas.** Las demás capas visibles bajan al 20 % de su
