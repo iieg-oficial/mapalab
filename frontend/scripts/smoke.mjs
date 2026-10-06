@@ -81,7 +81,7 @@ const abrirNavegador = async () => {
 const preview = spawn(
     'npx',
     ['vite', 'preview', '--port', String(PORT), '--strictPort'],
-    { stdio: ['ignore', 'pipe', 'pipe'] },
+    { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, NO_COLOR: '1' } },
 );
 
 let navegador;
