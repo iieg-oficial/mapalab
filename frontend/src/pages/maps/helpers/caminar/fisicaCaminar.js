@@ -99,3 +99,25 @@ export const rumboMasLibre = (edificio, x, y, alcance = 15) => {
     }
     return mejor.rumbo;
 };
+
+const distanciaASegmento = (x, y, [ax, ay, bx, by]) => {
+    const dx = bx - ax;
+    const dy = by - ay;
+    const t = acotar(((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1e-9), 0, 1);
+    return Math.hypot(x - (ax + t * dx), y - (ay + t * dy));
+};
+
+export const puntoMasLibre = (edificio, poligonos, paso = 0.4) => {
+    const puntos = poligonos.flatMap(p => p[0]);
+    const xs = puntos.map(q => q[0]);
+    const ys = puntos.map(q => q[1]);
+    let mejor = null;
+    for (let x = Math.min(...xs); x <= Math.max(...xs); x += paso) {
+        for (let y = Math.min(...ys); y <= Math.max(...ys); y += paso) {
+            if (!enAlguno(poligonos, x, y)) continue;
+            const libre = edificio.segmentosBase.reduce((min, s) => Math.min(min, distanciaASegmento(x, y, s)), Infinity);
+            if (!mejor || libre > mejor.libre) mejor = { x, y, libre };
+        }
+    }
+    return mejor ? [mejor.x, mejor.y] : null;
+};

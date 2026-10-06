@@ -7,11 +7,10 @@ const MIRA = 12;
 const DETRAS = 2.8;
 const SOBRE_CABEZA = 0.6;
 const HOLGURA = 0.3;
-const DETRAS_MIN = 0.5;
 
 const distanciaLibre = (segmentos, c, dx, dy) => {
     const t = segmentos.reduce((min, s) => Math.min(min, corteRayo(c.x, c.y, dx * DETRAS, dy * DETRAS, s)), Infinity);
-    return t === Infinity ? DETRAS : Math.max(DETRAS_MIN, t * DETRAS - HOLGURA);
+    return t === Infinity ? DETRAS : Math.max(0, t * DETRAS - HOLGURA);
 };
 
 export const camaraPrimera = (map, origen, c, base) => {

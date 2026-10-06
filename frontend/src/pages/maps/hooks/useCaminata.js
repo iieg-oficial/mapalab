@@ -3,7 +3,7 @@ import { useCaminar } from '@contexts/CaminarContext';
 import { loadMaplibre } from '@pages/maps/helpers/maplibreLoader';
 import { VIEW3D_PITCH_MAX } from '@pages/maps/helpers/view3d';
 import { espacioEn, prepararEdificio } from '@pages/maps/helpers/caminar/geometriaEdificio';
-import { crearCaminante, mirar, pasoCaminante, pisoActual, rumboMasLibre } from '@pages/maps/helpers/caminar/fisicaCaminar';
+import { crearCaminante, mirar, pasoCaminante, pisoActual, puntoMasLibre, rumboMasLibre } from '@pages/maps/helpers/caminar/fisicaCaminar';
 import { camaraPrimera, camaraTercera } from '@pages/maps/helpers/caminar/camaraCaminar';
 import { fetchEdificioInstituto } from '@services/institutoService';
 import { entradaCaminar, useCaminarTeclado } from './useCaminarTeclado';
@@ -35,8 +35,7 @@ const configurarMapa = (map, activo) => {
 
 const puntoInicial = (edificio) => {
     const espacio = edificio.espacios.find(e => e.nombre === ESPACIO_INICIAL) || edificio.espacios.find(e => e.tipo === 'circulacion');
-    const anillo = espacio?.poligonos[0]?.[0] || [[0, 0]];
-    return [anillo.reduce((s, p) => s + p[0], 0) / anillo.length, anillo.reduce((s, p) => s + p[1], 0) / anillo.length];
+    return (espacio && puntoMasLibre(edificio, espacio.poligonos)) || [0, 0];
 };
 
 export const useCaminata = (map, principal) => {
