@@ -121,3 +121,44 @@ export const puntoMasLibre = (edificio, poligonos, paso = 0.4) => {
     }
     return mejor ? [mejor.x, mejor.y] : null;
 };
+
+const proyectar = (x, y, [ax, ay], [bx, by]) => {
+    const dx = bx - ax;
+    const dy = by - ay;
+    const t = acotar(((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1e-9), 0, 1);
+    return [ax + t * dx, ay + t * dy];
+};
+
+const ladosDe = poligonos => poligonos.flatMap(p => p[0].map((a, i) => [a, p[0][(i + 1) % p[0].length]]));
+
+const umbral = (origen, destino) => {
+    let mejor = null;
+    const probar = (d, q) => { if (!mejor || d < mejor.d) mejor = { d, q }; };
+    origen.flatMap(p => p[0]).forEach(([x, y]) => ladosDe(destino).forEach(([a, b]) => {
+        const q = proyectar(x, y, a, b);
+        probar(Math.hypot(q[0] - x, q[1] - y), q);
+    }));
+    destino.flatMap(p => p[0]).forEach(([x, y]) => ladosDe(origen).forEach(([a, b]) => {
+        const q = proyectar(x, y, a, b);
+        probar(Math.hypot(q[0] - x, q[1] - y), [x, y]);
+    }));
+    return mejor.q;
+};
+
+export const llegadaPor = (edificio, origen, destino, holgura = 1.5, paso = 1) => {
+    const [tx, ty] = umbral(origen, destino);
+    const puntos = origen.flatMap(p => p[0]);
+    const xs = puntos.map(q => q[0]);
+    const ys = puntos.map(q => q[1]);
+    let mejor = null;
+    for (let x = Math.min(...xs); x <= Math.max(...xs); x += paso) {
+        for (let y = Math.min(...ys); y <= Math.max(...ys); y += paso) {
+            if (!enAlguno(origen, x, y)) continue;
+            const cerca = Math.hypot(tx - x, ty - y);
+            if (mejor && cerca >= mejor.cerca) continue;
+            if (edificio.segmentosBase.some(s => distanciaASegmento(x, y, s) < holgura)) continue;
+            mejor = { x, y, cerca };
+        }
+    }
+    return mejor ? { x: mejor.x, y: mejor.y, rumbo: ((Math.atan2(tx - mejor.x, ty - mejor.y) / RAD) + 360) % 360 } : null;
+};

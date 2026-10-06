@@ -3,7 +3,7 @@ import { useCaminar } from '@contexts/CaminarContext';
 import { loadMaplibre } from '@pages/maps/helpers/maplibreLoader';
 import { VIEW3D_PITCH_MAX } from '@pages/maps/helpers/view3d';
 import { espacioEn, prepararEdificio } from '@pages/maps/helpers/caminar/geometriaEdificio';
-import { crearCaminante, mirar, pasoCaminante, pisoActual, puntoMasLibre, rumboMasLibre } from '@pages/maps/helpers/caminar/fisicaCaminar';
+import { crearCaminante, llegadaPor, mirar, pasoCaminante, pisoActual, puntoMasLibre, rumboMasLibre } from '@pages/maps/helpers/caminar/fisicaCaminar';
 import { camaraPrimera, camaraTercera } from '@pages/maps/helpers/caminar/camaraCaminar';
 import { fetchEdificioInstituto } from '@services/institutoService';
 import { entradaCaminar, useCaminarTeclado } from './useCaminarTeclado';
@@ -11,6 +11,8 @@ import { entradaCaminar, useCaminarTeclado } from './useCaminarTeclado';
 const INTERACCIONES = ['dragPan', 'dragRotate', 'scrollZoom', 'touchZoomRotate', 'touchPitch', 'keyboard', 'doubleClickZoom', 'boxZoom'];
 const MIRADA_POR_PX = 0.2;
 const ESPACIO_INICIAL = 'Vestíbulo';
+const ARRANQUE = 'Estacionamiento';
+const ENTRADA = 'Pasillo de acceso';
 const SE_QUEDAN = new Set(['fondo', 'base']);
 
 const ocultarCapas = (map, ocultas) => (map.getStyle()?.layers ?? [])
@@ -33,9 +35,16 @@ const configurarMapa = (map, activo) => {
     map.setMaxZoom(activo ? 24 : 22);
 };
 
-const puntoInicial = (edificio) => {
-    const espacio = edificio.espacios.find(e => e.nombre === ESPACIO_INICIAL) || edificio.espacios.find(e => e.tipo === 'circulacion');
-    return (espacio && puntoMasLibre(edificio, espacio.poligonos)) || [0, 0];
+const porNombre = (edificio, nombre) => edificio.espacios.find(e => e.nombre === nombre);
+
+const arranque = (edificio) => {
+    const afuera = porNombre(edificio, ARRANQUE);
+    const entrada = porNombre(edificio, ENTRADA);
+    const llegada = afuera && entrada ? llegadaPor(edificio, afuera.poligonos, entrada.poligonos) : null;
+    if (llegada) return llegada;
+    const espacio = porNombre(edificio, ESPACIO_INICIAL) || edificio.espacios.find(e => e.tipo === 'circulacion');
+    const [x, y] = (espacio && puntoMasLibre(edificio, espacio.poligonos)) || [0, 0];
+    return { x, y, rumbo: rumboMasLibre(edificio, x, y) };
 };
 
 export const useCaminata = (map, principal) => {
@@ -73,8 +82,8 @@ export const useCaminata = (map, principal) => {
             .then(([maplibregl, { crearCapaEdificio }, datos]) => {
                 if (cancelado) return;
                 edificio = prepararEdificio(datos);
-                const [x, y] = puntoInicial(edificio);
-                c = crearCaminante(x, y, edificio.base.nivel, rumboMasLibre(edificio, x, y));
+                const inicio = arranque(edificio);
+                c = crearCaminante(inicio.x, inicio.y, edificio.base.nivel, inicio.rumbo);
                 map.jumpTo({ center: edificio.origen, zoom: 19, pitch: 60 });
                 capa = crearCapaEdificio(maplibregl, edificio, { leer });
                 if (!map.getLayer(capa.id)) map.addLayer(capa);
