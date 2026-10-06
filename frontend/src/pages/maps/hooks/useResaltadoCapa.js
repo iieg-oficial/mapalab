@@ -134,7 +134,7 @@ export const useResaltadoCapa = ({ mapRef, paneMapInstances, compareMode, allLay
             });
         };
 
-        const desuscribir = suscribirCapaResaltada((id) => (id ? aplicar(id) : soltar(false)));
+        const desuscribir = suscribirCapaResaltada((id, opciones) => (id ? aplicar(id) : soltar(!!opciones?.inmediato)));
         return () => {
             desuscribir();
             soltar(true);

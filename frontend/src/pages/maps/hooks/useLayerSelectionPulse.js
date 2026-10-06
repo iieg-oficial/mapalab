@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
 import { findAncestorChain } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { buildTargetOverlay, classifyLayer, collectWMSNodes, resolveTargetIds } from '@pages/maps/helpers/layers/aislarCapa';
+import { soltarResaltadoYa } from '@pages/maps/helpers/layers/capaResaltada';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { getFitPadding } from '@pages/maps/helpers/mapFit';
 import { acotarExtentAMunicipio } from '@pages/maps/helpers/municipioMask';
@@ -97,6 +98,7 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
     useEffect(() => () => cleanup(), [cleanup]);
 
     const pulseLayer = useCallback(async (layerId) => {
+        soltarResaltadoYa();
         cleanup();
 
         const targetMaps = compareMode?.active

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useResaltadoCapa } from '@pages/maps/hooks/useResaltadoCapa';
-import { fijarCapaResaltada, soltarCapaResaltada } from '@pages/maps/helpers/layers/capaResaltada';
+import { fijarCapaResaltada, soltarCapaResaltada, soltarResaltadoYa } from '@pages/maps/helpers/layers/capaResaltada';
+import { useLayerSelection } from '@pages/maps/hooks/useLayerSelectionPulse';
 import * as aislar from '@pages/maps/helpers/layers/aislarCapa';
 
 const llave = (lista, fn) => ({ target: { removeEventListener: () => { lista.delete(fn); } }, type: 'x', listener: fn });
@@ -99,6 +100,29 @@ describe('useResaltadoCapa', () => {
         act(() => { soltarCapaResaltada('a'); vi.advanceTimersByTime(400); });
         expect(a.getOpacity()).toBeCloseTo(1);
         expect(b.getOpacity()).toBeCloseTo(1);
+    });
+
+    it('soltar ya devuelve las opacidades sin animación', () => {
+        const a = capaOl(['a']);
+        const b = capaOl(['b'], { opacidad: 0.8 });
+        montar(mapa([a, b]));
+        act(() => { fijarCapaResaltada('a'); vi.advanceTimersByTime(400); });
+        act(() => { soltarResaltadoYa(); });
+        expect(b.getOpacity()).toBeCloseTo(0.8);
+    });
+
+    it('seleccionar con el puntero encima no deja las demás atenuadas al terminar la pulsación', () => {
+        const a = capaOl(['a']);
+        const b = capaOl(['b'], { opacidad: 0.8 });
+        const m = mapa([a, b]);
+        montar(m);
+        const { result } = renderHook(() => useLayerSelection({ mapRef: { current: m }, paneMapInstances: {}, compareMode: null, allLayers: arbol }));
+        act(() => { fijarCapaResaltada('a'); vi.advanceTimersByTime(400); });
+        expect(b.getOpacity()).toBeCloseTo(0.16);
+        act(() => { result.current.pulseLayer('a'); });
+        act(() => { soltarCapaResaltada('a'); vi.advanceTimersByTime(7000); });
+        expect(a.getOpacity()).toBeCloseTo(1);
+        expect(b.getOpacity()).toBeCloseTo(0.8);
     });
 
     it('no toca capas ocultas', () => {

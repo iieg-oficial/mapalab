@@ -8,6 +8,11 @@ export const fijarCapaResaltada = (layerId) => {
     oyentes.forEach((fn) => fn(actual));
 };
 
+export const soltarResaltadoYa = () => {
+    actual = null;
+    oyentes.forEach((fn) => fn(null, { inmediato: true }));
+};
+
 export const soltarCapaResaltada = (layerId) => {
     if (actual === layerId) fijarCapaResaltada(null);
 };
