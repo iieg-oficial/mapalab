@@ -96,10 +96,9 @@ describe('SharePanel — con el enlace listo', () => {
         expect(capa.className).toContain('opacity-0');
     });
 
-    it('insertar aparece también en producción, con su badge', () => {
+    it('en producción no se ofrece insertar en otra página', () => {
         render(<SharePanel link={listo} />);
-        expect(screen.getByText(/Insertar en otra página/)).toBeInTheDocument();
-        expect(screen.getByText('BETA')).toBeInTheDocument();
+        expect(screen.queryByText(/Insertar en otra página/)).not.toBeInTheDocument();
     });
 
     it('en beta, insertar despliega el codigo y pide la llave por Colibri', () => {

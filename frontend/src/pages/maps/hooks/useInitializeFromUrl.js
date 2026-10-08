@@ -7,6 +7,7 @@ import { registrarPendiente } from '@pages/maps/helpers/sesion/pendientes';
 import { useShareDeserializer } from '@pages/maps/hooks/useShareDeserializer';
 import { fetchShare } from '@services/shareService';
 import { trackShareMap } from '@services/analyticsService';
+import { devToolsStore } from '@services/devToolsStore';
 import { SESSION_STORAGE_KEY } from '@pages/maps/hooks/useSessionPersistence';
 
 const MAX_SESSION_BYTES = 200_000;
@@ -31,7 +32,7 @@ export const useInitializeFromUrl = () => {
     const enterMunicipioModeIfRequested = () => {
         const param = searchParams.get('municipios');
         const claves = parseMunicipiosParam(param);
-        if (claves.length > 0 && municipioMode?.enter) {
+        if (claves.length > 0 && municipioMode?.enter && devToolsStore.isNonProd()) {
             municipioMode.enter(claves, { fromUrl: true });
         }
     };

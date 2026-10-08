@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useMapsContext } from '@hooks/useMaps';
+import { useIsNonProd } from '@hooks/useDevTools';
 import { trackView3d } from '@services/analyticsService';
 import { suscribirVista3d, tomarVista3d } from '@pages/maps/helpers/vista3dCompartida';
 import { AJUSTES_3D_DEFAULT, LLAVE_AJUSTES_3D } from '@pages/maps/helpers/ajustes3d';
@@ -73,7 +74,9 @@ export const View3dProvider = ({ children, llaveAjustes = LLAVE_AJUSTES_3D }) =>
     } = useMapsContext();
     const [searchParams, setSearchParams] = useSearchParams();
     const [initial] = useState(() => readUrlState(searchParams));
-    const [available] = useState(webglAvailable);
+    const habilitado = useIsNonProd();
+    const [webgl] = useState(webglAvailable);
+    const available = webgl && habilitado;
     const [active, setActive] = useState(initial.active && available);
     const [pitch, setPitchState] = useState(initial.pitch);
     const [bearing, setBearing] = useState(VIEW3D_DEFAULTS.bearing);
@@ -123,6 +126,9 @@ export const View3dProvider = ({ children, llaveAjustes = LLAVE_AJUSTES_3D }) =>
     }, [showMeasurementTools]);
 
     const toggle = useCallback(() => (active ? exit() : enter()), [active, enter, exit]);
+    useEffect(() => {
+        if (!habilitado) exit();
+    }, [habilitado, exit]);
     const setPitch = useCallback((value) => setPitchState(clampPitch(value)), []);
     const setExaggeration = useCallback((value) => setExaggerationState(clampExaggeration(value)), []);
     const setters = useMemo(() => ({
@@ -201,12 +207,12 @@ export const View3dProvider = ({ children, llaveAjustes = LLAVE_AJUSTES_3D }) =>
     }, [active, roundedPitch, extrudedKey, searchParams, setSearchParams]);
 
     const value = useMemo(() => ({
-        present: true, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef, grupo3dRef,
+        present: habilitado, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus, map3dRef, grupo3dRef,
         ...ajustes, ajustes, setAjuste, ...setters, orbita, inundacion, setInundacion,
         enter, exit, toggle, setPitch, setBearing, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
         setOrbita, restablecer,
     }), [
-        available, active, pitch, bearing, exaggeration, extruded, extrusionStatus,
+        habilitado, available, active, pitch, bearing, exaggeration, extruded, extrusionStatus,
         ajustes, setAjuste, setters, orbita, inundacion, setInundacion,
         enter, exit, toggle, setPitch, setExaggeration, toggleExtrusion, isExtruded, reportExtrusion,
         restablecer,

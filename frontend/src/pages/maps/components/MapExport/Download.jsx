@@ -51,7 +51,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
     } = useMapDownload();
     const { compareMode, selectedLayerForSymbology, allLayers, measurements } = useMapsContext();
     const isSwipe = !!compareMode?.active;
-    const { active: en3d } = useView3d();
+    const { active: en3d, present: con3d } = useView3d();
     const { disponibles, idElegida, setElegida, elegirPorGeometria, geometria: seleccion, trazos } = useSeleccionDescarga(measurements);
     const haySeleccion = !!seleccion && !isSwipe;
     const [includeSwipeBar, setIncludeSwipeBar] = useState(true);
@@ -214,7 +214,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                     onCerrar={() => handleSetIsPanelOpen(false)}
                     className={`gap-3 min-h-0 overflow-y-auto ${HIDDEN_SCROLLBAR}`}
                 >
-                    <Segmented variant="panel" ariaLabel="Qué descargar" options={opcionesTipo(isSwipe)} value={tipoDescarga} onChange={setTipoDescarga} />
+                    {con3d && <Segmented variant="panel" ariaLabel="Qué descargar" options={opcionesTipo(isSwipe)} value={tipoDescarga} onChange={setTipoDescarga} />}
                     {tipoDescarga === 'animacion' ? (
                         <PanelAnimacion titulo={title} totalCapas={layersWithLegends.length} onListo={() => handleSetIsPanelOpen(false)} />
                     ) : (

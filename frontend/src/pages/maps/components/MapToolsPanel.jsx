@@ -8,6 +8,7 @@ import FloatingIconButton from '@components/FloatingIconButton';
 import ExportPreview from './MapExport/ExportPreview';
 import { useShareDirtiness } from '@pages/maps/hooks/useShareDirtiness';
 import { useMapsContext } from '@hooks/useMaps';
+import { useIsNonProd } from '@hooks/useDevTools';
 import { SIDER_EXPANDED_WIDTH, TOOLS_COMPACT_MEDIA_QUERY } from '@constants/sider';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import { useIsMobile } from '@hooks/useIsMobile';
@@ -20,6 +21,7 @@ import {
 } from '@pages/maps/helpers/toolsPanelCollapse';
 
 const MapToolsPanel = () => {
+    const isNonProd = useIsNonProd();
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [isMunicipioOpen, setIsMunicipioOpen] = useState(false);
@@ -99,11 +101,13 @@ const MapToolsPanel = () => {
                         collapsed={isCollapsed}
                         expanded={false}
                     />
-                    <MunicipioFilterButton 
-                        municipioMode={municipioMode} 
-                        onOpenChange={setIsMunicipioOpen} 
-                        collapsed={isCollapsed} 
-                    />
+                    {isNonProd && (
+                        <MunicipioFilterButton
+                            municipioMode={municipioMode}
+                            onOpenChange={setIsMunicipioOpen}
+                            collapsed={isCollapsed}
+                        />
+                    )}
                     <ShareButton
                         onOpenChange={setIsShareOpen}
                         isDirty={isDirty}

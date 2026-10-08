@@ -7,6 +7,8 @@ import { initialCompareMode } from '@pages/maps/helpers/swipeMode';
 import { marcarShareAplicado } from '@pages/maps/helpers/shareAplicacion';
 import { leerVista3d, pedirVista3d } from '@pages/maps/helpers/vista3dCompartida';
 import { registrarPendiente } from '@pages/maps/helpers/sesion/pendientes';
+import { SERVICE_HEXBIN } from '@pages/maps/helpers/serviceMode';
+import { devToolsStore } from '@services/devToolsStore';
 
 const VIEW_RETRY_INTERVAL_MS = 100;
 const VIEW_RETRY_MAX_ATTEMPTS = 60;
@@ -144,7 +146,7 @@ export const useShareDeserializer = () => {
                 [...paneAEntries, ...paneBEntries].forEach((entry) => {
                     if (!entry.service) return;
                     const layerId = resolveRefToId(entry.slug, layerTree);
-                    if (layerId) setServiceMode(layerId, entry.service);
+                    if (layerId && (entry.service !== SERVICE_HEXBIN || devToolsStore.isNonProd())) setServiceMode(layerId, entry.service);
                 });
             }
 
@@ -160,7 +162,7 @@ export const useShareDeserializer = () => {
             }
 
             const swipePosition = typeof payload.position === 'number' ? payload.position : 0.5;
-            if (typeof setCompareMode === 'function') {
+            if (typeof setCompareMode === 'function' && devToolsStore.isNonProd()) {
                 const stillActiveIds = new Set([
                     ...paneA.activeLayerIds,
                     ...paneB.activeLayerIds,
@@ -189,7 +191,7 @@ export const useShareDeserializer = () => {
             }
             restoreLoopPrefs(payload.loop);
             const sharedMunicipios = shared?.municipios;
-            if (sharedMunicipios?.selected?.length > 0 && municipioMode?.enter) {
+            if (sharedMunicipios?.selected?.length > 0 && municipioMode?.enter && devToolsStore.isNonProd()) {
                 municipioMode.enter(sharedMunicipios.selected, { fromUrl: true, scope: sharedMunicipios.scope });
             }
             restoreVista3d(shared.vista3d);
@@ -221,7 +223,7 @@ export const useShareDeserializer = () => {
             }
             if (entry.visible === false) hidden.push(layerId);
             if (typeof entry.opacity === 'number') opacities[layerId] = entry.opacity;
-            if (entry.service) services.push([layerId, entry.service]);
+            if (entry.service && (entry.service !== SERVICE_HEXBIN || devToolsStore.isNonProd())) services.push([layerId, entry.service]);
             if (entry.fill === false) sinFondo.push(layerId);
             if (Number.isInteger(entry.palette)) tonos.push([layerId, entry.palette]);
 
@@ -267,7 +269,7 @@ export const useShareDeserializer = () => {
 
         restoreLoopPrefs(payload.loop);
         const singleMunicipios = payload.municipios;
-        if (singleMunicipios?.selected?.length > 0 && municipioMode?.enter) {
+        if (singleMunicipios?.selected?.length > 0 && municipioMode?.enter && devToolsStore.isNonProd()) {
             municipioMode.enter(singleMunicipios.selected, { fromUrl: true, scope: singleMunicipios.scope });
         }
         restoreVista3d(payload.vista3d);

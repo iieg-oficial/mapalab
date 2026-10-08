@@ -24,12 +24,14 @@ const allTools = [
         label: 'Barra divisora',
         description: 'Swipe vertical',
         beta: true,
+        nonProdOnly: true,
     },
     {
         id: 'tabla',
         label: 'Tabla de datos',
         description: 'Columnas, celdas y filtros',
         beta: true,
+        nonProdOnly: true,
     },
     {
         id: 'anotaciones',
@@ -41,12 +43,14 @@ const allTools = [
         label: 'Catálogo',
         description: 'Explora y descarga capas sueltas',
         beta: true,
+        nonProdOnly: true,
     },
     {
         id: 'minimapa',
         label: 'Minimapa',
         description: 'Muestra dónde estás en Jalisco al acercarte',
         beta: true,
+        nonProdOnly: true,
     },
 ];
 

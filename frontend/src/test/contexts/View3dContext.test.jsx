@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router';
 
-const mocks = vi.hoisted(() => ({ ctx: null, webgl: true }));
+const mocks = vi.hoisted(() => ({ ctx: null, webgl: true, noProd: true }));
 
 vi.mock('@hooks/useMaps', () => ({ useMapsContext: () => mocks.ctx }));
+vi.mock('@hooks/useDevTools', () => ({ useIsNonProd: () => mocks.noProd }));
 vi.mock('@services/analyticsService', () => ({ trackView3d: vi.fn() }));
 vi.mock('@pages/maps/helpers/view3d', async (importOriginal) => ({
     ...(await importOriginal()),
@@ -38,6 +39,7 @@ describe('View3dContext', () => {
     beforeEach(() => {
         mocks.ctx = makeCtx();
         mocks.webgl = true;
+        mocks.noProd = true;
     });
 
     it('arranca en 3D con la inclinacion y las capas levantadas de la URL', () => {
@@ -105,6 +107,17 @@ describe('View3dContext', () => {
         mocks.webgl = false;
         const { result } = render('/mapa?vista=3d');
         expect(result.current.view.present).toBe(true);
+        expect(result.current.view.available).toBe(false);
+        expect(result.current.view.active).toBe(false);
+        let entered = true;
+        act(() => { entered = result.current.view.enter(); });
+        expect(entered).toBe(false);
+    });
+
+    it('en producción no hay 3D: ni el control ni el enlace con vista=3d', () => {
+        mocks.noProd = false;
+        const { result } = render('/mapa?vista=3d');
+        expect(result.current.view.present).toBe(false);
         expect(result.current.view.available).toBe(false);
         expect(result.current.view.active).toBe(false);
         let entered = true;

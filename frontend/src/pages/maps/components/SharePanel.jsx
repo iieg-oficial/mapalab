@@ -12,6 +12,7 @@ import { trackShareMap } from '@services/analyticsService';
 import { descargarQr } from '@utils/brandedQr';
 import { REDES_COMPARTIR, TEXTO_COMPARTIR } from '@pages/maps/helpers/shareNetworks';
 import ShareEmbed from './ShareEmbed';
+import { useIsNonProd } from '@hooks/useDevTools';
 
 const QR_PANEL = 200;
 const CARGA_DIFERIDA_MS = 300;
@@ -36,6 +37,7 @@ const SharePanel = ({ link, isDirty = false, loadedShareId = null, onEntrar, onS
     const [errorLocal, setErrorLocal] = useState(null);
     const [descargando, setDescargando] = useState(false);
     const [verInsertar, setVerInsertar] = useState(false);
+    const isNonProd = useIsNonProd();
     const [mostrarCarga, setMostrarCarga] = useState(false);
     const [accionesQr, setAccionesQr] = useState(false);
     const [enlaceCompleto, setEnlaceCompleto] = useState(false);
@@ -202,7 +204,7 @@ const SharePanel = ({ link, isDirty = false, loadedShareId = null, onEntrar, onS
                 </div>
             )}
 
-            {share && (
+            {share && isNonProd && (
                 <div className="flex justify-center mt-2">
                     <Tooltip content="Muestra el código para insertar este mapa en otra página" placement="top" delay={400}>
                         <button
@@ -218,7 +220,7 @@ const SharePanel = ({ link, isDirty = false, loadedShareId = null, onEntrar, onS
                 </div>
             )}
 
-            {share && verInsertar && <ShareEmbed shareId={share.id} />}
+            {share && isNonProd && verInsertar && <ShareEmbed shareId={share.id} />}
 
             {mensajeError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-[11px]/[16px] font-garet text-red-700 flex items-start gap-2">

@@ -1,10 +1,13 @@
 import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
 import { useGoToCatalogo } from '@pages/catalogo/useGoToCatalogo';
+import { useIsNonProd } from '@hooks/useDevTools';
 import IconoHerramienta from './IconoHerramienta';
 
 const CatalogoEntryButton = () => {
     const goToCatalogo = useGoToCatalogo();
+    const isNonProd = useIsNonProd();
+    if (!isNonProd) return null;
 
     return (
         <Tooltip content="Catálogo: explora y descarga capas sueltas del IIEG" placement="top" delay={300}>

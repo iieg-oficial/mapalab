@@ -7,6 +7,7 @@ import {
     salirDeSesion,
     urlDeEntrada,
 } from '@services/sesionService';
+import { useIsNonProd } from '@hooks/useDevTools';
 
 const VACIO = { habilitada: false, usuario: null, capasPrivadas: 0 };
 
@@ -27,12 +28,13 @@ export const SesionProvider = ({ children }) => {
     const [entrando, setEntrando] = useState(false);
     const [error, setError] = useState(() => leerErrorDeUrl());
     const popupRef = useRef(null);
+    const habilitada = useIsNonProd();
 
     const refrescar = useCallback(async () => {
-        const nuevo = await fetchSesion();
+        const nuevo = habilitada ? await fetchSesion() : VACIO;
         setEstado(nuevo);
         return nuevo;
-    }, []);
+    }, [habilitada]);
 
     useEffect(() => {
         refrescar();

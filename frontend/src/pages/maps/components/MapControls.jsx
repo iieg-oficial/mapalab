@@ -15,6 +15,7 @@ import Map3DAyuda from './Map3D/Map3DAyuda';
 import Tooltip from '@components/Tooltip';
 import PillCloseButton from '@components/PillCloseButton';
 import Badge from '@components/Badge';
+import { useIsNonProd } from '@hooks/useDevTools';
 import BotonNorte from './BotonNorte';
 import { useMiUbicacion } from '@hooksMaps/useMiUbicacion';
 import MinimapaEscritorio from './Minimapa/MinimapaEscritorio';
@@ -32,6 +33,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = 
     const isSwipe = !!compareMode?.active;
     const view3d = useView3d();
     const dron = useDron();
+    const isNonProd = useIsNonProd();
     const soloPastilla = dron.activo && isMobile;
     const view3dTitle = !view3d.available
         ? 'Tu navegador no tiene WebGL2, necesario para la vista 3D'
@@ -101,9 +103,9 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = 
                 bottom: soloPastilla ? `calc(15.5rem + ${margenes.bottom}px)` : `calc(3.75rem + ${margenes.bottom}px)`,
             }}
         >
-            <BotonNorte getActiveMap={getActiveMap} ancho={view3d.active && !soloPastilla} />
+            {isNonProd && <BotonNorte getActiveMap={getActiveMap} ancho={view3d.active && !soloPastilla} />}
             {soloPastilla && <Map3DBar />}
-            {conMinimapa && pantallaChica && !view3d.active && !soloPastilla && <MinimapaMovil />}
+            {conMinimapa && isNonProd && pantallaChica && !view3d.active && !soloPastilla && <MinimapaMovil />}
             <div className={`relative flex flex-col justify-center items-center rounded-[20px] bg-white shadow-[0_5px_20px_#1A26641A] ${soloPastilla ? 'hidden' : ''}`}>
                 <button
                     onClick={handleZoomIn}
@@ -197,7 +199,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = 
                         <Map3DBar />
                     </div>
                 )}
-                {conMinimapa && !pantallaChica && <MinimapaEscritorio />}
+                {conMinimapa && isNonProd && !pantallaChica && <MinimapaEscritorio />}
             </div>
         </div>
     );
