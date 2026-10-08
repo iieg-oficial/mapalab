@@ -212,3 +212,74 @@ html::-webkit-scrollbar-thumb:hover {
         display: none;
     }
 }
+
+@keyframes muertos-caer {
+    0%   { transform: translate(0, -100%) rotate(0deg); }
+    25%  { transform: translate(calc(14px * var(--muertos-lado)), calc(25dvh - 50%)) rotate(calc(60deg * var(--muertos-lado))); }
+    50%  { transform: translate(calc(-6px * var(--muertos-lado)), calc(50dvh - 75%)) rotate(calc(130deg * var(--muertos-lado))); }
+    75%  { transform: translate(calc(12px * var(--muertos-lado)), calc(75dvh - 90%)) rotate(calc(200deg * var(--muertos-lado))); }
+    100% { transform: translate(calc(4px * var(--muertos-lado)), calc(100dvh - 100%)) rotate(calc(250deg * var(--muertos-lado))); }
+}
+
+@keyframes muertos-cortar {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    12%  { transform: translate(0, -6px) rotate(-14deg); }
+    100% { transform: translate(var(--muertos-dx), var(--muertos-dy)) rotate(150deg); }
+}
+
+@keyframes muertos-mecer {
+    0%, 100% { transform: rotate(-3deg); }
+    50%      { transform: rotate(3deg); }
+}
+
+@keyframes muertos-aleteo {
+    0%   { transform: rotate(0deg); }
+    18%  { transform: rotate(16deg); }
+    40%  { transform: rotate(-11deg); }
+    62%  { transform: rotate(6deg); }
+    82%  { transform: rotate(-3deg); }
+    100% { transform: rotate(0deg); }
+}
+
+@keyframes muertos-girar {
+    to { transform: rotate(360deg); }
+}
+
+.muertos-flor-cae {
+    animation: muertos-caer 30s linear forwards;
+    transition: opacity 1.5s ease;
+    will-change: transform;
+}
+
+.muertos-flor-cortada {
+    animation: muertos-cortar 1.8s cubic-bezier(0.45, 0, 0.9, 0.6) forwards;
+}
+
+.muertos-bandera {
+    animation: muertos-mecer 5s ease-in-out infinite;
+}
+
+.muertos-colgante:hover .muertos-bandera {
+    animation: muertos-aleteo 1.2s ease-out;
+}
+
+.muertos-flor-lenta {
+    animation: muertos-girar 90s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .muertos-flor-cae {
+        animation: none;
+        transform: translate(0, calc(100dvh - 100%));
+    }
+
+    .muertos-flor-cortada {
+        animation-duration: 10ms;
+    }
+
+    .muertos-bandera,
+    .muertos-colgante:hover .muertos-bandera,
+    .muertos-flor-lenta {
+        animation: none;
+    }
+}

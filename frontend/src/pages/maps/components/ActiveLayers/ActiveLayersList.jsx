@@ -19,6 +19,7 @@ import { useLayers } from '@hooks/useLayers';
 import { resolveSelectedLayerLabel } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { getDefaultMapView } from '@pages/maps/helpers/defaultView';
 import { isInegiBaseMode } from '@pages/maps/helpers/basemaps';
+import BanderasPapelPicado from '@mapsComponents/DiaDeMuertos/BanderasPapelPicado';
 
 const ActiveLayersListInner = ({ onCollapseChange }) => {
     const {
@@ -199,7 +200,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
 
     if (collapse.isCollapsed) {
         return (
-            <div className={`w-auto flex items-center justify-end pt-1 pl-1`}>
+            <div className={`relative w-auto flex items-center justify-end pt-1 pl-1`}>
                 <Tooltip content={unifiedLayers.length > 0 ? 'Expandir capas activas' : 'No hay capas activas'}>
                     <button
                         onClick={collapse.handleExpand}
@@ -209,12 +210,13 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
                         <Badge visible={unifiedLayers.length > 0} count={unifiedLayers.length} className="absolute -top-1 -left-1" />
                     </button>
                 </Tooltip>
+                <BanderasPapelPicado variante="pila" />
             </div>
         );
     }
 
     return (
-        <div className="w-auto px-4.5 pt-2 pb-4.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] flex-1 min-h-0 flex flex-col max-md:pointer-events-auto">
+        <div className="relative w-auto px-4.5 pt-2 pb-4.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] flex-1 min-h-0 flex flex-col max-md:pointer-events-auto">
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                     <Icon name="capa_activa" className="size-8" />
@@ -279,6 +281,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
                     </SortableList>
                 )}
             </ScrollContainer>
+            <BanderasPapelPicado />
         </div>
     );
 };
