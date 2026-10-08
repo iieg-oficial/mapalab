@@ -16,4 +16,10 @@ export const tramosDeForma = (forma) => TRAMOS[forma] ?? 0;
 
 export const esEventoLite = (evento) => evento?.modo === 'lite';
 
+export const TEMA_DIA_DE_MUERTOS = 'dia-de-muertos';
+
+export const decoracionDeEventos = (eventos) => (eventos || []).find((e) => e?.decoracion && e.decoracion !== 'ninguna') || null;
+
+export const esDiaDeMuertos = (decoracion) => Boolean(decoracion?.activa) && decoracion.tema === TEMA_DIA_DE_MUERTOS;
+
 export const animacionDeDato = (fact, evento) => fact?.animacion || evento?.animacion || ANIMACION_POR_DEFECTO;

@@ -23,6 +23,7 @@ import { useZenMode } from './ZenMode';
 import MenuItem from './MenuItem';
 import SiderEdgeButtons from './SiderEdgeButtons';
 import EnvBadge from './EnvBadge';
+import LogoIieg from './DiaDeMuertos/LogoIieg';
 
 const SIDER_EVENTS_ENABLED = false;
 const EMPTY_EVENTOS = Object.freeze([]);
@@ -305,16 +306,7 @@ const MapSider = ({ className = '' }) => {
                     </div>
                 )}
 
-                <Logo
-                    name="iieg"
-                    size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'}
-                    expanded={isExpanded}
-                    visible={!treatAsMobile || isOpen}
-                    onClick={handleIiegLogoClick}
-                    tooltip="Acerca de Mapa Lab"
-                    tooltipPlacement="top"
-                    className="shrink-0 p-3 my-2 w-full"
-                />
+                <LogoIieg isExpanded={isExpanded} visible={!treatAsMobile || isOpen} onClick={handleIiegLogoClick} />
             </aside>
             {!isSwipe && (
                 <ExternalEventoWidget eventos={eventosCompletos} activeLayerIds={contextActiveLayerIds} onToggleLayer={onToggleLayer} treatAsMobile={treatAsMobile} isOpen={isOpen} toolsPanelVisible={toolsPanelVisible} siderWidth={width} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />

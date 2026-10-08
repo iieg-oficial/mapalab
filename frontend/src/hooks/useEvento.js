@@ -6,3 +6,5 @@ export const useEventoContext = () => {
     if (!context) throw new Error('useEventoContext debe usarse dentro de un EventoProvider');
     return context;
 };
+
+export const useDecoracionEvento = () => useEventoContext().decoracion;

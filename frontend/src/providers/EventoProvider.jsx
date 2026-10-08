@@ -3,6 +3,7 @@ import EventoContext from '@contexts/EventoContext';
 import { useMapsContext } from '@hooks/useMaps';
 import { useEventos } from '@hooks/useEventos';
 import { useEventoLayerIndex } from '@hooks/useEventoLayerIndex';
+import { decoracionDeEventos } from '@pages/maps/helpers/eventoDiversion';
 
 
 const EventoProvider = ({ children }) => {
@@ -11,6 +12,17 @@ const EventoProvider = ({ children }) => {
     const { eventoByLayerId, layerIdsByEvento, aliasByLayerId } = useEventoLayerIndex(eventos, allLayers);
 
     const [activeEvento, setActiveEvento] = useState(null);
+    const [decoracionEncendida, setDecoracionEncendida] = useState(false);
+    const alternarDecoracion = useCallback(() => setDecoracionEncendida((v) => !v), []);
+    const decoracion = useMemo(() => {
+        const evento = decoracionDeEventos(eventos);
+        return {
+            tema: evento?.decoracion || null,
+            slug: evento?.slug || null,
+            activa: Boolean(evento) && decoracionEncendida,
+            alternar: alternarDecoracion,
+        };
+    }, [eventos, decoracionEncendida, alternarDecoracion]);
 
     const findEventoByLayerId = useCallback(
         (layerId) => eventoByLayerId.get(layerId) || null,
@@ -34,7 +46,8 @@ const EventoProvider = ({ children }) => {
         findEventoByLayerId,
         getLayerIdsByEvento,
         getAliasByLayerId,
-    }), [eventos, loading, error, activeEvento, findEventoByLayerId, getLayerIdsByEvento, getAliasByLayerId]);
+        decoracion,
+    }), [eventos, loading, error, activeEvento, findEventoByLayerId, getLayerIdsByEvento, getAliasByLayerId, decoracion]);
 
     return (
         <EventoContext.Provider value={value}>
