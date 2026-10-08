@@ -5,7 +5,9 @@ import { useSider } from '@contexts/SiderContext';
 import Loading from '@components/Loading';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Tooltip from '@components/Tooltip';
+import { useAvisoSeleccion } from './avisoSeleccion';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
+import { hasHexbinMode } from '@pages/maps/helpers/serviceMode';
 import { LOOP_INTERVAL_PRESETS } from '@hooksMaps/useDateLoop';
 import { handleKeyActivate } from '@utils/a11y';
 
@@ -13,21 +15,22 @@ import { DragHandle, LayerTitle, PinBadge, EventoLayerIcon, GeometryTypeBadge } 
 import LayerBadge from '@mapsComponents/LayerBadge';
 import LayerDateControls from './LayerDateControls';
 import LayerActionsBar from './LayerActionsBar';
+import LayerServiceSegmented from './LayerServiceSegmented';
 import LayerInlineActions from './LayerInlineActions';
 import LayerLegendInline from './LayerLegendInline';
 import LayerDownloadProgress from './LayerDownloadProgress';
-import SlotBadge from './SlotBadge';
-import { computeLabel } from './datePillHelpers';
-import { ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
+import LayerStatsInline from './LayerStatsInline';
+import LayerPeriodicityInline from './LayerPeriodicityInline';
+import { useSlotPeriodicity } from '@hooksMaps/useSlotPeriodicity';
 import { useWMSLegend } from '@hooksMaps/useWMSLegend';
-import { useLayerGeometryType } from '@hooksMaps/useLayerGeometryType';
-import { useLayerMetadata } from '@hooksMaps/useLayerMetadata';
+import { useHoverResaltado } from '@hooksMaps/useHoverResaltado';
+import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadata';
 import { useLayerDownload } from '@hooksMaps/useLayerDownload';
 import DownloadMenu from '@mapsComponents/LayerDetailModal/components/DownloadMenu';
 
 const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const { loadingLayers } = useLayerLoading();
-    const { isMobile, width: siderWidth } = useSider();
+    const { isMobile } = useSider();
     const {
         selectedLayerForSymbology,
         setSelectedLayerForSymbology,
@@ -48,12 +51,12 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         compareMode,
         removeLayerFromSlot,
         toggleLayerVisibilityInSlot,
-        setLayerSlotMembership,
         getLayerOpacity,
         setLayerOpacity,
-        setActiveSlot,
-        centerOnLayer,
-        pulseLayer
+        pulseLayer,
+        getServiceMode,
+        tieneFondo,
+        toggleHexbinFondo, municipioMode
     } = useMapsContext();
 
     const { findEventoByLayerId } = useEventoContext();
@@ -79,11 +82,12 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
 
     const itemRef = useRef(null);
     const [isHovered, setIsHovered] = useState(false);
+    const hover = useHoverResaltado(layer.id, !isMobile, setIsHovered);
     const isSelected = selectedLayerForSymbology?.id === layer.id;
     const isExpanded = isSelected;
     const showHandle = !isPinned && (isSelected || (!isMobile && isHovered));
 
-    const { metadata } = useLayerMetadata(isExpanded ? layer.id : null);
+    const { metadata } = useLayerMetadata(isExpanded ? layer.id : null, useMetadataContext(municipioMode));
     const download = useLayerDownload(isExpanded ? layer.id : null, { getFilter, getSpecificFilter, metadata });
     const canDownload = isExpanded && metadata?.capa_descargable !== false;
     const handleDownloadClick = () => {
@@ -102,10 +106,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
     const handleClickOnLayer = () => {
         const wasSelected = selectedLayerForSymbology?.id === layer.id;
         setSelectedLayerForSymbology(layer);
-        if (!wasSelected) {
-            centerOnLayer?.(layer.id, { siderWidth, isMobile, rightPanelWidth: ACTIVE_LAYERS_PANEL_WIDTH });
-            pulseLayer?.(layer.id);
-        }
+        if (!wasSelected) pulseLayer?.(layer.id);
     };
 
     const targetSlot = slotMembership === 'AB' ? compareMode?.activeSlot : slotMembership;
@@ -127,27 +128,30 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         toggleLayerVisibility(layer.id);
     };
 
-    const handleSetSelectedLayerClick = (e) => {
+
+    const handleSetSelectedLayerClick = (e) => { e.stopPropagation(); setSelectedLayer(layer); };
+
+    const fechasEnItem = isExpanded && !compareMode?.active;
+    const periodicidad = useSlotPeriodicity(fechasEnItem ? layer.id : null);
+    const [fechasAbiertas, setFechasAbiertas] = useState(false);
+    const mostrarFechas = fechasEnItem && fechasAbiertas && periodicidad.hasPeriodicity;
+    useEffect(() => { if (!fechasEnItem) setFechasAbiertas(false); }, [fechasEnItem]);
+    const handlePillClick = (e) => {
+        if (!fechasEnItem || !periodicidad.hasPeriodicity) return handleSetSelectedLayerClick(e);
         e.stopPropagation();
-        setSelectedLayer(layer);
+        setFechasAbiertas(prev => !prev);
     };
 
     const loopState = getLoopState?.(layer.id);
     const isLooping = loopState?.isPlaying;
 
     const layerDef = useMemo(() => findLayerDef(layer.id, allLayers), [layer.id, allLayers]);
+    const hexbinIds = layer.childIds?.length ? layer.childIds : [layer.id];
+    const enHexagonos = hasHexbinMode(hexbinIds, getServiceMode);
+
     const rasterPeriodicity = layerDef?.rasterPeriodicity || null;
     const dateFilter = getSpecificFilter?.(layer.id, 'date') || null;
 
-    const hasAnyDateLabel = useMemo(() => {
-        const liveOk = computeLabel(dateFilter, rasterPeriodicity).label;
-        const aOk = computeLabel(compareMode?.paneA?.filters?.[layer.id]?.date, rasterPeriodicity).label;
-        const bOk = computeLabel(compareMode?.paneB?.filters?.[layer.id]?.date, rasterPeriodicity).label;
-        return !!(liveOk || aOk || bOk);
-    }, [dateFilter, rasterPeriodicity, compareMode?.paneA?.filters, compareMode?.paneB?.filters, layer.id]);
-
-    const showSlotBadgeInTitle = !!compareMode?.active && !!slotMembership && !hasAnyDateLabel;
-    const handleCycleSlot = (next) => setLayerSlotMembership?.(layer.id, next);
 
     const effectiveOpacity = useMemo(() => {
         const own = getLayerOpacity?.(layer.id) ?? 1;
@@ -161,20 +165,9 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         return own;
     }, [getLayerOpacity, layer.id, layer.childIds]);
 
-    const canPlayLoop = useMemo(() => {
-        if (isLooping) return true;
-        return inferLoopConfig?.(layer.id) != null;
-    }, [isLooping, inferLoopConfig, layer.id]);
+    const canPlayLoop = !!isLooping || inferLoopConfig?.(layer.id) != null;
 
-    const handleDateLabelClick = (e) => {
-        e.stopPropagation();
-        setSelectedLayer(layer);
-    };
-
-    const handlePlayClick = (e) => {
-        e.stopPropagation();
-        toggleLoop?.(layer.id);
-    };
+    const handlePlayClick = (e, slot) => { e.stopPropagation(); toggleLoop?.(layer.id, null, slot); };
 
     const handleIntervalClick = (e) => {
         e.stopPropagation();
@@ -183,10 +176,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         setLoopIntervalMs?.(layer.id, LOOP_INTERVAL_PRESETS[nextIdx]);
     };
 
-    const handleDirectionClick = (e) => {
-        e.stopPropagation();
-        setLoopDirection?.(layer.id, loopDirection === 'rtl' ? 'ltr' : 'rtl');
-    };
+    const handleDirectionClick = (e) => { e.stopPropagation(); setLoopDirection?.(layer.id, loopDirection === 'rtl' ? 'ltr' : 'rtl'); };
 
     const isLoading = useMemo(() => {
         if (loadingLayers.has(layer.id)) return true;
@@ -198,10 +188,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
 
     const { hasLegend } = useWMSLegend();
     const layerHasLegend = hasLegend(layer);
-    const geometryType = useLayerGeometryType(layer.id);
 
-    const warningContent = 'Al seleccionar un punto en el mapa, éste mostrará información de esta capa. Puedes cambiar la selección dando clic en la capa que necesites visualizar.';
-
+    const warningContent = useAvisoSeleccion(isSelected);
     return (
         <div
             ref={itemRef}
@@ -215,16 +203,12 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
             `}
             onClick={handleClickOnLayer}
             onKeyDown={handleKeyActivate(handleClickOnLayer)}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseEnter={hover.entrar}
+            onMouseLeave={hover.salir}
         >
             <Tooltip
-                content={isSelected ? warningContent : null}
-                variant="warning"
-                placement={isMobile ? 'top' : 'left'}
-                disabled={!isSelected || download.menuOpen}
-                triggerBlock
-                triggerClassName="w-full"
+                content={isSelected ? warningContent : null} variant="warning" placement={isMobile ? 'top' : 'left'}
+                disabled={!isSelected || download.menuOpen || !warningContent} triggerBlock triggerClassName="w-full"
             >
                 <div className="flex flex-col gap-1.5 px-2 py-2 w-full">
                     <div className="flex items-center gap-2 min-h-8 w-full">
@@ -246,13 +230,14 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                             <EventoLayerIcon evento={layerEvento} />
                         )}
                         <LayerTitle name={layer.name} />
-                        <GeometryTypeBadge type={geometryType} />
                         <LayerBadge badge={layer.badge} />
+                        <LayerServiceSegmented
+                            layer={layer}
+                            activo={isSelected}
+                            fallback={<GeometryTypeBadge type={layer.geometryType} hexbin={enHexagonos} />}
+                        />
                         {isLoading && !isLooping && (
                             <Loading visible={true} size="size-5" border="border-2" />
-                        )}
-                        {showSlotBadgeInTitle && (
-                            <SlotBadge membership={slotMembership} onCycle={handleCycleSlot} layerId={layer.id} />
                         )}
                     </div>
 
@@ -266,16 +251,21 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 slotMembership={slotMembership}
                                 liveDateFilter={dateFilter}
                                 isLooping={isLooping}
+                                loopSlot={loopState?.slot ?? null}
                                 isLoading={isLoading}
                                 canPlayLoop={canPlayLoop}
                                 loopIntervalMs={loopIntervalMs}
                                 loopDirection={loopDirection}
-                                onPillClick={handleDateLabelClick}
+                                onPillClick={handlePillClick}
+                                emptyLabel={periodicidad.hasPeriodicity ? 'TODAS' : null}
+                                pillTooltip={fechasEnItem && periodicidad.hasPeriodicity ? (mostrarFechas ? 'Ocultar fechas' : 'Elegir fecha') : undefined}
+                                pillExpanded={fechasEnItem ? mostrarFechas : undefined}
+                                onPillClear={fechasEnItem ? (e) => { e.stopPropagation(); periodicidad.forSlot(null).clear(); } : undefined}
                                 onPlay={handlePlayClick}
                                 onInterval={handleIntervalClick}
                                 onDirection={handleDirectionClick}
-                                onCycleSlot={handleCycleSlot}
                             />
+                            {mostrarFechas && <LayerPeriodicityInline layerId={layer.id} periodicidad={periodicidad} allLayers={allLayers} />}
                             <LayerActionsBar
                                 layerId={layer.id}
                                 visible={layer.visible}
@@ -286,12 +276,14 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 onToggleVisibility={handleToggleVisibilityClick}
                                 onOpenDetails={handleSetSelectedLayerClick}
                                 onChangeOpacity={(v) => setLayerOpacity?.(layer.id, v)}
+                                enHexagonos={enHexagonos}
+                                conFondo={tieneFondo?.(hexbinIds[0]) !== false}
+                                onToggleFondo={() => toggleHexbinFondo?.(hexbinIds)}
                                 onRemove={handleRemoveClick}
                                 hasLegend={layerHasLegend}
                                 slotMembership={slotMembership}
                                 activeSlot={compareMode?.activeSlot}
-                                onSwitchSlot={setActiveSlot}
-                                canDownload={canDownload}
+                                canDownload={canDownload} hasStats={Boolean(metadata?.numeralia?.some(s => s.nombre && s.valor))}
                                 isDownloading={download.downloading}
                                 onDownloadClick={handleDownloadClick}
                                 downloadButtonRef={download.menuAnchorRef}
@@ -314,8 +306,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                     />
                                 </>
                             )}
-                            <LayerLegendInline
-                                layer={layer}
+                            <LayerStatsInline metadata={metadata} layerId={layer.id} />
+                            <LayerLegendInline layer={layer}
                                 compareMode={compareMode}
                                 slotMembership={slotMembership}
                             />

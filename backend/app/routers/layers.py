@@ -1,11 +1,13 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 
 from app.auth.internal_token import require_internal_token
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.repositories.layers_repository import LayersRepository
+from app.routers.sesion import usuario_actual
+from app.services import acceso_capas, arbol_privado
 from app.services.layer_tree_service import get_cached_state, invalidate_memory_cache, refresh_cache
 from app.utils.api_responses import api_responses
 
@@ -106,6 +108,8 @@ def get_workspaces():
 )
 def refresh_cache_endpoint():
     result = refresh_cache()
+    acceso_capas.olvidar_cache()
+    arbol_privado.olvidar_cache()
     return {
         'ok': True,
         'etag': result['etag'],
@@ -127,7 +131,19 @@ def refresh_cache_endpoint():
 )
 def invalidate_cache_endpoint():
     invalidate_memory_cache()
+    acceso_capas.olvidar_cache()
+    arbol_privado.olvidar_cache()
     return {'ok': True}
+
+
+@router.get(
+    '/tree/completo',
+    include_in_schema=False,
+    dependencies=[Depends(require_internal_token)],
+)
+def get_layer_tree_completo(response: Response):
+    response.headers['Cache-Control'] = 'private, no-store'
+    return arbol_privado.arbol_completo_marcado()
 
 
 @router.get(
@@ -187,12 +203,14 @@ def search_layers(
     ),
 )
 def resolve_layer_ref(
+    request: Request,
     ref: str = Query(min_length=1, description='slug o alias publico'),
 ):
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
     with conn.get_session() as session:
         layer = LayersRepository.find_layer_by_slug_or_alias(session, ref)
-        if layer is None:
+        usuario = usuario_actual(request)
+        if layer is None or not acceso_capas.puede_ver(layer.id, usuario['uid'] if usuario else None):
             raise HTTPException(status_code=404, detail=f"No existe capa para ref '{ref}'")
         return {
             'id': layer.id,

@@ -11,7 +11,7 @@ import { findAncestorChain } from '../helpers/layers/utils/layerHelpers';
 const HIGHLIGHT_Z_INDEX = 998;
 
 const HIGHLIGHT_SHAPES = ['area', 'linea', 'off'];
-const DEFAULT_HIGHLIGHT_COLOR = 'morado';
+const DEFAULT_HIGHLIGHT_COLOR = 'naranja';
 const DEFAULT_HIGHLIGHT_SHAPE = 'area';
 
 const HEX_PATTERN = /^#[0-9A-Fa-f]{6}$/;

@@ -3,10 +3,14 @@ import { useIsMobile } from '@hooks/useIsMobile';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
+import PillCloseButton from '@components/PillCloseButton';
+import { DOCK_ID } from '@pages/maps/components/DockPills';
 import PeriodicitySection from '@pages/maps/components/LayerDetailModal/components/PeriodicitySection';
 import { describeDateFilter, formatDateFilterPill } from '@pages/maps/helpers/dateLoopHelpers';
 import { RADIUS_ICON, toneButtonFor } from '@pages/maps/helpers/periodicityTones';
 import { PANEL_SHADOW } from '../helpers/catalogoStyles';
+import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
+import CatalogoMunicipioPill, { CERRAR_DEBAJO } from './CatalogoMunicipioPill';
 
 const SIN_FILTRO = 'Todas las fechas';
 
@@ -14,8 +18,9 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
     const [abierto, setAbierto] = useState(false);
     const containerRef = useRef(null);
     const isMobile = useIsMobile();
+    const { municipio } = useCatalogoTiempoContext();
 
-    const { layerId, periodicidad, loading, isRaster, hasPeriodicidad, filtro, applyFilter, clearFilter, getSpecificFilter } = tiempo;
+    const { layerId, periodicidad, loading, isRaster, geometria, hasPeriodicidad, filtro, applyFilter, clearFilter, getSpecificFilter } = tiempo;
     const rasterPeriodicity = isRaster ? periodicidad : null;
     const {
         stopLoop, getLoopPrefs, setLoopIntervalMs, setLoopDirection,
@@ -28,7 +33,14 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
         setAbierto(false);
     }, [layerId]);
 
-    if (!hasPeriodicidad && !loading) return null;
+    useEffect(() => {
+        if (!abierto) setExpandedYear?.(null);
+    }, [abierto, setExpandedYear]);
+
+    useEffect(() => () => setExpandedYear?.(null), [setExpandedYear]);
+
+    const conFechas = hasPeriodicidad || loading;
+    const conMunicipio = municipio.disponible;
 
     const prefs = getLoopPrefs?.(layerId);
     const etiqueta = formatDateFilterPill(describeDateFilter({ filter: filtro, rasterPeriodicity })) || SIN_FILTRO;
@@ -54,44 +66,47 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
             ref={containerRef}
             className="fixed top-17 left-26 md:top-4 md:left-1/2 md:-translate-x-1/2 z-20 w-auto md:w-[min(560px,calc(100vw-26rem))] flex flex-col items-start md:items-center"
         >
-            <div className={`flex items-center gap-1.5 h-10 px-1.5 bg-white rounded-full ${PANEL_SHADOW}`}>
-                {canPlay && (
-                    <Tooltip content={isLoopPlaying ? 'Pausar animación' : 'Ver animación'} placement="bottom" delay={200}>
+            <div className="flex items-center gap-2">
+                <div id={DOCK_ID} data-cerrar-abajo="" className="contents" />
+                {conFechas && (
+                    <div className={`group relative flex items-center gap-1.5 h-10 px-1.5 bg-white rounded-full ${PANEL_SHADOW}`}>
+                        {canPlay && (
+                            <Tooltip content={isLoopPlaying ? 'Pausar animación' : 'Ver animación'} placement="bottom" delay={200}>
+                                <button
+                                    type="button"
+                                    onClick={onToggleLoop}
+                                    aria-label={isLoopPlaying ? 'Pausar animación' : 'Ver animación'}
+                                    className={`size-7 shrink-0 ${RADIUS_ICON} flex items-center justify-center cursor-pointer ${play.className}`}
+                                >
+                                    <Icon name={isLoopPlaying ? 'pause' : 'play'} className="size-3 shrink-0" />
+                                </button>
+                            </Tooltip>
+                        )}
+
                         <button
                             type="button"
-                            onClick={onToggleLoop}
-                            aria-label={isLoopPlaying ? 'Pausar animación' : 'Ver animación'}
-                            className={`size-7 shrink-0 ${RADIUS_ICON} flex items-center justify-center cursor-pointer ${play.className}`}
+                            onClick={() => setAbierto((v) => !v)}
+                            aria-expanded={abierto}
+                            className={`px-3 py-1 rounded-full text-[12px] font-garet font-bold tabular-nums transition-colors cursor-pointer ${abierto
+                                ? 'bg-purple-deep text-white'
+                                : 'text-purple hover:bg-purple-soft'} ${isLoopPlaying ? 'animate-pulse' : ''}`}
                         >
-                            <Icon name={isLoopPlaying ? 'pause' : 'play'} className="size-3 shrink-0" />
+                            {loading ? 'Cargando fechas…' : etiqueta}
                         </button>
-                    </Tooltip>
+
+                        {filtro && !abierto && (
+                            <PillCloseButton
+                                onClick={() => { stopLoop?.(layerId); clearFilter(); }}
+                                tooltip="Quitar el filtro de fecha"
+                                ariaLabel="Quitar el filtro de fecha"
+                                placement="bottom"
+                                className={CERRAR_DEBAJO}
+                            />
+                        )}
+
+                    </div>
                 )}
-
-                <button
-                    type="button"
-                    onClick={() => setAbierto((v) => !v)}
-                    aria-expanded={abierto}
-                    className={`px-3 py-1 rounded-full text-[12px] font-garet font-bold tabular-nums transition-colors cursor-pointer ${abierto
-                        ? 'bg-purple-deep text-white'
-                        : 'text-purple hover:bg-purple-soft'} ${isLoopPlaying ? 'animate-pulse' : ''}`}
-                >
-                    {loading ? 'Cargando fechas…' : etiqueta}
-                </button>
-
-                {filtro && (!isMobile || !abierto) && (
-                    <Tooltip content="Quitar el filtro de fecha" placement="bottom" delay={200}>
-                        <button
-                            type="button"
-                            onClick={() => { stopLoop?.(layerId); clearFilter(); }}
-                            aria-label="Quitar el filtro de fecha"
-                            className={`size-7 shrink-0 ${RADIUS_ICON} hover:bg-[#FFE6EC] flex items-center justify-center transition-colors cursor-pointer`}
-                        >
-                            <Icon name="eliminar" state="hover" className="size-4 shrink-0" />
-                        </button>
-                    </Tooltip>
-                )}
-
+                {conMunicipio && <CatalogoMunicipioPill municipio={municipio.municipio} />}
             </div>
 
             {abierto && (
@@ -107,7 +122,7 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
                             onClearFilter={clearFilter}
                             onClearDateFilter={() => { stopLoop?.(layerId); clearFilter(); }}
                             onExpandedYearChange={setExpandedYear}
-                            singleSelectOnly={false}
+                            singleSelectOnly={geometria === 'polygon'}
                             hasDateFilter={!!filtro}
                             showLoopControls
                             canPlay={canPlay}
@@ -118,7 +133,6 @@ const CatalogoTimeBar = ({ tiempo, loop }) => {
                             onSetLoopDirection={(dir) => setLoopDirection(layerId, dir)}
                             onTogglePeriodicityLoop={onToggleLoop}
                             getSpecificFilterOverride={getSpecificFilter}
-                            loopAppliesToSlot
                             trailingAction={isMobile ? null : botonCerrar}
                             titleAction={isMobile ? botonCerrar : null}
                         />

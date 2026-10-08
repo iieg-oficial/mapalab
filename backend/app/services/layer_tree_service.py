@@ -23,6 +23,9 @@ def _resolve_acervo_icon(raw: str | None) -> str | None:
     return f'/acervo/{raw.lstrip("/")}'
 
 
+_TREE_SCHEMA = '5'
+_ETAG_PREFIX = f'W/"{_TREE_SCHEMA}-'
+
 _MEM_LOCK = threading.Lock()
 _MEM_TTL_SECONDS = 30
 _MEM_CACHE: dict[str, Any] = {
@@ -74,6 +77,7 @@ def _layer_to_wms_config(layer: Layer, workspace_map: dict[str, Workspace]) -> O
         'timeEnabled': layer.time_enabled,
         'timeStylePattern': layer.time_style_pattern,
         'metadataLayer': layer.metadata_layer,
+        'legendVersion': ws.legend_version,
     }
 
 
@@ -99,17 +103,16 @@ def _layer_to_search_meta(layer: Layer) -> Optional[dict]:
 
 
 def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace], aliases_map: dict[str, list[str]]) -> dict:
-    label = layer.label
-    if layer.disabled:
-        label = f'*{label}'
-
     result: dict[str, Any] = {
         'id': layer.id,
-        'label': label,
+        'label': layer.label,
         'nodeType': layer.node_type,
         'sortOrder': layer.sort_order,
         'children': [],
     }
+
+    if layer.disabled:
+        result['disabled'] = True
 
     if layer.slug:
         result['slug'] = layer.slug
@@ -179,6 +182,10 @@ def _layer_to_dict(layer: Layer, workspace_map: dict[str, Workspace], aliases_ma
     if highlight_shape:
         result['highlightShape'] = highlight_shape
 
+    geometry_type = getattr(layer, 'geometry_type', None)
+    if geometry_type:
+        result['geometryType'] = geometry_type
+
     return result
 
 
@@ -200,13 +207,60 @@ def _inherit_municipio_meta(node: dict, inherited: Optional[dict] = None) -> Non
         _inherit_municipio_meta(child, next_inherited)
 
 
+def _inherit_little_card(nodes_by_id: dict[str, dict], layers: list[Layer]) -> None:
+    """Propaga `littleCard` desde el ancestro `group` mas cercano hacia quien no tenga propia.
+
+    Una propiedad —hoja hija de un grupo— es un filtro CQL sobre el mismo feature type, asi
+    que su tarjetita es la del grupo salvo que tenga una. Resolverlo aqui evita que el visor
+    recorra ancestros: `InfoBox` lee el `littleCard` de la capa del clic y nada mas, y ese
+    clic se resuelve por nombre de capa de GeoServer, que el grupo y sus propiedades comparten
+    —el resultado dependia de en que orden se encendieron.
+
+    **Espejo exacto de `_inherit_little_card` de `dataengine/jobs/run_refresh_layer_tree.py`.**
+    Los dos codigos construyen el mismo arbol; el job corre en el cron de las 04:00 y este
+    endpoint en `refresh-cache`. Si uno propaga y el otro no, la tarjetita de una propiedad
+    cambia segun quien reconstruyo el cache. `inheritedFrom` es la pista de origen y la lee
+    el editor de mariachi para decir de quien se hereda.
+    """
+    parent_of: dict[str, Optional[str]] = {layer.id: layer.parent_id for layer in layers}
+    type_of: dict[str, str] = {layer.id: layer.node_type for layer in layers}
+    own_card: dict[str, bool] = {layer.id: layer.infobox_config is not None for layer in layers}
+
+    def ancestro_con_tarjeta(layer_id: str) -> Optional[tuple[str, dict]]:
+        cur = parent_of.get(layer_id)
+        while cur is not None:
+            ancestro = nodes_by_id.get(cur)
+            if ancestro is None:
+                break
+            if type_of.get(cur) == 'group' and ancestro.get('littleCard') is not None:
+                return cur, ancestro['littleCard']
+            cur = parent_of.get(cur)
+        return None
+
+    for layer in layers:
+        if own_card.get(layer.id):
+            continue
+        if layer.node_type not in ('leaf', 'group'):
+            continue
+        encontrado = ancestro_con_tarjeta(layer.id)
+        if encontrado is None:
+            continue
+        ancestro_id, card = encontrado
+        nodes_by_id[layer.id]['littleCard'] = card
+        nodes_by_id[layer.id]['inheritedFrom'] = ancestro_id
+
+
 def _build_tree_from_rows(
     layers: list[Layer],
     workspace_map: dict[str, Workspace],
     aliases_map: dict[str, list[str]],
+    incluir_privadas: bool = False,
 ) -> list[dict]:
     nodes_by_id: dict[str, dict] = {}
     roots: list[dict] = []
+
+    if not incluir_privadas:
+        layers = [layer for layer in layers if not layer.privada]
 
     for layer in layers:
         nodes_by_id[layer.id] = _layer_to_dict(layer, workspace_map, aliases_map)
@@ -220,17 +274,35 @@ def _build_tree_from_rows(
             if parent is not None:
                 parent['children'].append(node)
 
+    _inherit_little_card(nodes_by_id, layers)
+
     for root in roots:
         _inherit_municipio_meta(root)
 
     return roots
 
 
-def _compute_etag(max_updated_at: Optional[datetime], count: int) -> str:
+def ids_del_arbol(nodes: list[dict]) -> set[str]:
+    ids: set[str] = set()
+    for node in nodes:
+        ids.add(node['id'])
+        ids |= ids_del_arbol(node.get('children') or [])
+    return ids
+
+
+def _legend_signature(workspaces: list[Workspace]) -> str:
+    return ','.join(f'{w.alias}:{w.legend_version}' for w in sorted(workspaces, key=lambda w: w.alias))
+
+
+def _compute_etag(max_updated_at: Optional[datetime], count: int, legend_signature: str = '') -> str:
     ts = max_updated_at.isoformat() if max_updated_at else 'empty'
-    raw = f'{ts}|{count}'
+    raw = f'{ts}|{count}|{legend_signature}'
     digest = hashlib.md5(raw.encode()).hexdigest()[:16]
-    return f'W/"{digest}"'
+    return f'{_ETAG_PREFIX}{digest}"'
+
+
+def _is_current_schema(etag: Optional[str]) -> bool:
+    return bool(etag) and etag.startswith(_ETAG_PREFIX)
 
 
 def refresh_cache() -> dict[str, Any]:
@@ -244,9 +316,10 @@ def refresh_cache() -> dict[str, Any]:
         count = len(layers)
 
         tree = _build_tree_from_rows(layers, ws_map, aliases_map)
-        initial_order = LayersRepository.get_initial_order(session)
+        publicas = ids_del_arbol(tree)
+        initial_order = [i for i in LayersRepository.get_initial_order(session) if i in publicas]
         ws_list = [_workspace_to_dict(w) for w in workspaces]
-        etag = _compute_etag(max_updated_at, count)
+        etag = _compute_etag(max_updated_at, count, _legend_signature(workspaces))
 
         stmt = insert(LayerTreeCache).values(
             id=1,
@@ -295,7 +368,11 @@ def refresh_cache() -> dict[str, Any]:
 def get_cached_state() -> dict[str, Any]:
     now = time.monotonic()
     with _MEM_LOCK:
-        if _MEM_CACHE['tree'] is not None and (now - _MEM_CACHE['checked_at']) < _MEM_TTL_SECONDS:
+        if (
+            _MEM_CACHE['tree'] is not None
+            and _is_current_schema(_MEM_CACHE['etag'])
+            and (now - _MEM_CACHE['checked_at']) < _MEM_TTL_SECONDS
+        ):
             return _snapshot()
 
     try:
@@ -308,7 +385,9 @@ def get_cached_state() -> dict[str, Any]:
                     _MEM_CACHE['checked_at'] = now
                     return _snapshot()
 
-            row = session.query(LayerTreeCache).filter(LayerTreeCache.id == 1).first()
+            row = None if not _is_current_schema(db_etag) else (
+                session.query(LayerTreeCache).filter(LayerTreeCache.id == 1).first()
+            )
             if row is None:
                 result = refresh_cache()
                 return {

@@ -1,6 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DragHandle, LayerTitle, PinBadge, EventoLayerIcon } from '@pages/maps/components/ActiveLayers/LayerItemHeader';
+import { DragHandle, LayerTitle, PinBadge, EventoLayerIcon, GeometryTypeBadge } from '@pages/maps/components/ActiveLayers/LayerItemHeader';
+
+const { mockUseIsNonProd } = vi.hoisted(() => ({
+    mockUseIsNonProd: vi.fn(),
+}));
+
+vi.mock('@hooks/useDevTools', () => ({
+    useIsNonProd: mockUseIsNonProd,
+}));
 
 describe('LayerTitle', () => {
     it('renderiza el nombre como texto', () => {
@@ -51,6 +59,49 @@ describe('PinBadge', () => {
     it('renderiza un span con el icono hide', () => {
         const { container } = render(<PinBadge />);
         expect(container.querySelector('span')).toBeInTheDocument();
+    });
+});
+
+describe('GeometryTypeBadge', () => {
+    beforeEach(() => {
+        mockUseIsNonProd.mockReturnValue(true);
+    });
+
+    it('no renderiza nada sin tipo', () => {
+        const { container } = render(<GeometryTypeBadge type={null} />);
+        expect(container).toBeEmptyDOMElement();
+    });
+
+    it('no renderiza nada con un tipo desconocido', () => {
+        const { container } = render(<GeometryTypeBadge type="multipoligono" />);
+        expect(container).toBeEmptyDOMElement();
+    });
+
+    it.each([
+        ['point', 'Capa de puntos'],
+        ['line', 'Capa de líneas'],
+        ['polygon', 'Capa de polígonos'],
+        ['raster', 'Capa ráster']
+    ])('renderiza el icono de %s con su etiqueta', (type, label) => {
+        render(<GeometryTypeBadge type={type} />);
+        expect(screen.getByLabelText(label)).toBeInTheDocument();
+    });
+
+    it('renderiza la variante de hexágonos fuera de producción', () => {
+        render(<GeometryTypeBadge type="point" hexbin />);
+        expect(screen.getByLabelText('Agrupada en hexágonos')).toBeInTheDocument();
+    });
+
+    it('renderiza el tipo de capa también en producción', () => {
+        mockUseIsNonProd.mockReturnValue(false);
+        const { container } = render(<GeometryTypeBadge type="point" />);
+        expect(container).not.toBeEmptyDOMElement();
+    });
+
+    it('renderiza la variante de hexágonos también en producción', () => {
+        mockUseIsNonProd.mockReturnValue(false);
+        const { container } = render(<GeometryTypeBadge type="point" hexbin />);
+        expect(container).not.toBeEmptyDOMElement();
     });
 });
 

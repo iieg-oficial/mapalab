@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { resolveTimeStyle } from '../helpers/wmsConfig';
 import { findLayerById } from '../helpers/layers/utils/layerHelpers';
 import { buildLayerMunicipioCql } from '../helpers/municipioCqlBuilder';
+import { joinCQLFilters } from '@utils/featureInfoUtils';
 import { useLayers } from '@hooks/useLayers';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
@@ -51,10 +52,10 @@ export const useWMSFilterUpdater = ({ mapRef, wmsLayersRef, filters, getFilter, 
                                 const baseCqlFilter = wmsConfig.cqlFilter && wmsConfig.cqlFilter.trim() !== '' ? wmsConfig.cqlFilter : null;
                                 const dynamicFilter = getFilter(sub.id);
                                 const combined = combineCQLFilters(baseCqlFilter, dynamicFilter);
-                                return combined ? `(${combined})` : null;
+                                return combined || null;
                             }).filter(f => f);
 
-                            let segment = subFilters.length === 0 ? 'INCLUDE' : subFilters.join(' OR ');
+                            let segment = subFilters.length === 0 ? 'INCLUDE' : joinCQLFilters(subFilters);
 
                             if (ctx?.active) {
                                 const isRaster = merged.subLayers.some(sub => RASTER_WORKSPACES.has(sub.wmsConfig?.workspace));

@@ -1,6 +1,6 @@
 import { useCallback, useContext } from 'react';
 import { findWMSConfig, hasWMSConfig } from '../helpers/wmsConfig';
-import { buildLegendGraphicUrl } from '../helpers/legendUrl';
+import { buildLegendGraphicUrl, legendVersionParam } from '../helpers/legendUrl';
 import { useLayers } from '@hooks/useLayers';
 import MapsContext from '@contexts/MapsContext';
 
@@ -37,7 +37,7 @@ export const useWMSLegend = () => {
         if (!wmsConfig) return null;
 
         const timeValue = dateValue !== undefined ? dateValue : getFilter?.(effectiveId);
-        const cqlFilter = wmsConfig.timeStylePattern ? null : (getSpecificFilter?.(effectiveId, 'date') || null);
+        const cqlFilter = wmsConfig.timeEnabled ? null : (getSpecificFilter?.(effectiveId, 'date') || null);
 
         return buildLegendGraphicUrl({
             baseUrl: wmsConfig.baseUrl,
@@ -51,6 +51,7 @@ export const useWMSLegend = () => {
             iconHeight,
             transparent,
             rule,
+            legendVersion: wmsConfig.legendVersion,
             options: { dpi, fontName, fontSize, fontStyle, fontColor, labelMargin, forceLabels },
         });
     }, [getFilter, getSpecificFilter, layers, resolveWMSId]);
@@ -62,7 +63,8 @@ export const useWMSLegend = () => {
 
         if (!wmsConfig) return null;
 
-        const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=application/json`;
+        const url = `${wmsConfig.baseUrl}?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=${wmsConfig.layerName}&format=application/json`
+            + legendVersionParam(wmsConfig.legendVersion);
 
         try {
             const response = await fetch(url);

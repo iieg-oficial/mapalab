@@ -30,6 +30,7 @@ export const useWMSLayerFactory = () => {
 
         if (wmsConfig._embedKey) {
             wmsParams.key = wmsConfig._embedKey;
+            if (wmsConfig._embedParent) wmsParams.parent = wmsConfig._embedParent;
         }
 
         if (wmsConfig.styles && wmsConfig.styles.trim() !== '') {

@@ -14,8 +14,9 @@ describe('resolveBadge', () => {
     });
 
     it('resuelve preset con label y color por defecto', () => {
-        expect(resolveBadge({ variant: 'new' })).toEqual({
+        expect(resolveBadge({ variant: 'new' })).toMatchObject({
             label: 'Nueva',
+            inicial: 'N',
             color: '#1F9D55',
             bg: '#1F9D551A',
         });
@@ -29,8 +30,9 @@ describe('resolveBadge', () => {
     });
 
     it('usa color y label en custom', () => {
-        expect(resolveBadge({ variant: 'custom', label: 'Beta', color: '#112233' })).toEqual({
+        expect(resolveBadge({ variant: 'custom', label: 'Beta', color: '#112233' })).toMatchObject({
             label: 'Beta',
+            inicial: 'B',
             color: '#112233',
             bg: '#1122331A',
         });
@@ -128,5 +130,30 @@ describe('themeHasUnseenBadge', () => {
 
     it('false si el tema no tiene hijos', () => {
         expect(themeHasUnseenBadge({ id: 'x' }, () => false, now)).toBe(false);
+    });
+});
+
+describe('resolveBadge - inicial y detalle para el tooltip', () => {
+    it('toma la inicial en mayúscula del label', () => {
+        expect(resolveBadge({ variant: 'updated' }).inicial).toBe('A');
+        expect(resolveBadge({ variant: 'soon' }).inicial).toBe('P');
+    });
+
+    it('usa la inicial del label propio cuando lo hay', () => {
+        expect(resolveBadge({ variant: 'new', label: 'beta' }).inicial).toBe('B');
+    });
+
+    it('cada preset trae su descripción', () => {
+        expect(resolveBadge({ variant: 'updated' }).detalle).toContain('actualización');
+    });
+
+    it('un badge custom no inventa descripción', () => {
+        expect(resolveBadge({ variant: 'custom', label: 'X', color: '#112233' }).detalle).toBe(null);
+    });
+
+    it('arrastra las fechas de vigencia para el tooltip', () => {
+        const b = resolveBadge({ variant: 'new', validFrom: '2026-08-01', validUntil: '2026-09-01' });
+        expect(b.desde).toBe('2026-08-01');
+        expect(b.hasta).toBe('2026-09-01');
     });
 });

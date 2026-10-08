@@ -3,9 +3,9 @@ import { buildLayerIndex, stringHash } from './noticeHelpers';
 export { buildLayerIndex };
 
 const BADGE_PRESETS = {
-    new: { label: 'Nueva', color: '#1F9D55' },
-    updated: { label: 'Actualizada', color: '#2563EB' },
-    soon: { label: 'Próximamente', color: '#FF8300' },
+    new: { label: 'Nueva', color: '#1F9D55', detalle: 'Esta capa se publicó recientemente' },
+    updated: { label: 'Actualizada', color: '#2563EB', detalle: 'Esta capa recibió una actualización' },
+    soon: { label: 'Próximamente', color: '#FF8300', detalle: 'Esta capa está por publicarse' },
 };
 
 const softBg = (hex) => {
@@ -19,7 +19,15 @@ export const resolveBadge = (badge) => {
     const color = badge.variant === 'custom' ? badge.color : preset?.color;
     const label = badge.label || preset?.label;
     if (!color || !label) return null;
-    return { label, color, bg: softBg(color) };
+    return {
+        label,
+        inicial: label.trim().charAt(0).toUpperCase(),
+        detalle: preset?.detalle || null,
+        desde: badge.validFrom || null,
+        hasta: badge.validUntil || null,
+        color,
+        bg: softBg(color)
+    };
 };
 
 export const isBadgeInValidityWindow = (badge, now = new Date()) => {

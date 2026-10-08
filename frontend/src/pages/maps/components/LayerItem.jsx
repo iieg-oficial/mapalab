@@ -2,6 +2,8 @@ import { useMemo, useCallback, useState } from 'react';
 import Switch from '@components/Switch';
 import Checkbox from '@components/Checkbox';
 import LayerBadge from '@mapsComponents/LayerBadge';
+import Tooltip from '@components/Tooltip';
+import { IconoCandado } from '@mapsComponents/Sesion/SesionIconos';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 
 const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
@@ -43,7 +45,7 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
         };
     }, [layer, activeLayerIds, hasChildren, getAllDescendantIds]);
 
-    const isDisabled = layer.label && layer.label.startsWith('*');
+    const isDisabled = layer.disabled === true;
     const isExpanded = hasChildren && (isManuallyExpanded || allChildrenActive || hasPartialSelection || hasAnyChildActive);
 
     const handleSwitchChange = useCallback((newValue) => {
@@ -106,6 +108,11 @@ const LayerItem = ({ layer, onToggle, activeLayerIds, depth = 0 }) => {
                     onClick={handleLabelClick}
                 >
                     {layer.label}
+                    {layer.privada && (
+                        <Tooltip content="Capa privada: solo la ven las personas con permiso" placement="top" delay={300} variant="soft">
+                            <span className="inline-flex text-purple" aria-label="Capa privada"><IconoCandado className="size-3" /></span>
+                        </Tooltip>
+                    )}
                     <LayerBadge badge={layer.badge} />
                 </button>
             </div>

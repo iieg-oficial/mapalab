@@ -1,5 +1,3 @@
-BACKEND_HOST="${BACKEND_HOST:-http://localhost:8000}"
-
 purge_gateway_cache() {
     if ! docker inspect gateway-hub-nginx-1 >/dev/null 2>&1; then
         row 'Gateway' 'en otro nodo' "$C_YELLOW" 'purga su cache de mapalab_assets alla'
@@ -14,7 +12,32 @@ purge_gateway_cache() {
 }
 
 refresh_layer_tree() {
-    curl -fsS -X POST "$BACKEND_HOST/layers/refresh-cache" | python3 -m json.tool
+    local env=$1 out
+    if ! out=$(dc "$env" exec -T backend python - 2>&1 <<'PY'
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+from app.config import settings
+
+req = urllib.request.Request(
+    f"http://127.0.0.1:{os.environ['BACKEND_PORT']}/layers/refresh-cache",
+    method='POST',
+    headers={'X-Internal-Token': settings.MAPALAB_INTERNAL_TOKEN or ''},
+)
+try:
+    with urllib.request.urlopen(req, timeout=300) as res:
+        body = json.load(res)
+except urllib.error.HTTPError as err:
+    sys.exit(f'HTTP {err.code}: {err.read().decode()}')
+print(f"{body['layer_count']} capas, etag {body['etag']}")
+PY
+    ); then
+        fail "Arbol:${out##*$'\n'}" 'Revisa MAPALAB_INTERNAL_TOKEN y los logs del backend.'
+    fi
+    row 'Arbol' 'regenerado' "$C_GREEN" "$out"
 }
 
 clean_artifacts() {

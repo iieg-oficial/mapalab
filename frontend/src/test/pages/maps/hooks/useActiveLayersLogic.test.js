@@ -25,14 +25,24 @@ vi.mock('@hooks/useLayers', () => {
                             id: 'subgroup-layer',
                             label: 'Capa Subgrupo',
                             children: [
-                                { id: 'deep-child-layer', label: 'Capa Hija Profunda' }
+                                {
+                                    id: 'deep-child-layer',
+                                    label: 'Capa Hija Profunda',
+                                    wmsConfig: { workspace: 'general' },
+                                    geometryType: 'polygon'
+                                }
                             ]
                         }
                     ]
                 }
             ]
         },
-        { id: 'standalone-layer', label: 'Capa Independiente' }
+        {
+            id: 'standalone-layer',
+            label: 'Capa Independiente',
+            wmsConfig: { workspace: 'general' },
+            geometryType: 'point'
+        }
     ];
 
     const findById = (id, list) => {
@@ -101,5 +111,19 @@ describe('useActiveLayersLogic', () => {
         expect(groupLayer).toBeDefined();
         expect(groupLayer.name).toBe('Capa Grupo');
         expect(groupLayer.hasChildren).toBe(true);
+    });
+
+    it('deberia exponer el geometryType de la capa activa', () => {
+        const { result } = renderHook(() => useActiveLayersLogic(['standalone-layer'], []));
+
+        const layer = result.current.unifiedLayers.find(l => l.id === 'standalone-layer');
+        expect(layer.geometryType).toBe('point');
+    });
+
+    it('deberia heredar el geometryType del descendiente con WMS en un grupo', () => {
+        const { result } = renderHook(() => useActiveLayersLogic(['deep-child-layer'], []));
+
+        const groupLayer = result.current.unifiedLayers.find(l => l.id === 'group-layer');
+        expect(groupLayer.geometryType).toBe('polygon');
     });
 });

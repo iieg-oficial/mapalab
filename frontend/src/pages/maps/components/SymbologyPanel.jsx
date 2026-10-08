@@ -80,7 +80,7 @@ const SymbologyPanel = ({ onCollapseChange }) => {
 
                 <div className="flex items-center gap-1">
                     <button onClick={handleManualCollapse} className="cursor-pointer">
-                        <Icon name="zoomout" className="size-6" tooltip="Colapsar simbologías" />
+                        <Tooltip content="Colapsar simbologías"><Icon name="zoomout" className="size-6" /></Tooltip>
                     </button>
                 </div>
             </div>

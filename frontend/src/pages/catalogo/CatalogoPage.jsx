@@ -8,7 +8,6 @@ import CatalogoInfoBoxEditor from './components/CatalogoInfoBoxEditor';
 import LottieSpinner from '@components/LottieSpinner';
 import { LayerLoadingProvider } from '@contexts/LayerLoadingContext';
 import { CatalogoTiempoProvider } from './hooks/CatalogoTiempoProvider';
-import { fechaParamToCql, cqlToFechaParam } from './helpers/catalogoRoutes';
 import {
     fetchCatalogoCapas,
     fetchCatalogoCapa,
@@ -24,20 +23,26 @@ import {
 } from '@services/analyticsService';
 import { CATALOGO_RETURN_KEY } from './useGoToCatalogo';
 import { buildCatalogoPath, filterCapas, resolveCatalogoRoute } from './helpers/catalogoRoutes';
-import { useIsNonProd } from '@hooks/useDevTools';
+import { PARAM_VISTA, VISTA_HEXAGONOS, vistaDeParam } from './helpers/catalogoVista';
+import { PARAM_MUNICIPIOS } from './hooks/useCatalogoMunicipio';
 
 const CatalogoPage = () => {
-    const isNonProd = useIsNonProd();
     const { seg1, seg2 } = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const initialFilterRef = useRef(fechaParamToCql(searchParams.get('fecha')));
+    const initialFechaRef = useRef(searchParams.get('fecha'));
+    const initialMunicipiosRef = useRef(searchParams.get(PARAM_MUNICIPIOS));
     const [capas, setCapas] = useState([]);
     const [instituciones, setInstituciones] = useState([]);
     const [listasCargadas, setListasCargadas] = useState(false);
     const [selectedCapa, setSelectedCapa] = useState(null);
+    const capaVigenteRef = useRef(null);
+    capaVigenteRef.current = selectedCapa?.slug || null;
     const [institucionSlug, setInstitucionSlug] = useState(null);
     const [searchOpen, setSearchOpen] = useState(false);
+    const [hexbin, setHexbin] = useState(null);
+    const [extrusion, setExtrusion] = useState(null);
+    const [imagenAbierta, setImagenAbierta] = useState(false);
     const [loadingCapa, setLoadingCapa] = useState(false);
     const [capaEnEdicion, setCapaEnEdicion] = useState(null);
     const openTrackedRef = useRef(false);
@@ -82,8 +87,8 @@ const CatalogoPage = () => {
 
         const local = capas.find((capa) => capa.slug === resolved.capaSlug);
         if (local) {
+            if (capaVigenteRef.current !== local.slug) setSearchOpen(false);
             setSelectedCapa(local);
-            setSearchOpen(false);
             return undefined;
         }
 
@@ -124,7 +129,9 @@ const CatalogoPage = () => {
     const handleSelect = (nextSlug, { fromSearch = false } = {}) => {
         trackCatalogoLayerSelect({ slug: nextSlug, fromSearch });
         setSearchOpen(false);
-        navigate(buildCatalogoPath({ institucionSlug, capaSlug: nextSlug }));
+        const ruta = buildCatalogoPath({ institucionSlug, capaSlug: nextSlug });
+        const municipios = searchParams.get(PARAM_MUNICIPIOS);
+        navigate(municipios ? `${ruta}?${PARAM_MUNICIPIOS}=${municipios}` : ruta);
     };
 
     const handleCloseCapa = () => {
@@ -137,8 +144,10 @@ const CatalogoPage = () => {
     const handleSelectInstitucion = useCallback((slug) => {
         const total = slug ? filterCapas(capas, { institucionSlug: slug }).length : capas.length;
         trackCatalogoInstitucionSelect({ slug, capas: total });
-        navigate(buildCatalogoPath({ institucionSlug: slug }));
-    }, [capas, navigate]);
+        const ruta = buildCatalogoPath({ institucionSlug: slug, capaSlug: capaVigenteRef.current });
+        const consulta = capaVigenteRef.current ? searchParams.toString() : '';
+        navigate(consulta ? `${ruta}?${consulta}` : ruta);
+    }, [capas, navigate, searchParams]);
 
     const handleEditInfobox = useCallback((capa, feature = null) => {
         if (!capa) return;
@@ -146,13 +155,35 @@ const CatalogoPage = () => {
         setCapaEnEdicion({ capa, feature });
     }, []);
 
-    const handleFilterChange = useCallback((cql) => {
-        initialFilterRef.current = null;
+    const handleFechaChange = useCallback((param) => {
+        initialFechaRef.current = null;
         setSearchParams((prev) => {
+            if ((prev.get('fecha') || null) === (param || null)) return prev;
             const next = new URLSearchParams(prev);
-            const param = cqlToFechaParam(cql);
             if (param) next.set('fecha', param);
             else next.delete('fecha');
+            return next;
+        }, { replace: true });
+    }, [setSearchParams]);
+
+    const handleMunicipiosChange = useCallback((param) => {
+        initialMunicipiosRef.current = null;
+        setSearchParams((prev) => {
+            if ((prev.get(PARAM_MUNICIPIOS) || null) === (param || null)) return prev;
+            const next = new URLSearchParams(prev);
+            if (param) next.set(PARAM_MUNICIPIOS, param);
+            else next.delete(PARAM_MUNICIPIOS);
+            return next;
+        }, { replace: true });
+    }, [setSearchParams]);
+
+    const vista = vistaDeParam(searchParams.get(PARAM_VISTA));
+    const hexagonos = vista === VISTA_HEXAGONOS;
+    const cambiarVista = useCallback((siguiente) => {
+        setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            if (siguiente === VISTA_HEXAGONOS) next.set(PARAM_VISTA, VISTA_HEXAGONOS);
+            else next.delete(PARAM_VISTA);
             return next;
         }, { replace: true });
     }, [setSearchParams]);
@@ -162,17 +193,29 @@ const CatalogoPage = () => {
             <LayerLoadingProvider>
                 <CatalogoTiempoProvider
                     capa={selectedCapa}
-                    initialFilter={initialFilterRef.current}
-                    onFilterChange={handleFilterChange}
+                    initialFecha={initialFechaRef.current}
+                    onFechaChange={handleFechaChange}
+                    initialMunicipios={initialMunicipiosRef.current}
+                    onMunicipiosChange={handleMunicipiosChange}
                 >
                     <CatalogoMapView
                         capa={selectedCapa}
-                        onEditInfobox={isNonProd ? (feature) => handleEditInfobox(selectedCapa, feature) : null}
+                        hexagonos={hexagonos}
+                        onHexbin={setHexbin}
+                        onExtrusion={setExtrusion}
+                        imagenAbierta={imagenAbierta}
+                        onCerrarImagen={() => setImagenAbierta(false)}
+                        onEditInfobox={(feature) => handleEditInfobox(selectedCapa, feature)}
                     />
                     {selectedCapa && (
                         <CatalogoLegends
                             capa={selectedCapa}
                             institucionSlug={institucionSlug}
+                            vista={vista}
+                            onVista={cambiarVista}
+                            hexbin={hexagonos ? hexbin : null}
+                            extrusion={extrusion}
+                            onImagen={() => setImagenAbierta(true)}
                             onClose={handleCloseCapa}
                         />
                     )}
@@ -195,7 +238,7 @@ const CatalogoPage = () => {
                 onOpen={() => setSearchOpen(true)}
                 onClose={() => setSearchOpen(false)}
                 onSelect={handleSelect}
-                onEditInfobox={isNonProd ? (capa) => handleEditInfobox(capa) : null}
+                onEditInfobox={(capa) => handleEditInfobox(capa)}
             />
             {capaEnEdicion && (
                 <CatalogoInfoBoxEditor

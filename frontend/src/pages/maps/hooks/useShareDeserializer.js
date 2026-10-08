@@ -5,6 +5,10 @@ import { useLayers } from '@hooks/useLayers';
 import { resolveRefToId } from '@pages/maps/helpers/wmsConfig';
 import { initialCompareMode } from '@pages/maps/helpers/swipeMode';
 import { marcarShareAplicado } from '@pages/maps/helpers/shareAplicacion';
+import { leerVista3d, pedirVista3d } from '@pages/maps/helpers/vista3dCompartida';
+import { registrarPendiente } from '@pages/maps/helpers/sesion/pendientes';
+import { SERVICE_HEXBIN } from '@pages/maps/helpers/serviceMode';
+import { devToolsStore } from '@services/devToolsStore';
 
 const VIEW_RETRY_INTERVAL_MS = 100;
 const VIEW_RETRY_MAX_ATTEMPTS = 60;
@@ -41,7 +45,10 @@ const buildPaneFromEntries = (paneEntries, layerTree, getAllChildLayerIds) => {
 
     paneEntries.forEach((entry) => {
         const layerId = resolveRefToId(entry.slug, layerTree);
-        if (!layerId) return;
+        if (!layerId) {
+            registrarPendiente(entry.slug);
+            return;
+        }
         if (!activeLayerIds.includes(layerId)) {
             activeLayerIds.push(layerId);
             getAllChildLayerIds(layerId).forEach((childId) => {
@@ -72,6 +79,10 @@ export const useShareDeserializer = () => {
         restoreSelectedById,
         findLayerById,
         setLayerOpacity,
+        setServiceMode,
+        toggleHexbinFondo,
+        asignarTono,
+        setSoloSeleccionada,
         setHiddenLayerIds,
         setLayerOpacities,
         setFilters,
@@ -80,6 +91,8 @@ export const useShareDeserializer = () => {
         setCompareMode,
         restoreAnnotations,
         municipioMode,
+        setLoopIntervalMs,
+        setLoopDirection,
     } = useMapsContext();
     const { layers: layerTree } = useLayers();
 
@@ -87,6 +100,16 @@ export const useShareDeserializer = () => {
         if (!envelope || (envelope.version !== 1 && envelope.version !== 2)) return false;
         if (envelope.kind !== 'single' && envelope.kind !== 'swipe') return false;
         const isSwipe = envelope.kind === 'swipe';
+        const restoreLoopPrefs = (loop) => {
+            const layerId = loop?.layerSlug ? resolveRefToId(loop.layerSlug, layerTree) : null;
+            if (!layerId) return;
+            if (loop.intervalMs) setLoopIntervalMs?.(layerId, loop.intervalMs);
+            if (loop.direction) setLoopDirection?.(layerId, loop.direction);
+        };
+        const restoreVista3d = (crudo) => {
+            const vista = leerVista3d(crudo, slug => resolveRefToId(slug, layerTree));
+            if (vista) pedirVista3d(vista);
+        };
 
         if (isSwipe) {
             const payload = envelope.payload || {};
@@ -119,6 +142,14 @@ export const useShareDeserializer = () => {
                 });
             }
 
+            if (typeof setServiceMode === 'function') {
+                [...paneAEntries, ...paneBEntries].forEach((entry) => {
+                    if (!entry.service) return;
+                    const layerId = resolveRefToId(entry.slug, layerTree);
+                    if (layerId && (entry.service !== SERVICE_HEXBIN || devToolsStore.isNonProd())) setServiceMode(layerId, entry.service);
+                });
+            }
+
             if (shared.basemap && typeof setBaseMapId === 'function') setBaseMapId(shared.basemap);
             scheduleViewApply(mapRef, shared.view);
             if (shared.selected) {
@@ -131,7 +162,7 @@ export const useShareDeserializer = () => {
             }
 
             const swipePosition = typeof payload.position === 'number' ? payload.position : 0.5;
-            if (typeof setCompareMode === 'function') {
+            if (typeof setCompareMode === 'function' && devToolsStore.isNonProd()) {
                 const stillActiveIds = new Set([
                     ...paneA.activeLayerIds,
                     ...paneB.activeLayerIds,
@@ -152,15 +183,18 @@ export const useShareDeserializer = () => {
                     swipePosition,
                     globalOrder,
                     capturedView,
+                    originalSnapshot: { ...livePane, layerOpacities: new Map(livePane.layerOpacities) },
                 });
             }
             if (Array.isArray(payload.annotations) && typeof restoreAnnotations === 'function') {
                 restoreAnnotations(payload.annotations);
             }
+            restoreLoopPrefs(payload.loop);
             const sharedMunicipios = shared?.municipios;
-            if (sharedMunicipios?.selected?.length > 0 && municipioMode?.enter) {
-                municipioMode.enter(sharedMunicipios.selected, { fromUrl: true });
+            if (sharedMunicipios?.selected?.length > 0 && municipioMode?.enter && devToolsStore.isNonProd()) {
+                municipioMode.enter(sharedMunicipios.selected, { fromUrl: true, scope: sharedMunicipios.scope });
             }
+            restoreVista3d(shared.vista3d);
             marcarShareAplicado();
             return true;
         }
@@ -171,10 +205,16 @@ export const useShareDeserializer = () => {
         const resolvedIds = [];
         const hidden = [];
         const opacities = {};
+        const services = [];
+        const sinFondo = [];
+        const tonos = [];
 
         layers.forEach((entry) => {
             const layerId = resolveRefToId(entry.slug, layerTree);
-            if (!layerId) return;
+            if (!layerId) {
+                registrarPendiente(entry.slug);
+                return;
+            }
             if (!resolvedIds.includes(layerId)) {
                 resolvedIds.push(layerId);
                 getAllChildLayerIds(layerId).forEach((childId) => {
@@ -183,6 +223,9 @@ export const useShareDeserializer = () => {
             }
             if (entry.visible === false) hidden.push(layerId);
             if (typeof entry.opacity === 'number') opacities[layerId] = entry.opacity;
+            if (entry.service && (entry.service !== SERVICE_HEXBIN || devToolsStore.isNonProd())) services.push([layerId, entry.service]);
+            if (entry.fill === false) sinFondo.push(layerId);
+            if (Number.isInteger(entry.palette)) tonos.push([layerId, entry.palette]);
 
             Object.entries(entry.filters || {}).forEach(([name, cql]) => {
                 if (cql) applyFilter(layerId, name, cql);
@@ -194,6 +237,12 @@ export const useShareDeserializer = () => {
         if (typeof setLayerOpacity === 'function') {
             Object.entries(opacities).forEach(([id, op]) => setLayerOpacity(id, op));
         }
+        if (typeof setServiceMode === 'function') {
+            services.forEach(([id, mode]) => setServiceMode(id, mode));
+            if (sinFondo.length > 0) toggleHexbinFondo?.(sinFondo);
+            tonos.forEach(([id, tono]) => asignarTono?.([id], tono));
+        }
+        setSoloSeleccionada?.(payload.soloSeleccionada === true);
 
         if (payload.basemap && typeof setBaseMapId === 'function') {
             setBaseMapId(payload.basemap);
@@ -218,12 +267,14 @@ export const useShareDeserializer = () => {
             restoreAnnotations(payload.annotations);
         }
 
+        restoreLoopPrefs(payload.loop);
         const singleMunicipios = payload.municipios;
-        if (singleMunicipios?.selected?.length > 0 && municipioMode?.enter) {
-            municipioMode.enter(singleMunicipios.selected, { fromUrl: true });
+        if (singleMunicipios?.selected?.length > 0 && municipioMode?.enter && devToolsStore.isNonProd()) {
+            municipioMode.enter(singleMunicipios.selected, { fromUrl: true, scope: singleMunicipios.scope });
         }
+        restoreVista3d(payload.vista3d);
 
         marcarShareAplicado();
         return true;
-    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, setLayerOpacity, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode]);
+    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, toggleHexbinFondo, asignarTono, setSoloSeleccionada, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, setLayerOpacity, setServiceMode, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode, setLoopIntervalMs, setLoopDirection]);
 };

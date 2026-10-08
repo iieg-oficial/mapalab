@@ -62,7 +62,7 @@ export const useMapInteractions = (mapRef, queryFeatures, disableFeatureSelectio
         };
 
         const handlePointerMove = (evt) => {
-            if (evt.dragging) return;
+            if (evt.dragging || disableSelectionRef.current) return;
 
             const now = Date.now();
             if (now - lastPointerCheckRef.current < 50) return;

@@ -111,6 +111,7 @@ export default defineConfig(({ mode }) => {
         ].filter(Boolean),
         build: {
             sourcemap: false,
+            license: { fileName: 'licencias.txt' },
             rolldownOptions: {
                 output: {
                     codeSplitting: {
@@ -118,6 +119,7 @@ export default defineConfig(({ mode }) => {
                             { name: 'vendor-react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 70 },
                             { name: 'vendor-router', test: /node_modules[\\/]react-router/, priority: 65 },
                             { name: 'vendor-ol', test: /node_modules[\\/]ol[\\/]/, priority: 60 },
+                            { name: 'vendor-maplibre', test: /node_modules[\\/](maplibre-gl|@maplibre)[\\/]/, priority: 58 },
                             { name: 'vendor-lottie', test: /node_modules[\\/](lottie-web|lottie-react)[\\/]/, priority: 55 },
                             { name: 'vendor-dnd', test: /node_modules[\\/]@dnd-kit[\\/]/, priority: 40 },
                             { name: 'vendor-download', test: /[\\/](jszip|pako|fast-png|fflate|iobuffer)[\\/]/, priority: 35 },

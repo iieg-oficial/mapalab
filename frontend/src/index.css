@@ -5,6 +5,20 @@
     line-height: 1.5;
     font-weight: 400;
 
+    /* Paleta secuencial de dataviz: la consume JS, no clases de Tailwind */
+    --color-viz-seq-1: #E6D3EF;
+    --color-viz-seq-2: #C9A5DC;
+    --color-viz-seq-3: #A66FC0;
+    --color-viz-seq-4: #8039A0;
+    --color-viz-seq-5: #5C2472;
+
+    /* Categorica: el tono base de cada capa agregada, rota cada 5 */
+    --color-viz-cat-1: #5C2472;
+    --color-viz-cat-2: #D55E00;
+    --color-viz-cat-3: #0072B2;
+    --color-viz-cat-4: #117733;
+    --color-viz-cat-5: #CC79A7;
+
     color-scheme: light;
     color: #213547;
     background-color: #ffffff;
@@ -70,13 +84,26 @@
 }
 
 
+.scrollbar-thin {
+    scrollbar-width: thin;
+}
+
 .scrollbar-thin::-webkit-scrollbar {
     width: 4px;
+    height: 4px;
+}
+
+.scrollbar-thumb-gray-400 {
+    scrollbar-color: rgb(156 163 175 / 0.5) transparent;
 }
 
 .scrollbar-thumb-gray-400::-webkit-scrollbar-thumb {
     background-color: rgb(156 163 175 / 0.5);
     border-radius: 2px;
+}
+
+.scrollbar-thumb-gray-500 {
+    scrollbar-color: rgb(107 114 128 / 0.7) transparent;
 }
 
 .scrollbar-thumb-gray-500::-webkit-scrollbar-thumb {

@@ -17,6 +17,14 @@ from app.services.share_service import (
 )
 from app.utils.logger import Logger
 
+from servers.blindaje import (
+    limpiar_anotaciones,
+    limpiar_capas,
+    techo_compartidos,
+    validar_etiqueta,
+    validar_vista,
+    vista3d_a_payload,
+)
 from servers.resolve import (
     _find_node_in_tree,
     _make_date_filter,
@@ -55,8 +63,20 @@ def _normalize_layer_entries(items: list) -> list[dict]:
     return out
 
 
+def _capas_del_catalogo(items: list | None) -> list[dict]:
+    capas = limpiar_capas(items)
+    for capa in capas:
+        resuelta = _resolve_layer_fuzzy(capa['slug'])
+        if not resuelta:
+            raise ValueError(f"No existe la capa '{capa['slug']}'. Usa search_layers para encontrar su id.")
+        capa['slug'] = resuelta['id']
+    return capas
+
+
 def _persist_share(envelope: dict) -> dict:
     kind, payload = validate_payload(envelope)
+    if not techo_compartidos.consumir():
+        raise ValueError('Se alcanzó el límite de mapas que el MCP puede crear por ahora. Intenta en unos minutos.')
     share_id = hash_id(payload, kind)
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
     with conn.get_session() as session:
@@ -139,10 +159,13 @@ def create_single_share(
     selected: str | None = None,
     annotations: list | None = None,
     municipios: dict | list | None = None,
+    vista3d: dict | None = None,
 ) -> dict:
     norm_municipios = _normalize_municipios(municipios)
     resolved_view = view or _default_view(norm_municipios)
     payload: dict[str, Any] = {"layers": _normalize_layer_entries(layers), "view": resolved_view}
+    if vista3d:
+        payload["vista3d"] = vista3d
     if basemap:
         payload["basemap"] = basemap
     if selected:
@@ -166,6 +189,7 @@ def create_swipe_share(
     label_b: str = "B",
     annotations: list | None = None,
     municipios: dict | list | None = None,
+    vista3d: dict | None = None,
 ) -> dict:
     norm_municipios = _normalize_municipios(municipios)
     resolved_view = view or _default_view(norm_municipios)
@@ -174,6 +198,8 @@ def create_swipe_share(
         "basemap": basemap,
         "selected": selected,
     }
+    if vista3d:
+        shared["vista3d"] = vista3d
     if norm_municipios:
         shared["municipios"] = norm_municipios
     payload: dict[str, Any] = {
@@ -195,6 +221,7 @@ def compare_years(
     municipio: str | None = None,
     view: dict | None = None,
     basemap: str = 'voyager',
+    vista_3d: Any = None,
 ) -> dict:
     node = _find_node_in_tree(get_cached_state()['tree'], layer)
     if not node or not node.get('wmsConfig'):
@@ -238,6 +265,7 @@ def compare_years(
         'basemap': basemap,
         'position': 0.5,
         'view': resolved_view,
+        'vista3d': vista3d_a_payload(vista_3d, {layer}, _resolve_layer_fuzzy),
     }
 
     if norm_municipios:
@@ -326,6 +354,7 @@ def create_map(
     basemap: str | None = None,
     selected: str | None = None,
     annotations: list | None = None,
+    vista_3d: Any = None,
 ) -> dict:
     has_query = bool((query or '').strip() or (theme or '').strip())
     has_layers = bool(layers)
@@ -334,6 +363,8 @@ def create_map(
     if not has_query and not has_layers:
         raise ValueError("Pasa 'query' (texto) o 'layers' (ids de capa).")
 
+    view = validar_vista(view)
+    annotations = limpiar_anotaciones(annotations)
     norm_municipios = _resolve_municipio_selection(municipio)
 
     layer_label = None
@@ -344,10 +375,18 @@ def create_map(
         entries = [{'slug': best_id}]
         layer_label = best_label
     else:
-        entries = _normalize_layer_entries(layers)
+        entries = _capas_del_catalogo(layers)
         if not entries:
             raise ValueError("'layers' vacío o inválido. Pasa ids de capa (string) u objetos {slug}.")
 
+    if selected:
+        resuelta = _resolve_layer_fuzzy(selected)
+        slugs = {entry['slug'] for entry in entries}
+        if not resuelta or resuelta['id'] not in slugs:
+            raise ValueError("'selected' debe ser una de las capas del mapa.")
+        selected = resuelta['id']
+
+    vista3d = vista3d_a_payload(vista_3d, {entry['slug'] for entry in entries}, _resolve_layer_fuzzy)
     if year:
         _apply_year_filter(entries, str(year))
 
@@ -358,6 +397,7 @@ def create_map(
         selected=selected,
         annotations=annotations,
         municipios=norm_municipios,
+        vista3d=vista3d,
     )
     if layer_label:
         result['layer'] = {'id': entries[0]['slug'], 'label': layer_label}
@@ -377,7 +417,12 @@ def create_swipe(
     label_a: str = 'A',
     label_b: str = 'B',
     annotations: list | None = None,
+    vista_3d: Any = None,
 ) -> dict:
+    view = validar_vista(view)
+    annotations = limpiar_anotaciones(annotations)
+    label_a = validar_etiqueta(label_a, 'label_a') or 'A'
+    label_b = validar_etiqueta(label_b, 'label_b') or 'B'
     use_layer = bool(layer)
     use_panes = bool(pane_a_layers or pane_b_layers)
     if use_layer and use_panes:
@@ -395,10 +440,12 @@ def create_swipe(
             municipio=municipio,
             view=view,
             basemap=basemap,
+            vista_3d=vista_3d,
         )
 
-    entries_a = _normalize_layer_entries(pane_a_layers or [])
-    entries_b = _normalize_layer_entries(pane_b_layers or [])
+    entries_a = _capas_del_catalogo(pane_a_layers)
+    entries_b = _capas_del_catalogo(pane_b_layers)
+    vista3d = vista3d_a_payload(vista_3d, {entry['slug'] for entry in entries_a + entries_b}, _resolve_layer_fuzzy)
     if year_a and entries_a:
         _apply_year_filter(entries_a, str(year_a))
     if year_b and entries_b:
@@ -415,4 +462,5 @@ def create_swipe(
         label_b=label_b,
         annotations=annotations,
         municipios=norm_municipios,
+        vista3d=vista3d,
     )

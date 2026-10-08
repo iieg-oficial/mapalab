@@ -6,16 +6,33 @@ import { useLegendsVisibility } from './hooks/useLegendsVisibility';
 import { ACTIVE_LAYERS_PANEL_WIDTH } from '@pages/maps/helpers/mapFit';
 import LegendImage from '@components/LegendImage';
 import Icon from '@components/Icon';
+import Tooltip from '@components/Tooltip';
+import HexbinLegend from './HexbinLegend';
+import { legendEntries } from '@pages/maps/helpers/hexbinStyles';
+import { hasHexbinMode } from '@pages/maps/helpers/serviceMode';
 
 const LayerLegendInline = ({ layer, compareMode, slotMembership }) => {
     const { hasLegend, getLegendUrl } = useWMSLegend();
     const { visible } = useLegendsVisibility();
-    const { centerOnLayer } = useMapsContext();
+    const { centerOnLayer, getServiceMode, getHexbinStats } = useMapsContext();
     const { width: siderWidth, isMobile } = useSider();
     const [hovered, setHovered] = useState(false);
 
     if (!visible) return null;
-    if (!layer || !hasLegend(layer)) return null;
+    if (!layer) return null;
+
+    const hexbinIds = layer.childIds?.length ? layer.childIds : [layer.id];
+    if (hasHexbinMode(hexbinIds, getServiceMode)) {
+        const stats = hexbinIds.map(id => getHexbinStats?.(id)).find(Boolean);
+        if (!stats) return null;
+        return (
+            <div className="w-full bg-white rounded-[13px] overflow-hidden">
+                <HexbinLegend entries={legendEntries(stats.breaks, stats.max, stats.paletteIndex)} />
+            </div>
+        );
+    }
+
+    if (!hasLegend(layer)) return null;
 
     const isSwipe = !!compareMode?.active;
 
@@ -45,22 +62,24 @@ const LayerLegendInline = ({ layer, compareMode, slotMembership }) => {
     };
 
     return (
-        <div
-            role="button"
-            tabIndex={0}
-            onClick={handleCenter}
-            onKeyDown={handleKeyDown}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            title="Centrar capa en el mapa"
-            aria-label="Centrar capa en el mapa"
-            className="relative group w-full bg-white rounded-[13px] overflow-hidden p-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#70308A] outline-none"
-        >
-            <LegendImage src={url} alt={layer.name} />
-            <span className="absolute top-1.5 right-1.5 z-10 p-1 bg-white rounded-full shadow-[0_2px_8px_#1A26641A] opacity-0 group-hover:opacity-100 max-md:opacity-100 transition-opacity pointer-events-none">
-                <Icon name="fit_extent" state={hovered ? 'hover' : 'normal'} className="w-4 h-4" />
-            </span>
-        </div>
+        <Tooltip content="Encuadrar el mapa en esta capa" placement="left" delay={400} triggerBlock>
+            <div
+                role="button"
+                tabIndex={0}
+                onClick={handleCenter}
+                onKeyDown={handleKeyDown}
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+                title="Centrar capa en el mapa"
+                aria-label="Centrar capa en el mapa"
+                className="relative group w-full bg-white rounded-[13px] overflow-hidden p-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#70308A] outline-none"
+            >
+                <LegendImage src={url} alt={layer.name} />
+                <span className="absolute top-1.5 right-1.5 z-10 p-1 bg-white rounded-full shadow-[0_2px_8px_#1A26641A] opacity-0 group-hover:opacity-100 max-md:opacity-100 transition-opacity pointer-events-none">
+                    <Icon name="fit_extent" state={hovered ? 'hover' : 'normal'} className="w-4 h-4" />
+                </span>
+            </div>
+        </Tooltip>
     );
 };
 

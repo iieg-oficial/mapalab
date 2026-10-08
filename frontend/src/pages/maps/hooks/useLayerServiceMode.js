@@ -1,0 +1,143 @@
+import { useState, useCallback, useEffect } from 'react';
+import { SERVICE_WMS, SERVICE_HEXBIN } from '../helpers/serviceMode';
+import { menorTonoLibre } from '../helpers/hexbinStyles';
+
+export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
+    const [layerServiceModes, setLayerServiceModes] = useState(new Map());
+    const [vectorRejections, setVectorRejections] = useState(new Map());
+    const [hexbinStats, setHexbinStats] = useState(new Map());
+    const [hexbinSinFondo, setHexbinSinFondo] = useState(new Set());
+    const [hexbinPalettes, setHexbinPalettes] = useState(new Map());
+
+    const asignarTono = useCallback((layerIds, tono = null) => {
+        setHexbinPalettes(prev => {
+            const ids = Array.isArray(layerIds) ? layerIds : [layerIds];
+            if (tono === null && ids.some(id => prev.has(id))) return prev;
+
+            const elegido = tono ?? menorTonoLibre(new Set(prev.values()));
+            const next = new Map(prev);
+            ids.forEach(id => next.set(id, elegido));
+            return next;
+        });
+    }, []);
+
+    const liberarTono = useCallback((layerIds) => {
+        setHexbinPalettes(prev => {
+            const ids = Array.isArray(layerIds) ? layerIds : [layerIds];
+            if (!ids.some(id => prev.has(id))) return prev;
+            const next = new Map(prev);
+            ids.forEach(id => next.delete(id));
+            return next;
+        });
+    }, []);
+
+    const getHexbinPalette = useCallback((layerId) => hexbinPalettes.get(layerId) ?? 0, [hexbinPalettes]);
+
+    const toggleHexbinFondo = useCallback((layerIds) => {
+        setHexbinSinFondo(prev => {
+            const next = new Set(prev);
+            const apagar = !layerIds.some(id => next.has(id));
+            layerIds.forEach(id => (apagar ? next.add(id) : next.delete(id)));
+            return next;
+        });
+    }, []);
+
+    const tieneFondo = useCallback((layerId) => !hexbinSinFondo.has(layerId), [hexbinSinFondo]);
+
+    const applyHexbinStats = useCallback((layerIds, stats) => {
+        setHexbinStats(prev => {
+            const next = new Map(prev);
+            (layerIds || []).forEach(id => next.set(id, stats));
+            return next;
+        });
+    }, []);
+
+    const getHexbinStats = useCallback((layerId) => {
+        return hexbinStats.get(layerId) ?? null;
+    }, [hexbinStats]);
+
+    const clearVectorRejection = useCallback((layerId) => {
+        setVectorRejections(prev => {
+            if (!prev.has(layerId)) return prev;
+            const next = new Map(prev);
+            next.delete(layerId);
+            return next;
+        });
+    }, []);
+
+    const setServiceMode = useCallback((layerId, mode) => {
+        clearVectorRejection(layerId);
+        setLayerServiceModes(prev => {
+            const next = new Map(prev);
+            if (!mode || mode === SERVICE_WMS) {
+                if (!next.has(layerId)) return prev;
+                next.delete(layerId);
+            } else {
+                if (next.get(layerId) === mode) return prev;
+                next.set(layerId, mode);
+            }
+            return next;
+        });
+    }, [clearVectorRejection]);
+
+    const rejectVectorMode = useCallback((layerId, reason) => {
+        setLayerServiceModes(prev => {
+            if (!prev.has(layerId)) return prev;
+            const next = new Map(prev);
+            next.delete(layerId);
+            return next;
+        });
+        setVectorRejections(prev => new Map(prev).set(layerId, reason));
+    }, []);
+
+    const getVectorRejection = useCallback((layerId) => {
+        return vectorRejections.get(layerId) ?? null;
+    }, [vectorRejections]);
+
+    const getServiceMode = useCallback((layerId) => {
+        return layerServiceModes.get(layerId) ?? SERVICE_WMS;
+    }, [layerServiceModes]);
+
+    useEffect(() => {
+        if (!activeLayerIds?.length) return;
+
+        setLayerServiceModes(prev => {
+            if (prev.size === 0) return prev;
+
+            const allActiveIds = new Set();
+            (activeLayerIds || []).forEach(id => {
+                allActiveIds.add(id);
+                getAllChildLayerIds(id).forEach(childId => allActiveIds.add(childId));
+            });
+
+            const next = new Map();
+            for (const [layerId, mode] of prev.entries()) {
+                if (allActiveIds.has(layerId)) {
+                    next.set(layerId, mode);
+                }
+            }
+
+            return next.size === prev.size ? prev : next;
+        });
+    }, [activeLayerIds, getAllChildLayerIds]);
+
+    return {
+        layerServiceModes,
+        setLayerServiceModes,
+        setServiceMode,
+        getServiceMode,
+        rejectVectorMode,
+        getVectorRejection,
+        clearVectorRejection,
+        hexbinStats,
+        applyHexbinStats,
+        getHexbinStats,
+        hexbinSinFondo,
+        toggleHexbinFondo,
+        tieneFondo,
+        hexbinPalettes,
+        asignarTono,
+        liberarTono,
+        getHexbinPalette
+    };
+};

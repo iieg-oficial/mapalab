@@ -35,16 +35,45 @@ services:
       - iieg-network
     restart: unless-stopped
 
+  docker-socket-proxy:
+    image: nginx:1.30.4-alpine
+    container_name: mapalab-docker-socket-proxy
+    user: "101:101"
+    group_add:
+      - ${DOCKER_GID:?}
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./version-api/docker-proxy.conf:/etc/nginx/nginx.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - docker-api
+    restart: unless-stopped
+    logging: *logging
+
   version-api:
     build: ./version-api
     container_name: mapalab-version-api
     environment:
       ONTOY_SERVICE: mapalab
+      ONTOY_NODE: ${ONTOY_NODE:?}
+      ONTOY_NODE_REPORTER: ${ONTOY_NODE_REPORTER:?}
+      ONTOY_PEER_CHECKS: ${ONTOY_PEER_CHECKS}
       ONTOY_COMPOSE_PROJECT: mapalab
       ONTOY_DISK_PATH: ${ONTOY_DISK_PATH:?}
       ONTOY_UPSTREAM_URL: http://backend:${BACKEND_PORT:?}/ontoy
+      DOCKER_HOST: tcp://docker-socket-proxy:2375
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    depends_on:
+      - docker-socket-proxy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8088), timeout=3).close()"]
       interval: 30s
@@ -53,6 +82,7 @@ services:
     networks:
       - default
       - iieg-network
+      - docker-api
     restart: unless-stopped
     logging: *logging
 
@@ -83,3 +113,6 @@ services:
 networks:
   iieg-network:
     external: true
+  docker-api:
+    name: mapalab-docker-api
+    internal: true

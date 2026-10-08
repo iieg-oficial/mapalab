@@ -4,14 +4,15 @@ import Tooltip from '@components/Tooltip';
 import Badge from '@components/Badge';
 import Switch from '@components/Switch';
 import ConfirmDropdown from '@components/ConfirmDropdown';
+import PillCloseButton from '@components/PillCloseButton';
 
 const ActiveLayersToolbar = ({
     noLayers,
     unifiedLayers,
     displayedLayers,
     isFiltering,
-    allHidden,
-    visibilityCount,
+    soloSeleccionada,
+    selectedLayerLabel = null,
     hasActiveLoops,
     activeLoopsCount,
     isInegiMode,
@@ -37,28 +38,50 @@ const ActiveLayersToolbar = ({
     const searchTooltip = noLayers ? 'No hay capas para buscar' : searchLabel;
     const onSearchClick = searchOpen ? onCloseSearch : onOpenSearch;
 
+    const puedeAislar = !noLayers && !!selectedLayerLabel;
+    const textoAislar = soloSeleccionada
+        ? selectedLayerLabel
+        : (puedeAislar ? 'Solo seleccionada' : 'Elige una capa');
+    const tooltipAislar = noLayers
+        ? 'No hay capas activas'
+        : !puedeAislar
+            ? 'Selecciona una capa de la lista para dejarla sola en el mapa'
+            : soloSeleccionada
+                ? `Volver a mostrar todas las capas. Ahora solo se ve ${selectedLayerLabel}`
+                : 'Ocultar las demás y dejar visible solo la capa seleccionada';
+
     return (
         <>
             <div className="flex items-center justify-between shrink-0 mb-2 gap-1.5">
                 <div className="flex items-center gap-2 md:gap-3 shrink md:shrink-0 min-w-0">
-                    <button
-                        type="button"
-                        disabled={noLayers}
-                        className={`group/vis flex items-center gap-1 shrink-0 ${noLayers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                        onClick={onToggleVisibilityAll}
-                    >
-                        <span className={`relative p-0.5 rounded-full border border-transparent transition-colors ${noLayers ? '' : 'group-hover/vis:border-purple'}`}>
-                            <Icon name="visible" state={allHidden ? 'hover' : 'gray'} className="size-5 shrink-0" />
-                            <Badge
-                                visible={visibilityCount > 0}
-                                count={visibilityCount}
-                                color="purple"
+                    <div className="group flex items-center shrink min-w-0">
+                        <Tooltip content={tooltipAislar}>
+                            <button
+                                type="button"
+                                disabled={!puedeAislar}
+                                aria-pressed={soloSeleccionada}
+                                className={`
+                                    flex items-center gap-1.5 h-6 pl-1 pr-2.5 rounded-full shrink min-w-0 transition-colors
+                                    ${soloSeleccionada ? 'bg-purple-soft' : 'bg-[#EFF3FC]'}
+                                    ${puedeAislar ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}
+                                    ${puedeAislar && !soloSeleccionada ? 'hover:bg-[#E1E8F7]' : ''}
+                                `}
+                                onClick={onToggleVisibilityAll}
+                            >
+                                <Icon name="solo_capa" className={`size-5 shrink-0 ${soloSeleccionada ? 'text-purple' : 'text-graphite'}`} />
+                                <span className={`text-[10px] font-garet font-semibold leading-none truncate max-w-[110px] md:max-w-[158px] ${soloSeleccionada ? 'text-purple' : 'text-graphite'}`}>{textoAislar}</span>
+                            </button>
+                        </Tooltip>
+                        {soloSeleccionada && (
+                            <PillCloseButton
+                                onClick={onToggleVisibilityAll}
                                 size="sm"
-                                className="absolute -top-1 -right-1 pointer-events-none"
+                                reveal="inline"
+                                tooltip="Volver a mostrar todas las capas"
+                                ariaLabel="Volver a mostrar todas las capas"
                             />
-                        </span>
-                        <span className={`${hideHeaderLabels ? 'hidden' : 'inline'} text-[8px] font-garet font-medium text-graphite whitespace-nowrap truncate leading-none pt-[1.5px]`}>{allHidden ? 'Mostrar mis capas' : 'Ocultar mis capas'}</span>
-                    </button>
+                        )}
+                    </div>
 
                     <div className="relative shrink-0">
                         <button
@@ -130,7 +153,7 @@ const ActiveLayersToolbar = ({
                     )}
                 </div>
 
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                     <Switch
                         checked={!isInegiMode}
                         onChange={onToggleBaseMode}

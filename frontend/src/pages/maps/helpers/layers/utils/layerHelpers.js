@@ -11,6 +11,12 @@ export const findLayerById = (layerId, layersArray) => {
     return null;
 };
 
+export const resolveSelectedLayerLabel = (selected, layersArray) => {
+    if (!selected?.id) return null;
+    const node = findLayerById(selected.id, layersArray || []);
+    return node?.label || selected.label || selected.name || null;
+};
+
 export const findAncestorChain = (layerId, layersArray) => {
     if (!layerId || !Array.isArray(layersArray)) return [];
     const walk = (layers, trail) => {
@@ -94,6 +100,12 @@ export const collectLayersWithWMS = (layer) => {
 
 export const collectLayerIdsWithWMS = (layer) =>
     collectLayersWithWMS(layer).map(node => node.id);
+
+export const resolveGeometryType = (layer) => {
+    if (!layer) return null;
+    if (layer.geometryType) return layer.geometryType;
+    return collectLayersWithWMS(layer).find(node => node.geometryType)?.geometryType || null;
+};
 
 export const collectCatalogUnits = (layer) => {
     if (!layer) return [];

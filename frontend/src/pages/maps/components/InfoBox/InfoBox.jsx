@@ -3,6 +3,8 @@ import MapsContext from '@contexts/MapsContext';
 import { trackFeatureClick } from '@services/analyticsService';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import { useSider } from '@contexts/SiderContext';
+import { useCaminar } from '@contexts/CaminarContext';
+import { useView3d } from '@contexts/View3dContext';
 import MobileSheet, { MobileSheetCloseButton } from '@components/MobileSheet';
 import ScrollContainer from '@components/ScrollContainer';
 import { useViewportContainment } from './hooks/useViewportContainment';
@@ -10,10 +12,11 @@ import { useDraggablePanel } from './hooks/useDraggablePanel';
 import InfoBoxArrow, { ARROW_TIP } from './components/InfoBoxArrow';
 import { useFeatureInfo } from '../../hooks/useFeatureInfo';
 import { renderCard } from './utils/renderCard.jsx';
-import { downloadFeaturesAsCSV } from './utils/downloadFeatures';
+import { useDescargaDeInfoBox } from './hooks/useDescargaDeInfoBox';
+import { pedirDescargaDeSeleccion } from '@pages/maps/helpers/descargaSeleccion';
 import { useInfoBoxLazyLoad } from '../../hooks/useInfoBoxLazyLoad';
 import { findLayerById } from '../../helpers/layers/utils/layerHelpers';
-import { centerOnResults } from '../../helpers/featureGeometry';
+import { centerOnResults, ubicacionDeFeature } from '../../helpers/featureGeometry';
 import { trackInfoBoxAction } from '@services/analyticsService';
 import LicenseTooltipContent from '@components/LicenseTooltipContent';
 import SummaryCard from './components/SummaryCard';
@@ -24,16 +27,17 @@ import InfoCard from './components/InfoCard';
 import DismissGesture from './components/DismissGesture';
 import WhatsNewModal from '../WhatsNewModal';
 import { useColibriOpen } from '@hooks/useColibriOpen';
-import { useIsNonProd } from '@hooks/useDevTools';
+import PanelMedicionSeleccion from '../MeasurementTools/PanelMedicionSeleccion';
 
 const InfoBox = ({ forceDesktop = false, embed = false }) => {
-    useIsNonProd();
     const openColibri = useColibriOpen();
+    const { entrar: entrarCaminata } = useCaminar();
+    const { available: con3d } = useView3d();
     const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, getSpecificFilter, activeLayerIds, filters, allLayers, mapRef, paneMapInstances, compareMode } = useContext(MapsContext);
     const { isMobile: siderIsMobile } = useSider();
     const isMobile = forceDesktop ? false : siderIsMobile;
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
-    const { selectAlternativeLayer, loadMoreFeatures, loadMorePolygonFeatures } = useFeatureInfo();
+    const { selectAlternativeLayer, loadMoreFeatures, loadMorePolygonFeatures, pedirParaDescarga } = useFeatureInfo();
     const panelRef = useRef(null);
     const cardRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -52,10 +56,11 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
 
         if (!isExpanded) {
             setIsLoadingExpand(true);
-            setTimeout(() => {
+            const sinElementos = selectedFeatureInfo?.isPolygonSelection && !selectedFeatureInfo?.results?.length;
+            Promise.resolve(sinElementos ? loadMorePolygonFeatures() : null).catch(() => null).finally(() => setTimeout(() => {
                 setIsExpanded(true);
                 setIsLoadingExpand(false);
-            }, 50);
+            }, 50));
         } else {
             setIsExpanded(false);
         }
@@ -78,8 +83,12 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
         loadMoreFeatures,
         loadMorePolygonFeatures,
     });
+    const descarga = useDescargaDeInfoBox({ selectedFeatureInfo, lazyLoad, allLayers, pedirParaDescarga });
 
-    const baseTransform = lazyLoad.totalFeatures === 1 ? 'translate(-50%, -100%)' : '';
+    const centrado = !!selectedFeatureInfo?.centrado;
+    const baseTransform = centrado
+        ? 'translate(-50%, -50%)'
+        : (lazyLoad.totalFeatures === 1 ? 'translate(-50%, -100%)' : '');
     const { isDragging, handleProps: moveHandleProps, reset: resetDrag } = useDraggablePanel({ panelRef, baseTransform });
 
     useOutsideClick([panelRef], isMobile ? undefined : handleClose);
@@ -116,17 +125,21 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
 
     if (!selectedFeatureInfo) return null;
 
-    const { results, isPolygonSelection, queriedLayerName, queriedLayerId, alternativeLayers } = selectedFeatureInfo;
-    const { sentinelRef: loadMoreSentinelRef, loadingMore, totalAvailable, totalFeatures, hasMore, downloadDisplayCount, downloadShowsPlus, downloadTooltipText, enrichResultsForDownload } = lazyLoad;
+    const { results, isPolygonSelection, queriedLayerName, queriedLayerId, alternativeLayers, enBorde = 0 } = selectedFeatureInfo;
+    const { sentinelRef: loadMoreSentinelRef, loadingMore, totalAvailable, totalFeatures, hasMore } = lazyLoad;
     const isSingleFeature = totalFeatures === 1;
     const hasNoResults = !results || results.length === 0 || totalFeatures === 0;
     const hasAlternatives = alternativeLayers && alternativeLayers.length > 0;
-    const showEmptySuggestions = hasNoResults && !isPolygonSelection && (queriedLayerName || hasAlternatives);
-    const showNoLayerSelected = hasNoResults && !isPolygonSelection && !queriedLayerName && !hasAlternatives;
+    const geometriaMedida = selectedFeatureInfo.medicion || (isPolygonSelection ? selectedFeatureInfo.polygonGeometry : null);
+    const soloMedicion = !!geometriaMedida && hasNoResults;
+    const showEmptySuggestions = hasNoResults && !isPolygonSelection && !soloMedicion && (queriedLayerName || hasAlternatives);
+    const showNoLayerSelected = hasNoResults && !isPolygonSelection && !soloMedicion && !queriedLayerName && !hasAlternatives;
 
-    const positionStyle = clickPosition.getPositionStyle(
-        isSingleFeature ? { x: 0, y: -ARROW_TIP } : { x: ARROW_TIP, y: -24 }
-    );
+    const positionStyle = centrado
+        ? { position: 'fixed', left: `${window.innerWidth / 2}px`, top: `${window.innerHeight / 2}px` }
+        : clickPosition.getPositionStyle(
+            isSingleFeature ? { x: 0, y: -ARROW_TIP } : { x: ARROW_TIP, y: -24 }
+        );
 
     const handleRemoveFeature = (layerId, featureIndex) => {
         if (!results) return;
@@ -176,14 +189,10 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
     const renderItem = (feature, layerId, onClose, resultLittleCard, cardIndex = null, cardTotal = null) => {
         const config = resultLittleCard || findLayerById(layerId, allLayers)?.littleCard;
         const dateValue = getSpecificFilter?.(layerId, 'date');
-        return renderCard(feature.properties, config, onClose, layerId, feature.id, handleAction, isMobile ? 'mobile' : 'desktop', cardIndex, cardTotal, dateValue);
+        return renderCard(feature.properties, config, onClose, layerId, feature.id, handleAction, isMobile ? 'mobile' : 'desktop', cardIndex, cardTotal, dateValue, ubicacionDeFeature(feature, selectedFeatureInfo?.lngLat));
     };
 
-    const handleDownload = async () => {
-        if (!results || results.length === 0) return;
-        const enriched = await enrichResultsForDownload();
-        downloadFeaturesAsCSV(enriched, allLayers);
-    };
+    const descargarMapaDeSeleccion = () => pedirDescargaDeSeleccion(selectedFeatureInfo?.polygonGeometry);
 
     const handleCenterGroup = () => {
         const activeMap = compareMode?.active ? paneMapInstances?.[0] : mapRef?.current;
@@ -194,7 +203,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
 
     const showCenterButton = !hasNoResults && !embed;
     const showMultiActions = !hasNoResults && totalFeatures > 1;
-    const showToolbar = showCenterButton || showMultiActions;
+    const showToolbar = showCenterButton || showMultiActions || soloMedicion;
     const cardHandleProps = embed ? { ...moveHandleProps, style: { touchAction: 'none' } } : {};
 
 
@@ -249,16 +258,23 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
             tooltip: 'Centrar selección en el mapa',
             onClick: handleCenterGroup
         },
-        showMultiActions && {
+        descarga.onDownload && {
             id: 'download',
             icon: 'download',
             label: (
                 <>
-                    Descargar <span className="text-orange font-bold">{downloadDisplayCount}{downloadShowsPlus ? '+' : ''}</span> {downloadDisplayCount === 1 ? 'tarjeta' : 'tarjetas'}
+                    Descargar <span className="text-orange font-bold">{descarga.downloadCount}{descarga.downloadShowsPlus ? '+' : ''}</span> {descarga.downloadCount === 1 ? 'tarjeta' : 'tarjetas'}
                 </>
             ),
             tooltip: <LicenseTooltipContent />,
-            onClick: handleDownload
+            onClick: descarga.onDownload
+        },
+        isPolygonSelection && {
+            id: 'descargar_mapa',
+            icon: 'poligono',
+            label: 'Descargar el mapa de esta selección',
+            tooltip: 'Descargar la imagen del mapa recortada a esta selección',
+            onClick: descargarMapaDeSeleccion
         }
     ];
 
@@ -305,14 +321,17 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                                 </InfoCard>
                             )}
 
+                            {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} />}
+
                             <SummaryCard
-                                visible={isPolygonSelection}
+                                visible={isPolygonSelection && (!hasNoResults || enBorde > 0 || !!selectedFeatureInfo?.resumen?.length)}
+                                enBorde={enBorde}
                                 results={results || []}
+                                resumen={selectedFeatureInfo?.resumen}
                                 matched={selectedFeatureInfo?.matched || 0}
                                 isExpanded={isExpanded}
                                 isLoadingExpand={isLoadingExpand}
                                 onToggleExpand={handleToggleExpand}
-                                onClose={handleClose}
                                 variant="mobile"
                             />
 
@@ -332,7 +351,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                 className={`relative w-fit bg-transparent z-5 ${isSingleFeature ? '' : 'flex items-stretch gap-2'}`}
                 style={positionStyle}
             >
-                <div ref={cardRef} className={`relative w-[239px]${embed ? (isDragging ? ' cursor-grabbing' : ' cursor-grab') : ''}`} {...cardHandleProps}>
+                <div ref={cardRef} className={`relative w-[239px] max-h-[calc(100dvh-20px)] overflow-y-auto overscroll-contain${embed ? (isDragging ? ' cursor-grabbing' : ' cursor-grab') : ''}`} {...cardHandleProps}>
                     <EmptySuggestions
                         visible={showEmptySuggestions}
                         queriedLayerName={queriedLayerName}
@@ -350,15 +369,19 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                         </InfoCard>
                     )}
 
+                    {geometriaMedida && <PanelMedicionSeleccion geometria={geometriaMedida} className="mb-2" />}
+
                     <SummaryCard
-                        visible={isPolygonSelection}
+                        visible={isPolygonSelection && (!hasNoResults || enBorde > 0 || !!selectedFeatureInfo?.resumen?.length)}
+                        enBorde={enBorde}
                         results={results || []}
+                        resumen={selectedFeatureInfo?.resumen}
                         matched={selectedFeatureInfo?.matched || 0}
                         isExpanded={isExpanded}
                         isLoadingExpand={isLoadingExpand}
                         onToggleExpand={handleToggleExpand}
-                        onClose={handleClose}
                     />
+
 
                     {featuresList && (
                         totalFeatures <= 1 ? (
@@ -391,14 +414,17 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                             : 'flex flex-col items-center justify-between pb-1'
                     }>
                         <ActionsToolbar
-                            onClear={showMultiActions ? handleClose : null}
+                            onClear={showMultiActions || soloMedicion ? handleClose : null}
                             moveHandleProps={embed ? null : moveHandleProps}
                             isMoving={isDragging}
-                            onDownload={showMultiActions ? handleDownload : null}
+                            onDownload={descarga.onDownload}
+                            onDownloadMap={isPolygonSelection ? descargarMapaDeSeleccion : null}
                             onCenter={showCenterButton ? handleCenterGroup : null}
-                            downloadCount={downloadDisplayCount}
-                            downloadShowsPlus={downloadShowsPlus}
-                            downloadTooltip={downloadTooltipText}
+                            onCaminar={selectedFeatureInfo?.acciones?.includes('caminar') ? entrarCaminata : null}
+                            caminarDisponible={con3d}
+                            downloadCount={descarga.downloadCount}
+                            downloadShowsPlus={descarga.downloadShowsPlus}
+                            downloadTooltip={descarga.downloadTooltip}
                         />
                     </div>
                 )}

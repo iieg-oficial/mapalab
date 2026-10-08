@@ -38,8 +38,8 @@ describe('devToolsStore · simulador de pantallas', () => {
         expect(store.getPantalla()).toBe('laptop');
     });
 
-    it('fuera de dev no se puede simular', async () => {
-        vi.stubEnv('VITE_APP_ENV', 'beta');
+    it('fuera de dev y beta no se puede simular', async () => {
+        vi.stubEnv('VITE_APP_ENV', 'production');
         const store = await cargarStore();
         store.setPantalla('movil');
         expect(store.getPantalla()).toBeNull();

@@ -1,7 +1,7 @@
 import { useCallback, useContext, useMemo } from 'react';
 import { useLayers } from '@hooks/useLayers';
 import EventoContext from '@contexts/EventoContext';
-import { findLayerById as findLayerByIdHelper, getAllChildLayerIds as getAllChildLayerIdsHelper } from '@pages/maps/helpers/layers/utils/layerHelpers';
+import { findLayerById as findLayerByIdHelper, getAllChildLayerIds as getAllChildLayerIdsHelper, resolveGeometryType } from '@pages/maps/helpers/layers/utils/layerHelpers';
 
 export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
     const { layers } = useLayers();
@@ -72,7 +72,8 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
                         visible: ancestorVisible,
                         order: result.length,
                         childIds,
-                        badge: forceGroupAncestor.badge
+                        badge: forceGroupAncestor.badge,
+                        geometryType: resolveGeometryType(forceGroupAncestor)
                     });
 
                     processedIds.add(forceGroupAncestor.id);
@@ -96,7 +97,8 @@ export const useActiveLayersLogic = (activeLayerIds, hiddenLayerIds) => {
                 visible,
                 order: result.length,
                 childIds,
-                badge: layer.badge
+                badge: layer.badge,
+                geometryType: resolveGeometryType(layer)
             });
 
             processedIds.add(layerId);

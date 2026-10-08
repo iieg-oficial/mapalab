@@ -5,45 +5,41 @@ import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import { fromLonLat, toLonLat, transformExtent } from 'ol/proj';
+import { fromLonLat, transformExtent } from 'ol/proj';
 import { defaults as defaultInteractions } from 'ol/interaction/defaults';
 import MouseWheelZoom from 'ol/interaction/MouseWheelZoom';
 import MapsContext from '@contexts/MapsContext';
-import { SiderContext } from '@contexts/SiderContext';
+import { LayersContext } from '@contexts/LayersContext';
+import { View3dProvider } from '@contexts/View3dContext';
 import MapControls from '@pages/maps/components/MapControls';
 import MapAttribution from '@pages/maps/components/MapAttribution';
 import LottieSpinner from '@components/LottieSpinner';
-import CatalogoInfoButton from './CatalogoInfoButton';
 import CatalogoInfoBox from './CatalogoInfoBox';
+import PanelMedicionSeleccion from '@mapsComponents/MeasurementTools/PanelMedicionSeleccion';
 import CatalogoTools from './CatalogoTools';
+import CatalogoTablaProviders from './CatalogoTablaProviders';
 import CatalogoTimeBar from './CatalogoTimeBar';
+import CatalogoVista3d from './CatalogoVista3d';
+import CatalogoDescargaImagen from './CatalogoDescargaImagen';
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { useCatalogoPoligono } from '../hooks/useCatalogoPoligono';
-import { buildWmsLayer, geojson, HIGHLIGHT_STYLE, HIGHLIGHT_Z } from '../helpers/catalogoMapLayer';
+import { useCatalogoTabla } from '../hooks/useCatalogoTabla';
+import { useCatalogoConsulta } from '../hooks/useCatalogoConsulta';
+import { useCatalogoHexbin } from '../hooks/useCatalogoHexbin';
+import { useMedicionesDelCatalogo } from '../hooks/useMedicionesDelCatalogo';
+import { useCatalogoMunicipioMapa } from '../hooks/useCatalogoMunicipioMapa';
+import { contexto3d } from '../helpers/catalogo3d';
+import { buildWmsLayer, HIGHLIGHT_STYLE, HIGHLIGHT_Z } from '../helpers/catalogoMapLayer';
 import { BASEMAPS, RELIEF_OVERLAY, RELIEF_OVERLAY_Z_INDEX } from '@pages/maps/helpers/basemaps';
 import { JALISCO_BOUNDS, hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
 import { getMinZoom, ZOOM_ANIMATION_MS } from '@pages/maps/helpers/defaultView';
 import { useScaleLineControl } from '@hooksMaps/useScaleLineControl';
-import { useMapDrawing } from '@hooksMaps/useMapDrawing';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
-import { trackCatalogoFeatureClick } from '@services/analyticsService';
-import { FEATURE_COUNT_CAP } from '@services/featureInfoService';
+import { useLayerLoading } from '@hooks/useLayerLoading';
 
-const CATALOGO_ANNOTATIONS_KEY = 'mapalab.catalogo.annotations';
-
-const SIDER_STUB = {
-    siderRef: { current: null },
-    toolsButtonRef: { current: null },
-    width: 0,
-    collapsedWidth: 0,
-    expandedWidth: 0,
-    isMobile: false,
-    isOpen: false,
-};
-
-const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
-    const { tiempo, loop, wmsLayerRef } = useCatalogoTiempoContext();
+const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, onExtrusion = null, imagenAbierta = false, onCerrarImagen, onEditInfobox = null }) => {
+    const { tiempo, loop, wmsLayerRef, municipio } = useCatalogoTiempoContext();
     const targetRef = useRef(null);
     const scaleRef = useRef(null);
     const mapRef = useRef(null);
@@ -51,7 +47,8 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
     const clickSeqRef = useRef(0);
     const [isLocating, setIsLocating] = useState(false);
     const [info, setInfo] = useState(null);
-    const [layerLoading, setLayerLoading] = useState(false);
+    const { loadingLayers, setLayerLoading } = useLayerLoading();
+    const layerLoading = !!capa && loadingLayers.has(capa.slug);
 
     const { seleccion, consultar, cargarMas, limpiar, reposicionar } = useCatalogoPoligono({ mapRef, capa, tiempo });
 
@@ -61,6 +58,13 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
         limpiar();
     }, [limpiar]);
 
+    const tabla = useCatalogoTabla({ capa, tiempo, setInfo, clearInfo });
+    const capasContexto = useMemo(
+        () => ({ layers: tabla.contexto.allLayers, initialOrder: [], loading: false, error: null }),
+        [tabla.contexto.allLayers],
+    );
+
+    const encuadrarMunicipio = useCatalogoMunicipioMapa({ mapRef, municipio: municipio.municipio });
     const getMapInstance = useCallback(() => mapRef.current, []);
     useScaleLineControl(getMapInstance, scaleRef);
 
@@ -75,7 +79,7 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
         consultarRef.current?.(geometry, centerCoordinate, onFeatureCountUpdate);
     }, []);
 
-    const drawing = useMapDrawing(mapRef, handlePolygonComplete, null, { storageKey: CATALOGO_ANNOTATIONS_KEY });
+    const drawing = useMedicionesDelCatalogo(mapRef, handlePolygonComplete);
     const editing = useMapEditing({
         mapRef,
         vectorSourceRef: drawing.vectorSourceRef,
@@ -97,6 +101,16 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
         capaRef.current = capa;
     }, [capa]);
 
+    const consultarPunto = useCatalogoConsulta({ mapRef, wmsLayerRef, capaRef, clickSeqRef, highlightSourceRef, setInfo, clearInfo });
+    const consultarPuntoRef = useRef(null);
+    useEffect(() => {
+        consultarPuntoRef.current = consultarPunto;
+    }, [consultarPunto]);
+    const consultar3d = useCallback(
+        (_olMap, coordinate, evento) => consultarPunto(coordinate, evento?.point ? [evento.point.x, evento.point.y] : null),
+        [consultarPunto],
+    );
+
     const mapsContextValue = useMemo(() => ({
         mapRef,
         baseMapId: 'voyager',
@@ -109,7 +123,11 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
         stopLoop: loop.stopLoop,
         ...drawing,
         ...editing,
-    }), [isLocating, drawing, editing, tiempo.getSpecificFilter, loop.getLoopState, loop.stopLoop]);
+        ...tabla.contexto,
+        ...contexto3d(hexagonos && tiempo.geometria === 'point'),
+        municipioMode: municipio.municipio,
+        targetRef,
+    }), [isLocating, drawing, editing, tabla.contexto, tiempo.getSpecificFilter, loop.getLoopState, loop.stopLoop, municipio.municipio, hexagonos, tiempo.geometria]);
 
     useEffect(() => {
         if (!targetRef.current || mapRef.current) return;
@@ -151,44 +169,8 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
         highlightSourceRef.current = highlightSource;
         map.addLayer(new VectorLayer({ source: highlightSource, style: HIGHLIGHT_STYLE, zIndex: HIGHLIGHT_Z }));
 
-        const handleClick = async (evt) => {
-            if (isDrawingRef.current) return;
-            const layer = wmsLayerRef.current;
-            if (!layer) {
-                clearInfo();
-                return;
-            }
-            const view = map.getView();
-            const url = layer.getSource().getFeatureInfoUrl(
-                evt.coordinate,
-                view.getResolution(),
-                view.getProjection(),
-                { INFO_FORMAT: 'application/json', FEATURE_COUNT: FEATURE_COUNT_CAP },
-            );
-            if (!url) return;
-            const seq = ++clickSeqRef.current;
-            const pixel = evt.pixel;
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                if (seq !== clickSeqRef.current) return;
-                const features = data?.features || [];
-                trackCatalogoFeatureClick({ slug: capaRef.current?.slug || null, count: features.length });
-                const [lng, lat] = toLonLat(evt.coordinate);
-                setInfo({ features, pixel, lngLat: { lng, lat } });
-                highlightSourceRef.current?.clear();
-                if (features.length) {
-                    const parsed = features
-                        .filter((f) => f?.geometry)
-                        .map((f) => {
-                            try { return geojson.readFeature(f, { dataProjection: 'EPSG:3857', featureProjection: 'EPSG:3857' }); } catch { return null; }
-                        })
-                        .filter(Boolean);
-                    highlightSourceRef.current?.addFeatures(parsed);
-                }
-            } catch {
-                if (seq === clickSeqRef.current) clearInfo();
-            }
+        const handleClick = (evt) => {
+            if (!isDrawingRef.current) consultarPuntoRef.current?.(evt.coordinate, evt.pixel);
         };
         map.on('singleclick', handleClick);
 
@@ -207,25 +189,19 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
             map.removeLayer(wmsLayerRef.current);
             wmsLayerRef.current = null;
         }
-        if (!capa) {
-            setLayerLoading(false);
-            return;
-        }
-        const layer = buildWmsLayer(capa);
-        if (!layer) {
-            setLayerLoading(false);
-            return;
-        }
+        const layer = capa ? buildWmsLayer(capa) : null;
+        if (!layer) return;
         map.addLayer(layer);
         wmsLayerRef.current = layer;
 
+        const layerId = capa.slug;
         const source = layer.getSource();
-        const onLoadStart = () => setLayerLoading(true);
-        const onLoadEnd = () => setLayerLoading(false);
+        const onLoadStart = () => setLayerLoading(layerId, true);
+        const onLoadEnd = () => setLayerLoading(layerId, false);
         source.on('imageloadstart', onLoadStart);
         source.on('imageloadend', onLoadEnd);
         source.on('imageloaderror', onLoadEnd);
-        setLayerLoading(true);
+        onLoadStart();
 
         const cfg = hydrateWmsConfig({
             geoserverWorkspace: capa.geoserverWorkspace,
@@ -233,7 +209,7 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
         });
         const jalisco = () => transformExtent(JALISCO_BOUNDS.coords, 'EPSG:4326', 'EPSG:3857');
         let cancelled = false;
-        getLayerExtent3857(cfg)
+        if (!encuadrarMunicipio()) getLayerExtent3857(cfg)
             .then((extent) => {
                 const view = mapRef.current?.getView();
                 if (cancelled || !view) return;
@@ -248,58 +224,74 @@ const CatalogoMapView = ({ capa, onEditInfobox = null }) => {
             source.un('imageloadstart', onLoadStart);
             source.un('imageloadend', onLoadEnd);
             source.un('imageloaderror', onLoadEnd);
+            onLoadEnd();
         };
-    }, [capa, clearInfo, wmsLayerRef]);
+    }, [capa, clearInfo, wmsLayerRef, setLayerLoading, encuadrarMunicipio]);
+
+    useCatalogoHexbin({ mapRef, wmsLayerRef, capa, tiempo, activo: hexagonos, onCambio: onHexbin });
 
     return (
         <>
             <div ref={targetRef} className="absolute inset-0" />
 
             <MapsContext.Provider value={mapsContextValue}>
-                <SiderContext.Provider value={SIDER_STUB}>
-                    <MapControls />
-                    <CatalogoTools />
-                </SiderContext.Provider>
-                <MapAttribution hideActions extraRight={<CatalogoInfoButton />} />
-                {capa && <CatalogoTimeBar tiempo={tiempo} loop={loop} />}
+                <LayersContext.Provider value={capasContexto}>
+                    <View3dProvider>
+                        <CatalogoTablaProviders tablasFijas={tabla.tablasFijas}>
+                            <MapControls conMinimapa />
+                            <CatalogoTools tabla={tabla} hayCapa={Boolean(capa)} />
+                        </CatalogoTablaProviders>
+                        <MapAttribution hideCatalogo origenReporte="catalogo" />
+                        {capa && <CatalogoTimeBar tiempo={tiempo} loop={loop} />}
+                        <CatalogoVista3d consultar={consultar3d} onExtrusion={onExtrusion} />
+                        {capa && <CatalogoDescargaImagen abierto={imagenAbierta} capa={capa} onCerrar={onCerrarImagen} />}
+                    </View3dProvider>
+
+                    <div ref={scaleRef} className="fixed left-4 bottom-1 z-10" />
+
+                    {layerLoading && !loop.isLoopPlaying && (
+                        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-20">
+                            <LottieSpinner loop autoplay className="w-32 h-32" />
+                        </div>
+                    )}
+
+                    {info?.medicion && (
+                        <div className="fixed left-1/2 top-1/2 z-20 w-[260px] -translate-x-1/2 -translate-y-1/2">
+                            <PanelMedicionSeleccion geometria={info.medicion} onCerrar={clearInfo} />
+                        </div>
+                    )}
+
+                    {info && !info.medicion && capa && (
+                        <CatalogoInfoBox
+                            capa={capa}
+                            features={info.features}
+                            pixel={info.pixel}
+                            lngLat={info.lngLat}
+                            mapInstance={mapRef.current}
+                            onReposition={(nextPixel) => setInfo((prev) => (prev ? { ...prev, pixel: nextPixel } : prev))}
+                            onEdit={onEditInfobox}
+                            onClose={clearInfo}
+                        />
+                    )}
+
+                    {seleccion && capa && (
+                        <CatalogoInfoBox
+                            capa={capa}
+                            features={seleccion.features}
+                            pixel={seleccion.pixel}
+                            lngLat={seleccion.lngLat}
+                            mapInstance={mapRef.current}
+                            onReposition={reposicionar}
+                            onEdit={onEditInfobox}
+                            onClose={clearInfo}
+                            hasMore={seleccion.hasMore}
+                            onLoadMore={cargarMas}
+                            matched={seleccion.matched}
+                            geometria={seleccion.geometria}
+                        />
+                    )}
+                </LayersContext.Provider>
             </MapsContext.Provider>
-
-            <div ref={scaleRef} className="fixed left-4 bottom-1 z-10" />
-
-            {layerLoading && !loop.isLoopPlaying && (
-                <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-20">
-                    <LottieSpinner loop autoplay className="w-32 h-32" />
-                </div>
-            )}
-
-            {info && capa && (
-                <CatalogoInfoBox
-                    capa={capa}
-                    features={info.features}
-                    pixel={info.pixel}
-                    lngLat={info.lngLat}
-                    mapInstance={mapRef.current}
-                    onReposition={(nextPixel) => setInfo((prev) => (prev ? { ...prev, pixel: nextPixel } : prev))}
-                    onEdit={onEditInfobox}
-                    onClose={clearInfo}
-                />
-            )}
-
-            {seleccion && capa && (
-                <CatalogoInfoBox
-                    capa={capa}
-                    features={seleccion.features}
-                    pixel={seleccion.pixel}
-                    lngLat={seleccion.lngLat}
-                    mapInstance={mapRef.current}
-                    onReposition={reposicionar}
-                    onEdit={onEditInfobox}
-                    onClose={clearInfo}
-                    hasMore={seleccion.hasMore}
-                    onLoadMore={cargarMas}
-                    matched={seleccion.matched}
-                />
-            )}
         </>
     );
 };

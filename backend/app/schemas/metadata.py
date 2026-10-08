@@ -45,6 +45,7 @@ class MetodologiaItem(BaseModel):
 
 class MetadataResponse(LayerResponse):
     numeralia: Optional[list] = Field(default = None)
+    ambito: Optional[dict] = Field(default = None)
     nombre_pie_numeralia : Optional[str] = Field(default = None)
     metadato: Optional[list[MetadatoItem]] = Field(default = None)
     fuentes: Optional[list[FuenteItem]] = Field(default = None)

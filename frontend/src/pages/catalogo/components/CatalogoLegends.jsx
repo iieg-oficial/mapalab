@@ -5,17 +5,23 @@ import { downloadCatalogoCapa, RASTER_FORMATS } from '@services/downloadService'
 import { capaHasGeometry } from '@services/catalogoService';
 import LegendImage from '@components/LegendImage';
 import CatalogoShare from './CatalogoShare';
-import { buildCatalogoShareUrl, cqlToFechaParam } from '../helpers/catalogoRoutes';
+import { CatalogoHexbinLeyenda, CatalogoVistaSegmented } from './CatalogoVista';
+import { hexbinDisponible } from '../hooks/useCatalogoHexbin';
+import { PARAM_VISTA, VISTA_HEXAGONOS, VISTA_PUNTOS } from '../helpers/catalogoVista';
+import { buildCatalogoShareUrl, filtroToFechaParam } from '../helpers/catalogoRoutes';
+import { PARAM_MUNICIPIOS } from '../hooks/useCatalogoMunicipio';
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
 import { trackCatalogoDownload, trackCatalogoShare } from '@services/analyticsService';
 
 const ICON_BTN = 'size-7 rounded-full flex items-center justify-center transition-colors';
 
-const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
-    const { tiempo } = useCatalogoTiempoContext();
+const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, onVista = null, hexbin = null, extrusion = null, onImagen = null, onClose }) => {
+    const { tiempo, municipio } = useCatalogoTiempoContext();
+    const municipios = municipio?.municipio?.active ? municipio.municipio.selected.join(',') : '';
     const filtro = tiempo?.filtro || null;
     const isRaster = !!tiempo?.isRaster;
-    const cqlFiltro = isRaster ? null : filtro;
+    const periodicidad = tiempo?.periodicidad || null;
+    const cqlFiltro = isRaster ? null : tiempo?.filtroMapa || null;
     const [minimized, setMinimized] = useState(false);
     const [showShp, setShowShp] = useState(true);
     const [showFormats, setShowFormats] = useState(false);
@@ -36,11 +42,18 @@ const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
         [cfg, cqlFiltro],
     );
 
+    const conVista = !!onVista && hexbinDisponible(capa, tiempo);
+
     const shareUrl = useMemo(() => {
         const base = buildCatalogoShareUrl({ institucionSlug, capaSlug: capa.slug });
-        const fecha = cqlToFechaParam(cqlFiltro);
-        return fecha ? `${base}?fecha=${encodeURIComponent(fecha)}` : base;
-    }, [institucionSlug, capa.slug, cqlFiltro]);
+        const params = new URLSearchParams();
+        const fecha = filtroToFechaParam(filtro, { isRaster, periodicidad });
+        if (fecha) params.set('fecha', fecha);
+        if (conVista && vista === VISTA_HEXAGONOS) params.set(PARAM_VISTA, VISTA_HEXAGONOS);
+        if (municipios) params.set(PARAM_MUNICIPIOS, municipios);
+        const consulta = params.toString();
+        return consulta ? `${base}?${consulta}` : base;
+    }, [institucionSlug, capa.slug, filtro, isRaster, periodicidad, conVista, vista, municipios]);
 
     useEffect(() => {
         let active = true;
@@ -64,7 +77,7 @@ const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
         await downloadCatalogoCapa(capa, formatId, {
             cqlFilter: cqlFiltro,
             timeValue: isRaster ? filtro : null,
-            rasterPeriodicity: isRaster ? tiempo?.periodicidad || null : null,
+            rasterPeriodicity: isRaster ? periodicidad : null,
         });
         setDownloading(null);
     };
@@ -104,7 +117,16 @@ const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
 
             {!minimized && (
                 <div className="px-3.5 pb-3">
-                    {legendUrl && (
+                    {(conVista || extrusion) && (
+                        <CatalogoVistaSegmented
+                            nombre={capa.nombre}
+                            vista={vista}
+                            onVista={conVista ? onVista : null}
+                            extrusion={extrusion}
+                            celdas={hexbin?.estado === 'listo' ? hexbin.stats?.cells ?? null : null}
+                        />
+                    )}
+                    {hexbin ? <CatalogoHexbinLeyenda hexbin={hexbin} /> : legendUrl && (
                         <div className="relative w-full bg-white rounded-[13px] p-2 max-h-[52vh] overflow-y-auto">
                             <LegendImage src={legendUrl} alt={capa.nombre} />
                         </div>
@@ -141,6 +163,15 @@ const CatalogoLegends = ({ capa, institucionSlug = null, onClose }) => {
 
                     {showFormats && (
                         <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                            {onImagen && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowFormats(false); onImagen(); }}
+                                    className="text-[12px] font-garet px-3 py-1.5 rounded-[14px] border border-purple-deep text-purple-deep hover:bg-purple-deep hover:text-white transition-colors"
+                                >
+                                    Imagen
+                                </button>
+                            )}
                             {formats.map((f) => (
                                 <button
                                     key={f.id}

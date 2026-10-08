@@ -17,11 +17,12 @@ from app.utils.logger import Logger
 _FLUSH_INTERVAL_SECONDS = 30.0
 _MAX_BUFFER_SIZE = 5000
 _HTTP_TIMEOUT = 6.0
+_SIN_FILA_SI_PERMITIDO = frozenset({'wms', 'telemetry'})
 
 
 @dataclass
 class AccessRecord:
-    api_key_id: int
+    api_key_id: Optional[int]
     timestamp: datetime
     endpoint: str
     resultado: str
@@ -30,6 +31,7 @@ class AccessRecord:
     ip_hash: Optional[str] = None
     layers: Optional[list[str]] = None
     request_id: Optional[str] = None
+    key_prefix: Optional[str] = None
 
     def to_payload(self) -> dict:
         return {
@@ -42,6 +44,7 @@ class AccessRecord:
             'ipHash': self.ip_hash,
             'layers': list(self.layers or []),
             'requestId': self.request_id,
+            'keyPrefix': self.key_prefix,
         }
 
 
@@ -68,8 +71,11 @@ class _AccessLogger:
         ip: Optional[str] = None,
         layers: Optional[list[str]] = None,
         request_id: Optional[str] = None,
+        key_prefix: Optional[str] = None,
     ) -> None:
-        if api_key_id is None:
+        if resultado == 'allowed' and endpoint in _SIN_FILA_SI_PERMITIDO:
+            return
+        if api_key_id is None and not key_prefix:
             return
         with self._lock:
             self._buffer.append(AccessRecord(
@@ -82,6 +88,7 @@ class _AccessLogger:
                 ip_hash=hash_ip(ip),
                 layers=list(layers or []),
                 request_id=request_id,
+                key_prefix=(key_prefix or '')[:20] or None,
             ))
 
     def drain(self) -> list[AccessRecord]:

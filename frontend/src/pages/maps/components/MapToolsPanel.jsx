@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Download from './MapExport/Download';
 import MunicipioFilterButton from './MapExport/MunicipioFilterButton';
 import ShareButton from './ShareButton';
@@ -8,10 +8,18 @@ import FloatingIconButton from '@components/FloatingIconButton';
 import ExportPreview from './MapExport/ExportPreview';
 import { useShareDirtiness } from '@pages/maps/hooks/useShareDirtiness';
 import { useMapsContext } from '@hooks/useMaps';
-import { SIDER_EXPANDED_WIDTH } from '@constants/sider';
 import { useIsNonProd } from '@hooks/useDevTools';
+import { SIDER_EXPANDED_WIDTH, TOOLS_COMPACT_MEDIA_QUERY } from '@constants/sider';
+import { useMediaQuery } from '@hooks/useMediaQuery';
+import { useIsMobile } from '@hooks/useIsMobile';
+import { useSider } from '@contexts/SiderContext';
+import { useAreaUtil } from '@contexts/AreaUtilContext';
+import {
+    leerPreferenciaCompacta,
+    guardarPreferenciaCompacta,
+    resolveToolsCollapsed,
+} from '@pages/maps/helpers/toolsPanelCollapse';
 
-const COLLAPSE_KEY = 'mapalab.tools.collapsed';
 const MapToolsPanel = () => {
     const isNonProd = useIsNonProd();
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -19,18 +27,30 @@ const MapToolsPanel = () => {
     const [isMunicipioOpen, setIsMunicipioOpen] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
     const { municipioMode } = useMapsContext();
+    const { toolsPanelRef } = useSider();
     const [previewFormat, setPreviewFormat] = useState('png');
     const [previewLegends, setPreviewLegends] = useState([]);
     const [previewTitle, setPreviewTitle] = useState('');
     const [previewQuality, setPreviewQuality] = useState(null);
     const [previewSwipeOptions, setPreviewSwipeOptions] = useState(null);
     const { isDirty, loadedShareId, reset } = useShareDirtiness();
-    const [isCollapsed, setIsCollapsed] = useState(() => {
-        try { return localStorage.getItem(COLLAPSE_KEY) === '1'; } catch { return false; }
-    });
+    const [preferencia, setPreferencia] = useState(leerPreferenciaCompacta);
+    const esCompacto = useMediaQuery(TOOLS_COMPACT_MEDIA_QUERY);
+    const isMobile = useIsMobile();
+    const { acoplado } = useAreaUtil();
+
+    const isCollapsed = resolveToolsCollapsed({ isMobile, esCompacto, preferencia });
 
     useEffect(() => {
-        try { localStorage.setItem(COLLAPSE_KEY, isCollapsed ? '1' : '0'); } catch { /* storage off */ }
+        if (!acoplado) return;
+        guardarPreferenciaCompacta('1');
+        setPreferencia('1');
+    }, [acoplado]);
+
+    const alternarCompacto = useCallback(() => {
+        const siguiente = isCollapsed ? '0' : '1';
+        guardarPreferenciaCompacta(siguiente);
+        setPreferencia(siguiente);
     }, [isCollapsed]);
 
     const handleOpenPreview = (format, selectedLegends, title, quality, swipeOptions) => {
@@ -47,14 +67,13 @@ const MapToolsPanel = () => {
     };
 
     const isAnyPanelOpen = isDownloadOpen || isPreviewOpen || isMunicipioOpen || isShareOpen;
-    const isDownloadExpanded = !isNonProd && !isCollapsed;
     // const panelInlineStyle = isCollapsed ? undefined : { width: SIDER_EXPANDED_WIDTH };
     const collapseIconKey = isCollapsed ? 'left_arrow_fill_normal' : 'right_arrow_fill_normal';
     const collapseTooltip = isCollapsed ? 'Mostrar etiquetas' : 'Compactar barra';
 
     return (
         <>
-            <div className={`fixed top-4 right-4 z-11 ${isAnyPanelOpen ? 'max-md:z-60' : 'max-md:z-21'} flex flex-row items-center`}>
+            <div ref={toolsPanelRef} className={`fixed top-4 right-4 z-11 ${isAnyPanelOpen ? 'max-md:z-60' : 'max-md:z-21'} flex flex-row items-center`}>
                 {loadedShareId && (
                     <ShareActiveChip loadedShareId={loadedShareId} isDirty={isDirty} onRestaurado={reset} />
                 )}
@@ -64,13 +83,13 @@ const MapToolsPanel = () => {
                         tooltip={collapseTooltip}
                         placement="left"
                         delay={300}
-                        onClick={() => setIsCollapsed(prev => !prev)}
+                        onClick={alternarCompacto}
                     />
                 </div>
                 <Panel
                     variant="floating"
                     position="static"
-                    width={isCollapsed || !isNonProd ? 'w-auto' : 'w-auto md:w-[373px]'}
+                    width={isCollapsed ? 'w-auto' : 'w-auto md:w-[373px]'}
                     flexDirection="flex-row items-center"
                     className="rounded-[10px] shadow-[0_5px_20px_#1A26641A]"
                     contentClassName="gap-2 px-4 py-3"
@@ -80,13 +99,16 @@ const MapToolsPanel = () => {
                         onOpenPreview={handleOpenPreview}
                         onOpenChange={setIsDownloadOpen}
                         collapsed={isCollapsed}
-                        expanded={isDownloadExpanded}
+                        expanded={false}
+                        llenar={!isNonProd}
                     />
-                    <MunicipioFilterButton 
-                        municipioMode={municipioMode} 
-                        onOpenChange={setIsMunicipioOpen} 
-                        collapsed={isCollapsed} 
-                    />
+                    {isNonProd && (
+                        <MunicipioFilterButton
+                            municipioMode={municipioMode}
+                            onOpenChange={setIsMunicipioOpen}
+                            collapsed={isCollapsed}
+                        />
+                    )}
                     <ShareButton
                         onOpenChange={setIsShareOpen}
                         isDirty={isDirty}

@@ -3,7 +3,9 @@ import Feature from 'ol/Feature';
 import LineString from 'ol/geom/LineString';
 import Polygon from 'ol/geom/Polygon';
 import Point from 'ol/geom/Point';
+import VectorSource from 'ol/source/Vector';
 import { serializeAnnotations } from '@pages/maps/helpers/annotationsSerialization';
+import { buildRestoredItems } from '@pages/maps/helpers/restoreAnnotations';
 
 const CENTRO_3857 = [-11500000, 2300000];
 
@@ -71,8 +73,8 @@ describe('serializeAnnotations', () => {
         expect(out.map((e) => e.id)).toEqual(['ok']);
     });
 
-    it('acepta los cinco tipos de anotacion', () => {
-        const tipos = ['LineString', 'Polygon', 'Freehand', 'Text', 'Emoji'];
+    it('acepta los seis tipos de anotacion, incluida la seleccion', () => {
+        const tipos = ['LineString', 'Polygon', 'Select', 'Freehand', 'Text', 'Emoji'];
         const out = serializeAnnotations(tipos.map((type, i) => medicion({ id: `a${i}`, type })));
 
         expect(out.map((e) => e.type)).toEqual(tipos);
@@ -197,5 +199,24 @@ describe('serializeAnnotations', () => {
         ]);
 
         expect(JSON.parse(JSON.stringify(out))).toEqual(out);
+    });
+});
+
+describe('seleccion ida y vuelta', () => {
+    it('la seleccion se guarda y vuelve con su geometria y su centro', () => {
+        const anillo = [CENTRO_3857, [-11400000, 2400000], [-11400000, 2300000], CENTRO_3857];
+        const guardado = serializeAnnotations([
+            medicion({ id: 's1', type: 'Select', label: '3 elementos', feature: new Feature({ geometry: new Polygon([anillo]) }) }),
+        ]);
+        const source = new VectorSource();
+        const [restaurada] = buildRestoredItems({ annotations: guardado, source, measurementConfig: {} });
+
+        expect(restaurada.id).toBe('s1');
+        expect(restaurada.type).toBe('Select');
+        expect(restaurada.label).toBe('3 elementos');
+        expect(restaurada.geometry.getType()).toBe('Polygon');
+        expect(restaurada.center).toHaveLength(2);
+        expect(restaurada.feature.get('annotationType')).toBe('Select');
+        expect(source.getFeatures()).toHaveLength(1);
     });
 });

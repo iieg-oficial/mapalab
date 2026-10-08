@@ -1,4 +1,4 @@
-import { SLOT_COLORS, SWIPE_HANDLE_COLOR } from '@pages/maps/helpers/swipeTheme';
+import { SLOT_COLORS, SWIPE_HANDLE_COLOR, slotLabel } from '@pages/maps/helpers/swipeTheme';
 
 const SLOT_FILL = { A: SLOT_COLORS.A.fg, B: SLOT_COLORS.B.fg };
 const SLOT_BG = { A: SLOT_COLORS.A.bg, B: SLOT_COLORS.B.bg };
@@ -21,7 +21,7 @@ const drawRoundedRect = (ctx, x, y, w, h, r) => {
 
 const drawCombinedPill = (ctx, { x, y, label, slot, fontSize, paddingX, paddingY, anchor = 'left' }) => {
     ctx.font = `bold ${fontSize}px sans-serif`;
-    const badgeText = slot;
+    const badgeText = slotLabel(slot);
     const badgeW = ctx.measureText(badgeText).width + paddingX * 1.4;
     const labelW = ctx.measureText(label).width + paddingX * 1.4;
     const totalW = badgeW + labelW;

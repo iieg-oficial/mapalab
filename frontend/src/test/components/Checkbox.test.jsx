@@ -61,19 +61,29 @@ describe('Checkbox - ícono de check', () => {
     });
 });
 
-describe('Checkbox - clases visuales', () => {
+describe('Checkbox - colores', () => {
     it('aplica fondo púrpura cuando checked=true', () => {
         render(<Checkbox checked={true} onChange={vi.fn()} />);
-        expect(screen.getByRole('checkbox').className).toContain('bg-[#703089]');
+        expect(screen.getByRole('checkbox')).toHaveStyle({ backgroundColor: '#703089' });
     });
 
     it('aplica fondo claro cuando checked=false', () => {
         render(<Checkbox checked={false} onChange={vi.fn()} />);
-        expect(screen.getByRole('checkbox').className).toContain('bg-[#EAEFFA]');
+        expect(screen.getByRole('checkbox')).toHaveStyle({ backgroundColor: '#EAEFFA' });
     });
 
     it('aplica fondo gris cuando disabled=true', () => {
         render(<Checkbox checked={false} onChange={vi.fn()} disabled={true} />);
-        expect(screen.getByRole('checkbox').className).toContain('bg-[#E9EDF7]');
+        expect(screen.getByRole('checkbox')).toHaveStyle({ backgroundColor: '#E9EDF7' });
+    });
+
+    it('respeta el color del slot cuando se le pasa uno', () => {
+        render(<Checkbox checked={true} onChange={vi.fn()} color="#FF8300" />);
+        expect(screen.getByRole('checkbox')).toHaveStyle({ backgroundColor: '#FF8300' });
+    });
+
+    it('ignora el color del slot mientras está apagado', () => {
+        render(<Checkbox checked={false} onChange={vi.fn()} color="#FF8300" />);
+        expect(screen.getByRole('checkbox')).toHaveStyle({ backgroundColor: '#EAEFFA' });
     });
 });

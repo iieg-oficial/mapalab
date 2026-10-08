@@ -1,7 +1,7 @@
 export const ACTIVE_LAYERS_PANEL_WIDTH = 373;
 
-const VIEWPORT_EDGE = 16;
-const PANEL_GAP = 14;
+export const VIEWPORT_EDGE = 16;
+export const PANEL_GAP = 14;
 const TOP_MARGIN = 50;
 const BOTTOM_MARGIN = 30;
 const MOBILE_MARGIN = 28;

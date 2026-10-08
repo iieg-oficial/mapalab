@@ -26,6 +26,7 @@ export const useFloatingPosition = ({ open, anchorRef, contentRef, placement = '
         }
 
         const placements = {
+            'bottom':       () => ({ top: anchor.bottom + offset, left: anchor.left + anchor.width / 2 - el.offsetWidth / 2 }),
             'bottom-start': () => ({ top: anchor.bottom + offset, left: anchor.left }),
             'bottom-end':   () => ({ top: anchor.bottom + offset, left: anchor.right - el.offsetWidth }),
             'top-start':    () => ({ top: anchor.top - el.offsetHeight - offset, left: anchor.left }),
@@ -64,6 +65,7 @@ export const useFloatingPosition = ({ open, anchorRef, contentRef, placement = '
 
         const resizeObserver = new ResizeObserver(handleUpdate);
         resizeObserver.observe(anchorRef.current);
+        resizeObserver.observe(contentRef.current);
 
         window.addEventListener('resize', handleUpdate, { passive: true });
 

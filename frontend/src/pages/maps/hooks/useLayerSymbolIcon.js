@@ -5,6 +5,32 @@ import { findLayerById, collectLayersWithWMS } from '../helpers/layers/utils/lay
 
 const symbolUrlCache = new Map();
 
+const normalize = (value) => String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+export const pickRuleForNode = (rules, layerNode) => {
+    if (!Array.isArray(rules) || rules.length === 0) return null;
+    if (rules.length === 1) return rules[0];
+
+    const label = normalize(layerNode?.label);
+    const porNombre = rules.find(rule => normalize(rule?.name) === label);
+    if (porNombre) return porNombre;
+
+    const cql = normalize(layerNode?.wmsConfig?.cqlFilter);
+    if (cql) {
+        const porFiltro = rules.find(rule => {
+            const filtro = normalize(rule?.filter).replace(/[[\]]/g, '');
+            return filtro && (cql.includes(filtro) || filtro.includes(cql));
+        });
+        if (porFiltro) return porFiltro;
+    }
+
+    return rules[0];
+};
+
 export const clearSymbolUrlCache = () => symbolUrlCache.clear();
 
 export const useLayerSymbolIcon = (layerId, enabled = true) => {
@@ -46,8 +72,9 @@ export const useLayerSymbolIcon = (layerId, enabled = true) => {
             let url = null;
             if (rules.length > 0) {
                 const options = { forceLabels: 'off', transparent: true };
-                if (rules.length > 1 && rules[0]?.name) {
-                    options.rule = rules[0].name;
+                const rule = pickRuleForNode(rules, layerNode);
+                if (rules.length > 1 && rule?.name) {
+                    options.rule = rule.name;
                 }
                 url = getLegendUrl(legendLayer, options);
             }

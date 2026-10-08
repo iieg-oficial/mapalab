@@ -248,7 +248,7 @@ const Header = () => {
             <div className={`sticky top-0 px-2.5 pt-2.5 bg-white z-50 w-full transition-all duration-300 ${showSticky ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}>
                 <div className="bg-purple flex items-center justify-between px-2 md:px-20 xl:px-45 py-5 rounded-[9px] border border-[#707070]">
                     <Logo name="mapalab" variant="dark" size="w-84 h-13" expanded />
-                    <Logo name="iieg" variant="dark" size="w-44 h-13" expanded visible={!isMobile} href="https://iieg.gob.mx/ns/" />
+                    <Logo name="iieg" variant="dark" size="w-44 h-13" expanded visible={!isMobile} href="https://iieg.jalisco.gob.mx/" />
                 </div>
             </div>
         </>

@@ -18,8 +18,6 @@ const BACKGROUND_POLYGON_LAYER_NAMES = new Set([
     'recursos:areas_naturales_protegidas'
 ]);
 
-export const PIN_Z_OFFSET = 9000;
-
 export const sortItemsWithPinnedFirst = (items, pinnedSet, initialOrder) => {
     if (pinnedSet.size === 0) return items;
     const orderOf = id => {

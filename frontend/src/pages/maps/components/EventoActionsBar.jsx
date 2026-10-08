@@ -100,7 +100,7 @@ const EventoActionsBar = ({ evento, externalActiveIds = [], onCenterEvento }) =>
                             aria-label="Centrar mapa en el evento"
                             className={ICON_BUTTON}
                         >
-                            <Icon name="fit_extent" className="size-3.5" />
+                            <Icon name="fit_extent" state="hover" className="size-3.5" />
                         </button>
                     </Tooltip>
                 )}

@@ -13,7 +13,9 @@ export const JALISCO_BOUNDS = {
 
 const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
 
-export const hydrateWmsConfig = (wmsConfig) => {
+const API_BASE = (import.meta.env.VITE_BACKEND_API_HOST || '/api/').replace(/\/+$/, '');
+
+export const hydrateWmsConfig = (wmsConfig, privada = false) => {
     if (!wmsConfig) return null;
     const gsWorkspace = wmsConfig.geoserverWorkspace || wmsConfig.workspace;
     const gsLayer = wmsConfig.geoserverLayer;
@@ -25,7 +27,7 @@ export const hydrateWmsConfig = (wmsConfig) => {
     return {
         ...WMS_BASE_CONFIG,
         ...clean,
-        baseUrl: `${GEOSERVER_BASE}/${gsWorkspace}/wms`,
+        baseUrl: privada ? `${API_BASE}/privado/${gsWorkspace}/wms` : `${GEOSERVER_BASE}/${gsWorkspace}/wms`,
         layerName,
         tiled: wmsConfig.tiled === true,
     };
@@ -35,7 +37,7 @@ const hydrateNode = (node) => {
     if (!node) return node;
     const result = {
         ...node,
-        wmsConfig: node.wmsConfig ? hydrateWmsConfig(node.wmsConfig) : node.wmsConfig,
+        wmsConfig: node.wmsConfig ? hydrateWmsConfig(node.wmsConfig, node.privada === true) : node.wmsConfig,
     };
     if (Array.isArray(node.children)) {
         result.children = node.children.map(hydrateNode);

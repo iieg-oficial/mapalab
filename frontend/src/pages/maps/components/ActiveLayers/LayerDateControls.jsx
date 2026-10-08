@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import DatePill from './DatePill';
-import SlotBadge from './SlotBadge';
 import { computeLabel } from './datePillHelpers';
 import { DEFAULT_LOOP_INTERVAL_MS, DEFAULT_LOOP_DIRECTION } from '@hooksMaps/useDateLoop';
 import { RADIUS_ICON, toneButtonFor, toneTextClass } from '@pages/maps/helpers/periodicityTones';
+import { slotLabel as etiquetaSlot } from '@pages/maps/helpers/swipeTheme';
 
 const LOOP_BUTTON_BASE = `flex items-center justify-center size-6 ${RADIUS_ICON} shrink-0 disabled:cursor-not-allowed`;
 
@@ -23,7 +23,7 @@ const LoopControls = ({
     disabledHint = ''
 }) => {
     const slot = slotPalette === 'A' || slotPalette === 'B' ? slotPalette : null;
-    const slotLabel = slot ? ` (lado ${slot})` : '';
+    const slotLabel = slot ? ` (lado ${etiquetaSlot(slot)})` : '';
     const play = toneButtonFor(slot, isLooping, { disabled });
     const interval = toneButtonFor(slot, (loopIntervalMs ?? DEFAULT_LOOP_INTERVAL_MS) !== DEFAULT_LOOP_INTERVAL_MS, { disabled });
     const direction = toneButtonFor(slot, (loopDirection ?? DEFAULT_LOOP_DIRECTION) !== DEFAULT_LOOP_DIRECTION, { disabled });
@@ -35,7 +35,7 @@ const LoopControls = ({
     const playButton = (
         <Tooltip content={playTooltip} key="play">
             <button
-                onClick={onPlay}
+                onClick={(e) => onPlay?.(e, slot || undefined)}
                 disabled={disabled || !canPlayLoop}
                 className={`${LOOP_BUTTON_BASE} disabled:opacity-50 ${play.className}`}
             >
@@ -80,15 +80,19 @@ const LayerDateControls = ({
     slotMembership,
     liveDateFilter,
     isLooping,
+    loopSlot = null,
     isLoading,
     canPlayLoop,
     loopIntervalMs,
     loopDirection,
     onPillClick,
+    emptyLabel = null,
+    pillTooltip,
+    pillExpanded,
+    onPillClear,
     onPlay,
     onInterval,
-    onDirection,
-    onCycleSlot
+    onDirection
 }) => {
     const isSwipe = !!compareMode?.active;
 
@@ -96,14 +100,12 @@ const LayerDateControls = ({
     const slotALabel = useMemo(() => computeLabel(compareMode?.paneA?.filters?.[layerId]?.date, rasterPeriodicity), [compareMode?.paneA?.filters, layerId, rasterPeriodicity]);
     const slotBLabel = useMemo(() => computeLabel(compareMode?.paneB?.filters?.[layerId]?.date, rasterPeriodicity), [compareMode?.paneB?.filters, layerId, rasterPeriodicity]);
 
-    const hasAnyLabel = !!(liveLabel.label || slotALabel.label || slotBLabel.label);
-    if (!hasAnyLabel) return null;
-
     if (!isSwipe) {
-        if (!liveLabel.label) return null;
+        const label = liveLabel.label || emptyLabel;
+        if (!label) return null;
         return (
             <div className="flex items-center gap-1 w-full">
-                <DatePill slot="none" label={liveLabel.label} kind={liveLabel.kind} onClick={onPillClick} isLoopingPulse={isLooping && isLoading} size="lg" />
+                <DatePill slot="none" label={label} kind={liveLabel.kind} onClick={onPillClick} isLoopingPulse={isLooping && isLoading} size="lg" tooltip={pillTooltip} expanded={pillExpanded} onClear={liveLabel.label ? onPillClear : undefined} />
                 <LoopControls
                     isLooping={isLooping}
                     canPlayLoop={canPlayLoop}
@@ -118,9 +120,10 @@ const LayerDateControls = ({
         );
     }
 
-    if (!slotMembership) return null;
+    if (!(slotALabel.label || slotBLabel.label) || !slotMembership) return null;
 
-    const isActiveA = compareMode.activeSlot === 'A';
+    const controlSlot = isLooping && loopSlot ? loopSlot : compareMode.activeSlot;
+    const isActiveA = controlSlot === 'A';
     const inactiveHint = `Cambia al lado ${isActiveA ? 'B' : 'A'} para controlar este loop`;
     const showA = (slotMembership === 'A' || slotMembership === 'AB') && slotALabel.label;
     const showB = (slotMembership === 'B' || slotMembership === 'AB') && slotBLabel.label;
@@ -132,8 +135,6 @@ const LayerDateControls = ({
             return (
                 <div className="flex items-center gap-1 w-full">
                     {showA && <DatePill slot="A" label={slotALabel.label} kind={slotALabel.kind} onClick={onPillClick} size="lg" />}
-                    <div className="flex-1" />
-                    <SlotBadge membership="AB" onCycle={onCycleSlot} layerId={layerId} />
                     <div className="flex-1" />
                     {showB && <DatePill slot="B" label={slotBLabel.label} kind={slotBLabel.kind} onClick={onPillClick} size="lg" />}
                 </div>
@@ -155,7 +156,6 @@ const LayerDateControls = ({
                         slotPalette="A"
                     />
                     <div className="flex-1" />
-                    <SlotBadge membership="AB" onCycle={onCycleSlot} layerId={layerId} />
                     {showB && <DatePill slot="B" label={slotBLabel.label} kind={slotBLabel.kind} onClick={onPillClick} size="lg" />}
                 </div>
             );
@@ -163,7 +163,6 @@ const LayerDateControls = ({
         return (
             <div className="flex items-center gap-1 w-full">
                 {showA && <DatePill slot="A" label={slotALabel.label} kind={slotALabel.kind} onClick={onPillClick} size="lg" />}
-                <SlotBadge membership="AB" onCycle={onCycleSlot} layerId={layerId} />
                 <div className="flex-1" />
                 <LoopControls
                     isLooping={isLooping}
@@ -198,14 +197,12 @@ const LayerDateControls = ({
                     disabledHint={inactiveHint}
                 />
                 <div className="flex-1" />
-                <SlotBadge membership="A" onCycle={onCycleSlot} layerId={layerId} />
             </div>
         );
     }
 
     return (
         <div className="flex items-center gap-1 w-full">
-            <SlotBadge membership="B" onCycle={onCycleSlot} layerId={layerId} />
             <div className="flex-1" />
             <LoopControls
                 isLooping={!isActiveA && isLooping}

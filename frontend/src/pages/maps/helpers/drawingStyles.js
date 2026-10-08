@@ -7,6 +7,20 @@ import { createAngleStyles, createSegmentLengthStyles } from './measurementStyle
 
 const LABEL_FONT = '"Garet", "Inter", sans-serif';
 
+const ETIQUETA_MEDICION = Symbol('etiquetaDeMedicion');
+
+const marcarEtiqueta = (estilo) => {
+    estilo[ETIQUETA_MEDICION] = true;
+    return estilo;
+};
+
+export const sinEtiquetasDeMedicion = (estilos) => {
+    if (!estilos) return estilos;
+    const lista = Array.isArray(estilos) ? estilos : [estilos];
+    const visibles = lista.filter(estilo => !estilo?.[ETIQUETA_MEDICION]);
+    return visibles.length === lista.length ? estilos : visibles;
+};
+
 const DEFAULT_STYLES = {
     LineString: {
         stroke: DRAW_COLORS.purpleDeep,
@@ -32,7 +46,7 @@ const createLabelStyle = (text, geometry) => {
     const geometryType = geometry.getType();
 
     if (geometryType === 'Polygon') {
-        return new Style({
+        return marcarEtiqueta(new Style({
             geometry: geometry.getInteriorPoint(),
             text: new TextStyle({
                 text: text,
@@ -42,12 +56,12 @@ const createLabelStyle = (text, geometry) => {
                 backgroundFill: new Fill({ color: 'rgba(255, 255, 255, 0.9)' }),
                 padding: [2, 4, 2, 4]
             })
-        });
+        }));
     } else if (geometryType === 'LineString') {
         const coordinates = geometry.getCoordinates();
         const lastCoord = coordinates[coordinates.length - 1];
 
-        return new Style({
+        return marcarEtiqueta(new Style({
             geometry: new Point(lastCoord),
             text: new TextStyle({
                 text: text,
@@ -58,7 +72,7 @@ const createLabelStyle = (text, geometry) => {
                 backgroundFill: new Fill({ color: 'rgba(255, 255, 255, 0.9)' }),
                 padding: [2, 4, 2, 4]
             })
-        });
+        }));
     }
 
     return null;

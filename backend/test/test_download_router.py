@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 import app.routers.download as download
 from app.exceptions.common_exceptions import BaseAppException, NotFoundException
 from app.handlers.handle_exceptions import app_exception_handler
+from app.services import download_slots
 
 
 @pytest.fixture
@@ -30,10 +31,9 @@ def repo(monkeypatch):
     return llamadas
 
 
-@pytest.mark.parametrize('workspace,capa', [('mapalab', 'map_shares'), ('pg_catalog', 'pg_roles')])
-def test_sin_metadatos_no_hay_respaldo_a_la_tabla(repo, workspace, capa):
+def test_sin_metadatos_no_hay_respaldo_a_la_tabla(repo):
     with pytest.raises(NotFoundException):
-        download._prepare_download(workspace, capa, False)
+        download._prepare_download('mapalab', 'map_shares', False)
     assert repo['tabla'] == [] and repo['cache'] == []
 
 
@@ -77,28 +77,23 @@ def test_rechaza_nombres_fuera_de_patron(cliente, ruta, monkeypatch):
     assert cliente.get(ruta).status_code == 404
 
 
-@pytest.mark.parametrize('ruta', ['/download/mapalab/map_shares', '/download/pg_catalog/pg_roles'])
-def test_tablas_fuera_del_catalogo_responden_404(cliente, repo, ruta):
-    assert cliente.get(ruta).status_code == 404
-    assert repo['tabla'] == []
+def test_responde_429_sin_ranuras_libres(cliente, monkeypatch):
+    monkeypatch.setattr(download, '_prepare_download', lambda *a: ('table', 't', 's', 't'))
+    monkeypatch.setattr(download_slots, 'try_acquire', lambda: None)
+    respuesta = cliente.get('/download/economia/capa')
+    assert respuesta.status_code == 429
+    assert respuesta.headers['retry-after'] == '30'
 
 
-def test_capa_del_catalogo_se_descarga(cliente, repo, monkeypatch):
-    monkeypatch.setattr(
-        download.DownloadRepository, 'resolve_downloadable',
-        lambda s, ws, capa: ('economia:unidades', 'economia', 'unidades'),
-    )
-
-    async def pool():
-        return object()
-
-    async def csv(p, schema, table, date_from, date_to):
-        yield f'{schema}.{table}\n'.encode()
-
-    monkeypatch.setattr(download, 'get_pool', pool)
-    monkeypatch.setattr(download.DownloadRepository, 'stream_csv', csv)
-    respuesta = cliente.get('/download/economia/unidades')
-    assert respuesta.status_code == 200
-    assert respuesta.text == 'economia.unidades\n'
-    assert 'filename="unidades.csv"' in respuesta.headers['content-disposition']
-    assert repo['cache'] == ['economia:unidades']
+def test_las_ranuras_limitan_la_concurrencia(tmp_path, monkeypatch):
+    monkeypatch.setattr(download_slots, '_SLOT_DIR', str(tmp_path))
+    primera = download_slots.try_acquire(2)
+    segunda = download_slots.try_acquire(2)
+    assert primera and segunda
+    assert download_slots.try_acquire(2) is None
+    primera.release()
+    primera.release()
+    tercera = download_slots.try_acquire(2)
+    assert tercera is not None
+    segunda.release()
+    tercera.release()

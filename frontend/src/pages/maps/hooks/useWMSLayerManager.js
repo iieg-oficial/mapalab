@@ -1,20 +1,20 @@
 import { useEffect, useCallback, useRef, useMemo } from 'react';
-import { hasWMSConfig, findWMSConfig } from '../helpers/wmsConfig';
+import { hasWMSConfig, findWMSConfig, resolveTimeStyle } from '../helpers/wmsConfig';
 import { useLayers } from '@hooks/useLayers';
 import { findLayerById } from '../helpers/layers/utils/layerHelpers';
-import { buildLayerMunicipioCql } from '../helpers/municipioCqlBuilder';
+import { buildLayerCqlSegment, isSingleTimeLayer } from '../helpers/layerCqlSegment';
 import { filtersInitializationComplete } from './useInitializeFromUrl';
 import { useDebounce } from '@hooks/useDebounce';
 import { useLayerLoading } from '@hooks/useLayerLoading';
-import { PIN_Z_OFFSET } from './useAlwaysOnTopPinning';
+import { computeLayerZIndex } from '../helpers/layerZIndex';
 
 const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 const EMPTY_PINNED = new Set();
 const EMPTY_ORDER = [];
-const RASTER_WORKSPACES = new Set(['raster', 'lluvia', 'temperatura']);
+const EMPTY_VECTOR_IDS = new Set();
 const EMPTY_MUNICIPIO_CTX = { active: false, claves: [], nombres: [], bbox: null };
 
-export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getLayerOpacity, layerOpacities, getFilter, combineCQLFilters, pinnedLayerIds = EMPTY_PINNED, initialOrder = EMPTY_ORDER, municipioContext = EMPTY_MUNICIPIO_CTX }) => {
+export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, createWMSLayer, getLayerOpacity, layerOpacities, getFilter, combineCQLFilters, pinnedLayerIds = EMPTY_PINNED, initialOrder = EMPTY_ORDER, municipioContext = EMPTY_MUNICIPIO_CTX, vectorLayerIds = EMPTY_VECTOR_IDS }) => {
     const { layers } = useLayers();
     const wmsLayersRef = useRef(new Map());
     const isFirstRender = useRef(true);
@@ -69,6 +69,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
 
             debouncedActiveLayerIds.forEach((id, index) => {
                 if (debouncedHiddenLayerIds.includes(id)) return;
+                if (vectorLayerIds.has(id)) return;
 
                 if (wmsConfigCache.has(id)) {
                     const wmsConfig = findWMSConfig(id, layers);
@@ -128,59 +129,43 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
                 const wmsLayersOrdered = [...mergedLayers].reverse();
                 const firstLayer = wmsLayersOrdered[wmsLayersOrdered.length - 1];
                 const representativeId = firstLayer.subLayers[0].id;
-                const minIndex = mergedLayers[0].index;
-                const totalLayers = debouncedActiveLayerIds.length;
-                let maxZIndex = (totalLayers - minIndex) + 100;
-                if (pinnedLayerIdsRef.current.has(representativeId)) {
-                    const order = initialOrderRef.current;
-                    const orderIdx = order.indexOf(representativeId);
-                    const effectiveIdx = orderIdx === -1 ? order.length : orderIdx;
-                    maxZIndex = PIN_Z_OFFSET + (order.length - effectiveIdx);
-                }
+                const maxZIndex = computeLayerZIndex({
+                    layerId: representativeId,
+                    index: mergedLayers[0].index,
+                    total: debouncedActiveLayerIds.length,
+                    pinnedLayerIds: pinnedLayerIdsRef.current,
+                    initialOrder: initialOrderRef.current
+                });
                 const layersParam = wmsLayersOrdered.map(l => l.layerName).join(',');
                 const stylesParam = wmsLayersOrdered.map(l => l.styles).join(',');
 
                 const ctx = municipioContextRef.current;
 
-                const cqlFilterSegments = wmsLayersOrdered.map(merged => {
-                    const subFilters = merged.subLayers.map(sub => {
-                        const baseCqlFilter = sub.wmsConfig.cqlFilter?.trim() || null;
-                        const dynamicFilter = getFilterRef.current?.(sub.id);
-                        return combineCQLFiltersRef.current?.(baseCqlFilter, dynamicFilter) ?? null;
-                    }).filter(f => f);
-
-                    let segment;
-                    if (subFilters.length === 0) {
-                        const hasDD = merged.subLayers.some(sub => findLayerById(sub.id, layers)?.defaultDate);
-                        segment = hasDD ? '1=0' : 'INCLUDE';
-                    } else {
-                        segment = subFilters.map(f => `(${f})`).join(' OR ');
-                    }
-
-                    if (ctx?.active && segment !== '1=0') {
-                        const isRaster = merged.subLayers.some(sub => RASTER_WORKSPACES.has(sub.wmsConfig?.workspace));
-                        if (!isRaster) {
-                            const firstSub = merged.subLayers[0];
-                            const layerDef = findLayerById(firstSub.id, layers);
-                            const muniCql = buildLayerMunicipioCql(layerDef?.searchMeta, ctx, firstSub.id);
-                            if (muniCql) {
-                                segment = segment === 'INCLUDE' ? muniCql : `(${muniCql}) AND (${segment})`;
-                            }
-                        }
-                    }
-
-                    return segment;
-                });
+                const cqlFilterSegments = wmsLayersOrdered.map(merged => buildLayerCqlSegment({
+                    subLayers: merged.subLayers,
+                    layers,
+                    getFilter: getFilterRef.current,
+                    combineCQLFilters: combineCQLFiltersRef.current,
+                    municipioContext: ctx
+                }));
 
                 const allInclude = cqlFilterSegments.every(f => f === 'INCLUDE');
                 const finalCqlFilter = allInclude ? null : cqlFilterSegments.join(';');
+
+                const timeSubLayers = wmsLayersOrdered.length === 1 ? wmsLayersOrdered[0].subLayers : null;
+                const timeSub = isSingleTimeLayer(timeSubLayers) ? timeSubLayers[0] : null;
+                const timeValue = timeSub ? getFilterRef.current?.(timeSub.id) : null;
 
                 const customParams = {
                     LAYERS: layersParam,
                     STYLES: stylesParam,
                     ENV: envParam,
                 };
-                if (finalCqlFilter) {
+                if (timeValue) {
+                    customParams.TIME = timeValue;
+                    const resolvedStyle = resolveTimeStyle(timeSub.wmsConfig.timeStylePattern, timeValue);
+                    if (resolvedStyle) customParams.STYLES = resolvedStyle;
+                } else if (finalCqlFilter) {
                     customParams.CQL_FILTER = finalCqlFilter;
                 }
 
@@ -296,7 +281,7 @@ export const useWMSLayerManager = ({ mapRef, activeLayerIds, hiddenLayerIds, cre
 
         performUpdate();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedActiveLayerIds, debouncedHiddenLayerIds, wmsConfigCache, createWMSLayer]);
+    }, [debouncedActiveLayerIds, debouncedHiddenLayerIds, wmsConfigCache, createWMSLayer, vectorLayerIds]);
 
     useEffect(updateActiveLayers, [updateActiveLayers]);
 

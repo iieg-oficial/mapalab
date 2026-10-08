@@ -4,7 +4,6 @@ set -e
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION=$(node -p "require('$REPO_ROOT/frontend/package.json').version")
 
-sed -i "s/^\*\*Version:\*\* .*/**Version:** $VERSION/" "$REPO_ROOT/README.md"
 
 printf '__version__ = "%s"\n' "$VERSION" > "$REPO_ROOT/backend/app/__version__.py"
 

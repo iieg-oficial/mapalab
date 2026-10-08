@@ -1,21 +1,15 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
-import ImageLayer from 'ol/layer/Image';
-import ImageWMS from 'ol/source/ImageWMS';
-import { findLayerById, collectLayersWithWMS, findAncestorChain } from '@pages/maps/helpers/layers/utils/layerHelpers';
+import { findAncestorChain } from '@pages/maps/helpers/layers/utils/layerHelpers';
+import { buildTargetOverlay, classifyLayer, collectWMSNodes, resolveTargetIds } from '@pages/maps/helpers/layers/aislarCapa';
+import { soltarResaltadoYa } from '@pages/maps/helpers/layers/capaResaltada';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { getFitPadding } from '@pages/maps/helpers/mapFit';
+import { acotarExtentAMunicipio } from '@pages/maps/helpers/municipioMask';
 
 const PULSE_DURATION_MS = 6000;
-const OVERLAY_Z_INDEX = 1_000_000;
 
 const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-
-const collectWMSNodes = (layerId, allLayers) => {
-    const node = findLayerById(layerId, allLayers);
-    if (!node) return [];
-    return node.wmsConfig ? [node] : collectLayersWithWMS(node);
-};
 
 const resolveLayerExtent3857 = async (layerId, allLayers) => {
     if (!layerId) return null;
@@ -41,65 +35,10 @@ const resolveCenterExtent = async (layerId, allLayers) => {
     return null;
 };
 
-const classifyLayer = (olLayer, targetIdSet) => {
-    const mergedLayers = olLayer.get('mergedLayers');
-
-    if (Array.isArray(mergedLayers)) {
-        const targetIdxs = [];
-        mergedLayers.forEach((entry, i) => {
-            if ((entry.subLayers || []).some(sub => targetIdSet.has(sub.id))) targetIdxs.push(i);
-        });
-        if (targetIdxs.length === 0) return { role: 'other' };
-        if (targetIdxs.length === mergedLayers.length) return { role: 'target' };
-        return { role: 'mixed', targetIdxs };
-    }
-
-    const layerId = olLayer.get('layerId');
-    if (layerId) return targetIdSet.has(layerId) ? { role: 'target' } : { role: 'other' };
-
-    return { role: 'skip' };
-};
-
-const buildTargetOverlay = (hostLayer, targetIdxs) => {
-    const source = hostLayer.getSource?.();
-    const mergedLayers = hostLayer.get('mergedLayers');
-    if (!source || !Array.isArray(mergedLayers)) return null;
-
-    const params = source.getParams ? source.getParams() : null;
-    const url = source.getUrl ? source.getUrl() : null;
-    if (!params || !url) return null;
-
-    const split = (value, sep) => (value == null ? null : String(value).split(sep));
-    const layersArr = split(params.LAYERS, ',');
-    if (!layersArr || layersArr.length !== mergedLayers.length) return null;
-
-    const pick = (arr) => (arr && arr.length === mergedLayers.length ? targetIdxs.map(i => arr[i]) : null);
-
-    const overlayParams = { ...params, LAYERS: pick(layersArr).join(',') };
-    const styles = pick(split(params.STYLES, ','));
-    if (styles) overlayParams.STYLES = styles.join(',');
-    const cql = pick(split(params.CQL_FILTER, ';'));
-    if (cql) overlayParams.CQL_FILTER = cql.join(';');
-
-    const overlaySource = new ImageWMS({
-        url,
-        params: overlayParams,
-        ratio: 1.5,
-        serverType: 'geoserver',
-        crossOrigin: 'anonymous',
-    });
-
-    return new ImageLayer({ source: overlaySource, opacity: 1, zIndex: OVERLAY_Z_INDEX });
-};
-
-const resolveTargetIds = (layerId, allLayers) => {
-    const nodes = collectWMSNodes(layerId, allLayers);
-    return new Set(nodes.map(n => n.id));
-};
-
-export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLayers }) => {
+export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLayers, municipioModeRef }) => {
     const centerOnLayer = useCallback(async (layerId, fitOptions = {}) => {
-        const extent = await resolveCenterExtent(layerId, allLayers);
+        const bruto = await resolveCenterExtent(layerId, allLayers);
+        const extent = acotarExtentAMunicipio(bruto, municipioModeRef?.current);
         if (!extent) {
             console.debug('centerOnLayer: sin extent resoluble para', layerId);
             return false;
@@ -119,7 +58,7 @@ export const useLayerSelection = ({ mapRef, paneMapInstances, compareMode, allLa
             fit(mapRef.current);
         }
         return true;
-    }, [allLayers, mapRef, paneMapInstances, compareMode]);
+    }, [allLayers, mapRef, paneMapInstances, compareMode, municipioModeRef]);
 
     const { pulseLayer, cancelPulse } = useLayerSelectionPulse({ mapRef, paneMapInstances, compareMode, allLayers });
 
@@ -159,6 +98,7 @@ const useLayerSelectionPulse = ({ mapRef, paneMapInstances, compareMode, allLaye
     useEffect(() => () => cleanup(), [cleanup]);
 
     const pulseLayer = useCallback(async (layerId) => {
+        soltarResaltadoYa();
         cleanup();
 
         const targetMaps = compareMode?.active

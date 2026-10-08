@@ -14,7 +14,7 @@ import {
     trackPeriodicityAdvanced,
     trackSiderLock,
     trackShareMap,
-    trackInfoOpen
+    trackMinimapa
 } from '@/services/analyticsService';
 
 beforeEach(() => {
@@ -138,6 +138,14 @@ describe('analyticsService', () => {
         });
     });
 
+    describe('trackMinimapa', () => {
+        it('pushea minimapa con su acción y suma a map_interaction', () => {
+            trackMinimapa('ir');
+            expect(getEvents()).toContainEqual({ event: 'minimapa', action: 'ir' });
+            expect(getEvents()).toContainEqual({ event: 'map_interaction', action: 'minimapa' });
+        });
+    });
+
     describe('trackSiderLock', () => {
         it('pushea sider_lock con mode', () => {
             trackSiderLock('locked');
@@ -149,13 +157,6 @@ describe('analyticsService', () => {
         it('pushea share_map con status', () => {
             trackShareMap('copied');
             expect(getEvents()).toContainEqual({ event: 'share_map', status: 'copied' });
-        });
-    });
-
-    describe('trackInfoOpen', () => {
-        it('pushea info_open', () => {
-            trackInfoOpen();
-            expect(getEvents()).toContainEqual({ event: 'info_open' });
         });
     });
 });

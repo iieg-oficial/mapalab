@@ -16,7 +16,7 @@ import { useEmbedFeatureRelay } from '@pages/embed/hooks/useEmbedFeatureRelay';
 import { useEmbedMarker } from '@pages/embed/hooks/useEmbedMarker';
 import { useEmbedTelemetry } from '@pages/embed/hooks/useEmbedTelemetry';
 import { useEmbedViewSync } from '@pages/embed/hooks/useEmbedViewSync';
-import { postError, postReady } from '@pages/embed/helpers/postMessage';
+import { detectParentOrigin, postError, postReady } from '@pages/embed/helpers/postMessage';
 import { buildViewerUrl } from '@pages/embed/helpers/viewerUrl';
 
 
@@ -53,9 +53,9 @@ const EmbedInner = ({ params, config }) => {
                 <LayerNotices enabled={noticesEnabled} />
                 <EmbedBrand params={params} />
                 <InfoBox forceDesktop embed />
-                <MapControls hideLocate />
+                <MapControls hideLocate hideEncuadrar />
                 <ScaleLineControl />
-                <MapAttribution hideActions />
+                <MapAttribution hideCatalogo origenReporte="embed" compact />
             </div>
         </SiderProvider>
     );
@@ -73,22 +73,6 @@ const matchesAllowedDomain = (origin, pattern) => {
         return originClean === base || originClean.endsWith('.' + base);
     }
     return false;
-};
-
-
-const detectParentOrigin = () => {
-    try {
-        if (document.referrer) {
-            const parsed = new URL(document.referrer);
-            return `${parsed.protocol}//${parsed.host}`;
-        }
-    } catch { /* ignore */ }
-    if (typeof window !== 'undefined' && window.parent !== window) {
-        try {
-            return window.location.origin;
-        } catch { /* ignore */ }
-    }
-    return null;
 };
 
 

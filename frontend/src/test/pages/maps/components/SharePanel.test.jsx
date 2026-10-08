@@ -96,7 +96,7 @@ describe('SharePanel — con el enlace listo', () => {
         expect(capa.className).toContain('opacity-0');
     });
 
-    it('insertar no aparece fuera de dev y beta', () => {
+    it('en producción no se ofrece insertar en otra página', () => {
         render(<SharePanel link={listo} />);
         expect(screen.queryByText(/Insertar en otra página/)).not.toBeInTheDocument();
     });

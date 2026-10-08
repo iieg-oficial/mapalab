@@ -5,6 +5,7 @@ import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { ACTION_BTN, PURPLE_HOVER, PINK_HOVER, BAR_SHELL, BAR_DIVIDER, ColorSwatch, Stepper } from './StyleControls';
 import { DEFAULT_TEXT_FILL, DRAW_COLORS } from '@pages/maps/helpers/drawingConstants';
+import { PIN_ETIQUETAS, PIN_ETIQUETA_INICIAL } from '@pages/maps/helpers/pin';
 
 const ROTATE_STEP = Math.PI / 4;
 const SCALE_STEP = 0.25;
@@ -37,6 +38,7 @@ const FeatureEditToolbar = ({
     onStrokeColor,
     onStrokeWidth,
     onEdit,
+    onPin,
     onDelete,
     onClose
 }) => {
@@ -89,6 +91,9 @@ const FeatureEditToolbar = ({
     const isText = annotationType === 'Text';
     const isEmoji = annotationType === 'Emoji';
     const isFreehand = annotationType === 'Freehand';
+    const isPin = annotationType === 'Pin';
+    const pinEtiqueta = feature?.get('pinEtiqueta') || PIN_ETIQUETA_INICIAL;
+    const pinTexto = feature?.get('textLabel') || '';
 
     const currentRotation = feature?.get('rotation') ?? 0;
     const currentScale = feature?.get('scale') ?? 1;
@@ -112,6 +117,34 @@ const FeatureEditToolbar = ({
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
             >
+                {isPin && (
+                    <div className="flex items-center gap-1" role="radiogroup" aria-label="Etiqueta del pin">
+                        {PIN_ETIQUETAS.map(({ id, texto }) => (
+                            <button
+                                key={id}
+                                type="button"
+                                role="radio"
+                                aria-checked={pinEtiqueta === id}
+                                onClick={() => onPin?.({ pinEtiqueta: id })}
+                                className={`rounded-full px-2.5 py-1 font-garet text-[11px] font-bold whitespace-nowrap transition ${pinEtiqueta === id ? 'bg-purple-deep text-white' : 'bg-[#EAEFFA] text-purple-deep hover:bg-[#dfe6f7]'}`}
+                            >
+                                {texto}
+                            </button>
+                        ))}
+                        {pinEtiqueta === 'texto' && (
+                            <input
+                                type="text"
+                                value={pinTexto}
+                                maxLength={60}
+                                placeholder="Escribe la etiqueta"
+                                aria-label="Texto del pin"
+                                onChange={(e) => onPin?.({ textLabel: e.target.value })}
+                                className="w-36 rounded-full border border-[#D5DDF0] bg-white px-2.5 py-1 font-garet text-[11px] text-graphite outline-none focus:border-purple-deep"
+                            />
+                        )}
+                    </div>
+                )}
+
                 {(isText || isFreehand) && (
                     <ColorSwatch
                         value={isText ? currentFill : currentStroke}
@@ -193,7 +226,7 @@ const FeatureEditToolbar = ({
                 </Tooltip>
             </div>
         );
-    }, [feature, isText, isEmoji, isFreehand, currentRotation, currentScale, currentFill, currentBg, currentStroke, currentWidth, onRotate, onScale, onFillColor, onBgColor, onStrokeColor, onStrokeWidth, onEdit, onDelete, onClose]);
+    }, [feature, isText, isEmoji, isFreehand, isPin, pinEtiqueta, pinTexto, currentRotation, currentScale, currentFill, currentBg, currentStroke, currentWidth, onRotate, onScale, onFillColor, onBgColor, onStrokeColor, onStrokeWidth, onEdit, onPin, onDelete, onClose]);
 
     if (!feature || !elementRef.current) return null;
     return createPortal(content, elementRef.current);

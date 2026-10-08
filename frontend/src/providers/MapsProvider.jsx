@@ -9,6 +9,7 @@ import { BASEMAPS } from '@pages/maps/helpers/basemaps';
 import { useLayerManagement } from '@hooksMaps/useLayerManagement';
 import { useSymbology } from '@hooksMaps/useSymbology';
 import { useLayerOpacity } from '@hooksMaps/useLayerOpacity';
+import { useLayerServiceMode } from '@hooksMaps/useLayerServiceMode';
 import { useLayerToggle } from '@hooksMaps/useLayerToggle';
 import { useCQLFilter } from '@hooksMaps/useCQLFilter';
 import { useDateLoop } from '@hooksMaps/useDateLoop';
@@ -19,6 +20,7 @@ import { useFeatureHighlight } from '@hooksMaps/useFeatureHighlight';
 import { useLayerSelection } from '@hooksMaps/useLayerSelectionPulse';
 import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { useSwipeMode } from '@hooksMaps/useSwipeMode';
+import { useSwipeAwareFilters } from '@hooksMaps/useSwipeAwareFilters';
 import { useMunicipioMode } from '@hooksMaps/useMunicipioMode';
 import { useMunicipioMask } from '@hooksMaps/useMunicipioMask';
 import { useMunicipioFit } from '@hooksMaps/useMunicipioFit';
@@ -66,6 +68,7 @@ const MapsProvider = ({ children }) => {
     }, [lmActiveLayerIds, lmFindLayerById]);
 
     const layerOpacity = useLayerOpacity(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
+    const layerServiceMode = useLayerServiceMode(layerManagement.getAllChildLayerIds, layerManagement.activeLayerIds);
     const cqlFilter = useCQLFilter();
     const periodicityCache = usePeriodicityCache(layerManagement.activeLayerIds);
     const mapMarker = useMapMarker(mapRef, paneMapRefs, compareModeRef, { setSelectedFeatureInfo, clickPosition });
@@ -95,42 +98,26 @@ const MapsProvider = ({ children }) => {
         compareMode: swipeMode.compareMode,
     });
 
+    const municipioModeRef = useRef(null);
+    const { applyFilterSwipeAware, clearFilterSwipeAware, applyFilterToAllSlots } = useSwipeAwareFilters({
+        compareMode: swipeMode.compareMode,
+        applyFilter: cqlFilter.applyFilter,
+        clearFilter: cqlFilter.clearFilter,
+        applyFilterToSlot: swipeMode.applyFilterToSlot,
+        clearFilterFromSlot: swipeMode.clearFilterFromSlot,
+    });
     const layerToggle = useLayerToggle({
         ...layerManagement,
         setSelectedLayer,
         setSelectedLayerForSymbology: symbology.setSelectedLayerForSymbology,
-        applyFilter: cqlFilter.applyFilter,
+        applyFilter: applyFilterToAllSlots,
         clearFilter: cqlFilter.clearFilter,
         periodicityCache,
         mapRef,
         showMarker: mapMarker.showMarker,
-        hideMarker: mapMarker.hideMarker
+        hideMarker: mapMarker.hideMarker,
+        municipioModeRef
     });
-    const swipeFilterRef = useRef({});
-    swipeFilterRef.current = {
-        active: swipeMode.compareMode.active,
-        activeSlot: swipeMode.compareMode.activeSlot,
-        applyFilterToSlot: swipeMode.applyFilterToSlot,
-        clearFilterFromSlot: swipeMode.clearFilterFromSlot,
-        applyFilter: cqlFilter.applyFilter,
-        clearFilter: cqlFilter.clearFilter,
-    };
-    const applyFilterSwipeAware = useCallback((layerId, filterName, cqlExpression) => {
-        const s = swipeFilterRef.current;
-        if (s.active) {
-            s.applyFilterToSlot(layerId, s.activeSlot, filterName, cqlExpression);
-            return;
-        }
-        s.applyFilter(layerId, filterName, cqlExpression);
-    }, []);
-    const clearFilterSwipeAware = useCallback((layerId, filterName) => {
-        const s = swipeFilterRef.current;
-        if (s.active) {
-            s.clearFilterFromSlot(layerId, s.activeSlot, filterName);
-            return;
-        }
-        s.clearFilter(layerId, filterName);
-    }, []);
 
     const dateLoop = useDateLoop({
         applyFilter: applyFilterSwipeAware,
@@ -138,7 +125,9 @@ const MapsProvider = ({ children }) => {
         activeLayerIds: layerManagement.activeLayerIds,
         hiddenLayerIds: symbology.hiddenLayerIds,
         getSpecificFilter: cqlFilter.getSpecificFilter,
-        getPeriodicity: periodicityCache.getPeriodicity
+        getPeriodicity: periodicityCache.getPeriodicity,
+        compareMode: swipeMode.compareMode,
+        applyFilterToSlot: swipeMode.applyFilterToSlot,
     });
 
     useLayoutEffect(() => {
@@ -176,7 +165,6 @@ const MapsProvider = ({ children }) => {
         return undefined;
     }, [swipeMode, layerToggle]);
 
-    const municipioModeRef = useRef(null);
     const handlePolygonComplete = useCallback((geometry, centerCoordinate, onFeatureCountUpdate) => {
         const guard = municipioModeRef.current?.polygonIntersectsMunicipios;
         if (typeof guard === 'function' && !guard(geometry)) {
@@ -236,7 +224,7 @@ const MapsProvider = ({ children }) => {
         mapRef,
         paneMapInstances,
         compareMode: swipeMode.compareMode,
-        allLayers,
+        allLayers, municipioModeRef,
     });
 
     const value = useMemo(() => ({
@@ -264,6 +252,7 @@ const MapsProvider = ({ children }) => {
         applyDefaultDate: layerToggle.applyDefaultDate,
         ...symbology,
         ...layerOpacity,
+        ...layerServiceMode,
         ...cqlFilter,
         ...dateLoop,
         ...mapDrawing,
@@ -289,6 +278,7 @@ const MapsProvider = ({ children }) => {
         layerToggle.applyDefaultDate,
         symbology,
         layerOpacity,
+        layerServiceMode,
         selectedFeatureInfo,
         setSelectedFeatureInfo,
         clickPosition,

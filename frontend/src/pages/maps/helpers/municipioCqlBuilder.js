@@ -1,3 +1,5 @@
+export const CQL_SIN_RESOLVER = '1=0';
+
 const escapeSingleQuotes = (value) => String(value).replace(/'/g, "''");
 
 const warned = new Set();
@@ -21,12 +23,13 @@ const buildBboxClause = (field, bbox) => {
 
 export const buildLayerMunicipioCql = (searchMeta, municipioContext, layerId = null) => {
     if (!municipioContext?.active) return null;
+    const listaCargada = (municipioContext.allMunicipiosCount || 0) > 0 && !municipioContext.listLoading;
     if (searchMeta?.hasMunicipio && searchMeta.municipioField) {
         const fieldType = searchMeta.municipioFieldType || 'clave';
         const values = fieldType === 'nombre' ? municipioContext.nombres : municipioContext.claves;
         const valuesLen = Array.isArray(values) ? values.length : 0;
         const clavesLen = Array.isArray(municipioContext.claves) ? municipioContext.claves.length : 0;
-        if (fieldType === 'nombre' && clavesLen > 0 && valuesLen < clavesLen && !municipioContext.listLoading) {
+        if (fieldType === 'nombre' && clavesLen > 0 && valuesLen < clavesLen && listaCargada) {
             const missing = clavesLen - valuesLen;
             const sampleClaves = (municipioContext.claves || []).slice(0, 5).join(', ');
             warnOnce(
@@ -36,7 +39,7 @@ export const buildLayerMunicipioCql = (searchMeta, municipioContext, layerId = n
         }
         const clause = buildInClause(searchMeta.municipioField, values);
         if (clause) return clause;
-        if (!municipioContext.listLoading) {
+        if (listaCargada) {
             const sampleClaves = (municipioContext.claves || []).slice(0, 5).join(', ');
             warnOnce(
                 `${layerId || searchMeta.municipioField}|sin-valores`,
@@ -44,5 +47,7 @@ export const buildLayerMunicipioCql = (searchMeta, municipioContext, layerId = n
             );
         }
     }
-    return buildBboxClause('geom', municipioContext.bbox);
+    const bboxClause = buildBboxClause('geom', municipioContext.bbox);
+    if (bboxClause) return bboxClause;
+    return listaCargada ? null : CQL_SIN_RESOLVER;
 };

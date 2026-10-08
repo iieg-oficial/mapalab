@@ -5,14 +5,14 @@ import Checkbox from '@components/Checkbox';
 import Badge from '@components/Badge';
 import BrandedQr from '@components/BrandedQr';
 import Logo from '@components/Logo';
-import { MobileSheetCloseButton } from '@components/MobileSheet';
+import PanelHoja from '@components/PanelHoja';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { pinShare } from '@services/shareService';
 import { trackShareMap } from '@services/analyticsService';
 import { descargarQr } from '@utils/brandedQr';
 import { REDES_COMPARTIR, TEXTO_COMPARTIR } from '@pages/maps/helpers/shareNetworks';
-import { useIsNonProd } from '@hooks/useDevTools';
 import ShareEmbed from './ShareEmbed';
+import { useIsNonProd } from '@hooks/useDevTools';
 
 const QR_PANEL = 200;
 const CARGA_DIFERIDA_MS = 300;
@@ -34,10 +34,10 @@ const IconoRed = ({ red }) => (
 );
 
 const SharePanel = ({ link, isDirty = false, loadedShareId = null, onEntrar, onSalir, onCerrar }) => {
-    const isNonProd = useIsNonProd();
     const [errorLocal, setErrorLocal] = useState(null);
     const [descargando, setDescargando] = useState(false);
     const [verInsertar, setVerInsertar] = useState(false);
+    const isNonProd = useIsNonProd();
     const [mostrarCarga, setMostrarCarga] = useState(false);
     const [accionesQr, setAccionesQr] = useState(false);
     const [enlaceCompleto, setEnlaceCompleto] = useState(false);
@@ -77,20 +77,16 @@ const SharePanel = ({ link, isDirty = false, loadedShareId = null, onEntrar, onS
     };
 
     return (
-        <div
+        <PanelHoja
+            titulo="Compartir mapa"
+            extra={loadedShareId && (
+                <span className="text-[10px] font-garet text-gray-400 tabular-nums">ID: {loadedShareId}</span>
+            )}
+            onCerrar={onCerrar}
             onMouseEnter={onEntrar}
             onMouseLeave={onSalir}
-            className={`pt-3 pb-4 px-4 w-full min-h-0 bg-[#F9FBFF] rounded-[14px] flex flex-col gap-3 ${HIDDEN_SCROLLBAR}`}
+            className={`min-h-0 gap-3 ${HIDDEN_SCROLLBAR}`}
         >
-            <div className="flex items-center justify-between gap-2">
-                <h3 className="text-[18px]/[24px] font-garet font-bold text-purple tracking-normal">Compartir mapa</h3>
-                <div className="flex items-center gap-2">
-                    {loadedShareId && (
-                        <span className="text-[10px] font-garet text-gray-400 tabular-nums">ID: {loadedShareId}</span>
-                    )}
-                    <MobileSheetCloseButton onClick={onCerrar} />
-                </div>
-            </div>
 
             {isDirty && !share && (
                 <p className="rounded-lg border border-orange/40 bg-[#FFF7EE] px-3 py-2 text-[11px]/[16px] font-garet text-[#7A4D00]">
@@ -153,12 +149,14 @@ const SharePanel = ({ link, isDirty = false, loadedShareId = null, onEntrar, onS
             )}
 
             {annotationsCount > 0 && (
-                <div className="flex items-center gap-2">
-                    <Checkbox checked={includeAnnotations} onChange={link.alternarAnotaciones} />
-                    <span className="text-[11px]/[16px] font-garet text-graphite">
-                        Incluir mis mediciones y anotaciones ({annotationsCount})
-                    </span>
-                </div>
+                <Tooltip content="Guarda también tus mediciones y anotaciones en el enlace" placement="bottom" delay={400} triggerBlock>
+                    <div className="flex items-center gap-2">
+                        <Checkbox checked={includeAnnotations} onChange={link.alternarAnotaciones} />
+                        <span className="text-[11px]/[16px] font-garet text-graphite">
+                            Incluir mis mediciones y anotaciones ({annotationsCount})
+                        </span>
+                    </div>
+                </Tooltip>
             )}
 
             {share && url && (
@@ -208,15 +206,17 @@ const SharePanel = ({ link, isDirty = false, loadedShareId = null, onEntrar, onS
 
             {share && isNonProd && (
                 <div className="flex justify-center mt-2">
-                    <button
-                        type="button"
-                        onClick={() => setVerInsertar((visible) => !visible)}
-                        aria-expanded={verInsertar}
-                        className="inline-flex items-center gap-1.5 text-[12px] font-garet font-bold text-purple hover:underline cursor-pointer"
-                    >
-                        Insertar en otra página
-                        <Badge variant="pill" color="orange" text="BETA" className="text-[8px]/[12px] px-1.5" />
-                    </button>
+                    <Tooltip content="Muestra el código para insertar este mapa en otra página" placement="top" delay={400}>
+                        <button
+                            type="button"
+                            onClick={() => setVerInsertar((visible) => !visible)}
+                            aria-expanded={verInsertar}
+                            className="inline-flex items-center gap-1.5 text-[12px] font-garet font-bold text-purple hover:underline cursor-pointer"
+                        >
+                            Insertar en otra página
+                            <Badge variant="pill" color="orange" text="BETA" className="text-[8px]/[12px] px-1.5" />
+                        </button>
+                    </Tooltip>
                 </div>
             )}
 
@@ -234,7 +234,7 @@ const SharePanel = ({ link, isDirty = false, loadedShareId = null, onEntrar, onS
                     </button>
                 </div>
             )}
-        </div>
+        </PanelHoja>
     );
 };
 

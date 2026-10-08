@@ -10,7 +10,7 @@ const formatBytes = (bytes) => {
 
 export { formatBytes };
 
-export const useLayerDownload = (layerId, { getFilter, getSpecificFilter, metadata } = {}) => {
+export const useLayerDownload = (layerId, { getFilter, getSpecificFilter, metadata, cqlBase = null, propertyNames = null } = {}) => {
     const [downloading, setDownloading] = useState(false);
     const [progress, setProgress] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
@@ -59,6 +59,8 @@ export const useLayerDownload = (layerId, { getFilter, getSpecificFilter, metada
             onProgress: setProgress,
             getFilter,
             getSpecificFilter,
+            cqlBase,
+            propertyNames,
         });
 
         abortRef.current = null;
@@ -67,7 +69,7 @@ export const useLayerDownload = (layerId, { getFilter, getSpecificFilter, metada
         if (result?.success) {
             trackLayerDownload(layerId);
         }
-    }, [layerId, downloading, metadata, getFilter, getSpecificFilter]);
+    }, [layerId, downloading, metadata, getFilter, getSpecificFilter, cqlBase, propertyNames]);
 
     const handleCancelDownload = useCallback(() => {
         abortRef.current?.abort();

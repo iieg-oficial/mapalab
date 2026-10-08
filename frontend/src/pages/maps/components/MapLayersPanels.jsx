@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ActiveLayersList } from './ActiveLayers';
 import SymbologyPanel from './SymbologyPanel';
 import Panel from '@components/Panel';
 import Message from '@components/Message';
 import { useSlowLoading } from '@hooks/useSlowLoading';
+import { useAreaUtil } from '@contexts/AreaUtilContext';
 
 const SYMBOLOGY_PANEL_ENABLED = false;
 
@@ -13,6 +14,13 @@ const MapLayersPanels = () => {
     const handleLayersCollapse = useCallback((v) => setLayersCollapsed(v), []);
     const handleSymbologyCollapse = useCallback((v) => setSymbologyCollapsed(v), []);
     const isSlow = useSlowLoading(5000);
+    const { acoplado } = useAreaUtil();
+
+    useEffect(() => {
+        if (!acoplado) return;
+        setLayersCollapsed(true);
+        setSymbologyCollapsed(true);
+    }, [acoplado]);
 
     const allCollapsed = layersCollapsed && (!SYMBOLOGY_PANEL_ENABLED || symbologyCollapsed);
 

@@ -1,24 +1,25 @@
 import asyncio
 import re
-from typing import Any, Optional
+from typing import Any, AsyncIterator, Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
+from starlette.background import BackgroundTask
 
+from app.auth.capa_visible import capa_visible
 from app.config import settings
 from app.consts.databases import DatabaseType
 from app.databases.async_pool import get_pool
 from app.databases.factory import DatabaseFactory
 from app.exceptions.common_exceptions import NotFoundException, BadRequestException
 from app.repositories.download_repository import DATE_COLUMN, DownloadRepository
+from app.services import download_slots
 from app.services.acervo_client import iter_object_body, open_object
 from app.utils.api_responses import api_responses
 
 router = APIRouter(prefix='/download', tags=['Download'])
 
 _DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')
-
-
 _WORKSPACE_PATTERN = re.compile(r'^[a-z0-9_]{1,50}$')
 _LAYER_PATTERN = re.compile(r'^[A-Za-z0-9_]{1,100}$')
 
@@ -58,6 +59,16 @@ def _prepare_download(
         return 'table', table, schema, table
 
 
+async def _stream_with_slot(
+    stream: AsyncIterator[bytes], slot: download_slots.DownloadSlot
+) -> AsyncIterator[bytes]:
+    try:
+        async for chunk in stream:
+            yield chunk
+    finally:
+        slot.release()
+
+
 def _csv_headers(filename: str) -> dict[str, str]:
     return {
         'Content-Disposition': f'attachment; filename="{filename}.csv"',
@@ -67,9 +78,10 @@ def _csv_headers(filename: str) -> dict[str, str]:
 
 @router.get(
     '/{workspace}/{layer}',
-    responses=api_responses(400, 404, 500),
+    responses=api_responses(400, 404, 429, 500),
 )
 async def download_layer(
+    request: Request,
     workspace: str,
     layer: str,
     date_from: Optional[str] = Query(default=None, description='Fecha inicio (YYYY-MM-DD)'),
@@ -81,6 +93,9 @@ async def download_layer(
         raise BadRequestException('date_from debe tener formato YYYY-MM-DD')
     if date_to and not _DATE_PATTERN.match(date_to):
         raise BadRequestException('date_to debe tener formato YYYY-MM-DD')
+
+    if not await asyncio.to_thread(capa_visible, request, workspace, layer):
+        raise NotFoundException(f'Capa {workspace}:{layer} no encontrada')
 
     has_date_filter = bool(date_from or date_to)
     kind, filename, first, second = await asyncio.to_thread(
@@ -98,11 +113,26 @@ async def download_layer(
             headers=headers,
         )
 
+    slot = download_slots.try_acquire()
+    if slot is None:
+        raise HTTPException(
+            status_code=429,
+            detail='Hay demasiadas descargas en curso. Intenta de nuevo en un momento.',
+            headers={'Retry-After': '30'},
+        )
+
     schema, table = first, second
-    pool = await get_pool()
+    try:
+        pool = await get_pool()
+    except BaseException:
+        slot.release()
+        raise
 
     return StreamingResponse(
-        DownloadRepository.stream_csv(pool, schema, table, date_from, date_to),
+        _stream_with_slot(
+            DownloadRepository.stream_csv(pool, schema, table, date_from, date_to), slot
+        ),
         media_type='text/csv; charset=utf-8',
         headers=_csv_headers(filename),
+        background=BackgroundTask(slot.release),
     )

@@ -1,4 +1,11 @@
-const TARGET_ORIGIN = '*';
+const originOf = (url) => {
+    try {
+        const { origin } = new URL(url);
+        return origin && origin !== 'null' ? origin : null;
+    } catch {
+        return null;
+    }
+};
 
 
 const isEmbedded = () => {
@@ -11,10 +18,28 @@ const isEmbedded = () => {
 };
 
 
+export const detectParentOrigin = () => {
+    if (!isEmbedded()) return null;
+    const ancestors = window.location.ancestorOrigins;
+    if (ancestors && ancestors.length > 0) {
+        const origin = originOf(ancestors[0]);
+        if (origin) return origin;
+    }
+    return document.referrer ? originOf(document.referrer) : null;
+};
+
+
+export const isMessageFromParent = (event) => {
+    if (!isEmbedded() || !event || event.source !== window.parent) return false;
+    const parentOrigin = detectParentOrigin();
+    return Boolean(parentOrigin) && event.origin === parentOrigin;
+};
+
+
 const post = (type, payload) => {
     if (!isEmbedded()) return;
     try {
-        window.parent.postMessage({ type, payload: payload || {} }, TARGET_ORIGIN);
+        window.parent.postMessage({ type, payload: payload || {} }, detectParentOrigin() || '*');
     } catch (err) {
         if (import.meta.env.DEV) {
             console.warn('postMessage failed', err);

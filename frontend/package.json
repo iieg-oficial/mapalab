@@ -3,7 +3,7 @@
     "description": "Mapa interactivo de Jalisco con capas geoespaciales. La herramienta oficial para visualizar y analizar información territorial del estado.",
     "license": "MIT",
     "author": "Edgar Alejandro Villarreal Padilla <edgar.villarreal@iieg.gob.mx>",
-    "version": "1.116.22",
+    "version": "2.3.0",
     "private": true,
     "type": "module",
     "scripts": {
@@ -16,6 +16,7 @@
         "test:watch": "vitest",
         "test:ui": "vitest --ui",
         "test:coverage": "vitest --run --coverage",
+        "smoke": "node scripts/smoke.mjs",
         "check:dead-code": "knip --no-exit-code",
         "check:dead-code:strict": "knip"
     },
@@ -28,16 +29,22 @@
         "@dnd-kit/sortable": "10.0.0",
         "@dnd-kit/utilities": "3.2.2",
         "@tailwindcss/vite": "4.3.3",
+        "gifenc": "^1.0.3",
+        "h3-js": "^4.5.0",
         "html2canvas-pro": "1.5.11",
         "jspdf": "4.2.1",
         "jszip": "3.10.1",
         "lottie-react": "2.4.1",
+        "maplibre-gl": "6.10.0",
+        "mediabunny": "^1.61.0",
         "ol": "10.9.0",
+        "polygon-clipping": "0.15.7",
         "qr-code-styling": "^1.9.2",
         "react": "19.2.8",
         "react-dom": "19.2.8",
         "react-router": "8.3.0",
         "tailwindcss": "4.3.3",
+        "three": "0.186.1",
         "web-vitals": "^5.2.0"
     },
     "devDependencies": {
@@ -58,6 +65,7 @@
         "happy-dom": "^20.9.0",
         "knip": "^6.6.0",
         "lint-staged": "^16.4.0",
+        "playwright": "^1.62.1",
         "rollup-plugin-visualizer": "^7.0.1",
         "vite": "8.2.0",
         "vitest": "4.1.10"

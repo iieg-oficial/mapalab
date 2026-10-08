@@ -9,6 +9,7 @@ import EmojiPanel from './EmojiPanel';
 import TextInlineEditor from './TextInlineEditor';
 import HistoryPanel from './HistoryPanel';
 import FeatureEditToolbar from './FeatureEditToolbar';
+import { abrirInfoBoxDeMedicion, useInfoBoxDeMedicion } from '@hooksMaps/useInfoBoxDeMedicion';
 
 const ToolsPanel = () => {
     const {
@@ -30,7 +31,7 @@ const ToolsPanel = () => {
         hideMeasurementTools,
         hideAnnotationTools,
         restoreLastSelection,
-        showSelectionByIndex,
+        showSelection,
         mapRef,
         selectedFeature,
         selectionTick,
@@ -41,6 +42,7 @@ const ToolsPanel = () => {
         updateStrokeColor: updateFeatureStrokeColor,
         updateStrokeWidth: updateFeatureStrokeWidth,
         deleteSelected: deleteSelectedFeature,
+        clearDrawings,
         deselectFeature,
         freehandColor,
         freehandWidth,
@@ -50,19 +52,29 @@ const ToolsPanel = () => {
         startTextEdit,
         updateEditingTextLabel,
         commitTextEdit,
-        cancelTextEdit
+        cancelTextEdit,
+        updatePin,
+        setSelectedFeatureInfo,
+        clickPosition
     } = useMapsContext();
     const { style, className } = useSiderAdaptivePosition({ anchorRef: 'tools' });
     const { isMobile } = useSider();
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [isMeasurementListOpen, setIsMeasurementListOpen] = useState(false);
     const emojiPickerButtonRef = useRef(null);
+    useInfoBoxDeMedicion({ measurements, mapRef, setSelectedFeatureInfo, clickPosition });
+
+    const mostrarMedicion = (id) => abrirInfoBoxDeMedicion({
+        medicion: measurements.find(m => m.id === id),
+        setSelectedFeatureInfo,
+        clickPosition,
+    });
 
     const shouldRender = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0;
     const showTypeSwitcher = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing;
     const compact = isMobile && (isDrawing || isEmojiPickerOpen || !!editingText);
 
-    const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo' };
+    const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo', Pin: 'Pin' };
 
     const handleMeasureTypeClick = (typeId) => {
         if (typeId === 'Point') {
@@ -174,7 +186,9 @@ const ToolsPanel = () => {
                 onDelete={deleteMeasurement}
                 onToggleVisibility={toggleMeasurementVisibility}
                 onClose={() => setIsMeasurementListOpen(false)}
-                onShowSelection={showSelectionByIndex}
+                onShowSelection={showSelection}
+                onShowMeasurement={mostrarMedicion}
+                onClearAll={clearDrawings}
             />
 
             {selectedFeature && (
@@ -189,6 +203,7 @@ const ToolsPanel = () => {
                     onStrokeColor={updateFeatureStrokeColor}
                     onStrokeWidth={updateFeatureStrokeWidth}
                     onEdit={startTextEdit}
+                    onPin={updatePin}
                     onDelete={deleteSelectedFeature}
                     onClose={deselectFeature}
                 />

@@ -39,18 +39,13 @@ from servers.resolve import (
     resolve_municipios as _resolve_municipios,
     search_by_theme as _search_by_theme,
 )
-from servers.layers import (
-    describe_layer as _describe_layer,
-    query_wfs as _query_wfs,
-)
+from servers.layers import describe_layer as _describe_layer
+from servers.blindaje import Vista3d
+from servers.tabla import FiltroTabla, layer_table as _layer_table
+from servers.estadisticas import layer_stats as _layer_stats
 from servers.shares import (
     create_map as _create_map,
     create_swipe as _create_swipe,
-)
-from servers.auth import (
-    MCPAuthMiddleware,
-    quota_flush_loop,
-    quota_flush_pending_sync,
 )
 from servers.telemetry import (
     MCPTelemetryMiddleware,
@@ -67,8 +62,9 @@ mcp = FastMCP(
 3. FLUJO TIPICO: search_layers -> describe_layer -> (municipios) -> create_map / create_swipe.
 4. BASEMAPS: voyager, position, sin_mapalab. NO existe 'osm'.
 5. FILTROS DE FECHA en shares: usa create_swipe en modo anios (layer + year_a + year_b) o el parametro `year` de create_map. Los anios disponibles de una capa salen en describe_layer.periodicidad.
-6. COORDENADAS: no las inventes. Usa query_wfs (limit bajo) para obtener geometrias reales.
-7. Para modelos chicos: usa describe_layer para todo lo de una capa (cualidades + metadata + numeralia + periodicidad en una llamada) y create_map para entregas rapidas."""
+6. COORDENADAS: no las inventes. Usa layer_table con coordenadas=True y por_pagina bajo para obtener puntos reales.
+7. Para modelos chicos: usa describe_layer para todo lo de una capa (cualidades + metadata + numeralia + periodicidad en una llamada) y create_map para entregas rapidas.
+8. CIFRAS: para contar, sumar, promediar o repartir por clase usa layer_stats; no pagines layer_table para calcular."""
 )
 
 
@@ -101,7 +97,7 @@ def search_layers(
     - ambos: filtra las capas del tema por el texto
 
     Devuelve una lista de objetos {id, label, slug, workspace, path}. Usa el
-    campo `id` en describe_layer, query_wfs, create_map y create_swipe.
+    campo `id` en describe_layer, layer_table, layer_stats, create_map y create_swipe.
 
     Ejemplos:
     1) Por nombre:        search_layers(query="homicidio")
@@ -154,44 +150,44 @@ def search_layers(
 
 
 @mcp.tool()
-def query_wfs(
+def layer_table(
     layer: str = Field(description="Id de la capa (el que devuelve search_layers). Ej: 'homicidio_doloso'."),
-    cql_filter: Optional[str] = Field(default=None, description="Filtro CQL avanzado. No combines con municipio/year/month; usa uno u otro."),
-    limit: int = Field(default=1000, ge=1, le=10000, description='Maximo de features a devolver (1-10000). Para modelos chicos usa limit bajo (ej. 10).'),
-    srs_name: Optional[Literal['EPSG:4326', 'EPSG:6368']] = Field(default=None, description="SRS de salida. 'EPSG:4326'=lat/lon, 'EPSG:6368'=metros (CRS nativo)."),
-    workspace: str = Field(default='', description='Opcional. Normalmente se deja vacio; se resuelve desde el arbol.'),
-    municipio: Optional[str] = Field(default=None, description="Nombre o clave de municipio para filtrar. Ej: 'Guadalajara' o '14039'. Usa municipios() para buscar."),
-    year: Optional[str] = Field(default=None, description="Anio de 4 digitos para filtrar por fecha. Ej: '2024'."),
-    month: Optional[int] = Field(default=None, ge=1, le=12, description="Mes (1-12) para afinar el filtro de fecha. Solo vale si tambien pasas 'year'."),
+    municipio: Optional[str] = Field(default=None, description="Nombre o clave de municipio. Ej: 'Guadalajara' o '14039'. Usa municipios() para buscar."),
+    year: Optional[str] = Field(default=None, description="Anio de 4 digitos. Ej: '2024'."),
+    month: Optional[int] = Field(default=None, ge=1, le=12, description="Mes (1-12). Solo vale con 'year'."),
+    filtros: Optional[list[FiltroTabla]] = Field(default=None, max_length=5, description="Hasta 5 condiciones sobre campos de la capa, unidas con AND."),
+    columnas: Optional[list[str]] = Field(default=None, max_length=20, description="Campos a mostrar, por su nombre crudo. Vacio = las columnas configuradas del visor."),
+    orden: Optional[str] = Field(default=None, max_length=64, description="Campo por el que se ordena."),
+    descendente: bool = Field(default=False, description="Orden de mayor a menor."),
+    pagina: int = Field(default=1, ge=1, le=250, description="Pagina a devolver, desde 1."),
+    por_pagina: int = Field(default=20, ge=1, le=50, description="Filas por pagina (1-50)."),
+    coordenadas: bool = Field(default=False, description="Agrega a cada fila un punto {lat, lon} del elemento."),
 ):
-    """Consulta los features (registros geograficos) reales de una capa del visor via WFS.
+    """Tabla de datos de una capa: filas con los nombres de columna legibles del visor, filtrables, ordenables y paginadas.
 
-    Devuelve GeoJSON con todas las propiedades de cada feature. Con `limit`
-    alto la respuesta es grande; si tu modelo es chico, usa `limit` bajo
-    (p. ej. 10) o describe_layer para un resumen (numeralia) en vez de los
-    features crudos.
-
-    Ahora podes filtrar sin escribir CQL: usa `municipio` (nombre/clave),
-    `year` y `month`. El servidor arma el CQL por vos. Si pasas `cql_filter`,
-    no combines con estos parametros.
+    Devuelve {capa, nombre, total, pagina, paginas, columnas: [{campo, etiqueta}], filas}.
+    Las filas usan la `etiqueta` como llave. Filtra con `columnas[].campo`.
+    La tabla llega hasta la fila 5000: para totales, sumas o repartos usa layer_stats.
 
     Ejemplos:
-    1) Pocos features:        query_wfs(layer="homicidio_doloso", limit=5)
-    2) Filtrado por municipio: query_wfs(layer="homicidio_doloso", municipio="Guadalajara")
-    3) Filtrado por anio:     query_wfs(layer="homicidio_doloso", year="2024", limit=10)
-    4) Con mes:               query_wfs(layer="precipitacion", year="2024", month=6, limit=10)
-    5) En lat/lon:            query_wfs(layer="homicidio_doloso", limit=10, srs_name="EPSG:4326")
+    1) Primeras filas:  layer_table(layer="homicidio_doloso")
+    2) Por municipio:   layer_table(layer="escuelas", municipio="Zapopan", year="2024")
+    3) Filtro y orden:  layer_table(layer="escuelas", filtros=[{"campo": "nivel", "op": "=", "valor": "Primaria"}], orden="matricula", descendente=True)
+    4) Para anotar:     layer_table(layer="hospitales", municipio="Guadalajara", por_pagina=5, coordenadas=True)
     """
     try:
-        return _query_wfs(
+        return _layer_table(
             layer=layer,
-            cql_filter=cql_filter,
-            limit=limit,
-            srs_name=srs_name,
-            workspace=(workspace or None),
             municipio=municipio,
             year=year,
             month=month,
+            filtros=[f.model_dump() for f in filtros or []],
+            columnas=columnas,
+            orden=orden,
+            descendente=descendente,
+            pagina=pagina,
+            por_pagina=por_pagina,
+            coordenadas=coordenadas,
         )
     except ValueError as exc:
         return {'error': str(exc)}
@@ -233,6 +229,7 @@ def create_map(
     basemap: Optional[Literal['voyager', 'position', 'sin_mapalab']] = Field(default=None, description="Basemap: 'voyager' (recomendado), 'position', 'sin_mapalab'. NO existe 'osm'."),
     selected: Optional[str] = Field(default=None, description='Id de la capa seleccionada para mostrar su simbologia.'),
     annotations: Optional[list] = Field(default=None, description="Anotaciones GeoJSON EPSG:4326. Cada item: {id, type ('LineString'|'Polygon'|'Text'|'Emoji'), geometry, label?, value?, unit?, textLabel?}."),
+    vista_3d: Optional[Vista3d] = Field(default=None, description="Abre el mapa en vista 3D con relieve. {inclinacion?, rumbo?, exageracion?, extruir?: [ids de capas del mapa]}."),
 ):
     """Crea un mapa (un panel) y devuelve {id, kind, url, embed_html, layer?}.
 
@@ -244,13 +241,15 @@ def create_map(
 
     Modificadores (aplican a cualquier modo): `municipio` (filtra + auto-encuadra),
     `year` (filtro de fecha validado contra la periodicidad; error accionable si
-    el anio no existe), `annotations`, `view`, `basemap`, `selected`.
+    el anio no existe), `annotations`, `view`, `basemap`, `selected`, `vista_3d`.
+    `vista_3d` solo aplica al abrir el `url`; el `embed_html` sigue en 2D.
 
     Ejemplos:
     1) Busqueda rapida:   create_map(query="homicidios en Guadalajara", municipio="Guadalajara", year="2024")
     2) Por tema:          create_map(theme="seguridad", municipio="Zapopan")
     3) Capas explicitas:  create_map(layers=["homicidio_doloso","poblacion"])
     4) Con anotacion:     create_map(layers=["homicidio_doloso"], annotations=[{"id":"a1","type":"Polygon","geometry":{...},"label":"Zona"}])
+    5) En 3D:             create_map(layers=["poblacion"], municipio="Zapopan", vista_3d={"inclinacion": 60, "extruir": ["poblacion"]})
     """
     try:
         return _create_map(
@@ -263,6 +262,7 @@ def create_map(
             basemap=basemap,
             selected=selected,
             annotations=annotations,
+            vista_3d=vista_3d,
         )
     except ValueError as exc:
         return {'error': str(exc)}
@@ -282,6 +282,7 @@ def create_swipe(
     label_a: str = Field(default='A', description='Etiqueta del lado A (modo libre).'),
     label_b: str = Field(default='B', description='Etiqueta del lado B (modo libre).'),
     annotations: Optional[list] = Field(default=None, description='Anotaciones globales (visibles en ambos lados). GeoJSON EPSG:4326.'),
+    vista_3d: Optional[Vista3d] = Field(default=None, description="Abre el comparador en vista 3D, con la camara igual en los dos lados. {inclinacion?, rumbo?, exageracion?, extruir?}."),
 ):
     """Crea un mapa comparativo A|B (swipe) y devuelve {id, kind, url, embed_html}.
 
@@ -318,6 +319,7 @@ def create_swipe(
             label_a=label_a,
             label_b=label_b,
             annotations=annotations,
+            vista_3d=vista_3d,
         )
     except ValueError as exc:
         return {'error': str(exc)}
@@ -338,7 +340,7 @@ def describe_layer(
 
     - `capabilities` dice que se puede hacer con la capa: {temporal, hasMunicipio,
       municipioField, descargable, consultableWfs, zoomRange}. Uselo para saber
-      si podes filtrar por municipio (query_wfs/create_map) o comparar anios
+      si podes filtrar por municipio (layer_table/create_map) o comparar anios
       (create_swipe).
     - `periodicidad` = {años: [...], meses: [...]} resume las fechas disponibles;
       elegí un año de `años` antes de filtrar por fecha.
@@ -349,6 +351,32 @@ def describe_layer(
     3) Anios disponibles: describe_layer("homicidio_doloso")["periodicidad"]["años"]
     """
     return _describe_layer(layer=layer)
+
+
+@mcp.tool()
+def layer_stats(
+    layer: str = Field(description="Id de la capa (de search_layers). Ej: 'escuelas', 'homicidio_doloso'."),
+    field: Optional[str] = Field(default=None, description="Campo numerico para suma y promedio. Si la capa no lo tiene, el error lista los campos posibles."),
+    group_by: Optional[str] = Field(default=None, description="Campo de texto para contar por clase (ej. tipo de cultivo, nivel escolar). Con `field`, tambien suma y promedio por clase."),
+    municipio: Optional[str] = Field(default=None, description="Nombre del municipio para acotar. Ej: 'Zapopan'. La capa debe soportar filtro por municipio."),
+    year: Optional[str] = Field(default=None, description="Anio de 4 digitos para capas temporales. Ej: '2024'."),
+    top: int = Field(default=10, ge=1, le=25, description='Cuantas clases devolver con group_by; el resto se junta en `otras`.'),
+):
+    """Cifras de una capa sin descargar sus elementos: conteo, suma, promedio y reparto por clase.
+
+    Devuelve {layer, filtros, conteo, campo?, suma?, promedio?, agrupado_por?, clases?, otras?}.
+    Lo calcula GeoServer; los resultados se guardan 10 minutos.
+
+    Ejemplos:
+    1) Cuantos hay:          layer_stats(layer="escuelas", municipio="Zapopan")
+    2) Suma y promedio:      layer_stats(layer="brecha_salarial", field="salario_promedio_diario_mujeres")
+    3) Reparto por clase:    layer_stats(layer="cultivos", group_by="cultivo", top=5)
+    4) Por clase con suma:   layer_stats(layer="cultivos", group_by="cultivo", field="superficie")
+    """
+    try:
+        return _layer_stats(layer=layer, field=field, group_by=group_by, municipio=municipio, year=year, top=top)
+    except ValueError as exc:
+        return {'error': str(exc)}
 
 
 @asynccontextmanager
@@ -363,24 +391,19 @@ async def lifespan(server_app: FastAPI):
         Logger.warning(f'mapalab-mcp warmup_error {exc}')
 
     flush_task = asyncio.create_task(telemetry_flush_loop())
-    quota_task = asyncio.create_task(quota_flush_loop())
     access_task = asyncio.create_task(access_flush_loop())
     try:
         yield
     finally:
-        for task in (flush_task, quota_task, access_task):
+        for task in (flush_task, access_task):
             task.cancel()
-        for task in (flush_task, quota_task, access_task):
+        for task in (flush_task, access_task):
             try:
                 await task
             except asyncio.CancelledError:
                 pass
         try:
             await asyncio.to_thread(telemetry_flush_pending_sync)
-        except Exception:
-            pass
-        try:
-            await asyncio.to_thread(quota_flush_pending_sync)
         except Exception:
             pass
         try:
@@ -411,7 +434,6 @@ app = FastAPI(
     lifespan=combine_lifespans(lifespan, mcp_app.lifespan),
 )
 app.add_middleware(MCPTelemetryMiddleware, path_prefix='/mcp')
-app.add_middleware(MCPAuthMiddleware, path_prefix='/mcp')
 
 if __name__ == "__main__":
     mcp.run()
