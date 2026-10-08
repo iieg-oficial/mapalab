@@ -3,6 +3,7 @@ import MobileSheet, { MobileSheetCloseButton } from '@components/MobileSheet';
 import { trackMinimapa } from '@services/analyticsService';
 import { useMinimapa } from '@pages/maps/hooks/useMinimapa';
 import IconoHerramienta from '../IconoHerramienta';
+import Badge from '@components/Badge';
 import LienzoMinimapa from './LienzoMinimapa';
 
 const ALTO_MAXIMO = 0.7;
@@ -56,9 +57,10 @@ const MinimapaMovil = () => {
                 aria-expanded={abierto}
                 aria-label="Ver dónde estás en Jalisco"
                 title="Minimapa"
-                className="flex size-11 items-center justify-center rounded-full bg-white shadow-[0_5px_20px_#1A26641A] cursor-pointer"
+                className="relative flex size-11 items-center justify-center rounded-full bg-white shadow-[0_5px_20px_#1A26641A] cursor-pointer"
             >
                 <IconoHerramienta id="minimapa" className="size-8" />
+                <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-3 text-[8px] px-1.5 pointer-events-none" />
             </button>
             <MobileSheet open={abierto} onClose={cerrar} maxHeightClass="max-h-[70vh]">
                 <HojaMinimapa cerrar={cerrar} />

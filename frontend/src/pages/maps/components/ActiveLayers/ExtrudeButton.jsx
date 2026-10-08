@@ -1,5 +1,6 @@
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
+import Badge from '@components/Badge';
 import Loading from '@components/Loading';
 import { useMapsContext } from '@hooks/useMaps';
 import { useView3d } from '@contexts/View3dContext';
@@ -46,7 +47,7 @@ const ExtrudeButton = ({ layerId, baseClass }) => {
         <Tooltip content={label}>
             <button
                 type="button"
-                className={`${on ? 'p-1.5 rounded-full bg-[#5C2472] text-white border border-[#5C2472] cursor-pointer' : `${baseClass} text-[#465055] hover:border-[#70308A]`}`}
+                className={`relative ${on ? 'p-1.5 rounded-full bg-[#5C2472] text-white border border-[#5C2472] cursor-pointer' : `${baseClass} text-[#465055] hover:border-[#70308A]`}`}
                 onClick={handleClick}
                 aria-pressed={on}
                 aria-label={label}
@@ -54,6 +55,7 @@ const ExtrudeButton = ({ layerId, baseClass }) => {
                 {on && status === 'loading'
                     ? <Loading visible size="size-5" border="border-2" color="border-white" />
                     : <Icon name="cubo" className="size-5" />}
+                <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-3 text-[8px] px-1.5 pointer-events-none" />
             </button>
         </Tooltip>
     );

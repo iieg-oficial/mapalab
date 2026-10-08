@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Tooltip from '@components/Tooltip';
+import Badge from '@components/Badge';
 import { useView3d } from '@contexts/View3dContext';
 import { useDron } from '@contexts/DronContext';
 import { useMapsContext } from '@hooks/useMaps';
@@ -53,8 +54,9 @@ const BotonNorte = ({ getActiveMap, ancho = false }) => {
 
     return (
         <Tooltip content="Orientar al norte · clic derecho y arrastrar para girar">
-            <button type="button" onClick={orientar} className={`${ancho ? 'w-24' : 'w-11'} flex justify-center p-1 cursor-pointer transition-[width] duration-300`} aria-label="Orientar al norte">
+            <button type="button" onClick={orientar} className={`relative ${ancho ? 'w-24' : 'w-11'} flex justify-center p-1 cursor-pointer transition-[width] duration-300`} aria-label="Orientar al norte">
                 <img ref={imagenRef} src={icoNorte} alt="" className={`${ancho ? 'h-16' : 'h-12'} w-auto transition-transform duration-200`} style={enDron ? undefined : { transform: `rotate(${grados}deg)` }} />
+                <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 right-0 text-[8px] px-1.5 pointer-events-none" />
             </button>
         </Tooltip>
     );

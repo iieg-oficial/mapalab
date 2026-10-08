@@ -3,6 +3,7 @@ import { toLonLat } from 'ol/proj';
 import { useView3d } from '@contexts/View3dContext';
 import { useDron } from '@contexts/DronContext';
 import Tooltip from '@components/Tooltip';
+import Badge from '@components/Badge';
 import { MobileSheetCloseButton } from '@components/MobileSheet';
 import { trackMinimapa } from '@services/analyticsService';
 import { useMinimapa } from '@pages/maps/hooks/useMinimapa';
@@ -61,6 +62,7 @@ const MinimapaEscritorio = () => {
             <div className="relative">
                 <LienzoMinimapa lado={lado} atenuado={!visible} {...lienzo} bloqueado={lienzo.bloqueado || enDron} alIr={en3d ? irEn3d : undefined} />
                 {enModoMunicipio && <PuntoDeReferencia map={lienzo.map} />}
+                <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 left-2 text-[8px] px-1.5 pointer-events-none" />
                 <div className="absolute right-0 top-0 flex rounded-full bg-white p-0.5 opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
                     <Tooltip content="Quitar el minimapa. Vuelve desde Herramientas" placement="top" delay={300}>
                         <MobileSheetCloseButton onClick={apagar} />

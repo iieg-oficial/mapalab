@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Tooltip from '@components/Tooltip';
+import Badge from '@components/Badge';
 import { useSesion } from '@contexts/SesionContext';
 import { IconoPersona } from './SesionIconos';
 import { iniciales } from '@pages/maps/helpers/sesion/iniciales';
@@ -48,6 +49,7 @@ const SesionBoton = ({ sizeClass = 'size-5', placement = 'right-start' }) => {
                         : <IconoPersona className="size-3" />}
                     {usuario && <span className="absolute -right-0.5 -bottom-0.5 size-2 rounded-full bg-[#2BB673] ring-2 ring-white" />}
                     {entrando && <span className="absolute -inset-0.5 rounded-full border-2 border-purple border-t-transparent animate-spin" />}
+                    <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2.5 -right-4 text-[7px] px-1 pointer-events-none" />
                 </button>
             </Tooltip>
             <SesionPopover open={abierto} anchorRef={anchorRef} placement={placement} sesion={sesion} onClose={cerrar} />
