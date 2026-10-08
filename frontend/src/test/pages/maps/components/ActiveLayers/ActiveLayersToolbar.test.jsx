@@ -7,7 +7,8 @@ const baseProps = {
     unifiedLayers: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }],
     displayedLayers: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }],
     isFiltering: false,
-    allHidden: false,
+    soloSeleccionada: false,
+    selectedLayerLabel: 'Temperatura media mensual',
     visibilityCount: 2,
     hasActiveLoops: false,
     activeLoopsCount: 0,
@@ -28,7 +29,7 @@ const baseProps = {
 describe('ActiveLayersToolbar - modo botones', () => {
     it('renderiza el switch IIEG/INEGI y los botones de acción', () => {
         render(<ActiveLayersToolbar {...baseProps} />);
-        expect(screen.getByText(/Ocultar mis capas/i)).toBeInTheDocument();
+        expect(screen.getByText(/Solo seleccionada/i)).toBeInTheDocument();
         expect(screen.getByText(/Eliminar mis capas/i)).toBeInTheDocument();
     });
 
@@ -51,13 +52,54 @@ describe('ActiveLayersToolbar - modo botones', () => {
     it('invoca onToggleVisibilityAll al hacer click en el botón de visibilidad', () => {
         const onToggleVisibilityAll = vi.fn();
         render(<ActiveLayersToolbar {...baseProps} onToggleVisibilityAll={onToggleVisibilityAll} />);
-        fireEvent.click(screen.getByText(/Ocultar mis capas/i));
+        fireEvent.click(screen.getByText(/Solo seleccionada/i));
         expect(onToggleVisibilityAll).toHaveBeenCalled();
     });
 
-    it('cambia el label de visibilidad cuando allHidden=true', () => {
-        render(<ActiveLayersToolbar {...baseProps} allHidden />);
-        expect(screen.getByText(/Mostrar mis capas/i)).toBeInTheDocument();
+    it('nombra la capa aislada cuando el modo está encendido', () => {
+        render(<ActiveLayersToolbar {...baseProps} soloSeleccionada />);
+        expect(screen.getByText('Temperatura media mensual')).toBeInTheDocument();
+        expect(screen.queryByText(/Solo seleccionada/i)).not.toBeInTheDocument();
+    });
+
+    it('ofrece aislar la seleccionada cuando se ven varias', () => {
+        render(<ActiveLayersToolbar {...baseProps} />);
+        expect(screen.getByText(/Solo seleccionada/i)).toBeInTheDocument();
+    });
+
+    it('ofrece la salida con el boton de cerrar solo mientras está encendido', () => {
+        const salida = /volver a mostrar todas las capas/i;
+        const { rerender } = render(<ActiveLayersToolbar {...baseProps} />);
+        expect(screen.queryByRole('button', { name: salida })).not.toBeInTheDocument();
+        rerender(<ActiveLayersToolbar {...baseProps} soloSeleccionada />);
+        expect(screen.getByRole('button', { name: salida })).toBeInTheDocument();
+    });
+
+    it('el boton de cerrar apaga el modo', () => {
+        const onToggleVisibilityAll = vi.fn();
+        render(<ActiveLayersToolbar {...baseProps} soloSeleccionada onToggleVisibilityAll={onToggleVisibilityAll} />);
+        fireEvent.click(screen.getByRole('button', { name: /volver a mostrar todas las capas/i }));
+        expect(onToggleVisibilityAll).toHaveBeenCalled();
+    });
+
+    it('pide elegir una capa y se deshabilita cuando no hay selección', () => {
+        const onToggleVisibilityAll = vi.fn();
+        render(<ActiveLayersToolbar {...baseProps} selectedLayerLabel={null} onToggleVisibilityAll={onToggleVisibilityAll} />);
+        const chip = screen.getByText(/Elige una capa/i).closest('button');
+        expect(chip).toBeDisabled();
+        fireEvent.click(chip);
+        expect(onToggleVisibilityAll).not.toHaveBeenCalled();
+    });
+
+    it('se deshabilita también sin capas activas', () => {
+        render(<ActiveLayersToolbar {...baseProps} noLayers unifiedLayers={[]} displayedLayers={[]} />);
+        expect(screen.getByText(/Elige una capa/i).closest('button')).toBeDisabled();
+    });
+
+    it('mantiene visible la etiqueta del chip aunque las demás se oculten', () => {
+        render(<ActiveLayersToolbar {...baseProps} />);
+        expect(screen.getByText(/Solo seleccionada/i).className).not.toMatch(/\bhidden\b/);
+        expect(screen.getByText(/Eliminar mis capas/i).className).toMatch(/\bhidden\b/);
     });
 
     it('muestra el botón de pausar animaciones cuando hasActiveLoops', () => {

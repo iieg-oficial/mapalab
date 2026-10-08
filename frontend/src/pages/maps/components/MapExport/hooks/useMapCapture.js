@@ -1,12 +1,21 @@
 import { useMapsContext } from '@hooks/useMaps';
+import { useView3d } from '@contexts/View3dContext';
 import { EXPORT_DIMENSIONS } from '../utils/exportDimensions';
 const { MAP_WIDTH, MAP_HEIGHT } = EXPORT_DIMENSIONS;
 import { transformExtent } from 'ol/proj';
 import { useMapView } from './useMapView';
 import { composeSwipeCanvas } from '../utils/swipeComposition';
+import { esperarRedibujo3d } from '../utils/esperarRedibujo3d';
+import { MASCARA_Z_INDEX } from '../utils/seleccionDescarga';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import Feature from 'ol/Feature';
+import { Fill, Style } from 'ol/style';
+import { sinEtiquetasDeMedicion } from '@pages/maps/helpers/drawingStyles';
 
 export const useMapCapture = () => {
     const { targetRef, mapRef, compareMode, paneMapRefs } = useMapsContext();
+    const { active: en3d, grupo3dRef } = useView3d();
     const { adjustViewToFullState, getActiveMapRef } = useMapView();
 
     const isSwipe = !!compareMode?.active;
@@ -40,12 +49,17 @@ export const useMapCapture = () => {
         scaleControl.style.transform = originalStyles.transform;
     };
 
+    const waitFor3d = () => {
+        if (!en3d) return Promise.resolve();
+        return esperarRedibujo3d(grupo3dRef.current?.miembros || []);
+    };
+
     const waitForTilesToLoad = () => {
         const refs = isSwipe
             ? [paneMapRefs?.current?.[0]?.current, paneMapRefs?.current?.[1]?.current].filter(Boolean)
             : [mapRef.current].filter(Boolean);
-        if (refs.length === 0) return Promise.resolve();
-        return Promise.all(refs.map(m => new Promise(resolve => m.once('rendercomplete', resolve))));
+        if (refs.length === 0) return waitFor3d();
+        return Promise.all([...refs.map(m => new Promise(resolve => m.once('rendercomplete', resolve))), waitFor3d()]);
     };
 
     const captureElement = async (element, options = {}) => {
@@ -115,7 +129,19 @@ export const useMapCapture = () => {
         return result;
     };
 
-    const getMapSnapshot = async ({ extent, viewType = 'viewport', mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT, captureScale = 1, swipeOptions = null }) => {
+    const ocultarEtiquetasDeMedicion = (capas) => {
+        const conEstiloPropio = capas
+            .map(capa => ({ capa, original: capa.getStyle?.() }))
+            .filter(({ original }) => typeof original === 'function');
+
+        conEstiloPropio.forEach(({ capa, original }) => {
+            capa.setStyle((feature, resolucion) => sinEtiquetasDeMedicion(original(feature, resolucion)));
+        });
+
+        return () => conEstiloPropio.forEach(({ capa, original }) => capa.setStyle(original));
+    };
+
+    const getMapSnapshot = async ({ extent, viewType = 'viewport', mapWidth = MAP_WIDTH, mapHeight = MAP_HEIGHT, captureScale = 1, swipeOptions = null, mascara = null, onExtent = null }) => {
         const target = isSwipe ? getSwipeComposite() : targetRef.current;
         const anchorRef = getActiveMapRef();
         if (!target || !anchorRef?.current) return null;
@@ -125,6 +151,8 @@ export const useMapCapture = () => {
 
         let originalState = null;
         let layerResolutions = [];
+        let capaMascara = null;
+        let restaurarEtiquetas = null;
         const targetsToResize = isSwipe
             ? [target, getPaneTarget(0), getPaneTarget(1)].filter(Boolean)
             : [target];
@@ -138,6 +166,7 @@ export const useMapCapture = () => {
             const allLayersFlat = allManagedRefs.flatMap(m => getAllLayers(m.getLayers()));
             layerResolutions = allLayersFlat.map(layer => ({ layer, minResolution: layer.getMinResolution() }));
             allLayersFlat.forEach(layer => layer.setMinResolution(0));
+            restaurarEtiquetas = ocultarEtiquetasDeMedicion(allLayersFlat);
 
             targetsToResize.forEach(el => {
                 el.style.width = `${mapWidth}px`;
@@ -147,6 +176,10 @@ export const useMapCapture = () => {
 
             if (viewType === 'full-state') {
                 adjustViewToFullState();
+            } else if (extent && mascara) {
+                const view = anchorRef.current.getView();
+                view.fit(transformExtent(extent, 'EPSG:4326', 'EPSG:3857'), { size: [mapWidth, mapHeight], nearest: false });
+                onExtent?.(transformExtent(view.calculateExtent([mapWidth, mapHeight]), 'EPSG:3857', 'EPSG:4326'));
             } else if (extent) {
                 const extent3857 = transformExtent(extent, 'EPSG:4326', 'EPSG:3857');
                 const view = anchorRef.current.getView();
@@ -161,6 +194,15 @@ export const useMapCapture = () => {
                 view.setResolution(resolution);
             }
 
+            if (mascara) {
+                capaMascara = new VectorLayer({
+                    source: new VectorSource({ features: [new Feature(mascara)] }),
+                    style: new Style({ fill: new Fill({ color: '#ffffff' }) }),
+                    zIndex: MASCARA_Z_INDEX,
+                });
+                anchorRef.current.addLayer(capaMascara);
+            }
+
             await waitForTilesToLoad();
 
             if (isSwipe) {
@@ -171,6 +213,8 @@ export const useMapCapture = () => {
             console.error('Error in getMapSnapshot:', error);
             throw error;
         } finally {
+            if (capaMascara) anchorRef.current.removeLayer(capaMascara);
+            restaurarEtiquetas?.();
             layerResolutions.forEach(({ layer, minResolution }) => layer.setMinResolution(minResolution));
 
             if (originalState) {

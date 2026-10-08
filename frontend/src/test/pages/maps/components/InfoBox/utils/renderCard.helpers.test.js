@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyHeaderTransform, resolveStaticValue } from '@pages/maps/components/InfoBox/utils/renderCard';
+import { applyHeaderTransform, resolveStaticValue } from '@utils/infoboxPlan';
 
 describe('applyHeaderTransform', () => {
     it('retorna el valor sin cambios si no hay transform', () => {

@@ -6,6 +6,7 @@ import { useAlwaysOnTopPinning, sortItemsWithPinnedFirst } from '../../hooks/use
 import { useLayerCollapse } from './hooks/useLayerCollapse';
 import { useLayerSorting } from './hooks/useLayerSorting';
 import { LegendsVisibilityProvider } from './hooks/useLegendsVisibility';
+import { StatsVisibilityProvider } from './hooks/useStatsVisibility';
 import { SortableList, SortableItem } from './SortableList';
 import ActiveLayerItem from './ActiveLayerItem';
 import ActiveLayersToolbar from './ActiveLayersToolbar';
@@ -15,6 +16,7 @@ import Badge from '@components/Badge';
 import ScrollContainer from '@components/ScrollContainer';
 import { useMapsContext } from '@hooks/useMaps';
 import { useLayers } from '@hooks/useLayers';
+import { resolveSelectedLayerLabel } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { getDefaultMapView } from '@pages/maps/helpers/defaultView';
 import { isInegiBaseMode } from '@pages/maps/helpers/basemaps';
 
@@ -32,7 +34,9 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         clearLayerFilters,
         getAllChildLayerIds,
         showAllLayers,
-        hideAllLayers,
+        setHiddenLayerIds,
+        soloSeleccionada,
+        setSoloSeleccionada,
         mapRef,
         hasActiveLoops,
         pauseAllLoops,
@@ -84,7 +88,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         hiddenLayerIds: effectiveHiddenLayerIds,
         compareModeActive: isSwipe
     });
-    const { initialOrder } = useLayers();
+    const { layers: layerTreeNodes, initialOrder } = useLayers();
     const unifiedLayers = useMemo(
         () => sortItemsWithPinnedFirst(rawUnifiedLayers, pinnedLayerIds, initialOrder),
         [rawUnifiedLayers, pinnedLayerIds, initialOrder]
@@ -138,15 +142,6 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
 
     const noLayers = unifiedLayers.length === 0;
 
-    const allHidden = useMemo(() => {
-        return unifiedLayers.length > 0 && unifiedLayers.every(l => !l.visible);
-    }, [unifiedLayers]);
-
-    const visibilityCount = useMemo(() => {
-        if (allHidden) return unifiedLayers.length;
-        return unifiedLayers.filter(l => l.visible).length;
-    }, [unifiedLayers, allHidden]);
-
     const activeLoopsCount = useMemo(() => {
         return Object.values(dateLoops || {}).filter(l => l?.isPlaying).length;
     }, [dateLoops]);
@@ -181,13 +176,26 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
         }
     }, [activeLayerIds, getAllChildLayerIds, clearLayerFilters, onToggleLayer, setSelectedLayerForSymbology, setSearchParams, mapRef]);
 
+    useEffect(() => {
+        if (!soloSeleccionada) return;
+        const id = selectedLayerForSymbology?.id;
+        if (!id) return;
+
+        const visibles = new Set([id, ...getAllChildLayerIds(id)]);
+        setHiddenLayerIds?.(effectiveActiveLayerIds.filter(cid => !visibles.has(cid)));
+    }, [soloSeleccionada, selectedLayerForSymbology?.id, effectiveActiveLayerIds, getAllChildLayerIds, setHiddenLayerIds]);
+
+    const selectedLayerLabel = useMemo(() => {
+        const enPanel = unifiedLayers.find(l => l.id === selectedLayerForSymbology?.id);
+        return enPanel?.name || resolveSelectedLayerLabel(selectedLayerForSymbology, layerTreeNodes);
+    }, [unifiedLayers, selectedLayerForSymbology, layerTreeNodes]);
+
     const handleToggleVisibilityAll = useCallback(() => {
-        if (allHidden) {
-            showAllLayers();
-        } else {
-            hideAllLayers();
-        }
-    }, [allHidden, showAllLayers, hideAllLayers]);
+        setSoloSeleccionada(prev => {
+            if (prev) showAllLayers();
+            return !prev;
+        });
+    }, [showAllLayers, setSoloSeleccionada]);
 
     if (collapse.isCollapsed) {
         return (
@@ -206,7 +214,7 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
     }
 
     return (
-        <div className="w-auto px-4.5 py-2 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] flex-1 min-h-0 flex flex-col max-md:pointer-events-auto">
+        <div className="w-auto px-4.5 pt-2 pb-4.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] flex-1 min-h-0 flex flex-col max-md:pointer-events-auto">
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                     <Icon name="capa_activa" className="size-8" />
@@ -225,8 +233,8 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
                 unifiedLayers={unifiedLayers}
                 displayedLayers={displayedLayers}
                 isFiltering={isFiltering}
-                allHidden={allHidden}
-                visibilityCount={visibilityCount}
+                soloSeleccionada={soloSeleccionada}
+                selectedLayerLabel={selectedLayerLabel}
                 hasActiveLoops={hasActiveLoops}
                 activeLoopsCount={activeLoopsCount}
                 isInegiMode={isInegiMode}
@@ -277,7 +285,9 @@ const ActiveLayersListInner = ({ onCollapseChange }) => {
 
 const ActiveLayersList = (props) => (
     <LegendsVisibilityProvider>
-        <ActiveLayersListInner {...props} />
+        <StatsVisibilityProvider>
+            <ActiveLayersListInner {...props} />
+        </StatsVisibilityProvider>
     </LegendsVisibilityProvider>
 );
 

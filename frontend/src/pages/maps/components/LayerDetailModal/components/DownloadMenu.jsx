@@ -82,7 +82,7 @@ const DownloadMenu = ({
                 </Tooltip>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4">
+            <div className="flex-1 overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-gray-400">
                 <div className="flex flex-col gap-4">
                     <div>
                         <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">

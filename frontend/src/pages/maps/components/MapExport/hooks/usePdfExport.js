@@ -4,7 +4,7 @@ import createExportLegendsLayout from '../ExportLegendsLayout';
 export const usePdfExport = () => {
     const { waitForImages, captureElement } = useMapCapture();
 
-    const exportToPdf = async ({ canvas, title, selectedLegends = [], getLegendUrl }) => {
+    const exportToPdf = async ({ canvas, title, selectedLegends = [], getLegendUrl, hexbinEntriesById = null }) => {
         const { default: jsPDF } = await import('jspdf');
         const canvasRatio = canvas.width / canvas.height;
         const pageWidth = 297;
@@ -22,7 +22,7 @@ export const usePdfExport = () => {
             const MM_TO_PX = 3.7795;
             const containerWidthPx = Math.round(pageWidth * MM_TO_PX);
             const containerHeightPx = Math.round(pageHeight * MM_TO_PX);
-            const legendsContainer = createExportLegendsLayout(selectedLegends, getLegendUrl, containerWidthPx, containerHeightPx);
+            const legendsContainer = createExportLegendsLayout(selectedLegends, getLegendUrl, containerWidthPx, containerHeightPx, hexbinEntriesById);
             
             document.body.appendChild(legendsContainer);
 

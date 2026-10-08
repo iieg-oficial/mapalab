@@ -9,8 +9,10 @@ import TextInlineEditor from '@mapsComponents/MeasurementTools/TextInlineEditor'
 import FeatureEditToolbar from '@mapsComponents/MeasurementTools/FeatureEditToolbar';
 import HistoryButton from '@mapsComponents/MeasurementTools/HistoryButton';
 import HistoryPanel from '@mapsComponents/MeasurementTools/HistoryPanel';
+import { abrirInfoBoxDeMedicion, useInfoBoxDeMedicion } from '@hooksMaps/useInfoBoxDeMedicion';
+import CatalogoTablaButton from './CatalogoTablaButton';
 
-const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo' };
+const TOOL_LABELS = { LineString: 'Linea', Polygon: 'Poligono', Freehand: 'ManoAlzada', Select: 'Seleccion', Circle: 'Circulo', Pin: 'Pin' };
 
 const RulerIcon = ({ className }) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -28,7 +30,12 @@ const CloseIcon = ({ className }) => (
     </svg>
 );
 
-const CatalogoTools = () => {
+const PanelDeLineaNueva = ({ measurements, mapRef, setSelectedFeatureInfo, clickPosition }) => {
+    useInfoBoxDeMedicion({ measurements, mapRef, setSelectedFeatureInfo, clickPosition });
+    return null;
+};
+
+const CatalogoTools = ({ tabla, hayCapa }) => {
     const {
         isDrawing,
         isSketching,
@@ -43,7 +50,7 @@ const CatalogoTools = () => {
         undoLastPoint,
         finishCurrentSketch,
         restoreLastSelection,
-        showSelectionByIndex,
+        showSelection,
         setEmojiTemplate,
         mapRef,
         selectedFeature,
@@ -64,7 +71,10 @@ const CatalogoTools = () => {
         startTextEdit,
         updateEditingTextLabel,
         commitTextEdit,
-        cancelTextEdit
+        cancelTextEdit,
+        updatePin,
+        setSelectedFeatureInfo,
+        clickPosition
     } = useMapsContext();
 
     const isMobile = useIsMobile();
@@ -77,11 +87,16 @@ const CatalogoTools = () => {
     const closeTools = () => {
         stopDrawing();
         deselectFeature?.();
-        clearDrawings();
         setIsEmojiPickerOpen(false);
         setIsListOpen(false);
         setToolsOpen(false);
     };
+
+    const mostrarMedicion = (id) => abrirInfoBoxDeMedicion({
+        medicion: measurements.find(m => m.id === id),
+        setSelectedFeatureInfo,
+        clickPosition,
+    });
 
     const togglePill = () => {
         trackCatalogoToolsToggle(!toolsOpen);
@@ -142,12 +157,22 @@ const CatalogoTools = () => {
         </Tooltip>
     );
 
+    const tablaButton = <CatalogoTablaButton layerId={tabla.layerId} disponible={tabla.disponible} hayCapa={hayCapa} />;
+
     return (
         <div className="fixed left-4 top-29 z-20 flex flex-col gap-2 items-start">
             {!toolsOpen && toggleButton}
+            {!toolsOpen && tablaButton}
 
             {toolsOpen && (
                 <>
+                    <PanelDeLineaNueva
+                        measurements={measurements}
+                        mapRef={mapRef}
+                        setSelectedFeatureInfo={setSelectedFeatureInfo}
+                        clickPosition={clickPosition}
+                    />
+
                     <HistoryButton
                         count={measurements.length}
                         onClick={() => setIsListOpen((v) => !v)}
@@ -203,7 +228,9 @@ const CatalogoTools = () => {
                         onDelete={deleteMeasurement}
                         onToggleVisibility={toggleMeasurementVisibility}
                         onClose={() => setIsListOpen(false)}
-                        onShowSelection={showSelectionByIndex}
+                        onShowSelection={showSelection}
+                        onShowMeasurement={mostrarMedicion}
+                        onClearAll={clearDrawings}
                     />
 
                     {selectedFeature && (
@@ -218,12 +245,14 @@ const CatalogoTools = () => {
                             onStrokeColor={updateStrokeColor}
                             onStrokeWidth={updateStrokeWidth}
                             onEdit={startTextEdit}
+                            onPin={updatePin}
                             onDelete={deleteSelected}
                             onClose={deselectFeature}
                         />
                     )}
 
                     {toggleButton}
+                    {tablaButton}
                 </>
             )}
         </div>

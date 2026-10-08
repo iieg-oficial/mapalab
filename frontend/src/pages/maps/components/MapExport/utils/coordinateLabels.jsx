@@ -5,8 +5,8 @@ const {
     NUM_DIVISIONS_X,
     NUM_DIVISIONS_Y,
     FRAME_COLOR,
-    COORDINATE_LABEL_WIDTH,
-    COORDINATE_LABEL_HEIGHT
+    LABEL_MARGIN_X,
+    LABEL_MARGIN_Y
 } = EXPORT_DIMENSIONS;
 
 const createHorizontalLabel = (text, fraction) => {
@@ -67,7 +67,7 @@ const coordinateLabels = (mapAreaWidth, mapAreaHeight, extent = null) => {
     Object.assign(topLabelsContainer.style, {
         position: 'relative',
         width: `${mapAreaWidth}px`,
-        height: `${COORDINATE_LABEL_HEIGHT}px`,
+        height: `${LABEL_MARGIN_X}px`,
         boxSizing: 'border-box'
     });
 
@@ -75,14 +75,14 @@ const coordinateLabels = (mapAreaWidth, mapAreaHeight, extent = null) => {
     Object.assign(bottomLabelsContainer.style, {
         position: 'relative',
         width: `${mapAreaWidth}px`,
-        height: `${COORDINATE_LABEL_HEIGHT * 4}px`,
+        height: `${LABEL_MARGIN_X}px`,
         boxSizing: 'border-box'
     });
 
     const leftLabelsContainer = document.createElement('div');
     Object.assign(leftLabelsContainer.style, {
         position: 'relative',
-        width: `${COORDINATE_LABEL_WIDTH}px`,
+        width: `${LABEL_MARGIN_Y}px`,
         height: `${mapAreaHeight}px`,
         boxSizing: 'border-box'
     });
@@ -90,7 +90,7 @@ const coordinateLabels = (mapAreaWidth, mapAreaHeight, extent = null) => {
     const rightLabelsContainer = document.createElement('div');
     Object.assign(rightLabelsContainer.style, {
         position: 'relative',
-        width: `${COORDINATE_LABEL_WIDTH}px`,
+        width: `${LABEL_MARGIN_Y}px`,
         height: `${mapAreaHeight}px`,
         boxSizing: 'border-box'
     });

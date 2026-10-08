@@ -6,6 +6,7 @@ import Stroke from 'ol/style/Stroke';
 import Fill from 'ol/style/Fill';
 import CircleStyle from 'ol/style/Circle';
 import { hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
+import { idTablaCatalogo } from '../hooks/useCatalogoTabla';
 
 export const HIGHLIGHT_Z = 998;
 
@@ -48,5 +49,12 @@ export const buildWmsLayer = (capa) => {
         serverType: 'geoserver',
         crossOrigin: 'anonymous',
     });
-    return new ImageLayer({ source, zIndex: 5 });
+    const layer = new ImageLayer({ source, zIndex: 5 });
+    layer.set('mergedLayers', [{
+        layerName: cfg.layerName,
+        styles: '',
+        wmsConfig: cfg,
+        subLayers: [{ id: idTablaCatalogo(capa) }],
+    }]);
+    return layer;
 };

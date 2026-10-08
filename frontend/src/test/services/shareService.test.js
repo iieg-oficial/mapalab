@@ -25,9 +25,14 @@ describe('createShare', () => {
         expect(JSON.parse(options.body)).toEqual({ foo: 'bar' });
     });
 
-    it('lanza error si la respuesta no es ok', async () => {
+    it('sin detalle del servidor lanza un mensaje generico', async () => {
         global.fetch.mockResolvedValueOnce(mockResponse({ ok: false, status: 500, body: 'boom' }));
-        await expect(createShare({})).rejects.toThrow(/POST \/shares 500/);
+        await expect(createShare({})).rejects.toThrow('No se pudo crear el enlace');
+    });
+
+    it('muestra el detalle del servidor, como el techo de enlaces', async () => {
+        global.fetch.mockResolvedValueOnce(mockResponse({ ok: false, status: 429, body: { detail: 'Se alcanzó el límite de enlaces del sitio. Intenta en un minuto.' } }));
+        await expect(createShare({})).rejects.toThrow('Se alcanzó el límite de enlaces del sitio');
     });
 });
 

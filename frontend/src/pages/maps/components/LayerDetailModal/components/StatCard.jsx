@@ -1,16 +1,143 @@
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
+import StatReceta from './StatReceta';
 
-const StatCard = ({ label, value, simbolo, className = '' }) => {
+const SIZES = {
+    default: { box: 'p-3.5', value: 'text-[16px]/[30px]', simbolo: 'text-[12px]', label: 'text-[13px]/[16px]' },
+    compact: { box: 'p-2', value: 'text-[11px]/[16px]', simbolo: 'text-[9px]', label: 'text-[9px]/[11px]' },
+};
+
+const RETARDO_MS = 2000;
+
+let cerrarFichaAbierta = null;
+
+const tomarTurno = (cerrar) => {
+    if (cerrarFichaAbierta && cerrarFichaAbierta !== cerrar) cerrarFichaAbierta();
+    cerrarFichaAbierta = cerrar;
+};
+
+const soltarTurno = (cerrar) => {
+    if (cerrarFichaAbierta === cerrar) cerrarFichaAbierta = null;
+};
+const ANCHO_FICHA = 290;
+const SEPARACION = 6;
+
+const StatCard = ({ label, value, simbolo, className = '', contenedorClassName = '', size = 'default', receta = null, lado = 'auto', fondo = 'bg-[#EFF3FC]' }) => {
+    const s = SIZES[size] || SIZES.default;
+    const Contenedor = receta ? 'button' : 'div';
+    const [posicion, setPosicion] = useState(null);
+    const [fijada, setFijada] = useState(false);
+    const temporizador = useRef(null);
+    const anclaRef = useRef(null);
+
+    const cerrar = useRef(() => {
+        setPosicion(null);
+        setFijada(false);
+    });
+
+    useEffect(() => {
+        const propia = cerrar.current;
+        return () => {
+            clearTimeout(temporizador.current);
+            soltarTurno(propia);
+        };
+    }, []);
+
+    const calcular = () => {
+        const rect = anclaRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        tomarTurno(cerrar.current);
+        const centro = rect.left + rect.width / 2;
+        const mitad = ANCHO_FICHA / 2;
+        const pegadaDerecha = centro + mitad > window.innerWidth - SEPARACION;
+        const pegadaIzquierda = centro - mitad < SEPARACION;
+        let deseada = centro - mitad;
+        if (lado === 'izquierda' || pegadaDerecha) deseada = rect.right - ANCHO_FICHA;
+        else if (pegadaIzquierda) deseada = rect.left;
+        const izquierda = Math.min(
+            Math.max(SEPARACION, deseada),
+            window.innerWidth - ANCHO_FICHA - SEPARACION,
+        );
+        setPosicion({
+            izquierda,
+            arriba: rect.top,
+            abajo: rect.bottom,
+            cabeArriba: rect.top > 220,
+            puntero: Math.min(Math.max(12, centro - izquierda), ANCHO_FICHA - 12),
+        });
+    };
+
+    const programar = () => {
+        if (!receta) return;
+        clearTimeout(temporizador.current);
+        temporizador.current = setTimeout(calcular, RETARDO_MS);
+    };
+
+    const cancelar = () => {
+        clearTimeout(temporizador.current);
+        if (!fijada) {
+            setPosicion(null);
+            soltarTurno(cerrar.current);
+        }
+    };
+
+    const alternar = (evento) => {
+        evento?.stopPropagation();
+        clearTimeout(temporizador.current);
+        if (fijada) {
+            setFijada(false);
+            setPosicion(null);
+            soltarTurno(cerrar.current);
+            return;
+        }
+        setFijada(true);
+        calcular();
+    };
+
     return (
-        <div className={`bg-[#EFF3FC] rounded-[14px] p-3.5 min-h-auto flex flex-col justify-center ${className}`}>
-            <div className="flex flex-col items-center justify-center text-center w-full">
-                <p className="text-[16px]/[30px] font-garet font-bold text-purple">
-                    {formatNumber(value)}{simbolo && <span className="text-[12px] font-medium ml-1">{simbolo}</span>}
-                </p>
-                <p className="text-[13px]/[16px] font-garet font-medium text-[#465055] tracking-normal">
-                    {label}
-                </p>
-            </div>
+        <div
+            ref={anclaRef}
+            className={`h-full ${contenedorClassName}`}
+            onMouseEnter={programar}
+            onMouseLeave={cancelar}
+            onFocus={programar}
+            onBlur={cancelar}
+        >
+            <Contenedor
+                className={`${fondo} rounded-[14px] ${s.box} min-h-auto flex flex-col justify-center w-full h-full ${receta ? 'cursor-pointer' : ''} ${className}`}
+                {...(receta ? { type: 'button', onClick: alternar, 'aria-expanded': Boolean(posicion) } : {})}
+            >
+                <div className="flex flex-col items-center justify-center text-center w-full">
+                    <p className={`${s.value} font-garet font-bold text-purple`}>
+                        {formatNumber(value)}{simbolo && <span className={`${s.simbolo} font-medium ml-1`}>{simbolo}</span>}
+                    </p>
+                    <p className={`${s.label} font-garet font-medium text-[#465055] tracking-normal`}>
+                        {label}
+                    </p>
+                </div>
+            </Contenedor>
+
+            {posicion && receta && createPortal(
+                <div
+                    className="fixed z-[60] font-garet"
+                    style={posicion.cabeArriba
+                        ? { left: posicion.izquierda, bottom: window.innerHeight - posicion.arriba + SEPARACION }
+                        : { left: posicion.izquierda, top: posicion.abajo + SEPARACION }}
+                    role="tooltip"
+                >
+                    <StatReceta
+                        receta={receta}
+                        valor={formatNumber(value)}
+                        simbolo={simbolo}
+                        titulo={label}
+                        onCerrar={cerrar.current}
+                        puntero={posicion.puntero}
+                        punteroAbajo={posicion.cabeArriba}
+                    />
+                </div>,
+                document.body,
+            )}
         </div>
     );
 };

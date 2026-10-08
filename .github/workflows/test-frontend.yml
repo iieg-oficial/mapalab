@@ -13,7 +13,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: 26
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
@@ -31,3 +31,9 @@ jobs:
       - name: Build
         working-directory: ./frontend
         run: npm run build
+      - name: Navegador para el smoke test
+        working-directory: ./frontend
+        run: npx playwright install chromium
+      - name: Smoke test del bundle
+        working-directory: ./frontend
+        run: npm run smoke

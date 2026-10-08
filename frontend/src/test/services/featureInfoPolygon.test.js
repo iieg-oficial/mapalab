@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import Polygon from 'ol/geom/Polygon';
 
 import { getFeaturesInPolygonForActiveLayers, POLYGON_PAGE_SIZE } from '@services/featureInfoService';
 
@@ -28,7 +29,7 @@ const map = {
     getView: () => ({ getProjection: () => ({ getCode: () => 'EPSG:3857' }) })
 };
 
-const polygonGeometry = { getExtent: () => [-1, -1, 1, 1] };
+const polygonGeometry = new Polygon([[[-1, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]]]);
 const activeLayers = [{ id: 'delitos', name: 'Delitos', visible: true }];
 
 const jsonResponse = (body) => ({
@@ -65,6 +66,16 @@ describe('getFeaturesInPolygonForActiveLayers', () => {
         expect(params.get('COUNT')).toBe(String(POLYGON_PAGE_SIZE));
         expect(page.nextIndex).toBe(POLYGON_PAGE_SIZE);
         expect(page.hasMore).toBe(true);
+    });
+
+    it('pide lo que queda dentro del polígono y no el rectángulo que lo envuelve', async () => {
+        global.fetch.mockResolvedValue(jsonResponse(buildBody(3, 3)));
+
+        await getFeaturesInPolygonForActiveLayers(activeLayers, map, polygonGeometry);
+
+        const cql = paramsOf(global.fetch.mock.calls[0][0]).get('CQL_FILTER');
+        expect(cql).toBe('WITHIN(geom, SRID=3857;POLYGON((-1 -1,1 -1,1 1,-1 1,-1 -1)))');
+        expect(cql).not.toContain('BBOX');
     });
 
     it('manda STARTINDEX solo al pedir una pagina posterior', async () => {

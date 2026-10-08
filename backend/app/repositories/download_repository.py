@@ -66,20 +66,25 @@ async def _fetch_export_columns(conn: asyncpg.Connection, schema: str, table: st
 class DownloadRepository:
 
     @staticmethod
-    def resolve_db_name(session: Session, geoserver_key: str) -> Optional[tuple[str, str]]:
-        result = session.execute(
+    def resolve_downloadable(
+        session: Session, workspace_alias: str, layer: str
+    ) -> Optional[tuple[str, str, str]]:
+        row = session.execute(
             text(
-                'SELECT layer_name_db FROM mapalab.layer_metadata '
-                'WHERE layer_key = :key AND layer_name_db IS NOT NULL '
-                "AND layer_name_db != '' LIMIT 1"
+                'SELECT m.layer_key, m.layer_name_db FROM mapalab.workspaces w '
+                'JOIN mapalab.layer_metadata m ON m.layer_key IN '
+                "(w.geoserver_workspace || ':' || :layer, w.db_schema || ':' || :layer) "
+                'WHERE w.alias = :alias AND m.downloadable '
+                "AND m.layer_name_db IS NOT NULL AND m.layer_name_db != '' "
+                "ORDER BY m.layer_key = w.geoserver_workspace || ':' || :layer DESC "
+                'LIMIT 1'
             ),
-            {'key': geoserver_key},
-        )
-        row = result.scalar()
-        if not row or '.' not in row:
+            {'alias': workspace_alias, 'layer': layer},
+        ).first()
+        if row is None or '.' not in row[1]:
             return None
-        schema, table = row.split('.', 1)
-        return (schema, table)
+        schema, table = row[1].split('.', 1)
+        return (row[0], schema, table)
 
     @staticmethod
     def find_fresh_cache(

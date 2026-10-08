@@ -1,12 +1,11 @@
 import { cloneElement } from 'react';
 import { externalIcons } from '@assets/icons';
-import Tooltip from '@components/Tooltip';
 
 const colibriIcon = (
     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16 7h.01" />
         <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
-        <path d="m20 7 2 .5-2 .5" />
+        <path d="m20 7 2 .5-2 .5" stroke="var(--color-orange)" />
         <path d="M10 18v3" />
         <path d="M14 17.75V21" />
         <path d="M7 18a6 6 0 0 0 3.84-10.61" />
@@ -23,6 +22,36 @@ const icons = {
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 5 4 10 9 15" />
             <path d="M4 10h8a6 6 0 1 1 0 12H9" />
+        </svg>
+    ),
+    recorte: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 8V5a1 1 0 0 1 1-1h3" />
+            <path d="M16 4h3a1 1 0 0 1 1 1v3" />
+            <path d="M20 16v3a1 1 0 0 1-1 1h-3" />
+            <path d="M8 20H5a1 1 0 0 1-1-1v-3" />
+            <rect x="9" y="9" width="6" height="6" rx="1" />
+        </svg>
+    ),
+    columnas: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="4.5" height="16" rx="1" />
+            <rect x="9.75" y="4" width="4.5" height="16" rx="1" />
+            <rect x="16.5" y="4" width="4.5" height="16" rx="1" />
+        </svg>
+    ),
+    filtro: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 5h16l-6 7v6l-4 2v-8z" />
+        </svg>
+    ),
+    tabla: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <line x1="3" y1="9" x2="21" y2="9" />
+            <line x1="3" y1="14.5" x2="21" y2="14.5" />
+            <line x1="9.5" y1="9" x2="9.5" y2="20" />
+            <line x1="15.5" y1="9" x2="15.5" y2="20" />
         </svg>
     ),
     close: (
@@ -139,9 +168,9 @@ const icons = {
     ),
     geom_point: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-            <circle cx="7" cy="8" r="2.4" />
-            <circle cx="16.5" cy="6.5" r="2.4" />
-            <circle cx="11.5" cy="16.5" r="2.4" />
+            <circle cx="12" cy="5.5" r="1.9" />
+            <circle cx="18.5" cy="16.5" r="1.9" />
+            <circle cx="5.5" cy="16.5" r="1.9" />
         </svg>
     ),
     geom_line: (
@@ -153,24 +182,78 @@ const icons = {
     ),
     geom_polygon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
-            <path d="M12 3.5 20 9l-3 9.5H7L4 9z" fill="currentColor" fillOpacity="0.18" />
-            <circle cx="12" cy="3.5" r="1.6" fill="currentColor" stroke="none" />
-            <circle cx="20" cy="9" r="1.6" fill="currentColor" stroke="none" />
-            <circle cx="4" cy="9" r="1.6" fill="currentColor" stroke="none" />
+            <path d="M12 4 20.5 18.5H3.5z" fill="currentColor" fillOpacity="0.18" />
+            <circle cx="12" cy="4" r="1.6" fill="currentColor" stroke="none" />
+            <circle cx="20.5" cy="18.5" r="1.6" fill="currentColor" stroke="none" />
+            <circle cx="3.5" cy="18.5" r="1.6" fill="currentColor" stroke="none" />
         </svg>
     ),
+    solo_capa: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round">
+            <path d="M12 3 20.5 7.5 12 12 3.5 7.5z" fill="currentColor" stroke="none" />
+            <path d="M4.5 12.5 12 16.3l7.5-3.8" opacity="0.45" />
+            <path d="M4.5 17 12 20.8l7.5-3.8" opacity="0.22" />
+        </svg>
+    ),
+    crear: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
+        </svg>
+    ),
+    ranking: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 20V4l-3 3" />
+            <path d="M12 6h9" />
+            <path d="M12 12h6" />
+            <path d="M12 18h3" />
+        </svg>
+    ),
+    grafica: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 4v15a1 1 0 0 0 1 1h15" />
+            <path d="M7 15l4-5 3 3 5-6" />
+        </svg>
+    ),
+    comparar: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 8h15l-3.5-3.5" />
+            <path d="M21 16H6l3.5 3.5" />
+        </svg>
+    ),
+    numeralia: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="3" y="13" width="4.5" height="7" rx="1" />
+            <rect x="9.75" y="8" width="4.5" height="12" rx="1" />
+            <rect x="16.5" y="4" width="4.5" height="16" rx="1" />
+        </svg>
+    ),
+    geom_hexbin: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+            <path d="M12 3 19 7v10l-7 4-7-4V7z" fill="currentColor" fillOpacity="0.32" />
+            <path d="M12 8.5 15.5 10.5v4L12 16.5 8.5 14.5v-4z" fill="currentColor" fillOpacity="0.55" stroke="none" />
+        </svg>
+    ),
+    cubo: (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+        <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z" /><path d="M4 7.5 12 12l8-4.5M12 12v9" /></svg>),
     geom_raster: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
-            <rect x="3.5" y="3.5" width="17" height="17" rx="1.5" />
-            <path d="M9.17 3.5v17M14.83 3.5v17M3.5 9.17h17M3.5 14.83h17" strokeWidth="1.2" />
-            <rect x="3.5" y="9.17" width="5.67" height="5.66" fill="currentColor" fillOpacity="0.28" stroke="none" />
-            <rect x="14.83" y="3.5" width="5.67" height="5.67" fill="currentColor" fillOpacity="0.28" stroke="none" />
-            <rect x="9.17" y="14.83" width="5.66" height="5.67" fill="currentColor" fillOpacity="0.28" stroke="none" />
+            <rect x="4" y="4" width="16" height="16" rx="1.5" />
+            <path d="M12 4v16M4 12h16" />
+            <rect x="4" y="4" width="8" height="8" fill="currentColor" fillOpacity="0.18" stroke="none" />
+            <rect x="12" y="12" width="8" height="8" fill="currentColor" fillOpacity="0.18" stroke="none" />
+        </svg>
+    ),
+    desacoplar: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="4" y="4" width="16" height="16" rx="2.5" />
+            <path d="M12 8v6.5" />
+            <path d="m9 11.5 3 3 3-3" />
         </svg>
     ),
 };
 
-const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visible = true, tooltip = null, onClick = null }) => {
+const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visible = true, title = null, onClick = null }) => {
     if (!visible) return null;
 
     const positioningClasses = ['absolute', 'fixed', 'relative', 'sticky', 'top-', 'bottom-', 'left-', 'right-', 'inset-', 'z-'];
@@ -200,7 +283,7 @@ const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visibl
 
     if (!iconElement) return null;
 
-    const needsWrapper = onClick || tooltip || wrapperClasses.length > 0 || classNameBG;
+    const needsWrapper = onClick || title || wrapperClasses.length > 0 || classNameBG;
 
     if (needsWrapper) {
         const finalWrapperClasses = [
@@ -209,13 +292,13 @@ const Icon = ({ name, className = '', classNameBG = '', state = 'normal', visibl
             onClick ? 'cursor-pointer' : ''
         ].filter(Boolean).join(' ');
 
-        const content = tooltip ? <Tooltip content={tooltip}>{iconElement}</Tooltip> : iconElement;
+        const content = iconElement;
         iconElement = onClick ? (
-            <button type="button" onClick={onClick} className={finalWrapperClasses || undefined}>
+            <button type="button" onClick={onClick} title={title || undefined} className={finalWrapperClasses || undefined}>
                 {content}
             </button>
         ) : (
-            <span className={finalWrapperClasses || undefined}>
+            <span title={title || undefined} className={finalWrapperClasses || undefined}>
                 {content}
             </span>
         );

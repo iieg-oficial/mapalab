@@ -17,8 +17,7 @@ import { esEventoLite } from '@pages/maps/helpers/eventoDiversion';
 import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
 
 import { trackSiderLock, trackLogoClick, trackMeasurementPanelOpen } from '@services/analyticsService';
-import { buildIiegMarker, computeIiegStats } from '@pages/maps/helpers/markerDefinitions';
-import { getDatabaseStats } from '@services/layerMetadataService';
+import { useMarcaIieg } from '@pages/maps/hooks/useMarcaIieg';
 import { useBadgeSeen, isBadgeSeen } from '@pages/maps/helpers/badgeSeenStore';
 import { useZenMode } from './ZenMode';
 import MenuItem from './MenuItem';
@@ -221,13 +220,12 @@ const MapSider = ({ className = '' }) => {
         }
     }, []);
 
-    const handleIiegLogoClick = useCallback(async () => {
+    const abrirMarcaIieg = useMarcaIieg({ showMarker, allLayers });
+    const handleIiegLogoClick = useCallback(() => {
         trackLogoClick('iieg');
         if (treatAsMobile) closeSider();
-        const stats = computeIiegStats({ allLayers });
-        const dbStats = await getDatabaseStats();
-        showMarker?.(buildIiegMarker({ ...stats, totalRecords: dbStats?.total_records ?? null }));
-    }, [showMarker, treatAsMobile, closeSider, allLayers]);
+        abrirMarcaIieg();
+    }, [abrirMarcaIieg, treatAsMobile, closeSider]);
 
     const sizeLogo = {
         expanded: 'w-57 h-17',

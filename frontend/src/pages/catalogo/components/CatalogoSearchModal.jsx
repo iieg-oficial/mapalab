@@ -1,19 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDebounce } from '@hooks/useDebounce';
 import { useOutsideClick } from '@hooks/useOutsideClick';
-import ScrollContainer from '@components/ScrollContainer';
+import CatalogoSearchInput, { SearchIcon } from './CatalogoSearchInput';
 import CatalogoShare from './CatalogoShare';
 import CatalogoInstitucionesList from './CatalogoInstitucionesList';
+import CatalogoCapasLista from './CatalogoCapasLista';
 import { buildCatalogoShareUrl, filterCapas } from '../helpers/catalogoRoutes';
-import { PANEL_SHADOW, STACK_SPACING, TITLE_PILL, Z_CAPAS, Z_INPUT } from '../helpers/catalogoStyles';
+import { PANEL_SHADOW, STACK_SPACING, TITLE_PILL, Z_CAPAS } from '../helpers/catalogoStyles';
 import { trackCatalogoSearch, trackCatalogoShare } from '@services/analyticsService';
-
-const SearchIcon = ({ className }) => (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-        <circle cx="11" cy="11" r="7" />
-        <path d="M21 21l-4.3-4.3" />
-    </svg>
-);
 
 const CloseIcon = ({ className }) => (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -68,11 +62,11 @@ const CatalogoSearchModal = ({
 
     useEffect(() => {
         setShareOpen(false);
-        setListaOpen(false);
     }, [institucionActiva]);
 
     const handleSelectInstitucion = (slug) => {
         setListaOpen(false);
+        onOpen();
         onSelectInstitucion(slug);
     };
 
@@ -95,6 +89,8 @@ const CatalogoSearchModal = ({
     };
 
     const headerVisibility = open ? 'flex' : 'hidden md:flex';
+    const altoCapas = listaOpen ? 'max-h-[calc(30vh-70px)]' : 'max-h-[calc(80vh-140px)]';
+    const logos = new Map(instituciones.map((i) => [i.slug, i.logoUrl || null]));
 
     return (
         <div
@@ -177,45 +173,14 @@ const CatalogoSearchModal = ({
 
             <div className={`${Z_CAPAS} ${PANEL_SHADOW} grid transition-all duration-300 ease-out min-h-0 rounded-xl ${open ? `grid-rows-[1fr] opacity-100 ${STACK_SPACING}` : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
                 <div className="min-h-0 overflow-hidden rounded-xl">
-                    <ScrollContainer
-                        className={`${listaOpen ? 'max-h-[calc(30vh-70px)]' : 'max-h-[calc(80vh-140px)]'} bg-white rounded-xl`}
-                        overlayFade
-                        overlayColor="#FFFFFF"
-                        clickableArrows
-                        minItemsForClick={12}
-                        itemCount={results.length}
-                    >
-                        {results.length === 0 ? (
-                            <p className="px-3 py-4 text-center text-[16px] text-graphite font-garet">
-                                Sin resultados
-                            </p>
-                        ) : (
-                            results.map((c) => (
-                                <div key={c.slug} className="group/item relative flex items-center rounded-lg hover:bg-orange/10 transition-colors">
-                                    <button
-                                        onClick={() => onSelect(c.slug, { fromSearch: !!debounced.trim() })}
-                                        className="flex-1 min-w-0 text-left px-3 py-2.5 pr-9 text-[16px] font-medium text-[#454545] font-garet group-hover/item:text-purple transition-colors truncate cursor-pointer"
-                                    >
-                                        {c.nombre}
-                                    </button>
-                                    {onEditInfobox && (
-                                        <button
-                                            type="button"
-                                            onClick={() => onEditInfobox(c)}
-                                            aria-label={`Personalizar la tarjeta de ${c.nombre}`}
-                                            title="Personalizar la tarjeta de información"
-                                            className="absolute right-1.5 size-7 rounded-full flex items-center justify-center text-purple opacity-0 group-hover/item:opacity-100 focus-visible:opacity-100 hover:bg-purple-soft transition-opacity cursor-pointer"
-                                        >
-                                            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M12 20h9" />
-                                                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                                            </svg>
-                                        </button>
-                                    )}
-                                </div>
-                            ))
-                        )}
-                    </ScrollContainer>
+                    <CatalogoCapasLista
+                        results={results}
+                        alto={altoCapas}
+                        fromSearch={!!debounced.trim()}
+                        onSelect={onSelect}
+                        onEditInfobox={onEditInfobox}
+                        logoDe={institucionActiva ? null : (capa) => logos.get(capa.institucion?.slug) || null}
+                    />
                 </div>
             </div>
 
@@ -285,24 +250,14 @@ const CatalogoSearchModal = ({
                 {institucionActiva ? institucionActiva.nombre : 'Catálogo'}
             </button>
 
-            <div className={`${headerVisibility} ${Z_INPUT} ${PANEL_SHADOW} shrink-0 bg-white rounded-[10px] overflow-hidden`}>
-                <input
-                    ref={inputRef}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onFocus={onOpen}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Busca una capa para verla en el mapa"
-                    className="w-full py-4 pl-4 pr-15.5 bg-transparent text-[13px] text-purple font-garet placeholder:text-[#191919] placeholder:opacity-70 focus:outline-none"
-                />
-                <button
-                    onClick={onOpen}
-                    className="absolute right-0 top-0 h-full w-12.75 flex items-center justify-center text-purple hover:bg-purple-deep hover:text-white transition-colors"
-                    aria-label="Buscar"
-                >
-                    <SearchIcon className="w-5 h-5" />
-                </button>
-            </div>
+            <CatalogoSearchInput
+                visibility={headerVisibility}
+                inputRef={inputRef}
+                query={query}
+                onQuery={setQuery}
+                onOpen={onOpen}
+                onKeyDown={handleKeyDown}
+            />
         </div>
     );
 };

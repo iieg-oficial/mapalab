@@ -7,10 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from sqlalchemy import text
-from app.routers import (metadata, periodicity, download, layers, shares, embed, municipios, client_errors, catalogo)
+from app.routers import (metadata, periodicity, download, layers, shares, embed, embed_marco, embed_telemetria, municipios, client_errors, catalogo, sesion, privado, instituto)
 from app.exceptions.common_exceptions import BaseAppException
 from app.services.access_logger import access_flush_loop, get_logger as get_access_logger, _flush_sync as _flush_accesos
 from app.services.api_key_quota import flush_to_mariachi
+from app.services.embed_telemetria import flush_to_mariachi as flush_telemetria
 from app.services.client_error_tracker import snapshot as client_error_snapshot
 from app.services.embed_abuse_tracker import snapshot as embed_abuse_snapshot
 from app.services.scheduler_service import SchedulerService
@@ -49,6 +50,9 @@ async def _quota_flush_loop() -> None:
             sent = await asyncio.to_thread(flush_to_mariachi)
             if sent:
                 Logger.info(f"embed.quota.flushed rows={sent}")
+            telemetria = await asyncio.to_thread(flush_telemetria)
+            if telemetria:
+                Logger.info(f"embed.telemetria.flushed rows={telemetria}")
         except asyncio.CancelledError:
             break
         except Exception as exc:
@@ -84,6 +88,10 @@ async def lifespan(app: FastAPI):
                 pass
         try:
             await asyncio.to_thread(flush_to_mariachi)
+        except Exception:
+            pass
+        try:
+            await asyncio.to_thread(flush_telemetria)
         except Exception:
             pass
         try:
@@ -125,9 +133,14 @@ app.include_router(download.router)
 app.include_router(layers.router)
 app.include_router(shares.router)
 app.include_router(embed.router)
+app.include_router(embed_marco.router)
+app.include_router(embed_telemetria.router)
 app.include_router(municipios.router)
 app.include_router(client_errors.router)
 app.include_router(catalogo.router)
+app.include_router(sesion.router)
+app.include_router(privado.router)
+app.include_router(instituto.router)
 
 
 @app.get('/')

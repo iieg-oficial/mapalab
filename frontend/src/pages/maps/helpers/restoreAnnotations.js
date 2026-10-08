@@ -1,8 +1,9 @@
 import GeoJSON from 'ol/format/GeoJSON';
 import { getLength } from 'ol/sphere';
-import { createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCacheStyle } from './drawingStyles';
+import { createFreehandStyle, createSymbolStyle, createTextStyle, computeAndCacheStyle, computeStylesForFeature } from './drawingStyles';
 import { DEFAULT_TEXT_FILL, DEFAULT_TEXT_BG, DRAW_COLORS } from './drawingConstants';
 import { genId } from './genId';
+import { PIN_ETIQUETA_INICIAL, cerrarPin } from './pin';
 import { formatLength, formatArea, formatLengthValue } from './formatMeasure';
 
 const RESTORE_GEOJSON = new GeoJSON({
@@ -53,6 +54,16 @@ export const buildRestoredItems = ({ annotations, source, measurementConfig }) =
             feature.set('selectionCenter', center);
             extra = { geometry: geom, center };
             computeAndCacheStyle(feature, value, measurementConfig);
+        } else if (type === 'Select') {
+            const center = centerOf(geom);
+            feature.set('selectionGeometry', geom);
+            feature.set('selectionCenter', center);
+            extra = { geometry: geom, center };
+            if (!label) label = 'Selección';
+            feature.set('cachedStyle', computeStylesForFeature('Select', null, geom, {
+                showMeasurementLabels: false,
+                showFinalAngles: false,
+            }), true);
         } else if (type === 'Text') {
             const textLabel = item.textLabel || '';
             const fillColor = item.fillColor || DEFAULT_TEXT_FILL;
@@ -71,6 +82,12 @@ export const buildRestoredItems = ({ annotations, source, measurementConfig }) =
             value = labelText;
             if (!label) label = `Emoji: ${labelText || ''}`;
             feature.set('cachedStyle', createSymbolStyle(symbol, rotation, scale, false), true);
+        } else if (type === 'Pin') {
+            feature.set('pinEtiqueta', item.pinEtiqueta || PIN_ETIQUETA_INICIAL);
+            if (item.textLabel) feature.set('textLabel', item.textLabel);
+            const pin = cerrarPin(feature);
+            value = pin.value;
+            label = pin.label;
         } else if (type === 'Freehand') {
             if (!label) label = 'Trazo libre';
             const strokeColor = item.strokeColor || DRAW_COLORS.pink;

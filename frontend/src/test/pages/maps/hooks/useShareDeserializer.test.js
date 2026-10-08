@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
-const { mockUseMapsContext, mockUseLayers } = vi.hoisted(() => ({
+const { mockUseMapsContext, mockUseLayers, entorno } = vi.hoisted(() => ({
     mockUseMapsContext: vi.fn(),
     mockUseLayers: vi.fn(),
+    entorno: { noProd: true },
 }));
+
+vi.mock('@services/devToolsStore', () => ({ devToolsStore: { isNonProd: () => entorno.noProd } }));
 
 vi.mock('@hooks/useMaps', () => ({
     useMapsContext: () => mockUseMapsContext(),
@@ -114,6 +117,26 @@ describe('useShareDeserializer', () => {
         expect(callArg.paneA.activeLayerIds).toContain('establecimientos_salud');
         expect(callArg.paneB.layerOpacities.get('establecimientos_salud')).toBe(0.5);
         expect(callArg.paneA.filters['establecimientos_salud'].date).toBe("fecha = '2020-01-01'");
+    });
+
+    it('en producción un enlace del comparador abre el panel activo sin comparador', () => {
+        entorno.noProd = false;
+        const ctx = makeCtx();
+        mockUseMapsContext.mockReturnValue(ctx);
+        const { result } = renderHook(() => useShareDeserializer());
+        result.current({
+            version: 1,
+            kind: 'swipe',
+            payload: {
+                shared: {},
+                paneA: { label: '2020', layers: [{ slug: 'establecimientos-salud', visible: true }] },
+                paneB: { label: '2024', layers: [{ slug: 'carreteras-estatales', visible: true }] },
+                activeSlot: 'B',
+            },
+        });
+        entorno.noProd = true;
+        expect(ctx.setCompareMode).not.toHaveBeenCalled();
+        expect(ctx.setActiveLayerIds).toHaveBeenCalledWith(expect.arrayContaining(['carreteras_estatales']));
     });
 
     it('aplica el slot activo al estado global cuando deserializa swipe', () => {

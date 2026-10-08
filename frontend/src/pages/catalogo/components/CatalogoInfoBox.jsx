@@ -9,23 +9,31 @@ import InfoBoxArrow, { ARROW_TIP } from '@pages/maps/components/InfoBox/componen
 import ActionsToolbar from '@pages/maps/components/InfoBox/components/ActionsToolbar';
 import DismissGesture from '@pages/maps/components/InfoBox/components/DismissGesture';
 import InfoBoxTools from '@pages/maps/components/InfoBox/components/InfoBoxTools';
+import SummaryCard from '@pages/maps/components/InfoBox/components/SummaryCard';
+import PanelMedicionSeleccion from '@mapsComponents/MeasurementTools/PanelMedicionSeleccion';
 import { useViewportContainment } from '@pages/maps/components/InfoBox/hooks/useViewportContainment';
 import { useDraggablePanel } from '@pages/maps/components/InfoBox/hooks/useDraggablePanel';
 import { useInfoBoxLazyLoad } from '@hooksMaps/useInfoBoxLazyLoad';
-import { centerOnResults } from '@pages/maps/helpers/featureGeometry';
+import { centerOnResults, ubicacionDeFeature } from '@pages/maps/helpers/featureGeometry';
 import { trackCatalogoInfoBoxAction } from '@services/analyticsService';
 
 const featureKey = (feature, idx) => feature?.id ?? `feature-${idx}`;
 
-const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposition, onEdit, onClose, hasMore = false, onLoadMore = null, matched = 0 }) => {
+const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposition, onEdit, onClose, hasMore = false, onLoadMore = null, matched = 0, geometria = null }) => {
     const isMobile = useIsMobile();
     const panelRef = useRef(null);
     const cardRef = useRef(null);
     const [dismissed, setDismissed] = useState(() => new Set());
+    const [expandido, setExpandido] = useState(false);
+    const esPoligono = !!geometria;
 
     useEffect(() => {
         setDismissed(new Set());
     }, [features]);
+
+    useEffect(() => {
+        setExpandido(false);
+    }, [geometria]);
 
     const visibles = useMemo(
         () => (features || []).filter((f, idx) => !dismissed.has(featureKey(f, idx))),
@@ -43,7 +51,7 @@ const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposit
 
     const total = visibles.length;
     const totalEnArea = matched > total ? matched : total;
-    const isSingle = total === 1;
+    const isSingle = total === 1 && !esPoligono;
 
     const { sentinelRef, loadingMore } = useInfoBoxLazyLoad({
         results,
@@ -101,21 +109,40 @@ const CatalogoInfoBox = ({ capa, features, pixel, lngLat, mapInstance, onReposit
             idx + 1,
             totalEnArea,
             null,
+            ubicacionDeFeature(feature, lngLat),
         ),
-    })).filter((c) => c.node), [visibles, capa, layerId, isMobile, handleRemove, totalEnArea]);
+    })).filter((c) => c.node), [visibles, capa, layerId, isMobile, handleRemove, totalEnArea, lngLat]);
 
-    if (cards.length === 0 || (!pixel && !isMobile)) return null;
+    if ((cards.length === 0 && !esPoligono) || (!pixel && !isMobile)) return null;
+
+    const variante = isMobile ? 'mobile' : 'desktop';
+    const resumen = esPoligono && (
+        <>
+            <PanelMedicionSeleccion geometria={geometria} onCerrar={onClose} className="mb-2" />
+            <SummaryCard
+                visible={total > 0}
+                results={results}
+                matched={matched}
+                isExpanded={expandido}
+                isLoadingExpand={false}
+                onToggleExpand={() => setExpandido((v) => !v)}
+                variant={variante}
+            />
+        </>
+    );
+    const conTarjetas = !esPoligono || expandido;
 
     const lista = (
         <div className="space-y-2">
-            {cards.map(({ key, feature, idx, node }) => (isMobile ? (
+            {resumen}
+            {conTarjetas && cards.map(({ key, feature, idx, node }) => (isMobile ? (
                 <DismissGesture key={key} onRemove={() => handleRemove(feature, idx)}>
                     {node}
                 </DismissGesture>
             ) : (
                 <div key={key}>{node}</div>
             )))}
-            {hasMore && onLoadMore && (
+            {conTarjetas && hasMore && onLoadMore && (
                 <div ref={sentinelRef} className="py-3 text-center text-[11px]/[14px] font-garet text-[#7e8a91]">
                     {loadingMore ? 'Cargando mas...' : 'Sigue desplazando para cargar mas'}
                 </div>

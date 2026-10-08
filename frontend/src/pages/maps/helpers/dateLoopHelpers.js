@@ -165,3 +165,16 @@ export const buildLoopValues = ({ mode, year, rasterPeriodicity = null, periodic
 
     return [];
 };
+
+export const findLoopStartKey = ({ values, mode, year = null, filter, rasterPeriodicity = null }) => {
+    if (!filter || !values?.length) return null;
+    const exact = values.find(v => v.filterValue === filter);
+    if (exact) return exact.key;
+    const desc = describeDateFilter({ filter, rasterPeriodicity });
+    if (!desc || desc.multi) return null;
+    if (mode === 'month' && desc.year !== year) return null;
+    const key = mode === 'year' ? desc.year : desc.months?.[0];
+    return values.some(v => v.key === key) ? key : null;
+};
+
+export const isSameLoopConfig = (a, b) => a?.mode === b?.mode && (a?.year ?? null) === (b?.year ?? null);

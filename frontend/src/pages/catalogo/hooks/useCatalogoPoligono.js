@@ -20,8 +20,8 @@ export const useCatalogoPoligono = ({ mapRef, capa, tiempo }) => {
     }, [capa, layerId]);
 
     const getFilter = useCallback(
-        () => (tiempo?.isRaster ? null : tiempo?.filtro || null),
-        [tiempo?.isRaster, tiempo?.filtro],
+        () => (tiempo?.isRaster ? null : tiempo?.filtroMapa || null),
+        [tiempo?.isRaster, tiempo?.filtroMapa],
     );
 
     const { queryPolygon, loadMorePage } = usePolygonSelection({ getFilter, pageRef });
@@ -46,10 +46,17 @@ export const useCatalogoPoligono = ({ mapRef, capa, tiempo }) => {
             });
 
             const features = (page?.results || []).flatMap((result) => result.features);
+            const [lng, lat] = toLonLat(centerCoordinate);
+            const base = {
+                pixel: map.getPixelFromCoordinate(centerCoordinate),
+                lngLat: { lng, lat },
+                geometria: geometry.clone(),
+            };
 
             if (features.length === 0) {
                 onFeatureCountUpdate?.(0);
-                limpiar();
+                pageRef.current = null;
+                setSeleccion({ ...base, features: [], hasMore: false, matched: 0 });
                 return null;
             }
 
@@ -59,11 +66,9 @@ export const useCatalogoPoligono = ({ mapRef, capa, tiempo }) => {
                 page.results,
             );
 
-            const [lng, lat] = toLonLat(centerCoordinate);
             setSeleccion({
+                ...base,
                 features,
-                pixel: map.getPixelFromCoordinate(centerCoordinate),
-                lngLat: { lng, lat },
                 hasMore: page.hasMore,
                 matched: page.matched,
             });

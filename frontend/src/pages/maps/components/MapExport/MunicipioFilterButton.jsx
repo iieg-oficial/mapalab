@@ -5,7 +5,6 @@ import { useSider } from '@contexts/SiderContext';
 import { trackMunicipioPanelOpen } from '@services/analyticsService';
 import { SCOPE_TYPES } from '@pages/maps/hooks/useMunicipioMode';
 import MunicipioFilterPanel from './MunicipioFilterPanel';
-import { useIsNonProd } from '@hooks/useDevTools';
 
 const buildLabel = (municipioMode) => {
     const { active, scope, scopeLabel } = municipioMode;
@@ -15,14 +14,21 @@ const buildLabel = (municipioMode) => {
     return scopeLabel || 'Jalisco';
 };
 
+const SIGLA_POR_SCOPE = {
+    [SCOPE_TYPES.MUNICIPIO]: 'MUN',
+    [SCOPE_TYPES.REGION]: 'REG',
+    [SCOPE_TYPES.ZMG]: 'ZMG',
+};
+
+const buildSigla = ({ active, scope }) => (active && SIGLA_POR_SCOPE[scope?.type]) || 'JAL';
+
 const MunicipioFilterButton = ({ municipioMode, onOpenChange, collapsed = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const anchorRef = useRef(null);
     const { isMobile } = useSider();
 
-    const isNonProd = useIsNonProd();
 
-    if (!isNonProd || !municipioMode) return null;
+    if (!municipioMode) return null;
 
     const handleSetOpen = (open) => {
         setIsOpen(open);
@@ -56,7 +62,7 @@ const MunicipioFilterButton = ({ municipioMode, onOpenChange, collapsed = false 
                     {showLabel ? (
                         <span className="truncate w-full text-center">{label}</span>
                     ) : (
-                        <span className="text-[10px] font-bold">JAL</span>
+                        <span className="text-[10px] font-bold">{buildSigla(municipioMode)}</span>
                     )}
                     <span
                         className={[
@@ -85,7 +91,7 @@ const MunicipioFilterButton = ({ municipioMode, onOpenChange, collapsed = false 
                 noPadding
                 bg="bg-transparent"
             >
-                <MunicipioFilterPanel municipioMode={municipioMode} />
+                <MunicipioFilterPanel municipioMode={municipioMode} onClose={() => handleSetOpen(false)} />
             </Panel>
         </div>
     );

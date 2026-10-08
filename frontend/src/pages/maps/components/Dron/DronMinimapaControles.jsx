@@ -1,0 +1,56 @@
+import Tooltip from '@components/Tooltip';
+
+const TRAZOS = {
+    expandir: <path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" />,
+    contraer: <path d="M4 14h6v6M20 10h-6V4M10 14l-7 7M14 10l7-7" />,
+    mas: <path d="M12 5v14M5 12h14" />,
+    menos: <path d="M5 12h14" />,
+    rumbo: <path d="M12 3l5 16-5-4-5 4z" />,
+    norte: <><path d="M12 3l5 16-5-4-5 4z" /><path d="M9 3h6" /></>,
+    pausa: <path d="M8 5v14M16 5v14" />,
+    seguir: <path d="M7 4.5v15l12-7.5z" />,
+    ciclo: <path d="M4 12a8 8 0 0114-5.3M20 12a8 8 0 01-14 5.3M18 3v4h-4M6 21v-4h4" />,
+    deshacer: <path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" />,
+    borrar: <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />,
+    descargar: <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />,
+    grabar: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3.5" fill="currentColor" /></>,
+};
+
+export const BotonMini = ({ icono, titulo, onClick, activo = false, disabled = false, alerta = false }) => (
+    <Tooltip content={titulo}>
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            aria-label={titulo}
+            aria-pressed={activo || undefined}
+            className={`grid size-7 place-items-center rounded-full shadow-[0_2px_8px_#221A2E26] cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${alerta ? 'bg-[#D6336C] text-white motion-safe:animate-pulse' : (activo ? 'bg-[#5C2472] text-white' : 'bg-white/95 text-[#5C2472] hover:bg-[#F0E6F6]')}`}
+        >
+            <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {TRAZOS[icono]}
+            </svg>
+        </button>
+    </Tooltip>
+);
+
+const formato = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 1 });
+
+const tiempo = (minutos) => {
+    if (!Number.isFinite(minutos)) return '';
+    if (minutos < 1) return 'menos de 1 min';
+    if (minutos < 60) return `${Math.round(minutos)} min`;
+    return `${Math.floor(minutos / 60)} h ${Math.round(minutos % 60)} min`;
+};
+
+export const ResumenRuta = ({ ruta, metros, kmh, grabando = false, onGrabar, onPausar, onCiclo, onDeshacer, onBorrar }) => (
+    <div className="pointer-events-auto flex flex-row-reverse items-center gap-1.5">
+        <span className="rounded-full bg-white/95 px-3 py-1.5 font-garet text-[11px] font-bold tabular-nums text-graphite whitespace-nowrap shadow-[0_2px_8px_#221A2E26]">
+            {ruta.puntos.length} {ruta.puntos.length === 1 ? 'punto' : 'puntos'} · {formato.format(metros / 1000)} km · {tiempo((metros / 1000 / kmh) * 60)}
+        </span>
+        <BotonMini icono="grabar" titulo={grabando ? 'Detener y descargar el video' : 'Grabar el trazo'} onClick={onGrabar} alerta={grabando} />
+        <BotonMini icono={ruta.pausada ? 'seguir' : 'pausa'} titulo={ruta.pausada ? 'Seguir la ruta' : 'Pausar la ruta'} onClick={onPausar} />
+        <BotonMini icono="ciclo" titulo={ruta.ciclo ? 'Recorrer una sola vez' : 'Repetir la ruta en ciclo'} onClick={onCiclo} activo={ruta.ciclo} />
+        <BotonMini icono="deshacer" titulo="Quitar el último punto" onClick={onDeshacer} />
+        <BotonMini icono="borrar" titulo="Borrar la ruta" onClick={onBorrar} />
+    </div>
+);

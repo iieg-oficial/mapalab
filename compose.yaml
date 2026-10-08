@@ -51,6 +51,11 @@ services:
       EMBED_ABUSE_WARN_COUNT: ${EMBED_ABUSE_WARN_COUNT:?}
       MARIACHI_BACKEND_URL: ${MARIACHI_BACKEND_URL:?}
       EMBED_KEY_CACHE_TTL_SECONDS: ${EMBED_KEY_CACHE_TTL_SECONDS:?}
+      MINERVA_ISSUER_URL: ${MINERVA_ISSUER_URL?}
+      MINERVA_PUBLIC_BASE: ${MINERVA_PUBLIC_BASE?}
+      MINERVA_CLIENT_ID: ${MINERVA_CLIENT_ID?}
+      MAPALAB_PUBLIC_BASE_URL: ${MAPALAB_PUBLIC_BASE_URL:?}
+      MAPALAB_SESSION_HOURS: ${MAPALAB_SESSION_HOURS:?}
     extra_hosts: *host-gateway
     healthcheck:
       <<: *healthcheck
@@ -61,6 +66,9 @@ services:
       - acervo_access_key
       - acervo_secret_key
       - mapalab_internal_token
+      - mapalab_share_ip_hash_secret
+      - minerva_client_secret
+      - mapalab_session_secret
     group_add:
       - "${SECRETS_GID:?}"
     networks:
@@ -111,3 +119,9 @@ secrets:
     file: ./secrets/acervo_secret_key
   mapalab_internal_token:
     file: ./secrets/mapalab_internal_token
+  mapalab_share_ip_hash_secret:
+    file: ./secrets/mapalab_share_ip_hash_secret
+  minerva_client_secret:
+    file: ./secrets/minerva_client_secret
+  mapalab_session_secret:
+    file: ./secrets/mapalab_session_secret

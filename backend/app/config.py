@@ -36,11 +36,18 @@ class Settings(BaseSettings):
     EMBED_ABUSE_WINDOW_MINUTES: int = Field(default=15)
     EMBED_ABUSE_WARN_COUNT: int = Field(default=30)
     MAPALAB_INTERNAL_TOKEN: Optional[str] = Field(default=None)
+    MAPALAB_SHARE_IP_HASH_SECRET: Optional[str] = Field(default=None)
     MARIACHI_BACKEND_URL: Optional[str] = Field(default=None)
     EMBED_KEY_CACHE_TTL_SECONDS: int = Field(default=300)
-    MCP_AUTH_ENABLED: bool = Field(default=True)
-    MCP_QUOTA_FLUSH_INTERVAL_SECONDS: int = Field(default=60)
     MARIACHI_VERIFY_SSL: bool = Field(default=True)
+    MINERVA_ISSUER_URL: Optional[str] = Field(default=None)
+    MINERVA_PUBLIC_BASE: Optional[str] = Field(default=None)
+    MINERVA_CLIENT_ID: Optional[str] = Field(default=None)
+    MINERVA_CLIENT_SECRET: Optional[str] = Field(default=None)
+    MINERVA_SCOPES: str = Field(default='openid profile email')
+    MAPALAB_PUBLIC_BASE_URL: Optional[str] = Field(default=None)
+    MAPALAB_SESSION_SECRET: Optional[str] = Field(default=None)
+    MAPALAB_SESSION_HOURS: int = Field(default=8)
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod
@@ -59,6 +66,16 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT == "production" and "*" in self.CORS_ORIGINS:
             raise ValueError("CORS_ORIGINS no puede contener '*' en production")
         return self
+
+    @property
+    def sesion_habilitada(self) -> bool:
+        return all((
+            self.MINERVA_ISSUER_URL,
+            self.MINERVA_CLIENT_ID,
+            self.MINERVA_CLIENT_SECRET,
+            self.MAPALAB_PUBLIC_BASE_URL,
+            self.MAPALAB_SESSION_SECRET,
+        ))
 
     @property
     def get_database_url(self) -> str:

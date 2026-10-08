@@ -15,7 +15,7 @@ const footerConfig = {
             id: 2,
             name: 'IIEG',
             src: logoIiegLargeDark,
-            link: 'https://iieg.gob.mx/ns/ ',
+            link: 'https://iieg.jalisco.gob.mx/',
             width: '230px',
             height: '80px'
         }, {

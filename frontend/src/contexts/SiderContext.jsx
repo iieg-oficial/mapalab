@@ -12,6 +12,7 @@ import {
     SIDER_MOBILE_WIDTH,
     SIDER_LOCK_MODES,
 } from '@constants/sider';
+import { leerCandado, guardarCandado } from '@utils/siderPersistencia';
 
 export const SiderContext = createContext(null);
 
@@ -20,25 +21,32 @@ SiderContext.displayName = 'SiderContext';
 export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH, expandedWidth = SIDER_EXPANDED_WIDTH }) => {
     const siderRef = useRef(null);
     const toolsButtonRef = useRef(null);
+    const toolsPanelRef = useRef(null);
     const [width, setWidth] = useState(collapsedWidth);
     const [isHovered, setIsHovered] = useState(false);
     const [openMenusCount, setOpenMenusCount] = useState(0);
     const [isMobile, setIsMobile] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-    const [lockMode, setLockMode] = useState('auto');
+    const [lockMode, setLockMode] = useState(leerCandado);
     const [hoverLockCount, setHoverLockCount] = useState(0);
+    const [candadoForzado, forzarCandado] = useState(null);
+    const candado = candadoForzado || lockMode;
+
+    useEffect(() => { guardarCandado(lockMode); }, [lockMode]);
+
+    const seAbreConClic = isMobile || candado === 'mobile';
 
     const toggleSider = useCallback(() => {
-        if (isMobile) {
+        if (seAbreConClic) {
             setIsOpen(prev => !prev);
         }
-    }, [isMobile]);
+    }, [seAbreConClic]);
 
     const closeSider = useCallback(() => {
-        if (isMobile) {
+        if (seAbreConClic) {
             setIsOpen(false);
         }
-    }, [isMobile]);
+    }, [seAbreConClic]);
 
     const setLock = useCallback((mode) => {
         if (!SIDER_LOCK_MODES.includes(mode)) return;
@@ -110,6 +118,7 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
     const value = {
         siderRef,
         toolsButtonRef,
+        toolsPanelRef,
         width,
         isHovered,
         setIsHovered,
@@ -121,10 +130,12 @@ export const SiderProvider = ({ children, collapsedWidth = SIDER_COLLAPSED_WIDTH
         unregisterOpenMenu,
         isMobile,
         isOpen,
-        lockMode,
+        lockMode: candado,
+        forzarCandado,
         toggleSider,
         closeSider,
         toggleLock,
+        setLockMode,
         setLock,
         hoverLocked: hoverLockCount > 0,
         lockHover,

@@ -9,14 +9,15 @@ import { toLonLat } from 'ol/proj';
 import { useLayers } from '@hooks/useLayers';
 import { useEventoContext } from '@hooks/useEvento';
 import { findLayerById, collectLayersWithWMS, findParentGroup, resolveLayerDisplayName, groupAlternativeResults } from '../helpers/layers/utils/layerHelpers';
+import { resolveLocalFeatureResults } from '../helpers/vectorFeatureQuery';
 
 const FEATURE_INFO_LOADING_ID = 'feature_info_query';
 
-const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
+export const INEGI_LAYER_IDS = ['limite_inegi', 'limite_municipal_inegi'];
 
 export const useFeatureInfo = (overrides = null) => {
     const ctx = useContext(MapsContext);
-    const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, selectedLayerForSymbology, setSelectedLayerForSymbology } = ctx;
+    const { selectedFeatureInfo, setSelectedFeatureInfo, clickPosition, selectedLayerForSymbology, setSelectedLayerForSymbology, getServiceMode } = ctx;
     const activeLayerIds = overrides?.activeLayerIds ?? ctx.activeLayerIds;
     const hiddenLayerIds = overrides?.hiddenLayerIds ?? ctx.hiddenLayerIds;
     const getFilter = overrides?.getFilter ?? ctx.getFilter;
@@ -26,7 +27,7 @@ export const useFeatureInfo = (overrides = null) => {
     const [loading, setLoading] = useState(false);
     const localPolygonPageRef = useRef(null);
     const polygonPageRef = ctx.polygonPageRef || localPolygonPageRef;
-    const { queryPolygon } = usePolygonSelection({ getFilter, pageRef: polygonPageRef });
+    const { resumirPoligono, pedirParaDescarga } = usePolygonSelection({ getFilter, pageRef: polygonPageRef });
 
     const getAllActiveLayers = useCallback(() => {
         const hiddenIdSet = new Set(hiddenLayerIds || []);
@@ -105,19 +106,20 @@ export const useFeatureInfo = (overrides = null) => {
                 }
             }
         }
-        const activeLayers = layersToQuery;
+        const { remoteLayers: activeLayers, localResults } = resolveLocalFeatureResults(map, coordinate, layersToQuery, getServiceMode);
 
         setLoading(true);
         setLayerLoading(FEATURE_INFO_LOADING_ID, true);
 
         try {
             const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
-            const results = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_CAP);
+            const remoteResults = await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_CAP);
+            const results = [...localResults, ...(remoteResults || [])];
             // Solo lanzamos el segundo fetch (cap 2000) si alguna capa llego al cap.
             // Si todas devuelven < 50, ya tenemos todo y nos ahorramos la request.
-            const needsTotal = (results || []).some(r => (r.features?.length || 0) >= FEATURE_COUNT_CAP);
+            const needsTotal = (remoteResults || []).some(r => (r.features?.length || 0) >= FEATURE_COUNT_CAP);
             const totalResults = needsTotal
-                ? await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_TOTAL)
+                ? [...localResults, ...(await getFeatureInfoForActiveLayers(activeLayers, map, coordinate, getFilter, isInegiMode, allLayers, FEATURE_COUNT_TOTAL) || [])]
                 : results;
             const [lng, lat] = toLonLat(coordinate);
 
@@ -183,7 +185,7 @@ export const useFeatureInfo = (overrides = null) => {
             setLayerLoading(FEATURE_INFO_LOADING_ID, false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, selectedLayerForSymbology, setLayerLoading, getAllActiveLayers, getAliasByLayerId]);
+    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, selectedLayerForSymbology, setLayerLoading, getAllActiveLayers, getAliasByLayerId, getServiceMode]);
 
     const selectAlternativeLayer = useCallback((layer) => {
         const layerNode = findLayerById(layer.id, allLayers);
@@ -281,22 +283,13 @@ export const useFeatureInfo = (overrides = null) => {
         setLayerLoading(FEATURE_INFO_LOADING_ID, true);
         try {
             const isInegiMode = activeLayerIds.some(id => INEGI_LAYER_IDS.includes(id));
-            const page = await queryPolygon({ map, polygonGeometry, activeLayers, allLayers, isInegiMode });
-            const { results, matched, hasMore } = page || { results: [], matched: 0, hasMore: false };
+            const resumenPoligono = await resumirPoligono({ map, polygonGeometry, activeLayers, allLayers, isInegiMode });
+            const { resumen = [], matched = 0, enBorde = 0 } = resumenPoligono || {};
             const [lng, lat] = toLonLat(centerCoordinate);
 
-            if (results && results.length > 0) {
-                const totalFeatures = results.reduce((sum, result) => sum + (result.features?.length || 0), 0);
-                const layerBreakdown = results
-                    .filter(result => result.features?.length > 0)
-                    .map(result => ({
-                        name: result.layerName,
-                        count: result.features.length
-                    }));
-
-                if (onFeatureCountUpdate) {
-                    onFeatureCountUpdate(Math.max(matched || 0, totalFeatures), layerBreakdown, results);
-                }
+            if (resumen.length > 0) {
+                const layerBreakdown = resumen.filter(fila => fila.conteo > 0).map(fila => ({ name: fila.layerName, count: fila.conteo }));
+                onFeatureCountUpdate?.(matched, layerBreakdown, null, enBorde);
 
                 setTimeout(() => {
                     const pixel = map.getPixelFromCoordinate(centerCoordinate);
@@ -304,20 +297,20 @@ export const useFeatureInfo = (overrides = null) => {
 
                     setSelectedFeatureInfo({
                         lngLat: { lng, lat },
-                        results,
+                        results: [],
+                        resumen,
                         isPolygonSelection: true,
+                        polygonGeometry,
                         matched,
-                        hasMore
+                        hasMore: false,
+                        enBorde
                     });
                 }, 100);
-                return results;
+                return resumen;
             } else {
-                if (onFeatureCountUpdate) {
-                    onFeatureCountUpdate(0);
-                }
-
-                setSelectedFeatureInfo(null);
-                clickPosition.clearPosition();
+                onFeatureCountUpdate?.(0, [], null, enBorde);
+                clickPosition.updatePosition({ pixel: map.getPixelFromCoordinate(centerCoordinate) });
+                setSelectedFeatureInfo({ lngLat: { lng, lat }, results: [], isPolygonSelection: true, polygonGeometry, matched: 0, hasMore: false, enBorde });
                 return null;
             }
         } catch {
@@ -329,7 +322,7 @@ export const useFeatureInfo = (overrides = null) => {
             setLayerLoading(FEATURE_INFO_LOADING_ID, false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, setLayerLoading, queryPolygon]);
+    }, [hiddenLayerIds, activeLayerIds, setSelectedFeatureInfo, clickPosition, getFilter, setLayerLoading, resumirPoligono]);
 
     const clearFeatureInfo = useCallback(() => {
         setSelectedFeatureInfo(null);
@@ -346,6 +339,7 @@ export const useFeatureInfo = (overrides = null) => {
         selectAlternativeLayer,
         loadMoreFeatures,
         loadMorePolygonFeatures,
+        pedirParaDescarga,
         loading
     };
 };

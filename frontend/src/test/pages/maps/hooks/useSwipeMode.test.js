@@ -14,7 +14,7 @@ const makeLive = (initial = {}) => {
     live.setActiveLayerIds = vi.fn((v) => { live.activeLayerIds = v; });
     live.setHiddenLayerIds = vi.fn((v) => { live.hiddenLayerIds = v; });
     live.setLayerOpacities = vi.fn((v) => { live.layerOpacities = v; });
-    live.setFilters = vi.fn((v) => { live.filters = v; });
+    live.setFilters = vi.fn((v) => { live.filters = typeof v === 'function' ? v(live.filters) : v; });
     return live;
 };
 
@@ -222,5 +222,25 @@ describe('useSwipeMode', () => {
 
         act(() => result.current.toggleLayerVisibilityInSlot('a', 'A'));
         expect(result.current.compareMode.paneA.hiddenLayerIds).not.toContain('a');
+    });
+
+    it('varias fechas aplicadas al lado activo en el mismo lote llegan todas al live', () => {
+        const live = makeLive({ activeLayerIds: ['a', 'b'] });
+        const { result } = buildHook(live);
+        act(() => result.current.enterCompareMode());
+        act(() => {
+            result.current.applyFilterToSlot('a', 'A', 'date', '2020');
+            result.current.applyFilterToSlot('b', 'A', 'date', '2021');
+        });
+        expect(live.filters).toEqual({ a: { date: '2020' }, b: { date: '2021' } });
+    });
+
+    it('exitCompareMode pausa los loops antes de restaurar', () => {
+        const live = makeLive({ activeLayerIds: ['a'] });
+        const { result } = buildHook(live);
+        act(() => result.current.enterCompareMode());
+        live.pauseAllLoops.mockClear();
+        act(() => result.current.exitCompareMode());
+        expect(live.pauseAllLoops).toHaveBeenCalled();
     });
 });

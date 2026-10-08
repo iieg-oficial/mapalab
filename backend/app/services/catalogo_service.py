@@ -1,6 +1,7 @@
 import time
 from typing import Optional
 
+from app.auth.capa_visible import es_publica
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.repositories.catalogo_repository import CatalogoRepository
@@ -27,6 +28,9 @@ def _serialize(row: dict) -> dict:
         'littleCard': row.get('infobox_config'),
         'littleCardPropia': bool(row.get('infobox_propia')),
         'institucion': institucion,
+        'hexbinLayerKey': row.get('hexbin_layer_key'),
+        'municipioField': row.get('municipio_field'),
+        'municipioFieldType': row.get('municipio_field_type') or ('clave' if row.get('municipio_field') else None),
     }
 
 
@@ -60,6 +64,7 @@ def get_capas() -> list[dict]:
         'capas',
         lambda session: [
             _serialize(row) for row in CatalogoRepository.get_enabled_capas(session)
+            if es_publica(row['workspace_alias'], row['geoserver_layer'])
         ],
     )
 
@@ -78,7 +83,9 @@ def get_capa_by_slug(slug: str) -> Optional[dict]:
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
     with conn.get_session() as session:
         row = CatalogoRepository.get_capa_by_slug(session, slug)
-    return _serialize(row) if row else None
+    if not row or not es_publica(row['workspace_alias'], row['geoserver_layer']):
+        return None
+    return _serialize(row)
 
 
 def invalidate_cache() -> None:

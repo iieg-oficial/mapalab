@@ -32,7 +32,7 @@ export const fetchMunicipiosList = async ({ signal, force = false } = {}) => {
     return items;
 };
 
-const EMPTY_RESULT = Object.freeze({ items: [], unionWkt: null, unionSrid: null, unionBbox: null });
+const EMPTY_RESULT = Object.freeze({ items: [], unionBbox: null });
 
 export const fetchMunicipiosGeometries = async (sourceId = 'iieg', claves = [], { signal, force = false } = {}) => {
     if (!Array.isArray(claves) || claves.length === 0) return EMPTY_RESULT;
@@ -59,8 +59,6 @@ export const fetchMunicipiosGeometries = async (sourceId = 'iieg', claves = [], 
     })).filter(item => item.clave && item.geometry);
     const result = {
         items,
-        unionWkt: data?.unionWkt || null,
-        unionSrid: data?.unionSrid || null,
         unionBbox: Array.isArray(data?.unionBbox) && data.unionBbox.length === 4
             ? data.unionBbox.map(Number)
             : null,
@@ -69,7 +67,30 @@ export const fetchMunicipiosGeometries = async (sourceId = 'iieg', claves = [], 
     return result;
 };
 
+let siluetasCache = null;
+
+export const fetchSiluetas = () => {
+    if (siluetasCache) return siluetasCache;
+    siluetasCache = fetch(`${API_HOST}/municipios/siluetas`)
+        .then((res) => {
+            if (!res.ok) throw new Error(`Backend responde ${res.status} al pedir las siluetas`);
+            return res.json();
+        })
+        .then(data => ({
+            estado: data?.estado ? geoJsonFormat.readGeometry(data.estado) : null,
+            municipios: (data?.municipios || [])
+                .filter(item => item?.geometry)
+                .map(item => ({ clave: String(item.clave), nombre: String(item.nombre), geometry: geoJsonFormat.readGeometry(item.geometry) })),
+        }))
+        .catch((error) => {
+            siluetasCache = null;
+            throw error;
+        });
+    return siluetasCache;
+};
+
 export const clearMunicipioCache = () => {
     listCache.clear();
     geomCache.clear();
+    siluetasCache = null;
 };

@@ -1,4 +1,5 @@
 import { useMapCapture } from './useMapCapture';
+import { cargarFuentesDeExportacion } from '../utils/fuentesExportacion';
 import coordinateGrid from '../utils/coordinateGrid';
 import coordinateLabels from '../utils/coordinateLabels';
 import northArrow from '../utils/northArrow';
@@ -29,9 +30,13 @@ export const useImageComposition = () => {
         viewportExtent,
         minimapImageUrl,
         minimapBounds,
+        seleccion = null,
+        sinReticula = false,
         source = 'Por definir',
         scale = 1
     }) => {
+        await cargarFuentesDeExportacion();
+
         const mapSectionWidth = mapCanvas.width / (scale > 1 ? scale : 1);
         const mapSectionHeight = mapCanvas.height / (scale > 1 ? scale : 1);
 
@@ -102,7 +107,7 @@ export const useImageComposition = () => {
         const arrow = northArrow();
         const scaleBarEl = scaleBar(mapAreaWidth - (FRAME_BORDER_WIDTH * 2), extent);
 
-        gridContainer.appendChild(grid);
+        if (!sinReticula) gridContainer.appendChild(grid);
         gridContainer.appendChild(arrow);
         gridContainer.appendChild(scaleBarEl);
 
@@ -144,6 +149,7 @@ export const useImageComposition = () => {
             viewportExtent,
             minimapImageUrl,
             minimapBounds,
+            seleccion,
             source
         });
 

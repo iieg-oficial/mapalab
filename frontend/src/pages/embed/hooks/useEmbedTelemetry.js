@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
+import { detectParentOrigin } from '@pages/embed/helpers/postMessage';
 
 
 const FLUSH_DEBOUNCE_MS = 1500;
@@ -9,7 +10,9 @@ const MAX_ERRORS_PER_FLUSH = 5;
 
 const buildUrl = (key) => {
     const base = (import.meta.env.VITE_BACKEND_API_HOST || '/api/').replace(/\/+$/, '');
-    return `${base}/embed/telemetry?key=${encodeURIComponent(key)}`;
+    const parent = detectParentOrigin();
+    const conPadre = parent ? `&parent=${encodeURIComponent(parent)}` : '';
+    return `${base}/embed/telemetry?key=${encodeURIComponent(key)}${conPadre}`;
 };
 
 
@@ -29,6 +32,7 @@ export const useEmbedTelemetry = ({ apiKey, enabled = true }) => {
     const flushTimer = useRef(null);
     const sentReady = useRef(false);
     const readyAt = useRef(null);
+    const scheduleRef = useRef(null);
 
     useEffect(() => {
         if (!enabled || !apiKey) return undefined;
@@ -60,6 +64,8 @@ export const useEmbedTelemetry = ({ apiKey, enabled = true }) => {
             if (flushTimer.current) clearTimeout(flushTimer.current);
             flushTimer.current = setTimeout(flush, FLUSH_DEBOUNCE_MS);
         };
+        scheduleRef.current = scheduleFlush;
+        if (buffer.current.vitals.length) scheduleFlush();
 
         const recordVital = (metric) => {
             buffer.current.vitals.push({ name: metric.name, value: metric.value });
@@ -106,6 +112,7 @@ export const useEmbedTelemetry = ({ apiKey, enabled = true }) => {
             window.removeEventListener('unhandledrejection', onRejection);
             window.removeEventListener('pagehide', onUnload);
             window.removeEventListener('beforeunload', onUnload);
+            scheduleRef.current = null;
             if (flushTimer.current) clearTimeout(flushTimer.current);
             flush();
         };
@@ -118,6 +125,7 @@ export const useEmbedTelemetry = ({ apiKey, enabled = true }) => {
         try {
             buffer.current.vitals.push({ name: 'IFRAME_READY', value: Math.round(readyAt.current) });
         } catch { /* */ }
+        scheduleRef.current?.();
     };
 
     return { markReady };

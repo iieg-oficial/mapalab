@@ -192,6 +192,27 @@ describe('useWMSLayerManager - creación de capas', () => {
 
         expect(props.createWMSLayer).toHaveBeenCalledTimes(1);
     });
+
+    it('excluye del merge WMS las capas en modo vectorial', () => {
+        mockHasWMSConfig.mockReturnValue(true);
+        mockFindWMSConfig.mockImplementation((id) => ({
+            baseUrl: 'http://gs/wms',
+            layerName: `ws:${id}`,
+            styles: '',
+            wmsGroup: 'grupo-1'
+        }));
+
+        const { props } = renderManager({
+            activeLayerIds: ['capa-a', 'capa-b'],
+            vectorLayerIds: new Set(['capa-a'])
+        });
+
+        expect(props.createWMSLayer).toHaveBeenCalledTimes(1);
+        expect(props.createWMSLayer.mock.calls[0][0]).toBe('capa-b');
+
+        const merged = props.mapRef.current.addLayer.mock.calls[0][0].get('mergedLayers');
+        expect(merged.flatMap(m => m.subLayers.map(s => s.id))).toEqual(['capa-b']);
+    });
 });
 
 describe('useWMSLayerManager - CQL_FILTER', () => {

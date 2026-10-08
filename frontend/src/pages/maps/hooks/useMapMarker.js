@@ -54,6 +54,7 @@ export const useMapMarker = (mapRef, paneMapRefs, compareModeRef, { setSelectedF
         const [lng, lat] = toLonLat(coord);
         setSelectedFeatureInfo({
             lngLat: { lng, lat },
+            acciones: infoBox.acciones,
             results: [{
                 layerId: `marker_${infoBox.layerName}`,
                 layerName: infoBox.layerName,

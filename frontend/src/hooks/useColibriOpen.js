@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useReportContext } from '@hooks/useReportContext';
+import { trackColibriOpen } from '@services/analyticsService';
 
 const SOURCE_APP = import.meta.env.VITE_COLIBRI_SOURCE_APP || 'mapalab';
 const API_KEY = import.meta.env.VITE_COLIBRI_API_KEY || '';
@@ -42,6 +43,7 @@ export const useColibriOpen = () => {
             apiKey: API_KEY,
             ...opcionesPanel,
         });
+        trackColibriOpen(extraContext?.motivo || extraContext?.source || 'reporte', opcionesPanel.tipoDefault || null);
         return true;
     }, [buildContext]);
 };

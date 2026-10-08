@@ -35,11 +35,11 @@ export const fetchCapaPeriodicidad = async (capa, signal) => {
 
 const MARIACHI_PUBLIC = (import.meta.env.VITE_MARIACHI_PUBLIC_API_HOST || '/api/public/').replace(/\/+$/, '');
 
-export const postInfoboxPropuesta = async ({ capaSlug, config, comentario, website }, signal) => {
+export const postInfoboxPropuesta = async ({ capaSlug, config, comentario, email, website }, signal) => {
     const res = await fetch(`${MARIACHI_PUBLIC}/mapalab/catalogo/infobox-propuestas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ capaSlug, config, comentario, website }),
+        body: JSON.stringify({ capaSlug, config, comentario, email, website }),
         signal,
     });
     if (res.status === 429) throw new Error('Ya enviaste varias propuestas. Intenta más tarde.');
@@ -51,7 +51,7 @@ export const postInfoboxPropuesta = async ({ capaSlug, config, comentario, websi
     return res.json();
 };
 
-export const fetchCapaSampleFeature = async (capa, signal) => {
+export const fetchCapaSampleFeatures = async (capa, signal, count = 5) => {
     const gsWorkspace = capa.geoserverWorkspace;
     const url = new URL(`${GEOSERVER_BASE}/${gsWorkspace}/wfs`, window.location.origin);
     url.searchParams.set('service', 'WFS');
@@ -59,11 +59,11 @@ export const fetchCapaSampleFeature = async (capa, signal) => {
     url.searchParams.set('request', 'GetFeature');
     url.searchParams.set('typeNames', `${gsWorkspace}:${capa.geoserverLayer}`);
     url.searchParams.set('outputFormat', 'application/json');
-    url.searchParams.set('count', '1');
+    url.searchParams.set('count', String(count));
     const res = await fetch(url.toString(), { signal });
-    if (!res.ok) return null;
+    if (!res.ok) return [];
     const data = await res.json();
-    return data?.features?.[0] || null;
+    return data?.features || [];
 };
 
 export const capaHasGeometry = async (capa, signal) => {

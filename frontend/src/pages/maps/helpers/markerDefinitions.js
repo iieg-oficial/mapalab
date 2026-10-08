@@ -1,5 +1,5 @@
-import mapalabSquareIcon from '@logos/mapalab_square.svg';
 import { APP_VERSION, APP_LOC } from '@constants/app';
+import { MULTIVALOR_SEPARADOR } from '@utils/infoboxPlan';
 import { collectCatalogUnits } from './layers/utils/layerHelpers';
 import { RELIEF_OVERLAY_Z_INDEX } from './basemaps';
 
@@ -12,19 +12,21 @@ export const computeIiegStats = ({ allLayers = [] } = {}) => {
 
 const formatCount = (n) => (typeof n === 'number' ? n.toLocaleString('es-MX') : '—');
 
-export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) => ({
+export const EMBED_MARKER_ICON = '/acervo/iieg/logos/ico_iieg_mapa.svg';
+const EMBED_MARKER_SCALE = 0.4;
+
+export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null, permanente = false, conCaminar = false } = {}) => ({
     id: 'iieg_hq',
     center: [-103.44669185275052, 20.68443473644039],
-    zoom: 16,
-    icon: mapalabSquareIcon,
-    scale: 0.25,
-    anchor: [0.5, 0.5],
+    zoom: permanente ? undefined : 16,
+    icon: EMBED_MARKER_ICON,
+    scale: EMBED_MARKER_SCALE,
+    anchor: [0.5, 1],
     minZoom: 15,
-    bgColor: '#5c2472',
-    bgRadius: 45,
-    openOnShow: true,
+    openOnShow: !permanente,
     infoBox: {
         layerName: 'MapaLab — IIEG Jalisco',
+        acciones: conCaminar ? ['caminar'] : [],
         properties: {
             nombre: 'MapaLab',
             version: `v${APP_VERSION}`,
@@ -33,8 +35,8 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) =
             direccion: 'Calz. de los Pirules #71, Ciudad Granja, 45010 Zapopan, Jal.',
             telefono: '(33) 3777 1770',
             correo: 'iieg@jalisco.gob.mx',
-            sitio_web: 'iieg.gob.mx',
-            tecnologias: 'React, OpenLayers, FastAPI, GeoServer, PostGIS',
+            sitio_web: 'iieg.jalisco.gob.mx',
+            tecnologias: ['React', 'OpenLayers', 'FastAPI', 'GeoServer', 'PostGIS'].join(MULTIVALOR_SEPARADOR),
             capas_disponibles: formatCount(totalLayers),
             registros_geograficos: formatCount(totalRecords),
             lineas_codigo: formatCount(APP_LOC)
@@ -59,7 +61,7 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) =
             iconText: [
                 { icon: 'ubicacion', field: 'direccion' },
                 { icon: 'celular', field: 'telefono' },
-                { icon: 'web', value: 'iieg.gob.mx', href: 'https://iieg.gob.mx/ns/' },
+                { icon: 'web', value: 'iieg.jalisco.gob.mx', href: 'https://iieg.jalisco.gob.mx/' },
                 { icon: 'novedades', value: `Novedades v${APP_VERSION}`, action: 'whats_new' },
                 { icon: 'bug', value: 'Reportar problema o sugerencia', action: 'report' }
             ]
@@ -67,9 +69,6 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null } = {}) =
     }
 });
 
-export const EMBED_MARKER_ICON = '/acervo/iieg/logos/ico_iieg_mapa.svg';
-
-const EMBED_MARKER_SCALE = 0.4;
 const CHIP_STYLES = {
     solid: { color: '#FFFFFF', bg: '#5C2472' },
     accent: { color: '#111827', bg: '#FF8300' },

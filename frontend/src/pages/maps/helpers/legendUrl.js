@@ -10,6 +10,8 @@ const DEFAULT_LEGEND_OPTIONS = {
     forceLabels: 'on',
 };
 
+export const legendVersionParam = (legendVersion) => (legendVersion ? `&lv=${legendVersion}` : '');
+
 export const buildLegendGraphicUrl = ({
     baseUrl,
     layerName,
@@ -22,6 +24,7 @@ export const buildLegendGraphicUrl = ({
     transparent = false,
     rule = null,
     hideEmptyRules = false,
+    legendVersion = null,
     options = {},
 }) => {
     if (!baseUrl || !layerName) return null;
@@ -52,5 +55,6 @@ export const buildLegendGraphicUrl = ({
         + (rule ? `&rule=${encodeURIComponent(rule)}` : '')
         + `&LEGEND_OPTIONS=${legendOptions.join(';')}`
         + (style ? `&STYLE=${style}` : '')
-        + (cqlFilter ? `&CQL_FILTER=${encodeURIComponent(cqlFilter)}` : '');
+        + (cqlFilter ? `&CQL_FILTER=${encodeURIComponent(cqlFilter)}` : '')
+        + legendVersionParam(legendVersion);
 };

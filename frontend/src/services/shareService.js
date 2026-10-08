@@ -9,8 +9,8 @@ export const createShare = async (envelope) => {
         body: JSON.stringify(envelope),
     });
     if (!res.ok) {
-        const detail = await res.text().catch(() => '');
-        throw new Error(`POST /shares ${res.status}: ${detail}`);
+        const cuerpo = await res.json().catch(() => null);
+        throw new Error(typeof cuerpo?.detail === 'string' ? cuerpo.detail : 'No se pudo crear el enlace');
     }
     return res.json();
 };

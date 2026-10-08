@@ -4,8 +4,8 @@ import { useMapDownload } from './hooks/useMapDownload';
 import { QUALITY_PRESETS } from './utils/exportDimensions';
 import { useSider } from '@contexts/SiderContext';
 import { useMapsContext } from '@hooks/useMaps';
+import { useView3d } from '@contexts/View3dContext';
 import SymbologyItem from '../SymbologyItem';
-import Checkbox from '@components/Checkbox';
 import Icon from '@components/Icon';
 import Panel from '@components/Panel';
 import Tooltip from '@components/Tooltip';
@@ -22,23 +22,38 @@ const licenciaContent = (
     </span>
 );
 import QualitySelector from './QualitySelector';
+import LegendPicker from './LegendPicker';
+import PanelHoja from '@components/PanelHoja';
+import Segmented from '@components/Segmented';
+import { HIDDEN_SCROLLBAR } from '@constants/global';
+import { useSeleccionDescarga } from './hooks/useSeleccionDescarga';
+import SelectorSeleccion from './SelectorSeleccion';
+import PanelAnimacion from './PanelAnimacion';
+import OpcionesComparador from './OpcionesComparador';
+import { alPedirDescargaDeSeleccion } from '@pages/maps/helpers/descargaSeleccion';
+import { VISTA_ANALITICA, opcionesFormato, opcionesTipo, opcionesVista, textoBotonDescarga, tooltipBotonDescarga } from './utils/opcionesDescarga';
 
-const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = false }) => {
+const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = false, llenar = false }) => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [selectedLegendLayers, setSelectedLegendLayers] = useState([]);
     const [title, setTitle] = useState('Capas mapalab');
     const { isMobile } = useSider();
     const anchorRef = useRef(null);
     const [format, setFormat] = useState('png');
+    const [tipoDescarga, setTipoDescarga] = useState('imagen');
     const [viewType, setViewType] = useState('viewport');
     const [qualityIndex, setQualityIndex] = useState(1);
+    const [camposPorCapa, setCamposPorCapa] = useState({});
 
     const {
         downloadMap, isDownloading, canDownload,
         layersWithLegends, selectedLayer
     } = useMapDownload();
-    const { compareMode, selectedLayerForSymbology, allLayers } = useMapsContext();
+    const { compareMode, selectedLayerForSymbology, allLayers, measurements } = useMapsContext();
     const isSwipe = !!compareMode?.active;
+    const { active: en3d, present: con3d } = useView3d();
+    const { disponibles, idElegida, setElegida, elegirPorGeometria, geometria: seleccion, trazos } = useSeleccionDescarga(measurements);
+    const haySeleccion = !!seleccion && !isSwipe;
     const [includeSwipeBar, setIncludeSwipeBar] = useState(true);
     const [includeSwipePills, setIncludeSwipePills] = useState(true);
 
@@ -63,11 +78,25 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
     })();
 
     useEffect(() => {
+        if (viewType === 'seleccion' && !haySeleccion) setViewType('viewport');
+        if (en3d && viewType !== 'viewport') setViewType('viewport');
+    }, [viewType, haySeleccion, en3d]);
+
+    useEffect(() => alPedirDescargaDeSeleccion((geometriaPedida) => {
+        if (!haySeleccion || en3d) return;
+        if (geometriaPedida) elegirPorGeometria(geometriaPedida);
+        setViewType('seleccion');
+        setIsPanelOpen(true);
+        onOpenChange?.(true);
+    }), [haySeleccion, en3d, onOpenChange, elegirPorGeometria]);
+
+    useEffect(() => {
         if (isSwipe) {
             if (format !== 'png') setFormat('png');
+            if (tipoDescarga !== 'imagen') setTipoDescarga('imagen');
             if (qualityIndex !== 1) setQualityIndex(1);
         }
-    }, [isSwipe, format, qualityIndex]);
+    }, [isSwipe, format, qualityIndex, tipoDescarga]);
 
     useEffect(() => {
         const layer = selectedLayer || layersWithLegends[0];
@@ -97,6 +126,8 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [format, layersWithLegends, selectedLayer, isPanelOpen]);
 
+    const elegirCampo = (layerId, campo) => setCamposPorCapa(prev => ({ ...prev, [layerId]: campo }));
+
     const handleSetIsPanelOpen = (isOpen) => {
         setIsPanelOpen(isOpen);
         if (onOpenChange) onOpenChange(isOpen);
@@ -118,13 +149,15 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                 onOpenPreview(format, selectedLegendLayers, title, quality, swipeOptions);
             }
         } else {
-            await downloadMap(format, selectedLegendLayers, viewType, title, null, quality, swipeOptions);
+            await downloadMap(format, selectedLegendLayers, viewType, title, null, quality, swipeOptions, { geometria: seleccion, trazos }, camposPorCapa);
         }
     };
 
+    const anchoCompleto = llenar && !collapsed && !isMobile;
+
     const handleConfirmDownload = () => {
         handleSetIsPanelOpen(false);
-        trackMapExport(format, QUALITY_PRESETS[qualityIndex].label, viewType === 'viewport' ? 'vista_actual' : 'estado_completo');
+        trackMapExport(format, QUALITY_PRESETS[qualityIndex].label, VISTA_ANALITICA[viewType]);
         executeDownload();
     };
 
@@ -145,8 +178,8 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
     };
 
     return (
-        <div className="flex flex-col relative">
-            <Tooltip content={licenciaContent} placement="top" delay={300} interactive>
+        <div className={`flex flex-col relative ${anchoCompleto ? 'flex-1' : ''}`}>
+            <Tooltip content={licenciaContent} placement="top" delay={300} interactive triggerBlock={anchoCompleto}>
                 <button
                     ref={anchorRef}
                     type="button"
@@ -155,12 +188,12 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                     className={[
                         'flex items-center justify-center whitespace-nowrap',
                         'text-center h-12.5 rounded-[30px] transition',
-                        collapsed || isMobile ? 'w-12.5' : (expanded ? 'w-12.5 md:w-auto md:px-6' : 'w-12.5 md:w-30'),
+                        collapsed || isMobile ? 'w-12.5' : (anchoCompleto ? 'w-full' : (expanded ? 'w-12.5 md:w-auto md:px-6' : 'w-12.5 md:w-30')),
                         'font-garet font-bold text-[14px] hover:shadow-[0_6px_6px_#5C247234]',
                         canDownload ? 'bg-[#703089] text-white hover:bg-[#5C2472]' : 'bg-black/5 text-black/40 cursor-not-allowed',
                     ].join(' ')}
                 >
-                    {(isMobile || collapsed) ? <Icon name="download" /> : (isDownloading ? 'Generando…' : (expanded ? 'Descargar visualización' : 'Descargar'))}
+                    {(isMobile || collapsed) ? <Icon name="download" /> : (isDownloading ? 'Generando…' : (expanded ? 'Descargar visualización' : (anchoCompleto ? 'Descargar mapa' : 'Descargar')))}
                 </button>
             </Tooltip>
 
@@ -173,137 +206,80 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                 maxHeight="max-h-200 max-md:max-h-[calc(100dvh-6rem)]"
                 className="z-50 mt-4 shadow-none border-none rounded-[14px]"
                 placement="bottom-end"
-                title={<span className="font-garet font-bold text-[14px]/[47px]">{isSwipe ? 'Descargar comparador' : 'Descargar mapa'}</span>}
                 mobileFullscreen={false}
-                footer={
-                    <div className="px-2 pb-2">
-                        <button
-                            onClick={handleConfirmDownload}
-                            className="w-full h-12.5 bg-[#703089] text-white rounded-[30px] hover:bg-[#5C2472] hover:shadow-[0_6px_6px_#5C247234] transition font-garet font-bold text-[14px]"
-                        >
-                            {viewType === 'viewport' ? 'Ir a seleccionar área' : `Descargar ${format.toUpperCase()}`}
-                        </button>
-                    </div>
-                }
+                hideHeader
+                noPadding
+                bg="bg-transparent"
             >
-                <div className="flex flex-col px-4 pb-4 gap-4">
+                <PanelHoja
+                    titulo={isSwipe ? 'Descargar comparador' : 'Descargar mapa'}
+                    onCerrar={() => handleSetIsPanelOpen(false)}
+                    className={`gap-3 min-h-0 overflow-y-auto ${HIDDEN_SCROLLBAR}`}
+                >
+                    {con3d && <Segmented variant="panel" ariaLabel="Qué descargar" options={opcionesTipo(isSwipe)} value={tipoDescarga} onChange={setTipoDescarga} />}
+                    {tipoDescarga === 'animacion' ? (
+                        <PanelAnimacion titulo={title} totalCapas={layersWithLegends.length} onListo={() => handleSetIsPanelOpen(false)} />
+                    ) : (
+                        <>
+                            <Segmented variant="panel" ariaLabel="Formato" options={opcionesFormato(isSwipe)} value={format} onChange={setFormat} />
+                            <Segmented
+                                variant="panel"
+                                ariaLabel="Vista"
+                                options={opcionesVista({ haySeleccion: !!seleccion, isSwipe, es3d: en3d })}
+                                value={viewType}
+                                onChange={setViewType}
+                            />
+                            {viewType === 'seleccion' && (
+                                <SelectorSeleccion disponibles={disponibles} elegida={idElegida} onElegir={setElegida} />
+                            )}
 
-                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb">
-                        Formato
-                    </div>
-                    <div className="flex gap-2 mb-2 flex-wrap">
-                        {[
-                            { id: 'png', disabled: false, swipeOnly: false },
-                            { id: 'jpeg', disabled: isSwipe, swipeOnly: false },
-                            { id: 'pdf', disabled: isSwipe, swipeOnly: false },
-                            { id: 'gif', disabled: true, swipeOnly: true },
-                        ].filter(f => !f.swipeOnly || isSwipe).map(({ id: fmt, disabled }) => (
-                            <button
-                                key={fmt}
-                                type="button"
-                                onClick={() => !disabled && setFormat(fmt)}
-                                disabled={disabled}
-                                className={`relative px-3 py-1.5 text-sm rounded-[14px] border transition-colors ${disabled ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' : (format === fmt ? 'bg-[#FF8300] border-transparent text-white font-medium' : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white')}`}
-                            >
-                                {fmt.toUpperCase()}
-                                {disabled && (
-                                    <Badge variant="pill" color="orange" text="PRÓXIMAMENTE" className="absolute -top-2 -right-2 text-[8px] px-1.5" />
-                                )}
-                            </button>
-                        ))}
-                    </div>
+                            {!isSwipe && (
+                                <QualitySelector
+                                    value={qualityIndex}
+                                    onChange={setQualityIndex}
+                                    isPanelOpen={isPanelOpen}
+                                />
+                            )}
+                            {isSwipe && (
+                                <div className="text-[11px] text-gray-500">
+                                Calidad: <span className="font-bold">Normal</span>. Otras calidades quedan habilitadas en mapa simple.
+                                </div>
+                            )}
 
-                    {!isSwipe && (
-                        <QualitySelector
-                            value={qualityIndex}
-                            onChange={setQualityIndex}
-                            isPanelOpen={isPanelOpen}
-                        />
+                            {layersWithLegends.length > 0 && (
+                                <LegendPicker
+                                    layers={layersWithLegends}
+                                    seleccionadas={selectedLegendLayers}
+                                    onAlternar={handleLayerSelect}
+                                    formato={format}
+                                    campos={camposPorCapa}
+                                    onCampo={elegirCampo}
+                                    allLayers={allLayers}
+                                    conEstadisticas={viewType === 'seleccion'}
+                                />
+                            )}
+
+                            {isSwipe && (
+                                <OpcionesComparador
+                                    conBarra={includeSwipeBar}
+                                    conEtiquetas={includeSwipePills}
+                                    onBarra={() => setIncludeSwipeBar(p => !p)}
+                                    onEtiquetas={() => setIncludeSwipePills(p => !p)}
+                                />
+                            )}
+
+                            <Tooltip content={tooltipBotonDescarga(viewType)} placement="top" delay={400} triggerBlock>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmDownload}
+                                    className="w-full h-12.5 bg-[#703089] text-white rounded-[30px] hover:bg-[#5C2472] hover:shadow-[0_6px_6px_#5C247234] transition font-garet font-bold text-[14px] cursor-pointer"
+                                >
+                                    {textoBotonDescarga(viewType, format)}
+                                </button>
+                            </Tooltip>
+                        </>
                     )}
-                    {isSwipe && (
-                        <div className="text-[11px] text-gray-500">
-                            Calidad: <span className="font-bold">Normal</span>. Otras calidades quedan habilitadas en mapa simple.
-                        </div>
-                    )}
-
-                    <div>
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                            Vista
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <button
-                                onClick={() => setViewType('viewport')}
-                                className={`
-                                    px-3 py-2 text-sm rounded-[14px] border transition-colors text-left
-                                    ${viewType === 'viewport'
-            ? 'bg-[#FF8300] border-transparent text-white font-medium'
-            : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-        }
-                                `}
-                            >
-                                <div className="font-medium">Seleccionar Área (Vista actual)</div>
-                                <div className="text-xs opacity-75">Activar recuadro de recorte manual</div>
-                            </button>
-                            <button
-                                onClick={() => setViewType('full-state')}
-                                className={`
-                                    px-3 py-2 text-sm rounded-[14px] border transition-colors text-left
-                                    ${viewType === 'full-state'
-            ? 'bg-[#703089] border-[#703089] text-white font-medium'
-            : 'border-[#703089] text-[#703089] hover:bg-[#703089] hover:text-white'
-        }
-                                `}
-                            >
-                                <div className="font-medium">Estado completo</div>
-                                <div className="text-xs opacity-75">Automático (Todo Jalisco)</div>
-                            </button>
-                        </div>
-                    </div>
-
-                    {layersWithLegends.length > 0 && (
-                        <div>
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                                {format === 'pdf' ? 'Leyendas' : 'Leyenda'}
-                            </div>
-
-                            <ScrollContainer className="max-h-40 border border-gray-100 rounded">
-                                {layersWithLegends.map(layer => {
-                                    const isSelected = selectedLegendLayers.some(l => l.id === layer.id);
-                                    return (
-                                        <SymbologyItem
-                                            key={layer.id}
-                                            layer={layer}
-                                            isExpanded={false}
-                                            onToggle={() => { }}
-                                            showDivider={true}
-                                            simple={true}
-                                            onClick={() => handleLayerSelect(layer)}
-                                            prefix={
-                                                <Checkbox checked={isSelected} />
-                                            }
-                                        />
-                                    );
-                                })}
-                            </ScrollContainer>
-                        </div>
-                    )}
-
-                    {isSwipe && (
-                        <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
-                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Opciones del comparador
-                            </div>
-                            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-                                <Checkbox checked={includeSwipeBar} onChange={() => setIncludeSwipeBar(p => !p)} />
-                                    Incluir barra divisora
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-                                <Checkbox checked={includeSwipePills} onChange={() => setIncludeSwipePills(p => !p)} />
-                                    Incluir etiquetas A / B con fecha
-                            </label>
-                        </div>
-                    )}
-                </div>
+                </PanelHoja>
             </Panel>
         </div>
     );

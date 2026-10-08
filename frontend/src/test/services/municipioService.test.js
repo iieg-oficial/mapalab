@@ -72,11 +72,11 @@ describe('municipioService', () => {
     describe('fetchMunicipiosGeometries', () => {
         it('retorna estructura vacía si no hay claves', async () => {
             const result = await fetchMunicipiosGeometries('iieg', []);
-            expect(result).toEqual({ items: [], unionWkt: null, unionSrid: null, unionBbox: null });
+            expect(result).toEqual({ items: [], unionBbox: null });
             expect(global.fetch).not.toHaveBeenCalled();
         });
 
-        it('pide al endpoint /municipios/geometries con source y claves, devuelve items + unionWkt + unionBbox', async () => {
+        it('pide al endpoint /municipios/geometries con source y claves, devuelve items + unionBbox', async () => {
             global.fetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
@@ -85,8 +85,6 @@ describe('municipioService', () => {
                     features: [
                         { properties: { clave: '014', nombre: 'Guadalajara' }, geometry: { type: 'Polygon' } },
                     ],
-                    unionWkt: 'MULTIPOLYGON(((0 0, 1 0, 1 1, 0 1, 0 0)))',
-                    unionSrid: 6368,
                     unionBbox: [0, 0, 1, 1],
                 }),
             });
@@ -97,8 +95,6 @@ describe('municipioService', () => {
             expect(params.get('claves')).toBe('014');
             expect(result.items).toHaveLength(1);
             expect(result.items[0].clave).toBe('014');
-            expect(result.unionWkt).toBe('MULTIPOLYGON(((0 0, 1 0, 1 1, 0 1, 0 0)))');
-            expect(result.unionSrid).toBe(6368);
             expect(result.unionBbox).toEqual([0, 0, 1, 1]);
         });
 

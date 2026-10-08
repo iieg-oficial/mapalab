@@ -3,6 +3,7 @@ import { createSidePanelHeader, createSidePanelTitle } from './utils/sidePanelHe
 import { createSidePanelLegend } from './utils/sidePanelLegend';
 import { createSidePanelMinimap } from './utils/sidePanelMinimap';
 import { createSidePanelFooter, createSidePanelLogo } from './utils/sidePanelFooter';
+import { createSidePanelSeleccion } from './utils/sidePanelSeleccion';
 
 const createExportSidePanel = (options = {}) => {
     const {
@@ -14,6 +15,7 @@ const createExportSidePanel = (options = {}) => {
         viewportExtent = null,
         minimapImageUrl = null,
         minimapBounds = null,
+        seleccion = null,
         source = 'Por definir'
     } = options;
 
@@ -43,13 +45,23 @@ const createExportSidePanel = (options = {}) => {
 
     panel.appendChild(createSidePanelTitle(title, contentWidth, SECTION_MARGIN, SECTION_RADIUS));
 
-    panel.appendChild(createSidePanelLegend(
+    const leyenda = createSidePanelLegend(
         selectedLegend,
         getLegendUrl,
         SECTION_PADDING,
         SECTION_MARGIN,
         SECTION_RADIUS
-    ));
+    );
+    panel.appendChild(leyenda);
+
+    const bloqueSeleccion = createSidePanelSeleccion(seleccion, contentWidth, SECTION_MARGIN, SECTION_RADIUS);
+    if (bloqueSeleccion) {
+        leyenda.style.flex = '0 1 auto';
+        panel.appendChild(bloqueSeleccion);
+        const relleno = document.createElement('div');
+        relleno.style.flex = '1';
+        panel.appendChild(relleno);
+    }
 
     panel.appendChild(createSidePanelMinimap(
         minimapImageUrl,

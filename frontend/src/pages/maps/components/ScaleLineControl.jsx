@@ -1,11 +1,13 @@
 import { useCallback, useRef } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
+import { useAreaUtil } from '@contexts/AreaUtilContext';
 import { useSiderAdaptivePosition } from '@contexts/SiderContext';
 import { useScaleLineControl } from '@hooksMaps/useScaleLineControl';
 
 const ScaleLineControl = () => {
     const { mapRef, compareMode, paneMapInstances } = useMapsContext();
     const { style, className } = useSiderAdaptivePosition({ bottomOffset: 40 });
+    const { margenes } = useAreaUtil();
     const containerRef = useRef(null);
     const isSwipe = !!compareMode?.active;
 
@@ -20,7 +22,11 @@ const ScaleLineControl = () => {
         <div
             ref={containerRef}
             className={`fixed bottom-1 z-10 ${className}`}
-            style={style}
+            style={{
+                ...style,
+                left: `calc(${style?.left || '0px'} + ${margenes.left}px)`,
+                bottom: `calc(0.25rem + ${margenes.bottom}px)`,
+            }}
         >
             <style>{`
                 .ol-scale-line {

@@ -33,3 +33,11 @@ def client():
         from app.server import app
         with TestClient(app) as c:
             yield c
+
+
+@pytest.fixture(autouse=True)
+def sin_capas_privadas(monkeypatch):
+    from app.services import acceso_capas, arbol_privado
+
+    monkeypatch.setattr(acceso_capas, 'compuertas', lambda: {})
+    monkeypatch.setattr(arbol_privado, '_arbol_completo', lambda: ({}, {}))

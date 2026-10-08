@@ -20,6 +20,18 @@ export const SCOPE_TYPES = {
 const ZMG_CLAVES = ['14039', '14120', '14098', '14101', '14097', '14070', '14051', '14044', '14124'];
 export const ZMG_LABEL = 'ZMG (Zona Metropolitana de Guadalajara)';
 
+const TIPOS_DE_SCOPE = new Set(Object.values(SCOPE_TYPES));
+
+const esZmg = (claves) => claves.length === ZMG_CLAVES.length && ZMG_CLAVES.every((c) => claves.includes(c));
+
+const scopeRestaurado = (claves, guardado) => {
+    if (TIPOS_DE_SCOPE.has(guardado?.type)) return { type: guardado.type, value: guardado.value ?? null };
+    if (claves.length === 0) return { type: null, value: null };
+    if (claves.length === 1) return { type: SCOPE_TYPES.MUNICIPIO, value: claves[0] };
+    if (esZmg(claves)) return { type: SCOPE_TYPES.ZMG, value: null };
+    return { type: SCOPE_TYPES.MUNICIPIO, value: null };
+};
+
 export const useMunicipioMode = ({ activeLayerIds }) => {
     const [active, setActive] = useState(false);
     const [scope, setScopeState] = useState({ type: null, value: null });
@@ -207,17 +219,11 @@ export const useMunicipioMode = ({ activeLayerIds }) => {
         trackMunicipioSelectionChange({ source: sourceId, count: claves.length, action: `set_${type}` });
     }, [sourceId, allMunicipios, resolveClavesForScope]);
 
-    const enter = useCallback(async (initialClaves = [], { fromUrl = false } = {}) => {
+    const enter = useCallback(async (initialClaves = [], { fromUrl = false, scope: scopeGuardado = null } = {}) => {
         const wasActive = active;
         const unique = Array.isArray(initialClaves) ? [...new Set(initialClaves.map(String))] : [];
         setSelected(unique);
-        if (unique.length === 1) {
-            setScopeState({ type: SCOPE_TYPES.MUNICIPIO, value: unique[0] });
-        } else if (unique.length > 1) {
-            setScopeState({ type: SCOPE_TYPES.MUNICIPIO, value: null });
-        } else {
-            setScopeState({ type: null, value: null });
-        }
+        setScopeState(scopeRestaurado(unique, scopeGuardado));
         setActive(true);
         if (!wasActive) {
             enteredAtRef.current = Date.now();

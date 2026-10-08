@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import GuideOverlay from './GuideOverlay';
 import { useZenMode } from '../ZenMode';
 import { useMapsContext } from '@hooks/useMaps';
+import { hasHexbinMode } from '@pages/maps/helpers/serviceMode';
+import { legendEntries } from '@pages/maps/helpers/hexbinStyles';
 import MapsContext from '@contexts/MapsContext';
 import { useWMSLegend } from '../../hooks/useWMSLegend';
 import { useMapDownload } from './hooks/useMapDownload';
@@ -17,9 +19,20 @@ import Logo from '@components/Logo';
 import Icon from '@components/Icon';
 
 const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propSelectedLegends = [], initialTitle = '', quality = QUALITY_PRESETS[1], swipeOptions = null }) => {
-    const { targetRef, compareMode } = useMapsContext();
+    const { targetRef, compareMode, getServiceMode, getHexbinStats } = useMapsContext();
     const isSwipe = !!compareMode?.active;
     const { getLegendUrl } = useWMSLegend();
+
+    const hexbinLegendEntries = () => {
+        const entries = new Map();
+        (groupedActiveLayers || []).forEach(layer => {
+            const ids = layer.childIds?.length ? layer.childIds : [layer.id];
+            if (!hasHexbinMode(ids, getServiceMode)) return;
+            const stats = ids.map(id => getHexbinStats?.(id)).find(Boolean);
+            if (stats) entries.set(layer.id, legendEntries(stats.breaks, stats.max, stats.paletteIndex));
+        });
+        return entries.size > 0 ? entries : null;
+    };
     const { activeLayerIds, groupedActiveLayers, allLayers } = useContext(MapsContext);
     const { getGuideExtent } = useMapDownload();
     const { generateMinimapImage } = useMinimap();
@@ -156,7 +169,7 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
 
         if (format === 'pdf') {
             const legends = propSelectedLegends.length > 0 ? propSelectedLegends : (currentSelectedLegend ? [currentSelectedLegend] : []);
-            await exportToPdf({ canvas: previewCanvas, title, selectedLegends: legends, getLegendUrl });
+            await exportToPdf({ canvas: previewCanvas, title, selectedLegends: legends, getLegendUrl, hexbinEntriesById: hexbinLegendEntries() });
         } else {
             exportToImage(previewCanvas, format, title);
         }
