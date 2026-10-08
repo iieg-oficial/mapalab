@@ -100,6 +100,7 @@ const MapToolsPanel = () => {
                         onOpenChange={setIsDownloadOpen}
                         collapsed={isCollapsed}
                         expanded={false}
+                        llenar={!isNonProd}
                     />
                     {isNonProd && (
                         <MunicipioFilterButton
