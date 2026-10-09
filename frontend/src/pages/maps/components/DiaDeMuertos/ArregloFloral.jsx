@@ -46,7 +46,7 @@ const ArregloFloral = ({ expandido }) => {
                 style={{ width: `${arreglo.ancho}px`, height: `${arreglo.alto}px` }}
             >
                 <svg viewBox={`0 0 ${arreglo.ancho} ${arreglo.alto}`} className="absolute inset-0 size-full overflow-visible" aria-hidden="true">
-                    <g stroke="#5E8A44" strokeWidth="1.3" fill="none" strokeLinecap="round">
+                    <g stroke="#5E8A44" strokeWidth="1.2" fill="none" strokeLinecap="round">
                         {arreglo.tallos.map((d) => <path key={d} d={d} />)}
                     </g>
                     {arreglo.hojas.map(({ x, y, r, w }) => (
