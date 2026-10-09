@@ -14,9 +14,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   el borde del sider muestra un pan de muerto que enciende el tema; arranca apagado en cada visita y el
   aviso «¡Día de Muertos!» sale una vez por visitante. Encendido, el pan lleva una mordida y aparecen:
   una lluvia lenta de cempasúchil que se acumula en el borde inferior (doce flores como tope, la más vieja
-  se desvanece), un ramo de maravillas sobre el logo del IIEG que se cortan con un clic (su «Acerca de»
-  pasa a un botón flotante mientras el ramo lo tapa), una rama lineal bajo el logo con el sider contraído
-  y papel picado bajo Capas activas, en cordel o en pila si el panel está contraído, que se agita con el
+  se desvanece), macetas de barro detrás del logo del IIEG, a todo lo ancho del sider y sin hacerlo
+  crecer, una de maravillas y las demás de cempasúchil, cuyas flores se tumban con un clic (el «Acerca
+  de» del logo pasa a un «>» gris en el borde mientras el tema está encendido), y papel picado bajo
+  Capas activas, en cordel o en pila si el panel está contraído, que se agita con el
   hover. Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
 - El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
 
