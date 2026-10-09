@@ -13,7 +13,7 @@ const LogoIieg = ({ isExpanded, visible, onClick }) => {
     const relleno = conRamo ? (isExpanded ? RAMO_EXPANDIDO : RAMO_CONTRAIDO).relleno : '';
 
     return (
-        <div className={`relative w-full shrink-0 ${relleno}`}>
+        <div className={`relative w-full shrink-0 flex flex-col ${relleno}`}>
             <Logo
                 name="iieg"
                 size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'}
