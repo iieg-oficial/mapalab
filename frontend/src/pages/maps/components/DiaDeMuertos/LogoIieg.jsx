@@ -4,16 +4,14 @@ import Tooltip from '@components/Tooltip';
 import { useDecoracionEvento } from '@hooks/useEvento';
 import { esDiaDeMuertos } from '@pages/maps/helpers/eventoDiversion';
 import RamoMaravillas from './RamoMaravillas';
-import { RAMO_CONTRAIDO, RAMO_EXPANDIDO } from './ramos';
 
 const LogoIieg = ({ isExpanded, visible, onClick }) => {
     const decoracion = useDecoracionEvento();
     const conRamo = visible && esDiaDeMuertos(decoracion);
     const ramoSobreLogo = conRamo && isExpanded;
-    const relleno = conRamo ? (isExpanded ? RAMO_EXPANDIDO : RAMO_CONTRAIDO).relleno : '';
 
     return (
-        <div className={`relative w-full shrink-0 ${relleno}`}>
+        <div className="relative w-full shrink-0 flex flex-col">
             <Logo
                 name="iieg"
                 size={isExpanded ? 'w-41 h-13' : 'w-12 h-13'}

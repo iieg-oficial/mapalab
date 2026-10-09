@@ -6,7 +6,6 @@ export const RAMO_EXPANDIDO = {
     ancho: 340,
     alto: 116,
     top: -12,
-    relleno: 'pb-3',
     ramas: [
         { d: 'M2.6 66 C44.5 104 91.5 92 136 72 C177.8 54 196.2 30 238 46 C279.8 62 295.5 104 337.4 98', stroke: '#7FA65E', width: 1.2 },
         { d: 'M0 104 C34 64 81.1 18 125.5 40 C162.2 58 156.9 92 196.2 82 C235.4 72 243.2 28 279.8 34 C313.8 40 324.3 76 340 62', stroke: '#4F7A3A', width: 2.8, brillo: true },
@@ -48,30 +47,29 @@ export const RAMO_EXPANDIDO = {
 
 export const RAMO_CONTRAIDO = {
     ancho: 88,
-    alto: 104,
+    alto: 72,
     top: 12,
-    relleno: 'pb-6',
     ramas: [
-        { d: 'M0 84 C14 76 24 92 44 84 C62 76 72 92 88 82', stroke: '#7FA65E', width: 1.1 },
-        { d: 'M0 88 C16 96 28 78 44 86 C60 94 74 80 88 86', stroke: '#4F7A3A', width: 2.4, brillo: true },
+        { d: 'M0 48C14 40 24 56 44 48C62 40 72 56 88 46', stroke: '#7FA65E', width: 1.1 },
+        { d: 'M0 52C16 60 28 42 44 50C60 58 74 44 88 50', stroke: '#4F7A3A', width: 2.4, brillo: true },
     ],
     zarcillos: [
-        'M30 83 c-1 -5 -6 -6 -7 -3 c0 2 2 3 3 1',
-        'M60 90 c1 5 6 6 7 3 c0 -2 -2 -3 -3 -1',
+        'M30 47c-1 -5 -6 -6 -7 -3c0 2 2 3 3 1',
+        'M60 54c1 5 6 6 7 3c0 -2 -2 -3 -3 -1',
     ],
     hojas: [
-        { x: 8, y: 91, r: 25, w: 14 },
-        { x: 48, y: 85, r: -25, w: 14 },
-        { x: 70, y: 89, r: 20, w: 14 },
+        { x: 8, y: 55, r: 25, w: 14 },
+        { x: 48, y: 49, r: -25, w: 14 },
+        { x: 70, y: 53, r: 20, w: 14 },
     ],
     tallos: [
-        'M14 92 L13 90',
-        'M44 86 L44 92',
-        'M75 84 L75 88',
+        'M14 56L13 54',
+        'M44 50L44 56',
+        'M75 48L75 52',
     ],
     flores: [
-        { id: 'a', cx: 13, cy: 83, size: 20, lenta: true, dx: 0 },
-        { id: 'b', cx: 44, cy: 96, size: 18, lenta: false, dx: 0 },
-        { id: 'c', cx: 75, cy: 81, size: 20, lenta: true, dx: 0 },
+        { id: 'a', cx: 13, cy: 47, size: 20, lenta: true, dx: 0 },
+        { id: 'b', cx: 44, cy: 60, size: 18, lenta: false, dx: 0 },
+        { id: 'c', cx: 75, cy: 45, size: 20, lenta: true, dx: 0 },
     ],
 };
