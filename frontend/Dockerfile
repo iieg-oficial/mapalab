@@ -4,6 +4,7 @@ FROM node:26-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
+COPY vendor ./vendor
 RUN --mount=type=cache,target=/root/.npm npm ci
 
 COPY . .
