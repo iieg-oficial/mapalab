@@ -1,5 +1,5 @@
 const ROJO = { cuerpo: '#D81B3C', borde: '#A3102B' };
-const BLANCO = { cuerpo: '#FFFFFF', borde: '#E6E1DC' };
+const BLANCO = { cuerpo: '#FFF6F0', borde: '#D8A3AE' };
 
 const polar = (grados, radio) => {
     const rad = ((grados - 90) * Math.PI) / 180;
@@ -14,7 +14,7 @@ const Maravilla = ({ variante = 'rbrbb', className = '' }) => {
     return (
         <svg viewBox="-20 -20 40 40" className={className} aria-hidden="true">
             {LOBULOS.map(({ a, x, y }, i) => <circle key={`b${a}`} cx={x} cy={y} r="8.6" fill={colores[i].borde} />)}
-            <g transform="scale(0.9)">
+            <g transform="scale(0.86)">
                 {LOBULOS.map(({ a, x, y }, i) => <circle key={`c${a}`} cx={x} cy={y} r="8.6" fill={colores[i].cuerpo} />)}
             </g>
             <g stroke="#00000022" strokeWidth="0.7">
