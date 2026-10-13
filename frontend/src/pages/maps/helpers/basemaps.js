@@ -42,6 +42,8 @@ export const BASEMAPS = {
     oscuro: {
         id: 'carto_dark',
         label: 'Carto Dark',
+        icono: 'position',
+        iconoClase: 'invert',
         labelZoomThreshold: 15,
         tiles: cartoUrl('dark_nolabels'),
         labelsTiles: cartoUrl('dark_only_labels'),
@@ -60,6 +62,12 @@ export const BASEMAP_ORDER = [
     'position',
     'sin_mapalab'
 ];
+
+export const ordenDeMapasBase = (activo) => (
+    BASEMAP_ORDER.includes(activo) || !BASEMAPS[activo]
+        ? BASEMAP_ORDER
+        : [...BASEMAP_ORDER.filter((id) => id !== 'sin_mapalab'), activo, 'sin_mapalab']
+);
 
 const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
 

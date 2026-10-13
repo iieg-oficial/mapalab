@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BASEMAP_ORDER } from '@pages/maps/helpers/basemaps';
+import { ordenDeMapasBase } from '@pages/maps/helpers/basemaps';
 import { useMapsContext } from '@hooks/useMaps';
 import Icon from '@components/Icon';
 import { trackBasemapChange } from '@services/analyticsService';
@@ -17,7 +17,7 @@ const BaseMapList = ({ closeButton }) => {
                 {closeButton}
             </div>
             <div className="grid grid-cols-2 gap-4">
-                {BASEMAP_ORDER.map(id => {
+                {ordenDeMapasBase(baseMapId).map(id => {
                     const active = baseMapId === id;
                     const label = basemaps[id]?.label ?? id;
 
@@ -36,9 +36,9 @@ const BaseMapList = ({ closeButton }) => {
                         >
                             <div className="flex items-center justify-center">
                                 <Icon
-                                    name={id}
+                                    name={basemaps[id]?.icono ?? id}
                                     state={active || hoveredId === id ? 'hover' : 'normal'}
-                                    className={`${active || hoveredId === id ? 'size-[57px]' : 'size-[47px]'}`}
+                                    className={`${active || hoveredId === id ? 'size-[57px]' : 'size-[47px]'} ${basemaps[id]?.iconoClase ?? ''}`}
                                 />
                             </div>
                             <span className={`text-[12px]/[18px] font-garet text-center ${active ? 'font-bold text-[#5C2472]' : 'font-medium text-[#465055]'}`}>
