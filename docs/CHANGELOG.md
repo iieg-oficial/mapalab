@@ -27,6 +27,14 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
 
 
+### Cambiado
+
+- **El loop de fechas corre sobre zootropo.** `useDateLoop` conserva su API (`toggleLoop`, `stopLoop`,
+  `dateLoops`, preferencias por capa, lado del comparador) pero la secuencia, los temporizadores, la
+  espera a que la capa termine de cargar y el tope de 30 s salen de zootropo 0.2.1, vendorizado en
+  `frontend/vendor/` como biombo. El sondeo cada 100 ms de `loadingLayers` se sustituye por
+  `loading()`/`ready()` del reproductor. Primer paso de `planes/migracion-a-zootropo.md`.
+
 ## [2.3.0] - 2026-10-06
 
 ### Agregado

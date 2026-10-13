@@ -4,13 +4,12 @@ import { useLayers } from '@hooks/useLayers';
 import { trackRasterLoop } from '@services/analyticsService';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 import { buildLoopValues, describeDateFilter, findLoopStartKey, isSameLoopConfig } from '../helpers/dateLoopHelpers';
+import { createLoopPlayer } from '../helpers/zootropoLoop';
 import { useRasterDefaultDate } from './useRasterDefaultDate';
 
 export const DEFAULT_LOOP_INTERVAL_MS = 1000;
 export const LOOP_INTERVAL_PRESETS = [250, 500, 1000, 2000, 3000];
 export const DEFAULT_LOOP_DIRECTION = 'ltr';
-
-const MAX_LOADING_RETRIES = 300;
 
 const clampIntervalMs = (ms) => Math.max(100, Math.min(10000, Number(ms) || DEFAULT_LOOP_INTERVAL_MS));
 const normalizeDirection = (dir) => (dir === 'rtl' ? 'rtl' : 'ltr');
@@ -35,12 +34,20 @@ const writeFilter = (r, layerId, slot, value) => {
     r.applyFilter(layerId, 'date', value);
 };
 
-const canResume = (r, layerId, data, preferred, slot) => {
-    if (!data || data.isPlaying || data.slot !== slot) return false;
-    if (preferred && !isSameLoopConfig(preferred, data)) return false;
-    const current = data.values.find(v => v.key === data.currentKey);
+const canResume = (r, layerId, loop, preferred, slot) => {
+    if (!loop || loop.player.getSnapshot().playing || loop.slot !== slot) return false;
+    if (preferred && !isSameLoopConfig(preferred, loop)) return false;
+    const current = loop.values.find(v => v.key === loop.currentKey());
     return !!current && current.filterValue === readFilter(r, layerId, slot);
 };
+
+const stateOf = (loop) => ({
+    isPlaying: loop.player.getSnapshot().playing,
+    currentKey: loop.currentKey(),
+    mode: loop.mode,
+    year: loop.year,
+    slot: loop.slot,
+});
 
 export const useDateLoop = ({
     applyFilter, clearFilter, activeLayerIds, hiddenLayerIds = [], getSpecificFilter, getPeriodicity,
@@ -50,11 +57,10 @@ export const useDateLoop = ({
     const { loadingLayers } = useLayerLoading();
     const [dateLoops, setDateLoops] = useState({});
     const [loopPrefs, setLoopPrefs] = useState({});
-    const loopDataRef = useRef({});
-    const timersRef = useRef(new Map());
+    const loopsRef = useRef(new Map());
     const prefsRef = useRef({});
     const refs = useRef({});
-    refs.current = { applyFilter, clearFilter, loadingLayers, getSpecificFilter, getPeriodicity, getRasterPeriodicity, allLayers, compareMode, applyFilterToSlot };
+    refs.current = { applyFilter, clearFilter, getSpecificFilter, getPeriodicity, getRasterPeriodicity, allLayers, compareMode, applyFilterToSlot };
 
     useRasterDefaultDate({ activeLayerIds, allLayers, compareMode, getSpecificFilter, applyFilter, clearFilter, applyFilterToSlot });
 
@@ -72,67 +78,29 @@ export const useDateLoop = ({
         setLoopPrefs(prev => ({ ...prev, [layerId]: { ...(prev[layerId] || {}), ...patch } }));
     }, []);
 
-    const setLoopIntervalMs = useCallback((layerId, ms) => setPref(layerId, { intervalMs: clampIntervalMs(ms) }), [setPref]);
-    const setLoopDirection = useCallback((layerId, dir) => setPref(layerId, { direction: normalizeDirection(dir) }), [setPref]);
+    const setLoopIntervalMs = useCallback((layerId, ms) => {
+        const intervalMs = clampIntervalMs(ms);
+        setPref(layerId, { intervalMs });
+        loopsRef.current.get(layerId)?.player.setIntervalMs(intervalMs);
+    }, [setPref]);
 
-    const clearTimer = useCallback((layerId) => {
-        const id = timersRef.current.get(layerId);
-        if (id != null) {
-            clearTimeout(id);
-            timersRef.current.delete(layerId);
-        }
+    const setLoopDirection = useCallback((layerId, dir) => {
+        const direction = normalizeDirection(dir);
+        setPref(layerId, { direction });
+        loopsRef.current.get(layerId)?.setDirection(direction);
+    }, [setPref]);
+
+    const sync = useCallback((layerId) => {
+        const loop = loopsRef.current.get(layerId);
+        if (loop) setDateLoops(prev => ({ ...prev, [layerId]: stateOf(loop) }));
     }, []);
 
     const stopLoop = useCallback((layerId) => {
-        const data = loopDataRef.current[layerId];
-        if (data) data.isPlaying = false;
-        clearTimer(layerId);
-        setDateLoops(prev => (prev[layerId] ? { ...prev, [layerId]: { ...prev[layerId], isPlaying: false } } : prev));
-    }, [clearTimer]);
-
-    const runNextTick = useCallback((layerId) => {
-        clearTimer(layerId);
-
-        const doTick = () => {
-            const data = loopDataRef.current[layerId];
-            if (!data || !data.isPlaying) return;
-            if (data.slot && !refs.current.compareMode?.active) {
-                stopLoop(layerId);
-                trackRasterLoop(layerId, false);
-                return;
-            }
-
-            const prefs = prefsRef.current[layerId] || {};
-            const intervalMs = prefs.intervalMs ?? DEFAULT_LOOP_INTERVAL_MS;
-            const direction = prefs.direction ?? DEFAULT_LOOP_DIRECTION;
-
-            if (refs.current.loadingLayers.has(layerId)) {
-                data.loadingRetries = (data.loadingRetries || 0) + 1;
-                if (data.loadingRetries > MAX_LOADING_RETRIES) {
-                    stopLoop(layerId);
-                    trackRasterLoop(layerId, false);
-                    return;
-                }
-                timersRef.current.set(layerId, setTimeout(doTick, 100));
-                return;
-            }
-            data.loadingRetries = 0;
-
-            const { values } = data;
-            const currentIdx = values.findIndex(v => v.key === data.currentKey);
-            const step = direction === 'rtl' ? -1 : 1;
-            const next = values[(currentIdx + step + values.length) % values.length];
-
-            writeFilter(refs.current, layerId, data.slot, next.filterValue);
-            data.currentKey = next.key;
-            setDateLoops(prev => ({ ...prev, [layerId]: { ...prev[layerId], currentKey: next.key } }));
-
-            timersRef.current.set(layerId, setTimeout(doTick, intervalMs));
-        };
-
-        const prefs = prefsRef.current[layerId] || {};
-        timersRef.current.set(layerId, setTimeout(doTick, prefs.intervalMs ?? DEFAULT_LOOP_INTERVAL_MS));
-    }, [clearTimer, stopLoop]);
+        const loop = loopsRef.current.get(layerId);
+        if (!loop) return;
+        loop.player.pause();
+        sync(layerId);
+    }, [sync]);
 
     const startLoop = useCallback((layerId, config, slot = currentSlot(refs.current)) => {
         const { mode, year = null, values } = config || {};
@@ -141,13 +109,29 @@ export const useDateLoop = ({
         const r = refs.current;
         const filter = readFilter(r, layerId, slot);
         const matched = findLoopStartKey({ values, mode, year, filter, rasterPeriodicity: resolveRaster(r, layerId) });
-        const startKey = matched ?? values[0].key;
-        if (matched == null) writeFilter(r, layerId, slot, values[0].filterValue);
+        const prefs = getLoopPrefs(layerId);
 
-        loopDataRef.current[layerId] = { isPlaying: true, currentKey: startKey, mode, year, values, slot };
-        setDateLoops(prev => ({ ...prev, [layerId]: { isPlaying: true, currentKey: startKey, mode, year, slot } }));
-        runNextTick(layerId);
-    }, [runNextTick]);
+        loopsRef.current.get(layerId)?.player.destroy();
+        let silent = matched != null;
+        const loop = createLoopPlayer({
+            mode, year, values, intervalMs: prefs.intervalMs, direction: prefs.direction,
+            onStep: (value) => {
+                if (silent || !value) return;
+                writeFilter(refs.current, layerId, loop.slot, value.filterValue);
+                sync(layerId);
+            },
+            onTimeout: () => {
+                sync(layerId);
+                trackRasterLoop(layerId, false);
+            },
+        });
+        loop.slot = slot;
+        loopsRef.current.set(layerId, loop);
+        loop.seek(matched ?? values[0].key);
+        silent = false;
+        loop.player.play();
+        sync(layerId);
+    }, [getLoopPrefs, sync]);
 
     const inferLoopConfig = useCallback((layerId, slot = currentSlot(refs.current)) => {
         const r = refs.current;
@@ -176,19 +160,17 @@ export const useDateLoop = ({
     }, []);
 
     const toggleLoop = useCallback((layerId, preferredConfig = null, slot = currentSlot(refs.current)) => {
-        const data = loopDataRef.current[layerId];
+        const loop = loopsRef.current.get(layerId);
 
-        if (data?.isPlaying) {
+        if (loop?.player.getSnapshot().playing) {
             stopLoop(layerId);
             trackRasterLoop(layerId, false);
             return;
         }
 
-        if (canResume(refs.current, layerId, data, preferredConfig, slot)) {
-            data.isPlaying = true;
-            data.loadingRetries = 0;
-            setDateLoops(prev => ({ ...prev, [layerId]: { ...prev[layerId], isPlaying: true } }));
-            runNextTick(layerId);
+        if (canResume(refs.current, layerId, loop, preferredConfig, slot)) {
+            loop.player.play();
+            sync(layerId);
             trackRasterLoop(layerId, true);
             return;
         }
@@ -197,20 +179,19 @@ export const useDateLoop = ({
         if (!config) return;
         startLoop(layerId, config, slot);
         trackRasterLoop(layerId, true);
-    }, [stopLoop, startLoop, runNextTick, inferLoopConfig]);
+    }, [stopLoop, startLoop, sync, inferLoopConfig]);
 
     const pauseAllLoops = useCallback(() => {
-        Object.keys(loopDataRef.current).forEach(layerId => {
-            if (loopDataRef.current[layerId]?.isPlaying) {
-                stopLoop(layerId);
-                trackRasterLoop(layerId, false);
-            }
+        loopsRef.current.forEach((loop, layerId) => {
+            if (!loop.player.getSnapshot().playing) return;
+            stopLoop(layerId);
+            trackRasterLoop(layerId, false);
         });
     }, [stopLoop]);
 
     const cleanupLoop = useCallback((layerId) => {
-        stopLoop(layerId);
-        delete loopDataRef.current[layerId];
+        loopsRef.current.get(layerId)?.player.destroy();
+        loopsRef.current.delete(layerId);
         delete prefsRef.current[layerId];
         setDateLoops(prev => {
             const next = { ...prev };
@@ -224,7 +205,7 @@ export const useDateLoop = ({
             return next;
         });
         if (!refs.current.compareMode?.active) refs.current.clearFilter(layerId, 'date');
-    }, [stopLoop]);
+    }, []);
 
     const getLoopState = useCallback((layerId) => dateLoops[layerId] || null, [dateLoops]);
 
@@ -241,10 +222,19 @@ export const useDateLoop = ({
     }, [activeLayerIds, compareActive, paneAIds, paneBIds, dateLoops, cleanupLoop]);
 
     useEffect(() => {
+        if (compareActive) return;
+        loopsRef.current.forEach((loop, layerId) => {
+            if (!loop.slot || !loop.player.getSnapshot().playing) return;
+            stopLoop(layerId);
+            trackRasterLoop(layerId, false);
+        });
+    }, [compareActive, stopLoop]);
+
+    useEffect(() => {
         const slot = currentSlot(refs.current);
         hiddenLayerIds.forEach(layerId => {
-            const data = loopDataRef.current[layerId];
-            if (data?.isPlaying && (data.slot ?? null) === slot) {
+            const loop = loopsRef.current.get(layerId);
+            if (loop?.player.getSnapshot().playing && (loop.slot ?? null) === slot) {
                 stopLoop(layerId);
                 trackRasterLoop(layerId, false);
             }
@@ -252,10 +242,17 @@ export const useDateLoop = ({
     }, [hiddenLayerIds, stopLoop]);
 
     useEffect(() => {
-        const timers = timersRef.current;
+        loopsRef.current.forEach((loop, layerId) => {
+            if (loadingLayers.has(layerId)) loop.player.loading();
+            else loop.player.ready();
+        });
+    }, [loadingLayers]);
+
+    useEffect(() => {
+        const loops = loopsRef.current;
         return () => {
-            timers.forEach(id => clearTimeout(id));
-            timers.clear();
+            loops.forEach(loop => loop.player.destroy());
+            loops.clear();
         };
     }, []);
 
