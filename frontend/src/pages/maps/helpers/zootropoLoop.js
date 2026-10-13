@@ -1,4 +1,4 @@
-import { createTimePlayer, parseKey, toKey } from 'zootropo';
+import { createPlayerGroup, createTimePlayer, parseKey, toKey } from 'zootropo';
 
 export const LOOP_TIMEOUT_MS = 30000;
 
@@ -33,11 +33,27 @@ export const createLoopPlayer = ({ mode, year = null, values, intervalMs, direct
         year,
         values,
         descending,
+        zkey: (key) => toZootropoKey(mode, year, key),
         seek: (key) => player.seek(toZootropoKey(mode, year, key)),
         currentKey: () => {
             const step = player.getSnapshot().step;
             return step ? fromZootropoKey(mode, step) : null;
         },
         setDirection: (dir) => player.setDirection(toZootropoDirection(dir, descending)),
+    };
+};
+
+export const createLoopGroup = (loops, { intervalMs, direction }) => {
+    const [first] = loops;
+    const group = createPlayerGroup(loops.map(loop => loop.player), {
+        intervalMs,
+        direction: toZootropoDirection(direction, first.descending),
+        timeoutMs: LOOP_TIMEOUT_MS,
+    });
+    return {
+        group,
+        loops,
+        seek: (key) => group.seek(first.zkey(key)),
+        setDirection: (dir) => group.setDirection(toZootropoDirection(dir, first.descending)),
     };
 };

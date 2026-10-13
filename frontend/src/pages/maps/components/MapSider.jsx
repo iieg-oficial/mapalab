@@ -45,7 +45,7 @@ const MapSider = ({ className = '' }) => {
         isDrawing,
         measurements,
         isLocating,
-        dateLoops,
+        isLayerLooping,
         showMarker,
         allLayers,
         compareMode
@@ -54,7 +54,7 @@ const MapSider = ({ className = '' }) => {
     const toolsPanelVisible = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0;
     const isSwipe = !!compareMode?.active;
     const { loadingLayers } = useLayerLoading();
-    const hasNonLoopLoading = [...loadingLayers].some(id => !dateLoops[id] && contextActiveLayerIds.includes(id));
+    const hasNonLoopLoading = [...loadingLayers].some(id => !isLayerLooping?.(id) && contextActiveLayerIds.includes(id));
     const isLoading = hasNonLoopLoading || isLocating;
     const {
         siderRef,

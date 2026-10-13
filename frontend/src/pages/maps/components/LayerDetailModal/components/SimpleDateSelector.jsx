@@ -46,8 +46,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
         onClear: () => onClearFilter?.(),
     });
 
-    const rawLoopState = getLoopState?.(layerId);
-    const loopState = (rawLoopState?.slot ?? null) === (slot ?? null) ? rawLoopState : null;
+    const loopState = getLoopState?.(layerId, slot ?? null) ?? null;
     const activeYearRef = useRef(null);
     const yearsCarousel = useCarouselOverflow();
 
@@ -74,7 +73,7 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
     if (availableYears.length === 0) return null;
 
     const handleStopLoop = () => {
-        if (loopState?.isPlaying) contextStopLoop?.(layerId);
+        if (loopState?.isPlaying) contextStopLoop?.(layerId, slot ?? null);
     };
 
     const handleYearClick = (year) => {

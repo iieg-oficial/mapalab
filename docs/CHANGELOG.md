@@ -51,6 +51,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   cambian: clic navega, doble clic marca y clic sobre algo marcado lo quita. Al marcar una fecha se quitan
   las que la contienen y las que contiene, así que el CQL no repite periodos (antes, marcar un año
   dejaba también sus meses). zootropo pasa a 0.3.0.
+- **En el comparador cada lado anima por su cuenta, y se pueden sincronizar.** El loop de una capa ya no
+  pertenece a un solo lado: A y B corren a la vez, cada uno con su fecha, y las capas activas muestran
+  los controles de los dos. En el panel de periodicidad del comparador, «Sincronizar A y B» une los dos
+  lados en un reloj de zootropo (`createPlayerGroup`): el play arranca ambos desde la fecha del lado
+  donde se pulsó y pausar cualquiera pausa los dos. `getLoopState` y `stopLoop` aceptan el lado.
 
 ## [2.3.0] - 2026-10-06
 

@@ -6,6 +6,7 @@ import SimpleDateSelector from '@mapsComponents/LayerDetailModal/components/Simp
 import { PlayPauseButton, LoopIntervalButton, LoopDirectionButton } from '@mapsComponents/LayerDetailModal/components/SimpleDateSelectorParts';
 import { useSlotPeriodicity } from '@hooksMaps/useSlotPeriodicity';
 import { slotLabel } from '@pages/maps/helpers/swipeTheme';
+import { RADIUS_LABEL, toneButtonFor } from '@pages/maps/helpers/periodicityTones';
 
 const PanelPeriodicidad = ({ layerId, slot, onClose }) => {
     const periodicidad = useSlotPeriodicity(layerId);
@@ -57,6 +58,16 @@ const PanelPeriodicidad = ({ layerId, slot, onClose }) => {
                         disabled={lado.loopDisabled}
                         disabledHint={lado.loopDisabledHint}
                     />
+                    <Tooltip content="Los dos lados avanzan con un solo reloj" placement="left" delay={400}>
+                        <button
+                            type="button"
+                            aria-pressed={periodicidad.syncSlots}
+                            onClick={() => periodicidad.setSyncSlots?.(!periodicidad.syncSlots)}
+                            className={`flex items-center h-7.5 px-2 ${RADIUS_LABEL} text-[11px]/[16px] font-bold font-garet ${toneButtonFor(slot, periodicidad.syncSlots).className}`}
+                        >
+                            Sincronizar A y B
+                        </button>
+                    </Tooltip>
                 </div>
             )}
 
