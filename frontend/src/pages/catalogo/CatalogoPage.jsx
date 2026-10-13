@@ -23,7 +23,7 @@ import {
 } from '@services/analyticsService';
 import { CATALOGO_RETURN_KEY } from './useGoToCatalogo';
 import { buildCatalogoPath, filterCapas, resolveCatalogoRoute } from './helpers/catalogoRoutes';
-import { PARAM_VISTA, VISTA_HEXAGONOS, vistaDeParam } from './helpers/catalogoVista';
+import { escribirOpciones, opcionesDeParams, PARAM_CLASES, PARAM_VALOR, PARAM_VISTA, VISTA_HEXAGONOS, vistaDeParam } from './helpers/catalogoVista';
 import { PARAM_MUNICIPIOS } from './hooks/useCatalogoMunicipio';
 
 const CatalogoPage = () => {
@@ -188,6 +188,13 @@ const CatalogoPage = () => {
         }, { replace: true });
     }, [setSearchParams]);
 
+    const valorParam = searchParams.get(PARAM_VALOR);
+    const clasesParam = searchParams.get(PARAM_CLASES);
+    const opcionesHexbin = useMemo(() => opcionesDeParams(valorParam, clasesParam), [valorParam, clasesParam]);
+    const cambiarOpcionesHexbin = useCallback((opciones) => {
+        setSearchParams(prev => escribirOpciones(new URLSearchParams(prev), opciones), { replace: true });
+    }, [setSearchParams]);
+
     return (
         <div className="fixed inset-0 overflow-hidden bg-[#EAE7E0]">
             <LayerLoadingProvider>
@@ -201,6 +208,7 @@ const CatalogoPage = () => {
                     <CatalogoMapView
                         capa={selectedCapa}
                         hexagonos={hexagonos}
+                        hexbinOpciones={opcionesHexbin}
                         onHexbin={setHexbin}
                         onExtrusion={setExtrusion}
                         imagenAbierta={imagenAbierta}
@@ -214,6 +222,8 @@ const CatalogoPage = () => {
                             vista={vista}
                             onVista={cambiarVista}
                             hexbin={hexagonos ? hexbin : null}
+                            hexbinOpciones={opcionesHexbin}
+                            onHexbinOpciones={cambiarOpcionesHexbin}
                             extrusion={extrusion}
                             onImagen={() => setImagenAbierta(true)}
                             onClose={handleCloseCapa}

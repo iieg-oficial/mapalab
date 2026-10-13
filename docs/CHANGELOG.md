@@ -26,6 +26,37 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   desplegado, «Carto Dark» aparece marcado en «Mapas base». Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
 - El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
 
+### Cambiado
+
+- **Qué se agrupa y cómo se colorea, en «Ver como: Hexágonos».** Bajo la leyenda hay dos selectores:
+  el valor de cada hexágono (conteo de puntos, o suma o promedio de cualquier campo numérico de la capa,
+  leídos con DescribeFeatureType) y el método de clases (cuantiles, cortes naturales o intervalos
+  iguales). Cambiar el método o el reductor no vuelve a pedir datos; cambiar de campo sí, y con campo no
+  se usa el precalculado, que solo trae conteos. Las opciones viajan en el share (`hexbin` por capa), en
+  la sesión y en la URL del catálogo (`valor=sum:campo`, `clases=jenks`). La leyenda de sumas y promedios
+  va con dos decimales
+- **Hexágonos para capas de más de 20 000 puntos sin precalculado.** En vez de quedarse en Puntos, la
+  capa se agrupa por vista: un Web Worker (`helpers/hexbin.worker.js`) descarga del WFS solo la vista
+  con un margen, con el recuadro en el CQL, y agrupa ahí. Antes de cada descarga se cuentan los puntos
+  de esa vista; si pasan de 50 000, la capa se oculta y la leyenda pide acercarse. Moverse dentro de lo
+  ya descargado no vuelve a pedir nada
+- **El hexbin lo resuelve panal** (`@ghegar/panal` 0.6.1, vendorizado en `frontend/vendor/`). Visor y
+  catálogo crean la capa con `helpers/panalHexbin.js` y `helpers/hexbinEntrada.js`; la reagrupación por
+  zoom, con histéresis de 0.3 niveles, la hace la propia capa. Los cuantiles interpolan y el corte cae
+  en la clase de arriba, igual que en el SLD coroplético, así que algunos números de la leyenda
+  cambian. La leyenda de conteos sigue en rangos enteros sin huecos
+- El precalculado pide solo `h3_index` y `total`: el hexágono se dibuja desde el índice. Cualquier
+  falla del precalculado cae al cálculo en el navegador
+- El clic en un hexágono busca la celda por su índice H3, no por píxel: funciona también con el relleno
+  apagado
+- Un `MultiPoint` cuenta una sola vez por celda
+- `h3-js` deja de ser dependencia directa: llega con panal
+
+### Eliminado
+
+- `helpers/h3Aggregation.js`, `helpers/hexbinLayer.js`, `hooks/useHexbinZoomRefresh.js`,
+  `resolutionForZoom` y `nearestPrecomputed`
+
 
 ## [2.3.0] - 2026-10-06
 

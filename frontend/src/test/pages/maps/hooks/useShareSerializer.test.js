@@ -101,3 +101,18 @@ describe('useShareSerializer', () => {
         expect(envelope.payload.view.lat).toBeLessThan(22);
     });
 });
+
+describe('useShareSerializer - opciones del hexbin', () => {
+    it('guarda las opciones de una capa en hexbin junto a su tono', () => {
+        mockUseLayers.mockReturnValue({ layers: TREE });
+        mockUseMapsContext.mockReturnValue(baseCtx({
+            layerServiceModes: new Map([['imss_1', 'hexbin']]),
+            hexbinPalettes: new Map([['imss_1', 2]]),
+            hexbinOpciones: new Map([['imss_1', { campo: 'camas', reductor: 'sum', metodo: 'jenks' }]]),
+        }));
+        const { result } = renderHook(() => useShareSerializer());
+        const capas = JSON.stringify(result.current('single').payload);
+        expect(capas).toContain('"hexbin":{"campo":"camas","reductor":"sum","metodo":"jenks"}');
+        expect(capas).toContain('"palette":2');
+    });
+});

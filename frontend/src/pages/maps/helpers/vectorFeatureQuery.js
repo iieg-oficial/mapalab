@@ -1,6 +1,6 @@
 import GeoJSON from 'ol/format/GeoJSON';
 import { LOCAL_SERVICES, VECTOR_LAYER_FLAG } from './serviceMode';
-import { HEXBIN_LAYER_FLAG } from './hexbinLayer';
+import { HEXBIN_LAYER_FLAG, hexbinDeCapa } from './panalHexbin';
 import { VECTOR_PROJECTION } from '@services/vectorLayerService';
 
 const HIT_TOLERANCE = 5;
@@ -13,38 +13,30 @@ const matchedMemberId = (layer, targetLayerIds) => {
     return memberIds.find(id => targetLayerIds.has(id)) || null;
 };
 
+const visibleAt = (layer, zoom) => layer.getVisible()
+    && (zoom === undefined || (zoom > layer.getMinZoom() && zoom <= layer.getMaxZoom()));
+
 export const findHexbinCellAtPixel = (map, coordinate, targetLayerIds) => {
     if (!map || !coordinate || !targetLayerIds || targetLayerIds.size === 0) return null;
 
-    const pixel = map.getPixelFromCoordinate(coordinate);
-    if (!pixel) return null;
+    const zoom = map.getView().getZoom();
+    const candidates = map.getLayers().getArray()
+        .filter(layer => layer?.get?.(HEXBIN_LAYER_FLAG) && visibleAt(layer, zoom))
+        .sort((a, b) => (b.getZIndex() ?? 0) - (a.getZIndex() ?? 0));
 
-    let hit = null;
-    map.forEachFeatureAtPixel(pixel, (feature, layer) => {
-        if (hit || !layer?.get?.(HEXBIN_LAYER_FLAG)) return;
-
+    for (const layer of candidates) {
         const layerId = matchedMemberId(layer, targetLayerIds);
-        if (!layerId) return;
+        const hexbin = hexbinDeCapa(layer);
+        const cell = layerId && hexbin ? hexbin.cellAt(coordinate) : null;
+        const geometry = cell ? layer.getSource().getFeatureById(cell.h3Index)?.getGeometry() : null;
+        if (geometry) return { layerId, layer, h3Index: cell.h3Index, count: cell.count, geometry };
+    }
 
-        const geometry = feature.getGeometry?.();
-        if (!geometry) return;
-
-        hit = {
-            layerId,
-            layer,
-            h3Index: feature.get('h3Index'),
-            count: feature.get('count'),
-            geometry
-        };
-    });
-
-    return hit;
+    return null;
 };
 
 export const markSelectedCell = (layer, h3Index) => {
-    if (!layer) return;
-    layer.set('selectedCell', h3Index || null);
-    layer.changed();
+    hexbinDeCapa(layer)?.select(h3Index || null);
 };
 
 const queryVectorFeaturesAtPixel = (map, coordinate, targetLayerIds) => {

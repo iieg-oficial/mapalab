@@ -82,6 +82,7 @@ export const useShareDeserializer = () => {
         setServiceMode,
         toggleHexbinFondo,
         asignarTono,
+        setHexbinOpciones,
         setSoloSeleccionada,
         setHiddenLayerIds,
         setLayerOpacities,
@@ -208,6 +209,7 @@ export const useShareDeserializer = () => {
         const services = [];
         const sinFondo = [];
         const tonos = [];
+        const opcionesHexbin = [];
 
         layers.forEach((entry) => {
             const layerId = resolveRefToId(entry.slug, layerTree);
@@ -226,6 +228,7 @@ export const useShareDeserializer = () => {
             if (entry.service && (entry.service !== SERVICE_HEXBIN || devToolsStore.isNonProd())) services.push([layerId, entry.service]);
             if (entry.fill === false) sinFondo.push(layerId);
             if (Number.isInteger(entry.palette)) tonos.push([layerId, entry.palette]);
+            if (entry.hexbin && typeof entry.hexbin === 'object') opcionesHexbin.push([layerId, entry.hexbin]);
 
             Object.entries(entry.filters || {}).forEach(([name, cql]) => {
                 if (cql) applyFilter(layerId, name, cql);
@@ -241,6 +244,7 @@ export const useShareDeserializer = () => {
             services.forEach(([id, mode]) => setServiceMode(id, mode));
             if (sinFondo.length > 0) toggleHexbinFondo?.(sinFondo);
             tonos.forEach(([id, tono]) => asignarTono?.([id], tono));
+            opcionesHexbin.forEach(([id, opciones]) => setHexbinOpciones?.([id], opciones));
         }
         setSoloSeleccionada?.(payload.soloSeleccionada === true);
 
@@ -276,5 +280,5 @@ export const useShareDeserializer = () => {
 
         marcarShareAplicado();
         return true;
-    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, toggleHexbinFondo, asignarTono, setSoloSeleccionada, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, setLayerOpacity, setServiceMode, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode, setLoopIntervalMs, setLoopDirection]);
+    }, [setActiveLayerIds, getAllChildLayerIds, applyFilter, toggleHexbinFondo, asignarTono, setHexbinOpciones, setSoloSeleccionada, setSelectedLayerForSymbology, restoreSelectedById, findLayerById, setLayerOpacity, setServiceMode, setLayerOpacities, setFilters, setHiddenLayerIds, setBaseMapId, mapRef, layerTree, setCompareMode, restoreAnnotations, municipioMode, setLoopIntervalMs, setLoopDirection]);
 };

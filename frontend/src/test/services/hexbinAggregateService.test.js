@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildAggregateCql, PRECOMPUTED_RESOLUTIONS, nearestPrecomputed } from '@services/hexbinAggregateService';
+import { effectiveResolution } from '@ghegar/panal/ol';
+import { buildAggregateCql, PRECOMPUTED_RESOLUTIONS, toAggregatedCells } from '@services/hexbinAggregateService';
 
 describe('buildAggregateCql', () => {
     it('pide el total sin desglose de anio ni municipio', () => {
@@ -29,18 +30,33 @@ describe('PRECOMPUTED_RESOLUTIONS', () => {
     });
 });
 
-describe('nearestPrecomputed', () => {
-    it('devuelve la misma cuando esta precalculada', () => {
-        expect(nearestPrecomputed(5)).toBe(5);
+describe('resolución precalculada que elige panal', () => {
+    const disponibles = [...PRECOMPUTED_RESOLUTIONS].sort((a, b) => a - b);
+
+    it('devuelve la misma cuando está precalculada', () => {
+        expect(effectiveResolution(5, disponibles)).toBe(5);
     });
 
-    it('cae a la mas fina disponible cuando el zoom pide una que no existe', () => {
-        expect(nearestPrecomputed(9)).toBe(8);
-        expect(nearestPrecomputed(11)).toBe(8);
+    it('cae a la más fina disponible cuando el zoom pide una que no existe', () => {
+        expect(effectiveResolution(9, disponibles)).toBe(8);
+        expect(effectiveResolution(11, disponibles)).toBe(8);
+    });
+});
+
+describe('toAggregatedCells', () => {
+    it('convierte cada fila en una celda de panal, sin geometría', () => {
+        const data = { features: [
+            { properties: { h3_index: '87498c96effffff', total: 12 } },
+            { properties: { h3_index: '87498c968ffffff', total: '3' } }
+        ] };
+        expect(toAggregatedCells(data)).toEqual([
+            { h3Index: '87498c96effffff', value: 12, count: 12 },
+            { h3Index: '87498c968ffffff', value: 3, count: 3 }
+        ]);
     });
 
-    it('devuelve null si ninguna sirve', () => {
-        expect(nearestPrecomputed(2)).toBe(null);
-        expect(nearestPrecomputed(NaN)).toBe(null);
+    it('ignora filas sin índice y respuestas vacías', () => {
+        expect(toAggregatedCells({ features: [{ properties: { total: 4 } }] })).toEqual([]);
+        expect(toAggregatedCells(null)).toEqual([]);
     });
 });

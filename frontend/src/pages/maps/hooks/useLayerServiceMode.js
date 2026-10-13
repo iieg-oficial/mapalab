@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { SERVICE_WMS, SERVICE_HEXBIN } from '../helpers/serviceMode';
 import { menorTonoLibre } from '../helpers/hexbinStyles';
+import { esOpcionBase, normalizarOpciones, OPCIONES_HEXBIN_BASE } from '../helpers/hexbinOpciones';
 
 export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
     const [layerServiceModes, setLayerServiceModes] = useState(new Map());
@@ -8,6 +9,7 @@ export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
     const [hexbinStats, setHexbinStats] = useState(new Map());
     const [hexbinSinFondo, setHexbinSinFondo] = useState(new Set());
     const [hexbinPalettes, setHexbinPalettes] = useState(new Map());
+    const [hexbinOpciones, setHexbinOpcionesMapa] = useState(new Map());
 
     const asignarTono = useCallback((layerIds, tono = null) => {
         setHexbinPalettes(prev => {
@@ -32,6 +34,18 @@ export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
     }, []);
 
     const getHexbinPalette = useCallback((layerId) => hexbinPalettes.get(layerId) ?? 0, [hexbinPalettes]);
+
+    const setHexbinOpciones = useCallback((layerIds, opciones) => {
+        const ids = Array.isArray(layerIds) ? layerIds : [layerIds];
+        const limpias = normalizarOpciones(opciones);
+        setHexbinOpcionesMapa(prev => {
+            const next = new Map(prev);
+            ids.forEach(id => (esOpcionBase(limpias) ? next.delete(id) : next.set(id, limpias)));
+            return next;
+        });
+    }, []);
+
+    const getHexbinOpciones = useCallback((layerId) => hexbinOpciones.get(layerId) ?? OPCIONES_HEXBIN_BASE, [hexbinOpciones]);
 
     const toggleHexbinFondo = useCallback((layerIds) => {
         setHexbinSinFondo(prev => {
@@ -136,6 +150,9 @@ export const useLayerServiceMode = (getAllChildLayerIds, activeLayerIds) => {
         toggleHexbinFondo,
         tieneFondo,
         hexbinPalettes,
+        hexbinOpciones,
+        setHexbinOpciones,
+        getHexbinOpciones,
         asignarTono,
         liberarTono,
         getHexbinPalette

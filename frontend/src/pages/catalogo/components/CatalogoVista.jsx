@@ -4,7 +4,9 @@ import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import HexbinLegend from '@pages/maps/components/ActiveLayers/HexbinLegend';
-import { legendEntries } from '@pages/maps/helpers/hexbinStyles';
+import HexbinOpciones from '@pages/maps/components/ActiveLayers/HexbinOpciones';
+import { hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
+import { legendEntries, textoAcercate } from '@pages/maps/helpers/hexbinStyles';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import { VISTA_HEXAGONOS, VISTA_PUNTOS } from '../helpers/catalogoVista';
 
@@ -81,8 +83,9 @@ export const CatalogoVistaSegmented = ({ nombre, vista, onVista = null, celdas =
     </div>
 );
 
-export const CatalogoHexbinLeyenda = ({ hexbin }) => {
+export const CatalogoHexbinLeyenda = ({ hexbin, capa = null, opciones = null, onOpciones = null }) => {
     if (!hexbin || hexbin.estado === 'cargando') return <p className={NOTA}>Agrupando los puntos…</p>;
+    if (hexbin.estado === 'acercate') return <p className={NOTA}>{textoAcercate(hexbin)}</p>;
     if (hexbin.estado === 'demasiados') {
         return (
             <p className={NOTA}>
@@ -91,11 +94,18 @@ export const CatalogoHexbinLeyenda = ({ hexbin }) => {
         );
     }
     if (hexbin.estado === 'error') return <p className={NOTA}>No se pudieron traer los puntos.</p>;
-    const { breaks, max, paletteIndex } = hexbin.stats || {};
-    if (!max) return <p className={NOTA}>Sin puntos en esta vista.</p>;
+    const { legend, cells, paletteIndex, enteros } = hexbin.stats || {};
+    if (!cells) return <p className={NOTA}>Sin puntos en esta vista.</p>;
     return (
         <div className="w-full bg-white rounded-[13px] overflow-hidden">
-            <HexbinLegend entries={legendEntries(breaks, max, paletteIndex)} />
+            <HexbinLegend entries={legendEntries(legend, paletteIndex, enteros !== false)} />
+            {capa && opciones && onOpciones && (
+                <HexbinOpciones
+                    wmsConfig={hydrateWmsConfig({ geoserverWorkspace: capa.geoserverWorkspace, geoserverLayer: capa.geoserverLayer })}
+                    opciones={opciones}
+                    onCambio={onOpciones}
+                />
+            )}
         </div>
     );
 };

@@ -1,6 +1,8 @@
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
+import { textoAcercate } from '@pages/maps/helpers/hexbinStyles';
 
-const HexbinLegend = ({ entries }) => {
+const HexbinLegend = ({ entries, acercate = null }) => {
+    if (acercate) return <p className="px-3 py-3 text-[10px] font-garet text-[#465055]">{textoAcercate(acercate)}</p>;
     if (!Array.isArray(entries) || entries.length === 0) return null;
 
     return (

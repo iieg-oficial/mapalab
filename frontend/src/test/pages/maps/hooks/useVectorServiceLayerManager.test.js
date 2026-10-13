@@ -1,18 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
+import OlMap from 'ol/Map';
+import View from 'ol/View';
 
 const {
     mockFindWMSConfig,
     mockFindLayerDef,
     mockCount,
     mockFetch,
-    mockSetLayerLoading
+    mockSetLayerLoading,
+    mockCells,
+    mockGeometria,
+    mockWorker
 } = vi.hoisted(() => ({
     mockFindWMSConfig: vi.fn(),
     mockFindLayerDef: vi.fn(),
     mockCount: vi.fn(),
     mockFetch: vi.fn(),
-    mockSetLayerLoading: vi.fn()
+    mockSetLayerLoading: vi.fn(),
+    mockCells: vi.fn(),
+    mockGeometria: vi.fn(),
+    mockWorker: vi.fn()
 }));
 
 vi.mock('@pages/maps/helpers/wmsConfig', () => ({
@@ -23,12 +31,15 @@ vi.mock('@pages/maps/helpers/wmsConfig', () => ({
 vi.mock('@services/vectorLayerService', () => ({
     VECTOR_PROJECTION: 'EPSG:3857',
     countVectorFeatures: (...args) => mockCount(...args),
-    fetchVectorFeatures: (...args) => mockFetch(...args)
+    fetchVectorFeatures: (...args) => mockFetch(...args),
+    geometriaDe: (...args) => mockGeometria(...args)
 }));
 
+vi.mock('@pages/maps/helpers/hexbinWorker', () => ({ hexbinWorker: () => mockWorker() }));
+
 vi.mock('@services/hexbinAggregateService', () => ({
-    nearestPrecomputed: (r) => (r >= 3 && r <= 8 ? r : 8),
-    fetchAggregatedCells: () => Promise.resolve(null)
+    PRECOMPUTED_RESOLUTIONS: new Set([3, 4, 5, 6, 7, 8]),
+    fetchAggregatedCells: (...args) => mockCells(...args)
 }));
 
 vi.mock('@hooks/useLayers', () => ({ useLayers: () => ({ layers: [] }) }));
@@ -40,15 +51,12 @@ vi.mock('@hooks/useLayerLoading', () => ({
 import { useVectorServiceLayerManager } from '@hooksMaps/useVectorServiceLayerManager';
 import { SERVICE_HEXBIN, SERVICE_VECTOR } from '@pages/maps/helpers/serviceMode';
 
-const makeMapRef = () => ({
-    current: {
-        addLayer: vi.fn(),
-        removeLayer: vi.fn(),
-        on: vi.fn(),
-        un: vi.fn(),
-        getView: () => ({ getZoom: () => 8 })
-    }
-});
+const makeMapRef = () => {
+    const map = new OlMap({ view: new View({ center: [0, 0], zoom: 8 }) });
+    vi.spyOn(map, 'addLayer');
+    vi.spyOn(map, 'removeLayer');
+    return { current: map };
+};
 
 const MISMA_TABLA = {
     baseUrl: 'http://gs/salud/wms',
@@ -56,14 +64,14 @@ const MISMA_TABLA = {
     wfsAvailable: true
 };
 
-const render = (vectorModes, activeLayerIds) => {
+const render = (vectorModes, activeLayerIds, getFilter = (id) => `institucion = '${id}'`) => {
     const mapRef = makeMapRef();
     const hook = renderHook(() => useVectorServiceLayerManager({
         mapRef,
         activeLayerIds,
         hiddenLayerIds: [],
         vectorModes,
-        getFilter: (id) => `institucion = '${id}'`,
+        getFilter,
         combineCQLFilters: (base, dyn) => dyn || base || null,
         getLayerOpacity: () => 1,
         layerOpacities: {}
@@ -77,6 +85,9 @@ beforeEach(() => {
     mockFindLayerDef.mockReturnValue({ geometryType: 'point' });
     mockCount.mockResolvedValue(10);
     mockFetch.mockResolvedValue({ type: 'FeatureCollection', features: [] });
+    mockCells.mockResolvedValue(null);
+    mockGeometria.mockResolvedValue('geom');
+    mockWorker.mockReturnValue(null);
 });
 
 describe('useVectorServiceLayerManager - una petición por tabla', () => {
@@ -128,5 +139,117 @@ describe('useVectorServiceLayerManager - una petición por tabla', () => {
 
         const marcados = mockSetLayerLoading.mock.calls.filter(([, on]) => on === true).map(([id]) => id);
         expect(marcados).toEqual(expect.arrayContaining(['hijo_a', 'hijo_b']));
+    });
+});
+
+describe('useVectorServiceLayerManager - hexbin con panal', () => {
+    it('sin filtro prueba el precalculado y, si no hay celdas, cae a los puntos', async () => {
+        const modes = new Map([['delitos', SERVICE_HEXBIN]]);
+        const { mapRef } = render(modes, ['delitos'], () => null);
+
+        expect(mockCells).toHaveBeenCalledWith(['delitos'], expect.any(Number), expect.any(AbortSignal));
+        await waitFor(() => expect(mockCount).toHaveBeenCalledTimes(1));
+        const capas = mapRef.current.getLayers().getArray();
+        expect(capas).toHaveLength(1);
+        expect(capas[0].get('mapalabHexbin')).toBe(true);
+    });
+
+    it('con celdas precalculadas no descarga puntos', async () => {
+        mockCells.mockResolvedValue([{ h3Index: '86498c96fffffff', value: 7, count: 7 }]);
+        const onHexbinStats = vi.fn();
+        const mapRef = makeMapRef();
+        renderHook(() => useVectorServiceLayerManager({
+            mapRef,
+            activeLayerIds: ['delitos'],
+            hiddenLayerIds: [],
+            vectorModes: new Map([['delitos', SERVICE_HEXBIN]]),
+            getFilter: () => null,
+            combineCQLFilters: (base, dyn) => dyn || base || null,
+            getLayerOpacity: () => 1,
+            layerOpacities: {},
+            onHexbinStats
+        }));
+
+        await waitFor(() => expect(onHexbinStats).toHaveBeenCalled());
+        expect(mockCount).not.toHaveBeenCalled();
+        const [ids, stats] = onHexbinStats.mock.calls.at(-1);
+        expect(ids).toEqual(['delitos']);
+        expect(stats).toMatchObject({ cells: 1, max: 7 });
+    });
+});
+
+describe('useVectorServiceLayerManager - capas grandes en hexbin', () => {
+    const grande = (onTooLarge) => {
+        mockCount.mockResolvedValue(120000);
+        const mapRef = makeMapRef();
+        renderHook(() => useVectorServiceLayerManager({
+            mapRef,
+            activeLayerIds: ['delitos'],
+            hiddenLayerIds: [],
+            vectorModes: new Map([['delitos', SERVICE_HEXBIN]]),
+            getFilter: () => 'anio = 2025',
+            combineCQLFilters: (base, dyn) => dyn || base || null,
+            getLayerOpacity: () => 1,
+            layerOpacities: {},
+            onTooLarge
+        }));
+        return mapRef;
+    };
+
+    it('sin worker se rechaza como antes', async () => {
+        const onTooLarge = vi.fn();
+        grande(onTooLarge);
+        await waitFor(() => expect(onTooLarge).toHaveBeenCalledWith('delitos', { count: 120000, limit: 20000 }));
+    });
+
+    it('con worker se monta en modo vista y no se rechaza', async () => {
+        const worker = { postMessage: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() };
+        mockWorker.mockReturnValue(worker);
+        const onTooLarge = vi.fn();
+        const mapRef = grande(onTooLarge);
+        await waitFor(() => expect(mockGeometria).toHaveBeenCalled());
+        await waitFor(() => expect(mockCount).toHaveBeenCalledTimes(2));
+        expect(mockCount.mock.calls[1][1]).toMatch(/^BBOX\(geom, .+\) AND \(.*anio = 2025.*\)$/);
+        expect(onTooLarge).not.toHaveBeenCalled();
+        expect(mapRef.current.getLayers().getArray()).toHaveLength(1);
+    });
+});
+
+describe('useVectorServiceLayerManager - opciones del hexbin', () => {
+    const montar = (getHexbinOpciones) => {
+        const mapRef = makeMapRef();
+        const props = {
+            mapRef,
+            activeLayerIds: ['escuelas'],
+            hiddenLayerIds: [],
+            vectorModes: new Map([['escuelas', SERVICE_HEXBIN]]),
+            getFilter: () => null,
+            combineCQLFilters: (base, dyn) => dyn || base || null,
+            getLayerOpacity: () => 1,
+            layerOpacities: {},
+            getHexbinOpciones
+        };
+        const hook = renderHook(p => useVectorServiceLayerManager(p), { initialProps: props });
+        return { ...hook, mapRef, props };
+    };
+
+    it('con un campo no usa el precalculado, que solo trae conteos', async () => {
+        montar(() => ({ campo: 'alumnos', reductor: 'sum', metodo: 'quantile' }));
+        await waitFor(() => expect(mockCount).toHaveBeenCalled());
+        expect(mockCells).not.toHaveBeenCalled();
+    });
+
+    it('cambiar el método no recrea la capa; cambiar el campo sí', async () => {
+        const { mapRef, rerender, props } = montar(() => ({ campo: null, reductor: 'count', metodo: 'quantile' }));
+        await waitFor(() => expect(mapRef.current.getLayers().getLength()).toBe(1));
+        const primera = mapRef.current.getLayers().item(0);
+
+        rerender({ ...props, getHexbinOpciones: () => ({ campo: null, reductor: 'count', metodo: 'jenks' }) });
+        expect(mapRef.current.getLayers().item(0)).toBe(primera);
+        expect(primera.get('panalHexbin').getSnapshot().classification.method).toBe('jenks');
+
+        rerender({ ...props, getHexbinOpciones: () => ({ campo: 'alumnos', reductor: 'mean', metodo: 'jenks' }) });
+        await waitFor(() => expect(mapRef.current.getLayers().item(0)).not.toBe(primera));
+        expect(mapRef.current.getLayers().getLength()).toBe(1);
     });
 });

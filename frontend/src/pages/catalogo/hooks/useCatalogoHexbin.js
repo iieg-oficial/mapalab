@@ -1,25 +1,29 @@
 import { useEffect, useRef } from 'react';
 import GeoJSON from 'ol/format/GeoJSON';
 import { hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
-import { createHexbinLayer, fillHexbinLayer, fillHexbinLayerFromCells } from '@pages/maps/helpers/hexbinLayer';
+import { montarHexbin, vistaPara } from '@pages/maps/helpers/hexbinEntrada';
 import { VECTOR_FEATURE_LIMIT } from '@pages/maps/helpers/serviceMode';
-import { resolutionForZoom } from '@constants/hexbin';
-import { fetchAggregatedCells, nearestPrecomputed } from '@services/hexbinAggregateService';
 import { countVectorFeatures, fetchVectorFeatures, VECTOR_PROJECTION } from '@services/vectorLayerService';
 import { idTablaCatalogo } from './useCatalogoTabla';
+import { normalizarOpciones } from '@pages/maps/helpers/hexbinOpciones';
 
 const HEXBIN_Z = 6;
 const HEXBIN_OPACIDAD = 0.85;
 
 export const hexbinDisponible = (capa, tiempo) => !!capa && !tiempo?.isRaster && tiempo?.geometria === 'point';
 
-export const fuenteHexbin = (capa, filtro) => (capa?.hexbinLayerKey && !filtro ? 'precalculado' : 'navegador');
+export const fuenteHexbin = (capa, filtro, campo = null) => (capa?.hexbinLayerKey && !filtro && !campo ? 'precalculado' : 'navegador');
 
-export const useCatalogoHexbin = ({ mapRef, wmsLayerRef, capa, tiempo, activo, onCambio }) => {
+export const useCatalogoHexbin = ({ mapRef, wmsLayerRef, capa, tiempo, activo, opciones = null, onCambio }) => {
     const onCambioRef = useRef(onCambio);
     onCambioRef.current = onCambio;
     const filtro = tiempo?.filtroMapa || null;
     const disponible = hexbinDisponible(capa, tiempo);
+    const limpias = normalizarOpciones(opciones);
+    const opcionesRef = useRef(limpias);
+    opcionesRef.current = limpias;
+    const montajeRef = useRef(null);
+    const { campo, reductor, metodo } = limpias;
 
     useEffect(() => {
         const map = mapRef.current;
@@ -31,73 +35,74 @@ export const useCatalogoHexbin = ({ mapRef, wmsLayerRef, capa, tiempo, activo, o
         }
 
         const controller = new AbortController();
-        const layer = createHexbinLayer({ layerId: idTablaCatalogo(capa), zIndex: HEXBIN_Z, opacity: HEXBIN_OPACIDAD });
-        map.addLayer(layer);
+        let montaje = null;
         wms.setVisible(false);
-        const estado = { modo: null, features: null, resolucion: null };
-        const zoom = () => map.getView().getZoom();
-
-        const conPrecalculo = async () => {
-            const resolucion = nearestPrecomputed(resolutionForZoom(zoom()));
-            if (!resolucion) return false;
-            if (resolucion === estado.resolucion) return true;
-            const celdas = await fetchAggregatedCells([capa.hexbinLayerKey], resolucion, controller.signal);
-            if (controller.signal.aborted) return true;
-            if (!celdas?.length) return false;
-            estado.modo = 'precalculado';
-            estado.resolucion = resolucion;
-            avisar({ estado: 'listo', fuente: 'precalculado', stats: fillHexbinLayerFromCells(layer, celdas) });
-            return true;
-        };
-
-        const reagrupar = () => {
-            const resolucion = resolutionForZoom(zoom());
-            if (resolucion === estado.resolucion) return;
-            estado.resolucion = resolucion;
-            avisar({ estado: 'listo', fuente: 'navegador', stats: fillHexbinLayer(layer, estado.features, resolucion) });
-        };
 
         const enNavegador = async () => {
             const cfg = hydrateWmsConfig({ geoserverWorkspace: capa.geoserverWorkspace, geoserverLayer: capa.geoserverLayer });
             const total = await countVectorFeatures(cfg, filtro, controller.signal);
             if (controller.signal.aborted) return;
             if (total !== null && total > VECTOR_FEATURE_LIMIT) {
-                avisar({ estado: 'demasiados', total, limite: VECTOR_FEATURE_LIMIT });
+                const vista = await vistaPara(cfg, filtro, controller.signal);
+                if (controller.signal.aborted) return;
+                if (vista) montar(false, vista);
+                else avisar({ estado: 'demasiados', total, limite: VECTOR_FEATURE_LIMIT });
                 return;
             }
             const data = await fetchVectorFeatures(cfg, filtro, controller.signal);
             if (controller.signal.aborted) return;
-            estado.modo = 'navegador';
-            estado.features = new GeoJSON().readFeatures(data || { type: 'FeatureCollection', features: [] }, {
+            const features = new GeoJSON().readFeatures(data || { type: 'FeatureCollection', features: [] }, {
                 dataProjection: VECTOR_PROJECTION,
                 featureProjection: VECTOR_PROJECTION,
             });
-            reagrupar();
+            montaje.vectorSource.addFeatures(features);
+            if (features.length === 0) montaje.avisarEstadisticas();
         };
 
-        const alMover = () => {
-            if (estado.modo === 'navegador') reagrupar();
-            else if (estado.modo === 'precalculado') conPrecalculo().catch(() => {});
+        const navegador = () => {
+            enNavegador().catch(() => {
+                if (!controller.signal.aborted) avisar({ estado: 'error' });
+            });
+        };
+
+        const montar = (precalculado, vista = null) => {
+            montaje?.desmontar();
+            montaje = montarHexbin({
+                map,
+                precalculado,
+                vista,
+                opciones: opcionesRef.current,
+                memberIds: [idTablaCatalogo(capa)],
+                claves: [capa.hexbinLayerKey],
+                zIndex: HEXBIN_Z,
+                opacity: HEXBIN_OPACIDAD,
+                onStats: stats => avisar({ estado: 'listo', fuente: precalculado ? 'precalculado' : vista ? 'vista' : 'navegador', stats }),
+                onAcercate: aviso => avisar({ estado: 'acercate', ...aviso }),
+                onSinPrecalculado: () => {
+                    if (controller.signal.aborted) return;
+                    montar(false);
+                    navegador();
+                },
+            });
+            montajeRef.current = montaje;
         };
 
         avisar({ estado: 'cargando' });
-        (async () => {
-            try {
-                if (fuenteHexbin(capa, filtro) === 'precalculado' && await conPrecalculo()) return;
-                await enNavegador();
-            } catch {
-                if (!controller.signal.aborted) avisar({ estado: 'error' });
-            }
-        })();
-        map.on('moveend', alMover);
+        const precalculado = fuenteHexbin(capa, filtro, opcionesRef.current.campo) === 'precalculado';
+        montar(precalculado);
+        if (!precalculado) navegador();
 
         return () => {
             controller.abort();
-            map.un('moveend', alMover);
-            map.removeLayer(layer);
+            montaje?.desmontar();
+            montajeRef.current = null;
             wms.setVisible(true);
         };
-    }, [activo, disponible, capa, filtro, mapRef, wmsLayerRef]);
+    }, [activo, disponible, capa, filtro, campo, mapRef, wmsLayerRef]);
+
+    useEffect(() => {
+        montajeRef.current?.aplicarOpciones(opcionesRef.current);
+    }, [reductor, metodo]);
 
     return disponible;
 };

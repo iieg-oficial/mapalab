@@ -8,13 +8,15 @@ import LegendImage from '@components/LegendImage';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import HexbinLegend from './HexbinLegend';
+import HexbinOpciones from './HexbinOpciones';
+import { findWMSConfig } from '@pages/maps/helpers/wmsConfig';
 import { legendEntries } from '@pages/maps/helpers/hexbinStyles';
-import { hasHexbinMode } from '@pages/maps/helpers/serviceMode';
+import { hasHexbinMode, SERVICE_HEXBIN } from '@pages/maps/helpers/serviceMode';
 
 const LayerLegendInline = ({ layer, compareMode, slotMembership }) => {
     const { hasLegend, getLegendUrl } = useWMSLegend();
     const { visible } = useLegendsVisibility();
-    const { centerOnLayer, getServiceMode, getHexbinStats } = useMapsContext();
+    const { centerOnLayer, getServiceMode, getHexbinStats, getHexbinOpciones, setHexbinOpciones, allLayers } = useMapsContext();
     const { width: siderWidth, isMobile } = useSider();
     const [hovered, setHovered] = useState(false);
 
@@ -25,9 +27,17 @@ const LayerLegendInline = ({ layer, compareMode, slotMembership }) => {
     if (hasHexbinMode(hexbinIds, getServiceMode)) {
         const stats = hexbinIds.map(id => getHexbinStats?.(id)).find(Boolean);
         if (!stats) return null;
+        const enHexbin = hexbinIds.filter(id => getServiceMode?.(id) === SERVICE_HEXBIN);
         return (
             <div className="w-full bg-white rounded-[13px] overflow-hidden">
-                <HexbinLegend entries={legendEntries(stats.breaks, stats.max, stats.paletteIndex)} />
+                <HexbinLegend entries={legendEntries(stats.legend, stats.paletteIndex, stats.enteros !== false)} acercate={stats.acercate} />
+                {setHexbinOpciones && (
+                    <HexbinOpciones
+                        wmsConfig={findWMSConfig(enHexbin[0], allLayers)}
+                        opciones={getHexbinOpciones(enHexbin[0])}
+                        onCambio={opciones => setHexbinOpciones(enHexbin, opciones)}
+                    />
+                )}
             </div>
         );
     }

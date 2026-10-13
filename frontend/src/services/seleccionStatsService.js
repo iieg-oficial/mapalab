@@ -97,8 +97,9 @@ export const esCampoDeClase = (propiedad) => propiedad?.type === 'xsd:string'
 
 export const esCampoNumerico = (propiedad) => TIPOS_NUMERICOS.includes(propiedad?.localType ? `xsd:${propiedad.localType}` : propiedad?.type);
 
-export const camposDeCapa = async (capa, allLayers = []) => {
-    const wmsConfig = findWMSConfig(capa?.id, allLayers);
+export const camposDeCapa = (capa, allLayers = []) => camposDeWmsConfig(findWMSConfig(capa?.id, allLayers));
+
+export const camposDeWmsConfig = async (wmsConfig) => {
     const vacio = { numericos: [], clases: [] };
     if (!wmsConfig || wmsConfig.wfsAvailable === false) return vacio;
 

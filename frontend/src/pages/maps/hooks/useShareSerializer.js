@@ -50,7 +50,7 @@ const serviceFor = (serviceModes, id) => {
     return mode && mode !== SERVICE_WMS ? mode : null;
 };
 
-const serializeLayerEntry = (id, layerTree, hidden, opacities, filters, serviceModes, sinFondo, palettes) => {
+const serializeLayerEntry = (id, layerTree, hidden, opacities, filters, serviceModes, sinFondo, palettes, opcionesHexbin) => {
     const layer = findLayerDef(id, layerTree);
     if (!layer || layer.isLabel || layer.isCategory) return null;
 
@@ -68,14 +68,17 @@ const serializeLayerEntry = (id, layerTree, hidden, opacities, filters, serviceM
     const tono = palettes?.get?.(id);
     if (service && Number.isInteger(tono)) entry.palette = tono;
 
+    const opciones = opcionesHexbin?.get?.(id);
+    if (service && opciones) entry.hexbin = opciones;
+
     return entry;
 };
 
-const serializePaneLayers = (snapshot, layerTree, serviceModes, sinFondo, palettes) => {
+const serializePaneLayers = (snapshot, layerTree, serviceModes, sinFondo, palettes, opcionesHexbin) => {
     const ids = snapshot?.activeLayerIds || [];
     const hidden = new Set(snapshot?.hiddenLayerIds || []);
     return ids
-        .map(id => serializeLayerEntry(id, layerTree, hidden, snapshot?.layerOpacities, snapshot?.filters, serviceModes, sinFondo, palettes))
+        .map(id => serializeLayerEntry(id, layerTree, hidden, snapshot?.layerOpacities, snapshot?.filters, serviceModes, sinFondo, palettes, opcionesHexbin))
         .filter(Boolean);
 };
 
@@ -87,6 +90,7 @@ export const useShareSerializer = () => {
         layerServiceModes,
         hexbinSinFondo,
         hexbinPalettes,
+        hexbinOpciones,
         soloSeleccionada,
         filters,
         selectedLayerForSymbology,
@@ -120,7 +124,7 @@ export const useShareSerializer = () => {
 
         const hidden = new Set(hiddenLayerIds || []);
         const layers = (activeLayerIds || [])
-            .map(id => serializeLayerEntry(id, layerTree, hidden, layerOpacities, filters, layerServiceModes, hexbinSinFondo, hexbinPalettes))
+            .map(id => serializeLayerEntry(id, layerTree, hidden, layerOpacities, filters, layerServiceModes, hexbinSinFondo, hexbinPalettes, hexbinOpciones))
             .filter(Boolean);
 
         const selectedSlug = selectedLayerForSymbology?.id ? slugForLayer(selectedLayerForSymbology.id, layerTree) : null;
@@ -170,11 +174,11 @@ export const useShareSerializer = () => {
                 shared: sharedPayload,
                 paneA: {
                     label: paneA.label || 'A',
-                    layers: serializePaneLayers(paneA, layerTree, layerServiceModes, hexbinSinFondo, hexbinPalettes),
+                    layers: serializePaneLayers(paneA, layerTree, layerServiceModes, hexbinSinFondo, hexbinPalettes, hexbinOpciones),
                 },
                 paneB: {
                     label: paneB.label || 'B',
-                    layers: serializePaneLayers(paneB, layerTree, layerServiceModes, hexbinSinFondo, hexbinPalettes),
+                    layers: serializePaneLayers(paneB, layerTree, layerServiceModes, hexbinSinFondo, hexbinPalettes, hexbinOpciones),
                 },
                 activeSlot,
                 loop: serializeLoop(dateLoops, loopPrefs, layerTree),
@@ -193,5 +197,5 @@ export const useShareSerializer = () => {
             kind: 'single',
             payload: basePayload,
         };
-    }, [activeLayerIds, hiddenLayerIds, layerOpacities, layerServiceModes, hexbinSinFondo, hexbinPalettes, soloSeleccionada, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode, measurements, municipioMode]);
+    }, [activeLayerIds, hiddenLayerIds, layerOpacities, layerServiceModes, hexbinSinFondo, hexbinPalettes, hexbinOpciones, soloSeleccionada, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode, measurements, municipioMode]);
 };
