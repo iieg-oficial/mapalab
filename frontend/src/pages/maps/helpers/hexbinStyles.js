@@ -117,14 +117,15 @@ export const hexbinStyle = (classIndex, opciones = {}) => {
     return styleCache.get(key);
 };
 
-export const legendEntries = (legend, paletteIndex = null) => {
+export const legendEntries = (legend, paletteIndex = null, enteros = true) => {
     if (!Array.isArray(legend) || legend.length === 0) return [];
     const ramp = paletteIndex == null ? hexbinRamp() : rampFor(paletteIndex);
 
+    const redondo = valor => Math.round(valor * 100) / 100;
     return legend.map(entry => ({
         color: ramp[entry.classIndex] || ramp[0],
-        from: Math.ceil(entry.min),
-        to: entry.closed === 'both' ? Math.floor(entry.max) : Math.ceil(entry.max) - 1
+        from: enteros ? Math.ceil(entry.min) : redondo(entry.min),
+        to: !enteros ? redondo(entry.max) : entry.closed === 'both' ? Math.floor(entry.max) : Math.ceil(entry.max) - 1
     })).filter(entry => entry.to >= entry.from);
 };
 

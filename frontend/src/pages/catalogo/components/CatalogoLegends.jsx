@@ -7,7 +7,7 @@ import LegendImage from '@components/LegendImage';
 import CatalogoShare from './CatalogoShare';
 import { CatalogoHexbinLeyenda, CatalogoVistaSegmented } from './CatalogoVista';
 import { hexbinDisponible } from '../hooks/useCatalogoHexbin';
-import { PARAM_VISTA, VISTA_HEXAGONOS, VISTA_PUNTOS } from '../helpers/catalogoVista';
+import { escribirOpciones, PARAM_VISTA, VISTA_HEXAGONOS, VISTA_PUNTOS } from '../helpers/catalogoVista';
 import { buildCatalogoShareUrl, filtroToFechaParam } from '../helpers/catalogoRoutes';
 import { PARAM_MUNICIPIOS } from '../hooks/useCatalogoMunicipio';
 import { useCatalogoTiempoContext } from '../hooks/catalogoTiempoContext';
@@ -15,7 +15,7 @@ import { trackCatalogoDownload, trackCatalogoShare } from '@services/analyticsSe
 
 const ICON_BTN = 'size-7 rounded-full flex items-center justify-center transition-colors';
 
-const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, onVista = null, hexbin = null, extrusion = null, onImagen = null, onClose }) => {
+const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, onVista = null, hexbin = null, hexbinOpciones = null, onHexbinOpciones = null, extrusion = null, onImagen = null, onClose }) => {
     const { tiempo, municipio } = useCatalogoTiempoContext();
     const municipios = municipio?.municipio?.active ? municipio.municipio.selected.join(',') : '';
     const filtro = tiempo?.filtro || null;
@@ -49,11 +49,14 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
         const params = new URLSearchParams();
         const fecha = filtroToFechaParam(filtro, { isRaster, periodicidad });
         if (fecha) params.set('fecha', fecha);
-        if (conVista && vista === VISTA_HEXAGONOS) params.set(PARAM_VISTA, VISTA_HEXAGONOS);
+        if (conVista && vista === VISTA_HEXAGONOS) {
+            params.set(PARAM_VISTA, VISTA_HEXAGONOS);
+            if (hexbinOpciones) escribirOpciones(params, hexbinOpciones);
+        }
         if (municipios) params.set(PARAM_MUNICIPIOS, municipios);
         const consulta = params.toString();
         return consulta ? `${base}?${consulta}` : base;
-    }, [institucionSlug, capa.slug, filtro, isRaster, periodicidad, conVista, vista, municipios]);
+    }, [institucionSlug, capa.slug, filtro, isRaster, periodicidad, conVista, vista, municipios, hexbinOpciones]);
 
     useEffect(() => {
         let active = true;
@@ -126,7 +129,7 @@ const CatalogoLegends = ({ capa, institucionSlug = null, vista = VISTA_PUNTOS, o
                             celdas={hexbin?.estado === 'listo' ? hexbin.stats?.cells ?? null : null}
                         />
                     )}
-                    {hexbin ? <CatalogoHexbinLeyenda hexbin={hexbin} /> : legendUrl && (
+                    {hexbin ? <CatalogoHexbinLeyenda hexbin={hexbin} capa={capa} opciones={hexbinOpciones} onOpciones={onHexbinOpciones} /> : legendUrl && (
                         <div className="relative w-full bg-white rounded-[13px] p-2 max-h-[52vh] overflow-y-auto">
                             <LegendImage src={legendUrl} alt={capa.nombre} />
                         </div>

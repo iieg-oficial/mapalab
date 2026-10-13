@@ -279,3 +279,18 @@ describe('useShareDeserializer', () => {
         expect(ids).not.toContain('inexistente');
     });
 });
+
+describe('useShareDeserializer - opciones del hexbin', () => {
+    it('restaura las opciones de cada capa en hexbin', () => {
+        mockUseLayers.mockReturnValue({ layers: TREE });
+        const setHexbinOpciones = vi.fn();
+        mockUseMapsContext.mockReturnValue(makeCtx({ setServiceMode: vi.fn(), asignarTono: vi.fn(), setHexbinOpciones }));
+        const { result } = renderHook(() => useShareDeserializer());
+        result.current({
+            version: 2,
+            kind: 'single',
+            payload: { layers: [{ slug: 'establecimientos-salud', service: 'hexbin', hexbin: { campo: 'camas', reductor: 'mean', metodo: 'jenks' } }] }
+        });
+        expect(setHexbinOpciones).toHaveBeenCalledWith(['establecimientos_salud'], { campo: 'camas', reductor: 'mean', metodo: 'jenks' });
+    });
+});

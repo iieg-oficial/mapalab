@@ -1,12 +1,14 @@
 import VectorSource from 'ol/source/Vector';
 import { geometriaDe } from '@services/vectorLayerService';
 import { hexbinWorker } from './hexbinWorker';
+import { mismasOpciones, normalizarOpciones } from './hexbinOpciones';
 import { Acercate, crearHexbin, estadisticasHexbin, fuenteLocal, fuentePrecalculada, fuenteVista } from './panalHexbin';
 
 export const montarHexbin = ({
     map,
     precalculado,
     vista = null,
+    opciones: opcionesIniciales = null,
     memberIds,
     claves = memberIds,
     zIndex,
@@ -19,11 +21,13 @@ export const montarHexbin = ({
     onSinPrecalculado,
     onAcercate
 }) => {
+    let opciones = normalizarOpciones(opcionesIniciales);
     const vectorSource = precalculado || vista ? null : new VectorSource();
-    const fuente = vista ? fuenteVista(vista) : precalculado ? fuentePrecalculada(claves) : fuenteLocal(vectorSource);
+    const fuente = vista ? fuenteVista({ ...vista, opciones }) : precalculado ? fuentePrecalculada(claves) : fuenteLocal(vectorSource);
     const hexbin = crearHexbin({
         map,
         source: fuente,
+        opciones,
         layerId: memberIds[0],
         zIndex,
         opacity,
@@ -57,7 +61,7 @@ export const montarHexbin = ({
         if (status === 'ready' && !layer.getVisible()) layer.setVisible(true);
         if (status !== 'ready' || !classification || classification === clasificacion) return;
         clasificacion = classification;
-        onStats?.(estadisticasHexbin(hexbin));
+        onStats?.(estadisticasHexbin(hexbin, opciones));
     };
     const desuscribir = hexbin.subscribe(alCambiar);
     alCambiar();
@@ -66,7 +70,17 @@ export const montarHexbin = ({
         hexbin,
         layer,
         vectorSource,
-        avisarEstadisticas: () => onStats?.(estadisticasHexbin(hexbin)),
+        avisarEstadisticas: () => onStats?.(estadisticasHexbin(hexbin, opciones)),
+        aplicarOpciones: (siguientes) => {
+            const nuevas = normalizarOpciones(siguientes);
+            const reagrupar = nuevas.reductor !== opciones.reductor || nuevas.campo !== opciones.campo;
+            const reclasificar = nuevas.metodo !== opciones.metodo;
+            opciones = nuevas;
+            if (reclasificar) hexbin.setClassification({ method: nuevas.metodo });
+            if (!reagrupar) return;
+            if (fuente.setReducer) fuente.setReducer(nuevas.reductor, nuevas.campo);
+            else hexbin.setReducer(nuevas.reductor, nuevas.campo ?? undefined);
+        },
         desmontar: () => {
             desuscribir();
             if (cargando) onLoading?.(false);
@@ -81,4 +95,15 @@ export const vistaPara = async (wmsConfig, cqlFilter, signal) => {
     if (!worker) return null;
     const geometria = await geometriaDe(wmsConfig, signal).catch(() => null);
     return geometria ? { worker, wmsConfig, cqlFilter, geometria } : null;
+};
+
+export const actualizarEntradaHexbin = (entry, target) => {
+    if (!mismasOpciones(entry.opciones, target.opciones)) {
+        entry.opciones = target.opciones;
+        entry.montaje?.aplicarOpciones(target.opciones);
+    }
+    if (entry.layer.get('paletteIndex') === target.paletteIndex) return;
+    entry.layer.set('paletteIndex', target.paletteIndex);
+    entry.layer.changed();
+    entry.montaje?.avisarEstadisticas();
 };

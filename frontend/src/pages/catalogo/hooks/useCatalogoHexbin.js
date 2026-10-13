@@ -5,19 +5,25 @@ import { montarHexbin, vistaPara } from '@pages/maps/helpers/hexbinEntrada';
 import { VECTOR_FEATURE_LIMIT } from '@pages/maps/helpers/serviceMode';
 import { countVectorFeatures, fetchVectorFeatures, VECTOR_PROJECTION } from '@services/vectorLayerService';
 import { idTablaCatalogo } from './useCatalogoTabla';
+import { normalizarOpciones } from '@pages/maps/helpers/hexbinOpciones';
 
 const HEXBIN_Z = 6;
 const HEXBIN_OPACIDAD = 0.85;
 
 export const hexbinDisponible = (capa, tiempo) => !!capa && !tiempo?.isRaster && tiempo?.geometria === 'point';
 
-export const fuenteHexbin = (capa, filtro) => (capa?.hexbinLayerKey && !filtro ? 'precalculado' : 'navegador');
+export const fuenteHexbin = (capa, filtro, campo = null) => (capa?.hexbinLayerKey && !filtro && !campo ? 'precalculado' : 'navegador');
 
-export const useCatalogoHexbin = ({ mapRef, wmsLayerRef, capa, tiempo, activo, onCambio }) => {
+export const useCatalogoHexbin = ({ mapRef, wmsLayerRef, capa, tiempo, activo, opciones = null, onCambio }) => {
     const onCambioRef = useRef(onCambio);
     onCambioRef.current = onCambio;
     const filtro = tiempo?.filtroMapa || null;
     const disponible = hexbinDisponible(capa, tiempo);
+    const limpias = normalizarOpciones(opciones);
+    const opcionesRef = useRef(limpias);
+    opcionesRef.current = limpias;
+    const montajeRef = useRef(null);
+    const { campo, reductor, metodo } = limpias;
 
     useEffect(() => {
         const map = mapRef.current;
@@ -65,6 +71,7 @@ export const useCatalogoHexbin = ({ mapRef, wmsLayerRef, capa, tiempo, activo, o
                 map,
                 precalculado,
                 vista,
+                opciones: opcionesRef.current,
                 memberIds: [idTablaCatalogo(capa)],
                 claves: [capa.hexbinLayerKey],
                 zIndex: HEXBIN_Z,
@@ -77,19 +84,25 @@ export const useCatalogoHexbin = ({ mapRef, wmsLayerRef, capa, tiempo, activo, o
                     navegador();
                 },
             });
+            montajeRef.current = montaje;
         };
 
         avisar({ estado: 'cargando' });
-        const precalculado = fuenteHexbin(capa, filtro) === 'precalculado';
+        const precalculado = fuenteHexbin(capa, filtro, opcionesRef.current.campo) === 'precalculado';
         montar(precalculado);
         if (!precalculado) navegador();
 
         return () => {
             controller.abort();
             montaje?.desmontar();
+            montajeRef.current = null;
             wms.setVisible(true);
         };
-    }, [activo, disponible, capa, filtro, mapRef, wmsLayerRef]);
+    }, [activo, disponible, capa, filtro, campo, mapRef, wmsLayerRef]);
+
+    useEffect(() => {
+        montajeRef.current?.aplicarOpciones(opcionesRef.current);
+    }, [reductor, metodo]);
 
     return disponible;
 };

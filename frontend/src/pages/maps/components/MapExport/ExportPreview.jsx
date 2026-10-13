@@ -29,7 +29,7 @@ const ExportPreview = ({ isOpen, onClose, format = 'png', selectedLegends: propS
             const ids = layer.childIds?.length ? layer.childIds : [layer.id];
             if (!hasHexbinMode(ids, getServiceMode)) return;
             const stats = ids.map(id => getHexbinStats?.(id)).find(Boolean);
-            if (stats) entries.set(layer.id, legendEntries(stats.legend, stats.paletteIndex));
+            if (stats) entries.set(layer.id, legendEntries(stats.legend, stats.paletteIndex, stats.enteros !== false));
         });
         return entries.size > 0 ? entries : null;
     };

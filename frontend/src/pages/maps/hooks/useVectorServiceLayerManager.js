@@ -11,7 +11,8 @@ import { buildLayerCqlSegment, buildMunicipioCqlDeGrupo } from '../helpers/layer
 import { CQL_SIN_RESOLVER } from '../helpers/municipioCqlBuilder';
 import { computeLayerZIndex } from '../helpers/layerZIndex';
 import { createVectorLayerStyle, resolveVectorColor } from '../helpers/vectorLayerStyles';
-import { montarHexbin, vistaPara } from '../helpers/hexbinEntrada';
+import { actualizarEntradaHexbin, montarHexbin, vistaPara } from '../helpers/hexbinEntrada';
+import { OPCIONES_HEXBIN_BASE } from '../helpers/hexbinOpciones';
 import { VECTOR_FEATURE_LIMIT, VECTOR_LAYER_FLAG, SERVICE_HEXBIN } from '../helpers/serviceMode';
 import { countVectorFeatures, fetchVectorFeatures, VECTOR_PROJECTION } from '@services/vectorLayerService';
 
@@ -37,7 +38,8 @@ export const useVectorServiceLayerManager = ({
     onError,
     onHexbinStats,
     sinFondo = null,
-    getPaletteIndex = null
+    getPaletteIndex = null,
+    getHexbinOpciones = null
 }) => {
     const { layers } = useLayers();
     const { setLayerLoading } = useLayerLoading();
@@ -197,6 +199,7 @@ export const useVectorServiceLayerManager = ({
             map: mapRef.current,
             precalculado,
             vista,
+            opciones: target.opciones,
             memberIds: target.memberIds,
             zIndex: previo?.layer.getZIndex() ?? zIndex,
             opacity: previo?.layer.getOpacity() ?? opacity,
@@ -223,7 +226,7 @@ export const useVectorServiceLayerManager = ({
         const layerId = target.memberIds[0];
         const layerDef = findLayerDef(layerId, layers);
         const controller = new AbortController();
-        const base = { cqlFilter: target.cqlFilter, hexbin: target.hexbin, memberIds: target.memberIds, controller };
+        const base = { cqlFilter: target.cqlFilter, hexbin: target.hexbin, memberIds: target.memberIds, controller, opciones: target.opciones };
 
         if (target.hexbin) {
             entriesRef.current.set(groupKey, { ...base, layer: null, montaje: null });
@@ -267,6 +270,8 @@ export const useVectorServiceLayerManager = ({
         targets.forEach((target, groupKey) => {
             if (target.hexbin) {
                 target.paletteIndex = getPaletteIndex?.(target.memberIds[0]) ?? 0;
+                target.opciones = getHexbinOpciones?.(target.memberIds[0]) ?? OPCIONES_HEXBIN_BASE;
+                target.precalculable = target.precalculable && !target.opciones.campo;
             }
 
             const representativeId = target.memberIds[0];
@@ -280,21 +285,18 @@ export const useVectorServiceLayerManager = ({
             const opacity = getLayerOpacityRef.current?.(representativeId) ?? 1;
             const existing = entriesRef.current.get(groupKey);
 
-            if (existing && existing.cqlFilter === target.cqlFilter && existing.hexbin === target.hexbin) {
+            const mismoCampo = !target.hexbin || existing?.opciones?.campo === target.opciones.campo;
+            if (existing && existing.cqlFilter === target.cqlFilter && existing.hexbin === target.hexbin && mismoCampo) {
                 if (existing.layer.getZIndex() !== zIndex) existing.layer.setZIndex(zIndex);
                 if (existing.layer.getOpacity() !== opacity) existing.layer.setOpacity(opacity);
-                if (target.hexbin && existing.layer.get('paletteIndex') !== target.paletteIndex) {
-                    existing.layer.set('paletteIndex', target.paletteIndex);
-                    existing.layer.changed();
-                    existing.montaje?.avisarEstadisticas();
-                }
+                if (target.hexbin) actualizarEntradaHexbin(existing, target);
                 return;
             }
 
             if (existing) removeEntry(groupKey);
             createEntry(groupKey, target, zIndex, opacity);
         });
-    }, [mapRef, buildTargets, removeEntry, createEntry, debouncedActiveLayerIds, getPaletteIndex]);
+    }, [mapRef, buildTargets, removeEntry, createEntry, debouncedActiveLayerIds, getPaletteIndex, getHexbinOpciones]);
 
     useEffect(syncLayers, [syncLayers]);
 

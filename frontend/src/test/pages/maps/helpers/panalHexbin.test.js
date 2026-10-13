@@ -94,3 +94,27 @@ describe('clic en celda', () => {
         expect(findHexbinCellAtPixel(map, GDL, new Set(['escuelas']))).toBeNull();
     });
 });
+
+describe('montarHexbin con opciones', () => {
+    it('agrega por campo y cambia reductor y método sin recrear la capa', async () => {
+        const map = mapa();
+        const onStats = vi.fn();
+        const montaje = montarHexbin({
+            map, precalculado: false, memberIds: ['escuelas'], onStats,
+            opciones: { campo: 'alumnos', reductor: 'sum', metodo: 'jenks' }
+        });
+        const conAlumnos = (coordenada, alumnos) => new Feature({ geometry: new Point(coordenada), alumnos });
+        montaje.vectorSource.addFeatures([conAlumnos(GDL, 10), conAlumnos(GDL, 30), conAlumnos(MTY, 5)]);
+        await esperar();
+        const celda = () => montaje.layer.getSource().getFeatureById('87498c96effffff');
+        expect(celda().get('value')).toBe(40);
+        expect(onStats.mock.calls.at(-1)[0].enteros).toBe(false);
+        expect(hexbinDeCapa(montaje.layer).getSnapshot().classification.method).toBe('jenks');
+
+        const capa = montaje.layer;
+        montaje.aplicarOpciones({ campo: 'alumnos', reductor: 'mean', metodo: 'equalInterval' });
+        expect(celda().get('value')).toBe(20);
+        expect(hexbinDeCapa(capa).getSnapshot().classification.method).toBe('equalInterval');
+        expect(montaje.layer).toBe(capa);
+    });
+});

@@ -38,7 +38,7 @@ import { useMapEditing } from '@hooksMaps/useMapEditing';
 import { getLayerExtent3857 } from '@services/wmsCapabilitiesService';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 
-const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, onExtrusion = null, imagenAbierta = false, onCerrarImagen, onEditInfobox = null }) => {
+const CatalogoMapView = ({ capa, hexagonos = false, hexbinOpciones = null, onHexbin = null, onExtrusion = null, imagenAbierta = false, onCerrarImagen, onEditInfobox = null }) => {
     const { tiempo, loop, wmsLayerRef, municipio } = useCatalogoTiempoContext();
     const targetRef = useRef(null);
     const scaleRef = useRef(null);
@@ -228,7 +228,7 @@ const CatalogoMapView = ({ capa, hexagonos = false, onHexbin = null, onExtrusion
         };
     }, [capa, clearInfo, wmsLayerRef, setLayerLoading, encuadrarMunicipio]);
 
-    useCatalogoHexbin({ mapRef, wmsLayerRef, capa, tiempo, activo: hexagonos, onCambio: onHexbin });
+    useCatalogoHexbin({ mapRef, wmsLayerRef, capa, tiempo, activo: hexagonos, opciones: hexbinOpciones, onCambio: onHexbin });
 
     return (
         <>

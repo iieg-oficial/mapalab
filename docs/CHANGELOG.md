@@ -28,6 +28,13 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Cambiado
 
+- **Qué se agrupa y cómo se colorea, en «Ver como: Hexágonos».** Bajo la leyenda hay dos selectores:
+  el valor de cada hexágono (conteo de puntos, o suma o promedio de cualquier campo numérico de la capa,
+  leídos con DescribeFeatureType) y el método de clases (cuantiles, cortes naturales o intervalos
+  iguales). Cambiar el método o el reductor no vuelve a pedir datos; cambiar de campo sí, y con campo no
+  se usa el precalculado, que solo trae conteos. Las opciones viajan en el share (`hexbin` por capa), en
+  la sesión y en la URL del catálogo (`valor=sum:campo`, `clases=jenks`). La leyenda de sumas y promedios
+  va con dos decimales
 - **Hexágonos para capas de más de 20 000 puntos sin precalculado.** En vez de quedarse en Puntos, la
   capa se agrupa por vista: un Web Worker (`helpers/hexbin.worker.js`) descarga del WFS solo la vista
   con un margen, con el recuadro en el CQL, y agrupa ahí. Antes de cada descarga se cuentan los puntos

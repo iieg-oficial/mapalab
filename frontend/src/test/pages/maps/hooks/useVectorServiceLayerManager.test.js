@@ -214,3 +214,42 @@ describe('useVectorServiceLayerManager - capas grandes en hexbin', () => {
         expect(mapRef.current.getLayers().getArray()).toHaveLength(1);
     });
 });
+
+describe('useVectorServiceLayerManager - opciones del hexbin', () => {
+    const montar = (getHexbinOpciones) => {
+        const mapRef = makeMapRef();
+        const props = {
+            mapRef,
+            activeLayerIds: ['escuelas'],
+            hiddenLayerIds: [],
+            vectorModes: new Map([['escuelas', SERVICE_HEXBIN]]),
+            getFilter: () => null,
+            combineCQLFilters: (base, dyn) => dyn || base || null,
+            getLayerOpacity: () => 1,
+            layerOpacities: {},
+            getHexbinOpciones
+        };
+        const hook = renderHook(p => useVectorServiceLayerManager(p), { initialProps: props });
+        return { ...hook, mapRef, props };
+    };
+
+    it('con un campo no usa el precalculado, que solo trae conteos', async () => {
+        montar(() => ({ campo: 'alumnos', reductor: 'sum', metodo: 'quantile' }));
+        await waitFor(() => expect(mockCount).toHaveBeenCalled());
+        expect(mockCells).not.toHaveBeenCalled();
+    });
+
+    it('cambiar el método no recrea la capa; cambiar el campo sí', async () => {
+        const { mapRef, rerender, props } = montar(() => ({ campo: null, reductor: 'count', metodo: 'quantile' }));
+        await waitFor(() => expect(mapRef.current.getLayers().getLength()).toBe(1));
+        const primera = mapRef.current.getLayers().item(0);
+
+        rerender({ ...props, getHexbinOpciones: () => ({ campo: null, reductor: 'count', metodo: 'jenks' }) });
+        expect(mapRef.current.getLayers().item(0)).toBe(primera);
+        expect(primera.get('panalHexbin').getSnapshot().classification.method).toBe('jenks');
+
+        rerender({ ...props, getHexbinOpciones: () => ({ campo: 'alumnos', reductor: 'mean', metodo: 'jenks' }) });
+        await waitFor(() => expect(mapRef.current.getLayers().item(0)).not.toBe(primera));
+        expect(mapRef.current.getLayers().getLength()).toBe(1);
+    });
+});

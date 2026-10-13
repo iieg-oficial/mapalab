@@ -7,6 +7,7 @@ import { countVectorFeatures } from '@services/vectorLayerService';
 import { HEXBIN_MAX_RESOLUTION, HEXBIN_RESOLUTION_BY_ZOOM } from '@constants/hexbin';
 import { fetchAggregatedCells, PRECOMPUTED_RESOLUTIONS } from '@services/hexbinAggregateService';
 import { hexbinStyle, HEXBIN_CLASSES } from './hexbinStyles';
+import { OPCIONES_HEXBIN_BASE } from './hexbinOpciones';
 
 export const HEXBIN_LAYER_FLAG = 'mapalabHexbin';
 export const PANAL_KEY = 'panalHexbin';
@@ -46,7 +47,7 @@ export class Acercate extends Error {
     }
 }
 
-export const fuenteVista = ({ worker, wmsConfig, cqlFilter, geometria, contar = countVectorFeatures, tope = TOPE_VISTA }) => {
+export const fuenteVista = ({ worker, wmsConfig, cqlFilter, geometria, opciones = OPCIONES_HEXBIN_BASE, contar = countVectorFeatures, tope = TOPE_VISTA }) => {
     const cql = cqlFilter || undefined;
     const wfs = createWorkerWfsSource(worker, {
         url: getWfsUrl(wmsConfig.baseUrl || ''),
@@ -54,7 +55,9 @@ export const fuenteVista = ({ worker, wmsConfig, cqlFilter, geometria, contar = 
         cql,
         bbox: { geometryName: geometria, margin: MARGEN_VISTA },
         maxFeatures: tope,
-        pageSize: 10000
+        pageSize: 10000,
+        reducer: opciones.reductor,
+        value: opciones.campo ?? undefined
     });
     let cubierta = null;
 
@@ -67,6 +70,7 @@ export const fuenteVista = ({ worker, wmsConfig, cqlFilter, geometria, contar = 
         listenChanges: wfs.listenChanges,
         loadMembers: wfs.loadMembers,
         release: wfs.release,
+        setReducer: wfs.setReducer,
         load: async (request) => {
             const vista = lonLatToMercatorExtent(request.extent);
             if (!cubierta || !containsExtent(cubierta, vista)) {
@@ -83,7 +87,7 @@ export const fuenteVista = ({ worker, wmsConfig, cqlFilter, geometria, contar = 
     };
 };
 
-export const crearHexbin = ({ map, source, layerId, zIndex, opacity, paletteIndex = 0 }) => {
+export const crearHexbin = ({ map, source, layerId, zIndex, opacity, paletteIndex = 0, opciones = OPCIONES_HEXBIN_BASE }) => {
     let layer = null;
     const hexbin = createHexbinLayer({
         map,
@@ -93,7 +97,9 @@ export const crearHexbin = ({ map, source, layerId, zIndex, opacity, paletteInde
             paletteIndex: layer?.get('paletteIndex') || 0,
             relleno: layer?.get('rellenoActivo') !== false
         }),
-        classification: { method: 'quantile', classes: HEXBIN_CLASSES },
+        classification: { method: opciones.metodo, classes: HEXBIN_CLASSES },
+        reducer: opciones.reductor,
+        value: opciones.campo ?? undefined,
         resolution: { table: TABLA_RESOLUCION, hysteresis: 0.3, latitudeCorrection: false },
         layerOptions: { zIndex, opacity, properties: { layerId, paletteIndex, [HEXBIN_LAYER_FLAG]: true } }
     });
@@ -104,10 +110,11 @@ export const crearHexbin = ({ map, source, layerId, zIndex, opacity, paletteInde
 
 export const hexbinDeCapa = (layer) => layer?.get?.(PANAL_KEY) || null;
 
-export const estadisticasHexbin = (hexbin) => {
+export const estadisticasHexbin = (hexbin, opciones = OPCIONES_HEXBIN_BASE) => {
     const { classification, legend, cellCount } = hexbin.getSnapshot();
     return {
         legend,
+        enteros: opciones.reductor === 'count',
         max: classification?.stats?.max ?? 0,
         cells: cellCount,
         paletteIndex: hexbin.layer.get('paletteIndex') || 0
