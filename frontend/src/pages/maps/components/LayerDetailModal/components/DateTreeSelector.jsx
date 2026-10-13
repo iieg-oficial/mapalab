@@ -1,9 +1,19 @@
-import { useEffect, useContext, useMemo, useRef } from 'react';
+import { useEffect, useContext, useMemo, useState } from 'react';
+import { contains, toKey } from 'zootropo';
 import MapsContext from '@contexts/MapsContext';
 import { useCarouselOverflow } from '@pages/maps/hooks/useCarouselOverflow';
-import { useDateSelections } from '@pages/maps/hooks/useDateSelections';
-import { generateCQLFilter, parseCQLToSelections, MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
+import { useDateSelector } from '@pages/maps/hooks/useDateSelector';
+import { MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import Icon from '@components/Icon';
+
+const initialExpansion = (keys) => {
+    const month = keys.find(key => key.length === 10);
+    const withMonth = keys.find(key => key.length >= 7);
+    return {
+        year: withMonth ? Number(withMonth.slice(0, 4)) : null,
+        month: month ? `${Number(month.slice(0, 4))}-${Number(month.slice(5, 7))}` : null,
+    };
+};
 
 const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, filterName = 'date', singleSelectOnly = false, getSpecificFilterOverride }) => {
     const { getSpecificFilter: getSpecificFilterCtx } = useContext(MapsContext);
@@ -16,67 +26,71 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
         return { fecha, filterColumn: 'fecha' };
     }, [periodicity]);
 
-    const initialSelections = useMemo(() => {
-        const currentFilter = getSpecificFilter ? getSpecificFilter(layerId, filterName) : null;
-        return parseCQLToSelections(currentFilter);
-    }, [layerId, filterName, getSpecificFilter]);
+    const currentFilter = getSpecificFilter ? getSpecificFilter(layerId, filterName) : null;
+    const { player, t } = useDateSelector({
+        fecha: periodicityData?.fecha,
+        filterColumn: periodicityData?.filterColumn,
+        isRaster: false,
+        singleSelectOnly,
+        mixed: true,
+        currentFilter,
+        onApply: (cqlFilter, selections) => onFilterApply?.({ filterName, cqlFilter, filterColumn: periodicityData?.filterColumn || 'fecha', selections }),
+        onClear: () => onClearFilter?.(),
+    });
 
-    const {
-        expandedYear,
-        expandedMonth,
-        selections,
-        toggleYear,
-        toggleMonth,
-        handleYearClick: _handleYearClick,
-        handleMonthClick: _handleMonthClick,
-        handleDayClick: _handleDayClick,
-        clearAllSelections,
-        isYearActive,
-        isMonthActive,
-        isDayActive
-    } = useDateSelections(initialSelections);
+    const [expansion, setExpansion] = useState(() => initialExpansion(t.selection));
+    const expandedYear = expansion.year;
+    const expandedMonth = expansion.month;
+    const keys = t.selection;
+    const selections = { size: keys.length };
+    const isActiveKey = (key) => keys.some(item => item === key || contains(key, item));
+    const isYearActive = (year) => isActiveKey(toKey(year));
+    const isMonthActive = (year, month) => isActiveKey(toKey(Number(year), Number(month)));
+    const isDayActive = (year, month, day) => keys.includes(toKey(Number(year), Number(month), Number(day)));
 
-    const handleYearClick = singleSelectOnly
-        ? (year) => { clearAllSelections(); _handleYearClick(year); }
-        : _handleYearClick;
+    const removeWithin = (key) => player.setSelection(keys.filter(item => !contains(key, item)));
+    const choose = (key) => {
+        if (singleSelectOnly) player.setSelection(keys.length === 1 && keys[0] === key ? [] : [key]);
+        else player.select(key, 'toggle');
+    };
 
-    const handleMonthClick = singleSelectOnly
-        ? (year, month) => { clearAllSelections(); _handleMonthClick(year, month); }
-        : _handleMonthClick;
+    const toggleYear = (year, yearData) => {
+        if (isYearActive(year)) {
+            removeWithin(toKey(year));
+            setExpansion({ year: null, month: null });
+            return;
+        }
+        if (expandedYear === year) {
+            setExpansion({ year: null, month: null });
+            return;
+        }
+        const months = yearData ? Object.keys(yearData) : [];
+        setExpansion({ year, month: months.length === 1 ? `${year}-${Number(months[0])}` : null });
+    };
 
-    const handleDayClick = singleSelectOnly
-        ? (year, month, day) => { clearAllSelections(); _handleDayClick(year, month, day); }
-        : _handleDayClick;
+    const toggleMonth = (year, month, yearData) => {
+        const monthKey = `${year}-${month}`;
+        const hasDays = Array.isArray(yearData?.[month]) && yearData[month].length > 0;
+        if (isMonthActive(year, month)) {
+            removeWithin(toKey(Number(year), Number(month)));
+            setExpansion(prev => ({ ...prev, month: null }));
+        } else if (expandedMonth === monthKey) {
+            setExpansion(prev => ({ ...prev, month: null }));
+        } else if (hasDays) {
+            setExpansion(prev => ({ ...prev, month: monthKey }));
+        }
+    };
+
+    const handleYearClick = (year) => choose(toKey(year));
+    const handleMonthClick = (year, month) => choose(toKey(Number(year), Number(month)));
+    const handleDayClick = (year, month, day) => choose(toKey(Number(year), Number(month), Number(day)));
+    const clearAllSelections = () => {
+        player.clearSelection();
+        setExpansion({ year: null, month: null });
+    };
 
     const yearsCarousel = useCarouselOverflow();
     const daysCarousel = useCarouselOverflow();
-
-    const onFilterApplyRef = useRef(onFilterApply);
-    const onClearFilterRef = useRef(onClearFilter);
-
-    useEffect(() => {
-        onFilterApplyRef.current = onFilterApply;
-        onClearFilterRef.current = onClearFilter;
-    });
-
-    useEffect(() => {
-        const cqlFilter = generateCQLFilter(selections, periodicityData?.filterColumn || 'fecha');
-
-        if (cqlFilter) {
-            if (onFilterApplyRef.current) {
-                onFilterApplyRef.current({
-                    filterName,
-                    cqlFilter,
-                    filterColumn: periodicityData?.filterColumn || 'fecha',
-                    selections: Array.from(selections)
-                });
-            }
-        } else {
-            if (onClearFilterRef.current) {
-                onClearFilterRef.current();
-            }
-        }
-    }, [selections, periodicityData, filterName]);
 
     useEffect(() => {
         yearsCarousel.checkOverflow();

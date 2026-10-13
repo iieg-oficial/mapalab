@@ -47,6 +47,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   queda el año). La selección se reconstruye del filtro vigente por llaves, así que sigue al loop, a
   los enlaces y al otro lado del comparador sin efectos propios. Los años y meses llevan `role="option"`,
   `aria-selected` y `data-key`.
+- **El árbol de fechas del modo avanzado también usa zootropo** (0.3.0, `multiple: 'mixed'`). Los gestos no
+  cambian: clic navega, doble clic marca y clic sobre algo marcado lo quita. Al marcar una fecha se quitan
+  las que la contienen y las que contiene, así que el CQL no repite periodos (antes, marcar un año
+  dejaba también sus meses). zootropo pasa a 0.3.0.
 
 ## [2.3.0] - 2026-10-06
 

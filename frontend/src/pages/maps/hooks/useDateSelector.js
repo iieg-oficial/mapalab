@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createTimePlayer, parseKey, toKey } from 'zootropo';
 import { useTimePlayer } from 'zootropo/react';
-import { dateKeysFromFilter } from '../helpers/dateKeys';
+import { dateKeysFromFilter, keyToSelection } from '../helpers/dateKeys';
 
 const NO_OPEN = [];
 
@@ -26,16 +26,16 @@ const rasterValueOf = (fecha, key) => {
 
 const sameKeys = (a, b) => a.length === b.length && a.every((key, index) => key === b[index]);
 
-export const useDateSelector = ({ fecha, filterColumn, isRaster, singleSelectOnly, currentFilter, onApply, onClear }) => {
+export const useDateSelector = ({ fecha, filterColumn, isRaster, singleSelectOnly, mixed = false, currentFilter, onApply, onClear }) => {
     const rasterPeriodicity = isRaster ? fecha : null;
     const [initialKeys] = useState(() => dateKeysFromFilter(currentFilter, { rasterPeriodicity }));
     const player = useMemo(() => createTimePlayer({
         catalog: catalogKeysOf(fecha, isRaster),
         kind: isRaster ? 'time' : 'cql',
         column: filterColumn || 'fecha',
-        multiple: !isRaster && !singleSelectOnly,
+        multiple: isRaster || singleSelectOnly ? false : (mixed ? 'mixed' : true),
         initial: initialKeys,
-    }), [fecha, isRaster, singleSelectOnly, filterColumn, initialKeys]);
+    }), [fecha, isRaster, singleSelectOnly, mixed, filterColumn, initialKeys]);
 
     useEffect(() => {
         const first = player.getSnapshot().selection[0];
@@ -71,7 +71,7 @@ export const useDateSelector = ({ fecha, filterColumn, isRaster, singleSelectOnl
             return;
         }
         const value = isRaster ? rasterValueOf(fecha, selection[0]) : cql;
-        if (value) callbacks.current.onApply?.(value, selection);
+        if (value) callbacks.current.onApply?.(value, selection.map(keyToSelection));
     }, [selection, cql, isRaster, fecha, rasterPeriodicity]);
 
     const first = selection[0] ? parseKey(selection[0]) : null;
