@@ -51,6 +51,39 @@ def test_columnas_legibles_en_el_orden_del_visor_y_sin_las_ocultas(geoserver):
     assert resultado['total'] == 130 and resultado['paginas'] == 7
 
 
+def test_sin_alias_toma_la_etiqueta_de_la_tarjeta_del_visor(geoserver, monkeypatch):
+    tarjeta = {
+        'headerField': 'nombre',
+        'list': [{'field': 'fecha', 'label': 'Año de la información', 'raw': True, 'formato': 'anio'}],
+        'cards': [{'field': 'nivel', 'label': 'Nivel educativo'}, {'field': 'matricula', 'label': 'Alumnos'}],
+        'labelGroups': [{'fields': ['nombre']}],
+    }
+    monkeypatch.setattr(tabla, 'configuracion_columnas', lambda resuelta: [])
+    monkeypatch.setattr(tabla, '_resolve_layer_fuzzy', lambda layer: {
+        'id': 'escuelas', 'label': 'Escuelas', 'workspace': 'educacion', 'node': {'littleCard': tarjeta},
+    })
+    resultado = tabla.layer_table('escuelas')
+    assert {c['campo']: c['etiqueta'] for c in resultado['columnas']} == {
+        'nombre': 'nombre', 'nivel': 'Nivel educativo', 'matricula': 'Alumnos',
+        'fecha': 'Año de la información', 'interno': 'interno',
+    }
+    assert resultado['filas'][0]['Año de la información'] == 2024
+
+
+def test_el_alias_de_la_tabla_manda_sobre_la_tarjeta(geoserver, monkeypatch):
+    monkeypatch.setattr(tabla, '_resolve_layer_fuzzy', lambda layer: {
+        'id': 'escuelas', 'label': 'Escuelas', 'workspace': 'educacion',
+        'node': {'littleCard': {'cards': [{'field': 'matricula', 'label': 'Alumnos'}, {'field': 'nivel', 'label': 'Nivel'}]}},
+    })
+    resultado = tabla.layer_table('escuelas')
+    assert [c['etiqueta'] for c in resultado['columnas']] == ['Escuela', 'Nivel', 'Matrícula', 'Año']
+
+
+def test_campos_de_tarjeta_ignora_lo_que_no_trae_etiqueta():
+    assert tabla.campos_de_tarjeta(None) == {}
+    assert tabla.campos_de_tarjeta({'iconText': [{'icon': 'ubicacion', 'field': 'domicilio'}], 'list': [{'field': 'a', 'label': '  '}]}) == {}
+
+
 def test_paginacion_y_orden_van_a_geoserver(geoserver):
     resultado = tabla.layer_table('escuelas', orden='matricula', descendente=True, pagina=3, por_pagina=10)
     params = geoserver.params()

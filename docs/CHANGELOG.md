@@ -26,6 +26,13 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   desplegado, «Carto Dark» aparece marcado en «Mapas base». Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
 - El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
 
+### Corregido
+
+- **`layer_table` del MCP devolvía las columnas con su nombre crudo** cuando la capa no tiene alias en
+  `atributos.columnas`. Ahora la etiqueta sale del alias de la tabla de datos y, si no hay, de la
+  etiqueta que la tarjetita (`littleCard`) le da al campo, con su formato (el año de `fecha`); el nombre
+  crudo queda solo como último recurso
+
 
 ## [2.3.0] - 2026-10-06
 
