@@ -7,4 +7,6 @@ export const useEventoContext = () => {
     return context;
 };
 
-export const useDecoracionEvento = () => useEventoContext().decoracion;
+const SIN_DECORACION = Object.freeze({ tema: null, slug: null, activa: false, alternar: () => {} });
+
+export const useDecoracionEvento = () => useContext(EventoContext)?.decoracion ?? SIN_DECORACION;

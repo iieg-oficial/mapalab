@@ -18,7 +18,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   crecer, una de maravillas y las demás de cempasúchil, cuyas flores se tumban con un clic (el «Acerca
   de» del logo pasa a un «>» gris en el borde mientras el tema está encendido), y papel picado bajo
   Capas activas, en cordel o en pila si el panel está contraído, que se agita con el
-  hover. Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
+  hover. Sobre «Contribuciones ©», en escritorio, una ofrenda chica: cirios y veladoras encendidos,
+  pan de muerto, un cafecito con vapor, mazapán, cocada, dulce de calabaza y una mandarina.
+  Los estilos del tema salen de `index.css` a `DiaDeMuertos/muertos.css`. Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
 - El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
 
 

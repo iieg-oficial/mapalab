@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useDecoracionEvento } from '@hooks/useEvento';
 import { esDiaDeMuertos } from '@pages/maps/helpers/eventoDiversion';
 import Cempasuchil from './Cempasuchil';
+import './muertos.css';
 
 const MAXIMO = 12;
 const CADENCIA_MS = 8000;
