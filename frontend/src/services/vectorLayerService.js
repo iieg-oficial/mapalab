@@ -53,7 +53,7 @@ export const acotarAGeometriasValidas = (cqlFilter, geometria) => {
     return cqlFilter ? `(${cqlFilter}) AND ${bbox}` : bbox;
 };
 
-const geometriaDe = async (wmsConfig, signal) => {
+export const geometriaDe = async (wmsConfig, signal) => {
     const params = new URLSearchParams({
         service: 'WFS',
         version: '2.0.0',

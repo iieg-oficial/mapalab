@@ -28,7 +28,7 @@
         "@dnd-kit/modifiers": "9.0.0",
         "@dnd-kit/sortable": "10.0.0",
         "@dnd-kit/utilities": "3.2.2",
-        "@ghegar/panal": "file:vendor/ghegar-panal-0.5.0.tgz",
+        "@ghegar/panal": "file:vendor/ghegar-panal-0.6.1.tgz",
         "@tailwindcss/vite": "4.3.3",
         "gifenc": "^1.0.3",
         "html2canvas-pro": "1.5.11",

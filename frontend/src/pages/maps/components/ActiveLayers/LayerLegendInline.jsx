@@ -27,7 +27,7 @@ const LayerLegendInline = ({ layer, compareMode, slotMembership }) => {
         if (!stats) return null;
         return (
             <div className="w-full bg-white rounded-[13px] overflow-hidden">
-                <HexbinLegend entries={legendEntries(stats.legend, stats.paletteIndex)} />
+                <HexbinLegend entries={legendEntries(stats.legend, stats.paletteIndex)} acercate={stats.acercate} />
             </div>
         );
     }

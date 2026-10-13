@@ -1,4 +1,5 @@
 import { Style, Stroke, Fill } from 'ol/style';
+import { formatNumber } from './formatNumber';
 
 export const HEXBIN_CLASSES = 5;
 
@@ -126,3 +127,6 @@ export const legendEntries = (legend, paletteIndex = null) => {
         to: entry.closed === 'both' ? Math.floor(entry.max) : Math.ceil(entry.max) - 1
     })).filter(entry => entry.to >= entry.from);
 };
+
+export const textoAcercate = ({ total, limite }) =>
+    `Acércate para ver los hexágonos: hay ${formatNumber(total)} puntos en la vista y el máximo son ${formatNumber(limite)}.`;

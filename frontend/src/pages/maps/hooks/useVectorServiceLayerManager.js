@@ -11,7 +11,7 @@ import { buildLayerCqlSegment, buildMunicipioCqlDeGrupo } from '../helpers/layer
 import { CQL_SIN_RESOLVER } from '../helpers/municipioCqlBuilder';
 import { computeLayerZIndex } from '../helpers/layerZIndex';
 import { createVectorLayerStyle, resolveVectorColor } from '../helpers/vectorLayerStyles';
-import { montarHexbin } from '../helpers/hexbinEntrada';
+import { montarHexbin, vistaPara } from '../helpers/hexbinEntrada';
 import { VECTOR_FEATURE_LIMIT, VECTOR_LAYER_FLAG, SERVICE_HEXBIN } from '../helpers/serviceMode';
 import { countVectorFeatures, fetchVectorFeatures, VECTOR_PROJECTION } from '@services/vectorLayerService';
 
@@ -78,6 +78,8 @@ export const useVectorServiceLayerManager = ({
         setGroupLoading(entry.memberIds, false);
     }, [mapRef, setGroupLoading]);
 
+    const montarEntradaHexbinRef = useRef(null);
+
     const loadInto = useCallback(async (groupKey, target, controller) => {
         const { wmsConfig, cqlFilter, memberIds } = target;
         setGroupLoading(memberIds, true);
@@ -87,6 +89,12 @@ export const useVectorServiceLayerManager = ({
             if (controller.signal.aborted) return;
 
             if (matched !== null && matched > VECTOR_FEATURE_LIMIT) {
+                const vista = target.hexbin ? await vistaPara(wmsConfig, cqlFilter, controller.signal) : null;
+                if (controller.signal.aborted) return;
+                if (vista) {
+                    montarEntradaHexbinRef.current?.(groupKey, target, null, null, false, vista);
+                    return;
+                }
                 memberIds.forEach(id => {
                     onTooLargeRef.current?.(id, { count: matched, limit: VECTOR_FEATURE_LIMIT });
                 });
@@ -181,13 +189,14 @@ export const useVectorServiceLayerManager = ({
         return groups;
     }, [debouncedActiveLayerIds, debouncedHiddenLayerIds, vectorModes, layers]);
 
-    const montarEntradaHexbin = useCallback((groupKey, target, zIndex, opacity, precalculado) => {
+    const montarEntradaHexbin = useCallback((groupKey, target, zIndex, opacity, precalculado, vista = null) => {
         const entry = entriesRef.current.get(groupKey);
         if (!entry) return;
         const previo = entry.montaje;
         const montaje = montarHexbin({
             map: mapRef.current,
             precalculado,
+            vista,
             memberIds: target.memberIds,
             zIndex: previo?.layer.getZIndex() ?? zIndex,
             opacity: previo?.layer.getOpacity() ?? opacity,
@@ -196,6 +205,7 @@ export const useVectorServiceLayerManager = ({
             zoomRange: findLayerDef(target.memberIds[0], layers)?.zoomRange,
             onStats: stats => onHexbinStatsRef.current?.(target.memberIds, stats),
             onLoading: cargando => setGroupLoading(target.memberIds, cargando),
+            onAcercate: aviso => onHexbinStatsRef.current?.(target.memberIds, { legend: [], max: 0, cells: 0, acercate: aviso }),
             onSinPrecalculado: () => {
                 if (entriesRef.current.get(groupKey) !== entry || entry.montaje !== montaje) return;
                 montarEntradaHexbin(groupKey, target, zIndex, opacity, false);
@@ -206,6 +216,7 @@ export const useVectorServiceLayerManager = ({
         entry.montaje = montaje;
         entry.layer = montaje.layer;
     }, [mapRef, layers, setGroupLoading, loadInto]);
+    montarEntradaHexbinRef.current = montarEntradaHexbin;
 
     const createEntry = useCallback((groupKey, target, zIndex, opacity) => {
         const map = mapRef.current;

@@ -28,7 +28,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Cambiado
 
-- **El hexbin lo resuelve panal** (`@ghegar/panal` 0.5.0, vendorizado en `frontend/vendor/`). Visor y
+- **Hexágonos para capas de más de 20 000 puntos sin precalculado.** En vez de quedarse en Puntos, la
+  capa se agrupa por vista: un Web Worker (`helpers/hexbin.worker.js`) descarga del WFS solo la vista
+  con un margen, con el recuadro en el CQL, y agrupa ahí. Antes de cada descarga se cuentan los puntos
+  de esa vista; si pasan de 50 000, la capa se oculta y la leyenda pide acercarse. Moverse dentro de lo
+  ya descargado no vuelve a pedir nada
+- **El hexbin lo resuelve panal** (`@ghegar/panal` 0.6.1, vendorizado en `frontend/vendor/`). Visor y
   catálogo crean la capa con `helpers/panalHexbin.js` y `helpers/hexbinEntrada.js`; la reagrupación por
   zoom, con histéresis de 0.3 niveles, la hace la propia capa. Los cuantiles interpolan y el corte cae
   en la clase de arriba, igual que en el SLD coroplético, así que algunos números de la leyenda

@@ -4,7 +4,7 @@ import Tooltip from '@components/Tooltip';
 import Icon from '@components/Icon';
 import Loading from '@components/Loading';
 import HexbinLegend from '@pages/maps/components/ActiveLayers/HexbinLegend';
-import { legendEntries } from '@pages/maps/helpers/hexbinStyles';
+import { legendEntries, textoAcercate } from '@pages/maps/helpers/hexbinStyles';
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import { VISTA_HEXAGONOS, VISTA_PUNTOS } from '../helpers/catalogoVista';
 
@@ -83,6 +83,7 @@ export const CatalogoVistaSegmented = ({ nombre, vista, onVista = null, celdas =
 
 export const CatalogoHexbinLeyenda = ({ hexbin }) => {
     if (!hexbin || hexbin.estado === 'cargando') return <p className={NOTA}>Agrupando los puntos…</p>;
+    if (hexbin.estado === 'acercate') return <p className={NOTA}>{textoAcercate(hexbin)}</p>;
     if (hexbin.estado === 'demasiados') {
         return (
             <p className={NOTA}>

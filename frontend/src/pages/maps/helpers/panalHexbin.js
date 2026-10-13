@@ -1,4 +1,9 @@
-import { createHexbinLayer, fromCellProvider, fromVectorSource } from '@ghegar/panal/ol';
+import {
+    bboxCql, containsExtent, createHexbinLayer, createWorkerWfsSource, expandExtent, fromCellProvider, fromVectorSource,
+    lonLatToMercatorExtent
+} from '@ghegar/panal/ol';
+import { getWfsUrl } from '@utils/featureInfoUtils';
+import { countVectorFeatures } from '@services/vectorLayerService';
 import { HEXBIN_MAX_RESOLUTION, HEXBIN_RESOLUTION_BY_ZOOM } from '@constants/hexbin';
 import { fetchAggregatedCells, PRECOMPUTED_RESOLUTIONS } from '@services/hexbinAggregateService';
 import { hexbinStyle, HEXBIN_CLASSES } from './hexbinStyles';
@@ -28,6 +33,55 @@ export const fuentePrecalculada = (layerKeys) => fromCellProvider({
 });
 
 export const fuenteLocal = (vectorSource) => fromVectorSource(vectorSource);
+
+export const TOPE_VISTA = 50000;
+const MARGEN_VISTA = 0.25;
+
+export class Acercate extends Error {
+    constructor(total, limite) {
+        super('demasiados puntos en la vista');
+        this.name = 'Acercate';
+        this.total = total;
+        this.limite = limite;
+    }
+}
+
+export const fuenteVista = ({ worker, wmsConfig, cqlFilter, geometria, contar = countVectorFeatures, tope = TOPE_VISTA }) => {
+    const cql = cqlFilter || undefined;
+    const wfs = createWorkerWfsSource(worker, {
+        url: getWfsUrl(wmsConfig.baseUrl || ''),
+        typeName: wmsConfig.wfsLayerName || wmsConfig.layerName,
+        cql,
+        bbox: { geometryName: geometria, margin: MARGEN_VISTA },
+        maxFeatures: tope,
+        pageSize: 10000
+    });
+    let cubierta = null;
+
+    return {
+        kind: 'cells',
+        resolutions: null,
+        extentDependent: true,
+        debounce: 250,
+        rollup: null,
+        listenChanges: wfs.listenChanges,
+        loadMembers: wfs.loadMembers,
+        release: wfs.release,
+        load: async (request) => {
+            const vista = lonLatToMercatorExtent(request.extent);
+            if (!cubierta || !containsExtent(cubierta, vista)) {
+                const pedida = expandExtent(vista, MARGEN_VISTA);
+                const total = await contar(wmsConfig, bboxCql(geometria, pedida, cql), request.signal);
+                if (total !== null && total > tope) {
+                    cubierta = null;
+                    throw new Acercate(total, tope);
+                }
+                cubierta = pedida;
+            }
+            return wfs.load(request);
+        }
+    };
+};
 
 export const crearHexbin = ({ map, source, layerId, zIndex, opacity, paletteIndex = 0 }) => {
     let layer = null;

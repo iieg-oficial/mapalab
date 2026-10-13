@@ -9,14 +9,18 @@ const {
     mockCount,
     mockFetch,
     mockSetLayerLoading,
-    mockCells
+    mockCells,
+    mockGeometria,
+    mockWorker
 } = vi.hoisted(() => ({
     mockFindWMSConfig: vi.fn(),
     mockFindLayerDef: vi.fn(),
     mockCount: vi.fn(),
     mockFetch: vi.fn(),
     mockSetLayerLoading: vi.fn(),
-    mockCells: vi.fn()
+    mockCells: vi.fn(),
+    mockGeometria: vi.fn(),
+    mockWorker: vi.fn()
 }));
 
 vi.mock('@pages/maps/helpers/wmsConfig', () => ({
@@ -27,8 +31,11 @@ vi.mock('@pages/maps/helpers/wmsConfig', () => ({
 vi.mock('@services/vectorLayerService', () => ({
     VECTOR_PROJECTION: 'EPSG:3857',
     countVectorFeatures: (...args) => mockCount(...args),
-    fetchVectorFeatures: (...args) => mockFetch(...args)
+    fetchVectorFeatures: (...args) => mockFetch(...args),
+    geometriaDe: (...args) => mockGeometria(...args)
 }));
+
+vi.mock('@pages/maps/helpers/hexbinWorker', () => ({ hexbinWorker: () => mockWorker() }));
 
 vi.mock('@services/hexbinAggregateService', () => ({
     PRECOMPUTED_RESOLUTIONS: new Set([3, 4, 5, 6, 7, 8]),
@@ -79,6 +86,8 @@ beforeEach(() => {
     mockCount.mockResolvedValue(10);
     mockFetch.mockResolvedValue({ type: 'FeatureCollection', features: [] });
     mockCells.mockResolvedValue(null);
+    mockGeometria.mockResolvedValue('geom');
+    mockWorker.mockReturnValue(null);
 });
 
 describe('useVectorServiceLayerManager - una petición por tabla', () => {
@@ -166,5 +175,42 @@ describe('useVectorServiceLayerManager - hexbin con panal', () => {
         const [ids, stats] = onHexbinStats.mock.calls.at(-1);
         expect(ids).toEqual(['delitos']);
         expect(stats).toMatchObject({ cells: 1, max: 7 });
+    });
+});
+
+describe('useVectorServiceLayerManager - capas grandes en hexbin', () => {
+    const grande = (onTooLarge) => {
+        mockCount.mockResolvedValue(120000);
+        const mapRef = makeMapRef();
+        renderHook(() => useVectorServiceLayerManager({
+            mapRef,
+            activeLayerIds: ['delitos'],
+            hiddenLayerIds: [],
+            vectorModes: new Map([['delitos', SERVICE_HEXBIN]]),
+            getFilter: () => 'anio = 2025',
+            combineCQLFilters: (base, dyn) => dyn || base || null,
+            getLayerOpacity: () => 1,
+            layerOpacities: {},
+            onTooLarge
+        }));
+        return mapRef;
+    };
+
+    it('sin worker se rechaza como antes', async () => {
+        const onTooLarge = vi.fn();
+        grande(onTooLarge);
+        await waitFor(() => expect(onTooLarge).toHaveBeenCalledWith('delitos', { count: 120000, limit: 20000 }));
+    });
+
+    it('con worker se monta en modo vista y no se rechaza', async () => {
+        const worker = { postMessage: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() };
+        mockWorker.mockReturnValue(worker);
+        const onTooLarge = vi.fn();
+        const mapRef = grande(onTooLarge);
+        await waitFor(() => expect(mockGeometria).toHaveBeenCalled());
+        await waitFor(() => expect(mockCount).toHaveBeenCalledTimes(2));
+        expect(mockCount.mock.calls[1][1]).toMatch(/^BBOX\(geom, .+\) AND \(.*anio = 2025.*\)$/);
+        expect(onTooLarge).not.toHaveBeenCalled();
+        expect(mapRef.current.getLayers().getArray()).toHaveLength(1);
     });
 });
