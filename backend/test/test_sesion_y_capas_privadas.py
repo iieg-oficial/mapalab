@@ -253,3 +253,39 @@ class TestBasePublica:
 
     def test_el_redirect_lleva_la_ruta_del_callback(self):
         assert sesion_oidc.redirect_uri('https://canario.iieg') == 'https://canario.iieg/mapalab/api/sesion/callback'
+
+
+class TestRegistrarLogin:
+    @pytest.fixture
+    def sesion_vacia(self, monkeypatch):
+        agregados = []
+
+        class _Resultado:
+            def scalar_one_or_none(self):
+                return None
+
+        class _Sesion:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+            def execute(self, _consulta):
+                return _Resultado()
+
+            def add(self, objeto):
+                agregados.append(objeto)
+
+            def commit(self):
+                for i, objeto in enumerate(agregados, start=1):
+                    objeto.id = i
+
+        conexion = SimpleNamespace(get_session=_Sesion)
+        monkeypatch.setattr(acceso_capas.DatabaseFactory, 'get_connection', lambda _tipo: conexion)
+        return agregados
+
+    def test_el_primer_ingreso_entra_activo(self, sesion_vacia):
+        usuario = acceso_capas.registrar_login('sub-nuevo', 'nueva@iieg.gob.mx', 'Nueva')
+        assert usuario == {'id': 1, 'nombre': 'Nueva', 'correo': 'nueva@iieg.gob.mx'}
+        assert sesion_vacia[0].activo is True

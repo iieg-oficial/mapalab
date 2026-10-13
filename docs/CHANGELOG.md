@@ -201,6 +201,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Corregido
 
+- El primer inicio de sesión de una cuenta ya no se rechaza como «Tu acceso a MapaLab está suspendido»:
+  el usuario nuevo nace activo en lugar de esperar al default de la base, que llega hasta el `INSERT`.
 - Al recargar con el tema de Día de Muertos encendido, el mapa ya no se queda oscuro: la sesión y los
   enlaces compartidos guardan el mapa base que había antes del tema, no el `oscuro`.
 - Los enlaces a la página del IIEG (footer, logo de la portada y tarjeta del IIEG en el mapa) apuntan a
