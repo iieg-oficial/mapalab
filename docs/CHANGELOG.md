@@ -41,6 +41,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   nuevo. `generateCQLFilter` genera con zootropo: meses o días contiguos salen como un solo rango y el
   día deja de ser `fecha = '…'`. Los enlaces y sesiones guardados con el formato anterior se siguen
   leyendo.
+- **El selector de año y mes guarda su estado en zootropo.** `SimpleDateSelector` usa
+  `useDateSelector`, un reproductor local de zootropo con las reglas de siempre (en ráster el clic en
+  el año conserva o elige un mes; «Regresar» deja el año entero en vectoriales; al quitar el último mes
+  queda el año). La selección se reconstruye del filtro vigente por llaves, así que sigue al loop, a
+  los enlaces y al otro lado del comparador sin efectos propios. Los años y meses llevan `role="option"`,
+  `aria-selected` y `data-key`.
 
 ## [2.3.0] - 2026-10-06
 
