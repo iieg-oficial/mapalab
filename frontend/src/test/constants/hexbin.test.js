@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { resolutionForZoom, HEXBIN_RESOLUTION_BY_ZOOM, HEXBIN_MAX_RESOLUTION, HEXBIN_CELL_SIDE_METERS } from '@constants/hexbin';
+import { createResolutionPicker } from '@ghegar/panal';
+import { HEXBIN_MAX_RESOLUTION, HEXBIN_CELL_SIDE_METERS } from '@constants/hexbin';
+import { TABLA_RESOLUCION } from '@pages/maps/helpers/panalHexbin';
 
-describe('resolutionForZoom', () => {
+const resolutionForZoom = (zoom) => createResolutionPicker({ table: TABLA_RESOLUCION, hysteresis: 0 }).pick(zoom);
+
+describe('tabla zoom → resolución con el selector de panal', () => {
     it('da celdas grandes cuando se ve todo el estado', () => {
         expect(resolutionForZoom(5)).toBe(3);
         expect(resolutionForZoom(8)).toBe(5);
@@ -35,8 +39,16 @@ describe('resolutionForZoom', () => {
         expect(resoluciones).toEqual(ordenada);
     });
 
-    it('cae en una resolución válida ante un zoom inservible', () => {
-        expect(resolutionForZoom(undefined)).toBe(HEXBIN_RESOLUTION_BY_ZOOM[2].resolution);
-        expect(resolutionForZoom(NaN)).toBe(HEXBIN_RESOLUTION_BY_ZOOM[2].resolution);
+    it('cae en la resolución más gruesa ante un zoom inservible', () => {
+        expect(resolutionForZoom(undefined)).toBe(TABLA_RESOLUCION[0].resolution);
+        expect(resolutionForZoom(NaN)).toBe(TABLA_RESOLUCION[0].resolution);
+    });
+
+    it('con histéresis no cambia en el umbral', () => {
+        const picker = createResolutionPicker({ table: TABLA_RESOLUCION, hysteresis: 0.3 });
+        expect(picker.pick(5)).toBe(3);
+        expect(picker.pick(5.2)).toBe(3);
+        expect(picker.pick(5.4)).toBe(4);
+        expect(picker.pick(4.8)).toBe(4);
     });
 });

@@ -1,5 +1,4 @@
 import { Style, Stroke, Fill } from 'ol/style';
-import { classOf } from './h3Aggregation';
 
 export const HEXBIN_CLASSES = 5;
 
@@ -88,20 +87,20 @@ const withAlpha = (color, alpha) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-const hexbinColor = (count, breaks, paletteIndex) => {
+const hexbinColor = (classIndex, paletteIndex) => {
     const ramp = paletteIndex == null ? hexbinRamp() : rampFor(paletteIndex);
-    return ramp[classOf(count, breaks)] || ramp[0];
+    return ramp[classIndex] || ramp[0];
 };
 
 const SELECTED_STROKE = '#FF8300';
 
-export const hexbinStyle = (count, breaks, opciones = {}) => {
+export const hexbinStyle = (classIndex, opciones = {}) => {
     const { selectedCell = false, paletteIndex = 0, relleno = true } = opciones;
-    const index = classOf(count, breaks);
+    const index = Math.max(0, classIndex);
     const key = `${paletteIndex}|${index}|${relleno ? 'f' : 'o'}|${selectedCell ? 's' : ''}`;
 
     if (!styleCache.has(key)) {
-        const color = hexbinColor(count, breaks, paletteIndex);
+        const color = hexbinColor(index, paletteIndex);
         styleCache.set(key, new Style({
             fill: relleno ? new Fill({ color: withAlpha(color, FILL_ALPHA) }) : null,
             stroke: selectedCell
@@ -117,20 +116,13 @@ export const hexbinStyle = (count, breaks, opciones = {}) => {
     return styleCache.get(key);
 };
 
-export const legendEntries = (breaks, max, paletteIndex = null) => {
-    if (max == null) return [];
+export const legendEntries = (legend, paletteIndex = null) => {
+    if (!Array.isArray(legend) || legend.length === 0) return [];
     const ramp = paletteIndex == null ? hexbinRamp() : rampFor(paletteIndex);
 
-    const bounds = [...breaks, max];
-    let lower = 1;
-
-    return bounds.map((upper, index) => {
-        const entry = {
-            color: ramp[index] || ramp[0],
-            from: lower,
-            to: upper
-        };
-        lower = upper + 1;
-        return entry;
-    }).filter(entry => entry.to >= entry.from);
+    return legend.map(entry => ({
+        color: ramp[entry.classIndex] || ramp[0],
+        from: Math.ceil(entry.min),
+        to: entry.closed === 'both' ? Math.floor(entry.max) : Math.ceil(entry.max) - 1
+    })).filter(entry => entry.to >= entry.from);
 };

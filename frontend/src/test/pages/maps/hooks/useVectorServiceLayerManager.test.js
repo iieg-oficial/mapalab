@@ -1,18 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
+import OlMap from 'ol/Map';
+import View from 'ol/View';
 
 const {
     mockFindWMSConfig,
     mockFindLayerDef,
     mockCount,
     mockFetch,
-    mockSetLayerLoading
+    mockSetLayerLoading,
+    mockCells
 } = vi.hoisted(() => ({
     mockFindWMSConfig: vi.fn(),
     mockFindLayerDef: vi.fn(),
     mockCount: vi.fn(),
     mockFetch: vi.fn(),
-    mockSetLayerLoading: vi.fn()
+    mockSetLayerLoading: vi.fn(),
+    mockCells: vi.fn()
 }));
 
 vi.mock('@pages/maps/helpers/wmsConfig', () => ({
@@ -27,8 +31,8 @@ vi.mock('@services/vectorLayerService', () => ({
 }));
 
 vi.mock('@services/hexbinAggregateService', () => ({
-    nearestPrecomputed: (r) => (r >= 3 && r <= 8 ? r : 8),
-    fetchAggregatedCells: () => Promise.resolve(null)
+    PRECOMPUTED_RESOLUTIONS: new Set([3, 4, 5, 6, 7, 8]),
+    fetchAggregatedCells: (...args) => mockCells(...args)
 }));
 
 vi.mock('@hooks/useLayers', () => ({ useLayers: () => ({ layers: [] }) }));
@@ -40,15 +44,12 @@ vi.mock('@hooks/useLayerLoading', () => ({
 import { useVectorServiceLayerManager } from '@hooksMaps/useVectorServiceLayerManager';
 import { SERVICE_HEXBIN, SERVICE_VECTOR } from '@pages/maps/helpers/serviceMode';
 
-const makeMapRef = () => ({
-    current: {
-        addLayer: vi.fn(),
-        removeLayer: vi.fn(),
-        on: vi.fn(),
-        un: vi.fn(),
-        getView: () => ({ getZoom: () => 8 })
-    }
-});
+const makeMapRef = () => {
+    const map = new OlMap({ view: new View({ center: [0, 0], zoom: 8 }) });
+    vi.spyOn(map, 'addLayer');
+    vi.spyOn(map, 'removeLayer');
+    return { current: map };
+};
 
 const MISMA_TABLA = {
     baseUrl: 'http://gs/salud/wms',
@@ -56,14 +57,14 @@ const MISMA_TABLA = {
     wfsAvailable: true
 };
 
-const render = (vectorModes, activeLayerIds) => {
+const render = (vectorModes, activeLayerIds, getFilter = (id) => `institucion = '${id}'`) => {
     const mapRef = makeMapRef();
     const hook = renderHook(() => useVectorServiceLayerManager({
         mapRef,
         activeLayerIds,
         hiddenLayerIds: [],
         vectorModes,
-        getFilter: (id) => `institucion = '${id}'`,
+        getFilter,
         combineCQLFilters: (base, dyn) => dyn || base || null,
         getLayerOpacity: () => 1,
         layerOpacities: {}
@@ -77,6 +78,7 @@ beforeEach(() => {
     mockFindLayerDef.mockReturnValue({ geometryType: 'point' });
     mockCount.mockResolvedValue(10);
     mockFetch.mockResolvedValue({ type: 'FeatureCollection', features: [] });
+    mockCells.mockResolvedValue(null);
 });
 
 describe('useVectorServiceLayerManager - una petición por tabla', () => {
@@ -128,5 +130,41 @@ describe('useVectorServiceLayerManager - una petición por tabla', () => {
 
         const marcados = mockSetLayerLoading.mock.calls.filter(([, on]) => on === true).map(([id]) => id);
         expect(marcados).toEqual(expect.arrayContaining(['hijo_a', 'hijo_b']));
+    });
+});
+
+describe('useVectorServiceLayerManager - hexbin con panal', () => {
+    it('sin filtro prueba el precalculado y, si no hay celdas, cae a los puntos', async () => {
+        const modes = new Map([['delitos', SERVICE_HEXBIN]]);
+        const { mapRef } = render(modes, ['delitos'], () => null);
+
+        expect(mockCells).toHaveBeenCalledWith(['delitos'], expect.any(Number), expect.any(AbortSignal));
+        await waitFor(() => expect(mockCount).toHaveBeenCalledTimes(1));
+        const capas = mapRef.current.getLayers().getArray();
+        expect(capas).toHaveLength(1);
+        expect(capas[0].get('mapalabHexbin')).toBe(true);
+    });
+
+    it('con celdas precalculadas no descarga puntos', async () => {
+        mockCells.mockResolvedValue([{ h3Index: '86498c96fffffff', value: 7, count: 7 }]);
+        const onHexbinStats = vi.fn();
+        const mapRef = makeMapRef();
+        renderHook(() => useVectorServiceLayerManager({
+            mapRef,
+            activeLayerIds: ['delitos'],
+            hiddenLayerIds: [],
+            vectorModes: new Map([['delitos', SERVICE_HEXBIN]]),
+            getFilter: () => null,
+            combineCQLFilters: (base, dyn) => dyn || base || null,
+            getLayerOpacity: () => 1,
+            layerOpacities: {},
+            onHexbinStats
+        }));
+
+        await waitFor(() => expect(onHexbinStats).toHaveBeenCalled());
+        expect(mockCount).not.toHaveBeenCalled();
+        const [ids, stats] = onHexbinStats.mock.calls.at(-1);
+        expect(ids).toEqual(['delitos']);
+        expect(stats).toMatchObject({ cells: 1, max: 7 });
     });
 });

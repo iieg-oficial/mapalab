@@ -26,6 +26,25 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   desplegado, «Carto Dark» aparece marcado en «Mapas base». Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
 - El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
 
+### Cambiado
+
+- **El hexbin lo resuelve panal** (`@ghegar/panal` 0.5.0, vendorizado en `frontend/vendor/`). Visor y
+  catálogo crean la capa con `helpers/panalHexbin.js` y `helpers/hexbinEntrada.js`; la reagrupación por
+  zoom, con histéresis de 0.3 niveles, la hace la propia capa. Los cuantiles interpolan y el corte cae
+  en la clase de arriba, igual que en el SLD coroplético, así que algunos números de la leyenda
+  cambian. La leyenda de conteos sigue en rangos enteros sin huecos
+- El precalculado pide solo `h3_index` y `total`: el hexágono se dibuja desde el índice. Cualquier
+  falla del precalculado cae al cálculo en el navegador
+- El clic en un hexágono busca la celda por su índice H3, no por píxel: funciona también con el relleno
+  apagado
+- Un `MultiPoint` cuenta una sola vez por celda
+- `h3-js` deja de ser dependencia directa: llega con panal
+
+### Eliminado
+
+- `helpers/h3Aggregation.js`, `helpers/hexbinLayer.js`, `hooks/useHexbinZoomRefresh.js`,
+  `resolutionForZoom` y `nearestPrecomputed`
+
 
 ## [2.3.0] - 2026-10-06
 

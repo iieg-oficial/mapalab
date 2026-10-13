@@ -91,11 +91,11 @@ export const CatalogoHexbinLeyenda = ({ hexbin }) => {
         );
     }
     if (hexbin.estado === 'error') return <p className={NOTA}>No se pudieron traer los puntos.</p>;
-    const { breaks, max, paletteIndex } = hexbin.stats || {};
+    const { legend, max, paletteIndex } = hexbin.stats || {};
     if (!max) return <p className={NOTA}>Sin puntos en esta vista.</p>;
     return (
         <div className="w-full bg-white rounded-[13px] overflow-hidden">
-            <HexbinLegend entries={legendEntries(breaks, max, paletteIndex)} />
+            <HexbinLegend entries={legendEntries(legend, paletteIndex)} />
         </div>
     );
 };

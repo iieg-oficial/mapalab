@@ -1,10 +1,8 @@
 import { useEffect, useRef } from 'react';
 import GeoJSON from 'ol/format/GeoJSON';
 import { hydrateWmsConfig } from '@pages/maps/helpers/wmsConfig';
-import { createHexbinLayer, fillHexbinLayer, fillHexbinLayerFromCells } from '@pages/maps/helpers/hexbinLayer';
+import { montarHexbin } from '@pages/maps/helpers/hexbinEntrada';
 import { VECTOR_FEATURE_LIMIT } from '@pages/maps/helpers/serviceMode';
-import { resolutionForZoom } from '@constants/hexbin';
-import { fetchAggregatedCells, nearestPrecomputed } from '@services/hexbinAggregateService';
 import { countVectorFeatures, fetchVectorFeatures, VECTOR_PROJECTION } from '@services/vectorLayerService';
 import { idTablaCatalogo } from './useCatalogoTabla';
 
@@ -31,31 +29,8 @@ export const useCatalogoHexbin = ({ mapRef, wmsLayerRef, capa, tiempo, activo, o
         }
 
         const controller = new AbortController();
-        const layer = createHexbinLayer({ layerId: idTablaCatalogo(capa), zIndex: HEXBIN_Z, opacity: HEXBIN_OPACIDAD });
-        map.addLayer(layer);
+        let montaje = null;
         wms.setVisible(false);
-        const estado = { modo: null, features: null, resolucion: null };
-        const zoom = () => map.getView().getZoom();
-
-        const conPrecalculo = async () => {
-            const resolucion = nearestPrecomputed(resolutionForZoom(zoom()));
-            if (!resolucion) return false;
-            if (resolucion === estado.resolucion) return true;
-            const celdas = await fetchAggregatedCells([capa.hexbinLayerKey], resolucion, controller.signal);
-            if (controller.signal.aborted) return true;
-            if (!celdas?.length) return false;
-            estado.modo = 'precalculado';
-            estado.resolucion = resolucion;
-            avisar({ estado: 'listo', fuente: 'precalculado', stats: fillHexbinLayerFromCells(layer, celdas) });
-            return true;
-        };
-
-        const reagrupar = () => {
-            const resolucion = resolutionForZoom(zoom());
-            if (resolucion === estado.resolucion) return;
-            estado.resolucion = resolucion;
-            avisar({ estado: 'listo', fuente: 'navegador', stats: fillHexbinLayer(layer, estado.features, resolucion) });
-        };
 
         const enNavegador = async () => {
             const cfg = hydrateWmsConfig({ geoserverWorkspace: capa.geoserverWorkspace, geoserverLayer: capa.geoserverLayer });
@@ -67,34 +42,46 @@ export const useCatalogoHexbin = ({ mapRef, wmsLayerRef, capa, tiempo, activo, o
             }
             const data = await fetchVectorFeatures(cfg, filtro, controller.signal);
             if (controller.signal.aborted) return;
-            estado.modo = 'navegador';
-            estado.features = new GeoJSON().readFeatures(data || { type: 'FeatureCollection', features: [] }, {
+            const features = new GeoJSON().readFeatures(data || { type: 'FeatureCollection', features: [] }, {
                 dataProjection: VECTOR_PROJECTION,
                 featureProjection: VECTOR_PROJECTION,
             });
-            reagrupar();
+            montaje.vectorSource.addFeatures(features);
+            if (features.length === 0) montaje.avisarEstadisticas();
         };
 
-        const alMover = () => {
-            if (estado.modo === 'navegador') reagrupar();
-            else if (estado.modo === 'precalculado') conPrecalculo().catch(() => {});
+        const navegador = () => {
+            enNavegador().catch(() => {
+                if (!controller.signal.aborted) avisar({ estado: 'error' });
+            });
+        };
+
+        const montar = (precalculado) => {
+            montaje?.desmontar();
+            montaje = montarHexbin({
+                map,
+                precalculado,
+                memberIds: [idTablaCatalogo(capa)],
+                claves: [capa.hexbinLayerKey],
+                zIndex: HEXBIN_Z,
+                opacity: HEXBIN_OPACIDAD,
+                onStats: stats => avisar({ estado: 'listo', fuente: precalculado ? 'precalculado' : 'navegador', stats }),
+                onSinPrecalculado: () => {
+                    if (controller.signal.aborted) return;
+                    montar(false);
+                    navegador();
+                },
+            });
         };
 
         avisar({ estado: 'cargando' });
-        (async () => {
-            try {
-                if (fuenteHexbin(capa, filtro) === 'precalculado' && await conPrecalculo()) return;
-                await enNavegador();
-            } catch {
-                if (!controller.signal.aborted) avisar({ estado: 'error' });
-            }
-        })();
-        map.on('moveend', alMover);
+        const precalculado = fuenteHexbin(capa, filtro) === 'precalculado';
+        montar(precalculado);
+        if (!precalculado) navegador();
 
         return () => {
             controller.abort();
-            map.un('moveend', alMover);
-            map.removeLayer(layer);
+            montaje?.desmontar();
             wms.setVisible(true);
         };
     }, [activo, disponible, capa, filtro, mapRef, wmsLayerRef]);

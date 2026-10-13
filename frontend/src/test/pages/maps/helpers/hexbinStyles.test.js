@@ -1,80 +1,47 @@
 import { describe, it, expect } from 'vitest';
-import Feature from 'ol/Feature';
-import Point from 'ol/geom/Point';
-import { fromLonLat } from 'ol/proj';
-import { buildHexbinFeatures, pointsFromFeatures } from '@pages/maps/helpers/hexbinLayer';
-import { legendEntries, hexbinRamp, baseColorFor, rampFor } from '@pages/maps/helpers/hexbinStyles';
+import { classify, legend } from '@ghegar/panal/classify';
+import { legendEntries, hexbinRamp, baseColorFor, rampFor, hexbinStyle } from '@pages/maps/helpers/hexbinStyles';
 
-const punto = (lon, lat) => new Feature({ geometry: new Point(fromLonLat([lon, lat], 'EPSG:3857')) });
-
-const GDL = [-103.35, 20.67];
-const ZAPOPAN = [-103.42, 20.72];
-
-describe('pointsFromFeatures', () => {
-    it('devuelve las coordenadas en lon/lat', () => {
-        const [[lon, lat]] = pointsFromFeatures([punto(...GDL)]);
-        expect(lon).toBeCloseTo(GDL[0], 4);
-        expect(lat).toBeCloseTo(GDL[1], 4);
-    });
-
-    it('ignora las features sin geometría de punto', () => {
-        expect(pointsFromFeatures([new Feature({})])).toEqual([]);
-        expect(pointsFromFeatures(null)).toEqual([]);
-    });
-});
-
-describe('buildHexbinFeatures', () => {
-    it('crea un polígono por celda con su conteo', () => {
-        const { features } = buildHexbinFeatures([punto(...GDL), punto(...GDL), punto(...ZAPOPAN)], 7);
-
-        expect(features.length).toBe(2);
-        const conteos = features.map(f => f.get('count')).sort();
-        expect(conteos).toEqual([1, 2]);
-    });
-
-    it('el polígono cierra el anillo', () => {
-        const { features } = buildHexbinFeatures([punto(...GDL)], 7);
-        const anillo = features[0].getGeometry().getCoordinates()[0];
-
-        expect(anillo.length).toBe(8);
-        expect(anillo[0]).toEqual(anillo[anillo.length - 1]);
-    });
-
-    it('cada celda lleva su índice H3', () => {
-        const { features } = buildHexbinFeatures([punto(...GDL)], 7);
-        expect(features[0].get('h3Index')).toMatch(/^[0-9a-f]+$/);
-    });
-
-    it('sin puntos no hay celdas ni cortes', () => {
-        expect(buildHexbinFeatures([], 7)).toEqual({ features: [], breaks: [], max: 0 });
-    });
-
-    it('a más resolución, más celdas', () => {
-        const puntos = [punto(...GDL), punto(-103.36, 20.68), punto(-103.37, 20.69)];
-        const gruesa = buildHexbinFeatures(puntos, 5).features.length;
-        const fina = buildHexbinFeatures(puntos, 9).features.length;
-        expect(fina).toBeGreaterThanOrEqual(gruesa);
-    });
-});
+const leyendaDe = (valores, clases = 5) => legend(classify(valores, { method: 'quantile', classes: clases }), valores);
 
 describe('legendEntries', () => {
-    it('cubre desde 1 hasta el máximo sin huecos', () => {
-        const entries = legendEntries([2, 5, 9], 20);
+    it('muestra rangos enteros sin huecos para conteos', () => {
+        const entries = legendEntries(leyendaDe([1, 2, 3, 5, 8, 13, 21, 34, 55, 89]));
 
         expect(entries[0].from).toBe(1);
-        expect(entries[entries.length - 1].to).toBe(20);
+        expect(entries[entries.length - 1].to).toBe(89);
         entries.slice(1).forEach((entry, i) => {
             expect(entry.from).toBe(entries[i].to + 1);
         });
     });
 
-    it('usa los colores de la rampa en orden', () => {
-        const entries = legendEntries([2, 5], 9);
+    it('redondea los cortes interpolados hacia el entero que los contiene', () => {
+        const entries = legendEntries([
+            { classIndex: 0, min: 4, max: 7.8, count: 1, closed: 'left' },
+            { classIndex: 1, min: 7.8, max: 196.2, count: 1, closed: 'both' }
+        ]);
+        expect(entries.map(({ from, to }) => [from, to])).toEqual([[4, 7], [8, 196]]);
+    });
+
+    it('usa los colores de la rampa por clase', () => {
+        const entries = legendEntries(leyendaDe([1, 2, 3, 4, 5, 6, 7, 8, 9], 3));
         expect(entries.map(e => e.color)).toEqual(hexbinRamp().slice(0, entries.length));
     });
 
-    it('sin máximo no hay leyenda', () => {
-        expect(legendEntries([], null)).toEqual([]);
+    it('sin leyenda no hay entradas', () => {
+        expect(legendEntries([])).toEqual([]);
+        expect(legendEntries(undefined)).toEqual([]);
+    });
+});
+
+describe('hexbinStyle', () => {
+    it('cachea por clase, tono, relleno y selección', () => {
+        expect(hexbinStyle(2, { paletteIndex: 1 })).toBe(hexbinStyle(2, { paletteIndex: 1 }));
+        expect(hexbinStyle(2, { paletteIndex: 1 })).not.toBe(hexbinStyle(2, { paletteIndex: 1, selectedCell: true }));
+    });
+
+    it('una celda sin clase usa el primer color', () => {
+        expect(hexbinStyle(-1).getFill().getColor()).toBe(hexbinStyle(0).getFill().getColor());
     });
 });
 
@@ -102,7 +69,7 @@ describe('paleta por capa', () => {
     });
 
     it('la leyenda usa la rampa de su capa', () => {
-        const conTono = legendEntries([2, 5], 9, 2);
+        const conTono = legendEntries(leyendaDe([1, 2, 3, 4, 5, 6, 7, 8, 9], 3), 2);
         expect(conTono.map(e => e.color)).toEqual(rampFor(2).slice(0, conTono.length));
     });
 });
@@ -121,7 +88,7 @@ describe('colores que el minificador acorta', () => {
     });
 
     it('la leyenda de la cuarta capa no queda vacía', () => {
-        const entries = legendEntries([2, 5], 9, 3);
+        const entries = legendEntries(leyendaDe([1, 2, 3, 4, 5, 6, 7, 8, 9], 3), 3);
         expect(entries.length).toBeGreaterThan(0);
         entries.forEach(e => expect(e.color).toMatch(/^#[0-9a-f]{6}$/i));
     });

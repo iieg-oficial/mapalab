@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { unByKey } from 'ol/Observable';
 import { getUid } from 'ol/util';
-import { HEXBIN_LAYER_FLAG } from '@pages/maps/helpers/hexbinLayer';
+import { HEXBIN_LAYER_FLAG } from '@pages/maps/helpers/panalHexbin';
 import { VECTOR_LAYER_FLAG } from '@pages/maps/helpers/serviceMode';
 import { RELIEF_LAYER_ID } from '@pages/maps/helpers/view3d';
 import { numericProperties } from '@pages/maps/helpers/extrusionRules';
