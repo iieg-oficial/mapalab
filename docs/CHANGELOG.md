@@ -34,6 +34,13 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   espera a que la capa termine de cargar y el tope de 30 s salen de zootropo 0.2.1, vendorizado en
   `frontend/vendor/` como biombo. El sondeo cada 100 ms de `loadingLayers` se sustituye por
   `loading()`/`ready()` del reproductor. Primer paso de `planes/migracion-a-zootropo.md`.
+- **El filtro de fecha se lee por rangos, no por el texto exacto.** `helpers/dateKeys.js` convierte
+  cualquier CQL de fecha (cualquier columna, rangos fundidos, días como rango o igualdad, horas) en
+  llaves de zootropo; `parseCQLToSelections`, `cqlToDateRange` y `describeDateFilter` pasan por ahí, así
+  que la píldora, el nombre y el rango de las descargas y `?fecha=` entienden el formato viejo y el
+  nuevo. `generateCQLFilter` genera con zootropo: meses o días contiguos salen como un solo rango y el
+  día deja de ser `fecha = '…'`. Los enlaces y sesiones guardados con el formato anterior se siguen
+  leyendo.
 
 ## [2.3.0] - 2026-10-06
 
