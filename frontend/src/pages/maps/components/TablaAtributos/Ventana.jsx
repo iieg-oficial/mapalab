@@ -25,7 +25,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
     const { municipioMode } = useMapsContext();
     const datos = useTablaDatos(layerId, { minimizada });
     const catalogo = useCatalogoCampos(layerId, !minimizada);
-    const seleccion = useTablaSeleccion(layerId, datos.layerDef, datos.filas, datos.tarjeta);
+    const seleccion = useTablaSeleccion(layerId, datos.layerDef, datos.filas, datos.tarjeta, datos.tabla);
     const { posicion, manejadores, zona } = useArrastreVentana(() => posicionCentrada(indice), acoplable ? acoplar : null);
     const tirador = useAltoAcoplado(altoAcople, fijarAltoAcople);
     const [verCql, setVerCql] = useState(false);
@@ -122,6 +122,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                         onAplicar={datos.filtros.poner}
                         onLimpiar={datos.filtros.quitar}
                         onOrdenar={datos.alternarOrden}
+                        tabla={datos.tabla}
                     />
                     <Cuerpo
                         columnas={datos.visibles}
@@ -232,6 +233,7 @@ const Ventana = ({ layerId, indice, activa, minimizada, esMovil }) => {
                                 onAplicar={datos.filtros.poner}
                                 onLimpiar={datos.filtros.quitar}
                                 onOrdenar={datos.alternarOrden}
+                                tabla={datos.tabla}
                             />
                         </div>
                     )}
