@@ -5,7 +5,7 @@ import { useLayerLoading } from '@hooks/useLayerLoading';
 import { useSider, useSiderHover } from '@contexts/SiderContext';
 import { useSearch } from '@contexts/SearchContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
-import { useScrollOverflow } from '@hooks/useScrollOverflow';
+import { useScrollEdges } from 'scroll-edges/react';
 import Logo from '@components/Logo';
 import { createMenuItems, BASE_ITEMS_COUNT } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING, SIDER_LOCK_LABELS } from '@constants/sider';
@@ -87,8 +87,7 @@ const MapSider = ({ className = '' }) => {
 
     const { shouldAutoOpenSearch, clearAutoOpen } = useSearch();
     const { isZenMode } = useZenMode();
-    const contentRef = useRef(null);
-    const { canScrollUp, canScrollDown } = useScrollOverflow(contentRef);
+    const { getContainerProps } = useScrollEdges({ mask: true });
     const [autoOpenMenuId, setAutoOpenMenuId] = useState(null);
     const autoOpenProcessedRef = useRef(false);
     const navigate = useNavigate();
@@ -280,20 +279,7 @@ const MapSider = ({ className = '' }) => {
                     />
                 </div>
                 {(!treatAsMobile || isOpen) && (
-                    <div
-                        ref={contentRef}
-                        className={[
-                            'flex-1 flex flex-col gap-3 px-3',
-                            `${HIDDEN_SCROLLBAR}`,
-                            canScrollUp && canScrollDown
-                                ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]'
-                                : canScrollUp
-                                    ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%)]'
-                                    : canScrollDown
-                                        ? '[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]'
-                                        : ''
-                        ].join(' ')}
-                    >
+                    <div {...getContainerProps({ className: `flex-1 flex flex-col gap-3 px-3 ${HIDDEN_SCROLLBAR}` })}>
                         <div className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3">
                             <MenuGroup items={menuItems.slice(0, baseItemsEnd)} isMobileView={treatAsMobile} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
                         </div>

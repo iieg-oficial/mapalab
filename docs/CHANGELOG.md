@@ -26,6 +26,13 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   desplegado, «Carto Dark» aparece marcado en «Mapas base». Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
 - El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
 
+### Cambiado
+
+- **`ScrollContainer` corre sobre scroll-edges**, la librería headless que salió de él (vendorizada en
+  `vendor/scroll-edges-0.1.0.tgz`). Se ve igual; ya no mide con cada cambio de clase de sus hijos, observa
+  los que llegan después de montar y el sider engancha su máscara aunque su contenido se monte tarde.
+  Salen seis props sin uso y `useScrollOverflow`
+
 
 ## [2.3.0] - 2026-10-06
 
