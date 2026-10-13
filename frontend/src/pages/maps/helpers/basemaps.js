@@ -39,6 +39,15 @@ export const BASEMAPS = {
         create: () => cartoSource('light_nolabels'),
         createLabelsOverlay: () => cartoSource('light_only_labels'),
     },
+    oscuro: {
+        id: 'carto_dark',
+        label: 'Carto Dark',
+        labelZoomThreshold: 15,
+        tiles: cartoUrl('dark_nolabels'),
+        labelsTiles: cartoUrl('dark_only_labels'),
+        create: () => cartoSource('dark_nolabels'),
+        createLabelsOverlay: () => cartoSource('dark_only_labels'),
+    },
     sin_mapalab: {
         id: 'sin_mapalab',
         label: 'Sin Mapa Base',

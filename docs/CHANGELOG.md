@@ -20,7 +20,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   Capas activas, en cordel o en pila si el panel está contraído, que se agita con el
   hover. Sobre «Contribuciones ©», en escritorio, una ofrenda chica: cirios y veladoras encendidos,
   pan de muerto, un cafecito con vapor, mazapán, cocada, dulce de calabaza y una mandarina.
-  Los estilos del tema salen de `index.css` a `DiaDeMuertos/muertos.css`. Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
+  Los estilos del tema salen de `index.css` a `DiaDeMuertos/muertos.css`.
+  Mientras el tema está encendido el mapa base pasa a CARTO oscuro (`oscuro`, fuera de la lista de
+  mapas base) y al apagarlo vuelve al que había; si el visitante elige otro, se respeta. Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
 - El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
 
 
