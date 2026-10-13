@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
+import { useDistinctValues } from '@ghegar/tamiz/react';
 import Checkbox from '@components/Checkbox';
 import ScrollContainer from '@components/ScrollContainer';
 import { familiaDeColumna } from '@pages/maps/helpers/tablaCqlBuilder';
 
 const CLASE_CAMPO = 'w-full h-7 px-2 rounded border border-[#DCE3F0] text-[12px] font-garet text-graphite focus:outline-none focus:border-purple';
 
-const ListaValores = ({ valores, seleccionados, onAlternar }) => {
+const ListaValores = ({ valores, seleccionados, onAlternar, aviso = null }) => {
     const [busqueda, setBusqueda] = useState('');
     const filtrados = useMemo(() => {
         const termino = busqueda.trim().toLowerCase();
@@ -46,12 +47,36 @@ const ListaValores = ({ valores, seleccionados, onAlternar }) => {
                     <span className="text-[11px] font-garet text-[#8A94A6]">Sin coincidencias</span>
                 )}
             </ScrollContainer>
+            {aviso && <span className="text-[11px] font-garet text-[#8A94A6]">{aviso}</span>}
         </div>
     );
 };
 
+const AVISOS = {
+    loading: 'Consultando los valores…',
+    parcial: 'Se muestran los primeros valores',
+};
+
+const ListaDistintos = ({ tabla, columna, respaldo, seleccionados, onAlternar }) => {
+    const distintos = useDistinctValues(tabla, columna, { limit: 200 });
+    const valores = useMemo(() => {
+        const base = distintos.status === 'ready' ? distintos.values.map(String) : respaldo;
+        return [...new Set([...seleccionados, ...base])];
+    }, [distintos.status, distintos.values, respaldo, seleccionados]);
+    const parcial = distintos.status === 'ready' && !distintos.complete;
+
+    return (
+        <ListaValores
+            valores={valores}
+            seleccionados={seleccionados}
+            onAlternar={onAlternar}
+            aviso={AVISOS[parcial ? 'parcial' : distintos.status] || null}
+        />
+    );
+};
+
 const MenuColumna = ({
-    columna, campos, municipios, descriptor, orden, onAplicar, onLimpiar, onOrdenar, onCerrar,
+    columna, campos, municipios, descriptor, orden, onAplicar, onLimpiar, onOrdenar, onCerrar, tabla = null,
 }) => {
     const familia = municipios ? 'lista' : familiaDeColumna(columna, campos);
     const campo = (campos || []).find(item => item.nombre === columna);
@@ -97,13 +122,21 @@ const MenuColumna = ({
                 </button>
             </div>
 
-            {familia === 'lista' && (
+            {familia === 'lista' && (municipios || !tabla ? (
                 <ListaValores
                     valores={valores}
                     seleccionados={actual?.valores || []}
                     onAlternar={alternarValor}
                 />
-            )}
+            ) : (
+                <ListaDistintos
+                    tabla={tabla}
+                    columna={columna}
+                    respaldo={valores}
+                    seleccionados={actual?.valores || []}
+                    onAlternar={alternarValor}
+                />
+            ))}
 
             {familia === 'texto' && (
                 <input

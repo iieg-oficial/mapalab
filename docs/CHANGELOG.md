@@ -26,6 +26,25 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   desplegado, «Carto Dark» aparece marcado en «Mapas base». Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
 - El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
 
+### Cambiado
+
+- **La tabla de datos corre sobre tamiz** (`@ghegar/tamiz` 0.3.0, vendorizado en
+  `frontend/vendor/`). El WFS, el conteo, el orden, el paginado, el abort y el CQL de los filtros de
+  columna salen de tamiz; la ventana, los menús, el contexto, la persistencia y la descarga se quedan.
+  Las páginas piden solo las columnas de atributos, sin geometría: la geometría se pide por id al
+  seleccionar (hasta 100 registros para la tarjeta). Todas las páginas van con el mismo orden estable
+  (la primera columna, o la elegida), no solo de la segunda en adelante.
+- El filtro de lista de una columna muestra los valores reales de la capa con los demás filtros puestos,
+  sin contar el de la propia columna, y conserva los ya elegidos. Los valores del catálogo de campos
+  quedan de respaldo mientras cargan; los municipios no cambian.
+- Los Dockerfiles copian `vendor/` antes del `npm ci`, igual que en la rama de biombo.
+
+### Corregido
+
+- El filtro de texto busca `%`, `_` y `\` como caracteres literales; antes funcionaban como comodines.
+- Los nombres de columna que no son identificadores simples (espacios, acentos) van entre comillas
+  dobles en el CQL de la tabla.
+
 
 ## [2.3.0] - 2026-10-06
 

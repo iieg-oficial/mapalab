@@ -8,6 +8,7 @@ import { centerOnResults } from '@pages/maps/helpers/featureGeometry';
 import { LLAVE_SELECCION, cqlDeIds } from '@pages/maps/helpers/tablaCqlBuilder';
 
 const MINIMO_MULTIPLE = 2;
+const MAXIMO_EN_TARJETA = 100;
 
 const formato = new GeoJSON();
 
@@ -31,11 +32,12 @@ const rango = (desde, hasta) => {
     return Array.from({ length: fin - inicio + 1 }, (_, i) => inicio + i);
 };
 
-export const useTablaSeleccion = (layerId, layerDef, filas, tarjeta) => {
+export const useTablaSeleccion = (layerId, layerDef, filas, tarjeta, tabla) => {
     const { mapRef, setSelectedFeatureInfo, clickPosition, applyFilter, clearFilter } = useMapsContext();
     const { estadoDe, fijarSeleccion } = useTablaAtributos();
     const ids = estadoDe(layerId).seleccion;
     const anclaRef = useRef(null);
+    const pedidoRef = useRef(null);
 
     const seleccionadas = useMemo(() => new Set(ids), [ids]);
 
@@ -75,15 +77,32 @@ export const useTablaSeleccion = (layerId, layerDef, filas, tarjeta) => {
         centerOnResults({ activeMap: mapa, results });
     }, [clickPosition, layerDef, layerId, mapRef, setSelectedFeatureInfo, tarjeta]);
 
+    const mostrarIds = useCallback((siguientes) => {
+        pedidoRef.current?.abort();
+        if (siguientes.length === 0 || !tabla) {
+            mostrar([]);
+            return;
+        }
+        const controlador = new AbortController();
+        pedidoRef.current = controlador;
+        const pedidos = siguientes.slice(0, MAXIMO_EN_TARJETA);
+        tabla.fetchFeatures({ ids: pedidos, srsName: 'EPSG:3857', signal: controlador.signal })
+            .then(coleccion => {
+                if (controlador.signal.aborted) return;
+                const porId = new Map(coleccion.features.map(feature => [String(feature.id), feature]));
+                mostrar(pedidos.map(id => porId.get(String(id))).filter(Boolean));
+            })
+            .catch(() => {});
+    }, [mostrar, tabla]);
+
     const aplicar = useCallback((siguientes) => {
         fijarSeleccion(layerId, siguientes);
-        const porId = new Map((filas || []).map(fila => [fila?.id, fila]));
-        mostrar(siguientes.map(id => porId.get(id)).filter(Boolean));
+        mostrarIds(siguientes);
 
         const cql = siguientes.length >= MINIMO_MULTIPLE ? cqlDeIds(siguientes) : null;
         if (cql) applyFilter(layerId, LLAVE_SELECCION, cql);
         else clearFilter(layerId, LLAVE_SELECCION);
-    }, [applyFilter, clearFilter, fijarSeleccion, filas, layerId, mostrar]);
+    }, [applyFilter, clearFilter, fijarSeleccion, layerId, mostrarIds]);
 
     const seleccionar = useCallback((feature, indice, modo = {}) => {
         const id = feature?.id;
@@ -112,6 +131,7 @@ export const useTablaSeleccion = (layerId, layerDef, filas, tarjeta) => {
 
     const limpiar = useCallback(() => {
         anclaRef.current = null;
+        pedidoRef.current?.abort();
         fijarSeleccion(layerId, []);
         setSelectedFeatureInfo(null);
         clearFilter(layerId, LLAVE_SELECCION);
@@ -122,6 +142,8 @@ export const useTablaSeleccion = (layerId, layerDef, filas, tarjeta) => {
     }, [aplicar, filas]);
 
     useEffect(() => () => clearFilter(layerId, LLAVE_SELECCION), [clearFilter, layerId]);
+
+    useEffect(() => () => pedidoRef.current?.abort(), []);
 
     return {
         seleccionadas,

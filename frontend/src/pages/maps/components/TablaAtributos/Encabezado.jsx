@@ -6,7 +6,7 @@ import Panel from '@components/Panel';
 import MenuColumna from './MenuColumna';
 
 const ColumnaEncabezado = ({
-    columna, abierta, onAlternar, onCerrar, campos, municipios, descriptor, orden, onAplicar, onLimpiar, onOrdenar,
+    columna, abierta, onAlternar, onCerrar, campos, municipios, descriptor, orden, onAplicar, onLimpiar, onOrdenar, tabla,
 }) => {
     const anclaRef = useRef(null);
     const conFiltro = Boolean(descriptor);
@@ -50,13 +50,16 @@ const ColumnaEncabezado = ({
                     onLimpiar={onLimpiar}
                     onOrdenar={onOrdenar}
                     onCerrar={onCerrar}
+                    tabla={tabla}
                 />
             </Panel>
         </div>
     );
 };
 
-const Encabezado = ({ columnas, plantilla, campos, orden, filtros, municipiosDe, seleccion, onAplicar, onLimpiar, onOrdenar }) => {
+const Encabezado = ({
+    columnas, plantilla, campos, orden, filtros, municipiosDe, seleccion, onAplicar, onLimpiar, onOrdenar, tabla = null,
+}) => {
     const [abierta, setAbierta] = useState(null);
 
     return (
@@ -93,6 +96,7 @@ const Encabezado = ({ columnas, plantilla, campos, orden, filtros, municipiosDe,
                     onAplicar={descriptor => onAplicar(columna.nombre, descriptor)}
                     onLimpiar={() => { onLimpiar(columna.nombre); setAbierta(null); }}
                     onOrdenar={() => onOrdenar(columna.nombre)}
+                    tabla={tabla}
                 />
             ))}
         </div>

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { createAttributeTable } from '@ghegar/tamiz';
 import { useMapsContext } from '@hooks/useMaps';
 import { useDebounce } from '@hooks/useDebounce';
 import { useTablaAtributos } from '@contexts/TablaAtributosContext';
@@ -11,38 +12,43 @@ import { resolverObjetivo } from '@pages/maps/helpers/tablaCapa';
 import { buildLayerMunicipioCql } from '@pages/maps/helpers/municipioCqlBuilder';
 import { RASTER_WORKSPACES } from '@pages/maps/helpers/layerCqlSegment';
 import { combinar, construirBbox, filtroHeredado, filtrosComunes } from '@pages/maps/helpers/tablaCqlBuilder';
-import { fetchNonGeometryColumns } from '@services/downloadUrls';
-import { countVectorFeatures } from '@services/vectorLayerService';
-import { fetchPagina, ordenarColumnas, MAX_PAGINAS } from '@services/tablaAtributosService';
-import { fetchGeometryColumns, getWfsUrl } from '@utils/featureInfoUtils';
+import { crearAcumulador, fuenteWfs, mensajeDeError, sincronizar } from '@pages/maps/helpers/tamizTabla';
+import { ordenarColumnas, MAX_PAGINAS, TAMANO_PAGINA } from '@services/tablaAtributosService';
 
 const RETARDO_CONSULTA = 300;
+const SIN_FILAS = [];
+const sinSuscripcion = () => () => {};
+const sinSnapshot = () => null;
+const SIN_ACUMULADOR = { subscribe: sinSuscripcion, getSnapshot: () => SIN_FILAS };
 
 export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
     const { allLayers, activeLayerIds, getLayerFilters, municipioMode } = useMapsContext();
     const { estadoDe, fijarConteo, fijarOrden } = useTablaAtributos();
-    const { orden, ocultas } = estadoDe(layerId);
+    const { orden, ocultas, filtros: descriptores, expresionPropia } = estadoDe(layerId);
     const configuracion = useColumnasConfig(layerId);
     const filtros = useTablaFiltros(layerId);
     const vista = useTablaVista(layerId);
 
-    const [columnas, setColumnas] = useState([]);
-    const [filas, setFilas] = useState([]);
-    const [total, setTotal] = useState(null);
-    const [pagina, setPagina] = useState(0);
-    const [cargando, setCargando] = useState(false);
-    const [error, setError] = useState(null);
-    const [campoGeometria, setCampoGeometria] = useState(null);
-    const [columnasListas, setColumnasListas] = useState(false);
-    const [cargandoMas, setCargandoMas] = useState(false);
-    const peticionRef = useRef(null);
-    const masRef = useRef(null);
-
     const layerDef = useMemo(() => findLayerDef(layerId, allLayers || []), [allLayers, layerId]);
     const objetivo = useMemo(() => resolverObjetivo(layerDef), [layerDef]);
     const wmsConfig = objetivo.wmsConfig;
+    const fuente = useMemo(() => fuenteWfs(wmsConfig), [wmsConfig]);
+    const tabla = useMemo(
+        () => (fuente ? createAttributeTable({ source: fuente, pageSize: TAMANO_PAGINA, stableSort: true }) : null),
+        [fuente],
+    );
+    const acumulador = useMemo(() => (tabla ? crearAcumulador(tabla) : SIN_ACUMULADOR), [tabla]);
+    const snapshot = useSyncExternalStore(tabla?.subscribe ?? sinSuscripcion, tabla?.getSnapshot ?? sinSnapshot);
+    const filas = useSyncExternalStore(acumulador.subscribe, acumulador.getSnapshot);
+
+    const esquema = snapshot?.schema ?? null;
+    const columnasListas = Boolean(esquema) || snapshot?.status === 'error';
+    const columnas = useMemo(
+        () => ordenarColumnas((esquema?.fields || []).map(campo => campo.name), configuracion),
+        [configuracion, esquema],
+    );
     const sinColumnas = columnas.length === 0 && columnasListas;
-    const disponible = Boolean(wmsConfig) && !sinColumnas;
+    const disponible = Boolean(tabla) && !sinColumnas;
 
     const mensaje = useMemo(() => {
         if (objetivo.motivo) return objetivo.motivo;
@@ -51,6 +57,13 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
             ? 'Las capas de este grupo no comparten una tabla que se pueda consultar.'
             : 'Esta capa no publica columnas de datos: solo tiene geometría.';
     }, [objetivo.esGrupo, objetivo.motivo, sinColumnas]);
+
+    const campoGeometria = useMemo(() => {
+        const campo = esquema?.geometryField;
+        if (!campo) return null;
+        const esInegi = (activeLayerIds || []).some(id => INEGI_LAYER_IDS.includes(id));
+        return esInegi && campo === 'geom_iieg' ? 'geom_inegi' : campo;
+    }, [activeLayerIds, esquema]);
 
     const heredado = useMemo(() => {
         const propios = objetivo.esGrupo
@@ -72,111 +85,48 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         return construirBbox(campoGeometria, vista.extent, vista.srs);
     }, [campoGeometria, vista.extent, vista.srs]);
 
-    const cqlCompleto = useMemo(
-        () => combinar([wmsConfig?.cqlFilter, municipio, heredado, filtros.cql, bbox]),
-        [bbox, filtros.cql, heredado, municipio, wmsConfig?.cqlFilter],
+    const base = useMemo(
+        () => combinar([wmsConfig?.cqlFilter, municipio, heredado, bbox]),
+        [bbox, heredado, municipio, wmsConfig?.cqlFilter],
     );
+    const cqlCompleto = useMemo(() => combinar([base, filtros.cql]), [base, filtros.cql]);
 
     const consulta = useDebounce(
-        useMemo(() => ({ cql: cqlCompleto, orden }), [cqlCompleto, orden]),
+        useMemo(() => ({
+            base,
+            filtros: descriptores,
+            expresion: expresionPropia,
+            orden,
+            tamano: minimizada ? 1 : TAMANO_PAGINA,
+        }), [base, descriptores, expresionPropia, minimizada, orden]),
         RETARDO_CONSULTA,
     );
 
     useEffect(() => {
-        if (!wmsConfig) {
-            setColumnas([]);
-            setColumnasListas(false);
-            return undefined;
-        }
-
-        const controlador = new AbortController();
-        setColumnasListas(false);
-        fetchNonGeometryColumns(wmsConfig, controlador.signal)
-            .then(nombres => setColumnas(ordenarColumnas(nombres || [], configuracion)))
-            .catch(() => setColumnas([]))
-            .finally(() => { if (!controlador.signal.aborted) setColumnasListas(true); });
-
-        return () => controlador.abort();
-    }, [configuracion, wmsConfig]);
+        if (tabla) sincronizar(tabla, consulta);
+    }, [consulta, tabla]);
 
     useEffect(() => {
-        if (!disponible) return;
-        const typeName = wmsConfig.wfsLayerName || wmsConfig.layerName;
-        const esInegi = (activeLayerIds || []).some(id => INEGI_LAYER_IDS.includes(id));
+        if (!tabla) return undefined;
+        tabla.start();
+        return () => tabla.destroy();
+    }, [tabla]);
 
-        fetchGeometryColumns(getWfsUrl(wmsConfig.baseUrl), [typeName])
-            .then(columnasGeom => {
-                const campo = columnasGeom?.[typeName] || 'the_geom';
-                setCampoGeometria(esInegi && campo === 'geom_iieg' ? 'geom_inegi' : campo);
-            })
-            .catch(() => setCampoGeometria(null));
-    }, [activeLayerIds, disponible, wmsConfig]);
-
-    const pedirPagina = useCallback(async (pagina, controlador) => fetchPagina(wmsConfig, {
-        cql: consulta.cql,
-        pagina,
-        orden: consulta.orden,
-        ordenPorDefecto: columnas.find(columna => columna.visible)?.nombre || null,
-        signal: controlador.signal,
-    }), [columnas, consulta.cql, consulta.orden, wmsConfig]);
+    const total = snapshot?.total ?? null;
 
     useEffect(() => {
-        if (!disponible || !columnasListas) return undefined;
+        if (Number.isFinite(total)) fijarConteo(layerId, total);
+    }, [fijarConteo, layerId, total]);
 
-        const controlador = new AbortController();
-        peticionRef.current?.abort();
-        peticionRef.current = controlador;
-        setCargando(true);
-        setError(null);
-
-        const pedir = async () => {
-            try {
-                const conteo = await countVectorFeatures(wmsConfig, consulta.cql, controlador.signal);
-                if (controlador.signal.aborted) return;
-                setTotal(conteo);
-                fijarConteo(layerId, conteo);
-
-                if (minimizada) return;
-
-                const { features } = await pedirPagina(0, controlador);
-                if (controlador.signal.aborted) return;
-                setFilas(features);
-                setPagina(0);
-            } catch (fallo) {
-                if (fallo?.name === 'AbortError' || controlador.signal.aborted) return;
-                setError(fallo?.message || 'No se pudieron traer los datos');
-                setFilas([]);
-            } finally {
-                if (!controlador.signal.aborted) setCargando(false);
-            }
-        };
-
-        pedir();
-        return () => controlador.abort();
-    }, [columnasListas, consulta.cql, disponible, fijarConteo, layerId, minimizada, pedirPagina, wmsConfig]);
-
-    const hayMas = Number.isFinite(total)
-        ? filas.length < total && pagina + 1 < MAX_PAGINAS
+    const cargandoPagina = snapshot?.status === 'loading';
+    const hayMas = Number.isFinite(total) && !minimizada
+        ? filas.length < total && Math.ceil(filas.length / TAMANO_PAGINA) < MAX_PAGINAS
         : false;
 
-    const cargarMas = useCallback(async () => {
-        if (!hayMas || cargandoMas || cargando) return;
-        const controlador = new AbortController();
-        masRef.current = controlador;
-        setCargandoMas(true);
-        try {
-            const { features } = await pedirPagina(pagina + 1, controlador);
-            if (controlador.signal.aborted) return;
-            setFilas(previas => [...previas, ...features]);
-            setPagina(actual => actual + 1);
-        } catch (fallo) {
-            if (fallo?.name !== 'AbortError' && !controlador.signal.aborted) {
-                setError(fallo?.message || 'No se pudieron traer más registros');
-            }
-        } finally {
-            if (!controlador.signal.aborted) setCargandoMas(false);
-        }
-    }, [cargando, cargandoMas, hayMas, pagina, pedirPagina]);
+    const cargarMas = useCallback(() => {
+        if (!hayMas || cargandoPagina || !tabla) return;
+        tabla.setPage(Math.ceil(filas.length / TAMANO_PAGINA));
+    }, [cargandoPagina, filas.length, hayMas, tabla]);
 
     const chipsHeredados = useMemo(() => {
         const ctx = municipioMode?.municipioContext;
@@ -201,7 +151,10 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         [columnas, ocultas],
     );
 
+    const primeraPagina = (snapshot?.page ?? 0) === 0;
+
     return {
+        tabla,
         layerDef,
         tarjeta,
         wmsConfig,
@@ -217,10 +170,10 @@ export const useTablaDatos = (layerId, { minimizada = false } = {}) => {
         filas,
         total,
         hayMas,
-        cargandoMas,
+        cargandoMas: cargandoPagina && !primeraPagina,
         cargarMas,
-        cargando: (cargando || vista.recalculando || !columnasListas) && Boolean(wmsConfig),
-        error,
+        cargando: ((cargandoPagina && primeraPagina) || vista.recalculando || !columnasListas) && Boolean(tabla),
+        error: mensajeDeError(snapshot?.error),
         filtros,
         chipsHeredados,
         vista,

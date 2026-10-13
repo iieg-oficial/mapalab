@@ -1,77 +1,57 @@
+import { and, bboxToCql, filterToCql, filtersToCql, idsToCql, isEmptyFilter } from '@ghegar/tamiz';
+
 export const FORMATOS_NUMERICOS = new Set(['entero', 'decimal', 'moneda']);
 
-const escapar = (valor) => String(valor).replace(/'/g, "''");
-
-const comillas = (valor) => `'${escapar(valor)}'`;
-
-const listaCql = (columna, descriptor) => {
-    const valores = (descriptor.valores || []).filter(v => v !== null && v !== undefined && v !== '');
-    if (valores.length === 0) return null;
-    if (valores.length === 1) return `${columna} = ${comillas(valores[0])}`;
-    return `${columna} IN (${valores.map(comillas).join(',')})`;
+const numeroCql = (descriptor) => {
+    const { min, max } = descriptor;
+    const conMin = Number.isFinite(min);
+    const conMax = Number.isFinite(max);
+    if (conMin && conMax) return { kind: 'number', op: 'between', min, max };
+    if (conMin) return { kind: 'number', op: 'gte', value: min };
+    if (conMax) return { kind: 'number', op: 'lte', value: max };
+    return null;
 };
 
-const textoCql = (columna, descriptor) => {
-    const termino = (descriptor.contiene || '').trim();
-    if (!termino) return null;
-    return `${columna} ILIKE '%${escapar(termino)}%'`;
-};
-
-const numeroCql = (columna, descriptor) => {
-    const partes = [];
-    if (Number.isFinite(descriptor.min)) partes.push(`${columna} >= ${descriptor.min}`);
-    if (Number.isFinite(descriptor.max)) partes.push(`${columna} <= ${descriptor.max}`);
-    if (partes.length === 0) return null;
-    return partes.join(' AND ');
-};
-
-const fechaCql = (columna, descriptor) => {
-    const partes = [];
-    if (descriptor.desde) partes.push(`${columna} >= ${comillas(descriptor.desde)}`);
-    if (descriptor.hasta) partes.push(`${columna} < ${comillas(descriptor.hasta)}`);
-    if (partes.length === 0) return null;
-    return partes.join(' AND ');
-};
-
-const booleanoCql = (columna, descriptor) => {
-    if (descriptor.valor !== true && descriptor.valor !== false) return null;
-    return `${columna} = ${descriptor.valor ? 'true' : 'false'}`;
-};
+const fechaCql = (descriptor) => ({
+    kind: 'date',
+    ...(descriptor.desde ? { from: descriptor.desde } : {}),
+    ...(descriptor.hasta ? { before: descriptor.hasta } : {}),
+});
 
 const POR_FAMILIA = {
-    lista: listaCql,
-    texto: textoCql,
+    lista: descriptor => ({ kind: 'list', values: descriptor.valores || [] }),
+    texto: descriptor => ({ kind: 'text', op: 'contains', value: (descriptor.contiene || '').trim() }),
     numero: numeroCql,
     fecha: fechaCql,
-    booleano: booleanoCql,
+    booleano: descriptor => (descriptor.valor === true || descriptor.valor === false
+        ? { kind: 'boolean', value: descriptor.valor }
+        : null),
 };
+
+export const aFiltroTamiz = (descriptor) => {
+    const traductor = POR_FAMILIA[descriptor?.familia];
+    return traductor ? traductor(descriptor) : null;
+};
+
+export const filtrosATamiz = (filtros) => Object.fromEntries(
+    Object.entries(filtros || {})
+        .map(([columna, descriptor]) => [columna, aFiltroTamiz(descriptor)])
+        .filter(([, filtro]) => filtro && !isEmptyFilter(filtro)),
+);
 
 export const construirCqlColumna = (columna, descriptor) => {
-    if (!columna || !descriptor) return null;
-    const constructor = POR_FAMILIA[descriptor.familia];
-    if (!constructor) return null;
-    return constructor(columna, descriptor);
+    const filtro = columna ? aFiltroTamiz(descriptor) : null;
+    return filtro ? filterToCql(columna, filtro) : null;
 };
 
-export const combinar = (expresiones) => {
-    const validas = (expresiones || []).filter(Boolean);
-    if (validas.length === 0) return null;
-    if (validas.length === 1) return validas[0];
-    return validas.map(expresion => `(${expresion})`).join(' AND ');
-};
+export const combinar = (expresiones) => and(expresiones || []);
 
-export const construirCql = (filtros) => {
-    if (!filtros) return null;
-    return combinar(
-        Object.entries(filtros).map(([columna, descriptor]) => construirCqlColumna(columna, descriptor)),
-    );
-};
+export const construirCql = (filtros) => filtersToCql(filtrosATamiz(filtros));
 
 export const construirBbox = (campoGeometria, extent, srs) => {
     if (!campoGeometria || !Array.isArray(extent) || extent.length !== 4) return null;
     if (!extent.every(Number.isFinite)) return null;
-    const [xmin, ymin, xmax, ymax] = extent;
-    return `BBOX(${campoGeometria}, ${xmin}, ${ymin}, ${xmax}, ${ymax}, '${srs}')`;
+    return bboxToCql(campoGeometria, extent, srs);
 };
 
 export const LLAVE_TABLA = 'tabla';
@@ -143,8 +123,4 @@ export const familiaDeColumna = (columna, campos) => {
     return 'texto';
 };
 
-export const cqlDeIds = (ids) => {
-    const validos = (ids || []).filter(Boolean);
-    if (validos.length === 0) return null;
-    return `IN (${validos.map(id => `'${String(id).replace(/'/g, "''")}'`).join(',')})`;
-};
+export const cqlDeIds = (ids) => idsToCql((ids || []).filter(Boolean).map(String), null);

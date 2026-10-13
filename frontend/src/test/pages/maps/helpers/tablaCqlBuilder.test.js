@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+    aFiltroTamiz,
     combinar,
     cqlDeIds,
     construirBbox,
@@ -9,6 +10,7 @@ import {
     etiquetaFiltro,
     familiaDeColumna,
     filtroHeredado,
+    filtrosATamiz,
     filtrosComunes,
 } from '@pages/maps/helpers/tablaCqlBuilder';
 
@@ -17,7 +19,7 @@ describe('construirCqlColumna', () => {
         expect(construirCqlColumna('municipio', { familia: 'lista', valores: ['Zapopan'] }))
             .toBe("municipio = 'Zapopan'");
         expect(construirCqlColumna('municipio', { familia: 'lista', valores: ['Zapopan', 'Tonalá'] }))
-            .toBe("municipio IN ('Zapopan','Tonalá')");
+            .toBe("municipio IN ('Zapopan', 'Tonalá')");
     });
 
     it('escapa las comillas simples de los valores', () => {
@@ -27,11 +29,23 @@ describe('construirCqlColumna', () => {
             .toBe("nombre ILIKE '%O''Brien%'");
     });
 
+    it('busca los comodines de LIKE como caracteres literales', () => {
+        expect(construirCqlColumna('clave', { familia: 'texto', contiene: '10%_a' }))
+            .toBe("clave ILIKE '%10\\%\\_a%'");
+    });
+
+    it('entrecomilla los nombres de columna que no son identificadores simples', () => {
+        expect(construirCqlColumna('Nombre escuela', { familia: 'texto', contiene: 'a' }))
+            .toBe(`"Nombre escuela" ILIKE '%a%'`);
+    });
+
     it('arma rangos numericos con los limites que existan', () => {
         expect(construirCqlColumna('alumnos', { familia: 'numero', min: 400, max: null }))
             .toBe('alumnos >= 400');
         expect(construirCqlColumna('alumnos', { familia: 'numero', min: 400, max: 900 }))
-            .toBe('alumnos >= 400 AND alumnos <= 900');
+            .toBe('alumnos BETWEEN 400 AND 900');
+        expect(construirCqlColumna('alumnos', { familia: 'numero', min: null, max: 900 }))
+            .toBe('alumnos <= 900');
     });
 
     it('trata la fecha como intervalo semiabierto', () => {
@@ -45,6 +59,23 @@ describe('construirCqlColumna', () => {
         expect(construirCqlColumna('x', { familia: 'numero', min: null, max: null })).toBeNull();
         expect(construirCqlColumna('x', { familia: 'booleano', valor: null })).toBeNull();
         expect(descriptorVacio({ familia: 'texto', contiene: '' })).toBe(true);
+    });
+});
+
+describe('aFiltroTamiz y filtrosATamiz', () => {
+    it('traduce cada familia al filtro de tamiz', () => {
+        expect(aFiltroTamiz({ familia: 'lista', valores: ['a'] })).toEqual({ kind: 'list', values: ['a'] });
+        expect(aFiltroTamiz({ familia: 'fecha', desde: '2026-01-01', hasta: '2026-02-01' }))
+            .toEqual({ kind: 'date', from: '2026-01-01', before: '2026-02-01' });
+        expect(aFiltroTamiz({ familia: 'booleano', valor: false })).toEqual({ kind: 'boolean', value: false });
+        expect(aFiltroTamiz({ familia: 'otra' })).toBeNull();
+    });
+
+    it('descarta los descriptores vacios', () => {
+        expect(filtrosATamiz({
+            a: { familia: 'texto', contiene: '  ' },
+            b: { familia: 'numero', min: 3, max: null },
+        })).toEqual({ b: { kind: 'number', op: 'gte', value: 3 } });
     });
 });
 
@@ -137,7 +168,7 @@ describe('filtrosComunes', () => {
 
 describe('cqlDeIds', () => {
     it('arma el filtro de ids que entiende GeoServer', () => {
-        expect(cqlDeIds(['escuelas.1', 'escuelas.2'])).toBe("IN ('escuelas.1','escuelas.2')");
+        expect(cqlDeIds(['escuelas.1', 'escuelas.2'])).toBe("IN ('escuelas.1', 'escuelas.2')");
     });
 
     it('escapa comillas y descarta vacios', () => {
