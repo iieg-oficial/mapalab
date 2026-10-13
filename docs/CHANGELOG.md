@@ -201,6 +201,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Corregido
 
+- El primer inicio de sesión de una cuenta ya no se rechaza como «Tu acceso a MapaLab está suspendido»:
+  el usuario nuevo nace activo en lugar de esperar al default de la base, que llega hasta el `INSERT`.
 - Los enlaces a la página del IIEG (footer, logo de la portada y tarjeta del IIEG en el mapa) apuntan a
   `https://iieg.jalisco.gob.mx/`. El PDF de la licencia sigue en `iieg.gob.mx`, el único que lo sirve
 - El widget embebible usa por defecto `https://iieg.jalisco.gob.mx/mapalab` cuando no se le pasa
