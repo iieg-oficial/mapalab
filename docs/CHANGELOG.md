@@ -57,6 +57,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   lados en un reloj de zootropo (`createPlayerGroup`): el play arranca ambos desde la fecha del lado
   donde se pulsó y pausar cualquiera pausa los dos. `getLoopState` y `stopLoop` aceptan el lado.
 
+### Eliminado
+
+- `useDateSelections` y `computeSelectorInitialState`: el árbol y el selector de fechas guardan la
+  selección en zootropo.
+
 ## [2.3.0] - 2026-10-06
 
 ### Agregado

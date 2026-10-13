@@ -1,5 +1,5 @@
 import { parseKey } from 'zootropo';
-import { generateCQLFilter, parseCQLToSelections, MONTHS } from './dateFilterHelpers';
+import { generateCQLFilter, MONTHS } from './dateFilterHelpers';
 import { dateKeysFromFilter } from './dateKeys';
 
 const pickPeriodicitySource = ({ rasterPeriodicity, periodicity }) => {
@@ -56,40 +56,6 @@ export const formatLoopLabelLong = (desc, { maxMonths = Infinity } = {}) => {
 };
 
 export const formatDateFilterPill = (desc) => formatLoopLabelLong(desc, { maxMonths: MAX_LISTED_MONTHS });
-
-export const computeSelectorInitialState = ({ isRaster, rasterPeriodicity, currentFilter }) => {
-    if (isRaster) {
-        if (!rasterPeriodicity) return { year: null, months: new Set() };
-        if (currentFilter) {
-            for (const [y, yData] of Object.entries(rasterPeriodicity)) {
-                if (typeof yData === 'string' && yData === currentFilter) {
-                    return { year: parseInt(y), months: new Set() };
-                }
-                if (yData && typeof yData === 'object') {
-                    for (const [m, v] of Object.entries(yData)) {
-                        if (v === currentFilter) return { year: parseInt(y), months: new Set([parseInt(m)]) };
-                    }
-                }
-            }
-        }
-        const years = Object.keys(rasterPeriodicity).map(Number).sort((a, b) => b - a);
-        return { year: years[0] || null, months: new Set() };
-    }
-
-    const parsed = parseCQLToSelections(currentFilter);
-    let year = null;
-    const months = new Set();
-    for (const sel of parsed) {
-        const parts = sel.split('-');
-        if (parts.length >= 2) {
-            year = parseInt(parts[0]);
-            months.add(parseInt(parts[1]));
-        } else if (parts.length === 1) {
-            year = parseInt(parts[0]);
-        }
-    }
-    return { year, months };
-};
 
 export const buildLoopValues = ({ mode, year, rasterPeriodicity = null, periodicity = null, monthsSelection = null, filterColumn = 'fecha' }) => {
     const isRaster = !!rasterPeriodicity;
