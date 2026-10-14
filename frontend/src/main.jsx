@@ -2,8 +2,8 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
-import { createRoot } from 'react-dom/client'
-import './index.css'
+import { createRoot } from 'react-dom/client';
+import './index.css';
 import NotFound from '@pages/NotFound';
 import ErrorPage from '@pages/ErrorPage';
 import MainProvider from '@providers/MainProvider';
@@ -54,4 +54,4 @@ createRoot(document.getElementById('root')).render(
             <RouterProvider router={router} />
         </Suspense>
     </RootErrorBoundary>
-)
+);

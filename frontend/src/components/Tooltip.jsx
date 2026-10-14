@@ -83,25 +83,25 @@ const Tooltip = ({
         let currentPlacement = placement;
 
         switch (placement) {
-        case 'top':
-            top = triggerRect.top - tooltipRect.height - offset;
-            left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
-            break;
-        case 'bottom':
-            top = triggerRect.bottom + offset;
-            left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
-            break;
-        case 'left':
-            top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
-            left = triggerRect.left - tooltipRect.width - offset;
-            break;
-        case 'right':
-            top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
-            left = triggerRect.right + offset;
-            break;
-        default:
-            top = triggerRect.top - tooltipRect.height - offset;
-            left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
+            case 'top':
+                top = triggerRect.top - tooltipRect.height - offset;
+                left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
+                break;
+            case 'bottom':
+                top = triggerRect.bottom + offset;
+                left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
+                break;
+            case 'left':
+                top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
+                left = triggerRect.left - tooltipRect.width - offset;
+                break;
+            case 'right':
+                top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
+                left = triggerRect.right + offset;
+                break;
+            default:
+                top = triggerRect.top - tooltipRect.height - offset;
+                left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
         }
 
         const triggerCenterX = triggerRect.left + triggerRect.width / 2;
@@ -209,44 +209,44 @@ const Tooltip = ({
             const offset = isBorder ? 0 : 1;
 
             switch (actualPlacement) {
-            case 'top':
-                return {
-                    ...baseStyles,
-                    bottom: isBorder ? -size : -(size - offset),
-                    left: `calc(50% + ${arrowOffset}px)`,
-                    transform: 'translateX(-50%)',
-                    borderWidth: `${size}px ${size}px 0 ${size}px`,
-                    borderColor: `${color} transparent transparent transparent`,
-                };
-            case 'bottom':
-                return {
-                    ...baseStyles,
-                    top: isBorder ? -size : -(size - offset),
-                    left: `calc(50% + ${arrowOffset}px)`,
-                    transform: 'translateX(-50%)',
-                    borderWidth: `0 ${size}px ${size}px ${size}px`,
-                    borderColor: `transparent transparent ${color} transparent`,
-                };
-            case 'left':
-                return {
-                    ...baseStyles,
-                    right: isBorder ? -size : -(size - offset),
-                    top: `calc(50% + ${arrowOffset}px)`,
-                    transform: 'translateY(-50%)',
-                    borderWidth: `${size}px 0 ${size}px ${size}px`,
-                    borderColor: `transparent transparent transparent ${color}`,
-                };
-            case 'right':
-                return {
-                    ...baseStyles,
-                    left: isBorder ? -size : -(size - offset),
-                    top: `calc(50% + ${arrowOffset}px)`,
-                    transform: 'translateY(-50%)',
-                    borderWidth: `${size}px ${size}px ${size}px 0`,
-                    borderColor: `transparent ${color} transparent transparent`,
-                };
-            default:
-                return baseStyles;
+                case 'top':
+                    return {
+                        ...baseStyles,
+                        bottom: isBorder ? -size : -(size - offset),
+                        left: `calc(50% + ${arrowOffset}px)`,
+                        transform: 'translateX(-50%)',
+                        borderWidth: `${size}px ${size}px 0 ${size}px`,
+                        borderColor: `${color} transparent transparent transparent`,
+                    };
+                case 'bottom':
+                    return {
+                        ...baseStyles,
+                        top: isBorder ? -size : -(size - offset),
+                        left: `calc(50% + ${arrowOffset}px)`,
+                        transform: 'translateX(-50%)',
+                        borderWidth: `0 ${size}px ${size}px ${size}px`,
+                        borderColor: `transparent transparent ${color} transparent`,
+                    };
+                case 'left':
+                    return {
+                        ...baseStyles,
+                        right: isBorder ? -size : -(size - offset),
+                        top: `calc(50% + ${arrowOffset}px)`,
+                        transform: 'translateY(-50%)',
+                        borderWidth: `${size}px 0 ${size}px ${size}px`,
+                        borderColor: `transparent transparent transparent ${color}`,
+                    };
+                case 'right':
+                    return {
+                        ...baseStyles,
+                        left: isBorder ? -size : -(size - offset),
+                        top: `calc(50% + ${arrowOffset}px)`,
+                        transform: 'translateY(-50%)',
+                        borderWidth: `${size}px ${size}px ${size}px 0`,
+                        borderColor: `transparent ${color} transparent transparent`,
+                    };
+                default:
+                    return baseStyles;
             }
         };
 

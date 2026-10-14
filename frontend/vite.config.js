@@ -183,5 +183,5 @@ export default defineConfig(({ mode }) => {
                 '@utils': resolve(__dirname, './src/utils'),
             },
         },
-    }
-})
+    };
+});

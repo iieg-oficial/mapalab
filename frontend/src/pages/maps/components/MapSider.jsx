@@ -234,7 +234,7 @@ const MapSider = ({ className = '' }) => {
         expanded: 'w-57 h-17',
         collapsed: 'w-14 h-17',
         loading: 'w-14 h-17'
-    }
+    };
 
     return (
         <>

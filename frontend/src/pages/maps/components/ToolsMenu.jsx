@@ -134,7 +134,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
             <div className="py-6 px-4">
                 <div className="flex items-center justify-between">
                     <h3 className="block text-[18px]/[47px] font-garet font-bold mb-2 text-purple tracking-normal">
-                    Herramientas
+                        Herramientas
                     </h3>
                     {closeButton}
                 </div>

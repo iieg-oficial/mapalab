@@ -21,6 +21,6 @@ const Loading = ({
     }
 
     return spinner;
-}
+};
 
 export default Loading;

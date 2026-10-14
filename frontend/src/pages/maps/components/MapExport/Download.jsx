@@ -242,7 +242,7 @@ const Download = ({ onOpenPreview, onOpenChange, collapsed = false, expanded = f
                             )}
                             {isSwipe && (
                                 <div className="text-[11px] text-gray-500">
-                                Calidad: <span className="font-bold">Normal</span>. Otras calidades quedan habilitadas en mapa simple.
+                                    Calidad: <span className="font-bold">Normal</span>. Otras calidades quedan habilitadas en mapa simple.
                                 </div>
                             )}
 

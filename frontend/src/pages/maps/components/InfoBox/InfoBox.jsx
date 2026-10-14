@@ -364,7 +364,7 @@ const InfoBox = ({ forceDesktop = false, embed = false }) => {
                     {showNoLayerSelected && (
                         <InfoCard>
                             <p className="text-[12px]/[16px] text-[#465055] font-medium text-center p-4">
-                            Selecciona una capa en el panel de capas activas para mostrar información
+                                Selecciona una capa en el panel de capas activas para mostrar información
                             </p>
                         </InfoCard>
                     )}

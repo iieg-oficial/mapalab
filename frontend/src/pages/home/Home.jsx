@@ -1,9 +1,9 @@
-import Header from './components/Header'
-import Body from './components/Body'
-import Footer from './components/Footer'
-import bgHome from '@assets/background/bg_home.svg'
-import SEO from '@components/SEO'
-import useThemeColor from '@hooks/useThemeColor'
+import Header from './components/Header';
+import Body from './components/Body';
+import Footer from './components/Footer';
+import bgHome from '@assets/background/bg_home.svg';
+import SEO from '@components/SEO';
+import useThemeColor from '@hooks/useThemeColor';
 
 const Home = () => {
     useThemeColor('#5C2472');

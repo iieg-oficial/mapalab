@@ -106,28 +106,28 @@ const listaLegible = (valores) => {
 export const etiquetaFiltro = (columna, descriptor) => {
     if (!descriptor) return columna;
     switch (descriptor.familia) {
-    case 'lista':
-        return `${columna}: ${listaLegible(descriptor.valores || [])}`;
-    case 'texto':
-        return `${columna} contiene "${descriptor.contiene}"`;
-    case 'numero': {
-        if (Number.isFinite(descriptor.min) && Number.isFinite(descriptor.max)) {
-            return `${columna}: ${descriptor.min} a ${descriptor.max}`;
+        case 'lista':
+            return `${columna}: ${listaLegible(descriptor.valores || [])}`;
+        case 'texto':
+            return `${columna} contiene "${descriptor.contiene}"`;
+        case 'numero': {
+            if (Number.isFinite(descriptor.min) && Number.isFinite(descriptor.max)) {
+                return `${columna}: ${descriptor.min} a ${descriptor.max}`;
+            }
+            if (Number.isFinite(descriptor.min)) return `${columna} ≥ ${descriptor.min}`;
+            if (Number.isFinite(descriptor.max)) return `${columna} ≤ ${descriptor.max}`;
+            return columna;
         }
-        if (Number.isFinite(descriptor.min)) return `${columna} ≥ ${descriptor.min}`;
-        if (Number.isFinite(descriptor.max)) return `${columna} ≤ ${descriptor.max}`;
-        return columna;
-    }
-    case 'fecha': {
-        if (descriptor.desde && descriptor.hasta) return `${columna}: ${descriptor.desde} a ${descriptor.hasta}`;
-        if (descriptor.desde) return `${columna} desde ${descriptor.desde}`;
-        if (descriptor.hasta) return `${columna} antes de ${descriptor.hasta}`;
-        return columna;
-    }
-    case 'booleano':
-        return `${columna}: ${descriptor.valor ? 'sí' : 'no'}`;
-    default:
-        return columna;
+        case 'fecha': {
+            if (descriptor.desde && descriptor.hasta) return `${columna}: ${descriptor.desde} a ${descriptor.hasta}`;
+            if (descriptor.desde) return `${columna} desde ${descriptor.desde}`;
+            if (descriptor.hasta) return `${columna} antes de ${descriptor.hasta}`;
+            return columna;
+        }
+        case 'booleano':
+            return `${columna}: ${descriptor.valor ? 'sí' : 'no'}`;
+        default:
+            return columna;
     }
 };
 

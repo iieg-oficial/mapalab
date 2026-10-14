@@ -175,7 +175,7 @@ const MapControls = ({ hideLocate = false, hideEncuadrar = false, conMinimapa = 
                             title={view3dTitle}
                             aria-label={view3dTitle}
                         >
-                        3D
+                            3D
                             <Badge variant="pill" color="orange" text="BETA" className="absolute -top-2 -right-3 text-[8px] px-1.5 pointer-events-none" />
                         </button>
                     </Tooltip>

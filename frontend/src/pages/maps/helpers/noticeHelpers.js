@@ -154,11 +154,11 @@ export const SIZE_ARROW = {
 export const arrowMarginFor = (position, size) => {
     const arrowSize = SIZE_ARROW[size] || SIZE_ARROW.large;
     switch (position) {
-    case 'top': return { marginTop: arrowSize };
-    case 'bottom': return { marginBottom: arrowSize };
-    case 'left': return { marginLeft: arrowSize };
-    case 'right': return { marginRight: arrowSize };
-    default: return {};
+        case 'top': return { marginTop: arrowSize };
+        case 'bottom': return { marginBottom: arrowSize };
+        case 'left': return { marginLeft: arrowSize };
+        case 'right': return { marginRight: arrowSize };
+        default: return {};
     }
 };
 

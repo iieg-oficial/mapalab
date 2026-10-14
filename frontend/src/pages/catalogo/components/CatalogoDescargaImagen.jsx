@@ -95,7 +95,7 @@ const CatalogoDescargaImagen = ({ abierto, capa, onCerrar }) => {
                         {layersWithLegends.length > 0 && (
                             <span className="inline-flex items-center gap-2 font-garet text-[13px] text-[#465055]">
                                 <Checkbox checked={conLeyenda} onChange={() => setConLeyenda((v) => !v)} />
-                            Incluir la leyenda
+                                Incluir la leyenda
                             </span>
                         )}
 

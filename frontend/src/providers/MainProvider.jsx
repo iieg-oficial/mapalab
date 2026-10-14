@@ -9,6 +9,6 @@ const MainProvider = () => {
             <AnalyticsDebugPanel />
         </SearchProvider>
     );
-}
+};
 
-export default MainProvider
+export default MainProvider;
