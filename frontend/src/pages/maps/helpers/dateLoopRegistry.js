@@ -7,6 +7,11 @@ export const LOOP_INTERVAL_PRESETS = [250, 500, 1000, 2000, 3000];
 export const DEFAULT_LOOP_DIRECTION = 'ltr';
 
 export const SLOTS = ['A', 'B'];
+
+export const nextLoopInterval = (ms) => {
+    const idx = LOOP_INTERVAL_PRESETS.indexOf(ms);
+    return LOOP_INTERVAL_PRESETS[idx === -1 ? 0 : (idx + 1) % LOOP_INTERVAL_PRESETS.length];
+};
 export const clampIntervalMs = (ms) => Math.max(100, Math.min(10000, Number(ms) || DEFAULT_LOOP_INTERVAL_MS));
 export const normalizeDirection = (dir) => (dir === 'rtl' ? 'rtl' : 'ltr');
 export const loopKeyOf = (layerId, slot) => (slot ? `${layerId}|${slot}` : layerId);
