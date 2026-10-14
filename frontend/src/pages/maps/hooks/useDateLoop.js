@@ -1,65 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { findLayerDef } from '../helpers/wmsConfig';
 import { useLayers } from '@hooks/useLayers';
 import { trackRasterLoop } from '@services/analyticsService';
 import { useLayerLoading } from '@hooks/useLayerLoading';
-import { buildLoopValues, describeDateFilter, findLoopStartKey, isSameLoopConfig } from '../helpers/dateLoopHelpers';
 import { createLoopGroup, createLoopPlayer } from '../helpers/zootropoLoop';
 import { useRasterDefaultDate } from './useRasterDefaultDate';
-import { dateColumnOf } from '@services/layerMetadataService';
+import {
+    DEFAULT_LOOP_DIRECTION, DEFAULT_LOOP_INTERVAL_MS, SLOTS, canResume, clampIntervalMs, currentSlot,
+    inferLoopConfigOf, isPlaying, loopKeyOf, normalizeDirection, startKeyOf, stateOf, writeFilter,
+} from '../helpers/dateLoopRegistry';
 
-export const DEFAULT_LOOP_INTERVAL_MS = 1000;
-export const LOOP_INTERVAL_PRESETS = [250, 500, 1000, 2000, 3000];
-export const DEFAULT_LOOP_DIRECTION = 'ltr';
-
-const SLOTS = ['A', 'B'];
-const clampIntervalMs = (ms) => Math.max(100, Math.min(10000, Number(ms) || DEFAULT_LOOP_INTERVAL_MS));
-const normalizeDirection = (dir) => (dir === 'rtl' ? 'rtl' : 'ltr');
-export const loopKeyOf = (layerId, slot) => (slot ? `${layerId}|${slot}` : layerId);
-
-const currentSlot = (r) => (r.compareMode?.active ? r.compareMode.activeSlot : null);
-
-const resolveRaster = (r, layerId) => r.getRasterPeriodicity?.(layerId)
-    ?? findLayerDef(layerId, r.allLayers)?.rasterPeriodicity
-    ?? null;
-
-const readFilter = (r, layerId, slot) => {
-    const cm = r.compareMode;
-    if (slot && cm?.active && slot !== cm.activeSlot) return cm[`pane${slot}`]?.filters?.[layerId]?.date || null;
-    return r.getSpecificFilter?.(layerId, 'date') || null;
-};
-
-const writeFilter = (r, layerId, slot, value) => {
-    if (slot && r.compareMode?.active) {
-        r.applyFilterToSlot?.(layerId, slot, 'date', value);
-        return;
-    }
-    r.applyFilter(layerId, 'date', value);
-};
-
-const isPlaying = (loop) => !!loop?.player.getSnapshot().playing;
-
-const canResume = (r, loop, preferred) => {
-    if (!loop || isPlaying(loop)) return false;
-    if (preferred && !isSameLoopConfig(preferred, loop)) return false;
-    const current = loop.values.find(v => v.key === loop.currentKey());
-    return !!current && current.filterValue === readFilter(r, loop.layerId, loop.slot);
-};
-
-const startKeyOf = (r, layerId, slot, config) => findLoopStartKey({
-    ...config, year: config.year ?? null,
-    filter: readFilter(r, layerId, slot),
-    rasterPeriodicity: resolveRaster(r, layerId),
-});
-
-const stateOf = (loop) => ({
-    layerId: loop.layerId,
-    isPlaying: isPlaying(loop),
-    currentKey: loop.currentKey(),
-    mode: loop.mode,
-    year: loop.year,
-    slot: loop.slot,
-});
+export { DEFAULT_LOOP_DIRECTION, DEFAULT_LOOP_INTERVAL_MS, LOOP_INTERVAL_PRESETS, loopKeyOf } from '../helpers/dateLoopRegistry';
 
 export const useDateLoop = ({
     applyFilter, clearFilter, activeLayerIds, hiddenLayerIds = [], getSpecificFilter, getPeriodicity,
@@ -174,32 +124,7 @@ export const useDateLoop = ({
         sync(layerId);
     }, [createLoop, getLoopPrefs, releaseGroup, sync]);
 
-    const inferLoopConfig = useCallback((layerId, slot = currentSlot(refs.current)) => {
-        const r = refs.current;
-        const rasterPeriodicity = resolveRaster(r, layerId);
-        const periodicity = r.getPeriodicity?.(layerId) || null;
-        const filterColumn = dateColumnOf(layerId);
-        const desc = describeDateFilter({ filter: readFilter(r, layerId, slot), rasterPeriodicity });
-
-        if (desc && !desc.multi && desc.months?.length >= 1) {
-            const values = buildLoopValues({
-                mode: 'month', year: desc.year, filterColumn,
-                rasterPeriodicity, periodicity,
-                monthsSelection: new Set(desc.months)
-            });
-            if (values.length >= 2) return { mode: 'month', year: desc.year, values };
-        }
-
-        const yearValues = buildLoopValues({ mode: 'year', rasterPeriodicity, periodicity, filterColumn });
-        if (yearValues.length >= 2) return { mode: 'year', values: yearValues };
-
-        if (desc && !desc.multi) {
-            const values = buildLoopValues({ mode: 'month', year: desc.year, rasterPeriodicity, periodicity, filterColumn });
-            if (values.length >= 2) return { mode: 'month', year: desc.year, values };
-        }
-
-        return null;
-    }, []);
+    const inferLoopConfig = useCallback((layerId, slot = currentSlot(refs.current)) => inferLoopConfigOf(refs.current, layerId, slot), []);
 
     const toggleLoop = useCallback((layerId, preferredConfig = null, slot = currentSlot(refs.current)) => {
         const loop = loopsRef.current.get(loopKeyOf(layerId, slot));
