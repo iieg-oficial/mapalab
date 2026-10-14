@@ -1,6 +1,7 @@
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
 import { DEFAULT_LOOP_INTERVAL_MS, DEFAULT_LOOP_DIRECTION } from '@hooksMaps/useDateLoop';
+import { nextLoopInterval } from '@pages/maps/helpers/dateLoopRegistry';
 import { RADIUS_ICON, RADIUS_LABEL, toneButtonFor, toneTextClass } from '@pages/maps/helpers/periodicityTones';
 
 export const BackButton = ({ onClick }) => (
@@ -52,8 +53,6 @@ export const CarouselArrow = ({ direction, onClick }) => (
     </button>
 );
 
-const LOOP_INTERVAL_PRESETS = [250, 500, 1000, 2000, 3000];
-
 const formatInterval = (ms) => {
     const s = ms / 1000;
     return `${s % 1 === 0 ? s : s.toFixed(2).replace(/\.?0+$/, '')}s`;
@@ -62,9 +61,7 @@ const formatInterval = (ms) => {
 export const LoopIntervalButton = ({ value, onChange, slot, disabled = false }) => {
     const handleClick = () => {
         if (disabled) return;
-        const idx = LOOP_INTERVAL_PRESETS.indexOf(value);
-        const nextIdx = idx === -1 ? 0 : (idx + 1) % LOOP_INTERVAL_PRESETS.length;
-        onChange(LOOP_INTERVAL_PRESETS[nextIdx]);
+        onChange(nextLoopInterval(value));
     };
     const { className } = toneButtonFor(slot, (value ?? DEFAULT_LOOP_INTERVAL_MS) !== DEFAULT_LOOP_INTERVAL_MS, { disabled });
     return (

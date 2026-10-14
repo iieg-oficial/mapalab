@@ -5,6 +5,7 @@ import { fetchGeometryType } from '@utils/featureInfoUtils';
 import { getLayerTimePeriodicity } from '@services/wmsCapabilitiesService';
 import { RASTER_WORKSPACES } from '@services/downloadUrls';
 import { fetchCapaPeriodicidad } from '@services/catalogoService';
+import { dateColumnOf } from '@services/layerMetadataService';
 import { LLAVE_SELECCION, LLAVE_TABLA, combinar } from '@pages/maps/helpers/tablaCqlBuilder';
 import { fechaParamToFiltro, filtroToFechaParam } from '../helpers/catalogoRoutes';
 
@@ -156,7 +157,8 @@ export const useCatalogoTiempo = (capa, wmsLayerRef, { initialFecha = null, onFe
         if (!hasPeriodicidad || !geometria) return;
         setCapaLista(layerId);
         const fechaInicial = layerId === primeraCapaRef.current ? initialFechaRef.current : null;
-        const inicial = fechaParamToFiltro(fechaInicial, { isRaster, periodicidad });
+        const column = dateColumnOf(layerId);
+        const inicial = fechaParamToFiltro(fechaInicial, { isRaster, periodicidad, column });
         if (inicial) {
             setFiltro(inicial);
             return;
@@ -166,7 +168,7 @@ export const useCatalogoTiempo = (capa, wmsLayerRef, { initialFecha = null, onFe
             return;
         }
         if (geometria === 'polygon') {
-            setFiltro(generateCQLFilter(new Set([`${years[0]}`])));
+            setFiltro(generateCQLFilter(new Set([`${years[0]}`]), column));
         }
     }, [hasPeriodicidad, geometria, layerId, capaVigente, capaLista, years, isRaster, periodicidad]);
 
