@@ -10,6 +10,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
+- **Capas no consultables.** El clic y la selección por polígono omiten las capas con
+  `wmsConfig.queryable === false`, y una de ellas ya no descarta las de `general`. Se configura en
+  mariachi.
 - **Tema de Día de Muertos.** Si un evento vigente trae `decoracion: 'dia-de-muertos'` (mariachi 2.151.0),
   el borde del sider muestra un pan de muerto que enciende el tema; arranca apagado en cada visita y el
   aviso «¡Día de Muertos!» sale una vez por visitante. Encendido, el pan lleva una mordida y aparecen:
