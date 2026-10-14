@@ -59,10 +59,35 @@ BEGIN
         date_column TEXT NOT NULL
     ) ON COMMIT DROP;
 
+    CREATE TEMP TABLE _configured_date_column (
+        schema_name TEXT NOT NULL,
+        table_name TEXT NOT NULL,
+        column_name TEXT NOT NULL
+    ) ON COMMIT DROP;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'mapalab' AND table_name = 'layers' AND column_name = 'date_column'
+    ) THEN
+        EXECUTE 'INSERT INTO _configured_date_column (schema_name, table_name, column_name)
+            SELECT DISTINCT w.db_schema, l.geoserver_layer, l.date_column
+            FROM mapalab.layers l
+            JOIN mapalab.workspaces w ON w.alias = l.workspace_alias
+            WHERE l.deleted_at IS NULL
+              AND l.geoserver_layer IS NOT NULL
+              AND nullif(btrim(l.date_column), '''') IS NOT NULL';
+    END IF;
+
     FOR rec IN
         WITH candidates AS (
             SELECT n.nspname AS schema_name, c.relname AS table_name,
                    a.attname AS column_name, t.typname AS col_type,
+                   EXISTS (
+                       SELECT 1 FROM _configured_date_column cfg
+                       WHERE cfg.schema_name = n.nspname
+                         AND cfg.table_name = c.relname
+                         AND cfg.column_name = a.attname
+                   ) AS by_config,
                    coalesce(col_description(c.oid, a.attnum), '') ILIKE '%mapalab:fecha%' AS by_comment,
                    a.attname = 'fecha' AS by_name
             FROM pg_attribute a
@@ -76,8 +101,8 @@ BEGIN
         )
         SELECT DISTINCT ON (schema_name, table_name) schema_name, table_name, column_name, col_type
         FROM candidates
-        WHERE by_comment OR by_name
-        ORDER BY schema_name, table_name, by_comment DESC, column_name
+        WHERE by_config OR by_comment OR by_name
+        ORDER BY schema_name, table_name, by_config DESC, by_comment DESC, column_name
     LOOP
         BEGIN
             IF rec.col_type IN ('date', 'timestamp', 'timestamptz') THEN

@@ -66,6 +66,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   El visor arma el CQL, el loop y la fecha por defecto con esa columna. No hace falta migración: la tabla
   la amplía el propio backend. El catálogo (`/catalogo`) también: el `?fecha=`, el año por defecto de los
   polígonos y los selectores usan la columna que devuelve `/periodicity/`.
+- **La columna de fecha también se elige en mariachi.** `refresh_layer_periodicity()` toma primero
+  `mapalab.layers.date_column` de una capa que apunte a la tabla (dataengine `0058`, campo «Columna de fecha»
+  del editor de capas), luego la columna con el comentario `mapalab:fecha` y al final `fecha`. Si la
+  columna configurada no existe en la tabla, cae a las otras dos; sin la migración, la función ignora ese
+  paso.
 
 ### Eliminado
 
