@@ -67,6 +67,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   la amplía el propio backend. El catálogo (`/catalogo`) también: el `?fecha=`, el año por defecto de los
   polígonos y los selectores usan la columna que devuelve `/periodicity/`.
 
+### Corregido
+
+- El build de producción copia `frontend/vendor` antes del `npm ci`: sin eso no encontraba el tgz de
+  zootropo.
+
 ### Eliminado
 
 - `useDateSelections` y `computeSelectorInitialState`: el árbol y el selector de fechas guardan la
