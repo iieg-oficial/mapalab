@@ -40,6 +40,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Cambiado
 
+- **ESLint desde `@npmegar/eslint-config` 0.4.0.** La config del frontend compone `base`, `react` y
+  `react-app` y solo conserva lo propio; las reglas del compilador de hooks quedan en `warn`. Los
+  Dockerfiles ya no copian `vendor/`, que se fue con zootropo desde npm.
 - **El loop de fechas corre sobre zootropo.** `useDateLoop` conserva su API (`toggleLoop`, `stopLoop`,
   `dateLoops`, preferencias por capa, lado del comparador) pero la secuencia, los temporizadores, la
   espera a que la capa termine de cargar y el tope de 30 s salen de zootropo, que se instala
