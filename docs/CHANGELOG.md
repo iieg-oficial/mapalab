@@ -10,6 +10,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
+- **Capas no consultables.** El clic y la selección por polígono omiten las capas con
+  `wmsConfig.queryable === false`, y una de ellas ya no descarta las de `general`. Se configura en
+  mariachi.
 - **Tema de Día de Muertos.** Si un evento vigente trae `decoracion: 'dia-de-muertos'` (mariachi 2.151.0),
   el borde del sider muestra un pan de muerto que enciende el tema; arranca apagado en cada visita y el
   aviso «¡Día de Muertos!» sale una vez por visitante. Encendido, el pan lleva una mordida y aparecen:
@@ -23,8 +26,16 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   Los estilos del tema salen de `index.css` a `DiaDeMuertos/muertos.css`.
   Mientras el tema está encendido el mapa base pasa a CARTO oscuro (`oscuro`, fuera de la lista de
   mapas base) y al apagarlo vuelve al que había; si el visitante elige otro, se respeta. Mientras está
-  desplegado, «Carto Dark» aparece marcado en «Mapas base». Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
+  desplegado, «Carto Dark» aparece marcado en «Mapas base», y ese panel se abre solo al encender el tema
+  para que el visitante pueda cambiar de mapa. Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
 - El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
+
+### Corregido
+
+- **`layer_table` del MCP devolvía las columnas con su nombre crudo** cuando la capa no tiene alias en
+  `atributos.columnas`. Ahora la etiqueta sale del alias de la tabla de datos y, si no hay, de la
+  etiqueta que la tarjetita (`littleCard`) le da al campo, con su formato (el año de `fecha`); el nombre
+  crudo queda solo como último recurso
 
 
 ### Cambiado
@@ -251,6 +262,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Corregido
 
+- El primer inicio de sesión de una cuenta ya no se rechaza como «Tu acceso a MapaLab está suspendido»:
+  el usuario nuevo nace activo en lugar de esperar al default de la base, que llega hasta el `INSERT`.
+- Al recargar con el tema de Día de Muertos encendido, el mapa ya no se queda oscuro: la sesión y los
+  enlaces compartidos guardan el mapa base que había antes del tema, no el `oscuro`.
 - Los enlaces a la página del IIEG (footer, logo de la portada y tarjeta del IIEG en el mapa) apuntan a
   `https://iieg.jalisco.gob.mx/`. El PDF de la licencia sigue en `iieg.gob.mx`, el único que lo sirve
 - El widget embebible usa por defecto `https://iieg.jalisco.gob.mx/mapalab` cuando no se le pasa

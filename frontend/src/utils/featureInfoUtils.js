@@ -189,7 +189,7 @@ export const filterValidLayers = (activeLayers, layers, findWMSConfig) => {
         })
         .map(layer => {
             const wmsConfig = findWMSConfig(layer.id, layers);
-            return wmsConfig ? { layer, wmsConfig } : null;
+            return wmsConfig && wmsConfig.queryable !== false ? { layer, wmsConfig } : null;
         })
         .filter(item => item !== null);
 

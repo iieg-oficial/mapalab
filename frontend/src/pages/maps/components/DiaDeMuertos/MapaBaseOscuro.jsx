@@ -1,26 +1,25 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useMapsContext } from '@hooks/useMaps';
 import { useDecoracionEvento } from '@hooks/useEvento';
 import { esDiaDeMuertos } from '@pages/maps/helpers/eventoDiversion';
+import { MAPA_OSCURO, mapaAnterior, recordarMapaAnterior } from '@pages/maps/helpers/mapaBaseTema';
 
-const OSCURO = 'oscuro';
 const SIN_MAPA = 'sin_mapalab';
 
 const MapaBaseOscuro = () => {
     const decoracion = useDecoracionEvento();
     const { baseMapId, setBaseMapId } = useMapsContext();
     const activa = esDiaDeMuertos(decoracion);
-    const anterior = useRef(null);
 
     useEffect(() => {
-        if (activa && anterior.current === null && baseMapId !== OSCURO) {
-            anterior.current = baseMapId;
-            if (baseMapId !== SIN_MAPA) setBaseMapId(OSCURO);
+        if (activa && mapaAnterior() === null && baseMapId !== MAPA_OSCURO) {
+            recordarMapaAnterior(baseMapId);
+            if (baseMapId !== SIN_MAPA) setBaseMapId(MAPA_OSCURO);
             return;
         }
-        if (!activa && anterior.current !== null) {
-            if (baseMapId === OSCURO) setBaseMapId(anterior.current);
-            anterior.current = null;
+        if (!activa && mapaAnterior() !== null) {
+            if (baseMapId === MAPA_OSCURO) setBaseMapId(mapaAnterior());
+            recordarMapaAnterior(null);
         }
     }, [activa, baseMapId, setBaseMapId]);
 

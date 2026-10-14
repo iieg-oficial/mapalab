@@ -12,6 +12,7 @@ import { SIDER_TRANSITION_TIMING, SIDER_LOCK_LABELS } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useEventoContext } from '@hooks/useEvento';
 import { useAutoOpenEventoFromUrl } from '@pages/maps/hooks/useAutoOpenEventoFromUrl';
+import { useAbrirMapasBaseConTema } from './DiaDeMuertos/useAbrirMapasBaseConTema';
 import { aggregateFactsFromEventos } from '@pages/maps/helpers/funFactPicker';
 import { esEventoLite } from '@pages/maps/helpers/eventoDiversion';
 import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
@@ -107,6 +108,7 @@ const MapSider = ({ className = '' }) => {
     }, [shouldAutoOpenSearch, clearAutoOpen, setIsHovered]);
 
     useAutoOpenEventoFromUrl({ setAutoOpenMenuId, setIsHovered });
+    useAbrirMapasBaseConTema({ setAutoOpenMenuId, setIsHovered, abrirSider: treatAsMobile && !isOpen ? toggleSider : null });
 
     useEffect(() => {
         const handleKeyDown = (e) => {

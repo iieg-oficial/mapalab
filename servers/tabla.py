@@ -115,8 +115,29 @@ def configuracion_columnas(resuelta: dict) -> list[dict]:
     return (respuesta or {}).get('columnas') or []
 
 
-def elegir_columnas(atributos: dict[str, str], configuracion: list[dict], pedidas: Optional[list[str]]) -> tuple[list[dict], int]:
+def campos_de_tarjeta(tarjeta: Any) -> dict[str, dict]:
+    campos: dict[str, dict] = {}
+    pila = [tarjeta]
+    while pila:
+        actual = pila.pop(0)
+        if isinstance(actual, list):
+            pila.extend(actual)
+        elif isinstance(actual, dict):
+            campo, etiqueta = actual.get('field'), actual.get('label')
+            if isinstance(campo, str) and isinstance(etiqueta, str) and etiqueta.strip():
+                campos.setdefault(campo, {'etiqueta': etiqueta.strip(), 'formato': actual.get('formato')})
+            pila.extend(v for v in actual.values() if isinstance(v, (list, dict)))
+    return campos
+
+
+def elegir_columnas(
+    atributos: dict[str, str],
+    configuracion: list[dict],
+    pedidas: Optional[list[str]],
+    de_tarjeta: Optional[dict[str, dict]] = None,
+) -> tuple[list[dict], int]:
     por_campo = {c.get('columna'): c for c in configuracion}
+    de_tarjeta = de_tarjeta or {}
     if pedidas:
         nombres = [validar_atributo(n, atributos) for n in dict.fromkeys(pedidas)]
     else:
@@ -127,11 +148,12 @@ def elegir_columnas(atributos: dict[str, str], configuracion: list[dict], pedida
     columnas, vistas = [], set()
     for nombre in nombres[:MAX_COLUMNAS]:
         config = por_campo.get(nombre) or {}
-        etiqueta = config.get('alias') or nombre
+        tarjeta = de_tarjeta.get(nombre) or {}
+        etiqueta = config.get('alias') or tarjeta.get('etiqueta') or nombre
         if etiqueta in vistas:
             etiqueta = f"{etiqueta} ({nombre})"
         vistas.add(etiqueta)
-        columnas.append({'campo': nombre, 'etiqueta': etiqueta, 'formato': config.get('formato')})
+        columnas.append({'campo': nombre, 'etiqueta': etiqueta, 'formato': config.get('formato') or tarjeta.get('formato')})
     return columnas, omitidas
 
 
@@ -226,7 +248,9 @@ def layer_table(
     atributos = {c: t for c, t in campos.items() if not es_geometria(t)}
     geometria = next((c for c, t in campos.items() if es_geometria(t)), None)
     partes = partes + construir_filtros(filtros or [], atributos)
-    elegidas, omitidas = elegir_columnas(atributos, configuracion_columnas(resuelta), columnas)
+    elegidas, omitidas = elegir_columnas(
+        atributos, configuracion_columnas(resuelta), columnas, campos_de_tarjeta(resuelta['node'].get('littleCard')),
+    )
     if not elegidas:
         raise ValueError(f"La capa '{resuelta['id']}' no tiene columnas de datos.")
     if orden:
