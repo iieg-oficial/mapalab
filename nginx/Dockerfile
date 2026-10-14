@@ -15,7 +15,6 @@ FROM node:26-alpine AS builder
 WORKDIR /app
 
 COPY frontend/package*.json ./
-COPY frontend/vendor ./vendor
 RUN --mount=type=cache,target=/root/.npm npm ci
 
 COPY frontend/ .

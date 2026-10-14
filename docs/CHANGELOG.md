@@ -31,8 +31,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 - **El loop de fechas corre sobre zootropo.** `useDateLoop` conserva su API (`toggleLoop`, `stopLoop`,
   `dateLoops`, preferencias por capa, lado del comparador) pero la secuencia, los temporizadores, la
-  espera a que la capa termine de cargar y el tope de 30 s salen de zootropo 0.2.1, vendorizado en
-  `frontend/vendor/` como biombo. El sondeo cada 100 ms de `loadingLayers` se sustituye por
+  espera a que la capa termine de cargar y el tope de 30 s salen de zootropo, que se instala
+  desde npm. El sondeo cada 100 ms de `loadingLayers` se sustituye por
   `loading()`/`ready()` del reproductor. Primer paso de `planes/migracion-a-zootropo.md`.
 - **El filtro de fecha se lee por rangos, no por el texto exacto.** `helpers/dateKeys.js` convierte
   cualquier CQL de fecha (cualquier columna, rangos fundidos, días como rango o igualdad, horas) en
@@ -58,7 +58,7 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   donde se pulsó y pausar cualquiera pausa los dos. `getLoopState` y `stopLoop` aceptan el lado.
 - **Las capas ráster entienden el `TIME` en intervalos.** `parseTimeDimensionToPeriodicity` usa el
   catálogo de zootropo: una dimensión anunciada como `inicio/fin/periodo` (presentación «Interval» de
-  GeoServer) o como rango continuo ya da meses, y antes dejaba la capa sin fechas. zootropo pasa a 0.7.0.
+  GeoServer) o como rango continuo ya da meses, y antes dejaba la capa sin fechas. zootropo pasa a 0.7.0, desde npm (antes vendorizado).
 - **La columna de fecha ya no tiene que llamarse `fecha`.** Una tabla o vista entra a la periodicidad si
   tiene una columna `fecha` o una columna con el comentario `mapalab:fecha`
   (`COMMENT ON COLUMN esquema.tabla.col IS 'mapalab:fecha'`); el comentario gana. `layer_periodicity`
@@ -66,11 +66,6 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   El visor arma el CQL, el loop y la fecha por defecto con esa columna. No hace falta migración: la tabla
   la amplía el propio backend. El catálogo (`/catalogo`) también: el `?fecha=`, el año por defecto de los
   polígonos y los selectores usan la columna que devuelve `/periodicity/`.
-
-### Corregido
-
-- El build de producción copia `frontend/vendor` antes del `npm ci`: sin eso no encontraba el tgz de
-  zootropo.
 
 ### Eliminado
 
