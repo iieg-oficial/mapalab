@@ -23,7 +23,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   Los estilos del tema salen de `index.css` a `DiaDeMuertos/muertos.css`.
   Mientras el tema está encendido el mapa base pasa a CARTO oscuro (`oscuro`, fuera de la lista de
   mapas base) y al apagarlo vuelve al que había; si el visitante elige otro, se respeta. Mientras está
-  desplegado, «Carto Dark» aparece marcado en «Mapas base». Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
+  desplegado, «Carto Dark» aparece marcado en «Mapas base», y ese panel se abre solo al encender el tema
+  para que el visitante pueda cambiar de mapa. Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
 - El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
 
 ### Corregido
