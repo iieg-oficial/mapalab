@@ -1,3 +1,4 @@
+import { createCatalog, parseKey } from 'zootropo';
 import WMSCapabilities from 'ol/format/WMSCapabilities';
 import { transformExtent } from 'ol/proj';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
@@ -29,15 +30,15 @@ export const sanitizeExtent4326 = (ext) => {
 
 export const parseTimeDimensionToPeriodicity = (values) => {
     if (!values || typeof values !== 'string') return null;
+    const catalog = createCatalog(values);
     const fecha = {};
-    for (const raw of values.split(',')) {
-        const iso = raw.trim().split('T')[0];
-        const [y, m] = iso.split('-');
-        const year = parseInt(y, 10);
-        const month = parseInt(m, 10);
-        if (!Number.isFinite(year) || !Number.isFinite(month)) continue;
+    for (const key of catalog.keys('month').keys) {
+        const { year, month } = parseKey(key);
+        const [from, to] = catalog.slice(key);
+        const text = to > from ? catalog.instants[to - 1] : catalog.rangesIn(key)[0]?.start;
+        if (!text) continue;
         if (!fecha[year]) fecha[year] = {};
-        fecha[year][month] = iso;
+        fecha[year][month] = text.split('T')[0];
     }
     return Object.keys(fecha).length ? fecha : null;
 };

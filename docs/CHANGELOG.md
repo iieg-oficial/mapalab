@@ -56,6 +56,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   los controles de los dos. En el panel de periodicidad del comparador, «Sincronizar A y B» une los dos
   lados en un reloj de zootropo (`createPlayerGroup`): el play arranca ambos desde la fecha del lado
   donde se pulsó y pausar cualquiera pausa los dos. `getLoopState` y `stopLoop` aceptan el lado.
+- **Las capas ráster entienden el `TIME` en intervalos.** `parseTimeDimensionToPeriodicity` usa el
+  catálogo de zootropo: una dimensión anunciada como `inicio/fin/periodo` (presentación «Interval» de
+  GeoServer) o como rango continuo ya da meses, y antes dejaba la capa sin fechas. zootropo pasa a 0.7.0.
 
 ### Eliminado
 
