@@ -6,6 +6,7 @@ import { useLayerLoading } from '@hooks/useLayerLoading';
 import { buildLoopValues, describeDateFilter, findLoopStartKey, isSameLoopConfig } from '../helpers/dateLoopHelpers';
 import { createLoopGroup, createLoopPlayer } from '../helpers/zootropoLoop';
 import { useRasterDefaultDate } from './useRasterDefaultDate';
+import { dateColumnOf } from '@services/layerMetadataService';
 
 export const DEFAULT_LOOP_INTERVAL_MS = 1000;
 export const LOOP_INTERVAL_PRESETS = [250, 500, 1000, 2000, 3000];
@@ -177,22 +178,23 @@ export const useDateLoop = ({
         const r = refs.current;
         const rasterPeriodicity = resolveRaster(r, layerId);
         const periodicity = r.getPeriodicity?.(layerId) || null;
+        const filterColumn = dateColumnOf(layerId);
         const desc = describeDateFilter({ filter: readFilter(r, layerId, slot), rasterPeriodicity });
 
         if (desc && !desc.multi && desc.months?.length >= 1) {
             const values = buildLoopValues({
-                mode: 'month', year: desc.year,
+                mode: 'month', year: desc.year, filterColumn,
                 rasterPeriodicity, periodicity,
                 monthsSelection: new Set(desc.months)
             });
             if (values.length >= 2) return { mode: 'month', year: desc.year, values };
         }
 
-        const yearValues = buildLoopValues({ mode: 'year', rasterPeriodicity, periodicity });
+        const yearValues = buildLoopValues({ mode: 'year', rasterPeriodicity, periodicity, filterColumn });
         if (yearValues.length >= 2) return { mode: 'year', values: yearValues };
 
         if (desc && !desc.multi) {
-            const values = buildLoopValues({ mode: 'month', year: desc.year, rasterPeriodicity, periodicity });
+            const values = buildLoopValues({ mode: 'month', year: desc.year, rasterPeriodicity, periodicity, filterColumn });
             if (values.length >= 2) return { mode: 'month', year: desc.year, values };
         }
 

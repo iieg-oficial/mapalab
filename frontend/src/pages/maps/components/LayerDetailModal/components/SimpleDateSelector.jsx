@@ -6,6 +6,7 @@ import { useDateSelector } from '@pages/maps/hooks/useDateSelector';
 import { MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import { BackButton, YearBadge, CarouselArrow } from './SimpleDateSelectorParts';
 import { toneClasses, toneStateFor } from '@pages/maps/helpers/periodicityTones';
+import { dateColumnOf } from '@services/layerMetadataService';
 
 const LOOP_TICK_SURFACE = {
     A: 'bg-[#E2D1EB] border-[#E2D1EB] text-[#5C2472]',
@@ -30,8 +31,8 @@ const SimpleDateSelector = ({ layerId, periodicity, rasterPeriodicity, onFilterA
         if (!periodicity) return null;
         const fecha = periodicity.fecha || periodicity;
         if (!fecha || typeof fecha !== 'object') return null;
-        return { fecha, filterColumn: 'fecha' };
-    }, [periodicity, rasterPeriodicity, isRaster]);
+        return { fecha, filterColumn: dateColumnOf(layerId) };
+    }, [periodicity, rasterPeriodicity, isRaster, layerId]);
 
     const currentFilter = getSpecificFilter?.(layerId, filterName) || null;
     const { t, player, selectedYear, selectedMonths, expandedYear } = useDateSelector({

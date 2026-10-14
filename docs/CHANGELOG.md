@@ -59,6 +59,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - **Las capas ráster entienden el `TIME` en intervalos.** `parseTimeDimensionToPeriodicity` usa el
   catálogo de zootropo: una dimensión anunciada como `inicio/fin/periodo` (presentación «Interval» de
   GeoServer) o como rango continuo ya da meses, y antes dejaba la capa sin fechas. zootropo pasa a 0.7.0.
+- **La columna de fecha ya no tiene que llamarse `fecha`.** Una tabla o vista entra a la periodicidad si
+  tiene una columna `fecha` o una columna con el comentario `mapalab:fecha`
+  (`COMMENT ON COLUMN esquema.tabla.col IS 'mapalab:fecha'`); el comentario gana. `layer_periodicity`
+  guarda `date_column`, `/periodicity/` la devuelve en `column` y `/periodicity/columns` la da por lote.
+  El visor arma el CQL, el loop y la fecha por defecto con esa columna. No hace falta migración: la tabla
+  la amplía el propio backend.
 
 ### Eliminado
 

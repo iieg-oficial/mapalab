@@ -3,6 +3,7 @@ import MapsContext from '@contexts/MapsContext';
 import { useLayerPeriodicity } from './useLayerPeriodicity';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { buildLoopValues } from '@pages/maps/helpers/dateLoopHelpers';
+import { dateColumnOf } from '@services/layerMetadataService';
 
 const slotKey = (slot) => slot || 'live';
 
@@ -42,10 +43,10 @@ export const useSlotPeriodicity = (layerId) => {
         if (!layerId) return null;
         const expandedYear = expandedYearOf(slot);
         if (expandedYear != null) {
-            const values = buildLoopValues({ mode: 'month', year: expandedYear, rasterPeriodicity, periodicity });
+            const values = buildLoopValues({ mode: 'month', year: expandedYear, rasterPeriodicity, periodicity, filterColumn: dateColumnOf(layerId) });
             return values.length >= 2 ? { mode: 'month', year: expandedYear, values } : null;
         }
-        const values = buildLoopValues({ mode: 'year', rasterPeriodicity, periodicity });
+        const values = buildLoopValues({ mode: 'year', rasterPeriodicity, periodicity, filterColumn: dateColumnOf(layerId) });
         return values.length >= 2 ? { mode: 'year', values } : null;
     }, [layerId, expandedYearOf, rasterPeriodicity, periodicity]);
 

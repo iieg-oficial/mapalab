@@ -12,6 +12,11 @@ const SOURCES_ENDPOINT = `${API_HOST}/metadata/sources`;
 const DATABASE_STATS_ENDPOINT = `${API_HOST}/metadata/database-stats`;
 const PERIODICITY_ENDPOINT = `${API_HOST}/periodicity/`;
 const PERIODICITY_BATCH_ENDPOINT = `${API_HOST}/periodicity/batch`;
+const PERIODICITY_COLUMNS_ENDPOINT = `${API_HOST}/periodicity/columns`;
+const DEFAULT_DATE_COLUMN = 'fecha';
+const dateColumns = new Map();
+
+export const dateColumnOf = (layerId) => dateColumns.get(layerId) ?? DEFAULT_DATE_COLUMN;
 
 let _databaseStatsCache = null;
 export const getDatabaseStats = async () => {
@@ -224,6 +229,7 @@ export const getLayerPeriodicity = async (layerId) => {
     if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
     const data = await response.json();
+    if (data.column) dateColumns.set(layerId, data.column);
     return data.periodicity || null;
 };
 
@@ -249,14 +255,17 @@ export const getLayersPeriodicities = async (layerIds) => {
     const keys = entries.map((e) => e.key).join(',');
     const url = new URL(PERIODICITY_BATCH_ENDPOINT, window.location.origin);
     url.searchParams.set('layers', keys);
+    const columnsUrl = new URL(PERIODICITY_COLUMNS_ENDPOINT, window.location.origin);
+    columnsUrl.searchParams.set('layers', keys);
 
-    const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-    });
+    const [response, columns] = await Promise.all([
+        fetch(url.toString(), { method: 'GET', headers: { 'Content-Type': 'application/json' } }),
+        fetch(columnsUrl.toString()).then((res) => (res.ok ? res.json() : {})).catch(() => ({})),
+    ]);
 
     if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
+    entries.forEach(({ id, key }) => { if (columns[key]) dateColumns.set(id, columns[key]); });
     const results = await response.json();
     return Object.fromEntries(entries.map(({ id, key }) => [id, results[key] ?? null]));
 };

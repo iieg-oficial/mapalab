@@ -5,6 +5,7 @@ import { useCarouselOverflow } from '@pages/maps/hooks/useCarouselOverflow';
 import { useDateSelector } from '@pages/maps/hooks/useDateSelector';
 import { MONTHS } from '@pages/maps/helpers/dateFilterHelpers';
 import Icon from '@components/Icon';
+import { dateColumnOf } from '@services/layerMetadataService';
 
 const initialExpansion = (keys) => {
     const month = keys.find(key => key.length === 10);
@@ -23,8 +24,8 @@ const DateTreeSelector = ({ layerId, periodicity, onFilterApply, onClearFilter, 
         if (!periodicity) return null;
         const fecha = periodicity.fecha || periodicity;
         if (!fecha || typeof fecha !== 'object') return null;
-        return { fecha, filterColumn: 'fecha' };
-    }, [periodicity]);
+        return { fecha, filterColumn: dateColumnOf(layerId) };
+    }, [periodicity, layerId]);
 
     const currentFilter = getSpecificFilter ? getSpecificFilter(layerId, filterName) : null;
     const { player, t } = useDateSelector({
