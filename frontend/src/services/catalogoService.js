@@ -1,3 +1,5 @@
+import { setDateColumn } from '@services/layerMetadataService';
+
 const API_HOST = (import.meta.env.VITE_BACKEND_API_HOST || '/api/').replace(/\/+$/, '');
 const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
 
@@ -29,6 +31,7 @@ export const fetchCapaPeriodicidad = async (capa, signal) => {
     const res = await fetch(url.toString(), { signal });
     if (!res.ok) throw new Error(`GET /periodicity fallo ${res.status}`);
     const data = await res.json();
+    setDateColumn(capa.slug, data?.column);
     const periodicidad = data?.periodicity;
     return periodicidad && Object.keys(periodicidad).length ? periodicidad : null;
 };

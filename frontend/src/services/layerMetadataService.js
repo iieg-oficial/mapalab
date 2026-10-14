@@ -18,6 +18,10 @@ const dateColumns = new Map();
 
 export const dateColumnOf = (layerId) => dateColumns.get(layerId) ?? DEFAULT_DATE_COLUMN;
 
+export const setDateColumn = (layerId, column) => {
+    if (layerId && column) dateColumns.set(layerId, column);
+};
+
 let _databaseStatsCache = null;
 export const getDatabaseStats = async () => {
     if (_databaseStatsCache) return _databaseStatsCache;

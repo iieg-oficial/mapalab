@@ -64,7 +64,8 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   (`COMMENT ON COLUMN esquema.tabla.col IS 'mapalab:fecha'`); el comentario gana. `layer_periodicity`
   guarda `date_column`, `/periodicity/` la devuelve en `column` y `/periodicity/columns` la da por lote.
   El visor arma el CQL, el loop y la fecha por defecto con esa columna. No hace falta migración: la tabla
-  la amplía el propio backend.
+  la amplía el propio backend. El catálogo (`/catalogo`) también: el `?fecha=`, el año por defecto de los
+  polígonos y los selectores usan la columna que devuelve `/periodicity/`.
 
 ### Eliminado
 
