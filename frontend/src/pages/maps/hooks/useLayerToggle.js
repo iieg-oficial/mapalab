@@ -6,7 +6,7 @@ import { generateDefaultDateFilter } from '@pages/maps/helpers/dateFilterHelpers
 import { findParentGroup } from '@pages/maps/helpers/layers/utils/layerHelpers';
 import { buildLayerMunicipioCql, CQL_SIN_RESOLVER } from '@pages/maps/helpers/municipioCqlBuilder';
 import { useLayers } from '@hooks/useLayers';
-import { getLayerPeriodicity } from '@services/layerMetadataService';
+import { dateColumnOf, getLayerPeriodicity } from '@services/layerMetadataService';
 import { fetchLayerExtent } from '@services/layerExtentService';
 import { JALISCO_BOUNDS } from '@pages/maps/helpers/wmsConfig';
 
@@ -68,12 +68,12 @@ export const useLayerToggle = ({
             const dateToApply = await resolveDefaultDate(layer.defaultDate, layerId);
             if (!dateToApply) return;
 
-            const cql = generateDefaultDateFilter(dateToApply, layer.defaultDate?.column || 'fecha');
+            const cql = generateDefaultDateFilter(dateToApply, layer.defaultDate?.column || dateColumnOf(layerId));
             if (cql) applyFilter(layerId, 'date', cql);
         } catch (err) {
             console.error('Error resolving default date for layer', err);
             if (layer.defaultDate && layer.defaultDate !== 'latest') {
-                const fallbackCql = generateDefaultDateFilter(layer.defaultDate, layer.defaultDate?.column || 'fecha');
+                const fallbackCql = generateDefaultDateFilter(layer.defaultDate, layer.defaultDate?.column || dateColumnOf(layerId));
                 if (fallbackCql) applyFilter(layerId, 'date', fallbackCql);
             }
         }

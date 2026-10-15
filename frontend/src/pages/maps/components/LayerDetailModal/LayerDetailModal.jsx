@@ -23,6 +23,7 @@ import DownloadMenu from './components/DownloadMenu';
 import Icon from '@components/Icon';
 import Logo from '@components/Logo';
 import Loading from '@components/Loading';
+import { slotMembershipOf } from '@pages/maps/helpers/swipeMode';
 
 const LayerDetailModal = () => {
     const {
@@ -55,10 +56,7 @@ const LayerDetailModal = () => {
 
     const hasPeriodicity = !hidePeriodicity && (periodicity != null || periodicityLoading || rasterPeriodicity != null);
 
-    const isSwipe = !!compareMode?.active;
-    const inA = isSwipe && compareMode.paneA?.activeLayerIds?.includes(selectedLayer?.id);
-    const inB = isSwipe && compareMode.paneB?.activeLayerIds?.includes(selectedLayer?.id);
-    const slotMembership = isSwipe ? (inA && inB ? 'AB' : (inA ? 'A' : (inB ? 'B' : null))) : null;
+    const slotMembership = slotMembershipOf(compareMode, [selectedLayer?.id]);
 
     const onAdvancedToggle = useCallback(() => setIsAdvancedMode(prev => !prev), []);
 

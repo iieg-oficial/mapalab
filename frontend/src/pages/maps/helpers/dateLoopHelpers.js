@@ -1,4 +1,6 @@
-import { generateCQLFilter, parseCQLToSelections, MONTHS } from './dateFilterHelpers';
+import { parseKey } from 'zootropo';
+import { generateCQLFilter, MONTHS } from './dateFilterHelpers';
+import { dateKeysFromFilter } from './dateKeys';
 
 const pickPeriodicitySource = ({ rasterPeriodicity, periodicity }) => {
     if (rasterPeriodicity) return rasterPeriodicity;
@@ -7,41 +9,13 @@ const pickPeriodicitySource = ({ rasterPeriodicity, periodicity }) => {
 };
 
 export const describeDateFilter = ({ filter, rasterPeriodicity }) => {
-    if (!filter) return null;
-
-    if (rasterPeriodicity) {
-        for (const [yStr, yData] of Object.entries(rasterPeriodicity)) {
-            const year = parseInt(yStr);
-            if (typeof yData === 'string') {
-                if (yData === filter) return { year, months: [], annual: true };
-            } else if (yData && typeof yData === 'object') {
-                for (const [mStr, v] of Object.entries(yData)) {
-                    if (v === filter) return { year, months: [parseInt(mStr)], annual: false };
-                }
-            }
-        }
-        return null;
-    }
-
-    const selections = parseCQLToSelections(filter);
-    if (selections.size === 0) return null;
-
-    const years = new Set();
-    const monthsByYear = {};
-    for (const s of selections) {
-        const parts = s.split('-');
-        const year = parseInt(parts[0]);
-        years.add(year);
-        if (parts.length >= 2) {
-            if (!monthsByYear[year]) monthsByYear[year] = new Set();
-            monthsByYear[year].add(parseInt(parts[1]));
-        }
-    }
-
+    const keys = dateKeysFromFilter(filter, { rasterPeriodicity });
+    if (keys.length === 0) return null;
+    const parts = keys.map(parseKey);
+    const years = new Set(parts.map(part => part.year));
     if (years.size > 1) return { multi: true, yearCount: years.size };
-
-    const year = [...years][0];
-    const months = [...(monthsByYear[year] || new Set())].sort((a, b) => a - b);
+    const year = parts[0].year;
+    const months = [...new Set(parts.map(part => part.month).filter(month => month !== null))].sort((a, b) => a - b);
     return { year, months, annual: months.length === 0 };
 };
 
@@ -82,40 +56,6 @@ export const formatLoopLabelLong = (desc, { maxMonths = Infinity } = {}) => {
 };
 
 export const formatDateFilterPill = (desc) => formatLoopLabelLong(desc, { maxMonths: MAX_LISTED_MONTHS });
-
-export const computeSelectorInitialState = ({ isRaster, rasterPeriodicity, currentFilter }) => {
-    if (isRaster) {
-        if (!rasterPeriodicity) return { year: null, months: new Set() };
-        if (currentFilter) {
-            for (const [y, yData] of Object.entries(rasterPeriodicity)) {
-                if (typeof yData === 'string' && yData === currentFilter) {
-                    return { year: parseInt(y), months: new Set() };
-                }
-                if (yData && typeof yData === 'object') {
-                    for (const [m, v] of Object.entries(yData)) {
-                        if (v === currentFilter) return { year: parseInt(y), months: new Set([parseInt(m)]) };
-                    }
-                }
-            }
-        }
-        const years = Object.keys(rasterPeriodicity).map(Number).sort((a, b) => b - a);
-        return { year: years[0] || null, months: new Set() };
-    }
-
-    const parsed = parseCQLToSelections(currentFilter);
-    let year = null;
-    const months = new Set();
-    for (const sel of parsed) {
-        const parts = sel.split('-');
-        if (parts.length >= 2) {
-            year = parseInt(parts[0]);
-            months.add(parseInt(parts[1]));
-        } else if (parts.length === 1) {
-            year = parseInt(parts[0]);
-        }
-    }
-    return { year, months };
-};
 
 export const buildLoopValues = ({ mode, year, rasterPeriodicity = null, periodicity = null, monthsSelection = null, filterColumn = 'fecha' }) => {
     const isRaster = !!rasterPeriodicity;

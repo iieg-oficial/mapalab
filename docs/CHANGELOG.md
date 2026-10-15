@@ -38,6 +38,56 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   crudo queda solo como último recurso
 
 
+### Cambiado
+
+- **El loop de fechas corre sobre zootropo.** `useDateLoop` conserva su API (`toggleLoop`, `stopLoop`,
+  `dateLoops`, preferencias por capa, lado del comparador) pero la secuencia, los temporizadores, la
+  espera a que la capa termine de cargar y el tope de 30 s salen de zootropo, que se instala
+  desde npm. El sondeo cada 100 ms de `loadingLayers` se sustituye por
+  `loading()`/`ready()` del reproductor. Primer paso de `planes/migracion-a-zootropo.md`.
+- **El filtro de fecha se lee por rangos, no por el texto exacto.** `helpers/dateKeys.js` convierte
+  cualquier CQL de fecha (cualquier columna, rangos fundidos, días como rango o igualdad, horas) en
+  llaves de zootropo; `parseCQLToSelections`, `cqlToDateRange` y `describeDateFilter` pasan por ahí, así
+  que la píldora, el nombre y el rango de las descargas y `?fecha=` entienden el formato viejo y el
+  nuevo. `generateCQLFilter` genera con zootropo: meses o días contiguos salen como un solo rango y el
+  día deja de ser `fecha = '…'`. Los enlaces y sesiones guardados con el formato anterior se siguen
+  leyendo.
+- **El selector de año y mes guarda su estado en zootropo.** `SimpleDateSelector` usa
+  `useDateSelector`, un reproductor local de zootropo con las reglas de siempre (en ráster el clic en
+  el año conserva o elige un mes; «Regresar» deja el año entero en vectoriales; al quitar el último mes
+  queda el año). La selección se reconstruye del filtro vigente por llaves, así que sigue al loop, a
+  los enlaces y al otro lado del comparador sin efectos propios. Los años y meses llevan `role="option"`,
+  `aria-selected` y `data-key`.
+- **El árbol de fechas del modo avanzado también usa zootropo** (0.3.0, `multiple: 'mixed'`). Los gestos no
+  cambian: clic navega, doble clic marca y clic sobre algo marcado lo quita. Al marcar una fecha se quitan
+  las que la contienen y las que contiene, así que el CQL no repite periodos (antes, marcar un año
+  dejaba también sus meses). zootropo pasa a 0.3.0.
+- **En el comparador cada lado anima por su cuenta, y se pueden sincronizar.** El loop de una capa ya no
+  pertenece a un solo lado: A y B corren a la vez, cada uno con su fecha, y las capas activas muestran
+  los controles de los dos. En el panel de periodicidad del comparador, «Sincronizar A y B» une los dos
+  lados en un reloj de zootropo (`createPlayerGroup`): el play arranca ambos desde la fecha del lado
+  donde se pulsó y pausar cualquiera pausa los dos. `getLoopState` y `stopLoop` aceptan el lado.
+- **Las capas ráster entienden el `TIME` en intervalos.** `parseTimeDimensionToPeriodicity` usa el
+  catálogo de zootropo: una dimensión anunciada como `inicio/fin/periodo` (presentación «Interval» de
+  GeoServer) o como rango continuo ya da meses, y antes dejaba la capa sin fechas. zootropo pasa a 0.7.0, desde npm (antes vendorizado).
+- **La columna de fecha ya no tiene que llamarse `fecha`.** Una tabla o vista entra a la periodicidad si
+  tiene una columna `fecha` o una columna con el comentario `mapalab:fecha`
+  (`COMMENT ON COLUMN esquema.tabla.col IS 'mapalab:fecha'`); el comentario gana. `layer_periodicity`
+  guarda `date_column`, `/periodicity/` la devuelve en `column` y `/periodicity/columns` la da por lote.
+  El visor arma el CQL, el loop y la fecha por defecto con esa columna. No hace falta migración: la tabla
+  la amplía el propio backend. El catálogo (`/catalogo`) también: el `?fecha=`, el año por defecto de los
+  polígonos y los selectores usan la columna que devuelve `/periodicity/`.
+- **La columna de fecha también se elige en mariachi.** `refresh_layer_periodicity()` toma primero
+  `mapalab.layers.date_column` de una capa que apunte a la tabla (dataengine `0058`, campo «Columna de fecha»
+  del editor de capas), luego la columna con el comentario `mapalab:fecha` y al final `fecha`. Si la
+  columna configurada no existe en la tabla, cae a las otras dos; sin la migración, la función ignora ese
+  paso.
+
+### Eliminado
+
+- `useDateSelections` y `computeSelectorInitialState`: el árbol y el selector de fechas guardan la
+  selección en zootropo.
+
 ## [2.3.0] - 2026-10-06
 
 ### Agregado

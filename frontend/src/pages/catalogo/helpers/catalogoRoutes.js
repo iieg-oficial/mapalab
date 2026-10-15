@@ -41,10 +41,10 @@ export const cqlToFechaParam = (cql) => {
     return [...selections].join(',');
 };
 
-export const fechaParamToCql = (param) => {
+export const fechaParamToCql = (param, column = 'fecha') => {
     if (!param) return null;
     const selections = new Set(param.split(',').map((s) => s.trim()).filter(Boolean));
-    return selections.size ? generateCQLFilter(selections) : null;
+    return selections.size ? generateCQLFilter(selections, column) : null;
 };
 
 const rasterToFechaParam = (time, periodicidad) => {
@@ -68,9 +68,9 @@ export const filtroToFechaParam = (filtro, { isRaster = false, periodicidad = nu
     return isRaster ? rasterToFechaParam(filtro, periodicidad) : cqlToFechaParam(filtro);
 };
 
-export const fechaParamToFiltro = (param, { isRaster = false, periodicidad = null } = {}) => {
+export const fechaParamToFiltro = (param, { isRaster = false, periodicidad = null, column = 'fecha' } = {}) => {
     if (!param) return null;
-    return isRaster ? fechaParamToRaster(param, periodicidad) : fechaParamToCql(param);
+    return isRaster ? fechaParamToRaster(param, periodicidad) : fechaParamToCql(param, column);
 };
 
 export const filterCapas = (capas, { institucionSlug = null, query = '' } = {}) => {

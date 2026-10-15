@@ -27,7 +27,8 @@ const serializeFilters = (rawFilters) => {
 const serializeLoop = (dateLoops, loopPrefs, layerTree) => {
     const playing = Object.entries(dateLoops || {}).find(([, l]) => l && l.isPlaying);
     if (!playing) return null;
-    const [layerId, state] = playing;
+    const [, state] = playing;
+    const { layerId } = state;
     const prefs = loopPrefs?.[layerId] || {};
     return {
         layerSlug: slugForLayer(layerId, layerTree),
