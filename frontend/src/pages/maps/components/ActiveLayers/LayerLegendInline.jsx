@@ -11,6 +11,8 @@ import HexbinLegend from './HexbinLegend';
 import { legendEntries } from '@pages/maps/helpers/hexbinStyles';
 import { hasHexbinMode } from '@pages/maps/helpers/serviceMode';
 
+const LEGEND_SCALE = 2;
+
 const LayerLegendInline = ({ layer, compareMode, slotMembership }) => {
     const { hasLegend, getLegendUrl } = useWMSLegend();
     const { visible } = useLegendsVisibility();
@@ -38,13 +40,13 @@ const LayerLegendInline = ({ layer, compareMode, slotMembership }) => {
 
     let url;
     if (!isSwipe || !slotMembership) {
-        url = getLegendUrl(layer);
+        url = getLegendUrl(layer, { dpi: 100 * LEGEND_SCALE });
     } else {
         const activeSlot = slotMembership === 'AB'
             ? (compareMode.activeSlot === 'B' ? 'B' : 'A')
             : slotMembership;
         const slotDate = compareMode[activeSlot === 'A' ? 'paneA' : 'paneB']?.filters?.[layer.id]?.date;
-        url = getLegendUrl(layer, { dateValue: slotDate });
+        url = getLegendUrl(layer, { dateValue: slotDate, dpi: 100 * LEGEND_SCALE });
     }
 
     if (!url) return null;
@@ -74,7 +76,7 @@ const LayerLegendInline = ({ layer, compareMode, slotMembership }) => {
                 aria-label="Centrar capa en el mapa"
                 className="relative group w-full bg-white rounded-[13px] overflow-hidden p-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#70308A] outline-none"
             >
-                <LegendImage src={url} alt={layer.name} />
+                <LegendImage src={url} alt={layer.name} scale={LEGEND_SCALE} />
                 <span className="absolute top-1.5 right-1.5 z-10 p-1 bg-white rounded-full shadow-[0_2px_8px_#1A26641A] opacity-0 group-hover:opacity-100 max-md:opacity-100 transition-opacity pointer-events-none">
                     <Icon name="fit_extent" state={hovered ? 'hover' : 'normal'} className="w-4 h-4" />
                 </span>

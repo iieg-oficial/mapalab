@@ -50,6 +50,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   `descendente` sin `orden`, error en páginas fuera de rango y `contiene` sin comodines (`strIndexOf`)
 - **MCP: telemetría.** El loop ya no muere si falta la configuración, los textos del cliente se recortan
   y una tool que falla cuenta como `error`
+- **El `antialias` de las capas WMS viajaba duplicado en pantallas de alta densidad.** Se mandaba como
+  `format_options` y OpenLayers agregaba su `FORMAT_OPTIONS=dpi:…` aparte; GeoServer se queda con el
+  último y perdía el otro. Ahora va en `FORMAT_OPTIONS` y OpenLayers le suma el `dpi` en la misma clave
+- **Las leyendas del panel de capas activas se veían pixeladas.** Se pedían a `dpi:100` y en pantallas de
+  alta densidad el navegador las estiraba. Ahora se piden al doble y se muestran a la mitad: mismo tamaño
+  de icono y letra, con el doble de detalle
 
 
 ### Cambiado
