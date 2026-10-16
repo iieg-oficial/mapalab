@@ -71,7 +71,7 @@ def create_map(
     view: Optional[dict[str, float]] = Field(default=None, description='Vista inicial {zoom, lat, lon, rotation?} dentro de Jalisco. Sin ella se encuadra al municipio o a Jalisco.'),
     basemap: Optional[Basemap] = Field(default=None, description="Mapa base: 'voyager' (recomendado), 'position' o 'sin_mapalab'. NO existe 'osm'."),
     selected: Optional[str] = Field(default=None, max_length=MAX_REFERENCIA, description='Id de la capa del mapa cuya simbología se muestra.'),
-    annotations: Optional[list[dict[str, Any]]] = Field(default=None, max_length=200, description="Anotaciones GeoJSON EPSG:4326: {id, type ('LineString'|'Polygon'|'Text'|'Emoji'), geometry, label?, value?, unit?, textLabel?, rotation?}."),
+    annotations: Optional[list[dict[str, Any]]] = Field(default=None, max_length=200, description="Anotaciones GeoJSON EPSG:4326: {id, type ('LineString'|'Polygon'|'Text'|'Emoji'), geometry, label?, value?, unit?, textLabel?, rotation?}. Los textos no aceptan páginas web, correos ni teléfonos."),
     vista_3d: Optional[Vista3d] = Field(default=None, description='Abre el mapa en 3D con relieve: {inclinacion?, rumbo?, exageracion?, extruir?: [ids de capas del mapa]}.'),
 ) -> dict:
     with como_error_de_tool():
@@ -93,7 +93,7 @@ def create_swipe(
     basemap: Basemap = Field(default='voyager', description="Mapa base: 'voyager', 'position' o 'sin_mapalab'."),
     label_a: str = Field(default='A', max_length=MAX_ETIQUETA_LADO, description='Etiqueta del lado A (modo dos capas).'),
     label_b: str = Field(default='B', max_length=MAX_ETIQUETA_LADO, description='Etiqueta del lado B (modo dos capas).'),
-    annotations: Optional[list[dict[str, Any]]] = Field(default=None, max_length=200, description='Anotaciones globales, visibles en ambos lados. GeoJSON EPSG:4326.'),
+    annotations: Optional[list[dict[str, Any]]] = Field(default=None, max_length=200, description='Anotaciones globales, visibles en ambos lados. GeoJSON EPSG:4326. Sin páginas web, correos ni teléfonos.'),
     vista_3d: Optional[Vista3d] = Field(default=None, description='Abre el comparador en 3D, con la cámara igual en los dos lados.'),
 ) -> dict:
     with como_error_de_tool():

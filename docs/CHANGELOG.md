@@ -10,7 +10,7 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
-- El proxy de capas privadas (`/api/privado`) puede autenticarse ante GeoServer con un token de servicio de minerva (`client_credentials`) en vez de usuario y contraseña: `GEOSERVER_AUTH_MODE=minerva` y `GEOSERVER_MINERVA_AUDIENCE=sextante`. Usa `MINERVA_ISSUER_URL`, `MINERVA_CLIENT_ID` y `MINERVA_CLIENT_SECRET`; renueva el token antes de que venza y reintenta una vez ante 401. La cuenta de servicio de mapalab solo necesita el rol que GeoServer traduce a `MAPALAB_PRIVADA`. Por defecto sigue `basic`.
+- El proxy de capas privadas (`/api/privado`) puede autenticarse ante GeoServer con un token de servicio de minerva (`client_credentials`) en vez de usuario y contraseña: `GEOSERVER_AUTH_MODE=minerva` y `GEOSERVER_MINERVA_AUDIENCE=sextante`. Usa `MINERVA_ISSUER_URL`, `MINERVA_CLIENT_ID` y `MINERVA_CLIENT_SECRET`; renueva el token antes de que venza y reintenta una vez ante 401. La cuenta de servicio de mapalab solo necesita el rol que GeoServer traduce a `MAPALAB_PRIVADA`. **Las dos variables son obligatorias en el compose**: cada `.env` tiene que declarar `GEOSERVER_AUTH_MODE` (`basic` para seguir como antes) y `GEOSERVER_MINERVA_AUDIENCE`.
 - **Capas no consultables.** El clic y la selección por polígono omiten las capas con
   `wmsConfig.queryable === false`, y una de ellas ya no descarta las de `general`. Se configura en
   mariachi.
@@ -76,6 +76,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   256 KB da 413 y nginx corta a 120 s
 - `servers/` se reparte en `servidor`, `herramientas_lectura`, `herramientas_mapas`, `compartidos` y
   `borde` para no pasar de 300 líneas
+- **El MCP no publica datos de contacto.** Los textos de las anotaciones y las etiquetas del comparador
+  rechazan páginas web, correos y teléfonos: un compartido vive en el dominio oficial y no debe servir
+  para dirigir a la gente a otro lado
 - **`mapalab-mcp` sale de `iieg-network` en producción.** Solo se llega a él por el nginx de mapalab
   (`/mcp`, detrás del gateway), con sus límites de tasa y de cuerpo; antes `:8000` se alcanzaba directo
   desde cualquier contenedor de esa red
