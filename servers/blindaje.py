@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 import threading
 import time
 from collections import deque
@@ -20,6 +21,15 @@ MAX_ANOTACIONES = 200
 
 CAMPOS_ANOTACION = frozenset({'id', 'type', 'geometry', 'label', 'value', 'unit', 'textLabel', 'rotation'})
 TEXTOS_ANOTACION = ('id', 'label', 'unit', 'textLabel')
+
+_CONTACTOS = (
+    ('páginas web', re.compile(
+        r'(https?://|www\.|\b[a-z0-9-]+(\.[a-z0-9-]+)*\.(com|net|org|info|biz|mx|gob|edu|io|co|me|app|site|online|link|ly|xyz|top|club|shop|store|tk|ru|cn)\b)',
+        re.IGNORECASE,
+    )),
+    ('correos', re.compile(r'[\w.+-]+\s*(@|\(at\)|\[at\])\s*[\w-]+\s*\.\s*\w+', re.IGNORECASE)),
+    ('teléfonos', re.compile(r'(\+\s*\d[\d\s().-]{6,}\d|\(?\d{2,3}\)?[\s.-]?\d{3,4}[\s.-]?\d{4}\b)')),
+)
 
 RANGOS_VISTA = {
     'lat': (17.0, 24.5),
@@ -94,10 +104,17 @@ def validar_vista(vista: Optional[dict]) -> Optional[dict]:
     return limpia
 
 
+def rechazar_contactos(texto: str, campo: str) -> None:
+    for tipo, patron in _CONTACTOS:
+        if patron.search(texto or ''):
+            raise ValueError(f'{campo} no puede llevar {tipo}: los mapas del MCP no publican datos de contacto ni enlaces.')
+
+
 def validar_etiqueta(texto: str, campo: str) -> str:
     limpio = (texto or '').strip()
     if len(limpio) > MAX_ETIQUETA_LADO:
         raise ValueError(f'{campo} admite hasta {MAX_ETIQUETA_LADO} caracteres.')
+    rechazar_contactos(limpio, campo)
     return limpio
 
 
@@ -140,9 +157,12 @@ def limpiar_anotaciones(items: Optional[list]) -> Optional[list]:
                 continue
             if not isinstance(valor, str) or len(valor) > MAX_TEXTO_ANOTACION:
                 raise ValueError(f'annotations[{indice}].{campo} debe ser texto de hasta {MAX_TEXTO_ANOTACION} caracteres.')
+            rechazar_contactos(valor, f'annotations[{indice}].{campo}')
         valor = anotacion.get('value')
         if valor is not None and not _es_numero(valor) and not (isinstance(valor, str) and len(valor) <= MAX_TEXTO_ANOTACION):
             raise ValueError(f'annotations[{indice}].value debe ser número o texto corto.')
+        if isinstance(valor, str):
+            rechazar_contactos(valor, f'annotations[{indice}].value')
         rotacion = anotacion.get('rotation')
         if rotacion is not None and (not _es_numero(rotacion) or not -360 <= rotacion <= 360):
             raise ValueError(f'annotations[{indice}].rotation debe ser un número entre -360 y 360.')

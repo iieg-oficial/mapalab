@@ -103,3 +103,28 @@ class TestEndurecimiento:
     def test_acepta_geometria_en_jalisco(self):
         punto = {'type': 'Text', 'rotation': 45, 'geometry': {'type': 'Point', 'coordinates': [-103.35, 20.67]}}
         assert limpiar_anotaciones([punto]) == [punto]
+
+
+class TestContactos:
+    @pytest.mark.parametrize('texto', [
+        'Registro en censo-jalisco.com',
+        'entra a https://pago.example',
+        'www.iieg-tramites.net',
+        'escribe a ayuda@correo.mx',
+        'ayuda (at) correo . mx',
+        'llama al 33 1234 5678',
+        'Tel. (33) 1234-5678',
+        '+52 33 1234 5678',
+    ])
+    def test_rechaza_paginas_correos_y_telefonos(self, texto):
+        with pytest.raises(ValueError, match='no puede llevar'):
+            limpiar_anotaciones([{'id': 'a', 'type': 'Text', 'textLabel': texto}])
+        with pytest.raises(ValueError, match='no puede llevar'):
+            validar_etiqueta(texto[:60], 'label_a')
+
+    @pytest.mark.parametrize('texto', [
+        'Zona de mayor incidencia', 'Población 1,234,567', 'Homicidios 2024 vs 2025',
+        'Tlaquepaque: 281 casos', 'Superficie 12.5 km²', 'Av. Juárez 1200', 'C.P. 44100',
+    ])
+    def test_deja_pasar_textos_normales(self, texto):
+        assert limpiar_anotaciones([{'id': 'a', 'type': 'Text', 'textLabel': texto}])[0]['textLabel'] == texto

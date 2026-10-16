@@ -76,6 +76,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   256 KB da 413 y nginx corta a 120 s
 - `servers/` se reparte en `servidor`, `herramientas_lectura`, `herramientas_mapas`, `compartidos` y
   `borde` para no pasar de 300 líneas
+- **El MCP no publica datos de contacto.** Los textos de las anotaciones y las etiquetas del comparador
+  rechazan páginas web, correos y teléfonos: un compartido vive en el dominio oficial y no debe servir
+  para dirigir a la gente a otro lado
 - **`mapalab-mcp` sale de `iieg-network` en producción.** Solo se llega a él por el nginx de mapalab
   (`/mcp`, detrás del gateway), con sus límites de tasa y de cuerpo; antes `:8000` se alcanzaba directo
   desde cualquier contenedor de esa red
