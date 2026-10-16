@@ -36,10 +36,39 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   `atributos.columnas`. Ahora la etiqueta sale del alias de la tabla de datos y, si no hay, de la
   etiqueta que la tarjetita (`littleCard`) le da al campo, con su formato (el año de `fecha`); el nombre
   crudo queda solo como último recurso
+- **MCP: ids de grupo y ids ambiguos.** `poblacion` o `cultivos` (grupos del árbol) daban `KeyError` en
+  `layer_table`/`layer_stats` y compartidos con grupos; `robo` se resolvía en silencio a la primera capa
+  alfabética. Ahora un grupo responde con sus capas, un texto ambiguo con la lista de ids y uno resuelto
+  lleva `resuelto_de`. Los municipios se buscan sin acentos y con error si hay varios (`Zapotlan`)
+- **MCP: `year` y `month` se validan contra la periodicidad** en `layer_table`, `layer_stats`, `create_map`
+  y `create_swipe`, con la columna de fecha de cada capa. Antes un año inexistente daba `0` como dato,
+  `month` sin `year` se ignoraba y en mapas de varias capas el filtro caía también en las no temporales
+- **MCP: `municipio` filtra de verdad.** Cada capa con `hasMunicipio` lleva `filters.municipio`; antes solo
+  se guardaba `payload.municipios`, que el visor ignora fuera de BETA, y el mapa mostraba todo Jalisco
+- **MCP: el swipe por años perdía `annotations` y `position`** y aceptaba el mismo año en los dos lados
+- **MCP: paginación de `layer_table`.** `paginas` coherente con el tope de 5000 filas, desempate por `fid`,
+  `descendente` sin `orden`, error en páginas fuera de rango y `contiene` sin comodines (`strIndexOf`)
+- **MCP: telemetría.** El loop ya no muere si falta la configuración, los textos del cliente se recortan
+  y una tool que falla cuenta como `error`
 
 
 ### Cambiado
 
+- **El MCP entra con privilegios mínimos.** Usa el rol `mapalab_mcp` de dataengine (`0059`; `MCP_DB_USER`
+  y el secreto `mcp_db_password`), ya no manda credencial a GeoServer, corre como `appuser` y deja de
+  recibir los secretos de acervo y GeoServer
+- **El MCP de producción no expone lo BETA.** Con `MAPALAB_APP_ENV` (el `VITE_APP_ENV` del entorno) fuera
+  de `dev`/`beta` no se registra `create_swipe`, `create_map` no tiene `vista_3d` y no se devuelve
+  `embed_html`. `create_map` acepta `month`
+- **Errores del MCP como errores de la tool** (`ToolError`, `isError: true`) y los no previstos sin
+  detalle (`mask_error_details`). Las tools llevan título en español y `readOnlyHint`; `serverInfo` da la
+  versión de mapalab
+- **Topes del MCP antes de trabajar:** hasta 60 capas, 8 palabras de búsqueda y longitud máxima en
+  todos los textos; el cupo de compartidos se cobra al entrar y los techos se reparten entre workers.
+  Anotaciones con números finitos y coordenadas en la región. `Origin` ajeno da 403, cuerpo de más de
+  256 KB da 413 y nginx corta a 120 s
+- `servers/` se reparte en `servidor`, `herramientas_lectura`, `herramientas_mapas`, `compartidos` y
+  `borde` para no pasar de 300 líneas
 - **El loop de fechas corre sobre zootropo.** `useDateLoop` conserva su API (`toggleLoop`, `stopLoop`,
   `dateLoops`, preferencias por capa, lado del comparador) pero la secuencia, los temporizadores, la
   espera a que la capa termine de cargar y el tope de 30 s salen de zootropo, que se instala

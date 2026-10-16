@@ -26,6 +26,7 @@ def geoserver(monkeypatch):
         return SimpleNamespace(json=lambda: respuestas['wps'])
 
     est._cache.clear()
+    est._campos_cache.clear()
     monkeypatch.setattr(est, '_pedir', pedir)
     monkeypatch.setattr(est, 'techo_wps', Techo(por_minuto=5, por_dia=50))
     monkeypatch.setattr(est, 'resolver_consulta', lambda layer, **kw: (
@@ -80,3 +81,20 @@ def test_el_techo_de_wps_corta_con_un_mensaje_claro(geoserver, monkeypatch):
     monkeypatch.setattr(est, 'techo_wps', Techo(por_minuto=0, por_dia=0))
     with pytest.raises(ValueError, match='solo el conteo'):
         est.layer_stats('cultivos', field='superficie')
+
+
+def test_el_xml_del_wps_va_escapado():
+    cuerpo = est.construir_agregado('agro:cultivos', 'superficie', "nombre = 'a&b'", 'cultivo<x>')
+    assert 'cultivo&lt;x&gt;' in cuerpo and '&amp;CQL_FILTER=' in cuerpo and '<x>' not in cuerpo
+
+
+def test_las_clases_nulas_se_reportan_y_el_conteo_es_entero():
+    datos = {'AggregationFunctions': ['Count'], 'AggregationResults': [['maiz', 10.0], [None, 3.0]]}
+    resultado = est.leer_agregado(datos, agrupado=True, top=5)
+    assert resultado['clases'] == [{'clase': 'maiz', 'conteo': 10}]
+    assert resultado['sin_valor'] == {'conteo': 3}
+
+
+def test_la_cache_no_devuelve_los_filtros_de_otro(geoserver):
+    est.layer_stats('cultivos', municipio='Zapopan')
+    assert est.layer_stats('cultivos', municipio='14120')['filtros'] == {'municipio': '14120'}

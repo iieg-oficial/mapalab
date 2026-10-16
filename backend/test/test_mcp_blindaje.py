@@ -51,8 +51,9 @@ class TestTextos:
             validar_etiqueta('x' * (MAX_ETIQUETA_LADO + 1), 'label_a')
 
     def test_anotacion_pierde_campos_desconocidos(self):
-        limpias = limpiar_anotaciones([{'id': 'a', 'type': 'Text', 'geometry': {}, 'label': 'Sede', 'onclick': 'x'}])
-        assert limpias == [{'id': 'a', 'type': 'Text', 'geometry': {}, 'label': 'Sede'}]
+        punto = {'type': 'Point', 'coordinates': [-103.35, 20.67]}
+        limpias = limpiar_anotaciones([{'id': 'a', 'type': 'Text', 'geometry': punto, 'label': 'Sede', 'onclick': 'x'}])
+        assert limpias == [{'id': 'a', 'type': 'Text', 'geometry': punto, 'label': 'Sede'}]
 
     def test_texto_de_anotacion_largo_se_rechaza(self):
         with pytest.raises(ValueError):
@@ -79,3 +80,26 @@ class TestTecho:
             assert techo.consumir()
         ahora[0] = 120
         assert not techo.consumir()
+
+
+class TestEndurecimiento:
+    def test_tope_de_capas(self):
+        with pytest.raises(ValueError, match='hasta 60'):
+            limpiar_capas(['x'] * 61)
+
+    @pytest.mark.parametrize('anotacion', [
+        {'type': 'Text', 'rotation': float('inf')},
+        {'type': 'Text', 'rotation': 400},
+        {'type': 'Text', 'value': float('nan')},
+        {'type': 'Text', 'geometry': {'type': 'Point', 'coordinates': [200, 95]}},
+        {'type': 'Text', 'geometry': {'type': 'Point', 'coordinates': [float('nan'), 20]}},
+        {'type': 'Polygon', 'geometry': {'type': 'Polygon', 'coordinates': [[[-103.3, 20.6]] * 2001]}},
+        {'type': 'Text', 'geometry': 'POINT(1 2)'},
+    ])
+    def test_rechaza_numeros_y_geometrias_invalidas(self, anotacion):
+        with pytest.raises(ValueError):
+            limpiar_anotaciones([anotacion])
+
+    def test_acepta_geometria_en_jalisco(self):
+        punto = {'type': 'Text', 'rotation': 45, 'geometry': {'type': 'Point', 'coordinates': [-103.35, 20.67]}}
+        assert limpiar_anotaciones([punto]) == [punto]

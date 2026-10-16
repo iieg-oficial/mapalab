@@ -12,7 +12,8 @@ NODO = {'id': 'bachillerato', 'wmsConfig': {
 def arbol(monkeypatch):
     nodo = {'id': NODO['id'], 'wmsConfig': dict(NODO['wmsConfig'])}
     monkeypatch.setattr(layers, 'get_cached_state', lambda: {'tree': [nodo], 'workspaces': []})
-    monkeypatch.setattr(layers, '_find_node_in_tree', lambda tree, layer: tree[0])
+    monkeypatch.setattr(layers, 'resolver_capa', lambda ref: {'id': nodo['id'], 'node': nodo})
+    monkeypatch.setattr(layers, 'filtro_de_fecha', lambda node, year, month=None: f"(fecha >= '{year}-01-01')" if year else None)
     return nodo
 
 
@@ -32,3 +33,21 @@ def test_rechaza_capas_sin_wfs(arbol):
     arbol['wmsConfig']['wfsAvailable'] = False
     with pytest.raises(ValueError, match='no publica'):
         layers.resolver_consulta('bachillerato')
+
+
+def test_rechaza_nombres_de_capa_que_no_son_de_geoserver(arbol):
+    arbol['wmsConfig']['wfsLayerName'] = 'x" onload="y'
+    with pytest.raises(ValueError, match='WFS'):
+        layers.resolver_consulta('bachillerato')
+
+
+def test_rechaza_municipio_en_capa_sin_municipio(arbol, monkeypatch):
+    monkeypatch.setattr(layers, 'resolver_municipio', lambda texto: {'clave': '14039', 'nombre': 'Guadalajara'})
+    with pytest.raises(ValueError, match='no soporta filtro por municipio'):
+        layers.resolver_consulta('bachillerato', municipio='Guadalajara')
+
+
+def test_filtra_por_municipio_con_el_campo_de_la_capa(arbol, monkeypatch):
+    arbol['searchMeta'] = {'hasMunicipio': True, 'municipioField': 'clave_municipio'}
+    monkeypatch.setattr(layers, 'resolver_municipio', lambda texto: {'clave': '14039', 'nombre': 'Guadalajara'})
+    assert layers.resolver_consulta('bachillerato', municipio='gdl')[3][-1] == "clave_municipio = '14039'"
