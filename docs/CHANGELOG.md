@@ -75,6 +75,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   256 KB da 413 y nginx corta a 120 s
 - `servers/` se reparte en `servidor`, `herramientas_lectura`, `herramientas_mapas`, `compartidos` y
   `borde` para no pasar de 300 líneas
+- **`mapalab-mcp` sale de `iieg-network` en producción.** Solo se llega a él por el nginx de mapalab
+  (`/mcp`, detrás del gateway), con sus límites de tasa y de cuerpo; antes `:8000` se alcanzaba directo
+  desde cualquier contenedor de esa red
 - **El loop de fechas corre sobre zootropo.** `useDateLoop` conserva su API (`toggleLoop`, `stopLoop`,
   `dateLoops`, preferencias por capa, lado del comparador) pero la secuencia, los temporizadores, la
   espera a que la capa termine de cargar y el tope de 30 s salen de zootropo, que se instala
