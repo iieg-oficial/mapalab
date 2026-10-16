@@ -40,7 +40,7 @@ export const buildWmsLayer = (capa) => {
         VERSION: cfg.version,
     };
     if (cfg.antialias && cfg.antialias !== 'full') {
-        params.format_options = `antialias:${cfg.antialias}`;
+        params.FORMAT_OPTIONS = `antialias:${cfg.antialias}`;
     }
     const source = new ImageWMS({
         url: cfg.baseUrl,

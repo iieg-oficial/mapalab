@@ -10,6 +10,7 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
+- El proxy de capas privadas (`/api/privado`) puede autenticarse ante GeoServer con un token de servicio de minerva (`client_credentials`) en vez de usuario y contraseña: `GEOSERVER_AUTH_MODE=minerva` y `GEOSERVER_MINERVA_AUDIENCE=sextante`. Usa `MINERVA_ISSUER_URL`, `MINERVA_CLIENT_ID` y `MINERVA_CLIENT_SECRET`; renueva el token antes de que venza y reintenta una vez ante 401. La cuenta de servicio de mapalab solo necesita el rol que GeoServer traduce a `MAPALAB_PRIVADA`. Por defecto sigue `basic`.
 - **Capas no consultables.** El clic y la selección por polígono omiten las capas con
   `wmsConfig.queryable === false`, y una de ellas ya no descarta las de `general`. Se configura en
   mariachi.
@@ -50,6 +51,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   `descendente` sin `orden`, error en páginas fuera de rango y `contiene` sin comodines (`strIndexOf`)
 - **MCP: telemetría.** El loop ya no muere si falta la configuración, los textos del cliente se recortan
   y una tool que falla cuenta como `error`
+- **El `antialias` de las capas WMS viajaba duplicado en pantallas de alta densidad.** Se mandaba como
+  `format_options` y OpenLayers agregaba su `FORMAT_OPTIONS=dpi:…` aparte; GeoServer se queda con el
+  último y perdía el otro. Ahora va en `FORMAT_OPTIONS` y OpenLayers le suma el `dpi` en la misma clave
+- **Las leyendas del panel de capas activas se veían pixeladas.** Se pedían a `dpi:100` y en pantallas de
+  alta densidad el navegador las estiraba. Ahora se piden al doble y se muestran a la mitad: mismo tamaño
+  de icono y letra, con el doble de detalle
 
 
 ### Cambiado
@@ -69,6 +76,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   256 KB da 413 y nginx corta a 120 s
 - `servers/` se reparte en `servidor`, `herramientas_lectura`, `herramientas_mapas`, `compartidos` y
   `borde` para no pasar de 300 líneas
+- **`mapalab-mcp` sale de `iieg-network` en producción.** Solo se llega a él por el nginx de mapalab
+  (`/mcp`, detrás del gateway), con sus límites de tasa y de cuerpo; antes `:8000` se alcanzaba directo
+  desde cualquier contenedor de esa red
 - **El loop de fechas corre sobre zootropo.** `useDateLoop` conserva su API (`toggleLoop`, `stopLoop`,
   `dateLoops`, preferencias por capa, lado del comparador) pero la secuencia, los temporizadores, la
   espera a que la capa termine de cargar y el tope de 30 s salen de zootropo, que se instala

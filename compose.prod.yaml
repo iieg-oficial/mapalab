@@ -32,7 +32,6 @@ services:
       target: production
     networks:
       - default
-      - iieg-network
     restart: unless-stopped
 
   docker-socket-proxy:
