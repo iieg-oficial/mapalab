@@ -1,4 +1,4 @@
-import footerConfig from '../config/footerConfig';
+import footerConfig from '@constants/footerConfig';
 import { useHomeContent } from '@hooks/useHomeContent';
 import ReportButton from '@components/ReportButton';
 
