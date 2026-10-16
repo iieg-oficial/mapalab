@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import math
+import os
 import threading
 import time
 from collections import deque
 from typing import Any, Callable, Optional
 
 from pydantic import BaseModel, Field, ValidationError
+
+from app.services.share_service import MAX_CAPAS, MAX_COORDINATES_PER_GEOMETRY, RANGO_LAT, RANGO_LON
+
+ES_BETA = os.environ.get('MAPALAB_APP_ENV', 'prod') in {'dev', 'beta'}
 
 MAX_TEXTO_ANOTACION = 200
 MAX_ETIQUETA_LADO = 60
@@ -31,10 +37,22 @@ class Vista3d(BaseModel):
 
 
 def _es_numero(valor: Any) -> bool:
-    return isinstance(valor, (int, float)) and not isinstance(valor, bool) and valor == valor
+    return isinstance(valor, (int, float)) and not isinstance(valor, bool) and math.isfinite(valor)
+
+
+def por_proceso(total: int) -> int:
+    try:
+        procesos = max(1, int(os.environ.get('MCP_WORKERS') or 1))
+    except ValueError:
+        procesos = 1
+    return max(1, total // procesos)
 
 
 def limpiar_capas(items: Optional[list]) -> list[dict]:
+    if items is not None and not isinstance(items, list):
+        raise ValueError('Las capas deben ir en una lista.')
+    if len(items or []) > MAX_CAPAS:
+        raise ValueError(f'Un mapa admite hasta {MAX_CAPAS} capas.')
     capas: list[dict] = []
     for crudo in items or []:
         entrada = {'slug': crudo} if isinstance(crudo, str) else crudo
@@ -83,6 +101,27 @@ def validar_etiqueta(texto: str, campo: str) -> str:
     return limpio
 
 
+def _validar_geometria(geometria: Any, indice: int) -> None:
+    if geometria is None:
+        return
+    if not isinstance(geometria, dict) or not isinstance(geometria.get('type'), str):
+        raise ValueError(f'annotations[{indice}].geometry debe ser un objeto GeoJSON con type y coordinates.')
+    pila, puntos = [geometria.get('coordinates')], 0
+    while pila:
+        actual = pila.pop()
+        if isinstance(actual, list) and len(actual) in (2, 3) and all(_es_numero(v) for v in actual):
+            lon, lat = actual[0], actual[1]
+            if not (RANGO_LON[0] <= lon <= RANGO_LON[1] and RANGO_LAT[0] <= lat <= RANGO_LAT[1]):
+                raise ValueError(f'annotations[{indice}].geometry tiene coordenadas fuera de la región (EPSG:4326, lon/lat).')
+            puntos += 1
+        elif isinstance(actual, list) and actual:
+            pila.extend(actual)
+        else:
+            raise ValueError(f'annotations[{indice}].geometry tiene coordenadas inválidas.')
+        if puntos > MAX_COORDINATES_PER_GEOMETRY:
+            raise ValueError(f'annotations[{indice}].geometry pasa de {MAX_COORDINATES_PER_GEOMETRY} vértices.')
+
+
 def limpiar_anotaciones(items: Optional[list]) -> Optional[list]:
     if items is None:
         return None
@@ -104,6 +143,10 @@ def limpiar_anotaciones(items: Optional[list]) -> Optional[list]:
         valor = anotacion.get('value')
         if valor is not None and not _es_numero(valor) and not (isinstance(valor, str) and len(valor) <= MAX_TEXTO_ANOTACION):
             raise ValueError(f'annotations[{indice}].value debe ser número o texto corto.')
+        rotacion = anotacion.get('rotation')
+        if rotacion is not None and (not _es_numero(rotacion) or not -360 <= rotacion <= 360):
+            raise ValueError(f'annotations[{indice}].rotation debe ser un número entre -360 y 360.')
+        _validar_geometria(anotacion.get('geometry'), indice)
         limpias.append(anotacion)
     return limpias
 
@@ -127,7 +170,7 @@ class Techo:
             return True
 
 
-techo_compartidos = Techo(por_minuto=30, por_dia=2000)
+techo_compartidos = Techo(por_minuto=por_proceso(30), por_dia=por_proceso(2000))
 
 
 def vista3d_a_payload(vista: Any, capas_del_mapa: set[str], resolver: Callable[[str], Optional[dict]]) -> Optional[dict]:

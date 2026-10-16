@@ -9,8 +9,13 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 COPY backend/requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
+RUN useradd --create-home --uid 10001 appuser
+
 COPY backend/app /app/app
 COPY servers /app/servers
+COPY frontend/package.json /app/package.json
+
+USER appuser
 
 EXPOSE 8000
 
