@@ -2,9 +2,16 @@ name: Test Frontend
 
 on:
   workflow_call:
+    inputs:
+      correr:
+        description: 'false salta los tests (no cambió frontend/ o ya corren en el PR)'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   test:
+    if: ${{ inputs.correr }}
     runs-on: [self-hosted, linux, iieg]
     timeout-minutes: 20
     steps:
@@ -14,11 +21,22 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 26
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+      - name: Restaurar node_modules
+        id: nm
+        working-directory: ./frontend
+        env:
+          LLAVE: ${{ github.event.repository.name }}-frontend-node26-${{ hashFiles('frontend/package-lock.json') }}
+        run: bash "$GITHUB_WORKSPACE/.github/scripts/node-modules.sh" restaurar "$LLAVE"
       - name: Install dependencies
+        if: steps.nm.outputs.hit != 'true'
         working-directory: ./frontend
         run: npm ci
+      - name: Guardar node_modules
+        if: steps.nm.outputs.hit != 'true'
+        working-directory: ./frontend
+        env:
+          LLAVE: ${{ github.event.repository.name }}-frontend-node26-${{ hashFiles('frontend/package-lock.json') }}
+        run: bash "$GITHUB_WORKSPACE/.github/scripts/node-modules.sh" guardar "$LLAVE"
       - name: Lint
         working-directory: ./frontend
         run: npm run lint

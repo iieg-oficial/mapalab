@@ -39,6 +39,17 @@ export const BASEMAPS = {
         create: () => cartoSource('light_nolabels'),
         createLabelsOverlay: () => cartoSource('light_only_labels'),
     },
+    oscuro: {
+        id: 'carto_dark',
+        label: 'Carto Dark',
+        icono: 'position',
+        iconoClase: 'invert',
+        labelZoomThreshold: 15,
+        tiles: cartoUrl('dark_nolabels'),
+        labelsTiles: cartoUrl('dark_only_labels'),
+        create: () => cartoSource('dark_nolabels'),
+        createLabelsOverlay: () => cartoSource('dark_only_labels'),
+    },
     sin_mapalab: {
         id: 'sin_mapalab',
         label: 'Sin Mapa Base',
@@ -51,6 +62,12 @@ export const BASEMAP_ORDER = [
     'position',
     'sin_mapalab'
 ];
+
+export const ordenDeMapasBase = (activo) => (
+    BASEMAP_ORDER.includes(activo) || !BASEMAPS[activo]
+        ? BASEMAP_ORDER
+        : [...BASEMAP_ORDER.filter((id) => id !== 'sin_mapalab'), activo, 'sin_mapalab']
+);
 
 const GEOSERVER_BASE = (import.meta.env.VITE_GEOSERVER_URL || '').replace(/\/+$/, '');
 

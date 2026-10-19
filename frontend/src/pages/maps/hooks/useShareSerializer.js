@@ -6,6 +6,7 @@ import { findLayerDef, slugForLayer } from '@pages/maps/helpers/wmsConfig';
 import { serializeAnnotations } from '@pages/maps/helpers/annotationsSerialization';
 import { SERVICE_WMS } from '@pages/maps/helpers/serviceMode';
 import { serializarVista3d } from '@pages/maps/helpers/vista3dCompartida';
+import { mapaParaGuardar } from '@pages/maps/helpers/mapaBaseTema';
 
 const round = (value, decimals) => {
     if (value === null || value === undefined || Number.isNaN(value)) return value;
@@ -26,7 +27,8 @@ const serializeFilters = (rawFilters) => {
 const serializeLoop = (dateLoops, loopPrefs, layerTree) => {
     const playing = Object.entries(dateLoops || {}).find(([, l]) => l && l.isPlaying);
     if (!playing) return null;
-    const [layerId, state] = playing;
+    const [, state] = playing;
+    const { layerId } = state;
     const prefs = loopPrefs?.[layerId] || {};
     return {
         layerSlug: slugForLayer(layerId, layerTree),
@@ -136,7 +138,7 @@ export const useShareSerializer = () => {
 
         const basePayload = {
             view,
-            basemap: baseMapId || null,
+            basemap: mapaParaGuardar(baseMapId),
             selected: selectedSlug,
             layers,
             loop: serializeLoop(dateLoops, loopPrefs, layerTree),
@@ -161,7 +163,7 @@ export const useShareSerializer = () => {
             const paneB = activeSlot === 'A' ? frozenPane : livePane;
             const sharedPayload = {
                 view,
-                basemap: baseMapId || null,
+                basemap: mapaParaGuardar(baseMapId),
                 selected: selectedSlug,
             };
             if (municipioPayload) sharedPayload.municipios = municipioPayload;

@@ -12,5 +12,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  alcance:
+    runs-on: [self-hosted, linux, iieg]
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      frontend: ${{ steps.carpetas.outputs.frontend }}
+      abiertos: ${{ steps.pr.outputs.abiertos }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - id: pr
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: echo "abiertos=$(gh pr list --repo '${{ github.repository }}' --head '${{ github.ref_name }}' --state open --json number --jq length || echo 0)" >> "$GITHUB_OUTPUT"
+
+      - id: carpetas
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: bash .github/scripts/carpetas-cambiadas.sh frontend
+
   test:
+    needs: alcance
+    if: ${{ !cancelled() }}
     uses: ./.github/workflows/test-frontend.yml
+    with:
+      correr: ${{ needs.alcance.outputs.frontend != 'false' && (github.event_name != 'push' || needs.alcance.outputs.abiertos == '0') }}

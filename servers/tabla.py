@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import math
-import threading
-import time
 from typing import Any, Literal, Optional, Union
 from urllib.parse import urlencode
 
@@ -14,21 +12,21 @@ from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.utils.logger import Logger
 
-from servers.blindaje import Techo
-from servers.estadisticas import TIPOS_NUMERICOS, _pedir, campos_de_capa
+from servers.estadisticas import TIPOS_NUMERICOS, _pedir, campos_de_capa, techo_conteo
+from servers.estadisticas import campos_cacheados as _campos_cacheados
 from servers.layers import resolver_consulta
 from servers.resolve import _resolve_layer_fuzzy
 
 GEOMETRIAS = ('geometry', 'point', 'linestring', 'polygon', 'curve', 'surface')
-OPERADORES = {'=': '=', '!=': '<>', '>': '>', '>=': '>=', '<': '<', '<=': '<=', 'contiene': 'ILIKE'}
+OPERADORES = {'=': '=', '!=': '<>', '>': '>', '>=': '>=', '<': '<', '<=': '<=', 'contiene': 'contiene'}
 MAX_POR_PAGINA = 50
+MAX_POR_PAGINA_CON_COORDENADAS = 10
 MAX_FILAS_ALCANZABLES = 5000
 MAX_FILTROS = 5
 MAX_COLUMNAS = 20
 MAX_VALOR = 100
-TTL_CAMPOS_S = 600.0
 
-techo_tabla = Techo(por_minuto=60, por_dia=5000)
+techo_tabla = techo_conteo
 
 
 class FiltroTabla(BaseModel):
@@ -37,24 +35,12 @@ class FiltroTabla(BaseModel):
     valor: Union[float, str] = Field(description="Valor a comparar. Número para campos numéricos.")
 
 
-_campos_cache: dict[str, tuple[float, dict[str, str]]] = {}
-_candado = threading.Lock()
-
-
 def es_geometria(tipo: str) -> bool:
     return any(g in tipo for g in GEOMETRIAS)
 
 
 def campos_cacheados(base: str, gs_workspace: str, gs_layer: str) -> dict[str, str]:
-    ahora = time.monotonic()
-    with _candado:
-        guardado = _campos_cache.get(gs_layer)
-        if guardado and ahora - guardado[0] < TTL_CAMPOS_S:
-            return guardado[1]
-    campos = campos_de_capa(base, gs_workspace, gs_layer)
-    with _candado:
-        _campos_cache[gs_layer] = (ahora, campos)
-    return campos
+    return _campos_cacheados(base, gs_workspace, gs_layer, campos_de_capa)
 
 
 def texto_escapado(valor: Any) -> str:
@@ -95,8 +81,8 @@ def construir_filtros(filtros: list[dict], atributos: dict[str, str]) -> list[st
         if op == 'contiene':
             if numerico:
                 raise ValueError(f"'contiene' solo aplica a campos de texto y '{campo}' es numérico.")
-            patron = texto_escapado(filtro.get('valor'))
-            partes.append(f"{campo} ILIKE '%{patron}%'")
+            patron = texto_escapado(str(filtro.get('valor')).lower())
+            partes.append(f"strIndexOf(strToLowerCase({campo}), '{patron}') >= 0")
         else:
             partes.append(f"{campo} {OPERADORES[op]} {literal(filtro.get('valor'), numerico)}")
     return partes
@@ -115,8 +101,29 @@ def configuracion_columnas(resuelta: dict) -> list[dict]:
     return (respuesta or {}).get('columnas') or []
 
 
-def elegir_columnas(atributos: dict[str, str], configuracion: list[dict], pedidas: Optional[list[str]]) -> tuple[list[dict], int]:
+def campos_de_tarjeta(tarjeta: Any) -> dict[str, dict]:
+    campos: dict[str, dict] = {}
+    pila = [tarjeta]
+    while pila:
+        actual = pila.pop(0)
+        if isinstance(actual, list):
+            pila.extend(actual)
+        elif isinstance(actual, dict):
+            campo, etiqueta = actual.get('field'), actual.get('label')
+            if isinstance(campo, str) and isinstance(etiqueta, str) and etiqueta.strip():
+                campos.setdefault(campo, {'etiqueta': etiqueta.strip(), 'formato': actual.get('formato')})
+            pila.extend(v for v in actual.values() if isinstance(v, (list, dict)))
+    return campos
+
+
+def elegir_columnas(
+    atributos: dict[str, str],
+    configuracion: list[dict],
+    pedidas: Optional[list[str]],
+    de_tarjeta: Optional[dict[str, dict]] = None,
+) -> tuple[list[dict], int]:
     por_campo = {c.get('columna'): c for c in configuracion}
+    de_tarjeta = de_tarjeta or {}
     if pedidas:
         nombres = [validar_atributo(n, atributos) for n in dict.fromkeys(pedidas)]
     else:
@@ -127,11 +134,12 @@ def elegir_columnas(atributos: dict[str, str], configuracion: list[dict], pedida
     columnas, vistas = [], set()
     for nombre in nombres[:MAX_COLUMNAS]:
         config = por_campo.get(nombre) or {}
-        etiqueta = config.get('alias') or nombre
+        tarjeta = de_tarjeta.get(nombre) or {}
+        etiqueta = config.get('alias') or tarjeta.get('etiqueta') or nombre
         if etiqueta in vistas:
             etiqueta = f"{etiqueta} ({nombre})"
         vistas.add(etiqueta)
-        columnas.append({'campo': nombre, 'etiqueta': etiqueta, 'formato': config.get('formato')})
+        columnas.append({'campo': nombre, 'etiqueta': etiqueta, 'formato': config.get('formato') or tarjeta.get('formato')})
     return columnas, omitidas
 
 
@@ -185,8 +193,9 @@ def leer_filas(datos: dict, columnas: list[dict], con_coordenadas: bool) -> list
         propiedades = feature.get('properties') or {}
         filas.append({c['etiqueta']: valor_de_celda(propiedades.get(c['campo']), c['formato']) for c in columnas})
     if con_coordenadas:
+        llave = '_coordenadas' if any(c['etiqueta'] == 'coordenadas' for c in columnas) else 'coordenadas'
         for fila, punto in zip(filas, a_lat_lon([centro(f.get('geometry')) for f in features])):
-            fila['coordenadas'] = punto
+            fila[llave] = punto
     return filas
 
 
@@ -210,7 +219,7 @@ def layer_table(
     por_pagina: int = 20,
     coordenadas: bool = False,
 ) -> dict:
-    por_pagina = max(1, min(por_pagina, MAX_POR_PAGINA))
+    por_pagina = max(1, min(por_pagina, MAX_POR_PAGINA_CON_COORDENADAS if coordenadas else MAX_POR_PAGINA))
     pagina = max(1, pagina)
     inicio = (pagina - 1) * por_pagina
     if inicio >= MAX_FILAS_ALCANZABLES:
@@ -219,14 +228,18 @@ def layer_table(
     resuelta = _resolve_layer_fuzzy(layer)
     if not resuelta:
         raise ValueError(f"No encontré la capa '{layer}'. Usa search_layers para ver ids válidos.")
-    _, gs_workspace, gs_layer, partes = resolver_consulta(resuelta['id'], None, municipio, year, month)
+    if resuelta['node'].get('downloadable') is False:
+        raise ValueError(f"La capa '{resuelta['id']}' no permite consultar sus filas. Usa layer_stats para sus cifras.")
+    _, gs_workspace, gs_layer, partes = resolver_consulta(resuelta['id'], municipio=municipio, year=year, month=month)
 
     base = settings.GEOSERVER_URL.rstrip('/')
     campos = campos_cacheados(base, gs_workspace, gs_layer)
     atributos = {c: t for c, t in campos.items() if not es_geometria(t)}
     geometria = next((c for c, t in campos.items() if es_geometria(t)), None)
     partes = partes + construir_filtros(filtros or [], atributos)
-    elegidas, omitidas = elegir_columnas(atributos, configuracion_columnas(resuelta), columnas)
+    elegidas, omitidas = elegir_columnas(
+        atributos, configuracion_columnas(resuelta), columnas, campos_de_tarjeta(resuelta['node'].get('littleCard')),
+    )
     if not elegidas:
         raise ValueError(f"La capa '{resuelta['id']}' no tiene columnas de datos.")
     if orden:
@@ -246,24 +259,33 @@ def layer_table(
     }
     if con_coordenadas:
         params['srsName'] = 'EPSG:6368'
-    params['sortBy'] = f"{orden or propiedades[0]} {'D' if orden and descendente else 'A'}"
+    criterio = orden or propiedades[0]
+    orden_sql = f"{criterio} {'D' if descendente else 'A'}"
+    if 'fid' in atributos and criterio != 'fid':
+        orden_sql += ',fid A'
+    params['sortBy'] = orden_sql
     if partes:
         params['CQL_FILTER'] = ' AND '.join(partes)
 
     datos = _pedir('GET', f"{base}/{gs_workspace}/ows?{urlencode(params)}").json()
     total = _total(datos)
     alcanzables = min(total, MAX_FILAS_ALCANZABLES) if total is not None else None
+    paginas = math.ceil(alcanzables / por_pagina) if alcanzables else 0
+    if paginas and pagina > paginas:
+        raise ValueError(f"La página {pagina} no existe: con {por_pagina} filas por página hay {paginas}.")
     resultado = {
         'capa': resuelta['id'],
         'nombre': resuelta.get('label') or resuelta['id'],
         'total': total,
         'pagina': pagina,
-        'paginas': math.ceil(alcanzables / por_pagina) if alcanzables else 0,
+        'paginas': paginas,
         'columnas': [{'campo': c['campo'], 'etiqueta': c['etiqueta']} for c in elegidas],
         'filas': leer_filas(datos, elegidas, con_coordenadas),
     }
     if omitidas:
         resultado['columnas_omitidas'] = omitidas
-    if orden:
-        resultado['orden'] = {'campo': orden, 'descendente': descendente}
+    if orden or descendente:
+        resultado['orden'] = {'campo': criterio, 'descendente': descendente}
+    if resuelta.get('resuelto_de'):
+        resultado['resuelto_de'] = resuelta['resuelto_de']
     return resultado

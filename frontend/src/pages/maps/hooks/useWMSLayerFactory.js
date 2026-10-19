@@ -38,7 +38,7 @@ export const useWMSLayerFactory = () => {
         }
 
         if (wmsConfig.antialias && wmsConfig.antialias !== 'full') {
-            wmsParams.format_options = `antialias:${wmsConfig.antialias}`;
+            wmsParams.FORMAT_OPTIONS = `antialias:${wmsConfig.antialias}`;
         }
 
         if (customParams) {

@@ -51,8 +51,9 @@ class TestTextos:
             validar_etiqueta('x' * (MAX_ETIQUETA_LADO + 1), 'label_a')
 
     def test_anotacion_pierde_campos_desconocidos(self):
-        limpias = limpiar_anotaciones([{'id': 'a', 'type': 'Text', 'geometry': {}, 'label': 'Sede', 'onclick': 'x'}])
-        assert limpias == [{'id': 'a', 'type': 'Text', 'geometry': {}, 'label': 'Sede'}]
+        punto = {'type': 'Point', 'coordinates': [-103.35, 20.67]}
+        limpias = limpiar_anotaciones([{'id': 'a', 'type': 'Text', 'geometry': punto, 'label': 'Sede', 'onclick': 'x'}])
+        assert limpias == [{'id': 'a', 'type': 'Text', 'geometry': punto, 'label': 'Sede'}]
 
     def test_texto_de_anotacion_largo_se_rechaza(self):
         with pytest.raises(ValueError):
@@ -79,3 +80,51 @@ class TestTecho:
             assert techo.consumir()
         ahora[0] = 120
         assert not techo.consumir()
+
+
+class TestEndurecimiento:
+    def test_tope_de_capas(self):
+        with pytest.raises(ValueError, match='hasta 60'):
+            limpiar_capas(['x'] * 61)
+
+    @pytest.mark.parametrize('anotacion', [
+        {'type': 'Text', 'rotation': float('inf')},
+        {'type': 'Text', 'rotation': 400},
+        {'type': 'Text', 'value': float('nan')},
+        {'type': 'Text', 'geometry': {'type': 'Point', 'coordinates': [200, 95]}},
+        {'type': 'Text', 'geometry': {'type': 'Point', 'coordinates': [float('nan'), 20]}},
+        {'type': 'Polygon', 'geometry': {'type': 'Polygon', 'coordinates': [[[-103.3, 20.6]] * 2001]}},
+        {'type': 'Text', 'geometry': 'POINT(1 2)'},
+    ])
+    def test_rechaza_numeros_y_geometrias_invalidas(self, anotacion):
+        with pytest.raises(ValueError):
+            limpiar_anotaciones([anotacion])
+
+    def test_acepta_geometria_en_jalisco(self):
+        punto = {'type': 'Text', 'rotation': 45, 'geometry': {'type': 'Point', 'coordinates': [-103.35, 20.67]}}
+        assert limpiar_anotaciones([punto]) == [punto]
+
+
+class TestContactos:
+    @pytest.mark.parametrize('texto', [
+        'Registro en censo-jalisco.com',
+        'entra a https://pago.example',
+        'www.iieg-tramites.net',
+        'escribe a ayuda@correo.mx',
+        'ayuda (at) correo . mx',
+        'llama al 33 1234 5678',
+        'Tel. (33) 1234-5678',
+        '+52 33 1234 5678',
+    ])
+    def test_rechaza_paginas_correos_y_telefonos(self, texto):
+        with pytest.raises(ValueError, match='no puede llevar'):
+            limpiar_anotaciones([{'id': 'a', 'type': 'Text', 'textLabel': texto}])
+        with pytest.raises(ValueError, match='no puede llevar'):
+            validar_etiqueta(texto[:60], 'label_a')
+
+    @pytest.mark.parametrize('texto', [
+        'Zona de mayor incidencia', 'Población 1,234,567', 'Homicidios 2024 vs 2025',
+        'Tlaquepaque: 281 casos', 'Superficie 12.5 km²', 'Av. Juárez 1200', 'C.P. 44100',
+    ])
+    def test_deja_pasar_textos_normales(self, texto):
+        assert limpiar_anotaciones([{'id': 'a', 'type': 'Text', 'textLabel': texto}])[0]['textLabel'] == texto

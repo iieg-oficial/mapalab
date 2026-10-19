@@ -3,6 +3,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
+import servers.estadisticas as est
 import servers.tabla as tabla
 from servers.blindaje import Techo
 
@@ -27,14 +28,14 @@ def geoserver(monkeypatch):
         urls.append(url)
         return SimpleNamespace(json=lambda: RESPUESTA)
 
-    tabla._campos_cache.clear()
+    est._campos_cache.clear()
     monkeypatch.setattr(tabla, '_pedir', pedir)
     monkeypatch.setattr(tabla, 'campos_de_capa', lambda *a: dict(CAMPOS))
     monkeypatch.setattr(tabla, 'techo_tabla', Techo(por_minuto=10, por_dia=100))
     monkeypatch.setattr(tabla, 'configuracion_columnas', lambda resuelta: CONFIGURACION)
     monkeypatch.setattr(tabla, '_resolve_layer_fuzzy', lambda layer: {'id': 'escuelas', 'label': 'Escuelas', 'workspace': 'educacion', 'node': {}})
-    monkeypatch.setattr(tabla, 'resolver_consulta', lambda layer, workspace, municipio, year, month: (
-        {}, 'educacion', 'educacion:escuelas', ["municipio = '120'"] if municipio else [],
+    monkeypatch.setattr(tabla, 'resolver_consulta', lambda layer, **kw: (
+        {}, 'educacion', 'educacion:escuelas', ["municipio = '120'"] if kw.get('municipio') else [],
     ))
 
     def params():
@@ -49,6 +50,39 @@ def test_columnas_legibles_en_el_orden_del_visor_y_sin_las_ocultas(geoserver):
     assert resultado['filas'] == [{'Escuela': "Benito O'Juárez", 'nivel': 'Primaria', 'Matrícula': 412, 'Año': 2024}]
     assert geoserver.params()['propertyName'] == 'nombre,nivel,matricula,fecha'
     assert resultado['total'] == 130 and resultado['paginas'] == 7
+
+
+def test_sin_alias_toma_la_etiqueta_de_la_tarjeta_del_visor(geoserver, monkeypatch):
+    tarjeta = {
+        'headerField': 'nombre',
+        'list': [{'field': 'fecha', 'label': 'Año de la información', 'raw': True, 'formato': 'anio'}],
+        'cards': [{'field': 'nivel', 'label': 'Nivel educativo'}, {'field': 'matricula', 'label': 'Alumnos'}],
+        'labelGroups': [{'fields': ['nombre']}],
+    }
+    monkeypatch.setattr(tabla, 'configuracion_columnas', lambda resuelta: [])
+    monkeypatch.setattr(tabla, '_resolve_layer_fuzzy', lambda layer: {
+        'id': 'escuelas', 'label': 'Escuelas', 'workspace': 'educacion', 'node': {'littleCard': tarjeta},
+    })
+    resultado = tabla.layer_table('escuelas')
+    assert {c['campo']: c['etiqueta'] for c in resultado['columnas']} == {
+        'nombre': 'nombre', 'nivel': 'Nivel educativo', 'matricula': 'Alumnos',
+        'fecha': 'Año de la información', 'interno': 'interno',
+    }
+    assert resultado['filas'][0]['Año de la información'] == 2024
+
+
+def test_el_alias_de_la_tabla_manda_sobre_la_tarjeta(geoserver, monkeypatch):
+    monkeypatch.setattr(tabla, '_resolve_layer_fuzzy', lambda layer: {
+        'id': 'escuelas', 'label': 'Escuelas', 'workspace': 'educacion',
+        'node': {'littleCard': {'cards': [{'field': 'matricula', 'label': 'Alumnos'}, {'field': 'nivel', 'label': 'Nivel'}]}},
+    })
+    resultado = tabla.layer_table('escuelas')
+    assert [c['etiqueta'] for c in resultado['columnas']] == ['Escuela', 'Nivel', 'Matrícula', 'Año']
+
+
+def test_campos_de_tarjeta_ignora_lo_que_no_trae_etiqueta():
+    assert tabla.campos_de_tarjeta(None) == {}
+    assert tabla.campos_de_tarjeta({'iconText': [{'icon': 'ubicacion', 'field': 'domicilio'}], 'list': [{'field': 'a', 'label': '  '}]}) == {}
 
 
 def test_paginacion_y_orden_van_a_geoserver(geoserver):
@@ -66,7 +100,7 @@ def test_los_filtros_se_arman_con_valores_escapados(geoserver):
         {'campo': 'nivel', 'op': '!=', 'valor': 2024.0},
     ])
     assert geoserver.params()['CQL_FILTER'] == (
-        "municipio = '120' AND nombre ILIKE '%O''J%' AND matricula >= 100 AND nivel <> '2024'"
+        "municipio = '120' AND strIndexOf(strToLowerCase(nombre), 'o''j') >= 0 AND matricula >= 100 AND nivel <> '2024'"
     )
 
 
@@ -109,3 +143,37 @@ def test_el_techo_corta_antes_de_pedir(geoserver, monkeypatch):
     with pytest.raises(ValueError, match='límite'):
         tabla.layer_table('escuelas')
     assert geoserver.urls == []
+
+
+def test_contiene_busca_el_texto_literal(geoserver):
+    tabla.layer_table('escuelas', filtros=[{'campo': 'nombre', 'op': 'contiene', 'valor': "50%_X'"}])
+    assert geoserver.params()['CQL_FILTER'] == "strIndexOf(strToLowerCase(nombre), '50%_x''') >= 0"
+
+
+def test_pagina_fuera_de_rango_da_error(geoserver):
+    with pytest.raises(ValueError, match='no existe'):
+        tabla.layer_table('escuelas', pagina=8)
+
+
+def test_descendente_sin_orden_aplica_a_la_primera_columna(geoserver):
+    resultado = tabla.layer_table('escuelas', descendente=True)
+    assert geoserver.params()['sortBy'] == 'nombre D'
+    assert resultado['orden'] == {'campo': 'nombre', 'descendente': True}
+
+
+def test_desempata_por_fid_si_la_capa_lo_tiene(geoserver, monkeypatch):
+    monkeypatch.setattr(tabla, 'campos_de_capa', lambda *a: {**CAMPOS, 'fid': 'int'})
+    tabla.layer_table('escuelas')
+    assert geoserver.params()['sortBy'] == 'nombre A,fid A'
+
+
+def test_respeta_las_capas_no_descargables(geoserver, monkeypatch):
+    monkeypatch.setattr(tabla, '_resolve_layer_fuzzy', lambda layer: {'id': 'privada', 'node': {'downloadable': False}})
+    with pytest.raises(ValueError, match='no permite'):
+        tabla.layer_table('privada')
+
+
+def test_con_coordenadas_baja_el_tamano_de_pagina(geoserver, monkeypatch):
+    monkeypatch.setattr(tabla, 'a_lat_lon', lambda c: [{'lat': 20.7, 'lon': -103.3}] * len(c))
+    tabla.layer_table('escuelas', por_pagina=50, coordenadas=True)
+    assert geoserver.params()['count'] == '10'

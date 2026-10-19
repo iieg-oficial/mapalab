@@ -45,7 +45,7 @@ const BOTON_BARRA = 'size-8 flex items-center justify-center rounded-full transi
 const SwipeSlotControls = () => {
     const {
         compareMode, exitCompareMode, toggleSwipeOrientation,
-        selectedLayerForSymbology, setSelectedLayerForSymbology, allLayers, dateLoops, highlightSlots,
+        selectedLayerForSymbology, setSelectedLayerForSymbology, allLayers, getLoopState, highlightSlots,
     } = useMapsContext();
     const { width: siderWidth, isOpen: isSiderOpen, isMobile: isMobileSider } = useSider();
     const siderShift = !isMobileSider && isSiderOpen ? siderWidth / 2 : 0;
@@ -103,7 +103,6 @@ const SwipeSlotControls = () => {
         setSelectedLayerForSymbology?.({ id: capa.id, name: capa.name });
     };
 
-    const loop = layerId ? dateLoops?.[layerId] : null;
     const pildoraFecha = (slot, dentro, etiqueta) => (dentro && etiqueta.label ? (
         <span
             className="shrink-0"
@@ -115,7 +114,7 @@ const SwipeSlotControls = () => {
                 label={etiqueta.label}
                 kind={etiqueta.kind}
                 onClick={() => alternar(slot)}
-                isLooping={!!loop?.isPlaying && loop.slot === slot}
+                isLooping={!!(layerId && getLoopState?.(layerId, slot)?.isPlaying)}
                 size="md"
                 autoWidth
             />

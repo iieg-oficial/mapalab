@@ -35,6 +35,7 @@ import { CaminarProvider } from '@contexts/CaminarContext';
 import ResaltadoDeCapas from '@mapsComponents/ActiveLayers/ResaltadoDeCapas';
 import AvisoCapasPrivadas from '@mapsComponents/Sesion/AvisoCapasPrivadas';
 import LluviaCempasuchil from '@mapsComponents/DiaDeMuertos/LluviaCempasuchil';
+import MapaBaseOscuro from '@mapsComponents/DiaDeMuertos/MapaBaseOscuro';
 import { GrabacionDronProvider } from '@contexts/GrabacionDronContext';
 import DronOverlay from './components/Dron/DronOverlay';
 import OcultoEnDronMovil from './components/Dron/OcultoEnDronMovil';
@@ -104,6 +105,7 @@ const Maps = () => {
                                                 <DockPills />
                                                 <TablaAtributos />
                                                 <LluviaCempasuchil />
+                                                <MapaBaseOscuro />
                                             </div>
                                         </GrabacionDronProvider>
                                     </CaminarProvider>

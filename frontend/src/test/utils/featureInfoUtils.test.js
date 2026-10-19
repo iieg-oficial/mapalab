@@ -61,6 +61,8 @@ describe('filterValidLayers', () => {
             'general-layer': { workspace: 'general', baseUrl: 'http://server/wms', layerName: 'general:layer' },
             'tematic-layer': { workspace: 'recursos', baseUrl: 'http://server/wms', layerName: 'recursos:layer' },
             'another-tematic': { workspace: 'general2', baseUrl: 'http://server/wms', layerName: 'general2:layer' },
+            'curvas': { workspace: 'general', baseUrl: 'http://server/wms', layerName: 'general:curvas', queryable: false },
+            'tematic-off': { workspace: 'recursos', baseUrl: 'http://server/wms', layerName: 'recursos:off', queryable: false },
         };
         return configs[layerId] || null;
     };
@@ -100,6 +102,26 @@ describe('filterValidLayers', () => {
     it('incluye capas general si no hay temáticas', () => {
         const activeLayers = [
             { id: 'general-layer', visible: true },
+        ];
+        const result = filterValidLayers(activeLayers, mockLayers, mockFindWMSConfig);
+        expect(result).toHaveLength(1);
+        expect(result[0].layer.id).toBe('general-layer');
+    });
+
+    it('excluye capas no consultables', () => {
+        const activeLayers = [
+            { id: 'curvas', visible: true },
+            { id: 'general-layer', visible: true },
+        ];
+        const result = filterValidLayers(activeLayers, mockLayers, mockFindWMSConfig);
+        expect(result).toHaveLength(1);
+        expect(result[0].layer.id).toBe('general-layer');
+    });
+
+    it('una temática no consultable no descarta las capas general', () => {
+        const activeLayers = [
+            { id: 'general-layer', visible: true },
+            { id: 'tematic-off', visible: true },
         ];
         const result = filterValidLayers(activeLayers, mockLayers, mockFindWMSConfig);
         expect(result).toHaveLength(1);
