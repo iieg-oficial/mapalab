@@ -5,7 +5,7 @@ import Icon from '@components/Icon';
 
 const LABELS = { top: 'Ir al inicio', bottom: 'Ir al final' };
 
-const ScrollArrow = ({ edge, arrowProps }) => {
+const ScrollArrow = ({ edge, arrowProps, pointerEvents }) => {
     const icon = <Icon name="downArrow" className={`w-3 h-3 ${edge === 'top' ? 'rotate-180' : ''}`} />;
 
     if (!arrowProps.onClick) {
@@ -19,6 +19,7 @@ const ScrollArrow = ({ edge, arrowProps }) => {
     return (
         <button
             {...arrowProps}
+            style={pointerEvents ? { ...arrowProps.style, pointerEvents } : arrowProps.style}
             className="p-1 rounded-full border border-transparent transition-colors cursor-pointer animate-[bounce_4s_ease-in-out_infinite] hover:border-[#70308A] hover:bg-white/70"
         >
             {icon}
@@ -62,7 +63,7 @@ const ScrollContainer = ({
             )}
             <div {...getAnchorProps(edge)} className="z-10">
                 <div className={`absolute left-0 right-0 flex justify-center ${edge === 'top' ? 'top-2' : 'bottom-2'}`}>
-                    <ScrollArrow edge={edge} arrowProps={getArrowProps(edge)} />
+                    <ScrollArrow edge={edge} arrowProps={getArrowProps(edge)} pointerEvents={props.style?.pointerEvents} />
                 </div>
             </div>
         </>
