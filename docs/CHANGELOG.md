@@ -128,6 +128,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   del editor de capas), luego la columna con el comentario `mapalab:fecha` y al final `fecha`. Si la
   columna configurada no existe en la tabla, cae a las otras dos; sin la migración, la función ignora ese
   paso.
+- **`ScrollContainer` corre sobre scroll-edges**, la librería headless que salió de él (`scroll-edges`
+  0.1.1, desde npm). Se ve igual; ya no mide con cada cambio de clase de sus hijos, observa
+  los que llegan después de montar y el sider engancha su máscara aunque su contenido se monte tarde.
+  Salen seis props sin uso y `useScrollOverflow`
 
 ### Eliminado
 
