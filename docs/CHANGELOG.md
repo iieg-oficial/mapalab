@@ -41,6 +41,11 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
   capa mensual, el mapa se filtraba por el año pero el panel de capas activas y el modal de detalle no
   marcaban nada: el año no existe en un catálogo de meses. `keysInCatalog` lo abre en los meses que tiene;
   en selección única se queda con el último.
+- **La fecha por defecto de un grupo se aplica al grupo.** En grupos como los de delitos contra el
+  patrimonio (*Con violencia*, *Sin violencia*, *Sin especificar*), la fecha configurada en los hijos se
+  aplicaba a cada hijo: el selector del grupo no la veía y, como el filtro propio del hijo le gana al
+  del grupo, cambiar el año no los movía. Ahora va al grupo, con la del grupo o la del primer hijo que
+  la tenga, y los hijos la heredan.
 - **`layer_table` del MCP devolvía las columnas con su nombre crudo** cuando la capa no tiene alias en
   `atributos.columnas`. Ahora la etiqueta sale del alias de la tabla de datos y, si no hay, de la
   etiqueta que la tarjetita (`littleCard`) le da al campo, con su formato (el año de `fecha`); el nombre
