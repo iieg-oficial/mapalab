@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dateKeysFromFilter, dateRangeOfKeys, keyToSelection, selectionToKey } from '@pages/maps/helpers/dateKeys';
+import { dateKeysFromFilter, dateRangeOfKeys, keyToSelection, keysInCatalog, selectionToKey } from '@pages/maps/helpers/dateKeys';
 
 const RASTER = { 2023: '2023-01-01', 2024: { 1: '2024-01-01', 2: '2024-02-01' } };
 
@@ -38,5 +38,23 @@ describe('conversiones', () => {
     it('da el rango de fechas de unas llaves', () => {
         expect(dateRangeOfKeys(['2024-03', '2024-01'])).toEqual({ dateFrom: '2024-01-01', dateTo: '2024-03-31' });
         expect(dateRangeOfKeys([])).toBeNull();
+    });
+});
+
+describe('keysInCatalog', () => {
+    const MENSUAL = ['2023-12', '2024-01', '2024-06', '2025-02'];
+
+    it('abre un año en los meses que tiene el catálogo', () => {
+        expect(keysInCatalog(['2024'], MENSUAL)).toEqual(['2024-01', '2024-06']);
+    });
+
+    it('deja igual las llaves que ya están en el catálogo', () => {
+        expect(keysInCatalog(['2024-06'], MENSUAL)).toEqual(['2024-06']);
+        expect(keysInCatalog(['2024'], ['2023', '2024'])).toEqual(['2024']);
+    });
+
+    it('no inventa llaves fuera del catálogo', () => {
+        expect(keysInCatalog(['2030'], MENSUAL)).toEqual([]);
+        expect(keysInCatalog(['2024-03'], MENSUAL)).toEqual([]);
     });
 });
