@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { fromLonLat } from 'ol/proj';
 import { transformExtent } from 'ol/proj';
 import { trackLayerToggle } from '@services/analyticsService';
@@ -29,6 +29,7 @@ export const useLayerToggle = ({
     municipioModeRef
 }) => {
     const { layers: allLayers } = useLayers();
+    const pendingDefaults = useRef(new Set());
 
     const resolveDefaultDate = useCallback(async (dateToApply, layerId) => {
         let periodicity = periodicityCache.getPeriodicity(layerId);
@@ -60,29 +61,41 @@ export const useLayerToggle = ({
         return resolved;
     }, [periodicityCache]);
 
+    const defaultDateOf = useCallback((layer) => {
+        if (!layer) return null;
+        if (layer.defaultDate || !layer.forceGroup) return layer.defaultDate || null;
+        const child = getAllChildLayerIds(layer.id).map(id => findLayerById(id)).find(node => node?.defaultDate);
+        return child?.defaultDate || null;
+    }, [getAllChildLayerIds, findLayerById]);
+
     const applyDefaultDate = useCallback(async (layerId) => {
-        const layer = findLayerById(layerId);
-        if (!layer?.defaultDate) return;
+        const target = findParentGroup(layerId, allLayers) || findLayerById(layerId);
+        const defaultDate = defaultDateOf(target);
+        if (!defaultDate) return;
+        const targetId = target.id;
+        if (pendingDefaults.current.has(targetId)) return;
+        pendingDefaults.current.add(targetId);
 
         try {
-            const dateToApply = await resolveDefaultDate(layer.defaultDate, layerId);
+            const dateToApply = await resolveDefaultDate(defaultDate, targetId);
             if (!dateToApply) return;
 
-            const cql = generateDefaultDateFilter(dateToApply, layer.defaultDate?.column || dateColumnOf(layerId));
-            if (cql) applyFilter(layerId, 'date', cql);
+            const cql = generateDefaultDateFilter(dateToApply, defaultDate?.column || dateColumnOf(targetId));
+            if (cql) applyFilter(targetId, 'date', cql);
         } catch (err) {
             console.error('Error resolving default date for layer', err);
-            if (layer.defaultDate && layer.defaultDate !== 'latest') {
-                const fallbackCql = generateDefaultDateFilter(layer.defaultDate, layer.defaultDate?.column || dateColumnOf(layerId));
-                if (fallbackCql) applyFilter(layerId, 'date', fallbackCql);
+            if (defaultDate !== 'latest') {
+                const fallbackCql = generateDefaultDateFilter(defaultDate, defaultDate?.column || dateColumnOf(targetId));
+                if (fallbackCql) applyFilter(targetId, 'date', fallbackCql);
             }
+        } finally {
+            pendingDefaults.current.delete(targetId);
         }
-    }, [findLayerById, applyFilter, resolveDefaultDate]);
+    }, [findLayerById, applyFilter, resolveDefaultDate, defaultDateOf, allLayers]);
 
     const clearDefaultDate = useCallback((layerId) => {
-        const layer = findLayerById(layerId);
-        if (layer?.defaultDate) clearFilter(layerId, 'date');
-    }, [findLayerById, clearFilter]);
+        if (defaultDateOf(findLayerById(layerId))) clearFilter(layerId, 'date');
+    }, [findLayerById, clearFilter, defaultDateOf]);
 
     const applyDefaultZoom = useCallback(async (layerId) => {
         const layer = findLayerById(layerId);
