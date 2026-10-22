@@ -37,6 +37,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Corregido
 
+- **La fecha por defecto de año completo se marca en el selector.** Con `defaultDate: { year }` en una
+  capa mensual, el mapa se filtraba por el año pero el panel de capas activas y el modal de detalle no
+  marcaban nada: el año no existe en un catálogo de meses. `keysInCatalog` lo abre en los meses que tiene;
+  en selección única se queda con el último.
 - **`layer_table` del MCP devolvía las columnas con su nombre crudo** cuando la capa no tiene alias en
   `atributos.columnas`. Ahora la etiqueta sale del alias de la tabla de datos y, si no hay, de la
   etiqueta que la tarjetita (`littleCard`) le da al campo, con su formato (el año de `fecha`); el nombre
