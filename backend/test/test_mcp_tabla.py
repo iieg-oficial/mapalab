@@ -5,7 +5,6 @@ import pytest
 
 import servers.estadisticas as est
 import servers.tabla as tabla
-from servers.blindaje import Techo
 
 CAMPOS = {'geom': 'multipolygon', 'nombre': 'string', 'nivel': 'string', 'matricula': 'int', 'fecha': 'date', 'interno': 'string'}
 CONFIGURACION = [
@@ -31,7 +30,6 @@ def geoserver(monkeypatch):
     est._campos_cache.clear()
     monkeypatch.setattr(tabla, '_pedir', pedir)
     monkeypatch.setattr(tabla, 'campos_de_capa', lambda *a: dict(CAMPOS))
-    monkeypatch.setattr(tabla, 'techo_tabla', Techo(por_minuto=10, por_dia=100))
     monkeypatch.setattr(tabla, 'configuracion_columnas', lambda resuelta: CONFIGURACION)
     monkeypatch.setattr(tabla, '_resolve_layer_fuzzy', lambda layer: {'id': 'escuelas', 'label': 'Escuelas', 'workspace': 'educacion', 'node': {}})
     monkeypatch.setattr(tabla, 'resolver_consulta', lambda layer, **kw: (
@@ -136,13 +134,6 @@ def test_sin_orden_pagina_estable_por_la_primera_columna(geoserver):
 def test_no_deja_recorrer_la_capa_completa(geoserver):
     with pytest.raises(ValueError, match='5000'):
         tabla.layer_table('escuelas', pagina=101, por_pagina=50)
-
-
-def test_el_techo_corta_antes_de_pedir(geoserver, monkeypatch):
-    monkeypatch.setattr(tabla, 'techo_tabla', Techo(por_minuto=0, por_dia=0))
-    with pytest.raises(ValueError, match='límite'):
-        tabla.layer_table('escuelas')
-    assert geoserver.urls == []
 
 
 def test_contiene_busca_el_texto_literal(geoserver):

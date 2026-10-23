@@ -54,6 +54,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - **MCP: detalles.** `municipios` respeta `limit` también sin `query`, y las coordenadas crudas
   (`x_6368`, `y_6368`) ya no salen en las columnas por defecto de `layer_table` ni como campo sumable
   de `layer_stats` (siguen pidiéndose en `columnas`)
+- **MCP: los conteos y tablas ya no se agotan.** Se quitó el techo global de 60/min y 5000/día de
+  `layer_table` y del conteo de `layer_stats`: sin la IP del cliente cortaba a todos, y contar los 36
+  delitos de un municipio lo agotaba en la llamada 31. En nginx, `burst=50` sin `nodelay`: una ráfaga
+  espera en cola en vez de recibir 429
 - **La fecha por defecto de año completo se marca en el selector.** Con `defaultDate: { year }` en una
   capa mensual, el mapa se filtraba por el año pero el panel de capas activas y el modal de detalle no
   marcaban nada: el año no existe en un catálogo de meses. `keysInCatalog` lo abre en los meses que tiene;
