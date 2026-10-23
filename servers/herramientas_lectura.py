@@ -9,11 +9,11 @@ from app.databases.factory import DatabaseFactory
 from app.repositories.layers_repository import LayersRepository
 from app.services.layer_tree_service import get_cached_state
 
+from servers.busqueda import buscar, indice_de_capas
 from servers.estadisticas import layer_stats as _layer_stats
 from servers.layers import describe_layer as _describe_layer
 from servers.resolve import (
     MAX_REFERENCIA,
-    es_capa,
     list_municipios,
     resolve_municipios,
     search_by_theme,
@@ -24,30 +24,18 @@ from servers.tabla import FiltroTabla, layer_table as _layer_table
 ID_CAPA = "Id de la capa (el que devuelve search_layers). Ej: 'homicidio_doloso'."
 
 
-def _indice_de_capas(tree: list[dict]) -> dict[str, dict]:
-    index: dict[str, dict] = {}
-
-    def walk(nodes: list[dict], parent_path: list[str]) -> None:
-        for node in nodes:
-            path = parent_path + [node['label']]
-            if es_capa(node):
-                index[node['id']] = {'node': node, 'path': path}
-            walk(node.get('children') or [], path)
-
-    walk(tree, [])
-    return index
-
-
 @mcp.tool(title='Buscar capas', annotations=LECTURA, timeout=TIMEOUT_TOOL_S)
 def search_layers(
-    query: str = Field(default='', max_length=MAX_REFERENCIA, description="Texto, id o slug a buscar. Ej: 'homicidio', 'primaria', 'tasa_brecha_salarial'. Vacío si solo filtras por theme."),
+    query: str = Field(default='', max_length=MAX_REFERENCIA, description="Palabras, id o slug a buscar; sin acentos y en plural también sirve. Ej: 'homicidio', 'escuelas primarias', 'tasa_brecha_salarial'. Vacío si solo filtras por theme."),
     theme: str = Field(default='', max_length=80, description="Área temática del visor para listar todas sus capas. Ej: 'seguridad', 'salud', 'economia', 'educacion'. Vacío para buscar en todos los temas."),
     limit: int = Field(default=20, ge=1, le=200, description='Máximo de resultados.'),
 ) -> list[dict]:
     """Encuentra capas del visor. SIEMPRE empieza aquí: los demás tools necesitan el `id` que este devuelve.
 
     Acepta tres modos combinables: texto/id/slug en `query`, área temática completa en `theme`, o ambos
-    (filtra las capas del tema por el texto). Solo devuelve capas, nunca grupos del árbol.
+    (filtra las capas del tema por el texto). Busca cada palabra en nombre, id, etiquetas y ruta del
+    árbol, y ordena por relevancia: quedan las capas que cubren más palabras. Solo devuelve capas,
+    nunca grupos del árbol. Lista vacía = no hay capas de eso en el catálogo.
 
     Devuelve una lista de {id, label, slug, workspace, path}.
 
@@ -60,15 +48,15 @@ def search_layers(
     with como_error_de_tool():
         if not q and not th:
             raise ValueError("Pasa 'query' (texto o id) o 'theme' (área). Ej: search_layers(query=\"homicidio\").")
-        index = _indice_de_capas(get_cached_state()['tree'])
+        index = indice_de_capas(get_cached_state()['tree'])
         if th:
-            ids = [item['id'] for item in search_by_theme(theme=th, limit=200)
-                   if not q or q.lower() in f"{item.get('label', '')} {item.get('id', '')}".lower()]
+            del_tema = [item['id'] for item in search_by_theme(theme=th, limit=200)]
+            ids = buscar(index, q, permitidos=del_tema) if q else del_tema
         else:
             conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
             with conn.get_session() as session:
                 exacta = LayersRepository.find_layer_by_slug_or_alias(session, q)
-                ids = ([exacta.id] if exacta is not None else []) + [row.id for row in LayersRepository.search_layers(session, q, limit=limit)]
+            ids = ([exacta.id] if exacta is not None else []) + buscar(index, q)
     results: list[dict] = []
     for layer_id in dict.fromkeys(ids):
         entry = index.get(layer_id)
@@ -89,7 +77,7 @@ def search_layers(
 @mcp.tool(title='Municipios de Jalisco', annotations=LECTURA, timeout=TIMEOUT_TOOL_S)
 def municipios(
     query: str = Field(default='', max_length=80, description="Texto o clave parcial. Ej: 'guadalajara', 'tonala', '14039'. Sin acentos también funciona. Vacío = los 125."),
-    limit: int = Field(default=50, ge=1, le=200, description='Máximo de resultados cuando hay query.'),
+    limit: Optional[int] = Field(default=None, ge=1, le=200, description='Máximo de resultados. Sin él: 50 con query, los 125 sin query.'),
 ) -> dict:
     """Lista o busca municipios de Jalisco con su clave INEGI de 5 dígitos.
 
@@ -103,8 +91,10 @@ def municipios(
     q = (query or '').strip()
     with como_error_de_tool():
         if not q:
-            return list_municipios()
-        matches = resolve_municipios(query=q, limit=limit)
+            todos = list_municipios()['items']
+            matches = todos[:limit] if limit else todos
+        else:
+            matches = resolve_municipios(query=q, limit=limit or 50)
     return {'items': matches, 'count': len(matches)}
 
 
@@ -179,6 +169,7 @@ def layer_stats(
     group_by: Optional[str] = Field(default=None, max_length=64, description='Campo de texto para contar por clase. Con `field`, también suma y promedio por clase.'),
     municipio: Optional[str] = Field(default=None, max_length=80, description="Municipio para acotar. Ej: 'Zapopan'. La capa debe soportarlo."),
     year: Optional[str] = Field(default=None, max_length=4, description="Año de 4 dígitos, validado contra la periodicidad. Ej: '2024'."),
+    month: Optional[int] = Field(default=None, ge=1, le=12, description="Mes (1-12). Solo vale con 'year'."),
     top: int = Field(default=10, ge=1, le=25, description='Cuántas clases devolver con group_by; el resto va en `otras`.'),
 ) -> dict:
     """Cifras de una capa sin descargar sus elementos: conteo, suma, promedio y reparto por clase.
@@ -191,6 +182,7 @@ def layer_stats(
     2) Suma y promedio:     layer_stats(layer="tasa_brecha_salarial", field="salario_promedio_diario_mujeres", year="2024")
     3) Reparto por clase:   layer_stats(layer="secretaria_salud_1", group_by="nombre_tipologia", top=5)
     4) Por municipio:       layer_stats(layer="homicidio_doloso", group_by="municipio", year="2024", top=5)
+    5) Un mes:              layer_stats(layer="homicidio_doloso", year="2025", month=3)
     """
     with como_error_de_tool():
-        return _layer_stats(layer=layer, field=field, group_by=group_by, municipio=municipio, year=year, top=top)
+        return _layer_stats(layer=layer, field=field, group_by=group_by, municipio=municipio, year=year, month=month, top=top)

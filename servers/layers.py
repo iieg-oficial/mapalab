@@ -35,6 +35,14 @@ def filtro_de_municipio(node: dict, municipio: dict) -> Optional[str]:
     return f"{campo} = '{escapado}'"
 
 
+def es_raster(node: dict) -> bool:
+    return node.get('geometryType') == 'raster'
+
+
+def consultable_por_wfs(node: dict) -> bool:
+    return (node.get('wmsConfig') or {}).get('wfsAvailable', True) is not False and not es_raster(node)
+
+
 def resolver_consulta(
     layer: str,
     municipio: Optional[str] = None,
@@ -44,8 +52,10 @@ def resolver_consulta(
     state = get_cached_state()
     node = resolver_capa(layer)['node']
     wms = node['wmsConfig']
-    if wms.get('wfsAvailable') is False:
-        raise ValueError(f"La capa '{node['id']}' no publica sus datos (es ráster o no tiene WFS).")
+    if es_raster(node):
+        raise ValueError(f"La capa '{node['id']}' es ráster: no tiene filas ni cifras consultables. Usa describe_layer para su ficha o create_map para verla.")
+    if not consultable_por_wfs(node):
+        raise ValueError(f"La capa '{node['id']}' no publica sus datos por WFS. Usa describe_layer para su ficha o create_map para verla.")
     ws_map = {w.get('alias'): w.get('geoserver_workspace') for w in state.get('workspaces', []) if w.get('alias')}
     gs_workspace = wms.get('geoserverWorkspace') or ws_map.get(wms.get('workspace'))
     if not gs_workspace:
@@ -104,7 +114,7 @@ def _capabilities_from_node(node: dict) -> dict:
         'temporal': bool(wms.get('timeEnabled')),
         'hasMunicipio': bool(search_meta.get('hasMunicipio')),
         'descargable': node.get('downloadable', True) is not False,
-        'consultableWfs': wms.get('wfsAvailable', True) is not False,
+        'consultableWfs': consultable_por_wfs(node),
     }
     if search_meta.get('municipioField'):
         caps['municipioField'] = search_meta['municipioField']

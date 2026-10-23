@@ -182,7 +182,7 @@ def llave_de_periodicidad(node: dict) -> str:
 
 def periodicidad_detallada(node: dict) -> dict[int, set[int]]:
     llave = llave_de_periodicidad(node)
-    datos = (PeriodicityService.get_periodicities_batch([llave]) or {}).get(llave)
+    datos = (PeriodicityService.get_periodicities_batch([llave]) or {}).get(llave) or node.get('rasterPeriodicity')
     if not isinstance(datos, dict):
         return {}
     detalle: dict[int, set[int]] = {}
@@ -238,7 +238,15 @@ def filtro_de_fecha(node: dict, year: Optional[str], month: Optional[int] = None
     meses = detalle[anio]
     if month is not None and meses and month not in meses:
         raise ValueError(f"La capa '{node['id']}' no tiene datos de {month:02d}/{year}. Meses de {year}: {', '.join(str(m) for m in sorted(meses))}.")
+    if (node.get('wmsConfig') or {}).get('timeEnabled'):
+        return instante_time(node, anio, month or max(meses, default=1))
     return _make_date_filter(str(year), month, columna_de_fecha(node))
+
+
+def instante_time(node: dict, anio: int, mes: int) -> str:
+    """En una capa timeEnabled el filtro `date` es el instante TIME, jamás CQL (ver CLAUDE.md)."""
+    por_mes = (node.get('rasterPeriodicity') or {}).get(str(anio)) or {}
+    return str(por_mes.get(str(mes)) or f'{anio}-{mes:02d}-01')
 
 
 def _todos_los_municipios() -> list[dict]:

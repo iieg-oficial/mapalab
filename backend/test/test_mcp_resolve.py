@@ -105,3 +105,19 @@ def test_capa_sin_periodicidad_no_acepta_year(monkeypatch):
     monkeypatch.setattr(resolve.PeriodicityService, 'get_periodicities_batch', lambda llaves: {})
     with pytest.raises(ValueError, match='no tiene periodicidad'):
         resolve.filtro_de_fecha({'id': 'cuerpos_de_agua', 'wmsConfig': {}}, '2024')
+
+
+RASTER = {'id': 'precipitacion_mensual', 'geometryType': 'raster',
+          'wmsConfig': {'workspace': 'raster', 'timeEnabled': True},
+          'rasterPeriodicity': {'2025': {'1': '2025-01-01', '3': '2025-03-01'}}}
+
+
+def test_raster_toma_la_periodicidad_del_arbol(monkeypatch):
+    monkeypatch.setattr(resolve.PeriodicityService, 'get_periodicities_batch', lambda llaves: {})
+    assert resolve.periodicidad_detallada(RASTER) == {2025: {1, 3}}
+
+
+@pytest.mark.parametrize('month,instante', [(1, '2025-01-01'), (None, '2025-03-01')])
+def test_capa_time_recibe_el_instante_y_no_cql(monkeypatch, month, instante):
+    monkeypatch.setattr(resolve.PeriodicityService, 'get_periodicities_batch', lambda llaves: {})
+    assert resolve.filtro_de_fecha(RASTER, '2025', month) == instante
