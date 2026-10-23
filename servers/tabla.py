@@ -12,7 +12,7 @@ from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.utils.logger import Logger
 
-from servers.estadisticas import TIPOS_NUMERICOS, _pedir, campos_de_capa, es_coordenada_cruda, techo_conteo
+from servers.estadisticas import TIPOS_NUMERICOS, _pedir, campos_de_capa, es_coordenada_cruda
 from servers.estadisticas import campos_cacheados as _campos_cacheados
 from servers.layers import resolver_consulta
 from servers.resolve import _resolve_layer_fuzzy
@@ -25,8 +25,6 @@ MAX_FILAS_ALCANZABLES = 5000
 MAX_FILTROS = 5
 MAX_COLUMNAS = 20
 MAX_VALOR = 100
-
-techo_tabla = techo_conteo
 
 
 class FiltroTabla(BaseModel):
@@ -244,9 +242,6 @@ def layer_table(
         raise ValueError(f"La capa '{resuelta['id']}' no tiene columnas de datos.")
     if orden:
         validar_atributo(orden, atributos)
-
-    if not techo_tabla.consumir():
-        raise ValueError('Se alcanzó el límite de consultas de tabla del sitio. Intenta en un minuto.')
 
     propiedades = [c['campo'] for c in elegidas]
     con_coordenadas = bool(coordenadas and geometria)

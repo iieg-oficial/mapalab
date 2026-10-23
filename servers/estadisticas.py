@@ -24,7 +24,6 @@ MAX_CACHE = 500
 _TIMEOUT = 60.0
 
 techo_wps = Techo(por_minuto=por_proceso(20), por_dia=por_proceso(500))
-techo_conteo = Techo(por_minuto=por_proceso(60), por_dia=por_proceso(5000))
 
 _cache: dict[tuple, tuple[float, dict]] = {}
 _candado_cache = threading.Lock()
@@ -215,8 +214,6 @@ def layer_stats(
         resultado.update(leer_agregado(datos, agrupado=bool(agrupar), top=top))
 
     if 'conteo' not in resultado:
-        if not techo_conteo.consumir():
-            raise ValueError('Se alcanzó el límite de conteos por ahora. Intenta en un minuto.')
         resultado['conteo'] = contar(base, gs_workspace, gs_layer, cql)
 
     _a_cache(clave, resultado)
