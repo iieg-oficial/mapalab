@@ -74,6 +74,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Cambiado
 
+- **Colibrí y Novedades tampoco salen a producción.** Con `VITE_APP_ENV` distinto de `dev` o `beta` se
+  ocultan el botón flotante de reportes y, en la tarjeta de la marca IIEG, «Novedades» y «Reportar problema o
+  sugerencia». Caminar el instituto ya estaba oculto
 - **El MCP entra con privilegios mínimos.** Usa el rol `mapalab_mcp` de dataengine (`0059`; `MCP_DB_USER`
   y el secreto `mcp_db_password`), ya no manda credencial a GeoServer, corre como `appuser` y deja de
   recibir los secretos de acervo y GeoServer

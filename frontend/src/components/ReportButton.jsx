@@ -2,6 +2,7 @@ import Icon from '@components/Icon';
 import Badge from '@components/Badge';
 import Tooltip from '@components/Tooltip';
 import { useColibriOpen } from '@hooks/useColibriOpen';
+import { useIsNonProd } from '@hooks/useDevTools';
 
 const ReportButton = ({
     variant = 'floating',
@@ -11,11 +12,14 @@ const ReportButton = ({
     onTrack,
 }) => {
     const open = useColibriOpen();
+    const isNonProd = useIsNonProd();
     const handleClick = (e) => {
         e?.stopPropagation?.();
         onTrack?.();
         open(extraContext);
     };
+
+    if (!isNonProd) return null;
 
     if (variant === 'inline') {
         return (
