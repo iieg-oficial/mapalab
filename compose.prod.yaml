@@ -35,7 +35,7 @@ services:
     restart: unless-stopped
 
   docker-socket-proxy:
-    image: nginx:1.30.4-alpine
+    image: nginx:1.30.6-alpine
     container_name: mapalab-docker-socket-proxy
     user: "101:101"
     group_add:

@@ -44,7 +44,7 @@ ENV VITE_BASE_PATH=$VITE_BASE_PATH \
 
 RUN npm run build
 
-FROM nginx:1.30.4-alpine
+FROM nginx:1.30.6-alpine
 COPY nginx/nginx-main.conf /etc/nginx/nginx.conf
 COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
