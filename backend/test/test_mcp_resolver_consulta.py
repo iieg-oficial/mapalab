@@ -51,3 +51,10 @@ def test_filtra_por_municipio_con_el_campo_de_la_capa(arbol, monkeypatch):
     arbol['searchMeta'] = {'hasMunicipio': True, 'municipioField': 'clave_municipio'}
     monkeypatch.setattr(layers, 'resolver_municipio', lambda texto: {'clave': '14039', 'nombre': 'Guadalajara'})
     assert layers.resolver_consulta('bachillerato', municipio='gdl')[3][-1] == "clave_municipio = '14039'"
+
+
+def test_rechaza_rasteres_aunque_digan_tener_wfs(arbol):
+    arbol['geometryType'] = 'raster'
+    with pytest.raises(ValueError, match='es ráster'):
+        layers.resolver_consulta('bachillerato')
+    assert layers._capabilities_from_node(arbol)['consultableWfs'] is False

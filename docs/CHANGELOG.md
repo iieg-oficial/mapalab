@@ -37,6 +37,23 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Corregido
 
+- **MCP: `search_layers` encuentra lo que se pide en lenguaje natural.** Busca palabra por palabra
+  (sin acentos, con plurales y unos pocos sinónimos) en nombre, id, etiquetas y ruta del árbol, y ordena
+  por relevancia: quedan las capas que cubren más palabras, con la etiqueta exacta primero. Antes era un
+  `LIKE '%frase%'` en orden alfabético y «escuelas primarias», «población total» u «hospital» daban
+  vacío. Vive en `servers/busqueda.py`, sobre el árbol en memoria; también la usa la `query` de
+  `create_map`. La resolución estricta de ids no cambia
+- **MCP: los rásters ya no se anuncian como consultables.** `describe_layer` daba
+  `consultableWfs: true` a las capas con `geometryType: 'raster'` y `layer_table`/`layer_stats`
+  fallaban con un «HTTP 400» de GeoServer; ahora el error dice que es ráster
+- **MCP: los rásters mensuales tienen periodicidad.** Se lee `rasterPeriodicity` del árbol cuando
+  `layer_periodicity` no tiene la capa, y en una capa `timeEnabled` el filtro `date` de `create_map`
+  es el instante `TIME` (el último mes del año si no hay `month`), nunca CQL
+- **MCP: `layer_stats` acepta `month`**, como ya decía la documentación; antes salía un error crudo
+  de pydantic
+- **MCP: detalles.** `municipios` respeta `limit` también sin `query`, y las coordenadas crudas
+  (`x_6368`, `y_6368`) ya no salen en las columnas por defecto de `layer_table` ni como campo sumable
+  de `layer_stats` (siguen pidiéndose en `columnas`)
 - **La fecha por defecto de año completo se marca en el selector.** Con `defaultDate: { year }` en una
   capa mensual, el mapa se filtraba por el año pero el panel de capas activas y el modal de detalle no
   marcaban nada: el año no existe en un catálogo de meses. `keysInCatalog` lo abre en los meses que tiene;

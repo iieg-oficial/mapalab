@@ -17,6 +17,7 @@ from servers.layers import resolver_consulta
 
 TIPOS_NUMERICOS = frozenset({'number', 'decimal', 'double', 'float', 'int', 'integer', 'long', 'short'})
 TIPOS_TEXTO = frozenset({'string'})
+_COORDENADA_CRUDA_RE = re.compile(r'[xy]_\d{4,5}')
 TTL_CACHE_S = 600.0
 TTL_CAMPOS_S = 600.0
 MAX_CACHE = 500
@@ -72,11 +73,15 @@ def campos_cacheados(base: str, gs_workspace: str, gs_layer: str, leer: Optional
     return campos
 
 
+def es_coordenada_cruda(campo: str) -> bool:
+    return bool(_COORDENADA_CRUDA_RE.fullmatch(campo or ''))
+
+
 def validar_campo(nombre: Optional[str], campos: dict[str, str], tipos: frozenset, rol: str) -> Optional[str]:
     if not nombre:
         return None
-    if campos.get(nombre) not in tipos:
-        disponibles = sorted(c for c, t in campos.items() if t in tipos)
+    if campos.get(nombre) not in tipos or es_coordenada_cruda(nombre):
+        disponibles = sorted(c for c, t in campos.items() if t in tipos and not es_coordenada_cruda(c))
         raise ValueError(f"'{nombre}' no sirve como {rol}. Campos posibles: {', '.join(disponibles) or 'ninguno'}.")
     return nombre
 
@@ -178,11 +183,12 @@ def layer_stats(
     group_by: Optional[str] = None,
     municipio: Optional[str] = None,
     year: Optional[str] = None,
+    month: Optional[int] = None,
     top: int = 10,
 ) -> dict:
-    node, gs_workspace, gs_layer, partes = resolver_consulta(layer, municipio=municipio, year=year)
+    node, gs_workspace, gs_layer, partes = resolver_consulta(layer, municipio=municipio, year=year, month=month)
     cql = ' AND '.join(partes) if partes else None
-    filtros = {k: v for k, v in (('municipio', municipio), ('year', year)) if v}
+    filtros = {k: v for k, v in (('municipio', municipio), ('year', year), ('month', month)) if v}
     cabecera: dict[str, Any] = {'layer': {'id': node.get('id') or layer, 'label': node.get('label')}, 'filtros': filtros}
     if node.get('id') and node['id'] != layer:
         cabecera['resuelto_de'] = layer

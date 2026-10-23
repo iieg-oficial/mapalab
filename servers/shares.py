@@ -6,6 +6,7 @@ from typing import Any, Optional
 from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.repositories.layers_repository import LayersRepository
+from app.services.layer_tree_service import get_cached_state
 
 from servers.blindaje import (
     limpiar_anotaciones,
@@ -15,6 +16,7 @@ from servers.blindaje import (
     validar_vista,
     vista3d_a_payload,
 )
+from servers.busqueda import buscar, indice_de_capas
 from servers.compartidos import _persist_share, create_single_share, create_swipe_share
 from servers.layers import filtro_de_municipio
 from servers.resolve import (
@@ -90,23 +92,19 @@ def _pick_best_layer(query: str, theme: str = '') -> tuple[Optional[str], Option
     th = (theme or '').strip()[:MAX_BUSQUEDA]
     if not q and not th:
         return None, None
+    index = indice_de_capas(get_cached_state()['tree'])
     if th:
-        candidatos = search_by_theme(theme=th, limit=200)
-        if q:
-            candidatos = [c for c in candidatos if q.lower() in f"{c.get('label', '')} {c.get('id', '')}".lower()]
-        return (candidatos[0]['id'], candidatos[0]['label']) if candidatos else (None, None)
-
-    palabras = [w for w in q.split() if len(w) > 2][:MAX_PALABRAS_BUSQUEDA]
-    terminos = [q] + (palabras if len(palabras) > 1 else [])
-    conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
-    with conn.get_session() as session:
-        for termino in terminos:
-            exacta = LayersRepository.find_layer_by_slug_or_alias(session, termino)
-            filas = ([exacta] if exacta is not None else []) + LayersRepository.search_layers(session, termino, limit=3)
-            for fila in filas:
-                resuelta = _resolve_layer_fuzzy(fila.id)
-                if resuelta:
-                    return resuelta['id'], resuelta['label']
+        del_tema = [c['id'] for c in search_by_theme(theme=th, limit=200)]
+        ids = buscar(index, q, permitidos=del_tema) if q else del_tema
+    else:
+        conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
+        with conn.get_session() as session:
+            exacta = LayersRepository.find_layer_by_slug_or_alias(session, q)
+        ids = ([exacta.id] if exacta is not None else []) + buscar(index, ' '.join(q.split()[:MAX_PALABRAS_BUSQUEDA]))
+    for layer_id in ids:
+        resuelta = _resolve_layer_fuzzy(layer_id)
+        if resuelta:
+            return resuelta['id'], resuelta['label']
     return None, None
 
 

@@ -12,7 +12,7 @@ from app.consts.databases import DatabaseType
 from app.databases.factory import DatabaseFactory
 from app.utils.logger import Logger
 
-from servers.estadisticas import TIPOS_NUMERICOS, _pedir, campos_de_capa, techo_conteo
+from servers.estadisticas import TIPOS_NUMERICOS, _pedir, campos_de_capa, es_coordenada_cruda, techo_conteo
 from servers.estadisticas import campos_cacheados as _campos_cacheados
 from servers.layers import resolver_consulta
 from servers.resolve import _resolve_layer_fuzzy
@@ -127,7 +127,7 @@ def elegir_columnas(
     if pedidas:
         nombres = [validar_atributo(n, atributos) for n in dict.fromkeys(pedidas)]
     else:
-        visibles = [n for n in atributos if (por_campo.get(n) or {}).get('visible', True) is not False]
+        visibles = [n for n in atributos if (por_campo.get(n) or {}).get('visible', not es_coordenada_cruda(n)) is not False]
         indice = {n: i for i, n in enumerate(atributos)}
         nombres = sorted(visibles, key=lambda n: (por_campo.get(n) or {}).get('orden', indice[n]))
     omitidas = max(0, len(nombres) - MAX_COLUMNAS)
