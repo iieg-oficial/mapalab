@@ -24,7 +24,7 @@ import { useZenMode } from './ZenMode';
 import MenuItem from './MenuItem';
 import SiderEdgeButtons from './SiderEdgeButtons';
 import EnvBadge from './EnvBadge';
-import LogoIieg from './DiaDeMuertos/LogoIieg';
+import LogoIieg from './LogoIieg';
 
 const SIDER_EVENTS_ENABLED = false;
 const EMPTY_EVENTOS = Object.freeze([]);

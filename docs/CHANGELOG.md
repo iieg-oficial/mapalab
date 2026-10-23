@@ -74,6 +74,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Cambiado
 
+- **Las macetas de Día de Muertos pasan a la ofrenda de Contribuciones.** El logo del IIEG queda limpio y
+  la ofrenda gana una grada con dos macetas de maravilla y una de cempasúchil; panes, dulces y velas van al
+  frente. Las flores se siguen tumbando con un clic
 - **Colibrí y Novedades tampoco salen a producción.** Con `VITE_APP_ENV` distinto de `dev` o `beta` se
   ocultan el botón flotante de reportes y, en la tarjeta de la marca IIEG, «Novedades» y «Reportar problema o
   sugerencia». Caminar el instituto ya estaba oculto
