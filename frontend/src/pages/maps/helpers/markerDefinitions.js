@@ -15,7 +15,7 @@ const formatCount = (n) => (typeof n === 'number' ? n.toLocaleString('es-MX') : 
 export const EMBED_MARKER_ICON = '/acervo/iieg/logos/ico_iieg_mapa.svg';
 const EMBED_MARKER_SCALE = 0.4;
 
-export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null, permanente = false, conCaminar = false } = {}) => ({
+export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null, permanente = false, conBeta = false } = {}) => ({
     id: 'iieg_hq',
     center: [-103.44669185275052, 20.68443473644039],
     zoom: permanente ? undefined : 16,
@@ -26,7 +26,7 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null, permanen
     openOnShow: !permanente,
     infoBox: {
         layerName: 'MapaLab — IIEG Jalisco',
-        acciones: conCaminar ? ['caminar'] : [],
+        acciones: conBeta ? ['caminar'] : [],
         properties: {
             nombre: 'MapaLab',
             version: `v${APP_VERSION}`,
@@ -62,8 +62,10 @@ export const buildIiegMarker = ({ totalLayers = 0, totalRecords = null, permanen
                 { icon: 'ubicacion', field: 'direccion' },
                 { icon: 'celular', field: 'telefono' },
                 { icon: 'web', value: 'iieg.jalisco.gob.mx', href: 'https://iieg.jalisco.gob.mx/' },
-                { icon: 'novedades', value: `Novedades v${APP_VERSION}`, action: 'whats_new' },
-                { icon: 'bug', value: 'Reportar problema o sugerencia', action: 'report' }
+                ...(conBeta ? [
+                    { icon: 'novedades', value: `Novedades v${APP_VERSION}`, action: 'whats_new' },
+                    { icon: 'bug', value: 'Reportar problema o sugerencia', action: 'report' },
+                ] : []),
             ]
         }
     }
