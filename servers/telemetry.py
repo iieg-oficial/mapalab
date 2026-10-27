@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import re
 import threading
 import time
 from collections import deque
@@ -23,6 +24,7 @@ _HTTP_TIMEOUT = 6.0
 _MAX_CUERPO_LEIDO = 256 * 1024
 _LARGOS = {'method': 40, 'tool': 80, 'client_name': 80, 'client_version': 40}
 _MARCA_ERROR = b'"isError":true'
+_PRODUCTO_UA = re.compile(r'[A-Za-z0-9._-]{1,36}')
 
 
 @dataclass
@@ -155,6 +157,13 @@ def _safe_parse_jsonrpc(body: bytes) -> tuple[Optional[str], Optional[str], Opti
     return method, tool, client_name, client_version
 
 
+def _producto_de_agente(user_agent: Optional[str]) -> Optional[str]:
+    if not user_agent:
+        return None
+    producto = _PRODUCTO_UA.match(user_agent.strip())
+    return f'ua:{producto.group(0)}' if producto else None
+
+
 class MCPTelemetryMiddleware:
     def __init__(self, app: ASGIApp, path_prefix: str = '/mcp') -> None:
         self.app = app
@@ -195,6 +204,8 @@ class MCPTelemetryMiddleware:
 
         headers = {k.decode('latin-1').lower(): v.decode('latin-1') for k, v in scope.get('headers', [])}
         session_id = headers.get('mcp-session-id')
+        if not client_name:
+            client_name = _producto_de_agente(headers.get('user-agent'))
         state = {'status': 0, 'bytes_out': 0, 'tool_error': False}
 
         async def wrapped_send(message: Message) -> None:

@@ -6,6 +6,16 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.4.1] - 2026-10-27
+
+### Corregido
+
+- **Clientes `unknown` en la telemetría del MCP.** Con `stateless_http` solo el `initialize` trae
+  `clientInfo`, así que `tools/call`, `tools/list` y las notificaciones salían sin cliente. Sin
+  `clientInfo`, `client_name` toma el producto del `User-Agent` con prefijo (`ua:python-httpx`,
+  `ua:Claude-User`), sin versión ni el resto de la cadena; uno que no empiece con letras, números, `.`,
+  `_` o `-` queda nulo.
+
 ## [2.4.0] - 2026-10-27
 
 ### Agregado
