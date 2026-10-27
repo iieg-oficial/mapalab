@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import traceback
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
@@ -9,6 +10,7 @@ from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
+from app.utils.logger import Logger
 from servers.blindaje import ES_BETA
 
 TIMEOUT_TOOL_S = 90.0
@@ -50,4 +52,12 @@ def como_error_de_tool() -> Iterator[None]:
     try:
         yield
     except ValueError as exc:
+        _registrar_error(exc)
         raise ToolError(str(exc)) from None
+
+
+def _registrar_error(exc: ValueError) -> None:
+    marcos = traceback.extract_tb(exc.__traceback__)
+    tool = next((m.name for m in marcos if Path(m.filename).name.startswith('herramientas_')), '?')
+    origen = f'{Path(marcos[-1].filename).name}:{marcos[-1].lineno}' if marcos else '?'
+    Logger.warning(f'mcp.tool_error tool={tool} origen={origen}')
