@@ -10,6 +10,9 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Agregado
 
+- **Errores de tool del MCP en el log.** Cada error de dominio deja una línea `mcp.tool_error tool=<tool>
+  origen=<archivo>:<línea>` con el punto que lo lanzó. No lleva el mensaje: repite lo que mandó el cliente y
+  la telemetría promete no guardar argumentos.
 - **Página del conector de IA** en `/conector`: la URL del MCP con botón para copiarla, cómo conectarlo
   desde Claude, Claude Code u otro cliente, las seis herramientas de producción, preguntas de ejemplo y qué
   datos se guardan. Es la documentación pública que pide el Connectors Directory. El footer de la portada
