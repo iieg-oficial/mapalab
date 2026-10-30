@@ -6,7 +6,7 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
-## [No publicado]
+## [2.5.0] - 2026-10-30
 
 ### Agregado
 
