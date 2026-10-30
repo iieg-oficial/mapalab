@@ -6,6 +6,14 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [No publicado]
+
+### Agregado
+
+- **Alias de valores en la tarjetita.** Los renglones, las cifras y las etiquetas aceptan `valueMap` para
+  mostrar un texto en lugar del valor exacto, por ejemplo `0` como «Sin registros». El alias no pasa por el
+  formato de números. `infoboxPlan.js` se sincroniza con mariachi.
+
 ## [2.4.1] - 2026-10-27
 
 ### Corregido
