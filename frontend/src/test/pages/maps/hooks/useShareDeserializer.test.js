@@ -4,10 +4,15 @@ import { renderHook } from '@testing-library/react';
 const { mockUseMapsContext, mockUseLayers, entorno } = vi.hoisted(() => ({
     mockUseMapsContext: vi.fn(),
     mockUseLayers: vi.fn(),
-    entorno: { noProd: true },
+    entorno: { noProd: true, pre: false },
 }));
 
-vi.mock('@services/devToolsStore', () => ({ devToolsStore: { isNonProd: () => entorno.noProd } }));
+vi.mock('@services/devToolsStore', () => ({
+    devToolsStore: {
+        isNonProd: () => entorno.noProd,
+        isLiberada: funcion => entorno.noProd || (entorno.pre && funcion === 'swipe'),
+    },
+}));
 
 vi.mock('@hooks/useMaps', () => ({
     useMapsContext: () => mockUseMapsContext(),
@@ -137,6 +142,26 @@ describe('useShareDeserializer', () => {
         entorno.noProd = true;
         expect(ctx.setCompareMode).not.toHaveBeenCalled();
         expect(ctx.setActiveLayerIds).toHaveBeenCalledWith(expect.arrayContaining(['carreteras_estatales']));
+    });
+
+    it('en preproducción un enlace del comparador sí abre el comparador', () => {
+        entorno.noProd = false;
+        entorno.pre = true;
+        const ctx = makeCtx();
+        mockUseMapsContext.mockReturnValue(ctx);
+        const { result } = renderHook(() => useShareDeserializer());
+        result.current({
+            version: 1,
+            kind: 'swipe',
+            payload: {
+                shared: {},
+                paneA: { label: '2020', layers: [{ slug: 'establecimientos-salud', visible: true }] },
+                paneB: { label: '2024', layers: [{ slug: 'carreteras-estatales', visible: true }] },
+            },
+        });
+        entorno.noProd = true;
+        entorno.pre = false;
+        expect(ctx.setCompareMode).toHaveBeenCalled();
     });
 
     it('aplica el slot activo al estado global cuando deserializa swipe', () => {

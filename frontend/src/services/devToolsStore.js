@@ -6,7 +6,9 @@ const PANTALLA_KEY = 'devtools-pantalla';
 
 const APP_ENV = import.meta.env.VITE_APP_ENV;
 const BUILD_IS_NON_PROD = ['dev', 'beta'].includes(APP_ENV);
+const BUILD_IS_PRE = APP_ENV === 'pre';
 const TOGGLE_AVAILABLE = BUILD_IS_NON_PROD;
+const PRELIBERADAS = ['swipe'];
 
 const detectarMarco = () => {
     try {
@@ -82,6 +84,9 @@ export const devToolsStore = {
     },
     isNonProd() {
         return BUILD_IS_NON_PROD && !previewingProd;
+    },
+    isLiberada(funcion) {
+        return this.isNonProd() || (BUILD_IS_PRE && PRELIBERADAS.includes(funcion));
     },
     isPreviewingProd() {
         return previewingProd;

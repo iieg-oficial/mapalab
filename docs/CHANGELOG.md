@@ -6,6 +6,15 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.6.0] - 2026-11-03
+
+### Agregado
+
+- **Entorno `pre` (preproducción).** `VITE_APP_ENV=pre` se ve como producción más las funciones que ya van a
+  salir, listadas en `PRELIBERADAS` del visor y del MCP. La primera es la barra divisora: el menú de
+  herramientas, los enlaces compartidos del comparador y `create_swipe` del MCP (sin `vista_3d`) se encienden en
+  `pre`. Fuera de `dev`/`beta` las herramientas ya no llevan la etiqueta BETA. Producción no cambia.
+
 ## [2.5.0] - 2026-10-30
 
 ### Agregado

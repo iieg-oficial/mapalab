@@ -12,7 +12,13 @@ from pydantic import BaseModel, Field, ValidationError
 
 from app.services.share_service import MAX_CAPAS, MAX_COORDINATES_PER_GEOMETRY, RANGO_LAT, RANGO_LON
 
-ES_BETA = os.environ.get('MAPALAB_APP_ENV', 'prod') in {'dev', 'beta'}
+APP_ENV = os.environ.get('MAPALAB_APP_ENV', 'prod')
+ES_BETA = APP_ENV in {'dev', 'beta'}
+PRELIBERADAS = frozenset({'swipe'})
+
+
+def liberada(funcion: str) -> bool:
+    return ES_BETA or (APP_ENV == 'pre' and funcion in PRELIBERADAS)
 
 MAX_TEXTO_ANOTACION = 200
 MAX_ETIQUETA_LADO = 60
