@@ -66,12 +66,17 @@ const LayerInfoSections = ({ metadata, layerName }) => {
                             const fallbackLabel = fuentes.length <= 1 ? 'Ver fuente' : `Fuente ${i + 1}`;
                             const label = f.enlace_label || f.corto || fallbackLabel;
                             const enlaces = splitEnlaces(f.enlace);
+                            const etiquetas = label.split(',').map(e => e.trim()).filter(Boolean);
+                            const etiquetaDe = (j) => {
+                                if (enlaces.length <= 1) return label;
+                                return etiquetas.length === enlaces.length ? etiquetas[j] : `${label} ${j + 1}`;
+                            };
                             return (
                                 <div key={i} className="flex flex-col gap-1">
                                     {f.largo && <TextBlock text={f.largo} />}
                                     {enlaces.map((enlace, j) => (
                                         <ExternalLink key={j} href={enlace}
-                                            label={enlaces.length > 1 ? `${label} ${j + 1}` : label} />
+                                            label={etiquetaDe(j)} />
                                     ))}
                                 </div>
                             );
