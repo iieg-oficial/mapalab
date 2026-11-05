@@ -23,10 +23,12 @@ const ExternalLink = ({ href, label }) => {
     );
 };
 
+const splitEnlaces = (enlace) => (enlace || '').split(/[\s,;]+(?=https?:\/\/)/).map(l => l.trim().replace(/[,;]+$/, '')).filter(Boolean);
+
 const normalizeFuentes = (metadata) => {
     if (Array.isArray(metadata.fuentes) && metadata.fuentes.length > 0) return metadata.fuentes;
     if (!metadata.fuentes_texto_largo && !metadata.fuentes_enlace && !metadata.fuentes_texto_corto) return [];
-    const links = (metadata.fuentes_enlace || '').split(',').map(l => l.trim()).filter(Boolean);
+    const links = splitEnlaces(metadata.fuentes_enlace);
     if (links.length <= 1) {
         return [{
             corto: metadata.fuentes_texto_corto,
@@ -63,10 +65,19 @@ const LayerInfoSections = ({ metadata, layerName }) => {
                         {fuentes.map((f, i) => {
                             const fallbackLabel = fuentes.length <= 1 ? 'Ver fuente' : `Fuente ${i + 1}`;
                             const label = f.enlace_label || f.corto || fallbackLabel;
+                            const enlaces = splitEnlaces(f.enlace);
+                            const etiquetas = label.split(',').map(e => e.trim()).filter(Boolean);
+                            const etiquetaDe = (j) => {
+                                if (enlaces.length <= 1) return label;
+                                return etiquetas.length === enlaces.length ? etiquetas[j] : `${label} ${j + 1}`;
+                            };
                             return (
                                 <div key={i} className="flex flex-col gap-1">
                                     {f.largo && <TextBlock text={f.largo} />}
-                                    {f.enlace && <ExternalLink href={f.enlace} label={label} />}
+                                    {enlaces.map((enlace, j) => (
+                                        <ExternalLink key={j} href={enlace}
+                                            label={etiquetaDe(j)} />
+                                    ))}
                                 </div>
                             );
                         })}

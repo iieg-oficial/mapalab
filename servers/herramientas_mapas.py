@@ -6,7 +6,7 @@ from typing import Any, Callable, Literal, Optional
 
 from pydantic import Field
 
-from servers.blindaje import ES_BETA, MAX_ETIQUETA_LADO, Vista3d
+from servers.blindaje import ES_BETA, MAX_ETIQUETA_LADO, Vista3d, liberada
 from servers.resolve import MAX_REFERENCIA
 from servers.servidor import ESCRITURA, TIMEOUT_TOOL_S, como_error_de_tool, mcp
 from servers.shares import create_map as _create_map, create_swipe as _create_swipe
@@ -35,7 +35,7 @@ Solo en este entorno (BETA): `vista_3d` abre el mapa en 3D con relieve y la resp
 snippet del widget que necesita la llave pública que mariachi emite para el sitio donde se inserta.
 5) En 3D:  create_map(layers=["tasa_poblacion_total"], municipio="Zapopan", vista_3d={"inclinacion": 60, "extruir": ["tasa_poblacion_total"]})"""
 
-DESCRIPCION_SWIPE = """Crea un comparador A|B (swipe) y devuelve {id, kind, url, embed_html}. Solo en entornos BETA.
+DESCRIPCION_SWIPE = """Crea un comparador A|B (swipe) y devuelve {id, kind, url}; en BETA también `embed_html`.
 
 Dos modos, uno u otro:
 - Una capa en dos años: `layer` + `year_a` + `year_b` (años distintos, validados contra la periodicidad).
@@ -112,3 +112,8 @@ else:
         _sin_parametros(create_map, 'vista_3d'),
         name='create_map', title='Crear mapa', description=DESCRIPCION_MAPA, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S,
     )
+    if liberada('swipe'):
+        mcp.tool(
+            _sin_parametros(create_swipe, 'vista_3d'),
+            name='create_swipe', title='Crear comparador', description=DESCRIPCION_SWIPE, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S,
+        )

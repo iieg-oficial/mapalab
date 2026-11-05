@@ -6,6 +6,34 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.6.0] - 2026-11-05
+
+### Agregado
+
+- **Entorno `pre` (preproducción).** `VITE_APP_ENV=pre` se ve como producción más las funciones que ya van a
+  salir, listadas en `PRELIBERADAS` del visor y del MCP. La primera es la barra divisora: el menú de
+  herramientas, los enlaces compartidos del comparador y `create_swipe` del MCP (sin `vista_3d`) se encienden en
+  `pre`. Fuera de `dev`/`beta` las herramientas ya no llevan la etiqueta BETA. Producción no cambia.
+
+### Cambiado
+
+- **Nodo nuevo de la barra divisora.** Contenedor `#FF8300` de 82 × 68 (68 × 82 en horizontal), radio de 18 px y
+  sombra `0 3px 6px #00000026`, con los iconos del comparador embebidos en `SwipeBar/IconoComparador.jsx`. En
+  reposo lleva A|B dentro y flechas afuera; en hover, flechas dentro y A y B a los lados. Los dos estados comparten
+  lienzo, marco y línea, así que no cambian de tamaño. La línea pasa de 2 a 6 px.
+- **Los lados del comparador vuelven a A y B** (`slotLabel`): handle, fechas, panel de capas, periodicidad e imagen
+  descargada.
+
+### Corregido
+
+- **Fuentes con varios enlaces.** El detalle de capa separa los enlaces aunque vengan unidos por espacio, coma o
+  punto y coma, y cada uno lleva su nombre: el de su posición si la etiqueta trae tantos como enlaces, o la
+  etiqueta numerada.
+
+### Eliminado
+
+- Iconos `swipe_handle_chevrons_h` y `swipe_handle_chevrons_v` de `Icon.jsx`.
+
 ## [2.5.0] - 2026-10-30
 
 ### Agregado

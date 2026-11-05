@@ -7,7 +7,7 @@ import { canUseVectorService } from '@pages/maps/helpers/serviceMode';
 import { useSider } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
 import Tooltip from '@components/Tooltip';
-import { useIsNonProd } from '@hooks/useDevTools';
+import { useIsLiberada, useIsNonProd } from '@hooks/useDevTools';
 import { useGoToCatalogo } from '@pages/catalogo/useGoToCatalogo';
 import IconoHerramienta from './IconoHerramienta';
 import { useMinimapaEncendido } from '@pages/maps/hooks/useMinimapaEncendido';
@@ -24,7 +24,7 @@ const allTools = [
         label: 'Barra divisora',
         description: 'Swipe vertical',
         beta: true,
-        nonProdOnly: true,
+        liberacion: 'swipe',
     },
     {
         id: 'tabla',
@@ -64,9 +64,15 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     const goToCatalogo = useGoToCatalogo();
     const [minimapaEncendido, alternarMinimapa] = useMinimapaEncendido();
     const isNonProd = useIsNonProd();
+    const conSwipe = useIsLiberada('swipe');
     const tools = useMemo(
-        () => allTools.filter(tool => (!tool.nonProdOnly || isNonProd) && !(tool.id === 'minimapa' && isMobile)),
-        [isNonProd, isMobile],
+        () => {
+            const liberadas = { swipe: conSwipe };
+            return allTools.filter(tool => (!tool.nonProdOnly || isNonProd)
+                && (!tool.liberacion || liberadas[tool.liberacion])
+                && !(tool.id === 'minimapa' && isMobile));
+        },
+        [isNonProd, conSwipe, isMobile],
     );
 
     const capaParaTabla = () => {
@@ -144,7 +150,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                         const tooltipContent = tool.id === 'compare-swipe' ? (
                             <div className="flex flex-col gap-1.5 max-w-[240px]">
                                 <span className="font-bold">{tool.label}</span>
-                                <span className="text-[11px] opacity-90">Compara dos mapas con barra divisora. Tus capas actuales van al lado α; el lado β empieza <span className="font-bold">vacío</span> para que agregues otra capa.</span>
+                                <span className="text-[11px] opacity-90">Compara dos mapas con barra divisora. Tus capas actuales van al lado A; el lado B empieza <span className="font-bold">vacío</span> para que agregues otra capa.</span>
                                 <span className="text-[11px] opacity-90">Agrega capas en cada slot (A o B) <span className="font-bold">una por una</span> para mejor rendimiento.</span>
                             </div>
                         ) : tool.id === 'catalogo' || tool.id === 'minimapa' ? tool.description : tool.label;
@@ -159,7 +165,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                                     ${active ? 'border-purple-deep' : 'border-transparent hover:border-purple-deep'}
                                 `}
                                 >
-                                    {tool.beta && (
+                                    {tool.beta && isNonProd && (
                                         <Badge
                                             variant="pill"
                                             color="orange"
