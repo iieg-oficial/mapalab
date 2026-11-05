@@ -126,18 +126,6 @@ const icons = {
             <rect x="7.5" y="1" width="3.5" height="12" rx="1.2" />
         </svg>
     ),
-    swipe_handle_chevrons_h: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6 9 12 3 18 9" />
-            <polyline points="18 15 12 21 6 15" />
-        </svg>
-    ),
-    swipe_handle_chevrons_v: (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 3 12 9 6" />
-            <polyline points="15 6 21 12 15 18" />
-        </svg>
-    ),
     swipe_orientacion: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="3" y1="12" x2="21" y2="12" />

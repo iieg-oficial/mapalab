@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import MapView from './MapView';
-import Icon from '@components/Icon';
+import IconoComparador from './SwipeBar/IconoComparador';
 import { useMapsContext } from '@hooks/useMaps';
 import { useViewSync } from '@pages/maps/hooks/useViewSync';
-import { SLOT_COLORS, SWIPE_HANDLE_COLOR, slotLabel } from '@pages/maps/helpers/swipeTheme';
+import { SLOT_COLORS, SWIPE_HANDLE_COLOR, SWIPE_ICON_COLOR, slotLabel } from '@pages/maps/helpers/swipeTheme';
 import {
     SWIPE_HANDLE_MIN,
     SWIPE_HANDLE_MAX,
@@ -17,8 +17,10 @@ import {
 } from '@pages/maps/helpers/swipeMode';
 
 const OVERLAY_LETTER = 'font-garet font-bold text-white text-[120px] leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]';
-const HANDLE_LABEL = 'flex items-center justify-center font-garet text-[18px] font-bold leading-none drop-shadow-[0_1px_3px_rgba(255,255,255,0.95)]';
+const HANDLE_LABEL = 'flex items-center justify-center font-garet text-[14px] font-extrabold leading-none drop-shadow-[0_1px_3px_rgba(255,255,255,0.95)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100';
 const FADE_DELAY_MS = Math.round(SWIPE_MINIMIZE_MS * 0.6);
+const ESCALA_ICONO = 1;
+const NODO = { vertical: 'w-[82px] h-[68px]', horizontal: 'w-[68px] h-[82px]' };
 
 const SwipeView = () => {
     const { compareMode, paneMapInstances, setSwipePosition, highlightedSlots } = useMapsContext();
@@ -142,17 +144,17 @@ const SwipeView = () => {
 
     if (!compareMode?.active) return null;
 
+    const nodo = isHorizontal ? NODO.horizontal : NODO.vertical;
     const clipPath = isHorizontal ? `inset(${pos}% 0 0 0)` : `inset(0 0 0 ${pos}%)`;
     const handleStyle = isHorizontal
         ? { top: `${pos}%`, height: '14px', marginTop: '-7px', left: 0, right: 0 }
         : { left: `${pos}%`, width: '14px', marginLeft: '-7px', top: 0, bottom: 0 };
     const handleBaseClass = isHorizontal
-        ? 'absolute z-[1] cursor-ns-resize touch-none'
-        : 'absolute z-[1] cursor-ew-resize touch-none';
+        ? 'group absolute z-[1] cursor-ns-resize touch-none'
+        : 'group absolute z-[1] cursor-ew-resize touch-none';
     const lineClass = isHorizontal
-        ? 'absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] shadow'
-        : 'absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] shadow';
-    const knobIconName = isHorizontal ? 'swipe_handle_chevrons_h' : 'swipe_handle_chevrons_v';
+        ? 'absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[6px] shadow'
+        : 'absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[6px] shadow';
 
     const overlayAStyle = isHorizontal
         ? { top: 0, left: 0, right: 0, height: `${pos}%` }
@@ -172,11 +174,6 @@ const SwipeView = () => {
             : 'none',
         opacity: minimizando ? 0 : 1,
         transition: `transform ${SWIPE_MINIMIZE_MS}ms cubic-bezier(0.34, 0.8, 0.3, 1), opacity 180ms linear ${FADE_DELAY_MS}ms`,
-    });
-    const etiquetaStyle = (slot) => ({
-        color: SLOT_COLORS[slot].fg,
-        opacity: !visibles || minimizando ? 1 : 0,
-        transition: `opacity 200ms ease ${FADE_DELAY_MS}ms`,
     });
 
     return (
@@ -218,14 +215,15 @@ const SwipeView = () => {
             >
                 <div className={lineClass} style={{ backgroundColor: SWIPE_HANDLE_COLOR }} />
                 <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 ${isHorizontal ? 'flex-col' : ''}`}>
-                    <span aria-hidden="true" className={HANDLE_LABEL} style={etiquetaStyle('A')}>{slotLabel('A')}</span>
+                    <span aria-hidden="true" className={HANDLE_LABEL} style={{ color: SWIPE_ICON_COLOR }}>{slotLabel('A')}</span>
                     <div
-                        className="shrink-0 w-9 h-9 rounded-full shadow-lg flex items-center justify-center"
+                        className={`shrink-0 ${nodo} rounded-[18px] shadow-[0px_3px_6px_#00000026] flex items-center justify-center`}
                         style={{ backgroundColor: SWIPE_HANDLE_COLOR }}
                     >
-                        <Icon name={knobIconName} className="w-5 h-5" />
+                        <IconoComparador letras horizontal={isHorizontal} escala={ESCALA_ICONO} className="group-hover:hidden group-focus-visible:hidden" />
+                        <IconoComparador horizontal={isHorizontal} escala={ESCALA_ICONO} className="hidden group-hover:block group-focus-visible:block" />
                     </div>
-                    <span aria-hidden="true" className={HANDLE_LABEL} style={etiquetaStyle('B')}>{slotLabel('B')}</span>
+                    <span aria-hidden="true" className={HANDLE_LABEL} style={{ color: SWIPE_ICON_COLOR }}>{slotLabel('B')}</span>
                 </div>
             </div>
         </div>
