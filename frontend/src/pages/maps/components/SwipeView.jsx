@@ -20,7 +20,7 @@ const OVERLAY_LETTER = 'font-garet font-bold text-white text-[120px] leading-non
 const HANDLE_LABEL = 'flex items-center justify-center font-garet text-[14px] font-extrabold leading-none drop-shadow-[0_1px_3px_rgba(255,255,255,0.95)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100';
 const FADE_DELAY_MS = Math.round(SWIPE_MINIMIZE_MS * 0.6);
 const ESCALA_ICONO = 1;
-const NODO = { vertical: 'w-[82px] h-[68px]', horizontal: 'w-[68px] h-[82px]' };
+const NODO = { vertical: 'w-[74px] h-[62px]', horizontal: 'w-[62px] h-[74px]' };
 
 const SwipeView = () => {
     const { compareMode, paneMapInstances, setSwipePosition, highlightedSlots } = useMapsContext();
