@@ -6,6 +6,13 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.7.0] - 2026-11-09
+
+### Agregado
+
+- **Panel de estadísticas preliberado.** `estadisticas` entra a `PRELIBERADAS`: en `pre` se encienden el panel y el
+  botón que desacopla las estadísticas desde el detalle de capa, sin la etiqueta BETA. Producción no cambia.
+
 ## [2.6.0] - 2026-11-05
 
 ### Agregado
