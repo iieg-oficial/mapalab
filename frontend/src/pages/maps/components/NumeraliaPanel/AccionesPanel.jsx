@@ -3,9 +3,9 @@ import ActionIconButton from '@components/ActionIconButton';
 
 const SIN_DINAMICAS = 'Esta capa tiene estadísticas capturadas a mano, no calculadas contra la base';
 
-const AccionesPanel = ({ modos, modo, dinamica, onModo, onMinimizar, onCerrar }) => (
+const AccionesPanel = ({ modos, modo, dinamica, onModo, onMinimizar, onCerrar, parte = 'todo' }) => (
     <>
-        {modos.map(item => (
+        {parte !== 'ventana' && modos.map(item => (
             <ActionIconButton
                 key={item.clave}
                 onClick={() => onModo(item.clave)}
@@ -21,25 +21,29 @@ const AccionesPanel = ({ modos, modo, dinamica, onModo, onMinimizar, onCerrar })
             </ActionIconButton>
         ))}
 
-        <span className="w-px h-3 bg-[#DCE3F0] mx-0.5" />
+        {parte === 'todo' && <span className="w-px h-3 bg-[#DCE3F0] mx-0.5" />}
 
-        <ActionIconButton
-            onClick={onMinimizar}
-            titulo="Minimizar estadísticas"
-            etiqueta="Minimizar el panel de estadísticas"
-            tamano="sm"
-        >
-            <span className="block w-2.5 h-[2px] bg-current rounded-full" />
-        </ActionIconButton>
+        {parte !== 'modos' && (
+            <>
+                <ActionIconButton
+                    onClick={onMinimizar}
+                    titulo="Minimizar estadísticas"
+                    etiqueta="Minimizar el panel de estadísticas"
+                    tamano="sm"
+                >
+                    <span className="block w-2.5 h-[2px] bg-current rounded-full" />
+                </ActionIconButton>
 
-        <ActionIconButton
-            onClick={onCerrar}
-            titulo="Cerrar estadísticas"
-            etiqueta="Cerrar el panel de estadísticas"
-            tamano="sm"
-        >
-            <Icon name="close" className="size-3.5" />
-        </ActionIconButton>
+                <ActionIconButton
+                    onClick={onCerrar}
+                    titulo="Cerrar estadísticas"
+                    etiqueta="Cerrar el panel de estadísticas"
+                    tamano="sm"
+                >
+                    <Icon name="close" className="size-3.5" />
+                </ActionIconButton>
+            </>
+        )}
     </>
 );
 

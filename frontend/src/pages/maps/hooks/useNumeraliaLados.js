@@ -23,6 +23,7 @@ export const useNumeraliaLados = (layerId, base) => {
         lado,
         otro,
         ambos,
+        contextos,
         contexto: lado ? contextos[lado] : contextos.vivo,
         metadataOtro: ambos ? metadataOtro : null,
     };

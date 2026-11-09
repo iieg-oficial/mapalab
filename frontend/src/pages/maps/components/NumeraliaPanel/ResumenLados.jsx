@@ -1,4 +1,5 @@
 import { formatNumber } from '@pages/maps/helpers/formatNumber';
+import CargandoLogo from './CargandoLogo';
 import { SLOT_COLORS } from '@pages/maps/helpers/swipeTheme';
 import { filasDeLados } from '@pages/maps/helpers/numeraliaLados';
 
@@ -10,15 +11,15 @@ const textoDelta = (delta) => {
     return `${signo}${formatNumber(String(Math.abs(redondo)))}`;
 };
 
-const Encabezado = ({ lado, periodo }) => (
-    <span className="flex flex-col items-end leading-none">
-        <span
-            className="px-2 py-0.5 rounded-full text-[10px]/[12px] font-bold"
-            style={{ color: TONO_LADO[lado], backgroundColor: SLOT_COLORS[lado].bg }}
-        >
-            {lado}
-        </span>
-        <span className="mt-1 text-[9px]/[11px] text-[#8894AE] tabular-nums">{periodo || '—'}</span>
+const Encabezado = ({ lado, periodo, cargando }) => (
+    <span
+        className="justify-self-end inline-flex items-center gap-1 h-5 px-2 rounded-full text-[10px] leading-none font-bold tabular-nums whitespace-nowrap"
+        style={{ color: TONO_LADO[lado], backgroundColor: SLOT_COLORS[lado].bg }}
+    >
+        {lado}
+        {cargando
+            ? <CargandoLogo className="size-3.5" etiqueta={`Calculando el lado ${lado}`} />
+            : periodo && <span className="font-semibold">{`· ${periodo}`}</span>}
     </span>
 );
 
@@ -47,8 +48,8 @@ const ResumenLados = ({ lado, metadata, metadataOtro }) => {
     return (
         <div className="grid grid-cols-[minmax(140px,1fr)_auto_auto_auto] gap-x-4 gap-y-1.5 items-center">
             <span />
-            <Encabezado lado="A" periodo={a?.ambito?.temporal} />
-            <Encabezado lado="B" periodo={b?.ambito?.temporal} />
+            <Encabezado lado="A" periodo={a?.ambito?.temporal} cargando={!a} />
+            <Encabezado lado="B" periodo={b?.ambito?.temporal} cargando={!b} />
             <span className="text-right text-[10px]/[12px] font-bold text-[#8894AE]">Δ</span>
             {filas.map(fila => (
                 <div key={fila.nombre} className="contents">

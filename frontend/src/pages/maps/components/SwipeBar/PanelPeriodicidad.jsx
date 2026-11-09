@@ -8,7 +8,7 @@ import { useSlotPeriodicity } from '@hooksMaps/useSlotPeriodicity';
 import { slotLabel } from '@pages/maps/helpers/swipeTheme';
 import { RADIUS_LABEL, toneButtonFor } from '@pages/maps/helpers/periodicityTones';
 
-const PanelPeriodicidad = ({ layerId, slot, onClose }) => {
+const PanelPeriodicidad = ({ layerId, slot, onClose, ubicacion = null }) => {
     const periodicidad = useSlotPeriodicity(layerId);
     const lado = periodicidad.forSlot(slot);
 
@@ -16,7 +16,7 @@ const PanelPeriodicidad = ({ layerId, slot, onClose }) => {
 
     return (
         <div
-            className={`absolute bottom-full mb-2 w-[min(430px,calc(100vw-2rem))] max-h-[60vh] overflow-y-auto px-4 pb-4 rounded-xl bg-white shadow-[0_5px_20px_#1A26641A] ${slot === 'B' ? 'left-1/2 ml-10' : 'right-1/2 mr-10'}`}
+            className={`w-[min(430px,calc(100vw-2rem))] max-h-[60vh] overflow-y-auto px-4 pb-4 rounded-xl bg-white shadow-[0_5px_20px_#1A26641A] ${ubicacion || `absolute bottom-full mb-2 ${slot === 'B' ? 'left-1/2 ml-10' : 'right-1/2 mr-10'}`}`}
         >
             <div className="sticky top-0 bg-white pt-3 pb-2 flex items-center gap-2">
                 <h3 className="flex-1 font-garet font-bold text-[15px]/[18px] text-purple">

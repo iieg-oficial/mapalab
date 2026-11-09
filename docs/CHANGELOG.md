@@ -6,6 +6,31 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.9.0] - 2026-11-09
+
+### Agregado
+
+- **Cifras por lado de la barra divisora.** Con la capa en los dos lados y el panel de estadísticas abierto, cada lado
+  suma los municipios que le quedan, con su fecha, en una pastilla junto al nodo. Un municipio cortado cuenta completo
+  del lado con más área y se dibuja rayado del color de su lado. Se recalcula en vivo al arrastrar (~2 ms con las
+  siluetas) y solo reparte indicadores sumables. Hover muestra el principal y clic, todos; en móvil el detalle se abre
+  dentro del panel.
+- **Controles del swipe en el nodo.** Capas comparadas, orientación y cerrar pasan a botones bajo el nodo; la X aparece
+  con hover. Las fechas de A y B van junto al nodo. En móvil, fechas y capas abren como hoja inferior.
+- `LottieSpinner` acepta `color`; el nodo muestra la carga en blanco mientras se calculan las cifras.
+- `data-pila-inferior` y `avisarLayout`: el panel abierto se acomoda sobre el dock de pastillas y lo marcado.
+
+### Cambiado
+
+- El panel de estadísticas lleva el ícono y el título del panel del swipe (`PanelHeader grande`), el ámbito en
+  pastilla y A · fecha y B · fecha en una sola fila. En móvil el encabezado va en dos filas.
+- Minimizar el panel ya no quita las cifras ni el rayado de la barra.
+- El scroll horizontal es solo de la tabla; el panel crece hasta 80 % de la altura.
+
+### Eliminado
+
+- La pastilla de controles del swipe al pie del mapa y su aviso «Barra de acciones».
+
 ## [2.8.0] - 2026-11-09
 
 ### Agregado
