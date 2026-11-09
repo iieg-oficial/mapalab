@@ -30,7 +30,7 @@ const BotonLado = ({ slot, activo, bloqueado, onClick, onResaltar }) => (
     </Tooltip>
 );
 
-const PanelCapas = ({ onClose, onElegirFecha }) => {
+const PanelCapas = ({ onClose, onElegirFecha, ubicacion = 'absolute bottom-full mb-2 left-1/2 -translate-x-1/2' }) => {
     const {
         compareMode, allLayers, selectedLayerForSymbology,
         setSelectedLayerForSymbology, setLayerSlotMembership, highlightSlots,
@@ -94,7 +94,7 @@ const PanelCapas = ({ onClose, onElegirFecha }) => {
     };
 
     return (
-        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-[min(460px,calc(100vw-2rem))] max-h-[60vh] overflow-y-auto px-4.5 pt-2 pb-4.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A]">
+        <div className={`${ubicacion} w-[min(460px,calc(100vw-2rem))] max-h-[60vh] overflow-y-auto px-4.5 pt-2 pb-4.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A]`}>
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                     <Icon name="tool_swipe" className="size-8 text-purple" />

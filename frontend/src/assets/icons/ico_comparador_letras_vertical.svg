@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="72.742" height="57.846" viewBox="0 0 72.742 57.846">
+  <g id="ico_comparador_letras_vertical" transform="translate(-923.623 -707.697)">
+    <path id="Rectángulo_14535" data-name="Rectángulo 14535" d="M4,4H4V36s0,0,0,0H46V4s0,0,0,0H4M4,0H46a4,4,0,0,1,4,4V36a4,4,0,0,1-4,4H4a4,4,0,0,1-4-4V4A4,4,0,0,1,4,0Z" transform="translate(935.13 717.263)" fill="#fff"/>
+    <path id="Trazado_36831" data-name="Trazado 36831" d="M4.1,6.033l-5.384-4.5a2,2,0,0,1-.253-2.817,2,2,0,0,1,2.817-.253L4.095.815,6.888-1.531a2,2,0,0,1,2.818.245A2,2,0,0,1,9.46,1.531Z" transform="translate(929.656 732.913) rotate(90)" fill="#70308a"/>
+    <path id="Trazado_36830" data-name="Trazado 36830" d="M4.1,6.033l-5.384-4.5a2,2,0,0,1-.253-2.817,2,2,0,0,1,2.817-.253L4.095.815,6.888-1.531a2,2,0,0,1,2.818.245A2,2,0,0,1,9.46,1.531Z" transform="translate(990.333 741.087) rotate(-90)" fill="#70308a"/>
+    <path id="Trazado_36832" data-name="Trazado 36832" d="M-6642-10373.018a2,2,0,0,1-2-2v-53.846a2,2,0,0,1,2-2,2,2,0,0,1,2,2v53.846A2,2,0,0,1-6642-10373.018Z" transform="translate(7601.5 11138.561)" fill="#70308a"/>
+    <text id="A" transform="translate(944 742)" fill="#fff" font-size="14" font-family="Garet-Heavy, Garet" font-weight="800"><tspan x="0" y="0">A</tspan></text>
+    <text id="B" transform="translate(966 742)" fill="#fff" font-size="14" font-family="Garet-Heavy, Garet" font-weight="800"><tspan x="0" y="0">B</tspan></text>
+  </g>
+</svg>

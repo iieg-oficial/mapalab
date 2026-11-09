@@ -96,6 +96,7 @@ export const useShareSerializer = () => {
         dateLoops,
         loopPrefs,
         mapRef,
+        paneMapInstances,
         compareMode,
         measurements,
         municipioMode,
@@ -105,7 +106,7 @@ export const useShareSerializer = () => {
     return useCallback((kind = 'single', extra = {}) => {
         const annotations = extra.includeAnnotations ? serializeAnnotations(measurements) : null;
         const view = (() => {
-            const map = mapRef?.current;
+            const map = (compareMode?.active && (paneMapInstances?.[0] || paneMapInstances?.[1])) || mapRef?.current;
             if (!map) return null;
             const olView = map.getView();
             const center = olView.getCenter();
@@ -195,5 +196,5 @@ export const useShareSerializer = () => {
             kind: 'single',
             payload: basePayload,
         };
-    }, [activeLayerIds, hiddenLayerIds, layerOpacities, layerServiceModes, hexbinSinFondo, hexbinPalettes, soloSeleccionada, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode, measurements, municipioMode]);
+    }, [activeLayerIds, hiddenLayerIds, layerOpacities, layerServiceModes, hexbinSinFondo, hexbinPalettes, soloSeleccionada, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, paneMapInstances, layerTree, compareMode, measurements, municipioMode]);
 };

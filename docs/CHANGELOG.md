@@ -6,6 +6,59 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.9.0] - 2026-11-09
+
+### Agregado
+
+- **Cifras por lado de la barra divisora.** Con la capa en los dos lados y el panel de estadísticas abierto, cada lado
+  suma los municipios que le quedan, con su fecha, en una pastilla junto al nodo. Un municipio cortado cuenta completo
+  del lado con más área y se dibuja rayado del color de su lado. Se recalcula en vivo al arrastrar (~2 ms con las
+  siluetas) y solo reparte indicadores sumables. Hover muestra el principal y clic, todos; en móvil el detalle se abre
+  dentro del panel.
+- **Controles del swipe en el nodo.** Capas comparadas, orientación y cerrar pasan a botones bajo el nodo; la X aparece
+  con hover. Las fechas de A y B van junto al nodo. En móvil, fechas y capas abren como hoja inferior.
+- `LottieSpinner` acepta `color`; el nodo muestra la carga en blanco mientras se calculan las cifras.
+- `data-pila-inferior` y `avisarLayout`: el panel abierto se acomoda sobre el dock de pastillas y lo marcado.
+
+### Cambiado
+
+- El panel de estadísticas lleva el ícono y el título del panel del swipe (`PanelHeader grande`), el ámbito en
+  pastilla y A · fecha y B · fecha en una sola fila. En móvil el encabezado va en dos filas.
+- Minimizar el panel ya no quita las cifras ni el rayado de la barra.
+- El scroll horizontal es solo de la tabla; el panel crece hasta 80 % de la altura.
+
+### Eliminado
+
+- La pastilla de controles del swipe al pie del mapa y su aviso «Barra de acciones».
+
+## [2.8.0] - 2026-11-09
+
+### Agregado
+
+- **Estadísticas en la barra divisora.** Si la capa está en los dos lados, el resumen del panel muestra A | B | Δ
+  con la fecha de cada lado (`ResumenLados`); si está en uno, el panel sigue a ese lado. Comparar, ranking y crear
+  trabajan sobre el lado activo. Fuera del comparador el panel manda la fecha del mapa.
+- **Token `@fecha` en `stats_config`.** Se liga a `layers.date_column` (`fecha` por defecto) igual que `@municipio`.
+  Sin fecha en la petición se usa el `default_date` de la capa, así que la numeralia no suma todos los periodos. El
+  constructor agrega el filtro solo cuando la capa lo usa.
+
+### Cambiado
+
+- Las capas cuya configuración no usa fecha descartan `fecha_inicio`/`fecha_fin`: sus números no cambiaban y el
+  ámbito decía un periodo que no se calculó.
+
+### Corregido
+
+- El constructor rechazaba seis condiciones: el filtro de municipio contaba contra el tope del motor. El usuario
+  conserva seis y el motor deja lugar para los filtros fijos.
+
+## [2.7.0] - 2026-11-09
+
+### Agregado
+
+- **Panel de estadísticas preliberado.** `estadisticas` entra a `PRELIBERADAS`: en `pre` se encienden el panel y el
+  botón que desacopla las estadísticas desde el detalle de capa, sin la etiqueta BETA. Producción no cambia.
+
 ## [2.6.0] - 2026-11-05
 
 ### Agregado

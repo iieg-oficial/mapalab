@@ -8,7 +8,7 @@ const APP_ENV = import.meta.env.VITE_APP_ENV;
 const BUILD_IS_NON_PROD = ['dev', 'beta'].includes(APP_ENV);
 const BUILD_IS_PRE = APP_ENV === 'pre';
 const TOGGLE_AVAILABLE = BUILD_IS_NON_PROD;
-const PRELIBERADAS = ['swipe'];
+const PRELIBERADAS = ['swipe', 'estadisticas'];
 
 const detectarMarco = () => {
     try {

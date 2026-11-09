@@ -15,12 +15,15 @@ import {
     SWIPE_MINIMIZE_MS,
     minimizeTransform,
 } from '@pages/maps/helpers/swipeMode';
+import { posicionBarraStore } from '@pages/maps/helpers/cifrasBarraStore';
+import { useCifrasBarra } from '@pages/maps/hooks/useCifrasBarra';
+import CargandoLogo from './NumeraliaPanel/CargandoLogo';
 
 const OVERLAY_LETTER = 'font-garet font-bold text-white text-[120px] leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]';
 const HANDLE_LABEL = 'flex items-center justify-center font-garet text-[14px] font-extrabold leading-none drop-shadow-[0_1px_3px_rgba(255,255,255,0.95)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100';
 const FADE_DELAY_MS = Math.round(SWIPE_MINIMIZE_MS * 0.6);
 const ESCALA_ICONO = 1;
-const NODO = { vertical: 'w-[82px] h-[68px]', horizontal: 'w-[68px] h-[82px]' };
+const NODO = { vertical: 'w-[74px] h-[62px]', horizontal: 'w-[62px] h-[74px]' };
 
 const SwipeView = () => {
     const { compareMode, paneMapInstances, setSwipePosition, highlightedSlots } = useMapsContext();
@@ -33,6 +36,9 @@ const SwipeView = () => {
     const [visibles, setVisibles] = useState('AB');
     const [minimizando, setMinimizando] = useState(false);
     const [medidas, setMedidas] = useState({ width: 0, height: 0 });
+    const [arrastrando, setArrastrando] = useState(false);
+    const [sobreNodo, setSobreNodo] = useState(false);
+    const { cargando: calculando } = useCifrasBarra();
     const minimizandoRef = useRef(false);
     const slots = highlightedSlots ?? (intro ? 'AB' : null);
 
@@ -92,6 +98,12 @@ const SwipeView = () => {
     }, [compareMode?.swipePosition]);
 
     useEffect(() => {
+        posicionBarraStore.fijar(pos / 100);
+    }, [pos]);
+
+    useEffect(() => () => posicionBarraStore.fijar(null), []);
+
+    useEffect(() => {
         if (externallySetRef.current) {
             externallySetRef.current = false;
             return undefined;
@@ -118,8 +130,10 @@ const SwipeView = () => {
 
     const onPointerDown = useCallback((e) => {
         e.preventDefault();
+        setArrastrando(true);
         const handleMove = (ev) => updatePosFromPointer(ev.clientX, ev.clientY);
         const handleUp = () => {
+            setArrastrando(false);
             window.removeEventListener('pointermove', handleMove);
             window.removeEventListener('pointerup', handleUp);
             window.removeEventListener('pointercancel', handleUp);
@@ -203,6 +217,10 @@ const SwipeView = () => {
             <div
                 onPointerDown={onPointerDown}
                 onKeyDown={onKeyDown}
+                onPointerEnter={() => setSobreNodo(true)}
+                onPointerLeave={() => setSobreNodo(false)}
+                onFocus={() => setSobreNodo(true)}
+                onBlur={() => setSobreNodo(false)}
                 tabIndex={0}
                 role="slider"
                 aria-orientation={isHorizontal ? 'horizontal' : 'vertical'}
@@ -220,12 +238,25 @@ const SwipeView = () => {
                         className={`shrink-0 ${nodo} rounded-[18px] shadow-[0px_3px_6px_#00000026] flex items-center justify-center`}
                         style={{ backgroundColor: SWIPE_HANDLE_COLOR }}
                     >
-                        <IconoComparador letras horizontal={isHorizontal} escala={ESCALA_ICONO} className="group-hover:hidden group-focus-visible:hidden" />
-                        <IconoComparador horizontal={isHorizontal} escala={ESCALA_ICONO} className="hidden group-hover:block group-focus-visible:block" />
+                        {calculando ? (
+                            <CargandoLogo className="size-11" color="#FFFFFF" etiqueta="Calculando las cifras de cada lado" />
+                        ) : (
+                            <>
+                                <IconoComparador letras horizontal={isHorizontal} escala={ESCALA_ICONO} className="group-hover:hidden group-focus-visible:hidden" />
+                                <IconoComparador horizontal={isHorizontal} escala={ESCALA_ICONO} className="hidden group-hover:block group-focus-visible:block" />
+                            </>
+                        )}
                     </div>
                     <span aria-hidden="true" className={HANDLE_LABEL} style={{ color: SWIPE_ICON_COLOR }}>{slotLabel('B')}</span>
                 </div>
             </div>
+            <div
+                data-swipe-nodo
+                data-arrastrando={arrastrando}
+                data-nodo={sobreNodo}
+                className="group/barra absolute z-[2] pointer-events-none"
+                style={handleStyle}
+            />
         </div>
     );
 };

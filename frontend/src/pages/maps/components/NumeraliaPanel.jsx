@@ -12,6 +12,7 @@ import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadat
 import { useNumeraliaComparador, construirFilas } from '@hooksMaps/useNumeraliaComparador';
 import { useNumeraliaRanking, ordenarRanking } from '@hooksMaps/useNumeraliaRanking';
 import { useComparadorGrafica } from '@hooksMaps/useComparadorGrafica';
+import { useNumeraliaLados } from '@hooksMaps/useNumeraliaLados';
 import {
     MAX_PROPIAS, definicionVacia, useCatalogoCampos,
     usePersonalizadasCalculadas, useVistaPrevia,
@@ -23,9 +24,12 @@ import AccionesPanel from './NumeraliaPanel/AccionesPanel';
 import RankingTabla from './NumeraliaPanel/RankingTabla';
 import Constructor from './NumeraliaPanel/Constructor';
 import TarjetasResumen from './NumeraliaPanel/TarjetasResumen';
+import ResumenSwipe from './NumeraliaPanel/ResumenSwipe';
+import SwipeEstadisticas from './NumeraliaPanel/SwipeEstadisticas';
+import DetalleAmbito from './NumeraliaPanel/DetalleAmbito';
 import PillMinimizada from './NumeraliaPanel/PillMinimizada';
 
-const CONTROLES_DEL_MAPA = ['.ol-scale-line', '.ol-attribution', '[data-barra-tabla]'];
+const OBSTACULOS = ['.ol-scale-line', '.ol-attribution', '[data-barra-tabla]', '#dock-pills', '[data-pila-inferior]'];
 
 const MODOS = [
     { clave: 'comparar', icono: 'comparar', titulo: 'Comparar municipios', etiqueta: 'Comparar estadísticas entre municipios' },
@@ -55,7 +59,7 @@ const NumeraliaPanel = () => {
     const { margenes } = useAreaUtil();
     const enFoco = selectedLayerForSymbology?.id || selectedLayer?.id || null;
     const layerId = abierto ? (enFoco || detachedLayerId) : null;
-    const contexto = useMetadataContext(municipioMode);
+    const { lado, ambos, contexto, contextos, metadataOtro } = useNumeraliaLados(layerId, useMetadataContext(municipioMode));
     const { metadata } = useLayerMetadata(layerId, contexto);
     const [resaltado, setResaltado] = useState(false);
     const [eligiendo, setEligiendo] = useState(false);
@@ -68,9 +72,9 @@ const NumeraliaPanel = () => {
     const enRanking = modo === 'ranking';
     const creando = modo === 'crear';
 
-    const inferior = useClearance(panelRef, { lado: 'bottom', obstaculos: CONTROLES_DEL_MAPA, base: isMobile ? 60 : 8, separacion: 8, activo: abierto && minimizado });
-    const { columnas, cargando } = useNumeraliaComparador(comparando ? layerId : null, clavesComparadas);
-    const { ranking, cargando: cargandoRanking } = useNumeraliaRanking(layerId, enRanking);
+    const inferior = useClearance(panelRef, { lado: 'bottom', obstaculos: OBSTACULOS, base: isMobile ? 60 : 64, separacion: 8, activo: abierto && !minimizado });
+    const { columnas, cargando } = useNumeraliaComparador(comparando ? layerId : null, clavesComparadas, contexto);
+    const { ranking, cargando: cargandoRanking } = useNumeraliaRanking(layerId, enRanking, contexto);
     const catalogo = useCatalogoCampos(layerId, creando);
     const { previa, calculando } = useVistaPrevia(creando ? layerId : null, borrador, contexto);
     const propias = personalizadasDe(layerId);
@@ -101,14 +105,12 @@ const NumeraliaPanel = () => {
         if (!municipioMode?.allMunicipios?.length) municipioMode?.loadList?.();
     }, [comparando, clavesComparadas.length, municipioMode, compararCon]);
 
-    const porClave = useMemo(() => {
+    const { porClave, porNombre } = useMemo(() => {
         const lista = municipioMode?.allMunicipios || [];
-        return new Map(lista.map(m => [String(m.clave), m.nombre]));
-    }, [municipioMode?.allMunicipios]);
-
-    const porNombre = useMemo(() => {
-        const lista = municipioMode?.allMunicipios || [];
-        return new Map(lista.map(m => [m.nombre, String(m.clave)]));
+        return {
+            porClave: new Map(lista.map(m => [String(m.clave), m.nombre])),
+            porNombre: new Map(lista.map(m => [m.nombre, String(m.clave)])),
+        };
     }, [municipioMode?.allMunicipios]);
 
     const columnasConNombre = useMemo(
@@ -177,33 +179,20 @@ const NumeraliaPanel = () => {
     const nombreCapa = metadata.nombre_capa_usuario || 'Estadísticas';
     const anillo = resaltado ? 'ring-2 ring-orange' : '';
 
-    const detalle = (
-        <p className="text-[11px]/[13px] font-garet font-bold text-purple tracking-normal shrink-0">
-            {modo === 'resumen' && (ambito?.geografico || 'Jalisco')}
-            {ambito?.temporal && !creando && <span className="text-orange"> {ambito.temporal}</span>}
-        </p>
-    );
+    const detalle = <DetalleAmbito lado={lado} ambos={ambos} modo={modo} ambito={ambito} creando={creando} />;
 
-    const acciones = (
-        <AccionesPanel
-            modos={MODOS}
-            modo={modo}
-            dinamica={dinamica}
-            onModo={abrirModo}
-            onMinimizar={alternarMinimizado}
-            onCerrar={attach}
-        />
-    );
+    const propsAcciones = { modos: MODOS, modo, dinamica, onModo: abrirModo, onMinimizar: alternarMinimizado, onCerrar: attach };
 
     return (
         <div
             className={`flex fixed z-11 justify-center pointer-events-none ${SIDER_TRANSITION_CLASSES}`}
             style={{
-                bottom: (minimizado ? inferior : (isMobile ? 60 : 64)) + margenes.bottom,
+                bottom: inferior + margenes.bottom,
                 left: isMobile ? VIEWPORT_EDGE : siderWidth + VIEWPORT_EDGE + PANEL_GAP,
                 right: VIEWPORT_EDGE + (isMobile ? 0 : PANEL_GAP),
             }}
         >
+            {ambos && <SwipeEstadisticas layerId={layerId} metadata={metadata} contextos={contextos} />}
             {minimizado ? (
                 <PillMinimizada
                     pillRef={panelRef}
@@ -216,76 +205,85 @@ const NumeraliaPanel = () => {
                 <section
                     ref={panelRef}
                     data-panel-numeralia
-                    className={`relative pointer-events-auto max-w-full max-h-[60vh] overflow-auto scrollbar-thin px-4.5 pt-2 pb-4.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] transition-shadow font-garet ${anillo}`}
+                    className={`relative pointer-events-auto max-w-full max-h-[80vh] overflow-y-auto overflow-x-hidden scrollbar-thin px-4.5 pt-2 pb-4.5 rounded-[10px] bg-[#F9FBFF] shadow-[0_5px_20px_#1A26641A] transition-shadow font-garet ${anillo}`}
                     aria-label={`Estadísticas de ${nombreCapa}`}
                     aria-live="polite"
                 >
                     <PanelHeader
-                        className="mb-2"
+                        className={isMobile ? '-mb-2' : 'mb-2'} grande icono={<Icon name="numeralia" className="size-8 text-purple shrink-0" />}
                         onVolver={modo === 'resumen' ? null : cerrarModo}
                         titulo={modo === 'resumen'
                             ? nombreCapa
                             : (isMobile ? TITULOS_CORTOS[modo] : TITULOS[modo])}
-                        detalle={detalle}
-                        acciones={acciones}
+                        detalle={isMobile ? null : detalle}
+                        acciones={<AccionesPanel {...propsAcciones} parte={isMobile ? 'ventana' : 'todo'} />}
                     />
+                    {isMobile && <div className="flex items-center justify-between gap-2 mb-4">{detalle}<div className="flex items-center gap-1"><AccionesPanel {...propsAcciones} parte="modos" /></div></div>}
 
-                    {creando && (
-                        <Constructor
-                            catalogo={catalogo}
-                            definicion={borrador}
-                            onDefinicion={(d) => fijarBorrador(layerId, d)}
-                            previa={previa}
-                            calculando={calculando}
-                            onGuardar={guardar}
-                            lleno={propias.length >= MAX_PROPIAS}
-                        />
-                    )}
+                    {ambos && isMobile && <div data-numeralia-ranura className="empty:hidden mb-3" />}
+                    <div className="overflow-x-auto overflow-y-hidden scrollbar-thin">
 
-                    {enRanking && (
-                        ranking ? (
-                            <RankingTabla
-                                ranking={ranking}
-                                filas={filasRanking}
-                                indice={indiceRanking}
-                                onIndice={(v) => fijarRankingIndice(layerId, v)}
-                                porcentaje={rankingPorcentaje}
-                                onPorcentaje={fijarRankingPorcentaje}
-                                resaltadas={resaltadas}
-                                claves={ranking.tipo === 'clave' ? porClave : porNombre}
+                        {creando && (
+                            <Constructor
+                                catalogo={catalogo}
+                                definicion={borrador}
+                                onDefinicion={(d) => fijarBorrador(layerId, d)}
+                                previa={previa}
+                                calculando={calculando}
+                                onGuardar={guardar}
+                                lleno={propias.length >= MAX_PROPIAS}
                             />
-                        ) : (
-                            <p className="text-[11px]/[14px] text-[#8894AE] py-2">
-                                {cargandoRanking ? 'Calculando…' : 'Esta capa no se puede agrupar por municipio.'}
-                            </p>
-                        )
-                    )}
+                        )}
 
-                    {comparando && (
-                        <ComparadorTabla
-                            columnas={columnasConNombre}
-                            filas={filas}
-                            onQuitar={quitarComparado}
-                            onReordenar={reordenarComparados}
-                            picker={picker}
-                            vistaGrafica={vistaGrafica}
-                            onVistaGrafica={fijarVistaGrafica}
-                            controlesGrafica={controlesGrafica}
-                            vacio={cargando ? 'Calculando…' : 'Elige un municipio para comparar.'}
-                        >
-                            <ComparadorGrafica
+                        {enRanking && (
+                            ranking ? (
+                                <RankingTabla
+                                    ranking={ranking}
+                                    filas={filasRanking}
+                                    indice={indiceRanking}
+                                    onIndice={(v) => fijarRankingIndice(layerId, v)}
+                                    porcentaje={rankingPorcentaje}
+                                    onPorcentaje={fijarRankingPorcentaje}
+                                    resaltadas={resaltadas}
+                                    claves={ranking.tipo === 'clave' ? porClave : porNombre}
+                                />
+                            ) : (
+                                <p className="text-[11px]/[14px] text-[#8894AE] py-2">
+                                    {cargandoRanking ? 'Calculando…' : 'Esta capa no se puede agrupar por municipio.'}
+                                </p>
+                            )
+                        )}
+
+                        {comparando && (
+                            <ComparadorTabla
                                 columnas={columnasConNombre}
                                 filas={filas}
-                                eje={graficaEje}
-                                municipio={municipioGrafica}
-                                indicador={indicadorGrafica}
-                            />
-                        </ComparadorTabla>
-                    )}
+                                onQuitar={quitarComparado}
+                                onReordenar={reordenarComparados}
+                                picker={picker}
+                                vistaGrafica={vistaGrafica}
+                                onVistaGrafica={fijarVistaGrafica}
+                                controlesGrafica={controlesGrafica}
+                                vacio={cargando ? 'Calculando…' : 'Elige un municipio para comparar.'}
+                            >
+                                <ComparadorGrafica
+                                    columnas={columnasConNombre}
+                                    filas={filas}
+                                    eje={graficaEje}
+                                    municipio={municipioGrafica}
+                                    indicador={indicadorGrafica}
+                                />
+                            </ComparadorTabla>
+                        )}
 
-                    {modo === 'resumen' && (
-                        <TarjetasResumen slots={slots} propias={valoresPropios} onQuitarPropia={(i) => quitarPersonalizada(layerId, i)} />
-                    )}
+                        {modo === 'resumen' && ambos && (
+                            <ResumenSwipe lado={lado} metadata={metadata} metadataOtro={metadataOtro} />
+                        )}
+
+                        {modo === 'resumen' && !ambos && (
+                            <TarjetasResumen slots={slots} propias={valoresPropios} onQuitarPropia={(i) => quitarPersonalizada(layerId, i)} />
+                        )}
+                    </div>
                 </section>
             )}
         </div>
