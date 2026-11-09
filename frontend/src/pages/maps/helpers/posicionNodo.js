@@ -16,18 +16,6 @@ export const UBICACION_BOTONES = {
     horizontal: 'flex-row pl-2.5 top-1/2 -translate-y-1/2 left-[calc(50%+38px)]',
 };
 
-export const ubicacionPanel = (orientacion, posicion) => {
-    const despues = posicion <= 0.5;
-    if (orientacion === 'horizontal') {
-        return despues
-            ? 'left-1/2 -translate-x-1/2 top-[calc(50%+52px)]'
-            : 'left-1/2 -translate-x-1/2 bottom-[calc(50%+52px)]';
-    }
-    return despues
-        ? 'top-1/2 -translate-y-1/2 left-[calc(50%+60px)]'
-        : 'top-1/2 -translate-y-1/2 right-[calc(50%+60px)]';
-};
-
 export const ubicacionAncla = (orientacion, posicion) => {
     const despues = posicion <= 0.5;
     if (orientacion === 'horizontal') return despues ? 'left-[calc(50%+46px)] top-[calc(50%+24px)]' : 'left-[calc(50%+46px)] bottom-[calc(50%+24px)]';

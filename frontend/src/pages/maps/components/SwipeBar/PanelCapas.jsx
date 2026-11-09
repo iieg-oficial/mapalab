@@ -100,7 +100,7 @@ const PanelCapas = ({ onClose, onElegirFecha, ubicacion = 'absolute bottom-full 
                     <Icon name="tool_swipe" className="size-8 text-purple" />
                     <h3 className="font-garet font-bold text-[18px]/[47px]">Capas comparadas</h3>
                 </div>
-                <MobileSheetCloseButton onClick={onClose} />
+                <span className="flex items-center"><MobileSheetCloseButton onClick={onClose} /></span>
             </div>
 
             <div className="flex flex-col gap-1">

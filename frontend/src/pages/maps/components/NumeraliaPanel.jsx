@@ -210,15 +210,14 @@ const NumeraliaPanel = () => {
                     aria-live="polite"
                 >
                     <PanelHeader
-                        className={isMobile ? '-mb-2' : 'mb-2'} grande icono={<Icon name="numeralia" className="size-8 text-purple shrink-0" />}
+                        className="" grande icono={<Icon name="numeralia" className="size-8 text-purple shrink-0" />}
                         onVolver={modo === 'resumen' ? null : cerrarModo}
                         titulo={modo === 'resumen'
                             ? nombreCapa
                             : (isMobile ? TITULOS_CORTOS[modo] : TITULOS[modo])}
-                        detalle={isMobile ? null : detalle}
-                        acciones={<AccionesPanel {...propsAcciones} parte={isMobile ? 'ventana' : 'todo'} />}
+                        acciones={<AccionesPanel {...propsAcciones} parte="ventana" />}
                     />
-                    {isMobile && <div className="flex items-center justify-between gap-2 mb-4">{detalle}<div className="flex items-center gap-1"><AccionesPanel {...propsAcciones} parte="modos" /></div></div>}
+                    <div className="flex items-center justify-between gap-3 mb-4">{detalle}<div className="flex items-center gap-1 shrink-0"><AccionesPanel {...propsAcciones} parte="modos" /></div></div>
 
                     {ambos && isMobile && <div data-numeralia-ranura className="empty:hidden mb-3" />}
                     <div className="overflow-x-auto overflow-y-hidden scrollbar-thin">

@@ -8,7 +8,7 @@ import { useSlotPeriodicity } from '@hooksMaps/useSlotPeriodicity';
 import { slotLabel } from '@pages/maps/helpers/swipeTheme';
 import { RADIUS_LABEL, toneButtonFor } from '@pages/maps/helpers/periodicityTones';
 
-const PanelPeriodicidad = ({ layerId, slot, onClose, ubicacion = null }) => {
+const PanelPeriodicidad = ({ layerId, slot, onClose, ubicacion = null, estilo = undefined }) => {
     const periodicidad = useSlotPeriodicity(layerId);
     const lado = periodicidad.forSlot(slot);
 
@@ -16,6 +16,7 @@ const PanelPeriodicidad = ({ layerId, slot, onClose, ubicacion = null }) => {
 
     return (
         <div
+            style={estilo}
             className={`w-[min(430px,calc(100vw-2rem))] max-h-[60vh] overflow-y-auto px-4 pb-4 rounded-xl bg-white shadow-[0_5px_20px_#1A26641A] ${ubicacion || `absolute bottom-full mb-2 ${slot === 'B' ? 'left-1/2 ml-10' : 'right-1/2 mr-10'}`}`}
         >
             <div className="sticky top-0 bg-white pt-3 pb-2 flex items-center gap-2">
@@ -34,7 +35,7 @@ const PanelPeriodicidad = ({ layerId, slot, onClose, ubicacion = null }) => {
                         </button>
                     </Tooltip>
                 )}
-                <MobileSheetCloseButton onClick={onClose} />
+                <span className="flex items-center"><MobileSheetCloseButton onClick={onClose} /></span>
             </div>
 
             {lado.canPlay && (

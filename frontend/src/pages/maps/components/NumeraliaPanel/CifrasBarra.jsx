@@ -100,7 +100,7 @@ const Pastilla = ({ lado, titulo, ambito, ranking, suma, fecha, orientacion, fij
             onMouseLeave={() => onResaltar(null)}
         >
             {fecha?.label && (
-                <span className="group-data-[arrastrando=true]/barra:hidden">
+                <span data-fecha-lado={lado} className="group-data-[arrastrando=true]/barra:hidden">
                     <DatePill slot={lado} label={fecha.label} kind={fecha.kind} onClick={onFecha} size="md" autoWidth />
                 </span>
             )}

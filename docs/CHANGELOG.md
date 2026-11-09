@@ -6,6 +6,22 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.9.1] - 2026-11-09
+
+### Cambiado
+
+- **Encabezado del panel de estadísticas en dos filas.** Arriba ícono, título, minimizar y la X estándar; abajo la pastilla
+  de lado (cuando la capa está en uno solo), la del ámbito y los modos. Los botones pasan a 32 px.
+- **Panel de fechas del swipe bajo su pastilla.** Se ancla a la pastilla de A o B y se ajusta a la pantalla; en móvil va a
+  lo ancho. Las fechas de la tabla A | B del panel también lo abren.
+- **Capas comparadas se abre donde vive el panel de estadísticas**, abajo al centro, en vez de a un costado de la barra.
+- La X de los paneles de capas y de fechas queda centrada verticalmente.
+
+### Corregido
+
+- La columna Δ ya no aparece cuando A y B tienen la misma fecha.
+- Las columnas de comparar municipios crecen con la cifra más larga (`minmax(78px, max-content)`) en vez de desbordarse.
+
 ## [2.9.0] - 2026-11-09
 
 ### Agregado
