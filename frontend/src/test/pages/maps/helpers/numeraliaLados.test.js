@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { conFechas, filasDeLados, ladoDe } from '@pages/maps/helpers/numeraliaLados';
+import { candidatasDelOtroLado, conFechas, filasDeLados, ladoDe } from '@pages/maps/helpers/numeraliaLados';
 import { generateCQLFilter } from '@pages/maps/helpers/dateFilterHelpers';
 
 const swipe = (a, b, activeSlot = 'A') => ({
@@ -54,5 +54,22 @@ describe('filasDeLados', () => {
     it('sin el dato de un lado no hay diferencia', () => {
         const [fila] = filasDeLados([{ nombre: 'Población', valor: '10' }], []);
         expect(fila).toMatchObject({ b: null, delta: null, cambio: null });
+    });
+});
+
+describe('candidatasDelOtroLado', () => {
+    const modo = {
+        active: true,
+        paneA: { activeLayerIds: ['poblacion', 'municipios'], hiddenLayerIds: [] },
+        paneB: { activeLayerIds: ['oculta', 'primaria', 'municipios'], hiddenLayerIds: ['oculta'] },
+    };
+
+    it('toma las visibles del otro lado que no están en el propio, de arriba hacia abajo', () => {
+        expect(candidatasDelOtroLado(modo, 'A', 'poblacion')).toEqual(['primaria']);
+    });
+
+    it('sin comparador o sin lado no hay candidatas', () => {
+        expect(candidatasDelOtroLado({ active: false }, 'A', 'poblacion')).toEqual([]);
+        expect(candidatasDelOtroLado(modo, null, 'poblacion')).toEqual([]);
     });
 });

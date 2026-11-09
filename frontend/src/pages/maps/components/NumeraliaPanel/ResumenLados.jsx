@@ -12,10 +12,10 @@ const textoDelta = (delta) => {
     return `${signo}${formatNumber(String(Math.abs(redondo)))}`;
 };
 
-const Encabezado = ({ lado, periodo, cargando }) => (
+export const Encabezado = ({ lado, periodo, cargando, capa = null }) => (
     <button
         type="button"
-        onClick={() => cifrasBarraStore.fijar({ solicitud: lado })}
+        onClick={() => cifrasBarraStore.fijar({ solicitud: lado, solicitudCapa: capa })}
         aria-label={`Cambiar la fecha del lado ${lado}`}
         className="justify-self-end inline-flex items-center gap-1 h-5 px-2 rounded-full text-[10px] leading-none font-bold tabular-nums whitespace-nowrap cursor-pointer hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange"
         style={{ color: TONO_LADO[lado], backgroundColor: SLOT_COLORS[lado].bg }}

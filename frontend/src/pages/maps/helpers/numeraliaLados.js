@@ -32,3 +32,12 @@ export const ladoDe = (compareMode, layerId) => {
     if (membresia === 'A' || membresia === 'B') return { lado: membresia, ambos: false };
     return { lado: compareMode.activeSlot === 'B' ? 'B' : 'A', ambos: membresia === 'AB' };
 };
+
+export const candidatasDelOtroLado = (compareMode, lado, layerId) => {
+    if (!compareMode?.active || !lado) return [];
+    const otro = lado === 'A' ? 'B' : 'A';
+    const panel = compareMode[`pane${otro}`] || {};
+    const propio = compareMode[`pane${lado}`]?.activeLayerIds || [];
+    const ocultas = new Set(panel.hiddenLayerIds || []);
+    return (panel.activeLayerIds || []).filter(id => id !== layerId && !ocultas.has(id) && !propio.includes(id));
+};

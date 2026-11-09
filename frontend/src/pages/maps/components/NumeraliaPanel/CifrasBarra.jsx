@@ -124,7 +124,7 @@ const Pastilla = ({ lado, titulo, ambito, ranking, suma, fecha, orientacion, fij
     );
 };
 
-const CifrasBarra = ({ layerId, titulo, ambito, rankingA, rankingB, reparto, permitidos, cargando, movil = false }) => {
+const CifrasBarra = ({ capas, ambito, rankingA, rankingB, reparto, permitidos, cargando, movil = false }) => {
     const { compareMode, highlightSlots } = useMapsContext();
     const [destino, setDestino] = useState(null);
     const [fijada, setFijada] = useState(null);
@@ -165,10 +165,10 @@ const CifrasBarra = ({ layerId, titulo, ambito, rankingA, rankingB, reparto, per
     if (!visibles) return null;
     const orientacion = compareMode?.swipeOrientation === 'horizontal' ? 'horizontal' : 'vertical';
 
-    const fechaDe = (lado) => computeLabel(compareMode?.[`pane${lado}`]?.filters?.[layerId]?.date, null);
+    const fechaDe = (lado) => computeLabel(compareMode?.[`pane${lado}`]?.filters?.[capas[lado].layerId]?.date, null);
     const comun = (lado) => ({
         lado,
-        titulo,
+        titulo: capas[lado].titulo,
         ambito,
         orientacion,
         movil,
@@ -178,7 +178,7 @@ const CifrasBarra = ({ layerId, titulo, ambito, rankingA, rankingB, reparto, per
             if (movil && minimizado && fijada !== lado) alternarMinimizado?.();
             setFijada(actual => (actual === lado ? null : lado));
         },
-        onFecha: () => cifrasBarraStore.fijar({ solicitud: lado }),
+        onFecha: () => cifrasBarraStore.fijar({ solicitud: lado, solicitudCapa: capas[lado].layerId }),
         onResaltar: (slot) => highlightSlots?.(slot),
     });
 
@@ -195,7 +195,7 @@ const CifrasBarra = ({ layerId, titulo, ambito, rankingA, rankingB, reparto, per
                 destino,
             )}
             {movil && fijada && ranura && createPortal(
-                <Detalle movil titulo={titulo} ambito={ambito} slots={rankingFijado.slots} suma={sumaFijada} completo onCerrar={() => setFijada(null)} />,
+                <Detalle movil titulo={capas[fijada].titulo} ambito={ambito} slots={rankingFijado.slots} suma={sumaFijada} completo onCerrar={() => setFijada(null)} />,
                 ranura,
             )}
         </>

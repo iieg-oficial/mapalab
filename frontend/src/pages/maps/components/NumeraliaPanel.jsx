@@ -25,6 +25,8 @@ import RankingTabla from './NumeraliaPanel/RankingTabla';
 import Constructor from './NumeraliaPanel/Constructor';
 import TarjetasResumen from './NumeraliaPanel/TarjetasResumen';
 import ResumenSwipe from './NumeraliaPanel/ResumenSwipe';
+import ResumenCapas from './NumeraliaPanel/ResumenCapas';
+import { useCapaOtroLado } from '@hooksMaps/useCapaOtroLado';
 import SwipeEstadisticas from './NumeraliaPanel/SwipeEstadisticas';
 import DetalleAmbito from './NumeraliaPanel/DetalleAmbito';
 import PillMinimizada from './NumeraliaPanel/PillMinimizada';
@@ -59,7 +61,9 @@ const NumeraliaPanel = () => {
     const { margenes } = useAreaUtil();
     const enFoco = selectedLayerForSymbology?.id || selectedLayer?.id || null;
     const layerId = abierto ? (enFoco || detachedLayerId) : null;
-    const { lado, ambos, contexto, contextos, metadataOtro } = useNumeraliaLados(layerId, useMetadataContext(municipioMode));
+    const contextoBase = useMetadataContext(municipioMode);
+    const { lado, ambos, contexto, contextos, metadataOtro } = useNumeraliaLados(layerId, contextoBase);
+    const capaOtra = useCapaOtroLado(layerId, lado, ambos, contextoBase);
     const { metadata } = useLayerMetadata(layerId, contexto);
     const [resaltado, setResaltado] = useState(false);
     const [eligiendo, setEligiendo] = useState(false);
@@ -192,7 +196,7 @@ const NumeraliaPanel = () => {
                 right: VIEWPORT_EDGE + (isMobile ? 0 : PANEL_GAP),
             }}
         >
-            {ambos && <SwipeEstadisticas layerId={layerId} metadata={metadata} contextos={contextos} />}
+            {(ambos || capaOtra) && <SwipeEstadisticas layerId={layerId} lado={lado} metadata={metadata} capaOtra={ambos ? null : capaOtra} contextos={contextos} />}
             {minimizado ? (
                 <PillMinimizada
                     pillRef={panelRef}
@@ -279,7 +283,8 @@ const NumeraliaPanel = () => {
                             <ResumenSwipe lado={lado} metadata={metadata} metadataOtro={metadataOtro} />
                         )}
 
-                        {modo === 'resumen' && !ambos && (
+                        {modo === 'resumen' && !ambos && capaOtra && <ResumenCapas layerId={layerId} lado={lado} metadata={metadata} capaOtra={capaOtra} />}
+                        {modo === 'resumen' && !ambos && !capaOtra && (
                             <TarjetasResumen slots={slots} propias={valoresPropios} onQuitarPropia={(i) => quitarPersonalizada(layerId, i)} />
                         )}
                     </div>

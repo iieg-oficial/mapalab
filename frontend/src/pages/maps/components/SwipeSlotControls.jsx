@@ -90,13 +90,19 @@ const SwipeSlotControls = () => {
         setAbierto(null);
     }, [layerId]);
 
-    const { activas: cifrasActivas, solicitud } = useCifrasBarra();
+    const { activas: cifrasActivas, solicitud, solicitudCapa } = useCifrasBarra();
 
     useEffect(() => {
         if (!solicitud) return;
+        cifrasBarraStore.fijar({ solicitud: null, solicitudCapa: null });
+        if (solicitudCapa && solicitudCapa !== layerId) {
+            const capa = findLayerDef(solicitudCapa, allLayers);
+            objetivoRef.current = solicitud;
+            setSelectedLayerForSymbology?.({ id: solicitudCapa, name: capa?.name || capa?.label || solicitudCapa });
+            return;
+        }
         setAbierto(solicitud);
-        cifrasBarraStore.fijar({ solicitud: null });
-    }, [solicitud]);
+    }, [solicitud, solicitudCapa, layerId, allLayers, setSelectedLayerForSymbology]);
 
     useLayoutEffect(() => {
         if (abierto !== 'A' && abierto !== 'B') {
