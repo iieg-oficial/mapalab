@@ -2,6 +2,7 @@ import { formatNumber } from '@pages/maps/helpers/formatNumber';
 import CargandoLogo from './CargandoLogo';
 import { SLOT_COLORS } from '@pages/maps/helpers/swipeTheme';
 import { filasDeLados } from '@pages/maps/helpers/numeraliaLados';
+import { cifrasBarraStore } from '@pages/maps/helpers/cifrasBarraStore';
 
 const TONO_LADO = { A: SLOT_COLORS.A.fg, B: '#B85C00' };
 
@@ -11,16 +12,19 @@ const textoDelta = (delta) => {
     return `${signo}${formatNumber(String(Math.abs(redondo)))}`;
 };
 
-const Encabezado = ({ lado, periodo, cargando }) => (
-    <span
-        className="justify-self-end inline-flex items-center gap-1 h-5 px-2 rounded-full text-[10px] leading-none font-bold tabular-nums whitespace-nowrap"
+export const Encabezado = ({ lado, periodo, cargando, capa = null }) => (
+    <button
+        type="button"
+        onClick={() => cifrasBarraStore.fijar({ solicitud: lado, solicitudCapa: capa })}
+        aria-label={`Cambiar la fecha del lado ${lado}`}
+        className="justify-self-end inline-flex items-center gap-1 h-5 px-2 rounded-full text-[10px] leading-none font-bold tabular-nums whitespace-nowrap cursor-pointer hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange"
         style={{ color: TONO_LADO[lado], backgroundColor: SLOT_COLORS[lado].bg }}
     >
         {lado}
         {cargando
             ? <CargandoLogo className="size-3.5" etiqueta={`Calculando el lado ${lado}`} />
             : periodo && <span className="font-semibold">{`· ${periodo}`}</span>}
-    </span>
+    </button>
 );
 
 const Valor = ({ valor, simbolo }) => (
@@ -45,18 +49,21 @@ const Delta = ({ fila }) => {
 const ResumenLados = ({ lado, metadata, metadataOtro }) => {
     const [a, b] = lado === 'B' ? [metadataOtro, metadata] : [metadata, metadataOtro];
     const filas = filasDeLados(a?.numeralia, b?.numeralia);
+    const periodoA = a?.ambito?.temporal;
+    const periodoB = b?.ambito?.temporal;
+    const conDelta = periodoA !== periodoB;
     return (
-        <div className="grid grid-cols-[minmax(140px,1fr)_auto_auto_auto] gap-x-4 gap-y-1.5 items-center">
+        <div className={`grid ${conDelta ? 'grid-cols-[minmax(140px,1fr)_auto_auto_auto]' : 'grid-cols-[minmax(140px,1fr)_auto_auto]'} gap-x-4 gap-y-1.5 items-center`}>
             <span />
-            <Encabezado lado="A" periodo={a?.ambito?.temporal} cargando={!a} />
-            <Encabezado lado="B" periodo={b?.ambito?.temporal} cargando={!b} />
-            <span className="text-right text-[10px]/[12px] font-bold text-[#8894AE]">Δ</span>
+            <Encabezado lado="A" periodo={periodoA} cargando={!a} />
+            <Encabezado lado="B" periodo={periodoB} cargando={!b} />
+            {conDelta && <span className="text-right text-[10px]/[12px] font-bold text-[#8894AE]">Δ</span>}
             {filas.map(fila => (
                 <div key={fila.nombre} className="contents">
                     <span className="text-[11px]/[14px] font-garet text-[#465055]">{fila.nombre}</span>
                     <Valor valor={fila.a} simbolo={fila.simbolo} />
                     <Valor valor={fila.b} simbolo={fila.simbolo} />
-                    <Delta fila={fila} />
+                    {conDelta && <Delta fila={fila} />}
                 </div>
             ))}
         </div>

@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { useMapsContext } from '@hooks/useMaps';
 import { useSider } from '@contexts/SiderContext';
+import { useAreaUtil } from '@contexts/AreaUtilContext';
+import { PANEL_GAP, VIEWPORT_EDGE } from '@pages/maps/helpers/mapFit';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import Icon from '@components/Icon';
 import Tooltip from '@components/Tooltip';
@@ -12,7 +14,7 @@ import { computeLabel } from './ActiveLayers/datePillHelpers';
 import { useCifrasBarra } from '@pages/maps/hooks/useCifrasBarra';
 import { cifrasBarraStore, posicionBarraStore } from '@pages/maps/helpers/cifrasBarraStore';
 import {
-    MOVIMIENTO, UBICACION_BOTONES, UBICACION_PILDORA, ubicacionAncla, ubicacionPanel,
+    MOVIMIENTO, UBICACION_BOTONES, UBICACION_PILDORA, ubicacionAncla,
 } from '@pages/maps/helpers/posicionNodo';
 import PanelPeriodicidad from './SwipeBar/PanelPeriodicidad';
 import PanelCapas from './SwipeBar/PanelCapas';
@@ -64,7 +66,9 @@ const SwipeSlotControls = () => {
     const contenedorRef = useRef(null);
     const hojaRef = useRef(null);
     const objetivoRef = useRef(null);
-    const { isMobile } = useSider();
+    const { isMobile, width: siderWidth } = useSider();
+    const { margenes } = useAreaUtil();
+    const [ancla, setAncla] = useState(null);
     const posicionViva = useSyncExternalStore(posicionBarraStore.subscribe, posicionBarraStore.get);
 
     useOutsideClick([contenedorRef, hojaRef], () => setAbierto(null));
@@ -86,13 +90,46 @@ const SwipeSlotControls = () => {
         setAbierto(null);
     }, [layerId]);
 
-    const { activas: cifrasActivas, solicitud } = useCifrasBarra();
+    const { activas: cifrasActivas, solicitud, solicitudCapa } = useCifrasBarra();
 
     useEffect(() => {
         if (!solicitud) return;
+        cifrasBarraStore.fijar({ solicitud: null, solicitudCapa: null });
+        if (solicitudCapa && solicitudCapa !== layerId) {
+            const capa = findLayerDef(solicitudCapa, allLayers);
+            objetivoRef.current = solicitud;
+            setSelectedLayerForSymbology?.({ id: solicitudCapa, name: capa?.name || capa?.label || solicitudCapa });
+            return;
+        }
         setAbierto(solicitud);
-        cifrasBarraStore.fijar({ solicitud: null });
-    }, [solicitud]);
+    }, [solicitud, solicitudCapa, layerId, allLayers, setSelectedLayerForSymbology]);
+
+    useLayoutEffect(() => {
+        if (abierto !== 'A' && abierto !== 'B') {
+            setAncla(null);
+            return undefined;
+        }
+        const medir = () => {
+            const pildora = document.querySelector(`[data-fecha-lado="${abierto}"]`);
+            if (!pildora) {
+                setAncla(null);
+                return;
+            }
+            const caja = pildora.getBoundingClientRect();
+            const ancho = Math.min(430, window.innerWidth - 32);
+            const deseado = abierto === 'A' ? caja.right - ancho : caja.left;
+            const top = caja.bottom + 8;
+            setAncla({
+                top,
+                left: Math.max(16, Math.min(deseado, window.innerWidth - ancho - 16)),
+                width: ancho,
+                maxHeight: Math.max(180, window.innerHeight - top - 16),
+            });
+        };
+        medir();
+        window.addEventListener('resize', medir);
+        return () => window.removeEventListener('resize', medir);
+    }, [abierto, posicionViva, compareMode?.swipeOrientation, cifrasActivas]);
 
     const inA = !!(layerId && compareMode?.paneA?.activeLayerIds?.includes(layerId));
     const inB = !!(layerId && compareMode?.paneB?.activeLayerIds?.includes(layerId));
@@ -109,7 +146,6 @@ const SwipeSlotControls = () => {
     const orientacion = compareMode.swipeOrientation === 'horizontal' ? 'horizontal' : 'vertical';
     const isHorizontal = orientacion === 'horizontal';
     const posicion = posicionViva ?? compareMode.swipePosition ?? 0.5;
-    const panel = isMobile ? 'relative' : `absolute ${ubicacionPanel(orientacion, posicion)} pointer-events-auto`;
 
     const alternar = (objetivo) => setAbierto(previo => (previo === objetivo ? null : objetivo));
     const cerrar = () => setAbierto(null);
@@ -125,6 +161,7 @@ const SwipeSlotControls = () => {
 
     const pildoraFecha = (slot, dentro, etiqueta) => (dentro && etiqueta.label && !cifrasActivas ? (
         <span
+            data-fecha-lado={slot}
             className={`absolute pointer-events-auto ${OCULTO_AL_ARRASTRAR} ${MOVIMIENTO} ${UBICACION_PILDORA[orientacion][slot]}`}
             onMouseEnter={() => highlightSlots?.(slot)}
             onMouseLeave={() => highlightSlots?.(null)}
@@ -141,13 +178,25 @@ const SwipeSlotControls = () => {
         </span>
     ) : null);
 
-    const paneles = (
-        <>
-            {abierto === 'A' && <PanelPeriodicidad layerId={layerId} slot="A" onClose={cerrar} ubicacion={panel} />}
-            {abierto === 'B' && <PanelPeriodicidad layerId={layerId} slot="B" onClose={cerrar} ubicacion={panel} />}
-            {abierto === 'capas' && <PanelCapas onClose={cerrar} onElegirFecha={elegirFecha} ubicacion={panel} />}
-        </>
-    );
+    const fecha = (abierto === 'A' || abierto === 'B') && ancla ? (
+        <div ref={hojaRef} className="fixed z-40" style={{ top: ancla.top, left: ancla.left, width: ancla.width }}>
+            <PanelPeriodicidad layerId={layerId} slot={abierto} onClose={cerrar} ubicacion="relative" estilo={{ maxHeight: ancla.maxHeight }} />
+        </div>
+    ) : null;
+
+    const capas = abierto === 'capas' ? (
+        <div
+            ref={hojaRef}
+            className="fixed z-40 flex justify-center pointer-events-none"
+            style={{
+                bottom: (isMobile ? 60 : 64) + margenes.bottom,
+                left: isMobile ? VIEWPORT_EDGE : siderWidth + VIEWPORT_EDGE + PANEL_GAP,
+                right: VIEWPORT_EDGE + (isMobile ? 0 : PANEL_GAP),
+            }}
+        >
+            <PanelCapas onClose={cerrar} onElegirFecha={elegirFecha} ubicacion="relative pointer-events-auto" />
+        </div>
+    ) : null;
 
     const orientacionTexto = isHorizontal ? 'Cambiar a barra vertical' : 'Cambiar a barra horizontal';
 
@@ -188,13 +237,7 @@ const SwipeSlotControls = () => {
                 />
             </div>
 
-            {!isMobile && paneles}
-            {isMobile && abierto && createPortal(
-                <div ref={hojaRef} className="fixed z-40 left-4 right-4 bottom-[calc(env(safe-area-inset-bottom,0px)+16px)] flex justify-center">
-                    {paneles}
-                </div>,
-                document.body,
-            )}
+            {(fecha || capas) && createPortal(fecha || capas, document.body)}
         </div>,
         destino,
     );

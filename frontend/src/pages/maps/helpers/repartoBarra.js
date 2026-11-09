@@ -91,20 +91,35 @@ export const repartir = (municipios, linea) => {
 
 export const sumarLado = (ranking, reparto, ladoBuscado, permitidos = null) => {
     if (!ranking?.slots?.length || !reparto) return null;
-    const valores = ranking.slots.map(slot => (esSumable(slot) ? 0 : null));
+    const promedio = ranking.slots.map(slot => slot?.op === 'avg');
+    const acumulado = ranking.slots.map((slot, i) => (esSumable(slot) || promedio[i] ? 0 : null));
+    const pesos = ranking.slots.map(() => 0);
     let municipios = 0;
     let cortados = 0;
-    for (const { llave, valores: crudos } of ranking.municipios || []) {
+    for (const { llave, valores: crudos, pesos: pesosMunicipio } of ranking.municipios || []) {
         const llaveTexto = String(llave);
         const asignacion = reparto.asignados.get(llaveTexto);
         if (asignacion?.lado !== ladoBuscado) continue;
         if (permitidos && !permitidos.has(llaveTexto)) continue;
         municipios++;
         if (asignacion.partido) cortados++;
-        crudos.forEach((valor, indice) => {
-            if (valores[indice] !== null && Number.isFinite(Number(valor))) valores[indice] += Number(valor);
+        crudos.forEach((crudo, indice) => {
+            const valor = Number(crudo);
+            if (acumulado[indice] === null || crudo === null || !Number.isFinite(valor)) return;
+            if (!promedio[indice]) {
+                acumulado[indice] += valor;
+                return;
+            }
+            const peso = Number(pesosMunicipio?.[indice]);
+            if (!Number.isFinite(peso) || peso <= 0) return;
+            acumulado[indice] += valor * peso;
+            pesos[indice] += peso;
         });
     }
+    const valores = acumulado.map((valor, i) => {
+        if (!promedio[i]) return valor;
+        return pesos[i] ? valor / pesos[i] : null;
+    });
     return { valores, municipios, cortados };
 };
 

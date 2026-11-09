@@ -12,7 +12,7 @@ const ANCHO_COLUMNA = 78;
 const ANCHO_PICKER = 288;
 const SEPARACION = 8;
 
-const CAJA = 'grid grid-cols-[1fr_34px] gap-1 items-center w-full px-1 py-0.5 rounded-md border';
+const CAJA = 'grid grid-cols-[1fr_auto] gap-1 items-center w-full px-1 py-0.5 rounded-md border';
 
 const Celda = ({ celda, fila, indice }) => {
     if (celda.bruto === null) {
@@ -35,14 +35,14 @@ const Celda = ({ celda, fila, indice }) => {
 
     return (
         <span className={`${CAJA} ${conDiferencia ? marca.borde : 'border-transparent'}`}>
-            <span className="text-right font-garet text-[15px]/[22px] font-bold tabular-nums text-[#191919]">
+            <span className="text-right font-garet text-[15px]/[22px] font-bold tabular-nums whitespace-nowrap text-[#191919]">
                 {formatNumber(String(celda.bruto))}
             </span>
             <span className="flex flex-col items-start justify-center leading-none">
-                <span className="h-[11px] text-[9px]/[11px] text-gray-400 tabular-nums">
+                <span className="h-[11px] min-w-[34px] text-[9px]/[11px] text-gray-400 tabular-nums whitespace-nowrap">
                     {celda.porcentaje === null ? '' : `${celda.porcentaje.toFixed(1)}%`}
                 </span>
-                <span className={`h-[11px] text-[9px]/[11px] font-bold tabular-nums ${marca ? marca.tono : ''}`}>
+                <span className={`h-[11px] text-[9px]/[11px] font-bold tabular-nums whitespace-nowrap ${marca ? marca.tono : ''}`}>
                     {conDiferencia
                         ? `${marca.signo}${fila.enPuntos ? marca.ventaja.toFixed(1) : formatNumber(String(Math.round(marca.ventaja)))}`
                         : ''}
@@ -185,7 +185,7 @@ const ComparadorTabla = ({ columnas, filas, onQuitar, onReordenar, picker, vacio
         >
             <div
                 className="grid gap-x-3 gap-y-2 items-end font-garet overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 pb-1"
-                style={{ gridTemplateColumns: `minmax(150px,max-content) repeat(${columnas.length}, ${ANCHO_COLUMNA}px)` }}
+                style={{ gridTemplateColumns: `minmax(150px,max-content) repeat(${columnas.length}, minmax(${ANCHO_COLUMNA}px, max-content))` }}
             >
                 <span className="sticky left-0 z-[3] bg-[#F9FBFF] pr-2 pb-1">{controles}</span>
 

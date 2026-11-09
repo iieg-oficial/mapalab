@@ -1,5 +1,6 @@
 import Icon from '@components/Icon';
 import ActionIconButton from '@components/ActionIconButton';
+import { MobileSheetCloseButton } from '@components/MobileSheet';
 
 const SIN_DINAMICAS = 'Esta capa tiene estadísticas capturadas a mano, no calculadas contra la base';
 
@@ -15,13 +16,13 @@ const AccionesPanel = ({ modos, modo, dinamica, onModo, onMinimizar, onCerrar, p
                     ? (modo === item.clave ? 'Volver al resumen' : item.titulo)
                     : SIN_DINAMICAS}
                 etiqueta={item.etiqueta}
-                tamano="sm"
+                tamano="lg"
             >
-                <Icon name={item.icono} className="size-3.5" />
+                <Icon name={item.icono} className="size-5" />
             </ActionIconButton>
         ))}
 
-        {parte === 'todo' && <span className="w-px h-3 bg-[#DCE3F0] mx-0.5" />}
+        {parte === 'todo' && <span className="w-px h-4 bg-[#DCE3F0] mx-0.5" />}
 
         {parte !== 'modos' && (
             <>
@@ -29,19 +30,13 @@ const AccionesPanel = ({ modos, modo, dinamica, onModo, onMinimizar, onCerrar, p
                     onClick={onMinimizar}
                     titulo="Minimizar estadísticas"
                     etiqueta="Minimizar el panel de estadísticas"
-                    tamano="sm"
+                    tamano="lg"
                 >
-                    <span className="block w-2.5 h-[2px] bg-current rounded-full" />
+                    <span className="block w-3.5 h-[2.5px] bg-current rounded-full" />
                 </ActionIconButton>
-
-                <ActionIconButton
-                    onClick={onCerrar}
-                    titulo="Cerrar estadísticas"
-                    etiqueta="Cerrar el panel de estadísticas"
-                    tamano="sm"
-                >
-                    <Icon name="close" className="size-3.5" />
-                </ActionIconButton>
+                <span className="flex items-center">
+                    <MobileSheetCloseButton onClick={onCerrar} />
+                </span>
             </>
         )}
     </>

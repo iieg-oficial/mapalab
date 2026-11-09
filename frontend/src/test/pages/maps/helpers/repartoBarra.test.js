@@ -73,6 +73,18 @@ describe('sumarLado', () => {
         expect(sumarLado(ranking, reparto, 'B', new Set(['Este']))).toEqual({ valores: [25, null], municipios: 1, cortados: 0 });
     });
 
+    it('pondera el promedio de cada municipio por sus registros', () => {
+        const reparto = repartir(MUNICIPIOS, barraEn(16));
+        const conPesos = {
+            slots: [{ nombre: 'Escuelas', op: 'count' }, { nombre: 'Alumnos promedio', op: 'avg' }],
+            municipios: [
+                { llave: 'Partido', valores: [10, 200], pesos: [null, 10] },
+                { llave: 'Este', valores: [30, 100], pesos: [null, 30] },
+            ],
+        };
+        expect(sumarLado(conPesos, reparto, 'B').valores).toEqual([40, 125]);
+    });
+
     it('sin ranking o sin reparto no hay suma', () => {
         expect(sumarLado(null, {}, 'A')).toBeNull();
         expect(sumarLado(ranking, null, 'A')).toBeNull();

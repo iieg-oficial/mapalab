@@ -43,9 +43,10 @@ _LAYER_BINDING_SQL = """
     LIMIT 1
 """
 _LAYER_FECHA_SQL = """
-    SELECT l.date_column, l.default_date
+    SELECT coalesce(nullif(btrim(l.date_column), ''), p.date_column), l.default_date
     FROM mapalab.layers l
     JOIN mapalab.workspaces w ON w.alias = l.workspace_alias
+    LEFT JOIN public.layer_periodicity p ON p.layer_key = :layer_key
     WHERE w.geoserver_workspace || ':' || l.geoserver_layer = :layer_key
       AND l.deleted_at IS NULL
     ORDER BY l.default_date IS NULL, l.id

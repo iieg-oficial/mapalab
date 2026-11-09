@@ -25,6 +25,8 @@ import RankingTabla from './NumeraliaPanel/RankingTabla';
 import Constructor from './NumeraliaPanel/Constructor';
 import TarjetasResumen from './NumeraliaPanel/TarjetasResumen';
 import ResumenSwipe from './NumeraliaPanel/ResumenSwipe';
+import ResumenCapas from './NumeraliaPanel/ResumenCapas';
+import { useCapaOtroLado } from '@hooksMaps/useCapaOtroLado';
 import SwipeEstadisticas from './NumeraliaPanel/SwipeEstadisticas';
 import DetalleAmbito from './NumeraliaPanel/DetalleAmbito';
 import PillMinimizada from './NumeraliaPanel/PillMinimizada';
@@ -59,7 +61,9 @@ const NumeraliaPanel = () => {
     const { margenes } = useAreaUtil();
     const enFoco = selectedLayerForSymbology?.id || selectedLayer?.id || null;
     const layerId = abierto ? (enFoco || detachedLayerId) : null;
-    const { lado, ambos, contexto, contextos, metadataOtro } = useNumeraliaLados(layerId, useMetadataContext(municipioMode));
+    const contextoBase = useMetadataContext(municipioMode);
+    const { lado, ambos, contexto, contextos, metadataOtro } = useNumeraliaLados(layerId, contextoBase);
+    const capaOtra = useCapaOtroLado(layerId, lado, ambos, contextoBase);
     const { metadata } = useLayerMetadata(layerId, contexto);
     const [resaltado, setResaltado] = useState(false);
     const [eligiendo, setEligiendo] = useState(false);
@@ -192,7 +196,7 @@ const NumeraliaPanel = () => {
                 right: VIEWPORT_EDGE + (isMobile ? 0 : PANEL_GAP),
             }}
         >
-            {ambos && <SwipeEstadisticas layerId={layerId} metadata={metadata} contextos={contextos} />}
+            {(ambos || capaOtra) && <SwipeEstadisticas layerId={layerId} lado={lado} metadata={metadata} capaOtra={ambos ? null : capaOtra} contextos={contextos} />}
             {minimizado ? (
                 <PillMinimizada
                     pillRef={panelRef}
@@ -210,15 +214,14 @@ const NumeraliaPanel = () => {
                     aria-live="polite"
                 >
                     <PanelHeader
-                        className={isMobile ? '-mb-2' : 'mb-2'} grande icono={<Icon name="numeralia" className="size-8 text-purple shrink-0" />}
+                        className="" grande icono={<Icon name="numeralia" className="size-8 text-purple shrink-0" />}
                         onVolver={modo === 'resumen' ? null : cerrarModo}
                         titulo={modo === 'resumen'
                             ? nombreCapa
                             : (isMobile ? TITULOS_CORTOS[modo] : TITULOS[modo])}
-                        detalle={isMobile ? null : detalle}
-                        acciones={<AccionesPanel {...propsAcciones} parte={isMobile ? 'ventana' : 'todo'} />}
+                        acciones={<AccionesPanel {...propsAcciones} parte="ventana" />}
                     />
-                    {isMobile && <div className="flex items-center justify-between gap-2 mb-4">{detalle}<div className="flex items-center gap-1"><AccionesPanel {...propsAcciones} parte="modos" /></div></div>}
+                    <div className="flex items-center justify-between gap-3 mb-4">{detalle}<div className="flex items-center gap-1 shrink-0"><AccionesPanel {...propsAcciones} parte="modos" /></div></div>
 
                     {ambos && isMobile && <div data-numeralia-ranura className="empty:hidden mb-3" />}
                     <div className="overflow-x-auto overflow-y-hidden scrollbar-thin">
@@ -280,7 +283,8 @@ const NumeraliaPanel = () => {
                             <ResumenSwipe lado={lado} metadata={metadata} metadataOtro={metadataOtro} />
                         )}
 
-                        {modo === 'resumen' && !ambos && (
+                        {modo === 'resumen' && !ambos && capaOtra && <ResumenCapas layerId={layerId} lado={lado} metadata={metadata} capaOtra={capaOtra} />}
+                        {modo === 'resumen' && !ambos && !capaOtra && (
                             <TarjetasResumen slots={slots} propias={valoresPropios} onQuitarPropia={(i) => quitarPersonalizada(layerId, i)} />
                         )}
                     </div>

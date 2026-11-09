@@ -72,3 +72,14 @@ def test_fecha_se_liga_a_la_columna_de_la_capa() -> None:
 def test_sin_binding_la_columna_es_fecha() -> None:
     ligado = bind_layer_fields(CONFIG_CON_FECHA, None)[0]
     assert ligado['filters'][0]['field'] == 'fecha'
+
+
+def test_ranking_agrupa_promedios_con_su_peso() -> None:
+    from app.services.stats_ranking import build_group_query
+    cfg = {**CONFIG_CON_FECHA[0], 'operation': 'avg'}
+    ligado = bind_layer_fields([cfg], BINDING)[0]
+    sql, _ = build_group_query(ligado, 'nombre', {'fecha.inicio': '2020-01-01', 'fecha.fin': '2020-12-31'})
+    assert 'AVG("poblacion_total") AS valor' in sql
+    assert 'COUNT("poblacion_total") AS peso' in sql
+    suma = build_group_query({**ligado, 'operation': 'sum'}, 'nombre', None)[0]
+    assert 'NULL AS peso' in suma

@@ -1,4 +1,4 @@
-let estado = { activas: false, solicitud: null, cargando: false };
+let estado = { activas: false, solicitud: null, solicitudCapa: null, cargando: false };
 const oyentes = new Set();
 
 export const cifrasBarraStore = {
