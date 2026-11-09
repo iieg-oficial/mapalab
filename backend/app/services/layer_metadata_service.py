@@ -7,7 +7,13 @@ from app.consts.databases import DatabaseType
 from app.consts.workspaces import resolve_schema
 from app.databases.factory import DatabaseFactory
 from app.models.layer import Layer, LayerMetadata, LayerStats, Workspace
-from app.services.stats_engine import build_recetas, compute_numeralia
+from app.services.stats_engine import (
+    build_recetas,
+    compute_numeralia,
+    contexto_con_fecha,
+    load_layer_binding,
+    usa_fecha,
+)
 from app.services.stats_ranking import compute_ranking
 from app.services.stats_builder import calcular_personalizada, catalogo_de_capa
 
@@ -154,6 +160,12 @@ def build_ambito(session, layer_key: str, context: Optional[dict]) -> dict:
     }
 
 
+def _contexto_de_capa(session: Session, layer_key: str, stats: Optional[LayerStats], context: Optional[dict]) -> Optional[dict]:
+    config = stats.stats_config if stats else None
+    binding = load_layer_binding(session, layer_key) if usa_fecha(config) else None
+    return contexto_con_fecha(binding, config, context)
+
+
 def get_catalogo_response(workspace_alias: str, layer: str) -> Optional[dict]:
     conn = DatabaseFactory.get_connection(DatabaseType.MAPALAB)
     with conn.get_session() as session:
@@ -173,7 +185,8 @@ def get_personalizada_response(
         stats = session.query(LayerStats).filter(LayerStats.layer_key == layer_key).first()
         if not stats or not stats.stats_config:
             return None
-        return calcular_personalizada(session, layer_key, stats.stats_config, definicion, context)
+        contexto = _contexto_de_capa(session, layer_key, stats, context)
+        return calcular_personalizada(session, layer_key, stats.stats_config, definicion, contexto)
 
 
 def get_ranking_response(
@@ -185,7 +198,8 @@ def get_ranking_response(
         stats = session.query(LayerStats).filter(LayerStats.layer_key == layer_key).first()
         if not stats or not stats.stats_config:
             return None
-        return compute_ranking(session, layer_key, stats.stats_config, context)
+        contexto = _contexto_de_capa(session, layer_key, stats, context)
+        return compute_ranking(session, layer_key, stats.stats_config, contexto)
 
 
 def get_metadata_response(
@@ -202,6 +216,7 @@ def get_metadata_response(
         stats = session.query(LayerStats).filter(LayerStats.layer_key == layer_key).first()
 
         numeralia = _numeralia_from_stats(stats)
+        context = _contexto_de_capa(session, layer_key, stats, context)
         ambito = build_ambito(session, layer_key, context)
         if context and stats and stats.stats_config:
             calculada = compute_numeralia(

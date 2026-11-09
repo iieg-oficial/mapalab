@@ -12,6 +12,7 @@ import { useLayerMetadata, useMetadataContext } from '@hooksMaps/useLayerMetadat
 import { useNumeraliaComparador, construirFilas } from '@hooksMaps/useNumeraliaComparador';
 import { useNumeraliaRanking, ordenarRanking } from '@hooksMaps/useNumeraliaRanking';
 import { useComparadorGrafica } from '@hooksMaps/useComparadorGrafica';
+import { useNumeraliaLados } from '@hooksMaps/useNumeraliaLados';
 import {
     MAX_PROPIAS, definicionVacia, useCatalogoCampos,
     usePersonalizadasCalculadas, useVistaPrevia,
@@ -23,6 +24,7 @@ import AccionesPanel from './NumeraliaPanel/AccionesPanel';
 import RankingTabla from './NumeraliaPanel/RankingTabla';
 import Constructor from './NumeraliaPanel/Constructor';
 import TarjetasResumen from './NumeraliaPanel/TarjetasResumen';
+import ResumenLados from './NumeraliaPanel/ResumenLados';
 import PillMinimizada from './NumeraliaPanel/PillMinimizada';
 
 const CONTROLES_DEL_MAPA = ['.ol-scale-line', '.ol-attribution', '[data-barra-tabla]'];
@@ -55,7 +57,7 @@ const NumeraliaPanel = () => {
     const { margenes } = useAreaUtil();
     const enFoco = selectedLayerForSymbology?.id || selectedLayer?.id || null;
     const layerId = abierto ? (enFoco || detachedLayerId) : null;
-    const contexto = useMetadataContext(municipioMode);
+    const { lado, ambos, contexto, metadataOtro } = useNumeraliaLados(layerId, useMetadataContext(municipioMode));
     const { metadata } = useLayerMetadata(layerId, contexto);
     const [resaltado, setResaltado] = useState(false);
     const [eligiendo, setEligiendo] = useState(false);
@@ -69,8 +71,8 @@ const NumeraliaPanel = () => {
     const creando = modo === 'crear';
 
     const inferior = useClearance(panelRef, { lado: 'bottom', obstaculos: CONTROLES_DEL_MAPA, base: isMobile ? 60 : 8, separacion: 8, activo: abierto && minimizado });
-    const { columnas, cargando } = useNumeraliaComparador(comparando ? layerId : null, clavesComparadas);
-    const { ranking, cargando: cargandoRanking } = useNumeraliaRanking(layerId, enRanking);
+    const { columnas, cargando } = useNumeraliaComparador(comparando ? layerId : null, clavesComparadas, contexto);
+    const { ranking, cargando: cargandoRanking } = useNumeraliaRanking(layerId, enRanking, contexto);
     const catalogo = useCatalogoCampos(layerId, creando);
     const { previa, calculando } = useVistaPrevia(creando ? layerId : null, borrador, contexto);
     const propias = personalizadasDe(layerId);
@@ -101,14 +103,12 @@ const NumeraliaPanel = () => {
         if (!municipioMode?.allMunicipios?.length) municipioMode?.loadList?.();
     }, [comparando, clavesComparadas.length, municipioMode, compararCon]);
 
-    const porClave = useMemo(() => {
+    const { porClave, porNombre } = useMemo(() => {
         const lista = municipioMode?.allMunicipios || [];
-        return new Map(lista.map(m => [String(m.clave), m.nombre]));
-    }, [municipioMode?.allMunicipios]);
-
-    const porNombre = useMemo(() => {
-        const lista = municipioMode?.allMunicipios || [];
-        return new Map(lista.map(m => [m.nombre, String(m.clave)]));
+        return {
+            porClave: new Map(lista.map(m => [String(m.clave), m.nombre])),
+            porNombre: new Map(lista.map(m => [m.nombre, String(m.clave)])),
+        };
     }, [municipioMode?.allMunicipios]);
 
     const columnasConNombre = useMemo(
@@ -179,8 +179,9 @@ const NumeraliaPanel = () => {
 
     const detalle = (
         <p className="text-[11px]/[13px] font-garet font-bold text-purple tracking-normal shrink-0">
+            {lado && !ambos && <span className="text-[#8894AE]">Lado {lado} · </span>}
             {modo === 'resumen' && (ambito?.geografico || 'Jalisco')}
-            {ambito?.temporal && !creando && <span className="text-orange"> {ambito.temporal}</span>}
+            {ambito?.temporal && !creando && !(ambos && modo === 'resumen') && <span className="text-orange"> {ambito.temporal}</span>}
         </p>
     );
 
@@ -283,7 +284,11 @@ const NumeraliaPanel = () => {
                         </ComparadorTabla>
                     )}
 
-                    {modo === 'resumen' && (
+                    {modo === 'resumen' && ambos && (
+                        <ResumenLados lado={lado} metadata={metadata} metadataOtro={metadataOtro} />
+                    )}
+
+                    {modo === 'resumen' && !ambos && (
                         <TarjetasResumen slots={slots} propias={valoresPropios} onQuitarPropia={(i) => quitarPersonalizada(layerId, i)} />
                     )}
                 </section>

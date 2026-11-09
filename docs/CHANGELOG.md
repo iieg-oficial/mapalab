@@ -6,6 +6,27 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.8.0] - 2026-11-09
+
+### Agregado
+
+- **Estadísticas en la barra divisora.** Si la capa está en los dos lados, el resumen del panel muestra A | B | Δ
+  con la fecha de cada lado (`ResumenLados`); si está en uno, el panel sigue a ese lado. Comparar, ranking y crear
+  trabajan sobre el lado activo. Fuera del comparador el panel manda la fecha del mapa.
+- **Token `@fecha` en `stats_config`.** Se liga a `layers.date_column` (`fecha` por defecto) igual que `@municipio`.
+  Sin fecha en la petición se usa el `default_date` de la capa, así que la numeralia no suma todos los periodos. El
+  constructor agrega el filtro solo cuando la capa lo usa.
+
+### Cambiado
+
+- Las capas cuya configuración no usa fecha descartan `fecha_inicio`/`fecha_fin`: sus números no cambiaban y el
+  ámbito decía un periodo que no se calculó.
+
+### Corregido
+
+- El constructor rechazaba seis condiciones: el filtro de municipio contaba contra el tope del motor. El usuario
+  conserva seis y el motor deja lugar para los filtros fijos.
+
 ## [2.7.0] - 2026-11-09
 
 ### Agregado

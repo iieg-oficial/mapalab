@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from calendar import monthrange
 from hashlib import sha1
 from json import dumps
 from threading import Lock
@@ -16,8 +17,10 @@ FILTER_OPS = {'eq', 'in', 'gte', 'lte', 'between', 'is_not_null'}
 CONTEXT_KEYS = {'municipio', 'municipio.claves', 'municipio.nombres', 'fecha.inicio', 'fecha.fin'}
 SQL_COMPARATORS = {'eq': '=', 'gte': '>=', 'lte': '<='}
 MUNICIPIO_FIELD_TOKEN = '@municipio'
+FECHA_FIELD_TOKEN = '@fecha'
+DEFAULT_DATE_COLUMN = 'fecha'
 MUNICIPIO_CONTEXT_BY_TYPE = {'clave': '{{municipio.claves}}', 'nombre': '{{municipio.nombres}}'}
-MAX_FILTERS = 6
+MAX_FILTERS = 8
 MAX_CACHE_ENTRIES = 256
 
 _PLACEHOLDER = re.compile(r'^\{\{([a-z_.]+)\}\}$')
@@ -37,6 +40,15 @@ _LAYER_BINDING_SQL = """
     SELECT municipio_field, municipio_field_type
     FROM cadena
     WHERE municipio_field IS NOT NULL
+    LIMIT 1
+"""
+_LAYER_FECHA_SQL = """
+    SELECT l.date_column, l.default_date
+    FROM mapalab.layers l
+    JOIN mapalab.workspaces w ON w.alias = l.workspace_alias
+    WHERE w.geoserver_workspace || ':' || l.geoserver_layer = :layer_key
+      AND l.deleted_at IS NULL
+    ORDER BY l.default_date IS NULL, l.id
     LIMIT 1
 """
 
@@ -200,9 +212,54 @@ def build_query(cfg: dict, context: dict | None = None) -> tuple[str, dict] | No
 
 def load_layer_binding(session: Session, layer_key: str) -> dict | None:
     row = session.execute(text(_LAYER_BINDING_SQL), {'layer_key': layer_key}).first()
-    if not row:
+    fecha = session.execute(text(_LAYER_FECHA_SQL), {'layer_key': layer_key}).first()
+    if not row and not fecha:
         return None
-    return {'municipio_field': row[0], 'municipio_field_type': row[1]}
+    return {
+        'municipio_field': row[0] if row else None,
+        'municipio_field_type': row[1] if row else None,
+        'date_column': (fecha[0] if fecha else None) or DEFAULT_DATE_COLUMN,
+        'default_date': fecha[1] if fecha else None,
+    }
+
+
+def usa_fecha(stats_config: list | None) -> bool:
+    texto = dumps(stats_config or [], default=str)
+    return f'"{FECHA_FIELD_TOKEN}"' in texto or '{{fecha.' in texto
+
+
+def _mayor(valor: Any) -> int | None:
+    valores = valor if isinstance(valor, list) else [valor]
+    numeros = [int(v) for v in valores if str(v).isdigit()]
+    return max(numeros) if numeros else None
+
+
+def rango_de_fecha_defecto(default_date: Any) -> tuple[str, str] | None:
+    if not isinstance(default_date, dict):
+        return None
+    anio = _mayor(default_date.get('year'))
+    if anio is None:
+        return None
+    mes = _mayor(default_date.get('month'))
+    if mes is None or not 1 <= mes <= 12:
+        return f'{anio}-01-01', f'{anio}-12-31'
+    ultimo = monthrange(anio, mes)[1]
+    dia = _mayor(default_date.get('day'))
+    if dia is None or not 1 <= dia <= ultimo:
+        return f'{anio}-{mes:02d}-01', f'{anio}-{mes:02d}-{ultimo:02d}'
+    return f'{anio}-{mes:02d}-{dia:02d}', f'{anio}-{mes:02d}-{dia:02d}'
+
+
+def contexto_con_fecha(binding: dict | None, stats_config: list | None, context: dict | None) -> dict | None:
+    if not usa_fecha(stats_config):
+        sin_fecha = {k: v for k, v in (context or {}).items() if not k.startswith('fecha.')}
+        return sin_fecha or None
+    if context and (context.get('fecha.inicio') or context.get('fecha.fin')):
+        return context
+    rango = rango_de_fecha_defecto((binding or {}).get('default_date'))
+    if rango is None:
+        return context
+    return {**(context or {}), 'fecha.inicio': rango[0], 'fecha.fin': rango[1]}
 
 
 def _bind_filter(item: dict, binding: dict | None) -> dict | None:
@@ -212,6 +269,8 @@ def _bind_filter(item: dict, binding: dict | None) -> dict | None:
         if not field:
             return None
         bound['field'] = field
+    if bound.get('field') == FECHA_FIELD_TOKEN:
+        bound['field'] = (binding or {}).get('date_column') or DEFAULT_DATE_COLUMN
     if _placeholder_key(bound.get('value')) == 'municipio':
         replacement = MUNICIPIO_CONTEXT_BY_TYPE.get((binding or {}).get('municipio_field_type'))
         if not replacement:
