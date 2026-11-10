@@ -14,7 +14,7 @@ from app.services.share_service import MAX_CAPAS, MAX_COORDINATES_PER_GEOMETRY, 
 
 APP_ENV = os.environ.get('MAPALAB_APP_ENV', 'prod')
 ES_BETA = APP_ENV in {'dev', 'beta'}
-PRELIBERADAS = frozenset({'swipe'})
+PRELIBERADAS = frozenset({'swipe', 'estadisticas'})
 
 
 def liberada(funcion: str) -> bool:

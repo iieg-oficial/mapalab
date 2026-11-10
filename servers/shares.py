@@ -29,6 +29,7 @@ from servers.resolve import (
 
 MAX_PALABRAS_BUSQUEDA = 8
 MAX_BUSQUEDA = 200
+MAX_MUNICIPIOS = 125
 
 __all__ = ['_persist_share', 'create_map', 'create_swipe']
 
@@ -53,21 +54,31 @@ def _nodo(entry: dict) -> Optional[dict]:
     return (resuelta or {}).get('node')
 
 
-def _municipio(municipio: Optional[str]) -> Optional[dict]:
-    return resolver_municipio(municipio) if municipio else None
+def _municipios(municipio: Optional[str], municipios: Optional[list[str]] = None) -> list[dict]:
+    if municipio and municipios:
+        raise ValueError("Pasa 'municipio' (uno) O 'municipios' (grupo), no ambos.")
+    textos = [municipio] if municipio else list(municipios or [])
+    if len(textos) > MAX_MUNICIPIOS:
+        raise ValueError(f"'municipios' admite hasta {MAX_MUNICIPIOS}.")
+    items = [resolver_municipio(str(texto)) for texto in textos if str(texto).strip()]
+    return list({item['clave']: item for item in items}.values())
 
 
-def _seleccion(item: Optional[dict]) -> Optional[dict]:
-    return {'source': 'iieg', 'selected': [item['clave']]} if item else None
+def _seleccion(items: list[dict]) -> Optional[dict]:
+    return {'source': 'iieg', 'selected': [item['clave'] for item in items]} if items else None
 
 
-def _aplicar_municipio(entries: list[dict], item: Optional[dict]) -> None:
-    if not item:
+def _estadisticas(abrir: bool, capa: Optional[str]) -> Optional[dict]:
+    return {'capa': capa} if abrir and capa else None
+
+
+def _aplicar_municipio(entries: list[dict], items: list[dict]) -> None:
+    if not items:
         return
     aplicadas = 0
     for entry in entries:
         node = _nodo(entry)
-        filtro = filtro_de_municipio(node, item) if node else None
+        filtro = filtro_de_municipio(node, items) if node else None
         if filtro:
             entry['filters'] = {**entry.get('filters', {}), 'municipio': filtro}
             aplicadas += 1
@@ -120,6 +131,8 @@ def create_map(
     selected: Optional[str] = None,
     annotations: Optional[list] = None,
     vista_3d: Any = None,
+    municipios: Optional[list[str]] = None,
+    estadisticas: Optional[bool] = None,
 ) -> dict:
     has_query = bool((query or '').strip() or (theme or '').strip())
     if has_query and layers:
@@ -130,7 +143,7 @@ def create_map(
 
     view = validar_vista(view)
     annotations = limpiar_anotaciones(annotations)
-    municipio_item = _municipio(municipio)
+    municipio_items = _municipios(municipio, municipios)
 
     layer_label = None
     if has_query:
@@ -154,7 +167,7 @@ def create_map(
         raise ValueError("'month' solo vale junto con 'year'.")
     if year:
         _apply_year_filter(entries, str(year), month)
-    _aplicar_municipio(entries, municipio_item)
+    _aplicar_municipio(entries, municipio_items)
 
     result = create_single_share(
         layers=entries,
@@ -162,8 +175,9 @@ def create_map(
         basemap=basemap,
         selected=selected,
         annotations=annotations,
-        municipios=_seleccion(municipio_item),
+        municipios=_seleccion(municipio_items),
         vista3d=vista3d,
+        estadisticas=_estadisticas(bool(estadisticas), selected or entries[0]['slug']),
     )
     if layer_label:
         result['layer'] = {'id': entries[0]['slug'], 'label': layer_label}
@@ -174,7 +188,8 @@ def compare_years(
     layer: str,
     year_a: str,
     year_b: str,
-    municipio_item: Optional[dict],
+    municipio_items: list[dict],
+    abrir_estadisticas: bool = False,
     **comunes: Any,
 ) -> dict:
     if not re.fullmatch(r'\d{4}', str(year_a)) or not re.fullmatch(r'\d{4}', str(year_b)):
@@ -187,16 +202,17 @@ def compare_years(
     node = resuelta['node']
     lado_a = [{'slug': node['id'], 'filters': {'date': filtro_de_fecha(node, str(year_a))}}]
     lado_b = [{'slug': node['id'], 'filters': {'date': filtro_de_fecha(node, str(year_b))}}]
-    _aplicar_municipio(lado_a, municipio_item)
-    _aplicar_municipio(lado_b, municipio_item)
+    _aplicar_municipio(lado_a, municipio_items)
+    _aplicar_municipio(lado_b, municipio_items)
     vista3d = vista3d_a_payload(comunes.pop('vista_3d', None), {node['id']}, _resolve_layer_fuzzy)
     return create_swipe_share(
         pane_a_layers=lado_a,
         pane_b_layers=lado_b,
         label_a=f"{node['label']} {year_a}"[:60],
         label_b=f"{node['label']} {year_b}"[:60],
-        municipios=_seleccion(municipio_item),
+        municipios=_seleccion(municipio_items),
         vista3d=vista3d,
+        estadisticas=_estadisticas(abrir_estadisticas, node['id']),
         **comunes,
     )
 
@@ -215,6 +231,8 @@ def create_swipe(
     label_b: str = 'B',
     annotations: Optional[list] = None,
     vista_3d: Any = None,
+    municipios: Optional[list[str]] = None,
+    estadisticas: Optional[bool] = None,
 ) -> dict:
     use_layer = bool(layer)
     use_panes = bool(pane_a_layers or pane_b_layers)
@@ -234,10 +252,12 @@ def create_swipe(
     }
     label_a = validar_etiqueta(label_a, 'label_a') or 'A'
     label_b = validar_etiqueta(label_b, 'label_b') or 'B'
-    municipio_item = _municipio(municipio)
+    municipio_items = _municipios(municipio, municipios)
 
     if use_layer:
-        return compare_years(layer, year_a, year_b, municipio_item, vista_3d=vista_3d, **comunes)
+        return compare_years(
+            layer, year_a, year_b, municipio_items, abrir_estadisticas=bool(estadisticas), vista_3d=vista_3d, **comunes,
+        )
 
     entries_a = _capas_del_catalogo(pane_a_layers)
     entries_b = _capas_del_catalogo(pane_b_layers)
@@ -248,15 +268,15 @@ def create_swipe(
         _apply_year_filter(entries_a, str(year_a))
     if year_b:
         _apply_year_filter(entries_b, str(year_b))
-    if municipio_item:
-        _aplicar_municipio(entries_a + entries_b, municipio_item)
+    _aplicar_municipio(entries_a + entries_b, municipio_items)
 
     return create_swipe_share(
         pane_a_layers=entries_a,
         pane_b_layers=entries_b,
         label_a=label_a,
         label_b=label_b,
-        municipios=_seleccion(municipio_item),
+        municipios=_seleccion(municipio_items),
         vista3d=vista3d,
+        estadisticas=_estadisticas(bool(estadisticas), entries_a[0]['slug']),
         **comunes,
     )
