@@ -23,16 +23,19 @@ from servers.resolve import (
 _NOMBRE_GS_RE = re.compile(r'[\w.\-]+(:[\w.\-]+)?')
 
 
-def filtro_de_municipio(node: dict, municipio: dict) -> Optional[str]:
+def filtro_de_municipio(node: dict, municipio: dict | list[dict]) -> Optional[str]:
     meta = node.get('searchMeta') or {}
     if not meta.get('hasMunicipio'):
         return None
     campo = meta.get('municipioField') or 'municipio'
     if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]{0,62}', campo):
         return None
-    valor = municipio['nombre'] if meta.get('municipioFieldType') == 'nombre' else municipio['clave']
-    escapado = str(valor).replace("'", "''")
-    return f"{campo} = '{escapado}'"
+    llave = 'nombre' if meta.get('municipioFieldType') == 'nombre' else 'clave'
+    items = municipio if isinstance(municipio, list) else [municipio]
+    valores = [f"""'{str(item[llave]).replace("'", "''")}'""" for item in items]
+    if len(valores) == 1:
+        return f"{campo} = {valores[0]}"
+    return f"{campo} IN ({','.join(valores)})"
 
 
 def es_raster(node: dict) -> bool:

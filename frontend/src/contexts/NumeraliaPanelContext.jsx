@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { definicionVacia, MAX_PROPIAS } from '@hooksMaps/useStatsBuilder';
 import { trackStatsCustomCreate, trackStatsDetach, trackStatsOpen } from '@services/analyticsService';
+import { suscribirEstadisticas, tomarEstadisticas } from '@pages/maps/helpers/estadisticasCompartidas';
 
 const NumeraliaPanelContext = createContext(null);
 
@@ -83,6 +84,17 @@ export const NumeraliaPanelProvider = ({ children }) => {
         trackStatsDetach(layerId || null);
         aplicar({ abierto: true });
         if (layerId) setDetachedLayerId(layerId);
+    }, [aplicar]);
+
+    useEffect(() => {
+        const restaurar = () => {
+            const compartidas = tomarEstadisticas();
+            if (!compartidas) return;
+            aplicar({ abierto: true, minimizado: false, modo: compartidas.modo, clavesComparadas: compartidas.comparados });
+            setDetachedLayerId(compartidas.layerId);
+        };
+        restaurar();
+        return suscribirEstadisticas(restaurar);
     }, [aplicar]);
 
     const attach = useCallback(() => {

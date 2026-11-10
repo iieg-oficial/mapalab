@@ -6,6 +6,17 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.11.0] - 2026-11-10
+
+### Agregado
+
+- **El panel de estadísticas viaja en el compartido.** El enlace guarda `estadisticas: {capa, modo?, comparados?}` y al
+  abrirlo el panel se abre con esa capa, en el modo y con los municipios comparados. El backend valida el bloque.
+- **MCP: grupo de municipios y estadísticas.** `create_map` y `create_swipe` aceptan `municipios` (lista de nombres o
+  claves, filtrada con `IN`) en lugar de `municipio`, y `estadisticas=true` para abrir el panel con la capa de
+  `selected`, la primera o la del lado A. `estadisticas` solo se registra donde la herramienta está liberada (`pre`, dev y
+  beta).
+
 ## [2.10.0] - 2026-11-09
 
 ### Agregado

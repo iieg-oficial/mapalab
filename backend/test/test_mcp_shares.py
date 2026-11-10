@@ -12,7 +12,6 @@ CATALOGO = {'homicidio_doloso', 'poblacion'}
 @pytest.fixture(autouse=True)
 def catalogo(monkeypatch):
     monkeypatch.setattr(shares, '_resolve_layer_fuzzy', lambda ref: {'id': ref} if ref in CATALOGO else None)
-    monkeypatch.setattr(shares, '_municipio', lambda municipio: None)
     monkeypatch.setattr(shares, 'techo_compartidos', Techo(por_minuto=100, por_dia=1000))
 
 
@@ -117,7 +116,7 @@ def test_year_solo_filtra_las_capas_temporales(capturado, temporal):
 
 
 def test_municipio_filtra_de_verdad_las_capas_que_lo_soportan(capturado, temporal, monkeypatch):
-    monkeypatch.setattr(shares, '_municipio', lambda municipio: {'clave': '14039', 'nombre': 'Guadalajara'})
+    monkeypatch.setattr(shares, 'resolver_municipio', lambda texto: {'clave': '14039', 'nombre': 'Guadalajara'})
     shares.create_map(layers=['homicidio_doloso', 'poblacion'], municipio='Guadalajara')
     assert capturado['layers'][0]['filters'] == {'municipio': "clave_municipio = '14039'"}
     assert capturado['municipios'] == {'source': 'iieg', 'selected': ['14039']}
@@ -131,3 +130,35 @@ def test_swipe_por_anios_conserva_anotaciones_y_posicion(capturado, temporal):
     assert capturado['position'] == 0.3 and capturado['annotations'] == [anotacion]
     with pytest.raises(ValueError, match='distintos'):
         shares.create_swipe(layer='homicidio_doloso', year_a='2024', year_b='2024')
+
+
+MUNICIPIOS = {'Guadalajara': '14039', 'Zapopan': '14120', 'gdl': '14039'}
+
+
+@pytest.fixture
+def grupo(monkeypatch):
+    monkeypatch.setattr(shares, 'resolver_municipio', lambda texto: {'clave': MUNICIPIOS[texto], 'nombre': texto})
+
+
+def test_municipios_filtra_el_grupo_con_in_y_sin_repetir(capturado, temporal, grupo):
+    shares.create_map(layers=['homicidio_doloso'], municipios=['Guadalajara', 'Zapopan', 'gdl'])
+    assert capturado['layers'][0]['filters'] == {'municipio': "clave_municipio IN ('14039','14120')"}
+    assert capturado['municipios'] == {'source': 'iieg', 'selected': ['14039', '14120']}
+
+
+def test_municipio_y_municipios_no_van_juntos(capturado, temporal, grupo):
+    with pytest.raises(ValueError, match='no ambos'):
+        shares.create_map(layers=['homicidio_doloso'], municipio='Zapopan', municipios=['Guadalajara'])
+
+
+def test_estadisticas_abre_el_panel_de_la_capa_elegida(capturado, temporal):
+    shares.create_map(layers=['poblacion', 'homicidio_doloso'], selected='homicidio_doloso', estadisticas=True)
+    assert capturado['estadisticas'] == {'capa': 'homicidio_doloso'}
+    shares.create_map(layers=['poblacion'])
+    assert capturado['estadisticas'] is None
+
+
+def test_estadisticas_en_el_comparador_por_anios(capturado, temporal, grupo):
+    shares.create_swipe(layer='homicidio_doloso', year_a='2024', year_b='2023', municipios=['Zapopan'], estadisticas=True)
+    assert capturado['estadisticas'] == {'capa': 'homicidio_doloso'}
+    assert capturado['municipios'] == {'source': 'iieg', 'selected': ['14120']}

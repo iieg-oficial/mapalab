@@ -19,13 +19,14 @@ Dos modos, uno u otro:
 - Búsqueda: `query` (o `theme`) elige la mejor capa.
 - Directo: `layers` con ids de search_layers (una o varias capas, hasta 60).
 
-Modificadores: `municipio` filtra las capas que lo soportan y encuadra; `year` y `month` filtran las capas
+Modificadores: `municipio` (uno) o `municipios` (grupo) filtran las capas que lo soportan y encuadran; `year` y `month` filtran las capas
 temporales y se validan contra su periodicidad; `annotations`, `view`, `basemap`, `selected`.
 Repetir la misma llamada devuelve el mismo id.
 
 Ejemplos:
 1) Búsqueda:          create_map(query="homicidio doloso", municipio="Guadalajara", year="2024")
 2) Por tema:          create_map(theme="educacion", municipio="Zapopan")
+2b) Grupo:            create_map(theme="educacion", municipios=["Guadalajara", "Zapopan", "Tlaquepaque"])
 3) Capas explícitas:  create_map(layers=["homicidio_doloso", "tasa_poblacion_total"])
 4) Con anotación:     create_map(layers=["homicidio_doloso"], annotations=[{"id": "a1", "type": "Text", "geometry": {"type": "Point", "coordinates": [-103.35, 20.67]}, "textLabel": "Centro"}])"""
 
@@ -41,12 +42,18 @@ Dos modos, uno u otro:
 - Una capa en dos años: `layer` + `year_a` + `year_b` (años distintos, validados contra la periodicidad).
 - Dos capas: `pane_a_layers` + `pane_b_layers`; opcionalmente `year_a` filtra el lado A y `year_b` el B.
 
-`municipio` filtra y encuadra ambos lados. Las anotaciones son globales.
+`municipio` (uno) o `municipios` (grupo) filtran y encuadran ambos lados. Las anotaciones son globales.
 
 Ejemplos:
 1) Una capa, dos años:  create_swipe(layer="homicidio_doloso", year_a="2025", year_b="2024")
 2) En municipio:        create_swipe(layer="homicidio_doloso", year_a="2025", year_b="2024", municipio="Guadalajara")
 3) Dos capas:           create_swipe(pane_a_layers=["tasa_poblacion_total"], pane_b_layers=["homicidio_doloso"], label_a="Población", label_b="Homicidio")"""
+
+
+EXTRA_ESTADISTICAS = """
+
+`estadisticas=true` abre el panel de estadísticas de la capa (la de `selected` o la primera; en el comparador,
+la del lado A). Con `municipios` las cifras salen de ese grupo; en el comparador, la fecha de cada lado."""
 
 
 def _sin_parametros(fn: Callable[..., dict], *nombres: str) -> Callable[..., dict]:
@@ -73,11 +80,14 @@ def create_map(
     selected: Optional[str] = Field(default=None, max_length=MAX_REFERENCIA, description='Id de la capa del mapa cuya simbología se muestra.'),
     annotations: Optional[list[dict[str, Any]]] = Field(default=None, max_length=200, description="Anotaciones GeoJSON EPSG:4326: {id, type ('LineString'|'Polygon'|'Text'|'Emoji'), geometry, label?, value?, unit?, textLabel?, rotation?}. Los textos no aceptan páginas web, correos ni teléfonos."),
     vista_3d: Optional[Vista3d] = Field(default=None, description='Abre el mapa en 3D con relieve: {inclinacion?, rumbo?, exageracion?, extruir?: [ids de capas del mapa]}.'),
+    municipios: Optional[list[str]] = Field(default=None, max_length=125, description="Grupo de municipios (nombres o claves) en lugar de 'municipio'. Ej: ['Guadalajara', 'Zapopan']."),
+    estadisticas: Optional[bool] = Field(default=None, description='Abre el panel de estadísticas de la capa.'),
 ) -> dict:
     with como_error_de_tool():
         return _create_map(
             query=query, layers=layers, municipio=municipio, year=year, month=month, theme=theme, view=view,
             basemap=basemap, selected=selected, annotations=annotations, vista_3d=vista_3d,
+            municipios=municipios, estadisticas=estadisticas,
         )
 
 
@@ -95,25 +105,31 @@ def create_swipe(
     label_b: str = Field(default='B', max_length=MAX_ETIQUETA_LADO, description='Etiqueta del lado B (modo dos capas).'),
     annotations: Optional[list[dict[str, Any]]] = Field(default=None, max_length=200, description='Anotaciones globales, visibles en ambos lados. GeoJSON EPSG:4326. Sin páginas web, correos ni teléfonos.'),
     vista_3d: Optional[Vista3d] = Field(default=None, description='Abre el comparador en 3D, con la cámara igual en los dos lados.'),
+    municipios: Optional[list[str]] = Field(default=None, max_length=125, description="Grupo de municipios (nombres o claves) en lugar de 'municipio'."),
+    estadisticas: Optional[bool] = Field(default=None, description='Abre el panel de estadísticas con las cifras de cada lado.'),
 ) -> dict:
     with como_error_de_tool():
         return _create_swipe(
             layer=layer or None, year_a=year_a, year_b=year_b, pane_a_layers=pane_a_layers,
             pane_b_layers=pane_b_layers, municipio=municipio, position=position, view=view, basemap=basemap,
             label_a=label_a, label_b=label_b, annotations=annotations, vista_3d=vista_3d,
+            municipios=municipios, estadisticas=estadisticas,
         )
 
 
+ESTADISTICAS = EXTRA_ESTADISTICAS if liberada('estadisticas') else ''
+
 if ES_BETA:
-    mcp.tool(create_map, title='Crear mapa', description=DESCRIPCION_MAPA + EXTRA_BETA, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S)
-    mcp.tool(create_swipe, title='Crear comparador', description=DESCRIPCION_SWIPE, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S)
+    mcp.tool(create_map, title='Crear mapa', description=DESCRIPCION_MAPA + EXTRA_BETA + ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S)
+    mcp.tool(create_swipe, title='Crear comparador', description=DESCRIPCION_SWIPE + ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S)
 else:
+    ocultos = ('vista_3d',) if ESTADISTICAS else ('vista_3d', 'estadisticas')
     mcp.tool(
-        _sin_parametros(create_map, 'vista_3d'),
-        name='create_map', title='Crear mapa', description=DESCRIPCION_MAPA, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S,
+        _sin_parametros(create_map, *ocultos),
+        name='create_map', title='Crear mapa', description=DESCRIPCION_MAPA + ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S,
     )
     if liberada('swipe'):
         mcp.tool(
-            _sin_parametros(create_swipe, 'vista_3d'),
-            name='create_swipe', title='Crear comparador', description=DESCRIPCION_SWIPE, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S,
+            _sin_parametros(create_swipe, *ocultos),
+            name='create_swipe', title='Crear comparador', description=DESCRIPCION_SWIPE + ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S,
         )

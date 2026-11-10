@@ -86,9 +86,13 @@ def create_single_share(
     annotations: Optional[list] = None,
     municipios: Optional[dict] = None,
     vista3d: Optional[dict] = None,
+    estadisticas: Optional[dict] = None,
 ) -> dict:
     payload: dict[str, Any] = {'layers': layers, 'view': view or _default_view(municipios)}
-    opcionales = {'vista3d': vista3d, 'basemap': basemap, 'selected': selected, 'annotations': annotations, 'municipios': municipios}
+    opcionales = {
+        'vista3d': vista3d, 'basemap': basemap, 'selected': selected, 'annotations': annotations,
+        'municipios': municipios, 'estadisticas': estadisticas,
+    }
     payload.update({k: v for k, v in opcionales.items() if v})
     return _persist_share({'version': 2, 'kind': 'single', 'payload': payload})
 
@@ -104,10 +108,13 @@ def create_swipe_share(
     annotations: Optional[list] = None,
     municipios: Optional[dict] = None,
     vista3d: Optional[dict] = None,
+    estadisticas: Optional[dict] = None,
 ) -> dict:
     shared: dict[str, Any] = {'view': view or _default_view(municipios), 'basemap': basemap, 'selected': None}
     if vista3d:
         shared['vista3d'] = vista3d
+    if estadisticas:
+        shared['estadisticas'] = estadisticas
     if municipios:
         shared['municipios'] = municipios
     payload: dict[str, Any] = {
