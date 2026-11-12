@@ -75,7 +75,10 @@ export const useDateSelector = ({ fecha, filterColumn, isRaster, singleSelectOnl
             }
             return;
         }
-        if (!sameKeys(keys, player.getSnapshot().selection)) player.setSelection(keys);
+        if (sameKeys(keys, player.getSnapshot().selection)) return;
+        player.setSelection(keys);
+        const { view } = player.getSnapshot();
+        if (view.level !== 'years' && view.level !== 'months') player.open(toKey(view.year));
     }, [currentFilter, player, rasterPeriodicity, catalogKeys, single]);
 
     const { selection, cql } = t;

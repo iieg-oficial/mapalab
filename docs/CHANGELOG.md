@@ -6,6 +6,22 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.11.1] - 2026-11-11
+
+### Corregido
+
+- **El selector de fechas embebido muestra los meses.** En capas con fechas por día, un filtro que llegaba de fuera
+  (fecha por defecto, loop o URL) dejaba la vista en el nivel de días y solo aparecían el año y «regresar». Ahora se
+  queda en los meses del año.
+- **La columna de fecha se ve al publicar.** `POST /layers/refresh-cache`, que mariachi llama al aprobar o editar capas,
+  recalcula `public.layer_periodicity` en segundo plano. Antes el visor seguía filtrando con `fecha` hasta el cron de
+  las 03:00.
+
+### Cambiado
+
+- **`fecha_periodo_seleccion` es la columna de fecha por contrato.** La función de periodicidad la toma antes que
+  `fecha` cuando es de tipo fecha; la columna configurada en mariachi y el comentario `mapalab:fecha` siguen ganando.
+
 ## [2.11.0] - 2026-11-10
 
 ### Agregado
