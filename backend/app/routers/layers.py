@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request, Response
 
 from app.auth.internal_token import require_internal_token
 from app.consts.databases import DatabaseType
@@ -9,9 +9,18 @@ from app.repositories.layers_repository import LayersRepository
 from app.routers.sesion import usuario_actual
 from app.services import acceso_capas, arbol_privado
 from app.services.layer_tree_service import get_cached_state, invalidate_memory_cache, refresh_cache
+from app.services.periodicity_service import PeriodicityService
 from app.utils.api_responses import api_responses
+from app.utils.logger import Logger
 
 router = APIRouter(prefix='/layers', tags=['Layers'])
+
+
+def _refrescar_periodicidad() -> None:
+    try:
+        PeriodicityService.refresh()
+    except Exception as exc:
+        Logger.error(f'layer_periodicity no se refrescó tras refresh-cache: {exc}')
 
 
 def _flatten_tree(tree: list[dict]) -> dict[str, dict]:
@@ -101,13 +110,16 @@ def get_workspaces():
     description=(
         "Reconstruye `mapalab.layer_tree_cache` a partir de `mapalab.layers` e invalida "
         "la cache en memoria de todos los workers. Lo invoca mariachi-api tras "
-        "aprobar borradores o editar capas. Requiere el header `X-Internal-Token`; "
+        "aprobar borradores o editar capas. También recalcula `public.layer_periodicity` "
+        "en segundo plano, para que un cambio de columna de fecha se vea sin esperar al cron. "
+        "Requiere el header `X-Internal-Token`; "
         "el gateway también bloquea este endpoint desde fuera de la red interna. "
         "Devuelve `{ok, etag, layer_count}`."
     ),
 )
-def refresh_cache_endpoint():
+def refresh_cache_endpoint(background_tasks: BackgroundTasks):
     result = refresh_cache()
+    background_tasks.add_task(_refrescar_periodicidad)
     acceso_capas.olvidar_cache()
     arbol_privado.olvidar_cache()
     return {

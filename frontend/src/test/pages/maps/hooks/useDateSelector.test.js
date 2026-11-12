@@ -15,6 +15,19 @@ const montar = (props) => {
     return { ...hook, onApply, onClear };
 };
 
+const DIARIA = { 2024: { 1: [1], 6: [1] } };
+const JUNIO_2024 = "fecha = '2024-06-01'";
+
+describe('useDateSelector con capa de fechas diarias', () => {
+    it('muestra los meses cuando el filtro llega después de montar', () => {
+        const { result, rerender } = montar({ fecha: DIARIA, currentFilter: null });
+        rerender({ fecha: DIARIA, currentFilter: JUNIO_2024 });
+        expect(result.current.expandedYear).toBe(2024);
+        expect(result.current.t.view.level).toBe('months');
+        expect(result.current.t.items.map(item => item.level)).toEqual(['month', 'month']);
+    });
+});
+
 describe('useDateSelector con fecha por defecto de año completo', () => {
     it('marca los meses del año sin tocar el filtro aplicado', () => {
         const { result, onApply, onClear } = montar({ currentFilter: ANIO_2024 });
