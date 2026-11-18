@@ -6,6 +6,12 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.11.3] - 2026-11-18
+
+### Corregido
+
+- **Enlace a la licencia IIEG 2026.** El PDF de `iieg.gob.mx/ns/wp-content` ya no existe; apunta a la declaración de abril de 2026 en el acervo del portal. `MapAttribution` usa ahora la misma constante `LICENCIA_URL` que el tooltip y la descarga.
+
 ## [2.11.2] - 2026-11-17
 
 ### Corregido
