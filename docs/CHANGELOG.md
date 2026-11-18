@@ -6,6 +6,12 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.11.2] - 2026-11-17
+
+### Corregido
+
+- **Imágenes sin HIGH de Trivy.** El backend y el MCP hacen `apt-get upgrade` al construir (`zlib1g` deb13u1) y el nginx `apk upgrade` (`libxslt`).
+
 ## [2.11.1] - 2026-11-11
 
 ### Corregido
