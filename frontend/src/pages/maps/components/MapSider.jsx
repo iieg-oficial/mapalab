@@ -5,13 +5,14 @@ import { useLayerLoading } from '@hooks/useLayerLoading';
 import { useSider, useSiderHover } from '@contexts/SiderContext';
 import { useSearch } from '@contexts/SearchContext';
 import { useOutsideClick } from '@hooks/useOutsideClick';
-import { useScrollOverflow } from '@hooks/useScrollOverflow';
+import { useScrollEdges } from 'scroll-edges/react';
 import Logo from '@components/Logo';
 import { createMenuItems, BASE_ITEMS_COUNT } from '@pages/maps/helpers/menuItems';
 import { SIDER_TRANSITION_TIMING, SIDER_LOCK_LABELS } from '@constants/sider';
 import { HIDDEN_SCROLLBAR } from '@constants/global';
 import { useEventoContext } from '@hooks/useEvento';
 import { useAutoOpenEventoFromUrl } from '@pages/maps/hooks/useAutoOpenEventoFromUrl';
+import { useAbrirMapasBaseConTema } from './DiaDeMuertos/useAbrirMapasBaseConTema';
 import { aggregateFactsFromEventos } from '@pages/maps/helpers/funFactPicker';
 import { esEventoLite } from '@pages/maps/helpers/eventoDiversion';
 import ExternalEventoWidget from '@mapsComponents/ExternalEventoWidget';
@@ -23,7 +24,7 @@ import { useZenMode } from './ZenMode';
 import MenuItem from './MenuItem';
 import SiderEdgeButtons from './SiderEdgeButtons';
 import EnvBadge from './EnvBadge';
-import LogoIieg from './DiaDeMuertos/LogoIieg';
+import LogoIieg from './LogoIieg';
 
 const SIDER_EVENTS_ENABLED = false;
 const EMPTY_EVENTOS = Object.freeze([]);
@@ -45,7 +46,7 @@ const MapSider = ({ className = '' }) => {
         isDrawing,
         measurements,
         isLocating,
-        dateLoops,
+        isLayerLooping,
         showMarker,
         allLayers,
         compareMode
@@ -54,7 +55,7 @@ const MapSider = ({ className = '' }) => {
     const toolsPanelVisible = areMeasurementToolsVisible || areAnnotationToolsVisible || isDrawing || measurements.length > 0;
     const isSwipe = !!compareMode?.active;
     const { loadingLayers } = useLayerLoading();
-    const hasNonLoopLoading = [...loadingLayers].some(id => !dateLoops[id] && contextActiveLayerIds.includes(id));
+    const hasNonLoopLoading = [...loadingLayers].some(id => !isLayerLooping?.(id) && contextActiveLayerIds.includes(id));
     const isLoading = hasNonLoopLoading || isLocating;
     const {
         siderRef,
@@ -87,8 +88,7 @@ const MapSider = ({ className = '' }) => {
 
     const { shouldAutoOpenSearch, clearAutoOpen } = useSearch();
     const { isZenMode } = useZenMode();
-    const contentRef = useRef(null);
-    const { canScrollUp, canScrollDown } = useScrollOverflow(contentRef);
+    const { getContainerProps } = useScrollEdges({ mask: true });
     const [autoOpenMenuId, setAutoOpenMenuId] = useState(null);
     const autoOpenProcessedRef = useRef(false);
     const navigate = useNavigate();
@@ -107,6 +107,7 @@ const MapSider = ({ className = '' }) => {
     }, [shouldAutoOpenSearch, clearAutoOpen, setIsHovered]);
 
     useAutoOpenEventoFromUrl({ setAutoOpenMenuId, setIsHovered });
+    useAbrirMapasBaseConTema({ setAutoOpenMenuId, setIsHovered, abrirSider: treatAsMobile && !isOpen ? toggleSider : null });
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -280,20 +281,7 @@ const MapSider = ({ className = '' }) => {
                     />
                 </div>
                 {(!treatAsMobile || isOpen) && (
-                    <div
-                        ref={contentRef}
-                        className={[
-                            'flex-1 flex flex-col gap-3 px-3',
-                            `${HIDDEN_SCROLLBAR}`,
-                            canScrollUp && canScrollDown
-                                ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]'
-                                : canScrollUp
-                                    ? '[mask-image:linear-gradient(to_bottom,transparent_0%,black_10%)]'
-                                    : canScrollDown
-                                        ? '[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]'
-                                        : ''
-                        ].join(' ')}
-                    >
+                    <div {...getContainerProps({ className: `flex-1 flex flex-col gap-3 px-3 ${HIDDEN_SCROLLBAR}` })}>
                         <div className="bg-[#F9FBFF] rounded-[8px] py-2 flex flex-col gap-3">
                             <MenuGroup items={menuItems.slice(0, baseItemsEnd)} isMobileView={treatAsMobile} autoOpenMenuId={autoOpenMenuId} clearAutoOpenMenu={clearAutoOpenMenu} />
                         </div>

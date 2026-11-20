@@ -4,6 +4,7 @@ import { createShare } from '@services/shareService';
 import { trackShareMap } from '@services/analyticsService';
 import { useMapsContext } from '@hooks/useMaps';
 import { useView3d } from '@contexts/View3dContext';
+import { useNumeraliaPanel } from '@contexts/NumeraliaPanelContext';
 
 const COPIADO_MS = 2500;
 
@@ -17,6 +18,7 @@ export const useShareLink = ({ onCreated } = {}) => {
     const serialize = useShareSerializer();
     const { compareMode, measurements } = useMapsContext();
     const view3d = useView3d();
+    const estadisticas = useNumeraliaPanel();
     const [share, setShare] = useState(null);
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState(null);
@@ -33,11 +35,11 @@ export const useShareLink = ({ onCreated } = {}) => {
     useEffect(() => () => clearTimeout(copiadoTimer.current), []);
 
     const armarEnvelope = useCallback((conAnotaciones) => {
-        const extra = { includeAnnotations: conAnotaciones && annotationsCount > 0, view3d };
+        const extra = { includeAnnotations: conAnotaciones && annotationsCount > 0, view3d, estadisticas };
         return compareMode?.active
             ? serialize('swipe', { ...extra, position: compareMode.swipePosition ?? 0.5 })
             : serialize('single', extra);
-    }, [annotationsCount, compareMode, serialize, view3d]);
+    }, [annotationsCount, compareMode, estadisticas, serialize, view3d]);
 
     const ensureShare = useCallback(async (conAnotaciones = includeAnnotations) => {
         const envelope = armarEnvelope(conAnotaciones);

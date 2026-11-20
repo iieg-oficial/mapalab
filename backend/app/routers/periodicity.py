@@ -16,7 +16,8 @@ router = APIRouter(prefix="/periodicity", tags=["Periodicity"])
     description=(
         "Devuelve la estructura jerárquica `{year: {month: [day, ...]}}` con las fechas "
         "disponibles para una capa con dimensión temporal (mensual, anual, eventual). "
-        "Si la capa no es temporal devuelve `{periodicity: {}}`. Los datos vienen de "
+        "Si la capa no es temporal devuelve `{periodicity: {}}`. `column` es la columna de fecha "
+        "(`fecha`, o la que tenga el comentario `mapalab:fecha`). Los datos vienen de "
         "`public.layer_periodicity`, una tabla materializada que se refresca diariamente "
         "a las 03:00 desde el cron de dataengine-jobs."
     ),
@@ -28,7 +29,8 @@ def get_periodicity(
 ):
     exigir_capa_visible(request, workspace, layer)
     result = PeriodicityService.get_periodicity(workspace, layer)
-    return {"periodicity": result}
+    column = PeriodicityService.get_date_column(workspace, layer) if result else None
+    return {"periodicity": result, "column": column}
 
 
 @router.get(
@@ -48,3 +50,22 @@ def get_periodicities_batch(
 ):
     layer_keys = list(dict.fromkeys(l.strip() for l in layers.split(",") if l.strip()))
     return PeriodicityService.get_periodicities_batch(claves_visibles(request, layer_keys))
+
+
+@router.get(
+    "/columns",
+    responses=api_responses(404, 500),
+    operation_id="get_periodicity_columns",
+    summary="Columna de fecha de varias capas",
+    description=(
+        "Devuelve `{workspace:layer: columna}` para las capas temporales pedidas: `fecha`, o la "
+        "columna que tenga el comentario `mapalab:fecha` en PostgreSQL. Las capas sin periodicidad "
+        "no aparecen."
+    ),
+)
+def get_periodicity_columns(
+    request: Request,
+    layers: str = Query(description="Capas separadas por coma en formato workspace:layer"),
+):
+    layer_keys = list(dict.fromkeys(l.strip() for l in layers.split(",") if l.strip()))
+    return PeriodicityService.get_date_columns(claves_visibles(request, layer_keys))

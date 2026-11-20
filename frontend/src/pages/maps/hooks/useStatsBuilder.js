@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getLayerCampos, calcularPersonalizada } from '@services/layerBuilderService';
+import { buildMetadataContextKey } from '@services/layerMetadataService';
 
 export const MAX_FILTROS = 6;
 export const MAX_PROPIAS = 4;
@@ -38,7 +39,7 @@ export const useVistaPrevia = (layerId, definicion, context) => {
     const [previa, setPrevia] = useState(null);
     const [calculando, setCalculando] = useState(false);
     const pedidoRef = useRef(0);
-    const firma = JSON.stringify({ definicion, claves: context?.claves || [] });
+    const firma = JSON.stringify({ definicion, contexto: buildMetadataContextKey(context) });
 
     useEffect(() => {
         if (!layerId || !definicion.operation) return undefined;
@@ -71,7 +72,7 @@ export const useVistaPrevia = (layerId, definicion, context) => {
 export const usePersonalizadasCalculadas = (layerId, definiciones, context) => {
     const [valores, setValores] = useState([]);
     const pedidoRef = useRef(0);
-    const firma = JSON.stringify({ definiciones, claves: context?.claves || [] });
+    const firma = JSON.stringify({ definiciones, contexto: buildMetadataContextKey(context) });
 
     useEffect(() => {
         if (!layerId || definiciones.length === 0) {

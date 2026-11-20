@@ -3,11 +3,11 @@ import { createPortal } from 'react-dom';
 import Cempasuchil from './Cempasuchil';
 import Maceta from './Maceta';
 import Maravilla from './Maravilla';
-import { ARREGLO_CONTRAIDO, ARREGLO_EXPANDIDO, varianteAlAzar } from './macetas';
+import { ARREGLO_OFRENDA as arreglo, varianteAlAzar } from './macetas';
 
 const HOJA = 'M0 0 C6 -5 15 -5 22 0 C15 5 6 5 0 0 Z';
 
-const variantesPara = (arreglo) => Object.fromEntries(
+const variantesIniciales = () => Object.fromEntries(
     arreglo.flores.filter((f) => f.tipo === 'maravilla').map((f) => [f.id, varianteAlAzar()]),
 );
 
@@ -19,9 +19,8 @@ const Flor = ({ tipo, variante }) => (
         : <Cempasuchil className="size-full" />
 );
 
-const ArregloFloral = ({ expandido }) => {
-    const arreglo = expandido ? ARREGLO_EXPANDIDO : ARREGLO_CONTRAIDO;
-    const [variantes] = useState(() => ({ ...variantesPara(ARREGLO_EXPANDIDO), ...variantesPara(ARREGLO_CONTRAIDO) }));
+const ArregloFloral = ({ className = '', style }) => {
+    const [variantes] = useState(variantesIniciales);
     const [caidas, setCaidas] = useState([]);
     const tumbadas = new Set(caidas.map((c) => c.id));
 
@@ -42,8 +41,8 @@ const ArregloFloral = ({ expandido }) => {
     return (
         <>
             <div
-                className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2"
-                style={{ width: `${arreglo.ancho}px`, height: `${arreglo.alto}px` }}
+                className={`pointer-events-none absolute ${className}`}
+                style={{ ...style, width: `${arreglo.ancho}px`, height: `${arreglo.alto}px` }}
             >
                 <svg viewBox={`0 0 ${arreglo.ancho} ${arreglo.alto}`} className="absolute inset-0 size-full overflow-visible" aria-hidden="true">
                     <g stroke="#5E8A44" strokeWidth="1.2" fill="none" strokeLinecap="round">
@@ -58,8 +57,6 @@ const ArregloFloral = ({ expandido }) => {
                 </svg>
                 {arreglo.flores.map((flor) => {
                     if (tumbadas.has(flor.id)) return null;
-                    const dibujo = <Flor tipo={flor.tipo} variante={variantes[flor.id]} />;
-                    if (!expandido) return <span key={flor.id} className="absolute" style={caja(flor)}>{dibujo}</span>;
                     return (
                         <button
                             key={flor.id}
@@ -69,7 +66,7 @@ const ArregloFloral = ({ expandido }) => {
                             className="pointer-events-auto absolute rounded-full cursor-pointer focus-visible:outline-2 focus-visible:outline-purple"
                             style={caja(flor)}
                         >
-                            {dibujo}
+                            <Flor tipo={flor.tipo} variante={variantes[flor.id]} />
                         </button>
                     );
                 })}

@@ -8,7 +8,11 @@ const MenuItem = ({ item, isMobileView, autoOpenMenuId, clearAutoOpenMenu }) => 
     const hasAutoOpenedRef = useRef(false);
 
     useEffect(() => {
-        if (autoOpenMenuId === item.id && !hasAutoOpenedRef.current) {
+        if (autoOpenMenuId !== item.id) {
+            hasAutoOpenedRef.current = false;
+            return;
+        }
+        if (!hasAutoOpenedRef.current) {
             hasAutoOpenedRef.current = true;
             setIsMenuOpen(true);
             clearAutoOpenMenu();

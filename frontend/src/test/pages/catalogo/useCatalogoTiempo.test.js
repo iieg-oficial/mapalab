@@ -43,6 +43,14 @@ describe('useCatalogoTiempo', () => {
         expect(onFechaChange).toHaveBeenCalledWith('2025');
     });
 
+    it('el ?fecha= inicial usa la columna de fecha de la capa', async () => {
+        const { setDateColumn } = await import('@services/layerMetadataService');
+        setDateColumn('columna-propia', 'fecha_corte');
+        const capa = { ...VECTOR, slug: 'columna-propia' };
+        const { result } = montar(capa, { initialFecha: '2025' });
+        await waitFor(() => expect(result.current.filtro).toBe(generateCQLFilter(new Set(['2025']), 'fecha_corte')));
+    });
+
     it('en raster el ?fecha= se mapea al valor TIME y vuelve igual a la URL', async () => {
         getLayerTimePeriodicity.mockResolvedValue({ 2026: { 3: '2026-03-01', 4: '2026-04-01' } });
         const onFechaChange = vi.fn();

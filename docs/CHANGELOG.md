@@ -8,24 +8,6 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
-### Agregado
-
-- **Tema de Día de Muertos.** Si un evento vigente trae `decoracion: 'dia-de-muertos'` (mariachi 2.151.0),
-  el borde del sider muestra un pan de muerto que enciende el tema; arranca apagado en cada visita y el
-  aviso «¡Día de Muertos!» sale una vez por visitante. Encendido, el pan lleva una mordida y aparecen:
-  una lluvia lenta de cempasúchil que se acumula en el borde inferior (doce flores como tope, la más vieja
-  se desvanece), macetas de barro detrás del logo del IIEG, a todo lo ancho del sider y sin hacerlo
-  crecer, una de maravillas y las demás de cempasúchil, cuyas flores se tumban con un clic (el «Acerca
-  de» del logo pasa a un «>» gris en el borde mientras el tema está encendido), y papel picado bajo
-  Capas activas, en cordel o en pila si el panel está contraído, que se agita con el
-  hover. Sobre «Contribuciones ©», en escritorio, una ofrenda chica: cirios y veladoras encendidos,
-  pan de muerto, un cafecito con vapor, mazapán, cocada, dulce de calabaza y una mandarina.
-  Los estilos del tema salen de `index.css` a `DiaDeMuertos/muertos.css`.
-  Mientras el tema está encendido el mapa base pasa a CARTO oscuro (`oscuro`, fuera de la lista de
-  mapas base) y al apagarlo vuelve al que había; si el visitante elige otro, se respeta. Mientras está
-  desplegado, «Carto Dark» aparece marcado en «Mapas base». Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
-- El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
-
 ### Cambiado
 
 - **Qué se agrupa y cómo se colorea, en «Ver como: Hexágonos».** Bajo la leyenda hay dos selectores:
@@ -57,6 +39,353 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 - `helpers/h3Aggregation.js`, `helpers/hexbinLayer.js`, `hooks/useHexbinZoomRefresh.js`,
   `resolutionForZoom` y `nearestPrecomputed`
 
+## [2.12.0] - 2026-11-20
+
+### Cambiado
+
+- **Barra divisora y estadísticas salen de preliberación.** Ya no dependen de `VITE_APP_ENV=pre`: se ven en cualquier entorno, sin la insignia BETA, y el MCP registra `create_swipe` y el parámetro `estadisticas` siempre. Se van `isLiberada`, `useIsLiberada` y `PRELIBERADAS` del frontend y `liberada` del MCP; `pre` queda igual que `prod`.
+
+## [2.11.3] - 2026-11-18
+
+### Corregido
+
+- **Enlace a la licencia IIEG 2026.** El PDF de `iieg.gob.mx/ns/wp-content` ya no existe; apunta a la declaración de abril de 2026 en el acervo del portal. `MapAttribution` usa ahora la misma constante `LICENCIA_URL` que el tooltip y la descarga.
+
+## [2.11.2] - 2026-11-17
+
+### Corregido
+
+- **Imágenes sin HIGH de Trivy.** El backend y el MCP hacen `apt-get upgrade` al construir (`zlib1g` deb13u1) y el nginx `apk upgrade` (`libxslt`).
+
+## [2.11.1] - 2026-11-11
+
+### Corregido
+
+- **El selector de fechas embebido muestra los meses.** En capas con fechas por día, un filtro que llegaba de fuera
+  (fecha por defecto, loop o URL) dejaba la vista en el nivel de días y solo aparecían el año y «regresar». Ahora se
+  queda en los meses del año.
+- **La columna de fecha se ve al publicar.** `POST /layers/refresh-cache`, que mariachi llama al aprobar o editar capas,
+  recalcula `public.layer_periodicity` en segundo plano. Antes el visor seguía filtrando con `fecha` hasta el cron de
+  las 03:00.
+
+### Cambiado
+
+- **`fecha_periodo_seleccion` es la columna de fecha por contrato.** La función de periodicidad la toma antes que
+  `fecha` cuando es de tipo fecha; la columna configurada en mariachi y el comentario `mapalab:fecha` siguen ganando.
+
+## [2.11.0] - 2026-11-10
+
+### Agregado
+
+- **El panel de estadísticas viaja en el compartido.** El enlace guarda `estadisticas: {capa, modo?, comparados?}` y al
+  abrirlo el panel se abre con esa capa, en el modo y con los municipios comparados. El backend valida el bloque.
+- **MCP: grupo de municipios y estadísticas.** `create_map` y `create_swipe` aceptan `municipios` (lista de nombres o
+  claves, filtrada con `IN`) en lugar de `municipio`, y `estadisticas=true` para abrir el panel con la capa de
+  `selected`, la primera o la del lado A. `estadisticas` solo se registra donde la herramienta está liberada (`pre`, dev y
+  beta).
+
+## [2.10.0] - 2026-11-09
+
+### Agregado
+
+- **Promedio por lado de la barra.** El ranking agrupa también los slots `avg` y devuelve `pesos` (registros por
+  municipio); cada lado calcula Σ(promedio × peso) / Σpeso, exacto para cualquier promedio. Sale en el detalle de la
+  pastilla y en el modo ranking.
+- **Una capa distinta en cada lado.** Si la capa del panel está en un solo lado, se busca en el otro la primera capa
+  visible con estadísticas (`useCapaOtroLado`). Cada lado reparte su propia capa con su fecha y el panel las muestra en
+  columnas, sin Δ. Tocar la fecha de la otra capa abre su selector.
+
+### Cambiado
+
+- `@fecha` toma la columna de `public.layer_periodicity.date_column` (o `layers.date_column` si la capa la declara),
+  la misma que usa el visor para filtrar: config, comentario `mapalab:fecha` y luego el nombre `fecha`. Un cambio de
+  nombre en el contrato ya no toca las `stats_config`.
+
+## [2.9.1] - 2026-11-09
+
+### Cambiado
+
+- **Encabezado del panel de estadísticas en dos filas.** Arriba ícono, título, minimizar y la X estándar; abajo la pastilla
+  de lado (cuando la capa está en uno solo), la del ámbito y los modos. Los botones pasan a 32 px.
+- **Panel de fechas del swipe bajo su pastilla.** Se ancla a la pastilla de A o B y se ajusta a la pantalla; en móvil va a
+  lo ancho. Las fechas de la tabla A | B del panel también lo abren.
+- **Capas comparadas se abre donde vive el panel de estadísticas**, abajo al centro, en vez de a un costado de la barra.
+- La X de los paneles de capas y de fechas queda centrada verticalmente.
+
+### Corregido
+
+- La columna Δ ya no aparece cuando A y B tienen la misma fecha.
+- Las columnas de comparar municipios crecen con la cifra más larga (`minmax(78px, max-content)`) en vez de desbordarse.
+
+## [2.9.0] - 2026-11-09
+
+### Agregado
+
+- **Cifras por lado de la barra divisora.** Con la capa en los dos lados y el panel de estadísticas abierto, cada lado
+  suma los municipios que le quedan, con su fecha, en una pastilla junto al nodo. Un municipio cortado cuenta completo
+  del lado con más área y se dibuja rayado del color de su lado. Se recalcula en vivo al arrastrar (~2 ms con las
+  siluetas) y solo reparte indicadores sumables. Hover muestra el principal y clic, todos; en móvil el detalle se abre
+  dentro del panel.
+- **Controles del swipe en el nodo.** Capas comparadas, orientación y cerrar pasan a botones bajo el nodo; la X aparece
+  con hover. Las fechas de A y B van junto al nodo. En móvil, fechas y capas abren como hoja inferior.
+- `LottieSpinner` acepta `color`; el nodo muestra la carga en blanco mientras se calculan las cifras.
+- `data-pila-inferior` y `avisarLayout`: el panel abierto se acomoda sobre el dock de pastillas y lo marcado.
+
+### Cambiado
+
+- El panel de estadísticas lleva el ícono y el título del panel del swipe (`PanelHeader grande`), el ámbito en
+  pastilla y A · fecha y B · fecha en una sola fila. En móvil el encabezado va en dos filas.
+- Minimizar el panel ya no quita las cifras ni el rayado de la barra.
+- El scroll horizontal es solo de la tabla; el panel crece hasta 80 % de la altura.
+
+### Eliminado
+
+- La pastilla de controles del swipe al pie del mapa y su aviso «Barra de acciones».
+
+## [2.8.0] - 2026-11-09
+
+### Agregado
+
+- **Estadísticas en la barra divisora.** Si la capa está en los dos lados, el resumen del panel muestra A | B | Δ
+  con la fecha de cada lado (`ResumenLados`); si está en uno, el panel sigue a ese lado. Comparar, ranking y crear
+  trabajan sobre el lado activo. Fuera del comparador el panel manda la fecha del mapa.
+- **Token `@fecha` en `stats_config`.** Se liga a `layers.date_column` (`fecha` por defecto) igual que `@municipio`.
+  Sin fecha en la petición se usa el `default_date` de la capa, así que la numeralia no suma todos los periodos. El
+  constructor agrega el filtro solo cuando la capa lo usa.
+
+### Cambiado
+
+- Las capas cuya configuración no usa fecha descartan `fecha_inicio`/`fecha_fin`: sus números no cambiaban y el
+  ámbito decía un periodo que no se calculó.
+
+### Corregido
+
+- El constructor rechazaba seis condiciones: el filtro de municipio contaba contra el tope del motor. El usuario
+  conserva seis y el motor deja lugar para los filtros fijos.
+
+## [2.7.0] - 2026-11-09
+
+### Agregado
+
+- **Panel de estadísticas preliberado.** `estadisticas` entra a `PRELIBERADAS`: en `pre` se encienden el panel y el
+  botón que desacopla las estadísticas desde el detalle de capa, sin la etiqueta BETA. Producción no cambia.
+
+## [2.6.0] - 2026-11-05
+
+### Agregado
+
+- **Entorno `pre` (preproducción).** `VITE_APP_ENV=pre` se ve como producción más las funciones que ya van a
+  salir, listadas en `PRELIBERADAS` del visor y del MCP. La primera es la barra divisora: el menú de
+  herramientas, los enlaces compartidos del comparador y `create_swipe` del MCP (sin `vista_3d`) se encienden en
+  `pre`. Fuera de `dev`/`beta` las herramientas ya no llevan la etiqueta BETA. Producción no cambia.
+
+### Cambiado
+
+- **Nodo nuevo de la barra divisora.** Contenedor `#FF8300` de 82 × 68 (68 × 82 en horizontal), radio de 18 px y
+  sombra `0 3px 6px #00000026`, con los iconos del comparador embebidos en `SwipeBar/IconoComparador.jsx`. En
+  reposo lleva A|B dentro y flechas afuera; en hover, flechas dentro y A y B a los lados. Los dos estados comparten
+  lienzo, marco y línea, así que no cambian de tamaño. La línea pasa de 2 a 6 px.
+- **Los lados del comparador vuelven a A y B** (`slotLabel`): handle, fechas, panel de capas, periodicidad e imagen
+  descargada.
+
+### Corregido
+
+- **Fuentes con varios enlaces.** El detalle de capa separa los enlaces aunque vengan unidos por espacio, coma o
+  punto y coma, y cada uno lleva su nombre: el de su posición si la etiqueta trae tantos como enlaces, o la
+  etiqueta numerada.
+
+### Eliminado
+
+- Iconos `swipe_handle_chevrons_h` y `swipe_handle_chevrons_v` de `Icon.jsx`.
+
+## [2.5.0] - 2026-10-30
+
+### Agregado
+
+- **Alias de valores en la tarjetita.** Los renglones, las cifras y las etiquetas aceptan `valueMap` para
+  mostrar un texto en lugar del valor exacto, por ejemplo `0` como «Sin registros». El alias no pasa por el
+  formato de números. `infoboxPlan.js` se sincroniza con mariachi.
+
+## [2.4.1] - 2026-10-27
+
+### Corregido
+
+- **Clientes `unknown` en la telemetría del MCP.** Con `stateless_http` solo el `initialize` trae
+  `clientInfo`, así que `tools/call`, `tools/list` y las notificaciones salían sin cliente. Sin
+  `clientInfo`, `client_name` toma el producto del `User-Agent` con prefijo (`ua:python-httpx`,
+  `ua:Claude-User`), sin versión ni el resto de la cadena; uno que no empiece con letras, números, `.`,
+  `_` o `-` queda nulo.
+
+## [2.4.0] - 2026-10-27
+
+### Agregado
+
+- **Errores de tool del MCP en el log.** Cada error de dominio deja una línea `mcp.tool_error tool=<tool>
+  origen=<archivo>:<línea>` con el punto que lo lanzó. No lleva el mensaje: repite lo que mandó el cliente y
+  la telemetría promete no guardar argumentos.
+- **Página del conector de IA** en `/conector`: la URL del MCP con botón para copiarla, cómo conectarlo
+  desde Claude, Claude Code u otro cliente, las seis herramientas de producción, preguntas de ejemplo y qué
+  datos se guardan. Es la documentación pública que pide el Connectors Directory. El footer de la portada
+  pasa a `components/Footer.jsx` y su configuración a `constants/footerConfig.js` para compartirlo
+- El proxy de capas privadas (`/api/privado`) puede autenticarse ante GeoServer con un token de servicio de minerva (`client_credentials`) en vez de usuario y contraseña: `GEOSERVER_AUTH_MODE=minerva` y `GEOSERVER_MINERVA_AUDIENCE=sextante`. Usa `MINERVA_ISSUER_URL`, `MINERVA_CLIENT_ID` y `MINERVA_CLIENT_SECRET`; renueva el token antes de que venza y reintenta una vez ante 401. La cuenta de servicio de mapalab solo necesita el rol que GeoServer traduce a `MAPALAB_PRIVADA`. **Las dos variables son obligatorias en el compose**: cada `.env` tiene que declarar `GEOSERVER_AUTH_MODE` (`basic` para seguir como antes) y `GEOSERVER_MINERVA_AUDIENCE`.
+- **Capas no consultables.** El clic y la selección por polígono omiten las capas con
+  `wmsConfig.queryable === false`, y una de ellas ya no descarta las de `general`. Se configura en
+  mariachi.
+- **Tema de Día de Muertos.** Si un evento vigente trae `decoracion: 'dia-de-muertos'` (mariachi 2.151.0),
+  el borde del sider muestra un pan de muerto que enciende el tema; arranca apagado en cada visita y el
+  aviso «¡Día de Muertos!» sale una vez por visitante. Encendido, el pan lleva una mordida y aparecen:
+  una lluvia lenta de cempasúchil que se acumula en el borde inferior (doce flores como tope, la más vieja
+  se desvanece), macetas de barro detrás del logo del IIEG, a todo lo ancho del sider y sin hacerlo
+  crecer, una de maravillas y las demás de cempasúchil, cuyas flores se tumban con un clic (el «Acerca
+  de» del logo pasa a un «>» gris en el borde mientras el tema está encendido), y papel picado bajo
+  Capas activas, en cordel o en pila si el panel está contraído, que se agita con el
+  hover. Sobre «Contribuciones ©», en escritorio, una ofrenda chica: cirios y veladoras encendidos,
+  pan de muerto, un cafecito con vapor, mazapán, cocada, dulce de calabaza y una mandarina.
+  Los estilos del tema salen de `index.css` a `DiaDeMuertos/muertos.css`.
+  Mientras el tema está encendido el mapa base pasa a CARTO oscuro (`oscuro`, fuera de la lista de
+  mapas base) y al apagarlo vuelve al que había; si el visitante elige otro, se respeta. Mientras está
+  desplegado, «Carto Dark» aparece marcado en «Mapas base», y ese panel se abre solo al encender el tema
+  para que el visitante pueda cambiar de mapa. Todo vive en `components/DiaDeMuertos/` y respeta `prefers-reduced-motion`
+- El logo del IIEG del sider sale a `DiaDeMuertos/LogoIieg.jsx`
+
+### Corregido
+
+- **MCP: `search_layers` encuentra lo que se pide en lenguaje natural.** Busca palabra por palabra
+  (sin acentos, con plurales y unos pocos sinónimos) en nombre, id, etiquetas y ruta del árbol, y ordena
+  por relevancia: quedan las capas que cubren más palabras, con la etiqueta exacta primero. Antes era un
+  `LIKE '%frase%'` en orden alfabético y «escuelas primarias», «población total» u «hospital» daban
+  vacío. Vive en `servers/busqueda.py`, sobre el árbol en memoria; también la usa la `query` de
+  `create_map`. La resolución estricta de ids no cambia
+- **MCP: los rásters ya no se anuncian como consultables.** `describe_layer` daba
+  `consultableWfs: true` a las capas con `geometryType: 'raster'` y `layer_table`/`layer_stats`
+  fallaban con un «HTTP 400» de GeoServer; ahora el error dice que es ráster
+- **MCP: los rásters mensuales tienen periodicidad.** Se lee `rasterPeriodicity` del árbol cuando
+  `layer_periodicity` no tiene la capa, y en una capa `timeEnabled` el filtro `date` de `create_map`
+  es el instante `TIME` (el último mes del año si no hay `month`), nunca CQL
+- **MCP: `layer_stats` acepta `month`**, como ya decía la documentación; antes salía un error crudo
+  de pydantic
+- **MCP: detalles.** `municipios` respeta `limit` también sin `query`, y las coordenadas crudas
+  (`x_6368`, `y_6368`) ya no salen en las columnas por defecto de `layer_table` ni como campo sumable
+  de `layer_stats` (siguen pidiéndose en `columnas`)
+- **MCP: los conteos y tablas ya no se agotan.** Se quitó el techo global de 60/min y 5000/día de
+  `layer_table` y del conteo de `layer_stats`: sin la IP del cliente cortaba a todos, y contar los 36
+  delitos de un municipio lo agotaba en la llamada 31. En nginx, `burst=50` sin `nodelay`: una ráfaga
+  espera en cola en vez de recibir 429
+- **La fecha por defecto de año completo se marca en el selector.** Con `defaultDate: { year }` en una
+  capa mensual, el mapa se filtraba por el año pero el panel de capas activas y el modal de detalle no
+  marcaban nada: el año no existe en un catálogo de meses. `keysInCatalog` lo abre en los meses que tiene;
+  en selección única se queda con el último.
+- **La fecha por defecto de un grupo se aplica al grupo.** En grupos como los de delitos contra el
+  patrimonio (*Con violencia*, *Sin violencia*, *Sin especificar*), la fecha configurada en los hijos se
+  aplicaba a cada hijo: el selector del grupo no la veía y, como el filtro propio del hijo le gana al
+  del grupo, cambiar el año no los movía. Ahora va al grupo, con la del grupo o la del primer hijo que
+  la tenga, y los hijos la heredan.
+- **`layer_table` del MCP devolvía las columnas con su nombre crudo** cuando la capa no tiene alias en
+  `atributos.columnas`. Ahora la etiqueta sale del alias de la tabla de datos y, si no hay, de la
+  etiqueta que la tarjetita (`littleCard`) le da al campo, con su formato (el año de `fecha`); el nombre
+  crudo queda solo como último recurso
+- **MCP: ids de grupo y ids ambiguos.** `poblacion` o `cultivos` (grupos del árbol) daban `KeyError` en
+  `layer_table`/`layer_stats` y compartidos con grupos; `robo` se resolvía en silencio a la primera capa
+  alfabética. Ahora un grupo responde con sus capas, un texto ambiguo con la lista de ids y uno resuelto
+  lleva `resuelto_de`. Los municipios se buscan sin acentos y con error si hay varios (`Zapotlan`)
+- **MCP: `year` y `month` se validan contra la periodicidad** en `layer_table`, `layer_stats`, `create_map`
+  y `create_swipe`, con la columna de fecha de cada capa. Antes un año inexistente daba `0` como dato,
+  `month` sin `year` se ignoraba y en mapas de varias capas el filtro caía también en las no temporales
+- **MCP: `municipio` filtra de verdad.** Cada capa con `hasMunicipio` lleva `filters.municipio`; antes solo
+  se guardaba `payload.municipios`, que el visor ignora fuera de BETA, y el mapa mostraba todo Jalisco
+- **MCP: el swipe por años perdía `annotations` y `position`** y aceptaba el mismo año en los dos lados
+- **MCP: paginación de `layer_table`.** `paginas` coherente con el tope de 5000 filas, desempate por `fid`,
+  `descendente` sin `orden`, error en páginas fuera de rango y `contiene` sin comodines (`strIndexOf`)
+- **MCP: telemetría.** El loop ya no muere si falta la configuración, los textos del cliente se recortan
+  y una tool que falla cuenta como `error`
+- **El `antialias` de las capas WMS viajaba duplicado en pantallas de alta densidad.** Se mandaba como
+  `format_options` y OpenLayers agregaba su `FORMAT_OPTIONS=dpi:…` aparte; GeoServer se queda con el
+  último y perdía el otro. Ahora va en `FORMAT_OPTIONS` y OpenLayers le suma el `dpi` en la misma clave
+- **Las leyendas del panel de capas activas se veían pixeladas.** Se pedían a `dpi:100` y en pantallas de
+  alta densidad el navegador las estiraba. Ahora se piden al doble y se muestran a la mitad: mismo tamaño
+  de icono y letra, con el doble de detalle
+
+
+### Cambiado
+
+- **Las macetas de Día de Muertos pasan a la ofrenda de Contribuciones.** El logo del IIEG queda limpio y
+  la ofrenda gana una grada con dos macetas de maravilla y una de cempasúchil; panes, dulces y velas van al
+  frente. Las flores se siguen tumbando con un clic
+- **Colibrí y Novedades tampoco salen a producción.** Con `VITE_APP_ENV` distinto de `dev` o `beta` se
+  ocultan el botón flotante de reportes y, en la tarjeta de la marca IIEG, «Novedades» y «Reportar problema o
+  sugerencia». Caminar el instituto ya estaba oculto
+- **El MCP entra con privilegios mínimos.** Usa el rol `mapalab_mcp` de dataengine (`0059`; `MCP_DB_USER`
+  y el secreto `mcp_db_password`), ya no manda credencial a GeoServer, corre como `appuser` y deja de
+  recibir los secretos de acervo y GeoServer
+- **El MCP de producción no expone lo BETA.** Con `MAPALAB_APP_ENV` (el `VITE_APP_ENV` del entorno) fuera
+  de `dev`/`beta` no se registra `create_swipe`, `create_map` no tiene `vista_3d` y no se devuelve
+  `embed_html`. `create_map` acepta `month`
+- **Errores del MCP como errores de la tool** (`ToolError`, `isError: true`) y los no previstos sin
+  detalle (`mask_error_details`). Las tools llevan título en español y `readOnlyHint`; `serverInfo` da la
+  versión de mapalab
+- **Topes del MCP antes de trabajar:** hasta 60 capas, 8 palabras de búsqueda y longitud máxima en
+  todos los textos; el cupo de compartidos se cobra al entrar y los techos se reparten entre workers.
+  Anotaciones con números finitos y coordenadas en la región. `Origin` ajeno da 403, cuerpo de más de
+  256 KB da 413 y nginx corta a 120 s
+- `servers/` se reparte en `servidor`, `herramientas_lectura`, `herramientas_mapas`, `compartidos` y
+  `borde` para no pasar de 300 líneas
+- **El MCP no publica datos de contacto.** Los textos de las anotaciones y las etiquetas del comparador
+  rechazan páginas web, correos y teléfonos: un compartido vive en el dominio oficial y no debe servir
+  para dirigir a la gente a otro lado
+- **`mapalab-mcp` sale de `iieg-network` en producción.** Solo se llega a él por el nginx de mapalab
+  (`/mcp`, detrás del gateway), con sus límites de tasa y de cuerpo; antes `:8000` se alcanzaba directo
+  desde cualquier contenedor de esa red
+- **El loop de fechas corre sobre zootropo.** `useDateLoop` conserva su API (`toggleLoop`, `stopLoop`,
+  `dateLoops`, preferencias por capa, lado del comparador) pero la secuencia, los temporizadores, la
+  espera a que la capa termine de cargar y el tope de 30 s salen de zootropo, que se instala
+  desde npm. El sondeo cada 100 ms de `loadingLayers` se sustituye por
+  `loading()`/`ready()` del reproductor. Primer paso de `planes/migracion-a-zootropo.md`.
+- **El filtro de fecha se lee por rangos, no por el texto exacto.** `helpers/dateKeys.js` convierte
+  cualquier CQL de fecha (cualquier columna, rangos fundidos, días como rango o igualdad, horas) en
+  llaves de zootropo; `parseCQLToSelections`, `cqlToDateRange` y `describeDateFilter` pasan por ahí, así
+  que la píldora, el nombre y el rango de las descargas y `?fecha=` entienden el formato viejo y el
+  nuevo. `generateCQLFilter` genera con zootropo: meses o días contiguos salen como un solo rango y el
+  día deja de ser `fecha = '…'`. Los enlaces y sesiones guardados con el formato anterior se siguen
+  leyendo.
+- **El selector de año y mes guarda su estado en zootropo.** `SimpleDateSelector` usa
+  `useDateSelector`, un reproductor local de zootropo con las reglas de siempre (en ráster el clic en
+  el año conserva o elige un mes; «Regresar» deja el año entero en vectoriales; al quitar el último mes
+  queda el año). La selección se reconstruye del filtro vigente por llaves, así que sigue al loop, a
+  los enlaces y al otro lado del comparador sin efectos propios. Los años y meses llevan `role="option"`,
+  `aria-selected` y `data-key`.
+- **El árbol de fechas del modo avanzado también usa zootropo** (0.3.0, `multiple: 'mixed'`). Los gestos no
+  cambian: clic navega, doble clic marca y clic sobre algo marcado lo quita. Al marcar una fecha se quitan
+  las que la contienen y las que contiene, así que el CQL no repite periodos (antes, marcar un año
+  dejaba también sus meses). zootropo pasa a 0.3.0.
+- **En el comparador cada lado anima por su cuenta, y se pueden sincronizar.** El loop de una capa ya no
+  pertenece a un solo lado: A y B corren a la vez, cada uno con su fecha, y las capas activas muestran
+  los controles de los dos. En el panel de periodicidad del comparador, «Sincronizar A y B» une los dos
+  lados en un reloj de zootropo (`createPlayerGroup`): el play arranca ambos desde la fecha del lado
+  donde se pulsó y pausar cualquiera pausa los dos. `getLoopState` y `stopLoop` aceptan el lado.
+- **Las capas ráster entienden el `TIME` en intervalos.** `parseTimeDimensionToPeriodicity` usa el
+  catálogo de zootropo: una dimensión anunciada como `inicio/fin/periodo` (presentación «Interval» de
+  GeoServer) o como rango continuo ya da meses, y antes dejaba la capa sin fechas. zootropo pasa a 0.7.0, desde npm (antes vendorizado).
+- **La columna de fecha ya no tiene que llamarse `fecha`.** Una tabla o vista entra a la periodicidad si
+  tiene una columna `fecha` o una columna con el comentario `mapalab:fecha`
+  (`COMMENT ON COLUMN esquema.tabla.col IS 'mapalab:fecha'`); el comentario gana. `layer_periodicity`
+  guarda `date_column`, `/periodicity/` la devuelve en `column` y `/periodicity/columns` la da por lote.
+  El visor arma el CQL, el loop y la fecha por defecto con esa columna. No hace falta migración: la tabla
+  la amplía el propio backend. El catálogo (`/catalogo`) también: el `?fecha=`, el año por defecto de los
+  polígonos y los selectores usan la columna que devuelve `/periodicity/`.
+- **La columna de fecha también se elige en mariachi.** `refresh_layer_periodicity()` toma primero
+  `mapalab.layers.date_column` de una capa que apunte a la tabla (dataengine `0058`, campo «Columna de fecha»
+  del editor de capas), luego la columna con el comentario `mapalab:fecha` y al final `fecha`. Si la
+  columna configurada no existe en la tabla, cae a las otras dos; sin la migración, la función ignora ese
+  paso.
+- **`ScrollContainer` corre sobre scroll-edges**, la librería headless que salió de él (`scroll-edges`
+  0.1.1, desde npm). Se ve igual; ya no mide con cada cambio de clase de sus hijos, observa
+  los que llegan después de montar y el sider engancha su máscara aunque su contenido se monte tarde.
+  Salen seis props sin uso y `useScrollOverflow`
+
+### Eliminado
+
+- `useDateSelections` y `computeSelectorInitialState`: el árbol y el selector de fechas guardan la
+  selección en zootropo.
 
 ## [2.3.0] - 2026-10-06
 
@@ -232,6 +561,10 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ### Corregido
 
+- El primer inicio de sesión de una cuenta ya no se rechaza como «Tu acceso a MapaLab está suspendido»:
+  el usuario nuevo nace activo en lugar de esperar al default de la base, que llega hasta el `INSERT`.
+- Al recargar con el tema de Día de Muertos encendido, el mapa ya no se queda oscuro: la sesión y los
+  enlaces compartidos guardan el mapa base que había antes del tema, no el `oscuro`.
 - Los enlaces a la página del IIEG (footer, logo de la portada y tarjeta del IIEG en el mapa) apuntan a
   `https://iieg.jalisco.gob.mx/`. El PDF de la licencia sigue en `iieg.gob.mx`, el único que lo sirve
 - El widget embebible usa por defecto `https://iieg.jalisco.gob.mx/mapalab` cuando no se le pasa

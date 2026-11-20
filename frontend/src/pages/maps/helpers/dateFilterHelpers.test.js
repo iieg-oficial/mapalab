@@ -14,37 +14,43 @@ describe('generateCQLFilter', () => {
         expect(generateCQLFilter(new Set())).toBeNull();
     });
 
-    it('genera igualdad exacta para un dia', () => {
-        expect(generateCQLFilter(new Set(['2024-3-5']))).toBe("fecha = '2024-03-05'");
+    it('genera el rango de un dia', () => {
+        expect(generateCQLFilter(new Set(['2024-3-5']))).toBe("fecha >= '2024-03-05' AND fecha < '2024-03-06'");
     });
 
     it('genera rango de mes con corte al mes siguiente', () => {
         expect(generateCQLFilter(new Set(['2024-3']))).toBe(
-            "(fecha >= '2024-03-01' AND fecha < '2024-04-01')",
+            "fecha >= '2024-03-01' AND fecha < '2024-04-01'",
         );
     });
 
     it('cruza al ano siguiente en diciembre', () => {
         expect(generateCQLFilter(new Set(['2024-12']))).toBe(
-            "(fecha >= '2024-12-01' AND fecha < '2025-01-01')",
+            "fecha >= '2024-12-01' AND fecha < '2025-01-01'",
         );
     });
 
     it('genera rango de ano completo', () => {
         expect(generateCQLFilter(new Set(['2024']))).toBe(
-            "(fecha >= '2024-01-01' AND fecha < '2025-01-01')",
+            "fecha >= '2024-01-01' AND fecha < '2025-01-01'",
         );
     });
 
-    it('combina varias selecciones con OR', () => {
+    it('funde meses contiguos en un rango', () => {
         expect(generateCQLFilter(new Set(['2024-1', '2024-2']))).toBe(
-            "((fecha >= '2024-01-01' AND fecha < '2024-02-01') OR (fecha >= '2024-02-01' AND fecha < '2024-03-01'))",
+            "fecha >= '2024-01-01' AND fecha < '2024-03-01'",
+        );
+    });
+
+    it('combina selecciones separadas con OR', () => {
+        expect(generateCQLFilter(new Set(['2024-1', '2024-3']))).toBe(
+            "(fecha >= '2024-01-01' AND fecha < '2024-02-01') OR (fecha >= '2024-03-01' AND fecha < '2024-04-01')",
         );
     });
 
     it('respeta una columna de filtro personalizada', () => {
         expect(generateCQLFilter(new Set(['2024']), 'fecha_evento')).toBe(
-            "(fecha_evento >= '2024-01-01' AND fecha_evento < '2025-01-01')",
+            "fecha_evento >= '2024-01-01' AND fecha_evento < '2025-01-01'",
         );
     });
 });
@@ -78,6 +84,14 @@ describe('parseCQLToSelections', () => {
     });
 });
 
+describe('parseCQLToSelections con el formato nuevo', () => {
+    it('lee rangos fundidos, otras columnas y dias como rango', () => {
+        expect(parseCQLToSelections("fecha >= '2024-01-01' AND fecha < '2024-04-01'")).toEqual(new Set(['2024-1', '2024-2', '2024-3']));
+        expect(parseCQLToSelections("obs >= '2024-03-05' AND obs < '2024-03-07'")).toEqual(new Set(['2024-3-5', '2024-3-6']));
+        expect(parseCQLToSelections("fecha >= '2023-01-01' AND fecha < '2025-01-01'")).toEqual(new Set(['2023', '2024']));
+    });
+});
+
 describe('generateDefaultDateFilter', () => {
     it('devuelve null sin fecha por defecto', () => {
         expect(generateDefaultDateFilter(null)).toBeNull();
@@ -85,25 +99,25 @@ describe('generateDefaultDateFilter', () => {
 
     it('resuelve solo ano', () => {
         expect(generateDefaultDateFilter({ year: 2024 })).toBe(
-            "(fecha >= '2024-01-01' AND fecha < '2025-01-01')",
+            "fecha >= '2024-01-01' AND fecha < '2025-01-01'",
         );
     });
 
     it('resuelve ano y mes', () => {
         expect(generateDefaultDateFilter({ year: 2024, month: 5 })).toBe(
-            "(fecha >= '2024-05-01' AND fecha < '2024-06-01')",
+            "fecha >= '2024-05-01' AND fecha < '2024-06-01'",
         );
     });
 
     it('resuelve ano, mes y dia', () => {
         expect(generateDefaultDateFilter({ year: 2024, month: 5, day: 9 })).toBe(
-            "fecha = '2024-05-09'",
+            "fecha >= '2024-05-09' AND fecha < '2024-05-10'",
         );
     });
 
     it('acepta arreglos de valores', () => {
         expect(generateDefaultDateFilter({ year: [2023, 2024] })).toBe(
-            "((fecha >= '2023-01-01' AND fecha < '2024-01-01') OR (fecha >= '2024-01-01' AND fecha < '2025-01-01'))",
+            "fecha >= '2023-01-01' AND fecha < '2025-01-01'",
         );
     });
 });

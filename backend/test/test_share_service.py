@@ -251,6 +251,30 @@ class TestVista3d:
             validate_payload(env)
 
 
+
+class TestEstadisticas:
+    PANEL = {'capa': 'poblacion_total', 'modo': 'comparar', 'comparados': ['14039', '120']}
+
+    def test_acepta_single_y_swipe_con_estadisticas(self):
+        validate_payload(_envelope('single', {'layers': [], 'estadisticas': self.PANEL}))
+        validate_payload(_envelope('swipe', {
+            'shared': {'estadisticas': {'capa': 'poblacion_total'}}, 'paneA': {'layers': []}, 'paneB': {'layers': []}, 'activeSlot': 'A',
+        }))
+
+    @pytest.mark.parametrize('cambio,mensaje', [
+        ({'capa': ''}, 'capa'),
+        ({'capa': 'x' * 201}, 'capa'),
+        ({'modo': 'crear'}, 'modo'),
+        ({'comparados': [str(i) for i in range(7)]}, 'comparados'),
+        ({'comparados': ['abc']}, 'comparados'),
+        ({'comparados': [14039]}, 'comparados'),
+    ])
+    def test_rechaza_valores_invalidos(self, cambio, mensaje):
+        env = _envelope('single', {'layers': [], 'estadisticas': {**self.PANEL, **cambio}})
+        with pytest.raises(ValueError, match=mensaje):
+            validate_payload(env)
+
+
 class TestLimitesDelPayload:
     @pytest.mark.parametrize('payload,mensaje', [
         ({'layers': [], 'view': {'zoom': 8, 'lat': 48.8, 'lon': 2.3}}, 'view.lat'),

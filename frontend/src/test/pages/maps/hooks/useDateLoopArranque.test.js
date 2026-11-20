@@ -121,4 +121,44 @@ describe('useDateLoop — comparador', () => {
         expect(result.current.getLoopState('c').isPlaying).toBe(false);
         expect(props.applyFilter).not.toHaveBeenCalled();
     });
+
+    it('cada lado corre su propio loop a la vez', () => {
+        const { result, props } = montar(anio(2021), { compareMode: comparador('A') });
+        act(() => result.current.toggleLoop('c', null, 'A'));
+        act(() => result.current.toggleLoop('c', null, 'B'));
+        expect(result.current.getLoopState('c', 'A')).toMatchObject({ isPlaying: true, currentKey: 2021 });
+        expect(result.current.getLoopState('c', 'B')).toMatchObject({ isPlaying: true, currentKey: 2023 });
+        act(() => vi.advanceTimersByTime(1000));
+        expect(props.applyFilterToSlot).toHaveBeenCalledWith('c', 'A', 'date', anio(2020));
+        expect(props.applyFilterToSlot).toHaveBeenCalledWith('c', 'B', 'date', anio(2022));
+        act(() => result.current.toggleLoop('c', null, 'A'));
+        expect(result.current.getLoopState('c', 'A').isPlaying).toBe(false);
+        expect(result.current.getLoopState('c', 'B').isPlaying).toBe(true);
+    });
+
+    it('sincronizados, los dos lados avanzan con un solo reloj desde el lado que arrancó', () => {
+        const { result, props } = montar(anio(2021), { compareMode: comparador('A') });
+        act(() => result.current.setSyncSlots(true));
+        act(() => result.current.toggleLoop('c', null, 'A'));
+        expect(result.current.getLoopState('c', 'A')).toMatchObject({ isPlaying: true, currentKey: 2021 });
+        expect(result.current.getLoopState('c', 'B')).toMatchObject({ isPlaying: true, currentKey: 2021 });
+        expect(props.applyFilterToSlot).toHaveBeenCalledWith('c', 'B', 'date', anio(2021));
+        props.applyFilterToSlot.mockClear();
+        act(() => vi.advanceTimersByTime(1000));
+        expect(props.applyFilterToSlot).toHaveBeenCalledWith('c', 'A', 'date', anio(2020));
+        expect(props.applyFilterToSlot).toHaveBeenCalledWith('c', 'B', 'date', anio(2020));
+        act(() => result.current.toggleLoop('c', null, 'B'));
+        expect(result.current.getLoopState('c', 'A').isPlaying).toBe(false);
+        expect(result.current.getLoopState('c', 'B').isPlaying).toBe(false);
+    });
+
+    it('al activar la sincronía con un loop pausado, el play arranca los dos lados juntos', () => {
+        const { result } = montar(anio(2021), { compareMode: comparador('A') });
+        act(() => result.current.toggleLoop('c', null, 'A'));
+        act(() => result.current.toggleLoop('c', null, 'A'));
+        act(() => result.current.setSyncSlots(true));
+        act(() => result.current.toggleLoop('c', null, 'A'));
+        expect(result.current.getLoopState('c', 'A').isPlaying).toBe(true);
+        expect(result.current.getLoopState('c', 'B').isPlaying).toBe(true);
+    });
 });

@@ -10,6 +10,7 @@ from fastapi.concurrency import run_in_threadpool
 from app.config import settings
 from app.routers.sesion import usuario_actual
 from app.services import acceso_capas, arbol_privado
+from app.services.token_servicio import auth_geoserver
 from app.services.embed_wms_params import WMS_ALLOWED_PARAMS, known_workspaces, split_layers
 from app.utils.api_responses import api_responses
 from app.utils.logger import Logger
@@ -57,7 +58,7 @@ def _autorizar(nombres: list[str], workspace: Optional[str], usuario_id: int) ->
 
 
 def _reenviar(destino: str) -> httpx.Response:
-    auth = (settings.GEOSERVER_USER, settings.GEOSERVER_PASSWORD) if settings.GEOSERVER_USER else None
+    auth = auth_geoserver(settings)
     with httpx.Client(timeout=_TIMEOUT, verify=settings.GEOSERVER_VERIFY_SSL) as client:
         return client.get(destino, auth=auth)
 

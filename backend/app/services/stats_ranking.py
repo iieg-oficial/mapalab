@@ -17,7 +17,7 @@ from app.services.stats_engine import (
     load_layer_binding,
 )
 
-AGRUPABLES = {'count', 'count_where', 'count_distinct', 'sum'}
+AGRUPABLES = {'count', 'count_where', 'count_distinct', 'sum', 'avg'}
 MAX_GRUPOS = 200
 
 
@@ -67,18 +67,21 @@ def build_group_query(cfg: dict, campo: str, context: dict | None) -> tuple[str,
         agregado = 'COUNT(*)'
     elif op == 'count_distinct':
         agregado = f'COUNT(DISTINCT "{field}")'
+    elif op == 'avg':
+        agregado = f'AVG("{field}")'
     else:
         agregado = f'SUM("{field}")'
+    peso = f'COUNT("{field}")' if op == 'avg' else 'NULL'
 
     fqtn = f'"{schema}"."{table}"'
     sql = (
-        f'SELECT "{campo}" AS llave, {agregado} AS valor '
+        f'SELECT "{campo}" AS llave, {agregado} AS valor, {peso} AS peso '
         f'FROM {fqtn}{where} GROUP BY "{campo}" LIMIT {MAX_GRUPOS}'
     )
     return sql, params
 
 
-def _ejecutar_grupo(session: Session, sql: str, params: dict) -> dict[str, Any]:
+def _ejecutar_grupo(session: Session, sql: str, params: dict) -> dict[str, tuple[Any, Any]]:
     savepoint = session.begin_nested()
     try:
         filas = session.execute(text(sql), params).fetchall()
@@ -86,7 +89,15 @@ def _ejecutar_grupo(session: Session, sql: str, params: dict) -> dict[str, Any]:
     except Exception:
         savepoint.rollback()
         return {}
-    return {str(fila[0]): fila[1] for fila in filas if fila[0] is not None}
+    return {str(fila[0]): (fila[1], fila[2]) for fila in filas if fila[0] is not None}
+
+
+def _municipio(llave: str, series: list[dict[str, tuple[Any, Any]]], pesos: bool) -> dict:
+    celdas = [serie.get(llave, (None, None)) for serie in series]
+    item: dict[str, Any] = {'llave': llave, 'valores': [valor for valor, _ in celdas]}
+    if pesos:
+        item['pesos'] = [peso for _, peso in celdas]
+    return item
 
 
 def compute_ranking(
@@ -101,7 +112,7 @@ def compute_ranking(
         return None
 
     slots: list[dict] = []
-    series: list[dict[str, Any]] = []
+    series: list[dict[str, tuple[Any, Any]]] = []
 
     for cfg in bind_layer_fields(stats_config, binding):
         construido = build_group_query(cfg, campo, context)
@@ -120,12 +131,10 @@ def compute_ranking(
         return None
 
     llaves = sorted({llave for serie in series for llave in serie})
+    con_pesos = any(slot['op'] == 'avg' for slot in slots)
     return {
         'campo': campo,
         'tipo': (binding or {}).get('municipio_field_type') or 'nombre',
         'slots': slots,
-        'municipios': [
-            {'llave': llave, 'valores': [serie.get(llave) for serie in series]}
-            for llave in llaves
-        ],
+        'municipios': [_municipio(llave, series, con_pesos) for llave in llaves],
     }

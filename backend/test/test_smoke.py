@@ -86,10 +86,12 @@ class TestLayersAdminAuth:
         settings.MAPALAB_INTERNAL_TOKEN = 'expected-token'
         try:
             mock_result = {'etag': 'W/"x"', 'layer_count': 0}
-            with patch('app.routers.layers.refresh_cache', return_value=mock_result):
+            with patch('app.routers.layers.refresh_cache', return_value=mock_result), \
+                    patch('app.routers.layers.PeriodicityService.refresh') as periodicidad:
                 r = client.post('/layers/refresh-cache', headers={'X-Internal-Token': 'expected-token'})
             assert r.status_code == 200
             assert r.json()['ok'] is True
+            periodicidad.assert_called_once()
         finally:
             settings.MAPALAB_INTERNAL_TOKEN = original
 
