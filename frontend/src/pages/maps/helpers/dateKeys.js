@@ -55,6 +55,16 @@ export const dateKeysFromFilter = (filter, { rasterPeriodicity = null } = {}) =>
     return sortKeys(rangesOfCql(filter).flatMap(([from, to]) => keysOfRange(from, to)));
 };
 
+export const keysInCatalog = (keys, catalogKeys) => {
+    const catalog = new Set(catalogKeys);
+    return sortKeys([...new Set(keys.flatMap((key) => {
+        if (catalog.has(key)) return [key];
+        const from = startAt(key);
+        const to = endAt(key);
+        return catalogKeys.filter(inner => startAt(inner) >= from && endAt(inner) <= to);
+    }))]);
+};
+
 export const selectionToKey = (selection) => {
     const [year, month, day] = String(selection).split('-').map(Number);
     return toKey(year, Number.isFinite(month) ? month : null, Number.isFinite(day) ? day : null);

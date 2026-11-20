@@ -23,8 +23,6 @@ const allTools = [
         id: 'compare-swipe',
         label: 'Barra divisora',
         description: 'Swipe vertical',
-        beta: true,
-        nonProdOnly: true,
     },
     {
         id: 'tabla',
@@ -65,7 +63,8 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     const [minimapaEncendido, alternarMinimapa] = useMinimapaEncendido();
     const isNonProd = useIsNonProd();
     const tools = useMemo(
-        () => allTools.filter(tool => (!tool.nonProdOnly || isNonProd) && !(tool.id === 'minimapa' && isMobile)),
+        () => allTools.filter(tool => (!tool.nonProdOnly || isNonProd)
+            && !(tool.id === 'minimapa' && isMobile)),
         [isNonProd, isMobile],
     );
 
@@ -144,7 +143,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                         const tooltipContent = tool.id === 'compare-swipe' ? (
                             <div className="flex flex-col gap-1.5 max-w-[240px]">
                                 <span className="font-bold">{tool.label}</span>
-                                <span className="text-[11px] opacity-90">Compara dos mapas con barra divisora. Tus capas actuales van al lado α; el lado β empieza <span className="font-bold">vacío</span> para que agregues otra capa.</span>
+                                <span className="text-[11px] opacity-90">Compara dos mapas con barra divisora. Tus capas actuales van al lado A; el lado B empieza <span className="font-bold">vacío</span> para que agregues otra capa.</span>
                                 <span className="text-[11px] opacity-90">Agrega capas en cada slot (A o B) <span className="font-bold">una por una</span> para mejor rendimiento.</span>
                             </div>
                         ) : tool.id === 'catalogo' || tool.id === 'minimapa' ? tool.description : tool.label;
@@ -159,7 +158,7 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
                                     ${active ? 'border-purple-deep' : 'border-transparent hover:border-purple-deep'}
                                 `}
                                 >
-                                    {tool.beta && (
+                                    {tool.beta && isNonProd && (
                                         <Badge
                                             variant="pill"
                                             color="orange"

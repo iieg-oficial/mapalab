@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.services.stats_engine import (
     FILTER_OPS,
-    MAX_FILTERS,
+    FECHA_FIELD_TOKEN,
     MUNICIPIO_FIELD_TOKEN,
     OPERATIONS_WITHOUT_FIELD,
     _is_identifier,
@@ -16,9 +16,12 @@ from app.services.stats_engine import (
     build_receta,
     format_stat_value,
     load_layer_binding,
+    usa_fecha,
 )
 
 MAX_VALORES = 50
+MAX_CONDICIONES = 6
+FILTRO_FECHA = {'field': FECHA_FIELD_TOKEN, 'op': 'between', 'value': ['{{fecha.inicio}}', '{{fecha.fin}}']}
 OPERACIONES_PUBLICAS = {
     'count': {'nombre': 'Contar registros', 'requiere_campo': False, 'tipos': None},
     'count_distinct': {'nombre': 'Contar valores distintos', 'requiere_campo': True, 'tipos': {'texto', 'numero', 'fecha'}},
@@ -129,7 +132,7 @@ def catalogo_de_capa(session: Session, layer_key: str, stats_config: list | None
 
 
 def _filtros_validos(crudos: Any, por_nombre: dict) -> list[dict] | None:
-    if not isinstance(crudos, list) or len(crudos) > MAX_FILTERS:
+    if not isinstance(crudos, list) or len(crudos) > MAX_CONDICIONES:
         return None
     limpios = []
     for item in crudos:
@@ -179,6 +182,7 @@ def calcular_personalizada(
         'format': 'integer' if operacion.startswith('count') else 'decimal_auto',
         'filters': [
             {'field': MUNICIPIO_FIELD_TOKEN, 'op': 'in', 'value': '{{municipio}}'},
+            *([FILTRO_FECHA] if usa_fecha(stats_config) else []),
             *filtros,
         ],
     }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getLayerRanking } from '@services/layerRankingService';
+import { buildMetadataContextKey } from '@services/layerMetadataService';
 
 const OPS_PROPORCIONALES = new Set(['count', 'count_where', 'count_distinct', 'sum']);
 
@@ -30,7 +31,8 @@ export const ordenarRanking = (ranking, indice, comoPorcentaje) => {
         .map((fila, indiceOrden) => ({ ...fila, posicion: indiceOrden + 1 }));
 };
 
-export const useNumeraliaRanking = (layerId, activo) => {
+export const useNumeraliaRanking = (layerId, activo, contexto = null) => {
+    const llave = buildMetadataContextKey(contexto);
     const [ranking, setRanking] = useState(null);
     const [cargando, setCargando] = useState(false);
     const pedidoRef = useRef(0);
@@ -47,7 +49,7 @@ export const useNumeraliaRanking = (layerId, activo) => {
         let cancelado = false;
         setCargando(true);
 
-        getLayerRanking(layerId)
+        getLayerRanking(layerId, contexto)
             .then(data => {
                 if (cancelado || pedidoRef.current !== pedido) return;
                 setRanking(data);
@@ -60,7 +62,8 @@ export const useNumeraliaRanking = (layerId, activo) => {
             });
 
         return () => { cancelado = true; };
-    }, [layerId, activo]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [layerId, activo, llave]);
 
     return useMemo(() => ({ ranking, cargando }), [ranking, cargando]);
 };

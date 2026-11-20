@@ -25,6 +25,7 @@ const Home = lazy(() => import('@pages/home/Home'));
 const Maps = lazy(() => import('@pages/maps/Maps'));
 const EmbedRoot = lazy(() => import('@pages/embed/EmbedRoot'));
 const CatalogoPage = lazy(() => import('@pages/catalogo/CatalogoPage'));
+const ConnectorPage = lazy(() => import('@pages/connector/ConnectorPage'));
 
 const CatalogoRuta = () => (useIsNonProd() ? <CatalogoPage /> : <Navigate to="/mapa" replace />);
 
@@ -40,6 +41,7 @@ const router = createBrowserRouter([
             { index: true, element: <Home /> },
             { path: 'mapa', element: <SesionProvider><LayersProvider><LayerLoadingProvider><MapsProvider><Maps /></MapsProvider></LayerLoadingProvider></LayersProvider></SesionProvider> },
             { path: 'embed', element: <EmbedRoot /> },
+            { path: 'conector', element: <ConnectorPage /> },
             { path: 'catalogo', element: <CatalogoRuta /> },
             { path: 'catalogo/:seg1', element: <CatalogoRuta /> },
             { path: 'catalogo/:seg1/:seg2', element: <CatalogoRuta /> },

@@ -63,9 +63,11 @@ deploy: $(DEPLOY_PRE) ## Actualizar, reconstruir y levantar produccion (VERBOSE=
 	git_sync
 	$(DEPLOY_GUARDS)
 	rule
-	run_step 'Build' dc prod build
+	run_step 'Pull' dc prod pull --ignore-buildable
+	run_step 'Build' dc prod build --pull
 	run_step 'Down' dc prod down --remove-orphans
 	run_step 'Up' $(DEPLOY_CMD)
+	run_step 'Builder' docker buildx stop
 	$(DEPLOY_POST)
 	rule
 	total=$$(( $$(date +%s) - start ))
