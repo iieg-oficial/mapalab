@@ -112,10 +112,11 @@ const Panel = ({
 
     useEffect(() => {
         if (!open || !autoFocus || !panelRef.current) return;
+        const preferido = panelRef.current.querySelector('[data-autofocus]');
         const focusable = panelRef.current.querySelectorAll(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
-        focusable[0]?.focus({ preventScroll: true });
+        (preferido || focusable[0])?.focus({ preventScroll: true });
     }, [open, autoFocus]);
 
     if (!open) return null;

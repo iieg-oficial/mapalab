@@ -79,6 +79,8 @@ const SearchMenu = ({ onToggleLayer, activeLayerIds = [], closeButton }) => {
             </div>
             <div className="relative">
                 <input
+                    id="buscador-capas"
+                    data-autofocus
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
