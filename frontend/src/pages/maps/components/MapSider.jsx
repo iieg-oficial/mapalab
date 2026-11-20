@@ -4,6 +4,7 @@ import { useMapsContext } from '@hooks/useMaps';
 import { useLayerLoading } from '@hooks/useLayerLoading';
 import { useSider, useSiderHover } from '@contexts/SiderContext';
 import { useSearch } from '@contexts/SearchContext';
+import useAtajosDelSider from '@pages/maps/hooks/useAtajosDelSider';
 import { useOutsideClick } from '@hooks/useOutsideClick';
 import { useScrollEdges } from 'scroll-edges/react';
 import Logo from '@components/Logo';
@@ -109,19 +110,7 @@ const MapSider = ({ className = '' }) => {
     useAutoOpenEventoFromUrl({ setAutoOpenMenuId, setIsHovered });
     useAbrirMapasBaseConTema({ setAutoOpenMenuId, setIsHovered, abrirSider: treatAsMobile && !isOpen ? toggleSider : null });
 
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.altKey && e.key.toLowerCase() === 'b') {
-                e.preventDefault();
-                if (!isMobile) {
-                    handleToggleLock();
-                }
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isMobile, handleToggleLock]);
+    useAtajosDelSider({ isMobile, handleToggleLock, setIsHovered, setAutoOpenMenuId });
 
     const { handleMouseEnter, handleMouseLeave } = useSiderHover({
         setIsHovered,

@@ -69,7 +69,7 @@ const createBaseItems = ({ isHovered, activeLayerIds, onToggleLayer, toggleMeasu
     {
         id: 'search',
         hasMenu: true,
-        tooltip: 'Buscador por capas',
+        tooltip: 'Buscador por capas (Ctrl+K)',
         menuContent: ({ closeButton } = {}) => <SearchMenu onToggleLayer={onToggleLayer} activeLayerIds={activeLayerIds} closeButton={closeButton} />,
         renderComponent: ({ isMenuOpen }) => (
             <MenuButton

@@ -2,13 +2,13 @@
 const processLayerTree = (layer, tema, temaLabel, subtema, subtemaLabel) => {
     const result = {};
 
-    if (!layer || !layer.id) return result;
+    if (!layer || !layer.id || layer.hiddenInMenu) return result;
 
     const hasChildren = Array.isArray(layer.children) && layer.children.length > 0;
 
     if (hasChildren) {
         layer.children.forEach(child => {
-            if (!child || !child.id) return;
+            if (!child || !child.id || child.hiddenInMenu) return;
 
             const childHasChildren = Array.isArray(child.children) && child.children.length > 0;
 
