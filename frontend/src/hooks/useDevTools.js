@@ -6,9 +6,6 @@ const subscribe = devToolsStore.subscribe;
 export const useIsNonProd = () =>
     useSyncExternalStore(subscribe, () => devToolsStore.isNonProd());
 
-export const useIsLiberada = (funcion) =>
-    useSyncExternalStore(subscribe, () => devToolsStore.isLiberada(funcion));
-
 export const useIsPreviewingProd = () =>
     useSyncExternalStore(subscribe, () => devToolsStore.isPreviewingProd());
 

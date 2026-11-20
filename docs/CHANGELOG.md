@@ -6,6 +6,12 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.12.0] - 2026-11-20
+
+### Cambiado
+
+- **Barra divisora y estadísticas salen de preliberación.** Ya no dependen de `VITE_APP_ENV=pre`: se ven en cualquier entorno, sin la insignia BETA, y el MCP registra `create_swipe` y el parámetro `estadisticas` siempre. Se van `isLiberada`, `useIsLiberada` y `PRELIBERADAS` del frontend y `liberada` del MCP; `pre` queda igual que `prod`.
+
 ## [2.11.3] - 2026-11-18
 
 ### Corregido

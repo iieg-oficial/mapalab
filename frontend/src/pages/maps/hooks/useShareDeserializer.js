@@ -167,7 +167,7 @@ export const useShareDeserializer = () => {
             }
 
             const swipePosition = typeof payload.position === 'number' ? payload.position : 0.5;
-            if (typeof setCompareMode === 'function' && devToolsStore.isLiberada('swipe')) {
+            if (typeof setCompareMode === 'function') {
                 const stillActiveIds = new Set([
                     ...paneA.activeLayerIds,
                     ...paneB.activeLayerIds,

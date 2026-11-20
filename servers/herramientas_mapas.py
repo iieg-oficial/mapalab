@@ -6,7 +6,7 @@ from typing import Any, Callable, Literal, Optional
 
 from pydantic import Field
 
-from servers.blindaje import ES_BETA, MAX_ETIQUETA_LADO, Vista3d, liberada
+from servers.blindaje import ES_BETA, MAX_ETIQUETA_LADO, Vista3d
 from servers.resolve import MAX_REFERENCIA
 from servers.servidor import ESCRITURA, TIMEOUT_TOOL_S, como_error_de_tool, mcp
 from servers.shares import create_map as _create_map, create_swipe as _create_swipe
@@ -117,19 +117,15 @@ def create_swipe(
         )
 
 
-ESTADISTICAS = EXTRA_ESTADISTICAS if liberada('estadisticas') else ''
-
 if ES_BETA:
-    mcp.tool(create_map, title='Crear mapa', description=DESCRIPCION_MAPA + EXTRA_BETA + ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S)
-    mcp.tool(create_swipe, title='Crear comparador', description=DESCRIPCION_SWIPE + ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S)
+    mcp.tool(create_map, title='Crear mapa', description=DESCRIPCION_MAPA + EXTRA_BETA + EXTRA_ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S)
+    mcp.tool(create_swipe, title='Crear comparador', description=DESCRIPCION_SWIPE + EXTRA_ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S)
 else:
-    ocultos = ('vista_3d',) if ESTADISTICAS else ('vista_3d', 'estadisticas')
     mcp.tool(
-        _sin_parametros(create_map, *ocultos),
-        name='create_map', title='Crear mapa', description=DESCRIPCION_MAPA + ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S,
+        _sin_parametros(create_map, 'vista_3d'),
+        name='create_map', title='Crear mapa', description=DESCRIPCION_MAPA + EXTRA_ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S,
     )
-    if liberada('swipe'):
-        mcp.tool(
-            _sin_parametros(create_swipe, *ocultos),
-            name='create_swipe', title='Crear comparador', description=DESCRIPCION_SWIPE + ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S,
-        )
+    mcp.tool(
+        _sin_parametros(create_swipe, 'vista_3d'),
+        name='create_swipe', title='Crear comparador', description=DESCRIPCION_SWIPE + EXTRA_ESTADISTICAS, annotations=ESCRITURA, timeout=TIMEOUT_TOOL_S,
+    )

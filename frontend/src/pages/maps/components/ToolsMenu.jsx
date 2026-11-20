@@ -7,7 +7,7 @@ import { canUseVectorService } from '@pages/maps/helpers/serviceMode';
 import { useSider } from '@contexts/SiderContext';
 import Badge from '@components/Badge';
 import Tooltip from '@components/Tooltip';
-import { useIsLiberada, useIsNonProd } from '@hooks/useDevTools';
+import { useIsNonProd } from '@hooks/useDevTools';
 import { useGoToCatalogo } from '@pages/catalogo/useGoToCatalogo';
 import IconoHerramienta from './IconoHerramienta';
 import { useMinimapaEncendido } from '@pages/maps/hooks/useMinimapaEncendido';
@@ -23,8 +23,6 @@ const allTools = [
         id: 'compare-swipe',
         label: 'Barra divisora',
         description: 'Swipe vertical',
-        beta: true,
-        liberacion: 'swipe',
     },
     {
         id: 'tabla',
@@ -64,15 +62,10 @@ const ToolsMenu = ({ close, closeButton, toggleMeasurementTools, areMeasurementT
     const goToCatalogo = useGoToCatalogo();
     const [minimapaEncendido, alternarMinimapa] = useMinimapaEncendido();
     const isNonProd = useIsNonProd();
-    const conSwipe = useIsLiberada('swipe');
     const tools = useMemo(
-        () => {
-            const liberadas = { swipe: conSwipe };
-            return allTools.filter(tool => (!tool.nonProdOnly || isNonProd)
-                && (!tool.liberacion || liberadas[tool.liberacion])
-                && !(tool.id === 'minimapa' && isMobile));
-        },
-        [isNonProd, conSwipe, isMobile],
+        () => allTools.filter(tool => (!tool.nonProdOnly || isNonProd)
+            && !(tool.id === 'minimapa' && isMobile)),
+        [isNonProd, isMobile],
     );
 
     const capaParaTabla = () => {

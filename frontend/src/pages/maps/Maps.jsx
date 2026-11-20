@@ -28,7 +28,6 @@ import TablaAtributos from './components/TablaAtributos/TablaAtributos';
 import DockPills from './components/DockPills';
 import useThemeColor from '@hooks/useThemeColor';
 import { useMapsContext } from '@hooks/useMaps';
-import { useIsLiberada } from '@hooks/useDevTools';
 import { View3dProvider, useView3d } from '@contexts/View3dContext';
 import { DronProvider } from '@contexts/DronContext';
 import { CaminarProvider } from '@contexts/CaminarContext';
@@ -42,8 +41,6 @@ import OcultoEnDronMovil from './components/Dron/OcultoEnDronMovil';
 
 const Map3DView = lazy(() => import('@mapsComponents/Map3D/Map3DView'));
 const Map3DSwipe = lazy(() => import('@mapsComponents/Map3D/Map3DSwipe'));
-
-const PanelEstadisticas = () => (useIsLiberada('estadisticas') ? <NumeraliaPanel /> : null);
 
 const MapaPrincipal = ({ isComparing }) => {
     const { active } = useView3d();
@@ -93,7 +90,7 @@ const Maps = () => {
                                                 <MunicipioActiveChip />
                                                 <OcultoEnDronMovil><MapLayersPanels /></OcultoEnDronMovil>
                                                 <LayerDetailModal />
-                                                <PanelEstadisticas />
+                                                <NumeraliaPanel />
                                                 <InfoBox />
                                                 <MapAttribution />
                                                 <MapControls conMinimapa />

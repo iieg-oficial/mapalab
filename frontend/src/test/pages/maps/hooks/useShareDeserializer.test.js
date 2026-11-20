@@ -4,13 +4,12 @@ import { renderHook } from '@testing-library/react';
 const { mockUseMapsContext, mockUseLayers, entorno } = vi.hoisted(() => ({
     mockUseMapsContext: vi.fn(),
     mockUseLayers: vi.fn(),
-    entorno: { noProd: true, pre: false },
+    entorno: { noProd: true },
 }));
 
 vi.mock('@services/devToolsStore', () => ({
     devToolsStore: {
         isNonProd: () => entorno.noProd,
-        isLiberada: funcion => entorno.noProd || (entorno.pre && funcion === 'swipe'),
     },
 }));
 
@@ -124,29 +123,8 @@ describe('useShareDeserializer', () => {
         expect(callArg.paneA.filters['establecimientos_salud'].date).toBe("fecha = '2020-01-01'");
     });
 
-    it('en producción un enlace del comparador abre el panel activo sin comparador', () => {
+    it('en producción un enlace del comparador abre el comparador', () => {
         entorno.noProd = false;
-        const ctx = makeCtx();
-        mockUseMapsContext.mockReturnValue(ctx);
-        const { result } = renderHook(() => useShareDeserializer());
-        result.current({
-            version: 1,
-            kind: 'swipe',
-            payload: {
-                shared: {},
-                paneA: { label: '2020', layers: [{ slug: 'establecimientos-salud', visible: true }] },
-                paneB: { label: '2024', layers: [{ slug: 'carreteras-estatales', visible: true }] },
-                activeSlot: 'B',
-            },
-        });
-        entorno.noProd = true;
-        expect(ctx.setCompareMode).not.toHaveBeenCalled();
-        expect(ctx.setActiveLayerIds).toHaveBeenCalledWith(expect.arrayContaining(['carreteras_estatales']));
-    });
-
-    it('en preproducción un enlace del comparador sí abre el comparador', () => {
-        entorno.noProd = false;
-        entorno.pre = true;
         const ctx = makeCtx();
         mockUseMapsContext.mockReturnValue(ctx);
         const { result } = renderHook(() => useShareDeserializer());
@@ -160,7 +138,6 @@ describe('useShareDeserializer', () => {
             },
         });
         entorno.noProd = true;
-        entorno.pre = false;
         expect(ctx.setCompareMode).toHaveBeenCalled();
     });
 

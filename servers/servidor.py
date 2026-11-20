@@ -11,7 +11,6 @@ from fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
 from app.utils.logger import Logger
-from servers.blindaje import liberada
 
 TIMEOUT_TOOL_S = 90.0
 
@@ -27,9 +26,8 @@ _REGLAS = [
     'COORDENADAS: no las inventes. Usa layer_table con coordenadas=True y por_pagina bajo.',
     'CIFRAS: para contar, sumar, promediar o repartir por clase usa layer_stats; no pagines layer_table para calcular.',
     'ERRORES: llegan como error de la tool con un mensaje accionable; corrige el argumento y vuelve a intentar.',
+    'COMPARAR: create_swipe compara una capa en dos años o dos capas lado a lado.',
 ]
-if liberada('swipe'):
-    _REGLAS.append('COMPARAR: create_swipe compara una capa en dos años o dos capas lado a lado.')
 
 
 def _version_mapalab() -> str:
