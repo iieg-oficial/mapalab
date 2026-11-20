@@ -6,6 +6,16 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [2.11.4] - 2026-11-20
+
+### Agregado
+
+- **Foco directo en el buscador.** Al abrir «Buscador» el cursor queda en el campo de texto, y `Ctrl+K` (`⌘K` en Mac) lo abre o lo enfoca desde cualquier parte del visor.
+
+### Corregido
+
+- **El buscador ya no encuentra capas ocultas en el menú.** Las capas, subtemas y temas con «Oculta en menú» quedan fuera del índice de búsqueda, igual que del menú.
+
 ## [2.11.3] - 2026-11-18
 
 ### Corregido
