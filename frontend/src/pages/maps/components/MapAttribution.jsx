@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LICENCIA_URL } from '@constants/app';
 import { useMapsContext } from '@hooks/useMaps';
 import { BASEMAPS } from '@pages/maps/helpers/basemaps';
 import ReportButton from '@components/ReportButton';
@@ -17,7 +18,7 @@ const ENLACES = [
     { texto: 'GeoServer', href: 'https://geoserver.org', copy: true },
     { texto: 'PostGIS', href: 'https://postgis.net', copy: true },
     { texto: 'Licencias de software', href: `${import.meta.env.BASE_URL}licencias.txt`, copy: false },
-    { texto: 'Licencia IIEG 2026', href: 'https://iieg.gob.mx/ns/wp-content/uploads/2026/04/declaracion_de_licencia_de_uso_atribuciones_de_informacion_publica_del_IIEG_2026.pdf', copy: false },
+    { texto: 'Licencia IIEG 2026', href: LICENCIA_URL, copy: false },
 ];
 
 const MapAttribution = ({ hideCatalogo = false, origenReporte = 'map_attribution', compact = false, extraRight = null }) => {

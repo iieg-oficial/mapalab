@@ -1,106 +1,13 @@
+import { dateFilterOfKeys, dateKeysFromFilter, dateRangeOfKeys, keyToSelection, selectionToKey } from './dateKeys';
+
 export const generateCQLFilter = (selections, filterColumn = 'fecha') => {
     if (!selections || selections.size === 0) return null;
-
-    const filters = [];
-
-    selections.forEach(selection => {
-        const parts = selection.split('-');
-
-        if (parts.length === 3) {
-            const [year, month, day] = parts;
-            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            filters.push(`${filterColumn} = '${dateStr}'`);
-        } else if (parts.length === 2) {
-            const [year, month] = parts;
-            const yearNum = parseInt(year);
-            const monthNum = parseInt(month);
-
-            const startDate = `${year}-${String(monthNum).padStart(2, '0')}-01`;
-            const nextMonth = monthNum === 12 ? 1 : monthNum + 1;
-            const nextYear = monthNum === 12 ? yearNum + 1 : yearNum;
-            const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
-
-            filters.push(`(${filterColumn} >= '${startDate}' AND ${filterColumn} < '${endDate}')`);
-        } else if (parts.length === 1) {
-            const year = parts[0];
-            const startDate = `${year}-01-01`;
-            const endDate = `${parseInt(year) + 1}-01-01`;
-            filters.push(`(${filterColumn} >= '${startDate}' AND ${filterColumn} < '${endDate}')`);
-        }
-    });
-
-    if (filters.length === 0) return null;
-    if (filters.length === 1) return filters[0];
-
-    return `(${filters.join(' OR ')})`;
+    return dateFilterOfKeys([...selections].map(selectionToKey), filterColumn);
 };
 
-export const parseCQLToSelections = (cqlFilter) => {
-    if (!cqlFilter) return new Set();
+export const parseCQLToSelections = (cqlFilter) => new Set(dateKeysFromFilter(cqlFilter).map(keyToSelection));
 
-    const selections = new Set();
-    const cleanFilter = cqlFilter.startsWith('(') && cqlFilter.endsWith(')')
-        ? cqlFilter.slice(1, -1)
-        : cqlFilter;
-
-    const parts = cleanFilter.split(' OR ');
-
-    parts.forEach(part => {
-        const p = part.trim().replace(/^\(+|\)+$/g, '');
-
-        const dayMatch = p.match(/fecha\s*=\s*'(\d{4}-\d{2}-\d{2})'/);
-        if (dayMatch) {
-            const [y, m, d] = dayMatch[1].split('-');
-            selections.add(`${y}-${parseInt(m)}-${parseInt(d)}`);
-            return;
-        }
-
-        const rangeMatch = p.match(/fecha\s*>=\s*'(\d{4})-(\d{2})-\d{2}'/);
-        if (rangeMatch) {
-            const [_, y, m] = rangeMatch;
-
-            const endMatch = p.match(/fecha\s*<\s*'(\d{4})-(\d{2})-\d{2}'/);
-            if (endMatch) {
-                const [__, endY, endM] = endMatch;
-
-                if (m === '01' && endM === '01' && parseInt(endY) === parseInt(y) + 1) {
-                    selections.add(y);
-                } else {
-                    selections.add(`${y}-${parseInt(m)}`);
-                }
-            }
-        }
-    });
-
-    return selections;
-};
-
-const toIso = (date) => date.toISOString().slice(0, 10);
-
-export const cqlToDateRange = (cqlFilter) => {
-    const selections = parseCQLToSelections(cqlFilter);
-    if (selections.size === 0) return null;
-
-    let min = null;
-    let max = null;
-
-    for (const selection of selections) {
-        const [year, month, day] = selection.split('-').map(Number);
-        if (!Number.isFinite(year)) continue;
-
-        const start = new Date(Date.UTC(year, (month || 1) - 1, day || 1));
-        let end;
-        if (day) end = start;
-        else if (month) end = new Date(Date.UTC(year, month, 0));
-        else end = new Date(Date.UTC(year, 11, 31));
-
-        if (!min || start < min) min = start;
-        if (!max || end > max) max = end;
-    }
-
-    if (!min || !max) return null;
-    return { dateFrom: toIso(min), dateTo: toIso(max) };
-};
+export const cqlToDateRange = (cqlFilter) => dateRangeOfKeys(dateKeysFromFilter(cqlFilter));
 
 export const generateDefaultDateFilter = (defaultDate, filterColumn = 'fecha') => {
     if (!defaultDate) return null;

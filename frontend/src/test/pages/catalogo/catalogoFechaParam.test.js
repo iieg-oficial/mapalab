@@ -21,6 +21,13 @@ describe('?fecha= en capas vectoriales', () => {
         expect(filtroToFechaParam(cql)).toBe('2026-1,2026-6');
     });
 
+    it('arma el CQL sobre la columna de la capa', () => {
+        const cql = fechaParamToFiltro('2026-3', { column: 'fecha_corte' });
+        expect(cql).toBe(generateCQLFilter(new Set(['2026-3']), 'fecha_corte'));
+        expect(cql).not.toMatch(/\bfecha\b/);
+        expect(filtroToFechaParam(cql)).toBe('2026-3');
+    });
+
     it('sin filtro no hay parámetro', () => {
         expect(filtroToFechaParam(null)).toBe(null);
         expect(fechaParamToFiltro(null)).toBe(null);

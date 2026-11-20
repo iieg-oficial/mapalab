@@ -5,6 +5,8 @@ export const SLOT_COLORS = {
 
 export const SWIPE_HANDLE_COLOR = '#FF8300';
 
-export const SLOT_LABEL = { A: 'α', B: 'β' };
+export const SWIPE_ICON_COLOR = '#70308A';
+
+export const SLOT_LABEL = { A: 'A', B: 'B' };
 
 export const slotLabel = (slot) => SLOT_LABEL[slot] || slot;

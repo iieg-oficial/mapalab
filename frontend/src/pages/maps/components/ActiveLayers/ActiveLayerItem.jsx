@@ -8,7 +8,8 @@ import Tooltip from '@components/Tooltip';
 import { useAvisoSeleccion } from './avisoSeleccion';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { hasHexbinMode } from '@pages/maps/helpers/serviceMode';
-import { LOOP_INTERVAL_PRESETS } from '@hooksMaps/useDateLoop';
+import { slotMembershipOf } from '@pages/maps/helpers/swipeMode';
+import { useActiveLayerLoop } from '@hooksMaps/useActiveLayerLoop';
 import { handleKeyActivate } from '@utils/a11y';
 
 import { DragHandle, LayerTitle, PinBadge, EventoLayerIcon, GeometryTypeBadge } from './LayerItemHeader';
@@ -39,14 +40,8 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         getAllChildLayerIds,
         toggleLayerVisibility,
         setSelectedLayer,
-        getLoopState,
-        toggleLoop,
-        inferLoopConfig,
         getFilter,
         getSpecificFilter,
-        getLoopPrefs,
-        setLoopIntervalMs,
-        setLoopDirection,
         allLayers,
         compareMode,
         removeLayerFromSlot,
@@ -65,20 +60,14 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         [findEventoByLayerId, layer.id]
     );
 
-    const slotMembership = useMemo(() => {
-        if (!compareMode?.active) return null;
-        const idsToCheck = [layer.id, ...(layer.childIds || [])];
-        const paneAIds = compareMode.paneA?.activeLayerIds || [];
-        const paneBIds = compareMode.paneB?.activeLayerIds || [];
-        const inA = idsToCheck.some(id => paneAIds.includes(id));
-        const inB = idsToCheck.some(id => paneBIds.includes(id));
-        if (inA && inB) return 'AB';
-        if (inA) return 'A';
-        if (inB) return 'B';
-        return null;
-    }, [compareMode?.active, compareMode?.paneA?.activeLayerIds, compareMode?.paneB?.activeLayerIds, layer.id, layer.childIds]);
-
-    const { intervalMs: loopIntervalMs, direction: loopDirection } = getLoopPrefs?.(layer.id) || {};
+    const slotMembership = useMemo(
+        () => slotMembershipOf(compareMode, [layer.id, ...(layer.childIds || [])]),
+        [compareMode, layer.id, layer.childIds]
+    );
+    const {
+        isLooping, canPlayLoop, slotLoops, loopIntervalMs, loopDirection,
+        handlePlayClick, handleIntervalClick, handleDirectionClick,
+    } = useActiveLayerLoop(layer.id, !!compareMode?.active);
 
     const itemRef = useRef(null);
     const [isHovered, setIsHovered] = useState(false);
@@ -142,9 +131,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         setFechasAbiertas(prev => !prev);
     };
 
-    const loopState = getLoopState?.(layer.id);
-    const isLooping = loopState?.isPlaying;
-
     const layerDef = useMemo(() => findLayerDef(layer.id, allLayers), [layer.id, allLayers]);
     const hexbinIds = layer.childIds?.length ? layer.childIds : [layer.id];
     const enHexagonos = hasHexbinMode(hexbinIds, getServiceMode);
@@ -164,19 +150,6 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
         }
         return own;
     }, [getLayerOpacity, layer.id, layer.childIds]);
-
-    const canPlayLoop = !!isLooping || inferLoopConfig?.(layer.id) != null;
-
-    const handlePlayClick = (e, slot) => { e.stopPropagation(); toggleLoop?.(layer.id, null, slot); };
-
-    const handleIntervalClick = (e) => {
-        e.stopPropagation();
-        const idx = LOOP_INTERVAL_PRESETS.indexOf(loopIntervalMs);
-        const nextIdx = idx === -1 ? 0 : (idx + 1) % LOOP_INTERVAL_PRESETS.length;
-        setLoopIntervalMs?.(layer.id, LOOP_INTERVAL_PRESETS[nextIdx]);
-    };
-
-    const handleDirectionClick = (e) => { e.stopPropagation(); setLoopDirection?.(layer.id, loopDirection === 'rtl' ? 'ltr' : 'rtl'); };
 
     const isLoading = useMemo(() => {
         if (loadingLayers.has(layer.id)) return true;
@@ -251,7 +224,7 @@ const ActiveLayerItem = ({ layer, dragHandleProps, isPinned = false }) => {
                                 slotMembership={slotMembership}
                                 liveDateFilter={dateFilter}
                                 isLooping={isLooping}
-                                loopSlot={loopState?.slot ?? null}
+                                slotLoops={slotLoops}
                                 isLoading={isLoading}
                                 canPlayLoop={canPlayLoop}
                                 loopIntervalMs={loopIntervalMs}

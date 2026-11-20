@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getLayerMetadata } from '@services/layerMetadataService';
+import { buildMetadataContextKey, getLayerMetadata } from '@services/layerMetadataService';
 
 const OPS_PROPORCIONALES = new Set(['count', 'count_where', 'count_distinct', 'sum']);
 
@@ -57,8 +57,12 @@ export const construirFilas = (columnas) => {
     });
 };
 
-export const useNumeraliaComparador = (layerId, claves) => {
+export const useNumeraliaComparador = (layerId, claves, contexto = null) => {
     const firma = claves.join(',');
+    const fechas = contexto?.fechaInicio || contexto?.fechaFin
+        ? { fechaInicio: contexto.fechaInicio, fechaFin: contexto.fechaFin }
+        : null;
+    const llaveFechas = buildMetadataContextKey(fechas);
     const [columnas, setColumnas] = useState([]);
     const [cargando, setCargando] = useState(false);
     const pedidoRef = useRef(0);
@@ -76,7 +80,7 @@ export const useNumeraliaComparador = (layerId, claves) => {
         setCargando(true);
 
         Promise.all(
-            firma.split(',').map(clave => getLayerMetadata(layerId, { claves: [clave] })
+            firma.split(',').map(clave => getLayerMetadata(layerId, { ...fechas, claves: [clave] })
                 .then(data => ({ clave, numeralia: (data?.numeralia || []).filter(s => s.nombre && s.valor !== null) }))
                 .catch(() => ({ clave, numeralia: [] }))),
         ).then(resultado => {
@@ -86,7 +90,8 @@ export const useNumeraliaComparador = (layerId, claves) => {
         });
 
         return () => { cancelado = true; };
-    }, [layerId, firma]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [layerId, firma, llaveFechas]);
 
     return useMemo(() => ({ columnas, cargando }), [columnas, cargando]);
 };

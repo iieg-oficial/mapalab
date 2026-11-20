@@ -18,6 +18,7 @@ export const useSessionPersistence = () => {
         selectedLayerForSymbology,
         baseMapId,
         mapRef,
+        paneMapInstances,
         compareMode,
     } = useMapsContext();
     const serialize = useShareSerializer();
@@ -55,14 +56,16 @@ export const useSessionPersistence = () => {
     }, [activeLayerIds, filters, layerOpacities, layerServiceModes, hexbinSinFondo, hexbinPalettes, soloSeleccionada, hiddenLayerIds, selectedLayerForSymbology, baseMapId, serialize, compareMode]);
 
     useEffect(() => {
-        const map = mapRef?.current;
-        if (!map) return;
+        const maps = compareMode?.active
+            ? Object.values(paneMapInstances || {}).filter(Boolean)
+            : [mapRef?.current].filter(Boolean);
+        if (maps.length === 0) return;
         const handler = () => {
             clearTimeout(saveTimerRef.current);
             saveTimerRef.current = setTimeout(persist, SAVE_DEBOUNCE_MS);
         };
-        map.on('moveend', handler);
-        return () => map.un('moveend', handler);
+        maps.forEach(m => m.on('moveend', handler));
+        return () => maps.forEach(m => m.un('moveend', handler));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mapRef, serialize, compareMode]);
+    }, [mapRef, paneMapInstances, serialize, compareMode]);
 };

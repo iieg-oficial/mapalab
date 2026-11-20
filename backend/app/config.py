@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     GEOSERVER_USER: Optional[str] = Field(default="")
     GEOSERVER_PASSWORD: Optional[str] = Field(default="")
     GEOSERVER_VERIFY_SSL: bool = Field(default=True)
+    GEOSERVER_AUTH_MODE: Literal["basic", "minerva"] = Field(default="basic")
+    GEOSERVER_MINERVA_AUDIENCE: str = Field(default="sextante")
     ACERVO_PUBLIC_URL: Optional[str] = Field(default=None)
     ACERVO_ENDPOINT: Optional[str] = Field(default=None)
     ACERVO_PUBLIC_ENDPOINT: Optional[str] = Field(default=None)

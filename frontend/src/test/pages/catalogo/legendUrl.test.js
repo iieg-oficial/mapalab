@@ -72,6 +72,21 @@ describe('parseTimeDimensionToPeriodicity', () => {
         expect(fecha[2026][4]).toBe('2026-04-01');
     });
 
+    it('expande intervalos con periodo y conserva los huecos', () => {
+        const fecha = parseTimeDimensionToPeriodicity('2023-11-01/2024-01-01/P1M,2024-03-01/2024-04-01/P1M');
+        expect(fecha[2023]).toEqual({ 11: '2023-11-01', 12: '2023-12-01' });
+        expect(fecha[2024]).toEqual({ 1: '2024-01-01', 3: '2024-03-01', 4: '2024-04-01' });
+    });
+
+    it('reparte un intervalo continuo en meses', () => {
+        const fecha = parseTimeDimensionToPeriodicity('2024-01-15T00:00:00Z/2024-03-10T00:00:00Z');
+        expect(fecha[2024]).toEqual({ 1: '2024-01-15', 2: '2024-02-01', 3: '2024-03-01' });
+    });
+
+    it('se queda con el último instante de cada mes', () => {
+        expect(parseTimeDimensionToPeriodicity('2024-05-01,2024-05-16')[2024][5]).toBe('2024-05-16');
+    });
+
     it('devuelve null para entradas vacías o inválidas', () => {
         expect(parseTimeDimensionToPeriodicity('')).toBe(null);
         expect(parseTimeDimensionToPeriodicity(null)).toBe(null);

@@ -149,3 +149,13 @@ export const minimizeTransform = ({ slot, pos, isHorizontal, width, height }) =>
     const axis = isHorizontal ? `0px, ${shift}px` : `${shift}px, 0px`;
     return `translate(${axis}) scale(${SWIPE_MINIMIZE_SCALE})`;
 };
+
+export const slotMembershipOf = (compareMode, ids) => {
+    if (!compareMode?.active) return null;
+    const inA = ids.some(id => compareMode.paneA?.activeLayerIds?.includes(id));
+    const inB = ids.some(id => compareMode.paneB?.activeLayerIds?.includes(id));
+    if (inA && inB) return 'AB';
+    if (inA) return 'A';
+    if (inB) return 'B';
+    return null;
+};

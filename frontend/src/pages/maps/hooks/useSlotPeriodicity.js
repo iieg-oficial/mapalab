@@ -3,14 +3,14 @@ import MapsContext from '@contexts/MapsContext';
 import { useLayerPeriodicity } from './useLayerPeriodicity';
 import { findLayerDef } from '@pages/maps/helpers/wmsConfig';
 import { buildLoopValues } from '@pages/maps/helpers/dateLoopHelpers';
-import { slotLabel } from '@pages/maps/helpers/swipeTheme';
+import { dateColumnOf } from '@services/layerMetadataService';
 
 const slotKey = (slot) => slot || 'live';
 
 export const useSlotPeriodicity = (layerId) => {
     const {
         getLoopState, toggleLoop, stopLoop, inferLoopConfig,
-        getLoopPrefs, setLoopIntervalMs, setLoopDirection,
+        getLoopPrefs, setLoopIntervalMs, setLoopDirection, syncSlots, setSyncSlots,
         applyFilter, clearFilter, getSpecificFilter,
         compareMode, applyFilterToSlot, clearFilterFromSlot, allLayers,
     } = useContext(MapsContext);
@@ -25,7 +25,6 @@ export const useSlotPeriodicity = (layerId) => {
 
     const loopState = layerId ? getLoopState?.(layerId) : null;
     const isLoopPlaying = loopState?.isPlaying ?? false;
-    const loopSlot = loopState?.slot ?? null;
     const prefs = layerId ? getLoopPrefs?.(layerId) : null;
 
     const expandedYearOf = useCallback((slot) => (
@@ -44,22 +43,21 @@ export const useSlotPeriodicity = (layerId) => {
         if (!layerId) return null;
         const expandedYear = expandedYearOf(slot);
         if (expandedYear != null) {
-            const values = buildLoopValues({ mode: 'month', year: expandedYear, rasterPeriodicity, periodicity });
+            const values = buildLoopValues({ mode: 'month', year: expandedYear, rasterPeriodicity, periodicity, filterColumn: dateColumnOf(layerId) });
             return values.length >= 2 ? { mode: 'month', year: expandedYear, values } : null;
         }
-        const values = buildLoopValues({ mode: 'year', rasterPeriodicity, periodicity });
+        const values = buildLoopValues({ mode: 'year', rasterPeriodicity, periodicity, filterColumn: dateColumnOf(layerId) });
         return values.length >= 2 ? { mode: 'year', values } : null;
     }, [layerId, expandedYearOf, rasterPeriodicity, periodicity]);
 
     const canPlayIn = useCallback((slot) => !!layerId
-        && (!!loopState || viewLoopConfig(slot) != null || inferLoopConfig?.(layerId, slot) != null),
-    [layerId, loopState, viewLoopConfig, inferLoopConfig]);
+        && (!!getLoopState?.(layerId, slot ?? null) || viewLoopConfig(slot) != null || inferLoopConfig?.(layerId, slot) != null),
+    [layerId, getLoopState, viewLoopConfig, inferLoopConfig]);
 
     const forSlot = useCallback((slot = null) => {
         const pane = slot ? compareMode?.[`pane${slot}`] : null;
-        const ownsLoop = loopSlot === slot;
-        const otro = slot === 'A' ? 'B' : 'A';
-        const stopOwnLoop = () => { if (ownsLoop && isLoopPlaying) stopLoop?.(layerId); };
+        const playing = !!(layerId && getLoopState?.(layerId, slot ?? null)?.isPlaying);
+        const stopOwnLoop = () => { if (playing) stopLoop?.(layerId, slot ?? null); };
         return {
             apply: (fd) => {
                 if (!layerId) return;
@@ -75,13 +73,13 @@ export const useSlotPeriodicity = (layerId) => {
             getFilter: slot ? (id, name) => pane?.filters?.[id]?.[name] || null : undefined,
             hasFilter: slot ? !!pane?.filters?.[layerId]?.date : !!getSpecificFilter?.(layerId, 'date'),
             canPlay: canPlayIn(slot),
-            isPlaying: isLoopPlaying && ownsLoop,
-            loopDisabled: isLoopPlaying && !ownsLoop,
-            loopDisabledHint: `Pausa la animación del lado ${slotLabel(otro)} para iniciar acá`,
+            isPlaying: playing,
+            loopDisabled: false,
+            loopDisabledHint: '',
             toggleLoop: () => layerId && toggleLoop?.(layerId, viewLoopConfig(slot), slot),
             onExpandedYearChange: (year) => setExpandedYear(slot, year),
         };
-    }, [layerId, compareMode, loopSlot, isLoopPlaying, stopLoop, applyFilterToSlot, applyFilter, clearFilterFromSlot, clearFilter, getSpecificFilter, canPlayIn, toggleLoop, viewLoopConfig, setExpandedYear]);
+    }, [layerId, compareMode, getLoopState, stopLoop, applyFilterToSlot, applyFilter, clearFilterFromSlot, clearFilter, getSpecificFilter, canPlayIn, toggleLoop, viewLoopConfig, setExpandedYear]);
 
     return {
         periodicity,
@@ -93,6 +91,8 @@ export const useSlotPeriodicity = (layerId) => {
         direction: prefs?.direction,
         setLoopIntervalMs: useCallback((ms) => layerId && setLoopIntervalMs?.(layerId, ms), [layerId, setLoopIntervalMs]),
         setLoopDirection: useCallback((dir) => layerId && setLoopDirection?.(layerId, dir), [layerId, setLoopDirection]),
+        syncSlots: !!syncSlots,
+        setSyncSlots,
         forSlot,
     };
 };

@@ -124,7 +124,7 @@ def registrar_login(sub: str, correo: str, nombre: Optional[str]) -> dict[str, A
                 raise AccesoError('conflicto')
             usuario = por_correo
         if usuario is None:
-            usuario = UsuarioMapalab(sub=sub, correo=correo, nombre=nombre)
+            usuario = UsuarioMapalab(sub=sub, correo=correo, nombre=nombre, activo=True)
             session.add(usuario)
         if not usuario.activo:
             raise AccesoError('inactivo')

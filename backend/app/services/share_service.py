@@ -31,6 +31,8 @@ MAX_FILTROS_POR_CAPA = 20
 MAX_REFERENCIA = 200
 MAX_TEXTO_ANOTACION = 200
 MAX_ETIQUETA_LADO = 60
+MODOS_ESTADISTICAS = {"resumen", "comparar", "ranking"}
+MAX_COMPARADOS_ESTADISTICAS = 6
 TEXTOS_ANOTACION = ("id", "label", "unit", "textLabel", "pinEtiqueta")
 RANGO_LAT = (10.0, 35.0)
 RANGO_LON = (-120.0, -84.0)
@@ -198,6 +200,26 @@ def _validate_municipios(municipios: Any, source: str) -> None:
     _validate_municipio_scope(municipios.get("scope"), source)
 
 
+def _validate_estadisticas(estadisticas: Any, source: str) -> None:
+    if estadisticas is None:
+        return
+    if not isinstance(estadisticas, dict):
+        raise ValueError(f"{source}.estadisticas debe ser objeto")
+    capa = estadisticas.get("capa")
+    if not isinstance(capa, str) or not capa.strip() or len(capa) > MAX_REFERENCIA:
+        raise ValueError(f"{source}.estadisticas.capa debe ser texto de hasta {MAX_REFERENCIA} caracteres")
+    modo = estadisticas.get("modo")
+    if modo is not None and modo not in MODOS_ESTADISTICAS:
+        raise ValueError(f"{source}.estadisticas.modo debe ser uno de {sorted(MODOS_ESTADISTICAS)}")
+    comparados = estadisticas.get("comparados")
+    if comparados is None:
+        return
+    if not isinstance(comparados, list) or len(comparados) > MAX_COMPARADOS_ESTADISTICAS:
+        raise ValueError(f"{source}.estadisticas.comparados debe ser lista de hasta {MAX_COMPARADOS_ESTADISTICAS} claves")
+    if not all(isinstance(clave, str) and clave.isdigit() and len(clave) <= 5 for clave in comparados):
+        raise ValueError(f"{source}.estadisticas.comparados: cada clave debe ser numerica de hasta 5 digitos")
+
+
 def _validate_municipio_scope(scope: Any, source: str) -> None:
     if scope is None:
         return
@@ -262,6 +284,7 @@ def _validate_single_payload(payload: dict) -> None:
     _validate_annotations(payload.get("annotations"), "single.payload")
     _validate_municipios(payload.get("municipios"), "single.payload")
     _validate_vista3d(payload.get("vista3d"), "single.payload")
+    _validate_estadisticas(payload.get("estadisticas"), "single.payload")
 
 
 def _validate_swipe_payload(payload: dict) -> None:
@@ -273,6 +296,7 @@ def _validate_swipe_payload(payload: dict) -> None:
     _validate_referencia(shared.get("selected"), "swipe.payload.shared.selected")
     _validate_municipios(shared.get("municipios"), "swipe.payload.shared")
     _validate_vista3d(shared.get("vista3d"), "swipe.payload.shared")
+    _validate_estadisticas(shared.get("estadisticas"), "swipe.payload.shared")
     for pane_key in ("paneA", "paneB"):
         pane = payload.get(pane_key)
         if not isinstance(pane, dict):

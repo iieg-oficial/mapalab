@@ -8,13 +8,13 @@ import { getDatabaseStats } from '@services/layerMetadataService';
 const ZOOM_MARCA = 16;
 
 export const useMarcaIieg = ({ showMarker, allLayers }) => {
-    const conCaminar = useIsNonProd();
+    const conBeta = useIsNonProd();
     const { active, map3dRef } = useView3d();
 
     useEffect(() => {
         if (!allLayers?.length) return;
-        showMarker?.(buildIiegMarker({ ...computeIiegStats({ allLayers }), permanente: true, conCaminar }));
-    }, [showMarker, allLayers, conCaminar]);
+        showMarker?.(buildIiegMarker({ ...computeIiegStats({ allLayers }), permanente: true, conBeta }));
+    }, [showMarker, allLayers, conBeta]);
 
     return useCallback(async () => {
         const map3d = active ? map3dRef.current : null;
@@ -23,8 +23,8 @@ export const useMarcaIieg = ({ showMarker, allLayers }) => {
             map3d.flyTo({ center, zoom: zoom3dDeOl(zoom ?? ZOOM_MARCA), pitch: map3d.getPitch(), bearing: map3d.getBearing(), duration: 1500 });
         }
         const dbStats = await getDatabaseStats();
-        const marca = buildIiegMarker({ ...computeIiegStats({ allLayers }), totalRecords: dbStats?.total_records ?? null, conCaminar });
+        const marca = buildIiegMarker({ ...computeIiegStats({ allLayers }), totalRecords: dbStats?.total_records ?? null, conBeta });
         showMarker?.(marca);
         return marca;
-    }, [showMarker, allLayers, conCaminar, active, map3dRef]);
+    }, [showMarker, allLayers, conBeta, active, map3dRef]);
 };

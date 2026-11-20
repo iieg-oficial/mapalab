@@ -6,6 +6,8 @@ import { findLayerDef, slugForLayer } from '@pages/maps/helpers/wmsConfig';
 import { serializeAnnotations } from '@pages/maps/helpers/annotationsSerialization';
 import { SERVICE_WMS } from '@pages/maps/helpers/serviceMode';
 import { serializarVista3d } from '@pages/maps/helpers/vista3dCompartida';
+import { serializarEstadisticas } from '@pages/maps/helpers/estadisticasCompartidas';
+import { mapaParaGuardar } from '@pages/maps/helpers/mapaBaseTema';
 
 const round = (value, decimals) => {
     if (value === null || value === undefined || Number.isNaN(value)) return value;
@@ -26,7 +28,8 @@ const serializeFilters = (rawFilters) => {
 const serializeLoop = (dateLoops, loopPrefs, layerTree) => {
     const playing = Object.entries(dateLoops || {}).find(([, l]) => l && l.isPlaying);
     if (!playing) return null;
-    const [layerId, state] = playing;
+    const [, state] = playing;
+    const { layerId } = state;
     const prefs = loopPrefs?.[layerId] || {};
     return {
         layerSlug: slugForLayer(layerId, layerTree),
@@ -94,6 +97,7 @@ export const useShareSerializer = () => {
         dateLoops,
         loopPrefs,
         mapRef,
+        paneMapInstances,
         compareMode,
         measurements,
         municipioMode,
@@ -103,7 +107,7 @@ export const useShareSerializer = () => {
     return useCallback((kind = 'single', extra = {}) => {
         const annotations = extra.includeAnnotations ? serializeAnnotations(measurements) : null;
         const view = (() => {
-            const map = mapRef?.current;
+            const map = (compareMode?.active && (paneMapInstances?.[0] || paneMapInstances?.[1])) || mapRef?.current;
             if (!map) return null;
             const olView = map.getView();
             const center = olView.getCenter();
@@ -125,6 +129,7 @@ export const useShareSerializer = () => {
 
         const selectedSlug = selectedLayerForSymbology?.id ? slugForLayer(selectedLayerForSymbology.id, layerTree) : null;
         const vista3d = serializarVista3d(extra.view3d, id => slugForLayer(id, layerTree));
+        const estadisticas = serializarEstadisticas(extra.estadisticas, id => slugForLayer(id, layerTree));
 
         const municipioPayload = (municipioMode?.active && Array.isArray(municipioMode.selected) && municipioMode.selected.length > 0)
             ? {
@@ -136,7 +141,7 @@ export const useShareSerializer = () => {
 
         const basePayload = {
             view,
-            basemap: baseMapId || null,
+            basemap: mapaParaGuardar(baseMapId),
             selected: selectedSlug,
             layers,
             loop: serializeLoop(dateLoops, loopPrefs, layerTree),
@@ -145,6 +150,7 @@ export const useShareSerializer = () => {
         if (annotations) basePayload.annotations = annotations;
         if (municipioPayload) basePayload.municipios = municipioPayload;
         if (vista3d) basePayload.vista3d = vista3d;
+        if (estadisticas) basePayload.estadisticas = estadisticas;
 
         if (kind === 'swipe') {
             const activeSlot = compareMode?.activeSlot || extra.activeSlot || 'A';
@@ -161,11 +167,12 @@ export const useShareSerializer = () => {
             const paneB = activeSlot === 'A' ? frozenPane : livePane;
             const sharedPayload = {
                 view,
-                basemap: baseMapId || null,
+                basemap: mapaParaGuardar(baseMapId),
                 selected: selectedSlug,
             };
             if (municipioPayload) sharedPayload.municipios = municipioPayload;
             if (vista3d) sharedPayload.vista3d = vista3d;
+            if (estadisticas) sharedPayload.estadisticas = estadisticas;
             const swipePayload = {
                 shared: sharedPayload,
                 paneA: {
@@ -193,5 +200,5 @@ export const useShareSerializer = () => {
             kind: 'single',
             payload: basePayload,
         };
-    }, [activeLayerIds, hiddenLayerIds, layerOpacities, layerServiceModes, hexbinSinFondo, hexbinPalettes, soloSeleccionada, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, layerTree, compareMode, measurements, municipioMode]);
+    }, [activeLayerIds, hiddenLayerIds, layerOpacities, layerServiceModes, hexbinSinFondo, hexbinPalettes, soloSeleccionada, filters, selectedLayerForSymbology, baseMapId, dateLoops, loopPrefs, mapRef, paneMapInstances, layerTree, compareMode, measurements, municipioMode]);
 };

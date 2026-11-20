@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import re
 import threading
 import time
 from collections import deque
@@ -20,6 +21,10 @@ from app.utils.logger import Logger
 _FLUSH_INTERVAL_SECONDS = 30.0
 _MAX_BUFFER_SIZE = 5000
 _HTTP_TIMEOUT = 6.0
+_MAX_CUERPO_LEIDO = 256 * 1024
+_LARGOS = {'method': 40, 'tool': 80, 'client_name': 80, 'client_version': 40}
+_MARCA_ERROR = b'"isError":true'
+_PRODUCTO_UA = re.compile(r'[A-Za-z0-9._-]{1,36}')
 
 
 @dataclass
@@ -53,10 +58,13 @@ class McpEventRecord:
 
 
 def _hash_with_salt(value: Optional[str]) -> Optional[str]:
-    if not value:
+    if not value or not settings.MAPALAB_INTERNAL_TOKEN:
         return None
-    salt = settings.MAPALAB_INTERNAL_TOKEN or 'mapalab'
-    return hashlib.sha256(f"{salt}|{value}".encode('utf-8')).hexdigest()
+    return hashlib.sha256(f"{settings.MAPALAB_INTERNAL_TOKEN}|{value}".encode('utf-8')).hexdigest()
+
+
+def _recortar(valor: Optional[str], campo: str) -> Optional[str]:
+    return valor[:_LARGOS[campo]] if isinstance(valor, str) else None
 
 
 class _McpTelemetryLogger:
@@ -89,7 +97,7 @@ def _flush_sync(records: list[McpEventRecord]) -> None:
     if not records:
         return
     if not settings.MARIACHI_BACKEND_URL or not settings.MAPALAB_INTERNAL_TOKEN:
-        Logger.warning('mcp_telemetry.skip reason=no_config records=%d', len(records))
+        Logger.warning(f'mcp_telemetry.skip reason=no_config records={len(records)}')
         return
     url = f"{settings.MARIACHI_BACKEND_URL.rstrip('/')}/api/mariachi/internal/mapalab/mcp/events"
     headers = {'X-Internal-Token': settings.MAPALAB_INTERNAL_TOKEN}
@@ -101,8 +109,8 @@ def _flush_sync(records: list[McpEventRecord]) -> None:
             Logger.warning(
                 f"mcp_telemetry.flush.bad_status status={response.status_code} body={response.text[:200]}"
             )
-    except httpx.RequestError as exc:
-        Logger.warning(f"mcp_telemetry.flush.error error={exc} records={len(records)}")
+    except Exception as exc:
+        Logger.warning(f"mcp_telemetry.flush.error error={type(exc).__name__} records={len(records)}")
 
 
 async def flush_loop() -> None:
@@ -112,8 +120,10 @@ async def flush_loop() -> None:
         records = logger.drain()
         if not records:
             continue
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, _flush_sync, records)
+        try:
+            await asyncio.to_thread(_flush_sync, records)
+        except Exception as exc:
+            Logger.warning(f"mcp_telemetry.loop.error error={type(exc).__name__}")
 
 
 def _safe_parse_jsonrpc(body: bytes) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
@@ -147,6 +157,13 @@ def _safe_parse_jsonrpc(body: bytes) -> tuple[Optional[str], Optional[str], Opti
     return method, tool, client_name, client_version
 
 
+def _producto_de_agente(user_agent: Optional[str]) -> Optional[str]:
+    if not user_agent:
+        return None
+    producto = _PRODUCTO_UA.match(user_agent.strip())
+    return f'ua:{producto.group(0)}' if producto else None
+
+
 class MCPTelemetryMiddleware:
     def __init__(self, app: ASGIApp, path_prefix: str = '/mcp') -> None:
         self.app = app
@@ -169,7 +186,8 @@ class MCPTelemetryMiddleware:
             message = await receive()
             buffered.append(message)
             if message['type'] == 'http.request':
-                body_bytes += message.get('body', b'')
+                if len(body_bytes) < _MAX_CUERPO_LEIDO:
+                    body_bytes += message.get('body', b'')
                 more_body = message.get('more_body', False)
             else:
                 more_body = False
@@ -186,10 +204,9 @@ class MCPTelemetryMiddleware:
 
         headers = {k.decode('latin-1').lower(): v.decode('latin-1') for k, v in scope.get('headers', [])}
         session_id = headers.get('mcp-session-id')
-        client = scope.get('client') or (None, None)
-        ip = client[0] if client else None
-
-        state = {'status': 0, 'bytes_out': 0}
+        if not client_name:
+            client_name = _producto_de_agente(headers.get('user-agent'))
+        state = {'status': 0, 'bytes_out': 0, 'tool_error': False}
 
         async def wrapped_send(message: Message) -> None:
             if message['type'] == 'http.response.start':
@@ -198,6 +215,7 @@ class MCPTelemetryMiddleware:
                 body = message.get('body') or b''
                 if body:
                     state['bytes_out'] += len(body)
+                    state['tool_error'] = state['tool_error'] or _MARCA_ERROR in body.replace(b' ', b'')
             await send(message)
 
         start = time.monotonic()
@@ -206,24 +224,23 @@ class MCPTelemetryMiddleware:
         finally:
             duration_ms = int((time.monotonic() - start) * 1000)
             http_status = state['status']
-            outcome = 'ok' if 200 <= http_status < 400 else 'error'
+            outcome = 'ok' if 200 <= http_status < 400 and not state['tool_error'] else 'error'
             get_logger().record(McpEventRecord(
                 timestamp=datetime.now(timezone.utc),
-                method=method,
-                tool=tool,
+                method=_recortar(method, 'method') or '',
+                tool=_recortar(tool, 'tool'),
                 status=outcome,
-                error_code=http_status if outcome == 'error' else None,
+                error_code=http_status if http_status >= 400 else None,
                 duration_ms=duration_ms,
                 bytes_out=state['bytes_out'] or None,
                 session_hash=_hash_with_salt(session_id),
-                ip_hash=_hash_with_salt(ip),
-                client_name=client_name,
-                client_version=client_version,
+                ip_hash=None,
+                client_name=_recortar(client_name, 'client_name'),
+                client_version=_recortar(client_version, 'client_version'),
             ))
 
 
 def flush_pending_sync() -> None:
-    """Drain the buffer and flush synchronously. Called on shutdown."""
     try:
         _flush_sync(get_logger().drain())
     except Exception as exc:
