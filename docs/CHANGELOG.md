@@ -6,6 +6,12 @@ está en [`changelog/v1.md`](changelog/v1.md).
 El formato esta basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
+## [No publicado]
+
+### Cambiado
+
+- Imágenes base a Python 3.15 y Node 26. `asyncpg` 0.32.0 y `pydantic` 2.14.4, las primeras con ruedas para 3.15.
+
 ## [2.12.0] - 2026-11-20
 
 ### Cambiado
