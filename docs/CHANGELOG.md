@@ -8,9 +8,12 @@ y este proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/)
 
 ## [No publicado]
 
+## [2.12.1] - 2026-11-23
+
 ### Cambiado
 
 - Imágenes base a Python 3.15 y Node 26. `asyncpg` 0.32.0 y `pydantic` 2.14.4, las primeras con ruedas para 3.15.
+- Proxy del socket de Docker en `dhi.io/nginx:1.31.9-alpine3.24`, la imagen hardened de mainline, en lugar de `nginx:1.30.6-alpine`.
 
 ## [2.12.0] - 2026-11-20
 
